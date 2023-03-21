@@ -22,6 +22,14 @@
     .p-datatable .p-datatable-tbody tr.dot-pages-listing-content__row {
         height: 47px;
     }
+
+    .dot-pages-listing-header__language-input .p-dropdown-label.p-inputtext {
+        min-width: 100px;
+    }
+
+    .p-datatable .p-datatable-tbody tr td.dot-pages-listing__empty-content {
+        text-align: center;
+    }
 }
 
 .dot-pages-listing-header__inputs {
@@ -33,6 +41,10 @@
         font-weight: $font-weight-regular-bold;
         margin-left: $spacing-3;
     }
+}
+
+.dot-pages-listing-header__filter-input {
+    width: 250px;
 }
 
 .dot-pages-table__status-field {

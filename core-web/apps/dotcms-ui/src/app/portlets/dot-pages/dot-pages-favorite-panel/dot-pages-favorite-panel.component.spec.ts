@@ -137,10 +137,9 @@ describe('DotPagesFavoritePanelComponent', () => {
         });
 
         it('should load empty pages cards container', () => {
-            expect(de.queryAll(By.css('dot-pages-card-empty')).length).toBe(5);
             expect(
                 de.query(By.css('.dot-pages-empty__container dot-icon')).componentInstance.name
-            ).toBe('library_add');
+            ).toBe('star_outline');
             expect(de.query(By.css('.dot-pages-empty__header')).nativeElement.outerText).toBe(
                 'favoritePage.listing.empty.header'
             );
