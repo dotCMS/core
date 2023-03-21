@@ -1,7 +1,7 @@
 import * as md5 from 'md5';
 import { Observable } from 'rxjs';
 
-import { Component, Inject, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Inject, OnInit, ViewChild } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
 import { Menu } from 'primeng/menu';
@@ -18,7 +18,8 @@ import { Auth, CurrentUser, LoggerService, LoginService, LOGOUT_URL } from '@dot
 @Component({
     selector: 'dot-toolbar-user',
     styleUrls: ['./dot-toolbar-user.component.scss'],
-    templateUrl: 'dot-toolbar-user.component.html'
+    templateUrl: 'dot-toolbar-user.component.html',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotToolbarUserComponent implements OnInit {
     @ViewChild(Menu) menu: Menu;
