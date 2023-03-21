@@ -1,23 +1,12 @@
 package com.dotmarketing.portlets.fileassets.business;
 
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertTrue;
-import static org.junit.Assert.assertNotEquals;
-
-import com.dotcms.api.tree.Parentable;
-import com.dotcms.datagen.SiteDataGen;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.portlets.templates.business.TemplateAPI;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import org.junit.BeforeClass;
-import org.junit.Test;
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.api.tree.Parentable;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -26,6 +15,17 @@ import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertNotEquals;
 
 public class FileAssetAPITest extends IntegrationTestBase {
 
@@ -473,7 +473,6 @@ public class FileAssetAPITest extends IntegrationTestBase {
 
         List<String> fileNames = new ArrayList<>();
         final int fileAssetSize=3;
-        System.out.println("-> [workingFileAssets_success] Site Name = " + site.getHostname() + " / " + site.getIdentifier());
         for(int i=0;i<fileAssetSize;i++) {
             final java.io.File file = java.io.File.createTempFile("blah" + i, ".txt");
             fileNames.add(file.getName());
@@ -484,10 +483,7 @@ public class FileAssetAPITest extends IntegrationTestBase {
         }
 
         List<FileAsset> assets = APILocator.getFileAssetAPI().findFileAssetsByHost(site,user,false,true,false,false);
-        for (final FileAsset file : assets) {
-            System.out.println("-- [workingFileAssets_success] Returned file = " + file.getURI() + " / " + file.getParent());
-        }
-        assertEquals(fileAssetSize,assets.size());
+        assertEquals("Result count does not match the number of expected working files: " + assets, fileAssetSize,assets.size());
         assets.forEach(a-> {
             assert(fileNames.contains(a.getFileName()));
         });
@@ -507,7 +503,6 @@ public class FileAssetAPITest extends IntegrationTestBase {
 
         List<String> fileNames = new ArrayList<>();
         final int fileAssetSize=3;
-        System.out.println("-> [archivedFileAssets_success] Site Name = " + site.getHostname() + " / " + site.getIdentifier());
         for(int i=0;i<fileAssetSize;i++) {
             final java.io.File file = java.io.File.createTempFile("blah" + i, ".txt");
             fileNames.add(file.getName());
@@ -519,10 +514,7 @@ public class FileAssetAPITest extends IntegrationTestBase {
         }
 
         List<FileAsset> assets = APILocator.getFileAssetAPI().findFileAssetsByHost(site,user,false,false,true,false);
-        for (final FileAsset file : assets) {
-            System.out.println("-- [archivedFileAssets_success] Returned file = " + file.getURI() + " / " + file.getParent());
-        }
-        assertEquals(fileAssetSize,assets.size());
+        assertEquals("Result count does not match the number of expected archived files: " + assets, fileAssetSize,assets.size());
         assets.forEach(a-> {
             assert(fileNames.contains(a.getFileName()));
         });
