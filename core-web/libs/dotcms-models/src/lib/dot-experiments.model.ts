@@ -47,6 +47,7 @@ export interface GoalCondition {
     parameter: GOAL_PARAMETERS;
     operator: GOAL_OPERATORS;
     value: string;
+    isDefault?: boolean;
 }
 
 export interface RangeOfDateAndTime {
@@ -56,17 +57,13 @@ export interface RangeOfDateAndTime {
 
 export type GroupedExperimentByStatus = Partial<Record<DotExperimentStatusList, DotExperiment[]>>;
 
-export interface StepStatus {
+export interface SidebarStatus {
     status: ComponentStatus;
     isOpen: boolean;
-    experimentStep: ExperimentSteps | null;
 }
 
-export type ExperimentsSelectOption<T> = {
-    label: string;
-    value: T;
-    inactive: boolean;
-    description?: string;
+export type StepStatus = SidebarStatus & {
+    experimentStep: ExperimentSteps | null;
 };
 
 export type EditPageTabs = 'edit' | 'preview';
@@ -91,5 +88,12 @@ export enum GOAL_OPERATORS {
 }
 
 export enum GOAL_PARAMETERS {
-    URL = 'url'
+    URL = 'url',
+    REFERER = 'referer'
 }
+
+export const ConditionDefaultByTypeOfGoal: Record<GOAL_TYPES, GOAL_PARAMETERS> = {
+    [GOAL_TYPES.BOUNCE_RATE]: GOAL_PARAMETERS.URL,
+    [GOAL_TYPES.REACH_PAGE]: GOAL_PARAMETERS.REFERER,
+    [GOAL_TYPES.CLICK_ON_ELEMENT]: GOAL_PARAMETERS.URL
+};

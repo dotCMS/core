@@ -13,10 +13,12 @@ import {
     DotLanguagesService,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService,
-    DotPageRenderService
+    DotPageRenderService,
+    DotPageTypesService
 } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 
+import { DotPagesCreatePageDialogComponent } from './dot-pages-create-page-dialog/dot-pages-create-page-dialog.component';
 import { DotPagesFavoritePanelModule } from './dot-pages-favorite-panel/dot-pages-favorite-panel.module';
 import { DotPagesListingPanelModule } from './dot-pages-listing-panel/dot-pages-listing-panel.module';
 import { DotPagesRoutingModule } from './dot-pages-routing.module';
@@ -27,6 +29,7 @@ import { DotPagesComponent } from './dot-pages.component';
     imports: [
         CommonModule,
         DotAddToBundleModule,
+        DotPagesCreatePageDialogComponent,
         DotPagesFavoritePanelModule,
         DotPagesListingPanelModule,
         DotPagesRoutingModule,
@@ -37,6 +40,7 @@ import { DotPagesComponent } from './dot-pages.component';
         DotESContentService,
         DotLanguagesService,
         DotPageRenderService,
+        DotPageTypesService,
         DotTempFileUploadService,
         DotWorkflowsActionsService,
         DotWorkflowActionsFireService,

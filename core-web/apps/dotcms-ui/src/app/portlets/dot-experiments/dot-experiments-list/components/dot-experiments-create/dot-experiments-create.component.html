@@ -1,5 +1,5 @@
 <ng-container *ngIf="vm$ | async as vm">
-    <p-sidebar [(visible)]="vm.isOpenSidebar" (onHide)="closeSidebar()" dotSidebar>
+    <p-sidebar [(visible)]="vm.sidebar.isOpen" (onHide)="closeSidebar()" dotSidebar>
         <dot-sidebar-header
             [actionButtonTpl]="actionHeaderBtnTpl"
             dotTitle="{{ 'experiments.create.form.sidebar.header' | dm }}"
@@ -62,8 +62,8 @@
     <ng-template #actionHeaderBtnTpl>
         <button
             [disabled]="!form.valid"
-            [loading]="vm.isLoading"
-            (click)="handleSubmit()"
+            [loading]="vm.isSaving"
+            (click)="handleSubmit(vm.pageId)"
             data-testId="add-experiment-button"
             form="new-experiment-form"
             label="{{ 'experiments.action.add' | dm }}"

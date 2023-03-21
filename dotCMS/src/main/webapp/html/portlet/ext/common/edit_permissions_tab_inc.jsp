@@ -104,7 +104,7 @@
 </div>
 
 <!-- START Saving permissions dialog -->
-	<div id="savingPermissionsDialog" dojoType="dijit.Dialog" title="<%= LanguageUtil.get(pageContext, "saving-permissions") %>" style="display: none;">
+	<div id="savingPermissionsDialog" data-dojo-props="closable:false" dojoType="dijit.Dialog" title="<%= LanguageUtil.get(pageContext, "saving-permissions") %>" style="display: none;">
 		<div dojoType="dijit.ProgressBar" style="width:200px;text-align:center;" indeterminate="true"></div>
 	</div>
 <!-- END Saving permissions dialog -->

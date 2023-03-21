@@ -1,6 +1,7 @@
 <p-table
     *ngIf="vm$ | async as vm"
     [value]="vm.pages.items"
+    [loading]="vm.isPagesLoading"
     [scrollable]="true"
     [virtualScroll]="true"
     [virtualScrollItemSize]="47"
@@ -34,7 +35,7 @@
             <button
                 class="p-button-primary"
                 [label]="'create.page' | dm"
-                routerLink="/c/content/new/htmlpageasset"
+                (click)="store.getPageTypes()"
                 data-testid="createPageButton"
                 pButton
             ></button>
@@ -58,7 +59,7 @@
                 {{ 'Last-Editor' | dm }}
             </th>
             <th pSortableColumn="modDate" style="width: 13%">
-                {{ 'last.edited' | dm }}<p-sortIcon field="modDate"></p-sortIcon>
+                {{ 'Last-Edited' | dm }}<p-sortIcon field="modDate"></p-sortIcon>
             </th>
             <th style="width: 5%"></th>
         </tr>
@@ -90,9 +91,7 @@
             <td>
                 {{ rowData['modUserName'] }}
             </td>
-            <td>
-                {{ rowData['modDate'] }}
-            </td>
+            <td>{{ rowData['modDate'] | dotRelativeDate }}</td>
             <td>
                 <dot-icon-button
                     id="pageActionButton-{{ rowIndex }}"
