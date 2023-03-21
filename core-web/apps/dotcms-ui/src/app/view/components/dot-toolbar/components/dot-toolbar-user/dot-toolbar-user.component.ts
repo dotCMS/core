@@ -47,11 +47,11 @@ export class DotToolbarUserComponent implements OnInit {
             this.auth = auth;
         });
 
-        this.items$ = this.dotGravatarService.getPhoto(md5(this.getEmailFromAuthState())).pipe(
-            switchMap((photo) =>
-                this.loginService.getCurrentUser().pipe(
+        this.items$ = this.loginService.getCurrentUser().pipe(
+            switchMap(({ loginAs }: CurrentUser) =>
+                this.dotGravatarService.getPhoto(md5(this.getEmailFromAuthState())).pipe(
                     map(
-                        ({ loginAs }: CurrentUser) =>
+                        (photo: string) =>
                             [
                                 {
                                     id: 'toolbar-header',
