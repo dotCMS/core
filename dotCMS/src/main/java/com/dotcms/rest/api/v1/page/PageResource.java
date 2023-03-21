@@ -5,7 +5,6 @@ import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.ema.EMAWebInterceptor;
-import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -55,7 +54,6 @@ import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
-import com.liferay.util.StringPool;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.collections.keyvalue.MultiKey;
 import org.glassfish.jersey.server.JSONP;
@@ -89,8 +87,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
-
-import static com.liferay.util.StringPool.COMMA;
 
 /**
  * Provides different methods to access information about HTML Pages in dotCMS. For example,
@@ -517,7 +513,7 @@ public class PageResource {
             for (final String contentletId : contentletIdList) {
                 final Contentlet contentlet;
                 try {
-                    contentlet = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguageAndVariant(contentletId);
+                    contentlet = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguageAnyVariant(contentletId);
                     if (null == contentlet) {
 
                         throw new BadRequestException("The contentlet: " + contentletId + " does not exists!");
