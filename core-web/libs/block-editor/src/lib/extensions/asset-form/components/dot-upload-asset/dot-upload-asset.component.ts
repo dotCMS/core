@@ -1,4 +1,4 @@
-import { throwError } from 'rxjs';
+import { Subscription, throwError } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import {
@@ -43,6 +43,9 @@ export class DotUploadAssetComponent implements OnDestroy {
     @Output()
     preventClose = new EventEmitter<boolean>();
 
+    @Output()
+    hide = new EventEmitter<boolean>();
+
     @Input()
     type: EditorAssetTypes;
 
@@ -51,6 +54,12 @@ export class DotUploadAssetComponent implements OnDestroy {
     public src: string | ArrayBuffer | SafeResourceUrl;
     public error: string;
     public animation = 'shakeend';
+    public $uploadRequestSubs: Subscription;
+    public controller: AbortController;
+
+    get errorMessage() {
+        return ` Don't close this window while the ${this.type} uploads`;
+    }
 
     @HostListener('window:click', ['$event.target']) onClick(e) {
         const clickedOutside = !this.el.nativeElement.contains(e);
@@ -81,7 +90,7 @@ export class DotUploadAssetComponent implements OnDestroy {
     onSelectFile(files: File[]) {
         const file = files[0];
         const reader = new FileReader();
-
+        this.preventClose.emit(true);
         reader.onload = (e) => this.setFile(file, e.target.result);
 
         /*
@@ -97,32 +106,17 @@ export class DotUploadAssetComponent implements OnDestroy {
      *
      * @memberof DotUploadAssetComponent
      */
-    removeFile() {
+    cancelAction() {
         this.file = null;
         this.status = STATUS.SELECT;
-    }
 
-    /**
-     * Upload the selected File to dotCMS
-     *
-     * @memberof DotUploadAssetComponent
-     */
-    uploadFile() {
-        this.status = STATUS.UPLOAD;
-        this.preventClose.emit(true);
-        this.imageService
-            .publishContent({ data: this.file })
-            .pipe(
-                take(1),
-                catchError((error: HttpErrorResponse) => this.handleError(error))
-            )
-            .subscribe((data) => {
-                const contentlet = data[0];
-                this.uploadedFile.emit(contentlet[Object.keys(contentlet)[0]]);
-                this.status = STATUS.SELECT;
-            });
-    }
+        this.cancelUploading();
+        this.hide.emit(true);
 
+        return;
+
+        // this.preventClose.emit(false);
+    }
     /**
      * End the uploading message animation
      *
@@ -148,6 +142,27 @@ export class DotUploadAssetComponent implements OnDestroy {
     }
 
     /**
+     * Upload the selected File to dotCMS
+     *
+     * @memberof DotUploadAssetComponent
+     */
+    private uploadFile() {
+        this.controller = new AbortController();
+        this.status = STATUS.UPLOAD;
+        this.$uploadRequestSubs = this.imageService
+            .publishContent({ data: this.file, signal: this.controller.signal })
+            .pipe(
+                take(1),
+                catchError((error: HttpErrorResponse) => this.handleError(error))
+            )
+            .subscribe((data) => {
+                const contentlet = data[0];
+                this.uploadedFile.emit(contentlet[Object.keys(contentlet)[0]]);
+                this.status = STATUS.SELECT;
+            });
+    }
+
+    /**
      * Set vide File and asset src.
      *
      * @private
@@ -163,7 +178,8 @@ export class DotUploadAssetComponent implements OnDestroy {
 
         this.src = this.sanitizer.bypassSecurityTrustResourceUrl(URL.createObjectURL(videoBlob));
         this.file = file;
-        this.status = STATUS.PREVIEW;
+        this.status = STATUS.UPLOAD;
+        this.uploadFile();
         this.cd.markForCheck();
     }
 
@@ -183,5 +199,10 @@ export class DotUploadAssetComponent implements OnDestroy {
         console.error(error);
 
         return throwError(error);
+    }
+
+    private cancelUploading(): void {
+        this.$uploadRequestSubs.unsubscribe();
+        this.controller?.abort();
     }
 }

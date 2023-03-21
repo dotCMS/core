@@ -4,9 +4,10 @@ import { Injectable } from '@angular/core';
 
 import { pluck, map } from 'rxjs/operators';
 
-import { DotSessionStorageService } from '@dotcms/data-access';
 import { CoreWebService, DotRequestOptionsArgs } from '@dotcms/dotcms-js';
 import { DotLayout, DotPageRender, DotPageRenderParameters } from '@dotcms/dotcms-models';
+
+import { DotSessionStorageService } from '../dot-session-storage/dot-session-storage.service';
 
 /**
  * Provide util methods interact with layout API

@@ -15,6 +15,7 @@ export class AssetFormComponent {
     @Input() type: EditorAssetTypes;
     @Input() onSelectAsset: (payload: DotCMSContentlet | string) => void;
     @Input() preventClose: (value: boolean) => void;
+    @Input() onHide: (value: boolean) => void;
 
     public disableTabs = false;
 

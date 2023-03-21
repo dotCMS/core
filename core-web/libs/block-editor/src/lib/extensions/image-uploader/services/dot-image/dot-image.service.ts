@@ -5,8 +5,8 @@ import { Injectable } from '@angular/core';
 
 import { catchError, pluck, switchMap } from 'rxjs/operators';
 
+import { DotUploadService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
-import { uploadFile } from '@dotcms/utils';
 
 export enum FileStatus {
     DOWNLOAD = 'DOWNLOADING',
@@ -16,9 +16,10 @@ export enum FileStatus {
 }
 
 interface PublishContentProps {
-    data: string | File | File[];
+    data: string | File;
     maxSize?: string;
     statusCallback?: (status: FileStatus) => void;
+    signal?: AbortSignal;
 }
 
 /**
@@ -29,18 +30,19 @@ interface PublishContentProps {
  */
 @Injectable()
 export class DotImageService {
-    constructor(private http: HttpClient) {}
+    constructor(private http: HttpClient, private dotUploadService: DotUploadService) {}
 
     publishContent({
         data,
         maxSize,
         statusCallback = (_status) => {
             /* */
-        }
+        },
+        signal
     }: PublishContentProps): Observable<DotCMSContentlet[]> {
         statusCallback(FileStatus.DOWNLOAD);
 
-        return this.setTempResource(data, maxSize).pipe(
+        return this.setTempResource({ data, maxSize, signal }).pipe(
             switchMap((response: DotCMSTempFile | DotCMSTempFile[]) => {
                 const files = Array.isArray(response) ? response : [response];
                 const contentlets = [];
@@ -72,17 +74,16 @@ export class DotImageService {
         );
     }
 
-    private setTempResource(
-        file: string | File | File[],
-        maxSize?: string
-    ): Observable<DotCMSTempFile | DotCMSTempFile[]> {
+    private setTempResource({
+        data: file,
+        maxSize,
+        signal
+    }: PublishContentProps): Observable<DotCMSTempFile | DotCMSTempFile[]> {
         return from(
-            uploadFile({
+            this.dotUploadService.uploadFile({
                 file,
-                progressCallBack: () => {
-                    /**/
-                },
-                maxSize
+                maxSize,
+                signal
             })
         );
     }
