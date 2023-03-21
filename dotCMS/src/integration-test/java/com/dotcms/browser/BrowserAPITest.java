@@ -71,8 +71,6 @@ public class BrowserAPITest extends IntegrationTestBase {
 
     static Link testlink;
 
-    private static BrowserAPIImpl browserAPIImpl;
-
     @BeforeClass
     public static void prepare() throws Exception {
         //Setting web app environment
@@ -116,7 +114,6 @@ public class BrowserAPITest extends IntegrationTestBase {
         testPage = APILocator.getHTMLPageAssetAPI().fromContentlet(HTMLPageDataGen.checkin(page, IndexPolicy.FORCE));
 
         testlink = new LinkDataGen().hostId(testHost.getIdentifier()).title("testLink").parent(testFolder).target("https://google.com").linkType("EXTERNAL").nextPersisted();
-        browserAPIImpl = (BrowserAPIImpl) APILocator.getBrowserAPI();
     }
 
     /**

@@ -66,14 +66,16 @@ public class BrowserAPIImpl implements BrowserAPI {
 
     private static final StringBuilder ASSET_NAME_LIKE = new StringBuilder().append("LOWER(%s) LIKE ? ");
 
-    private final String OR = " OR ";
-
     /**
-     * Returns a collection of contentlets based on diff attributes of the BrowserQuery
-     * e.g folder, host, archived, baseTypes, language.
-     * After that filters the list of contentlets based on permissions.
-     * @param browserQuery {@link BrowserQuery}
-     * @return list of contentlets
+     * Returns a collection of contentlets based on specific filtering criteria specified via the
+     * {@link BrowserQuery} class, such as: Parent folder, Site, archived/non-archived status, base Content Types,
+     * language, among many others. After that, the resulting list is filtered based on {@code READ} permissions.
+     * <p>It's worth nothing this approach uses both a SQL query and a Lucene query to fetch results. Their results are
+     * combined in order to get a final result set.</p>
+     *
+     * @param browserQuery The {@link BrowserQuery} object specifying the filtering criteria.
+     *
+     * @return The list of filtered contentlets.
      */
     @Override
     @CloseDBIfOpened
@@ -85,14 +87,10 @@ public class BrowserAPIImpl implements BrowserAPI {
             final List<Map<String,String>> inodesMapList =  dc.loadResults();
             final List<Contentlet> contentletList = contentletAPI.search(sqlQuery._2, -1, 0, null, browserQuery.user,
                     false);
-            final List<String> inodes =
-                    inodesMapList.stream().map(data -> data.get("inode")).collect(Collectors.toList());
-            contentletList.forEach(contentlet -> {
-                if (!inodes.contains(contentlet.getInode())) {
-                    inodes.add(contentlet.getInode());
-                }
-            });
-            final List<Contentlet> contentlets = APILocator.getContentletAPI().findContentlets(inodes);
+            final Set<String> inodes =
+                    inodesMapList.stream().map(data -> data.get("inode")).collect(Collectors.toSet());
+            contentletList.forEach(contentlet -> inodes.add(contentlet.getInode()));
+            final List<Contentlet> contentlets = APILocator.getContentletAPI().findContentlets(new ArrayList<>(inodes));
             return permissionAPI.filterCollection(contentlets,
                     PermissionAPI.PERMISSION_READ, true, browserQuery.user);
         } catch (final Exception e) {
@@ -287,7 +285,7 @@ public class BrowserAPIImpl implements BrowserAPI {
             final List<String> baseTypes =
                     browserQuery.baseTypes.stream().map(t -> String.valueOf(t.getType())).collect(Collectors.toList());
             final List<String> baseTypesNames =
-                    browserQuery.baseTypes.stream().map(t -> t.name()).collect(Collectors.toList());
+                    browserQuery.baseTypes.stream().map(Enum::name).collect(Collectors.toList());
             sqlQuery.append(" and struc.structuretype in (").append(String.join(" , ", baseTypes)).append(") ");
             luceneQuery.append("+contentType:(").append(String.join(" OR ", baseTypesNames)).append(") ");
         }
@@ -297,7 +295,7 @@ public class BrowserAPIImpl implements BrowserAPI {
             luceneQuery.append("+languageId:").append(browserQuery.languageId).append(" ");
         }
         if (browserQuery.site != null) {
-            sqlQuery.append(" and (id.host_inode = ? OR id.host_inode = '").append(Host.SYSTEM_HOST).append("') ");
+            sqlQuery.append(" and (id.host_inode = ?) ");
             parameters.add(browserQuery.site.getIdentifier());
             luceneQuery.append("+conHost:(").append(Host.SYSTEM_HOST).append(" OR ").append(browserQuery.site.getIdentifier()).append(") ");
         }
@@ -322,7 +320,7 @@ public class BrowserAPIImpl implements BrowserAPI {
                     sqlQuery.append(" and");
                 }
             }
-            sqlQuery.append(OR);
+            sqlQuery.append(" OR ");
             sqlQuery.append(getAssetNameColumn(ASSET_NAME_LIKE.toString()));
             sqlQuery.append(" ) ");
             parameters.add("%" + filterText + "%");
