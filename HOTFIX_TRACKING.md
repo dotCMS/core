@@ -100,3 +100,4 @@ This maintenance release includes the following code fixes:
 83. https://github.com/dotCMS/core/issues/22850 : Catch Throwable in PublisherJobQueue #22850
 84. https://github.com/dotCMS/core/issues/23810 : Asset download missing directories 8 and 9 #23810
 85. https://github.com/dotCMS/core/issues/23384 : Thumbnailing Large/Complex pdfs can blow heap #23384
+86. https://github.com/dotCMS/core/issues/23009 : Add a way to set categories on workflow #23009

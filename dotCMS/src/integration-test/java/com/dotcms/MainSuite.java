@@ -98,6 +98,7 @@ import com.dotmarketing.portlets.containers.business.ContainerFactoryImplTest;
 import com.dotmarketing.portlets.containers.business.ContainerStructureFinderStrategyResolverTest;
 import com.dotmarketing.portlets.contentlet.business.ContentletCacheImplTest;
 import com.dotmarketing.portlets.contentlet.business.web.ContentletWebAPIImplIntegrationTest;
+import com.dotmarketing.portlets.contentlet.model.ContentletDependenciesTest;
 import com.dotmarketing.portlets.contentlet.model.IntegrationResourceLinkTest;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImplIntegrationTest;
 import com.dotmarketing.portlets.fileassets.business.FileAssetFactoryIntegrationTest;
@@ -491,7 +492,8 @@ import org.junit.runners.Suite.SuiteClasses;
         PermissionBitFactoryImplTest.class,
         Task220912UpdateCorrectShowOnMenuPropertyTest.class,
         UtilMethodsITest.class,
-        PaginatedContentletsIntegrationTest.class
+        PaginatedContentletsIntegrationTest.class,
+        ContentletDependenciesTest.class
 })
 public class MainSuite {
 
