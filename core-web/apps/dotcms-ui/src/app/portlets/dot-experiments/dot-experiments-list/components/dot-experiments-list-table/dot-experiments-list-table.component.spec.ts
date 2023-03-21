@@ -222,4 +222,16 @@ describe('DotExperimentsListTableComponent', () => {
             expect(output).toEqual(itemToArchive);
         });
     });
+
+    describe('Output viewReports', () => {
+        it('should emit the $event on click', () => {
+            const itemToView = RUNNING_EXPERIMENT_MOCK;
+            let output;
+
+            spectator.output('goToReport').subscribe((result) => (output = result));
+            spectator.component.viewReports(itemToView);
+
+            expect(output).toEqual(itemToView);
+        });
+    });
 });

@@ -4,7 +4,7 @@ import { of } from 'rxjs';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 
-import { ComponentStatus } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotExperimentStatusList } from '@dotcms/dotcms-models';
 import {
     DotExperimentsReportsState,
     DotExperimentsReportsStore
@@ -62,6 +62,60 @@ describe('DotExperimentsReportsStore', () => {
         store.state$.subscribe((state) => {
             expect(state).toEqual(expectedInitialState);
             done();
+        });
+    });
+
+    it('should have isLoading$ from the store', (done) => {
+        spectator.service.loadExperiment(EXPERIMENT_MOCK.id);
+        store.isLoading$.subscribe((data) => {
+            expect(data).toEqual(false);
+            done();
+        });
+    });
+
+    it('should update component status to the store', (done) => {
+        store.setComponentStatus(ComponentStatus.LOADED);
+        store.state$.subscribe(({ status }) => {
+            expect(status).toBe(ComponentStatus.LOADED);
+            done();
+        });
+    });
+
+    it('should get FALSE from showExperimentSummary$ if Experiment status is different of Running', (done) => {
+        dotExperimentsService.getById.and.callThrough().and.returnValue(of(EXPERIMENT_MOCK));
+        spectator.service.loadExperiment(EXPERIMENT_MOCK.id);
+
+        store.showExperimentSummary$.subscribe((value) => {
+            expect(value).toEqual(false);
+            done();
+        });
+    });
+    it('should get TRUE from showExperimentSummary$ if Experiment status is different of Running', (done) => {
+        dotExperimentsService.getById.and.callThrough().and.returnValue(
+            of({
+                ...EXPERIMENT_MOCK,
+                status: DotExperimentStatusList.RUNNING
+            })
+        );
+        spectator.service.loadExperiment(EXPERIMENT_MOCK.id);
+
+        store.showExperimentSummary$.subscribe((value) => {
+            expect(value).toEqual(true);
+            done();
+        });
+    });
+
+    describe('Effects', () => {
+        it('should load experiment to store', (done) => {
+            dotExperimentsService.getById.and.callThrough().and.returnValue(of(EXPERIMENT_MOCK));
+
+            store.loadExperiment(EXPERIMENT_MOCK.id);
+            expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_MOCK.id);
+
+            store.state$.subscribe(({ experiment }) => {
+                expect(experiment).toEqual(EXPERIMENT_MOCK);
+                done();
+            });
         });
     });
 });

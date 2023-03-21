@@ -25,7 +25,7 @@ export class DotExperimentsListTableComponent {
     deleteItem = new EventEmitter<DotExperiment>();
 
     @Output()
-    reportItem = new EventEmitter<DotExperiment>();
+    goToReport = new EventEmitter<DotExperiment>();
 
     constructor(
         private readonly dotMessageService: DotMessageService,
@@ -77,6 +77,6 @@ export class DotExperimentsListTableComponent {
      * @memberof DotExperimentsListTableComponent
      */
     viewReports(item: DotExperiment) {
-        this.reportItem.emit(item);
+        this.goToReport.emit(item);
     }
 }
