@@ -7,29 +7,7 @@
     inverted="true"
     position="right"
 >
-    <div class="toolbar-user__content">
-        <header class="toolbar-user__header">
-            <dot-gravatar
-                class="toolbar-user__header-gravatar"
-                [email]="
-                    auth.loginAsUser === null
-                        ? auth.user.emailAddress
-                        : auth.loginAsUser.emailAddress
-                "
-                size="40"
-            ></dot-gravatar>
-            <div class="toolbar-user__header-info">
-                <h5 class="toolbar-user__user-name" id="dot-toolbar-user-name">
-                    {{
-                        auth.loginAsUser
-                            ? auth.loginAsUser.name || auth.loginAsUser.fullName
-                            : auth.user.name || auth.user.fullName
-                    }}
-                </h5>
-            </div>
-        </header>
-        <p-menu [model]="items$ | async" appendTo="body"></p-menu>
-    </div>
+    <p-menu [model]="items$ | async" appendTo="body"></p-menu>
 </dot-dropdown-component>
 
 <dot-login-as

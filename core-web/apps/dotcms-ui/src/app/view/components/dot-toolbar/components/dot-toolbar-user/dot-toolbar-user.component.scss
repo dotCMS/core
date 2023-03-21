@@ -12,24 +12,48 @@
         margin: 0;
     }
 
-    .toolbar-user__header {
-        padding: $spacing-3;
-        display: flex;
-        align-items: center;
-        border-bottom: 1px solid $color-gray-200;
-    }
-
     .toolbar-user__header-gravatar {
         margin-right: $spacing-1;
-    }
-
-    .toolbar-user__user-name {
-        margin: 0;
-        white-space: nowrap;
     }
 
     .user-menu__item {
         display: block;
         padding: 0.25rem 0;
+    }
+
+    ::ng-deep .toolbar-user__user-name {
+        margin: 0;
+        white-space: nowrap;
+        font-size: $font-size-large;
+        color: $color-gray-600;
+    }
+
+    ::ng-deep .gravatar {
+        border-radius: 50%;
+        width: 35px;
+        height: 35px;
+    }
+
+    ::ng-deep .gravatar-placeholder {
+        border-radius: 50%;
+        width: 35px;
+        height: 35px;
+        background-color: $brand-secondary;
+        color: $white;
+        font-family: "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+        line-height: 35px;
+        text-align: center;
+        font-size: calc(35px - (35px * 25px) / 100px);
+    }
+
+    ::ng-deep #toolbar-header:hover {
+        cursor: default;
+        background-color: white;
+    }
+
+    ::ng-deep .toolbar-user__header {
+        display: flex;
+        align-items: center;
+        gap: $spacing-1;
     }
 }
