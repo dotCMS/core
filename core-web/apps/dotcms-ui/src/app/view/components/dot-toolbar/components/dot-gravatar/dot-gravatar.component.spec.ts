@@ -3,11 +3,10 @@ import { Observable, of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import { Component, DebugElement, Input } from '@angular/core';
-import { ComponentFixture, waitForAsync } from '@angular/core/testing';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
 import { DotGravatarService } from '@dotcms/app/api/services/dot-gravatar-service';
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 
 import { DotGravatarComponent } from './dot-gravatar.component';
 
@@ -37,7 +36,7 @@ describe('DotGravatarComponent', () => {
     let dotGravatarService: DotGravatarService;
 
     beforeEach(waitForAsync(() => {
-        DOTTestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             declarations: [HostTestComponent],
             imports: [DotAvatarModule, CommonModule, DotGravatarComponent],
             providers: [{ provide: DotGravatarService, useClass: DotGravatarServiceMock }]
@@ -45,7 +44,7 @@ describe('DotGravatarComponent', () => {
     }));
 
     beforeEach(() => {
-        fixture = DOTTestBed.createComponent(HostTestComponent);
+        fixture = TestBed.createComponent(HostTestComponent);
         fixture.detectChanges();
         avatarComponent = fixture.debugElement.query(By.css('dot-avatar'));
 

@@ -20,8 +20,8 @@ import { DotToolbarComponent } from './dot-toolbar.component';
         UiDotIconButtonModule,
         DotSiteSelectorModule,
         DotToolbarNotificationModule,
-        DotToolbarUserComponent,
-        ToolbarModule
+        ToolbarModule,
+        DotToolbarUserComponent
     ],
     declarations: [DotToolbarComponent],
     exports: [DotToolbarComponent]

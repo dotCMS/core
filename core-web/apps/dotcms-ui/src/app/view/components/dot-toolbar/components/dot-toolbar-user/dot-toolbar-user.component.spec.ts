@@ -65,7 +65,6 @@ describe('DotToolbarUserComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [],
             providers: [
                 {
                     provide: LOCATION_TOKEN,
@@ -95,7 +94,6 @@ describe('DotToolbarUserComponent', () => {
             imports: [
                 BrowserAnimationsModule,
                 DotDialogModule,
-                DotGravatarComponent,
                 UiDotIconButtonModule,
                 DotIconModule,
                 SearchableDropDownModule,
@@ -108,9 +106,10 @@ describe('DotToolbarUserComponent', () => {
                 CheckboxModule,
                 HttpClientTestingModule,
                 MenuModule,
-                DotToolbarUserComponent,
                 DotLoginAsModule,
-                DotMyAccountModule
+                DotMyAccountModule,
+                DotToolbarUserComponent,
+                DotGravatarComponent
             ]
         });
 
