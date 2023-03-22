@@ -15,6 +15,7 @@ import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.SiteDataGen;
@@ -609,6 +610,19 @@ public class FolderAPITest extends IntegrationTestBase {//24 contentlets
 		contentAsset5= contentletAPI.checkin(contentAsset5, user, false);
 		contentletAPI.publish(contentAsset5 , user, false);
 
+		
+		Contentlet draftedFileAsset = new FileAssetDataGen(ftest2, "this is content").nextPersistedAndPublish();
+		draftedFileAsset.setInode(null);
+		draftedFileAsset =   contentletAPI.checkin(draftedFileAsset, user, false);
+        assert(!draftedFileAsset.isLive());
+        assert(draftedFileAsset.isWorking());
+        assert(draftedFileAsset.hasLiveVersion());
+		
+		
+		
+		
+		
+		
 		final String pageStr2="page2";
 		Contentlet contentAsset6=new Contentlet();
 		contentAsset6.setStructureInode(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
@@ -663,6 +677,28 @@ public class FolderAPITest extends IntegrationTestBase {//24 contentlets
 		contentAsset7 = contentletAPI.checkin(contentAsset7, user, false);
 		contentletAPI.publish(contentAsset7, user, false);
 
+		
+		
+        final String page4DraftedVersion="page4DraftedVersion";
+        Contentlet page4DraftedVersionPage=new Contentlet();
+        page4DraftedVersionPage.setStructureInode(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
+        page4DraftedVersionPage.setHost(host.getIdentifier());
+        page4DraftedVersionPage.setProperty(HTMLPageAssetAPIImpl.FRIENDLY_NAME_FIELD, page4DraftedVersion);
+        page4DraftedVersionPage.setProperty(HTMLPageAssetAPIImpl.URL_FIELD, page4DraftedVersion);
+        page4DraftedVersionPage.setProperty(HTMLPageAssetAPIImpl.TITLE_FIELD, page4DraftedVersion);
+        page4DraftedVersionPage.setProperty(HTMLPageAssetAPIImpl.CACHE_TTL_FIELD, "0");
+        page4DraftedVersionPage.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD, template.getIdentifier());
+        page4DraftedVersionPage.setLanguageId(langId);
+        page4DraftedVersionPage.setFolder(ftest3.getInode());
+        page4DraftedVersionPage = contentletAPI.checkin(page4DraftedVersionPage, user, false);
+        contentletAPI.publish(page4DraftedVersionPage, user, false);
+        page4DraftedVersionPage.setInode(null);
+        page4DraftedVersionPage =   contentletAPI.checkin(page4DraftedVersionPage, user, false);
+		assert(!page4DraftedVersionPage.isLive());
+		assert(page4DraftedVersionPage.isWorking());
+		assert(page4DraftedVersionPage.hasLiveVersion());
+
+		
 		final String title3="test3";
 		Contentlet contentAsset8=new Contentlet();
 		st = StructureFactory.getStructureByVelocityVarName("webPageContent");
