@@ -3,7 +3,7 @@ $panel-padding: $spacing-1 * 2;
 
 .portlet {
     &-main {
-        padding: $spacing-1 * 3 0;
+        padding: 0;
 
         .dijitTabPaneWrapper .dijitContentPane .dijitContentPane {
             padding: 0;
@@ -15,7 +15,7 @@ $panel-padding: $spacing-1 * 2;
     }
 
     &-sidebar-wrapper {
-        background-color: $color-palette-gray-200;
+        background-color: $color-palette-gray-100;
         border-right: solid 1px $color-palette-gray-400;
     }
 

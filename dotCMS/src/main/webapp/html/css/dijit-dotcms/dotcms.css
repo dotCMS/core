@@ -9655,7 +9655,7 @@ dd .buttonCaption {
 
 /* PORTLET STYLES 2.0 */
 .portlet-main {
-  padding: 1.5rem 0;
+  padding: 0;
 }
 .portlet-main .dijitTabPaneWrapper .dijitContentPane .dijitContentPane {
   padding: 0;
@@ -9664,7 +9664,7 @@ dd .buttonCaption {
   padding: 1.5rem 1rem 0 1rem;
 }
 .portlet-sidebar-wrapper {
-  background-color: #f3f3f4;
+  background-color: #fafafb;
   border-right: solid 1px #d1d4db;
 }
 .portlet-wrapper {

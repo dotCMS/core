@@ -73,7 +73,7 @@
 <div class="portlet-main">
 	
 	<!-- START Toolbar -->
-	<div class="portlet-toolbar">
+	<div class="portlet-toolbar" style="margin-top: 16px;">
 		<div class="portlet-toolbar__actions-primary">
 			<div dojoType="dojo.data.ItemFileReadStore" jsId="test" url="/html/portlet/ext/osgi/available_bundles_json.jsp"></div>
 				<%= LanguageUtil.get(pageContext,"OSGI-AVAIL-BUNDLES") %> : <input dojoType="dijit.form.ComboBox" store="test" searchAttr="label" name="availBundlesCombo" id="availBundlesCombo">
@@ -82,7 +82,6 @@
 		<div class="portlet-toolbar__info">
                   <input type="checkbox" id="ignoresystembundles" value="false" onclick="new function(e){getBundlesData()}"> <label for="ignoresystembundles"> &nbsp; Show system bundles</label>
 		</div>
-        <div>
             <div class="portlet-toolbar__actions-secondary">
                 <!-- START Actions -->			
                 <button dojoType="dijit.form.Button" onClick="javascript:dijit.byId('uploadOSGIDialog').show()" iconClass="plusIcon" type="button"><%=LanguageUtil.get(pageContext, "OSGI-Upload-Bundle")%></button>
@@ -91,10 +90,10 @@
                 <button dojoType="dijit.form.Button" onClick="getBundlesData" iconClass="resetIcon" type="button"><%=LanguageUtil.get(pageContext, "Refresh")%></button>
                 <!-- END Actions -->
             </div>
-            <div style="text-align: center; margin-top: 4px;"><span><%=LanguageUtil.get(pageContext, "OSGI-Drag-And-Drop-Allow")%></span></div>
-        </div>
    </div>
    <!-- END Toolbar -->
+
+   <div style="text-align: center; margin-bottom: 16px;"><b><%=LanguageUtil.get(pageContext, "OSGI-Drag-And-Drop-Allow")%></b></div>
 	
 	<table class="listingTable" style="margin:0 0 25px 0;" id="bundlesTable">
         <thead>
