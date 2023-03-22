@@ -116,8 +116,11 @@ describe('DotExperimentsCreateComponent', () => {
     });
 
     describe('Form', () => {
-        it('should have a form', () => {
+        it('should have a form & autofocus ', () => {
             expect(spectator.query(byTestId('new-experiment-form'))).toExist();
+            expect(spectator.query(byTestId('add-experiment-name-input'))).toHaveAttribute(
+                'dotAutofocus'
+            );
         });
         it('should call handleSubmit() on Add button click and form valid', () => {
             spectator.component.ngOnInit();
