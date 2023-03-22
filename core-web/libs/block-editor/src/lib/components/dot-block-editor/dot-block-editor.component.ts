@@ -1,4 +1,5 @@
 import { Subject, from } from 'rxjs';
+import { assert, object, string, array, optional } from 'superstruct';
 
 import {
     Component,
@@ -24,7 +25,11 @@ import { TextAlign } from '@tiptap/extension-text-align';
 import { Underline } from '@tiptap/extension-underline';
 import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
 
-import { RemoteCustomExtentions, EDITOR_MARKETING_KEYS } from '@dotcms/dotcms-models';
+import {
+    RemoteCustomExtensions,
+    EDITOR_MARKETING_KEYS,
+    IMPORT_RESULTS
+} from '@dotcms/dotcms-models';
 
 import {
     ActionsMenu,
@@ -39,7 +44,9 @@ import {
     DragHandler,
     DotFloatingButton,
     BubbleAssetFormExtension,
-    ImageUpload
+    ImageUpload,
+    FreezeScroll,
+    FREEZE_SCROLL_KEY
 } from '../../extensions';
 import { ContentletBlock, ImageNode, VideoNode } from '../../nodes';
 import {
@@ -94,6 +101,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
 
     editor: Editor;
     subject = new Subject();
+    freezeScroll = true;
 
     private _allowedBlocks: string[] = ['paragraph']; //paragraph should be always.
     private _customNodes: Map<string, AnyExtension> = new Map([
@@ -129,8 +137,8 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
         private dotMarketingConfigService: DotMarketingConfigService
     ) {}
 
-    async loadCustomBlocks(urls: string[]) {
-        return Promise.all(urls.map(async (url) => import(/* webpackIgnore: true */ url)));
+    async loadCustomBlocks(urls: string[]): Promise<PromiseSettledResult<AnyExtension>[]> {
+        return Promise.allSettled(urls.map(async (url) => import(/* webpackIgnore: true */ url)));
     }
 
     ngOnInit() {
@@ -154,6 +162,10 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
                 this.editor.on('update', ({ editor }) => {
                     this.valueChange.emit(JSON.stringify(editor.getJSON()));
                 });
+
+                this.editor.on('transaction', ({ editor }) => {
+                    this.freezeScroll = FREEZE_SCROLL_KEY.getState(editor.view.state)?.freezeScroll;
+                });
             });
     }
 
@@ -170,9 +182,47 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
         this.editor.view.dispatch(tr);
     }
 
-    private getParsedCustomBlocks(): RemoteCustomExtentions {
+    /**
+     * assert call throws a detailed error
+     * @param data
+     * @throws if the schema is not valid to use
+     *
+     */
+    private isValidSchema(data: RemoteCustomExtensions): void {
+        const RemoteExtensionsSchema = object({
+            extensions: array(
+                object({
+                    url: string(),
+                    actions: optional(
+                        array(
+                            object({
+                                command: string(),
+                                menuLabel: string(),
+                                icon: string()
+                            })
+                        )
+                    )
+                })
+            )
+        });
+
+        assert(data, RemoteExtensionsSchema);
+    }
+
+    private getParsedCustomBlocks(): RemoteCustomExtensions {
+        const emptyExtentions = {
+            extensions: []
+        };
+
+        if (!this.customBlocks.length) {
+            return emptyExtentions;
+        }
+
         try {
-            return JSON.parse(this.customBlocks);
+            const data = JSON.parse(this.customBlocks);
+            this.isValidSchema(data);
+
+            return data;
         } catch (e) {
             console.warn('JSON parse fails, please check the JSON format.', e);
 
@@ -180,6 +230,22 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
                 extensions: []
             };
         }
+    }
+
+    private parsedCustomModules(
+        prevModule,
+        module: PromiseFulfilledResult<AnyExtension> | PromiseRejectedResult
+    ) {
+        if (module.status === IMPORT_RESULTS.REJECTED) {
+            console.warn('Failed to load the module', module.reason);
+        }
+
+        return module.status === IMPORT_RESULTS.FULFILLED
+            ? {
+                  ...prevModule,
+                  ...module?.value
+              }
+            : { ...prevModule };
     }
 
     /**
@@ -190,22 +256,18 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
      * @memberof DotBlockEditorComponent
      */
     private async getCustomRemoteExtensions(): Promise<AnyExtension[]> {
-        const data: RemoteCustomExtentions = this.getParsedCustomBlocks();
-
-        const extensionUrls = data.extensions.map((extension) => extension.url);
+        const data: RemoteCustomExtensions = this.getParsedCustomBlocks();
+        const extensionUrls = data?.extensions?.map((extension) => extension.url);
         const customModules = await this.loadCustomBlocks(extensionUrls);
         const blockNames = [];
 
         data.extensions.forEach((extension) => {
-            blockNames.push(...extension.actions.map((item) => item.name));
+            blockNames.push(...(extension.actions?.map((item) => item.name) || []));
         });
 
-        const moduleObj = customModules.reduce(
-            (prevModule, module) => ({ ...prevModule, ...module }),
-            {}
-        );
+        const moduleObj = customModules.reduce(this.parsedCustomModules, {});
 
-        return blockNames.map((block) => moduleObj[block]);
+        return Object.values(moduleObj);
     }
 
     private getEditorNodes(): AnyExtension[] {
@@ -305,6 +367,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             BubbleAssetFormExtension(this.viewContainerRef),
             DotTableHeaderExtension(),
             TableRow,
+            FreezeScroll,
             CharacterCount
         ];
     }

@@ -7,6 +7,7 @@ import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { ConfirmPopupModule } from 'primeng/confirmpopup';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { tap } from 'rxjs/operators';
 
@@ -17,7 +18,6 @@ import {
     ComponentStatus,
     ExperimentSteps,
     Goals,
-    GOALS_METADATA_MAP,
     GoalsLevels,
     StepStatus
 } from '@dotcms/dotcms-models';
@@ -25,6 +25,7 @@ import { DotIconModule } from '@dotcms/ui';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotExperimentsConfigurationGoalSelectComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-goal-select/dot-experiments-configuration-goal-select.component';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
+import { DotExperimentsExperimentGoalConfigurationDetailComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-goal-configuration-detail/dot-experiments-experiment-goal-configuration-detail.component';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
 
 /**
@@ -40,10 +41,12 @@ import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.dir
         DotDynamicDirective,
         DotIconModule,
         UiDotIconButtonTooltipModule,
+        DotExperimentsExperimentGoalConfigurationDetailComponent,
         // PrimeNg
         ButtonModule,
         CardModule,
-        ConfirmPopupModule
+        ConfirmPopupModule,
+        TooltipModule
     ],
     templateUrl: './dot-experiments-configuration-goals.component.html',
     styleUrls: ['./dot-experiments-configuration-goals.component.scss'],
@@ -51,12 +54,15 @@ import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.dir
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationGoalsComponent {
-    vm$: Observable<{ experimentId: string; goals: Goals; status: StepStatus }> =
-        this.dotExperimentsConfigurationStore.goalsStepVm$.pipe(
-            tap(({ status }) => this.handleSidebar(status))
-        );
+    vm$: Observable<{
+        experimentId: string;
+        goals: Goals;
+        status: StepStatus;
+        isExperimentADraft: boolean;
+    }> = this.dotExperimentsConfigurationStore.goalsStepVm$.pipe(
+        tap(({ status }) => this.handleSidebar(status))
+    );
 
-    goalTypeMap = GOALS_METADATA_MAP;
     destroy$: Subject<boolean> = new Subject<boolean>();
     @ViewChild(DotDynamicDirective, { static: true }) sidebarHost!: DotDynamicDirective;
     private componentRef: ComponentRef<DotExperimentsConfigurationGoalSelectComponent>;

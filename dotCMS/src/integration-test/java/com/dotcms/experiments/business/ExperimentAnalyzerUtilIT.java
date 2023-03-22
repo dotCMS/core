@@ -10,8 +10,6 @@ import com.dotcms.analytics.metrics.EventType;
 import com.dotcms.analytics.metrics.Metric;
 import com.dotcms.analytics.metrics.MetricType;
 
-import com.dotcms.cube.CubeJSResultSet;
-
 import com.dotcms.datagen.ExperimentDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.SiteDataGen;
@@ -21,8 +19,7 @@ import com.dotcms.experiments.business.result.Event;
 import com.dotcms.experiments.business.result.ExperimentAnalyzerUtil;
 
 import com.dotcms.experiments.business.result.ExperimentResults;
-import com.dotcms.experiments.business.result.ExperimentResults.VariantResult;
-import com.dotcms.experiments.business.result.ExperimentResult;
+import com.dotcms.experiments.business.result.VariantResults;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.experiments.model.Goals;
@@ -38,9 +35,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.SortedSet;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import net.bytebuddy.utility.RandomString;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -143,11 +137,11 @@ public class ExperimentAnalyzerUtilIT {
         final ExperimentResults experimentResults = ExperimentAnalyzerUtil.INSTANCE
                 .getExperimentResult(experiment, browserSessions);
 
-        assertEquals(3, experimentResults.getTotalSessions());
+        assertEquals(3, experimentResults.getSessions());
 
-       assertEquals(1, experimentResults.getGoalResults().size());
+       assertEquals(1, experimentResults.getGoals().size());
 
-        final Map<String, VariantResult> variants = experimentResults.getGoalResults().get(0)
+        final Map<String, VariantResults> variants = experimentResults.getGoals().get(0)
                 .getVariants();
 
         assertEquals(2, variants.size());
@@ -156,16 +150,16 @@ public class ExperimentAnalyzerUtilIT {
                 .map(experimentVariant -> experimentVariant.id())
                 .collect(Collectors.toList());
 
-        for (VariantResult resultVariant : variants.values()) {
+        for (VariantResults resultVariant : variants.values()) {
 
             assertTrue(expectedVariants.contains(resultVariant.getVariantName()));
 
             if (!resultVariant.getVariantName().equals("DEFAULT")) {
-                assertEquals(2, resultVariant.totalUniqueBySession());
-                assertEquals(3, resultVariant.totalMultiBySession());
+                assertEquals(2, resultVariant.getUniqueBySession().getCount());
+                assertEquals(3, resultVariant.getMultiBySession());
             } else {
-                assertEquals(0, resultVariant.totalUniqueBySession());
-                assertEquals(0, resultVariant.totalMultiBySession());
+                assertEquals(0, resultVariant.getUniqueBySession().getCount());
+                assertEquals(0, resultVariant.getMultiBySession());
             }
         }
 
@@ -241,11 +235,11 @@ public class ExperimentAnalyzerUtilIT {
         final ExperimentResults experimentResult = ExperimentAnalyzerUtil.INSTANCE
                 .getExperimentResult(experiment, browserSessions);
 
-        assertEquals(2, experimentResult.getTotalSessions());
+        assertEquals(2, experimentResult.getSessions());
 
-        assertEquals(1, experimentResult.getGoalResults().size());
+        assertEquals(1, experimentResult.getGoals().size());
 
-        final Map<String, VariantResult> variants = experimentResult.getGoalResults().get(0)
+        final Map<String, VariantResults> variants = experimentResult.getGoals().get(0)
                 .getVariants();
 
         assertEquals(2, variants.size());
@@ -254,16 +248,16 @@ public class ExperimentAnalyzerUtilIT {
                 .map(experimentVariant -> experimentVariant.id())
                 .collect(Collectors.toList());
 
-        for (VariantResult resultVariant : variants.values()) {
+        for (VariantResults resultVariant : variants.values()) {
 
             assertTrue(expectedVariants.contains(resultVariant.getVariantName()));
 
             if (!resultVariant.getVariantName().equals("DEFAULT")) {
-                assertEquals(1, resultVariant.totalUniqueBySession());
-                assertEquals(1, resultVariant.totalMultiBySession());
+                assertEquals(1, resultVariant.getUniqueBySession().getCount());
+                assertEquals(1, resultVariant.getMultiBySession());
             } else {
-                assertEquals(0, resultVariant.totalUniqueBySession());
-                assertEquals(0, resultVariant.totalMultiBySession());
+                assertEquals(0, resultVariant.getUniqueBySession().getCount());
+                assertEquals(0, resultVariant.getMultiBySession());
             }
         }
 

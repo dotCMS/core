@@ -6,6 +6,7 @@ import { ChangeDetectionStrategy, Component, ComponentRef, ViewChild } from '@an
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { ConfirmPopupModule } from 'primeng/confirmpopup';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { tap } from 'rxjs/operators';
 
@@ -30,17 +31,22 @@ import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.dir
         // PrimeNg
         CardModule,
         ButtonModule,
-        ConfirmPopupModule
+        ConfirmPopupModule,
+        TooltipModule
     ],
     templateUrl: './dot-experiments-configuration-scheduling.component.html',
     styleUrls: ['./dot-experiments-configuration-scheduling.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationSchedulingComponent {
-    vm$: Observable<{ experimentId: string; scheduling: RangeOfDateAndTime; status: StepStatus }> =
-        this.dotExperimentsConfigurationStore.schedulingStepVm$.pipe(
-            tap(({ status }) => this.handleSidebar(status))
-        );
+    vm$: Observable<{
+        experimentId: string;
+        scheduling: RangeOfDateAndTime;
+        status: StepStatus;
+        isExperimentADraft: boolean;
+    }> = this.dotExperimentsConfigurationStore.schedulingStepVm$.pipe(
+        tap(({ status }) => this.handleSidebar(status))
+    );
 
     @ViewChild(DotDynamicDirective, { static: true }) sidebarHost!: DotDynamicDirective;
     private componentRef: ComponentRef<DotExperimentsConfigurationSchedulingAddComponent>;
@@ -59,7 +65,7 @@ export class DotExperimentsConfigurationSchedulingComponent {
     }
 
     private handleSidebar(status: StepStatus) {
-        if (status && status.isOpen) {
+        if (status && status.isOpen && status.status != ComponentStatus.SAVING) {
             this.loadSidebarComponent(status);
         } else {
             this.removeSidebarComponent();
@@ -67,7 +73,7 @@ export class DotExperimentsConfigurationSchedulingComponent {
     }
 
     private loadSidebarComponent(status: StepStatus): void {
-        if (status && status.isOpen && status.status != ComponentStatus.SAVING) {
+        if (this.shouldLoadSidebar(status)) {
             this.sidebarHost.viewContainerRef.clear();
             this.componentRef =
                 this.sidebarHost.viewContainerRef.createComponent<DotExperimentsConfigurationSchedulingAddComponent>(
@@ -80,5 +86,9 @@ export class DotExperimentsConfigurationSchedulingComponent {
         if (this.componentRef) {
             this.sidebarHost.viewContainerRef.clear();
         }
+    }
+
+    private shouldLoadSidebar(status: StepStatus): boolean {
+        return status && status.isOpen && status.status != ComponentStatus.SAVING;
     }
 }

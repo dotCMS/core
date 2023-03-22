@@ -1,35 +1,35 @@
 <dot-listing-data-table
     #listing
-    (rowWasClicked)="editTemplate($event)"
-    (selectedItems)="updateSelectedTemplates($event)"
-    (contextMenuSelect)="setContextMenu($event)"
     [actionHeaderOptions]="actionHeaderOptions"
     [columns]="tableColumns"
-    sortField="modDate"
-    sortOrder="DESC"
-    url="v1/templates"
     [actions]="[]"
     [checkbox]="true"
     [mapItems]="mapTableItems"
     [contextMenu]="true"
+    (rowWasClicked)="editTemplate($event)"
+    (selectedItems)="updateSelectedTemplates($event)"
+    (contextMenuSelect)="setContextMenu($event)"
+    sortField="modDate"
+    sortOrder="DESC"
+    url="v1/templates"
     dataKey="inode"
 >
     <div class="template-listing__header-options">
         <div>
             <p-checkbox
-                data-testid="archiveCheckbox"
                 [label]="'Show-Archived' | dm"
                 [binary]="true"
                 (onChange)="handleArchivedFilter($event.checked)"
+                data-testid="archiveCheckbox"
             ></p-checkbox>
             <button
-                type="button"
-                pButton
-                [disabled]="!this.selectedTemplates?.length"
                 class="p-button-secondary p-button-sm"
-                icon="pi pi-ellipsis-v"
+                [disabled]="!this.selectedTemplates?.length"
                 [label]="'Actions' | dm"
                 (click)="actionsMenu.toggle($event)"
+                type="button"
+                pButton
+                icon="pi pi-ellipsis-v"
                 attr.data-testid="bulkActions"
             ></button>
         </div>
@@ -39,11 +39,11 @@
     <dot-empty-state
         [rows]="10"
         [colsTextWidth]="[60, 50, 60, 80]"
-        icon="web"
         [title]="'message.template.empty.title' | dm"
         [content]="'message.template.empty.content' | dm"
         [buttonLabel]="'message.template.empty.button.label' | dm"
         (buttonClick)="handleButtonClick()"
+        icon="web"
     >
     </dot-empty-state>
 
@@ -63,13 +63,13 @@
             {{ rowData.friendlyName }}
         </td>
         <td [ngStyle]="{ 'text-align': tableColumns[3].textAlign }">
-            {{ rowData.modDate }}
+            {{ rowData.modDate | dotRelativeDate : true }}
         </td>
         <td style="width: 5%; height: 3.85rem">
             <dot-action-menu-button
+                class="listing-datatable__action-button"
                 *ngIf="!rowData.disableInteraction"
                 [attr.data-testid]="rowData.identifier"
-                class="listing-datatable__action-button"
                 [actions]="setTemplateActions(rowData)"
                 [item]="rowData"
             >

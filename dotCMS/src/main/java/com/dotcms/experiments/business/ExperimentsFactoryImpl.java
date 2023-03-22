@@ -141,7 +141,7 @@ public class ExperimentsFactoryImpl implements
         dc.addParam(experiment.createdBy());
         dc.addParam(experiment.lastModifiedBy());
         dc.addJSONParam(experiment.goals().isPresent()?experiment.goals().get():null);
-        dc.addParam(experiment.lookbackWindow());
+        dc.addParam(experiment.lookBackWindowExpireTime());
         dc.loadResult();
     }
 
@@ -162,7 +162,7 @@ public class ExperimentsFactoryImpl implements
         dc.addParam(experiment.createdBy());
         dc.addParam(experiment.lastModifiedBy());
         dc.addJSONParam(experiment.goals().isPresent()?experiment.goals().get():null);
-        dc.addParam(experiment.lookbackWindow());
+        dc.addParam(experiment.lookBackWindowExpireTime());
         dc.addParam(experiment.id().get());
         dc.loadResult();
     }

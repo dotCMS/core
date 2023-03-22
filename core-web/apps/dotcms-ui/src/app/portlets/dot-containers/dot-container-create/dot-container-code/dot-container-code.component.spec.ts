@@ -10,7 +10,8 @@ import {
     FormGroup,
     FormsModule,
     NG_VALUE_ACCESSOR,
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    Validators
 } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -92,7 +93,7 @@ class HostTestComponent {
     contentTypes = mockContentTypes;
     constructor(private fb: FormBuilder) {
         this.form = this.fb.group({
-            containerStructures: this.fb.array([])
+            containerStructures: this.fb.array([], [Validators.required, Validators.minLength(1)])
         });
     }
 }
@@ -227,6 +228,7 @@ describe('DotContentEditorComponent', () => {
             expect(icon).toBeDefined();
             expect(title.nativeElement.textContent).toContain('Content Type Empty');
             expect(subtitle.nativeElement.textContent).toContain('Need help? Go to documentation');
+            expect(hostComponent.form.valid).toEqual(false);
         });
 
         describe('without default content type', () => {
@@ -256,6 +258,12 @@ describe('DotContentEditorComponent', () => {
                 expect((hostComponent.form.get('containerStructures') as FormArray).length).toEqual(
                     1
                 );
+                expect(
+                    (hostComponent.form.get('containerStructures') as FormArray).controls[0]
+                        .get('code')
+                        .hasValidator(Validators.required)
+                ).toEqual(false);
+                expect(hostComponent.form.valid).toEqual(true);
                 expect(comp.monacoEditors[mockContentTypes[0].name].focus).toHaveBeenCalled();
             }));
 
@@ -290,6 +298,7 @@ describe('DotContentEditorComponent', () => {
                 expect((hostComponent.form.get('containerStructures') as FormArray).length).toEqual(
                     1
                 );
+                expect(hostComponent.form.valid).toEqual(true);
                 expect(comp.monacoEditors[mockContentTypes[0].id].focus).toHaveBeenCalled();
             }));
 
@@ -324,8 +333,18 @@ describe('DotContentEditorComponent', () => {
                 expect(selectedContentType.nativeElement.innerText.toLowerCase()).toBe(
                     mockContentTypes[0].name.toLowerCase()
                 );
+                expect(hostComponent.form.valid).toEqual(true);
                 expect(comp.monacoEditors[mockContentTypes[0].id].focus).toHaveBeenCalled();
             }));
+        });
+
+        it('shoud not have required code field on default content type', () => {
+            expect(
+                (hostComponent.form.get('containerStructures') as FormArray).controls[0]
+                    .get('code')
+                    .hasValidator(Validators.required)
+            ).toEqual(false);
+            expect(hostComponent.form.valid).toEqual(true);
         });
 
         it('shoud have add loader on content types', () => {

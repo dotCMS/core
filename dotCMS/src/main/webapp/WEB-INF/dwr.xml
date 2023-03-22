@@ -4,22 +4,22 @@
     <create creator="new" javascript="JDate">
       <param name="class" value="java.util.Date"/>
     </create>
-    <create creator="new" javascript="StructureAjax" scope="session">
+    <create creator="new" javascript="StructureAjax" scope="application">
       <param name="class" value="com.dotmarketing.portlets.structure.ajax.StructureAjax"/>
     </create>
-    <create creator="new" javascript="ContentletAjax" scope="request">
+    <create creator="new" javascript="ContentletAjax" scope="application">
       <param name="class" value="com.dotmarketing.portlets.contentlet.ajax.ContentletAjax"/>
     </create>
-    <create creator="new" javascript="CategoryAjax" scope="request">
+    <create creator="new" javascript="CategoryAjax" scope="application">
       <param name="class" value="com.dotmarketing.portlets.categories.ajax.CategoryAjax"/>
     </create>
-    <create creator="new" javascript="BrowserAjax" scope="session">
+    <create creator="new" javascript="BrowserAjax" scope="application">
       <param name="class" value="com.dotmarketing.portlets.browser.ajax.BrowserAjax"/>
     </create>
     <create creator="new" javascript="TagAjax" scope="application">
       <param name="class" value="com.dotmarketing.tag.ajax.TagAjax"/>
     </create>
-    <create creator="new" javascript="CMSMaintenanceAjax" scope="request">
+    <create creator="new" javascript="CMSMaintenanceAjax" scope="application">
       <param name="class" value="com.dotmarketing.portlets.cmsmaintenance.ajax.CMSMaintenanceAjax"/>
     </create>
     <create creator="new" javascript="UserAjax" scope="application">
@@ -34,10 +34,10 @@
     <create creator="new" javascript="LanguageAjax" scope="application">
       <param name="class" value="com.dotmarketing.portlets.languagesmanager.ajax.LanguageAjax"/>
     </create>
-    <create creator="new" javascript="InodeAjax" scope="request">
+    <create creator="new" javascript="InodeAjax" scope="application">
       <param name="class" value="com.dotmarketing.business.ajax.InodeAjax"/>
     </create>
-    <create creator="new" javascript="PermissionAjax" scope="request">
+    <create creator="new" javascript="PermissionAjax" scope="application">
       <param name="class" value="com.dotmarketing.business.ajax.PermissionAjax"/>
     </create>
     <create creator="new" javascript="HostAjax" scope="application">
@@ -60,7 +60,7 @@
     <create creator="new" javascript="HTMLPageViewAjax" scope="application">
       <param name="class" value="com.dotmarketing.portlets.htmlpageviews.ajax.HTMLPageViewAjax"/>
     </create>
-    <create creator="new" javascript="ImportContentletAjax" scope="request">
+    <create creator="new" javascript="ImportContentletAjax" scope="application">
       <param name="class" value="com.dotmarketing.portlets.contentlet.ajax.ImportContentletAjax"/>
     </create>
     <create creator="new" javascript="DashboardAjax" scope="application">
@@ -69,16 +69,16 @@
     <create creator="new" javascript="AutoUpdaterAjax" scope="application">
       <param name="class" value="com.dotmarketing.business.ajax.AutoUpdaterAjax"/>
     </create>
-    <create creator="new" javascript="FieldVariableAjax" scope="session">
+    <create creator="new" javascript="FieldVariableAjax" scope="application">
       <param name="class" value="com.dotmarketing.portlets.structure.ajax.FieldVariableAjax"/>
     </create>
-    <create creator="new" javascript="FileAssetAjax" scope="request">
+    <create creator="new" javascript="FileAssetAjax" scope="application">
       <param name="class" value="com.dotmarketing.portlets.fileassets.ajax.FileAssetAjax"/>
     </create>
-    <create creator="new" javascript="ThreadMonitorTool" >
+    <create creator="new" javascript="ThreadMonitorTool" scope="application">
       <param name="class" value="com.dotcms.cmsmaintenance.ajax.ThreadMonitorTool"/>
     </create>
-    <create creator="new" javascript="UserSessionAjax" >
+    <create creator="new" javascript="UserSessionAjax"  scope="application">
       <param name="class" value="com.dotcms.cmsmaintenance.ajax.UserSessionAjax"/>
     </create>
     <create creator="new" javascript="ACheckerDWR">

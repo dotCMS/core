@@ -1,4 +1,5 @@
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator';
+import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
@@ -11,8 +12,12 @@ import { SidebarModule } from 'primeng/sidebar';
 
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotMessageService } from '@dotcms/data-access';
+import { ComponentStatus, ExperimentSteps } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
+import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { DotSidebarDirective } from '@portlets/shared/directives/dot-sidebar.directive';
+import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sidebar-header.component';
 
 import { DotExperimentsConfigurationVariantsAddComponent } from './dot-experiments-configuration-variants-add.component';
@@ -24,6 +29,7 @@ const messageServiceMock = new MockDotMessageService({
 
 describe('DotExperimentsConfigurationVariantsAddComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationVariantsAddComponent>;
+    let store: DotExperimentsConfigurationStore;
 
     const createComponent = createComponentFactory({
         imports: [
@@ -40,6 +46,9 @@ describe('DotExperimentsConfigurationVariantsAddComponent', () => {
         ],
         component: DotExperimentsConfigurationVariantsAddComponent,
         providers: [
+            DotExperimentsConfigurationStore,
+            mockProvider(DotExperimentsService),
+            mockProvider(DotHttpErrorManagerService),
             {
                 provide: DotMessageService,
                 useValue: messageServiceMock
@@ -50,19 +59,34 @@ describe('DotExperimentsConfigurationVariantsAddComponent', () => {
 
     beforeEach(() => {
         spectator = createComponent({
-            props: { isSidebarOpen: true }
+            detectChanges: false
         });
+
+        store = spectator.inject(DotExperimentsConfigurationStore);
+
+        spectator.component.vm$ = of({
+            experimentId: '1',
+            trafficProportion: null,
+            status: {
+                status: ComponentStatus.IDLE,
+                isOpen: true,
+                experimentStep: ExperimentSteps.VARIANTS
+            },
+            isExperimentADraft: true
+        });
+
+        spectator.detectChanges();
     });
 
     it('should have a form', () => {
         expect(spectator.query(byTestId('new-variant-form'))).toExist();
     });
 
-    it('should call saveForm() on add button click and form valid', () => {
-        let formValuesOutput;
+    it('should saveForm when form is valid', () => {
+        spyOn(store, 'addVariant');
 
         const formValues = {
-            description: 'name'
+            name: 'name'
         };
 
         spectator.component.form.setValue(formValues);
@@ -74,16 +98,14 @@ describe('DotExperimentsConfigurationVariantsAddComponent', () => {
         expect(submitButton).toContainText('Add');
         expect(spectator.component.form.valid).toBeTrue();
 
-        spectator.output('formValues').subscribe((result) => (formValuesOutput = result));
-
         spectator.click(submitButton);
 
-        expect(formValuesOutput).toEqual(formValues);
+        expect(store.addVariant).toHaveBeenCalledWith({ name: 'name', experimentId: '1' });
     });
 
     it('should disable submit button if the form is invalid', () => {
         const invalidFormValues = {
-            description: ''
+            name: ''
         };
 
         spectator.component.form.setValue(invalidFormValues);

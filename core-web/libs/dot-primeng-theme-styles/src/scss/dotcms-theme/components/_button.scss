@@ -1,6 +1,5 @@
 @use "sass:math";
 @use "variables" as *;
-
 .p-button {
     background: $brand-primary;
     border-radius: $border-radius;
@@ -620,4 +619,13 @@
     background: rgba(211, 47, 47, 0.16);
     color: #d32f2f;
     border: 1px solid;
+}
+
+.p-button.p-button-outlined.p-button-secondary {
+    border-radius: 4px;
+    border-color: $color-gray-300;
+    color: $color-gray-500;
+    font-size: $font-size-small;
+    height: $spacing-4;
+    padding: 0.25rem $spacing-1;
 }

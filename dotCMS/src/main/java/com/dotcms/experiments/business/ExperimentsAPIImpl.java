@@ -11,6 +11,8 @@ import static com.dotcms.util.CollectionsUtils.set;
 
 import static com.dotcms.experiments.model.AbstractExperimentVariant.ORIGINAL_VARIANT;
 import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
+import static com.dotmarketing.util.DateUtil.isTimeReach;
+import static com.dotmarketing.util.FileUtil.getFileContentFromResourceContext;
 
 import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.analytics.helper.AnalyticsHelper;
@@ -85,6 +87,7 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import graphql.VisibleForTesting;
 import io.vavr.control.Try;
+import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -99,12 +102,11 @@ import java.util.TreeSet;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import io.vavr.Lazy;
+import javax.servlet.http.HttpServletRequest;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class ExperimentsAPIImpl implements ExperimentsAPI {
-
-    private Lazy<Boolean> isExperimentEnabled =
-            Lazy.of(() -> Config.getBooleanProperty("FEATURE_FLAG_EXPERIMENTS", false));
 
     final ExperimentsFactory factory = FactoryLocator.getExperimentsFactory();
     final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
@@ -194,7 +196,9 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                     ORIGINAL_VARIANT, user));
         }
 
-        if(!savedExperiment.get().scheduling().isEmpty()) {
+        if(savedExperiment.get().status() != RUNNING &&
+                savedExperiment.get().status() != ENDED &&
+                !savedExperiment.get().scheduling().isEmpty()) {
             validateScheduling(savedExperiment.get().scheduling().get());
         }
 
@@ -245,11 +249,15 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     private com.dotcms.analytics.metrics.Condition createConditionWithUrlValue(final HTMLPageAsset page,
             final String conditionName) {
 
-        return com.dotcms.analytics.metrics.Condition.builder()
-                .parameter(conditionName)
-                .operator(Operator.CONTAINS)
-                .value(page.getPageUrl())
-                .build();
+        try {
+            return com.dotcms.analytics.metrics.Condition.builder()
+                    .parameter(conditionName)
+                    .operator(Operator.CONTAINS)
+                    .value(page.getURI().replace("index", ""))
+                    .build();
+        } catch (DotDataException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void saveTargetingConditions(final Experiment experiment, final User user)
@@ -462,9 +470,8 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             toReturn = save(persistedExperiment.withScheduling(scheduling).withStatus(RUNNING), user);
             publishContentOnExperimentVariants(user, toReturn);
         } else {
-            Scheduling scheduling = validateScheduling(persistedExperiment.scheduling().get());
-            toReturn = save(persistedExperiment.withScheduling(scheduling).withStatus(SCHEDULED)
-                    ,user);
+            Scheduling scheduling = persistedExperiment.scheduling().get();
+            toReturn = save(persistedExperiment.withScheduling(scheduling).withStatus(SCHEDULED),user);
         }
 
         return toReturn;
@@ -786,9 +793,11 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
     @Override
     public boolean isAnyExperimentRunning() throws DotDataException {
-        return isExperimentEnabled.get() &&
+        return ConfigExperimentUtil.INSTANCE.isExperimentEnabled() &&
                 !APILocator.getExperimentsAPI().getRunningExperiments().isEmpty();
     }
+
+
 
     /**
      * Return the Experiment partial or total result:
@@ -874,8 +883,13 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     @Override
     public void endFinalizedExperiments(final User user) throws DotDataException {
         final List<Experiment> finalizedExperiments = getRunningExperiments().stream()
-                .filter((experiment -> experiment.scheduling().orElseThrow().endDate().orElseThrow()
-                        .isBefore(Instant.now()))).collect(Collectors.toList());
+                .filter(experiment -> experiment.scheduling().orElseThrow().endDate().isPresent())
+                .filter(experiment -> {
+                    final Instant endDate = experiment.scheduling().orElseThrow().endDate()
+                            .orElseThrow();
+                    return isTimeReach(endDate, ChronoUnit.MINUTES);
+                })
+                .collect(Collectors.toList());
 
         finalizedExperiments.forEach((experiment ->
                 Try.of(()->end(experiment.id().orElseThrow(), user)).getOrElseThrow((e)->
@@ -886,14 +900,17 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     public void startScheduledToStartExperiments(final User user) throws DotDataException {
         final List<Experiment> scheduledToStartExperiments = list(ExperimentFilter.builder()
                 .statuses(CollectionsUtils.set(SCHEDULED)).build(), user).stream()
-                .filter((experiment -> experiment.scheduling().isPresent() && experiment.scheduling().get().startDate().orElseThrow()
-                        .isAfter(Instant.now()))).collect(Collectors.toList());
+                .filter((experiment -> {
+                    final Instant startDate = experiment.scheduling().get().startDate().orElseThrow();
+                    return isTimeReach(startDate, ChronoUnit.MINUTES);
+                }))
+                .collect(Collectors.toList());
 
         scheduledToStartExperiments.forEach((experiment ->
                 Try.of(()->startScheduled(experiment.id().orElseThrow(), user)).getOrElseThrow((e)->
                         new DotStateException("Unable to start Experiment. Cause:" + e))));
     }
-    
+
     private TreeSet<ExperimentVariant> redistributeWeights(final Set<ExperimentVariant> variants) {
 
         final int count = variants.size();
@@ -992,4 +1009,5 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     private boolean hasValidLicense(){
         return (licenseValiditySupplierSupplier.hasValidLicense());
     }
+
 }

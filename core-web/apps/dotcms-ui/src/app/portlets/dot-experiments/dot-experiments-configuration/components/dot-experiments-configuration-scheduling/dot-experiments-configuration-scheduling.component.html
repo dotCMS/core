@@ -14,22 +14,30 @@
                     }}</span>
                 </div>
 
-                <button
-                    class="p-button-sm p-button-link"
-                    (click)="setupSchedule()"
-                    data-testId="scheduling-setup-button"
-                    pButton
-                    pRipple
+                <div
+                    [pTooltip]="'experiment.configure.edit.only.draft.status' | dm"
+                    [tooltipDisabled]="vm.isExperimentADraft"
+                    tooltipPosition="bottom"
+                    data-testId="tooltip-on-disabled"
                 >
-                    <ng-container
-                        *ngIf="
-                            !(!!vm.scheduling?.endDate || !!vm.scheduling?.startDate);
-                            else dateRange
-                        "
+                    <button
+                        class="p-button-sm p-button-link"
+                        [disabled]="!vm.isExperimentADraft"
+                        (click)="setupSchedule()"
+                        data-testId="scheduling-setup-button"
+                        pButton
+                        pRipple
                     >
-                        {{ 'experiments.configure.scheduling.setup' | dm }}
-                    </ng-container>
-                </button>
+                        <ng-container
+                            *ngIf="
+                                !(!!vm.scheduling?.endDate || !!vm.scheduling?.startDate);
+                                else dateRange
+                            "
+                        >
+                            {{ 'experiments.configure.scheduling.setup' | dm }}
+                        </ng-container>
+                    </button>
+                </div>
             </div>
         </p-card>
     </p-card>

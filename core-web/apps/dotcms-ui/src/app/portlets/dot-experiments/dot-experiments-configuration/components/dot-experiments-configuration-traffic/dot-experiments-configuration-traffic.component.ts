@@ -5,12 +5,13 @@ import { ChangeDetectionStrategy, Component, ComponentRef, ViewChild } from '@an
 
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { tap } from 'rxjs/operators';
 
 import {
-    ExperimentSteps,
     ComponentStatus,
+    ExperimentSteps,
     StepStatus,
     TrafficProportion,
     TrafficProportionTypes
@@ -22,11 +23,6 @@ import { DotExperimentsConfigurationTrafficSplitAddComponent } from '@portlets/d
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
 
-enum TrafficConfig {
-    ALLOCATION = 'ALLOCATION',
-    SPLIT = 'SPLIT'
-}
-
 @Component({
     selector: 'dot-experiments-configuration-traffic',
     standalone: true,
@@ -37,7 +33,8 @@ enum TrafficConfig {
         // PrimeNg
         CardModule,
         ButtonModule,
-        DotIconModule
+        DotIconModule,
+        TooltipModule
     ],
     templateUrl: './dot-experiments-configuration-traffic.component.html',
     styleUrls: ['./dot-experiments-configuration-traffic.component.scss'],
@@ -49,6 +46,7 @@ export class DotExperimentsConfigurationTrafficComponent {
         trafficProportion: TrafficProportion;
         trafficAllocation: number;
         status: StepStatus;
+        isExperimentADraft: boolean;
     }> = this.dotExperimentsConfigurationStore.trafficStepVm$.pipe(
         tap(({ status }) => this.handleSidebar(status))
     );
@@ -60,7 +58,6 @@ export class DotExperimentsConfigurationTrafficComponent {
         | DotExperimentsConfigurationTrafficAllocationAddComponent
         | DotExperimentsConfigurationTrafficSplitAddComponent
     >;
-    private trafficConfig: TrafficConfig;
 
     constructor(
         private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore
@@ -72,8 +69,7 @@ export class DotExperimentsConfigurationTrafficComponent {
      * @memberof DotExperimentsConfigurationTrafficComponent
      */
     changeTrafficAllocation() {
-        this.trafficConfig = TrafficConfig.ALLOCATION;
-        this.dotExperimentsConfigurationStore.openSidebar(ExperimentSteps.TRAFFIC);
+        this.dotExperimentsConfigurationStore.openSidebar(ExperimentSteps.TRAFFIC_LOAD);
     }
 
     /**
@@ -82,12 +78,11 @@ export class DotExperimentsConfigurationTrafficComponent {
      * @memberof DotExperimentsConfigurationTrafficComponent
      */
     changeTrafficProportion() {
-        this.trafficConfig = TrafficConfig.SPLIT;
-        this.dotExperimentsConfigurationStore.openSidebar(ExperimentSteps.TRAFFIC);
+        this.dotExperimentsConfigurationStore.openSidebar(ExperimentSteps.TRAFFICS_SPLIT);
     }
 
     private handleSidebar(status: StepStatus) {
-        if (status && status.isOpen) {
+        if (status && status.isOpen && status.status != ComponentStatus.SAVING) {
             this.loadSidebarComponent(status);
         } else {
             this.removeSidebarComponent();
@@ -95,18 +90,15 @@ export class DotExperimentsConfigurationTrafficComponent {
     }
 
     private loadSidebarComponent(status: StepStatus): void {
-        if (status && status.isOpen && status.status != ComponentStatus.SAVING) {
-            this.sidebarHost.viewContainerRef.clear();
-
-            this.componentRef =
-                this.trafficConfig == TrafficConfig.SPLIT
-                    ? this.sidebarHost.viewContainerRef.createComponent<DotExperimentsConfigurationTrafficSplitAddComponent>(
-                          DotExperimentsConfigurationTrafficSplitAddComponent
-                      )
-                    : this.sidebarHost.viewContainerRef.createComponent<DotExperimentsConfigurationTrafficAllocationAddComponent>(
-                          DotExperimentsConfigurationTrafficAllocationAddComponent
-                      );
-        }
+        this.sidebarHost.viewContainerRef.clear();
+        this.componentRef =
+            status.experimentStep == ExperimentSteps.TRAFFICS_SPLIT
+                ? this.sidebarHost.viewContainerRef.createComponent<DotExperimentsConfigurationTrafficSplitAddComponent>(
+                      DotExperimentsConfigurationTrafficSplitAddComponent
+                  )
+                : this.sidebarHost.viewContainerRef.createComponent<DotExperimentsConfigurationTrafficAllocationAddComponent>(
+                      DotExperimentsConfigurationTrafficAllocationAddComponent
+                  );
     }
 
     private removeSidebarComponent() {
