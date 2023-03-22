@@ -106,3 +106,4 @@ This maintenance release includes the following code fixes:
 89. https://github.com/dotCMS/core/issues/24158 : CMSFilter updating language param #24158
 90. https://github.com/dotCMS/core/issues/24436 : Task05380ChangeContainerPathToAbsolute repeating site if container was added several times
 91. https://github.com/dotCMS/core/issues/22508 : Error when try to generate a Bundle with a User #22508
+92. https://github.com/dotCMS/core/issues/23078 : Unable to add categories to bundles #23078

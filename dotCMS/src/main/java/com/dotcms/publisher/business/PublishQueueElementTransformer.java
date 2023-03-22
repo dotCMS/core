@@ -1,5 +1,6 @@
 package com.dotcms.publisher.business;
 
+import static com.dotcms.publisher.ajax.RemotePublishAjaxAction.ADD_ALL_CATEGORIES_TO_BUNDLE_KEY;
 import static com.dotcms.util.CollectionsUtils.map;
 
 import com.dotcms.publisher.util.PusheableAsset;
@@ -11,6 +12,8 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.base.CaseFormat;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.util.StringPool;
 import java.util.HashMap;
 import java.util.List;
@@ -83,6 +86,8 @@ public class PublishQueueElementTransformer {
             result = getMapForContentlet(id);
         } else if (isLanguage(type)) {
             result = getMapForLanguage(id);
+        } else if (ADD_ALL_CATEGORIES_TO_BUNDLE_KEY.equals(id)) {
+            result = getMapForCategory();
         } else {
 
             String title = PublishAuditUtil.getInstance().getTitle(type, id);
@@ -124,6 +129,14 @@ public class PublishQueueElementTransformer {
                     CONTENT_TYPE_NAME_KEY,  CaseFormat.LOWER_CAMEL.to(CaseFormat.UPPER_CAMEL,
                             PusheableAsset.LANGUAGE.getType())
             ) : map(TITLE_KEY, id);
+    }
+
+    private static Map<String, Object> getMapForCategory(){
+        try {
+            return map(TITLE_KEY, LanguageUtil.get("Syncing_all_Categories"));
+        } catch (LanguageException e) {
+            return map(TITLE_KEY, "Syncing All Categories ");
+        }
     }
 
     private static Map<String, Object> getMapForContentlet(final String id) {
