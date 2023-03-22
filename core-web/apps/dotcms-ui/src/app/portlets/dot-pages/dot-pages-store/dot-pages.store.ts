@@ -557,14 +557,6 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             });
         });
 
-        // Adding Add To Bundle action
-        if (isEnterprise) {
-            selectItems.push({
-                label: this.dotMessageService.get('contenttypes.content.add_to_bundle'),
-                command: () => this.showAddToBundle(item.identifier)
-            });
-        }
-
         // Adding Push Publish action
         if (isEnterprise && environments) {
             selectItems.push({
@@ -574,6 +566,14 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                         assetIdentifier: item.identifier,
                         title: this.dotMessageService.get('contenttypes.content.push_publish')
                     })
+            });
+        }
+
+        // Adding Add To Bundle action
+        if (isEnterprise) {
+            selectItems.push({
+                label: this.dotMessageService.get('contenttypes.content.add_to_bundle'),
+                command: () => this.showAddToBundle(item.identifier)
             });
         }
 
