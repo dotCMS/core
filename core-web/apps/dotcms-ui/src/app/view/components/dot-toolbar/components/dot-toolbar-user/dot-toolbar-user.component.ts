@@ -1,10 +1,11 @@
 import * as md5 from 'md5';
 import { Observable } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Inject, OnInit, ViewChild } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
-import { Menu } from 'primeng/menu';
+import { Menu, MenuModule } from 'primeng/menu';
 
 import { map, switchMap } from 'rxjs/operators';
 
@@ -12,14 +13,28 @@ import { DotNavigationService } from '@components/dot-navigation/services/dot-na
 import { DotGravatarService } from '@dotcms/app/api/services/dot-gravatar-service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { LOCATION_TOKEN } from '@dotcms/app/providers';
+import { DotPipesModule } from '@dotcms/app/view/pipes/dot-pipes.module';
 import { DotMessageService } from '@dotcms/data-access';
 import { Auth, CurrentUser, LoggerService, LoginService, LOGOUT_URL } from '@dotcms/dotcms-js';
+
+import { DotGravatarComponent } from '../dot-gravatar/dot-gravatar.component';
+import { DotLoginAsModule } from '../dot-login-as/dot-login-as.module';
+import { DotMyAccountModule } from '../dot-my-account/dot-my-account.module';
 
 @Component({
     selector: 'dot-toolbar-user',
     styleUrls: ['./dot-toolbar-user.component.scss'],
     templateUrl: 'dot-toolbar-user.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: true,
+    imports: [
+        CommonModule,
+        DotGravatarComponent,
+        DotLoginAsModule,
+        DotMyAccountModule,
+        DotPipesModule,
+        MenuModule
+    ]
 })
 export class DotToolbarUserComponent implements OnInit {
     @ViewChild(Menu) menu: Menu;
@@ -169,6 +184,11 @@ export class DotToolbarUserComponent implements OnInit {
             : this.auth.user.name || this.auth.user.fullName;
     }
 
+    /**
+     * @description Creates the template to show as header on user menu
+     * @param photo the photo url obtained from gravatar service
+     * @returns HTML template as string
+     */
     private getTemplateFromPhoto(photo: string | null) {
         const name = this.getNameFromAuthState();
 

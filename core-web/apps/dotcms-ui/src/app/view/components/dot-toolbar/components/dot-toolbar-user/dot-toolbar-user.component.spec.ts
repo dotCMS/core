@@ -45,9 +45,9 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotToolbarUserComponent } from './dot-toolbar-user.component';
 
-import { DotGravatarModule } from '../dot-gravatar/dot-gravatar.module';
-import { DotLoginAsComponent } from '../dot-login-as/dot-login-as.component';
-import { DotMyAccountComponent } from '../dot-my-account/dot-my-account.component';
+import { DotGravatarComponent } from '../dot-gravatar/dot-gravatar.component';
+import { DotLoginAsModule } from '../dot-login-as/dot-login-as.module';
+import { DotMyAccountModule } from '../dot-my-account/dot-my-account.module';
 
 class DotGravatarServiceMock {
     getPhoto() {
@@ -65,7 +65,7 @@ describe('DotToolbarUserComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [DotLoginAsComponent, DotMyAccountComponent, DotToolbarUserComponent],
+            declarations: [],
             providers: [
                 {
                     provide: LOCATION_TOKEN,
@@ -95,7 +95,7 @@ describe('DotToolbarUserComponent', () => {
             imports: [
                 BrowserAnimationsModule,
                 DotDialogModule,
-                DotGravatarModule,
+                DotGravatarComponent,
                 UiDotIconButtonModule,
                 DotIconModule,
                 SearchableDropDownModule,
@@ -107,7 +107,10 @@ describe('DotToolbarUserComponent', () => {
                 PasswordModule,
                 CheckboxModule,
                 HttpClientTestingModule,
-                MenuModule
+                MenuModule,
+                DotToolbarUserComponent,
+                DotLoginAsModule,
+                DotMyAccountModule
             ]
         });
 

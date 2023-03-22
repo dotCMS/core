@@ -9,7 +9,7 @@ import { DotSiteSelectorModule } from '@components/_common/dot-site-selector/dot
 import { DotCrumbtrailModule } from '@components/dot-crumbtrail/dot-crumbtrail.module';
 
 import { DotToolbarNotificationModule } from './components/dot-toolbar-notifications/dot-toolbar-notifications.module';
-import { DotToolbarUserModule } from './components/dot-toolbar-user/dot-toolbar-user.module';
+import { DotToolbarUserComponent } from './components/dot-toolbar-user/dot-toolbar-user.component';
 import { DotToolbarComponent } from './dot-toolbar.component';
 
 @NgModule({
@@ -20,7 +20,7 @@ import { DotToolbarComponent } from './dot-toolbar.component';
         UiDotIconButtonModule,
         DotSiteSelectorModule,
         DotToolbarNotificationModule,
-        DotToolbarUserModule,
+        DotToolbarUserComponent,
         ToolbarModule
     ],
     declarations: [DotToolbarComponent],

@@ -38,8 +38,8 @@ describe('DotGravatarComponent', () => {
 
     beforeEach(waitForAsync(() => {
         DOTTestBed.configureTestingModule({
-            declarations: [HostTestComponent, DotGravatarComponent],
-            imports: [DotAvatarModule, CommonModule],
+            declarations: [HostTestComponent],
+            imports: [DotAvatarModule, CommonModule, DotGravatarComponent],
             providers: [{ provide: DotGravatarService, useClass: DotGravatarServiceMock }]
         });
     }));
