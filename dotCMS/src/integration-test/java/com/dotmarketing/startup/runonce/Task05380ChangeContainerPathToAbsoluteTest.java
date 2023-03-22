@@ -68,6 +68,14 @@ public class Task05380ChangeContainerPathToAbsoluteTest {
             "{" +
             "\"identifier\": \"%s/application/containers/default/\"," +
             "\"uuid\": \"1\"" +
+            "}," +
+            "{" +
+            "\"identifier\": \"%s/application/containers/default/\"," +
+            "\"uuid\": \"2\"" +
+            "}," +
+            "{" +
+            "\"identifier\": \"%s/application/containers/default/\"," +
+            "\"uuid\": \"3\"" +
             "}" +
             "]," +
             "\"widthPercent\": 83," +
@@ -150,7 +158,7 @@ public class Task05380ChangeContainerPathToAbsoluteTest {
         final boolean saveAsJson = Config.getBooleanProperty(SAVE_CONTENTLET_AS_JSON, true);
         try {
             Config.setProperty(SAVE_CONTENTLET_AS_JSON, false);
-            final String layout = String.format(jsonDrawBody, "");
+            final String layout = String.format(jsonDrawBody, "","","");
             final String testBody = String.format(body, "");
             final Host host = new SiteDataGen().nextPersisted();
 
@@ -184,7 +192,7 @@ public class Task05380ChangeContainerPathToAbsoluteTest {
     public void whenTemplateLayoutHasNotFileCOntainer() throws IOException, DotDataException, DotSecurityException {
         final Container container = new ContainerDataGen().nextPersisted();
 
-        final String layout = String.format(jsonDrawBody, container.getIdentifier())
+        final String layout = String.format(jsonDrawBody, container.getIdentifier(),container.getIdentifier(),container.getIdentifier())
                 .replaceAll("/application/containers/default/", "");
 
         final String testBody = String.format(body, "");
@@ -225,7 +233,7 @@ public class Task05380ChangeContainerPathToAbsoluteTest {
         final boolean saveAsJson = Config.getBooleanProperty(SAVE_CONTENTLET_AS_JSON, true);
         try {
             Config.setProperty(SAVE_CONTENTLET_AS_JSON, false);
-            final String layout = String.format(jsonDrawBody, "");
+            final String layout = String.format(jsonDrawBody, "","","");
             final Host host = new SiteDataGen().nextPersisted();
 
             checkTemplateLayout(layout);
@@ -258,6 +266,9 @@ public class Task05380ChangeContainerPathToAbsoluteTest {
         final String drawedBody = templateMap.get("drawed_body").toString();
         assertTrue(drawedBody.contains(String.format("//%s/application/containers/default/", host.getHostname())));
 
+        assertFalse(drawedBody.contains(String.format("//%s//%s//%s/application/containers/default/",
+                host.getHostname(),host.getHostname(),host.getHostname())));
+
         if (!Strings.isNullOrEmpty(templateMap.get("body").toString())) {
             final String body = templateMap.get("body").toString();
             assertTrue(body.contains(String.format("//%s/application/containers/default/", host.getHostname())));
@@ -279,7 +290,7 @@ public class Task05380ChangeContainerPathToAbsoluteTest {
     public void whenTemplateLayoutHasAbsolutePathShouldKeepThePathWithoutChange() throws IOException, DotDataException, DotSecurityException {
 
         final Host host = new SiteDataGen().nextPersisted();
-        final String layout = String.format(jsonDrawBody, "//" + host.getHostname());
+        final String layout = String.format(jsonDrawBody, "//" + host.getHostname(),"//" + host.getHostname(),"//" + host.getHostname());
 
         checkTemplateLayout(layout);
         final Contentlet theme = new ThemeDataGen().nextPersisted();
@@ -373,7 +384,7 @@ public class Task05380ChangeContainerPathToAbsoluteTest {
         final boolean saveAsJson = Config.getBooleanProperty(SAVE_CONTENTLET_AS_JSON, true);
         try {
             Config.setProperty(SAVE_CONTENTLET_AS_JSON, false);
-            final String layout = String.format(jsonDrawBody, "");
+            final String layout = String.format(jsonDrawBody, "","","");
             final String testBody = String.format(body, "");
             final Host host = new SiteDataGen().nextPersisted();
 
@@ -452,7 +463,7 @@ public class Task05380ChangeContainerPathToAbsoluteTest {
         final Host host = new SiteDataGen().nextPersisted();
         final Host anotherHost = new SiteDataGen().nextPersisted();
 
-        final String layout = String.format(jsonDrawBody, "//" + anotherHost.getHostname());
+        final String layout = String.format(jsonDrawBody, "//" + anotherHost.getHostname(), "//" + anotherHost.getHostname(), "//" + anotherHost.getHostname());
         final String testBody = String.format(body, "//" + anotherHost.getHostname());
 
         checkTemplateLayout(layout);
@@ -521,7 +532,7 @@ public class Task05380ChangeContainerPathToAbsoluteTest {
         final boolean saveAsJson = Config.getBooleanProperty(SAVE_CONTENTLET_AS_JSON, true);
         try {
             Config.setProperty(SAVE_CONTENTLET_AS_JSON, false);
-            final String layout = String.format(jsonDrawBody, "");
+            final String layout = String.format(jsonDrawBody, "","","");
             final String testBody = String.format(body, "");
             final Host host = new SiteDataGen().nextPersisted();
             final String oldName = host.getHostname();
