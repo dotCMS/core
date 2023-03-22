@@ -796,6 +796,65 @@ public class FolderAPITest {//24 contentlets
 	}
 
 	/**
+	 * Creates a folder with the following content:
+	 * - A page with diff live and working versions
+	 * - A file asset with diff live and working versions
+	 * - A page with only live version
+	 * - A page with only working version
+	 *
+	 * Copies the folder to a new destination.
+	 * Should copy all the content successfully.
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 * @throws IOException
+	 */
+	@Test
+	public void test_copyFolder_contentWithLiveAndWorkingVersions() throws DotDataException, DotSecurityException, IOException {
+		final Host host = new SiteDataGen().nextPersisted();
+		final Folder folder = new FolderDataGen().site(host).nextPersisted();
+		final ContentType contentTypeToPage = new ContentTypeDataGen().host(host).nextPersisted();
+		final Container container = new ContainerDataGen().withContentType(contentTypeToPage, "")
+				.nextPersisted();
+
+		final TemplateLayout templateLayout = new TemplateLayoutDataGen().withContainer(container)
+				.next();
+		final Template template = new TemplateDataGen().drawedBody(templateLayout).nextPersisted();
+
+		final Contentlet htmlPageAsset = new HTMLPageDataGen(host, template).host(host).folder(folder)
+				.languageId(langId).nextPersisted();
+		ContentletDataGen.publish(htmlPageAsset);
+
+		final Contentlet htmlPageAssetNewVersion = APILocator.getContentletAPI().checkout(htmlPageAsset.getInode(),user,false);
+		htmlPageAssetNewVersion.setSortOrder(3);
+		APILocator.getContentletAPI().checkin(htmlPageAssetNewVersion, user, false);
+
+		final Contentlet fileAsset = new FileAssetDataGen(folder, "this is content").nextPersisted();
+		ContentletDataGen.publish(fileAsset);
+
+		final Contentlet fileAssetNewVersion = APILocator.getContentletAPI().checkout(fileAsset.getInode(),user,false);
+		fileAsset.setSortOrder(3);
+		APILocator.getContentletAPI().checkin(fileAssetNewVersion, user, false);
+
+		final Contentlet htmlPageAssetLive = new HTMLPageDataGen(host, template).host(host).folder(folder)
+				.languageId(langId).nextPersisted();
+		ContentletDataGen.publish(htmlPageAssetLive);
+
+		final Contentlet htmlPageAssetWorking = new HTMLPageDataGen(host, template).host(host).folder(folder)
+				.languageId(langId).nextPersisted();
+
+		final Folder destinationFolder = folderAPI
+				.createFolders("/folderCopyDestinationTest" + System.currentTimeMillis(), host,
+						user, false);
+
+		//Copy folder
+		folderAPI.copy(folderAPI.find(htmlPageAsset.getFolder(), user, false), destinationFolder,
+				user, false);
+
+		Assert.assertEquals(4,folderAPI.getWorkingContent(folder,user,false).size());
+	}
+
+
+	/**
 	 * <b>Method to test:</b> {@link FolderAPI#copy(Folder, Folder, User, boolean)}<br></br>
 	 * <b>Given Scenario:</b> Copying a folder that contains pieces of content with relation_type (multi_tree table)
 	 * different from {@link ContainerUUID#UUID_LEGACY_VALUE}<br></br>
