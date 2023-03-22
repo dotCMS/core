@@ -56,3 +56,18 @@
         left: 0;
     }
 }
+
+.content-search__action-item {
+    cursor: pointer;
+    width: 24px;
+    height: 24px;
+    margin-right: 0;
+    position: relative;
+
+    &::before {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+}
