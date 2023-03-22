@@ -8,6 +8,7 @@ import static com.dotcms.exception.ExceptionUtil.getRootCause;
 
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rest.ErrorResponseHelper;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.exception.SecurityException;
@@ -159,11 +160,15 @@ public class ResponseUtil implements Serializable {
         }
 
         if(causedBy(e, BAD_REQUEST_EXCEPTIONS)){
-            return ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
+            final Throwable causedByException = ExceptionUtil.getCauseBy(e, BAD_REQUEST_EXCEPTIONS);
+            return ExceptionMapperUtil.createResponse(null != causedByException? causedByException:e,
+                    null != causedByException?causedByException.getMessage():e.getMessage(), Response.Status.BAD_REQUEST);
         }
 
         if(causedBy(e, NOT_FOUND_EXCEPTIONS)){
-            return ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+            final Throwable causedByException = ExceptionUtil.getCauseBy(e, NOT_FOUND_EXCEPTIONS);
+            return ExceptionMapperUtil.createResponse(null != causedByException? causedByException:e,
+                    null != causedByException?causedByException.getMessage():e.getMessage(), Response.Status.NOT_FOUND);
         }
 
         if(e instanceof DotContentletValidationException){

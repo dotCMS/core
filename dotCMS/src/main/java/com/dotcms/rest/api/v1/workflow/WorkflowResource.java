@@ -19,6 +19,7 @@ import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
@@ -148,6 +149,8 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
+
+import io.vavr.control.Try;
 import org.apache.commons.lang.time.StopWatch;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.media.sse.EventOutput;
@@ -1602,18 +1605,24 @@ public class WorkflowResource {
     private void processPermissions(final FireActionForm fireActionForm,
                                     final ContentletDependencies.Builder formBuilder) {
 
-        if (UtilMethods.isSet(fireActionForm.getIndividualPermissions())) {
+        if (null != fireActionForm.getIndividualPermissions()) {
 
             final List<Permission> permissions = new ArrayList<>();
             for(final Map.Entry<PermissionAPI.Type, List<String>> entry :
                     fireActionForm.getIndividualPermissions().entrySet()) {
 
                 entry.getValue().forEach(roleId -> permissions.add(
-                        new Permission(null, roleId, entry.getKey().getType())));
+                        new Permission(null, this.mapRoleId(roleId), entry.getKey().getType())));
             }
 
             formBuilder.permissions(permissions);
         }
+    }
+
+    protected String mapRoleId (final String roleIdOrKey) {
+
+        final Role role = Try.of(()-> APILocator.getRoleAPI().loadRoleByKey(roleIdOrKey)).getOrNull();
+        return null != role? role.getId(): roleIdOrKey;
     }
 
     private boolean needSave (final FireActionForm fireActionForm) {

@@ -22,7 +22,7 @@ import {
     DEFAULT_VARIANT_NAME,
     DotExperimentStatusList,
     ExperimentSteps,
-    SidebarStatus,
+    SIDEBAR_STATUS,
     Variant
 } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -195,7 +195,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
 
             expect(addButton.disabled).not.toBe(true);
             spectator.click(addButton);
-            expect(output).toEqual(SidebarStatus.OPEN);
+            expect(output).toEqual(SIDEBAR_STATUS.OPEN);
         });
 
         it('should goToEditPage emit a variant and mode(preview) when View button is clicked', () => {

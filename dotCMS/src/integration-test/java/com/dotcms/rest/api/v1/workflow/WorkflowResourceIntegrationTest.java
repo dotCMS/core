@@ -2326,6 +2326,50 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         return contentType;
     }
 
+    /**
+     * Method to test: {@link WorkflowResource#mapRoleId(String)}
+     * Given Scenario: sents an invalid role and returns exactly the same
+     * ExpectedResult: The bad role is being returned
+     *
+     */
+    @Test
+    public void test_mapRoleId_No_Exist_Success() throws Exception {
+
+        final String invalidRole = "xxxx";
+        Assert.assertEquals(invalidRole, workflowResource.mapRoleId(invalidRole));
+    }
+
+    /**
+     * Method to test: {@link WorkflowResource#mapRoleId(String)}
+     * Given Scenario: Find any role present and sents to the mapRoleId, should return the same role id
+     * ExpectedResult: The role id of the role id sent, should be the same
+     *
+     */
+    @Test
+    public void test_mapRoleId_Role_Id_Success() throws Exception {
+
+        final Optional<Role> roleOpt = APILocator.getRoleAPI().findAllAssignableRoles(false).stream().findFirst();
+        if (roleOpt.isPresent()) {
+            Assert.assertEquals(roleOpt.get().getId(), workflowResource.mapRoleId(roleOpt.get().getId()));
+        }
+    }
+
+    /**
+     * Method to test: {@link WorkflowResource#mapRoleId(String)}
+     * Given Scenario: Find any role present and sents the key to the mapRoleId, should return the same role id of the role key sent
+     * ExpectedResult: should return the same role id of the role key sent
+     *
+     */
+    @Test
+    public void test_mapRoleId_Role_Key_Success() throws Exception {
+
+        final Optional<Role> roleOpt = APILocator.getRoleAPI().findAllAssignableRoles(true).stream().filter(role -> role.getRoleKey() != null).findFirst();
+        if (roleOpt.isPresent()) {
+            Assert.assertEquals(roleOpt.get().getId(), workflowResource.mapRoleId(roleOpt.get().getRoleKey()));
+        }
+    }
+
+
     @Test
     public void testFireActionDefault_ContentWithCategories_Success() throws Exception {
         ContentType categoryContentType = null;

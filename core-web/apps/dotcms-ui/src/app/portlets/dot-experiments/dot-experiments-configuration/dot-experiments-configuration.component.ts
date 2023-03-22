@@ -12,7 +12,7 @@ import {
     DotExperimentStatusList,
     EditPageTabs,
     ExperimentSteps,
-    SidebarStatus,
+    SIDEBAR_STATUS,
     Variant
 } from '@dotcms/dotcms-models';
 import {
@@ -96,13 +96,13 @@ export class DotExperimentsConfigurationComponent implements OnInit {
 
     /**
      * Sidebar controller
-     * @param {SidebarStatus} action
+     * @param {SIDEBAR_STATUS} action
      * @param {ExperimentSteps} step
      * @returns void
      * @memberof DotExperimentsConfigurationComponent
      */
-    sidebarStatusController(action: SidebarStatus, step?: ExperimentSteps) {
-        if (action === SidebarStatus.OPEN) {
+    sidebarStatusController(action: SIDEBAR_STATUS, step?: ExperimentSteps) {
+        if (action === SIDEBAR_STATUS.OPEN) {
             this.dotExperimentsConfigurationStore.openSidebar(step);
         } else {
             this.dotExperimentsConfigurationStore.closeSidebar();

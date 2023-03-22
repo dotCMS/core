@@ -43,7 +43,8 @@ import { DotContentletEditorService } from '../../services/dot-contentlet-editor
 const messageServiceMock = new MockDotMessageService({
     'editcontentlet.lose.dialog.header': 'Header',
     'editcontentlet.lose.dialog.message': 'Message',
-    'editcontentlet.lose.dialog.accept': 'Accept'
+    'editcontentlet.lose.dialog.accept': 'Accept',
+    'message.content.saved': 'Page Saved'
 });
 
 describe('DotContentletWrapperComponent', () => {
@@ -56,6 +57,7 @@ describe('DotContentletWrapperComponent', () => {
     let dotRouterService: DotRouterService;
     let titleService: Title;
     let dotIframeService: DotIframeService;
+    let dotEventsService: DotEventsService;
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
@@ -120,12 +122,14 @@ describe('DotContentletWrapperComponent', () => {
         dotRouterService = de.injector.get(DotRouterService);
         titleService = de.injector.get(Title);
         dotIframeService = de.injector.get(DotIframeService);
+        dotEventsService = de.injector.get(DotEventsService);
 
         spyOn(titleService, 'setTitle').and.callThrough();
         spyOn(dotIframeService, 'reload');
         spyOn(dotAddContentletService, 'clear');
         spyOn(dotAddContentletService, 'load');
         spyOn(dotAddContentletService, 'keyDown');
+        spyOn(dotEventsService, 'notify');
         spyOn(component.shutdown, 'emit');
         spyOn(component.custom, 'emit');
     });
@@ -320,6 +324,12 @@ describe('DotContentletWrapperComponent', () => {
                     };
                     dotIframeDialog.triggerEventHandler('custom', params);
                     expect(component.custom.emit).toHaveBeenCalledWith(params);
+                    expect(dotEventsService.notify).toHaveBeenCalledWith('save-page', {
+                        payload: {
+                            hello: 'world'
+                        },
+                        value: 'Page Saved'
+                    });
                 });
 
                 it('should reload content dialog if is not a new content', () => {
