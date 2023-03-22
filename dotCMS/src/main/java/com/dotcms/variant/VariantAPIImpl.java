@@ -1,23 +1,36 @@
 package com.dotcms.variant;
 
+import static com.dotcms.util.CollectionsUtils.list;
+
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.rest.validation.Preconditions;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.variant.model.Variant;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * API of {@link Variant}
  */
 public class VariantAPIImpl implements VariantAPI {
     private final VariantFactory variantFactory;
+
 
     public VariantAPIImpl(){
         variantFactory = FactoryLocator.getVariantFactory();
@@ -125,5 +138,51 @@ public class VariantAPIImpl implements VariantAPI {
     @CloseDBIfOpened
     public List<Variant> getVariants() throws DotDataException {
         return variantFactory.getVariants();
+    }
+
+    @Override
+    public void promote(final Variant variant, final User user) throws DotDataException {
+
+        DotPreconditions.checkArgument(!variant.name().equals(DEFAULT_VARIANT.name()),
+                "DEFAULT variant can not be promoted");
+
+        final Variant variantFromDatabase = APILocator.getVariantAPI().get(variant.name())
+                .orElseThrow(() -> new IllegalArgumentException(
+                        String.format("Variant `%s` does not exists", variant.name())));
+
+        DotPreconditions.checkArgument(!variantFromDatabase.archived(), "An archived Variant can not be promoted");
+
+        APILocator.getVersionableAPI().findAllByVariant(variantFromDatabase).stream()
+                .forEach(contentletVersionInfo -> promoteToDefault(user, contentletVersionInfo));
+
+        Logger.debug(this, () -> "Promoting Variant: " + variantFromDatabase);
+        archive(variantFromDatabase.name());
+    }
+
+    private static void promoteToDefault(final User user, final ContentletVersionInfo contentletVersionInfo) {
+        try {
+            if (UtilMethods.isSet(contentletVersionInfo.getLiveInode())) {
+                final Contentlet liveContentlet = APILocator.getContentletAPI()
+                        .find(contentletVersionInfo.getLiveInode(), user, false);
+
+                final Contentlet contentletOnVariant = APILocator.getContentletAPI()
+                        .saveContentOnVariant(liveContentlet, VariantAPI.DEFAULT_VARIANT.name(), user);
+
+                APILocator.getContentletAPI().publish(contentletOnVariant, user, false);
+            }
+
+            if (UtilMethods.isSet(contentletVersionInfo.getWorkingInode()) &&
+                    !contentletVersionInfo.getWorkingInode().equals(contentletVersionInfo.getLiveInode())) {
+
+                final Contentlet workingContentlet = APILocator.getContentletAPI()
+                        .find(contentletVersionInfo.getWorkingInode(), user, false);
+
+                APILocator.getContentletAPI()
+                        .saveContentOnVariant(workingContentlet, VariantAPI.DEFAULT_VARIANT.name(), user);
+            }
+
+        } catch (DotDataException | DotSecurityException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

@@ -2,6 +2,7 @@ package com.dotcms.variant;
 
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.exception.DotDataException;
+import com.liferay.portal.model.User;
 import java.util.List;
 import java.util.Optional;
 
@@ -60,8 +61,22 @@ public interface VariantAPI {
     Optional<Variant> get(final String name) throws DotDataException;
 
     /**
-     * Gets all persisted {@link Variant}
+     * Gets all persisted {@link Variant} that are not archived
      * @return the variants
      */
     List<Variant> getVariants() throws DotDataException;
+
+    /**
+     * This method will set the {@link Variant} as the DEFAULT Variant.
+     *
+     * It means that all the contentlets's version in the specific {@link Variant} are going
+     * to be copied and set as the DEFAULT version.
+     *
+     * Also this new copies are goignt o be the LIVE version into teh DEFAULT {@link Variant}.
+     *
+     * @param variant
+     * @param user to check permissions
+     * @throws DotDataException
+     */
+    void promote(final Variant variant, final User user) throws DotDataException;
 }

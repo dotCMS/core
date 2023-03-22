@@ -17,6 +17,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
@@ -2258,4 +2259,14 @@ public interface ContentletAPI {
      */
     void refresh(ContentType type) throws DotReindexStateException;
 
+	/**
+	 * This method will create a new version of the contentlet but into variantName.
+	 *
+	 * @param contentlet  to be copied
+	 * @param variantName new variant version
+	 * @param user        user to check permissions
+	 * @return new contentlet version
+	 */
+	Contentlet saveContentOnVariant(final Contentlet contentlet, final String variantName,
+			final User user);
 }

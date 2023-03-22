@@ -22,6 +22,7 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.hook.HTMLPageHook;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
@@ -1694,6 +1695,25 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
         for(ContentletAPIPostHook post : postHooks){
             post.refresh(type);
         }
+    }
+
+	public Contentlet saveContentOnVariant(final Contentlet contentlet, final String variantName,
+			final User user) {
+		for(ContentletAPIPreHook pre : preHooks){
+			boolean preResult = pre.saveContentOnVariant(contentlet, variantName, user);
+			if(!preResult){
+				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+			}
+		}
+
+		final Contentlet saveContentOnVariant = conAPI.saveContentOnVariant(contentlet, variantName, user);
+
+		for(ContentletAPIPostHook post : postHooks){
+			post.saveContentOnVariant(contentlet, variantName, user);
+		}
+
+		return saveContentOnVariant;
     }
 	
 	
