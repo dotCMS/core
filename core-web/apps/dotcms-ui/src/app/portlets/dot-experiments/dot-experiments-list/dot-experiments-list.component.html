@@ -3,7 +3,7 @@
         [isLoading]="vm.isLoading"
         [title]="vm.page.pageTitle"
         (goBack)="goToBrowserBack()"
-    ></dot-experiments-header>
+    />
 
     <div class="dot-experiment">
         <ng-container
@@ -14,7 +14,7 @@
                     [options]="statusOptionList"
                     [selectedItems]="vm.filterStatus"
                     (switch)="selectedStatusFilter($event)"
-                ></dot-experiments-status-filter>
+                />
 
                 <button
                     (click)="addExperiment()"
@@ -30,7 +30,8 @@
                 [experiments]="vm.experimentsFiltered"
                 (archiveItem)="archiveExperiment($event)"
                 (deleteItem)="deleteExperiment($event)"
-            ></dot-experiments-list-table>
+                (goToReport)="goToViewExperimentReport($event)"
+            />
         </ng-container>
     </div>
 </ng-container>
@@ -39,10 +40,10 @@
     <dot-experiments-empty-experiments
         (addNew)="addExperiment()"
         description="{{ 'experimentspage.not.experiments.founds' | dm }}"
-    ></dot-experiments-empty-experiments>
+    />
 </ng-template>
 <ng-template #loadingExperiments>
-    <dot-experiments-list-skeleton></dot-experiments-list-skeleton>
+    <dot-experiments-list-skeleton />
 </ng-template>
 
 <ng-template dotDynamic></ng-template>

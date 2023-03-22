@@ -25,33 +25,6 @@
 }
 
 ::ng-deep {
-    p-tag .p-tag {
-        &.running {
-            color: $color-accessible-text-green;
-            background-color: $color-accessible-text-green-bg;
-        }
-
-        &.draft {
-            color: $color-accessible-text-yellow;
-            background-color: $color-accessible-text-yellow-bg;
-        }
-
-        &.scheduled {
-            color: $color-accessible-text-purple;
-            background-color: $color-accessible-text-purple-bg;
-        }
-
-        &.ended {
-            color: $color-accessible-text-blue;
-            background-color: $color-accessible-text-blue-bg;
-        }
-
-        &.archived {
-            color: $color-accessible-text-gray;
-            background-color: $color-accessible-text-gray-bg;
-        }
-    }
-
     .p-button {
         &:disabled {
             background-color: transparent;
