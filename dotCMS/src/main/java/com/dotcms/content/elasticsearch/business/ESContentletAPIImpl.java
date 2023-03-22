@@ -728,7 +728,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @CloseDBIfOpened
     @Override
-    public Contentlet findContentletByIdentifierAnyLanguageAndVariant(final String identifier) throws DotDataException{
+    public Contentlet findContentletByIdentifierAnyLanguageAnyVariant(final String identifier) throws DotDataException{
 
         try {
             final ContentletVersionInfo anyContentletVersionInfoAnyVariant = FactoryLocator.getVersionableFactory()
@@ -7230,13 +7230,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 if (((String) value).trim().length() > 0) {
                     try {
                         final String trimmedValue = ((String) value).trim();
-                        if (trimmedValue.equals("+0000") || trimmedValue.equals("00:00 +0000")) {
-                            contentlet.setDateProperty(field.getVelocityVarName(),
-                                    null);
-                        } else {
-                            contentlet.setDateProperty(field.getVelocityVarName(),
-                                    DateUtil.convertDate((String) value, dateFormats));
-                        }
+                        contentlet.setDateProperty(field.getVelocityVarName(),
+                                DateUtil.convertDate(trimmedValue, dateFormats));
                     } catch (Exception e) {
                         throw new DotContentletStateException(
                                 "Unable to convert string to date " + value);

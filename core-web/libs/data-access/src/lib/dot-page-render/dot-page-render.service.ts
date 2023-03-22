@@ -27,6 +27,25 @@ export class DotPageRenderService {
     constructor(private coreWebService: CoreWebService) {}
 
     /**
+     * Verifies if a use can access a page based on the path param
+     *
+     * @param {Params} queryParams
+     * @returns {Observable<boolean>}
+     * @memberof DotPageRenderService
+     */
+    checkPermission(queryParams: Params): Observable<boolean> {
+        return this.coreWebService
+            .requestView({
+                body: {
+                    ...queryParams
+                },
+                method: 'POST',
+                url: `v1/page/_check-permission`
+            })
+            .pipe(pluck('entity'));
+    }
+
+    /**
      * Make request to get a rendered page
      *
      * @param {DotPageRenderOptions} options

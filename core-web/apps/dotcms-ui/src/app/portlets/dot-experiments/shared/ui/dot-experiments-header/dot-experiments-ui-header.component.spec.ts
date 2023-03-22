@@ -1,14 +1,29 @@
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
 
 import { Skeleton } from 'primeng/skeleton';
+import { Tag, TagModule } from 'primeng/tag';
+
+import { DotMessageService } from '@dotcms/data-access';
+import { DotExperimentStatusList } from '@dotcms/dotcms-models';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotExperimentsUiHeaderComponent } from './dot-experiments-ui-header.component';
 
+const messageServiceMock = new MockDotMessageService({
+    running: 'RUNNING'
+});
 describe('ExperimentsHeaderComponent', () => {
     let spectator: Spectator<DotExperimentsUiHeaderComponent>;
 
     const createComponent = createComponentFactory({
-        component: DotExperimentsUiHeaderComponent
+        component: DotExperimentsUiHeaderComponent,
+        imports: [TagModule],
+        providers: [
+            {
+                provide: DotMessageService,
+                useValue: messageServiceMock
+            }
+        ]
     });
 
     beforeEach(() => {
@@ -35,5 +50,15 @@ describe('ExperimentsHeaderComponent', () => {
         });
 
         expect(spectator.query(Skeleton)).toExist();
+    });
+
+    it('should rendered the status Input', () => {
+        const expectedStatus: DotExperimentStatusList = DotExperimentStatusList.RUNNING;
+        spectator.setInput({
+            status: DotExperimentStatusList.RUNNING
+        });
+
+        expect(spectator.query(Tag)).toExist();
+        expect(spectator.query(byTestId('status-tag'))).toContainText(expectedStatus);
     });
 });

@@ -2,38 +2,64 @@ import { Injectable } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { RouterStateSnapshot, TitleStrategy } from '@angular/router';
 
+import { DotMessageService } from '@dotcms/data-access';
+
+const DEFAULT_TITLE_PLATFORM = 'dotCMS Content Management Platform';
+
 /**
- * Page Title Strategy
+ * DotCMS Title Strategy
  * Add the string path to useTitleStrategy to use TitleStrategy
- * to add title, in the Router add the title atribute.
+ * to add title, in the Router add the title attribute.
  */
 @Injectable()
-export class DotTemplatePageTitleStrategy extends TitleStrategy {
-    constructor(private readonly title: Title) {
+export class DotTitleStrategy extends TitleStrategy {
+    constructor(
+        private readonly title: Title,
+        private readonly dotMessageService: DotMessageService
+    ) {
         super();
     }
 
     override updateTitle(routerState: RouterStateSnapshot) {
-        const dotCMSTitle = 'dotCMS Content Management Platform';
-        const title = this.buildTitle(routerState);
+        const currentRouteTitle = this.buildTitle(routerState);
 
         // TODO: after add the title to all the paths, delete the wrapper if
         if (this.useTitleStrategy(routerState.url)) {
-            const metaTitle = title ? `${title} - ${dotCMSTitle}` : `${dotCMSTitle}`;
+            const metaTitle = currentRouteTitle
+                ? `${this.translateTitle(currentRouteTitle)} - ${DEFAULT_TITLE_PLATFORM}`
+                : `${DEFAULT_TITLE_PLATFORM}`;
             this.title.setTitle(metaTitle);
         }
     }
 
     /**
      * Add to the array allowedPaths all the path do you
-     * want use the global TitleStrategy
-     * @param currentUrl
+     * want to use the global TitleStrategy
+     * @param {string} currentUrl
      * @private
      */
     private useTitleStrategy(currentUrl: string) {
         const allowedPaths = ['experiments'];
-        const search = allowedPaths.find((url) => currentUrl.includes(url));
 
-        return !!search;
+        return !!allowedPaths.find((url) => currentUrl.includes(url));
+    }
+
+    /**
+     * Translate the title sent in the Route
+     *
+     * @example
+     * ```
+     * {
+     *   path: 'reports',
+     *   component: ComponentToShow
+     *   title: 'title.to.translate',
+     * }
+     * ```
+     *
+     * @param {string} title
+     * @private
+     */
+    private translateTitle(title: string) {
+        return this.dotMessageService.get(title);
     }
 }

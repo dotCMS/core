@@ -72,7 +72,8 @@ export enum ExperimentSteps {
     VARIANTS = 'variants',
     GOAL = 'goal',
     TARGETING = 'targeting',
-    TRAFFIC = 'traffic',
+    TRAFFIC_LOAD = 'trafficLoad',
+    TRAFFICS_SPLIT = 'trafficSplit',
     SCHEDULING = 'scheduling'
 }
 

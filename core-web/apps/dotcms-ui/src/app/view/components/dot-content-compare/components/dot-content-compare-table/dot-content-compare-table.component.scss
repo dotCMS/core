@@ -1,6 +1,6 @@
 @use "variables" as *;
 
-.dot-content-compare-table__controls{
+.dot-content-compare-table__controls {
     display: flex;
     align-items: center;
 
@@ -19,7 +19,6 @@
 }
 
 :host ::ng-deep .p-datatable {
-
     table {
         border-collapse: separate;
         border-spacing: 0;
@@ -50,6 +49,9 @@
             top: 0;
             z-index: 1;
 
+            &:not(:first-of-type) {
+                width: 45%;
+            }
         }
     }
 }
