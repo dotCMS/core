@@ -3,6 +3,7 @@ package com.dotcms.contenttype.business;
 import com.dotcms.enterprise.license.LicenseLevel;
 
 import java.util.*;
+import java.util.function.Predicate;
 
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
@@ -59,7 +60,7 @@ public interface ContentTypeAPI {
    */
   void delete(ContentType st) throws DotSecurityException, DotDataException;
 
-  ContentType prepAsyncDelete(ContentType type) throws DotSecurityException, DotDataException;
+  Optional<ContentType> relocateContentletsThenDispose(ContentType type) throws DotSecurityException, DotDataException;
   /**
    * Find a Content Type given the inode
    * 
@@ -246,7 +247,7 @@ public interface ContentTypeAPI {
    * @throws DotDataException
    * @throws DotSecurityException
    */
-  ContentType copyFrom(final CopyContentTypeBean copyContentTypeBean,final Set<String> excludeFields) throws DotDataException, DotSecurityException;
+  ContentType copyFrom(CopyContentTypeBean copyContentTypeBean, Predicate<Field> excludeField) throws DotDataException, DotSecurityException;
 
   /**
    * Saves a new Content Type.

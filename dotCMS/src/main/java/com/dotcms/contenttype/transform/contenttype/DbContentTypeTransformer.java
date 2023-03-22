@@ -14,6 +14,7 @@ import com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.util.UtilMethods;
+import io.vavr.control.Try;
 
 public class DbContentTypeTransformer implements ContentTypeTransformer{
 	final List<ContentType> list;
@@ -147,7 +148,7 @@ public class DbContentTypeTransformer implements ContentTypeTransformer{
 
 			@Override
 			public boolean markedForDeletion() {
-				return DbConnectionFactory.isDBTrue(map.get("marked_for_deletion").toString());
+				return Try.of(()->DbConnectionFactory.isDBTrue(map.get("marked_for_deletion").toString())).getOrElse(false);
 			}
 
 			private Date convertSQLDate(Date d){

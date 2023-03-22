@@ -28,6 +28,7 @@ import io.vavr.Tuple2;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -48,12 +49,12 @@ import static org.junit.Assert.*;
 @RunWith(DataProviderRunner.class)
 public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 
-	/**
-	 * Method to test: {@link ContentTypeAPI#copyFrom(CopyContentTypeBean)}
-	 * Given Scenario: Creates a content type and makes a copy of it
-	 * ExpectedResult: Expected result will be to have a copy of the original content type
-	 *
-	 */
+		/**
+         * Method to test: {@link ContentTypeAPI#copyFrom(CopyContentTypeBean)}
+         * Given Scenario: Creates a content type and makes a copy of it
+         * ExpectedResult: Expected result will be to have a copy of the original content type
+         *
+         */
 	@Test
 	public void test_copy_content_type_expected_copy_success () throws DotDataException, DotSecurityException {
 

@@ -295,14 +295,14 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
 
   private ContentType dbSelectDefaultType() throws DotDataException {
-    DotConnect dc = new DotConnect().setSQL(ContentTypeSql.SELECT_DEFAULT_TYPE);
+    DotConnect dc = new DotConnect().setSQL(this.contentTypeSql.SELECT_DEFAULT_TYPE);
 
     return new DbContentTypeTransformer(dc.loadObjectResults()).from();
   }
 
   private ContentType dbUpdateDefaultToTrue(ContentType type) throws DotDataException {
 
-    new DotConnect().setSQL(ContentTypeSql.UPDATE_ALL_DEFAULT).addParam(false).loadResult();
+    new DotConnect().setSQL(this.contentTypeSql.UPDATE_ALL_DEFAULT).addParam(false).loadResult();
     type = ContentTypeBuilder.builder(type).defaultType(true).build();
     return save(type);
 
@@ -311,7 +311,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
   private List<ContentType> dbByType(int type) throws DotDataException {
     DotConnect dc = new DotConnect();
-    String sql = ContentTypeSql.SELECT_BY_TYPE;
+    String sql = this.contentTypeSql.SELECT_BY_TYPE;
     dc.setSQL(String.format(sql, "mod_date desc")).addParam(type);
 
     return new DbContentTypeTransformer(dc.loadObjectResults()).asList();
@@ -320,7 +320,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
   private List<ContentType> dbAll(String orderBy) throws DotDataException {
     DotConnect dc = new DotConnect();
-    String sql = ContentTypeSql.SELECT_ALL;
+    String sql = this.contentTypeSql.SELECT_ALL;
     orderBy = SQLUtil.sanitizeSortBy(orderBy);
     dc.setSQL(String.format(sql, orderBy));
 
@@ -330,7 +330,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
   private ContentType dbById(@NotNull String id) throws DotDataException {
     DotConnect dc = new DotConnect();
-    dc.setSQL(ContentTypeSql.SELECT_BY_INODE);
+    dc.setSQL(this.contentTypeSql.SELECT_BY_INODE);
     dc.addParam(id);
     List<Map<String, Object>> results;
 
@@ -349,7 +349,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     final String suggestedVarName = VelocityUtil.convertToVelocityVariable(tryVar, true);
     String varName = suggestedVarName;
     for (int i = 1; i < 100000; i++) {
-      dc.setSQL(ContentTypeSql.SELECT_COUNT_VAR);
+      dc.setSQL(this.contentTypeSql.SELECT_COUNT_VAR);
       dc.addParam(varName.toLowerCase());
       if (dc.getInt("test") == 0 && !reservedContentTypeVars.contains(varName.toLowerCase())) {
         return varName;
@@ -539,7 +539,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
   private void dbInodeUpdate(final ContentType type) throws DotDataException {
     DotConnect dc = new DotConnect();
-    dc.setSQL(ContentTypeSql.UPDATE_TYPE_INODE);
+    dc.setSQL(this.contentTypeSql.UPDATE_TYPE_INODE);
     dc.addParam(type.owner());
     dc.addParam(type.id());
     dc.loadResult();
@@ -547,7 +547,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
   private void dbInodeInsert(final ContentType type) throws DotDataException {
     DotConnect dc = new DotConnect();
-    dc.setSQL(ContentTypeSql.INSERT_TYPE_INODE);
+    dc.setSQL(this.contentTypeSql.INSERT_TYPE_INODE);
     dc.addParam(type.id());
     dc.addParam(type.iDate());
     dc.addParam(type.owner());
@@ -556,7 +556,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
   private void dbUpdate(ContentType type) throws DotDataException {
     DotConnect dc = new DotConnect();
-    dc.setSQL(ContentTypeSql.UPDATE_TYPE);
+    dc.setSQL(this.contentTypeSql.UPDATE_TYPE);
     dc.addParam(type.name());
     dc.addParam(type.description());
     dc.addParam(type.defaultType());
@@ -582,7 +582,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
 
     DotConnect dc = new DotConnect();
-    dc.setSQL(ContentTypeSql.INSERT_TYPE);
+    dc.setSQL(this.contentTypeSql.INSERT_TYPE);
     dc.addParam(type.id());
     dc.addParam(type.name());
     dc.addParam(type.description());
@@ -646,8 +646,8 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
     // remove structure itself
     DotConnect dc = new DotConnect();
-    dc.setSQL(ContentTypeSql.DELETE_TYPE_BY_INODE).addParam(dbType.id()).loadResult();
-    dc.setSQL(ContentTypeSql.DELETE_INODE_BY_INODE).addParam(dbType.id()).loadResult();
+    dc.setSQL(this.contentTypeSql.DELETE_TYPE_BY_INODE).addParam(dbType.id()).loadResult();
+    dc.setSQL(this.contentTypeSql.DELETE_INODE_BY_INODE).addParam(dbType.id()).loadResult();
     return true;
   }
 
@@ -706,9 +706,9 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     DotConnect dc = new DotConnect();
 
     if(LOAD_FROM_CACHE.get()) {
-        dc.setSQL( String.format(ContentTypeSql.SELECT_INODE_ONLY_QUERY_CONDITION, SQLUtil.sanitizeCondition( searchCondition.condition ), orderBy ) );
+        dc.setSQL( String.format( this.contentTypeSql.SELECT_INODE_ONLY_QUERY_CONDITION, SQLUtil.sanitizeCondition( searchCondition.condition ), orderBy ) );
     }else {
-        dc.setSQL( String.format(ContentTypeSql.SELECT_QUERY_CONDITION, SQLUtil.sanitizeCondition( searchCondition.condition ), orderBy ) );
+        dc.setSQL( String.format( this.contentTypeSql.SELECT_QUERY_CONDITION, SQLUtil.sanitizeCondition( searchCondition.condition ), orderBy ) );
     }
     dc.setMaxRows(limit);
     dc.setStartRow(offset);
@@ -746,7 +746,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     SearchCondition searchCondition = new SearchCondition(search);
 
     DotConnect dc = new DotConnect();
-    dc.setSQL( String.format(ContentTypeSql.SELECT_COUNT_CONDITION, SQLUtil.sanitizeCondition( searchCondition.condition ) ) );
+    dc.setSQL( String.format( this.contentTypeSql.SELECT_COUNT_CONDITION, SQLUtil.sanitizeCondition( searchCondition.condition ) ) );
     dc.addParam( searchCondition.search );
     dc.addParam( searchCondition.search.toLowerCase());
     dc.addParam( searchCondition.search );
@@ -1061,9 +1061,9 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 	 cache.remove(type);
  }
 
- private void dbUpdateModDate(ContentType type) throws DotDataException {
+ private void dbUpdateModDate(ContentType type) throws DotDataException{
 	 DotConnect dc = new DotConnect();
-	 dc.setSQL(ContentTypeSql.UPDATE_TYPE_MOD_DATE_BY_INODE);
+	 dc.setSQL(this.contentTypeSql.UPDATE_TYPE_MOD_DATE_BY_INODE);
 	 dc.addParam(type.modDate());
 	 dc.addParam(type.id());
 	 dc.loadResult();

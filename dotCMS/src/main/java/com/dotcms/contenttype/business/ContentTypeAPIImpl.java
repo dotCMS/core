@@ -1,15 +1,22 @@
 package com.dotcms.contenttype.business;
 
+import com.dotcms.api.system.event.ContentTypePayloadDataWrapper;
+import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.SystemEventType;
+import com.dotcms.api.system.event.Visibility;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.event.ContentTypeDeletedEvent;
 import com.dotcms.contenttype.model.event.ContentTypeSavedEvent;
 import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.*;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.license.LicenseManager;
+import com.dotcms.exception.BaseRuntimeInternationalizationException;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
+import com.dotcms.util.ContentTypeUtil;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.LowerKeyMap;
 import com.dotmarketing.business.*;
@@ -21,17 +28,16 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
 import com.dotmarketing.quartz.job.ContentTypeDeleteJob;
 import com.dotmarketing.quartz.job.IdentifierDateJob;
-import com.dotmarketing.util.ActivityLogger;
-import com.dotmarketing.util.AdminLogger;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
+import io.vavr.control.Try;
 import org.elasticsearch.action.search.SearchResponse;
 
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -54,6 +60,10 @@ import java.util.stream.Collectors;
  * @since Jun 24th, 2016
  */
 public class ContentTypeAPIImpl implements ContentTypeAPI {
+
+  public static final String CONTENT_TYPE_DELETE_ASYNC = "CONTENT_TYPE_DELETE_ASYNC";
+
+  public static final String CONTENT_TYPE_DELETE_ASYNC_JOB = "CONTENT_TYPE_DELETE_ASYNC_JOB";
 
   private final ContentTypeFactory contentTypeFactory;
   private final FieldFactory fieldFactory;
@@ -85,14 +95,57 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
   @Override
   public void delete(ContentType type) throws DotSecurityException, DotDataException {
-    perms.checkPermission(type, PermissionLevel.EDIT_PERMISSIONS, user);
-    final ContentType copy = prepAsyncDelete(type);
-    ContentTypeDeleteJob.triggerContentTypeDeletion(copy);
+      perms.checkPermission(type, PermissionLevel.EDIT_PERMISSIONS, user);
+
+      if (Config.getBooleanProperty(CONTENT_TYPE_DELETE_ASYNC, true)) {
+        final Optional<ContentType> copy = relocateContentletsThenDispose(type);
+        if (copy.isEmpty()) {
+          return;
+        }
+          //By default, the deletion process takes placed within job
+          if (Config.getBooleanProperty(CONTENT_TYPE_DELETE_ASYNC_JOB, true)) {
+            ContentTypeDeleteJob.triggerContentTypeDeletion(copy.get());
+          } else {
+            //But we can decide to do it here using the thread pool directly
+            //This option becomes useful when running from tests
+            FactoryLocator.getContentTypeFactory().tearDown(copy.get());
+          }
+      } else {
+        // in case we want to fall back to the old way of deleting content types
+        transactionalDelete(type);
+      }
+  }
+
+  /**
+   * This method will delete the content type and all the content associated to it.
+   * This has been ur traditional way to delete content types. and all its associated pieces of content.
+   * @param type
+   * @throws DotSecurityException
+   * @throws DotDataException
+   */
+  @WrapInTransaction
+  private void transactionalDelete(ContentType type) throws DotSecurityException, DotDataException {
+      try {
+        contentTypeFactory.delete(type);
+      } catch (DotStateException | DotDataException e) {
+        Logger.error(ContentType.class, e.getMessage(), e);
+        throw new BaseRuntimeInternationalizationException(e);
+      }
+      try {
+        String actionUrl = ContentTypeUtil.getInstance().getActionUrl(type, user);
+        ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = new ContentTypePayloadDataWrapper(actionUrl, type);
+        APILocator.getSystemEventsAPI().pushAsync(SystemEventType.DELETE_BASE_CONTENT_TYPE, new Payload(
+                contentTypePayloadDataWrapper, Visibility.PERMISSION, String.valueOf(PermissionAPI.PERMISSION_READ)));
+      } catch (DotStateException | DotDataException e) {
+        Logger.error(ContentType.class, e.getMessage(), e);
+        throw new BaseRuntimeInternationalizationException(e);
+      }
+      HibernateUtil.addCommitListener(() -> localSystemEventsAPI.notify(new ContentTypeDeletedEvent(type.variable())));
   }
 
   @Override
   @WrapInTransaction
-  public ContentType prepAsyncDelete(ContentType type) throws DotSecurityException, DotDataException {
+  public Optional<ContentType> relocateContentletsThenDispose(ContentType type) throws DotSecurityException, DotDataException {
 
     if(null == type.id()){
        throw new DotDataException("ContentType must have an id set");
@@ -100,32 +153,48 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
      //sometimes we might get an instance that has been called without having set the id therefore it will be missing certain fields
      //This prevents that scenarios from happening
-      type = contentTypeFactory.find(type.id());
+    final String id = type.id();
+    type = Try.of(()->contentTypeFactory.find(id)).getOrNull();
+    if(null == type){
+       Logger.warn(this, "ContentType with id: " + id + " does not exist");
+       return Optional.empty();
+    }
 
       //If we're ok permissions wise, we need to remove the content from the index
       APILocator.getContentletIndexAPI().removeContentFromIndexByStructureInode(type.inode());
       //Then this quickly hides the content from the front end and APIS
       contentTypeFactory.markForDeletion(type);
+
       //Now we need a copy of the CT that basically makes it possible relocating content for asynchronous deletion
-      final String newName = String.format("%s_%s", type.variable(), System.currentTimeMillis());
+      final String newName = String.format("%s_disposed_%s", type.variable(), System.currentTimeMillis());
 
       //We need to remove all the relationships from the CT and probably all other system fields as well.
      //if we leave RelationshipFields here we might run into this https://github.com/dotCMS/core/issues/24414
       final Set<String> relationshipFieldVars = type.fields().stream().filter(RelationshipField.class::isInstance).map(Field::variable).collect(Collectors.toSet());
-      ContentType copy = copyFrom(new CopyContentTypeBean.Builder().sourceContentType(ContentTypeBuilder.builder(type).build()).name(newName).newVariable(newName).build(), relationshipFieldVars);
+
+      //Relationships will be removed together with the original CT
+      final Predicate<Field> excludeField = field -> !relationshipFieldVars.contains(field.variable());
+
+      //This needs be done on a separate instance of the ContentTypeAPIImpl to avoid permission issues when copying the CT
+      final ContentTypeAPIImpl withSystemPermsAPI = new ContentTypeAPIImpl(APILocator.systemUser(), false);
+      ContentType copy = withSystemPermsAPI.copyFrom(
+              new CopyContentTypeBean.Builder().sourceContentType(ContentTypeBuilder.builder(type).build()).name(newName).newVariable(newName).build(),
+              excludeField
+      );
 
       //A copy is made. but we need to refresh our var since the copy returned by the method is incomplete
       copy = contentTypeFactory.find(copy.id());
-      Logger.info(getClass(), String.format("::: CT (%s) with inode:(%s) Will be deleted shortly. A Copy Will  with  name (%s) and inode (%s) will be used to dispose all contentlet. :::",
+      Logger.info(getClass(), String.format("::: CT (%s) with inode:(%s) Will be deleted shortly. A Copy  with  name (%s) and inode (%s) will be used to dispose all contentlets in background. :::",
               type.variable(), type.inode(), copy.variable(), copy.inode())
       );
+
       APILocator.getContentletAPI().relocateContentletsForDeletion(type, copy);
       //Now that all the content is relocated, we're ready to destroy the original structure that held all content
       //System fields like Categories, Relationships and Containers will be deleted using the original structure
       contentTypeFactory.delete(type);
       //and destroy all associated content under the copy
       contentTypeFactory.markForDeletion(copy);
-      return copy;
+      return Optional.of(copy);
   }
 
   @Override
@@ -250,11 +319,11 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
   @Override
   public ContentType copyFrom(final CopyContentTypeBean copyContentTypeBean) throws DotDataException, DotSecurityException {
-    return copyFrom(copyContentTypeBean, Set.of());
+    return copyFrom(copyContentTypeBean, field -> true);
   }
   @WrapInTransaction
   @Override
-  public ContentType copyFrom(final CopyContentTypeBean copyContentTypeBean, final Set<String> excludeFields) throws DotDataException, DotSecurityException {
+  public ContentType copyFrom(final CopyContentTypeBean copyContentTypeBean, Predicate<Field> excludeField) throws DotDataException, DotSecurityException {
 
     if (LicenseManager.getInstance().isCommunity()) {
 
@@ -288,7 +357,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     final ContentType contentType    = builder.build();
     final ContentType newContentType = this.save(contentType);
     final FieldAPI contentTypeFieldAPI = APILocator.getContentTypeFieldAPI();
-    final List<Field> sourceFields = contentTypeFieldAPI.byContentTypeId(sourceContentType.id()).stream().filter(field -> !excludeFields.contains(field.variable())).collect(Collectors.toList());
+    final List<Field> sourceFields = contentTypeFieldAPI.byContentTypeId(sourceContentType.id()).stream().filter(excludeField).collect(Collectors.toList());
     final Map<String, Field> newFieldMap = newContentType.fieldMap();
     final Map<String, Field> lowerNewFieldMap = new LowerKeyMap<>();
     lowerNewFieldMap.putAll(newFieldMap);
@@ -500,7 +569,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   @CloseDBIfOpened
   @Override
   public List<ContentType> search(String condition, String orderBy, int limit, int offset,final String hostId) throws DotDataException {
-    return this.search( condition, BaseContentType.ANY, orderBy,  limit,  offset,hostId);
+    return this.search( condition, BaseContentType.ANY, orderBy,  limit,  offset, hostId);
   }
 
   @CloseDBIfOpened
