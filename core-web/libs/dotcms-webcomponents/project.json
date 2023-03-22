@@ -39,6 +39,7 @@
         "serve": {
             "executor": "@nxext/stencil:build",
             "options": {
+                "outputPath": "dist/libs/dotcms-webcomponents",
                 "projectType": "library",
                 "configPath": "libs/dotcms-webcomponents/stencil.config.ts",
                 "serve": true,

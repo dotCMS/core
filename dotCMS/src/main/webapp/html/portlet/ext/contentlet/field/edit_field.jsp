@@ -791,7 +791,20 @@
             licenseLevel="<%=LicenseUtil.getLevel() %>"
             accept="<%=accept %>" >
     </div>
+    <div class="file-asset-container">
+        <dot-asset-drop-zone id="dot-asset-drop-zone-<%=field.getVelocityVarName()%>" class="file-asset__drop-zone"></dot-asset-drop-zone>
+            <dot-file-upload
+                id="dot-file-upload-<%=field.getVelocityVarName()%>"
+                dropFilesText='Drag and Drop or paste a file'
+                browserButtonText="Browser"
+                writeCodeButtonText="Write Code"
+                cancelButtonText="Cancel"
+            ></dot-file-upload>
+    </div>
     <script type="text/javascript">
+        dojo.addOnLoad(() => {
+            bindDotFileUploadListener("<%=field.getVelocityVarName()%>")
+        })
         function saveBinaryFileOnContent<%=field.getVelocityVarName()%>(fileName, dijitReference){
             saveBinaryFileOnContent('<%=field.getInode()%>','<%=field.getVelocityVarName()%>','<%=field.getFieldContentlet()%>', dijitReference.fileNameField.value);
         }
@@ -866,7 +879,6 @@
 
     <script>
         dojo.addOnLoad(function() {
-
             <%
               Optional<com.dotcms.contenttype.model.field.Field> hostFolderField = Optional.empty();
               final ContentType contentType = Try.of(()->APILocator.getContentTypeAPI(APILocator.systemUser()).find(structure.getVelocityVarName())).getOrNull();

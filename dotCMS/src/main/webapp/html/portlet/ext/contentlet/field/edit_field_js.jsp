@@ -30,6 +30,23 @@
 <script src="/html/js/ace-builds-1.2.3/src-noconflict/ace.js" type="text/javascript"></script>
 <script type="text/javascript" src="/html/js/tinymce/js/tinymce/tinymce.min.js"></script>
 
+<!-- Monaco Editor -->
+<!-- <link
+	rel="stylesheet"
+	data-name="vs/editor/editor.main"
+	href="/html/js/monaco-editor/min/vs/editor/editor.main.css"
+/> -->
+<!-- <script>
+	var require = { paths: { vs: '/html/js/monaco-editor/min/vs' } };
+</script>
+<script src="/html/js/monaco-editor/min/vs/loader.js"></script>
+<script src="/html/js/monaco-editor/min/vs/editor/editor.main.nls.js"></script>
+<script src="/html/js/monaco-editor/min/vs/editor/editor.main.js"></script>
+<script>
+	console.log(require)
+</script> -->
+<!-- Monaco Editor -->
+
 <script type="text/javascript">
 
 	dojo.require("dotcms.dijit.form.HostFolderFilteringSelect");
@@ -75,6 +92,21 @@ function enableSiteKeyUpdate(dialogId, siteKeyInputId) {
         dijit.byId(siteKeyInputId).focus();
     }, 500);
 }
+
+// Dot Upload File
+
+function bindDotFileUploadListener(id){
+	const dotFileUpload = document.querySelector(`#dot-file-upload-${id}`)
+	dotFileUpload.addEventListener('fileUploaded', function (event){
+		const dotFileUpload = document.querySelector(`#dot-file-upload-${id}`)
+		const dotAssetDropZone = document.querySelector(`#ddot-asset-drop-zone-${id}`)
+
+	})
+}
+
+
+
+// Dot Upload File
 
 var cmsfile=null;
 	//Hints

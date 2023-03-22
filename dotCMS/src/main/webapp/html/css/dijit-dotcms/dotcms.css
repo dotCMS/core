@@ -11467,6 +11467,20 @@ a.category_higlighted, a.tag_higlighted {
   right: 0px;
 }
 
+.file-asset-container {
+  position: relative;
+}
+
+.file-asset__drop-zone {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  bottom: 0;
+  top: 0;
+  left: 0;
+  right: 0px;
+}
+
 #iFrameWrapper {
   position: absolute;
   left: 0px;
