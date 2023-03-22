@@ -4,6 +4,12 @@
     padding: $spacing-4;
     color: $color-gray-600;
     line-height: 140%;
+    display: flex;
+    justify-content: center;
+
+    .wrapper {
+        width: 1100px;
+    }
 
     i {
         font-size: $md-icon-size-big;
@@ -12,5 +18,11 @@
         &.pi-ban {
             color: $color-alert-red;
         }
+    }
+}
+
+@media only screen and (max-width: $screen-lg-max) {
+    .wrapper {
+        width: calc(100% - 2rem);
     }
 }
