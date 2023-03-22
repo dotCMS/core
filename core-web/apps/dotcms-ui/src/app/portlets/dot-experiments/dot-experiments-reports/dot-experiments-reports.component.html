@@ -1,18 +1,11 @@
 <ng-container *ngIf="vm$ | async as vm">
     <dot-experiments-header
         [isLoading]="vm.isLoading"
+        [status]="vm?.experiment.status"
         [title]="vm.experiment?.name"
         (goBack)="goToExperimentList(vm.experiment.pageId)"
-    >
-        <div class="flex flex-grow-1 align-items-center justify-content-between">
-            <p-tag
-                *ngIf="vm.experiment"
-                styleClass="{{ vm.experiment.status | lowercase }}"
-                value="{{ vm.experiment.status | lowercase | dm }} "
-            >
-            </p-tag>
-        </div>
-    </dot-experiments-header>
+    />
+
     <div class="flex flex-column dot-experiment-report-content">
         <ng-container *ngIf="!vm.isLoading; else loadingTpl">
             <dot-experiments-experiment-summary

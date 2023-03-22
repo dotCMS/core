@@ -9,7 +9,7 @@
 }
 
 .dot-experiment-report-content {
-    padding: $spacing-3 $spacing-5 $spacing-5 $spacing-5;
+    padding: $spacing-3 $spacing-5 $spacing-5;
     row-gap: $spacing-3;
     width: 100%;
     overflow-y: scroll;
@@ -25,10 +25,10 @@
         background-color: $white;
         padding: $spacing-4;
         border-radius: $border-radius-xl;
-        min-height: 500px;
+        min-height: 600px;
 
         .content {
-            width: $container-reports-max;
+            width: 1100px;
         }
     }
 }

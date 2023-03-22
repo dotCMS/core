@@ -18,7 +18,6 @@
 }
 
 .p-tag {
-    // defaults statuses
     &.p-tag-success {
         background-color: $color-alert-green-light;
         color: $color-alert-green;
@@ -32,36 +31,5 @@
     &.p-tag-warning {
         background-color: $color-alert-yellow-light;
         color: $color-alert-yellow;
-    }
-
-    &.p-tag-danger {
-        background-color: $color-alert-red-light;
-        color: $color-alert-red;
-    }
-
-    // Experiments statuses
-    &.running {
-        color: $color-accessible-text-green;
-        background-color: $color-accessible-text-green-bg;
-    }
-
-    &.draft {
-        color: $color-accessible-text-yellow;
-        background-color: $color-accessible-text-yellow-bg;
-    }
-
-    &.scheduled {
-        color: $color-accessible-text-purple;
-        background-color: $color-accessible-text-purple-bg;
-    }
-
-    &.ended {
-        color: $color-accessible-text-blue;
-        background-color: $color-accessible-text-blue-bg;
-    }
-
-    &.archived {
-        color: $color-accessible-text-gray;
-        background-color: $color-accessible-text-gray-bg;
     }
 }

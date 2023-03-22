@@ -21,7 +21,7 @@ import {
 } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import { LayoutEditorCanDeactivateGuardService } from '@services/guards/layout-editor-can-deactivate-guard.service';
-import { DotTemplatePageTitleStrategy } from '@shared/services/dot-title-strategy.service';
+import { DotTitleStrategy } from '@shared/services/dot-title-strategy.service';
 
 import { DotAccountService } from './api/services/dot-account-service';
 import { DotFormatDateService } from './api/services/dot-format-date-service';
@@ -81,7 +81,7 @@ const PROVIDERS: Provider[] = [
     LayoutEditorCanDeactivateGuardService,
     {
         provide: TitleStrategy,
-        useClass: DotTemplatePageTitleStrategy
+        useClass: DotTitleStrategy
     }
 ];
 

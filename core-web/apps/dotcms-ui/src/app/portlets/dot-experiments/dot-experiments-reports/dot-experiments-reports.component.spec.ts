@@ -100,7 +100,7 @@ describe('DotExperimentsReportsComponent', () => {
         expect(spectator.query(DotExperimentsReportsSkeletonComponent)).not.toExist();
     });
 
-    fit('should show the SummaryComponent', () => {
+    it('should show the SummaryComponent', () => {
         spectator.component.vm$ = of({
             ...defaultVmMock,
             experiment: {

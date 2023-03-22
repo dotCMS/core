@@ -15,14 +15,14 @@ const routes: Routes = [
         children: [
             {
                 path: '',
-                title: 'Experiments List',
+                title: 'experiment.container.list.title',
                 loadChildren: async () =>
                     (await import('../dot-experiments-list/dot-experiments-list.module'))
                         .DotExperimentsListModule
             },
             {
                 path: 'configuration',
-                title: 'Experiment Configuration',
+                title: 'experiment.container.configuration.title',
                 loadChildren: async () =>
                     (
                         await import(
@@ -32,7 +32,7 @@ const routes: Routes = [
             },
             {
                 path: 'reports',
-                title: 'Experiment Reports',
+                title: 'experiment.container.report.title',
                 loadChildren: async () =>
                     (await import('../dot-experiments-reports/dot-experiments-reports.routes'))
                         .DotExperimentsReportsRoutes
