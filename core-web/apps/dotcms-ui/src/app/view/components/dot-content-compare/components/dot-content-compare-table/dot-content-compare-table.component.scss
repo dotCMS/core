@@ -48,6 +48,10 @@
             position: sticky;
             top: 0;
             z-index: 1;
+
+            &:not(:first-of-type) {
+                width: 45%;
+            }
         }
     }
 }

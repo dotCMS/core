@@ -45,7 +45,6 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
-import java.util.stream.Stream;
 import org.apache.commons.lang.StringUtils;
 
 import java.sql.SQLException;
@@ -1012,7 +1011,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
             Contentlet contentlet = null;
             try {
-                contentlet = contentletAPI.findContentletByIdentifierAnyLanguageAndVariant(multiTree.getContentlet());
+                contentlet = contentletAPI.findContentletByIdentifierAnyLanguageAnyVariant(multiTree.getContentlet());
             } catch (DotDataException  | DotContentletStateException e) {
                 Logger.debug(this.getClass(), "invalid contentlet on multitree:" + multiTree
                         + ", msg: " + e.getMessage(), e);

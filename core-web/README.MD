@@ -1,8 +1,6 @@
-[![DotCMS/core-web Tests](https://github.com/dotCMS/core-web/actions/workflows/main.yml/badge.svg)](https://github.com/dotCMS/core-web/actions/workflows/main.yml)
-
 # DotCMS Frontend
 
-This repository contains the frontend infrastructure for the DotCMS admin system, includes the main app and all the internal libraries.
+This folder contains the frontend infrastructure for the DotCMS admin system, includes the main app and all the internal libraries.
 
 ## Content
 
@@ -12,6 +10,7 @@ This repository contains the frontend infrastructure for the DotCMS admin system
 | [dotcdn](https://github.com/dotCMS/core-web/tree/master/apps/dotcdn)                               | app  | `apps/dotcdn`                | Angular    | App for the dotCDN plugin                                   |
 | [dotcms](https://github.com/dotCMS/core-web/tree/master/libs/dotcms)                               | lib  | `libs/dotcms`                | Typescript | JavaScript SDK for DotCMS API's                             |
 | [dot-layout-grid](https://github.com/dotCMS/core-web/tree/master/libs/dot-layout-grid)             | lib  | `libs/dot-layout-grid`       | Angular    | Components for layout editor                                |
+| [block-editor](https://github.com/dotCMS/core-web/tree/master/libs/block-editor)             | lib  | `libs/block-editor`       | Angular    | Components for layout editor                                |
 | [dot-rules](https://github.com/dotCMS/core-web/tree/master/libs/dot-rules)                         | lib  | `libs/dot-rules`             | Angular    | Components and services for rules                           |
 | [dotcms-field-elements](https://github.com/dotCMS/core-web/tree/master/libs/dotcms-field-elements) | lib  | `libs/dotcms-field-elements` | Stenciljs  | Web components for form builder (deprecated)                |
 | [dotcms-js](https://github.com/dotCMS/core-web/tree/master/libs/dotcms-js)                         | lib  | `libs/dotcms-js`             | Angular    | Angular @injectables for DotCMS API                         |

@@ -5,10 +5,10 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
 import { MenuItem, SelectItem } from 'primeng/api';
+import { DialogService } from 'primeng/dynamicdialog';
 
 import { delay, filter, map, mergeMap, retryWhen, switchMap, take, tap } from 'rxjs/operators';
 
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotWorkflowEventHandlerService } from '@dotcms/app/api/services/dot-workflow-event-handler/dot-workflow-event-handler.service';
@@ -41,6 +41,8 @@ import {
     PermissionsType,
     UserPermissions
 } from '@dotcms/dotcms-models';
+
+import { DotPagesCreatePageDialogComponent } from '../dot-pages-create-page-dialog/dot-pages-create-page-dialog.component';
 
 export interface DotPagesState {
     favoritePages: {
@@ -259,6 +261,11 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                         (pageTypes: DotCMSContentType[]) => {
                             this.patchState({
                                 pageTypes
+                            });
+                            this.dialogService.open(DotPagesCreatePageDialogComponent, {
+                                header: this.dotMessageService.get('create.page'),
+                                width: '58rem',
+                                data: pageTypes
                             });
                         },
                         (error: HttpErrorResponse) => {
@@ -550,14 +557,6 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             });
         });
 
-        // Adding Add To Bundle action
-        if (isEnterprise) {
-            selectItems.push({
-                label: this.dotMessageService.get('contenttypes.content.add_to_bundle'),
-                command: () => this.showAddToBundle(item.identifier)
-            });
-        }
-
         // Adding Push Publish action
         if (isEnterprise && environments) {
             selectItems.push({
@@ -567,6 +566,14 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                         assetIdentifier: item.identifier,
                         title: this.dotMessageService.get('contenttypes.content.push_publish')
                     })
+            });
+        }
+
+        // Adding Add To Bundle action
+        if (isEnterprise) {
+            selectItems.push({
+                label: this.dotMessageService.get('contenttypes.content.add_to_bundle'),
+                command: () => this.showAddToBundle(item.identifier)
             });
         }
 
@@ -580,8 +587,8 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         private httpErrorManagerService: DotHttpErrorManagerService,
         private dotESContentService: DotESContentService,
         private dotPageTypesService: DotPageTypesService,
-        private dotFormatDateService: DotFormatDateService,
         private dotMessageService: DotMessageService,
+        private dialogService: DialogService,
         private dotLanguagesService: DotLanguagesService,
         private dotPushPublishDialogService: DotPushPublishDialogService,
         private dotWorkflowsActionsService: DotWorkflowsActionsService,
