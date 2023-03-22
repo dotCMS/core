@@ -27,7 +27,9 @@ interface DotProfile {
  * @export
  * @class DotGravatarService
  */
-@Injectable()
+@Injectable({
+    providedIn: 'root'
+})
 export class DotGravatarService {
     constructor(private http: HttpClient) {}
 
