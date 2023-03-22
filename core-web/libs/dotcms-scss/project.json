@@ -1,5 +1,5 @@
 {
-    "name": "dojo-theme",
+    "name": "dotcms-scss",
     "projectType": "library",
     "sourceRoot": "libs/dotcms-scss",
     "prefix": "dotcms",
