@@ -12,7 +12,7 @@ import { DotExperimentsUiHeaderComponent } from './dot-experiments-ui-header.com
 const messageServiceMock = new MockDotMessageService({
     running: 'RUNNING'
 });
-fdescribe('ExperimentsHeaderComponent', () => {
+describe('ExperimentsHeaderComponent', () => {
     let spectator: Spectator<DotExperimentsUiHeaderComponent>;
 
     const createComponent = createComponentFactory({
