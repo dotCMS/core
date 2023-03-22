@@ -1,8 +1,15 @@
 <ng-container *ngIf="vm$ | async as vm">
     <p-card>
         <ng-template pTemplate="title">
-            <h2 data-testId="traffic-card-title">
+            <h2 class="flex align-items-center gap-1 uppercase" data-testId="traffic-card-title">
                 {{ 'experiments.configure.traffic.name' | dm }}
+                <dot-icon
+                    class="inline-flex"
+                    [ngClass]="{ isDone: vm.trafficAllocation }"
+                    data-testId="traffic-step-done"
+                    name="check_circle"
+                    size="16"
+                ></dot-icon>
             </h2>
         </ng-template>
 

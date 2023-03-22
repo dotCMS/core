@@ -10,3 +10,13 @@ h2 {
 .scheduling-setup-date-spacing {
     margin: 0 $spacing-1;
 }
+
+:host ::ng-deep {
+    dot-icon {
+        color: $gray-light;
+
+        &.isDone {
+            color: $success;
+        }
+    }
+}

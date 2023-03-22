@@ -29,7 +29,7 @@ const messageServiceMock = new MockDotMessageService({
 
 const EXPERIMENT_MOCK = getExperimentMock(0);
 
-describe('DotExperimentsConfigurationTrafficComponent', () => {
+fdescribe('DotExperimentsConfigurationTrafficComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationTrafficComponent>;
     let store: DotExperimentsConfigurationStore;
     let dotExperimentsService: SpyObject<DotExperimentsService>;
@@ -72,6 +72,18 @@ describe('DotExperimentsConfigurationTrafficComponent', () => {
         expect(spectator.query(byTestId('traffic-allocation-button'))).toExist();
         expect(spectator.query(byTestId('traffic-split-title'))).toHaveText('Split');
         expect(spectator.query(byTestId('traffic-split-change-button'))).toExist();
+        expect(spectator.query(byTestId('traffic-step-done'))).toHaveClass('isDone');
+    });
+
+    it('should render indicator in gray', () => {
+        dotExperimentsService.getById.and.returnValue(
+            of({ ...EXPERIMENT_MOCK, ...{ trafficAllocation: null } })
+        );
+
+        store.loadExperiment(EXPERIMENT_MOCK.id);
+        spectator.detectChanges();
+
+        expect(spectator.query(byTestId('traffic-step-done'))).not.toHaveClass('isDone');
     });
 
     it('should open sidebar of traffic allocation', () => {

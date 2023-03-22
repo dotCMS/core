@@ -82,6 +82,7 @@ describe('DotExperimentsConfigurationSchedulingComponent', () => {
             'When the experiment start'
         );
         expect(spectator.query(byTestId('scheduling-setup-button'))).toContainText('Setup');
+        expect(spectator.query(byTestId('schedule-step-done'))).not.toHaveClass('isDone');
     });
 
     it('should open sidebar on button click', () => {
@@ -109,5 +110,14 @@ describe('DotExperimentsConfigurationSchedulingComponent', () => {
 
         expect(spectator.query(byTestId('scheduling-setup-button'))).toHaveAttribute('disabled');
         expect(spectator.query(Tooltip).disabled).toEqual(false);
+    });
+
+    it('should set indicator in green', () => {
+        dotExperimentsService.getById.and.returnValue(of(getExperimentMock(0)));
+
+        store.loadExperiment(EXPERIMENT_MOCK.id);
+        spectator.detectChanges();
+
+        expect(spectator.query(byTestId('schedule-step-done'))).toHaveClass('isDone');
     });
 });
