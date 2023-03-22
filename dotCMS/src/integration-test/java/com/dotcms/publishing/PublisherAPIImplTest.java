@@ -10,27 +10,7 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
-import com.dotcms.datagen.BundleDataGen;
-import com.dotcms.datagen.CategoryDataGen;
-import com.dotcms.datagen.ContainerDataGen;
-import com.dotcms.datagen.ContentTypeDataGen;
-import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.EnvironmentDataGen;
-import com.dotcms.datagen.FieldDataGen;
-import com.dotcms.datagen.FieldRelationshipDataGen;
-import com.dotcms.datagen.FileAssetDataGen;
-import com.dotcms.datagen.FilterDescriptorDataGen;
-import com.dotcms.datagen.FolderDataGen;
-import com.dotcms.datagen.HTMLPageDataGen;
-import com.dotcms.datagen.LanguageDataGen;
-import com.dotcms.datagen.LinkDataGen;
-import com.dotcms.datagen.PushPublishingEndPointDataGen;
-import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.datagen.TemplateDataGen;
-import com.dotcms.datagen.TemplateLayoutDataGen;
-import com.dotcms.datagen.WorkflowActionDataGen;
-import com.dotcms.datagen.WorkflowDataGen;
-import com.dotcms.datagen.WorkflowStepDataGen;
+import com.dotcms.datagen.*;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.publisher.assets.bean.PushedAsset;
 import com.dotcms.publisher.bundle.bean.Bundle;
@@ -173,7 +153,8 @@ public class PublisherAPIImplTest {
                 getWorkflowWithDependencies(),
                 getLanguageWithDependencies(),
                 getRuleWithDependencies(),
-                getContentWithSeveralVersions()
+                getContentWithSeveralVersions(),
+                getUser()
         };
     }
 
@@ -221,6 +202,13 @@ public class PublisherAPIImplTest {
         return new TestAsset(ruleWithPage,
                 map(ruleWithPage, list(host)),
                 "/bundlers-test/rule/rule.rule.xml", false);
+    }
+
+    private static TestAsset getUser() {
+        final User user = new UserDataGen().nextPersisted();
+        return new TestAsset(user,
+                map(),
+                "/bundlers-test/user/user.user.xml", false);
     }
 
     private static TestAsset getLanguageWithDependencies() {
@@ -448,9 +436,11 @@ public class PublisherAPIImplTest {
         createLanguageVariableIfNeeded();
 
         List<Contentlet> languageVariables = getLanguageVariables();
-        Set<?> languagesVariableDependencies = getLanguagesVariableDependencies(
-                languageVariables,
-                testAsset.addLanguageVariableDependencies, true, true);
+        Set<?> languagesVariableDependencies = !User.class.isInstance(testAsset.asset) ?
+                getLanguagesVariableDependencies(
+                        languageVariables,
+                        testAsset.addLanguageVariableDependencies, true, true)
+                : Collections.EMPTY_SET;
 
         final FilterDescriptor filterDescriptor = new FilterDescriptorDataGen().nextPersisted();
 
@@ -482,7 +472,7 @@ public class PublisherAPIImplTest {
                         languageVariablesAddInBundle, languagesVariableDependencies),
                 extractHere);
 
-        if (!Rule.class.isInstance(testAsset.asset)) {
+        if (!Rule.class.isInstance(testAsset.asset) && !User.class.isInstance(testAsset.asset)) {
             final ManifestItemsMapTest manifestLines = testAsset.manifestLines();
             manifestLines.addExcludes(map("Excluded System Folder/Host",
                     list(APILocator.getHostAPI().findSystemHost(), APILocator.getFolderAPI().findSystemFolder())));
@@ -634,8 +624,10 @@ public class PublisherAPIImplTest {
 
         createLanguageVariableIfNeeded();
 
-        addLanguageVariableDependencies(dependencies,
+        if (!User.class.isInstance(testAsset.asset)) {
+            addLanguageVariableDependencies(dependencies,
                     testAsset.addLanguageVariableDependencies);
+        }
 
         final PublisherAPIImpl publisherAPI = new PublisherAPIImpl();
 
@@ -666,7 +658,9 @@ public class PublisherAPIImplTest {
             httpServer.stop(0);
         }
 
-        assertPushAsset(bundle, environment, publishingEndPoint, dependencies);
+        if (!User.class.isInstance(testAsset.asset)) {
+            assertPushAsset(bundle, environment, publishingEndPoint, dependencies);
+        }
     }
 
     private void assertPushAsset(final Bundle bundle,

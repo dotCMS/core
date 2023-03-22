@@ -17,6 +17,7 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.google.common.collect.ImmutableList;
+import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -43,6 +44,7 @@ public class FileTestUtil {
         assertions = new AssignableFromMap<>();
         assertions.put(ContentType.class, new ContentTypeAssertionChecker());
         assertions.put(Host.class, new HostAssertionChecker());
+        assertions.put(User.class, new UserAssertionChecker());
         assertions.put(WorkflowScheme.class, new WorkflowSchemeAssertionChecker());
         assertions.put(Relationship.class, new RelationshipAssertionChecker());
         assertions.put(Category.class, new CategoryAssertionChecker());
