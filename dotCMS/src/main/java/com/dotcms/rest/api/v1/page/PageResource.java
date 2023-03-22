@@ -6,6 +6,7 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.ema.EMAWebInterceptor;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityBooleanView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -26,7 +27,10 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionLevel;
+import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.cms.urlmap.URLMapInfo;
+import com.dotmarketing.cms.urlmap.UrlMapContextBuilder;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -55,6 +59,7 @@ import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.vavr.control.Try;
 import org.apache.commons.collections.keyvalue.MultiKey;
 import org.glassfish.jersey.server.JSONP;
 
@@ -1000,4 +1005,59 @@ public class PageResource {
         return paginationUtil.getPage(originalRequest, user, filter, page, perPage, orderbyParam,
                     OrderDirection.valueOf(direction), extraParams);
     }
+
+    /**
+     * Returns true if the page exist and the current user has 'type' permission over it
+     * Parameters:
+     * - type: is optional, by default is READ
+     * - path: page path
+     *
+     * @param originalRequest The {@link HttpServletRequest} object.
+     * @param response The {@link HttpServletResponse} object.
+     * @param type {@link String} type: READ by default @see {@link PermissionLevel}
+     * @param path {@link String} page path
+     * @return All the content types that match
+     */
+    @NoCache
+    @POST
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Path("/_check-permission")
+    public ResponseEntityBooleanView checkPagePermission(@Context final HttpServletRequest request,
+                                                         @Context final HttpServletResponse response,
+                                                         final PageCheckPermissionForm pageCheckPermissionForm) throws DotSecurityException, DotDataException {
+
+        final User user = new WebResource.InitBuilder(webResource).requestAndResponse(request, response)
+                .rejectWhenNoUser(true).requiredBackendUser(true).init().getUser();
+
+        final PageMode mode = PageMode.get(request);
+        Logger.debug(this, ()-> "Checking Page Permission type" + pageCheckPermissionForm.getType()
+                +" for the page path: " + pageCheckPermissionForm.getPath() + ", host id: " + pageCheckPermissionForm.getHostId()
+                + ", lang: " + pageCheckPermissionForm.getLanguageId());
+
+        final long languageId  = -1 != pageCheckPermissionForm.getLanguageId()? pageCheckPermissionForm.getLanguageId():
+                WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
+        final Host currentHost = UtilMethods.isSet(pageCheckPermissionForm.getHostId())?
+                WebAPILocator.getHostWebAPI().find(pageCheckPermissionForm.getHostId(), user, PageMode.get(request).respectAnonPerms):
+                WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+
+        final Optional<URLMapInfo> urlMapInfoOptional = APILocator.getURLMapAPI().processURLMap(
+                UrlMapContextBuilder.builder()
+                        .setHost(currentHost)
+                        .setLanguageId(languageId)
+                        .setMode(mode)
+                        .setUri(pageCheckPermissionForm.getPath())
+                        .setUser(user)
+                        .setGraphQL(false)
+                        .build());
+
+        final Permissionable page = urlMapInfoOptional.isPresent()? urlMapInfoOptional.get().getContentlet():
+                 APILocator.getHTMLPageAssetAPI().getPageByPath(
+                    pageCheckPermissionForm.getPath(), currentHost, languageId, mode.showLive);
+
+        return null != page?
+                new ResponseEntityBooleanView(APILocator.getPermissionAPI().
+                    doesUserHavePermission(page, pageCheckPermissionForm.getType().getType(),
+                            user, false)):
+                new ResponseEntityBooleanView(false);
+    } // checkPagePermission.
 } // E:O:F:PageResource
