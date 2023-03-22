@@ -1,9 +1,8 @@
+import { createServiceFactory, mockProvider, SpectatorService, SpyObject } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { TestBed } from '@angular/core/testing';
-import { ActivatedRoute } from '@angular/router';
-import { RouterTestingModule } from '@angular/router/testing';
+import { Title } from '@angular/platform-browser';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
 
@@ -15,16 +14,17 @@ import {
     GroupedExperimentByStatus,
     TrafficProportionTypes
 } from '@dotcms/dotcms-models';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import {
+    DotExperimentsListStore,
+    DotExperimentsState
+} from '@portlets/dot-experiments/dot-experiments-list/store/dot-experiments-list-store';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import {
     getExperimentAllMocks,
     getExperimentMock,
     GoalsMock
 } from '@portlets/dot-experiments/test/mocks';
-
-import { DotExperimentsListStore, DotExperimentsState } from './dot-experiments-list-store.service';
+import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 const routerParamsPageId = '1111-1111-111';
 const ActivatedRouteMock = {
@@ -41,39 +41,37 @@ const EXPERIMENT_MOCK_1 = getExperimentMock(1);
 const EXPERIMENT_MOCK_2 = getExperimentMock(2);
 const EXPERIMENT_MOCK_ALL = getExperimentAllMocks();
 
-const messageServiceMock = new MockDotMessageService({
-    'experimentspage.add.new.experiment': 'Add a new experiment'
-});
-
 describe('DotExperimentsListStore', () => {
+    let spectator: SpectatorService<DotExperimentsListStore>;
+
     let store: DotExperimentsListStore;
-    let dotExperimentsService: jasmine.SpyObj<DotExperimentsService>;
+    let dotExperimentsService: SpyObject<DotExperimentsService>;
+    let messageService: SpyObject<MessageService>;
+
+    const storeService = createServiceFactory({
+        service: DotExperimentsListStore,
+        providers: [
+            mockProvider(DotExperimentsService),
+            mockProvider(DotMessageService),
+            mockProvider(MessageService),
+            mockProvider(DotHttpErrorManagerService),
+            mockProvider(Title),
+            {
+                provide: ActivatedRoute,
+                useValue: ActivatedRouteMock
+            },
+            mockProvider(Router)
+        ]
+    });
 
     beforeEach(() => {
-        const dotExperimentsServiceSpy = jasmine.createSpyObj('DotExperimentsService', [
-            'add',
-            'getAll',
-            'getById',
-            'archive',
-            'delete'
-        ]);
+        spectator = storeService({});
+        store = spectator.inject(DotExperimentsListStore);
 
-        TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule, DotMessagePipeModule, RouterTestingModule],
-            providers: [
-                DotExperimentsListStore,
-                MessageService,
-                { provide: ActivatedRoute, useValue: ActivatedRouteMock },
-                { provide: DotExperimentsService, useValue: dotExperimentsServiceSpy },
-                { provide: DotMessageService, useValue: messageServiceMock }
-            ]
-        });
+        dotExperimentsService = spectator.inject(DotExperimentsService);
+        messageService = spectator.inject(MessageService);
 
-        store = TestBed.inject(DotExperimentsListStore);
-
-        dotExperimentsService = TestBed.inject(
-            DotExperimentsService
-        ) as jasmine.SpyObj<DotExperimentsService>;
+        dotExperimentsService.getById.and.callThrough().and.returnValue(of(EXPERIMENT_MOCK));
     });
 
     it('should set initial data', (done) => {
@@ -90,7 +88,11 @@ describe('DotExperimentsListStore', () => {
                 DotExperimentStatusList.SCHEDULED,
                 DotExperimentStatusList.ARCHIVED
             ],
-            status: ComponentStatus.INIT
+            status: ComponentStatus.INIT,
+            sidebar: {
+                status: ComponentStatus.IDLE,
+                isOpen: false
+            }
         };
 
         store.state$.subscribe((state) => {
@@ -100,28 +102,28 @@ describe('DotExperimentsListStore', () => {
     });
 
     it('should have getState$ from the store', () => {
-        store.getStatus$.subscribe((data) => {
-            expect(data).toEqual(ComponentStatus.INIT);
+        store.state$.subscribe(({ status }) => {
+            expect(status).toEqual(ComponentStatus.INIT);
         });
     });
 
     it('should update status to the store', () => {
         store.setComponentStatus(ComponentStatus.LOADED);
-        store.getStatus$.subscribe((status) => {
+        store.state$.subscribe(({ status }) => {
             expect(status).toEqual(ComponentStatus.LOADED);
         });
     });
     it('should update experiments to the store', () => {
         store.setExperiments([...EXPERIMENT_MOCK_ALL]);
-        store.getExperiments$.subscribe((experiments) => {
+        store.state$.subscribe(({ experiments }) => {
             expect(experiments).toEqual(EXPERIMENT_MOCK_ALL);
         });
     });
     it('should update status filtered to the store', () => {
         const statusSelectedMock = [DotExperimentStatusList.DRAFT, DotExperimentStatusList.ENDED];
         store.setFilterStatus(statusSelectedMock);
-        store.getFilterStatusList$.subscribe((experimentsFilterStatus) => {
-            expect(experimentsFilterStatus).toEqual(statusSelectedMock);
+        store.state$.subscribe(({ filterStatus }) => {
+            expect(filterStatus).toEqual(statusSelectedMock);
         });
     });
 
@@ -130,7 +132,7 @@ describe('DotExperimentsListStore', () => {
 
         store.setExperiments([...EXPERIMENT_MOCK_ALL]);
         store.deleteExperimentById(EXPERIMENT_MOCK_1.id);
-        store.getExperiments$.subscribe((experiments) => {
+        store.state$.subscribe(({ experiments }) => {
             expect(experiments.map((experiment) => experiment.id)).toEqual(expected);
         });
     });
@@ -138,8 +140,8 @@ describe('DotExperimentsListStore', () => {
     it('should change status to archived status by experiment id of the store', () => {
         store.setExperiments([{ ...getExperimentMock(1) }]);
         store.archiveExperimentById(EXPERIMENT_MOCK_1.id);
-        store.getExperiments$.subscribe((exp) => {
-            expect(exp[0].status).toEqual(DotExperimentStatusList.ARCHIVED);
+        store.state$.subscribe(({ experiments }) => {
+            expect(experiments[0].status).toEqual(DotExperimentStatusList.ARCHIVED);
         });
     });
 
@@ -208,8 +210,8 @@ describe('DotExperimentsListStore', () => {
         });
         it('should load experiments to store', (done) => {
             expect(dotExperimentsService.getAll).toHaveBeenCalledWith(routerParamsPageId);
-            store.getExperiments$.subscribe((exp) => {
-                expect(exp).toEqual(EXPERIMENT_MOCK_ALL);
+            store.state$.subscribe(({ experiments }) => {
+                expect(experiments).toEqual(EXPERIMENT_MOCK_ALL);
                 done();
             });
         });
@@ -224,7 +226,7 @@ describe('DotExperimentsListStore', () => {
 
             expect(dotExperimentsService.delete).toHaveBeenCalled();
             expect(dotExperimentsService.delete).toHaveBeenCalledWith(EXPERIMENT_MOCK.id);
-            store.getExperiments$.subscribe((experiments) => {
+            store.state$.subscribe(({ experiments }) => {
                 expect(experiments).toEqual(expectedExperimentsInStore);
                 done();
             });
@@ -243,10 +245,46 @@ describe('DotExperimentsListStore', () => {
 
             expect(dotExperimentsService.archive).toHaveBeenCalled();
             expect(dotExperimentsService.archive).toHaveBeenCalledWith(experimentToArchive.id);
-            store.getExperiments$.subscribe((experiment) => {
-                expect(experiment).toEqual(expectedExperimentsInStore);
+            store.state$.subscribe(({ experiments }) => {
+                expect(experiments).toEqual(expectedExperimentsInStore);
                 done();
             });
+        });
+
+        it('should update sidebar isSaving to the store', () => {
+            store.setSidebarStatus({ status: ComponentStatus.SAVING, isOpen: true });
+            store.isSidebarSaving$.subscribe((isSaving) => {
+                expect(isSaving).toBe(true);
+            });
+        });
+
+        it('should update isOpen and isSaving to the store', () => {
+            store.setSidebarStatus({ status: ComponentStatus.IDLE, isOpen: false });
+            store.createVm$.subscribe(({ sidebar, isSaving }) => {
+                expect(sidebar.isOpen).toBe(false);
+                expect(sidebar.status).toBe(ComponentStatus.IDLE);
+                expect(isSaving).toBe(false);
+            });
+        });
+
+        it('should save the experiment', () => {
+            const isSavingSatuses = [];
+            const experiment: Pick<DotExperiment, 'pageId' | 'name' | 'description'> = {
+                pageId: '1111-1111-1111-1111',
+                name: 'Experiment name',
+                description: 'description or goal'
+            };
+
+            dotExperimentsService.add.and.callThrough().and.returnValue(of(EXPERIMENT_MOCK));
+
+            store.createVm$.subscribe(({ isSaving }) => {
+                isSavingSatuses.push(isSaving);
+            });
+
+            store.addExperiments(experiment);
+
+            expect(dotExperimentsService.add).toHaveBeenCalled();
+            expect(messageService.add).toHaveBeenCalled();
         });
     });
 });

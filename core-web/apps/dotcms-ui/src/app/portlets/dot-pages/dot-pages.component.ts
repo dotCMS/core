@@ -1,21 +1,21 @@
 import { Subject } from 'rxjs';
 
+import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 
-import { DialogService } from 'primeng/dynamicdialog';
 import { Menu } from 'primeng/menu';
 
 import { Observable } from 'rxjs/internal/Observable';
-import { filter, skip, takeUntil } from 'rxjs/operators';
+import { filter, skip, take, takeUntil } from 'rxjs/operators';
 
 import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotEventsService, DotMessageService } from '@dotcms/data-access';
-import { SiteService } from '@dotcms/dotcms-js';
-import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotEventsService, DotPageRenderService } from '@dotcms/data-access';
+import { HttpCode, SiteService } from '@dotcms/dotcms-js';
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
-import { DotPagesCreatePageDialogComponent } from './dot-pages-create-page-dialog/dot-pages-create-page-dialog.component';
 import { DotPagesState, DotPageStore } from './dot-pages-store/dot-pages.store';
 
 export const FAVORITE_PAGE_LIMIT = 5;
@@ -40,13 +40,13 @@ export class DotPagesComponent implements OnInit, OnDestroy {
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
-        private dialogService: DialogService,
-        private dotMessageService: DotMessageService,
         private store: DotPageStore,
         private dotRouterService: DotRouterService,
         private dotMessageDisplayService: DotMessageDisplayService,
         private dotEventsService: DotEventsService,
+        private dotHttpErrorManagerService: DotHttpErrorManagerService,
         private dotSiteService: SiteService,
+        private dotPageRenderService: DotPageRenderService,
         private element: ElementRef
     ) {
         this.store.setInitialStateData(FAVORITE_PAGE_LIMIT);
@@ -67,7 +67,24 @@ export class DotPagesComponent implements OnInit, OnDestroy {
             urlParams[entry[0]] = entry[1];
         }
 
-        this.dotRouterService.goToEditPage(urlParams);
+        this.dotPageRenderService
+            .checkPermission(urlParams)
+            .pipe(take(1))
+            .subscribe((hasPermission: boolean) => {
+                if (hasPermission) {
+                    this.dotRouterService.goToEditPage(urlParams);
+                } else {
+                    const error = new HttpErrorResponse(
+                        new HttpResponse({
+                            body: null,
+                            status: HttpCode.FORBIDDEN,
+                            headers: null,
+                            url: ''
+                        })
+                    );
+                    this.dotHttpErrorManagerService.handle(error);
+                }
+            });
     }
 
     /**
@@ -110,10 +127,18 @@ export class DotPagesComponent implements OnInit, OnDestroy {
             });
 
         this.dotEventsService
-            .listen('dot-global-message')
+            .listen('save-page')
             .pipe(takeUntil(this.destroy$))
             .subscribe((evt) => {
-                this.store.getPages({ offset: 0 });
+                const identifier =
+                    evt.data['payload']?.identifier || evt.data['payload']?.contentletIdentifier;
+
+                const isFavoritePage =
+                    evt.data['payload']?.contentType === 'dotFavoritePage' ||
+                    evt.data['payload']?.contentletType === 'dotFavoritePage';
+
+                this.store.updateSinglePageData({ identifier, isFavoritePage });
+
                 this.dotMessageDisplayService.push({
                     life: 3000,
                     message: evt.data['value'],
@@ -125,19 +150,6 @@ export class DotPagesComponent implements OnInit, OnDestroy {
         this.dotSiteService.switchSite$.pipe(takeUntil(this.destroy$), skip(1)).subscribe(() => {
             this.store.getPages({ offset: 0 });
         });
-
-        this.store.pageTypes$
-            .pipe(
-                takeUntil(this.destroy$),
-                filter((val) => !!val)
-            )
-            .subscribe((pageTypes: DotCMSContentType[]) => {
-                this.dialogService.open(DotPagesCreatePageDialogComponent, {
-                    header: this.dotMessageService.get('create.page'),
-                    width: '58rem',
-                    data: pageTypes
-                });
-            });
     }
 
     ngOnDestroy(): void {

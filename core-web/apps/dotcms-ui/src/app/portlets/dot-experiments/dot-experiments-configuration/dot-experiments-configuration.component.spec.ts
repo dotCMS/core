@@ -34,32 +34,25 @@ import {
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { DotExperimentsExperimentSummaryComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-experiment-summary/dot-experiments-experiment-summary.component';
 import { DotExperimentsUiHeaderComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
-import {
-    DotExperimentsConfigurationStoreMock,
-    getExperimentMock
-} from '@portlets/dot-experiments/test/mocks';
+import { getExperimentMock } from '@portlets/dot-experiments/test/mocks';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotExperimentsConfigurationComponent } from './dot-experiments-configuration.component';
 
+const EXPERIMENT_MOCK = getExperimentMock(0);
+
 const ActivatedRouteMock = {
     snapshot: {
         params: {
-            experimentId: '1111',
+            experimentId: EXPERIMENT_MOCK.id,
             pageId: '222'
         }
     }
 };
 
 const messageServiceMock = new MockDotMessageService({
-    'experiments.configure.scheduling.name': 'Scheduling',
-    'experiments.configure.scheduling.start': 'When the experiment start',
-    'experiments.configure.variant.delete.confirm': 'Are you sure you want to delete this variant?',
-    delete: 'Delete',
-    'dot.common.dialog.reject': 'Cancel'
+    'experiments.configure.scheduling.name': 'Scheduling'
 });
-
-const EXPERIMENT_MOCK = getExperimentMock(0);
 
 const defaultVmMock: ConfigurationViewModel = {
     experiment: EXPERIMENT_MOCK,
@@ -99,9 +92,7 @@ describe('DotExperimentsConfigurationComponent', () => {
         ],
         component: DotExperimentsConfigurationComponent,
 
-        componentProviders: [
-            mockProvider(DotExperimentsConfigurationStore, DotExperimentsConfigurationStoreMock)
-        ],
+        componentProviders: [DotExperimentsConfigurationStore],
         providers: [
             ConfirmationService,
             {
@@ -114,11 +105,11 @@ describe('DotExperimentsConfigurationComponent', () => {
             },
 
             mockProvider(DotExperimentsService),
-            mockProvider(DotSessionStorageService),
             mockProvider(MessageService),
             mockProvider(Router),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(Title),
+            mockProvider(DotSessionStorageService),
             DotMessagePipe
         ]
     });
@@ -133,6 +124,10 @@ describe('DotExperimentsConfigurationComponent', () => {
     });
 
     it('should show the skeleton component when is loading', () => {
+        spectator.component.vm$ = of({
+            ...defaultVmMock,
+            isLoading: true
+        });
         spectator.detectChanges();
 
         expect(spectator.query(DotExperimentsUiHeaderComponent)).toExist();
@@ -140,7 +135,6 @@ describe('DotExperimentsConfigurationComponent', () => {
     });
 
     it('should load all the components', () => {
-        spectator.component.vm$ = of({ ...defaultVmMock });
         spectator.detectChanges();
 
         expect(spectator.query(DotExperimentsUiHeaderComponent)).toExist();
@@ -153,10 +147,6 @@ describe('DotExperimentsConfigurationComponent', () => {
     });
 
     it('should show Start Experiment button if isExperimentADraft true', () => {
-        spectator.component.vm$ = of({
-            ...defaultVmMock,
-            isExperimentADraft: true
-        });
         spectator.detectChanges();
         expect(spectator.query(byTestId('start-experiment-button'))).toExist();
     });
@@ -227,27 +217,5 @@ describe('DotExperimentsConfigurationComponent', () => {
         });
         spectator.detectChanges();
         expect(spectator.query(DotExperimentsExperimentSummaryComponent)).not.toExist();
-    });
-
-    it('should confirm before delete a variant', () => {
-        spectator.component.vm$ = of({
-            ...defaultVmMock
-        });
-        spectator.detectChanges();
-
-        spyOn(dotExperimentsConfigurationStore, 'deleteVariant');
-
-        spectator.click(byTestId('variant-delete-button'));
-
-        const confirmPopup = spectator.query(ConfirmPopup);
-
-        spectator.detectChanges();
-
-        confirmPopup.accept();
-
-        expect(dotExperimentsConfigurationStore.deleteVariant).toHaveBeenCalledWith({
-            experimentId: '111',
-            variant: { id: '111', name: 'DEFAULT', weight: 100 }
-        });
     });
 });
