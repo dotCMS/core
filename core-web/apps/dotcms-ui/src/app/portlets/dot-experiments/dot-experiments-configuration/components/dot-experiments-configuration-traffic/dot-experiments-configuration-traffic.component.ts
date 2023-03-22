@@ -19,7 +19,6 @@ import {
 import { DotIconModule } from '@dotcms/ui';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotExperimentsConfigurationTrafficAllocationAddComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-traffic-allocation-add/dot-experiments-configuration-traffic-allocation-add.component';
-import { DotExperimentsConfigurationTrafficSplitAddComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-traffic-split-add/dot-experiments-configuration-traffic-split-add.component';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
 
@@ -54,10 +53,7 @@ export class DotExperimentsConfigurationTrafficComponent {
     splitEvenly = TrafficProportionTypes.SPLIT_EVENLY;
 
     @ViewChild(DotDynamicDirective, { static: true }) sidebarHost!: DotDynamicDirective;
-    private componentRef: ComponentRef<
-        | DotExperimentsConfigurationTrafficAllocationAddComponent
-        | DotExperimentsConfigurationTrafficSplitAddComponent
-    >;
+    private componentRef: ComponentRef<DotExperimentsConfigurationTrafficAllocationAddComponent>;
 
     constructor(
         private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore
@@ -72,33 +68,20 @@ export class DotExperimentsConfigurationTrafficComponent {
         this.dotExperimentsConfigurationStore.openSidebar(ExperimentSteps.TRAFFIC_LOAD);
     }
 
-    /**
-     * Open sidebar to set Traffic Proportion
-     * @returns void
-     * @memberof DotExperimentsConfigurationTrafficComponent
-     */
-    changeTrafficProportion() {
-        this.dotExperimentsConfigurationStore.openSidebar(ExperimentSteps.TRAFFICS_SPLIT);
-    }
-
     private handleSidebar(status: StepStatus) {
         if (status && status.isOpen && status.status != ComponentStatus.SAVING) {
-            this.loadSidebarComponent(status);
+            this.loadSidebarComponent();
         } else {
             this.removeSidebarComponent();
         }
     }
 
-    private loadSidebarComponent(status: StepStatus): void {
+    private loadSidebarComponent(): void {
         this.sidebarHost.viewContainerRef.clear();
         this.componentRef =
-            status.experimentStep == ExperimentSteps.TRAFFICS_SPLIT
-                ? this.sidebarHost.viewContainerRef.createComponent<DotExperimentsConfigurationTrafficSplitAddComponent>(
-                      DotExperimentsConfigurationTrafficSplitAddComponent
-                  )
-                : this.sidebarHost.viewContainerRef.createComponent<DotExperimentsConfigurationTrafficAllocationAddComponent>(
-                      DotExperimentsConfigurationTrafficAllocationAddComponent
-                  );
+            this.sidebarHost.viewContainerRef.createComponent<DotExperimentsConfigurationTrafficAllocationAddComponent>(
+                DotExperimentsConfigurationTrafficAllocationAddComponent
+            );
     }
 
     private removeSidebarComponent() {
