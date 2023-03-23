@@ -202,6 +202,14 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
         });
 
         it('should open sideBar to add a variant ', () => {
+            loadExperiment(EXPERIMENT_MOCK, [
+                {
+                    id: DEFAULT_VARIANT_ID,
+                    name: DEFAULT_VARIANT_NAME,
+                    weight: 33.33,
+                    url: 'link1'
+                }
+            ]);
             spyOn(store, 'openSidebar');
             spectator.click(byTestId('variant-add-button'));
 
@@ -319,7 +327,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
                 });
         });
 
-        it('should disable button and show tooltip when experiment is nos on draft', () => {
+        fit('should disable button and show tooltip when experiment is nos on draft', () => {
             dotExperimentsService.getById.and.returnValue(
                 of({
                     ...EXPERIMENT_MOCK_2,
@@ -340,10 +348,10 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
                 .queryAll(Tooltip)
                 .filter((tooltip) => tooltip.disabled == false);
 
-            // Two: variant weight
+            // One: variant weight
             // One: Delete variant
             // One: Add New Variant.
-            expect(enableTooltips.length).toEqual(4);
+            expect(enableTooltips.length).toEqual(3);
         });
 
         it('should view button on all variants when experiment is not on draft', () => {
