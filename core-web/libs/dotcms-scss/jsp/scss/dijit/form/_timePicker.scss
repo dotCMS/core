@@ -1,0 +1,14 @@
+.dijit {
+    &TimePicker {
+        .dijitDownArrowButton,
+        .dijitUpArrowButton {
+            background-color: $color-palette-gray-200;
+            padding: calc($spacing-1 / 2);
+        }
+
+        .dijitDownArrowHover,
+        .dijitUpArrowHover {
+            background-color: $color-palette-gray-400;
+        }
+    }
+}

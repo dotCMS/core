@@ -15,14 +15,14 @@
                 "tsConfig": "apps/dotcdn/tsconfig.app.json",
                 "assets": ["apps/dotcdn/src/favicon.ico", "apps/dotcdn/src/assets"],
                 "styles": [
-                    "libs/dot-primeng-theme-styles/src/scss/styles.scss",
+                    "libs/dotcms-scss/angular/styles.scss",
                     "node_modules/primeicons/primeicons.css",
                     "node_modules/primeflex/primeflex.css",
                     "node_modules/primeng/resources/primeng.min.css",
                     "apps/dotcdn/src/styles.scss"
                 ],
                 "stylePreprocessorOptions": {
-                    "includePaths": ["libs/dot-primeng-theme-styles/src/scss"]
+                    "includePaths": ["libs/dotcms-scss/angular"]
                 },
                 "scripts": ["node_modules/chart.js/dist/chart.js"],
                 "vendorChunk": true,
@@ -95,7 +95,7 @@
                 "jestConfig": "apps/dotcdn/jest.config.ts",
                 "passWithNoTests": true,
                 "styles": [
-                    "libs/dot-primeng-theme-styles/src/scss/styles.scss",
+                    "libs/dotcms-scss/angular/styles.scss",
                     "node_modules/primeicons/primeicons.css",
                     "node_modules/primeflex/primeflex.css",
                     "node_modules/primeng/resources/primeng.min.css",
@@ -103,7 +103,7 @@
                 ],
                 "assets": ["apps/dotcdn/src/favicon.ico", "apps/dotcdn/src/assets"],
                 "stylePreprocessorOptions": {
-                    "includePaths": ["libs/dot-primeng-theme-styles/src/scss"]
+                    "includePaths": ["libs/dotcms-scss/angular"]
                 },
                 "scripts": ["node_modules/chart.js/dist/Chart.js"]
             }

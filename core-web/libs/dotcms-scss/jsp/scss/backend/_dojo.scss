@@ -1,0 +1,147 @@
+// In this file we are doing overwrite for DotCMS admin of global things in the Dojo Widgets
+
+.dijitTextBox,
+.dijitSelect {
+    width: 100%;
+    max-width: $content-edit-field-max-width;
+}
+
+.dijitComboBox {
+    width: auto;
+}
+
+// MultiSelect widget in Dojo 1.8.3 doesn't have any special class or behaviour, we just style it as usual
+select[multiple] {
+    border: $field-normal-border;
+    min-height: 80px;
+    width: 100%;
+
+    &:hover {
+        border: $field-hover-border;
+    }
+}
+
+// CUSTOM BUTTONS FOR DOTCMS UI
+.fakeDojoButton {
+    @include btn(
+        $button-normal-shadow,
+        $button-normal-bgcolor,
+        $button-normal-border,
+        $button-normal-textcolor
+    );
+    transition: all $field-animation-speed;
+    border-radius: $field-border-radius;
+    display: inline-block;
+    height: $field-height;
+    line-height: $field-height;
+    padding: 0 $spacing-1 * 2;
+    text-decoration: none;
+    text-transform: uppercase;
+
+    &:hover {
+        @include btn(
+            $button-hover-shadow,
+            $button-hover-bgcolor,
+            $button-hover-border,
+            $button-hover-textcolor
+        );
+    }
+
+    img {
+        vertical-align: middle;
+        margin-top: -2px;
+    }
+}
+
+.fakeDojoButtonDanger {
+    background-color: $red;
+    color: $white;
+
+    &:hover {
+        background-color: darken($red, 10%);
+        color: $white;
+    }
+}
+
+.dijit {
+    $action-button-size: 3rem;
+
+    &DropDownActionButton {
+        background-color: $color-palette-primary;
+        border: none;
+        border-radius: calc($action-button-size / 2);
+        height: $action-button-size;
+        width: $action-button-size;
+
+        .actionIcon,
+        .fa-plus {
+            color: $white;
+            line-height: $action-button-size;
+            margin: 0;
+            font-size: 16px;
+        }
+
+        .dijitButtonNode {
+            height: $action-button-size;
+            width: $action-button-size;
+            padding: 0;
+        }
+
+        .dijitArrowButtonInner {
+            display: none;
+        }
+
+        &.dijitDropDownButtonHover {
+            background-color: $color-palette-primary-400;
+        }
+
+        &.dijitDropDownButtonDisabled {
+            background-color: $color-palette-gray-400;
+
+            .actionIcon,
+            .fa-plus {
+                color: $color-palette-gray-700;
+            }
+        }
+    }
+
+    &ButtonFlat {
+        border: 0;
+        background-color: transparent;
+        box-shadow: none;
+        color: $color-palette-primary;
+
+        &.dijitButtonHover {
+            background-color: $color-palette-primary-200;
+        }
+    }
+
+    &ButtonDanger {
+        border: 0;
+        background-color: $red;
+        color: $white;
+
+        &.dijitButtonHover {
+            background-color: darken($red, 10%);
+        }
+    }
+
+    &ButtonAction {
+        border: solid 1px transparent;
+        background-color: $color-palette-primary;
+        color: $white;
+
+        &.dijitButtonHover {
+            background-color: $color-palette-primary-400;
+        }
+    }
+}
+
+.dotCMSHostFileFilteringSelect {
+    .dijitTextBox {
+        width: auto;
+    }
+}
+.dijitHostFoldersTreeWrapper {
+    min-width: 250px;
+}

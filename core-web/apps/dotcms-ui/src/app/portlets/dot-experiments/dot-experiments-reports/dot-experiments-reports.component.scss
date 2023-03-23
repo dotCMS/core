@@ -14,10 +14,10 @@
     width: 100%;
     overflow-y: scroll;
     height: 100%;
-    background-color: $color-gray-100;
+    background-color: $color-palette-gray-100;
 
     p {
-        font-size: $font-size-medium;
+        font-size: $font-size-md;
         line-height: $line-height;
     }
 

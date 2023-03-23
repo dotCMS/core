@@ -752,7 +752,7 @@
                     <!-- START Listing Results -->
                     <input type="hidden" name="referer" value="<%=referer%>">
                     <input type="hidden" name="cmd" value="prepublish">
-                    <div class="portlet-toolbar" style="height: 48px">
+                    <div class="portlet-toolbar" style="height: 48px; margin-top: 16px;">
                         <div class="portlet-toolbar__actions-secondary">
                             <div id="matchingResultsDiv" style="display: none" class="portlet-toolbar__info"></div>
                         </div>

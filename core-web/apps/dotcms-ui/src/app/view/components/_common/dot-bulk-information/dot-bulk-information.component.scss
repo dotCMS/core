@@ -1,8 +1,8 @@
 @use "variables" as *;
 
 .bulk-information__success-message {
-    color: $gray;
-    font-size: $font-size-large;
+    color: $color-palette-gray-700;
+    font-size: $font-size-lg;
     text-align: center;
     padding-top: $spacing-3;
     padding-bottom: $spacing-5;
@@ -40,7 +40,7 @@
     }
     h5 {
         padding-bottom: $spacing-1;
-        font-size: $font-size-large;
+        font-size: $font-size-lg;
     }
     padding: $spacing-3;
     box-shadow: $md-shadow-1;

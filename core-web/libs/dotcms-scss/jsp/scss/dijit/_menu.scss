@@ -1,0 +1,99 @@
+.dijitMenu {
+    box-shadow: $menu-shadow;
+    background-color: $menu-bgcolor;
+    border: $menu-border;
+
+    .dijitMenuItem {
+        border-bottom: $menu-item-separator;
+        height: $field-height;
+
+        &:last-child {
+            border-bottom: none;
+        }
+
+        &Hover {
+            background-color: $menu-item-hover-bgcolor;
+            color: $menu-item-hover-textcolor;
+        }
+
+        &Selected {
+            background-color: $menu-item-selected-bgcolor;
+            color: $menu-item-selected-textcolor;
+        }
+
+        .dijitMenuItemIconCell {
+            padding-left: $spacing-1;
+            width: $font-size-default;
+        }
+    }
+
+    &ArrowCell {
+        .dijitIcon {
+            margin-right: $spacing-1;
+            text-align: right;
+            vertical-align: baseline;
+        }
+    }
+
+    &SeparatorBottom {
+        height: auto;
+        margin-bottom: 1px;
+    }
+
+    &SeparatorTop {
+        height: auto;
+        margin-top: 1px;
+        border-bottom: 1px solid $color-palette-gray-400;
+    }
+}
+
+.dijitComboBoxMenuPopup {
+    .dijitMenuItem {
+        line-height: $field-height;
+        margin-bottom: 1px;
+        padding: 0 $spacing-1;
+    }
+
+    .dijitComboBoxMenu {
+        min-width: 200px;
+    }
+}
+
+.dijitMenuBar {
+    .dijitMenuItem {
+        padding: 5px;
+    }
+}
+
+.dijitTimePicker {
+    background-color: $timepicker-bgcolor;
+    margin-top: 1px;
+
+    &Item {
+        line-height: $field-height;
+        height: $field-height;
+        color: $font-color-base;
+        border-bottom: $timepicker-item-separator;
+
+        &Hover {
+            background-color: $timepicker-item-hover-bgcolor;
+            color: $timepicker-item-hover-textcolor;
+        }
+
+        &Selected {
+            .dijitTimePickerItemInner {
+                background-color: $timepicker-item-selected-bgcolor;
+                color: $timepicker-item-selected-textcolor;
+            }
+        }
+
+        &Inner {
+            padding: 0;
+        }
+    }
+
+    &Marker {
+        font-weight: bold;
+        background-color: $timepicker-marker-bgcolor;
+    }
+}

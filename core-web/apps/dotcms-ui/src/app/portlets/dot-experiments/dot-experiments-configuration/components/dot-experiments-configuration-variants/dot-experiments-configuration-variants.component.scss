@@ -2,17 +2,17 @@
 
 h2 {
     margin: 0;
-    font-size: $font-size-large;
+    font-size: $font-size-lg;
     font-weight: $font-weight-bold;
 }
 
 .variant-name dot-icon {
     display: inline;
-    color: $brand-primary;
+    color: $color-palette-primary;
 }
 
 .separator {
-    color: $gray-lighter;
+    color: $color-palette-gray-300;
 }
 
 button {
@@ -21,7 +21,7 @@ button {
 
 :host ::ng-deep {
     dot-icon {
-        color: $gray-light;
+        color: $color-palette-gray-500;
 
         &.isDone {
             color: $success;
@@ -36,14 +36,14 @@ button {
             }
 
             &.first .p-card {
-                border-top-right-radius: $border-radius-md;
-                border-top-left-radius: $border-radius-md;
+                border-top-right-radius: $border-radius-sm;
+                border-top-left-radius: $border-radius-sm;
             }
 
             &.last .p-card {
-                border-bottom-right-radius: $border-radius-md;
-                border-bottom-left-radius: $border-radius-md;
-                border: 1px solid $gray-lighter;
+                border-bottom-right-radius: $border-radius-sm;
+                border-bottom-left-radius: $border-radius-sm;
+                border: 1px solid $color-palette-gray-300;
             }
         }
 

@@ -1,0 +1,27 @@
+@use "variables" as *;
+
+.p-toolbar {
+    background-color: $white;
+    border-bottom: solid 1px $color-palette-gray-500;
+    display: flex;
+    padding: $spacing-3 $spacing-4;
+
+    &.p-corner-all {
+        border-radius: 0;
+    }
+}
+
+.p-toolbar-group-left,
+.p-toolbar-group-right {
+    align-items: center;
+    display: flex;
+    flex: 1;
+}
+
+.p-toolbar-group-left {
+    justify-content: flex-start;
+}
+
+.p-toolbar-group-right {
+    justify-content: flex-end;
+}

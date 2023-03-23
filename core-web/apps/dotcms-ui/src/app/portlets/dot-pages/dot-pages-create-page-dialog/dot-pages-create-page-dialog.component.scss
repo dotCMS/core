@@ -5,7 +5,7 @@
     width: 100%;
 
     input {
-        border-radius: $border-radius-md;
+        border-radius: $border-radius-sm;
         width: 100%;
     }
 
@@ -17,13 +17,13 @@
 }
 
 .dot-pages-create-page-dialog__page-types-container {
-    border: 1px solid $gray-lighter;
-    border-radius: $border-radius-md;
+    border: 1px solid $color-palette-gray-300;
+    border-radius: $border-radius-sm;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
 
     ::ng-deep dot-icon i {
-        color: $color-primary-500;
+        color: $color-palette-primary-500;
     }
 
     dot-icon {
@@ -31,13 +31,13 @@
     }
 
     .dot-pages-create-page-dialog__page-item {
-        border-left: 1px solid $gray-lighter;
+        border-left: 1px solid $color-palette-gray-300;
         cursor: pointer;
         display: flex;
         padding: $spacing-3;
 
         &:hover {
-            background-color: $color-gray-200;
+            background-color: $color-palette-gray-200;
         }
 
         &:first-child,

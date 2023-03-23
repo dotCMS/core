@@ -1,0 +1,179 @@
+@use "variables" as *;
+
+.p-multiselect {
+    background: $white;
+    border: 1px solid $input-border-color;
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s,
+        background-size 0.2s cubic-bezier(0.64, 0.09, 0.08, 1);
+    border-radius: $border-radius-xs;
+    min-width: 13rem;
+}
+
+.p-multiselect:not(.p-multiselect-open):hover {
+    border-color: $input-border-color-hover;
+}
+
+.p-multiselect:not(.p-disabled).p-focus {
+    outline: 0 none;
+    outline-offset: 0;
+    box-shadow: $input-inset-shadow;
+    border-color: $color-palette-primary;
+}
+
+.p-multiselect .p-multiselect-label {
+    border: 0 none;
+    padding: $spacing-2 $spacing-2;
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s,
+        background-size 0.2s cubic-bezier(0.64, 0.09, 0.08, 1);
+}
+
+.p-multiselect .p-multiselect-label.p-placeholder {
+    color: $black;
+}
+
+.p-multiselect .p-multiselect-trigger {
+    background: transparent;
+    color: $black;
+    width: 2.357rem;
+    border-top-right-radius: $border-radius-xs;
+    border-bottom-right-radius: $border-radius-xs;
+}
+
+.p-multiselect-panel {
+    background: $white;
+    color: $black;
+    border: 0 none;
+    border-radius: $border-radius-xs;
+    box-shadow: 0 5px 5px -3px rgba(0, 0, 0, 0.2), 0 8px 10px 1px rgba(0, 0, 0, 0.14),
+        0 3px 14px 2px rgba(0, 0, 0, 0.12);
+}
+
+.p-multiselect-panel .p-multiselect-header {
+    padding: $spacing-2;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+    color: $black;
+    background: $white;
+    margin: 0;
+    border-top-right-radius: $border-radius-xs;
+    border-top-left-radius: $border-radius-xs;
+}
+
+.p-multiselect-panel .p-multiselect-header .p-multiselect-filter-container .p-inputtext {
+    padding-right: $spacing-6;
+}
+
+.p-multiselect-panel
+    .p-multiselect-header
+    .p-multiselect-filter-container
+    .p-multiselect-filter-icon {
+    right: $spacing-2;
+    color: $black;
+}
+
+.p-multiselect-panel .p-multiselect-header .p-checkbox {
+    margin-right: $spacing-1;
+}
+
+.p-multiselect.p-multiselect-open {
+    border-color: $input-border-color-hover;
+    box-shadow: $input-inset-shadow;
+}
+
+.p-multiselect-panel .p-multiselect-header .p-multiselect-close {
+    margin-left: $spacing-1;
+    width: $spacing-5;
+    height: $spacing-5;
+    color: $black;
+    border: 0 none;
+    background: transparent;
+    border-radius: 50%;
+    transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
+}
+
+.p-multiselect-panel .p-multiselect-header .p-multiselect-close:enabled:hover {
+    color: $text-color-hover;
+    border-color: transparent;
+    background: $bg-hover;
+}
+
+.p-multiselect-panel .p-multiselect-header .p-multiselect-close:focus {
+    outline: 0 none;
+    outline-offset: 0;
+    box-shadow: none;
+}
+
+.p-multiselect-panel .p-multiselect-items {
+    padding: 0;
+}
+
+.p-multiselect-panel .p-multiselect-items .p-multiselect-item {
+    margin: 0;
+    padding: $spacing-2 $spacing-2;
+    border: 0 none;
+    color: $black;
+    background: transparent;
+    transition: none;
+    border-radius: 0;
+}
+
+.p-multiselect-panel .p-multiselect-items .p-multiselect-item.p-highlight {
+    color: $text-color-highlight;
+    background: $bg-highlight;
+}
+
+.p-multiselect-panel
+    .p-multiselect-items
+    .p-multiselect-item:not(.p-highlight):not(.p-disabled):hover {
+    color: $text-color-hover;
+    background: $bg-hover;
+}
+
+.p-multiselect-panel .p-multiselect-items .p-multiselect-item:focus {
+    outline: 0 none;
+    outline-offset: 0;
+    box-shadow: $input-inset-shadow;
+}
+
+.p-multiselect-panel .p-multiselect-items .p-multiselect-item .p-checkbox {
+    margin-right: $spacing-1;
+}
+
+.p-multiselect-panel .p-multiselect-items .p-multiselect-empty-message {
+    padding: $spacing-2 $spacing-2;
+    color: $black;
+    background: transparent;
+}
+
+.p-multiselect .p-multiselect-label,
+.p-multiselect .p-multiselect-trigger {
+    background: initial;
+}
+
+.p-multiselect-item .p-ink {
+    background-color: rgba(63, 81, 181, 0.16);
+}
+
+.p-multiselect.p-multiselect-chip {
+    color: $color-palette-gray-800;
+}
+
+.p-multiselect.p-multiselect-chip .p-multiselect-label {
+    gap: $spacing-1;
+    padding: $spacing-1;
+}
+
+.p-multiselect.p-multiselect-chip .p-multiselect-label.p-placeholder {
+    padding: $spacing-3;
+}
+
+.p-multiselect.p-multiselect-chip .p-multiselect-token {
+    align-items: center;
+    background: rgba($color-palette-primary, 0.1);
+    border-radius: $border-radius-sm;
+    color: $color-palette-primary;
+    display: flex;
+    gap: $spacing-1;
+    justify-content: center;
+    margin-right: $spacing-1;
+    padding: $spacing-1;
+}

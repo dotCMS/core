@@ -2,6 +2,7 @@
 
 <!-- Auto Generated Below -->
 
+
 ## Properties
 
 | Property             | Attribute              | Description | Type                | Default     |
@@ -14,19 +15,19 @@
 | `showVideoThumbnail` | `show-video-thumbnail` |             | `boolean`           | `true`      |
 | `width`              | `width`                |             | `string`            | `''`        |
 
+
 ## Dependencies
 
 ### Used by
 
--   [dot-card-contentlet](../../components/dot-card-contentlet)
+ - [dot-card-contentlet](../../components/dot-card-contentlet)
 
 ### Depends on
 
--   [dot-video-thumbnail](../dot-video-thumbnail)
--   [dot-contentlet-icon](../dot-contentlet-icon)
+- [dot-video-thumbnail](../dot-video-thumbnail)
+- [dot-contentlet-icon](../dot-contentlet-icon)
 
 ### Graph
-
 ```mermaid
 graph TD;
   dot-contentlet-thumbnail --> dot-video-thumbnail
@@ -35,6 +36,6 @@ graph TD;
   style dot-contentlet-thumbnail fill:#f9f,stroke:#333,stroke-width:4px
 ```
 
----
+----------------------------------------------
 
-_Built with [StencilJS](https://stenciljs.com/)_
+*Built with [StencilJS](https://stenciljs.com/)*

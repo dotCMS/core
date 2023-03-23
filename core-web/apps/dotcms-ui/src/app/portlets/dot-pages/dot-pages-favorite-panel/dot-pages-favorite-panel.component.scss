@@ -2,7 +2,7 @@
 
 ::ng-deep {
     .p-panel-toggleable {
-        border: 1px solid $gray-lighter;
+        border: 1px solid $color-palette-gray-300;
 
         &.p-panel-expanded {
             border-color: $white;
@@ -10,14 +10,14 @@
     }
 
     .p-panel-header {
-        font-size: $font-size-x-large;
+        font-size: $font-size-xl;
         margin: $spacing-1 0;
         padding: $spacing-3 0;
         position: relative;
 
         .p-panel-icons span {
-            color: $brand-primary;
-            font-size: $font-size-x-large;
+            color: $color-palette-primary;
+            font-size: $font-size-xl;
             margin-left: $spacing-1;
             margin-right: $spacing-2;
         }
@@ -30,7 +30,7 @@
         top: $spacing-1;
 
         span.p-button-label {
-            font-size: $font-size-medium;
+            font-size: $font-size-md;
         }
     }
 
@@ -85,7 +85,7 @@
         width: max-content;
 
         dot-icon {
-            color: $brand-primary;
+            color: $color-palette-primary;
             margin-bottom: $spacing-3;
         }
     }

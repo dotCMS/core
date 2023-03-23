@@ -7,12 +7,12 @@
     position: relative;
 
     .autocomplete-helper {
-        font-size: $font-size-small;
+        font-size: $font-size-sm;
         text-transform: uppercase;
         position: absolute;
         top: 15px;
         right: $spacing-1;
-        color: $gray;
+        color: $color-palette-gray-700;
         display: flex;
         align-items: baseline;
 
@@ -62,8 +62,8 @@
                 }
 
                 .p-autocomplete-token {
-                    border-radius: $border-radius;
-                    border: solid 1px $gray-light;
+                    border-radius: $border-radius-xs;
+                    border: solid 1px $color-palette-gray-500;
                     margin: $spacing-1 $spacing-1 0 0;
                     padding: $spacing-1 $spacing-1;
                     max-width: 100%;

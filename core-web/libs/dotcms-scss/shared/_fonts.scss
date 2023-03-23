@@ -1,0 +1,19 @@
+@use "./colors" as *;
+
+$font-size-xxxl: 3rem;
+$font-size-xxl: 1.75rem;
+$font-size-xl: 1.5rem;
+$font-size-lg: 1.25rem;
+$font-size-md: 1rem;
+$font-size-sm: 0.875rem;
+$font-size-xs: 0.75rem;
+
+$font-weight-regular-bold: 400;
+$font-weight-semi-bold: 500;
+$font-weight-bold: 700;
+
+$font-code: "Menlo", "Monaco", "Consolas";
+$font-default: Roboto, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+// TODO: This should be 1rem. If use rems boostrap interferes with the font size.
+$font-size-default: 14px;
+$font-color-base: $black;

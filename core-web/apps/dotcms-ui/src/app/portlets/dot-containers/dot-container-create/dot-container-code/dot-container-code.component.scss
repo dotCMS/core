@@ -13,16 +13,16 @@
 }
 
 .dot-container-code__empty-content-title {
-    font-size: $font-size-medium;
+    font-size: $font-size-md;
 }
 
 .dot-container-code__empty-content-subtitle {
-    font-size: $font-size-small;
+    font-size: $font-size-sm;
 }
 
 .dot-container-code__content-tab-container ::ng-deep {
     dot-icon {
-        color: $brand-primary;
+        color: $color-palette-primary;
     }
 
     .p-tabview {
@@ -54,14 +54,14 @@
         width: $tabView-scroll-btn-width;
         border: 1px solid $input-border-color;
         border-left: none;
-        background: $gray-bg;
+        background: $color-palette-gray-200;
     }
 
     .p-tabview-nav-prev {
         width: $tabView-scroll-btn-width;
         border: 1px solid $input-border-color;
         border-right: none;
-        background: $gray-bg;
+        background: $color-palette-gray-200;
     }
 
     .p-tabview .p-tabview-nav {

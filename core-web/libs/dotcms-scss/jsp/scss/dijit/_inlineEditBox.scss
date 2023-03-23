@@ -1,0 +1,30 @@
+// TODO: design it :)
+
+.dijitInline {
+    .dijitButton {
+        margin: 5px 5px 0 0;
+        line-height: normal;
+    }
+
+    &.dijitTextBox .dijitInputInner {
+        height: $field-height - ($field-border-size * 2);
+        line-height: $field-height - ($field-border-size * 2);
+        // line-height: normal; TODO: fix this because is breaking other inline fields
+        padding: 0;
+    }
+
+    &EditBoxDisplayMode {
+        transition: all $field-animation-speed;
+
+        &Hover {
+            border-radius: 2px;
+            border: solid $inlineeditbox-hover-border-size $inlineeditbox-hover-border-color;
+            background: $inlineeditbox-hover-bgcolor;
+        }
+
+        // TODO: check why the original class don't work
+        &.dijitOffScreen {
+            display: none;
+        }
+    }
+}

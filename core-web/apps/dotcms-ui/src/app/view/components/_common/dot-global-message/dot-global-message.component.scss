@@ -3,7 +3,7 @@
 
 :host {
     align-items: center;
-    border-right: solid 1px $gray-bg;
+    border-right: solid 1px $color-palette-gray-200;
     display: flex;
     opacity: 0;
     padding-right: $spacing-4;
@@ -17,7 +17,7 @@
 
     &.loading {
         .dot-global-message__text {
-            color: $brand-primary;
+            color: $color-palette-primary;
         }
     }
 
@@ -45,5 +45,5 @@
 }
 
 .dot-global-message__text {
-    color: $gray;
+    color: $color-palette-gray-700;
 }
