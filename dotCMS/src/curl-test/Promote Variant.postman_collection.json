@@ -1,0 +1,132 @@
+{
+	"info": {
+		"_postman_id": "7dd20c64-c95d-4957-b702-365ce73eca87",
+		"name": "Promote Variant",
+		"description": "Promote a Variant, Step:\n\n- Create an Experiment, beacuse this is for now the only way to Create a Variant.\n- Create a Variant into the Experiment.\n- Create two Contentlet into the Variant.\n- Promote the Variant",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "1549189"
+	},
+	"item": [
+		{
+			"name": "Promote a Not exists Variant",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be ok 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/variants/not_exists/_promote",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"variants",
+						"not_exists",
+						"_promote"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Logout",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/dotAdmin/logout",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"dotAdmin",
+						"logout"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Try to promote a Variant with no user",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be ok 401\", function () {",
+							"    pm.response.to.have.status(401);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/variants/not_exists/_promote",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"variants",
+						"not_exists",
+						"_promote"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "promoteTestPageId",
+			"value": ""
+		},
+		{
+			"key": "promoteTestExperimentId",
+			"value": ""
+		},
+		{
+			"key": "parentId1",
+			"value": ""
+		},
+		{
+			"key": "parentInode1",
+			"value": ""
+		}
+	]
+}
