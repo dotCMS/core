@@ -152,7 +152,7 @@ public class AnalyticsHelperTest {
      * Then evaluate if issue date is in window
      */
     @Test
-    public void test_isTokenInWindow() {
+    public void test_iisTokenInWindow() {
         AccessToken accessToken = createFreshAccessToken();
         assertFalse(AnalyticsHelper.get().isTokenInWindow(accessToken));
 
