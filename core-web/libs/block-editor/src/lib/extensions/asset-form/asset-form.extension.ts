@@ -145,7 +145,10 @@ export const BubbleAssetFormExtension = (viewContainerRef: ViewContainerRef) => 
                     ({ chain }) => {
                         switch (type) {
                             case 'video':
-                                return chain().setVideo(payload).run();
+                                return (
+                                    chain().setYoutubeVideo({ src: payload }).run() ||
+                                    chain().setVideo(payload).run()
+                                );
 
                             case 'image':
                                 return chain().addDotImage(payload).run();

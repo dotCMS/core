@@ -23,6 +23,7 @@ import Placeholder from '@tiptap/extension-placeholder';
 import { TableRow } from '@tiptap/extension-table-row';
 import { TextAlign } from '@tiptap/extension-text-align';
 import { Underline } from '@tiptap/extension-underline';
+import { Youtube } from '@tiptap/extension-youtube';
 import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
 
 import {
@@ -366,6 +367,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             DotTableCellExtension(this.viewContainerRef),
             BubbleAssetFormExtension(this.viewContainerRef),
             DotTableHeaderExtension(),
+            Youtube.configure(),
             TableRow,
             FreezeScroll,
             CharacterCount
