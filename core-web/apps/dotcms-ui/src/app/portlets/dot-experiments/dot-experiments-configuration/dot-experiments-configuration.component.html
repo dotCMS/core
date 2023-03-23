@@ -42,7 +42,7 @@
                 [scheduling]="vm.experiment.scheduling"
             />
 
-            <p-card>
+            <p-card *ngIf="!!vm.experiment.description" data-testId="experiment-description">
                 {{ vm.experiment.description }}
             </p-card>
 

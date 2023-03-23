@@ -144,6 +144,20 @@ describe('DotExperimentsConfigurationComponent', () => {
         expect(spectator.query(DotExperimentsConfigurationTargetingComponent)).toExist();
         expect(spectator.query(DotExperimentsConfigurationTrafficComponent)).toExist();
         expect(spectator.query(DotExperimentsConfigurationSchedulingComponent)).toExist();
+        expect(spectator.query(byTestId('experiment-description'))).toExist();
+    });
+
+    it('should hide description if empty', () => {
+        spectator.component.vm$ = of({
+            ...defaultVmMock,
+            experiment: {
+                ...EXPERIMENT_MOCK,
+                description: ''
+            }
+        });
+        spectator.detectChanges();
+
+        expect(spectator.query(byTestId('experiment-description'))).not.toExist();
     });
 
     it('should show Start Experiment button if isExperimentADraft true', () => {

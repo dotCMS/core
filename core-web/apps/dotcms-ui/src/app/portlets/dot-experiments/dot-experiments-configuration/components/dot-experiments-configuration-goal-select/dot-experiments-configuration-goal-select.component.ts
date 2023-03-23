@@ -20,6 +20,7 @@ import { SidebarModule } from 'primeng/sidebar';
 import { takeUntil } from 'rxjs/operators';
 
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
+import { DotMessagePipe } from '@dotcms/app/view/pipes';
 import {
     ComponentStatus,
     GOAL_TYPES,
@@ -76,6 +77,7 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
 
     constructor(
         private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore,
+        private readonly dotMessagePipe: DotMessagePipe,
         private readonly cdr: ChangeDetectorRef
     ) {}
 
@@ -144,10 +146,13 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
     private initForm(): void {
         this.form = new FormGroup({
             primary: new FormGroup({
-                name: new FormControl('', {
-                    nonNullable: true,
-                    validators: [Validators.required]
-                }),
+                name: new FormControl(
+                    this.dotMessagePipe.transform('experiments.configure.goals.name.default'),
+                    {
+                        nonNullable: true,
+                        validators: [Validators.required]
+                    }
+                ),
                 type: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
                 conditions: new FormArray([
                     new FormGroup({
