@@ -38,3 +38,9 @@
         width: calc(100% - 2rem);
     }
 }
+
+@media only screen and (min-width: $screen-xl-min) {
+    .dot-experiment-report-content .container .content {
+        width: $container-reports-max;
+    }
+}

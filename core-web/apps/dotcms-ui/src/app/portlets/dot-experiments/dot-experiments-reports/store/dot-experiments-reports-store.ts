@@ -84,7 +84,7 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
 
     constructor(
         private readonly dotExperimentsService: DotExperimentsService,
-        private readonly dotHttpErrorManagerService: DotHttpErrorManagerService,
+        private dotHttpErrorManagerService: DotHttpErrorManagerService,
         private readonly title: Title
     ) {
         super(initialState);
