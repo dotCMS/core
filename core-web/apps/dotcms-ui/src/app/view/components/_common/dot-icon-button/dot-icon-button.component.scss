@@ -23,12 +23,12 @@
 
     &[float] {
         button {
-            background-color: $brand-primary;
+            background-color: $color-palette-primary;
             border-radius: 50%;
             box-shadow: $md-shadow-1;
 
             &:hover {
-                background-color: $brand-primary_mod;
+                background-color: $color-palette-primary-400;
             }
         }
 
@@ -51,7 +51,7 @@
         background-color: transparent;
 
         &:hover {
-            background-color: rgba($white_rgb, 0.3);
+            background-color: rgba($white, 0.3);
         }
 
         ::ng-deep i {
@@ -66,11 +66,11 @@
             }
 
             &:active ::ng-deep i {
-                color: $brand-primary;
+                color: $color-palette-primary;
             }
 
             &:hover ::ng-deep i {
-                color: $brand-primary;
+                color: $color-palette-primary;
             }
 
             ::ng-deep i {
@@ -90,7 +90,7 @@
     }
 
     &[square] button {
-        border-radius: $border-radius;
+        border-radius: $border-radius-xs;
     }
 
     &[disabled="true"] {
@@ -116,7 +116,7 @@
         background: transparent;
         border-radius: 50%;
         border: none;
-        color: $gray;
+        color: $color-palette-gray-700;
         cursor: pointer;
         display: inline-flex;
         justify-content: center;

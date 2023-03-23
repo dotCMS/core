@@ -1,8 +1,8 @@
-@use "libs/dot-primeng-theme-styles/src/scss/variables" as *;
+@use "variables" as *;
 
 :host {
     display: flex;
-    color: $gray;
+    color: $color-palette-gray-700;
     position: sticky;
     align-self: flex-start;
     margin-bottom: $spacing-3;

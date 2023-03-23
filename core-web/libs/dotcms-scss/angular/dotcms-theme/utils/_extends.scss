@@ -1,0 +1,81 @@
+@import "theme-variables";
+
+#inputtext-normal-border {
+    box-shadow: 0 $field-normal-border-size 0 $field-normal-border-color;
+}
+
+#inputtext-hover-border {
+    box-shadow: 0 $field-hover-border-size 0 $field-hover-border-color;
+}
+
+#inputtext-active-border {
+    box-shadow: 0 $field-active-border-size 0 $field-active-border-color;
+}
+
+#inputtext-disabled-border {
+    box-shadow: 0 $field-disabled-border-size 0 $field-disabled-border-color;
+}
+
+#inputtext-error-border {
+    box-shadow: 0 $field-active-border-size 0 $red;
+}
+
+#field-default-state {
+    background: $field-normal-bgcolor;
+    border: none;
+    color: $field-normal-color;
+    font-weight: normal;
+}
+
+#field-hover-state {
+    background: $field-hover-bgcolor;
+    color: $field-hover-color;
+}
+
+#field-active-state {
+    background: $field-active-bgcolor;
+    color: $field-active-color;
+}
+
+#field-disabled-state {
+    background: $field-disabled-bgcolor none;
+    color: $field-disabled-color;
+}
+
+#ui-hover-state {
+    background: $color-palette-gray-200;
+    color: $field-hover-color;
+}
+
+#ui-trigger {
+    align-items: center;
+    display: flex;
+    justify-content: flex-end;
+    padding: 0;
+    width: $ui-trigger-width;
+}
+
+#ui-trigger-icon {
+    position: static;
+    margin: 0;
+}
+
+#ui-field-selectable-label {
+    border: 0;
+    line-height: $field-height;
+    max-height: $field-height;
+    padding: 0 $ui-trigger-width 0 0;
+}
+
+// EDIT PAGE
+
+#edit-page-selector-label {
+    color: $color-palette-gray-700;
+    font-size: $font-size-sm;
+    position: absolute;
+    top: 0;
+}
+
+#edit-page-selector-field {
+    position: relative;
+}

@@ -1,0 +1,91 @@
+@use "variables" as *;
+
+.p-confirm-popup {
+    position: absolute;
+    margin-top: $spacing-2;
+    top: 0;
+    left: 0;
+
+    background: $white;
+    color: $color-palette-gray-800;
+    border: 0 none;
+    border-radius: $border-radius-xs;
+    box-shadow: $md-shadow-1;
+
+    .p-confirm-popup-icon {
+        font-size: $font-size-xl;
+    }
+
+    .p-confirm-popup-message {
+        margin-left: $spacing-3;
+    }
+
+    .p-confirm-popup-footer {
+        padding: $spacing-2 $spacing-4;
+        display: flex;
+        column-gap: $confirm-popup-column-gap;
+        justify-content: flex-end;
+
+        button {
+            margin: 0 0 $spacing-1 0;
+            width: auto;
+        }
+    }
+}
+
+.p-confirm-popup-flipped {
+    margin-top: 0;
+    margin-bottom: $spacing-2;
+}
+
+.p-confirm-popup:after,
+.p-confirm-popup:before {
+    bottom: 100%;
+    left: calc(var(--overlayArrowLeft, 0) + $spacing-4);
+    content: " ";
+    height: 0;
+    width: 0;
+    position: absolute;
+    pointer-events: none;
+}
+
+.p-confirm-popup:after {
+    border-width: 8px;
+    margin-left: -8px;
+}
+
+.p-confirm-popup:before {
+    border-width: 10px;
+    margin-left: -10px;
+}
+
+.p-confirm-popup-flipped:after,
+.p-confirm-popup-flipped:before {
+    bottom: auto;
+    top: 100%;
+}
+
+.p-confirm-popup.p-confirm-popup-flipped:after {
+    border-bottom-color: transparent;
+}
+
+.p-confirm-popup.p-confirm-popup-flipped:before {
+    border-bottom-color: transparent;
+}
+
+.p-confirm-popup .p-confirm-popup-content {
+    display: flex;
+    align-items: center;
+    padding: $spacing-4;
+}
+
+.p-confirm-popup .p-button.p-button-sm {
+    font-size: 0.875rem;
+    padding: 0.65625rem 1.09375rem;
+}
+
+.p-confirm-popup .p-button.p-button-text {
+    background-color: transparent;
+    color: $color-palette-primary;
+    border-color: transparent;
+}

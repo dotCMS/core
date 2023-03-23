@@ -1,0 +1,51 @@
+.dijit {
+    &Splitter {
+        background: rgba($color-palette-gray-200, 0.25);
+
+        &Hover {
+            background: rgba($color-palette-gray-200, 0.5);
+
+            .dijitSplitterThumb {
+                background: $color-palette-gray-700;
+            }
+        }
+
+        &Active {
+            background-color: rgba($color-palette-gray-700, 0.2);
+
+            .dijitSplitterThumb {
+                background: $color-palette-gray-700;
+            }
+        }
+    }
+
+    &SplitterThumb {
+        background-color: $color-palette-gray-400;
+    }
+
+    &SplitterV {
+        width: 6px;
+
+        .dijitSplitterThumb {
+            left: 50%;
+            top: 50%;
+            position: absolute;
+            width: 2px;
+            height: 20px;
+            margin: -10px 0 0 -1px;
+        }
+    }
+
+    &SplitterH {
+        height: 6px;
+
+        .dijitSplitterThumb {
+            left: 50%;
+            top: 50%;
+            position: absolute;
+            width: 20px;
+            height: 2px;
+            margin-left: -10px;
+        }
+    }
+}

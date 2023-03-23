@@ -32,8 +32,8 @@
                 }
 
                 .p-card-subtitle {
-                    color: $gray;
-                    font-size: $font-size-small;
+                    color: $color-palette-gray-700;
+                    font-size: $font-size-sm;
                     font-weight: regular;
                     margin-bottom: $spacing-2;
                 }
@@ -51,7 +51,7 @@
                         padding: 0;
                         text-overflow: ellipsis;
                         white-space: nowrap;
-                        font-size: $font-size-x-large;
+                        font-size: $font-size-xl;
                     }
                 }
             }

@@ -1,11 +1,10 @@
 @use "variables" as *;
-@import "mixins";
 
 :host {
-    box-shadow: $md-shadow-2;
+    box-shadow: $md-shadow-4;
     display: block;
     transition: box-shadow $basic-speed ease-in;
-    border-radius: $border-radius-md;
+    border-radius: $border-radius-sm;
 
     &:hover {
         box-shadow: $md-shadow-3;
@@ -14,7 +13,7 @@
 }
 
 .dot-apps-card__disabled {
-    background-color: $gray-bg;
+    background-color: $color-palette-gray-200;
     display: block;
     height: 100%;
 
@@ -40,16 +39,16 @@
 
     ::ng-deep {
         .p-card {
-            background: $gray-bg;
+            background: $color-palette-gray-200;
         }
         .avatar__img {
             filter: grayscale(1);
         }
         .p-widget-content {
-            background-color: $gray-bg;
+            background-color: $color-palette-gray-200;
         }
         .dot-apps-card__name {
-            color: $gray;
+            color: $color-palette-gray-700;
         }
     }
 }
@@ -69,7 +68,7 @@ dot-avatar {
     color: $black;
     display: block;
     flex: 1;
-    font-size: $font-size-large;
+    font-size: $font-size-lg;
     font-weight: bold;
     height: $spacing-3;
     line-height: $spacing-3;
@@ -83,16 +82,16 @@ dot-avatar {
 
     dot-icon {
         bottom: 0;
-        color: $brand-primary;
+        color: $color-palette-primary;
         position: absolute;
         right: 0;
     }
 }
 
 .dot-apps-card__configurations {
-    color: $gray;
+    color: $color-palette-gray-700;
     display: block;
-    font-size: $font-size-medium;
+    font-size: $font-size-md;
     line-height: $spacing-3;
     margin-top: $spacing-1;
     margin-right: $spacing-4;
@@ -100,7 +99,7 @@ dot-avatar {
 
 ::ng-deep {
     p-card {
-        border-radius: $border-radius-md;
+        border-radius: $border-radius-sm;
     }
 
     .p-card {
@@ -108,7 +107,7 @@ dot-avatar {
         height: 100%;
 
         .p-card-body {
-            color: $gray;
+            color: $color-palette-gray-700;
 
             .p-card-content > p {
                 line-height: 1.5rem;

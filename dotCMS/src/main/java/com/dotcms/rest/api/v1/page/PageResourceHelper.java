@@ -7,6 +7,8 @@ import com.dotcms.mock.request.HttpServletRequestParameterDecoratorWrapper;
 import com.dotcms.mock.request.LanguageIdParameterDecorator;
 import com.dotcms.mock.request.ParameterDecorator;
 import com.dotcms.rendering.velocity.directive.ParseContainer;
+import com.dotcms.rendering.velocity.services.ContentletLoader;
+import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.rest.api.v1.page.PageContainerForm.ContainerEntry;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.util.CollectionsUtils;
@@ -20,6 +22,8 @@ import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.db.FlushCacheRunnable;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -134,15 +138,13 @@ public class PageResourceHelper implements Serializable {
     public void saveContent(final String pageId,
             final List<ContainerEntry> containerEntries,
             final Language language, String variantName) throws DotDataException {
-
         final Map<String, List<MultiTree>> multiTreesMap = new HashMap<>();
         for (final PageContainerForm.ContainerEntry containerEntry : containerEntries) {
             int i = 0;
-            final  List<String> contentIds = containerEntry.getContentIds();
+            final List<String> contentIds = containerEntry.getContentIds();
             final String personalization = UtilMethods.isSet(containerEntry.getPersonaTag()) ?
                     Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + containerEntry.getPersonaTag() :
                     MultiTree.DOT_PERSONALIZATION_DEFAULT;
-
             if (UtilMethods.isSet(contentIds)) {
                 for (final String contentletId : contentIds) {
                     final MultiTree multiTree = new MultiTree().setContainer(containerEntry.getContainerId())
@@ -151,21 +153,34 @@ public class PageResourceHelper implements Serializable {
                             .setTreeOrder(i++)
                             .setHtmlPage(pageId)
                             .setVariantId(variantName);
-
                     CollectionsUtils.computeSubValueIfAbsent(
                             multiTreesMap, personalization, MultiTree.personalized(multiTree, personalization),
                             CollectionsUtils::add,
                             (String key, MultiTree multitree) -> CollectionsUtils.list(multitree));
+                    HibernateUtil.addCommitListener(new FlushCacheRunnable() {
+
+                        @Override
+                        public void run() {
+                            try {
+                                final Contentlet contentlet =
+                                        contentletAPI.findContentletByIdentifierAnyLanguage(contentletId, variantName);
+                                new ContentletLoader().invalidate(contentlet, PageMode.EDIT_MODE);
+                            } catch (final DotDataException e) {
+                                Logger.warn(this, String.format("Contentlet with ID '%s' could not be invalidated " +
+                                                                        "from cache: %s", contentletId,
+                                        e.getMessage()));
+                            }
+                        }
+
+                    });
                 }
             } else {
                 multiTreesMap.computeIfAbsent(personalization, key -> new ArrayList<>());
             }
         }
-
         for (final String personalization : multiTreesMap.keySet()) {
-
             multiTreeAPI.overridesMultitreesByPersonalization(pageId, personalization,
-                    multiTreesMap.get(personalization), Optional.ofNullable(language.getId()),
+                    multiTreesMap.get(personalization), Optional.of(language.getId()),
                     variantName);
         }
     }

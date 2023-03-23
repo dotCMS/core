@@ -9,14 +9,14 @@ $theme-item-dimension: 240px;
 
         dot-searchable-dropdown .p-button,
         .site-selector__title {
-            font-size: $font-size-large;
+            font-size: $font-size-lg;
             min-width: 200px;
         }
     }
 
     .dialog__content {
         min-width: 77.85rem;
-        padding: $spacing-3 $spacing-4 $dialog-padding;
+        padding: $spacing-3 $spacing-4 $spacing-6;
     }
 
     @media (max-width: 1100px) {
@@ -39,7 +39,7 @@ $theme-item-dimension: 240px;
 
     .p-dataview-content .p-widget-content.p-g-12 {
         text-align: center;
-        font-size: $font-size-large;
+        font-size: $font-size-lg;
         margin-top: $spacing-7;
     }
 
@@ -65,7 +65,7 @@ $theme-item-dimension: 240px;
     position: relative;
 
     input {
-        font-size: $font-size-large;
+        font-size: $font-size-lg;
     }
 
     dot-icon {
@@ -78,7 +78,7 @@ $theme-item-dimension: 240px;
 
 .dot-theme-item {
     align-items: center;
-    background: $gray-bg;
+    background: $color-palette-gray-200;
     border-radius: 4px;
     cursor: pointer;
     display: flex;
@@ -90,7 +90,7 @@ $theme-item-dimension: 240px;
     width: $theme-item-dimension;
 
     svg {
-        fill: $gray;
+        fill: $color-palette-gray-700;
         border-radius: 6px;
     }
 

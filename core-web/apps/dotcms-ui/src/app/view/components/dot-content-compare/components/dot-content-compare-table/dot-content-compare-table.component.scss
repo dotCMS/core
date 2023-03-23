@@ -15,7 +15,7 @@
 
 .dot-content-compare-table__title {
     color: $black;
-    font-size: $font-size-large;
+    font-size: $font-size-lg;
 }
 
 :host ::ng-deep .p-datatable {
@@ -24,14 +24,14 @@
         border-spacing: 0;
 
         th {
-            border-top: 1px solid $gray-lighter;
-            border-bottom: 1px solid $gray-lighter;
-            border-right: 1px solid $gray-lighter;
+            border-top: 1px solid $color-palette-gray-300;
+            border-bottom: 1px solid $color-palette-gray-300;
+            border-right: 1px solid $color-palette-gray-300;
         }
 
         td {
-            border-bottom: 1px solid $gray-lighter;
-            border-right: 1px solid $gray-lighter;
+            border-bottom: 1px solid $color-palette-gray-300;
+            border-right: 1px solid $color-palette-gray-300;
 
             img {
                 max-width: 100%;
@@ -41,7 +41,7 @@
 
         th:first-child,
         td:first-child {
-            border-left: 1px solid $gray-lighter;
+            border-left: 1px solid $color-palette-gray-300;
         }
 
         thead th {

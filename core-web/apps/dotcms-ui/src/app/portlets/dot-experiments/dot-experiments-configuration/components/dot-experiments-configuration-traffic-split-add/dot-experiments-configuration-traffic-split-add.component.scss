@@ -11,7 +11,7 @@
     label {
         font-weight: $font-weight-bold;
         margin-bottom: $spacing-3;
-        font-size: $font-size-large;
+        font-size: $font-size-lg;
     }
 
     p-radioButton {
@@ -32,8 +32,8 @@
             margin-bottom: $spacing-2;
 
             &.experiment-traffic-split__variants-header {
-                font-size: $font-size-large;
-                color: $gray;
+                font-size: $font-size-lg;
+                color: $color-palette-gray-700;
                 text-transform: uppercase;
                 font-weight: $font-weight-bold;
             }

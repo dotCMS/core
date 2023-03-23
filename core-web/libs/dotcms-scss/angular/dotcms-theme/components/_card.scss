@@ -1,0 +1,43 @@
+@use "variables" as *;
+
+.p-card {
+    background: $white;
+    color: $color-palette-gray-800;
+    border: 1px solid $color-palette-gray-300;
+    border-radius: $border-radius-sm;
+
+    .p-card-header {
+        padding: $spacing-3 $spacing-3 0 $spacing-3;
+    }
+
+    .p-card-subtitle {
+        font-weight: 400;
+        margin-bottom: $spacing-1;
+        color: $color-palette-gray-700;
+    }
+
+    .p-card-body {
+        padding: $spacing-4;
+
+        .p-card-title {
+            font-size: $font-size-xl;
+            font-weight: 700;
+            margin-bottom: $spacing-2;
+        }
+    }
+
+    .p-card-footer {
+        padding: $spacing-3 $spacing-0 $spacing-0 $spacing-0;
+    }
+
+    .p-card {
+        min-height: $card-min-height;
+        display: flex;
+        align-items: center;
+    }
+
+    .p-card-body .p-card-body {
+        padding: $spacing-1 $spacing-2;
+        width: 100%;
+    }
+}

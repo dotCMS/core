@@ -27,11 +27,11 @@
 .dot-layout-designer__header,
 [class^="dot-layout-designer__sidebar"] {
     align-items: center;
-    background: $gray-bg;
-    color: $gray;
+    background: $color-palette-gray-200;
+    color: $color-palette-gray-700;
     display: flex;
     flex-shrink: 0;
-    font-size: $font-size-xx-large;
+    font-size: $font-size-xxl;
     justify-content: center;
 }
 
@@ -45,7 +45,7 @@
 
 .dot-layout-designer__sidebar--left,
 .dot-layout-designer__sidebar--right {
-    border: 1px solid $gray-light;
+    border: 1px solid $color-palette-gray-500;
 }
 
 .dot-layout-designer__sidebar {
@@ -88,7 +88,7 @@
     &::ng-deep .action-button--no-label .p-button.p-button-icon-only {
         height: $field-height;
         width: $field-height;
-        font-size: $font-size-small;
+        font-size: $font-size-sm;
     }
 }
 
@@ -102,8 +102,8 @@
         -90deg,
         transparent,
         transparent $spacing-1,
-        $gray-bg $spacing-1,
-        $gray-bg calc(100% / 12)
+        $color-palette-gray-200 $spacing-1,
+        $color-palette-gray-200 calc(100% / 12)
     );
     flex-grow: 1;
     margin-right: -$spacing-1;

@@ -1,0 +1,12 @@
+.log-files__container {
+    width: 100%;
+    height: calc(100% - 48px);
+}
+
+.log-files__iframe {
+    border: 1px solid $color-palette-gray-500;
+    overflow: auto;
+    height: 100%;
+    width: 100%;
+    min-height: 500px;
+}

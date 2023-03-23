@@ -1,0 +1,17 @@
+.import-preview {
+    margin: 50px auto;
+    border: solid 1px $color-palette-secondary;
+    border-color: $color-palette-gray-400;
+    border-radius: $border-radius-xs * 2;
+
+    .import-preview__heading {
+        background-color: $color-palette-gray-400;
+        border-color: $color-palette-gray-400;
+        padding: 10px $spacing-1 * 2;
+        border-bottom: 1px solid $color-palette-gray-400;
+    }
+
+    .import-preview__body {
+        padding: $spacing-1 * 2;
+    }
+}

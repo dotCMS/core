@@ -2,6 +2,7 @@
 
 <!-- Auto Generated Below -->
 
+
 ## Properties
 
 | Property             | Attribute              | Description | Type                      | Default     |
@@ -10,6 +11,7 @@
 | `showVideoThumbnail` | `show-video-thumbnail` |             | `boolean`                 | `true`      |
 | `value`              | `value`                |             | `string`                  | `undefined` |
 
+
 ## Events
 
 | Event       | Description | Type               |
@@ -17,28 +19,37 @@
 | `cardClick` |             | `CustomEvent<any>` |
 | `selected`  |             | `CustomEvent<any>` |
 
+
 ## Methods
 
 ### `clearValue() => Promise<void>`
+
+
 
 #### Returns
 
 Type: `Promise<void>`
 
+
+
 ### `getValue() => Promise<DotContentletItem[]>`
+
+
 
 #### Returns
 
 Type: `Promise<DotContentletItem[]>`
 
+
+
+
 ## Dependencies
 
 ### Depends on
 
--   [dot-card-contentlet](../../components/dot-card-contentlet)
+- [dot-card-contentlet](../../components/dot-card-contentlet)
 
 ### Graph
-
 ```mermaid
 graph TD;
   dot-card-view --> dot-card-contentlet
@@ -55,6 +66,6 @@ graph TD;
   style dot-card-view fill:#f9f,stroke:#333,stroke-width:4px
 ```
 
----
+----------------------------------------------
 
-_Built with [StencilJS](https://stenciljs.com/)_
+*Built with [StencilJS](https://stenciljs.com/)*

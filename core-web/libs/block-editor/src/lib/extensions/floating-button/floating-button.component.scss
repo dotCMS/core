@@ -12,7 +12,7 @@
     .p-button:enabled:hover,
     .p-button:enabled:active,
     .p-button:enabled:focus {
-        background: rgb($brand-primary_rgb);
+        background: $color-palette-primary;
     }
 
     .p-button:disabled {
@@ -22,7 +22,7 @@
     }
 
     .p-button.completed {
-        background: rgb($brand-primary_rgb) !important;
+        background: $color-palette-primary !important;
     }
 }
 
@@ -30,7 +30,7 @@
     background: $white;
     color: $error;
     border: 1px solid $error;
-    border-radius: $border-radius;
+    border-radius: $border-radius-xs;
     padding: 0.625 * $dot-editor-size;
     display: flex;
     align-items: center;

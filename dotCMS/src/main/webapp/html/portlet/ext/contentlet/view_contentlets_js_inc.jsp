@@ -2026,9 +2026,6 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                 th = document.createElement('th');
                 row.appendChild(th);
 
-                th = document.createElement('th');
-                row.appendChild(th);
-
 
                 var languageId;
                 var locale;

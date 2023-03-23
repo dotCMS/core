@@ -1,0 +1,64 @@
+@mixin center-icon($width, $height, $direction: "") {
+    left: 50%;
+    @if $direction == right or $direction == left {
+        margin-left: -(calc($height / 2));
+        margin-top: -(calc($width / 2));
+    } @else {
+        margin-left: -(calc($width / 2));
+        margin-top: -(calc($height / 2));
+    }
+    position: absolute;
+    top: 50%;
+}
+
+@mixin mouse {
+    font-size: 11px; // TODO: set a variable
+    color: $color-palette-gray-500;
+}
+
+@mixin create-arrow($arrow-size, $arrow-color, $direction: "bottom") {
+    @include center-icon(
+        $arrow-size * 2,
+        $arrow-size,
+        $direction
+    ); // Sadly compass can't get width and height from a svg
+
+    @if $direction == right {
+        border-top: $arrow-size solid transparent;
+        border-bottom: $arrow-size solid transparent;
+        border-left: $arrow-size solid $arrow-color;
+    }
+    @if $direction == left {
+        border-top: $arrow-size solid transparent;
+        border-bottom: $arrow-size solid transparent;
+        border-right: $arrow-size solid $arrow-color;
+    }
+    @if $direction == up {
+        border-left: $arrow-size solid transparent;
+        border-right: $arrow-size solid transparent;
+        border-bottom: $arrow-size solid $arrow-color;
+    }
+    @if $direction == bottom {
+        border-left: $arrow-size solid transparent;
+        border-right: $arrow-size solid transparent;
+        border-top: $arrow-size solid $arrow-color;
+    }
+    content: "";
+    height: 0;
+    width: 0;
+}
+
+@mixin btn(
+    $shadow: none,
+    $bg: $button-normal-bgcolor,
+    $border: $button-normal-border,
+    $color: $button-normal-textcolor
+) {
+    background-color: $bg;
+    border: $border;
+    color: $color;
+
+    @if ($shadow != "none") {
+        box-shadow: $shadow;
+    }
+}

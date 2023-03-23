@@ -44,7 +44,7 @@
 
 <div class="portlet-main">
 	<!-- START Toolbar -->
-	<div class="portlet-toolbar">
+	<div class="portlet-toolbar" style="margin: 16px">
 		<div class="portlet-toolbar__actions-primary">
 			<div class="inline-form">
 				<input type="text" name="filter" id="filter" onkeydown="hostAdmin.filterHosts()" dojoType="dijit.form.TextBox" value="" />
