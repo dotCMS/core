@@ -12,6 +12,7 @@ import { DotExperimentsService } from '@portlets/dot-experiments/shared/services
  * @export
  * @class DotExperimentExperimentResolver
  * @implements {Resolve<DotRenderedPageState>}
+ *
  */
 @Injectable()
 export class DotExperimentExperimentResolver implements Resolve<DotExperiment> {
