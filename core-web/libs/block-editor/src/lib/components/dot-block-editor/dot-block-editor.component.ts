@@ -367,7 +367,9 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             DotTableCellExtension(this.viewContainerRef),
             BubbleAssetFormExtension(this.viewContainerRef),
             DotTableHeaderExtension(),
-            Youtube.configure(),
+            Youtube.configure({
+                //TODO: Add configs
+            }),
             TableRow,
             FreezeScroll,
             CharacterCount
