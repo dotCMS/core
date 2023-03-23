@@ -93,42 +93,40 @@ describe('DotExperimentsReportsComponent', () => {
     });
 
     it("shouldn't show the skeleton component when is not loading", () => {
-        it("shouldn't show the skeleton component when is not loading", () => {
-            spectator.component.vm$ = of({ ...defaultVmMock, isLoading: false });
-            spectator.detectChanges();
+        spectator.component.vm$ = of({ ...defaultVmMock, isLoading: false });
+        spectator.detectChanges();
 
-            expect(spectator.query(DotExperimentsUiHeaderComponent)).toExist();
-            expect(spectator.query(DotExperimentsReportsSkeletonComponent)).not.toExist();
+        expect(spectator.query(DotExperimentsUiHeaderComponent)).toExist();
+        expect(spectator.query(DotExperimentsReportsSkeletonComponent)).not.toExist();
+    });
+
+    it('should show the SummaryComponent', () => {
+        spectator.component.vm$ = of({
+            ...defaultVmMock,
+            experiment: {
+                ...defaultVmMock.experiment,
+                status: DotExperimentStatusList.RUNNING
+            },
+            isLoading: false,
+            showSummary: true
         });
+        spectator.detectChanges();
+        expect(spectator.query(DotExperimentsExperimentSummaryComponent)).toExist();
+    });
 
-        it('should show the SummaryComponent', () => {
-            spectator.component.vm$ = of({
-                ...defaultVmMock,
-                experiment: {
-                    ...defaultVmMock.experiment,
-                    status: DotExperimentStatusList.RUNNING
+    it('should back to Experiment List', () => {
+        spectator.detectComponentChanges();
+        spectator.component.goToExperimentList(EXPERIMENT_MOCK.pageId);
+        expect(router.navigate).toHaveBeenCalledWith(
+            ['/edit-page/experiments/', EXPERIMENT_MOCK.pageId],
+            {
+                queryParams: {
+                    editPageTab: null,
+                    variantName: null,
+                    experimentId: null
                 },
-                isLoading: false,
-                showSummary: true
-            });
-            spectator.detectChanges();
-            expect(spectator.query(DotExperimentsExperimentSummaryComponent)).toExist();
-        });
-
-        it('should back to Experiment List', () => {
-            spectator.detectComponentChanges();
-            spectator.component.goToExperimentList(EXPERIMENT_MOCK.pageId);
-            expect(router.navigate).toHaveBeenCalledWith(
-                ['/edit-page/experiments/', EXPERIMENT_MOCK.pageId],
-                {
-                    queryParams: {
-                        editPageTab: null,
-                        variantName: null,
-                        experimentId: null
-                    },
-                    queryParamsHandling: 'merge'
-                }
-            );
-        });
+                queryParamsHandling: 'merge'
+            }
+        );
     });
 });
