@@ -95,7 +95,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -886,23 +885,31 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         return getGoalResults(experimentResults, goalName)
             .map(results -> {
                 final VariantResults controlResults = results.getVariants().get(DEFAULT_VARIANT.name());
-                final Optional<VariantResults> testResults = results
+                if (Objects.isNull(controlResults)) {
+                    return null;
+                }
+
+                final VariantResults testResults = results
                     .getVariants()
                     .keySet()
                     .stream()
                     .filter(name -> !name.equals(DEFAULT_VARIANT.name()))
                     .map(name -> results.getVariants().get(name))
-                    .findFirst();
-                return testResults
-                    .map(variantResults -> BayesianInput
-                        .builder()
-                        .priors(priors)
-                        .controlSuccesses(extractSuccesses(controlResults))
-                        .controlFailures(extractFailures(experimentResults, goalName, DEFAULT_VARIANT.name()))
-                        .testSuccesses(extractSuccesses(variantResults))
-                        .testFailures(extractFailures(experimentResults, goalName, variantResults.getVariantName()))
-                        .build())
+                    .findFirst()
                     .orElse(null);
+                if (Objects.isNull(testResults)) {
+                    return null;
+                }
+
+                return BayesianInput
+                    .builder()
+                    .variants(new ArrayList<>(experimentResults.getSessions().getVariants().keySet()))
+                    .priors(priors)
+                    .controlSuccesses(extractSuccesses(controlResults))
+                    .controlFailures(extractFailures(experimentResults, goalName, DEFAULT_VARIANT.name()))
+                    .testSuccesses(extractSuccesses(testResults))
+                    .testFailures(extractFailures(experimentResults, goalName, testResults.getVariantName()))
+                    .build();
             })
             .orElse(null);
     }

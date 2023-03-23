@@ -12,6 +12,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.analytics.app.AnalyticsApp;
+import com.dotcms.analytics.bayesian.BayesianAPI;
 import com.dotcms.analytics.bayesian.model.BayesianResult;
 import com.dotcms.analytics.helper.AnalyticsHelper;
 import com.dotcms.analytics.metrics.AbstractCondition.Operator;
@@ -89,10 +90,12 @@ public class ExperimentAPIImpIT {
     private static final int CUBEJS_SERVER_PORT = 5000;
     private static final String CUBEJS_SERVER_URL = String.format("http://%s:%s", CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
 
-    private final DateTimeFormatter SIMPLE_FORMATTER = DateTimeFormatter.ofPattern("MM/dd/yyyy")
-            .withZone(ZoneId.systemDefault());
-    private final DateTimeFormatter EVENTS_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.n")
-            .withZone(ZoneId.systemDefault());
+    private static final DateTimeFormatter SIMPLE_FORMATTER = DateTimeFormatter
+        .ofPattern("MM/dd/yyyy")
+        .withZone(ZoneId.systemDefault());
+    private static final DateTimeFormatter EVENTS_FORMATTER = DateTimeFormatter
+        .ofPattern("yyyy-MM-dd'T'HH:mm:ss.n")
+        .withZone(ZoneId.systemDefault());
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -1474,7 +1477,9 @@ public class ExperimentAPIImpIT {
             assertEquals(120, experimentResults.getSessions().getTotal());
 
             final BayesianResult bayesianResult = experimentResults.getBayesianResult();
-            Assert.assertEquals(0.99, bayesianResult.result(), 0.01);
+            Assert.assertEquals(0.99, bayesianResult.value(), 0.01);
+            Assert.assertEquals(BayesianAPI.VARIANT_B, bayesianResult.inFavorOf());
+            Assert.assertTrue(bayesianResult.suggested().startsWith("dotexperiment-"));
 
             mockhttpServer.validate();
         } finally {
@@ -1530,7 +1535,9 @@ public class ExperimentAPIImpIT {
             assertEquals(120, experimentResults.getSessions().getTotal());
 
             final BayesianResult bayesianResult = experimentResults.getBayesianResult();
-            Assert.assertEquals(0.02, bayesianResult.result(), 0.01);
+            Assert.assertEquals(0.02, bayesianResult.value(), 0.01);
+            Assert.assertEquals(BayesianAPI.VARIANT_B, bayesianResult.inFavorOf());
+            Assert.assertTrue(bayesianResult.suggested().startsWith(DEFAULT_VARIANT.name()));
 
             mockhttpServer.validate();
         } finally {
@@ -1586,7 +1593,9 @@ public class ExperimentAPIImpIT {
             assertEquals(120, experimentResults.getSessions().getTotal());
 
             final BayesianResult bayesianResult = experimentResults.getBayesianResult();
-            Assert.assertEquals(0.57, bayesianResult.result(), 0.01);
+            Assert.assertEquals(0.57, bayesianResult.value(), 0.01);
+            Assert.assertEquals(BayesianAPI.VARIANT_B, bayesianResult.inFavorOf());
+            Assert.assertTrue(bayesianResult.suggested().startsWith("dotexperiment-"));
 
             mockhttpServer.validate();
         } finally {
@@ -1642,7 +1651,9 @@ public class ExperimentAPIImpIT {
             assertEquals(120, experimentResults.getSessions().getTotal());
 
             final BayesianResult bayesianResult = experimentResults.getBayesianResult();
-            Assert.assertEquals(0.50, bayesianResult.result(), 0.000000001);
+            Assert.assertEquals(0.50, bayesianResult.value(), 0.000000001);
+            Assert.assertEquals(BayesianAPI.VARIANT_B, bayesianResult.inFavorOf());
+            Assert.assertTrue(bayesianResult.suggested().startsWith(BayesianAPI.TIE));
 
             mockhttpServer.validate();
         } finally {

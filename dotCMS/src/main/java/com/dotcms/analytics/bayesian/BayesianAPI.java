@@ -4,6 +4,9 @@ package com.dotcms.analytics.bayesian;
 import com.dotcms.analytics.bayesian.model.BayesianInput;
 import com.dotcms.analytics.bayesian.model.BayesianPriors;
 import com.dotcms.analytics.bayesian.model.BayesianResult;
+import com.dotcms.variant.VariantAPI;
+
+import java.util.function.Predicate;
 
 /**
  * Bayesian calculation API.
@@ -12,7 +15,14 @@ import com.dotcms.analytics.bayesian.model.BayesianResult;
  */
 public interface BayesianAPI {
 
+    String VARIANT_A = "A";
+    String VARIANT_B = "B";
+    String VARIANT_C = "C";
+    String TIE = "_TIE_";
+    String UNKNOWN = "_UNKNOWN_";
     BayesianPriors NULL_PRIORS = BayesianPriors.builder().alpha(null).beta(null).build();
+    Predicate<String> DEFAULT_VARIANT_FILTER = variant -> variant.equals(VariantAPI.DEFAULT_VARIANT.name());
+    Predicate<String> OTHER_THAN_DEFAULT_VARIANT_FILTER = variant -> DEFAULT_VARIANT_FILTER.negate().test(variant);
 
     /**
      * Calculates probability that B (Test) beats A (Control) based on this pseudo (Julia) code:

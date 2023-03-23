@@ -5,6 +5,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.immutables.value.Value;
 
+import java.util.List;
+
 
 /**
  * Bayesian inference calculation input. It consists in 6 known parameters:
@@ -38,5 +40,8 @@ public interface AbstractBayesianInput {
 
     @JsonProperty("testFailures")
     long testFailures();
+
+    @JsonProperty("variants")
+    List<String> variants();
 
 }

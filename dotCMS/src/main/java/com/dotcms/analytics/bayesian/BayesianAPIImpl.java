@@ -10,6 +10,7 @@ import com.dotcms.analytics.bayesian.model.SampleGroup;
 import com.dotmarketing.util.Config;
 import com.google.common.collect.ImmutableMap;
 import org.apache.commons.numbers.gamma.LogBeta;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -35,6 +36,8 @@ public class BayesianAPIImpl implements BayesianAPI {
     private static final double[] QUANTILES = { 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, 0.975, 0.99 };
     private static final int SAMPLE_SIZE = Config.getIntProperty("BETA_DISTRIBUTION_SAMPLE_SIZE", 1000);
     private static final BiFunction<Double, Double, Double> LOG_BETA_FN = LogBeta::value;
+    private static final double HALF = 0.5;
+    private static final double TIE_COMPARE_DELTA = 0.01;
 
     /**
      * {@inheritDoc}
@@ -50,13 +53,15 @@ public class BayesianAPIImpl implements BayesianAPI {
         final DifferenceData differenceData = generateDifferenceData(controlData, testData);
 
         // call calculation
+        final double value = calcABTesting(
+            input.controlSuccesses() + 1,
+            input.controlFailures() + 1,
+            input.testSuccesses() + 1,
+            input.testFailures() + 1);
         BayesianResult.Builder builder = BayesianResult.builder()
-            .result(calcABTesting(
-                input.controlSuccesses() + 1,
-                input.controlFailures() + 1,
-                input.testSuccesses() + 1,
-                input.testFailures() + 1))
-            .inFavorOf("B");
+            .value(value)
+            .inFavorOf(VARIANT_B)
+            .suggested(suggestWinner(value, input.variants()));
         if (priorPresent) {
             builder = builder
                 .distributionPdfs(calcDistributionsPdfs(controlData, testData))
@@ -65,6 +70,19 @@ public class BayesianAPIImpl implements BayesianAPI {
         }
 
         return builder.build();
+    }
+
+    @NotNull
+    private static String suggestWinner(final double value, final List<String> variants) {
+        if (Double.compare(HALF, value) == 0 || Math.abs(HALF - value) <= TIE_COMPARE_DELTA) {
+            return TIE;
+        }
+
+        return variants
+            .stream()
+            .filter(value < 0.5 ? DEFAULT_VARIANT_FILTER : OTHER_THAN_DEFAULT_VARIANT_FILTER)
+            .findFirst()
+            .orElse(UNKNOWN);
     }
 
     /**
@@ -173,7 +191,7 @@ public class BayesianAPIImpl implements BayesianAPI {
      * @param differences difference data array
      * @param alpha alpha value
      * @param beta beta value
-     * @return list of calculated quantiles double values
+     * @return map of calculated quantiles double values
      */
     private Map<Double, QuantilePair> calcQuantiles(final double[] differences, final Double alpha, final Double beta) {
         if (differences.length == 0) {

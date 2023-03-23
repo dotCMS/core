@@ -47,7 +47,7 @@ public class BayesianAPIImplTest {
             .build();
         final BayesianResult result = bayesianAPI.calcProbBOverA(input);
         Assert.assertNotNull(result);
-        Assert.assertEquals("0.69", String.format("%.2f", result.result()));
+        Assert.assertEquals("0.69", String.format("%.2f", result.value()));
     }
 
     /**
