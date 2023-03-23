@@ -2,7 +2,7 @@
 
 :host {
     padding: $spacing-4;
-    color: $color-gray-600;
+    color: $color-palette-gray-600;
     line-height: 140%;
     display: flex;
     justify-content: center;
@@ -13,7 +13,7 @@
 
     i {
         font-size: $md-icon-size-big;
-        color: $color-primary-500;
+        color: $color-palette-primary-500;
 
         &.pi-ban {
             color: $color-alert-red;

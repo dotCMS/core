@@ -1,0 +1,35 @@
+.contentIdentifier {
+    margin: 0 0 $spacing-1;
+}
+
+.formRow {
+    text-align: center;
+    padding: 10px 8px;
+}
+
+.buttonRightInBox {
+    text-align: right;
+    margin: 4px 10px 2px 0;
+    font-weight: normal;
+}
+
+.buttonRightInBoxTab {
+    position: absolute;
+    text-align: right;
+    z-index: 5;
+    top: 3px;
+    right: 15px;
+}
+
+.shadowBoxLine {
+    margin-bottom: 15px;
+    padding: 45px 5px 20px 5px;
+    border: 1px solid #ccc;
+    -moz-box-shadow: 0px 0px 5px #ccc;
+    -webkit-box-shadow: 0px 0px 5px #ccc;
+    background: transparent url($portal-tab) repeat-x 0 0;
+}
+
+.headerBox {
+    padding: 0;
+}

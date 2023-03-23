@@ -18,9 +18,9 @@
                 "main": "libs/ui/src/test.ts",
                 "tsConfig": "libs/ui/tsconfig.spec.json",
                 "karmaConfig": "libs/ui/karma.conf.js",
-                "styles": ["libs/dot-primeng-theme-styles/src/scss/styles.scss"],
+                "styles": ["libs/dotcms-scss/angular/styles.scss"],
                 "stylePreprocessorOptions": {
-                    "includePaths": ["libs/dot-primeng-theme-styles/src/scss"]
+                    "includePaths": ["libs/dotcms-scss/angular/"]
                 }
             }
         }

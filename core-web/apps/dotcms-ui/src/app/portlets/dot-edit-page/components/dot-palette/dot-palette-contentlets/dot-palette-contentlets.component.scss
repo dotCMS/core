@@ -1,8 +1,8 @@
-@use "libs/dot-primeng-theme-styles/src/scss/variables" as *;
+@use "variables" as *;
 
 :host {
     background: $white;
-    border-left: 1px solid $gray-lighter;
+    border-left: 1px solid $color-palette-gray-300;
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -28,7 +28,7 @@
         text-align: center;
 
         &:hover {
-            background: $gray-bg;
+            background: $color-palette-gray-200;
         }
 
         img {
@@ -40,7 +40,7 @@
         p {
             align-self: center;
             display: -webkit-box;
-            font-size: $font-size-small;
+            font-size: $font-size-sm;
             margin: 0 0 0 $spacing-1;
             overflow: hidden;
             text-align: left;
@@ -48,7 +48,6 @@
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
         }
-
     }
 
     p-paginator {
