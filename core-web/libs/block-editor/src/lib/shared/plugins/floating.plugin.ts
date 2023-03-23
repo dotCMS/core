@@ -85,6 +85,11 @@ export class FloatingActionsView {
         this.command = command;
         this.key = key;
         this.createTooltip(tippyOptions);
+        this.tippy.show();
+
+        setTimeout(() => {
+            this.editor.view.focus();
+        }, 1000);
     }
 
     /**
@@ -128,11 +133,21 @@ export class FloatingActionsView {
      */
     update(view: EditorView, prevState?: EditorState): void {
         const { selection } = view.state;
-        const { $anchor, to } = selection;
+        const { $anchor, empty, from, to } = selection;
+        const isRootDepth = $anchor.depth === 1;
+        const isNodeEmpty =
+            !selection.$anchor.parent.isLeaf && !selection.$anchor.parent.textContent;
+        const isActive = isRootDepth && isNodeEmpty;
         const nodeType = $anchor.parent.type.name;
 
         const next = this.key?.getState(view.state);
         const prev = prevState ? this.key?.getState(prevState) : null;
+
+        if (!prev?.open && (!isActive || !empty)) {
+            this.hide();
+
+            return;
+        }
 
         // Hide is Parent node is not the editor
         if (!prev?.open && this.invalidNodes.includes(nodeType)) {
@@ -142,8 +157,7 @@ export class FloatingActionsView {
         }
 
         this.tippy.setProps({
-            getReferenceClientRect: () =>
-                posToDOMRect(view, selectedElement?.getBoundingClientRect().x, to)
+            getReferenceClientRect: () => posToDOMRect(view, from, to)
         });
         this.show();
 
