@@ -93,8 +93,7 @@ export class DotExperimentsCreateComponent implements OnInit {
                 validators: [Validators.required, Validators.maxLength(255)]
             }),
             description: new FormControl<string>('', {
-                nonNullable: true,
-                validators: [Validators.required, Validators.maxLength(255)]
+                validators: [Validators.maxLength(255)]
             })
         });
     }

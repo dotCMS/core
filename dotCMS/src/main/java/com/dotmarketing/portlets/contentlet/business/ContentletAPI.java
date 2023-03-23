@@ -237,7 +237,7 @@ public interface ContentletAPI {
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 */
-	public Contentlet findContentletByIdentifierAnyLanguageAndVariant(String identifier) throws DotDataException;
+	Contentlet findContentletByIdentifierAnyLanguageAnyVariant(String identifier) throws DotDataException;
 
 
 	/**

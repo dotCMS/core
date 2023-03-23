@@ -118,4 +118,21 @@ export class DotExperimentsListComponent {
             this.sidebarHost.viewContainerRef.clear();
         }
     }
+
+    /**
+     * Go to view Experiment Report
+     * @param {DotExperiment} experiment
+     * @returns void
+     * @memberof DotExperimentsShellComponent
+     */
+    goToViewExperimentReport(experiment: DotExperiment) {
+        this.router.navigate(['/edit-page/experiments/reports/', experiment.id], {
+            queryParams: {
+                editPageTab: null,
+                variantName: null,
+                experimentId: null
+            },
+            queryParamsHandling: 'merge'
+        });
+    }
 }

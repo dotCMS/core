@@ -6,7 +6,7 @@
     }
 
     textarea {
-        font-family: $code-text;
+        font-family: $font-code;
         max-height: 21.5rem;
         overflow: auto !important;
     }
@@ -21,12 +21,12 @@
 
     input,
     textarea {
-        font-size: $font-size-large;
+        font-size: $font-size-lg;
         width: 100%;
     }
 
     dot-icon {
-        color: $brand-primary;
+        color: $color-palette-primary;
         margin-left: $spacing-1;
         vertical-align: middle;
     }
@@ -38,7 +38,7 @@
         }
 
         p-checkbox label {
-            font-size: $font-size-large;
+            font-size: $font-size-lg;
         }
 
         p-checkbox.required label:before,
