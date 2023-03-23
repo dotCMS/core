@@ -57,6 +57,7 @@ import org.apache.oro.text.regex.Perl5Matcher;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -100,13 +101,13 @@ public class FolderFactoryImpl extends FolderFactory {
            new DotConnect()
                 .setSQL("delete from folder where folder.inode = ? ")
                 .addParam(f.getInode()).loadResult();
-        
+
            new DotConnect()
             .setSQL("delete from inode where inode = ? ")
             .addParam(f.getInode()).loadResult();
            folderCache.removeFolder(f, id);
 
-        
+
 	   CacheLocator.getIdentifierCache().removeFromCacheByVersionable(f);
 	}
 
@@ -220,7 +221,7 @@ public class FolderFactoryImpl extends FolderFactory {
 
 	@Override
 	protected Folder findFolderByPath(String path, final Host site) throws DotDataException {
-	  
+
 		final String originalPath = path;
 		Folder folder;
 		List<Folder> result;
@@ -526,12 +527,12 @@ public class FolderFactoryImpl extends FolderFactory {
 		//Content Files
 		List<FileAsset> faConts = APILocator.getFileAssetAPI().findFileAssetsByFolder(source, APILocator.getUserAPI().getSystemUser(), false);
 		for(FileAsset fa : faConts){
-			if(fa.isWorking() && !fa.isArchived()){
+			if(fa.isWorking() && !fa.isArchived() && !filesCopied.containsKey(fa.getIdentifier())){
 				Contentlet cont = APILocator.getContentletAPI().find(fa.getInode(), APILocator.getUserAPI().getSystemUser(), false);
 				cont.setIndexPolicy(IndexPolicyProvider.getInstance().forSingleContent());
 
 				APILocator.getContentletAPI().copyContentlet(cont, newFolder, APILocator.getUserAPI().getSystemUser(), false);
-				filesCopied.put(cont.getInode(), new IFileAsset[] {fa , APILocator.getFileAssetAPI().fromContentlet(cont)});
+				filesCopied.put(cont.getIdentifier(), new IFileAsset[] {fa , APILocator.getFileAssetAPI().fromContentlet(cont)});
 			}
 		}
 		
@@ -539,9 +540,11 @@ public class FolderFactoryImpl extends FolderFactory {
 		Set<IHTMLPage> pageAssetList=new HashSet<IHTMLPage>();
 		pageAssetList.addAll(APILocator.getHTMLPageAssetAPI().getWorkingHTMLPages(source, APILocator.getUserAPI().getSystemUser(), false));
 		for(IHTMLPage page : pageAssetList) {
-		    Contentlet cont = APILocator.getContentletAPI().find(page.getInode(), APILocator.getUserAPI().getSystemUser(), false);
-            APILocator.getContentletAPI().copyContentlet(cont, newFolder, APILocator.getUserAPI().getSystemUser(), false);
-            pagesCopied.put(cont.getInode(), new IHTMLPage[] {page , APILocator.getHTMLPageAssetAPI().fromContentlet(cont)});
+			if(!pagesCopied.containsKey(page.getIdentifier())) {
+				Contentlet cont = APILocator.getContentletAPI().find(page.getInode(), APILocator.getUserAPI().getSystemUser(), false);
+				APILocator.getContentletAPI().copyContentlet(cont, newFolder, APILocator.getUserAPI().getSystemUser(), false);
+				pagesCopied.put(cont.getIdentifier(), new IHTMLPage[]{page, APILocator.getHTMLPageAssetAPI().fromContentlet(cont)});
+			}
 		}
 		
 

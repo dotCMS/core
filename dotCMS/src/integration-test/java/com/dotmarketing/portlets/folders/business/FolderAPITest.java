@@ -801,6 +801,8 @@ public class FolderAPITest {//24 contentlets
 	 * - A file asset with diff live and working versions
 	 * - A page with only live version
 	 * - A page with only working version
+	 * - Spanish Version of a page
+	 * - Spanish Version of a file asset
 	 *
 	 * Copies the folder to a new destination.
 	 * Should copy all the content successfully.
@@ -809,7 +811,7 @@ public class FolderAPITest {//24 contentlets
 	 * @throws IOException
 	 */
 	@Test
-	public void test_copyFolder_contentWithLiveAndWorkingVersions() throws DotDataException, DotSecurityException, IOException {
+	public void test_copyFolder_contentWithLiveAndWorkingVersionsAndMultilingual() throws DotDataException, DotSecurityException, IOException {
 		final Host host = new SiteDataGen().nextPersisted();
 		final Folder folder = new FolderDataGen().site(host).nextPersisted();
 		final ContentType contentTypeToPage = new ContentTypeDataGen().host(host).nextPersisted();
@@ -828,12 +830,20 @@ public class FolderAPITest {//24 contentlets
 		htmlPageAssetNewVersion.setSortOrder(3);
 		APILocator.getContentletAPI().checkin(htmlPageAssetNewVersion, user, false);
 
+		final Contentlet htmlPageAssetSpanish = APILocator.getContentletAPI().checkout(htmlPageAsset.getInode(),user,false);
+		htmlPageAssetSpanish.setLanguageId(2);
+		APILocator.getContentletAPI().checkin(htmlPageAssetSpanish, user, false);
+
 		final Contentlet fileAsset = new FileAssetDataGen(folder, "this is content").nextPersisted();
 		ContentletDataGen.publish(fileAsset);
 
 		final Contentlet fileAssetNewVersion = APILocator.getContentletAPI().checkout(fileAsset.getInode(),user,false);
 		fileAsset.setSortOrder(3);
 		APILocator.getContentletAPI().checkin(fileAssetNewVersion, user, false);
+
+		final Contentlet fileAssetSpanish = APILocator.getContentletAPI().checkout(fileAsset.getInode(),user,false);
+		fileAssetSpanish.setLanguageId(2);
+		APILocator.getContentletAPI().checkin(fileAssetSpanish, user, false);
 
 		final Contentlet htmlPageAssetLive = new HTMLPageDataGen(host, template).host(host).folder(folder)
 				.languageId(langId).nextPersisted();
@@ -850,7 +860,7 @@ public class FolderAPITest {//24 contentlets
 		folderAPI.copy(folderAPI.find(htmlPageAsset.getFolder(), user, false), destinationFolder,
 				user, false);
 
-		Assert.assertEquals(4,folderAPI.getWorkingContent(folder,user,false).size());
+		Assert.assertEquals(6,folderAPI.getWorkingContent(folder,user,false).size());
 	}
 
 
