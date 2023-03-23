@@ -23,8 +23,8 @@
     .toolbar-user__user-name {
         margin: 0;
         white-space: nowrap;
-        font-size: $font-size-large;
-        color: $color-gray-600;
+        font-size: $font-size-lg;
+        color: $black;
     }
 
     //Gravatar styles were taken from dot-avatar component
@@ -41,7 +41,7 @@
         font-size: calc(35px - (35px * 25px) / 100px);
 
         border-radius: 50%;
-        background-color: $brand-secondary;
+        background-color: $color-palette-secondary;
         color: $white;
         font-family: "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
         text-align: center;
