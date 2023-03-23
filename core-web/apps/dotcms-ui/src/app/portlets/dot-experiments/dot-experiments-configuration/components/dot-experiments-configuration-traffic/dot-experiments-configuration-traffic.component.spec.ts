@@ -79,6 +79,13 @@ describe('DotExperimentsConfigurationTrafficComponent', () => {
         expect(store.openSidebar).toHaveBeenCalledOnceWith(ExperimentSteps.TRAFFIC_LOAD);
     });
 
+    it('should open sidebar of traffic split', () => {
+        spyOn(store, 'openSidebar');
+        spectator.click(byTestId('traffic-split-change-button'));
+
+        expect(store.openSidebar).toHaveBeenCalledOnceWith(ExperimentSteps.TRAFFICS_SPLIT);
+    });
+
     it('should disable tooltip if is on draft', () => {
         expect(spectator.query(Tooltip).disabled).toEqual(true);
     });
