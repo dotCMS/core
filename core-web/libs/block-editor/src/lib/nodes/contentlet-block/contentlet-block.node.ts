@@ -6,8 +6,8 @@ import { mergeAttributes, Node, NodeViewRenderer } from '@tiptap/core';
 
 import { ContentletBlockComponent } from './contentlet-block.component';
 
-import { AngularNodeViewRenderer } from '../../NodeViewRenderer';
 import { AngularRenderer } from '../../AngularRenderer';
+import { AngularNodeViewRenderer } from '../../NodeViewRenderer';
 
 export type ContentletBlockOptions = {
     HTMLAttributes: Record<string, unknown>;
