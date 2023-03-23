@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.variants;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -44,7 +45,7 @@ public class VariantResource {
         final User user = initData.getUser();
 
         final Variant variant = APILocator.getVariantAPI().get(variantName)
-                .orElseThrow(() -> new IllegalArgumentException("Variant not found: " + variantName));
+                .orElseThrow(() -> new NotFoundException("Variant not found: " + variantName));
 
         APILocator.getVariantAPI().promote(variant, user);
 
