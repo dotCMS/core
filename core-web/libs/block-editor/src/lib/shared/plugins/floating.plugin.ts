@@ -85,6 +85,11 @@ export class FloatingActionsView {
         this.command = command;
         this.key = key;
         this.createTooltip(tippyOptions);
+        this.tippy.show();
+
+        setTimeout(() => {
+            this.editor.view.focus();
+        }, 1000);
     }
 
     /**
@@ -113,6 +118,7 @@ export class FloatingActionsView {
             trigger: 'manual',
             placement: 'left',
             hideOnClick: 'toggle',
+            sticky: true,
             ...options
         });
     }
@@ -137,7 +143,7 @@ export class FloatingActionsView {
         const next = this.key?.getState(view.state);
         const prev = prevState ? this.key?.getState(prevState) : null;
 
-        if (!prev?.open && (!empty || !isActive)) {
+        if (!prev?.open && (!isActive || !empty)) {
             this.hide();
 
             return;
