@@ -326,7 +326,7 @@ public class VersionableHelper {
             this.templateAPI.deleteVersionByInode(inode);
         } else {
 
-            throw new DoesNotExistException("The template inode: " + inode + " does not exists");
+            throw new DoesNotExistException("The template inode: " + inode + " does not exist");
         }
     }
 
@@ -344,7 +344,7 @@ public class VersionableHelper {
                 this.containerAPI.deleteVersionByInode(inode);
             } else {
 
-                throw new DoesNotExistException("The container inode: " + inode + " does not exists");
+                throw new DoesNotExistException("The container inode: " + inode + " does not exist");
             }
 
     }
@@ -361,7 +361,7 @@ public class VersionableHelper {
                 WebAssetFactory.deleteAssetVersion(link);
             } else {
 
-                throw new DoesNotExistException("The link inode: " + inode + " does not exists");
+                throw new DoesNotExistException("The link inode: " + inode + " does not exist");
             }
     }
 
@@ -377,7 +377,7 @@ public class VersionableHelper {
                 contentletAPI.deleteVersion(contentlet, user, respectFrontEndRoles);
             } else {
 
-                throw new DoesNotExistException("The contentlet inode: " + inode + " does not exists");
+                throw new DoesNotExistException("The contentlet inode: " + inode + " does not exist");
             }
     }
     // END DELETE VERSION METHODS

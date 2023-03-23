@@ -1,16 +1,12 @@
 <ng-container *ngIf="vm$ | async as vm">
     <dot-experiments-header
         [isLoading]="vm.isLoading"
+        [status]="vm.experiment?.status"
+        [title]="vm.experiment?.name"
         [title]="vm.experiment?.name"
         (goBack)="goToExperimentList(vm.experiment.pageId)"
     >
-        <div class="flex flex-grow-1 align-items-center justify-content-between">
-            <p-tag
-                styleClass="{{ vm.experimentStatus | lowercase }}"
-                value="{{ vm.experimentStatus | lowercase | dm }} "
-            >
-            </p-tag>
-
+        <div class="flex flex-grow-0 align-items-center justify-content-between">
             <button
                 class="p-button-outlined"
                 *ngIf="vm.isExperimentADraft"
@@ -61,5 +57,5 @@
 </ng-container>
 
 <ng-template #loadingTpl>
-    <dot-experiments-configuration-skeleton></dot-experiments-configuration-skeleton>
+    <dot-experiments-configuration-skeleton />
 </ng-template>

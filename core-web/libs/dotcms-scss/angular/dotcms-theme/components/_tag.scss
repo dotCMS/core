@@ -1,0 +1,35 @@
+@use "variables" as *;
+
+.p-tag {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: $color-palette-primary;
+    color: $white;
+    font-size: $font-size-md;
+    font-weight: $font-weight-regular-bold;
+    padding: $spacing-1 $spacing-3;
+    border-radius: $tag-radius-md;
+}
+
+.p-tag .p-tag-icon {
+    margin-right: $spacing-1;
+    font-size: $font-size-xs;
+}
+
+.p-tag {
+    &.p-tag-success {
+        background-color: $color-alert-green-light;
+        color: $color-alert-green;
+    }
+
+    &.p-tag-info {
+        background-color: $color-alert-blue-light;
+        color: $color-alert-blue;
+    }
+
+    &.p-tag-warning {
+        background-color: $color-alert-yellow-light;
+        color: $color-alert-yellow;
+    }
+}
