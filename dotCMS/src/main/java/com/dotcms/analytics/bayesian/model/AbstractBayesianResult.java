@@ -20,11 +20,14 @@ import java.util.Map;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public interface AbstractBayesianResult {
 
-    @JsonProperty("result")
-    double result();
+    @JsonProperty("value")
+    double value();
 
     @JsonProperty("inFavorOf")
     String inFavorOf();
+
+    @JsonProperty("suggested")
+    String suggested();
 
     @Nullable
     @JsonProperty("distributionPdfs")
