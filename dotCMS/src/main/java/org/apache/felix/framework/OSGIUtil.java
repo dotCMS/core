@@ -28,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import javax.servlet.ServletException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.SuffixFileFilter;
@@ -463,7 +464,10 @@ public class OSGIUtil {
                                      final Set<String> osgiUserPackages) {
         try {
 
-            final LinkedHashSet<String> exportedPackagesSet = new LinkedHashSet<>(StringUtils.splitOnCommasWithQuotes(getExtraOSGIPackages()));
+            final LinkedHashSet<String> exportedPackagesSet = new LinkedHashSet<>(
+                    StringUtils.splitOnCommasWithQuotes(getExtraOSGIPackages()).stream()
+                            .map(org.apache.commons.lang3.StringUtils::normalizeSpace)
+                            .collect(Collectors.toSet()));
             
             if (exportedPackagesSet.containsAll(osgiUserPackages)) {
                 this.moveNewBundlesToFelixLoadFolder(uploadFolderFile, pathnames);
