@@ -908,6 +908,8 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
                 dc.setSQL(ContentTypeSql.DELETE_INODE_BY_INODE).addParam(type.id()).loadResult();
                 Logger.info(getClass(), String.format("We're done with Content-Type [%s],[%s].", type.inode(), type.variable()));
 
+                cache.remove(type);
+
                 HibernateUtil.addCommitListener(()-> localSystemEventsAPI.notify(new ContentTypeDeletedEvent(type.variable())));
 
             } catch (DotDataException e) {

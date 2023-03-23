@@ -3,7 +3,6 @@ package com.dotcms.contenttype.business;
 import com.dotcms.enterprise.license.LicenseLevel;
 
 import java.util.*;
-import java.util.function.Predicate;
 
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
@@ -238,16 +237,6 @@ public interface ContentTypeAPI {
    * @throws DotSecurityException The user does not have permissions to perform this action.
    */
   ContentType copyFrom(CopyContentTypeBean copyContentTypeBean) throws DotDataException, DotSecurityException;
-
-  /**
-   * Saves a new content type based on another existing type
-   * @param copyContentTypeBean {@link CopyContentTypeBean}
-   * @param excludeFields - fields to exclude from the copy
-   * @return ContentType
-   * @throws DotDataException
-   * @throws DotSecurityException
-   */
-  ContentType copyFrom(CopyContentTypeBean copyContentTypeBean, Predicate<Field> excludeField) throws DotDataException, DotSecurityException;
 
   /**
    * Saves a new Content Type.

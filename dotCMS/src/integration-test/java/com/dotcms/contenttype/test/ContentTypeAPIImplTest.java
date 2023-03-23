@@ -12,19 +12,23 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionAPI.PermissionableType;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.Tuple2;
+import io.vavr.control.Try;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.junit.Assert;
@@ -39,8 +43,7 @@ import java.nio.file.Files;
 import java.util.*;
 
 import static com.dotcms.contenttype.business.ContentTypeAPIImpl.TYPES_AND_FIELDS_VALID_VARIABLE_REGEX;
-import static com.dotcms.datagen.TestDataUtils.FILE_ASSET_1;
-import static com.dotcms.datagen.TestDataUtils.FILE_ASSET_2;
+import static com.dotcms.datagen.TestDataUtils.*;
 import static junit.framework.Assert.assertTrue;
 import static junit.framework.TestCase.assertEquals;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -2388,5 +2391,98 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 					'}';
 		}
 	}
+
+	/**
+	 * This test will validate that when a content type is deleted, the content type is removed from the cache
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	@Test
+	public void Test_Async_CT_Remove_General_Test() throws DotSecurityException, DotDataException {
+		final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+		final long currentTime = System.currentTimeMillis();
+		final String name =  String.format("Async_CT_Remove_%s", currentTime);
+		List<Field> fields = new ArrayList<>();
+		fields.add(new FieldDataGen().name("Title").velocityVarName("title").next());
+		final ContentType contentType = new ContentTypeDataGen().fields(fields).name(name).velocityVarName(name).nextPersisted();
+
+		final Set<String> inodes = new HashSet<>();
+		for (int i = 0; i < 10; i++) {
+			inodes.add(new ContentletDataGen(contentType.id()).setProperty("title", "test"+i).nextPersisted().getInode());
+		}
+
+		final String id = contentType.id();
+		contentTypeAPI.delete(contentType);
+
+		final ContentType deletedContentType = Try.of(()->contentTypeAPI.find(id)).getOrNull();
+		assertNull(deletedContentType);
+
+		//Test no copy structure is left hang around
+		final String likeName =  String.format("%s_disposed_*", name);
+		int count = new DotConnect().setSQL("select count(*) as x from structure where velocity_var_name like ? ").addParam(likeName).getInt("x");
+        assertEquals(0, count);
+
+		//Test no content is left hang around
+		for (String inode:inodes) {
+			count = new DotConnect().setSQL("select count(*) as x from contentlet where inode = ? ").addParam(inode).getInt("x");
+			assertEquals(0, count);
+		}
+
+	}
+
+
+	/**
+	 * This test will validate that when a content type holding a relationship is deleted, the relationship is also removed from the database
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	@Test
+	public void Test_Async_CT_Remove_Verify_No_Relations_Are_Left_Hanging() throws DotSecurityException, DotDataException {
+		final Host host = new SiteDataGen().nextPersisted();
+
+		final ContentType parent = new ContentTypeDataGen()
+				.host(host)
+				.fields(
+					Collections.singletonList(new FieldDataGen().name("Title").velocityVarName("title").next())
+				)
+				.nextPersisted();
+
+		final ContentType child = new ContentTypeDataGen()
+				.host(host)
+				.fields(
+					Collections.singletonList(new FieldDataGen().name("Title").velocityVarName("title").next())
+				)
+				.nextPersisted();
+
+		final Relationship relationship = new FieldRelationshipDataGen()
+				.parent(parent)
+				.child(child)
+				.nextPersisted();
+
+		Contentlet parentInstance = new ContentletDataGen(parent)
+				.host(host)
+				.setProperty("title", "parent")
+				.nextPersisted();
+
+		Contentlet childInstance = new ContentletDataGen(child)
+				.host(host)
+				.setProperty("title", "child")
+				.nextPersisted();
+
+		final Contentlet parentCheckout = ContentletDataGen.checkout(parentInstance);
+		parentCheckout.setProperty(relationship.getChildRelationName(), Collections.singletonList(childInstance));
+		ContentletDataGen.checkin(parentCheckout);
+
+		final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+		contentTypeAPI.delete(parent);
+
+		final int count = new DotConnect().setSQL("select count(*) as x from relationship where child_structure_inode = ?  and  parent_structure_inode=?  ")
+				.addParam(child.inode())
+				.addParam(parent.inode())
+				.getInt("x");
+
+		Assert.assertEquals(0, count);
+	}
+
 
 }

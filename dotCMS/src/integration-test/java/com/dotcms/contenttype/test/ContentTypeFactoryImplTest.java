@@ -1,46 +1,31 @@
 package com.dotcms.contenttype.test;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-
 import com.dotcms.contenttype.exception.NotFoundInDbException;
-import com.dotcms.contenttype.model.field.DataTypes;
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.FieldBuilder;
-import com.dotcms.contenttype.model.field.FieldVariable;
-import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
-import com.dotcms.contenttype.model.field.ImmutableWysiwygField;
-import com.dotcms.contenttype.model.field.OnePerContentType;
-import com.dotcms.contenttype.model.field.WysiwygField;
-import com.dotcms.contenttype.model.type.BaseContentType;
-import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.model.type.ContentTypeBuilder;
-import com.dotcms.contenttype.model.type.Expireable;
-import com.dotcms.contenttype.model.type.ImmutableFileAssetContentType;
-import com.dotcms.contenttype.model.type.ImmutableFormContentType;
-import com.dotcms.contenttype.model.type.ImmutablePageContentType;
-import com.dotcms.contenttype.model.type.ImmutablePersonaContentType;
-import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
-import com.dotcms.contenttype.model.type.ImmutableWidgetContentType;
-import com.dotcms.contenttype.model.type.UrlMapable;
+import com.dotcms.contenttype.model.field.*;
+import com.dotcms.contenttype.model.type.*;
 import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import io.vavr.control.Try;
+import org.junit.Assert;
+import org.junit.Test;
+
 import java.io.File;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import org.junit.Assert;
-import org.junit.Test;
+import java.util.Objects;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 
@@ -635,5 +620,60 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 		contentTypeSearched = contentTypeFactory.find(type.id());
 		Assert.assertNotNull(contentTypeSearched);
 		Assert.assertEquals(1,contentTypeSearched.sortOrder());
+	}
+
+	/**
+	 * Test the {@link ContentTypeFactory#markForDeletion(ContentType)} method
+	 * Wew want to corroborate that the content type is marked for deletion doesn't make it into the search results nor count methods
+	 * @throws Exception
+	 */
+	@Test
+	public void Test_Mark_ContentTypeForDeletion() throws Exception {
+		final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+		int searchCount = contentTypeFactory.searchCount(null);
+		List<ContentType> types = contentTypeFactory.search(String.format("velocity_var_name like '%s'",contentType.variable()), BaseContentType.ANY, "mod_date", -1, 0);
+		Assert.assertTrue(types.size() > 0);
+
+		ContentType found = contentTypeFactory.find(contentType.variable());
+		Assert.assertNotNull(found);
+
+		long count = contentTypeFactory.findAll().stream().filter(ct -> Objects.equals(ct.id(), contentType.id())).count();
+		Assert.assertEquals(1, count);
+
+		//MARK FOR DELETION
+		contentTypeFactory.markForDeletion(contentType);
+		Assert.assertTrue(contentTypeFactory.searchCount(null) <  searchCount );
+
+		//Marking the CT should exclude it from the search results
+		types = contentTypeFactory.search(String.format("velocity_var_name like '%s'",contentType.variable()), BaseContentType.ANY, "mod_date", -1, 0);
+		Assert.assertTrue(types.isEmpty());
+
+		//Also once marked it must disappear from the list of all content types
+		count = contentTypeFactory.findAll().stream().filter(ct -> Objects.equals(ct.id(), contentType.id())).count();
+		Assert.assertEquals(0, count);
+
+		//But If we have the id or varName we should still be able to find the content type even it is marked for deletion
+		found = contentTypeFactory.find(contentType.variable());
+		Assert.assertNotNull(found);
+
+		found = contentTypeFactory.find(contentType.id());
+		Assert.assertNotNull(found);
+	}
+
+	/**
+	 * Test the {@link ContentTypeFactory#tearDown(ContentType)} method
+	 * General test to make sure that the content type is deleted from the db and cache
+	 * @throws Exception
+	 */
+	@Test(expected = NotFoundInDbException.class)
+	public void Test_TearDown_Content_Type() throws Exception {
+		ContentType contentType = new ContentTypeDataGen().nextPersisted();
+		ContentType found = contentTypeFactory.find(contentType.id());
+		Assert.assertNotNull(found);
+		contentTypeFactory.markForDeletion(contentType);
+		contentType = contentTypeFactory.find(contentType.id());
+		contentTypeFactory.tearDown(contentType);
+		found = contentTypeFactory.find(contentType.id());
+		Assert.assertNull(found);
 	}
 }

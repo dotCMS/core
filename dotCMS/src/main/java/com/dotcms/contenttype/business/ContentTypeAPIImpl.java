@@ -31,6 +31,7 @@ import com.dotmarketing.quartz.job.IdentifierDateJob;
 import com.dotmarketing.util.*;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
@@ -118,13 +119,12 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
   /**
    * This method will delete the content type and all the content associated to it.
-   * This has been ur traditional way to delete content types. and all its associated pieces of content.
+   * This has been our traditional way to delete content types. and all its associated pieces of content.
    * @param type
-   * @throws DotSecurityException
    * @throws DotDataException
    */
   @WrapInTransaction
-  private void transactionalDelete(ContentType type) throws DotSecurityException, DotDataException {
+  private void transactionalDelete(ContentType type) throws DotDataException {
       try {
         contentTypeFactory.delete(type);
       } catch (DotStateException | DotDataException e) {
@@ -321,9 +321,19 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   public ContentType copyFrom(final CopyContentTypeBean copyContentTypeBean) throws DotDataException, DotSecurityException {
     return copyFrom(copyContentTypeBean, field -> true);
   }
+
+  /**
+   * This package private version of the method is here to help us deal with the fact that we need to exclude fields from the copy to avoid issues with certain type of fields like relationships
+   * But for the most part the public version is good enough so no need for this to be public
+   * @param copyContentTypeBean
+   * @param excludeField
+   * @return
+   * @throws DotDataException
+   * @throws DotSecurityException
+   */
+  @VisibleForTesting
   @WrapInTransaction
-  @Override
-  public ContentType copyFrom(final CopyContentTypeBean copyContentTypeBean, Predicate<Field> excludeField) throws DotDataException, DotSecurityException {
+  ContentType copyFrom(final CopyContentTypeBean copyContentTypeBean, Predicate<Field> excludeField) throws DotDataException, DotSecurityException {
 
     if (LicenseManager.getInstance().isCommunity()) {
 

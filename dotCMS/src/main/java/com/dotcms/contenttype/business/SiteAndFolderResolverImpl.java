@@ -65,6 +65,7 @@ public class SiteAndFolderResolverImpl implements SiteAndFolderResolver {
             return build;
         }
 
+
         //when lazy calculations are blocked we can get null values when nothing has been set on those fields instead of the lazy calculation
         //Immutables work in such a way that if a getter
 

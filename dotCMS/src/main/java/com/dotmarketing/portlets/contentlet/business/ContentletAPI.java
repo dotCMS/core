@@ -2259,7 +2259,8 @@ public interface ContentletAPI {
     void refresh(ContentType type) throws DotReindexStateException;
 
 	/**
-	 * Massive update on Content-Type and all contents changing the structure-inode appending the postfix _DELETE_ME
+	 * Massive update on Content-Type and all contents changing the structure-inode to copy-structure meant for disposal
+	 * This way we can free-up the original structure for re-use quickly
 	 *
 	 * @param source
 	 * @param target
