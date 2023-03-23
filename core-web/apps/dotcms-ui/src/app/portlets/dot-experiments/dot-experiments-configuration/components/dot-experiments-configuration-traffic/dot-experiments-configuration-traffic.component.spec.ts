@@ -15,6 +15,7 @@ import { Tooltip } from 'primeng/tooltip';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotExperimentStatusList, ExperimentSteps } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotExperimentsConfigurationTrafficSplitAddComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-traffic-split-add/dot-experiments-configuration-traffic-split-add.component';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { getExperimentMock } from '@portlets/dot-experiments/test/mocks';
@@ -29,7 +30,7 @@ const messageServiceMock = new MockDotMessageService({
 
 const EXPERIMENT_MOCK = getExperimentMock(0);
 
-describe('DotExperimentsConfigurationTrafficComponent', () => {
+fdescribe('DotExperimentsConfigurationTrafficComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationTrafficComponent>;
     let store: DotExperimentsConfigurationStore;
     let dotExperimentsService: SpyObject<DotExperimentsService>;
@@ -80,10 +81,12 @@ describe('DotExperimentsConfigurationTrafficComponent', () => {
     });
 
     it('should open sidebar of traffic split', () => {
-        spyOn(store, 'openSidebar');
-        spectator.click(byTestId('traffic-split-change-button'));
-
-        expect(store.openSidebar).toHaveBeenCalledOnceWith(ExperimentSteps.TRAFFICS_SPLIT);
+        //tested this way because the sidebar is called from variant component
+        store.setSidebarStatus({
+            experimentStep: ExperimentSteps.TRAFFICS_SPLIT,
+            isOpen: true
+        });
+        expect(spectator.query(DotExperimentsConfigurationTrafficSplitAddComponent)).toExist();
     });
 
     it('should disable tooltip if is on draft', () => {

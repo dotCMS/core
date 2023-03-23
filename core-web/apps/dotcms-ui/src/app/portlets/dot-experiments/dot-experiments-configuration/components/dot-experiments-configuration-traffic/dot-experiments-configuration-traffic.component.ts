@@ -64,15 +64,6 @@ export class DotExperimentsConfigurationTrafficComponent {
     ) {}
 
     /**
-     * Open sidebar to set Traffic Proportion
-     * @returns void
-     * @memberof DotExperimentsConfigurationTrafficComponent
-     */
-    changeTrafficProportion() {
-        this.dotExperimentsConfigurationStore.openSidebar(ExperimentSteps.TRAFFICS_SPLIT);
-    }
-
-    /**
      * Open sidebar to set Traffic Allocation
      * @returns void
      * @memberof DotExperimentsConfigurationTrafficComponent
