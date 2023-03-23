@@ -474,12 +474,12 @@ public class FolderFactoryImpl extends FolderFactory {
 		//Content Files
 		List<FileAsset> faConts = APILocator.getFileAssetAPI().findFileAssetsByFolder(source, APILocator.getUserAPI().getSystemUser(), false);
 		for(FileAsset fa : faConts){
-			if(fa.isWorking() && !fa.isArchived()){
+			if(fa.isWorking() && !fa.isArchived() && !filesCopied.containsKey(fa.getIdentifier())){
 				Contentlet cont = APILocator.getContentletAPI().find(fa.getInode(), APILocator.getUserAPI().getSystemUser(), false);
 				cont.setIndexPolicy(IndexPolicyProvider.getInstance().forSingleContent());
 
 				APILocator.getContentletAPI().copyContentlet(cont, newFolder, APILocator.getUserAPI().getSystemUser(), false);
-				filesCopied.put(cont.getInode(), new IFileAsset[] {fa , APILocator.getFileAssetAPI().fromContentlet(cont)});
+				filesCopied.put(cont.getIdentifier(), new IFileAsset[] {fa , APILocator.getFileAssetAPI().fromContentlet(cont)});
 			}
 		}
 		
@@ -487,9 +487,11 @@ public class FolderFactoryImpl extends FolderFactory {
 		Set<IHTMLPage> pageAssetList=new HashSet<IHTMLPage>();
 		pageAssetList.addAll(APILocator.getHTMLPageAssetAPI().getWorkingHTMLPages(source, APILocator.getUserAPI().getSystemUser(), false));
 		for(IHTMLPage page : pageAssetList) {
-		    Contentlet cont = APILocator.getContentletAPI().find(page.getInode(), APILocator.getUserAPI().getSystemUser(), false);
-            APILocator.getContentletAPI().copyContentlet(cont, newFolder, APILocator.getUserAPI().getSystemUser(), false);
-            pagesCopied.put(cont.getInode(), new IHTMLPage[] {page , APILocator.getHTMLPageAssetAPI().fromContentlet(cont)});
+			if(!pagesCopied.containsKey(page.getIdentifier())) {
+				Contentlet cont = APILocator.getContentletAPI().find(page.getInode(), APILocator.getUserAPI().getSystemUser(), false);
+				APILocator.getContentletAPI().copyContentlet(cont, newFolder, APILocator.getUserAPI().getSystemUser(), false);
+				pagesCopied.put(cont.getIdentifier(), new IHTMLPage[]{page, APILocator.getHTMLPageAssetAPI().fromContentlet(cont)});
+			}
 		}
 		
 
