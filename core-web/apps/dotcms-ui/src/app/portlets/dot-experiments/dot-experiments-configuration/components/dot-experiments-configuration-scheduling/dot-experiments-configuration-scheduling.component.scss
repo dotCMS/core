@@ -13,10 +13,10 @@ h2 {
 
 :host ::ng-deep {
     dot-icon {
-        color: $gray-light;
+        color: $color-palette-gray-500;
 
         &.isDone {
-            color: $success;
+            color: $color-accessible-text-green;
         }
     }
 }
