@@ -43,7 +43,7 @@ import java.util.StringTokenizer;
  * @author Nollymar Longa
  * @since Jan 11th, 2018
  */
-public class ContentletTransformer implements DBTransformer {
+public class ContentletTransformer implements DBTransformer<Contentlet> {
 
     private static final String DISABLED_WYSIWYG = "disabled_wysiwyg";
     private static final String INODE = "inode";
