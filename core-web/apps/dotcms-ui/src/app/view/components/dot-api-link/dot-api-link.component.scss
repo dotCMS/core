@@ -19,8 +19,12 @@ a:active {
     font-size: $font-size-default;
 }
 
+// This styles are the same as .p-button.p-button-secondary.p-button-outlined:enabled:hover in _buttons.scss,
+// the problem is the :enabled pseudoclass, hyperlink tag doesn't have that pseudoclass
+
 .p-button:hover,
 .p-button:active {
-    background: rgba($color-palette-secondary, 0.04);
-    border-color: $color-palette-secondary;
+    background: rgba(96, 125, 139, 0.04);
+    color: #607d8b;
+    border: 1px solid;
 }
