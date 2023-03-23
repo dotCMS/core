@@ -17,11 +17,11 @@ export const getImageAttr = (attrs: DotCMSContentlet | string) => {
         return { src: attrs };
     }
 
-    const { fileAsset, asset, title } = attrs;
+    const { fileAsset, assetVersion, asset, title } = attrs;
 
     return {
         data: attrs,
-        src: fileAsset || asset,
+        src: assetVersion || fileAsset || asset,
         title: title,
         alt: title
     };
