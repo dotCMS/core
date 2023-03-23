@@ -132,8 +132,8 @@
                 ></td>
                 <td
                     [innerHTML]="
-                        data.working[field.variable]
-                            | dotDiff : data.compare[field.variable] : showDiff
+                        'data.working[field.variable]'
+                            | dotDiff : 'data.compare[field.variable]' : showDiff
                     "
                     data-testId="table-field-compare"
                 ></td>
