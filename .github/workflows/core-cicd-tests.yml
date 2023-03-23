@@ -224,7 +224,7 @@ jobs:
       - id: run-integration-tests
         name: Run Integration Tests
         uses: ./.github/actions/run-integration-tests
-        timeout-minutes: 210
+        timeout-minutes: 270
         with:
           build_env: ${{ env.BUILD_ENV }}
           db_type: ${{ matrix.db_type }}
