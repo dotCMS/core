@@ -30,7 +30,7 @@ const messageServiceMock = new MockDotMessageService({
 
 const EXPERIMENT_MOCK = getExperimentMock(0);
 
-fdescribe('DotExperimentsConfigurationTrafficComponent', () => {
+describe('DotExperimentsConfigurationTrafficComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationTrafficComponent>;
     let store: DotExperimentsConfigurationStore;
     let dotExperimentsService: SpyObject<DotExperimentsService>;
