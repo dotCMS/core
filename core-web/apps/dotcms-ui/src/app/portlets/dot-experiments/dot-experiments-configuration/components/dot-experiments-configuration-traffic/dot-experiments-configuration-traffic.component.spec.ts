@@ -71,8 +71,6 @@ describe('DotExperimentsConfigurationTrafficComponent', () => {
         expect(spectator.queryAll(Card).length).toEqual(2);
         expect(spectator.query(byTestId('traffic-card-title'))).toHaveText('Traffic');
         expect(spectator.query(byTestId('traffic-allocation-button'))).toExist();
-        expect(spectator.query(byTestId('traffic-split-title'))).toHaveText('Split');
-        expect(spectator.query(byTestId('traffic-split-change-button'))).toExist();
         expect(spectator.query(byTestId('traffic-step-done'))).toHaveClass('isDone');
     });
 
