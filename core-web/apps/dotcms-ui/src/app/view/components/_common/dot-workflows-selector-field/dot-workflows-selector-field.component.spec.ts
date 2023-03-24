@@ -199,9 +199,10 @@ describe('DotWorkflowsSelectorFieldComponent', () => {
             expect(innerMultiselect.componentInstance.disabled).toBe(false);
         });
 
-        it('should set disabled', () => {
+        it('should set disabled', async () => {
             fixtureHost.componentInstance.form.get('workflows').disable();
             fixtureHost.detectChanges();
+            await fixtureHost.whenStable();
             expect(innerMultiselect.componentInstance.disabled).toBe(true);
         });
     });

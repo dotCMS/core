@@ -3,8 +3,10 @@ on:
   push:
     branches:
       - release-*
+      - master
   repository_dispatch:
     types:
+
       - enterprise-update
 jobs:
   publish_image:

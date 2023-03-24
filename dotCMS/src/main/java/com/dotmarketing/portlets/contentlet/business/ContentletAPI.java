@@ -83,7 +83,7 @@ public interface ContentletAPI {
 	 * @throws DotDataException
 	 */
 	public Contentlet find(String inode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
-
+	
 	/**
 	 * Move the contentlet to a host path for instance //demo.dotcms.com/application
 	 * Indexing will be based on the {@link Contentlet#getIndexPolicy()}
@@ -218,13 +218,27 @@ public interface ContentletAPI {
     Contentlet findContentletByIdentifierAnyLanguage(String identifier, boolean includeDeleted) throws DotDataException;
 
     /**
-	 * Retrieves a contentlet from the database by its identifier and the working version. Ignores archived content
+	 * Retrieves a contentlet from the database by its identifier, the working version and the DEFAULT Variant.
+	 * Ignores archived content
+	 *
 	 * @param identifier
 	 * @return Contentlet object
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 */
 	public Contentlet findContentletByIdentifierAnyLanguage(String identifier) throws DotDataException;
+
+	/**
+	 * Retrieves a contentlet from the database by its identifier, the working version and any {@link com.dotcms.variant.model.Variant}.
+	 * Ignores archived content
+	 *
+	 * @param identifier
+	 * @return Contentlet object
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	Contentlet findContentletByIdentifierAnyLanguageAnyVariant(String identifier) throws DotDataException;
+
 
 	/**
 	 * Retrieves a contentlet from the database by its identifier, working version and variant. Ignores archived content

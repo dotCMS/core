@@ -287,9 +287,10 @@ public class CategoriesResource {
     @Path("/{idOrKey}")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final CategoryView getCategoryByIdOrKey(@Context final HttpServletRequest httpRequest,
+    public final Response getCategoryByIdOrKey(@Context final HttpServletRequest httpRequest,
             @Context final HttpServletResponse httpResponse,
-            @PathParam("idOrKey") final String idOrKey)
+            @PathParam("idOrKey") final String idOrKey,
+            @QueryParam("showChildrenCount") final boolean showChildrenCount)
             throws DotSecurityException, DotDataException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
@@ -316,7 +317,9 @@ public class CategoriesResource {
             throw new DoesNotExistException(
                     "Category with idOrKey: " + idOrKey + " does not exist");
         }
-        return this.categoryHelper.toCategoryView(category, user);
+
+        return showChildrenCount ? Response.ok(new ResponseEntityView<CategoryWithChildCountView>(this.categoryHelper.toCategoryWithChildCountView(category, user))).build() :
+                Response.ok(new ResponseEntityView<CategoryView>(this.categoryHelper.toCategoryView(category, user))).build();
     }
 
     /**
@@ -333,7 +336,7 @@ public class CategoriesResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final CategoryView saveNew(@Context final HttpServletRequest httpRequest,
+    public final Response saveNew(@Context final HttpServletRequest httpRequest,
             @Context final HttpServletResponse httpResponse,
             final CategoryForm categoryForm)
             throws DotDataException, DotSecurityException {
@@ -352,8 +355,8 @@ public class CategoriesResource {
                 "The category name is required");
 
         try {
-            return this.categoryHelper.toCategoryView(
-                    this.fillAndSave(categoryForm, user, host, pageMode, new Category()), user);
+           return Response.ok(new ResponseEntityView(this.categoryHelper.toCategoryView(
+                   this.fillAndSave(categoryForm, user, host, pageMode, new Category()), user))).build();
         } catch (InvocationTargetException | IllegalAccessException e) {
             Logger.error(this, e.getMessage(), e);
             throw new RuntimeException(e);
@@ -375,7 +378,7 @@ public class CategoriesResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final CategoryView save(@Context final HttpServletRequest httpRequest,
+    public final Response save(@Context final HttpServletRequest httpRequest,
             @Context final HttpServletResponse httpResponse,
             final CategoryForm categoryForm) throws DotDataException, DotSecurityException {
 
@@ -401,9 +404,9 @@ public class CategoriesResource {
         }
 
         try {
-            return this.categoryHelper.toCategoryView(
+           return Response.ok(new ResponseEntityView(this.categoryHelper.toCategoryView(
                     this.fillAndSave(categoryForm, user, host, pageMode, oldCategory,
-                            new Category()), user);
+                            new Category()), user))).build();
         } catch (InvocationTargetException | IllegalAccessException e) {
             Logger.error(this, e.getMessage(), e);
             throw new RuntimeException(e);

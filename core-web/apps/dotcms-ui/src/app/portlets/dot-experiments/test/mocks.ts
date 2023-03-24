@@ -1,6 +1,9 @@
 import { of } from 'rxjs';
 
 import {
+    ComponentStatus,
+    DEFAULT_VARIANT_ID,
+    DEFAULT_VARIANT_NAME,
     DotExperiment,
     DotExperimentStatusList,
     GOAL_OPERATORS,
@@ -24,7 +27,15 @@ export const GoalsMock: Goals = {
     }
 };
 
-export const ExperimentMocks: Array<DotExperiment> = [
+export const getExperimentMock = (index: number): DotExperiment => {
+    return { ...ExperimentMocks[index] };
+};
+
+export const getExperimentAllMocks = (): Array<DotExperiment> => {
+    return [{ ...getExperimentMock(0) }, { ...getExperimentMock(1) }, { ...getExperimentMock(2) }];
+};
+
+const ExperimentMocks: Array<DotExperiment> = [
     {
         id: '111',
         identifier: '1111-1111-1111-1111',
@@ -35,10 +46,10 @@ export const ExperimentMocks: Array<DotExperiment> = [
         description: 'Praesent at molestie mauris, quis vulputate augue.',
         name: 'Praesent at molestie mauris',
         trafficAllocation: 98,
-        scheduling: { startDate: 1674861424000, endDate: 1677107824000 },
+        scheduling: { startDate: 1, endDate: 2 },
         trafficProportion: {
             type: TrafficProportionTypes.SPLIT_EVENLY,
-            variants: [{ id: '111', name: 'DEFAULT', weight: '100.0' }]
+            variants: [{ id: DEFAULT_VARIANT_ID, name: DEFAULT_VARIANT_NAME, weight: 100 }]
         },
         creationDate: new Date('2022-08-21 14:50:03'),
         modDate: new Date('2022-08-21 18:50:03'),
@@ -57,7 +68,10 @@ export const ExperimentMocks: Array<DotExperiment> = [
         scheduling: null,
         trafficProportion: {
             type: TrafficProportionTypes.SPLIT_EVENLY,
-            variants: [{ id: '222', name: 'DEFAULT', weight: '100.0' }]
+            variants: [
+                { id: DEFAULT_VARIANT_ID, name: DEFAULT_VARIANT_NAME, weight: 50, url: 'test/1' },
+                { id: '111', name: 'variant a', weight: 50, url: 'test/2' }
+            ]
         },
         creationDate: new Date('2022-08-21 14:50:03'),
         modDate: new Date('2022-08-21 18:50:03'),
@@ -77,8 +91,8 @@ export const ExperimentMocks: Array<DotExperiment> = [
         trafficProportion: {
             type: TrafficProportionTypes.SPLIT_EVENLY,
             variants: [
-                { id: '111', name: 'DEFAULT', weight: '50.0' },
-                { id: '222', name: 'Variant A', weight: '50.0' }
+                { id: DEFAULT_VARIANT_ID, name: DEFAULT_VARIANT_NAME, weight: 50 },
+                { id: '222', name: 'Variant A', weight: 50 }
             ]
         },
         creationDate: new Date('2022-08-21 14:50:03'),
@@ -87,21 +101,38 @@ export const ExperimentMocks: Array<DotExperiment> = [
     }
 ];
 
-export const dotExperimentsCreateStoreStub = {
-    state$: () =>
-        of({
-            isSaving: false,
-            isOpenSidebar: false
-        }),
-    setCloseSidebar: () => of({}),
-    addExperiments: () => of([])
-};
-
 export const DotExperimentsListStoreMock = {
     addExperiment: () => of({}),
     setCloseSidebar: () => of({}),
     getPage$: of({
         pageId: '1111'
+    }),
+    vm$: of({
+        page: {
+            pageId: '',
+            pageTitle: ''
+        },
+        experiments: [],
+        filterStatus: [
+            DotExperimentStatusList.DRAFT,
+            DotExperimentStatusList.ENDED,
+            DotExperimentStatusList.RUNNING,
+            DotExperimentStatusList.SCHEDULED,
+            DotExperimentStatusList.ARCHIVED
+        ],
+        status: ComponentStatus.INIT,
+        sidebar: {
+            status: ComponentStatus.IDLE,
+            isOpen: false
+        }
+    }),
+    createVm$: of({
+        pageId: '',
+        sidebar: {
+            status: ComponentStatus.IDLE,
+            isOpen: true
+        },
+        isSaving: false
     })
 };
 
@@ -111,6 +142,7 @@ export const DotExperimentsConfigurationStoreMock = {
     openSidebar: () => of([]),
     closeSidebar: () => of([]),
     loadExperiment: () => of([]),
+    stopExperiment: () => of([]),
     getExperimentId$: of('1111111'),
     vm$: of({
         pageId: '',
@@ -128,7 +160,16 @@ export const DotExperimentsConfigurationStoreMock = {
         trafficProportion: '',
         trafficAllocation: '',
         status: ''
-    })
+    }),
+    variantsStepVm$: of({
+        status: '',
+        isExperimentADraft: true
+    }),
+    targetStepVm$: of({})
+};
+
+export const DotExperimentsReportsStoreMock = {
+    loadExperiment: () => of([])
 };
 
 export const DotExperimentsServiceMock = {

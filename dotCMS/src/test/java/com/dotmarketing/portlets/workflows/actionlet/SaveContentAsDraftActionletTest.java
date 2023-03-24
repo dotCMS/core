@@ -82,10 +82,11 @@ public class SaveContentAsDraftActionletTest {
 
         final ContentletDependencies contentletDependencies = mock(ContentletDependencies.class);
         when(processor.getContentletDependencies()).thenReturn(contentletDependencies);
+        when(contentletDependencies.getPermissions()).thenReturn(permissions);
 
         final Contentlet contentletNew = mock(Contentlet.class);
         when(contentletDependencies.getCategories()).thenReturn(categories);
-
+        when(contentletDependencies.getPermissions()).thenReturn(permissions);
         when(processor.getContentletDependencies().isRespectAnonymousPermissions()).thenReturn(testCase.respectFrontendRoles);
 
         when(this.contentletAPI.saveDraft(

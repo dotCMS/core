@@ -1,6 +1,7 @@
 package com.dotmarketing.startup.runonce;
 
 
+import com.dotcms.business.WrapInTransaction;
 import java.util.Date;
 
 import com.dotmarketing.beans.Host;
@@ -29,6 +30,8 @@ public class Task00810FilesAsContentChanges implements StartupTask {
 		return true;
 	}
 
+	@Override
+	@WrapInTransaction
 	public void executeUpgrade() throws DotDataException, DotRuntimeException {
 		
 		try{

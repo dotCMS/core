@@ -1,7 +1,11 @@
 package com.dotcms.rest.api.v1.categories;
 
 import java.util.Date;
-
+/**
+ * Data transferring object for any category
+ *
+ * @author Hassan Mustafa Baig
+ */
 public class CategoryView {
 
     private final String inode;
@@ -14,7 +18,6 @@ public class CategoryView {
     private final int sortOrder;
     private final String categoryVelocityVarName;
     private final Date modDate;
-
 
     private CategoryView(final Builder builder) {
 
@@ -82,6 +85,7 @@ public class CategoryView {
         private int sortOrder;
         private String categoryVelocityVarName;
         private Date modDate;
+        private Integer childrenCount;
 
         public Builder inode(final String inode) {
             this.inode = inode;

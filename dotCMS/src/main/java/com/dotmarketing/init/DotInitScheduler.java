@@ -652,7 +652,7 @@ public class DotInitScheduler {
 						.setTriggerName(triggerName)
 						.setTriggerGroup(triggerGroup)
 						.setCronExpressionProp("START_END_SCHEDULED_EXPERIMENTS_JOB_CRON_EXPRESSION")
-						.setCronExpressionPropDefault("0 30 * ? * *")
+						.setCronExpressionPropDefault("0 /30 * ? * *")
 						.setCronMissfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
 				scheduleJob(endFinalizedExperimentsJob);
 			} else {

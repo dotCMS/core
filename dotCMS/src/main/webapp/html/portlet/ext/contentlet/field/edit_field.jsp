@@ -244,7 +244,7 @@
 
                     if (content) {
                         blockEditor.value = content;
-                        field.value = content; 
+                        field.value = JSON.stringify(content); 
                     }
 
                     blockEditor.addEventListener('valueChange', (event) => {
@@ -255,7 +255,7 @@
                         if(block.editor.getHTML().toLowerCase() === "<p></p>"){
                             field.value = null;
                         } else {
-                            field.value = event.detail;
+                            field.value = JSON.stringify(event.detail);
                         }
                     });
 
@@ -820,26 +820,13 @@
 
     </script>
 
-
-    <%
-
-        if(UtilMethods.isSet(value) && UtilMethods.isSet(resourceLink)){
-
-          boolean canUserWriteToContentlet = APILocator.getPermissionAPI().doesUserHavePermission(contentlet,PermissionAPI.PERMISSION_WRITE, user);
-
-    %>
-
-        <%if(canUserWriteToContentlet){%>
-            <% if (resourceLink.isEditableAsText()) { %>
-                <%
-                    if (InodeUtils.isSet(binInode) && canUserWriteToContentlet) {
-
-                %>
-                    <%@ include file="/html/portlet/ext/contentlet/field/edit_file_asset_text_inc.jsp"%>
-                <%  } %>
-            <% } %>
-
-        <% } %>
+    <% if (UtilMethods.isSet(value)) {
+            final boolean canUserWriteToContentlet = APILocator.getPermissionAPI().doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_WRITE, user);
+            if (canUserWriteToContentlet && resourceLink.isEditableAsText() && InodeUtils.isSet(binInode)) { %>
+                <%@ include file="/html/portlet/ext/contentlet/field/edit_file_asset_text_inc.jsp"%>
+         <% } %>
+    <% } else { %>
+            <%@ include file="/html/portlet/ext/contentlet/field/edit_file_asset_text_inc.jsp"%>
     <% } %>
 
     <!--  END display -->

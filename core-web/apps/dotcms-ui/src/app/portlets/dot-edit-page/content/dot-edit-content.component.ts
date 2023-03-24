@@ -346,7 +346,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
             .get({
                 itemsPerPage: 10,
                 offset: '0',
-                query: `+contentType:DotFavoritePage +DotFavoritePage.url_dotraw:${pageUrl}`
+                query: `+contentType:DotFavoritePage +deleted:false +working:true +DotFavoritePage.url_dotraw:${pageUrl}`
             })
             .pipe(take(1))
             .subscribe((response: ESContent) => {
@@ -675,7 +675,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                     },
                     pageId: experiment.pageId,
                     experimentId: experiment.id,
-
+                    experimentStatus: experiment.status,
                     experimentName: experiment.name,
                     mode: editPageTab
                 } as DotVariantData;

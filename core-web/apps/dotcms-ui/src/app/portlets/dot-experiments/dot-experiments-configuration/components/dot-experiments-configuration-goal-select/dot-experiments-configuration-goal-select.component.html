@@ -1,9 +1,14 @@
 <ng-container *ngIf="vm$ | async as vm">
-    <p-sidebar [(visible)]="vm.status.isOpen" (onHide)="closeSidebar()" dotSidebar>
+    <p-sidebar
+        [(visible)]="vm.status.isOpen"
+        (onHide)="closeSidebar()"
+        dotSidebar
+        dotSize="{{ sidebarSizes.LG }}"
+    >
         <dot-sidebar-header
             [actionButtonTpl]="actionHeaderBtnTpl"
             dotTitle="{{ 'experiments.configure.goals.sidebar.header' | dm }}"
-        ></dot-sidebar-header>
+        />
 
         <div class="experiment-goal-select__form-wrapper flex flex-column">
             <form
@@ -13,23 +18,49 @@
                 data-testId="select-goal-form"
                 novalidate
             >
-                <div class="field">
-                    <label class="p-label-input-required">{{
-                        'experiments.configure.goals.sidebar.form.name.label' | dm
-                    }}</label>
+                <div formGroupName="primary">
+                    <div class="field flex-auto flex flex-column">
+                        <label class="p-label-input-required">{{
+                            'experiments.goal.reach_page.form.name.label' | dm
+                        }}</label>
+                        <div>
+                            <input
+                                id="name"
+                                data-testId="goal-name-input"
+                                dotAutofocus
+                                formControlName="name"
+                                name="name"
+                                pInputText
+                                placeholder="{{
+                                    'experiments.goal.reach_page.form.name.placeholder' | dm
+                                }}"
+                                required
+                                type="text"
+                            />
 
-                    <p-selectButton
-                        [options]="goalsList"
-                        formControlName="goal"
-                        optionDisabled="inactive"
-                    >
-                        <ng-template let-item>
-                            <div class="flex flex-column w-full option-wrapper">
-                                <h2>{{ item.label | dm }}</h2>
-                                <p>{{ item.description | dm }}</p>
-                            </div>
-                        </ng-template>
-                    </p-selectButton>
+                            <dot-field-validation-message
+                                [field]="goalNameControl"
+                            ></dot-field-validation-message>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <dot-experiment-options formControlName="type">
+                            <dot-experiment-options-item
+                                [value]="goalsTypes.BOUNCE_RATE"
+                                detail="{{ goals.BOUNCE_RATE.description | dm }}"
+                                title="{{ goals.BOUNCE_RATE.label | dm }}"
+                            />
+                            <dot-experiment-options-item
+                                [value]="goalsTypes.REACH_PAGE"
+                                detail="{{ goals.REACH_PAGE.description | dm }}"
+                                title="{{ goals.REACH_PAGE.label | dm }}"
+                            >
+                                <ng-template dotOptionContent>
+                                    <dot-experiments-goal-configuration-reach-page />
+                                </ng-template>
+                            </dot-experiment-options-item>
+                        </dot-experiment-options>
+                    </div>
                 </div>
             </form>
         </div>
@@ -41,7 +72,7 @@
             [loading]="vm.status.status === statusList.SAVING"
             (click)="save(vm.experimentId)"
             data-testId="add-goal-button"
-            label="{{ 'experiments.configure.goals.sidebar.header.button' | dm }}"
+            label="{{ 'experiments.configure.goals.sidebar.header.button.apply.label' | dm }}"
             pButton
             pRipple
             type="submit"

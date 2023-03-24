@@ -1,6 +1,9 @@
 package com.dotcms.experiments.business.result;
 
 import com.dotcms.analytics.metrics.EventType;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.Optional;
 
@@ -10,6 +13,8 @@ import java.util.Optional;
  */
 public class Event {
 
+    private final static DateTimeFormatter  PARSER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.n")
+            .withZone(ZoneId.systemDefault());
     private Map<String, Object> eventAttributes;
     private EventType type;
 
@@ -25,5 +30,18 @@ public class Event {
 
     public EventType getType() {
         return type;
+    }
+
+    public Optional<String> getVariant() {
+        return  Optional.of (get("variant")
+                    .map(variantObject -> variantObject.toString())
+                    .orElseThrow());
+    }
+
+    public Optional<Instant> getDate() {
+        return get("utcTime")
+                .map(dateAsObject -> dateAsObject.toString())
+                .map(dateAsString -> PARSER.parse(dateAsString))
+                .map(temporalAccessor -> Instant.from(temporalAccessor));
     }
 }

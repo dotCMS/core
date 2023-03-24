@@ -10,7 +10,7 @@
             [mapItems]="getContainersWithDisabledEntities"
             (selectedItems)="updateSelectedContainers($event)"
             (rowWasClicked)="handleRowClick($event)"
-            url="v1/containers?system=true"
+            url="v1/containers"
             dataKey="inode"
         >
             <div class="container-listing__header-options">
@@ -59,6 +59,12 @@
             <ng-template #rowTemplate *ngIf="vm.tableColumns as tableColumns" let-rowData="rowData">
                 <td [ngStyle]="{ 'text-align': tableColumns[0].textAlign }">
                     {{ rowData.name }}
+                    <ng-container *ngIf="rowData.path"
+                        >-
+                        <span class="container-listing__path">{{
+                            rowData.path
+                        }}</span></ng-container
+                    >
                 </td>
                 <td [ngStyle]="{ 'text-align': tableColumns[1].textAlign }">
                     <dot-state-icon
@@ -72,7 +78,7 @@
                     {{ rowData.friendlyName }}
                 </td>
                 <td [ngStyle]="{ 'text-align': tableColumns[3].textAlign }">
-                    {{ rowData.modDate }}
+                    {{ rowData.modDate | dotRelativeDate : true }}
                 </td>
                 <td style="width: 5%">
                     <dot-action-menu-button

@@ -1,3 +1,6 @@
+/* eslint-disable @angular-eslint/no-output-on-prefix */
+import { Observable, Subscription, fromEvent as observableFromEvent } from 'rxjs';
+
 import {
     Directive,
     ElementRef,
@@ -12,7 +15,8 @@ import {
     Output,
     Renderer2
 } from '@angular/core';
-import { Observable, Subscription, fromEvent as observableFromEvent } from 'rxjs';
+
+import { NgGridItem } from './NgGridItem';
 
 import { NgGridPlaceholder } from '../components/NgGridPlaceholder';
 import { NgGridHelper } from '../helpers/NgGridHelper';
@@ -25,26 +29,57 @@ import {
     NgGridItemDimensions,
     NgConfigFixDirection
 } from '../interfaces/INgGrid';
-import { NgGridItem } from './NgGridItem';
+
+const CONST_DEFAULT_RESIZE_DIRECTIONS: string[] = [
+    'bottomright',
+    'bottomleft',
+    'topright',
+    'topleft',
+    'right',
+    'left',
+    'bottom',
+    'top'
+];
 
 @Directive({
+    // eslint-disable-next-line @angular-eslint/no-host-metadata-property
     host: {
         '(window:resize)': 'resizeEventHandler($event)'
     },
-    inputs: ['config: ngGrid'],
+    // eslint-disable-next-line @angular-eslint/no-inputs-metadata-property
+    inputs: ['config'],
+    // eslint-disable-next-line @angular-eslint/directive-selector
     selector: '[ngGrid]'
 })
+// eslint-disable-next-line @angular-eslint/directive-class-suffix
 export class NgGrid implements OnInit, DoCheck, OnDestroy {
-    public static CONST_DEFAULT_RESIZE_DIRECTIONS: string[] = [
-        'bottomright',
-        'bottomleft',
-        'topright',
-        'topleft',
-        'right',
-        'left',
-        'bottom',
-        'top'
-    ];
+    private static CONST_DEFAULT_CONFIG: NgGridConfig = {
+        margins: [10],
+        draggable: true,
+        resizable: true,
+        max_cols: 0,
+        max_rows: 0,
+        visible_cols: 0,
+        visible_rows: 0,
+        col_width: 250,
+        row_height: 250,
+        cascade: 'up',
+        min_width: 100,
+        min_height: 100,
+        fix_to_grid: false,
+        auto_style: true,
+        auto_resize: false,
+        maintain_ratio: false,
+        prefer_new: false,
+        zoom_on_drag: false,
+        limit_to_screen: false,
+        center_to_screen: false,
+        resize_directions: CONST_DEFAULT_RESIZE_DIRECTIONS,
+        element_based_row_height: false,
+        fix_item_position_direction: 'cascade',
+        fix_collision_position_direction: 'cascade',
+        allow_overlap: false
+    };
 
     // 	Event Emitters
     @Output()
@@ -80,7 +115,7 @@ export class NgGrid implements OnInit, DoCheck, OnDestroy {
     public cascade = 'up';
     public minWidth = 100;
     public minHeight = 100;
-    public resizeDirections: string[] = NgGrid.CONST_DEFAULT_RESIZE_DIRECTIONS;
+    public resizeDirections: string[] = CONST_DEFAULT_RESIZE_DIRECTIONS;
 
     // 	Private variables
     private _items: Map<string, NgGridItem> = new Map<string, NgGridItem>();
@@ -128,36 +163,6 @@ export class NgGrid implements OnInit, DoCheck, OnDestroy {
 
     private _enabledListener = false;
 
-    // 	Default config
-    // tslint:disable:object-literal-sort-keys
-    // tslint:disable-next-line:member-ordering
-    private static CONST_DEFAULT_CONFIG: NgGridConfig = {
-        margins: [10],
-        draggable: true,
-        resizable: true,
-        max_cols: 0,
-        max_rows: 0,
-        visible_cols: 0,
-        visible_rows: 0,
-        col_width: 250,
-        row_height: 250,
-        cascade: 'up',
-        min_width: 100,
-        min_height: 100,
-        fix_to_grid: false,
-        auto_style: true,
-        auto_resize: false,
-        maintain_ratio: false,
-        prefer_new: false,
-        zoom_on_drag: false,
-        limit_to_screen: false,
-        center_to_screen: false,
-        resize_directions: NgGrid.CONST_DEFAULT_RESIZE_DIRECTIONS,
-        element_based_row_height: false,
-        fix_item_position_direction: 'cascade',
-        fix_collision_position_direction: 'cascade',
-        allow_overlap: false
-    };
     // tslint:enable:object-literal-sort-keys
     private _config = NgGrid.CONST_DEFAULT_CONFIG;
 
@@ -225,74 +230,97 @@ export class NgGrid implements OnInit, DoCheck, OnDestroy {
                 case 'margins':
                     this.setMargins(val);
                     break;
+
                 case 'col_width':
                     this.colWidth = Math.max(intVal, 1);
                     break;
+
                 case 'row_height':
                     this.rowHeight = Math.max(intVal, 1);
                     break;
+
                 case 'auto_style':
                     this.autoStyle = val ? true : false;
                     break;
+
                 case 'auto_resize':
                     this._autoResize = val ? true : false;
                     break;
+
                 case 'draggable':
                     this.dragEnable = val ? true : false;
                     break;
+
                 case 'resizable':
                     this.resizeEnable = val ? true : false;
                     break;
+
                 case 'max_rows':
                     maxColRowChanged = maxColRowChanged || this._maxRows !== intVal;
                     this._maxRows = intVal < 0 ? 0 : intVal;
                     break;
+
                 case 'max_cols':
                     maxColRowChanged = maxColRowChanged || this._maxCols !== intVal;
                     this._maxCols = intVal < 0 ? 0 : intVal;
                     break;
+
                 case 'visible_rows':
                     this._visibleRows = Math.max(intVal, 0);
                     break;
+
                 case 'visible_cols':
                     this._visibleCols = Math.max(intVal, 0);
                     break;
+
                 case 'min_rows':
                     this.minRows = Math.max(intVal, 1);
                     break;
+
                 case 'min_cols':
                     this.minCols = Math.max(intVal, 1);
                     break;
+
                 case 'min_height':
                     this.minHeight = Math.max(intVal, 1);
                     break;
+
                 case 'min_width':
                     this.minWidth = Math.max(intVal, 1);
                     break;
+
                 case 'zoom_on_drag':
                     this._zoomOnDrag = val ? true : false;
                     break;
+
                 case 'cascade':
                     if (this.cascade !== val) {
                         this.cascade = val;
                         this._cascadeGrid();
                     }
+
                     break;
+
                 case 'fix_to_grid':
                     this._fixToGrid = val ? true : false;
                     break;
+
                 case 'maintain_ratio':
                     this._maintainRatio = val ? true : false;
                     break;
+
                 case 'prefer_new':
                     this._preferNew = val ? true : false;
                     break;
+
                 case 'limit_to_screen':
                     this._limitToScreen = !this._autoResize && !!val;
                     break;
+
                 case 'center_to_screen':
                     this._centerToScreen = val ? true : false;
                     break;
+
                 case 'resize_directions':
                     this.resizeDirections = val || [
                         'bottomright',
@@ -305,15 +333,19 @@ export class NgGrid implements OnInit, DoCheck, OnDestroy {
                         'top'
                     ];
                     break;
+
                 case 'element_based_row_height':
                     this._elementBasedDynamicRowHeight = !!val;
                     break;
+
                 case 'fix_item_position_direction':
                     this._itemFixDirection = val;
                     break;
+
                 case 'fix_collision_position_direction':
                     this._collisionFixDirection = val;
                     break;
+
                 case 'allow_overlap':
                     this._allowOverlap = !!val;
                     break;
@@ -368,11 +400,15 @@ export class NgGrid implements OnInit, DoCheck, OnDestroy {
                 // 	Can't have both, prioritise on cascade
                 switch (this.cascade) {
                     case 'left':
+
                     case 'right':
                         this._maxCols = 0;
                         break;
+
                     case 'up':
+
                     case 'down':
+
                     default:
                         this._maxRows = 0;
                         break;
@@ -603,10 +639,12 @@ export class NgGrid implements OnInit, DoCheck, OnDestroy {
         if (this._resizeReady) {
             this._resizeStart(e);
             e.preventDefault();
+
             return;
         } else if (this._dragReady) {
             this._dragStart(e);
             e.preventDefault();
+
             return;
         }
 
@@ -628,10 +666,14 @@ export class NgGrid implements OnInit, DoCheck, OnDestroy {
     private _getFixDirectionFromCascade(): NgConfigFixDirection {
         switch (this.cascade) {
             case 'up':
+
             case 'down':
+
             default:
                 return 'vertical';
+
             case 'left':
+
             case 'right':
                 return 'horizontal';
         }
@@ -1061,6 +1103,7 @@ export class NgGrid implements OnInit, DoCheck, OnDestroy {
         if (!pos.col) {
             pos.col = 1;
         }
+
         if (!pos.row) {
             pos.row = 1;
         }
@@ -1075,6 +1118,7 @@ export class NgGrid implements OnInit, DoCheck, OnDestroy {
 
             if (!item) {
                 this._itemsInGrid.delete(itemId);
+
                 return;
             }
 
@@ -1152,6 +1196,7 @@ export class NgGrid implements OnInit, DoCheck, OnDestroy {
 
         switch (this.cascade) {
             case 'up':
+
             case 'down':
                 itemsInGrid = itemsInGrid.sort(NgGridHelper.sortItemsByPositionVertical);
                 const lowestRowPerColumn: Map<number, number> = new Map<number, number>();
@@ -1206,8 +1251,11 @@ export class NgGrid implements OnInit, DoCheck, OnDestroy {
                         lowestRowPerColumn.set(itemPos.col + i, lowestRowForItem + itemDims.y); // 	Update the lowest row to be below the item
                     }
                 }
+
                 break;
+
             case 'left':
+
             case 'right':
                 itemsInGrid = itemsInGrid.sort(NgGridHelper.sortItemsByPositionHorizontal);
                 const lowestColumnPerRow: Map<number, number> = new Map<number, number>();
@@ -1266,7 +1314,9 @@ export class NgGrid implements OnInit, DoCheck, OnDestroy {
                         lowestColumnPerRow.set(itemPos.row + i, lowestColumnForItem + itemDims.x); // 	Update the lowest col to be below the item
                     }
                 }
+
                 break;
+
             default:
                 break;
         }
@@ -1411,12 +1461,15 @@ export class NgGrid implements OnInit, DoCheck, OnDestroy {
             if (item.col + item.sizex - 1 < startColumn) {
                 return;
             } // 	Item falls after start column
+
             if (item.row > topRow) {
                 return;
             } // 	Item falls above path
+
             if (item.row + item.sizey - 1 < pos.row) {
                 return;
             } // 	Item falls below path
+
             itemsInPath.push(item);
         });
 
@@ -1436,12 +1489,15 @@ export class NgGrid implements OnInit, DoCheck, OnDestroy {
             if (item.row + item.sizey - 1 < startRow) {
                 return;
             } // 	Item falls above start row
+
             if (item.col > rightCol) {
                 return;
             } // 	Item falls after path
+
             if (item.col + item.sizex - 1 < pos.col) {
                 return;
             } // 	Item falls before path
+
             itemsInPath.push(item);
         });
 
@@ -1465,6 +1521,7 @@ export class NgGrid implements OnInit, DoCheck, OnDestroy {
             pos.col = Math.max(this._maxCols - (dims.x - 1), 1);
             pos.row++;
         }
+
         return pos;
     }
 
@@ -1473,6 +1530,7 @@ export class NgGrid implements OnInit, DoCheck, OnDestroy {
             dims.x = Math.max(this._maxCols - (pos.col - 1), 1);
             dims.y++;
         }
+
         return dims;
     }
 
@@ -1493,6 +1551,7 @@ export class NgGrid implements OnInit, DoCheck, OnDestroy {
             pos.row = Math.max(this._maxRows - (dims.y - 1), 1);
             pos.col++;
         }
+
         return pos;
     }
 
@@ -1501,6 +1560,7 @@ export class NgGrid implements OnInit, DoCheck, OnDestroy {
             dims.y = Math.max(this._maxRows - (pos.row - 1), 1);
             dims.x++;
         }
+
         return dims;
     }
 
@@ -1559,6 +1619,7 @@ export class NgGrid implements OnInit, DoCheck, OnDestroy {
         const itemsRows: number[] = Array.from(this._itemsInGrid, (itemId: string) => {
             const item = this._items.get(itemId);
             if (!item) return 0;
+
             return item.row + item.sizey - 1;
         });
 
@@ -1569,6 +1630,7 @@ export class NgGrid implements OnInit, DoCheck, OnDestroy {
         const itemsCols: number[] = Array.from(this._itemsInGrid, (itemId: string) => {
             const item = this._items.get(itemId);
             if (!item) return 0;
+
             return item.col + item.sizex - 1;
         });
 
@@ -1606,12 +1668,14 @@ export class NgGrid implements OnInit, DoCheck, OnDestroy {
     private _getContainerColumns(): number {
         const maxWidth: number = this._ngEl.nativeElement.getBoundingClientRect().width;
         const itemWidth: number = this.colWidth + this.marginLeft + this.marginRight;
+
         return Math.floor(maxWidth / itemWidth);
     }
 
     private _getScreenMargin(): number {
         const maxWidth: number = this._ngEl.nativeElement.getBoundingClientRect().width;
         const itemWidth: number = this.colWidth + this.marginLeft + this.marginRight;
+
         return Math.floor((maxWidth - this._maxCols * itemWidth) / 2);
     }
 

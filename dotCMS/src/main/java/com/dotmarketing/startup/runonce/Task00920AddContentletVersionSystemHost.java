@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -25,6 +26,7 @@ public class Task00920AddContentletVersionSystemHost implements StartupTask {
     }
 
     @Override
+    @WrapInTransaction
     public void executeUpgrade () throws DotDataException, DotRuntimeException {
 
         //Update identifier table for the SYSTEM_HOST

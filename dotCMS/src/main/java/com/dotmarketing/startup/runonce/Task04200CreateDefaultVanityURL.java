@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
@@ -59,6 +60,7 @@ public class Task04200CreateDefaultVanityURL extends AbstractJDBCStartupTask {
 	private static final String SELECT_FIELD = "com.dotcms.contenttype.model.field.SelectField";
 
 	@Override
+	@WrapInTransaction
 	public void executeUpgrade() throws DotDataException {
 		DotConnect dc = new DotConnect();
 

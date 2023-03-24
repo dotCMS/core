@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
@@ -20,7 +21,8 @@ public class Task03565FixContainerVersionsCheck implements StartupTask {
     public boolean forceRun() {
         return true;
     }
-
+    @Override
+    @WrapInTransaction
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
         DotConnect dc = new DotConnect();
         List<String> statements = new ArrayList<>();

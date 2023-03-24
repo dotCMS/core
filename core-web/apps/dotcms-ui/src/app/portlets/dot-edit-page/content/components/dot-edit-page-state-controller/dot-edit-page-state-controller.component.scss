@@ -18,7 +18,7 @@
             display: flex;
 
             .p-button-label {
-                color: $dark;
+                color: $black;
             }
         }
     }
@@ -32,7 +32,7 @@ p-inputSwitch {
     ::ng-deep {
         .p-inputswitch-slider:after {
             @include md-icon;
-            color: $brand-primary;
+            color: $color-palette-primary;
             content: "lock_open";
             font-size: 13px;
             left: 3px;

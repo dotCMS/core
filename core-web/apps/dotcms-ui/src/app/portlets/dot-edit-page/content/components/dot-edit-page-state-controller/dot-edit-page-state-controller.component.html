@@ -3,6 +3,7 @@
     [(ngModel)]="mode"
     [options]="options"
     (onChange)="stateSelectorHandler($event.value)"
+    data-testId="selectButton"
 ></p-selectButton>
 
 <ng-container *ngIf="!variant">
@@ -23,4 +24,8 @@
     ></p-inputSwitch>
 </ng-container>
 
-<dot-edit-page-lock-info #pageLockInfo [pageState]="pageState"></dot-edit-page-lock-info>
+<dot-edit-page-lock-info
+    #pageLockInfo
+    [pageState]="pageState"
+    data-testId="lockInfo"
+></dot-edit-page-lock-info>

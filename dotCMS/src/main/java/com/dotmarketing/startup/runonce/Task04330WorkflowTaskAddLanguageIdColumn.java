@@ -3,6 +3,7 @@
 package com.dotmarketing.startup.runonce;
 
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.util.CloseUtils;
@@ -109,6 +110,7 @@ public class Task04330WorkflowTaskAddLanguageIdColumn extends AbstractJDBCStartu
     }
 
     @Override
+    @WrapInTransaction
     public void executeUpgrade() throws DotDataException {
 
         final boolean created = this.addLanguageIdColumn();

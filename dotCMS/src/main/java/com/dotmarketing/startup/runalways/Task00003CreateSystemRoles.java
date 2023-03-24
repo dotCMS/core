@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runalways;
 
+import com.dotcms.business.WrapInTransaction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -30,6 +31,8 @@ public class Task00003CreateSystemRoles implements StartupTask {
 	
 	private final String[] rolesWithUsersLocked = { "LDAP User", "CMS Owner", "CMS Anonymous" };
 
+	@WrapInTransaction
+	@Override
 	public void executeUpgrade() throws DotDataException, DotRuntimeException {
 		
 		DotConnect dc = new DotConnect();

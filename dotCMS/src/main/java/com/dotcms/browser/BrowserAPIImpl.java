@@ -66,6 +66,17 @@ public class BrowserAPIImpl implements BrowserAPI {
 
     private static final StringBuilder ASSET_NAME_LIKE = new StringBuilder().append("LOWER(%s) LIKE ? ");
 
+    private static final StringBuilder POSTGRES_ASSETNAME_COLUMN = new StringBuilder(ContentletJsonAPI
+            .CONTENTLET_AS_JSON).append("-> 'fields' -> ").append("'asset' -> 'metadata' ->> ").append("'name' ");
+
+    private static final StringBuilder MSSQL_ASSETNAME_COLUMN = new StringBuilder("JSON_VALUE(c.").append
+            (ContentletJsonAPI.CONTENTLET_AS_JSON).append(", '$.fields.").append("asset.metadata.").append("name')" +
+            " ");
+
+    private static final StringBuilder ASSET_NAME_LIKE = new StringBuilder().append("LOWER(%s) LIKE ? ");
+
+    private final String OR = " OR ";
+
     /**
      * Returns a collection of contentlets based on specific filtering criteria specified via the
      * {@link BrowserQuery} class, such as: Parent folder, Site, archived/non-archived status, base Content Types,
@@ -333,6 +344,32 @@ public class BrowserAPIImpl implements BrowserAPI {
             sqlQuery.append(" and cvi.deleted = ").append(DbConnectionFactory.getDBFalse());
         }
         return Tuple.of(sqlQuery.toString(),luceneQuery.toString(), parameters);
+    }
+
+    /**
+     * Returns the appropriate column for the {@code Asset Name} field depending on the database that dotCMS is running
+     * on. That is, if the value is inside the "Content as JSON" column, or the legacy "text" column.
+     *
+     * @param baseQuery The base SQL query whose column name will be replaced.
+     *
+     * @return The appropriate database column for the Asset Name field.
+     */
+    public static String getAssetNameColumn(final String baseQuery) {
+        String sql = baseQuery;
+        if (APILocator.getContentletJsonAPI().isJsonSupportedDatabase()) {
+            if (DbConnectionFactory.isPostgres()) {
+                sql = String.format(sql, POSTGRES_ASSETNAME_COLUMN);
+            } else {
+                sql = String.format(sql, MSSQL_ASSETNAME_COLUMN);
+            }
+
+            sqlQuery.append(OR);
+            sqlQuery.append(getAssetNameColumn(ASSET_NAME_LIKE.toString()));
+            sqlQuery.append(" ) ");
+
+            parameters.add("%" + filterText + "%");
+        }
+        return sql;
     }
 
     /**

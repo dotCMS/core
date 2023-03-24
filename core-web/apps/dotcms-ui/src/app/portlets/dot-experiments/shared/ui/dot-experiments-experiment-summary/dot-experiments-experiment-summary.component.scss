@@ -2,15 +2,27 @@
 
 :host {
     padding: $spacing-4;
-    color: $color-gray-600;
+    color: $color-palette-gray-600;
     line-height: 140%;
+    display: flex;
+    justify-content: center;
+
+    .wrapper {
+        width: 1100px;
+    }
 
     i {
         font-size: $md-icon-size-big;
-        color: $color-primary-500;
+        color: $color-palette-primary-500;
 
         &.pi-ban {
             color: $color-alert-red;
         }
+    }
+}
+
+@media only screen and (max-width: $screen-lg-max) {
+    .wrapper {
+        width: calc(100% - 2rem);
     }
 }

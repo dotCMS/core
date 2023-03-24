@@ -1,18 +1,17 @@
 # dot-card-contentlet
 
-
-
 <!-- Auto Generated Below -->
 
 
 ## Properties
 
-| Property        | Attribute        | Description | Type                    | Default     |
-| --------------- | ---------------- | ----------- | ----------------------- | ----------- |
-| `checked`       | `checked`        |             | `boolean`               | `undefined` |
-| `iconSize`      | `icon-size`      |             | `string`                | `'96px'`    |
-| `item`          | --               |             | `DotCardContentletItem` | `undefined` |
-| `thumbnailSize` | `thumbnail-size` |             | `string`                | `'260'`     |
+| Property             | Attribute              | Description | Type                    | Default     |
+| -------------------- | ---------------------- | ----------- | ----------------------- | ----------- |
+| `checked`            | `checked`              |             | `boolean`               | `undefined` |
+| `iconSize`           | `icon-size`            |             | `string`                | `'96px'`    |
+| `item`               | --                     |             | `DotCardContentletItem` | `undefined` |
+| `showVideoThumbnail` | `show-video-thumbnail` |             | `boolean`               | `false`     |
+| `thumbnailSize`      | `thumbnail-size`       |             | `string`                | `'260'`     |
 
 
 ## Events
@@ -72,6 +71,7 @@ graph TD;
   dot-card-contentlet --> dot-badge
   dot-card-contentlet --> dot-contentlet-lock-icon
   dot-card-contentlet --> dot-context-menu
+  dot-contentlet-thumbnail --> dot-video-thumbnail
   dot-contentlet-thumbnail --> dot-contentlet-icon
   dot-state-icon --> dot-tooltip
   dot-card-view --> dot-card-contentlet

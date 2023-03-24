@@ -5,11 +5,13 @@ import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.datagen.ExperimentDataGen;
+import com.dotcms.experiments.business.web.SelectedExperiment.LookBackWindow;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.ExperimentVariant;
@@ -34,6 +36,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -65,7 +68,7 @@ public class ExperimentWebAPIImplIT {
 
             final HttpServletRequest request = mock(HttpServletRequest.class);
 
-            for (int i = 0; i < 10; i++) {
+            for (int i = 0; i < 100; i++) {
                 final DotCMSMockResponse response = new DotCMSMockResponse();
 
                 final SelectedExperiments selectedExperiments = WebAPILocator.getExperimentWebAPI()
@@ -79,6 +82,13 @@ public class ExperimentWebAPIImplIT {
                 assertEquals(experiment.id().get(), selectedExperiments.getIncludedExperimentIds().get(0));
 
                 assertTrue(selectedExperiments.getExcludedExperimentIds().isEmpty());
+
+                final LookBackWindow lookBackWindow = selectedExperiments.getExperiments().get(0)
+                        .getLookBackWindow();
+                assertNotNull(lookBackWindow);
+                assertNotNull(lookBackWindow.getValue());
+                assertEquals(TimeUnit.MINUTES.toMillis(30), lookBackWindow.getExpireMillis());
+
             }
         } finally {
             ExperimentDataGen.end(experiment);
@@ -106,7 +116,7 @@ public class ExperimentWebAPIImplIT {
 
             final HttpServletRequest request = mock(HttpServletRequest.class);
 
-            for (int i = 0; i < 10; i++) {
+            for (int i = 0; i < 100; i++) {
                 final DotCMSMockResponse response = new DotCMSMockResponse();
 
 
@@ -128,6 +138,12 @@ public class ExperimentWebAPIImplIT {
                 assertTrue(selectedExperiments.getIncludedExperimentIds().contains(experiment_2.id().get()));
 
                 assertTrue(selectedExperiments.getExcludedExperimentIds().isEmpty());
+
+                final LookBackWindow lookBackWindow = selectedExperiments.getExperiments().get(0)
+                        .getLookBackWindow();
+                assertNotNull(lookBackWindow);
+                assertNotNull(lookBackWindow.getValue());
+                assertEquals(TimeUnit.MINUTES.toMillis(30), lookBackWindow.getExpireMillis());
             }
         } finally {
             ExperimentDataGen.end(experiment_1);
@@ -148,7 +164,7 @@ public class ExperimentWebAPIImplIT {
 
         final Instant expireDate = Instant.now().plus(30, ChronoUnit.DAYS);
 
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 100; i++) {
 
             final DotCMSMockResponse response = new DotCMSMockResponse();
             final SelectedExperiments selectedExperiments = WebAPILocator.getExperimentWebAPI()
@@ -163,6 +179,12 @@ public class ExperimentWebAPIImplIT {
 
             assertTrue(selectedExperiments.getIncludedExperimentIds().isEmpty());
             assertTrue(selectedExperiments.getExcludedExperimentIds().isEmpty());
+
+            final LookBackWindow lookBackWindow = selectedExperiments.getExperiments().get(0)
+                    .getLookBackWindow();
+            assertNotNull(lookBackWindow);
+            assertNull(lookBackWindow.getValue());
+            assertEquals(TimeUnit.MINUTES.toMillis(30), lookBackWindow.getExpireMillis());
         }
     }
 
@@ -183,7 +205,7 @@ public class ExperimentWebAPIImplIT {
             final HttpServletRequest request = mock(HttpServletRequest.class);
             final List<SelectedExperiment> experimentsSelected = new ArrayList<>();
 
-            for (int i = 0; i < 10; i++) {
+            for (int i = 0; i < 100; i++) {
                 final DotCMSMockResponse response = new DotCMSMockResponse();
                 final SelectedExperiments selectedExperiments = WebAPILocator.getExperimentWebAPI()
                         .isUserIncluded(request, response, null);
@@ -196,11 +218,13 @@ public class ExperimentWebAPIImplIT {
                 assertTrue(selectedExperiments.getExcludedExperimentIds().isEmpty());
             }
 
+            // Random Failure rate = 0.5^n = 1 in 1/(0.5^50)
             final boolean anyNoneExperiment = experimentsSelected.stream()
                     .anyMatch(experimentSelected -> ExperimentWebAPI.NONE_EXPERIMENT.id().equals(
                             experimentSelected.id()));
             assertTrue("Expected some NONE response", anyNoneExperiment);
 
+            // Random Failure rate = 0.5^n = 1 in 1/(0.5^50) = 1 in 1125899906842624
             final boolean anySelectedExperiment = experimentsSelected.stream()
                     .anyMatch(experimentSelected -> experiment.id().get().equals(
                             experimentSelected.id()));
@@ -229,7 +253,8 @@ public class ExperimentWebAPIImplIT {
             final HttpServletRequest request = mock(HttpServletRequest.class);
             final List<SelectedExperiment> experimentsSelected = new ArrayList<>();
 
-            for (int i = 0; i < 10; i++) {
+
+            for (int i = 0; i < 100; i++) {
                 final DotCMSMockResponse response = new DotCMSMockResponse();
                 final SelectedExperiments selectedExperiments = WebAPILocator.getExperimentWebAPI()
                         .isUserIncluded(request, response, null);
@@ -247,6 +272,7 @@ public class ExperimentWebAPIImplIT {
                 assertTrue(selectedExperiments.getExcludedExperimentIds().isEmpty());
             }
 
+            // Random failure expected is 1 in 1/(0.75^n)
             final boolean anyNoneExperiment = experimentsSelected.stream()
                     .anyMatch(experimentSelected -> ExperimentWebAPI.NONE_EXPERIMENT.name().equals(
                             experimentSelected.name()));
@@ -300,7 +326,7 @@ public class ExperimentWebAPIImplIT {
 
             final HttpServletRequest request = mock(HttpServletRequest.class);
 
-            for (int i = 0; i < 10; i++) {
+            for (int i = 0; i < 100; i++) {
                 final DotCMSMockResponse response = new DotCMSMockResponse();
                 final SelectedExperiments selectedExperiments = WebAPILocator.getExperimentWebAPI()
                         .isUserIncluded(request, response, null);
@@ -349,7 +375,7 @@ public class ExperimentWebAPIImplIT {
             final HttpServletRequest request = mock(HttpServletRequest.class);
             when(request.getAttribute("testing-attribute")).thenReturn("testing");
 
-            for (int i = 0; i < 10; i++) {
+            for (int i = 0; i < 100; i++) {
                 final DotCMSMockResponse response = new DotCMSMockResponse();
                 final SelectedExperiments selectedExperiments = WebAPILocator.getExperimentWebAPI()
                         .isUserIncluded(request, response, null);
@@ -405,7 +431,7 @@ public class ExperimentWebAPIImplIT {
             final HttpServletRequest request = mock(HttpServletRequest.class);
             when(request.getAttribute("testing-attribute")).thenReturn("testing");
 
-            for (int i = 0; i < 10; i++) {
+            for (int i = 0; i < 100; i++) {
                 final DotCMSMockResponse response = new DotCMSMockResponse();
                 final SelectedExperiments selectedExperiments = WebAPILocator.getExperimentWebAPI()
                         .isUserIncluded(request, response, null);
@@ -459,7 +485,7 @@ public class ExperimentWebAPIImplIT {
 
             final List<SelectedExperiment> experiments = new ArrayList<>();
 
-            for (int i = 0; i < 20; i++) {
+            for (int i = 0; i < 100; i++) {
                 final DotCMSMockResponse response = new DotCMSMockResponse();
                 final SelectedExperiments selectedExperiments = WebAPILocator.getExperimentWebAPI()
                         .isUserIncluded(request, response, null);

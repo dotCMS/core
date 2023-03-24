@@ -3,7 +3,6 @@ package com.dotcms;
 import com.dotcms.business.bytebuddy.ByteBuddyFactory;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
-import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 import com.dotcms.util.VoidDelegate;
 import com.dotmarketing.beans.Host;
@@ -14,7 +13,6 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
@@ -26,25 +24,27 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import org.apache.commons.io.FileUtils;
-import org.junit.*;
-import org.junit.rules.TestName;
-
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.sql.SQLException;
 import java.util.List;
+import org.apache.commons.io.FileUtils;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.rules.TestName;
 
 /**
- * Created by Jonathan Gamba.
- * Date: 3/6/12
- * Time: 4:36 PM
+ * Created by Jonathan Gamba. Date: 3/6/12 Time: 4:36 PM
  * <p/>
- * Annotations that can be use: {@link org.junit.BeforeClass @BeforeClass}, {@link org.junit.Before @Before},
- * {@link org.junit.Test @Test}, {@link org.junit.AfterClass @AfterClass},
- * {@link org.junit.After @After}, {@link org.junit.Ignore @Ignore}
+ * Annotations that can be use: {@link org.junit.BeforeClass @BeforeClass},
+ * {@link org.junit.Before @Before}, {@link org.junit.Test @Test},
+ * {@link org.junit.AfterClass @AfterClass}, {@link org.junit.After @After},
+ * {@link org.junit.Ignore @Ignore}
  * <br>For managing the assertions use the static class {@link org.junit.Assert Assert}
  */
 public abstract class IntegrationTestBase extends BaseMessageResources {
@@ -63,7 +63,7 @@ public abstract class IntegrationTestBase extends BaseMessageResources {
         Config.setProperty("SYSTEM_EXIT_ON_STARTUP_FAILURE", false);
     }
 
-    protected static void setDebugMode (final boolean mode) throws UnsupportedEncodingException {
+    protected static void setDebugMode(final boolean mode) throws UnsupportedEncodingException {
 
         debugMode = mode;
         if (debugMode) {
@@ -72,7 +72,7 @@ public abstract class IntegrationTestBase extends BaseMessageResources {
         }
     }
 
-    protected static void cleanupDebug (Class clazz) {
+    protected static void cleanupDebug(Class clazz) {
 
         if (debugMode) {
             try {
@@ -89,11 +89,11 @@ public abstract class IntegrationTestBase extends BaseMessageResources {
 
     /**
      * Runs a delegate on non-license mode
+     *
      * @param delegate
      * @throws Exception
      */
     protected static void runNoLicense(final VoidDelegate delegate) throws Exception {
-
 
         final String licenseSerial = LicenseUtil.getSerial();
 
@@ -115,28 +115,38 @@ public abstract class IntegrationTestBase extends BaseMessageResources {
     } // runNoLicense.
 
     @Before
-    public void beforeBase ()  {
+    public void beforeBase() {
 
         this.initConnection();
     }
 
     @After
-    public void after ()  {
+    public void after() {
 
-        if (DbConnectionFactory.inTransaction())
-            Logger.error(IntegrationTestBase.class,"Test "+name.getMethodName()+" has open transaction after");
+        if (DbConnectionFactory.inTransaction()) {
+            Logger.error(IntegrationTestBase.class,
+                    "Test " + name.getMethodName() + " has open transaction after");
+        }
 
-        if (DbConnectionFactory.connectionExists())
-            Logger.error(IntegrationTestBase.class,"Test "+name.getMethodName()+" has open connection after");
+        if (DbConnectionFactory.connectionExists()) {
+            Logger.error(IntegrationTestBase.class,
+                    "Test " + name.getMethodName() + " has open connection after");
+        }
 
         //Closing the session
         try {
             HibernateUtil.closeAndCommitTransaction();
-            if (null != HibernateUtil.getSession()) {
-                HibernateUtil.getSession().connection().close();
-                HibernateUtil.getSession().close();
-            }
-        } catch (Exception e) {} finally {
+            HibernateUtil.getSessionIfOpened().ifPresent(session -> {
+                try {
+                    session.flush();
+                    session.clear();
+                    session.close();
+                } catch (HibernateException e) {
+                    Logger.debug(this, e.getMessage(), e);
+                }
+            });
+        } catch (Exception e) {
+        } finally {
             DbConnectionFactory.closeSilently();
         }
     }
@@ -232,12 +242,13 @@ public abstract class IntegrationTestBase extends BaseMessageResources {
                     try {
                         categoryAPI.delete(category, systemUser, false);
                     } catch (DotDataException | DotSecurityException e) {
-                        Assert.fail("Can't delete Category: " + category.getCategoryName() + ", with id:"
+                        Assert.fail("Can't delete Category: " + category.getCategoryName()
+                                + ", with id:"
                                 + category.getInode() + ", Exception: " + e.getMessage());
                     }
                 }
             }
-        }catch (Exception e) {
+        } catch (Exception e) {
 
         }
     }

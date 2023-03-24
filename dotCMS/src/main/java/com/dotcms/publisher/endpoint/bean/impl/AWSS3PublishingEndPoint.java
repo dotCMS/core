@@ -1,5 +1,6 @@
 package com.dotcms.publisher.endpoint.bean.impl;
 
+<<<<<<< HEAD
 import com.dotcms.api.system.event.message.MessageSeverity;
 import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
@@ -21,10 +22,30 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.util.PortalUtil;
+=======
+>>>>>>> master
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.List;
 import java.util.Properties;
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
+import com.dotcms.api.system.event.message.MessageSeverity;
+import com.dotcms.api.system.event.message.MessageType;
+import com.dotcms.api.system.event.message.SystemMessageEventUtil;
+import com.dotcms.api.system.event.message.builder.SystemMessage;
+import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
+import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Configuration;
+import com.dotcms.enterprise.publishing.staticpublishing.AWSS3EndPointPublisher;
+import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher;
+import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
+import com.dotmarketing.cms.factories.PublicEncryptionFactory;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.PublishingEndPointValidationException;
+import com.dotmarketing.exception.PublishingEndPointValidationException.Builder;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.util.PortalUtil;
+import io.vavr.control.Try;
 
 /**
  * Implementation of {@link PublishingEndPoint} for fancy AWS S3 Publish.

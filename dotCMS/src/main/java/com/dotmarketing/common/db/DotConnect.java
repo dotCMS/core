@@ -252,7 +252,7 @@ public class DotConnect {
     public boolean executeStatement(String sql) throws SQLException {
         Connection conn = DbConnectionFactory.getConnection();
         Statement stmt = conn.createStatement();
-        Logger.info(this, "Executing " + sql);
+        Logger.debug(this, "Executing " + sql);
         boolean ret = stmt.execute(sql);
         stmt.close();
         return ret;
@@ -260,9 +260,9 @@ public class DotConnect {
 
     public boolean executeStatement(String sql, Connection con) throws SQLException {
         Statement stmt = con.createStatement();
-        Logger.info(this, "Executing " + sql);
+        Logger.debug(this, "Executing " + sql);
         boolean ret = stmt.execute(sql);
-        Logger.info(this, "Finished Executing " + sql);
+        Logger.debug(this, "Finished Executing " + sql);
         stmt.close();
         return ret;
     }

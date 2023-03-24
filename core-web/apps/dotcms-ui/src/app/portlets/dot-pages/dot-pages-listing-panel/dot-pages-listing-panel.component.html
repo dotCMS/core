@@ -1,6 +1,7 @@
 <p-table
     *ngIf="vm$ | async as vm"
     [value]="vm.pages.items"
+    [loading]="vm.isPagesLoading"
     [scrollable]="true"
     [virtualScroll]="true"
     [virtualScrollItemSize]="47"
@@ -90,9 +91,7 @@
             <td>
                 {{ rowData['modUserName'] }}
             </td>
-            <td>
-                {{ rowData['modDate'] }}
-            </td>
+            <td>{{ rowData['modDate'] | dotRelativeDate }}</td>
             <td>
                 <dot-icon-button
                     id="pageActionButton-{{ rowIndex }}"

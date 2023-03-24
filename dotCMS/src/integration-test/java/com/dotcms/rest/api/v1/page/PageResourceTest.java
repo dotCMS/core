@@ -1097,64 +1097,6 @@ public class PageResourceTest {
     }
 
     /**
-     * <ul>
-     *     <li><b>Method to Test:</b>
-     *     {@link PageResource#addContent(HttpServletRequest, HttpServletResponse, String, String, PageContainerForm)}</li>
-     *     <li><b>Given Scenario:</b> In Edit Mode, creates an HTML Page with a Contentlet in it using the
-     *     {@code addContent} endpoint. Then, the very same Contentlet is added to another page.</li>
-     *     <li><b>Expected Result:</b> The {@link Contentlet#ON_NUMBER_OF_PAGES} property of the Contentlet added to
-     *     the page must be 2 at the end of the test because it's present on two pages.</li>
-     * </ul>
-     */
-    @Test
-    public void testOnNumberOfPagesCounter_addContent() throws DotDataException, DotSecurityException,
-                                                                           SystemException, PortalException {
-        // Initialization
-        final String modeParam = "EDIT_MODE";
-        final Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
-        final long languageId = defaultLang.getId();
-
-        // Test data generation
-        final Contentlet testContentlet = TestDataUtils.getGenericContentContent(true, languageId, this.host);
-        PageRenderTestUtil.PageRenderTest testData = PageRenderTestUtil.createPage(1, this.host);
-        HTMLPageAsset testPage = testData.getPage();
-        Container container = testData.getFirstContainer();
-        PageContainerForm pageContainerForm = this.createPageContainerForm(container.getIdentifier(),
-                List.of(testContentlet.getIdentifier()), "uuid-1");
-        Response saveResponse = this.pageResourceWithHelper.addContent(this.request, this.response,
-                testPage.getIdentifier(), VariantAPI.DEFAULT_VARIANT.name(), pageContainerForm);
-
-        // Assertion
-        assertEquals("Test Contentlet could not be saved.", HttpServletResponse.SC_OK, saveResponse.getStatus());
-
-        Response response = this.pageResource.render(this.request, this.response, testPage.getURI(), modeParam, null,
-                String.valueOf(languageId), null);
-        int contentletReferences = this.getContentletReferences(response);
-
-        // Assertions
-        assertEquals("There must be only ONE reference to the Contentlet at this point", 1, contentletReferences);
-
-        // Test data generation
-        testData = PageRenderTestUtil.createPage(1, this.host);
-        testPage = testData.getPage();
-        container = testData.getFirstContainer();
-        pageContainerForm = this.createPageContainerForm(container.getIdentifier(),
-                List.of(testContentlet.getIdentifier()), "uuid-1");
-        saveResponse = this.pageResourceWithHelper.addContent(this.request, this.response, testPage.getIdentifier(),
-                VariantAPI.DEFAULT_VARIANT.name(), pageContainerForm);
-
-        // Assertion
-        assertEquals("Test Contentlet could not be saved.", HttpServletResponse.SC_OK, saveResponse.getStatus());
-
-        response = this.pageResource.render(this.request, this.response, testPage.getURI(), modeParam, null,
-                String.valueOf(languageId), null);
-        contentletReferences = this.getContentletReferences(response);
-
-        // Assertions
-        assertEquals("Now, there must be TWO references to the Contentlet at this point", 2, contentletReferences);
-    }
-
-    /**
      * Utility method used to create an instance of the {@link PageContainerForm} object with the provided data.
      *
      * @param containerId   The Container ID.
@@ -1176,15 +1118,12 @@ public class PageResourceTest {
     /**
      * <ul>
      *     <li><b>Method to Test:</b> {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String)}</li>
-     *     <li><b>Given Scenario:</b> In Edit Mode, creates an HTML Page with a Contentlet in it using the dotCMS APIs.
-     *     Then, the very same Contentlet is added to another page. In both cases, the data returned by dotCMS is read
-     *     by calling the {@code render} endpoint.</li>
-     *     <li><b>Expected Result:</b> The {@link Contentlet#ON_NUMBER_OF_PAGES} property of the Contentlet added to the
-     *     page must be 2 at the end of the test because it's present on two pages.</li>
+     *     <li><b>Given Scenario:</b> In Edit Mode, test the rest API</li>
+     *     <li><b>Expected Result:</b> Receive the on-number-of-pages data attribute for the contentlet object inside rendered element.</li>
      * </ul>
      */
     @Test
-    public void testOnNumberOfPagesCounter_render() throws DotDataException, SystemException, DotSecurityException,
+    public void testOnNumberOfPagesDataAttribute_render() throws DotDataException, SystemException, DotSecurityException,
                                                                 PortalException {
         // Initialization
         final String modeParam = "EDIT_MODE";
@@ -1198,52 +1137,12 @@ public class PageResourceTest {
         final Contentlet testContent = pageRenderTestOne.addContent(container);
         Response pageResponse = this.pageResource.render(this.request, this.response, pageOne.getURI(), modeParam, null,
                 String.valueOf(languageId), null);
-        int contentletReferences = this.getContentletReferences(pageResponse);
 
-        // Assertions
-        assertEquals("There must be only ONE reference to the Contentlet at this point", 1, contentletReferences);
-
-        // Test data generation
-        final PageRenderTestUtil.PageRenderTest pageRenderTestTwo = PageRenderTestUtil.createPage(1, this.host);
-        final HTMLPageAsset pageTwo = pageRenderTestTwo.getPage();
-        final Container containerTwo = pageRenderTestTwo.getFirstContainer();
-        pageRenderTestTwo.addContent(containerTwo, testContent);
-        pageResponse = this.pageResource.render(this.request, this.response, pageTwo.getURI(), modeParam, null,
-                String.valueOf(languageId), null);
-        contentletReferences = this.getContentletReferences(pageResponse);
-
-        // Assertions
-        assertEquals("Now, there must be TWO references to the Contentlet at this point", 2, contentletReferences);
-    }
-
-    /**
-     * Utility method to return the number of HTML Pages that are referencing a specific Contentlet.
-     *
-     * @param pageResponse The {@link Response} object
-     * @return The number of references.
-     */
-    private int getContentletReferences(final Response pageResponse) {
         final HTMLPageAssetRendered htmlPageAssetRendered =
                 (HTMLPageAssetRendered) ((ResponseEntityView<?>) pageResponse.getEntity()).getEntity();
 
-        // Assertions
-        assertEquals("There must be only one Container in the page", 1, htmlPageAssetRendered.getContainers().size());
-
-        int referenceCounter;
         final ContainerRaw containerRaw = htmlPageAssetRendered.getContainers().stream().findFirst().orElse(null);
-
         // Assertions
-        assert containerRaw != null;
-
-        final String containerKey = containerRaw.getContentlets().keySet().stream().findFirst().orElse(null);
-
-        // Assertions
-        assertEquals("There must be only one Contentlet in the Container", 1,
-                containerRaw.getContentlets().get(containerKey).size());
-
-        final Contentlet contentlet = containerRaw.getContentlets().get(containerKey).get(0);
-        referenceCounter = (int) contentlet.get(Contentlet.ON_NUMBER_OF_PAGES);
-        return referenceCounter;
+        assertTrue(containerRaw.toString().contains("data-dot-on-number-of-pages="));
     }
-
 }

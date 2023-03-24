@@ -152,8 +152,6 @@ public class ExperimentForm extends Validated {
     }
 
     private void validateScheduling(final Scheduling scheduling) {
-        if(scheduling==null) return;
-
         APILocator.getExperimentsAPI().validateScheduling(scheduling);
     }
 }
