@@ -1151,8 +1151,6 @@ public class DotConnect {
             if (param != null && statementSetterHandlerMap.containsKey(param.getClass())) {
                 statementSetterHandlerMap.get(param.getClass())
                         .execute(preparedStatement, i + 1, param);
-            } else if (param.getClass().isArray()) {
-                preparedStatement.setArray(i + 1, preparedStatement.getConnection().createArrayOf("varchar", (Object[]) param));
             } else {
                 preparedStatement.setObject(i + 1, param);
             }

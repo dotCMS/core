@@ -63,6 +63,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -102,7 +103,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     private static final String TIMEOUT_INDEX_FORCE = "TIMEOUT_INDEX_FORCE";
 
     private static final String SELECT_CONTENTLET_VERSION_INFO =
-            "select working_inode,live_inode from contentlet_version_info where identifier IN (?)";
+            "select working_inode,live_inode from contentlet_version_info where identifier IN (%s)";
     private static ReindexQueueAPI queueApi = null;
     private static final ESIndexAPI esIndexApi = new ESIndexAPI();
     private static final ESMappingAPIImpl mappingAPI = new ESMappingAPIImpl();
@@ -879,9 +880,14 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         final List<String> depsIdentifiers =  Sneaky.sneak(() ->
                 this.mappingAPI.dependenciesLeftToReindex(parentContentlet));
 
+        final String templateQuery = String.format(SELECT_CONTENTLET_VERSION_INFO,
+                String.join(",", Collections.nCopies(depsIdentifiers.size(), "?")));
+
+        final DotConnect dotConnect = new DotConnect().setSQL(templateQuery);
+        depsIdentifiers.stream().forEach(dotConnect::addParam);
+
         final List<Map<String, String>> versionInfoMapResults =
-                Sneaky.sneak(() -> new DotConnect().setSQL(SELECT_CONTENTLET_VERSION_INFO)
-                        .addParam(depsIdentifiers.toArray()).loadResults());
+                Sneaky.sneak(() -> dotConnect.loadResults());
 
         final List<String> inodes = versionInfoMapResults.stream()
                 .map(versionInfoMap -> {
