@@ -5,18 +5,18 @@ import com.dotcms.content.business.json.ContentletJsonAPI;
 import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.repackage.com.google.common.base.Strings;
 import com.dotcms.util.CloseUtils;
-import com.dotcms.util.marshal.MarshalFactory;
-import com.dotcms.util.marshal.MarshalUtils;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
 
 import javax.annotation.Nullable;
 import java.io.BufferedWriter;
@@ -28,10 +28,11 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collections;
-import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.dotcms.content.business.json.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
@@ -86,62 +87,55 @@ public class PopulateContentletAsJSONUtil {
         void accept(T t) throws E;
     }
 
-//    @WrapInTransaction
-//    public void populateSites() throws DotDataException, DotRuntimeException {
-//
-//        // Finding the contentlets that are Hosts and have a null contentlet_as_json
-//        final List<Contentlet> sites = findSiteContentlets();
-//
-//        // Building a json representation of each contentlet to update the contentlet_as_json column of the
-//        // contentlet table.
-//        sites.stream()
-//                .map(wrapCheckedFunction(this::toJSON))
-//                .forEach(wrapCheckedConsumer(this::updateContentlet));
-//    }
-
-    /**
-     * Search for all the contentlets that are Hosts and have a null contentlet_as_json using a db query and transform
-     * the results into a list of contentlets.
-     *
-     * @return List of contentlets
-     * @throws DotDataException
-     * @throws DotStateException
-     */
-//    private List<Contentlet> findSiteContentlets() throws DotDataException, DotStateException {
-//
-//        final var dotConnect = new DotConnect();
-//        dotConnect.setSQL(SITES_WITH_NO_JSON);
-//
-//        return Optional.ofNullable(dotConnect.loadObjectResults())
-//                .map(results -> TransformerLocator.createContentletTransformer(results).asList())
-//                .orElse(Collections.emptyList());
-//    }
     @WrapInTransaction
-    public void run(@Nullable String assetSubtype) throws SQLException, DotDataException, IOException {
+    public void populate(@Nullable String assetSubtype) throws SQLException, DotDataException, IOException {
 
         final File populateJSONTaskDataFile = File.createTempFile("rows-task-230320", "tmp");
-        final MarshalUtils marshalUtils = MarshalFactory.getInstance().getMarshalUtils();
 
         // First we need to find all the contentlets to process and write them into a file
-        findAndStoreToDisk(assetSubtype, populateJSONTaskDataFile, marshalUtils);
+        findAndStoreToDisk(assetSubtype, populateJSONTaskDataFile);
 
         // Now we need to process the file and each record on it
-        processFile(populateJSONTaskDataFile, marshalUtils);
+        processFile(populateJSONTaskDataFile);
     }
 
-    private void processFile(final File taskDataFile,
-                             final MarshalUtils marshalUtils) throws IOException {
+    /**
+     * This method processes a file that contains all the contentlets that need to be updated with the contentlet_as_json
+     *
+     * @param taskDataFile
+     * @throws IOException
+     */
+    @WrapInTransaction
+    private void processFile(final File taskDataFile) throws IOException {
 
         try (final Stream<String> streamLines = Files.lines(taskDataFile.toPath())) {
 
-            streamLines.map(line -> lineToContentlet(line, marshalUtils))// Map each line to a new contentlet
-                    .map(wrapCheckedFunction(this::toJSON))// Generate populate the contentlet_as_json attribute in the contentlet
+            streamLines.map(line -> {
+                        try {
+                            return parseLine(line);
+                        } catch (Exception e) {
+                            Logger.error("Error parsing line: " + line, e);
+                            return null;
+                        }
+                    })// Map each line to Tuple (inode, contentlet_as_json)
+                    .filter(Objects::nonNull)
                     .forEach(wrapCheckedConsumer(this::updateContentlet));// Update each contentlet in the DB
         }
     }
 
+    /**
+     * Searches for all the contentlets of a given asset subtype (Content Type) that have a null contentlet_as_json. This
+     * method uses a cursor to avoid loading all the contentlets into memory.
+     * Each found contentlet is written into a file for a later processing.
+     *
+     * @param assetSubtype             The asset subtype (Content Type) to search for, if null all the contentlets will be searched.
+     * @param populateJSONTaskDataFile The file where the contentlets will be written.
+     * @throws SQLException
+     * @throws DotDataException
+     * @throws IOException
+     */
     private void findAndStoreToDisk(@Nullable String assetSubtype,
-                                    final File populateJSONTaskDataFile, final MarshalUtils marshalUtils) throws
+                                    final File populateJSONTaskDataFile) throws
             SQLException, DotDataException, IOException {
 
         var fileWriter = new BufferedWriter(new FileWriter(populateJSONTaskDataFile));
@@ -171,11 +165,20 @@ public class PopulateContentletAsJSONUtil {
                         var dotConnect = new DotConnect();
                         dotConnect.fromResultSet(rs);
 
-                        var contentlets = Optional.ofNullable(dotConnect.loadObjectResults())
+                        var jsonDataArray = Optional.ofNullable(dotConnect.loadObjectResults())
+                                .map(results ->
+                                        TransformerLocator.createContentletTransformer(results).asList()
+                                )// Transform the results into a list of contentlets
+                                .map(contentletList ->
+                                        contentletList.stream()
+                                                .map(wrapCheckedFunction(this::toJSON))
+                                                .collect(Collectors.toList())
+                                )// Transform the contentlets into a list of json strings
                                 .orElse(Collections.emptyList());
 
-                        for (var contentlet : contentlets) {
-                            fileWriter.write(marshalUtils.marshal(contentlet));
+                        for (var jsonData : jsonDataArray) {
+                            // Write the json representation of the contentlet into the file
+                            fileWriter.write(jsonData);
                             fileWriter.newLine();
                         }
                     }
@@ -196,14 +199,17 @@ public class PopulateContentletAsJSONUtil {
         }
     }
 
-    private Contentlet lineToContentlet(final String line, final MarshalUtils marshalUtils) {
+    /**
+     * Parses the given line and returns a tuple with the inode and the json representation of the contentlet.
+     *
+     * @param line Line with the json representation of the contentlet.
+     * @return
+     * @throws JsonProcessingException
+     */
+    private Tuple2<String, String> parseLine(final String line) throws JsonProcessingException {
 
-        final var contentletMap = marshalUtils.unmarshal(line, Map.class);
-
-        return Optional.ofNullable(contentletMap)
-                .map(results -> TransformerLocator.createContentletTransformer(Collections.singletonList(contentletMap))
-                        .findFirst())
-                .orElse(null);
+        var contentlet = ContentletJsonHelper.INSTANCE.get().immutableFromJson(line);
+        return Tuple.of(contentlet.inode(), line);
     }
 
     /**
@@ -212,29 +218,27 @@ public class PopulateContentletAsJSONUtil {
      * @param contentlet
      * @return The Contentlet with the json representation attached to it.
      */
-    private Contentlet toJSON(Contentlet contentlet) throws JsonProcessingException {
+    private String toJSON(Contentlet contentlet) throws JsonProcessingException {
 
         // Converts the given contentlet to an immutable contentlet and then builds a json representation of it.
-        var asJSON = ContentletJsonHelper.INSTANCE.get().writeAsString(this.contentletJsonAPI.toImmutable(contentlet));
+        var contentletAsJSON = ContentletJsonHelper.INSTANCE.get().writeAsString(this.contentletJsonAPI.toImmutable(contentlet));
 
-        //Attach the json, so it can be grabbed by the upsert downstream
-        contentlet.setProperty(Contentlet.CONTENTLET_AS_JSON, asJSON);
-
-        return contentlet;
+        // I need to have the JSON in a single line, so I can write it into a file
+        return contentletAsJSON.replaceAll("[\\t\\n\\r]", "");
     }
 
     /**
      * Updates the contentlet_as_json column of the contentlet table with the json representation of the contentlet.
      *
-     * @param contentlet
+     * @param contentletData Tuple with the inode and the json representation of the contentlet.
      * @throws DotDataException
      */
-    private void updateContentlet(final Contentlet contentlet) throws DotDataException {
+    private void updateContentlet(final Tuple2<String, String> contentletData) throws DotDataException {
 
         final var dotConnect = new DotConnect();
         dotConnect.setSQL(UPDATE_CONTENTLET_AS_JSON);
-        dotConnect.addParam(contentlet.getStringProperty(Contentlet.CONTENTLET_AS_JSON));
-        dotConnect.addObject(contentlet.getInode());
+        dotConnect.addJSONParam(contentletData._2());
+        dotConnect.addParam(contentletData._1());
         dotConnect.loadResult();
     }
 

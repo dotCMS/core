@@ -29,7 +29,7 @@ public class Task230320FixMissingContentletAsJSON implements StartupTask {
         stopWatch.start();
 
         try {
-            PopulateContentletAsJSONUtil.getInstance().run("Host");
+            PopulateContentletAsJSONUtil.getInstance().populate("Host");
         } catch (SQLException e) {
             throw new DotDataException(e.getMessage(), e);
         } catch (IOException e) {
