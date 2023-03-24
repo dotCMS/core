@@ -4,6 +4,7 @@ import com.dotcms.api.provider.DefaultResponseExceptionMapper;
 import com.dotcms.api.provider.DotCMSClientHeaders;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.language.Language;
+import java.util.List;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -24,6 +25,10 @@ import org.eclipse.microprofile.rest.client.annotation.RegisterProvider;
 )
 @RegisterClientHeaders(DotCMSClientHeaders.class)
 @RegisterProvider(DefaultResponseExceptionMapper.class)
+/**
+ * Interface that defines all the operations that can be performed over Languages
+ * @author nollymar
+ */
 public interface LanguageAPI {
 
     @GET
@@ -40,4 +45,10 @@ public interface LanguageAPI {
             summary = " Returns the Language that matches the specified tag"
     )
     ResponseEntityView<Language> getFromLanguageTag(@PathParam("languageTag") String languageTag);
+
+    @GET
+    @Operation(
+            summary = " Returns all the languages in the system"
+    )
+    ResponseEntityView<List<Language>> list();
 }

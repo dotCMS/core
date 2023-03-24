@@ -78,4 +78,19 @@ public class LanguageCommandTest extends CommandTest {
         }
     }
 
+    /**
+     * Test the language find command. This test will fail if no languages are returned
+     */
+    @Test
+    void Test_Command_Language_Find() {
+        final CommandLine commandLine = getFactory().create();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final int status = commandLine.execute(LanguageCommand.NAME, LanguageFind.NAME);
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            final String output = writer.toString();
+            Assertions.assertTrue(output.contains("English"));
+        }
+    }
 }

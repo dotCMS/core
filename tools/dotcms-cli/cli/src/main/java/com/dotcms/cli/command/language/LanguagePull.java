@@ -21,6 +21,10 @@ import picocli.CommandLine.Parameters;
         name = LanguagePull.NAME,
         description = "@|bold,green Get a language given its id or tag (e.g.: en-us)|@"
 )
+/**
+ * Command to pull a language given its id or tag (e.g.: en-us)
+ * @author nollymar
+ */
 public class LanguagePull extends AbstractLanguageCommand implements Callable<Integer> {
     static final String NAME = "pull";
 

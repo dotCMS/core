@@ -5,16 +5,20 @@ import com.dotcms.cli.common.OutputOptionMixin;
 import java.util.List;
 import java.util.concurrent.Callable;
 import picocli.CommandLine;
-import picocli.CommandLine.ExitCode;
 
 @CommandLine.Command(
         name = com.dotcms.cli.command.language.LanguageCommand.NAME,
         aliases = { com.dotcms.cli.command.language.LanguageCommand.ALIAS },
         header = "Language CRUD operations.",
         subcommands = {
-                LanguagePull.class
+                LanguagePull.class,
+                LanguageFind.class
         }
 )
+/**
+ * Super command for language operations
+ * @author nollymar
+ */
 public class LanguageCommand implements Callable<Integer> {
 
     static final String NAME = "language";
@@ -35,7 +39,8 @@ public class LanguageCommand implements Callable<Integer> {
     @Override
     public Integer call() throws Exception {
         spec.commandLine().usage(System.out);
-        return ExitCode.USAGE;
+        output.info("Listing languages (default action)");
+        return spec.commandLine().execute(NAME, LanguageFind.NAME);
     }
 
 }
