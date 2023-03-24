@@ -1,6 +1,5 @@
 package com.dotmarketing.startup.runonce;
 
-import com.dotcms.business.WrapInTransaction;
 import com.dotcms.util.content.json.PopulateContentletAsJSONUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -20,7 +19,6 @@ public class Task230320FixMissingContentletAsJSON implements StartupTask {
     }
 
     @Override
-    @WrapInTransaction
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
 
         Logger.info(this, "Running upgrade Task230320FixMissingContentletAsJSON");
@@ -29,7 +27,7 @@ public class Task230320FixMissingContentletAsJSON implements StartupTask {
         stopWatch.start();
 
         try {
-            PopulateContentletAsJSONUtil.getInstance().populate("Host");
+            PopulateContentletAsJSONUtil.getInstance().populateForAssetSubType("Host");
         } catch (SQLException e) {
             throw new DotDataException(e.getMessage(), e);
         } catch (IOException e) {

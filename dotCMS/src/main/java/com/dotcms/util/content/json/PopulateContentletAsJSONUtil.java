@@ -1,6 +1,5 @@
 package com.dotcms.util.content.json;
 
-import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.json.ContentletJsonAPI;
 import com.dotcms.content.business.json.ContentletJsonHelper;
@@ -10,6 +9,7 @@ import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -42,29 +42,37 @@ public class PopulateContentletAsJSONUtil {
 
     private final ContentletJsonAPI contentletJsonAPI;
 
-    // Query to find all the contentlets that are Hosts and have a null contentlet_as_json
-    private final String SUBTYPE_WITH_NO_JSON = "select c.*\n" +
-            "from contentlet c\n" +
-            "         JOIN identifier i ON i.id = c.identifier\n" +
-            "         JOIN contentlet_version_info cv ON i.id = cv.identifier\n" +
-            "    AND (c.inode = cv.working_inode OR c.inode = cv.live_inode)\n" +
-            "WHERE i.asset_subtype = '%s' AND c.contentlet_as_json IS NULL;";
+    // Query to find all the contentlets for a given asset_subtype and have a null contentlet_as_json
+    private final String SUBTYPE_WITH_NO_JSON = "select c.*" +
+            "from contentlet c" +
+            "         JOIN identifier i ON i.id = c.identifier" +
+            "         JOIN contentlet_version_info cv ON i.id = cv.identifier" +
+            "    AND (c.inode = cv.working_inode OR c.inode = cv.live_inode)" +
+            "   WHERE i.asset_subtype = '%s' AND c.contentlet_as_json IS NULL;";
 
-    // Query to find all the contentlets that are NOT Hosts and have a null contentlet_as_json
-    private final String CONTENTS_WITH_NO_JSON = "select c.*\n" +
-            "from contentlet c\n" +
-            "         JOIN identifier i ON i.id = c.identifier\n" +
-            "         JOIN contentlet_version_info cv ON i.id = cv.identifier\n" +
-            "    AND (c.inode = cv.working_inode OR c.inode = cv.live_inode)\n" +
-            "WHERE i.asset_type <> 'contentlet' AND c.contentlet_as_json IS NULL;";
+    // Query to find all the contentlets that have a null contentlet_as_json
+    private final String CONTENTS_WITH_NO_JSON = "select c.*" +
+            "from contentlet c" +
+            "         JOIN identifier i ON i.id = c.identifier" +
+            "         JOIN contentlet_version_info cv ON i.id = cv.identifier" +
+            "    AND (c.inode = cv.working_inode OR c.inode = cv.live_inode)" +
+            "   WHERE i.asset_type = 'contentlet' AND c.contentlet_as_json IS NULL;";
+
+    // Query to find all the contentlets that are NOT of a given asset_subtype and have a null contentlet_as_json
+    private final String CONTENTS_WITH_NO_JSON_AND_EXCLUDE = "select c.*" +
+            "from contentlet c" +
+            "         JOIN identifier i ON i.id = c.identifier" +
+            "         JOIN contentlet_version_info cv ON i.id = cv.identifier" +
+            "    AND (c.inode = cv.working_inode OR c.inode = cv.live_inode)" +
+            "   WHERE i.asset_subtype <> '%s' AND i.asset_type = 'contentlet' AND c.contentlet_as_json IS NULL;";
 
     // Query to update the contentlet_as_json column of the contentlet table
     private final String UPDATE_CONTENTLET_AS_JSON = "UPDATE contentlet SET contentlet_as_json = ? WHERE inode = ?";
 
     // Cursor related queries
     private final String DECLARE_CURSOR = "DECLARE missingContentletAsJSONCursor CURSOR FOR %s";
-    private final String FETCH_CURSOR_POSTGRES = "FETCH FORWARD 100 FROM missingContentletAsJSONCursor";
-    private final String FETCH_CURSOR_MSSQL = "FETCH NEXT 100 FROM missingContentletAsJSONCursor";
+    private final String FETCH_CURSOR_POSTGRES = "FETCH FORWARD %s FROM missingContentletAsJSONCursor";
+    private final String FETCH_CURSOR_MSSQL = "FETCH NEXT %s FROM missingContentletAsJSONCursor";
     private final String CLOSE_CURSOR = "CLOSE missingContentletAsJSONCursor";
 
     private static class SingletonHolder {
@@ -91,24 +99,159 @@ public class PopulateContentletAsJSONUtil {
 
     /**
      * Finds all the contentlets that need to be updated with the contentlet_as_json column for a given
-     * optional assetSubtype (Content Type).
+     * assetSubtype (Content Type).
      *
-     * @param assetSubtype Optional assetSubtype (Content Type) to filter the contentlets to process, if null then all
+     * @param assetSubtype Asset subtype (Content Type) to filter the contentlets to process, if null then all
      *                     the contentlets will be processed.
      * @throws SQLException
      * @throws DotDataException
      * @throws IOException
      */
-    @WrapInTransaction
-    public void populate(@Nullable String assetSubtype) throws SQLException, DotDataException, IOException {
+    public void populateForAssetSubType(String assetSubtype) throws SQLException, DotDataException, IOException {
+        populate(assetSubtype, null);
+    }
+
+    /**
+     * Finds all the contentlets that need to be updated with the contentlet_as_json column excluding the contentles
+     * of a given assetSubtype (Content Type).
+     *
+     * @param assetSubtype Asset subtype (Content Type) use to exclude contentlets of that given type from the query.
+     * @throws SQLException
+     * @throws DotDataException
+     * @throws IOException
+     */
+    public void populateExcludingAssetSubType(String assetSubtype) throws SQLException, DotDataException, IOException {
+        populate(null, assetSubtype);
+    }
+
+    /**
+     * Finds all the contentlets that need to be updated with the contentlet_as_json column for the given
+     * assetSubtype and excludingAssetSubtype.
+     *
+     * @param assetSubtype          Optional asset subtype (Content Type) to filter the contentlets to process, if null then all
+     *                              the contentlets will be processed unless the excludingAssetSubtype is provided.
+     * @param excludingAssetSubtype Optional asset subtype (Content Type) use to exclude contentlets from the query
+     * @throws SQLException
+     * @throws DotDataException
+     * @throws IOException
+     */
+    private void populate(@Nullable String assetSubtype, @Nullable String excludingAssetSubtype) throws SQLException, DotDataException, IOException {
 
         final File populateJSONTaskDataFile = File.createTempFile("rows-task-230320", "tmp");
 
-        // First we need to find all the contentlets to process and write them into a file
-        findAndStoreToDisk(assetSubtype, populateJSONTaskDataFile);
+        try {
 
-        // Now we need to process the file and each record on it
-        processFile(populateJSONTaskDataFile);
+            HibernateUtil.startTransaction();
+
+            // First we need to find all the contentlets to process and write them into a file
+            findAndStoreToDisk(assetSubtype, excludingAssetSubtype, populateJSONTaskDataFile);
+
+        } finally {
+            HibernateUtil.closeSessionSilently();
+        }
+
+        try {
+
+            HibernateUtil.startTransaction();
+
+            // Now we need to process the file and each record on it
+            processFile(populateJSONTaskDataFile);
+        } finally {
+            HibernateUtil.closeSessionSilently();
+        }
+    }
+
+    /**
+     * Searches for all the contentlets of a given asset subtype (Content Type) that have a null contentlet_as_json. This
+     * method uses a cursor to avoid loading all the contentlets into memory.
+     * Each found contentlet is written into a file for a later processing.
+     *
+     * @param assetSubtype             The asset subtype (Content Type) to search for, if null all the contentlets will be searched.
+     * @param populateJSONTaskDataFile The file where the contentlets will be written.
+     * @throws SQLException
+     * @throws DotDataException
+     * @throws IOException
+     */
+    @WrapInTransaction
+    private void findAndStoreToDisk(@Nullable String assetSubtype,
+                                    @Nullable String excludingAssetSubtype,
+                                    final File populateJSONTaskDataFile) throws
+            SQLException, DotDataException, IOException {
+
+        var fileWriter = new BufferedWriter(new FileWriter(populateJSONTaskDataFile));
+
+        try (final Connection conn = DbConnectionFactory.getConnection();
+             var stmt = conn.createStatement()) {
+
+            // Declaring the cursor
+            if (Strings.isNullOrEmpty(assetSubtype)) {
+                if (Strings.isNullOrEmpty(excludingAssetSubtype)) {
+                    stmt.execute(String.format(DECLARE_CURSOR, CONTENTS_WITH_NO_JSON));
+                } else {
+                    var selectQuery = String.format(CONTENTS_WITH_NO_JSON_AND_EXCLUDE, excludingAssetSubtype);
+                    stmt.execute(String.format(DECLARE_CURSOR, selectQuery));
+                }
+            } else {
+                var selectQuery = String.format(SUBTYPE_WITH_NO_JSON, assetSubtype);
+                stmt.execute(String.format(DECLARE_CURSOR, selectQuery));
+            }
+
+            boolean hasRows;
+
+            do {
+
+                hasRows = false;
+
+                // Fetching batches of 100 records
+                var batchSize = 100;
+                if (DbConnectionFactory.isMsSql()) {
+                    stmt.execute(String.format(FETCH_CURSOR_MSSQL, batchSize));
+                } else {
+                    stmt.execute(String.format(FETCH_CURSOR_POSTGRES, batchSize));
+                }
+
+                try (ResultSet rs = stmt.getResultSet()) {
+
+                    // Process the batch of rows
+                    while (rs.next()) {
+
+                        hasRows = true;
+
+                        // Now we want to write the found Contentlets into a file for a later processing
+                        var dotConnect = new DotConnect();
+                        dotConnect.fromResultSet(rs);
+
+                        var loadedResults = dotConnect.loadObjectResults();
+
+                        var jsonDataArray = Optional.ofNullable(loadedResults)
+                                .map(results ->
+                                        TransformerLocator.createContentletTransformer(results).asList()
+                                )// Transform the results into a list of contentlets
+                                .map(contentletList ->
+                                        contentletList.stream()
+                                                .map(wrapCheckedFunction(this::toJSON))
+                                                .collect(Collectors.toList())
+                                )// Transform the contentlets into a list of json strings
+                                .orElse(Collections.emptyList());
+
+                        for (var jsonData : jsonDataArray) {
+                            // Write the json representation of the contentlet into the file
+                            fileWriter.write(jsonData);
+                            fileWriter.newLine();
+                        }
+                    }
+                }
+
+            } while (hasRows);
+
+            // Flush the writer to the file
+            fileWriter.flush();
+
+            // Close the cursor
+            stmt.execute(CLOSE_CURSOR);
+        } finally {
+            CloseUtils.closeQuietly(fileWriter);
+        }
     }
 
     /**
@@ -132,88 +275,6 @@ public class PopulateContentletAsJSONUtil {
                     })// Map each line to Tuple (inode, contentlet_as_json)
                     .filter(Objects::nonNull)
                     .forEach(wrapCheckedConsumer(this::updateContentlet));// Update each contentlet in the DB
-        }
-    }
-
-    /**
-     * Searches for all the contentlets of a given asset subtype (Content Type) that have a null contentlet_as_json. This
-     * method uses a cursor to avoid loading all the contentlets into memory.
-     * Each found contentlet is written into a file for a later processing.
-     *
-     * @param assetSubtype             The asset subtype (Content Type) to search for, if null all the contentlets will be searched.
-     * @param populateJSONTaskDataFile The file where the contentlets will be written.
-     * @throws SQLException
-     * @throws DotDataException
-     * @throws IOException
-     */
-    @CloseDBIfOpened
-    private void findAndStoreToDisk(@Nullable String assetSubtype,
-                                    final File populateJSONTaskDataFile) throws
-            SQLException, DotDataException, IOException {
-
-        var fileWriter = new BufferedWriter(new FileWriter(populateJSONTaskDataFile));
-
-        try (final Connection conn = DbConnectionFactory.getConnection();
-             var stmt = conn.createStatement()) {
-
-            if (Strings.isNullOrEmpty(assetSubtype)) {
-                stmt.execute(String.format(DECLARE_CURSOR, CONTENTS_WITH_NO_JSON));
-            } else {
-                var selectQuery = String.format(SUBTYPE_WITH_NO_JSON, assetSubtype);
-                stmt.execute(String.format(DECLARE_CURSOR, selectQuery));
-            }
-
-            boolean hasMoreRows = true;
-
-            do {
-
-                // Fetching batches of 100 records
-                if (DbConnectionFactory.isMsSql()) {
-                    stmt.execute(FETCH_CURSOR_MSSQL);
-                } else {
-                    stmt.execute(FETCH_CURSOR_POSTGRES);
-                }
-
-                try (ResultSet rs = stmt.getResultSet()) {
-
-                    // Process the batch of rows
-                    while (rs.next()) {
-
-                        // Now we want to write the found Contentlets into a file for a later processing
-                        var dotConnect = new DotConnect();
-                        dotConnect.fromResultSet(rs);
-
-                        var jsonDataArray = Optional.ofNullable(dotConnect.loadObjectResults())
-                                .map(results ->
-                                        TransformerLocator.createContentletTransformer(results).asList()
-                                )// Transform the results into a list of contentlets
-                                .map(contentletList ->
-                                        contentletList.stream()
-                                                .map(wrapCheckedFunction(this::toJSON))
-                                                .collect(Collectors.toList())
-                                )// Transform the contentlets into a list of json strings
-                                .orElse(Collections.emptyList());
-
-                        for (var jsonData : jsonDataArray) {
-                            // Write the json representation of the contentlet into the file
-                            fileWriter.write(jsonData);
-                            fileWriter.newLine();
-                        }
-                    }
-
-                    // Check if there are more rows to fetch
-                    hasMoreRows = rs.getRow() > 0;
-                }
-
-                // Flush the writer to the file
-                fileWriter.flush();
-
-            } while (hasMoreRows);
-
-            // Close the cursor
-            stmt.execute(CLOSE_CURSOR);
-        } finally {
-            CloseUtils.closeQuietly(fileWriter);
         }
     }
 
