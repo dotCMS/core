@@ -5,7 +5,7 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { ChartModule } from 'primeng/chart';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { daysOfTheWeek } from '@dotcms/dotcms-models';
+import { ChartColors, daysOfTheWeek } from '@dotcms/dotcms-models';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { dotExperimentChartJsOptions } from '@portlets/dot-experiments/dot-experiments-reports/components/dot-experiments-reports-chart/chartjs/options/dotExperiments-chartjs.options';
 import { htmlLegendPlugin } from '@portlets/dot-experiments/dot-experiments-reports/components/dot-experiments-reports-chart/chartjs/plugins/dotHtmlLegend-chartjs.plugin';
@@ -24,19 +24,19 @@ const DefaultExperimentChartDatasetColors: Record<
     { borderColor: string; backgroundColor: string; pointBackgroundColor: string }
 > = {
     DEFAULT: {
-        borderColor: 'rgba(66,107,240,1)',
-        pointBackgroundColor: 'rgba(66,107,240,1)',
-        backgroundColor: 'rgba(66,107,240,.1)'
+        borderColor: ChartColors.primary.rgb,
+        pointBackgroundColor: ChartColors.primary.rgb,
+        backgroundColor: ChartColors.primary.rgba_10
     },
     VARIANT1: {
-        borderColor: 'rgba(177,117,255,1)',
-        pointBackgroundColor: 'rgba(177,117,255,1)',
-        backgroundColor: 'rgba(177,117,255,.1)'
+        borderColor: ChartColors.secondary.rgb,
+        pointBackgroundColor: ChartColors.secondary.rgb,
+        backgroundColor: ChartColors.secondary.rgba_10
     },
     VARIANT2: {
-        borderColor: 'rgba(65,219,247,1)',
-        pointBackgroundColor: 'rgba(65,219,247,1)',
-        backgroundColor: 'rgba(65,219,247,.1)'
+        borderColor: ChartColors.accent.rgb,
+        pointBackgroundColor: ChartColors.accent.rgb,
+        backgroundColor: ChartColors.accent.rgba_10
     }
 };
 
@@ -50,7 +50,10 @@ const DefaultExperimentChartDatasetColors: Record<
 })
 export class DotExperimentsReportsChartComponent {
     readonly customChartPlugins = [htmlLegendPlugin];
-    readonly dotExperimentsChartJSOptions = dotExperimentChartJsOptions;
+    readonly dotExperimentsChartJSOptions = dotExperimentChartJsOptions({
+        xAxisLabel: this.dotMessageService.get('dot.experimental.chart.xAxisLabel'),
+        yAxisLabel: this.dotMessageService.get('dot.experimental.chart.yAxisLabel')
+    });
 
     labels = this.addWeekdayToDateLabels([
         '03/15/2023',

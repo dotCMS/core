@@ -98,3 +98,18 @@ export const ConditionDefaultByTypeOfGoal: Record<GOAL_TYPES, GOAL_PARAMETERS> =
     [GOAL_TYPES.REACH_PAGE]: GOAL_PARAMETERS.REFERER,
     [GOAL_TYPES.CLICK_ON_ELEMENT]: GOAL_PARAMETERS.URL
 };
+
+export const ChartColors = {
+    primary: {
+        rgb: 'rgb(66,107,240)',
+        rgba_10: 'rgba(66,107,240,0.1)'
+    },
+    secondary: {
+        rgb: 'rgb(177,117,255)',
+        rgba_10: 'rgba(177,117,255,0.1)'
+    },
+    accent: {
+        rgb: 'rgb(65,219,247)',
+        rgba_10: 'rgba(65,219,247,0.1)'
+    }
+};
