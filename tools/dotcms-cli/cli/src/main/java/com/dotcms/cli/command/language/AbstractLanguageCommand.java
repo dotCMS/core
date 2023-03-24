@@ -28,6 +28,11 @@ public abstract class AbstractLanguageCommand {
         );
     }
 
+    /**
+     * Find a language by id or language tag
+     * @param languageTagOrId
+     * @return
+     */
     Optional<Language> findExistingLanguage(final String languageTagOrId){
         if (null != languageTagOrId) {
             final Language language;
