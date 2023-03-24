@@ -1987,4 +1987,53 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
 
         return APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
     }
+
+    @Test
+    public void test_getUrlMapForContentlet_with_bad_detail_page() throws Exception{
+
+        ContentType type =  new ContentTypeDataGen()
+                .detailPage("bad detail page")
+                .nextPersisted();
+
+        Contentlet content = new ContentletDataGen(type.id()).nextPersisted();
+
+        assertNotNull(content);
+        assertNotNull(content.getIdentifier());
+        assertEquals(content.getContentTypeId(), type.id());
+
+        assertNull(APILocator.getContentletAPI().getUrlMapForContentlet(content,user,false));
+
+
+
+
+    }
+
+    @Test
+    public void test_getUrlMapForContentlet_with_detail_page_but_no_pattern() throws Exception{
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template_A = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset htmlPageAsset = createHtmlPageAsset(VariantAPI.DEFAULT_VARIANT, APILocator.getLanguageAPI().getDefaultLanguage(), host, template_A);
+
+        ContentType type =  new ContentTypeDataGen()
+                .detailPage(htmlPageAsset.getIdentifier())
+                .nextPersisted();
+
+        Contentlet content = new ContentletDataGen(type.id()).nextPersisted();
+        assertNotNull(content);
+        assertNotNull(content.getIdentifier());
+        assertEquals(content.getContentTypeId(), type.id());
+
+        assertEquals(contentletAPI.getUrlMapForContentlet(content,user,false),
+
+                htmlPageAsset.getPageUrl() + "?id=" + content.getInode()
+
+                );
+    }
+
+
+
+
+
 }

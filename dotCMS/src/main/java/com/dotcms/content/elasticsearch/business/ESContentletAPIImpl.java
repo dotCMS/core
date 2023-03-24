@@ -9472,17 +9472,18 @@ public class ESContentletAPIImpl implements ContentletAPI {
         contentFactory.updateUserReferences(userToReplace, replacementUserId, user);
     }
 
+    final static String CONTENTLET_URL_MAP_FOR_CONTENT_404 = "URL_MAP_FOR_CONTENT_404";
+
     @CloseDBIfOpened
     @Override
     public String getUrlMapForContentlet(Contentlet contentlet, User user,
             boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
-        // no structure, no inode, no workee
-        if (!InodeUtils.isSet(contentlet.getInode()) || !InodeUtils.isSet(
-                contentlet.getStructureInode())) {
+
+
+        if(contentlet ==null || contentlet.getMap()==null) {
             return null;
         }
 
-        final String CONTENTLET_URL_MAP_FOR_CONTENT_404 = "URL_MAP_FOR_CONTENT_404";
         String result = (String) contentlet.getMap().get(URL_MAP_FOR_CONTENT_KEY);
         if (result != null) {
             if (CONTENTLET_URL_MAP_FOR_CONTENT_404.equals(result)) {
@@ -9491,22 +9492,38 @@ public class ESContentletAPIImpl implements ContentletAPI {
             return result;
         }
 
-        // if there is no detail page, return
-        Structure structure = CacheLocator.getContentTypeCache()
-                .getStructureByInode(contentlet.getStructureInode());
-        if (!UtilMethods.isSet(structure.getDetailPage())) {
+        // no structure, no inode, no workee
+        if (!InodeUtils.isSet(contentlet.getInode()) || !InodeUtils.isSet(
+                contentlet.getContentTypeId())) {
+            contentlet.getMap().put(URL_MAP_FOR_CONTENT_KEY, CONTENTLET_URL_MAP_FOR_CONTENT_404);
             return null;
         }
+
+        ContentType type = Try.of(()->contentlet.getContentType()).getOrNull();
+        // if there is no valid detail page, return
+        if (type==null || !UtilMethods.isSet(type.detailPage())) {
+            contentlet.getMap().put(URL_MAP_FOR_CONTENT_KEY, CONTENTLET_URL_MAP_FOR_CONTENT_404);
+            return null;
+        }
+
+
+        //if detail page does not exist, return null
+        Identifier detailPageId = APILocator.getIdentifierAPI().find(type.detailPage());
+        if(detailPageId==null || !InodeUtils.isSet(detailPageId.getId())){
+            contentlet.getMap().put(URL_MAP_FOR_CONTENT_KEY, CONTENTLET_URL_MAP_FOR_CONTENT_404);
+            return null;
+        }
+
 
         Identifier id = APILocator.getIdentifierAPI().find(contentlet.getIdentifier());
         Host host = APILocator.getHostAPI().find(id.getHostId(), user, respectFrontendRoles);
 
         // URL MAPPed
-        if (UtilMethods.isSet(structure.getUrlMapPattern())) {
-            List<RegExMatch> matches = RegEX.find(structure.getUrlMapPattern(), "({[^{}]+})");
+        if (UtilMethods.isSet(type.urlMapPattern())) {
+            List<RegExMatch> matches = RegEX.find(type.urlMapPattern(), "({[^{}]+})");
             String urlMapField;
             String urlMapFieldValue;
-            result = structure.getUrlMapPattern();
+            result = type.urlMapPattern();
             for (RegExMatch match : matches) {
                 urlMapField = match.getMatch();
                 urlMapFieldValue = contentlet.getStringProperty(
@@ -9526,10 +9543,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         // or Detail page with id=uuid
         else {
-            IHTMLPage p = loadPageByIdentifier(structure.getDetailPage(), false, user,
+            IHTMLPage p = loadPageByIdentifier(type.detailPage(), false, user,
                     respectFrontendRoles);
             if (p != null && UtilMethods.isSet(p.getIdentifier())) {
-                result = p.getURI() + "?id=" + contentlet.getInode();
+                result = p.getPageUrl() + "?id=" + contentlet.getInode();
             }
         }
 
