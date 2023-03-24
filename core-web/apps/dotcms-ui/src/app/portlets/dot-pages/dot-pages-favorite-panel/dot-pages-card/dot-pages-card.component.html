@@ -2,11 +2,13 @@
     <ng-template pTemplate="header">
         <div
             class="dot-pages-favorite-card-content__image"
+            *ngIf="imageUri"
             [ngStyle]="{ 'background-image': 'url(' + imageUri + ')' }"
             data-testId="favoriteCardImageContainer"
         >
             <img [alt]="title" [src]="imageUri" />
         </div>
+        <dot-pages-favorite-page-empty-skeleton *ngIf="!imageUri" />
     </ng-template>
 
     <dot-icon-button

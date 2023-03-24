@@ -69,7 +69,7 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
                     this.form = this.fb.group({
                         currentUserRoleId: [formStateData?.currentUserRoleId, Validators.required],
                         inode: [formStateData?.inode],
-                        thumbnail: [formStateData?.thumbnail, Validators.required],
+                        thumbnail: [formStateData?.thumbnail],
                         title: [formStateData?.title, Validators.required],
                         url: [{ value: formStateData?.url, disabled: true }, Validators.required],
                         order: [formStateData?.order, Validators.required],
@@ -160,8 +160,15 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
 
     private setPreviewThumbnailListener() {
         const dotHtmlToImageElement = document.querySelector('dot-html-to-image');
-        dotHtmlToImageElement.addEventListener('pageThumbnail', (event: CustomEvent) => {
-            this.form.get('thumbnail').setValue(event.detail.file);
-        });
+        dotHtmlToImageElement
+            ? dotHtmlToImageElement.addEventListener('pageThumbnail', (event: CustomEvent) => {
+                  if (event.detail.file) {
+                      this.form.get('thumbnail').setValue(event.detail.file);
+                  } else {
+                      this.form.get('thumbnail').setValue('');
+                      this.store.setShowFavoriteEmptySkeleton(true);
+                  }
+              })
+            : null;
     }
 }

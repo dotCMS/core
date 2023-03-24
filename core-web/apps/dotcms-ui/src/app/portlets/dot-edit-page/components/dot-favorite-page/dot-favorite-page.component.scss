@@ -15,6 +15,7 @@
         position: absolute;
     }
 
+    dot-pages-favorite-page-empty-skeleton,
     .dot-favorite-dialog__thumbnailField {
         margin-bottom: 0;
         min-height: 353px;
@@ -44,6 +45,7 @@
         min-height: 353px;
 
         img {
+            background-color: $white;
             border: 1px solid $gray-lighter;
             height: 353px;
             object-fit: contain;

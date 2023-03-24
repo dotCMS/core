@@ -8,7 +8,15 @@
 >
     <form class="p-fluid" *ngIf="form" [formGroup]="form" data-testId="form">
         <div class="fields-col">
-            <div class="dot-favorite-dialog__thumbnailField" data-testId="thumbnailField">
+            <dot-pages-favorite-page-empty-skeleton
+                *ngIf="vm.showFavoriteEmptySkeleton"
+            ></dot-pages-favorite-page-empty-skeleton>
+
+            <div
+                class="dot-favorite-dialog__thumbnailField"
+                *ngIf="!vm.showFavoriteEmptySkeleton"
+                data-testId="thumbnailField"
+            >
                 <ng-template [ngIf]="vm.renderThumbnail" [ngIfElse]="existingFavoritePage">
                     <dot-html-to-image
                         *ngIf="vm.renderThumbnail"
