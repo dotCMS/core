@@ -9499,7 +9499,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             return null;
         }
 
-        ContentType type = Try.of(()->contentlet.getContentType()).getOrNull();
+        ContentType type = Try.of(contentlet::getContentType).getOrNull();
         // if there is no valid detail page, return
         if (type==null || !UtilMethods.isSet(type.detailPage())) {
             contentlet.getMap().put(URL_MAP_FOR_CONTENT_KEY, CONTENTLET_URL_MAP_FOR_CONTENT_404);
@@ -9509,55 +9509,51 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         //if detail page does not exist, return null
         Identifier detailPageId = APILocator.getIdentifierAPI().find(type.detailPage());
+
+
         if(detailPageId==null || !InodeUtils.isSet(detailPageId.getId())){
             contentlet.getMap().put(URL_MAP_FOR_CONTENT_KEY, CONTENTLET_URL_MAP_FOR_CONTENT_404);
             return null;
         }
 
 
-        Identifier id = APILocator.getIdentifierAPI().find(contentlet.getIdentifier());
-        Host host = APILocator.getHostAPI().find(id.getHostId(), user, respectFrontendRoles);
 
-        // URL MAPPed
-        if (UtilMethods.isSet(type.urlMapPattern())) {
-            List<RegExMatch> matches = RegEX.find(type.urlMapPattern(), "({[^{}]+})");
-            String urlMapField;
-            String urlMapFieldValue;
-            result = type.urlMapPattern();
-            for (RegExMatch match : matches) {
-                urlMapField = match.getMatch();
-                urlMapFieldValue = contentlet.getStringProperty(
-                        urlMapField.substring(1, (urlMapField.length() - 1)));
-
-                //Clean up the contents before to replace the values
-                urlMapFieldValue = sanitizeForURLMap(urlMapFieldValue);
-                urlMapField = sanitizeForURLMap(urlMapField);
-
-                if (UtilMethods.isSet(urlMapFieldValue)) {
-                    result = result.replaceAll(urlMapField, urlMapFieldValue);
-                } else {
-                    result = result.replaceAll(urlMapField, "");
-                }
-            }
-        }
-
-        // or Detail page with id=uuid
-        else {
-            IHTMLPage p = loadPageByIdentifier(type.detailPage(), false, user,
+        if(UtilMethods.isEmpty(type.urlMapPattern())){
+            IHTMLPage p = APILocator.getHTMLPageAssetAPI().findByIdLanguageFallback(type.detailPage(), contentlet.getLanguageId(),false, user,
                     respectFrontendRoles);
+
+
             if (p != null && UtilMethods.isSet(p.getIdentifier())) {
-                result = p.getPageUrl() + "?id=" + contentlet.getInode();
+                String urlMap = p.getPageUrl() + "?id=" + contentlet.getInode()  ;
+                contentlet.getMap().put(URL_MAP_FOR_CONTENT_KEY, urlMap);
+                return urlMap;
             }
         }
 
-        // we send the host of the content, not the detail page (is this right?)
-        if ((host != null) && !host.isSystemHost() && !respectFrontendRoles && result != null) {
-            if (result.indexOf("?") < 0) {
-                result = result + "?host_id=" + host.getIdentifier();
+
+        List<RegExMatch> matches = RegEX.find(type.urlMapPattern(), "({[^{}]+})");
+        if (matches.isEmpty()) {
+            contentlet.getMap().put(URL_MAP_FOR_CONTENT_KEY, CONTENTLET_URL_MAP_FOR_CONTENT_404);
+            return null;
+        }
+
+        result = type.urlMapPattern();
+        for (RegExMatch match : matches) {
+            String urlMapField = match.getMatch();
+            String urlMapFieldValue = contentlet.getStringProperty(
+                    urlMapField.substring(1, (urlMapField.length() - 1)));
+
+            //Clean up the contents before to replace the values
+            urlMapFieldValue = sanitizeForURLMap(urlMapFieldValue);
+            urlMapField = sanitizeForURLMap(urlMapField);
+
+            if (UtilMethods.isSet(urlMapFieldValue)) {
+                result = result.replaceAll(urlMapField, urlMapFieldValue);
             } else {
-                result = result + "&host_id=" + host.getIdentifier();
+                result = result.replaceAll(urlMapField, "");
             }
         }
+        
 
         if (result == null) {
             result = CONTENTLET_URL_MAP_FOR_CONTENT_404;
