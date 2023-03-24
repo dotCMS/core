@@ -1,5 +1,6 @@
 package com.dotcms.util.content.json;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.json.ContentletJsonAPI;
 import com.dotcms.content.business.json.ContentletJsonHelper;
@@ -62,7 +63,8 @@ public class PopulateContentletAsJSONUtil {
 
     // Cursor related queries
     private final String DECLARE_CURSOR = "DECLARE missingContentletAsJSONCursor CURSOR FOR %s";
-    private final String FETCH_CURSOR = "FETCH FORWARD 100 FROM missingContentletAsJSONCursor";
+    private final String FETCH_CURSOR_POSTGRES = "FETCH FORWARD 100 FROM missingContentletAsJSONCursor";
+    private final String FETCH_CURSOR_MSSQL = "FETCH NEXT 100 FROM missingContentletAsJSONCursor";
     private final String CLOSE_CURSOR = "CLOSE missingContentletAsJSONCursor";
 
     private static class SingletonHolder {
@@ -87,6 +89,16 @@ public class PopulateContentletAsJSONUtil {
         void accept(T t) throws E;
     }
 
+    /**
+     * Finds all the contentlets that need to be updated with the contentlet_as_json column for a given
+     * optional assetSubtype (Content Type).
+     *
+     * @param assetSubtype Optional assetSubtype (Content Type) to filter the contentlets to process, if null then all
+     *                     the contentlets will be processed.
+     * @throws SQLException
+     * @throws DotDataException
+     * @throws IOException
+     */
     @WrapInTransaction
     public void populate(@Nullable String assetSubtype) throws SQLException, DotDataException, IOException {
 
@@ -134,6 +146,7 @@ public class PopulateContentletAsJSONUtil {
      * @throws DotDataException
      * @throws IOException
      */
+    @CloseDBIfOpened
     private void findAndStoreToDisk(@Nullable String assetSubtype,
                                     final File populateJSONTaskDataFile) throws
             SQLException, DotDataException, IOException {
@@ -154,7 +167,12 @@ public class PopulateContentletAsJSONUtil {
 
             do {
 
-                stmt.execute(FETCH_CURSOR);// Fetching batches of 100 records
+                // Fetching batches of 100 records
+                if (DbConnectionFactory.isMsSql()) {
+                    stmt.execute(FETCH_CURSOR_MSSQL);
+                } else {
+                    stmt.execute(FETCH_CURSOR_POSTGRES);
+                }
 
                 try (ResultSet rs = stmt.getResultSet()) {
 
