@@ -27,10 +27,10 @@
                             {{ experiment.name }}
                         </td>
                         <td data-testId="experiment-row__createdDate">
-                            {{ experiment.creationDate | date : 'longDate' }}
+                            {{ experiment.creationDate | dotRelativeDate : true }}
                         </td>
                         <td data-testId="experiment-row__modDate">
-                            {{ experiment.modDate | date : 'longDate' }}
+                            {{ experiment.modDate | dotRelativeDate : true }}
                         </td>
                         <td data-testId="experiment-row__actions">
                             <ng-container
