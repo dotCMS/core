@@ -40,7 +40,7 @@ $row-height: 70px;
     position: relative;
 
     .dot-add-rows-columns-list__title {
-        font-size: $font-size-large;
+        font-size: $font-size-lg;
     }
 
     dot-icon-button {
@@ -51,7 +51,7 @@ $row-height: 70px;
 }
 
 .dot-add-rows-columns-list__item {
-    background-color: $gray-bg;
+    background-color: $color-palette-gray-200;
     cursor: pointer;
     display: block;
     flex-grow: 1;
@@ -65,23 +65,23 @@ $row-height: 70px;
     }
 
     &.active {
-        background-color: rgba($brand-secondary_rgb, 0.25);
+        background-color: rgba($color-palette-secondary, 0.25);
 
         .dot-add-rows-columns-list__item-col {
-            background-color: $gray-bg;
+            background-color: $color-palette-gray-200;
         }
     }
 
     .dot-add-rows-columns-list__item-title {
-        color: $gray;
-        font-size: $font-size-small;
+        color: $color-palette-gray-700;
+        font-size: $font-size-sm;
     }
 
     .dot-add-rows-columns-list__item-container {
         display: flex;
 
         .dot-add-rows-columns-list__item-col {
-            background-color: $gray-dark;
+            background-color: $color-palette-gray-800;
             flex-grow: 1;
             height: 60px;
             margin: 0 $spacing-1;
