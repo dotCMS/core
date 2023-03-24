@@ -20,8 +20,8 @@ import { SidebarModule } from 'primeng/sidebar';
 import { takeUntil } from 'rxjs/operators';
 
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
-import { DotMessagePipe } from '@dotcms/app/view/pipes';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
+import { DotMessagePipe } from '@dotcms/app/view/pipes';
 import {
     ComponentStatus,
     GOAL_TYPES,
