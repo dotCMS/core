@@ -45,13 +45,11 @@ import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.*;
-import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
-import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -69,7 +67,6 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships.Content
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.google.common.io.Files;
@@ -1762,7 +1759,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ESContentletAPIImpl#findContentletByIdentifierAnyLanguageAndVariant(String)} (String)}
+     * Method to test: {@link ESContentletAPIImpl#findContentletByIdentifierAnyLanguageAnyVariant(String)} (String)}
      * When: The contentlet had just one version not in the DEFAULT variant
      * Should: return the {@link Contentlet} anyway
      *
@@ -1784,7 +1781,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
                 .nextPersisted();
 
         final Contentlet contentletByIdentifierAnyLanguage = APILocator.getContentletAPI()
-                .findContentletByIdentifierAnyLanguageAndVariant(contentlet.getIdentifier());
+                .findContentletByIdentifierAnyLanguageAnyVariant(contentlet.getIdentifier());
 
         assertNotNull(contentletByIdentifierAnyLanguage);
         assertEquals(contentlet.getIdentifier(), contentletByIdentifierAnyLanguage.getIdentifier());
