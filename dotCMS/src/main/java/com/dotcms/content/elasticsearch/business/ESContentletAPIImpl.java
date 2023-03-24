@@ -219,7 +219,6 @@ import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
 import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PERSONA_NAME_KEY;
-import static com.twelvemonkeys.io.FileUtil.list;
 
 /**
  * Implementation class for the {@link ContentletAPI} interface.
@@ -3718,13 +3717,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
         final String inode = contentlet.getInode();
         final Contentlet checkedoutContentlet = Try.of(() -> checkout(inode, user, false))
                 .getOrElseThrow(
-                        (e) -> new DotStateException("Unable to checkout content. Inode:" + inode, e));
+                        e -> new DotStateException("Unable to checkout content. Inode:" + inode, e));
 
         checkedoutContentlet.setVariantId(variantName);
 
         return Try.of(() -> checkin(checkedoutContentlet, user, false))
                  .getOrElseThrow(
-                        (e) -> new DotStateException("Unable to checkin content. Inode:" + inode, e));
+                        e -> new DotStateException("Unable to checkin content. Inode:" + inode, e));
     }
 
 

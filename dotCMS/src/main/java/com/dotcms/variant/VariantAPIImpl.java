@@ -1,6 +1,5 @@
 package com.dotcms.variant;
 
-import static com.dotcms.util.CollectionsUtils.list;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
@@ -12,18 +11,17 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
+
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import org.jetbrains.annotations.NotNull;
+
 
 /**
  * API of {@link Variant}
@@ -182,7 +180,7 @@ public class VariantAPIImpl implements VariantAPI {
             }
 
         } catch (DotDataException | DotSecurityException e) {
-            throw new RuntimeException(e);
+            throw new DotRuntimeException(e);
         }
     }
 }
