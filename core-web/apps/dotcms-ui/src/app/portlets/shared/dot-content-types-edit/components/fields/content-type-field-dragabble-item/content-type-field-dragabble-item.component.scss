@@ -6,7 +6,7 @@
     cursor: move;
     display: flex;
     height: $content-type-field-height;
-    padding: $spacing-3;
+    padding: $spacing-2 $spacing-3;
     transition: box-shadow $basic-speed;
 
     &:hover {
@@ -60,17 +60,17 @@ dot-icon {
     align-items: center;
 }
 
-.field__attribute,
-.field__variable {
-    color: gray;
-    font-size: $font-size-sm;
-    overflow: hidden;
+.field__info__container {
     display: flex;
+    align-items: center;
+    padding-top: 4px;
+    gap: $spacing-1;
 }
 
 .field__attribute {
+    color: gray;
+    font-size: $font-size-sm;
     min-height: $font-size-sm;
-    margin-left: 26px;
 }
 
 .field__actions {
