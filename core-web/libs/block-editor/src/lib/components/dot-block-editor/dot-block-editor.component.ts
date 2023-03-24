@@ -357,6 +357,13 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
                 allowedBlocks: this._allowedBlocks
             }),
             Placeholder.configure({ placeholder: this.placeholder }),
+            Youtube.configure({
+                height: 400,
+                width: 500,
+                interfaceLanguage: 'us',
+                nocookie: true,
+                modestBranding: true
+            }),
             ActionsMenu(this.viewContainerRef, this.getParsedCustomBlocks()),
             DragHandler(this.viewContainerRef),
             ImageUpload(this.injector, this.viewContainerRef),
@@ -367,9 +374,6 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             DotTableCellExtension(this.viewContainerRef),
             BubbleAssetFormExtension(this.viewContainerRef),
             DotTableHeaderExtension(),
-            Youtube.configure({
-                //TODO: Add configs
-            }),
             TableRow,
             FreezeScroll,
             CharacterCount
