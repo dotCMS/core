@@ -45,7 +45,6 @@ dot-icon {
 }
 
 .field__name {
-    margin-right: $spacing-1;
     @include truncate-text;
 }
 
@@ -75,7 +74,7 @@ dot-icon {
 
 .field__actions {
     flex-shrink: 0;
-    margin-left: $spacing-1;
+    margin-left: 0.25rem;
 
     & > * {
         margin: 0 0.25rem;
