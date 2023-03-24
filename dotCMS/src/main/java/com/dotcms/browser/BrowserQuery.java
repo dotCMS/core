@@ -4,16 +4,12 @@ import com.dotcms.api.tree.Parentable;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
-import com.dotmarketing.business.Theme;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -92,24 +88,24 @@ public class BrowserQuery {
         this.roles= Try.of(()->APILocator.getRoleAPI().loadRolesForUser(user.getUserId()).toArray(new Role[0])).getOrElse(new Role[0]);
     }
 
+    /**
+     * Returns the appropriate Site and Folder based on the input from the User or system configuration.
+     *
+     * @param parentId           The ID of the Folder or Site that has been selected or specified.
+     * @param user               The {@link User} executing this action.
+     * @param hostIdSystemFolder The ID of a specific Site.
+     *
+     * @return A Tuple2 containing the Site and its Folder.
+     */
     @CloseDBIfOpened
     private Tuple2<Host, Folder> getParents(final String parentId, final User user, final String hostIdSystemFolder) {
         boolean respectFrontEndPermissions = PageMode.get().respectAnonPerms;
-        //check if the parentId exists
-        final Identifier identifier = Try.of(() -> APILocator.getIdentifierAPI().findFromInode(parentId)).getOrNull();
-        if ((identifier == null || UtilMethods.isEmpty(identifier.getId())) && (!parentId.equalsIgnoreCase(
-                Theme.SYSTEM_THEME))) {
-            Logger.error(this, "parentId doesn't belong to a Folder or a Host, id: " + parentId
-                    + ", maybe the Folder was modified in the background. If using SystemFolder must send hostIdSystemFolder.");
-            throw new DotRuntimeException("parentId doesn't belong to a Folder or a Host, id: " + parentId);
-        }
-
-        // gets folder parent
         final Folder folder = Try.of(() -> APILocator.getFolderAPI().find(parentId, user, respectFrontEndPermissions)).toJavaOptional()
                 .orElse(APILocator.getFolderAPI().findSystemFolder());
         final Host site = folder.isSystemFolder()
-                ? null != hostIdSystemFolder ? Try.of(() -> APILocator.getHostAPI().find(hostIdSystemFolder, user, respectFrontEndPermissions)).getOrNull()
-                :  Try.of(() -> WebAPILocator.getHostWebAPI().getCurrentHost()).getOrNull()
+                ? null != hostIdSystemFolder
+                          ? Try.of(() -> APILocator.getHostAPI().find(hostIdSystemFolder, user, respectFrontEndPermissions)).getOrNull()
+                          : Try.of(() -> WebAPILocator.getHostWebAPI().getCurrentHost()).getOrNull()
                 : Try.of(() -> APILocator.getHostAPI().find(folder.getHostId(), user, respectFrontEndPermissions)).getOrNull();
 
         return Tuple.of(site, folder);
