@@ -79,8 +79,9 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
         spectator.detectChanges();
     });
 
-    it('should have a form', () => {
+    it('should have a form & autofocus', () => {
         expect(spectator.query(byTestId('select-goal-form'))).toExist();
+        expect(spectator.query(byTestId('goal-name-input'))).toHaveAttribute('dotAutofocus');
         expect((spectator.query(byTestId('goal-name-input')) as HTMLInputElement).value).toEqual(
             'Primary goal'
         );
