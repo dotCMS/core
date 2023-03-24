@@ -20,6 +20,7 @@ import { SidebarModule } from 'primeng/sidebar';
 import { takeUntil } from 'rxjs/operators';
 
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
+import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import {
     ComponentStatus,
     GOAL_TYPES,
@@ -51,6 +52,7 @@ import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sideba
         DotSidebarDirective,
         DotExperimentsOptionsModule,
         DotDropdownDirective,
+        DotAutofocusModule,
         //PrimeNg
         SidebarModule,
         ButtonModule,
