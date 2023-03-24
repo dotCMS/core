@@ -1,9 +1,11 @@
+import { ChartColors } from '@dotcms/dotcms-models';
+
 interface DotExperimentsChartjsOptions {
     xAxisLabel: string;
     yAxisLabel: string;
 }
 
-export const dotExperimentChartJsOptions = ({
+export const getDotExperimentChartJsOptions = ({
     xAxisLabel,
     yAxisLabel
 }: DotExperimentsChartjsOptions) => {
@@ -40,7 +42,7 @@ export const dotExperimentChartJsOptions = ({
                         };
                     },
                     labelTextColor: function () {
-                        return '#fff';
+                        return ChartColors.white;
                     }
                 }
             }
@@ -65,7 +67,7 @@ export const dotExperimentChartJsOptions = ({
                     callback: function (val, index) {
                         return index % 2 === 0 ? this.getLabelForValue(val as number) : '';
                     },
-                    color: '#524E5C',
+                    color: ChartColors.ticks.hex,
                     autoSkip: true,
                     autoSkipPadding: 3,
                     maxTicksLimit: 10,
@@ -73,11 +75,11 @@ export const dotExperimentChartJsOptions = ({
                 },
                 border: {
                     display: true,
-                    color: 'black'
+                    color: ChartColors.black
                 },
                 grid: {
                     display: true,
-                    color: '#AFB3C0',
+                    color: ChartColors.xAxis.gridLine,
                     lineWidth: 0.8,
                     drawTicks: false
                 }
@@ -93,15 +95,16 @@ export const dotExperimentChartJsOptions = ({
                     padding: 5
                 },
                 ticks: {
-                    color: '#524E5C'
+                    color: ChartColors.ticks.hex
                 },
                 border: {
                     display: true,
                     dash: [6, 3]
                 },
                 grid: {
-                    color: '#3D404D',
-                    lineWidth: [0.2]
+                    color: ChartColors.yAxis.gridLine,
+                    lineWidth: [0.2],
+                    borderDash: [8, 4]
                 }
             }
         }

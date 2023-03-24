@@ -1,3 +1,5 @@
+import { ChartDataset } from 'chart.js';
+
 import {
     ComponentStatus,
     DotExperimentStatusList,
@@ -111,5 +113,48 @@ export const ChartColors = {
     accent: {
         rgb: 'rgb(65,219,247)',
         rgba_10: 'rgba(65,219,247,0.1)'
+    },
+    xAxis: { gridLine: '#AFB3C0' },
+    yAxis: { gridLine: '#3D404D' },
+    ticks: {
+        hex: '#524E5C'
+    },
+    gridXLine: {
+        hex: '#AFB3C0'
+    },
+    gridYLine: {
+        hex: '#3D404D'
+    },
+    white: '#FFFFFF',
+    black: '#000000'
+};
+
+export const DefaultExperimentChartDatasetColors: Record<
+    'DEFAULT' | 'VARIANT1' | 'VARIANT2',
+    { borderColor: string; backgroundColor: string; pointBackgroundColor: string }
+> = {
+    DEFAULT: {
+        borderColor: ChartColors.primary.rgb,
+        pointBackgroundColor: ChartColors.primary.rgb,
+        backgroundColor: ChartColors.primary.rgba_10
+    },
+    VARIANT1: {
+        borderColor: ChartColors.secondary.rgb,
+        pointBackgroundColor: ChartColors.secondary.rgb,
+        backgroundColor: ChartColors.secondary.rgba_10
+    },
+    VARIANT2: {
+        borderColor: ChartColors.accent.rgb,
+        pointBackgroundColor: ChartColors.accent.rgb,
+        backgroundColor: ChartColors.accent.rgba_10
     }
+};
+
+export const DefaultExperimentChartDatasetOption: Partial<ChartDataset<'line'>> = {
+    type: 'line',
+    pointRadius: 4,
+    pointHoverRadius: 6,
+    fill: true,
+    cubicInterpolationMode: 'monotone',
+    borderWidth: 1.5
 };

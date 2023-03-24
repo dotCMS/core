@@ -1,44 +1,18 @@
-import { ChartData, ChartDataset } from 'chart.js';
+import { ChartData } from 'chart.js';
 
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 
 import { ChartModule } from 'primeng/chart';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { ChartColors, daysOfTheWeek } from '@dotcms/dotcms-models';
+import {
+    daysOfTheWeek,
+    DefaultExperimentChartDatasetColors,
+    DefaultExperimentChartDatasetOption
+} from '@dotcms/dotcms-models';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
-import { dotExperimentChartJsOptions } from '@portlets/dot-experiments/dot-experiments-reports/components/dot-experiments-reports-chart/chartjs/options/dotExperiments-chartjs.options';
+import { getDotExperimentChartJsOptions } from '@portlets/dot-experiments/dot-experiments-reports/components/dot-experiments-reports-chart/chartjs/options/dotExperiments-chartjs.options';
 import { htmlLegendPlugin } from '@portlets/dot-experiments/dot-experiments-reports/components/dot-experiments-reports-chart/chartjs/plugins/dotHtmlLegend-chartjs.plugin';
-
-const DefaultExperimentChartDatasetOption: Partial<ChartDataset<'line'>> = {
-    type: 'line',
-    pointRadius: 4,
-    pointHoverRadius: 6,
-    fill: true,
-    cubicInterpolationMode: 'monotone',
-    borderWidth: 1.5
-};
-
-const DefaultExperimentChartDatasetColors: Record<
-    'DEFAULT' | 'VARIANT1' | 'VARIANT2',
-    { borderColor: string; backgroundColor: string; pointBackgroundColor: string }
-> = {
-    DEFAULT: {
-        borderColor: ChartColors.primary.rgb,
-        pointBackgroundColor: ChartColors.primary.rgb,
-        backgroundColor: ChartColors.primary.rgba_10
-    },
-    VARIANT1: {
-        borderColor: ChartColors.secondary.rgb,
-        pointBackgroundColor: ChartColors.secondary.rgb,
-        backgroundColor: ChartColors.secondary.rgba_10
-    },
-    VARIANT2: {
-        borderColor: ChartColors.accent.rgb,
-        pointBackgroundColor: ChartColors.accent.rgb,
-        backgroundColor: ChartColors.accent.rgba_10
-    }
-};
 
 @Component({
     standalone: true,
@@ -50,7 +24,7 @@ const DefaultExperimentChartDatasetColors: Record<
 })
 export class DotExperimentsReportsChartComponent {
     readonly customChartPlugins = [htmlLegendPlugin];
-    readonly dotExperimentsChartJSOptions = dotExperimentChartJsOptions({
+    readonly dotExperimentsChartJSOptions = getDotExperimentChartJsOptions({
         xAxisLabel: this.dotMessageService.get('dot.experimental.chart.xAxisLabel'),
         yAxisLabel: this.dotMessageService.get('dot.experimental.chart.yAxisLabel')
     });
