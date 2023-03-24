@@ -244,7 +244,7 @@
 
                     if (content) {
                         blockEditor.value = content;
-                        field.value = content; 
+                        field.value = JSON.stringify(content); 
                     }
 
                     blockEditor.addEventListener('valueChange', (event) => {
@@ -255,7 +255,7 @@
                         if(block.editor.getHTML().toLowerCase() === "<p></p>"){
                             field.value = null;
                         } else {
-                            field.value = event.detail;
+                            field.value = JSON.stringify(event.detail);
                         }
                     });
 
