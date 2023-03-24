@@ -135,7 +135,8 @@ public class PopulateContentletAsJSONUtil {
      * @throws DotDataException
      * @throws IOException
      */
-    private void populate(@Nullable String assetSubtype, @Nullable String excludingAssetSubtype) throws SQLException, DotDataException, IOException {
+    private void populate(@Nullable String assetSubtype, @Nullable String excludingAssetSubtype)
+            throws SQLException, DotDataException, IOException {
 
         final File populateJSONTaskDataFile = File.createTempFile("rows-task-230320", "tmp");
 
