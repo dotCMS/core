@@ -21,7 +21,7 @@ p-toolbar::ng-deep {
         height: $toolbar-height;
         padding: 0 $spacing-3 0 0;
         border: 0;
-        border-bottom: solid 1px $gray-lighter;
+        border-bottom: solid 1px $color-palette-gray-300;
     }
 
     .p-toolbar-group-right > * {
@@ -115,7 +115,7 @@ dot-toolbar-notifications {
 }
 
 .toolbar__sep {
-    border-left: solid 1px $gray-bg;
+    border-left: solid 1px $color-palette-gray-200;
     margin: 0 $spacing-1 0 $spacing-4 !important;
     display: block;
     height: 40px;

@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public class Task221007AddVariantIntoPrimaryKey extends AbstractJDBCStartupTask {
 
@@ -26,31 +27,30 @@ public class Task221007AddVariantIntoPrimaryKey extends AbstractJDBCStartupTask 
     }
 
     public String getPostgresScript() {
-        return getScript("contentlet_version_info_pkey");
+        return getScript();
     }
 
 
     public String getMSSQLScript(){
-
-        try {
-            final ArrayList arrayList = new DotConnect()
-                    .setSQL("SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS T "
-                            + "WHERE table_name = 'contentlet_version_info' "
-                            + "AND constraint_type = 'PRIMARY KEY'")
-                    .loadResults();
-
-            final String constraintName = (((Map) arrayList.get(0))).get("constraint_name").toString();
-            return getScript(constraintName);
-        } catch (DotDataException e) {
-            throw new DotRuntimeException(e);
-        }
+        return getScript();
     }
 
-    public String getScript(final String name) {
-        final String dropStatement = String.format("ALTER TABLE contentlet_version_info DROP CONSTRAINT %s", name);
+    public String getScript() {
+        final StringBuffer buffer = new StringBuffer();
 
-        final String createStatement = String.format("ALTER TABLE contentlet_version_info "
-                + " ADD CONSTRAINT %s PRIMARY KEY (identifier, lang, variant_id)", name);
-        return dropStatement + ";" + createStatement + ";";
+        final Optional<String> contentletVersionInfoOptional = DotDatabaseMetaData.getPrimaryKeyName(
+                "contentlet_version_info");
+
+        if (contentletVersionInfoOptional.isPresent()) {
+            buffer.append(String.format("ALTER TABLE contentlet_version_info DROP CONSTRAINT %s;", contentletVersionInfoOptional.get()));
+        }
+
+        final String updatePrimaryKeyStatement = String.format(
+                "ALTER TABLE contentlet_version_info ADD CONSTRAINT %s PRIMARY KEY (identifier, lang, variant_id);",
+                contentletVersionInfoOptional.orElse("contentlet_version_info_pkey")
+        );
+
+        buffer.append(updatePrimaryKeyStatement);
+        return buffer.toString();
     }
 }

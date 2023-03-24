@@ -1,5 +1,6 @@
 package com.dotcms.util;
 
+import com.dotcms.business.bytebuddy.ByteBuddyFactory;
 import com.dotcms.config.DotInitializationService;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
@@ -10,9 +11,12 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.util.SystemProperties;
+
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.apache.felix.framework.OSGISystem;
+import org.awaitility.Awaitility;
+import org.awaitility.Duration;
 import org.mockito.Mockito;
 
 /**
@@ -33,12 +37,17 @@ public class IntegrationTestInitService {
     }
 
     public static IntegrationTestInitService getInstance() {
+        ByteBuddyFactory.init();
         return service;
     }
 
     public void init() throws Exception {
         try {
             if (initCompleted.compareAndSet(false, true)) {
+                Awaitility.setDefaultPollInterval(10, TimeUnit.MILLISECONDS);
+                Awaitility.setDefaultPollDelay(Duration.ZERO);
+                Awaitility.setDefaultTimeout(Duration.ONE_MINUTE);
+
                 ConfigTestHelper._setupFakeTestingContext();
 
                 CacheLocator.init();
@@ -57,7 +66,7 @@ public class IntegrationTestInitService {
                 // Init other dotCMS services.
                 DotInitializationService.getInstance().initialize();
             }
-        } catch(Exception e) {
+        } catch (Exception e) {
             Logger.error(this, "Error initializing Integration Test Init Service", e);
             throw e;
         }

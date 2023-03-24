@@ -2,21 +2,26 @@ package com.dotmarketing.business;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.LanguageDataGen;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.VariantAPI;
 import com.dotcms.variant.model.Variant;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -403,4 +408,38 @@ public class VersionableFactoryImplTest {
         assertTrue(ConversionUtils.toBooleanFromDb(map.get("deleted").toString()));
 
     }
+
+    /**
+     * Method to test: {@link VersionableFactory#findAnyContentletVersionInfoAnyVariant(String, boolean)} (String)}
+     * When: The contentlet had just one version not in the DEFAULT variant
+     * Should: return the {@link ContentletVersionInfo} anyway
+     *
+     * @throws WebAssetException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void findContentletByIdentifierAnyLanguageAndVariant() throws DotDataException {
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final Language language = new LanguageDataGen().nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType)
+                .languageId(language.getId())
+                .host(host)
+                .variant(variant)
+                .nextPersisted();
+
+        final ContentletVersionInfo anyContentletVersionInfoAnyVariant = FactoryLocator.getVersionableFactory()
+                .findAnyContentletVersionInfoAnyVariant(contentlet.getIdentifier(), false)
+                .orElseThrow();
+
+        assertNotNull(anyContentletVersionInfoAnyVariant);
+        assertEquals(contentlet.getIdentifier(), anyContentletVersionInfoAnyVariant.getIdentifier());
+        assertEquals(contentlet.getInode(), anyContentletVersionInfoAnyVariant.getWorkingInode());
+
+
+    }
+
 }

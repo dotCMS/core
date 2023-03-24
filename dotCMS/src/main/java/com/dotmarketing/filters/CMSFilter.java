@@ -144,7 +144,8 @@ public class CMSFilter implements Filter {
 
             if (UtilMethods.isSet(queryString)) {
                 if (!queryString.contains(WebKeys.HTMLPAGE_LANGUAGE)) {
-                    queryString = queryString + "&" + WebKeys.HTMLPAGE_LANGUAGE + "=" + languageId;
+                    queryString = queryString + "&" + WebKeys.HTMLPAGE_LANGUAGE + "=" +
+                            Try.of(()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId()).getOrElse(languageId);
                 }
                 forward.append('?');
                 forward.append(queryString);

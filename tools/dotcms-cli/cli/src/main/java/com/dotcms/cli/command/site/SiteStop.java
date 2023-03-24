@@ -16,18 +16,17 @@ import java.util.concurrent.Callable;
 @CommandLine.Command(name = SiteStop.NAME,
      description = "@|bold,green Stop Site |@ Option params @|bold,cyan --idOrName|@ site name or site id."
 )
-public class SiteStop extends SiteCommand implements Callable<Integer> {
+public class SiteStop extends AbstractSiteCommand implements Callable<Integer> {
 
-    static final String NAME = "site-stop";
+    static final String NAME = "stop";
 
     @CommandLine.Mixin(name = "output")
-    protected OutputOptionMixin output;
+    OutputOptionMixin output;
 
     @Inject
     RestClientFactory clientFactory;
 
-    @CommandLine.Option(names = { "-in", "--idOrName" },
-            order = 2, arity = "1", description = "Site by id or name", required = true)
+    @CommandLine.Parameters(index = "0", arity = "1", description = "Site name Or Id.")
     String siteNameOrId;
 
     @Override

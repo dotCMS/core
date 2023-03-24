@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.cache.FieldsCache;
@@ -38,6 +39,8 @@ public class Task00768CreateTagStorageFieldOnHostStructure implements StartupTas
         }
     }
 
+	@Override
+	@WrapInTransaction
 	public void executeUpgrade() throws DotDataException, DotRuntimeException {
 		
 	    upgradeStructureFields();

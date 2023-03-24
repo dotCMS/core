@@ -1,16 +1,15 @@
 # dot-card-view
 
-
-
 <!-- Auto Generated Below -->
 
 
 ## Properties
 
-| Property | Attribute | Description | Type                      | Default     |
-| -------- | --------- | ----------- | ------------------------- | ----------- |
-| `items`  | --        |             | `DotCardContentletItem[]` | `[]`        |
-| `value`  | `value`   |             | `string`                  | `undefined` |
+| Property             | Attribute              | Description | Type                      | Default     |
+| -------------------- | ---------------------- | ----------- | ------------------------- | ----------- |
+| `items`              | --                     |             | `DotCardContentletItem[]` | `[]`        |
+| `showVideoThumbnail` | `show-video-thumbnail` |             | `boolean`                 | `true`      |
+| `value`              | `value`                |             | `string`                  | `undefined` |
 
 
 ## Events
@@ -61,6 +60,7 @@ graph TD;
   dot-card-contentlet --> dot-badge
   dot-card-contentlet --> dot-contentlet-lock-icon
   dot-card-contentlet --> dot-context-menu
+  dot-contentlet-thumbnail --> dot-video-thumbnail
   dot-contentlet-thumbnail --> dot-contentlet-icon
   dot-state-icon --> dot-tooltip
   style dot-card-view fill:#f9f,stroke:#333,stroke-width:4px

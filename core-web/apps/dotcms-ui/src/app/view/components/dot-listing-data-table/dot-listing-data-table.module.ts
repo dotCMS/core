@@ -16,6 +16,7 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { ActionHeaderModule } from './action-header/action-header.module';
 import { DotListingDataTableComponent } from './dot-listing-data-table.component';
 
+import { DotRelativeDatePipe } from '../../pipes/dot-relative-date/dot-relative-date.pipe';
 import { DotActionMenuButtonModule } from '../_common/dot-action-menu-button/dot-action-menu-button.module';
 
 @NgModule({
@@ -24,6 +25,7 @@ import { DotActionMenuButtonModule } from '../_common/dot-action-menu-button/dot
     imports: [
         ActionHeaderModule,
         CommonModule,
+        DotRelativeDatePipe,
         TableModule,
         FormsModule,
         InputTextModule,

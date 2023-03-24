@@ -18,3 +18,10 @@ export const enum FeaturedFlags {
     LOAD_FRONTEND_EXPERIMENTS = 'FEATURE_FLAG_EXPERIMENTS',
     DOTFAVORITEPAGE_FEATURE_ENABLE = 'DOTFAVORITEPAGE_FEATURE_ENABLE'
 }
+
+export type DotDropdownSelectOption<T> = {
+    label: string;
+    value: T;
+    inactive?: boolean;
+    description?: string;
+};

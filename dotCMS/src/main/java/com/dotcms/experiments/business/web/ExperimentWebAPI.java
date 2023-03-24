@@ -1,9 +1,13 @@
 package com.dotcms.experiments.business.web;
 
+import com.dotcms.experiments.business.ConfigExperimentUtil;
 import com.dotcms.experiments.model.Experiment;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import java.util.List;
+import java.util.Optional;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -16,6 +20,7 @@ public interface ExperimentWebAPI {
             .id("NONE")
             .name("NONE")
             .variant(new SelectedVariant("NONE", null))
+            .expireTime(ConfigExperimentUtil.INSTANCE.lookBackWindowDefaultExpireTime())
             .build();
     /**
      * Return if the current user should be included into a set of RUNNING {@link Experiment}:
@@ -43,4 +48,14 @@ public interface ExperimentWebAPI {
      */
     SelectedExperiments isUserIncluded(final HttpServletRequest request,
             final HttpServletResponse response, final List<String> idsToExclude) throws DotDataException, DotSecurityException ;
+
+
+    /**
+     * Return the HTML/JS Code needed to support Experiments into the Browser
+     * @param host
+     * @param request
+     * @return
+     */
+    Optional<String> getCode(final Host host, final HttpServletRequest request);
+
 }

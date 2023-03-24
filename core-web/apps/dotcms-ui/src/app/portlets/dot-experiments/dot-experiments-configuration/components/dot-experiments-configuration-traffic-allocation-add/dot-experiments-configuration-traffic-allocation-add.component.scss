@@ -1,17 +1,17 @@
 @use "variables" as *;
 
 h5 {
-    font-weight: $font-weight-semi-bold;
+    font-weight: $font-weight-bold;
     margin: 0;
-    font-size: $font-size-large;
+    font-size: $font-size-lg;
 }
 
 .experiment-traffic-allocation-add__form-wrapper {
     padding: $spacing-5;
 
     label {
-        font-weight: $font-weight-semi-bold;
-        font-size: $font-size-large;
+        font-weight: $font-weight-bold;
+        font-size: $font-size-lg;
     }
 
     p {

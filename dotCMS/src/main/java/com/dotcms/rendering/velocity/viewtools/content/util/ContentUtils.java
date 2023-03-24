@@ -12,6 +12,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.calendar.business.RecurrenceUtil;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
@@ -124,10 +125,17 @@ public class ContentUtils {
                                         .orElse(null);
                     }
                 }
+
+				final ContentletVersionInfo contentletVersionInfoByFallback = WebAPILocator.getVariantWebAPI()
+						.getContentletVersionInfoByFallback(sessionLang, inodeOrIdentifier,
+								EDIT_OR_PREVIEW_MODE ? PageMode.PREVIEW_MODE : PageMode.LIVE, user);
 				// If content is being viewed in EDIT_OR_PREVIEW_MODE, we need to get the working version. Otherwise, we
 				// need the live version. That's why we're negating it when calling the API
-                contentlet = conAPI.findContentletByIdentifierOrFallback(inodeOrIdentifier,
-                                !EDIT_OR_PREVIEW_MODE, sessionLang, user, true).orElse(null);
+				final String contentletInode =
+						EDIT_OR_PREVIEW_MODE ? contentletVersionInfoByFallback.getWorkingInode()
+								: contentletVersionInfoByFallback.getLiveInode();
+
+				contentlet = conAPI.find(contentletInode, user, true);
                 return fixRecurringDates(contentlet, recDates);
             } catch (final Exception e) {
                 String msg = e.getMessage();

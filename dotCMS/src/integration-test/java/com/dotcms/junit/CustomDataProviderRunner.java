@@ -1,16 +1,11 @@
 package com.dotcms.junit;
 
 import com.dotcms.business.bytebuddy.ByteBuddyFactory;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.util.Logger;
+import com.dotcms.util.IntegrationTestInitService;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
-import java.util.Arrays;
-
-import net.bytebuddy.agent.ByteBuddyAgent;
-import net.bytebuddy.agent.builder.AgentBuilder;
+import java.util.List;
 import org.junit.Ignore;
 import org.junit.rules.RunRules;
-import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.FrameworkMethod;
@@ -21,6 +16,15 @@ public class CustomDataProviderRunner extends DataProviderRunner {
     public CustomDataProviderRunner(Class<?> clazz) throws InitializationError {
         super(clazz);
         ByteBuddyFactory.init();
+        // Make sure integration test init service is initialized for Data Providers
+        // these run when the tests to run are determined, not when the tests are run
+        // so @BeforeClass methods are not run before this.
+        // It is better to have DataProviders not do any database work, but if they do
+        try {
+            IntegrationTestInitService.getInstance().init();
+        } catch (Exception e) {
+            throw new InitializationError(e);
+        }
     }
 
     @Override
@@ -30,13 +34,8 @@ public class CustomDataProviderRunner extends DataProviderRunner {
             notifier.fireTestIgnored(description);
         } else {
             RunRules runRules = new RunRules(methodBlock(method),
-                    Arrays.asList(new TestRule[]{new RuleWatcher()}), description);
+                    List.of(new RuleWatcher()), description);
             runLeaf(runRules, description, notifier);
-            if (DbConnectionFactory.connectionExists())
-            {
-                Logger.error(CustomDataProviderRunner.class,"Connection remains after test = "+description+":"+DbConnectionFactory.connectionExists());
-            }
-
         }
     }
 

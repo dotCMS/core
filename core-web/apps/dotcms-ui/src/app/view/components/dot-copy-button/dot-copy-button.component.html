@@ -1,9 +1,13 @@
 <button
-    class="label"
-    (click)="copyUrlToClipboard($event)"
+    class="p-button-sm p-button-outlined p-button-secondary"
     [pTooltip]="tooltipText"
+    (click)="copyUrlToClipboard($event)"
+    pButton
+    type="button"
     appendTo="body"
-    tooltipPosition="bottom"
     hideDelay="800"
-    >{{ label }}</button
+    tooltipPosition="bottom"
 >
+    <i class="material-icons">content_copy</i>
+    {{ label }}
+</button>

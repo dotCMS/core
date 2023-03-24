@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.util.DataSourceAttributes;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.DotDatabaseMetaData;
@@ -8,6 +9,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.URLEncoder;
 import com.google.common.annotations.VisibleForTesting;
@@ -124,6 +126,7 @@ public class Task210901UpdateDateTimezones extends AbstractJDBCStartupTask {
     }
 
     @Override
+    @WrapInTransaction
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
         tablesCount = 0;
         try {
@@ -207,8 +210,11 @@ public class Task210901UpdateDateTimezones extends AbstractJDBCStartupTask {
         for (int i = 1; i < 26; i++) {
             updateDateValue("contentlet", "date" + i, offsetFromUTCtoTimezone, considerDst);
         }
-        // Updating "mod_date" value in the "contentlet" table
-        updateDateValue("contentlet", "mod_date", offsetFromUTCtoTimezone, considerDst);
+        
+        if(Config.getBooleanProperty("UPDATE_CONTENT_MOD_DATE_BY_TIMEZONE", false)) {
+            // Updating "mod_date" value in the "contentlet" table
+            updateDateValue("contentlet", "mod_date", offsetFromUTCtoTimezone, considerDst);
+        }
         // Updating date values in the "identifier" table
         updateDateValue("identifier", "syspublish_date", offsetFromUTCtoTimezone, considerDst);
         updateDateValue("identifier", "sysexpire_date", offsetFromUTCtoTimezone, considerDst);
@@ -226,6 +232,7 @@ public class Task210901UpdateDateTimezones extends AbstractJDBCStartupTask {
      * @throws DotDataException An error occurred when running the SQL query.
      */
     private void updateDateValue(final String table, final String column, final int offset, final boolean considerDst) throws DotDataException {
+
         Logger.info(this, String.format("Adjusting current '%s.%s' values by %s seconds", table, column, offset));
         String sql;
         if (considerDst) {

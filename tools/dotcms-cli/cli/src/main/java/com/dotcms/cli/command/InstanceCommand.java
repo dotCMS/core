@@ -25,11 +25,8 @@ import static org.apache.commons.lang3.BooleanUtils.toStringYesNo;
 @ActivateRequestContext
 @CommandLine.Command(
         name = InstanceCommand.NAME,
-        header = "@|bold,green Prints a list of available dotCMS instances.|@ "
-                + "Use to activate/switch dotCMS instance. @|bold,cyan -a  --activate|@ followed by the profile name.",
-        description = {
-
-        }
+        description = "@|bold,green Prints a list of available dotCMS instances.|@ "
+                + "Use to activate/switch dotCMS instance. @|bold,cyan -a  --activate|@ followed by the profile name."
 )
 public class InstanceCommand implements Callable<Integer> {
 
@@ -45,28 +42,13 @@ public class InstanceCommand implements Callable<Integer> {
     @Inject
     ServiceManager serviceManager;
 
-    //https://github.com/remkop/picocli/issues/947
-    //This combination should give me one or both but at least one selection needs to be made
-    static class RequireOneOrBothNotNoneGroup {
-
-        @CommandLine.Option(names = {"-ls", "--list"}, description = "Prints out a list of available dotCMS Instance")
-        boolean list;
-
-        @CommandLine.Option(names = {"-act", "--activate"}, arity = "1", description = "Activate a profile by entering it's name.")
-        String activate;
-    }
-
-    //setting exclusive=false on the group makes the options mutually dependent
-    //setting multiplicity = "1" on the group makes the group mandatory
-    //both options are non-required in the group (this is the default, you can also explicitly say required = false)
-    @CommandLine.ArgGroup(multiplicity = "1", exclusive = false)
-    RequireOneOrBothNotNoneGroup options;
+    @CommandLine.Option(names = {"-act", "--activate"}, arity = "1", description = "Activate a profile by entering it's name.")
+    String activate;
 
     @Override
     public Integer call() {
 
         final Map<String, URI> servers = clientConfig.servers();
-
         if (servers.isEmpty()) {
             output.error(
                     "No dotCMS instances are configured. They should be included in the application.properties or via .env file.");
@@ -77,8 +59,6 @@ public class InstanceCommand implements Callable<Integer> {
             final Map<String, ServiceBean> serviceBeanByName = services.stream()
                     .collect(Collectors.toMap(ServiceBean::name, Function.identity(),
                             (serviceBean1, serviceBean2) -> serviceBean1));
-
-            if (options.list) {
 
                 output.info("Available registered dotCMS servers.");
 
@@ -94,22 +74,21 @@ public class InstanceCommand implements Callable<Integer> {
                             " Profile [@|bold,underline,%s %s|@], Uri [@|bold,underline,%s %s|@], active [@|bold,underline,%s %s|@]. ",
                             color, suffix, color, uri, color, toStringYesNo(active)));
                 }
-            }
 
-            if (null != options.activate) {
+            if (null != activate) {
 
                 final List<ServiceBean> beans = beansList(servers, serviceBeanByName);
-                Optional<ServiceBean> optional = get(options.activate, beans);
+                Optional<ServiceBean> optional = get(activate, beans);
                 if (optional.isEmpty()) {
                     // The selected option is not valid
-                    output.error(String.format(" The instance name [%s] does not match any configured server! Use --list option. ", options.activate));
+                    output.error(String.format(" The instance name [%s] does not match any configured server! Use --list option. ", activate));
                     return ExitCode.SOFTWARE;
                 } else {
                     ServiceBean serviceBean = optional.get();
                     serviceBean = serviceBean.withActive(true);
                     try {
                         serviceManager.persist(serviceBean);
-                        output.info(String.format(" The instance name [@|bold,underline,green %s|@] is now the active profile.",options.activate));
+                        output.info(String.format(" The instance name [@|bold,underline,green %s|@] is now the active profile.", activate));
                     } catch (IOException e) {
                         output.error("Unable to persist the new selected service ",e);
                         return ExitCode.SOFTWARE;

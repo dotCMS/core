@@ -37,7 +37,7 @@ public class BounceRateExperimentAnalyzer implements MetricExperimentAnalyzer  {
         final Event lastEvent = events.get(events.size() - 1);
 
         if (goal.validateConditions(lastEvent)) {
-            experimentResultBuilder.count(goal, browserSession.getLookBackWindow(), lastEvent);
+            experimentResultBuilder.success(goal, browserSession.getLookBackWindow(), lastEvent);
         }
     }
 

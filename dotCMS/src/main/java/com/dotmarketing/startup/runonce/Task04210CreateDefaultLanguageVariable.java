@@ -3,6 +3,7 @@ package com.dotmarketing.startup.runonce;
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
 
+import com.dotcms.business.WrapInTransaction;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -51,6 +52,7 @@ public class Task04210CreateDefaultLanguageVariable implements StartupTask {
     };
 
     @Override
+    @WrapInTransaction
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
         DotConnect dc = new DotConnect();
         // Inserts into Inode table the reference to the Language Variable Content Type

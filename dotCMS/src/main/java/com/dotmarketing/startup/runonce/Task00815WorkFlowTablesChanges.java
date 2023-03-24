@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotcms.business.WrapInTransaction;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
@@ -243,6 +244,8 @@ public class Task00815WorkFlowTablesChanges implements StartupTask{
     	}
     }
 
+	@Override
+	@WrapInTransaction
 	public void executeUpgrade() throws DotDataException, DotRuntimeException {
 		Connection conn = null;
 		DotConnect dc = new DotConnect();

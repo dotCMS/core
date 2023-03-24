@@ -15,7 +15,7 @@
 
 .row-columns {
     display: flex;
-    background: $gray-bg;
+    background: $color-palette-gray-200;
     padding: $spacing-1;
 }
 
@@ -30,14 +30,14 @@
     width: 0;
 
     &:after {
-        border: dashed 1px $gray;
+        border: dashed 1px $color-palette-gray-700;
         bottom: 0;
-        color: $gray;
+        color: $color-palette-gray-700;
         content: var(--empty-message);
         display: flex;
         flex-direction: column;
         flex-grow: 1;
-        font-size: $font-size-small;
+        font-size: $font-size-sm;
         justify-content: center;
         min-height: $content-type-field-height;
         pointer-events: none;
@@ -61,7 +61,7 @@
     }
 
     &.empty {
-        background: $gray-bg;
+        background: $color-palette-gray-200;
         min-height: $content-type-field-height * 2;
 
         dot-content-type-field-dragabble-item {

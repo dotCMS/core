@@ -239,7 +239,7 @@ public class ContainerResource implements Serializable {
                                            @PathParam("containerId")  final String containerId,
                                            @PathParam("contentletId") final String contentletId,
                                            @QueryParam("pageInode") final String pageInode)
-            throws DotDataException, DotSecurityException {
+            throws DotDataException {
 
         final InitDataObject initData = this.webResource.init(req, res, true);
         final User user               = initData.getUser();
@@ -257,7 +257,7 @@ public class ContainerResource implements Serializable {
 
             final Contentlet contentlet =
                     (contentShorty.type == ShortType.IDENTIFIER) ?
-                            this.contentletAPI.findContentletByIdentifierAnyLanguage(contentShorty.longId):
+                            this.contentletAPI.findContentletByIdentifierAnyLanguageAnyVariant(contentShorty.longId):
                             this.contentletAPI.find(contentShorty.longId, user, mode.respectAnonPerms);
 
             final String html = this.getHTML(req, res, containerId, user, contentlet, pageInode);

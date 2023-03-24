@@ -71,6 +71,8 @@ public class BrowserAPITest extends IntegrationTestBase {
 
     static Link testlink;
 
+    private static BrowserAPIImpl browserAPIImpl;
+
     @BeforeClass
     public static void prepare() throws Exception {
         //Setting web app environment

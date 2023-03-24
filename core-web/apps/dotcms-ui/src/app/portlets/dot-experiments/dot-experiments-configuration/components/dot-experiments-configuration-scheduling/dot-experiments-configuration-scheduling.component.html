@@ -1,8 +1,15 @@
 <ng-container *ngIf="vm$ | async as vm">
     <p-card>
         <ng-template pTemplate="title">
-            <h2 data-testId="scheduling-card-name">
+            <h2 class="flex align-items-center gap-1 uppercase" data-testId="scheduling-card-name">
                 {{ 'experiments.configure.scheduling.name' | dm }}
+
+                <dot-icon
+                    [ngClass]="{ isDone: !!vm.scheduling?.endDate || !!vm.scheduling?.startDate }"
+                    data-testId="schedule-step-done"
+                    name="check_circle"
+                    size="16"
+                ></dot-icon>
             </h2>
         </ng-template>
 
@@ -14,26 +21,48 @@
                     }}</span>
                 </div>
 
-                <button
-                    class="p-button-sm p-button-link"
-                    (click)="setupSchedule()"
-                    data-testId="scheduling-setup-button"
-                    pButton
-                    pRipple
+                <div
+                    [pTooltip]="'experiment.configure.edit.only.draft.status' | dm"
+                    [tooltipDisabled]="vm.isExperimentADraft"
+                    tooltipPosition="bottom"
+                    data-testId="tooltip-on-disabled"
                 >
-                    <ng-container *ngIf="!vm.scheduling; else dateRange">
-                        {{ 'experiments.configure.scheduling.setup' | dm }}
-                    </ng-container>
-                </button>
+                    <button
+                        class="p-button-sm p-button-link"
+                        [disabled]="!vm.isExperimentADraft"
+                        (click)="setupSchedule()"
+                        data-testId="scheduling-setup-button"
+                        pButton
+                        pRipple
+                    >
+                        <ng-container
+                            *ngIf="
+                                !(!!vm.scheduling?.endDate || !!vm.scheduling?.startDate);
+                                else dateRange
+                            "
+                        >
+                            {{ 'experiments.configure.scheduling.setup' | dm }}
+                        </ng-container>
+                    </button>
+                </div>
             </div>
         </p-card>
     </p-card>
 
     <ng-template #dateRange>
-        {{ 'start' | dm | titlecase }}:
-        <span>{{ vm.scheduling.startDate | date : 'EEE, LLL dd, Y, h:mm aa zz' }}</span> -
-        {{ 'end' | dm | titlecase }}:
-        <span>{{ vm.scheduling.endDate | date : 'EEE, LLL dd, Y, h:mm aa zz' }}</span>
+        <span *ngIf="!!vm.scheduling?.startDate">
+            {{ 'start' | dm | titlecase }}:
+            <span>{{ vm.scheduling.startDate | date : 'EEE, LLL dd, Y, h:mm aa zz' }}</span>
+        </span>
+        <span
+            class="scheduling-setup-date-spacing"
+            *ngIf="vm.scheduling?.startDate && vm.scheduling.endDate"
+            >-</span
+        >
+        <span *ngIf="!!vm.scheduling?.endDate">
+            {{ 'end' | dm | titlecase }}:
+            <span>{{ vm.scheduling.endDate | date : 'EEE, LLL dd, Y, h:mm aa zz' }}</span>
+        </span>
     </ng-template>
 </ng-container>
 

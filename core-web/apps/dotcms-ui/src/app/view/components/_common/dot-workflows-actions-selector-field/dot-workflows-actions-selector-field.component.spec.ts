@@ -154,9 +154,10 @@ describe('DotWorkflowsActionsSelectorFieldComponent', () => {
             });
 
             describe('disable', () => {
-                it('should be disable when actions list is empty', () => {
+                it('should be disable when actions list is empty', async () => {
                     mockActionsGrouped = [];
                     fixtureHost.detectChanges();
+                    await fixtureHost.whenStable();
                     dropdown = getDropdownComponent();
                     expect(dropdown.disabled).toBe(true);
                 });

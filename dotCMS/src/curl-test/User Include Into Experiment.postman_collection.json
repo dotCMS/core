@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "664cad7d-390b-495a-a2cf-f8d027406924",
+		"_postman_id": "0a683a20-6cb1-4da9-b53c-4d517b3e420d",
 		"name": "User Include Into Experiment",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "4500400"
+		"_exporter_id": "1549189"
 	},
 	"item": [
 		{
@@ -290,6 +290,10 @@
 									"    pm.expect(jsonData.entity.experiments[0].pageUrl).to.be.eq(\"/page_isUserIncluded_1\");",
 									"    var cookie = postman.getResponseCookie('runningExperiment_' + pm.variables.get(\"experimentId\"));",
 									"    pm.expect(cookie).to.not.eq(null);",
+									"",
+									"    pm.expect(jsonData.entity.experiments[0].lookBackWindow).not.to.be.eq(null);",
+									"    pm.expect(jsonData.entity.experiments[0].lookBackWindow.value).not.to.be.eq(null);",
+									"    pm.expect(jsonData.entity.experiments[0].lookBackWindow.expireMillis).to.be.eq(1800000);",
 									"});",
 									""
 								],
@@ -729,6 +733,10 @@
 									"    pm.expect(jsonData.entity.experiments[0].pageUrl).to.be.eq(\"/page_isUserIncluded_2\");",
 									"    var cookie = postman.getResponseCookie('runningExperiment' + pm.variables.get(\"experimentId\"));",
 									"    pm.expect(cookie).to.not.eq(null);",
+									"",
+									"    pm.expect(jsonData.entity.experiments[0].lookBackWindow).not.to.be.eq(null);",
+									"    pm.expect(jsonData.entity.experiments[0].lookBackWindow.value).not.to.be.eq(null);",
+									"    pm.expect(jsonData.entity.experiments[0].lookBackWindow.expireMillis).to.be.eq(1800000);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -776,6 +784,10 @@
 									"    pm.expect(jsonData.entity.includedExperimentIds.length).to.be.eq(1);",
 									"    pm.expect(jsonData.entity.includedExperimentIds.includes(pm.variables.get(\"experimentId\"))).to.be.eq(true);",
 									"    pm.expect(jsonData.entity.excludedExperimentIds.length).to.be.eq(0);",
+									"",
+									"    pm.expect(jsonData.entity.experiments[0].lookBackWindow).not.to.be.eq(null);",
+									"    pm.expect(jsonData.entity.experiments[0].lookBackWindow.value).to.be.eq(null);",
+									"    pm.expect(jsonData.entity.experiments[0].lookBackWindow.expireMillis).to.be.eq(1800000);",
 									"});",
 									""
 								],

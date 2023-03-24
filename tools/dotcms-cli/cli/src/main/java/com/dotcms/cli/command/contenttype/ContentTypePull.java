@@ -7,23 +7,26 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.model.ResponseEntityView;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import picocli.CommandLine;
-
+import picocli.CommandLine.Parameters;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
 import javax.ws.rs.NotFoundException;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.concurrent.Callable;
+
+import static com.dotcms.cli.common.Utils.nextFileName;
 
 @ActivateRequestContext
 @CommandLine.Command(
         name = ContentTypePull.NAME,
         description = "@|bold,green Get a Content-type from a given  idOrVar |@ Use @|bold,cyan --idOrVar|@ to pass the CT identifier or var name."
 )
-public class ContentTypePull extends ContentTypeCommand implements Callable<Integer> {
+public class ContentTypePull extends AbstractContentTypeCommand implements Callable<Integer> {
 
-    static final String NAME = "content-type-pull";
+    static final String NAME = "pull";
 
     @CommandLine.Mixin(name = "output")
     OutputOptionMixin output;
@@ -31,16 +34,10 @@ public class ContentTypePull extends ContentTypeCommand implements Callable<Inte
     @Inject
     RestClientFactory clientFactory;
 
-    @CommandLine.Option(names = {"-iv","--idOrVar"}, order = 1, description = "Pull Content-type by id or var-name", required = true)
+    @Parameters(index = "0", arity = "1", description = "CT Identifier or varName.")
     String idOrVar;
 
-    @CommandLine.Option(names = {"-lg", "--lang"}, order = 2, description = "Content-type Language.", defaultValue = "1")
-    Long lang;
-
-    @CommandLine.Option(names = {"-l", "--live"}, order = 3, description = "live content if omitted then working will be used.", defaultValue = "true")
-    Boolean live;
-
-    @CommandLine.Option(names = {"-to", "--saveTo"}, order = 4, description = "Save to.")
+    @CommandLine.Option(names = {"-to", "--saveTo"}, order = 5, description = "Save Pulled CT to a file.")
     File saveAs;
 
     @Override
@@ -48,22 +45,29 @@ public class ContentTypePull extends ContentTypeCommand implements Callable<Inte
 
         final ContentTypeAPI contentTypeAPI = clientFactory.getClient(ContentTypeAPI.class);
             try {
-                final ResponseEntityView<ContentType> responseEntityView = contentTypeAPI.getContentType(idOrVar, lang, live);
+                final ResponseEntityView<ContentType> responseEntityView = contentTypeAPI.getContentType(idOrVar, null, null);
                 final ContentType contentType = responseEntityView.entity();
                 final ObjectMapper objectMapper = output.objectMapper();
 
-                if(output.isVerbose()) {
-                    final String asString = objectMapper.writeValueAsString(contentType);
-                    output.info(asString);
-                    if (null != saveAs) {
-                        Files.writeString(saveAs.toPath(), asString);
-                    }
-                } else {
+                if(output.isShortenOutput()) {
                     final String asString = shortFormat(contentType);
                     output.info(asString);
+                } else {
+                    final String asString = objectMapper.writeValueAsString(contentType);
+                    output.info(asString);
+
+                    //By default, We'll always save pulled CT as file using CT's var name
+                    final Path path;
                     if (null != saveAs) {
-                        Files.writeString(saveAs.toPath(), asString);
+                       path = saveAs.toPath();
+                    } else {
+                        //But this behavior can be modified if we explicitly add a file name
+                        final String fileName = String.format("%s.%s",contentType.variable(),output.getInputOutputFormat().getExtension());
+                        final Path next = Path.of(".", fileName);
+                        path = nextFileName(next);
                     }
+                    Files.writeString(path, asString);
+                    output.info(String.format("Output has been written to file [%s].",path));
                 }
             } catch (IOException | NotFoundException e) {
                 output.error(String.format(

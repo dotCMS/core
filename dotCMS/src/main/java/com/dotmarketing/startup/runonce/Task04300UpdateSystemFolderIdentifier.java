@@ -35,7 +35,7 @@ public class Task04300UpdateSystemFolderIdentifier extends AbstractJDBCStartupTa
     }
 
     @Override
-    @CloseDBIfOpened
+    @WrapInTransaction
     public void executeUpgrade() throws DotDataException {
         DotConnect dc = new DotConnect();
 

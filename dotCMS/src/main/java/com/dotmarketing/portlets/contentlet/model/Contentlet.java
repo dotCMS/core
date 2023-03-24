@@ -1619,7 +1619,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		return map.getOrDefault(VARIANT_ID, VariantAPI.DEFAULT_VARIANT.name()).toString();
 	}
 
-    private class ContentletHashMap extends ConcurrentHashMap<String, Object> {
+	@VisibleForTesting
+    public class ContentletHashMap extends ConcurrentHashMap<String, Object> {
 		 /**
 		 *
 		 */

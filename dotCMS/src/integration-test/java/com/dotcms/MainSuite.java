@@ -153,6 +153,7 @@ import com.dotmarketing.portlets.templates.business.FileAssetTemplateUtilTest;
 import com.dotmarketing.portlets.templates.business.TemplateFactoryImplTest;
 import com.dotmarketing.portlets.workflows.actionlet.MoveContentActionletTest;
 import com.dotmarketing.portlets.workflows.actionlet.PushNowActionletTest;
+import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionletIntegrationTest;
 import com.dotmarketing.portlets.workflows.actionlet.VelocityScriptActionletAbortTest;
 import com.dotmarketing.portlets.workflows.model.TestWorkflowAction;
 import com.dotmarketing.portlets.workflows.util.WorkflowEmailUtilTest;
@@ -630,10 +631,28 @@ import org.junit.runners.Suite.SuiteClasses;
         TailLogResourceTest.class,
         BayesianAPIImplTest.class,
         ContentletDependenciesTest.class,
-        UtilMethodsITest.class,
+        SaveContentAsDraftActionletIntegrationTest.class,
         StoryBlockAPITest.class,
         UtilMethodsITest.class,
         Task220912UpdateCorrectShowOnMenuPropertyTest.class,
+        PersonaActionletTest.class,
+        SendRedirectActionletTest.class,
+        SetRequestAttributeActionletTest.class,
+        StopProcessingActionletTest.class,
+        DateTimeConditionletTest.class,
+        HttpMethodConditionletTest.class,
+        PagesViewedConditionletTest.class,
+        PersonaConditionletTest.class,
+        ReferrerURLConditionletTest.class,
+        RequestAttributeConditionletTest.class,
+        RequestHeaderConditionletTest.class,
+        RequestParameterConditionletTest.class,
+        SessionAttributeConditionletTest.class,
+        UsersBrowserConditionletTest.class,
+        UsersCountryConditionletTest.class,
+        UsersPlatformConditionletTest.class,
+        VisitorsCurrentURLConditionletTest.class,
+        VisitorsGeolocationConditionletTest.class,
         HashedLocalFileRepositoryManagerTest.class,
         ManifestUtilTest.class,
         ZipUtilTest.class,

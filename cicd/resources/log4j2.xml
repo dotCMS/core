@@ -10,22 +10,22 @@
         <Console name="Console" target="SYSTEM_OUT">
             <PatternLayout pattern="%d{HH:mm:ss.SSS}  %-5level %logger{2} - %msg%n" />
         </Console>
-       <Async name="generic">
+        <Async name="generic">
             <AppenderRef ref="GENERIC-FILE"/>
         </Async>
-        
+
         <!--  Generic Logging File -->
         <RollingFile name="GENERIC-FILE"
-                     fileName="${DOTCMS_LOG_FILE}"
-                     filePattern="${DOTCMS_FILENAME_PATTERN}"
-                     immediateFlush="false">
+            fileName="${DOTCMS_LOG_FILE}"
+            filePattern="${DOTCMS_FILENAME_PATTERN}"
+            immediateFlush="false">
             <PatternLayout pattern="${MESSAGE_PATTERN}"/>
             <Policies>
-                <SizeBasedTriggeringPolicy size="20MB"/>
+                <SizeBasedTriggeringPolicy size="90MB"/>
             </Policies>
             <DefaultRolloverStrategy max="10"/>
         </RollingFile>
-        
+
     </Appenders>
     <Loggers>
         <Root level="info">

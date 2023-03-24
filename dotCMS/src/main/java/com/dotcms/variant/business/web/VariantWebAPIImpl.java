@@ -87,12 +87,25 @@ public class VariantWebAPIImpl implements VariantWebAPI{
     public RenderContext getRenderContext(final long tryingLang, final String identifier,
             final PageMode pageMode, final User user) {
 
+        final ContentletVersionInfo contentletVersionInfoByFallback = getContentletVersionInfoByFallback(
+                tryingLang, identifier, pageMode, user);
+
+        return new RenderContext(contentletVersionInfoByFallback.getVariant(),
+                contentletVersionInfoByFallback.getLang());
+    }
+
+
+
+    @Override
+    public ContentletVersionInfo getContentletVersionInfoByFallback(final long tryingLang, final String identifier,
+            final PageMode pageMode, final User user) {
+
         final String currentVariantName = currentVariantId();
         Optional<ContentletVersionInfo> contentletVersionInfo = APILocator.getVersionableAPI()
                 .getContentletVersionInfo(identifier, tryingLang, currentVariantName);
 
         if (contentletVersionInfo.isPresent()) {
-            return new RenderContext(currentVariantName, tryingLang);
+            return contentletVersionInfo.get();
         }
 
         if (!VariantAPI.DEFAULT_VARIANT.equals(currentVariantName)) {
@@ -101,7 +114,7 @@ public class VariantWebAPIImpl implements VariantWebAPI{
                             VariantAPI.DEFAULT_VARIANT.name());
 
             if (contentletVersionInfo.isPresent()) {
-                return new RenderContext(VariantAPI.DEFAULT_VARIANT.name(), tryingLang);
+                return contentletVersionInfo.get();
             }
         }
 
@@ -109,24 +122,25 @@ public class VariantWebAPIImpl implements VariantWebAPI{
             final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
 
             if (defaultLanguage.getId() != tryingLang) {
+
                 contentletVersionInfo = APILocator.getVersionableAPI()
                         .getContentletVersionInfo(identifier, defaultLanguage.getId(),
                                 currentVariantName);
 
                 if (contentletVersionInfo.isPresent() && shouldFallbackByLang(
                         contentletVersionInfo.get(), pageMode, user)) {
-                    return new RenderContext(currentVariantName, defaultLanguage.getId());
+                    return contentletVersionInfo.get();
                 }
 
                 if (!VariantAPI.DEFAULT_VARIANT.equals(currentVariantName)) {
+
                     contentletVersionInfo = APILocator.getVersionableAPI()
                             .getContentletVersionInfo(identifier, defaultLanguage.getId(),
                                     VariantAPI.DEFAULT_VARIANT.name());
 
                     if (contentletVersionInfo.isPresent() && shouldFallbackByLang(
                             contentletVersionInfo.get(), pageMode, user)) {
-                        return new RenderContext(VariantAPI.DEFAULT_VARIANT.name(),
-                                defaultLanguage.getId());
+                        return contentletVersionInfo.get();
                     }
                 }
             }
@@ -136,7 +150,6 @@ public class VariantWebAPIImpl implements VariantWebAPI{
             throw new ResourceNotFoundException("cannnot find contentlet id " + identifier + " lang:" + tryingLang, e);
         }
     }
-
     private boolean shouldFallbackByLang(final ContentletVersionInfo contentletVersionInfo, PageMode pageMode, User user)
             throws DotDataException, DotSecurityException {
         final String inode = pageMode.showLive ? contentletVersionInfo.getLiveInode() :

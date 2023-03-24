@@ -4,9 +4,9 @@
     padding: $spacing-5;
 
     label {
-        font-weight: $font-weight-semi-bold;
+        font-weight: $font-weight-bold;
         margin-bottom: $spacing-3;
-        font-size: $font-size-large;
+        font-size: $font-size-lg;
     }
 
     ::ng-deep .p-calendar {

@@ -16,6 +16,7 @@ public class StartEndScheduledExperimentsJob extends DotStatefulJob {
     @WrapInTransaction
     public void run(final JobExecutionContext jobContext)
             throws JobExecutionException {
+
         Try.run(()->APILocator.getExperimentsAPI().startScheduledToStartExperiments(APILocator.systemUser()))
                 .getOrElseThrow((e)->new JobExecutionException(e));
 

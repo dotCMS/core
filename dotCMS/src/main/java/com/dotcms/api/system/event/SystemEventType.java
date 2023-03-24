@@ -63,6 +63,11 @@ public enum SystemEventType {
 	ARCHIVE_SITE,
 
 	/**
+	 * When a site is deleted
+	 */
+	DELETE_SITE,
+
+	/**
 	 * When a site is unarchived
 	 */
 	UN_ARCHIVE_SITE,

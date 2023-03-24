@@ -29,7 +29,7 @@ export interface TrafficProportion {
 export interface Variant {
     id: string;
     name: string;
-    weight: string;
+    weight: number;
     url?: string;
 }
 
@@ -38,7 +38,7 @@ export type GoalsLevels = 'primary';
 export interface Goal {
     name: string;
     type: GOAL_TYPES;
-    conditions: Array<GoalCondition>;
+    conditions?: Array<GoalCondition>;
 }
 
 export type Goals = Record<GoalsLevels, Goal>;
@@ -47,6 +47,7 @@ export interface GoalCondition {
     parameter: GOAL_PARAMETERS;
     operator: GOAL_OPERATORS;
     value: string;
+    isDefault?: boolean;
 }
 
 export interface RangeOfDateAndTime {
@@ -56,17 +57,13 @@ export interface RangeOfDateAndTime {
 
 export type GroupedExperimentByStatus = Partial<Record<DotExperimentStatusList, DotExperiment[]>>;
 
-export interface StepStatus {
+export interface SidebarStatus {
     status: ComponentStatus;
     isOpen: boolean;
-    experimentStep: ExperimentSteps | null;
 }
 
-export type GoalSelectOption = {
-    label: string;
-    value: string;
-    inactive: boolean;
-    description: string;
+export type StepStatus = SidebarStatus & {
+    experimentStep: ExperimentSteps | null;
 };
 
 export type EditPageTabs = 'edit' | 'preview';
@@ -75,7 +72,8 @@ export enum ExperimentSteps {
     VARIANTS = 'variants',
     GOAL = 'goal',
     TARGETING = 'targeting',
-    TRAFFIC = 'traffic',
+    TRAFFIC_LOAD = 'trafficLoad',
+    TRAFFICS_SPLIT = 'trafficSplit',
     SCHEDULING = 'scheduling'
 }
 
@@ -91,5 +89,12 @@ export enum GOAL_OPERATORS {
 }
 
 export enum GOAL_PARAMETERS {
-    URL = 'url'
+    URL = 'url',
+    REFERER = 'referer'
 }
+
+export const ConditionDefaultByTypeOfGoal: Record<GOAL_TYPES, GOAL_PARAMETERS> = {
+    [GOAL_TYPES.BOUNCE_RATE]: GOAL_PARAMETERS.URL,
+    [GOAL_TYPES.REACH_PAGE]: GOAL_PARAMETERS.REFERER,
+    [GOAL_TYPES.CLICK_ON_ELEMENT]: GOAL_PARAMETERS.URL
+};

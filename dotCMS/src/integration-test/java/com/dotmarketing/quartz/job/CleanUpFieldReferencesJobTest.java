@@ -64,7 +64,8 @@ public class CleanUpFieldReferencesJobTest extends IntegrationTestBase {
         final Class<?> fieldType;
         final boolean isJsonFields;
 
-        public TestCase(final String name, final Object fieldValue, final String values, final Class<?> fieldType, final boolean isJsonFields) {
+        public TestCase(final String name, final Object fieldValue, final String values,
+                final Class<?> fieldType, final boolean isJsonFields) {
             this.name = name;
             this.fieldValue = fieldValue;
             this.values = values;
@@ -89,7 +90,8 @@ public class CleanUpFieldReferencesJobTest extends IntegrationTestBase {
         return new TestCase[]{
                 new TestCase("checkboxFieldVarName", "CA",
                         "Canada|CA\r\nMexico|MX\r\nUSA|US", CheckboxField.class, false),
-                new TestCase("dateTimeFieldVarName", new Date(System.currentTimeMillis()-24*60*60*1000),
+                new TestCase("dateTimeFieldVarName",
+                        new Date(System.currentTimeMillis() - 24 * 60 * 60 * 1000),
                         null, DateTimeField.class, false),
 
                 new TestCase("checkboxFieldVarName", "CA",
@@ -104,12 +106,12 @@ public class CleanUpFieldReferencesJobTest extends IntegrationTestBase {
     public void testCleanUpFieldJob(TestCase testCase)
             throws DotDataException, DotSecurityException {
 
-        if(!APILocator.getContentletJsonAPI().isPersistContentAsJson() && testCase.isJsonFields){
+        if (!APILocator.getContentletJsonAPI().isPersistContentAsJson() && testCase.isJsonFields) {
             //if we're on a db different from a json supporting db (like Postgres or MS-SQL) and this test is marked for jsonFields. We Skip it.
             return;
         }
 
-        final boolean saveFieldsAsJson = Config.getBooleanProperty(SAVE_CONTENTLET_AS_JSON,true);
+        final boolean saveFieldsAsJson = Config.getBooleanProperty(SAVE_CONTENTLET_AS_JSON, true);
         Config.setProperty(SAVE_CONTENTLET_AS_JSON, testCase.isJsonFields);
 
         final long langId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
@@ -126,10 +128,9 @@ public class CleanUpFieldReferencesJobTest extends IntegrationTestBase {
             // Create content type
             contentType = contentTypeAPI.save(
                     ContentTypeBuilder.builder(SimpleContentType.class).folder(
-                            FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
+                                    FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
                             .name("testContentType" + currentTime)
                             .owner(systemUser.getUserId()).build());
-
 
             // Adding the test fields
             Field field = FieldBuilder
@@ -157,16 +158,17 @@ public class CleanUpFieldReferencesJobTest extends IntegrationTestBase {
             TestJobExecutor.execute(instance, jobProperties);
 
             // Make sure the field value is cleaned up
-            contentlet = APILocator.getContentletAPI().find(contentlet.getInode(), systemUser, false);
+            contentlet = APILocator.getContentletAPI()
+                    .find(contentlet.getInode(), systemUser, false);
 
             Object fieldValue = contentlet.get(field.variable());
 
-            if(testCase.isJsonFields){
+            if (testCase.isJsonFields) {
                 // For jsonField We're testing that the field was removed from the contentlet
                 assertNull(fieldValue);
             } else {
-               // For the regular field-column implementation We test that the field was set to their default state before anything was saved on it
-                if (fieldValue instanceof Date){
+                // For the regular field-column implementation We test that the field was set to their default state before anything was saved on it
+                if (fieldValue instanceof Date) {
 
                     Calendar cal1 = Calendar.getInstance();
                     Calendar cal2 = Calendar.getInstance();
@@ -174,14 +176,14 @@ public class CleanUpFieldReferencesJobTest extends IntegrationTestBase {
                     cal2.setTime((Date) testCase.fieldValue);
 
                     assertNotEquals(cal1.get(Calendar.DAY_OF_YEAR), cal2.get(Calendar.DAY_OF_YEAR));
-                } else{
-                    assertEquals(DbConnectionFactory.isOracle()?null:"" , fieldValue);
+                } else {
+                    assertEquals(DbConnectionFactory.isOracle() ? null : "", fieldValue);
                 }
             }
 
         } finally {
 
-            Config.getBooleanProperty(SAVE_CONTENTLET_AS_JSON, saveFieldsAsJson);
+            Config.setProperty(SAVE_CONTENTLET_AS_JSON, saveFieldsAsJson);
 
             if (contentType != null) {
                 contentTypeAPI.delete(contentType);

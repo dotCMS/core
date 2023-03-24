@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotcms.business.WrapInTransaction;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -58,6 +59,7 @@ public class Task03510CreateDefaultPersona extends AbstractJDBCStartupTask {
      * But I did not want to "CALL an API in a startup task"
      */
     @Override
+    @WrapInTransaction
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
 
         DotConnect dc = new DotConnect();

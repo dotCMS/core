@@ -1,6 +1,7 @@
 package com.dotmarketing.startup.runalways;
 
 
+import com.dotcms.business.WrapInTransaction;
 import org.quartz.JobExecutionContext;
 
 import com.dotmarketing.common.db.DotConnect;
@@ -13,14 +14,12 @@ import com.dotmarketing.util.Logger;
 
 public class Task00005LoadFixassets implements StartupTask {
 
-	
-		public void executeUpgrade() throws DotDataException, DotRuntimeException {
-			
-
-	    	FixTasksExecutor fixtask=FixTasksExecutor.getInstance();
-	        JobExecutionContext arg0=null;
-	        fixtask.execute(arg0);
-			
+	@Override
+	@WrapInTransaction
+	public void executeUpgrade() throws DotDataException, DotRuntimeException {
+		FixTasksExecutor fixtask=FixTasksExecutor.getInstance();
+		JobExecutionContext arg0=null;
+		fixtask.execute(arg0);
 	}
 
 
