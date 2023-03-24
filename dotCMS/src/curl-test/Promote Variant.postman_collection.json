@@ -14,8 +14,8 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code should be ok 400\", function () {",
-							"    pm.response.to.have.status(400);",
+							"pm.test(\"Status code should be ok 404\", function () {",
+							"    pm.response.to.have.status(404);",
 							"});",
 							""
 						],
