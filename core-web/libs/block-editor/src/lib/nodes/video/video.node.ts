@@ -11,7 +11,7 @@ declare module '@tiptap/core' {
 }
 
 export const VideoNode = Node.create({
-    name: 'video',
+    name: 'dotVideo',
 
     addAttributes() {
         return {
