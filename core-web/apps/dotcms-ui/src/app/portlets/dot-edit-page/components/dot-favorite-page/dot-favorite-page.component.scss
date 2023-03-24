@@ -1,4 +1,4 @@
-@use "libs/dot-primeng-theme-styles/src/scss/variables" as *;
+@use "variables" as *;
 
 :host {
     display: block;
@@ -30,7 +30,7 @@
     }
 
     .dot-favorite-dialog__image-container {
-        border: 1px solid $gray-lighter;
+        border: 1px solid $color-palette-gray-300;
         display: block;
         text-align: center;
 
@@ -46,7 +46,7 @@
 
         img {
             background-color: $white;
-            border: 1px solid $gray-lighter;
+            border: 1px solid $color-palette-gray-300;
             height: 353px;
             object-fit: contain;
             width: 100%;

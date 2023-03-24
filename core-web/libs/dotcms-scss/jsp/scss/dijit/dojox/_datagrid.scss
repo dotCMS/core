@@ -1,0 +1,65 @@
+.dojoxGrid {
+    background-color: $white !important;
+
+    .dojoxGridMasterHeader .dojoxGridHeader {
+        background-color: $color-palette-gray-200;
+
+        .dojoxGridRowTable .dojoxGridCell {
+            background: none;
+            border: 0px;
+            font-weight: bold;
+        }
+
+        .dojoxGridRowTable {
+            border-bottom: 1px solid $color-palette-gray-400;
+        }
+
+        .dojoxGridArrowButtonChar {
+            float: left;
+        }
+    }
+
+    .dojoxGridMasterView .dojoxGridRowbar {
+        background: none;
+        border: 0px;
+
+        .dojoxGridRowbarInner {
+            border: 0px;
+        }
+    }
+
+    .dojoxGridMasterView .dojoxGridRow {
+        background-color: $white;
+        border-bottom: 1px solid $color-palette-gray-400;
+
+        &.dojoxGridRowOdd {
+            background-color: $color-palette-gray-200;
+        }
+
+        &.dojoxGridRowOver .dojoxGridCell {
+            color: $font-color-base;
+        }
+
+        .dojoxGridRowTable .dojoxGridCell {
+            background: none;
+            border: 0px;
+        }
+    }
+
+    .dojoxGridRow,
+    .dojoxGridHeader {
+        .dojoxGridRowTable .dojoxGridCell {
+            font-family: $font-default;
+            padding: 10px $spacing-1;
+        }
+    }
+
+    .dojoxGridPaginator {
+        background-color: $color-palette-gray-400;
+        border: 0px;
+
+        td {
+            padding: $spacing-1 $spacing-1;
+        }
+    }
+}

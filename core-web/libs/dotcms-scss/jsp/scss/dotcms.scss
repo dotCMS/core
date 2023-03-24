@@ -1,0 +1,119 @@
+@use "variables" as *;
+
+// Font-icons
+@import "font-awesome-4.7.0/mixins";
+@import "font-awesome-4.7.0/variables";
+@import "font-awesome-4.7.0/path";
+@import "font-awesome-4.7.0/core";
+@import "font-awesome-4.7.0/icons";
+
+// TODO: get rid of Bootstrap, need to find if we are using it
+@import "bootstrap-sass-3.3.7/assets/stylesheets/bootstrap/variables";
+@import "bootstrap-sass-3.3.7/assets/stylesheets/bootstrap/mixins";
+@import "bootstrap-sass-3.3.7/assets/stylesheets/bootstrap/grid";
+
+// MATERIAL DESIGN FOR DOJO THEME
+@import "dijit-theme-dotcms";
+
+// DOJO THEME
+@import "dijit/theme";
+
+// BACKEND
+//@import "backend/legacy"; // THINGS WE ARE GOING TO GET RID OFF
+@import "backend/common";
+
+// Compass SASS Framework
+:root {
+    --color-background: #3a3847;
+    --color-main: #c336e5;
+    --color-main_mod: #d369ec;
+    --color-main_rgb: 195, 54, 229;
+    --color-sec: #54428e;
+    --color-sec_rgb: 84, 66, 142;
+}
+
+@font-face {
+    font-family: "Material Icons";
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("/dotAdmin/assets/MaterialIcons-Regular.ttf") format("truetype");
+}
+
+#structure_inode_popup .dijitMenuItem .label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+#structure_inode_popup .dijitMenuItem .separator {
+    height: 1px;
+    margin: -1px -10px 0px -10px;
+    background: #ddd;
+}
+
+// GOOGLE FONTS
+/* roboto-regular - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
+@font-face {
+    font-family: "Roboto";
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: local(""),
+        url("/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-regular.woff2")
+            format("woff2"),
+        /* Chrome 26+, Opera 23+, Firefox 39+ */
+            url("/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-regular.woff")
+            format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+}
+/* roboto-500 - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
+@font-face {
+    font-family: "Roboto";
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: local(""),
+        url("/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-500.woff2")
+            format("woff2"),
+        /* Chrome 26+, Opera 23+, Firefox 39+ */
+            url("/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-500.woff")
+            format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+}
+/* roboto-700 - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
+@font-face {
+    font-family: "Roboto";
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: local(""),
+        url("/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-700.woff2")
+            format("woff2"),
+        /* Chrome 26+, Opera 23+, Firefox 39+ */
+            url("/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-700.woff")
+            format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: $font-default;
+    font-size: $font-size-default;
+    color: $font-color-base;
+}
+
+.material-icons {
+    font-family: "Material Icons", sans-serif;
+    font-weight: normal;
+    font-style: normal;
+    font-size: 24px; /* Preferred icon size */
+    display: inline-block;
+    line-height: 1;
+    text-transform: none;
+    letter-spacing: normal;
+    word-wrap: normal;
+    white-space: nowrap;
+    direction: ltr;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    -moz-osx-font-smoothing: grayscale;
+}
