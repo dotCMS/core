@@ -327,7 +327,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
                 });
         });
 
-        fit('should disable button and show tooltip when experiment is nos on draft', () => {
+        it('should disable button and show tooltip when experiment is nos on draft', () => {
             dotExperimentsService.getById.and.returnValue(
                 of({
                     ...EXPERIMENT_MOCK_2,
