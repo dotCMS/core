@@ -541,9 +541,15 @@ public class DotConnect {
             return addObject(json);
         }
 
-        final String jsonStr = Try.of(()->
-                        mapper.writeValueAsString(json))
-                .getOrNull();
+        final String jsonStr;
+        if (!(json instanceof String)) {
+            jsonStr = Try.of(() ->
+                            mapper.writeValueAsString(json))
+                    .getOrNull();
+        } else {
+            jsonStr = (String) json;
+        }
+
         if(DbConnectionFactory.isPostgres()) {
             PGobject jsonObject = new PGobject();
             jsonObject.setType("json");
@@ -572,8 +578,6 @@ public class DotConnect {
      */
     private void executeQuery(Connection conn) throws SQLException {
         ResultSet rs = null;
-        results = new ArrayList<Object>();
-        objectResults = new ArrayList<Map<String, Object>>();
         Statement stmt = null;
         // perform some query optimizations
         String starter = SQL.substring(0, 10);
@@ -714,6 +718,10 @@ public class DotConnect {
      * @throws SQLException
      */
     public void fromResultSet(ResultSet rs) throws SQLException {
+
+        results = new ArrayList<Object>();
+        objectResults = new ArrayList<Map<String, Object>>();
+        gotResult = true;
 
         if (rs != null) {
 
