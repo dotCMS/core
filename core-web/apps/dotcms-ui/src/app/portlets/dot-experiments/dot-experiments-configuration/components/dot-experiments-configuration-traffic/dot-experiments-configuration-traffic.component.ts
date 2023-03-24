@@ -72,15 +72,6 @@ export class DotExperimentsConfigurationTrafficComponent {
         this.dotExperimentsConfigurationStore.openSidebar(ExperimentSteps.TRAFFIC_LOAD);
     }
 
-    /**
-     * Open sidebar to set Traffic Proportion
-     * @returns void
-     * @memberof DotExperimentsConfigurationTrafficComponent
-     */
-    changeTrafficProportion() {
-        this.dotExperimentsConfigurationStore.openSidebar(ExperimentSteps.TRAFFICS_SPLIT);
-    }
-
     private handleSidebar(status: StepStatus) {
         if (status && status.isOpen && status.status != ComponentStatus.SAVING) {
             this.loadSidebarComponent(status);
