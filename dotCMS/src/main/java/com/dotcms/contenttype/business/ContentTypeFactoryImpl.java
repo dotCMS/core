@@ -799,7 +799,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
         final long t1 = System.currentTimeMillis();
         final User systemUser = APILocator.systemUser();
-        final int maxThreads = Config.getIntProperty("CT_DELETE_THREADS", 2);
+        final int maxThreads = Config.getIntProperty("CT_DELETE_THREADS", 1);
         final ExecutorService pool = Executors.newFixedThreadPool(maxThreads);
         final CompletionService<Boolean> service = new ExecutorCompletionService<>(pool);
         final long allCount = countByType(type);
