@@ -13,9 +13,11 @@ import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-butto
 import { DotMessageService } from '@dotcms/data-access';
 import { DotExperimentStatusList, GroupedExperimentByStatus } from '@dotcms/dotcms-models';
 import { DotIconModule } from '@dotcms/ui';
-import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotFormatDateServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { DotRelativeDatePipe } from '@pipes/dot-relative-date/dot-relative-date.pipe';
 import { getExperimentMock } from '@portlets/dot-experiments/test/mocks';
+import { DotFormatDateService } from '@services/dot-format-date-service';
 
 import { DotExperimentsListTableComponent } from './dot-experiments-list-table.component';
 
@@ -68,7 +70,8 @@ describe('DotExperimentsListTableComponent', () => {
             ConfirmPopupModule,
             ToastModule,
             DotMessagePipeModule,
-            RouterTestingModule
+            RouterTestingModule,
+            DotRelativeDatePipe
         ],
         component: DotExperimentsListTableComponent,
         componentMocks: [ConfirmPopup],
@@ -79,7 +82,8 @@ describe('DotExperimentsListTableComponent', () => {
                 useValue: messageServiceMock
             },
             MessageService,
-            ConfirmationService
+            ConfirmationService,
+            { provide: DotFormatDateService, useClass: DotFormatDateServiceMock }
         ]
     });
 
@@ -127,11 +131,9 @@ describe('DotExperimentsListTableComponent', () => {
                 groupedExperimentByStatus.DRAFT[0].name
             );
             expect(spectator.query(byTestId('experiment-row__createdDate'))).toHaveText(
-                groupedExperimentByStatus.DRAFT[0].creationDate.toLocaleDateString()
+                '1 hour ago'
             );
-            expect(spectator.query(byTestId('experiment-row__modDate'))).toHaveText(
-                groupedExperimentByStatus.DRAFT[0].modDate.toLocaleDateString()
-            );
+            expect(spectator.query(byTestId('experiment-row__modDate'))).toHaveText('1 hour ago');
         });
 
         describe('Actions icons', () => {
