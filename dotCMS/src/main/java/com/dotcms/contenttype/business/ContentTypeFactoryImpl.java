@@ -1077,7 +1077,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
      * @param type
      * @throws DotDataException
      */
-   @WrapInTransaction
+
    @Override
    public void markForDeletion(ContentType type) throws DotDataException {
        final DotConnect dotConnect = new DotConnect();
