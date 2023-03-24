@@ -141,7 +141,8 @@ describe('DotExperimentsConfigurationComponent', () => {
         expect(spectator.query(DotExperimentsExperimentSummaryComponent)).not.toExist();
         expect(spectator.query(DotExperimentsConfigurationVariantsComponent)).toExist();
         expect(spectator.query(DotExperimentsConfigurationGoalsComponent)).toExist();
-        expect(spectator.query(DotExperimentsConfigurationTargetingComponent)).toExist();
+        // Wait until is implemented.
+        // expect(spectator.query(DotExperimentsConfigurationTargetingComponent)).toExist();
         expect(spectator.query(DotExperimentsConfigurationTrafficComponent)).toExist();
         expect(spectator.query(DotExperimentsConfigurationSchedulingComponent)).toExist();
         expect(spectator.query(byTestId('experiment-description'))).toExist();
