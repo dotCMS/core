@@ -1,6 +1,5 @@
 package com.dotcms.publisher.endpoint.bean.impl;
 
-<<<<<<< HEAD
 import com.dotcms.api.system.event.message.MessageSeverity;
 import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
@@ -22,8 +21,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.util.PortalUtil;
-=======
->>>>>>> master
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.List;
