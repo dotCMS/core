@@ -14,7 +14,7 @@ import {
 
 import { debounceTime, take, takeUntil } from 'rxjs/operators';
 
-import { AnyExtension, Content, Editor } from '@tiptap/core';
+import { AnyExtension, Content, Editor, JSONContent } from '@tiptap/core';
 import CharacterCount, { CharacterCountStorage } from '@tiptap/extension-character-count';
 import { Level } from '@tiptap/extension-heading';
 import { Highlight } from '@tiptap/extension-highlight';
@@ -98,7 +98,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
 
         this.setEditorJSONContent(content);
     }
-    @Output() valueChange = new EventEmitter<string>();
+    @Output() valueChange = new EventEmitter<JSONContent>();
 
     editor: Editor;
     subject = new Subject();
@@ -161,7 +161,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
                     .subscribe(() => this.updateChartCount());
 
                 this.editor.on('update', ({ editor }) => {
-                    this.valueChange.emit(JSON.stringify(editor.getJSON()));
+                    this.valueChange.emit(editor.getJSON());
                 });
 
                 this.editor.on('transaction', ({ editor }) => {
