@@ -96,25 +96,25 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
   @Override
   public void delete(ContentType type) throws DotSecurityException, DotDataException {
-      perms.checkPermission(type, PermissionLevel.EDIT_PERMISSIONS, user);
-
-      if (Config.getBooleanProperty(CONTENT_TYPE_DELETE_ASYNC, true)) {
-        final Optional<ContentType> copy = relocateContentletsThenDispose(type);
-        if (copy.isEmpty()) {
-          return;
+    if (!contentTypeCanBeDeleted(type)) {
+      Logger.warn(this, "Content Type " + type.name() + " cannot be deleted because it is referenced by other content types");
+      return;
+    }
+    if (Config.getBooleanProperty(CONTENT_TYPE_DELETE_ASYNC, true)) {
+        final ContentType disposableCopy = makeDisposableCopy(type);
+        final ContentType copy = relocateContentletsThenDispose(type, disposableCopy);
+        //By default, the deletion process takes placed within job
+        if (Config.getBooleanProperty(CONTENT_TYPE_DELETE_ASYNC_JOB, true)) {
+          ContentTypeDeleteJob.triggerContentTypeDeletion(copy);
+        } else {
+          //But we can decide to do it here using the thread pool directly
+          //This option becomes useful when running from tests
+          FactoryLocator.getContentTypeFactory().tearDown(copy);
         }
-          //By default, the deletion process takes placed within job
-          if (Config.getBooleanProperty(CONTENT_TYPE_DELETE_ASYNC_JOB, true)) {
-            ContentTypeDeleteJob.triggerContentTypeDeletion(copy.get());
-          } else {
-            //But we can decide to do it here using the thread pool directly
-            //This option becomes useful when running from tests
-            FactoryLocator.getContentTypeFactory().tearDown(copy.get());
-          }
-      } else {
-        // in case we want to fall back to the old way of deleting content types
-        transactionalDelete(type);
-      }
+    } else {
+      // in case we want to fall back to the old way of deleting content types
+      transactionalDelete(type);
+    }
   }
 
   /**
@@ -143,50 +143,75 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
       HibernateUtil.addCommitListener(() -> localSystemEventsAPI.notify(new ContentTypeDeletedEvent(type.variable())));
   }
 
-  @Override
+  boolean contentTypeCanBeDeleted(ContentType type) throws DotDataException, DotSecurityException {
+
+      if (null == type.id()) {
+          throw new DotDataException("ContentType must have an id set");
+      }
+
+      //sometimes we might get an instance that has been called without having set the id therefore it will be missing certain fields
+      //This prevents that scenarios from happening
+      final String id = type.id();
+      type = Try.of(() -> contentTypeFactory.find(id)).getOrNull();
+      if (null == type) {
+        Logger.warn(this, "ContentType with id: " + id + " does not exist");
+        return false;
+      }
+
+      perms.checkPermission(type, PermissionLevel.EDIT_PERMISSIONS, user);
+      return true;
+  }
+
+  /**
+   * This can a heavy operation. depending on the amount of fields present in the CT we want to copy
+   * Therefor it is best if it happens in a separate transaction
+   * @param type
+   * @return
+   * @throws DotDataException
+   * @throws DotSecurityException
+   */
   @WrapInTransaction
-  public Optional<ContentType> relocateContentletsThenDispose(ContentType type) throws DotSecurityException, DotDataException {
+  private ContentType makeDisposableCopy(ContentType type) throws DotDataException, DotSecurityException {
 
-    if(null == type.id()){
-       throw new DotDataException("ContentType must have an id set");
-    }
+    //Now we need a copy of the CT that basically makes it possible relocating content for asynchronous deletion
+    final String newName = String.format("%s_disposed_%s", type.variable(), System.currentTimeMillis());
 
-     //sometimes we might get an instance that has been called without having set the id therefore it will be missing certain fields
-     //This prevents that scenarios from happening
-    final String id = type.id();
-    type = Try.of(()->contentTypeFactory.find(id)).getOrNull();
-    if(null == type){
-       Logger.warn(this, "ContentType with id: " + id + " does not exist");
-       return Optional.empty();
-    }
+    //We need to remove all the relationships from the CT and probably all other system fields as well.
+    //if we leave RelationshipFields here we might run into this https://github.com/dotCMS/core/issues/24414
+    final Set<String> relationshipFieldVars = type.fields().stream().filter(RelationshipField.class::isInstance).map(Field::variable).collect(Collectors.toSet());
 
+    //Relationships will be removed together with the original CT
+    final Predicate<Field> excludeField = field -> !relationshipFieldVars.contains(field.variable());
+
+    //This needs be done on a separate instance of the ContentTypeAPIImpl to avoid permission issues when copying the CT
+    final ContentTypeAPIImpl withSystemPermsAPI = new ContentTypeAPIImpl(APILocator.systemUser(), false);
+    ContentType copy = withSystemPermsAPI.copyFrom(
+            new CopyContentTypeBean.Builder().sourceContentType(ContentTypeBuilder.builder(type).build()).name(newName).newVariable(newName).build(),
+            excludeField
+    );
+
+    //A copy is made. but we need to refresh our var since the copy returned by the method is incomplete
+    copy = contentTypeFactory.find(copy.id());
+    Logger.info(getClass(), String.format("::: CT (%s) with inode:(%s) Will be deleted shortly. A Copy  with  name (%s) and inode (%s) will be used to dispose all contentlets in background. :::",
+            type.variable(), type.inode(), copy.variable(), copy.inode())
+    );
+    return copy;
+  }
+
+    /**
+     * This method will move all the content associated to the content type to a new content type and then delete the old
+     * content type.
+     * @param type
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+  @WrapInTransaction
+  ContentType relocateContentletsThenDispose(final ContentType type, final ContentType copy) throws DotSecurityException, DotDataException {
       //If we're ok permissions wise, we need to remove the content from the index
       APILocator.getContentletIndexAPI().removeContentFromIndexByStructureInode(type.inode());
       //Then this quickly hides the content from the front end and APIS
       contentTypeFactory.markForDeletion(type);
-
-      //Now we need a copy of the CT that basically makes it possible relocating content for asynchronous deletion
-      final String newName = String.format("%s_disposed_%s", type.variable(), System.currentTimeMillis());
-
-      //We need to remove all the relationships from the CT and probably all other system fields as well.
-     //if we leave RelationshipFields here we might run into this https://github.com/dotCMS/core/issues/24414
-      final Set<String> relationshipFieldVars = type.fields().stream().filter(RelationshipField.class::isInstance).map(Field::variable).collect(Collectors.toSet());
-
-      //Relationships will be removed together with the original CT
-      final Predicate<Field> excludeField = field -> !relationshipFieldVars.contains(field.variable());
-
-      //This needs be done on a separate instance of the ContentTypeAPIImpl to avoid permission issues when copying the CT
-      final ContentTypeAPIImpl withSystemPermsAPI = new ContentTypeAPIImpl(APILocator.systemUser(), false);
-      ContentType copy = withSystemPermsAPI.copyFrom(
-              new CopyContentTypeBean.Builder().sourceContentType(ContentTypeBuilder.builder(type).build()).name(newName).newVariable(newName).build(),
-              excludeField
-      );
-
-      //A copy is made. but we need to refresh our var since the copy returned by the method is incomplete
-      copy = contentTypeFactory.find(copy.id());
-      Logger.info(getClass(), String.format("::: CT (%s) with inode:(%s) Will be deleted shortly. A Copy  with  name (%s) and inode (%s) will be used to dispose all contentlets in background. :::",
-              type.variable(), type.inode(), copy.variable(), copy.inode())
-      );
 
       APILocator.getContentletAPI().relocateContentletsForDeletion(type, copy);
       //Now that all the content is relocated, we're ready to destroy the original structure that held all content
@@ -194,7 +219,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
       contentTypeFactory.delete(type);
       //and destroy all associated content under the copy
       contentTypeFactory.markForDeletion(copy);
-      return Optional.of(copy);
+      return copy;
   }
 
   @Override
