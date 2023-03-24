@@ -47,12 +47,6 @@ export const ImageUpload = (injector: Injector, viewContainerRef: ViewContainerR
                 return !!files.length;
             }
 
-            function isImageBlockAllowed(): boolean {
-                const allowedBlocks: string[] = editor.storage.dotConfig.allowedBlocks;
-
-                return allowedBlocks.length > 1 ? allowedBlocks.includes('image') : true;
-            }
-
             function setPlaceHolder(view: EditorView, position: number, id: string) {
                 const loadingBlock: ComponentRef<LoaderComponent> =
                     viewContainerRef.createComponent(LoaderComponent);
@@ -150,7 +144,7 @@ export const ImageUpload = (injector: Injector, viewContainerRef: ViewContainerR
                                 return true;
                             },
                             paste(view, event: ClipboardEvent) {
-                                if (!isImageBlockAllowed()) {
+                                if (!editor.commands.isNodeRegistered(ImageNode.name)) {
                                     return true;
                                 }
 
@@ -179,7 +173,10 @@ export const ImageUpload = (injector: Injector, viewContainerRef: ViewContainerR
                                 }
                             },
                             drop(view, event: DragEvent) {
-                                if (isImageBlockAllowed() && areImageFiles(event)) {
+                                if (
+                                    editor.commands.isNodeRegistered(ImageNode.name) &&
+                                    areImageFiles(event)
+                                ) {
                                     event.preventDefault();
                                     if (event.dataTransfer.files.length !== 1) {
                                         alert('Can drop just one image at a time');

@@ -6,6 +6,7 @@ declare module '@tiptap/core' {
     interface Commands<ReturnType> {
         videoBlock: {
             setVideo: (attrs: DotCMSContentlet | string) => ReturnType;
+            insertVideoAt: (attrs: DotCMSContentlet | string, position: number) => ReturnType;
         };
     }
 }
@@ -83,6 +84,14 @@ export const VideoNode = Node.create({
                 (attrs) =>
                 ({ commands }) => {
                     return commands.insertContent({
+                        type: this.name,
+                        attrs: getVideoAttrs(attrs)
+                    });
+                },
+            insertVideoAt:
+                (attrs, position) =>
+                ({ commands }) => {
+                    return commands.insertContentAt(position, {
                         type: this.name,
                         attrs: getVideoAttrs(attrs)
                     });

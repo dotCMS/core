@@ -1,0 +1,16 @@
+<div class="container">
+    <video class="video" src="" controls></video>
+
+    <div class="preview-container">
+        <div>
+            <dot-spinner size="30px"></dot-spinner>
+            Uploading video, wait until finished.
+        </div>
+        <button
+            class="p-button-sm p-button-outlined"
+            (click)="cancel.emit(true)"
+            pButton
+            label="Cancel"
+        ></button>
+    </div>
+</div>

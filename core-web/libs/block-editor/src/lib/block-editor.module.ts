@@ -17,7 +17,8 @@ import {
     DragHandlerComponent,
     FormActionsComponent,
     LoaderComponent,
-    SuggestionPageComponent
+    SuggestionPageComponent,
+    VideoPlaceholderComponent
 } from './extensions';
 import { AssetFormModule } from './extensions/asset-form/asset-form.module';
 import { BubbleFormComponent } from './extensions/bubble-form/bubble-form.component';
@@ -34,7 +35,8 @@ import { SharedModule } from './shared/shared.module';
         ReactiveFormsModule,
         SharedModule,
         PrimengModule,
-        AssetFormModule
+        AssetFormModule,
+        VideoPlaceholderComponent
     ],
     declarations: [
         EditorDirective,
