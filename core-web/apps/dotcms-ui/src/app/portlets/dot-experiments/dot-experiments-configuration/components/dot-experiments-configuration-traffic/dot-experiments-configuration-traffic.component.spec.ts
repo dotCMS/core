@@ -71,6 +71,20 @@ describe('DotExperimentsConfigurationTrafficComponent', () => {
         expect(spectator.queryAll(Card).length).toEqual(2);
         expect(spectator.query(byTestId('traffic-card-title'))).toHaveText('Traffic');
         expect(spectator.query(byTestId('traffic-allocation-button'))).toExist();
+        expect(spectator.query(byTestId('traffic-split-title'))).toHaveText('Split');
+        expect(spectator.query(byTestId('traffic-split-change-button'))).toExist();
+        expect(spectator.query(byTestId('traffic-step-done'))).toHaveClass('isDone');
+    });
+
+    it('should render indicator in gray', () => {
+        dotExperimentsService.getById.and.returnValue(
+            of({ ...EXPERIMENT_MOCK, ...{ trafficAllocation: null } })
+        );
+
+        store.loadExperiment(EXPERIMENT_MOCK.id);
+        spectator.detectChanges();
+
+        expect(spectator.query(byTestId('traffic-step-done'))).not.toHaveClass('isDone');
     });
 
     it('should open sidebar of traffic allocation', () => {
