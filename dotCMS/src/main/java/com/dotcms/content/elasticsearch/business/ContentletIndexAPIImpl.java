@@ -61,6 +61,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -101,7 +102,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     private static final String TIMEOUT_INDEX_FORCE = "TIMEOUT_INDEX_FORCE";
 
     private static final String SELECT_CONTENTLET_VERSION_INFO =
-            "select working_inode,live_inode from contentlet_version_info where identifier=?";
+            "select working_inode,live_inode from contentlet_version_info where identifier IN (?)";
     private static ReindexQueueAPI queueApi = null;
     private static final ESIndexAPI esIndexApi = new ESIndexAPI();
     private static final ESMappingAPIImpl mappingAPI = new ESMappingAPIImpl();
@@ -875,36 +876,31 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     @SuppressWarnings("unchecked")
     private List<Contentlet> loadDeps(final Contentlet parentContentlet) {
 
-        final List<Contentlet> contentToIndex = new ArrayList<Contentlet>();
-        final List<String> depsIdentifiers = Sneaky.sneak(
-                () -> this.mappingAPI.dependenciesLeftToReindex(parentContentlet));
-        for (final String identifier : depsIdentifiers) {
+        final List<String> depsIdentifiers =  Sneaky.sneak(() ->
+                this.mappingAPI.dependenciesLeftToReindex(parentContentlet));
 
-            // get working and live version for all languages based on the identifier
-            final List<Map<String, String>> versionInfoMapResults =
-                    Sneaky.sneak(() -> new DotConnect().setSQL(SELECT_CONTENTLET_VERSION_INFO)
-                            .addParam(identifier).loadResults());
-            final List<String> inodes = new ArrayList<>();
-            for (final Map<String, String> versionInfoMap : versionInfoMapResults) {
+        final List<Map<String, String>> versionInfoMapResults =
+                Sneaky.sneak(() -> new DotConnect().setSQL(SELECT_CONTENTLET_VERSION_INFO)
+                        .addParam(depsIdentifiers.toArray()).loadResults());
 
-                final String workingInode = versionInfoMap.get("working_inode");
-                final String liveInode = versionInfoMap.get("live_inode");
-                inodes.add(workingInode);
-                if (UtilMethods.isSet(liveInode) && !workingInode.equals(liveInode)) {
-                    inodes.add(liveInode);
-                }
-            }
+        final List<String> inodes = versionInfoMapResults.stream()
+                .map(versionInfoMap -> {
+                    final String workingInode = versionInfoMap.get("working_inode");
+                    final String liveInode = versionInfoMap.get("live_inode");
 
-            for (final String inode : inodes) {
+                    if (UtilMethods.isSet(liveInode) && !workingInode.equals(liveInode)) {
+                        return Arrays.asList(workingInode, liveInode);
+                    }
 
-                final Contentlet contentlet =
-                        Sneaky.sneak(() -> APILocator.getContentletAPI()
-                                .find(inode, APILocator.getUserAPI().getSystemUser(), false));
-                contentlet.setIndexPolicy(IndexPolicy.DEFER);
-                contentToIndex.add(contentlet);
-            }
-        }
-        return contentToIndex;
+                    return Arrays.asList(workingInode);
+                })
+                .flatMap(Collection::stream)
+                .filter(inode -> UtilMethods.isSet(inode))
+                .distinct()
+                .collect(Collectors.toList());
+
+        return  Sneaky.sneak(() -> APILocator.getContentletAPI()
+                .findContentlets(inodes));
     }
 
     public void removeContentFromIndex(final Contentlet content) throws DotHibernateException {
