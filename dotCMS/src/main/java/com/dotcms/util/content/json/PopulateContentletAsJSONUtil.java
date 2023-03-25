@@ -29,7 +29,6 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collections;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -270,11 +269,9 @@ public class PopulateContentletAsJSONUtil {
                         try {
                             return parseLine(line);
                         } catch (Exception e) {
-                            Logger.error("Error parsing line: " + line, e);
-                            return null;
+                            throw new DotRuntimeException("Error parsing line: " + line, e);
                         }
                     })// Map each line to Tuple (inode, contentlet_as_json)
-                    .filter(Objects::nonNull)
                     .forEach(wrapCheckedConsumer(this::updateContentlet));// Update each contentlet in the DB
         }
     }
