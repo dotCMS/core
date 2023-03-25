@@ -160,7 +160,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
       }
 
       try {
-         APILocator.getContentletDisposeAPI().tearDown(dbType);
+         APILocator.getContentletDisposeAPI().sequentialTearDown(dbType);
       } catch (DotDataException | DotSecurityException e) {
         Logger.error(getClass(), String.format("Error Tearing down ContentType [%s]", dbType.variable()), e);
       }

@@ -18,4 +18,6 @@ public interface ContentletDisposeAPI {
 
     void tearDown(ContentType contentType) throws DotDataException, DotSecurityException;
 
+    void sequentialTearDown(ContentType type) throws DotDataException, DotSecurityException;
+
 }

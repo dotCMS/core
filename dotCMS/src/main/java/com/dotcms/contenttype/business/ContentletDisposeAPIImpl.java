@@ -118,6 +118,8 @@ public class ContentletDisposeAPIImpl implements ContentletDisposeAPI {
                                 (Long) row.get("language_id")), Collectors.toList())));
     }
 
+
+
     @Override
     public void tearDown(ContentType type) throws DotDataException, DotSecurityException {
         final long t1 = System.currentTimeMillis();
@@ -174,6 +176,61 @@ public class ContentletDisposeAPIImpl implements ContentletDisposeAPI {
             }
         } finally {
             pool.shutdown();
+        }
+
+        //Fallback in case something went wrong
+        final int failuresCount = countByType(type);
+        if (failuresCount > 0) {
+            Logger.info(getClass(),
+                    String.format(" There were still (%d) that failed getting removed. ",
+                            failuresCount));
+            //  deleteContentletsByType(type);
+        }
+
+        destroy(type);
+
+        final long diff = System.currentTimeMillis() - t1;
+        final long hours = TimeUnit.MILLISECONDS.toHours(diff);
+        final long minutes = TimeUnit.MILLISECONDS.toMinutes(diff);
+        final long seconds = TimeUnit.MILLISECONDS.toSeconds(diff);
+        String timeInHHMMSS = String.format("%02d:%02d:%02d", hours, minutes, seconds);
+        Logger.info(getClass(),
+                String.format(" it took me (%s) to tear down (%d) of CT (%s) ", timeInHHMMSS,
+                        allCount, type));
+    }
+
+    @Override
+    public void sequentialTearDown(ContentType type) throws DotDataException, DotSecurityException {
+        final long t1 = System.currentTimeMillis();
+        final long allCount = countByType(type);
+        final int limit = Config.getIntProperty("CT_DELETE_BATCH_SIZE", 600);
+        Logger.info(getClass(), String.format(
+                "There are (%d) contents. Will attack using (%d) batchSize ",
+                allCount, limit));
+
+        int offset = 0;
+
+        while (true) {
+
+            Map<String, List<InodeAndLanguage>> batch = nextBatch(type, limit, offset);
+            if (batch.isEmpty()) {
+                //We're done lets get out of here
+                Logger.info(getClass(), "We're done collecting batch!");
+                break;
+            }
+
+            final List<Map<String, List<InodeAndLanguage>>> partitions = partitionInput(batch, 1);
+            Logger.debug(getClass(),
+                    String.format(" ::: Partitions size %d ", partitions.size()));
+
+            for (Map<String, List<InodeAndLanguage>> partition : partitions) {
+                destroy(partition, type);
+                Logger.info(getClass(), String.format("Finished destroying a batch of (%d) contentlets!",partition.size()));
+            }
+
+            offset += limit;
+            Logger.debug(getClass(),
+                    String.format(" Offset is (%d) of (%d) total. ", offset, allCount));
         }
 
         //Fallback in case something went wrong
