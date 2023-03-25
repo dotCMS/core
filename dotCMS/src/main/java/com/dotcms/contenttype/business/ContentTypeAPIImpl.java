@@ -39,11 +39,9 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
+import com.dotmarketing.quartz.job.ContentTypeDeleteJob;
 import com.dotmarketing.quartz.job.IdentifierDateJob;
-import com.dotmarketing.util.ActivityLogger;
-import com.dotmarketing.util.AdminLogger;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
 import com.google.common.collect.ImmutableList;
@@ -56,6 +54,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+import io.vavr.control.Try;
 import org.elasticsearch.action.search.SearchResponse;
 
 /**
@@ -78,6 +78,10 @@ import org.elasticsearch.action.search.SearchResponse;
  * @since Jun 24th, 2016
  */
 public class ContentTypeAPIImpl implements ContentTypeAPI {
+
+  public static final String CONTENT_TYPE_DELETE_ASYNC = "CONTENT_TYPE_DELETE_ASYNC";
+
+  public static final String CONTENT_TYPE_DELETE_ASYNC_JOB = "CONTENT_TYPE_DELETE_ASYNC_JOB";
 
   private final ContentTypeFactory contentTypeFactory;
   private final FieldFactory fieldFactory;
@@ -106,31 +110,161 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
         APILocator.getPermissionAPI(), APILocator.getContentTypeFieldAPI(), APILocator.getLocalSystemEventsAPI());
   }
 
-  @WrapInTransaction
+
   @Override
   public void delete(ContentType type) throws DotSecurityException, DotDataException {
-    perms.checkPermission(type, PermissionLevel.EDIT_PERMISSIONS, user);
+    if (!contentTypeCanBeDeleted(type)) {
+      Logger.warn(this, "Content Type " + type.name() + " cannot be deleted because it is referenced by other content types");
+      return;
+    }
+    if (Config.getBooleanProperty(CONTENT_TYPE_DELETE_ASYNC, true)) {
+        final ContentType copy = relocateContentletsThenDispose(type);
+        //By default, the deletion process takes placed within job
+        if (Config.getBooleanProperty(CONTENT_TYPE_DELETE_ASYNC_JOB, true)) {
+          ContentTypeDeleteJob.triggerContentTypeDeletion(copy);
+        } else {
+          //But we can decide to do it here using the thread pool directly
+          //This option becomes useful when running from tests
+          tearDown(copy);
+        }
+    } else {
+      // in case we want to fall back to the old way of deleting content types
+      transactionalDelete(type);
+    }
+  }
 
-    try {
+  @CloseDBIfOpened
+  public void tearDown(final ContentType type) throws DotDataException {
+
+      // default structure can't be deleted
+      if (type.defaultType()) {
+        throw new DotDataException("contenttype.delete.cannot.delete.default.type");
+      }
+      if (type.system()) {
+        throw new DotDataException("contenttype.delete.cannot.delete.system.type");
+      }
+
+      //Force a database hit by removing the type from the cache
+      CacheLocator.getContentTypeCache2().remove(type);
+
+      //Refresh prior to delete
+      final ContentType dbType = Try.of(() -> find(type.id())).getOrNull();
+      if (null == dbType) {
+        Logger.warn(ContentTypeFactoryImpl.class, String.format("The ContentType with id `%s` does not exist ", type.id()));
+        return;
+      }
+
+      if (!dbType.markedForDeletion()) {
+        Logger.warn(ContentTypeFactoryImpl.class, String.format("The ContentType with id `%s` isn't marked for deletion ", type.id()));
+        return;
+      }
+
+      try {
+         APILocator.getContentletDisposeAPI().tearDown(dbType);
+      } catch (DotDataException | DotSecurityException e) {
+        Logger.error(getClass(), String.format("Error Tearing down ContentType [%s]", dbType.variable()), e);
+      }
+
+  }
+
+  /**
+   * This method will delete the content type and all the content associated to it.
+   * This has been our traditional way to delete content types. and all its associated pieces of content.
+   * @param type
+   * @throws DotDataException
+   */
+  @WrapInTransaction
+  private void transactionalDelete(ContentType type) throws DotDataException {
+      try {
+        contentTypeFactory.delete(type);
+      } catch (DotStateException | DotDataException e) {
+        Logger.error(ContentType.class, e.getMessage(), e);
+        throw new BaseRuntimeInternationalizationException(e);
+      }
+      try {
+        String actionUrl = ContentTypeUtil.getInstance().getActionUrl(type, user);
+        ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = new ContentTypePayloadDataWrapper(actionUrl, type);
+        APILocator.getSystemEventsAPI().pushAsync(SystemEventType.DELETE_BASE_CONTENT_TYPE, new Payload(
+                contentTypePayloadDataWrapper, Visibility.PERMISSION, String.valueOf(PermissionAPI.PERMISSION_READ)));
+      } catch (DotStateException | DotDataException e) {
+        Logger.error(ContentType.class, e.getMessage(), e);
+        throw new BaseRuntimeInternationalizationException(e);
+      }
+      HibernateUtil.addCommitListener(() -> localSystemEventsAPI.notify(new ContentTypeDeletedEvent(type.variable())));
+  }
+
+  boolean contentTypeCanBeDeleted(ContentType type) throws DotDataException, DotSecurityException {
+
+      if (null == type.id()) {
+          throw new DotDataException("ContentType must have an id set");
+      }
+
+      //sometimes we might get an instance that has been called without having set the id therefore it will be missing certain fields
+      //This prevents that scenarios from happening
+      final String id = type.id();
+      type = Try.of(() -> contentTypeFactory.find(id)).getOrNull();
+      if (null == type) {
+        Logger.warn(this, "ContentType with id: " + id + " does not exist");
+        return false;
+      }
+
+      perms.checkPermission(type, PermissionLevel.EDIT_PERMISSIONS, user);
+      return true;
+  }
+
+  /**
+   * This can a heavy operation. depending on the amount of fields present in the CT we want to copy
+   * Therefor it is best if it happens in a separate transaction
+   * @param type
+   * @return
+   * @throws DotDataException
+   */
+
+  private ContentType makeDisposableCopy(final ContentType type) throws DotDataException {
+
+    //Now we need a copy of the CT that basically makes it possible relocating content for asynchronous deletion
+    final String newName = String.format("%s_disposed_%s", type.variable(), System.currentTimeMillis());
+
+    ContentType copy = ContentTypeBuilder.builder(type)
+            .id(null)
+            .name(newName)
+            .variable(newName)
+            .build();
+
+    copy = contentTypeFactory.save(copy);
+
+    //A copy is made. but we need to refresh our var since the copy returned by the method is incomplete
+    copy = contentTypeFactory.find(copy.id());
+    Logger.info(getClass(), String.format("::: CT (%s) with inode:(%s) Will be deleted shortly. A Copy  with  name (%s) and inode (%s) will be used to dispose all contentlets in background. :::",
+            type.variable(), type.inode(), copy.variable(), copy.inode())
+    );
+    return copy;
+  }
+
+    /**
+     * This method will move all the content associated to the content type to a new content type and then delete the old
+     * content type.
+     * @param type
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+  @WrapInTransaction
+  ContentType relocateContentletsThenDispose(final ContentType type) throws DotSecurityException, DotDataException {
+      //If we're ok permissions wise, we need to remove the content from the index
+      APILocator.getContentletIndexAPI().removeContentFromIndexByStructureInode(type.inode());
+      //Then this quickly hides the content from the front end and APIS
+      contentTypeFactory.markForDeletion(type);
+
+      final ContentType copy = makeDisposableCopy(type);
+
+      APILocator.getContentletDisposeAPI().relocateContentletsForDeletion(type, copy);
+      //Now that all the content is relocated, we're ready to destroy the original structure that held all content
+      //System fields like Categories, Relationships and Containers will be deleted using the original structure
       contentTypeFactory.delete(type);
-    } catch (DotStateException | DotDataException e) {
-      Logger.error(ContentType.class, e.getMessage(), e);
-      throw new BaseRuntimeInternationalizationException(e);
-    }
-    try {
-      String actionUrl = ContentTypeUtil.getInstance().getActionUrl(type, user);
-      ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = new ContentTypePayloadDataWrapper(actionUrl, type);
-      APILocator.getSystemEventsAPI().pushAsync(SystemEventType.DELETE_BASE_CONTENT_TYPE, new Payload(
-          contentTypePayloadDataWrapper, Visibility.PERMISSION, String.valueOf(PermissionAPI.PERMISSION_READ)));
-    } catch (DotStateException | DotDataException e) {
-      Logger.error(ContentType.class, e.getMessage(), e);
-      throw new BaseRuntimeInternationalizationException(e);
-    }
-
-    HibernateUtil.addCommitListener(()-> {
-      localSystemEventsAPI.notify(new ContentTypeDeletedEvent(type.variable()));
-    });
-
+      //and destroy all associated content under the copy
+      contentTypeFactory.markForDeletion(copy);
+      return copy;
   }
 
   @Override

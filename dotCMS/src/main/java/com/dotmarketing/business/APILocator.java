@@ -24,16 +24,7 @@ import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPIImpl;
-import com.dotcms.contenttype.business.ContentTypeAPI;
-import com.dotcms.contenttype.business.ContentTypeAPIImpl;
-import com.dotcms.contenttype.business.ContentTypeFieldLayoutAPI;
-import com.dotcms.contenttype.business.ContentTypeFieldLayoutAPIImpl;
-import com.dotcms.contenttype.business.DotAssetAPI;
-import com.dotcms.contenttype.business.DotAssetAPIImpl;
-import com.dotcms.contenttype.business.FieldAPI;
-import com.dotcms.contenttype.business.FieldAPIImpl;
-import com.dotcms.contenttype.business.StoryBlockAPI;
-import com.dotcms.contenttype.business.StoryBlockAPIImpl;
+import com.dotcms.contenttype.business.*;
 import com.dotcms.device.DeviceAPI;
 import com.dotcms.device.DeviceAPIImpl;
 import com.dotcms.dotpubsub.DotPubSubProvider;
@@ -1135,6 +1126,10 @@ public class APILocator extends Locator<APIIndex> {
 		return (AnalyticsAPI) getInstance(APIIndex.ANALYTICS_API);
 	}
 
+	public static ContentletDisposeAPI getContentletDisposeAPI() {
+		return (ContentletDisposeAPI) getInstance(APIIndex.CONTENTLET_DISPOSE_API);
+	}
+
 	/**
 	 * Generates a unique instance of the specified dotCMS API.
 	 *
@@ -1286,7 +1281,8 @@ enum APIIndex
 	VARIANT_API,
 	EXPERIMENTS_API,
 	BAYESIAN_API,
-	ANALYTICS_API;
+	ANALYTICS_API,
+	CONTENTLET_DISPOSE_API;
 
 	Object create() {
 		switch(this) {
@@ -1375,6 +1371,7 @@ enum APIIndex
 			case EXPERIMENTS_API: return new ExperimentsAPIImpl();
 			case BAYESIAN_API: return new BayesianAPIImpl();
 			case ANALYTICS_API: return new AnalyticsAPIImpl();
+			case CONTENTLET_DISPOSE_API: return new ContentletDisposeAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

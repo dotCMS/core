@@ -736,6 +736,7 @@ create table structure (
    mod_date timestamptz,
    sort_order int4,
    icon varchar(255),
+   marked_for_deletion bool not null default false,
    primary key (inode)
 );
 create table cms_role (

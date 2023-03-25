@@ -536,6 +536,7 @@ public class ContentTypeResource implements Serializable {
 		} catch (DotSecurityException e) {
 			throw new ForbiddenException(e);
 		} catch (Exception e) {
+			Logger.error(this, "Error deleting content type", e);
 			return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
 		}
 	}
