@@ -16,10 +16,10 @@ import static com.dotmarketing.util.DateUtil.isTimeReach;
 import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.analytics.bayesian.BayesianAPI;
 import com.dotcms.analytics.bayesian.model.BayesianInput;
-import com.dotcms.analytics.bayesian.model.BayesianPriors;
 import com.dotcms.analytics.bayesian.model.BayesianResult;
 import com.dotcms.analytics.helper.AnalyticsHelper;
 
+import com.dotcms.analytics.helper.BayesianHelper;
 import com.dotcms.analytics.metrics.AbstractCondition.Operator;
 import com.dotcms.analytics.metrics.EventType;
 import com.dotcms.analytics.metrics.Metric;
@@ -38,8 +38,6 @@ import com.dotcms.experiments.business.result.ExperimentAnalyzerUtil;
 import com.dotcms.experiments.business.result.ExperimentResults;
 import com.dotcms.experiments.business.result.ExperimentResultsQueryFactory;
 import com.dotcms.exception.NotAllowedException;
-import com.dotcms.experiments.business.result.GoalResults;
-import com.dotcms.experiments.business.result.VariantResults;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.AbstractTrafficProportion.Type;
 import com.dotcms.experiments.model.Experiment;
@@ -107,8 +105,7 @@ import org.jetbrains.annotations.NotNull;
 
 public class ExperimentsAPIImpl implements ExperimentsAPI {
 
-    private static final String PRIMARY_GOAL = "primary";
-    private static final int VARIANTS_NUMBER_MAX = 2;
+    private static final int VARIANTS_NUMBER_MAX = 3;
 
     final ExperimentsFactory factory = FactoryLocator.getExperimentsFactory();
     final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
@@ -825,93 +822,27 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final ExperimentResults experimentResults = ExperimentAnalyzerUtil.INSTANCE.getExperimentResult(
             experiment,
             events);
-        experimentResults.setBayesianResult(calcBayesian(experiment, experimentResults, null));
+        experimentResults.setBayesianResult(calcBayesian(experimentResults, null));
         return experimentResults;
     }
 
     /**
      * Calculates Bayesian results based on {@link ExperimentResults} object gathered results from cube.
      *
-     * @param experiment experiment to get results from
      * @param experimentResults experiments results
      * @param goalName          goal name to get results from
      * @return {@link BayesianResult} bayesian results instance
      */
-    private BayesianResult calcBayesian(final Experiment experiment, final ExperimentResults experimentResults, final String goalName) {
+    private BayesianResult calcBayesian(final ExperimentResults experimentResults, final String goalName) {
         DotPreconditions.checkNotNull(experimentResults, "Experiment results should not be null");
-        DotPreconditions.checkArgument(
-            experimentResults.getSessions().getVariants().size() >= 2,
-            "At least two variants should be put to test");
-        DotPreconditions.checkArgument(
-            experimentResults.getSessions().getVariants().size() <= VARIANTS_NUMBER_MAX,
-            "Currently more than variant is not supported");
+        final int variantsNumber = experimentResults.getSessions().getVariants().size();
+        DotPreconditions.checkArgument(variantsNumber >= 2, "At least two variants should be put to test");
+        DotPreconditions.checkArgument(variantsNumber <= VARIANTS_NUMBER_MAX, "Currently more than variant is not supported");
 
-        return bayesianAPI.calcProbBOverA(
-            toBayesianInput(
-                experimentResults,
-                StringUtils.defaultIfBlank(goalName, PRIMARY_GOAL),
-                resolvePriors(experiment)));
-    }
+        final String goal = StringUtils.defaultIfBlank(goalName, PRIMARY_GOAL);
+        final BayesianInput bayesianInput = BayesianHelper.get().toBayesianInput(experimentResults, goal);
 
-    private BayesianPriors resolvePriors(final Experiment experiment) {
-        //TODO: if and when priors this the place we need to resolve those values
-        return BayesianAPI.NULL_PRIORS;
-    }
-
-    private Optional<GoalResults> getGoalResults(final ExperimentResults experimentResults, final String goalName) {
-        return Optional.ofNullable(experimentResults.getGoals().get(goalName));
-    }
-
-    private long extractSuccesses(final VariantResults variantResults) {
-        return variantResults.getUniqueBySession().getCount();
-    }
-
-    private long extractFailures(final ExperimentResults experimentResult,
-                                 final String goalName,
-                                 final String variantName) {
-        final long total = Optional.ofNullable(experimentResult.getSessions().getVariants().get(variantName)).orElse(0L);
-        return total != 0
-            ? total - extractSuccesses(
-                Objects.requireNonNull(Optional
-                    .ofNullable(experimentResult.getGoals().get(goalName))
-                    .map(goal -> goal.getVariants().get(variantName))
-                    .orElse(null)))
-            : 0;
-    }
-
-    private BayesianInput toBayesianInput(final ExperimentResults experimentResults,
-                                          final String goalName,
-                                          final BayesianPriors priors) {
-        return getGoalResults(experimentResults, goalName)
-            .map(results -> {
-                final VariantResults controlResults = results.getVariants().get(DEFAULT_VARIANT.name());
-                if (Objects.isNull(controlResults)) {
-                    return null;
-                }
-
-                final VariantResults testResults = results
-                    .getVariants()
-                    .keySet()
-                    .stream()
-                    .filter(name -> !name.equals(DEFAULT_VARIANT.name()))
-                    .map(name -> results.getVariants().get(name))
-                    .findFirst()
-                    .orElse(null);
-                if (Objects.isNull(testResults)) {
-                    return null;
-                }
-
-                return BayesianInput
-                    .builder()
-                    .variants(new ArrayList<>(experimentResults.getSessions().getVariants().keySet()))
-                    .priors(priors)
-                    .controlSuccesses(extractSuccesses(controlResults))
-                    .controlFailures(extractFailures(experimentResults, goalName, DEFAULT_VARIANT.name()))
-                    .testSuccesses(extractSuccesses(testResults))
-                    .testFailures(extractFailures(experimentResults, goalName, testResults.getVariantName()))
-                    .build();
-            })
-            .orElse(null);
+        return variantsNumber == 2 ? bayesianAPI.calcProbBOverA(bayesianInput) : bayesianAPI.calcProbABC(bayesianInput);
     }
 
     @Override
@@ -947,7 +878,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
                 currentEvents.add(new Event(resultSetItem.getAll(),
                             EventType.get(resultSetItem.get("Events.eventType")
-                                    .map(value -> value.toString())
+                                    .map(Object::toString)
                                     .orElseThrow(() -> new IllegalStateException("Type into Event is expected")))
                 ));
 

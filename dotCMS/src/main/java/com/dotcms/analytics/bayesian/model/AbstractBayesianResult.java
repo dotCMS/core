@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.immutables.value.Value;
 
 import javax.annotation.Nullable;
+import java.util.List;
 import java.util.Map;
 
 
@@ -20,11 +21,8 @@ import java.util.Map;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public interface AbstractBayesianResult {
 
-    @JsonProperty("value")
-    double value();
-
-    @JsonProperty("inFavorOf")
-    String inFavorOf();
+    @JsonProperty("probabilities")
+    List<VariantProbability> probabilities();
 
     @JsonProperty("suggested")
     String suggested();

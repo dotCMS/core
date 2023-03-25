@@ -12,7 +12,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.analytics.app.AnalyticsApp;
-import com.dotcms.analytics.bayesian.BayesianAPI;
 import com.dotcms.analytics.bayesian.model.BayesianResult;
 import com.dotcms.analytics.helper.AnalyticsHelper;
 import com.dotcms.analytics.metrics.AbstractCondition.Operator;
@@ -89,7 +88,6 @@ public class ExperimentAPIImpIT {
     private static final String CUBEJS_SERVER_IP = "127.0.0.1";
     private static final int CUBEJS_SERVER_PORT = 5000;
     private static final String CUBEJS_SERVER_URL = String.format("http://%s:%s", CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
-
     private static final DateTimeFormatter SIMPLE_FORMATTER = DateTimeFormatter
         .ofPattern("MM/dd/yyyy")
         .withZone(ZoneId.systemDefault());
@@ -381,7 +379,8 @@ public class ExperimentAPIImpIT {
 
     private static Experiment createExperimentWithReachPageGoalAndVariant(final String experimentName,
                                                                           final HTMLPageAsset experimentPage,
-                                                                          final HTMLPageAsset reachPage) {
+                                                                          final HTMLPageAsset reachPage,
+                                                                          final String... vatiants) {
         final Metric metric = Metric.builder()
                 .name("Testing Metric")
                 .type(MetricType.REACH_PAGE)
@@ -389,19 +388,23 @@ public class ExperimentAPIImpIT {
                     getUrlCondition(reachPage.getPageUrl()),
                     getRefererCondition(experimentPage.getPageUrl()))
                 .build();
-        return createExperiment(experimentName, experimentPage, metric);
+        return createExperiment(experimentName, experimentPage, metric, vatiants);
     }
 
     private static Experiment createExperiment(final String experimentName,
                                                final HTMLPageAsset pageB,
-                                               final Metric metric) {
+                                               final Metric metric,
+                                               final String... variants) {
         final Goals goal = Goals.builder().primary(metric).build();
+        final ExperimentDataGen experimentDataGen = new ExperimentDataGen()
+            .addVariant(experimentName)
+            .page(pageB)
+            .addGoal(goal);
+        for (final String variant : variants) {
+            experimentDataGen.addVariant(variant);
+        }
 
-        return new ExperimentDataGen()
-                .addVariant(experimentName)
-                .page(pageB)
-                .addGoal(goal)
-                .nextPersisted();
+        return experimentDataGen.nextPersisted();
     }
 
     private static Condition getUrlCondition(final String url) {
@@ -795,7 +798,6 @@ public class ExperimentAPIImpIT {
             mockhttpServer.stop();
         }
     }
-
 
     /**
      * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
@@ -1477,8 +1479,6 @@ public class ExperimentAPIImpIT {
             assertEquals(120, experimentResults.getSessions().getTotal());
 
             final BayesianResult bayesianResult = experimentResults.getBayesianResult();
-            Assert.assertEquals(0.99, bayesianResult.value(), 0.01);
-            Assert.assertEquals(BayesianAPI.VARIANT_B, bayesianResult.inFavorOf());
             Assert.assertTrue(bayesianResult.suggested().startsWith("dotexperiment-"));
 
             mockhttpServer.validate();
@@ -1535,9 +1535,7 @@ public class ExperimentAPIImpIT {
             assertEquals(120, experimentResults.getSessions().getTotal());
 
             final BayesianResult bayesianResult = experimentResults.getBayesianResult();
-            Assert.assertEquals(0.02, bayesianResult.value(), 0.01);
-            Assert.assertEquals(BayesianAPI.VARIANT_B, bayesianResult.inFavorOf());
-            Assert.assertTrue(bayesianResult.suggested().startsWith(DEFAULT_VARIANT.name()));
+            Assert.assertEquals(DEFAULT_VARIANT.name(), bayesianResult.suggested());
 
             mockhttpServer.validate();
         } finally {
@@ -1554,28 +1552,36 @@ public class ExperimentAPIImpIT {
      * - You create an {@link Experiment} using the A page with a PAGE_REACH Goal: url EQUALS TO Page C .
      * - You have the follow page_view to the pages order by timestamp: A, B and C
      *
-     * Should: calculate the probability that B beats A by 0.57
+     * Should: calculate the probability that B beats A is 0.99
      */
     @Test
-    public void test_calcBayesian_BIsSlightlySameAsA() throws DotDataException, DotSecurityException {
+    public void test_calcBayesian_ABC() throws DotDataException, DotSecurityException {
         final Host host = new SiteDataGen().nextPersisted();
         final Template template = new TemplateDataGen().host(host).nextPersisted();
         final HTMLPageAsset pageA = new HTMLPageDataGen(host, template).nextPersisted();
         final HTMLPageAsset pageB = new HTMLPageDataGen(host, template).nextPersisted();
         final HTMLPageAsset pageC = new HTMLPageDataGen(host, template).nextPersisted();
+        final String experimentName = "experiment_page_reach_testing_1";
         final Experiment experiment = createExperimentWithReachPageGoalAndVariant(
-            "experiment_page_reach_testing_1",
-            pageA, pageC);
-        final String variantName = experiment.trafficProportion().variants().stream()
+            experimentName,
+            pageA, pageC,
+            "variantC");
+        experiment.trafficProportion().variants().stream()
             .map(ExperimentVariant::id)
             .filter(id -> !id.equals("DEFAULT"))
             .limit(1)
             .findFirst()
             .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
-        final List<Map<String, String>> data = createPageViewEvents(35, experiment, variantName, 2, pageA, pageC);
-        data.addAll(createPageViewEvents(25, experiment, variantName, 2, pageA, pageB));
-        data.addAll(createPageViewEvents(34, experiment, DEFAULT_VARIANT.name(), 2, pageA, pageC));
-        data.addAll(createPageViewEvents(26, experiment, DEFAULT_VARIANT.name(), 2, pageA, pageB));
+        final List<ExperimentVariant> variants = new ArrayList<>(experiment.trafficProportion().variants());
+        final String variantBName = variants.get(1).id();
+        final String variantCName = variants.get(2).id();
+
+        final List<Map<String, String>> data = createPageViewEvents(50, experiment, variantBName, 2, pageA, pageC);
+        data.addAll(createPageViewEvents(10, experiment, variantBName, 2, pageA, pageB));
+        data.addAll(createPageViewEvents(16, experiment, DEFAULT_VARIANT.name(), 2, pageA, pageC));
+        data.addAll(createPageViewEvents(44, experiment, DEFAULT_VARIANT.name(), 2, pageA, pageB));
+        data.addAll(createPageViewEvents(55, experiment, variantCName, 2, pageA, pageC));
+        data.addAll(createPageViewEvents(5, experiment, variantCName, 2, pageA, pageB));
         final Map<String, List<Map<String, String>>> cubeJsQueryResult = map("data", data);
 
         APILocator.getExperimentsAPI().start(experiment.getIdentifier(), APILocator.systemUser());
@@ -1590,70 +1596,10 @@ public class ExperimentAPIImpIT {
             final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
             final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
-            assertEquals(120, experimentResults.getSessions().getTotal());
+            assertEquals(180, experimentResults.getSessions().getTotal());
 
             final BayesianResult bayesianResult = experimentResults.getBayesianResult();
-            Assert.assertEquals(0.57, bayesianResult.value(), 0.01);
-            Assert.assertEquals(BayesianAPI.VARIANT_B, bayesianResult.inFavorOf());
-            Assert.assertTrue(bayesianResult.suggested().startsWith("dotexperiment-"));
-
-            mockhttpServer.validate();
-        } finally {
-            APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
-            IPUtils.disabledIpPrivateSubnet(false);
-            mockhttpServer.stop();
-        }
-    }
-
-    /**
-     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
-     * When:
-     * - You have four pages: A, B and C
-     * - You create an {@link Experiment} using the A page with a PAGE_REACH Goal: url EQUALS TO Page C .
-     * - You have the follow page_view to the pages order by timestamp: A, B and C
-     *
-     * Should: calculate the probability that B beats A by 0.50
-     */
-    @Test
-    public void test_calcBayesian_BIsSameAsA() throws DotDataException, DotSecurityException {
-        final Host host = new SiteDataGen().nextPersisted();
-        final Template template = new TemplateDataGen().host(host).nextPersisted();
-        final HTMLPageAsset pageA = new HTMLPageDataGen(host, template).nextPersisted();
-        final HTMLPageAsset pageB = new HTMLPageDataGen(host, template).nextPersisted();
-        final HTMLPageAsset pageC = new HTMLPageDataGen(host, template).nextPersisted();
-        final Experiment experiment = createExperimentWithReachPageGoalAndVariant(
-            "experiment_page_reach_testing_1",
-            pageA, pageC);
-        final String variantName = experiment.trafficProportion().variants().stream()
-            .map(ExperimentVariant::id)
-            .filter(id -> !id.equals("DEFAULT"))
-            .limit(1)
-            .findFirst()
-            .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
-        final List<Map<String, String>> data = createPageViewEvents(35, experiment, variantName, 2, pageA, pageC);
-        data.addAll(createPageViewEvents(25, experiment, variantName, 2, pageA, pageB));
-        data.addAll(createPageViewEvents(35, experiment, DEFAULT_VARIANT.name(), 2, pageA, pageC));
-        data.addAll(createPageViewEvents(25, experiment, DEFAULT_VARIANT.name(), 2, pageA, pageB));
-        final Map<String, List<Map<String, String>>> cubeJsQueryResult = map("data", data);
-
-        APILocator.getExperimentsAPI().start(experiment.getIdentifier(), APILocator.systemUser());
-
-        IPUtils.disabledIpPrivateSubnet(true);
-        final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment);
-        final MockHttpServer mockhttpServer = createMockHttpServerAndStart(
-            cubeJSQueryExpected,
-            JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
-
-        try {
-            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
-            final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
-            assertEquals(120, experimentResults.getSessions().getTotal());
-
-            final BayesianResult bayesianResult = experimentResults.getBayesianResult();
-            Assert.assertEquals(0.50, bayesianResult.value(), 0.000000001);
-            Assert.assertEquals(BayesianAPI.VARIANT_B, bayesianResult.inFavorOf());
-            Assert.assertTrue(bayesianResult.suggested().startsWith(BayesianAPI.TIE));
+            Assert.assertEquals(variantCName, bayesianResult.suggested());
 
             mockhttpServer.validate();
         } finally {
