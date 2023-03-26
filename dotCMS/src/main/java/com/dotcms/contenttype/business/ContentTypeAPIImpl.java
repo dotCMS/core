@@ -241,7 +241,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   @WrapInTransaction
   ContentType relocateContentletsThenDispose(final ContentType type) throws DotSecurityException, DotDataException {
       //If we're ok permissions wise, we need to remove the content from the index
-      APILocator.getContentletIndexAPI().removeContentFromIndexByStructureInode(type.inode());
+      //APILocator.getContentletIndexAPI().removeContentFromIndexByStructureInode(type.inode());
       //Then this quickly hides the content from the front end and APIS
       contentTypeFactory.markForDeletion(type);
 

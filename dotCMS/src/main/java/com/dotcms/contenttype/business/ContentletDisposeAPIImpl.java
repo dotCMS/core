@@ -8,16 +8,22 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.InvalidLicenseException;
+import com.dotmarketing.portlets.categories.business.CategoryAPI;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 
 import com.google.common.collect.Lists;
+import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -63,6 +69,7 @@ public class ContentletDisposeAPIImpl implements ContentletDisposeAPI {
         final Map<String, Field> targetMappedByVar = target.fields().stream().collect(
                 Collectors.toMap(com.dotcms.contenttype.model.field.Field::variable,
                         Function.identity()));
+
         for (final com.dotcms.contenttype.model.field.Field field : sourceFields) {
             final com.dotcms.contenttype.model.field.Field targetField = targetMappedByVar.get(
                     field.variable());
@@ -233,15 +240,6 @@ public class ContentletDisposeAPIImpl implements ContentletDisposeAPI {
                     String.format(" Offset is (%d) of (%d) total. ", offset, allCount));
         }
 
-        //Fallback in case something went wrong
-        final int failuresCount = countByType(type);
-        if (failuresCount > 0) {
-            Logger.info(getClass(),
-                    String.format(" There were still (%d) that failed getting removed. ",
-                            failuresCount));
-            //  deleteContentletsByType(type);
-        }
-
         destroy(type);
 
         final long diff = System.currentTimeMillis() - t1;
@@ -272,12 +270,12 @@ public class ContentletDisposeAPIImpl implements ContentletDisposeAPI {
             //deleteWorkflowSchemeReference(type);
 
             // remove structure permissions
-            APILocator.getPermissionAPI().removePermissions(type);
+            //APILocator.getPermissionAPI().removePermissions(type);
 
             // delete relationships
             //deleteRelationships(type);
 
-            FactoryLocator.getFieldFactory().deleteByContentType(type);
+            //FactoryLocator.getFieldFactory().deleteByContentType(type);
             // remove structure itself
             DotConnect dc = new DotConnect();
             dc.setSQL(ContentTypeSql.DELETE_TYPE_BY_INODE).addParam(type.id()).loadResult();
@@ -305,32 +303,74 @@ public class ContentletDisposeAPIImpl implements ContentletDisposeAPI {
      */
     boolean destroy(final Map<String, List<InodeAndLanguage>> partition, ContentType type) {
 
+        final User user = APILocator.systemUser();
         partition.forEach((identifier, inodeAndLanguages) -> {
-            final List<Contentlet> contentlets = makeContentlets(identifier, inodeAndLanguages,
-                    type);
-            destroy(contentlets);
+            final List<Contentlet> contentlets = makeContentlets(identifier, inodeAndLanguages, type);
+            destroy(contentlets, user);
         });
+
         return true;
     }
 
 
     @WrapInTransaction
-    void destroy(List<Contentlet> contentlets) {
+    void destroy(List<Contentlet> contentlets, User user) {
+
         try {
-            APILocator.getContentletAPI().destroy(contentlets, APILocator.systemUser(), false);
+            APILocator.getContentletAPI().destroy(contentlets, user, false);
         } catch (DotDataException | DotSecurityException e) {
-            Logger.error(this, "Error destroying contents", e);
+           Logger.error(this, "Error destroying contents", e);
         }
 
-        //destroyRules(identifier)
-        //destroyCategories(identifier)
-        //destroyRelationships(identifier)
-        //destroyMultiTree(identifier)
-        //deleteVersions(inodeAndLanguages
+        /*
+        for (Contentlet contentlet : contentlets) {
+            try {
+                destroy(contentlet, user);
+            } catch (DotDataException | DotSecurityException e) {
+                Logger.error(this, "Error destroying contents", e);
+            }
+        }*/
+    }
 
-        //deleteBinaries
-        //deleteElementsFromPublishQueueTable
-        //destroyMetadata
+    void destroy(Contentlet contentlet, User user) throws DotDataException, DotSecurityException {
+         destroyRules(contentlet, user);
+         destroyCategories(contentlet, user);
+         destroyRelationships(contentlet, user);
+      //  destroyMultiTree(contentlet);
+      //  deleteVersions(contentlet);
+      //  deleteBinaries(contentlet);
+      //  deleteElementsFromPublishQueueTable(contentlet);
+      //  destroyMetadata(contentlet);
+    }
+
+    void destroyRules(Contentlet contentlet, User user) throws  DotDataException, DotSecurityException{
+        try {
+            APILocator.getRulesAPI()
+                    .deleteRulesByParent(contentlet, user, false);
+        } catch (InvalidLicenseException  ile) {
+            Logger.warn(this, "An enterprise license is required to delete rules under pages.");
+        }
+    }
+
+    void destroyCategories(Contentlet contentlet, User user)
+            throws DotDataException, DotSecurityException {
+        final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
+        categoryAPI.removeChildren(contentlet, user, false);
+        categoryAPI.removeParents(contentlet, user, false);
+    }
+
+     void destroyRelationships(final Contentlet contentlet, final User user)
+            throws DotSecurityException, DotDataException {
+
+         final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+         final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
+         final List<Relationship> relationships =
+                relationshipAPI.byContentType(contentlet.getStructure());
+        // Remove related contents
+        for (final Relationship relationship : relationships) {
+            final boolean hasParent = relationshipAPI.isParent(relationship, contentlet.getStructure());
+            contentletAPI.deleteRelatedContent(contentlet, relationship, hasParent, user, false);
+        }
     }
 
     List<Contentlet> makeContentlets(final String identifier,
