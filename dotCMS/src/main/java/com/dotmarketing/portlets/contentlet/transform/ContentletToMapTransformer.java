@@ -18,6 +18,7 @@ import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -183,9 +184,16 @@ public class ContentletToMapTransformer {
             contentlet.getMap().put(Contentlet.ARCHIVED_KEY, contentlet.isArchived());
             contentlet.getMap().put(Contentlet.LOCKED_KEY, contentlet.isLocked());
 
-            final String urlMap = APILocator.getContentletAPI().getUrlMapForContentlet(contentlet, APILocator.getUserAPI().getSystemUser(), true);
-            contentlet.getMap().put(ESMappingConstants.URL_MAP, urlMap);
 
+            try {
+                final String urlMap =  APILocator.getContentletAPI().getUrlMapForContentlet(contentlet, APILocator.getUserAPI().getSystemUser(), true);
+                contentlet.getMap().put(Contentlet.URL_MAP_FOR_CONTENT_KEY, urlMap);
+                contentlet.getMap().put(ESMappingConstants.URL_MAP, urlMap);
+            }catch(Exception e) {
+                Logger.warnAndDebug(this.getClass(), "Cannot get URLMap for Content : " +
+                                "contentlet.id : " + ((contentlet.getIdentifier() != null) ? contentlet.getIdentifier() : contentlet) +
+                                " , reason: " + e.getMessage(),e);
+            }
         } catch (Exception e) {
             Logger.error(getClass(),"Error calculating modUser", e);
         }

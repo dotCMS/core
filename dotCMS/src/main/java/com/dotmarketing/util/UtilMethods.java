@@ -322,6 +322,21 @@ public class UtilMethods {
         return (x.length() > 0);
 
     }
+    
+    public static final boolean isSet(final Supplier<?> supplier) {
+        try {
+            Object obj=supplier.get();
+            
+            return obj instanceof String ? isSet((String)obj) : isSet(obj);
+        }
+        catch(Throwable e) {
+            return false;
+        }
+    }
+    public static final boolean isEmpty(final Supplier<?> supplier) {
+        return !isSet(supplier);
+        
+    }
 
 
     public static boolean isNotSet(final char[] chars){

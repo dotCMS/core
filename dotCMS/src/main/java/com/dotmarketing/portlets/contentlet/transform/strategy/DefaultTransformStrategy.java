@@ -36,6 +36,7 @@ import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.rendering.velocity.viewtools.ContentsWebAPI;
 import com.dotcms.storage.model.Metadata;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -135,10 +136,16 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
         map.put(HOST_NAME, host != null ? host.getHostname() : NOT_APPLICABLE);
         map.put(HOST_KEY, host != null ? host.getIdentifier() : NOT_APPLICABLE);
 
-        final String urlMap = toolBox.contentletAPI
-                .getUrlMapForContentlet(contentlet, toolBox.userAPI.getSystemUser(), true);
-        map.put(URL_MAP_FOR_CONTENT_KEY, urlMap);
-        map.put(ESMappingConstants.URL_MAP, urlMap);
+        try {
+            final String urlMap = toolBox.contentletAPI
+                    .getUrlMapForContentlet(contentlet, toolBox.userAPI.getSystemUser(), true);
+            map.put(URL_MAP_FOR_CONTENT_KEY, urlMap);
+            map.put(ESMappingConstants.URL_MAP, urlMap);
+        }catch(Exception e) {
+            Logger.warnAndDebug(this.getClass(), "Cannot get URLMap for Content Type: " + type.name() + " and " +
+                            "contentlet.id : " + ((contentlet.getIdentifier() != null) ? contentlet.getIdentifier() : contentlet) +
+                            " , reason: " + e.getMessage(),e);
+        }
 
         //We only calculate the fields if it is not already set
         //However WebAssets (Pages, FileAssets) are forced to calculate it.

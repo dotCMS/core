@@ -2003,36 +2003,81 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
 
         assertNull(APILocator.getContentletAPI().getUrlMapForContentlet(content,user,false));
 
-
-
-
     }
+    
+    
+    
 
     @Test
-    public void test_getUrlMapForContentlet_with_detail_page_but_no_pattern() throws Exception{
+    public void test_getUrlMapForContentlet_with_detail_page_but_no_pattern() throws Exception {
 
         final Host host = new SiteDataGen().nextPersisted();
         final Template template_A = new TemplateDataGen().host(host).nextPersisted();
 
-        final HTMLPageAsset htmlPageAsset = createHtmlPageAsset(VariantAPI.DEFAULT_VARIANT, APILocator.getLanguageAPI().getDefaultLanguage(), host, template_A);
+        final HTMLPageAsset htmlPageAsset = createHtmlPageAsset(VariantAPI.DEFAULT_VARIANT,
+                        APILocator.getLanguageAPI().getDefaultLanguage(), host, template_A);
 
-        ContentType type =  new ContentTypeDataGen()
-                .detailPage(htmlPageAsset.getIdentifier())
-                .nextPersisted();
+        ContentType type = new ContentTypeDataGen().detailPage(htmlPageAsset.getIdentifier()).nextPersisted();
 
         Contentlet content = new ContentletDataGen(type.id()).nextPersisted();
         assertNotNull(content);
         assertNotNull(content.getIdentifier());
         assertEquals(content.getContentTypeId(), type.id());
 
-        assertEquals(contentletAPI.getUrlMapForContentlet(content,user,false),
+        assertEquals(contentletAPI.getUrlMapForContentlet(content, user, false),
 
-                htmlPageAsset.getPageUrl() + "?id=" + content.getInode()
+                        htmlPageAsset.getPageUrl() + "?id=" + content.getInode()
 
-                );
+        );
     }
 
+    @Test
+    public void test_getUrlMapForContentlet_with_detail_page_and_pattern() throws Exception {
 
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template_A = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset htmlPageAsset = createHtmlPageAsset(VariantAPI.DEFAULT_VARIANT,
+                        APILocator.getLanguageAPI().getDefaultLanguage(), host, template_A);
+
+        List<Field> fields = List.of(
+                        new FieldDataGen().name("title").velocityVarName("title").next(),
+                        new FieldDataGen().name("urlMap1").velocityVarName("urlMap1").next(),
+                        new FieldDataGen().name("urlMap2").velocityVarName("urlMap2").next());
+        
+        
+        ContentType type = new ContentTypeDataGen()
+                        .detailPage(htmlPageAsset.getIdentifier())
+                        .urlMapPattern("/testing/{urlMap1}/{urlMap2}")
+                        .fields(fields)
+                        .nextPersisted();
+
+
+        
+        
+        
+        
+        Contentlet content = new ContentletDataGen(type.id())
+                        .setProperty("title", "title")
+                        .setProperty("urlMap1", "urlMapValue1")
+                        .setProperty("urlMap2", "urlMapValue2")
+                        .nextPersisted();
+        
+        
+        assertNotNull(content);
+        assertNotNull(content.getIdentifier());
+        assertEquals(content.getContentTypeId(), type.id());
+
+        assertEquals(contentletAPI.getUrlMapForContentlet(content, user, false),
+
+                        "/testing/urlMapValue1/urlMapValue2"
+
+        );
+    }
+    
+    
+    
+    
 
 
 

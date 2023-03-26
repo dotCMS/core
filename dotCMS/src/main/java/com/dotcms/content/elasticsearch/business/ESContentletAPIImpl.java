@@ -179,6 +179,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.common.regex.Regex;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.jetbrains.annotations.NotNull;
@@ -211,6 +212,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -9474,72 +9476,63 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     final static String CONTENTLET_URL_MAP_FOR_CONTENT_404 = "URL_MAP_FOR_CONTENT_404";
 
+    
+    static final Pattern URLMAP_PATTERN = Pattern.compile("(\\{[^\\{\\}]+\\})");
+    
+    
+
     @CloseDBIfOpened
     @Override
     public String getUrlMapForContentlet(Contentlet contentlet, User user,
             boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
 
 
-        if(contentlet ==null || contentlet.getMap()==null) {
+        if (contentlet == null 
+                        || contentlet.getMap() == null 
+                        || UtilMethods.isEmpty(contentlet.getInode())) {
             return null;
         }
 
         String result = (String) contentlet.getMap().get(URL_MAP_FOR_CONTENT_KEY);
-        if (result != null) {
-            if (CONTENTLET_URL_MAP_FOR_CONTENT_404.equals(result)) {
-                return null;
-            }
-            return result;
-        }
-
-        // no structure, no inode, no workee
-        if (!InodeUtils.isSet(contentlet.getInode()) || !InodeUtils.isSet(
-                contentlet.getContentTypeId())) {
-            contentlet.getMap().put(URL_MAP_FOR_CONTENT_KEY, CONTENTLET_URL_MAP_FOR_CONTENT_404);
-            return null;
+        if (null != result) {
+            return CONTENTLET_URL_MAP_FOR_CONTENT_404.equals(result) ? null : result;
         }
 
         ContentType type = Try.of(contentlet::getContentType).getOrNull();
-        // if there is no valid detail page, return
-        if (type==null || !UtilMethods.isSet(type.detailPage())) {
-            contentlet.getMap().put(URL_MAP_FOR_CONTENT_KEY, CONTENTLET_URL_MAP_FOR_CONTENT_404);
-            return null;
+
+        // if there is no valid detail page set, return
+        if (UtilMethods.isEmpty(( )-> type.detailPage())) { //NOSONAR
+            return returnAndSetUrlMap(contentlet, null);
         }
 
+        
+        final Identifier detailPageId = APILocator.getIdentifierAPI().find(type.detailPage());
 
         //if detail page does not exist, return null
-        Identifier detailPageId = APILocator.getIdentifierAPI().find(type.detailPage());
-
-
-        if(detailPageId==null || !InodeUtils.isSet(detailPageId.getId())){
-            contentlet.getMap().put(URL_MAP_FOR_CONTENT_KEY, CONTENTLET_URL_MAP_FOR_CONTENT_404);
-            return null;
+        if (UtilMethods.isEmpty(() -> detailPageId.getId())) { //NOSONAR
+            return returnAndSetUrlMap(contentlet, null);
         }
 
-
-
-        if(UtilMethods.isEmpty(type.urlMapPattern())){
-            IHTMLPage p = APILocator.getHTMLPageAssetAPI().findByIdLanguageFallback(type.detailPage(), contentlet.getLanguageId(),false, user,
+        // if we have a detail page but no urlMap
+        if (UtilMethods.isEmpty(type.urlMapPattern())) {
+            IHTMLPage p = APILocator.getHTMLPageAssetAPI().findByIdLanguageFallback(type.detailPage(), contentlet.getLanguageId(), false, user,
                     respectFrontendRoles);
-
-
-            if (p != null && UtilMethods.isSet(p.getIdentifier())) {
-                String urlMap = p.getPageUrl() + "?id=" + contentlet.getInode()  ;
-                contentlet.getMap().put(URL_MAP_FOR_CONTENT_KEY, urlMap);
-                return urlMap;
+            if (UtilMethods.isSet(()->p.getIdentifier())) {
+                return returnAndSetUrlMap(contentlet, p.getPageUrl() + "?id=" + contentlet.getInode());
             }
+            return returnAndSetUrlMap(contentlet, null);
         }
-
-
-        List<RegExMatch> matches = RegEX.find(type.urlMapPattern(), "({[^{}]+})");
-        if (matches.isEmpty()) {
-            contentlet.getMap().put(URL_MAP_FOR_CONTENT_KEY, CONTENTLET_URL_MAP_FOR_CONTENT_404);
-            return null;
+        
+        final Matcher matches = URLMAP_PATTERN.matcher(type.urlMapPattern());
+        if (!matches.find()) {
+            return returnAndSetUrlMap(contentlet, null);
         }
-
+        
+        matches.reset();
         result = type.urlMapPattern();
-        for (RegExMatch match : matches) {
-            String urlMapField = match.getMatch();
+        int i=0;
+        while (matches.find()) {
+            String urlMapField = matches.group(i++);
             String urlMapFieldValue = contentlet.getStringProperty(
                     urlMapField.substring(1, (urlMapField.length() - 1)));
 
@@ -9547,20 +9540,23 @@ public class ESContentletAPIImpl implements ContentletAPI {
             urlMapFieldValue = sanitizeForURLMap(urlMapFieldValue);
             urlMapField = sanitizeForURLMap(urlMapField);
 
-            if (UtilMethods.isSet(urlMapFieldValue)) {
-                result = result.replaceAll(urlMapField, urlMapFieldValue);
-            } else {
-                result = result.replaceAll(urlMapField, "");
-            }
+            result = UtilMethods.isSet(urlMapFieldValue) 
+                    ? result.replaceAll(urlMapField, urlMapFieldValue)
+                    : result.replaceAll(urlMapField, "");
         }
-        
 
-        if (result == null) {
-            result = CONTENTLET_URL_MAP_FOR_CONTENT_404;
-        }
-        contentlet.setStringProperty(URL_MAP_FOR_CONTENT_KEY, result);
-        return result;
+
+        return returnAndSetUrlMap(contentlet,result);
+
     }
+
+    private String returnAndSetUrlMap(Contentlet contentlet,String value) {
+        value = UtilMethods.isEmpty(value) ? CONTENTLET_URL_MAP_FOR_CONTENT_404 : value;
+        contentlet.getMap().put(URL_MAP_FOR_CONTENT_KEY, value);
+        return value;
+    }
+
+
 
     /**
      * Sanitizes a given value in order to be properly use when replacing url mapping values
