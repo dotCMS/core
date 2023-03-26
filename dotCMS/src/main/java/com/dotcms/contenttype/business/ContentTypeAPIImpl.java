@@ -117,20 +117,9 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
       Logger.warn(this, "Content Type " + type.name() + " cannot be deleted because it is referenced by other content types");
       return;
     }
-    if (Config.getBooleanProperty(CONTENT_TYPE_DELETE_ASYNC, true)) {
         final ContentType copy = relocateContentletsThenDispose(type);
         //By default, the deletion process takes placed within job
-        if (Config.getBooleanProperty(CONTENT_TYPE_DELETE_ASYNC_JOB, true)) {
-          ContentTypeDeleteJob.triggerContentTypeDeletion(copy);
-        } else {
-          //But we can decide to do it here using the thread pool directly
-          //This option becomes useful when running from tests
-          tearDown(copy);
-        }
-    } else {
-      // in case we want to fall back to the old way of deleting content types
-      transactionalDelete(type);
-    }
+        tearDown(copy);
   }
 
   @CloseDBIfOpened
