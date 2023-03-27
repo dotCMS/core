@@ -5,7 +5,7 @@
     background: $white;
     cursor: move;
     display: flex;
-    height: $content-type-field-height;
+    height: 78px;
     padding: $spacing-2 $spacing-3;
     transition: box-shadow $basic-speed;
 
@@ -62,7 +62,7 @@ dot-icon {
 .field__info__container {
     display: flex;
     align-items: center;
-    padding-top: 4px;
+    padding-top: 0.25rem;
     gap: $spacing-1;
 }
 
