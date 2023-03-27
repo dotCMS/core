@@ -76,8 +76,9 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
         spectator.detectChanges();
     });
 
-    it('should have a form', () => {
+    it('should have a form & autofocus', () => {
         expect(spectator.query(byTestId('select-goal-form'))).toExist();
+        expect(spectator.query(byTestId('goal-name-input'))).toHaveAttribute('dotAutofocus');
     });
 
     it('should have rendered BOUCE_RATE and REACH_PAGE options items', () => {
