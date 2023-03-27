@@ -1,7 +1,7 @@
 import * as md5 from 'md5';
 import { Observable } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 
 import { DotAvatarModule } from '@components/_common/dot-avatar/dot-avatar.module';
@@ -12,7 +12,7 @@ import { DotGravatarService } from '@dotcms/app/api/services/dot-gravatar-servic
     styleUrls: ['./dot-gravatar.component.scss'],
     templateUrl: './dot-gravatar.component.html',
     standalone: true,
-    imports: [CommonModule, DotAvatarModule]
+    imports: [AsyncPipe, DotAvatarModule]
 })
 export class DotGravatarComponent implements OnChanges {
     @Input()
