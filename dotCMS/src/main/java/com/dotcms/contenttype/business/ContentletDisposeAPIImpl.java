@@ -5,23 +5,32 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.sql.ContentTypeSql;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.rendering.velocity.services.PageLoader;
+import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
+import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
@@ -315,28 +324,28 @@ public class ContentletDisposeAPIImpl implements ContentletDisposeAPI {
 
     @WrapInTransaction
     void destroy(List<Contentlet> contentlets, User user) {
-
         try {
             APILocator.getContentletAPI().destroy(contentlets, user, false);
         } catch (DotDataException | DotSecurityException e) {
            Logger.error(this, "Error destroying contents", e);
         }
 
-        /*
-        for (Contentlet contentlet : contentlets) {
+/*
+        for (Contentlet contentlet : contentlets) 
             try {
                 destroy(contentlet, user);
             } catch (DotDataException | DotSecurityException e) {
                 Logger.error(this, "Error destroying contents", e);
             }
-        }*/
+        }
+ */
     }
 
     void destroy(Contentlet contentlet, User user) throws DotDataException, DotSecurityException {
          destroyRules(contentlet, user);
          destroyCategories(contentlet, user);
          destroyRelationships(contentlet, user);
-      //  destroyMultiTree(contentlet);
+         destroyMultiTree(contentlet);
       //  deleteVersions(contentlet);
       //  deleteBinaries(contentlet);
       //  deleteElementsFromPublishQueueTable(contentlet);
@@ -372,6 +381,36 @@ public class ContentletDisposeAPIImpl implements ContentletDisposeAPI {
             contentletAPI.deleteRelatedContent(contentlet, relationship, hasParent, user, false);
         }
     }
+
+    private void destroyMultiTree(Contentlet contentlet) throws DotDataException {
+        final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
+        final List<MultiTree> multiTrees = multiTreeAPI.getMultiTreesByChild(contentlet.getIdentifier());
+        for (final MultiTree multiTree : multiTrees) {
+            if(contentlet.isHTMLPage()){
+                handlePage(multiTree, contentlet, APILocator.systemUser());
+            }
+            multiTreeAPI.deleteMultiTree(multiTree);
+        }
+    }
+
+    private void handlePage(MultiTree multiTree, Contentlet contentlet, User user)
+            throws DotDataException {
+
+        final HTMLPageAssetAPI htmlPageAssetAPI = APILocator.getHTMLPageAssetAPI();
+        final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
+        final Identifier pageIdentifier = identifierAPI.find(multiTree.getHtmlPage());
+        if (pageIdentifier != null && UtilMethods.isSet(pageIdentifier.getInode())) {
+            try {
+                final IHTMLPage page = htmlPageAssetAPI.fromContentlet(contentlet);
+                if (page != null && UtilMethods.isSet(page.getIdentifier())) {
+                    new PageLoader().invalidate(page);
+                }
+            } catch (DotStateException dcse) {
+                Logger.warn(this.getClass(), "Page with id:" + pageIdentifier.getId() + " does not exist");
+            }
+        }
+    }
+
 
     List<Contentlet> makeContentlets(final String identifier,
             final List<InodeAndLanguage> inodeAndLanguages, final ContentType type) {
