@@ -14,7 +14,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -464,10 +463,7 @@ public class OSGIUtil {
                                      final Set<String> osgiUserPackages) {
         try {
 
-            final LinkedHashSet<String> exportedPackagesSet = new LinkedHashSet<>(
-                    StringUtils.splitOnCommasWithQuotes(getExtraOSGIPackages()).stream()
-                            .map(org.apache.commons.lang3.StringUtils::normalizeSpace)
-                            .collect(Collectors.toSet()));
+            final LinkedHashSet<String> exportedPackagesSet = this.getExportedPackagesAsSet();
             
             if (exportedPackagesSet.containsAll(osgiUserPackages)) {
                 this.moveNewBundlesToFelixLoadFolder(uploadFolderFile, pathnames);
@@ -481,6 +477,14 @@ public class OSGIUtil {
         } catch (IOException e) {
             Logger.error(this, e.getMessage(), e);
         }
+    }
+
+    LinkedHashSet<String> getExportedPackagesAsSet() {
+
+        return new LinkedHashSet<>(
+                StringUtils.splitOnCommasWithQuotes(getExtraOSGIPackages()).stream()
+                        .map(org.apache.commons.lang3.StringUtils::normalizeSpace)
+                        .collect(Collectors.toSet()));
     }
 
     // move all on upload folder to load, and restarts osgi.
