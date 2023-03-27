@@ -39,7 +39,6 @@ import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
-import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.storage.FileMetadataAPI;
 import com.dotcms.storage.model.Metadata;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
@@ -146,8 +145,6 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.PaginatedArrayList;
-import com.dotmarketing.util.RegEX;
-import com.dotmarketing.util.RegExMatch;
 import com.dotmarketing.util.TrashUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
@@ -179,7 +176,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.common.regex.Regex;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.jetbrains.annotations.NotNull;
@@ -9474,7 +9470,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         contentFactory.updateUserReferences(userToReplace, replacementUserId, user);
     }
 
-    final static String CONTENTLET_URL_MAP_FOR_CONTENT_404 = "URL_MAP_FOR_CONTENT_404";
+    static final String CONTENTLET_URL_MAP_FOR_CONTENT_404 = "URL_MAP_FOR_CONTENT_404";
 
     
     static final Pattern URLMAP_PATTERN = Pattern.compile("(\\{[^\\{\\}]+\\})");
@@ -9501,7 +9497,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         ContentType type = Try.of(contentlet::getContentType).getOrNull();
 
         // if there is no valid detail page set, return
-        if (UtilMethods.isEmpty(( )-> type.detailPage())) { //NOSONAR
+        if (UtilMethods.isEmpty(()-> type.detailPage())) { //NOSONAR
             return returnAndSetUrlMap(contentlet, null);
         }
 
@@ -9517,7 +9513,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (UtilMethods.isEmpty(type.urlMapPattern())) {
             IHTMLPage p = APILocator.getHTMLPageAssetAPI().findByIdLanguageFallback(type.detailPage(), contentlet.getLanguageId(), false, user,
                     respectFrontendRoles);
-            if (UtilMethods.isSet(()->p.getIdentifier())) {
+            if (UtilMethods.isSet(() -> p.getIdentifier())) { //NOSONAR
                 return returnAndSetUrlMap(contentlet, p.getPageUrl() + "?id=" + contentlet.getInode());
             }
             return returnAndSetUrlMap(contentlet, null);

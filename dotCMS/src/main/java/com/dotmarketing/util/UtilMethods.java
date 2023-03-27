@@ -323,13 +323,21 @@ public class UtilMethods {
 
     }
     
+    /**
+     * Can be used to run isSet on nested objects and
+     * lets you voliate the Law of Demeter with impunity, e.g.
+     * UtilMethods.isSet(contentlet.getContentType().fieldMap().get("fieldVar"))
+     * Created to appease the sonarqube cyclic complexity gods.
+     * @param supplier
+     * @return
+     */
     public static final boolean isSet(final Supplier<?> supplier) {
         try {
             Object obj=supplier.get();
             
             return obj instanceof String ? isSet((String)obj) : isSet(obj);
         }
-        catch(Throwable e) {
+        catch(NullPointerException e) {
             return false;
         }
     }

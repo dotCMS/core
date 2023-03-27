@@ -2068,11 +2068,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         assertNotNull(content.getIdentifier());
         assertEquals(content.getContentTypeId(), type.id());
 
-        assertEquals(contentletAPI.getUrlMapForContentlet(content, user, false),
-
-                        "/testing/urlMapValue1/urlMapValue2"
-
-        );
+        assertEquals("/testing/urlMapValue1/urlMapValue2",contentletAPI.getUrlMapForContentlet(content, user, false));
     }
     
     

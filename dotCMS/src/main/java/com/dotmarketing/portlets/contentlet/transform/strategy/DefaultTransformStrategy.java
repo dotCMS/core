@@ -136,16 +136,14 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
         map.put(HOST_NAME, host != null ? host.getHostname() : NOT_APPLICABLE);
         map.put(HOST_KEY, host != null ? host.getIdentifier() : NOT_APPLICABLE);
 
-        try {
-            final String urlMap = toolBox.contentletAPI
-                    .getUrlMapForContentlet(contentlet, toolBox.userAPI.getSystemUser(), true);
-            map.put(URL_MAP_FOR_CONTENT_KEY, urlMap);
-            map.put(ESMappingConstants.URL_MAP, urlMap);
-        }catch(Exception e) {
-            Logger.warnAndDebug(this.getClass(), "Cannot get URLMap for Content Type: " + (type != null ? type.variable() : "unknown") + " and " +
-                            "contentlet.id : " + ((contentlet.getIdentifier() != null) ? contentlet.getIdentifier() : contentlet) +
-                            " , reason: " + e.getMessage(),e);
-        }
+        Try.of(()->APILocator.getContentletAPI().getUrlMapForContentlet(contentlet, APILocator.getUserAPI().getSystemUser(), true))
+            .onFailure(e->Logger.warnAndDebug(getClass(), "unable to find urlMap for content id:"+ contentlet.getIdentifier(), e))
+            .onSuccess(s -> {
+                contentlet.getMap().put(Contentlet.URL_MAP_FOR_CONTENT_KEY, s);
+                contentlet.getMap().put(ESMappingConstants.URL_MAP, s);
+            })
+            .get();
+
 
         //We only calculate the fields if it is not already set
         //However WebAssets (Pages, FileAssets) are forced to calculate it.

@@ -1,8 +1,10 @@
 package com.dotmarketing.portlets.contentlet.transform;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableSet;
-
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -16,14 +18,10 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.util.Logger;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * This class is deprecated as it has proven to lack flexibility
@@ -183,17 +181,13 @@ public class ContentletToMapTransformer {
             contentlet.getMap().put(Contentlet.LIVE_KEY, contentlet.isLive());
             contentlet.getMap().put(Contentlet.ARCHIVED_KEY, contentlet.isArchived());
             contentlet.getMap().put(Contentlet.LOCKED_KEY, contentlet.isLocked());
-
-
-            try {
-                final String urlMap =  APILocator.getContentletAPI().getUrlMapForContentlet(contentlet, APILocator.getUserAPI().getSystemUser(), true);
-                contentlet.getMap().put(Contentlet.URL_MAP_FOR_CONTENT_KEY, urlMap);
-                contentlet.getMap().put(ESMappingConstants.URL_MAP, urlMap);
-            }catch(Exception e) {
-                Logger.warnAndDebug(this.getClass(), "Cannot get URLMap for Content : " +
-                                "contentlet.id : " + ((contentlet.getIdentifier() != null) ? contentlet.getIdentifier() : contentlet) +
-                                " , reason: " + e.getMessage(),e);
-            }
+            Try.of(()->APILocator.getContentletAPI().getUrlMapForContentlet(contentlet, APILocator.getUserAPI().getSystemUser(), true))
+                .onFailure(e->Logger.warnAndDebug(getClass(), "unable to find urlMap for content id:"+ contentlet.getIdentifier(), e))
+                .onSuccess(s -> {
+                    contentlet.getMap().put(Contentlet.URL_MAP_FOR_CONTENT_KEY, s);
+                    contentlet.getMap().put(ESMappingConstants.URL_MAP, s);
+                })
+                .get();
         } catch (Exception e) {
             Logger.error(getClass(),"Error calculating modUser", e);
         }
