@@ -97,6 +97,24 @@ export class DotExperimentsListComponent {
         });
     }
 
+    /**
+     * Opens the experiment report page for a given experiment
+     * @param {DotExperiment} experiment The experiment whose report page needs to be opened
+     * @returns void
+     * @memberof DotExperimentsShellComponent
+     */
+
+    goToViewExperimentReport(experiment: DotExperiment) {
+        this.router.navigate(['/edit-page/experiments/reports/', experiment.id], {
+            queryParams: {
+                editPageTab: null,
+                variantName: null,
+                experimentId: null
+            },
+            queryParamsHandling: 'merge'
+        });
+    }
+
     private handleSidebar(status: SidebarStatus): void {
         if (status && status.isOpen && status.status != ComponentStatus.SAVING) {
             this.loadSidebarComponent();
@@ -117,22 +135,5 @@ export class DotExperimentsListComponent {
         if (this.componentRef) {
             this.sidebarHost.viewContainerRef.clear();
         }
-    }
-
-    /**
-     * Go to view Experiment Report
-     * @param {DotExperiment} experiment
-     * @returns void
-     * @memberof DotExperimentsShellComponent
-     */
-    goToViewExperimentReport(experiment: DotExperiment) {
-        this.router.navigate(['/edit-page/experiments/reports/', experiment.id], {
-            queryParams: {
-                editPageTab: null,
-                variantName: null,
-                experimentId: null
-            },
-            queryParamsHandling: 'merge'
-        });
     }
 }
