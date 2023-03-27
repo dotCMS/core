@@ -16,7 +16,6 @@ import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
 import { dotcmsContentletMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotPagesCardModule } from './dot-pages-card/dot-pages-card.module';
-import { DotPagesCardEmptyModule } from './dot-pages-card-empty/dot-pages-card-empty.module';
 import { DotPagesFavoritePanelComponent } from './dot-pages-favorite-panel.component';
 
 import { DotPageStore } from '../dot-pages-store/dot-pages.store';
@@ -107,7 +106,6 @@ describe('DotPagesFavoritePanelComponent', () => {
                     DotMessagePipeModule,
                     ButtonModule,
                     DotPagesCardModule,
-                    DotPagesCardEmptyModule,
                     PanelModule,
                     HttpClientTestingModule
                 ],
@@ -185,7 +183,6 @@ describe('DotPagesFavoritePanelComponent', () => {
                     DotMessagePipeModule,
                     ButtonModule,
                     DotPagesCardModule,
-                    DotPagesCardEmptyModule,
                     PanelModule,
                     HttpClientTestingModule
                 ],
@@ -325,7 +322,6 @@ describe('DotPagesFavoritePanelComponent', () => {
                     DotMessagePipeModule,
                     ButtonModule,
                     DotPagesCardModule,
-                    DotPagesCardEmptyModule,
                     PanelModule,
                     HttpClientTestingModule
                 ],
