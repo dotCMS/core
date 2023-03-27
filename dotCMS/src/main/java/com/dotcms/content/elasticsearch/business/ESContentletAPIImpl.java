@@ -9569,7 +9569,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         // or Detail page with id=uuid
         else {
             final Identifier detailPageId = APILocator.getIdentifierAPI().find(type.detailPage());
-            if (UtilMethods.isEmpty(() -> detailPageId.getId())) { //NOSONAR
+            if (UtilMethods.isEmpty(() -> detailPageId.getPath())) { //NOSONAR
                 contentlet.setStringProperty(URL_MAP_FOR_CONTENT_KEY, CONTENTLET_URL_MAP_FOR_CONTENT_404);
                 return null;
             }
