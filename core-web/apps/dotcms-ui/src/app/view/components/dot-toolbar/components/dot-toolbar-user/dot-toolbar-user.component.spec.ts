@@ -131,10 +131,18 @@ describe('DotToolbarUserComponent', () => {
     });
 
     it('should have correct href in logout link', () => {
+        const { emailAddress, firstName } = mockUser();
+
+        comp.userData = {
+            email: emailAddress,
+            name: firstName
+        };
+
         comp.auth = {
             user: mockUser(),
             loginAsUser: null
         };
+
         fixture.detectChanges();
 
         const dotGravatarComponent = de.query(By.css('dot-gravatar')).nativeElement;
@@ -147,6 +155,14 @@ describe('DotToolbarUserComponent', () => {
 
     it('should call "logoutAs" in "LoginService" on logout click', async () => {
         comp.auth = mockAuth;
+
+        const { emailAddress, firstName } = mockUser();
+
+        comp.userData = {
+            email: emailAddress,
+            name: firstName
+        };
+
         spyOn(dotNavigationService, 'goToFirstPortlet').and.returnValue(
             new Promise((resolve) => {
                 resolve(true);
@@ -176,6 +192,14 @@ describe('DotToolbarUserComponent', () => {
 
     it('should hide login as link', () => {
         comp.auth = mockAuth;
+
+        const { emailAddress, firstName } = mockUser();
+
+        comp.userData = {
+            email: emailAddress,
+            name: firstName
+        };
+
         spyOn(loginService, 'getCurrentUser').and.returnValue(
             of({
                 email: 'admin@dotcms.com',
