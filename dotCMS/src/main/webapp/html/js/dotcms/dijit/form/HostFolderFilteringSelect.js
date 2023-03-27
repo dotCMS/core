@@ -224,6 +224,13 @@ dojo.declare("dotcms.dijit.form.HostFolderFilteringSelect", [dijit._Widget, diji
 		this.hostFolderSelectedName.value = fullPath;
 		this.hostFolderSelectedId.value = id;
 
+
+		// Update input element size
+		if(fullPath.length > this.hostFolderSelectedName.size){
+			this.hostFolderSelectedName.size = fullPath.length;
+
+		}
+		
 		if (this.hostFoldersTreeWrapper != null)
 			dojo.style(this.hostFoldersTreeWrapper, { display: 'none' });
 
