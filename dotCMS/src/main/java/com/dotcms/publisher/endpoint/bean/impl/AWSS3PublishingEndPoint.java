@@ -1,5 +1,10 @@
 package com.dotcms.publisher.endpoint.bean.impl;
 
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.List;
+import java.util.Properties;
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.dotcms.api.system.event.message.MessageSeverity;
 import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
@@ -8,23 +13,15 @@ import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Configuration;
 import com.dotcms.enterprise.publishing.staticpublishing.AWSS3EndPointPublisher;
 import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher;
-import com.dotcms.enterprise.publishing.staticpublishing.EndPointPublisherConnectionException;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.PublishingEndPointValidationException;
 import com.dotmarketing.exception.PublishingEndPointValidationException.Builder;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
-import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.util.PortalUtil;
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.List;
-import java.util.Properties;
+import io.vavr.control.Try;
 
 /**
  * Implementation of {@link PublishingEndPoint} for fancy AWS S3 Publish.
@@ -88,12 +85,19 @@ public class AWSS3PublishingEndPoint extends PublishingEndPoint {
                             bucketValidationName);
     
             }
+            // we do not throw an exception here, instead we save config, log the exception and raise an error to 
+            // to the user in the UI.
         } catch (Exception e) {
             Logger.warn(AWSS3PublishingEndPoint.class, e.getMessage(),e);
             final SystemMessageBuilder systemMessageBuilder = new SystemMessageBuilder();
             SystemMessage systemMessage = systemMessageBuilder.setMessage("Unable to verify S3 Endpoint. Please check your configuration:" + e.getMessage()).setType(MessageType.SIMPLE_MESSAGE)
                             .setSeverity(MessageSeverity.WARNING).setLife(100000).create();
-            SystemMessageEventUtil.getInstance().pushMessage(systemMessage, ImmutableList.of(PortalUtil.getUser().getUserId()));
+
+            String userId = Try.of(()->PortalUtil.getUser().getUserId()).getOrNull();
+            
+            if (userId != null) {
+                SystemMessageEventUtil.getInstance().pushMessage(systemMessage, List.of(userId));
+            }
 
         }
 

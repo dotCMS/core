@@ -1,6 +1,7 @@
 package com.dotcms.util;
 
 import com.dotcms.exception.ExceptionUtil;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import org.junit.Assert;
@@ -12,6 +13,21 @@ import java.util.concurrent.TimeoutException;
 
 public class TestExceptionUtil {
 
+    /**
+     * Method to test: {@link ExceptionUtil#getCauseBy(Throwable, Set)}
+     * Given Scenario: {@link DoesNotExistException} is a root cause
+     * ExpectedResult: The root recovery is not null and it is {@link DoesNotExistException}
+     *
+     */
+    @Test
+    public void TestException_getCauseBy () {
+
+        final Exception sec = new DotDataException(new DotSecurityException(new DoesNotExistException("Root cause")));
+        final Throwable rootCause = ExceptionUtil.getCauseBy(sec, ExceptionUtil.NOT_FOUND_EXCEPTIONS);
+
+        Assert.assertNotNull(rootCause);
+        Assert.assertEquals(rootCause.getClass(), DoesNotExistException.class);
+    }
     @Test
     public void TestExceptionIsCausedBy () {
         DotSecurityException sec = new DotSecurityException("Root cause");

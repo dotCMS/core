@@ -21,6 +21,7 @@ import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { DotListingDataTableModule } from '@components/dot-listing-data-table';
 import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
+import { DotRelativeDatePipe } from '@dotcms/app/view/pipes/dot-relative-date/dot-relative-date.pipe';
 import {
     DotAlertConfirmService,
     DotMessageService,
@@ -279,6 +280,7 @@ describe('ContainerListComponent', () => {
                 DotActionButtonModule,
                 DotActionMenuButtonModule,
                 DotAddToBundleModule,
+                DotRelativeDatePipe,
                 HttpClientTestingModule,
                 DynamicDialogModule,
                 BrowserAnimationsModule

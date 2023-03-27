@@ -1,15 +1,17 @@
 import { Directive, Input, Optional, Self } from '@angular/core';
 
 import { Dropdown } from 'primeng/dropdown';
+import { MultiSelect } from 'primeng/multiselect';
 
 import { DotMessagePipe } from '@dotcms/app/view/pipes';
+import { DotMessageService } from '@dotcms/data-access';
 import { DotDropdownSelectOption } from '@dotcms/dotcms-models';
 
 const DEFAULT_LABEL_NAME_INDEX = 'label';
 const DEFAULT_VALUE_NAME_INDEX = 'value';
 
 /**
- * Directive to set a default configuration of Dropdown (PrimeNG) and translate the label of the options
+ * Directive to set a default configuration of Dropdown or MultiSelect (PrimeNG) and translate the label of the options
  *
  * @export
  * @class DotDropdownDirective
@@ -20,16 +22,21 @@ const DEFAULT_VALUE_NAME_INDEX = 'value';
     providers: [DotMessagePipe]
 })
 export class DotDropdownDirective {
+    control: Dropdown | MultiSelect;
+
     constructor(
         @Optional() @Self() private readonly primeDropdown: Dropdown,
-        private readonly dotMessagePipe: DotMessagePipe
+        @Optional() @Self() private readonly primeMultiSelect: MultiSelect,
+        private readonly dotMessageService: DotMessageService
     ) {
-        if (primeDropdown) {
-            primeDropdown.optionLabel = DEFAULT_LABEL_NAME_INDEX;
-            primeDropdown.optionValue = DEFAULT_VALUE_NAME_INDEX;
-            primeDropdown.showClear = true;
+        this.control = this.primeDropdown ? this.primeDropdown : this.primeMultiSelect;
+
+        if (this.control) {
+            this.control.optionLabel = DEFAULT_LABEL_NAME_INDEX;
+            this.control.optionValue = DEFAULT_VALUE_NAME_INDEX;
+            this.control.showClear = this.control instanceof Dropdown ? true : false;
         } else {
-            console.warn('DotDropdownDirective is for use with PrimeNg Dropdown');
+            console.warn('DotDropdownDirective is for use with PrimeNg Dropdown or MultiSelect');
         }
     }
 
@@ -42,14 +49,18 @@ export class DotDropdownDirective {
     @Input()
     set dotOptions(options: Array<DotDropdownSelectOption<string>>) {
         if (options) {
-            this.primeDropdown.options = options.map((opt) => {
-                return {
-                    ...opt,
-                    [DEFAULT_LABEL_NAME_INDEX]: this.dotMessagePipe.transform(
-                        opt[DEFAULT_LABEL_NAME_INDEX]
-                    )
-                };
-            });
+            this.setOptions(options);
         }
+    }
+
+    private setOptions(options: Array<DotDropdownSelectOption<string>>) {
+        this.control.options = options.map((opt) => {
+            return {
+                ...opt,
+                [DEFAULT_LABEL_NAME_INDEX]: this.dotMessageService.get(
+                    opt[DEFAULT_LABEL_NAME_INDEX]
+                )
+            };
+        });
     }
 }

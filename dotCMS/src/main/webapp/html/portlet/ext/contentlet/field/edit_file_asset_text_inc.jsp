@@ -1,5 +1,16 @@
-<%String contents =UtilMethods.htmlifyString(FileUtils.readFileToString(contentlet.getBinary(field.getVelocityVarName()))); %>
+<%@ page import="java.io.File" %>
+<%@ page import="com.dotmarketing.portlets.contentlet.model.Contentlet" %>
+<%@ page import="org.apache.commons.io.FileUtils" %>
 
+<%
+	final File file = contentlet.getBinary(field.getVelocityVarName());
+	String contents = "";
+	String fileExtension = "txt";
+	if (null != file) {
+		contents = UtilMethods.htmlifyString(FileUtils.readFileToString(file));
+		fileExtension = UtilMethods.getFileExtension(file.getName());
+	}
+%>
 
 <style type="text/css">
     #editor {
@@ -72,31 +83,66 @@
 			aceAreaParser(parser);
      }
 
+	/**
+	 * Adds the on-blur event to the "File Name" field so that it automatically fills the "Title", if required.
+	 */
+	function addAutoFillTitleEvent() {
+		dojo.byId("fileName").addEventListener("blur", (event) => {
+			const titleField = dojo.byId("title");
+			if (titleField && !titleField.value) {
+				titleField.value = dojo.byId("fileName").value;
+			}
+		});
+	}
 
+	let tempFileId = "new";
+
+	/**
+	 * For text File Assets, creates a temporary file with the changes that the user made. Once the User saves/publishes
+	 * the Contentlet, these new changes will overwrite the existing file so that they can be persisted.
+	 */
 	function saveText(){
 		if(!changed) {
 			return;
 		}
-		var text = aceEditor.getValue();
-		
-		
-		FileAssetAjax.saveFileText(contentletInode.value, text, '<%=field.getVelocityVarName()%>', {
-			async: false,
-			callback:function(data) {
-			console.log("savedText");
-			console.log(data);
-		   }
-		});
+		const text = aceEditor.getValue();
+
+		if (contentletInode.value == '') {
+			const fileName = dojo.byId("fileName").value;
+			if (fileName) {
+				const fileExtension = fileName.split('.').pop();
+				if (fileExtension) {
+					loadAce(fileExtension);
+				}
+				const data = JSON.stringify({
+					"fileName": fileName,
+					"fileContent": text
+				});
+				const xhr = new XMLHttpRequest();
+
+				xhr.onload = function() {
+					const jsonData = JSON.parse(xhr.response);
+					tempFileId = jsonData.tempFiles[0].id;
+					const elements = document.getElementsByName("<%= field.getFieldContentlet() %>");
+					for (const element of elements) {
+						if (element.tagName.toLowerCase() === "input") {
+							element.value = tempFileId;
+						}
+					}
+				};
+
+				xhr.open("PUT", "/api/v1/temp/id/" + tempFileId);
+				xhr.setRequestHeader("Content-Type", "application/json");
+				xhr.send(data);
+			}
+		} else {
+			FileAssetAjax.saveFileText(contentletInode.value, text, '<%=field.getVelocityVarName()%>', {
+				async: false
+			});
+		}
 	}
 
 </script>
-
-
-<%@page import="org.apache.commons.io.FileUtils"%>
-<%@page import="java.nio.file.Paths"%>
-<%@page import="java.nio.file.Files"%>
-<%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
-<%@page import="com.dotmarketing.util.UtilMethods"%>
 
 <div id="fileTextEditorDiv">
     <div style="height:600px;max-width:900px;border:1px solid silver" 
@@ -112,5 +158,8 @@
 <input type="hidden" id="<%=field.getVelocityVarName()%>_hidden_field" value="<%=contents %>">
 
 <script>
-loadAce("<%=UtilMethods.getFileExtension(contentlet.getBinary(field.getVelocityVarName()).getName())%>")
+	loadAce("<%= fileExtension %>");
+	document.addEventListener("DOMContentLoaded", function(event) {
+		addAutoFillTitleEvent();
+	});
 </script>

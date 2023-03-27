@@ -225,7 +225,7 @@ export class DotPageStateService {
                         .get({
                             itemsPerPage: 10,
                             offset: '0',
-                            query: `+contentType:DotFavoritePage +DotFavoritePage.url_dotraw:${urlParam}`
+                            query: `+contentType:DotFavoritePage +deleted:false +working:true +DotFavoritePage.url_dotraw:${urlParam}`
                         })
                         .pipe(
                             take(1),

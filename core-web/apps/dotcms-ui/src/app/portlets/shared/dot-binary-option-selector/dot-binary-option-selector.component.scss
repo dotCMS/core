@@ -19,12 +19,17 @@
     gap: $spacing-4;
 }
 
+p {
+    line-height: 1.5;
+    color: $color-palette-gray-800;
+}
+
 .item {
     align-items: center;
-    background-color: $gray-bg;
-    border: solid 2px $gray-bg;
-    border-radius: $border-radius-lg;
-    color: $gray-light;
+    background-color: $color-palette-gray-200;
+    border: solid 2px $color-palette-gray-200;
+    border-radius: $border-radius-xs;
+    color: $color-palette-gray-500;
     cursor: pointer;
     display: flex;
     flex-direction: column;
@@ -35,7 +40,7 @@
     transition: border-color $basic-speed ease, color $basic-speed ease;
 
     &:hover {
-        color: $gray;
+        color: $color-palette-gray-700;
     }
 
     span {
@@ -45,6 +50,7 @@
 
     .material-icons {
         font-size: 4rem;
+        font-size: $font-size-lg;
     }
 }
 
@@ -53,9 +59,9 @@ input[type="radio"] {
     position: absolute;
 
     &:checked + .item {
-        border-color: $brand-primary;
-        color: $brand-primary;
-        background-color: rgba($brand-secondary_rgb, 0.1);
+        border-color: $color-palette-primary;
+        color: $color-palette-primary;
+        background-color: rgba($color-palette-secondary, 0.1);
     }
 }
 

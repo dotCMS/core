@@ -200,16 +200,13 @@ public class CaffineCache extends CacheProvider {
 
             final int seconds =
                     isDefault ? Config.getIntProperty("cache." + DEFAULT_CACHE + ".seconds", 100)
-                            : (Config.getIntProperty("cache." + group + ".seconds", -1) != -1)
-                                    ? Config.getIntProperty("cache." + group + ".seconds")
-                                    : Config.getIntProperty("cache." + DEFAULT_CACHE + ".seconds",
-                                            100);
+                            : Config.getIntProperty("cache." + group + ".seconds", -1);
 
             com.github.benmanes.caffeine.cache.stats.CacheStats cstats = foundCache.stats();
             stats.addStat(CacheStats.REGION, group);
             stats.addStat(CacheStats.REGION_DEFAULT, isDefault + "");
             stats.addStat(CacheStats.REGION_CONFIGURED_SIZE,
-                    "size:" + nf.format(size) + " / " + seconds + "s");
+                    "size:" + nf.format(size) + " / " + (seconds == -1? "infinity": seconds + "s") );
             stats.addStat(CacheStats.REGION_SIZE, nf.format(foundCache.estimatedSize()));
             stats.addStat(CacheStats.REGION_LOAD,
                     nf.format(cstats.missCount() + cstats.hitCount()));

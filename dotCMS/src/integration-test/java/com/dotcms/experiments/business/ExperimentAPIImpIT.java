@@ -487,14 +487,10 @@ public class ExperimentAPIImpIT {
                 final ResultResumeItem resultResumeItem = details.get(
                         SIMPLE_FORMATTER.format(firstEventStartDate));
 
-                if (sessionExpected == 1) {
-                    assertNotNull(resultResumeItem);
+                assertNotNull(resultResumeItem);
 
-                    Assert.assertEquals(sessionExpected, resultResumeItem.getUniqueBySession());
-                    Assert.assertEquals(sessionExpected, resultResumeItem.getMultiBySession());
-                } else {
-                    assertNull(resultResumeItem);
-                }
+                Assert.assertEquals(sessionExpected, resultResumeItem.getUniqueBySession());
+                Assert.assertEquals(sessionExpected, resultResumeItem.getMultiBySession());
             }
         } finally {
             APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
@@ -891,15 +887,10 @@ public class ExperimentAPIImpIT {
                 final ResultResumeItem resultResumeItem = variantResult.getDetails()
                         .get(SIMPLE_FORMATTER.format(firstEventStartDate));
 
-                if (sessionExpected == 1) {
+                assertNotNull(resultResumeItem);
 
-                    assertNotNull(resultResumeItem);
-
-                    Assert.assertEquals(sessionExpected, resultResumeItem.getUniqueBySession());
-                    Assert.assertEquals(sessionExpected, resultResumeItem.getMultiBySession());
-                } else {
-                    assertNull(resultResumeItem);
-                }
+                Assert.assertEquals(sessionExpected, resultResumeItem.getUniqueBySession());
+                Assert.assertEquals(sessionExpected, resultResumeItem.getMultiBySession());
             }
         } finally {
             APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
@@ -1353,7 +1344,7 @@ public class ExperimentAPIImpIT {
                 assertEquals(reachPage.getPageUrl(), condition.value());
                 assertEquals(Operator.CONTAINS, condition.operator());
             } else if (condition.parameter().equals("referer")) {
-                assertEquals(experimentPage.getPageUrl(), condition.value());
+                assertEquals(experimentPage.getURI(), condition.value());
                 assertEquals(Operator.CONTAINS, condition.operator());
             }
         }
@@ -1441,7 +1432,7 @@ public class ExperimentAPIImpIT {
         assertEquals(1,  conditions.size());
 
         assertEquals("url", conditions.get(0).parameter());
-        assertEquals(experimentPage.getPageUrl(), conditions.get(0).value());
+        assertEquals(experimentPage.getURI(), conditions.get(0).value());
         assertEquals(Operator.CONTAINS, conditions.get(0).operator());
     }
 
