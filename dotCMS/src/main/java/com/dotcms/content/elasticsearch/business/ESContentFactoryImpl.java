@@ -16,8 +16,10 @@ import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.system.SimpleMapAppContext;
 import com.dotcms.util.CollectionsUtils;
+import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.I18NMessage;
 import com.dotcms.util.transform.TransformerLocator;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -120,10 +122,13 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.jetbrains.annotations.Nullable;
 
 import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.MAX_LIMIT;
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
+import static com.dotmarketing.db.DbConnectionFactory.isMsSql;
+import static com.dotmarketing.db.DbConnectionFactory.isPostgres;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.AUTO_ASSIGN_WORKFLOW;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITLE_IMAGE_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_ACTION_KEY;
@@ -995,7 +1000,42 @@ public class ESContentFactoryImpl extends ContentletFactory {
         return findAllVersions(identifier, bringOldVersions, null);
     }
 
-	@Override
+    @Override
+    protected  List<Contentlet> findAllVersions(final Identifier identifier, final Variant variant)
+            throws DotDataException, DotSecurityException{
+        DotPreconditions.notNull(identifier, () -> "Identifier cannot be null");
+        DotPreconditions.notNull(variant, () -> "Variant cannot be null");
+
+        final String columnName = getJsonVariantIdColumnName();
+
+        final List<Map<String,Object>> list = new DotConnect()
+                .setSQL(String.format("select inode from contentlet where identifier = ? and %s = ?",
+                        columnName))
+                .addParam(identifier.getId())
+                .addParam(variant.name())
+                .loadResults();
+
+        return findContentlets(list.stream()
+                .map(map -> map.get("inode").toString())
+                .collect(Collectors.toList()));
+    }
+
+    @Nullable
+    private static String getJsonVariantIdColumnName() {
+        String columnName = null;
+
+        if (APILocator.getContentletJsonAPI().isJsonSupportedDatabase()) {
+            if (isPostgres()) {
+                columnName = ContentletJsonAPI.CONTENTLET_AS_JSON + "->>'variantId'";
+            } else if (isMsSql()) {
+                columnName =
+                        "JSON_VALUE(" + ContentletJsonAPI.CONTENTLET_AS_JSON + ", '$.variantId')";
+            }
+        }
+        return columnName;
+    }
+
+    @Override
     public List<Contentlet> findAllVersions(final Identifier identifier,
             final boolean bringOldVersions, final Integer maxResults)
             throws DotDataException, DotStateException, DotSecurityException {

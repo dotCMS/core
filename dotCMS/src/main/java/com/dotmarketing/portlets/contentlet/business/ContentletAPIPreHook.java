@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -1063,6 +1064,22 @@ public interface ContentletAPIPreHook {
 	 * @return
 	 */
 	public default boolean findAllVersions(Identifier identifier, boolean bringOldVersions, User user, boolean respectFrontendRoles){
+		return true;
+	}
+
+	/**
+	 * Retrieves all versions for a contentlet identifier inside a {@link Contentlet}.
+	 * Note: This method could pull too many versions.
+	 * @param identifier - Identifier object that belongs to a contentlet
+	 * @param variant - Variant to filter
+	 * @param bringOldVersions - boolean value which determines if old versions (non-live, non-working
+	 * 	should be brought here).
+	 * @param user - User in context who has triggered this call.
+	 * @param respectFrontendRoles - if it is true then the Frontend roles will be respected
+	 * @return
+	 */
+	public default boolean findAllVersions(final Identifier identifier, final Variant variant,
+			 final User user, final boolean respectFrontendRoles){
 		return true;
 	}
 	

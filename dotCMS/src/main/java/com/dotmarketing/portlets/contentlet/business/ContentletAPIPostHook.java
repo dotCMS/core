@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -916,7 +917,12 @@ public interface ContentletAPIPostHook {
 	 * @param returnValue - value returned by primary API Method
 	 */
 	public default void findAllVersions(Identifier identifier, boolean bringOldVersions, User user, boolean respectFrontendRoles,List<Contentlet> returnValue){}
-	
+
+	public default void findAllVersions(final Identifier identifier, final Variant variant,
+			final User user, boolean respectFrontendRoles){
+
+	}
+
 	/**
 	 * Retrieves all versions for a contentlet identifier checked in by a real user meaning not the system user
 	 * @param identifier

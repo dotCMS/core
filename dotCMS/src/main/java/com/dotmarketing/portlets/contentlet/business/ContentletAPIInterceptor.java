@@ -5,6 +5,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.variant.VariantAPI;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -778,6 +779,24 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		List<Contentlet> c = conAPI.findAllVersions(identifier, user, respectFrontendRoles);
 		for(ContentletAPIPostHook post : postHooks){
 			post.findAllVersions(identifier, user, respectFrontendRoles,c);
+		}
+		return c;
+	}
+
+	@Override
+	public List<Contentlet> findAllVersions(final Identifier identifier, final Variant variant,
+			final User user, final boolean respectFrontendRoles)
+			throws DotSecurityException, DotDataException {
+		for(ContentletAPIPreHook pre : preHooks){
+			boolean preResult = pre.findAllVersions(identifier, variant, user, respectFrontendRoles);
+			if(!preResult){
+				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+			}
+		}
+		List<Contentlet> c = conAPI.findAllVersions(identifier, variant, user, respectFrontendRoles);
+		for(ContentletAPIPostHook post : postHooks){
+			post.findAllVersions(identifier, variant, user, respectFrontendRoles);
 		}
 		return c;
 	}
