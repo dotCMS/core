@@ -4,12 +4,16 @@ import com.dotcms.api.tree.Parentable;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.business.Theme;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -100,14 +104,31 @@ public class BrowserQuery {
     @CloseDBIfOpened
     private Tuple2<Host, Folder> getParents(final String parentId, final User user, final String hostIdSystemFolder) {
         boolean respectFrontEndPermissions = PageMode.get().respectAnonPerms;
-        final Folder folder = Try.of(() -> APILocator.getFolderAPI().find(parentId, user, respectFrontEndPermissions)).toJavaOptional()
-                .orElse(APILocator.getFolderAPI().findSystemFolder());
-        final Host site = folder.isSystemFolder()
-                ? null != hostIdSystemFolder
-                          ? Try.of(() -> APILocator.getHostAPI().find(hostIdSystemFolder, user, respectFrontEndPermissions)).getOrNull()
-                          : Try.of(() -> WebAPILocator.getHostWebAPI().getCurrentHost()).getOrNull()
-                : Try.of(() -> APILocator.getHostAPI().find(folder.getHostId(), user, respectFrontEndPermissions)).getOrNull();
-
+        Folder folder;
+        boolean isSite = false;
+        final Identifier identifier = Try.of(() -> APILocator.getIdentifierAPI().findFromInode(parentId)).getOrNull();
+        if (null != identifier && UtilMethods.isSet(identifier.getId()) && !parentId.equalsIgnoreCase(
+                Theme.SYSTEM_THEME) && Host.HOST_VELOCITY_VAR_NAME.equals(identifier.getAssetSubType())) {
+            folder = APILocator.getFolderAPI().findSystemFolder();
+            isSite = true;
+        } else {
+            folder = Try.of(() -> APILocator.getFolderAPI().find(parentId, user, respectFrontEndPermissions)).getOrElse(new Folder());
+        }
+        final String siteId = (isSite)
+                                  ? (UtilMethods.isSet(hostIdSystemFolder))
+                                            ? hostIdSystemFolder
+                                            : parentId
+                                  : (null != folder)
+                                            ? folder.getHostId()
+                                            : null;
+        final Host site = Try.of(() -> APILocator.getHostAPI().find(siteId, user, respectFrontEndPermissions)).getOrNull();
+        if (null == folder || UtilMethods.isEmpty(folder.getIdentifier()) || null == site || UtilMethods.isEmpty(site.getIdentifier())) {
+            final String errorMsg = String.format("Parent ID '%s' does not match any existing Folder or Site.",
+                    parentId);
+            Logger.error(this, errorMsg + ". Maybe the Site/Folder was modified or deleted in the background. If " +
+                                       "using SystemFolder must send hostIdSystemFolder.");
+            throw new DotRuntimeException(errorMsg);
+        }
         return Tuple.of(site, folder);
     }
 
