@@ -39,7 +39,8 @@ import org.immutables.value.Value.Default;
     "nEntries",
     "sortOrder",
     "versionable",
-    "multilingualable"
+    "multilingualable",
+    "pagination"
 })
 public abstract class ContentType {
 
