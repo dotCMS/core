@@ -9521,7 +9521,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public String getUrlMapForContentlet(Contentlet contentlet, User user,
             boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
         // no structure, no inode, no workee
-        if (UtilMethods.isEmpty(contentlet.getInode())) {
+        if (UtilMethods.isEmpty(()->contentlet.getInode())) {//NOSONAR
             return null;
         }
 
