@@ -1,11 +1,12 @@
-import { Component, Host, State, h, Prop, Element, Event, EventEmitter } from '@stencil/core';
+import { Component, Host, h, Prop, Element, Event, EventEmitter, Watch } from '@stencil/core';
 import '@material/mwc-button';
 import '@material/mwc-icon';
+import { DotCMSTempFile } from '@dotcms/dotcms-models';
 
 enum DotFileCurrentStatus {
     UPLOADFILE = 'UploadFile',
     CODEEDITOR = 'CodeEditor',
-    FileList = 'FileList'
+    FILELIST = 'FileList'
 }
 
 @Component({
@@ -15,24 +16,52 @@ enum DotFileCurrentStatus {
 export class DotFileUpload {
     @Element() el: HTMLElement;
 
-    @State() currentState: DotFileCurrentStatus = DotFileCurrentStatus.UPLOADFILE;
+    @Prop() currentState: DotFileCurrentStatus = DotFileCurrentStatus.UPLOADFILE;
 
     @Prop() dropFilesText = 'Drag and Drop or paste a file';
     @Prop() browserButtonText = 'Browser';
     @Prop() writeCodeButtonText = 'Write Code';
     @Prop() cancelButtonText = 'Cancel';
 
-    @Event() fileUploaded: EventEmitter;
+    @Prop({ reflect: true, mutable: true }) assets: DotCMSTempFile[] = [];
+    @Watch('assets')
+    watchAssets(newAssets: DotCMSTempFile[], _oldAssets: DotCMSTempFile[]) {
+        if (newAssets.length > 0 && this.currentState !== DotFileCurrentStatus.FILELIST) {
+            this.currentState = DotFileCurrentStatus.FILELIST;
+        }
+    }
 
-    updateCurrentStatus(status: DotFileCurrentStatus) {
+    @Event() fileUploaded: EventEmitter<File[]>;
+    @Event() dataChanges: EventEmitter<File[]>;
+
+    private updateCurrentStatus(status: DotFileCurrentStatus) {
         this.currentState = status;
+        if (this.currentState !== DotFileCurrentStatus.FILELIST) {
+            this.assets = [];
+        }
     }
 
-    fileChangeHandler(event: Event) {
-        this.fileUploaded.emit(event);
+    private fileChangeHandler(event: Event) {
+        let files: File[] = [];
+        if (
+            (event.target as HTMLInputElement).files &&
+            (event.target as HTMLInputElement).files.length
+        ) {
+            Array.from((event.target as HTMLInputElement).files).map((file: File) => {
+                files.push(file);
+            });
+        }
+        this.fileUploaded.emit(files);
     }
-    getCurrentElement() {
-        if (this.currentState === DotFileCurrentStatus.UPLOADFILE) {
+
+    private removeAssetFromFileList(assetId) {
+        this.assets = this.assets.filter(({ id }: DotCMSTempFile) => id !== assetId);
+        if (this.assets.length === 0) {
+            this.currentState = DotFileCurrentStatus.UPLOADFILE;
+        }
+    }
+    private getCurrentElement(currentState: DotFileCurrentStatus) {
+        if (currentState === DotFileCurrentStatus.UPLOADFILE) {
             return (
                 <div class="dot-file-upload">
                     <div class="dot-file-upload-drop-message">
@@ -59,18 +88,22 @@ export class DotFileUpload {
                     </div>
                 </div>
             );
-        } else if (this.currentState === DotFileCurrentStatus.FileList) {
+        } else if (currentState === DotFileCurrentStatus.FILELIST) {
             return (
                 <div class="dot-file-list">
-                    <div class="dot-file-list-item">
-                        <div>
-                            <mwc-icon>insert_drive_file</mwc-icon>
+                    {this.assets.map((asset: DotCMSTempFile) => (
+                        <div class="dot-file-list-item">
+                            <div>
+                                <mwc-icon>insert_drive_file</mwc-icon>
+                            </div>
+                            <div>{asset.fileName}</div>
+                            <div>
+                                <mwc-icon onClick={() => this.removeAssetFromFileList(asset.id)}>
+                                    delete
+                                </mwc-icon>
+                            </div>
                         </div>
-                        <div>File12345</div>
-                        <div>
-                            <mwc-icon>delete</mwc-icon>
-                        </div>
-                    </div>
+                    ))}
 
                     <div class="dot-file-list-cancel-box">
                         <mwc-button
@@ -84,7 +117,7 @@ export class DotFileUpload {
                     </div>
                 </div>
             );
-        } else if (this.currentState === DotFileCurrentStatus.CODEEDITOR) {
+        } else if (currentState === DotFileCurrentStatus.CODEEDITOR) {
             return (
                 <div class="dot-file-editor">
                     <slot />
@@ -120,9 +153,12 @@ export class DotFileUpload {
 
     componentDidLoad(): void {
         this.fileInput = this.el.querySelector('.dot-file-upload input');
+        if (this.assets.length > 0) {
+            this.currentState = DotFileCurrentStatus.FILELIST;
+        }
     }
 
     render() {
-        return <Host>{this.getCurrentElement()}</Host>;
+        return <Host>{this.getCurrentElement(this.currentState)}</Host>;
     }
 }

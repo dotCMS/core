@@ -792,18 +792,61 @@
             accept="<%=accept %>" >
     </div>
     <div class="file-asset-container">
-        <dot-asset-drop-zone id="dot-asset-drop-zone-<%=field.getVelocityVarName()%>" class="file-asset__drop-zone"></dot-asset-drop-zone>
+        <dot-asset-drop-zone 
+            id="dot-asset-drop-zone-<%=field.getVelocityVarName()%>"
+            class="file-asset__drop-zone"
+        ></dot-asset-drop-zone>
             <dot-file-upload
                 id="dot-file-upload-<%=field.getVelocityVarName()%>"
                 dropFilesText='Drag and Drop or paste a file'
                 browserButtonText="Browser"
                 writeCodeButtonText="Write Code"
                 cancelButtonText="Cancel"
+                assets="[]"
             ></dot-file-upload>
     </div>
     <script type="text/javascript">
         dojo.addOnLoad(() => {
-            bindDotFileUploadListener("<%=field.getVelocityVarName()%>")
+
+        const uploadPlugin = ({files, onSuccess, updateProgress, onError}) => {
+                // Check if we get an array of files otherwise create array.
+                const data = Array.isArray(files) ? files : [files];
+
+                // Create Form Data
+                const formData = new FormData();
+                data.forEach((file) => formData.append('file', file));
+                
+                return new Promise((res, rej) => {
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('POST', '/api/v1/temp?maxFileLength=<%= maxFileLength%>');
+                    xhr.onload = () => res(xhr);
+                    xhr.onerror = rej;
+
+                    // Get Upload Process
+                    if (xhr.upload && updateProgress) {
+                        xhr.upload.onprogress = (e) => {
+                            const percentComplete = (e.loaded / e.total) * 100;
+                            updateProgress(percentComplete);
+                        };
+                    }
+
+                    xhr.send(formData);
+
+                }).then(async (request) => {
+                    if (request.status !== 200) {
+                        throw request;
+                    }
+                    onSuccess();
+                    return JSON.parse(request.response)?.tempFiles || [];
+                })
+                .catch((request) => {
+                    const response = typeof (request.response) === 'string' ? JSON.parse(request.response) : request.response;
+                    const errorMesage = response.errors[0].message;
+                    onError(headerError, errorMesage);
+                    throw response;
+                });
+            }
+            bindDotFileUploadListener("<%=field.getVelocityVarName()%>", uploadPlugin)
         })
         function saveBinaryFileOnContent<%=field.getVelocityVarName()%>(fileName, dijitReference){
             saveBinaryFileOnContent('<%=field.getInode()%>','<%=field.getVelocityVarName()%>','<%=field.getFieldContentlet()%>', dijitReference.fileNameField.value);

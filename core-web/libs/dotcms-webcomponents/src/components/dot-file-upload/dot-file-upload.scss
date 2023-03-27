@@ -11,17 +11,24 @@
 }
 
 dot-file-upload {
+    @mixin box-style($border-style) {
+        border: 1px $border-style var(--color-main);
+        border-radius: 4px;
+    }
     mwc-icon {
         color: var(--color-grey);
         font-size: 24px;
+        cursor: pointer;
+    }
+
+    mwc-button {
+        border: 1.5px solid var(--color-main);
+        border-radius: 8px;
+        color: var(--color-main);
     }
 
     input[type="file"] {
         display: none;
-    }
-    @mixin box-style($border-style) {
-        border: 1px $border-style var(--color-main);
-        border-radius: 4px;
     }
     .dot-file-upload {
         width: 100%;
@@ -50,17 +57,15 @@ dot-file-upload {
         :first-child {
             margin-right: 8px;
         }
-        mwc-button {
-            border: 1.5px solid var(--color-main);
-            border-radius: 8px;
-            color: var(--color-main);
-        }
     }
 
     .dot-file-list {
         @include box-style(solid);
         margin-top: 10px;
         padding: 16px;
+        mwc-icon {
+            color: var(--color-main);
+        }
         .dot-file-list-item {
             display: flex;
             align-items: center;

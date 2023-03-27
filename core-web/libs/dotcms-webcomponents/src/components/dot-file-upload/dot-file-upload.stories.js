@@ -12,7 +12,8 @@ export default {
         browserButtonText: 'Browse',
         writeCodeButtonText: 'Write Code',
         cancelButtonText: 'Cancel',
-        currentState: 'UPLOADFILE'
+        currentState: 'UploadFile',
+        assets: []
     }
 };
 

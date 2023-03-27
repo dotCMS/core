@@ -95,14 +95,24 @@ function enableSiteKeyUpdate(dialogId, siteKeyInputId) {
 
 // Dot Upload File
 
-function bindDotFileUploadListener(id){
-	const dotFileUpload = document.querySelector(`#dot-file-upload-${id}`)
-	dotFileUpload.addEventListener('fileUploaded', function (event){
-		const dotFileUpload = document.querySelector(`#dot-file-upload-${id}`)
-		const dotAssetDropZone = document.querySelector(`#ddot-asset-drop-zone-${id}`)
 
-	})
-}
+	function bindDotFileUploadListener(id, uploadPlugin){
+		const dotFileUpload = document.querySelector(`#dot-file-upload-${id}`)
+		const dotAssetDropZone = document.querySelector(`#dot-asset-drop-zone-${id}`);
+		dotFileUpload.addEventListener('fileUploaded', function (event){
+			event.dataTransfer = {};
+			event.dataTransfer.files = event.detail;
+			dotAssetDropZone.ondrop(event);
+		})
+
+
+		dotAssetDropZone.customUploadFiles = uploadPlugin;
+		dotAssetDropZone.addEventListener('uploadComplete', function(asset){
+			console.log("data", asset)
+			dotFileUpload.assets = [...asset.detail];
+			dotAssetDropZone.style.pointerEvents = "none";
+		})
+	}
 
 
 
