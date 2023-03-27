@@ -1,8 +1,15 @@
 <ng-container *ngIf="vm$ | async as vm">
     <p-card>
         <ng-template pTemplate="title">
-            <h2 data-testId="scheduling-card-name">
+            <h2 class="flex align-items-center gap-1 uppercase" data-testId="scheduling-card-name">
                 {{ 'experiments.configure.scheduling.name' | dm }}
+
+                <dot-icon
+                    [ngClass]="{ isDone: !!vm.scheduling?.endDate || !!vm.scheduling?.startDate }"
+                    data-testId="schedule-step-done"
+                    name="check_circle"
+                    size="16"
+                ></dot-icon>
             </h2>
         </ng-template>
 

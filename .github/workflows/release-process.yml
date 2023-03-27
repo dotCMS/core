@@ -67,9 +67,6 @@ jobs:
     steps:
       - name: Checkout core
         uses: actions/checkout@v3
-        with:
-          token: ${{ secrets.CICD_GITHUB_TOKEN }}
-          submodules: recursively
       - name: Set Common Vars
         run: |
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
@@ -90,6 +87,7 @@ jobs:
 
           RELEASE_NAME="${{ github.event.release.name }}"
           if [[ -n "${RELEASE_NAME}" && "${RELEASE_NAME^^}" =~ [[:blank:]].?LTS$ ]]; then
+            IS_LTS=true
             RELEASE_LABEL=lts
           fi
           if [[ "${IS_RELEASE}" == 'true' && "${IS_LTS}" != 'true' ]]; then

@@ -1,0 +1,28 @@
+<ng-container *ngIf="vm$ | async as vm">
+    <dot-experiments-header
+        [isLoading]="vm.isLoading"
+        [status]="vm?.experiment?.status"
+        [title]="vm.experiment?.name"
+        (goBack)="goToExperimentList(vm.experiment.pageId)"
+    />
+
+    <div class="flex flex-column dot-experiment-report-content">
+        <ng-container *ngIf="!vm.isLoading; else loadingTpl">
+            <dot-experiments-experiment-summary
+                *ngIf="vm.showSummary"
+                [goals]="vm.experiment.goals"
+                [scheduling]="vm.experiment.scheduling"
+            />
+
+            <div class="flex justify-content-center w-full container">
+                <div class="content">
+                    <dot-experiments-reports-chart />
+                </div>
+            </div>
+        </ng-container>
+    </div>
+</ng-container>
+
+<ng-template #loadingTpl>
+    <dot-experiments-reports-skeleton />
+</ng-template>

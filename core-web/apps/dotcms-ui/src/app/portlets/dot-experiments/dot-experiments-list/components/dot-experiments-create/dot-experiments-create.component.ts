@@ -11,6 +11,7 @@ import { SidebarModule } from 'primeng/sidebar';
 
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { DotExperiment } from '@dotcms/dotcms-models';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import {
@@ -38,6 +39,7 @@ interface CreateForm {
         DotMessagePipeModule,
         DotFieldValidationMessageModule,
         UiDotIconButtonModule,
+        DotAutofocusModule,
         // PrimeNg
         InputTextareaModule,
         InputTextModule,
@@ -93,8 +95,7 @@ export class DotExperimentsCreateComponent implements OnInit {
                 validators: [Validators.required, Validators.maxLength(255)]
             }),
             description: new FormControl<string>('', {
-                nonNullable: true,
-                validators: [Validators.required, Validators.maxLength(255)]
+                validators: [Validators.maxLength(255)]
             })
         });
     }

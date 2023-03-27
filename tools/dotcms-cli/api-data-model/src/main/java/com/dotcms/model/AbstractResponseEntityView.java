@@ -2,6 +2,7 @@ package com.dotcms.model;
 
 
 import com.dotcms.model.annotation.ValueType;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import io.vertx.codegen.annotations.Nullable;
 import java.util.ArrayList;
@@ -15,6 +16,9 @@ import java.util.List;
 @ValueType
 @Value.Immutable
 @JsonDeserialize(builder = ResponseEntityView.Builder.class)
+@JsonIgnoreProperties(value = {
+        "pagination"
+})
 public interface AbstractResponseEntityView<T> {
     @Nullable
     T entity();
