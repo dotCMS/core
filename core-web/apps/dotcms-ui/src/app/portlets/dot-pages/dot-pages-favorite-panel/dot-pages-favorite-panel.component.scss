@@ -82,7 +82,6 @@
         width: max-content;
 
         dot-icon {
-            color: $color-palette-primary;
             margin-bottom: $spacing-3;
         }
     }
@@ -93,7 +92,7 @@
 }
 
 .dot-pages-empty__content {
-    color: $color-gray-500;
+    color: $color-palette-gray-700;
     text-align: center;
 }
 
