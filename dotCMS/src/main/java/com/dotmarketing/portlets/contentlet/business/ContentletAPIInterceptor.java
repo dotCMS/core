@@ -1696,8 +1696,8 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
         }
     }
 
-	public Contentlet saveContentOnVariant(final Contentlet contentlet, final String variantName,
-			final User user) {
+	public Contentlet copyContentToVariant(final Contentlet contentlet, final String variantName,
+			final User user) throws DotDataException, DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.saveContentOnVariant(contentlet, variantName, user);
 			if(!preResult){
@@ -1706,7 +1706,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 			}
 		}
 
-		final Contentlet saveContentOnVariant = conAPI.saveContentOnVariant(contentlet, variantName, user);
+		final Contentlet saveContentOnVariant = conAPI.copyContentToVariant(contentlet, variantName, user);
 
 		for(ContentletAPIPostHook post : postHooks){
 			post.saveContentOnVariant(contentlet, variantName, user);

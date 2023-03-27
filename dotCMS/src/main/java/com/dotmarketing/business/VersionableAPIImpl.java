@@ -712,6 +712,7 @@ public class VersionableAPIImpl implements VersionableAPI {
     }
 	
 	@Override
+    @CloseDBIfOpened
     public List<ContentletVersionInfo> findAllByVariant(final Variant variant) throws DotDataException{
         return versionableFactory.findAllByVariant(variant);
     }

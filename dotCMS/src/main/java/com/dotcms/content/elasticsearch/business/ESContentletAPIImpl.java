@@ -3711,19 +3711,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @WrapInTransaction
     @Override
-    public Contentlet saveContentOnVariant(final Contentlet contentlet, final String variantName,
-            final User user){
+    public Contentlet copyContentToVariant(final Contentlet contentlet, final String variantName,
+            final User user) throws DotDataException, DotSecurityException {
 
-        final String inode = contentlet.getInode();
-        final Contentlet checkedoutContentlet = Try.of(() -> checkout(inode, user, false))
-                .getOrElseThrow(
-                        e -> new DotStateException("Unable to checkout content. Inode:" + inode, e));
+        final Contentlet contentletFromDataBase = find(contentlet.getInode(), user, false);
 
-        checkedoutContentlet.setVariantId(variantName);
+        final Contentlet checkout = checkout(contentletFromDataBase.getInode(), user, false);
+        checkout.setVariantId(variantName);
 
-        return Try.of(() -> checkin(checkedoutContentlet, user, false))
+        return Try.of(() -> checkin(checkout, user, false))
                  .getOrElseThrow(
-                        e -> new DotStateException("Unable to checkin content. Inode:" + inode, e));
+                        e -> new DotStateException("Unable to create a new version from Contentlet:" + contentlet.getInode(), e));
     }
 
 

@@ -75,7 +75,6 @@ import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 
-import graphql.AssertException;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -1991,7 +1990,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ESContentletAPIImpl#saveContentOnVariant(Contentlet, String, User)}
+     * Method to test: {@link ESContentletAPIImpl#copyContentToVariant(Contentlet, String, User)}
      * When:
      * - Create a {@link Contentlet} in the DEFAULT Variant.
      * - Create a new {@link Variant}.
@@ -2019,7 +2018,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
 
         ContentletDataGen.createNewVersion(contentlet, variant, map("title", "Variant Version"));
 
-        APILocator.getContentletAPI().saveContentOnVariant(contentlet, variant.name(),
+        APILocator.getContentletAPI().copyContentToVariant(contentlet, variant.name(),
                 APILocator.systemUser());
 
         final Contentlet contentletByIdentifierSpecificVariant = APILocator.getContentletAPI()
@@ -2047,7 +2046,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ESContentletAPIImpl#saveContentOnVariant(Contentlet, String, User)}
+     * Method to test: {@link ESContentletAPIImpl#copyContentToVariant(Contentlet, String, User)}
      * When:
      * - Creata a {@link Variant} let call it variant_1
      * - Create a {@link Contentlet} with a version in variant_1, but not any version in DEFAULT Variant.
@@ -2074,7 +2073,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
                 .setProperty("title", "Variant 1 Version")
                 .variant(variant_1)
                 .nextPersisted();
-        APILocator.getContentletAPI().saveContentOnVariant(contentlet, variant_2.name(),
+        APILocator.getContentletAPI().copyContentToVariant(contentlet, variant_2.name(),
                 APILocator.systemUser());
 
         final Contentlet contentletByIdentifierVariant1 = APILocator.getContentletAPI()

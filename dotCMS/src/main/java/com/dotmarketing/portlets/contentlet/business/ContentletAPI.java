@@ -2266,6 +2266,6 @@ public interface ContentletAPI {
 	 * @param user        user to check permissions
 	 * @return new contentlet version
 	 */
-	Contentlet saveContentOnVariant(final Contentlet contentlet, final String variantName,
-			final User user);
+	Contentlet copyContentToVariant(final Contentlet contentlet, final String variantName,
+			final User user) throws DotDataException, DotSecurityException;
 }

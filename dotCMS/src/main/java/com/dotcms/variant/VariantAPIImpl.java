@@ -164,7 +164,7 @@ public class VariantAPIImpl implements VariantAPI {
                         .find(contentletVersionInfo.getLiveInode(), user, false);
 
                 final Contentlet contentletOnVariant = APILocator.getContentletAPI()
-                        .saveContentOnVariant(liveContentlet, VariantAPI.DEFAULT_VARIANT.name(), user);
+                        .copyContentToVariant(liveContentlet, VariantAPI.DEFAULT_VARIANT.name(), user);
 
                 APILocator.getContentletAPI().publish(contentletOnVariant, user, false);
             }
@@ -176,7 +176,7 @@ public class VariantAPIImpl implements VariantAPI {
                         .find(contentletVersionInfo.getWorkingInode(), user, false);
 
                 APILocator.getContentletAPI()
-                        .saveContentOnVariant(workingContentlet, VariantAPI.DEFAULT_VARIANT.name(), user);
+                        .copyContentToVariant(workingContentlet, VariantAPI.DEFAULT_VARIANT.name(), user);
             }
 
         } catch (DotDataException | DotSecurityException e) {
