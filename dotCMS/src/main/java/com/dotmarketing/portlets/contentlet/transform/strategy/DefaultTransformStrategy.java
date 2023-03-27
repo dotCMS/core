@@ -142,7 +142,7 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
             map.put(URL_MAP_FOR_CONTENT_KEY, urlMap);
             map.put(ESMappingConstants.URL_MAP, urlMap);
         }catch(Exception e) {
-            Logger.warnAndDebug(this.getClass(), "Cannot get URLMap for Content Type: " + type.name() + " and " +
+            Logger.warnAndDebug(this.getClass(), "Cannot get URLMap for Content Type: " + (type != null ? type.variable() : "unknown") + " and " +
                             "contentlet.id : " + ((contentlet.getIdentifier() != null) ? contentlet.getIdentifier() : contentlet) +
                             " , reason: " + e.getMessage(),e);
         }
