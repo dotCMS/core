@@ -1,12 +1,7 @@
+import { Observable } from 'rxjs';
+
 import { CommonModule } from '@angular/common';
-import {
-    ChangeDetectionStrategy,
-    Component,
-    EventEmitter,
-    Input,
-    OnInit,
-    Output
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -15,8 +10,9 @@ import { SidebarModule } from 'primeng/sidebar';
 
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
-import { DotExperiment } from '@dotcms/dotcms-models';
+import { ComponentStatus, StepStatus, TrafficProportion } from '@dotcms/dotcms-models';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 import { DotSidebarDirective } from '@portlets/shared/directives/dot-sidebar.directive';
 import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sidebar-header.component';
 
@@ -43,39 +39,46 @@ import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sideba
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationVariantsAddComponent implements OnInit {
-    @Input()
-    isSaving = false;
-
-    @Input()
-    isSidebarOpen: boolean;
-
-    /**
-     * Emit when the sidebar is closed
-     */
-    @Output()
-    closedSidebar = new EventEmitter<boolean>();
-
-    /**
-     * Emit a valid form values
-     */
-    @Output()
-    formValues = new EventEmitter<Pick<DotExperiment, 'name'>>();
+    stepStatus = ComponentStatus;
 
     form: FormGroup;
 
-    saveForm(): void {
-        const formValues = this.form.value as Pick<DotExperiment, 'name'>;
-        this.formValues.emit(formValues);
-        this.closedSidebarEvent();
-    }
+    vm$: Observable<{
+        experimentId: string;
+        trafficProportion: TrafficProportion;
+        status: StepStatus;
+        isExperimentADraft: boolean;
+    }> = this.dotExperimentsConfigurationStore.variantsStepVm$;
+
+    constructor(
+        private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore
+    ) {}
 
     ngOnInit(): void {
         this.initForm();
     }
 
-    closedSidebarEvent() {
+    /**
+     * Save variant
+     * @param {string} experimentId
+     * @returns void
+     * @memberof DotExperimentsConfigurationVariantsAddComponent
+     */
+    saveVariant(experimentId: string) {
+        this.dotExperimentsConfigurationStore.addVariant({
+            name: this.form.value.name,
+            experimentId
+        });
         this.form.reset();
-        this.closedSidebar.emit(true);
+    }
+
+    /**
+     * Close sidebar
+     * @returns void
+     * @memberof DotExperimentsConfigurationVariantsAddComponent
+     */
+    closeSidebar() {
+        this.dotExperimentsConfigurationStore.closeSidebar();
     }
 
     private initForm() {

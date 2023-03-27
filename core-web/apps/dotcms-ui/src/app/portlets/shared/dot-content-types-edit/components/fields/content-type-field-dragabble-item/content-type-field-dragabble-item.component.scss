@@ -25,7 +25,7 @@
 
 dot-icon-button-tooltip ::ng-deep .material-icons,
 dot-icon {
-    color: $gray;
+    color: $color-palette-gray-700;
 }
 
 dot-icon {
@@ -63,13 +63,13 @@ dot-icon {
 .field__attribute,
 .field__variable {
     color: gray;
-    font-size: $font-size-small;
+    font-size: $font-size-sm;
     overflow: hidden;
     display: flex;
 }
 
 .field__attribute {
-    min-height: $font-size-small;
+    min-height: $font-size-sm;
     margin-left: 26px;
 }
 

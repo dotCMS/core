@@ -45,13 +45,13 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
-
+import java.io.IOException;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
-
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -601,7 +601,4 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         }
     }
 
-    private String getLocalServerName(HttpServletRequest request) {
-        return request.getLocalName() + ":" + request.getLocalPort();
-    }
 }

@@ -23,24 +23,22 @@
                     [inlineEditDisplayTemplate]="inlineEditDisplayTemplate"
                 >
                 </dot-inline-edit>
-                <dot-api-link href="api/v1/contenttype/id/{{ contentType.id }}"></dot-api-link>
             </header>
         </div>
 
         <div class="content-type__info">
-            {{ 'contenttypes.content.variable' | dm }}:
-            <dot-copy-link
-                [copy]="contentType.variable"
-                [label]="contentType.variable"
-                data-testId="copyVariableName"
-            ></dot-copy-link>
-            <span class="content-type__dot-separator">•</span>
-            {{ 'contenttypes.form.identifier' | dm }}:
-            <dot-copy-link
+            <dot-api-link href="api/v1/contenttype/id/{{ contentType.id }}"></dot-api-link>
+            <dot-copy-button
                 [copy]="contentType.id"
-                [label]="contentType.id"
+                [tooltipText]="contentType.id"
+                label="Copy ID"
                 data-testId="copyIdentifier"
-            ></dot-copy-link>
+            ></dot-copy-button>
+            <dot-copy-button
+                [copy]="contentType.variable"
+                label="{{ 'contenttypes.content.variable' | dm }}: {{ contentType.variable }}"
+                data-testId="copyVariableName"
+            ></dot-copy-button>
         </div>
     </div>
     <div class="main-toolbar-right">
@@ -56,7 +54,7 @@
             class="p-button-secondary"
             id="form-edit-button"
             (click)="openEditDialog.next()"
-            icon="fa fa-edit"
+            icon="pi pi-pencil"
             label="{{ 'contenttypes.action.edit' | dm }}"
             pButton
             type="button"
