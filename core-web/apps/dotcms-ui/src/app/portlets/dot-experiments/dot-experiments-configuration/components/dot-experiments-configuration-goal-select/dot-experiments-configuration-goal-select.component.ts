@@ -21,7 +21,7 @@ import { takeUntil } from 'rxjs/operators';
 
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
-import { DotMessagePipe } from '@dotcms/app/view/pipes';
+import { DotMessageService } from '@dotcms/data-access';
 import {
     ComponentStatus,
     GOAL_TYPES,
@@ -79,7 +79,7 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
 
     constructor(
         private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore,
-        private readonly dotMessagePipe: DotMessagePipe,
+        private readonly dotMessageService: DotMessageService,
         private readonly cdr: ChangeDetectorRef
     ) {}
 
@@ -149,7 +149,7 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
         this.form = new FormGroup({
             primary: new FormGroup({
                 name: new FormControl(
-                    this.dotMessagePipe.transform('experiments.configure.goals.name.default'),
+                    this.dotMessageService.get('experiments.configure.goals.name.default'),
                     {
                         nonNullable: true,
                         validators: [Validators.required]
