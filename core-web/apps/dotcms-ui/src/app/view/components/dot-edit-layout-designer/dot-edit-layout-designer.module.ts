@@ -8,6 +8,7 @@ import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
+// import { TooltipModule } from 'primeng/tooltip';
 
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
 import { DotGlobalMessageModule } from '@components/_common/dot-global-message/dot-global-message.module';
