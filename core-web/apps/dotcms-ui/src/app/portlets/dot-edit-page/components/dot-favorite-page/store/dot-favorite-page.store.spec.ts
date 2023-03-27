@@ -139,6 +139,7 @@ describe('DotFavoritePageStore', () => {
                 renderThumbnail: true,
                 loading: false,
                 pageRenderedHtml: '<html><head></header><body><p>Hello World</p></body></html>',
+                showFavoriteEmptySkeleton: undefined,
                 closeDialog: false,
                 actionState: null
             };
@@ -157,6 +158,13 @@ describe('DotFavoritePageStore', () => {
             dotFavoritePageStore.setRenderThumbnail(true);
             dotFavoritePageStore.state$.subscribe((data) => {
                 expect(data.renderThumbnail).toEqual(true);
+            });
+        });
+
+        it('should update setShowFavoriteEmptySkeleton flag', () => {
+            dotFavoritePageStore.setShowFavoriteEmptySkeleton(true);
+            dotFavoritePageStore.state$.subscribe((data) => {
+                expect(data.showFavoriteEmptySkeleton).toEqual(true);
             });
         });
 
@@ -194,7 +202,7 @@ describe('DotFavoritePageStore', () => {
         });
 
         // Effects
-        it('should create a Favorite Page', (done) => {
+        it('should create a Favorite Page with thumbnail', (done) => {
             spyOn(dotTempFileUploadService, 'upload').and.returnValue(of([mockDotCMSTempFile]));
             spyOn(
                 dotWorkflowActionsFireService,
@@ -226,6 +234,46 @@ describe('DotFavoritePageStore', () => {
                 'dotFavoritePage',
                 {
                     screenshot: 'temp-file_123',
+                    inode: null,
+                    title: 'A title',
+                    url: '/an/url/test?language_id=1',
+                    order: 1
+                },
+                { READ: [CurrentUserDataMock.roleId, '6b1fa42f-8729-4625-80d1-17e4ef691ce7'] }
+            );
+
+            dotFavoritePageStore.state$.subscribe((state) => {
+                expect(state.closeDialog).toEqual(true);
+                expect(state.loading).toEqual(false);
+                expect(state.actionState).toEqual(DotFavoritePageActionState.SAVED);
+                done();
+            });
+        });
+
+        it('should create a Favorite Page without thumbnail', (done) => {
+            spyOn(dotTempFileUploadService, 'upload').and.returnValue(of([mockDotCMSTempFile]));
+            spyOn(
+                dotWorkflowActionsFireService,
+                'publishContentletAndWaitForIndex'
+            ).and.returnValue(of(null));
+
+            dotFavoritePageStore.saveFavoritePage({
+                currentUserRoleId: CurrentUserDataMock.roleId,
+                thumbnail: '',
+                title: 'A title',
+                url: '/an/url/test?language_id=1',
+                order: 1,
+                permissions: []
+            });
+
+            expect(dotTempFileUploadService.upload).toHaveBeenCalledTimes(0);
+
+            expect(
+                dotWorkflowActionsFireService.publishContentletAndWaitForIndex
+            ).toHaveBeenCalledWith(
+                'dotFavoritePage',
+                {
+                    screenshot: '',
                     inode: null,
                     title: 'A title',
                     url: '/an/url/test?language_id=1',
@@ -392,6 +440,7 @@ describe('DotFavoritePageStore', () => {
                 renderThumbnail: false,
                 loading: false,
                 pageRenderedHtml: '<html><head></header><body><p>Hello World</p></body></html>',
+                showFavoriteEmptySkeleton: false,
                 closeDialog: false,
                 actionState: null
             };
