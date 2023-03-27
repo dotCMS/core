@@ -1,13 +1,13 @@
 import * as md5 from 'md5';
 import { Observable } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { AsyncPipe, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Inject, OnInit, ViewChild } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
 import { Menu, MenuModule } from 'primeng/menu';
 
-import { map, switchMap } from 'rxjs/operators';
+import { map, switchMap, take } from 'rxjs/operators';
 
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
 import { DotGravatarService } from '@dotcms/app/api/services/dot-gravatar-service';
@@ -28,12 +28,13 @@ import { DotMyAccountModule } from '../dot-my-account/dot-my-account.module';
     changeDetection: ChangeDetectionStrategy.OnPush,
     standalone: true,
     imports: [
-        CommonModule,
         DotGravatarComponent,
         DotLoginAsModule,
         DotMyAccountModule,
         DotPipesModule,
-        MenuModule
+        MenuModule,
+        AsyncPipe,
+        NgIf
     ]
 })
 export class DotToolbarUserComponent implements OnInit {
@@ -42,6 +43,8 @@ export class DotToolbarUserComponent implements OnInit {
     items$: Observable<MenuItem[]>;
 
     auth: Auth;
+
+    userData: { email: string; name: string };
 
     showLoginAs = false;
     showMyAccount = false;
@@ -61,11 +64,16 @@ export class DotToolbarUserComponent implements OnInit {
     ngOnInit(): void {
         this.loginService.watchUser((auth: Auth) => {
             this.auth = auth;
+
+            this.userData = {
+                email: this.getEmailFromAuthState(),
+                name: this.getNameFromAuthState()
+            };
         });
 
         this.items$ = this.loginService.getCurrentUser().pipe(
             switchMap(({ loginAs }: CurrentUser) =>
-                this.dotGravatarService.getPhoto(md5(this.getEmailFromAuthState())).pipe(
+                this.dotGravatarService.getPhoto(md5(this.userData.email)).pipe(
                     map(
                         (photo: string) =>
                             [
@@ -134,17 +142,20 @@ export class DotToolbarUserComponent implements OnInit {
     logoutAs($event: Event): void {
         $event.preventDefault();
 
-        this.loginService.logoutAs().subscribe(
-            () => {
-                this.menu.hide();
-                this.dotNavigationService.goToFirstPortlet().then(() => {
-                    this.location.reload();
-                });
-            },
-            (error) => {
-                this.loggerService.error(error);
-            }
-        );
+        this.loginService
+            .logoutAs()
+            .pipe(take(1))
+            .subscribe(
+                () => {
+                    this.menu.hide();
+                    this.dotNavigationService.goToFirstPortlet().then(() => {
+                        this.location.reload();
+                    });
+                },
+                (error) => {
+                    this.loggerService.error(error);
+                }
+            );
     }
 
     /**
@@ -172,7 +183,7 @@ export class DotToolbarUserComponent implements OnInit {
         return false;
     }
 
-    getEmailFromAuthState() {
+    private getEmailFromAuthState() {
         return this.auth.loginAsUser
             ? this.auth.loginAsUser.emailAddress
             : this.auth.user.emailAddress;
@@ -190,7 +201,7 @@ export class DotToolbarUserComponent implements OnInit {
      * @returns HTML template as string
      */
     private getTemplateFromPhoto(photo: string | null) {
-        const name = this.getNameFromAuthState();
+        const { name } = this.userData;
 
         const photoTemplate = photo
             ? `<img src=${photo} alt="${name} gravatar" title="${name} gravatar" class="gravatar" />`

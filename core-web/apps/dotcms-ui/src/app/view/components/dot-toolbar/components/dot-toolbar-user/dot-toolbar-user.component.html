@@ -1,7 +1,7 @@
 <dot-gravatar
     class="gravatar-button"
     id="dot-toolbar-user"
-    [email]="getEmailFromAuthState()"
+    [email]="userData.email"
     [size]="32"
     (click)="menu.toggle($event)"
 ></dot-gravatar>
