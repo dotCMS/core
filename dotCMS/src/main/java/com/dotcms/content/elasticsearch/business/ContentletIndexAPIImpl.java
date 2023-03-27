@@ -880,6 +880,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         final List<String> depsIdentifiers =  Sneaky.sneak(() ->
                 this.mappingAPI.dependenciesLeftToReindex(parentContentlet));
 
+        if (!UtilMethods.isSet(depsIdentifiers)) {
+            return Collections.emptyList();
+        }
+
         final String templateQuery = String.format(SELECT_CONTENTLET_VERSION_INFO,
                 String.join(",", Collections.nCopies(depsIdentifiers.size(), "?")));
 
