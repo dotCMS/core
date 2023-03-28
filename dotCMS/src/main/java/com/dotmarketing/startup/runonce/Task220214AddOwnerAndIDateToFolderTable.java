@@ -1,6 +1,7 @@
 package com.dotmarketing.startup.runonce;
 
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -20,7 +21,17 @@ public class Task220214AddOwnerAndIDateToFolderTable implements StartupTask {
 
     @Override
     public boolean forceRun() {
-        return true;
+        return !hasOwnerField();
+    }
+
+    private boolean hasOwnerField() {
+        final DotDatabaseMetaData databaseMetaData = new DotDatabaseMetaData();
+
+        try {
+            return databaseMetaData.hasColumn("folder", "owner");
+        } catch (SQLException e) {
+            return false;
+        }
     }
 
     @Override

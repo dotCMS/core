@@ -33,6 +33,7 @@ import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.startup.runonce.Task220330ChangeVanityURLSiteFieldType;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
@@ -502,6 +503,8 @@ public class VanityUrlAPITest {
         vanityURLContentletSpanish = contentletAPI.checkout(vanityURLContentletEnglish.getInode(), user, false);
         vanityURLContentletSpanish.setLanguageId(spanish.getId());
         vanityURLContentletSpanish = contentletAPI.checkin(vanityURLContentletSpanish, user, false);
+        assert(!APILocator.getVersionableAPI().isLive(vanityURLContentletSpanish));
+        Logger.info(getClass(), "checking vanities from host:" + defaultHost.getIdentifier());
 
         Optional<CachedVanityUrl> spanishVanity = vanityUrlAPI.resolveVanityUrl("/testing" + currentTime, defaultHost, spanish);
 
