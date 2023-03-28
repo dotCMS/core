@@ -2,7 +2,6 @@
     class="gravatar-button"
     id="dot-toolbar-user"
     [email]="userData.email"
-    [size]="32"
     (click)="menu.toggle($event)"
 ></dot-gravatar>
 <p-menu #menu [model]="items$ | async" [popup]="true" appendTo="body"></p-menu>
