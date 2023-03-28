@@ -60,7 +60,7 @@ describe('DotPersonaSelectorOptionComponent', () => {
             fixture.detectChanges();
         });
 
-        it('should have dot-avatar with right properties', () => {
+        it('should have p-avatar with right properties', () => {
             const hostComp = fixture.componentInstance;
 
             const avatar: DebugElement = de.query(By.css('p-avatar'));
