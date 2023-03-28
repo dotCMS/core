@@ -32,7 +32,7 @@ public class Task230320FixMissingContentletAsJSON implements StartupTask {
         PopulateContentAsJSONJob.fireJob("Host");
 
         try {
-            PopulateContentletAsJSONUtil.getInstance().populateForAssetSubType("Host");
+            new PopulateContentletAsJSONUtil().populateForAssetSubType("Host");
         } catch (SQLException | IOException e) {
             Logger.error(this, "Error populating Contentlet as JSON population column for Hosts", e);
             throw new DotDataException(e.getMessage(), e);

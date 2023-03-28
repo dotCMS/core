@@ -8,6 +8,7 @@ import com.dotcms.util.CloseUtils;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.db.Params;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -16,8 +17,10 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import io.vavr.Tuple;
-import io.vavr.Tuple2;
+import com.google.common.primitives.Ints;
+import io.vavr.control.Try;
+import org.apache.commons.lang3.mutable.MutableInt;
+import org.postgresql.util.PGobject;
 
 import javax.annotation.Nullable;
 import java.io.BufferedWriter;
@@ -28,10 +31,10 @@ import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
-import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -80,26 +83,12 @@ public class PopulateContentletAsJSONUtil {
     private final String CLOSE_CURSOR = "CLOSE missingContentletAsJSONCursor";
     private final String DEALLOCATE_CURSOR_MSSQL = "DEALLOCATE missingContentletAsJSONCursor";
 
-    private static class SingletonHolder {
-        private static final PopulateContentletAsJSONUtil INSTANCE = new PopulateContentletAsJSONUtil();
-    }
-
-    public static PopulateContentletAsJSONUtil getInstance() {
-        return PopulateContentletAsJSONUtil.SingletonHolder.INSTANCE;
-    } // getInstance.
+    protected static final int MAX_UPDATE_BATCH_SIZE = Config.getIntProperty("task.230320.maxupdatebatchsize", 100);
+    protected static final int MAX_CURSOR_FETCH_SIZE = Config.getIntProperty("task.230320.maxcursorfetchsize", 100);
+    protected final List<Params> paramsUpdate = new ArrayList<>();
 
     public PopulateContentletAsJSONUtil() {
         this.contentletJsonAPI = APILocator.getContentletJsonAPI();
-    }
-
-    @FunctionalInterface
-    private interface CheckedFunction<T, R, E extends Exception> {
-        R apply(T t) throws E;
-    }
-
-    @FunctionalInterface
-    private interface CheckedConsumer<T, E extends Exception> {
-        void accept(T t) throws E;
     }
 
     /**
@@ -220,8 +209,7 @@ public class PopulateContentletAsJSONUtil {
                 if (DbConnectionFactory.isMsSql()) {
                     stmt.execute(FETCH_CURSOR_MSSQL);
                 } else {
-                    var batchSize = 100;
-                    stmt.execute(String.format(FETCH_CURSOR_POSTGRES, batchSize));
+                    stmt.execute(String.format(FETCH_CURSOR_POSTGRES, MAX_CURSOR_FETCH_SIZE));
                 }
 
                 try (ResultSet rs = stmt.getResultSet()) {
@@ -243,7 +231,7 @@ public class PopulateContentletAsJSONUtil {
                                 )// Transform the results into a list of contentlets
                                 .map(contentletList ->
                                         contentletList.stream()
-                                                .map(wrapCheckedFunction(this::toJSON))
+                                                .map(this::toJSON)
                                                 .collect(Collectors.toList())
                                 )// Transform the contentlets into a list of json strings
                                 .orElse(Collections.emptyList());
@@ -272,7 +260,7 @@ public class PopulateContentletAsJSONUtil {
             CloseUtils.closeQuietly(fileWriter);
         }
 
-        Logger.info(this, "Records to process: " + recordsProcessed);
+        Logger.info(this, "-- Records found to process: " + recordsProcessed);
     }
 
     /**
@@ -286,32 +274,54 @@ public class PopulateContentletAsJSONUtil {
 
         Logger.info(this, "Updating records with missing Contentlet as JSON");
 
+        final MutableInt totalUpdateAffected = new MutableInt(0);
+
         try (final Stream<String> streamLines = Files.lines(taskDataFile.toPath())) {
 
-            streamLines.map(line -> {
-                        try {
-                            return parseLine(line);
-                        } catch (Exception e) {
-                            throw new DotRuntimeException("Error parsing line: " + line, e);
-                        }
-                    })// Map each line to Tuple (inode, contentlet_as_json)
-                    .forEach(wrapCheckedConsumer(this::updateContentlet));// Update each contentlet in the DB
+            streamLines.forEachOrdered(line -> this.processLine(line, totalUpdateAffected));
+
+            if (!this.paramsUpdate.isEmpty()) {
+                this.doUpdateBatch(totalUpdateAffected);
+            }
+        } finally {
+            Logger.info(this, "-- total updates: " + totalUpdateAffected.intValue());
         }
 
         Logger.info(this, "Updated records with missing Contentlet as JSON");
     }
 
     /**
-     * Parses the given line and returns a tuple with the inode and the json representation of the contentlet.
+     * Processes the given line preparing the params for the batch update.
      *
      * @param line Line with the json representation of the contentlet.
      * @return
      * @throws JsonProcessingException
      */
-    private Tuple2<String, String> parseLine(final String line) throws JsonProcessingException {
+    private void processLine(final String line, final MutableInt totalInsertAffected) {
 
-        var contentlet = ContentletJsonHelper.INSTANCE.get().immutableFromJson(line);
-        return Tuple.of(contentlet.inode(), line);
+        try {
+            var contentlet = ContentletJsonHelper.INSTANCE.get().immutableFromJson(line);
+
+            final Object contentletAsJSON;
+            if (DbConnectionFactory.isPostgres()) {
+                PGobject jsonObject = new PGobject();
+                jsonObject.setType("json");
+                Try.run(() -> jsonObject.setValue(line)).getOrElseThrow(
+                        () -> new IllegalArgumentException("Invalid JSON"));
+                contentletAsJSON = jsonObject;
+            } else {
+                contentletAsJSON = line;
+            }
+
+            this.paramsUpdate.add(new Params(contentletAsJSON, contentlet.inode()));
+
+            // Execute the batch for the updates if we have reached the max batch size
+            if (this.paramsUpdate.size() >= MAX_UPDATE_BATCH_SIZE) {
+                this.doUpdateBatch(totalInsertAffected);
+            }
+        } catch (JsonProcessingException e) {
+            throw new DotRuntimeException("Error processing line", e);
+        }
     }
 
     /**
@@ -320,48 +330,41 @@ public class PopulateContentletAsJSONUtil {
      * @param contentlet
      * @return The Contentlet with the json representation attached to it.
      */
-    private String toJSON(Contentlet contentlet) throws JsonProcessingException {
+    private String toJSON(Contentlet contentlet) {
 
-        // Converts the given contentlet to an immutable contentlet and then builds a json representation of it.
-        var contentletAsJSON = ContentletJsonHelper.INSTANCE.get().writeAsString(this.contentletJsonAPI.toImmutable(contentlet));
+        try {
+            // Converts the given contentlet to an immutable contentlet and then builds a json representation of it.
+            var contentletAsJSON = ContentletJsonHelper.INSTANCE.get().writeAsString(this.contentletJsonAPI.toImmutable(contentlet));
 
-        // I need to have the JSON in a single line, so I can write it into a file
-        return contentletAsJSON.replaceAll("[\\t\\n\\r]", "");
+            // I need to have the JSON in a single line, so I can write it into a file
+            return contentletAsJSON.replaceAll("[\\t\\n\\r]", "");
+        } catch (JsonProcessingException e) {
+            throw new DotRuntimeException("Error creating the JSON representation of the Contentlet", e);
+        }
     }
 
     /**
-     * Updates the contentlet_as_json column of the contentlet table with the json representation of the contentlet.
+     * Executes the batch of updates to fill the contentlet_as_json column.
      *
-     * @param contentletData Tuple with the inode and the json representation of the contentlet.
-     * @throws DotDataException
+     * @param totalUpdateAffected
      */
-    private void updateContentlet(final Tuple2<String, String> contentletData) throws DotDataException {
+    private void doUpdateBatch(final MutableInt totalUpdateAffected) {
 
-        final var dotConnect = new DotConnect();
-        dotConnect.setSQL(UPDATE_CONTENTLET_AS_JSON);
-        dotConnect.addJSONParam(contentletData._2());
-        dotConnect.addParam(contentletData._1());
-        dotConnect.loadResult();
-    }
+        try {
+            final List<Integer> batchResult =
+                    Ints.asList(new DotConnect().executeBatch(
+                            UPDATE_CONTENTLET_AS_JSON,
+                            this.paramsUpdate));
 
-    private static <T, R, E extends Exception> Function<T, R> wrapCheckedFunction(PopulateContentletAsJSONUtil.CheckedFunction<T, R, E> function) {
-        return t -> {
-            try {
-                return function.apply(t);
-            } catch (Exception e) {
-                throw new DotRuntimeException(e.getMessage(), e);
-            }
-        };
-    }
-
-    private static <T, E extends Exception> Consumer<T> wrapCheckedConsumer(PopulateContentletAsJSONUtil.CheckedConsumer<T, E> consumer) {
-        return t -> {
-            try {
-                consumer.accept(t);
-            } catch (Exception e) {
-                throw new DotRuntimeException(e.getMessage(), e);
-            }
-        };
+            final int rowsAffected = batchResult.stream().reduce(0, Integer::sum);
+            Logger.info(this, "Batch rows to populate contentlet_as_json column, updated: " + rowsAffected + " rows");
+            totalUpdateAffected.add(rowsAffected);
+        } catch (DotDataException e) {
+            Logger.error(this, "Couldn't update these rows: " + this.paramsUpdate);
+            Logger.error(this, e.getMessage(), e);
+        } finally {
+            this.paramsUpdate.clear();
+        }
     }
 
     /**

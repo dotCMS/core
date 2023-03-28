@@ -35,7 +35,7 @@ public class PopulateContentAsJSONJob extends DotStatefulJob {
         }
 
         try {
-            PopulateContentletAsJSONUtil.getInstance().populateExcludingAssetSubType(excludingAssetSubType);
+            new PopulateContentletAsJSONUtil().populateExcludingAssetSubType(excludingAssetSubType);
         } catch (SQLException | DotDataException | IOException e) {
             Logger.error(this, "Error executing Contentlet as JSON population job", e);
             throw new DotRuntimeException(e);

@@ -25,12 +25,12 @@ public class PopulateContentletAsJSONUtilTest extends IntegrationTestBase {
 
     @Test
     public void Test_populate_host() throws SQLException, DotDataException, IOException {
-        PopulateContentletAsJSONUtil.getInstance().populateForAssetSubType("Host");
+        new PopulateContentletAsJSONUtil().populateForAssetSubType("Host");
     }
 
     @Test
     public void Test_populate_All_excluding_host() throws SQLException, DotDataException, IOException {
-        PopulateContentletAsJSONUtil.getInstance().populateExcludingAssetSubType("Host");
+        new PopulateContentletAsJSONUtil().populateExcludingAssetSubType("Host");
     }
 
     /**
