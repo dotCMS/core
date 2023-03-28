@@ -116,14 +116,8 @@ dojo.declare("dotcms.dijit.tree.HostFolderTreeReadStoreModel", null, {
 	},
 
 	getFullPath: function(item) {
-		let fullPath = "";
-		const Host = item.fullPath.split(":")[0];
-		if (item.type === "host") {
-			fullPath = Host
-		} else {
-			fullPath = `${Host}${item.folderPath}`
-		}
-		return fullPath
+		const [ host ] = item.fullPath.split(":");
+		return item.type === "host" ? host : `${host}${item.folderPath}`
 	},
 
 	newItem: function(/* dojo.dnd.Item */ args, /*Item*/ parent, /*int?*/ insertIndex){
