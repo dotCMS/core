@@ -23,3 +23,5 @@ This maintenance release includes the following code fixes:
 
 15. https://github.com/dotCMS/core/issues/22667 : Cannot change date or time fields to never on an existing contentlet #22667
 16. https://github.com/dotCMS/core/issues/23982 : Improve startup performance #23982
+17. https://github.com/dotCMS/core/issues/24344 : The content is becoming published automatically after unpublishing it manually without specifying any publish date #24344
+18. 
