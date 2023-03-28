@@ -3,6 +3,7 @@ package com.dotcms.contenttype.model.type;
 import com.dotcms.api.provider.ClientObjectMapper;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldLayoutRow;
+import com.dotcms.contenttype.model.field.Workflow;
 import com.dotcms.contenttype.model.type.ContentType.ClassNameAliasResolver;
 import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
@@ -35,7 +36,6 @@ import org.immutables.value.Value.Default;
 })
 @JsonIgnoreProperties(value = {
     "systemActionMappings",
-    "workflows",
     "nEntries",
     "sortOrder",
     "versionable",
@@ -122,6 +122,9 @@ public abstract class ContentType {
 
     @Nullable
     public abstract String urlMapPattern();
+
+    @Nullable
+    public abstract List<Workflow> workflows();
 
     /**
      * Class id resolver allows us using smaller ClassNames that eventually get mapped to the fully qualified class name

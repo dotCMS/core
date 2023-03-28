@@ -1,16 +1,13 @@
 package com.dotcms.model;
 
-
 import com.dotcms.model.annotation.ValueType;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import io.vertx.codegen.annotations.Nullable;
 import java.util.ArrayList;
-import java.util.Map;
-import org.immutables.value.Value;
-
 import java.util.HashMap;
 import java.util.List;
-;
+import java.util.Map;
+import org.immutables.value.Value;
 
 @ValueType
 @Value.Immutable
@@ -20,11 +17,13 @@ public interface AbstractResponseEntityView<T> {
     T entity();
 
     @Value.Default
-    default List<ErrorEntity> errors() { return new ArrayList<>(); };
+    default List<ErrorEntity> errors() { return new ArrayList<>(); }
     @Value.Default
-    default List<MessageEntity> messages() { return new ArrayList<>(); };
+    default List<MessageEntity> messages() { return new ArrayList<>(); }
     @Value.Default
-    default Map<String, String> i18nMessagesMap() { return new HashMap<>(); };
+    default Map<String, String> i18nMessagesMap() { return new HashMap<>(); }
     @Value.Default
-    default List<String> permissions() { return new ArrayList<>(); };
+    default List<String> permissions() { return new ArrayList<>(); }
+    @Nullable
+    Pagination pagination();
 }
