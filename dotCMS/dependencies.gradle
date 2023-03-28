@@ -423,7 +423,7 @@ dependencies {
     compile 'com.github.ben-manes.caffeine:caffeine:2.9.2'
     
     
-    implementation (group: 'org.apache.pdfbox', name: 'pdfbox', version: '2.0.27'){
+    compile(group: 'org.apache.pdfbox', name: 'pdfbox', version: '2.0.27'){
         exclude(group: 'commons-logging')
     }
 
