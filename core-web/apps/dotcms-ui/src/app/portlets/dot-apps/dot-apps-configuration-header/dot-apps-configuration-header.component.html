@@ -1,9 +1,11 @@
-<dot-avatar
-    [size]="112"
-    [url]="app.iconUrl"
+<p-avatar
+    [image]="app.iconUrl"
     [label]="app.name"
     (click)="goToApps(app.key)"
-></dot-avatar>
+    size="xlarge"
+    dotAvatar
+></p-avatar>
+
 <div class="dot-apps-configuration__data">
     <header>
         <h3 class="dot-apps-configuration__service-name" (click)="goToApps(app.key)">

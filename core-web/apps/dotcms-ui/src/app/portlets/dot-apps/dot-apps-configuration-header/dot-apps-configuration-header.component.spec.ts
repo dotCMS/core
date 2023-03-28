@@ -1,18 +1,28 @@
 import { MarkdownService } from 'ngx-markdown';
 
 import { CommonModule } from '@angular/common';
-import { DebugElement } from '@angular/core';
+import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { DotAvatarModule } from '@components/_common/dot-avatar/dot-avatar.module';
+import { AvatarModule } from 'primeng/avatar';
+
 import { DotCopyLinkModule } from '@components/dot-copy-link/dot-copy-link.module';
+import { DotAvatarDirective } from '@directives/dot-avatar/dot-avatar.directive';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotMessageService } from '@dotcms/data-access';
+import { DotApps } from '@dotcms/dotcms-models';
 import { MockDotMessageService, MockDotRouterService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotAppsConfigurationHeaderComponent } from './dot-apps-configuration-header.component';
+
+@Component({
+    template: `<dot-apps-configuration-header [app]="app"></dot-apps-configuration-header>`
+})
+class TestHostComponent {
+    app: DotApps;
+}
 
 const messages = {
     'apps.configurations': 'Configurations',
@@ -33,8 +43,8 @@ const appData = {
 };
 
 describe('DotAppsConfigurationHeaderComponent', () => {
-    let component: DotAppsConfigurationHeaderComponent;
-    let fixture: ComponentFixture<DotAppsConfigurationHeaderComponent>;
+    let component: TestHostComponent;
+    let fixture: ComponentFixture<TestHostComponent>;
     let routerService: DotRouterService;
     let de: DebugElement;
 
@@ -42,8 +52,14 @@ describe('DotAppsConfigurationHeaderComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [CommonModule, DotAvatarModule, DotCopyLinkModule, DotPipesModule],
-            declarations: [DotAppsConfigurationHeaderComponent],
+            imports: [
+                CommonModule,
+                DotCopyLinkModule,
+                DotPipesModule,
+                DotAvatarDirective,
+                AvatarModule
+            ],
+            declarations: [DotAppsConfigurationHeaderComponent, TestHostComponent],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 {
@@ -56,9 +72,9 @@ describe('DotAppsConfigurationHeaderComponent', () => {
     }));
 
     beforeEach(() => {
-        fixture = TestBed.createComponent(DotAppsConfigurationHeaderComponent);
+        fixture = TestBed.createComponent(TestHostComponent);
         de = fixture.debugElement;
-        component = fixture.debugElement.componentInstance;
+        component = fixture.componentInstance;
         routerService = fixture.debugElement.injector.get(DotRouterService);
         component.app = appData;
         fixture.detectChanges();
@@ -89,18 +105,23 @@ describe('DotAppsConfigurationHeaderComponent', () => {
     });
 
     it('should DotCopy & DotAvatar with right properties', () => {
-        const dotAvatar = de.query(By.css('dot-avatar')).componentInstance;
+        const avatar = de.query(By.css('p-avatar')).componentInstance;
         const dotCopy = de.query(By.css('dot-copy-link')).componentInstance;
-        expect(dotAvatar.label).toBe(component.app.name);
-        expect(dotAvatar.size).toBe(112);
-        expect(dotAvatar.url).toBe(component.app.iconUrl);
+
+        expect(avatar.image).toBe(component.app.iconUrl);
+        expect(avatar.size).toBe('xlarge');
+
+        component.app.iconUrl = undefined;
+        fixture.detectChanges();
+        expect(avatar.label).toBe(component.app.name.charAt(0).toUpperCase());
+
         expect(dotCopy.label).toBe(component.app.key);
         expect(dotCopy.copy).toBe(component.app.key);
     });
 
     it('should redirect to detail configuration list page when app Card clicked', () => {
-        const dotAvatar = de.query(By.css('dot-avatar'));
-        dotAvatar.triggerEventHandler('click', { key: appData.key });
+        const avatar = de.query(By.css('p-avatar'));
+        avatar.triggerEventHandler('click', { key: appData.key });
         expect(routerService.goToAppsConfiguration).toHaveBeenCalledWith(component.app.key);
         const title = de.query(By.css('.dot-apps-configuration__service-name'));
         title.triggerEventHandler('click', { key: appData.key });
