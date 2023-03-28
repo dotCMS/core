@@ -9,28 +9,28 @@ p {
 
     &__title {
         margin: $spacing-0;
-        font-size: $font-size-large;
+        font-size: $font-size-lg;
         font-weight: $font-weight-bold;
     }
 
     &__headers {
         padding: $spacing-1 $spacing-3;
         gap: $spacing-3;
-        font-size: $font-size-medium;
+        font-size: $font-size-md;
         font-weight: $font-weight-bold;
-        color: $color-gray-600;
-        background-color: $color-gray-100;
-        border-radius: $border-radius-md;
+        color: $color-palette-gray-600;
+        background-color: $color-palette-gray-100;
+        border-radius: $border-radius-sm;
     }
 
     &__conditions {
-        background-color: $color-gray-100;
-        border-radius: $border-radius-md;
+        background-color: $color-palette-gray-100;
+        border-radius: $border-radius-sm;
         font-weight: $font-weight-bold;
     }
 
     &__condition-row {
-        adding: $spacing-1 $spacing-3;
+        padding: $spacing-1 $spacing-3;
         gap: $spacing-3;
         font-weight: $font-weight-regular-bold;
     }

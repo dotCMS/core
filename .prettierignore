@@ -19,5 +19,6 @@ core-web/.storybook
 core-web/karma_html
 core-web/docs
 core-web/.angular
-core-web/*.md
+core-web/**/*.md
+core-web/**/*.d.ts
 core-web/decorate-angular-cli.js

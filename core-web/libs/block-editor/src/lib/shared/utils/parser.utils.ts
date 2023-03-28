@@ -27,13 +27,18 @@ const imageContent: BlockMap = {
     dotImage: true
 };
 
+const video: BlockMap = {
+    dotVideo: true
+};
+
 const basicNodes: BlockMap = { paragrah: true, text: true, doc: true };
 
 const relatedContent = {
     image: imageContent,
     table: tableContent,
     orderedList: orderedListContent,
-    bulletList: bulletListContent
+    bulletList: bulletListContent,
+    video
 };
 
 /**

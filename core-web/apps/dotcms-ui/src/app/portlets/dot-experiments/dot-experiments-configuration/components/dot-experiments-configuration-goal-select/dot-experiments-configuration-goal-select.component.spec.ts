@@ -13,6 +13,7 @@ import { CardModule } from 'primeng/card';
 import { DropdownModule } from 'primeng/dropdown';
 import { Sidebar } from 'primeng/sidebar';
 
+import { DotMessagePipe } from '@dotcms/app/view/pipes';
 import { DotMessageService } from '@dotcms/data-access';
 import { DefaultGoalConfiguration, ExperimentSteps, GOAL_TYPES } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -27,7 +28,8 @@ import { DotExperimentsConfigurationGoalSelectComponent } from './dot-experiment
 
 const messageServiceMock = new MockDotMessageService({
     'experiments.configure.goals.sidebar.header': 'Select a goal',
-    'experiments.configure.goals.sidebar.header.button': 'Apply'
+    'experiments.configure.goals.sidebar.header.button': 'Apply',
+    'experiments.configure.goals.name.default': 'Primary goal'
 });
 
 const EXPERIMENT_MOCK = getExperimentMock(0);
@@ -55,7 +57,8 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
                 provide: DotMessageService,
                 useValue: messageServiceMock
             },
-            mockProvider(DotHttpErrorManagerService)
+            mockProvider(DotHttpErrorManagerService),
+            DotMessagePipe
         ]
     });
 
@@ -76,8 +79,12 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
         spectator.detectChanges();
     });
 
-    it('should have a form', () => {
+    it('should have a form & autofocus', () => {
         expect(spectator.query(byTestId('select-goal-form'))).toExist();
+        expect(spectator.query(byTestId('goal-name-input'))).toHaveAttribute('dotAutofocus');
+        expect((spectator.query(byTestId('goal-name-input')) as HTMLInputElement).value).toEqual(
+            'Primary goal'
+        );
     });
 
     it('should have rendered BOUCE_RATE and REACH_PAGE options items', () => {

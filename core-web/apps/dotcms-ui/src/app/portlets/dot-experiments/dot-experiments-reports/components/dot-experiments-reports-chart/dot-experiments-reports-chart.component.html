@@ -1,0 +1,16 @@
+<div class="flex flex-column gap-2">
+    <div class="flex flex-row justify-content-between header">
+        <h1 class="header-title" data-testId="chart-title">
+            {{ 'experiments.reports.daily-results' | dm }}
+        </h1>
+        <div id="legend-container" data-testId="chart-legends"></div>
+    </div>
+
+    <p-chart
+        [data]="data"
+        [options]="dotExperimentsChartJSOptions"
+        [plugins]="customChartPlugins"
+        height="35vh"
+        width="100%"
+    ></p-chart>
+</div>

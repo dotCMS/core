@@ -13,7 +13,7 @@
 
 .avatar__placeholder {
     border-radius: 50%;
-    background-color: $brand-secondary;
+    background-color: $color-palette-secondary;
     color: $white;
     font-family: "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
     line-height: 1.2em;
@@ -21,7 +21,7 @@
 }
 
 .avatar__dot {
-    background-color: $brand-primary;
+    background-color: $color-palette-primary;
     bottom: -2px;
     border: 1px solid $white;
     border-radius: 50%;
