@@ -22,7 +22,7 @@ import { DotAppsCardComponent } from './dot-apps-card.component';
 })
 class MockMarkdownComponent {}
 
-fdescribe('DotAppsCardComponent', () => {
+describe('DotAppsCardComponent', () => {
     let component: DotAppsCardComponent;
     let fixture: ComponentFixture<DotAppsCardComponent>;
 
