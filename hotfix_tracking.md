@@ -18,3 +18,6 @@ This maintenance release includes the following code fixes:
 12. https://github.com/dotCMS/core/issues/24351 : Configuration of S3Client to target endpoint unable to sent css files outside AWS #24351
 13. https://github.com/dotCMS/core/issues/24358 : File Browser Only Showing Content in the Backend Language #24358
 14. https://github.com/dotCMS/core/issues/24272 : File Browse Not Working as Expected #24272
+
+**Release-23.01.2**
+
