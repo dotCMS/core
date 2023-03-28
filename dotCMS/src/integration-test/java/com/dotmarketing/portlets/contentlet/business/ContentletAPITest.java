@@ -37,6 +37,7 @@ import com.dotcms.mock.request.MockInternalRequest;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
+import com.liferay.portal.auth.PrincipalThreadLocal;
 import org.apache.commons.io.FileUtils;
 import com.dotcms.storage.FileMetadataAPI;
 import com.dotcms.storage.model.Metadata;
@@ -7710,8 +7711,8 @@ public class ContentletAPITest extends ContentletBaseTest {
     }
 
     @DataProvider
-    public static Object[] testCasesDateTime() {
-        return new Object[]{" +0000", "00:00 +0000"};
+    public static Object[] testCasesClearDateTime() {
+        return new Object[]{"", null};
     }
 
     /**
@@ -7721,7 +7722,7 @@ public class ContentletAPITest extends ContentletBaseTest {
      *
      */
     @Test
-    @UseDataProvider("testCasesDateTime")
+    @UseDataProvider("testCasesClearDateTime")
     public void clearDateTimeFieldValue(final String testCase) throws Exception {
         // create content type with JSON field
         ContentType typeWithDateTimeField = new ContentTypeDataGen().nextPersisted();
@@ -7740,7 +7741,66 @@ public class ContentletAPITest extends ContentletBaseTest {
         // Save the content
         contentletWithDate = contentletAPI.checkin(contentletWithDate, user, Boolean.TRUE);
 
-        assertEquals(null, contentletWithDate.getStringProperty(typeWithDateTimeField.variable()));
+        assertEquals(null, contentletWithDate.getStringProperty(dateTimeField.variable()));
+    }
+
+    @DataProvider
+    public static Object[][] testCasesDateTimeWithTimeZone() {
+        return new Object[][]{
+                {"UTC", "2023-03-15 15:45 +0000"},                    // UTC
+                {"America/New_York", "2023-02-15 15:45 -0500"},       // EST
+                {"America/New_York", "2023-03-15 16:45 -0400"},       // EDT
+                {"America/Chicago", "2023-02-15 14:45 -0600"},        // CST
+                {"America/Chicago", "2023-03-15 15:45 -0500"},        // CDT
+                {"America/Los_Angeles", "2023-02-15 12:45 -0800"},    // PST
+                {"America/Los_Angeles", "2023-03-15 13:45 -0700"}     // PDT
+        };
+    }
+
+    /**
+     * Given scenario: Contentlet with a {@link DateTimeField} when the system timezone is different from UTC (+0000)
+     */
+    @Test
+    @UseDataProvider("testCasesDateTimeWithTimeZone")
+    public void setDateTimeFieldValueWithTimeZone(String timeZoneId, String dateToSave) throws Exception {
+
+        // save current timezone and language
+        PrincipalThreadLocal.setName(APILocator.systemUser().getUserId());
+        final TimeZone currentTimeZone = APILocator.systemTimeZone();
+        final String currentLanguageId = APILocator.getCompanyAPI().getDefaultCompany().getLocale().getLanguage();
+        try {
+
+            // set system timezone
+            APILocator.getCompanyAPI().updateDefaultUserSettings(currentLanguageId, timeZoneId,
+                    null, false, false, null);
+
+            // create content type with JSON field
+            final ContentType typeWithDateTimeField = new ContentTypeDataGen().nextPersisted();
+            com.dotcms.contenttype.model.field.Field dateTimeField = new FieldDataGen()
+                    .type(DateTimeField.class)
+                    .contentTypeId(typeWithDateTimeField.id())
+                    .defaultValue(null)
+                    .nextPersisted();
+
+            Contentlet contentletWithDate = new ContentletDataGen(typeWithDateTimeField)
+                    .next();
+
+            contentletAPI.setContentletProperty(contentletWithDate,
+                    new LegacyFieldTransformer(dateTimeField).asOldField(), dateToSave);
+
+            // Save the content
+            contentletWithDate = contentletAPI.checkin(contentletWithDate, user, Boolean.TRUE);
+
+            final Date expectedDate = DateUtil.convertDate(dateToSave);
+
+            assertEquals(expectedDate, contentletWithDate.getDateProperty(dateTimeField.variable()));
+
+        } finally {
+            // restore timezone and language
+            APILocator.getCompanyAPI().updateDefaultUserSettings(currentLanguageId, currentTimeZone.getID(),
+                    null, false, false, null);
+            PrincipalThreadLocal.setName(null);
+        }
     }
 
     /**
