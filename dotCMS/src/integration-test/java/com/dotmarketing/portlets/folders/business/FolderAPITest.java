@@ -831,7 +831,7 @@ public class FolderAPITest {//24 contentlets
 		APILocator.getContentletAPI().checkin(htmlPageAssetNewVersion, user, false);
 
 		final Contentlet htmlPageAssetSpanish = APILocator.getContentletAPI().checkout(htmlPageAsset.getInode(),user,false);
-		htmlPageAssetSpanish.setLanguageId(2);
+		htmlPageAssetSpanish.setLanguageId(TestDataUtils.getSpanishLanguage().getId());
 		APILocator.getContentletAPI().checkin(htmlPageAssetSpanish, user, false);
 
 		final Contentlet fileAsset = new FileAssetDataGen(folder, "this is content").nextPersisted();
@@ -842,7 +842,7 @@ public class FolderAPITest {//24 contentlets
 		APILocator.getContentletAPI().checkin(fileAssetNewVersion, user, false);
 
 		final Contentlet fileAssetSpanish = APILocator.getContentletAPI().checkout(fileAsset.getInode(),user,false);
-		fileAssetSpanish.setLanguageId(2);
+		fileAssetSpanish.setLanguageId(TestDataUtils.getSpanishLanguage().getId());
 		APILocator.getContentletAPI().checkin(fileAssetSpanish, user, false);
 
 		final Contentlet htmlPageAssetLive = new HTMLPageDataGen(host, template).host(host).folder(folder)
