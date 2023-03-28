@@ -14,16 +14,15 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotPersonaSelectorOptionComponent } from './dot-persona-selector-option.component';
 
-//Create a HostTestComponent to test DotPersonaSelectorOptionComponent
 @Component({
     template: `<dot-persona-selector-option [persona]="persona"></dot-persona-selector-option>`
 })
-class HostTestComponent {
+class TestHostComponent {
     persona = mockDotPersona;
 }
 describe('DotPersonaSelectorOptionComponent', () => {
     let component: DotPersonaSelectorOptionComponent;
-    let fixture: ComponentFixture<HostTestComponent>;
+    let fixture: ComponentFixture<TestHostComponent>;
     let de: DebugElement;
 
     const messageServiceMock = new MockDotMessageService({
@@ -32,7 +31,7 @@ describe('DotPersonaSelectorOptionComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [DotPersonaSelectorOptionComponent, HostTestComponent],
+            declarations: [DotPersonaSelectorOptionComponent, TestHostComponent],
             imports: [
                 BrowserAnimationsModule,
                 DotAvatarDirective,
@@ -49,7 +48,7 @@ describe('DotPersonaSelectorOptionComponent', () => {
             ]
         }).compileComponents();
 
-        fixture = TestBed.createComponent(HostTestComponent);
+        fixture = TestBed.createComponent(TestHostComponent);
         component = fixture.debugElement.query(
             By.css('dot-persona-selector-option')
         ).componentInstance;
@@ -98,7 +97,8 @@ describe('DotPersonaSelectorOptionComponent', () => {
 
     describe('not personalize', () => {
         it('should label not set personalized class', () => {
-            component.persona = {
+            const hostComp = fixture.componentInstance;
+            hostComp.persona = {
                 ...mockDotPersona,
                 personalized: false
             };
@@ -114,7 +114,8 @@ describe('DotPersonaSelectorOptionComponent', () => {
         });
 
         it('should not display personalized button when personalized is false', () => {
-            component.persona = {
+            const hostComp = fixture.componentInstance;
+            hostComp.persona = {
                 ...mockDotPersona,
                 personalized: false
             };
@@ -125,9 +126,6 @@ describe('DotPersonaSelectorOptionComponent', () => {
         });
 
         it('should not display personalized button when canDespersonalize is false', () => {
-            component.persona = {
-                ...mockDotPersona
-            };
             component.canDespersonalize = false;
             fixture.detectChanges();
 
