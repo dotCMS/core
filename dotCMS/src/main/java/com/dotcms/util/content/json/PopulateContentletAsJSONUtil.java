@@ -37,12 +37,15 @@ import java.util.stream.Stream;
 
 import static com.dotcms.content.business.json.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
 
+/**
+ * Utility class to populate the contentlet_as_json column in the contentlet table.
+ */
 public class PopulateContentletAsJSONUtil {
 
     private final ContentletJsonAPI contentletJsonAPI;
 
     // Query to find all the contentlets for a given asset_subtype and have a null contentlet_as_json
-    private final String SUBTYPE_WITH_NO_JSON = "select c.*" +
+    private final String SUBTYPE_WITH_NO_JSON = "select c.* " +
             "from contentlet c" +
             "         JOIN identifier i ON i.id = c.identifier" +
             "         JOIN contentlet_version_info cv ON i.id = cv.identifier" +
@@ -50,7 +53,7 @@ public class PopulateContentletAsJSONUtil {
             "   WHERE i.asset_subtype = '%s' AND c.contentlet_as_json IS NULL;";
 
     // Query to find all the contentlets that have a null contentlet_as_json
-    private final String CONTENTS_WITH_NO_JSON = "select c.*" +
+    private final String CONTENTS_WITH_NO_JSON = "select c.* " +
             "from contentlet c" +
             "         JOIN identifier i ON i.id = c.identifier" +
             "         JOIN contentlet_version_info cv ON i.id = cv.identifier" +
@@ -58,7 +61,7 @@ public class PopulateContentletAsJSONUtil {
             "   WHERE i.asset_type = 'contentlet' AND c.contentlet_as_json IS NULL;";
 
     // Query to find all the contentlets that are NOT of a given asset_subtype and have a null contentlet_as_json
-    private final String CONTENTS_WITH_NO_JSON_AND_EXCLUDE = "select c.*" +
+    private final String CONTENTS_WITH_NO_JSON_AND_EXCLUDE = "select c.* " +
             "from contentlet c" +
             "         JOIN identifier i ON i.id = c.identifier" +
             "         JOIN contentlet_version_info cv ON i.id = cv.identifier" +
@@ -66,13 +69,16 @@ public class PopulateContentletAsJSONUtil {
             "   WHERE i.asset_subtype <> '%s' AND i.asset_type = 'contentlet' AND c.contentlet_as_json IS NULL;";
 
     // Query to update the contentlet_as_json column of the contentlet table
-    private final String UPDATE_CONTENTLET_AS_JSON = "UPDATE contentlet SET contentlet_as_json = ? WHERE inode = ?";
+    private final String UPDATE_CONTENTLET_AS_JSON = "UPDATE contentlet SET contentlet_as_json = ? " +
+            "WHERE inode = ? AND contentlet_as_json IS NULL";
 
     // Cursor related queries
     private final String DECLARE_CURSOR = "DECLARE missingContentletAsJSONCursor CURSOR FOR %s";
     private final String FETCH_CURSOR_POSTGRES = "FETCH FORWARD %s FROM missingContentletAsJSONCursor";
-    private final String FETCH_CURSOR_MSSQL = "FETCH NEXT %s FROM missingContentletAsJSONCursor";
+    private final String FETCH_CURSOR_MSSQL = "FETCH NEXT FROM missingContentletAsJSONCursor";
+    private final String OPEN_CURSOR_MSSQL = "OPEN missingContentletAsJSONCursor";
     private final String CLOSE_CURSOR = "CLOSE missingContentletAsJSONCursor";
+    private final String DEALLOCATE_CURSOR_MSSQL = "DEALLOCATE missingContentletAsJSONCursor";
 
     private static class SingletonHolder {
         private static final PopulateContentletAsJSONUtil INSTANCE = new PopulateContentletAsJSONUtil();
@@ -107,6 +113,7 @@ public class PopulateContentletAsJSONUtil {
      * @throws IOException
      */
     public void populateForAssetSubType(String assetSubtype) throws SQLException, DotDataException, IOException {
+        Logger.info(this, String.format("Populate Contentlet as JSON task started for asset subtype [%s]", assetSubtype));
         populate(assetSubtype, null);
     }
 
@@ -120,6 +127,7 @@ public class PopulateContentletAsJSONUtil {
      * @throws IOException
      */
     public void populateExcludingAssetSubType(String assetSubtype) throws SQLException, DotDataException, IOException {
+        Logger.info(this, String.format("Populate Contentlet as JSON task started excluding asset subtype [%s]", assetSubtype));
         populate(null, assetSubtype);
     }
 
@@ -138,6 +146,8 @@ public class PopulateContentletAsJSONUtil {
             throws SQLException, DotDataException, IOException {
 
         final File populateJSONTaskDataFile = File.createTempFile("rows-task-230320", "tmp");
+
+        Logger.debug(this, "File created: " + populateJSONTaskDataFile.getAbsolutePath());
 
         try {
 
@@ -180,6 +190,8 @@ public class PopulateContentletAsJSONUtil {
 
         var fileWriter = new BufferedWriter(new FileWriter(populateJSONTaskDataFile));
 
+        int recordsProcessed = 0;
+
         try (final Connection conn = DbConnectionFactory.getConnection();
              var stmt = conn.createStatement()) {
 
@@ -196,32 +208,34 @@ public class PopulateContentletAsJSONUtil {
                 stmt.execute(String.format(DECLARE_CURSOR, selectQuery));
             }
 
+            if (DbConnectionFactory.isMsSql()) {
+                stmt.execute(OPEN_CURSOR_MSSQL);
+            }
+
             boolean hasRows;
 
             do {
 
-                hasRows = false;
-
                 // Fetching batches of 100 records
-                var batchSize = 100;
                 if (DbConnectionFactory.isMsSql()) {
-                    stmt.execute(String.format(FETCH_CURSOR_MSSQL, batchSize));
+                    stmt.execute(FETCH_CURSOR_MSSQL);
                 } else {
+                    var batchSize = 100;
                     stmt.execute(String.format(FETCH_CURSOR_POSTGRES, batchSize));
                 }
 
                 try (ResultSet rs = stmt.getResultSet()) {
 
-                    // Process the batch of rows
-                    while (rs.next()) {
+                    // Now we want to write the found Contentlets into a file for a later processing
+                    var dotConnect = new DotConnect();
+                    dotConnect.fromResultSet(rs);
+
+                    var loadedResults = dotConnect.loadObjectResults();
+                    recordsProcessed += loadedResults.size();
+
+                    if (!loadedResults.isEmpty()) {
 
                         hasRows = true;
-
-                        // Now we want to write the found Contentlets into a file for a later processing
-                        var dotConnect = new DotConnect();
-                        dotConnect.fromResultSet(rs);
-
-                        var loadedResults = dotConnect.loadObjectResults();
 
                         var jsonDataArray = Optional.ofNullable(loadedResults)
                                 .map(results ->
@@ -239,6 +253,8 @@ public class PopulateContentletAsJSONUtil {
                             fileWriter.write(jsonData);
                             fileWriter.newLine();
                         }
+                    } else {
+                        hasRows = false;
                     }
                 }
 
@@ -249,9 +265,14 @@ public class PopulateContentletAsJSONUtil {
 
             // Close the cursor
             stmt.execute(CLOSE_CURSOR);
+            if (DbConnectionFactory.isMsSql()) {
+                stmt.execute(DEALLOCATE_CURSOR_MSSQL);
+            }
         } finally {
             CloseUtils.closeQuietly(fileWriter);
         }
+
+        Logger.info(this, "Records to process: " + recordsProcessed);
     }
 
     /**
@@ -262,6 +283,8 @@ public class PopulateContentletAsJSONUtil {
      */
     @WrapInTransaction
     private void processFile(final File taskDataFile) throws IOException {
+
+        Logger.info(this, "Updating records with missing Contentlet as JSON");
 
         try (final Stream<String> streamLines = Files.lines(taskDataFile.toPath())) {
 
@@ -274,6 +297,8 @@ public class PopulateContentletAsJSONUtil {
                     })// Map each line to Tuple (inode, contentlet_as_json)
                     .forEach(wrapCheckedConsumer(this::updateContentlet));// Update each contentlet in the DB
         }
+
+        Logger.info(this, "Updated records with missing Contentlet as JSON");
     }
 
     /**
