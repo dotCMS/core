@@ -138,6 +138,7 @@ public class VariantAPIImpl implements VariantAPI {
         return variantFactory.getVariants();
     }
 
+    @WrapInTransaction
     @Override
     public void promote(final Variant variant, final User user) throws DotDataException {
 

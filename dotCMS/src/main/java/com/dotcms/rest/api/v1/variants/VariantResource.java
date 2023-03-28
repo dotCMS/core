@@ -50,8 +50,8 @@ public class VariantResource {
         return Response.ok().build();
     }
 
-    private InitDataObject getInitData(@Context HttpServletRequest request,
-            @Context HttpServletResponse response) {
+    private InitDataObject getInitData(final HttpServletRequest request,
+            final HttpServletResponse response) {
         return new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
