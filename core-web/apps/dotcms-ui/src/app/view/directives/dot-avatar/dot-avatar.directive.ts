@@ -1,4 +1,12 @@
-import { Directive, ElementRef, HostListener, OnInit } from '@angular/core';
+import {
+    Directive,
+    ElementRef,
+    HostListener,
+    Input,
+    OnChanges,
+    OnInit,
+    SimpleChanges
+} from '@angular/core';
 
 import { Avatar } from 'primeng/avatar';
 
@@ -6,8 +14,10 @@ import { Avatar } from 'primeng/avatar';
     selector: 'p-avatar[dotAvatar]',
     standalone: true
 })
-export class DotAvatarDirective implements OnInit {
+export class DotAvatarDirective implements OnInit, OnChanges {
     private _label: string;
+    @Input() readonly image: string;
+    @Input() readonly label: string;
 
     constructor(private avatar: Avatar, private el: ElementRef) {
         this.avatar.shape = 'circle';
@@ -19,6 +29,20 @@ export class DotAvatarDirective implements OnInit {
         // If theres an image we set the label to undefined
         //so if it fails on loading the event is triggered
         this.avatar.label = this.avatar.image ? undefined : this._label[0]?.toUpperCase();
+    }
+
+    ngOnChanges(changes: SimpleChanges) {
+        if (changes.label) {
+            this._label = changes.label.currentValue
+                ? changes.label.currentValue.charAt(0).toUpperCase()
+                : 'U';
+            this.avatar.label = this._label;
+        }
+
+        if (changes.image && changes.image.currentValue)
+            // If theres an image we set the label to undefined
+            //so if it fails on loading the event is triggered
+            this.avatar.label = this.avatar.image ? undefined : this._label[0]?.toUpperCase();
     }
 
     // This event doesn't trigger when label has a value, but I need to trigger it because
