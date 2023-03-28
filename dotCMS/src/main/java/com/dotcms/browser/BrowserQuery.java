@@ -118,17 +118,21 @@ public class BrowserQuery {
             // The ID belongs to a Folder
             folderObj = Try.of(() -> APILocator.getFolderAPI().find(parentId, user, respectFrontEndPermissions)).getOrElse(new Folder());
         }
-        String calculatedSiteId;
+        String calculatedSiteId = null;
+        // Determine the appropriate Site ID based on provided data
         if (isSite) {
             calculatedSiteId = UtilMethods.isSet(hostIdSystemFolder) ? hostIdSystemFolder : parentId;
         } else {
-            calculatedSiteId = Folder.SYSTEM_FOLDER.equals(folderObj.getInode()) ? hostIdSystemFolder : folderObj.getHostId();
+            if (null != folderObj) {
+                calculatedSiteId = Folder.SYSTEM_FOLDER.equals(folderObj.getInode()) && UtilMethods.isSet(hostIdSystemFolder) ? hostIdSystemFolder :
+                                           folderObj.getHostId();
+            }
         }
         final String siteId = calculatedSiteId;
         final Host siteObj = Try.of(() -> APILocator.getHostAPI().find(siteId, user, respectFrontEndPermissions)).getOrNull();
         if (null == folderObj || UtilMethods.isEmpty(folderObj.getIdentifier()) || null == siteObj || UtilMethods.isEmpty(siteObj.getIdentifier())) {
-            final String errorMsg = String.format("Parent ID '%s' does not match any existing Folder or Site.",
-                    parentId);
+            final String errorMsg = String.format("Parent ID '%s' [ %s ] does not match any existing Folder or Site.",
+                    parentId, siteId);
             Logger.error(this, errorMsg + ". Maybe the Site/Folder was modified or deleted in the background. If " +
                                        "System Folder is specified, then set a value for hostIdSystemFolder as well.");
             throw new DotRuntimeException(errorMsg);
