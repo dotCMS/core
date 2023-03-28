@@ -77,7 +77,7 @@ export class FloatingActionsView {
         this.view = view;
         this.element.addEventListener('mousedown', this.mousedownHandler, { capture: true });
         this.editor.on('focus', () => {
-            this.tippy.unmount();
+           // this.tippy.unmount();
             this.update(this.editor.view);
         });
         this.element.style.visibility = 'visible';
@@ -85,11 +85,9 @@ export class FloatingActionsView {
         this.command = command;
         this.key = key;
         this.createTooltip(tippyOptions);
-        this.tippy.show();
-
-        setTimeout(() => {
-            this.editor.view.focus();
-        }, 1000);
+        this.editor.on('create', () => {
+            this.show(); 
+        });
     }
 
     /**
@@ -112,13 +110,12 @@ export class FloatingActionsView {
     createTooltip(options: Partial<Props> = {}): void {
         this.tippy = tippy(this.view.dom, {
             duration: 0,
-            getReferenceClientRect: null,
+            getReferenceClientRect: () => posToDOMRect(this.editor.view, 1, 1),
             content: this.element,
             interactive: true,
             trigger: 'manual',
             placement: 'left',
             hideOnClick: 'toggle',
-            sticky: true,
             ...options
         });
     }
@@ -143,7 +140,7 @@ export class FloatingActionsView {
         const next = this.key?.getState(view.state);
         const prev = prevState ? this.key?.getState(prevState) : null;
 
-        if (!prev?.open && (!isActive || !empty)) {
+       if (!prev?.open && (!isActive || !empty)) {
             this.hide();
 
             return;
@@ -159,8 +156,7 @@ export class FloatingActionsView {
         this.tippy.setProps({
             getReferenceClientRect: () => posToDOMRect(view, from, to)
         });
-        this.show();
-
+        
         if (next.open) {
             const { from, to } = this.editor.state.selection;
             const rect = posToDOMRect(this.view, from, to);

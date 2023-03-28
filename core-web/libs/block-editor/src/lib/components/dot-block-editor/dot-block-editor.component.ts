@@ -14,7 +14,7 @@ import {
 
 import { debounceTime, take, takeUntil } from 'rxjs/operators';
 
-import { AnyExtension, Content, Editor } from '@tiptap/core';
+import { AnyExtension, Content, Editor, generateHTML } from '@tiptap/core';
 import CharacterCount, { CharacterCountStorage } from '@tiptap/extension-character-count';
 import { Level } from '@tiptap/extension-heading';
 import { Highlight } from '@tiptap/extension-highlight';
@@ -105,7 +105,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
 
     private _allowedBlocks: string[] = ['paragraph']; //paragraph should be always.
     private _customNodes: Map<string, AnyExtension> = new Map([
-        ['dotContent', ContentletBlock(this.injector)],
+
         ['image', ImageNode],
         ['video', VideoNode],
         ['table', DotTableExtension()]
@@ -160,7 +160,17 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
                     .subscribe(() => this.updateChartCount());
 
                 this.editor.on('update', ({ editor }) => {
-                    this.valueChange.emit(JSON.stringify(editor.getJSON()));
+                    console.log('Inner HTML:', editor.view.dom.innerHTML);
+                    // eslint-disable-next-line no-console
+                    
+                   /*  console.log('generate content:', generateHTML(editor.getJSON(), [
+                        ...this.getEditorExtensions(),
+                        ...this.getEditorMarks(),
+                        ...this.getEditorNodes(),
+                        ...extensions
+                    ])); */
+
+                    this.valueChange.emit(JSON.stringify(editor.getJSON(),));
                 });
 
                 this.editor.on('transaction', ({ editor }) => {
@@ -324,13 +334,14 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
      */
     private getAllowedCustomNodes(): AnyExtension[] {
         const whiteList = [];
-
+        this._customNodes.set('dotContent', ContentletBlock(this.injector, this.editor));
         // If only paragraph is included
         // We do not need to filter
         if (this._allowedBlocks.length <= 1) {
             return [...this._customNodes.values()];
         }
 
+  
         for (const block of this._allowedBlocks) {
             const node = this._customNodes.get(block);
             if (node) {

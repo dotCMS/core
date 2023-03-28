@@ -2,7 +2,7 @@ import { DOMOutputSpec, ParseRule } from 'prosemirror-model';
 
 import { Injector } from '@angular/core';
 
-import { mergeAttributes, Node, NodeViewRenderer } from '@tiptap/core';
+import { Editor, generateHTML, mergeAttributes, Node, NodeViewRenderer } from '@tiptap/core';
 
 import { ContentletBlockComponent } from './contentlet-block.component';
 
@@ -13,7 +13,7 @@ export type ContentletBlockOptions = {
     HTMLAttributes: Record<string, unknown>;
 };
 
-export const ContentletBlock = (injector: Injector): Node<ContentletBlockOptions> => {
+export const ContentletBlock = (injector: Injector, editor: Editor): Node<ContentletBlockOptions> => {
     return Node.create({
         name: 'dotContent',
         group: 'block',
@@ -39,18 +39,21 @@ export const ContentletBlock = (injector: Injector): Node<ContentletBlockOptions
             return [{ tag: 'dotcms-contentlet-block' }];
         },
 
-        renderHTML(props): DOMOutputSpec {
-            console.log('props', props);
-            const renderer = new AngularRenderer(ContentletBlockComponent, injector, {
-                width: '94',
-                height: '94',
-                iconSize: "'72px'",
-                contentlet: props.HTMLAttributes.data
-            });
-            console.log('renderer', renderer.dom);
-            console.log('HTMLAttributes', props.HTMLAttributes);
+        renderHTML( props): DOMOutputSpec {
 
-            return [
+           // const renderer = new AngularRenderer(ContentletBlockComponent, injector, props);
+            
+            //const renderer = new AngularRenderer(DotContentletThumbnail, injector, props);
+          //  console.log('renderer dom 2:', renderer.dom);
+    
+         //   console.log('editor.view.dom', editor.view.dom);
+            //console.log('HTMLAttributes:', props.HTMLAttributes);
+           // const parser = new DOMParser;
+         
+             /*  parser.parseFromString("<div></div>", 'text/html');
+            
+          //  return  parser.parseFromString("<div></div>", 'text/html');
+        /*      return [
                 'dot-contentlet-thumbnail',
                 {
                     width: '94',
@@ -58,7 +61,16 @@ export const ContentletBlock = (injector: Injector): Node<ContentletBlockOptions
                     iconSize: "'72px'",
                     contentlet: props.HTMLAttributes.data
                 }
-            ];
+            ]; */
+
+            // eslint-disable-next-line no-console
+            //console.log("getJSON",editor.getJSON())
+           // console.log("getHTML", generateHTML(editor.getJSON(), editor.))
+           // console.log("renderer", renderer.dom)
+            
+            //return renderer.dom;
+
+            return ['dotcms-contentlet-block', mergeAttributes(props.HTMLAttributes)];
         },
 
         addNodeView(): NodeViewRenderer {
