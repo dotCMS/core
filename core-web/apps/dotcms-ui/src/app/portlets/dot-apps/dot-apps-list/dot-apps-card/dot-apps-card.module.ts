@@ -3,10 +3,12 @@ import { MarkdownModule } from 'ngx-markdown';
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 
+import { AvatarModule } from 'primeng/avatar';
+import { BadgeModule } from 'primeng/badge';
 import { CardModule } from 'primeng/card';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotAvatarModule } from '@components/_common/dot-avatar/dot-avatar.module';
+import { DotAvatarDirective } from '@directives/dot-avatar/dot-avatar.directive';
 import { DotIconModule } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
@@ -16,7 +18,9 @@ import { DotAppsCardComponent } from './dot-apps-card.component';
     imports: [
         CommonModule,
         CardModule,
-        DotAvatarModule,
+        DotAvatarDirective,
+        AvatarModule,
+        BadgeModule,
         DotIconModule,
         MarkdownModule.forChild(),
         TooltipModule,

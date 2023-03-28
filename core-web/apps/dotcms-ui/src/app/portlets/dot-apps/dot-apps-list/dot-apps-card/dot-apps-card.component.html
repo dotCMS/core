@@ -5,12 +5,21 @@
     (click)="actionFired.emit(app.key)"
 >
     <p-header>
-        <dot-avatar
-            [showDot]="!!app.configurationsCount"
-            [size]="40"
-            [url]="app.iconUrl"
+        <p-avatar
+            *ngIf="app.configurationsCount"
+            [image]="app.iconUrl"
             [label]="app.name"
-        ></dot-avatar>
+            size="large"
+            dotAvatar
+            pBadge
+        ></p-avatar>
+        <p-avatar
+            *ngIf="!app.configurationsCount"
+            [image]="app.iconUrl"
+            [label]="app.name"
+            size="large"
+            dotAvatar
+        ></p-avatar>
         <div class="dot-apps-card__label-container">
             <span class="dot-apps-card__name">
                 {{ app.name }}
