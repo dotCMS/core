@@ -1,27 +1,24 @@
 import * as md5 from 'md5';
 import { Observable, of } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
-import { Component, DebugElement, Input } from '@angular/core';
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import { AsyncPipe } from '@angular/common';
+import { Component, DebugElement } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
+import { AvatarModule } from 'primeng/avatar';
+
+import { DotAvatarDirective } from '@directives/dot-avatar/dot-avatar.directive';
 import { DotGravatarService } from '@dotcms/app/api/services/dot-gravatar-service';
 
 import { DotGravatarComponent } from './dot-gravatar.component';
 
-import { DotAvatarModule } from '../../../_common/dot-avatar/dot-avatar.module';
-
 @Component({
     selector: 'dot-test-component',
-    template: `<dot-gravatar [email]="email" [size]="size"> </dot-gravatar>`
+    template: `<dot-gravatar [email]="email"> </dot-gravatar>`
 })
 class HostTestComponent {
-    @Input()
     email: string;
-
-    @Input()
-    size: number;
 }
 
 class DotGravatarServiceMock {
@@ -35,44 +32,41 @@ describe('DotGravatarComponent', () => {
     let avatarComponent: DebugElement;
     let dotGravatarService: DotGravatarService;
 
-    beforeEach(waitForAsync(() => {
-        TestBed.configureTestingModule({
+    beforeEach(async () => {
+        await TestBed.configureTestingModule({
             declarations: [HostTestComponent],
-            imports: [DotAvatarModule, CommonModule, DotGravatarComponent],
+            imports: [DotGravatarComponent, AsyncPipe, DotAvatarDirective, AvatarModule],
             providers: [{ provide: DotGravatarService, useClass: DotGravatarServiceMock }]
-        });
-    }));
+        }).compileComponents();
 
-    beforeEach(() => {
         fixture = TestBed.createComponent(HostTestComponent);
         fixture.detectChanges();
-        avatarComponent = fixture.debugElement.query(By.css('dot-avatar'));
-
+        avatarComponent = fixture.debugElement.query(By.css('p-avatar'));
         dotGravatarService = fixture.debugElement.injector.get(DotGravatarService);
     });
 
-    it('should have a dot-avatar', () => {
+    it('should have a p-avatar', () => {
         expect(avatarComponent).not.toBeNull();
     });
 
-    it('should set dot-avatar size', () => {
-        fixture.componentInstance.size = 20;
-        fixture.detectChanges();
-        expect(avatarComponent.componentInstance.size).toEqual(20);
-    });
-
-    it('should set dot-avatar label', () => {
+    it('should set p-avatar label', (done) => {
         fixture.componentInstance.email = 'a@a.com';
         fixture.detectChanges();
-        expect(avatarComponent.componentInstance.label).toEqual('a@a.com');
+
+        setTimeout(() => {
+            fixture.detectChanges();
+            expect(avatarComponent.componentInstance.label).toEqual('A');
+            done();
+        }, 100);
     });
 
-    it('should set dot-avatar label', () => {
+    it('should set p-avatar image', () => {
         fixture.componentInstance.email = 'a@a.com';
         spyOn(dotGravatarService, 'getPhoto').and.callThrough();
 
         fixture.detectChanges();
-        expect(avatarComponent.componentInstance.url).toEqual('/avatar_url');
+
+        expect(avatarComponent.componentInstance.image).toEqual('/avatar_url');
 
         expect(dotGravatarService.getPhoto).toHaveBeenCalledWith(
             md5(fixture.componentInstance.email)

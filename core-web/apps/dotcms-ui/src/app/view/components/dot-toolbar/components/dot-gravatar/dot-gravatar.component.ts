@@ -17,11 +17,7 @@ import { DotAvatarDirective } from '@dotcms/app/view/directives/dot-avatar/dot-a
     imports: [AsyncPipe, AvatarModule, DotAvatarDirective]
 })
 export class DotGravatarComponent implements OnChanges {
-    @Input()
-    email: string;
-
-    @Input()
-    size: number;
+    @Input() email: string;
 
     avatarUrl$: Observable<string>;
 
