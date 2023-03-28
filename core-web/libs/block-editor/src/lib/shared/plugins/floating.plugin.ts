@@ -79,7 +79,7 @@ export class FloatingActionsView {
         this.element.addEventListener('mousedown', this.mousedownHandler, { capture: true });
         this.editor.on('focus', () => {
             this.tippy.unmount();
-            this.update(this.editor.view);
+            this.update(this.view);
         });
         this.element.style.visibility = 'visible';
         this.render = render;
@@ -108,7 +108,6 @@ export class FloatingActionsView {
     createTooltip(options: Partial<Props> = {}): void {
         const { element: editorElement } = this.editor.options;
         const editorIsAttached = !!editorElement.parentElement;
-
         if (this.tippy || !editorIsAttached) {
             return;
         }
