@@ -74,6 +74,7 @@ import com.google.common.collect.Lists;
 import com.google.common.primitives.Ints;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
+import java.util.Collection;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
@@ -122,12 +123,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.jetbrains.annotations.Nullable;
 
 import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.MAX_LIMIT;
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
-import static com.dotmarketing.db.DbConnectionFactory.isMsSql;
 import static com.dotmarketing.db.DbConnectionFactory.isPostgres;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.AUTO_ASSIGN_WORKFLOW;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITLE_IMAGE_KEY;
@@ -1006,33 +1005,31 @@ public class ESContentFactoryImpl extends ContentletFactory {
         DotPreconditions.notNull(identifier, () -> "Identifier cannot be null");
         DotPreconditions.notNull(variant, () -> "Variant cannot be null");
 
+        if (APILocator.getContentletJsonAPI().isJsonSupportedDatabase()){
+            return findContentlets(getContantletInodesFromJsonField(identifier, variant).stream()
+                    .map(map -> map.get("inode").toString())
+                    .collect(Collectors.toList()));
+        } else {
+            return findAllVersions(identifier);
+        }
+    }
+
+    private static Collection<Map<String, Object>> getContantletInodesFromJsonField
+            (final Identifier identifier, final Variant variant) throws DotDataException {
         final String columnName = getJsonVariantIdColumnName();
 
-        final List<Map<String,Object>> list = new DotConnect()
-                .setSQL(String.format("select inode from contentlet where identifier = ? and %s = ?",
+        return new DotConnect()
+                .setSQL(String.format(
+                        "select inode from contentlet where identifier = ? and %s = ?",
                         columnName))
                 .addParam(identifier.getId())
                 .addParam(variant.name())
                 .loadResults();
-
-        return findContentlets(list.stream()
-                .map(map -> map.get("inode").toString())
-                .collect(Collectors.toList()));
     }
 
-    @Nullable
     private static String getJsonVariantIdColumnName() {
-        String columnName = null;
-
-        if (APILocator.getContentletJsonAPI().isJsonSupportedDatabase()) {
-            if (isPostgres()) {
-                columnName = ContentletJsonAPI.CONTENTLET_AS_JSON + "->>'variantId'";
-            } else if (isMsSql()) {
-                columnName =
-                        "JSON_VALUE(" + ContentletJsonAPI.CONTENTLET_AS_JSON + ", '$.variantId')";
-            }
-        }
-        return columnName;
+        return isPostgres() ? ContentletJsonAPI.CONTENTLET_AS_JSON + "->>'variantId'" :
+                "JSON_VALUE(" + ContentletJsonAPI.CONTENTLET_AS_JSON + ", '$.variantId')";
     }
 
     @Override
