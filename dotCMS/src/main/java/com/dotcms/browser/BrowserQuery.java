@@ -8,7 +8,6 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.Theme;
-import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -116,7 +115,9 @@ public class BrowserQuery {
             isSite = true;
         } else {
             // The ID belongs to a Folder
-            folderObj = Try.of(() -> APILocator.getFolderAPI().find(parentId, user, respectFrontEndPermissions)).getOrElse(new Folder());
+            folderObj = parentId.equalsIgnoreCase(Theme.SYSTEM_THEME)
+                                ? APILocator.getFolderAPI().findSystemFolder()
+                                : Try.of(() -> APILocator.getFolderAPI().find(parentId, user, respectFrontEndPermissions)).getOrElse(new Folder());
         }
         String calculatedSiteId = null;
         // Determine the appropriate Site ID based on provided data
