@@ -117,6 +117,20 @@ export class DotExperimentsConfigurationTrafficSplitAddComponent implements OnIn
         });
     }
 
+    /**
+     * This is needed because a current bug in primeng
+     * https://github.com/primefaces/primeng/pull/11093
+     * @param {number} arrayIndex
+     * @param {number} value
+     * @returns void
+     * @memberof DotExperimentsConfigurationTrafficSplitAddComponent
+     */
+    checkControl(arrayIndex: number, value: number): void {
+        (
+            (this.form.get('variants') as FormArray).controls[arrayIndex] as FormGroup
+        ).controls.weight.setValue(value);
+    }
+
     private initForm() {
         this.vm$.pipe(take(1)).subscribe((data) => {
             this.form = this.fb.group({

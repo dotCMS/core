@@ -1,4 +1,12 @@
-import { Component, EventEmitter, HostListener, Input, OnInit, Output } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    EventEmitter,
+    HostListener,
+    Input,
+    OnInit,
+    Output
+} from '@angular/core';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
@@ -13,7 +21,8 @@ import { FieldService } from '../service';
 @Component({
     selector: 'dot-content-type-field-dragabble-item',
     styleUrls: ['./content-type-field-dragabble-item.component.scss'],
-    templateUrl: './content-type-field-dragabble-item.component.html'
+    templateUrl: './content-type-field-dragabble-item.component.html',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ContentTypesFieldDragabbleItemComponent implements OnInit {
     @Input()

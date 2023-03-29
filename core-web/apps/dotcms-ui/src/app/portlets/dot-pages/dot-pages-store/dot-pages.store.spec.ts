@@ -4,6 +4,8 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Injectable } from '@angular/core';
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 
+import { DialogService } from 'primeng/dynamicdialog';
+
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { PushPublishServiceMock } from '@components/_common/dot-push-publish-env-selector/dot-push-publish-env-selector.component.spec';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
@@ -63,6 +65,7 @@ import {
     CurrentUserDataMock,
     DotCurrentUserServiceMock
 } from '../../dot-starter/dot-starter-resolver.service.spec';
+import { DotPagesCreatePageDialogComponent } from '../dot-pages-create-page-dialog/dot-pages-create-page-dialog.component';
 import { favoritePagesInitialTestData } from '../dot-pages.component.spec';
 
 @Injectable()
@@ -80,8 +83,16 @@ class MockESPaginatorService {
     }
 }
 
+@Injectable()
+export class DialogServiceMock {
+    open(): void {
+        /* */
+    }
+}
+
 describe('DotPageStore', () => {
     let dotPageStore: DotPageStore;
+    let dialogService: DialogService;
     let dotESContentService: DotESContentService;
     let dotPageTypesService: DotPageTypesService;
     let dotWorkflowsActionsService: DotWorkflowsActionsService;
@@ -101,6 +112,7 @@ describe('DotPageStore', () => {
                 DotWorkflowEventHandlerService,
                 LoggerService,
                 StringUtils,
+                { provide: DialogService, useClass: DialogServiceMock },
                 { provide: DotcmsEventsService, useClass: DotcmsEventsServiceMock },
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotCurrentUserService, useClass: DotCurrentUserServiceMock },
@@ -117,9 +129,12 @@ describe('DotPageStore', () => {
             ]
         });
         dotPageStore = TestBed.inject(DotPageStore);
+        dialogService = TestBed.inject(DialogService);
         dotESContentService = TestBed.inject(DotESContentService);
         dotPageTypesService = TestBed.inject(DotPageTypesService);
         dotWorkflowsActionsService = TestBed.inject(DotWorkflowsActionsService);
+
+        spyOn(dialogService, 'open').and.callThrough();
 
         dotPageStore.setInitialStateData(5);
     });
@@ -269,7 +284,7 @@ describe('DotPageStore', () => {
         expect(dotESContentService.get).toHaveBeenCalledTimes(1);
     });
 
-    it('should get all Page Types value in store', () => {
+    it('should get all Page Types value in store and show dialog', () => {
         const expectedInputArray = [{ ...dotcmsContentTypeBasicMock, ...contentTypeDataMock[0] }];
         spyOn(dotPageTypesService, 'getPages').and.returnValue(
             of(expectedInputArray as unknown as DotCMSContentType[])
@@ -280,6 +295,11 @@ describe('DotPageStore', () => {
             expect(data.pageTypes).toEqual(expectedInputArray);
         });
         expect(dotPageTypesService.getPages).toHaveBeenCalledTimes(1);
+        expect(dialogService.open).toHaveBeenCalledWith(DotPagesCreatePageDialogComponent, {
+            header: 'create.page',
+            width: '58rem',
+            data: expectedInputArray
+        });
     });
 
     it('should set all Pages value in store', () => {
@@ -393,8 +413,8 @@ describe('DotPageStore', () => {
             expect(data.pages.menuActions[1].label).toEqual(mockWorkflowsActions[0].name);
             expect(data.pages.menuActions[2].label).toEqual(mockWorkflowsActions[1].name);
             expect(data.pages.menuActions[3].label).toEqual(mockWorkflowsActions[2].name);
-            expect(data.pages.menuActions[4].label).toEqual('contenttypes.content.add_to_bundle');
-            expect(data.pages.menuActions[5].label).toEqual('contenttypes.content.push_publish');
+            expect(data.pages.menuActions[4].label).toEqual('contenttypes.content.push_publish');
+            expect(data.pages.menuActions[5].label).toEqual('contenttypes.content.add_to_bundle');
             expect(data.pages.actionMenuDomId).toEqual('test1');
         });
 

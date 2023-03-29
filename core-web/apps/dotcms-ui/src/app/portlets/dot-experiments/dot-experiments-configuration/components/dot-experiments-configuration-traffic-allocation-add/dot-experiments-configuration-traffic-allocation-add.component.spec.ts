@@ -63,7 +63,7 @@ describe('DotExperimentsConfigurationTrafficAllocationAddComponent', () => {
 
         store.loadExperiment(EXPERIMENT_MOCK.id);
         store.setSidebarStatus({
-            experimentStep: ExperimentSteps.TRAFFIC,
+            experimentStep: ExperimentSteps.TRAFFIC_LOAD,
             isOpen: true
         });
         spectator.detectChanges();
