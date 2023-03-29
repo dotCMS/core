@@ -5,16 +5,16 @@
 >
     <p-avatar
         *ngIf="persona?.personalized"
-        [label]="persona?.name || ('modes.persona.no.persona' | dm)"
+        [text]="persona?.name || ('modes.persona.no.persona' | dm)"
         [image]="persona?.photo"
         pBadge
-        shape="circle"
+        dotAvatar
     ></p-avatar>
     <p-avatar
         *ngIf="!persona?.personalized"
-        [label]="persona?.name || ('modes.persona.no.persona' | dm)"
+        [text]="persona?.name || ('modes.persona.no.persona' | dm)"
         [image]="persona?.photo"
-        shape="circle"
+        dotAvatar
     ></p-avatar>
 
     <span class="dot-persona-selector__name">{{
