@@ -1,4 +1,4 @@
-import md5 from 'md5';
+import * as md5 from 'md5';
 import { Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
@@ -35,7 +35,7 @@ export class DotGravatarService {
     /**
      * Load the avatar url from a hash
      *
-     * @param {string} hash
+     * @param {string} email
      * @returns {Observable<string>}
      * @memberof DotGravatarService
      */
