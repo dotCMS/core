@@ -23,7 +23,7 @@ const mockProfile = {
     urls: []
 };
 
-fdescribe('DotGravatarService', () => {
+describe('DotGravatarService', () => {
     let service: DotGravatarService;
     let httpTestingController: HttpTestingController;
 
