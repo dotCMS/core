@@ -28,6 +28,5 @@ export * from './floating-button/plugin/floating-button.plugin';
 export * from './freeze-scroll/freeze-scroll.extension';
 export * from './image-uploader/components/loader/loader.component';
 export * from './image-uploader/image-uploader.extension';
-export * from './image-uploader/services/dot-image/dot-image.service';
 export * from './video-uploader/asset-uploader.extension';
 export * from './video-uploader/components/video-placeholder/video-placeholder.component';

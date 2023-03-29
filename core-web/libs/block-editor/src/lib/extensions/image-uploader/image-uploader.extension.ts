@@ -11,10 +11,9 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { LoaderComponent, MessageType } from './components/loader/loader.component';
 import { PlaceholderPlugin } from './plugins/placeholder.plugin';
-import { DotImageService } from './services/dot-image/dot-image.service';
 
 import { ImageNode } from '../../nodes';
-import { deselectCurrentNode } from '../../shared';
+import { deselectCurrentNode, DotUploadFileService } from '../../shared';
 
 function checkImageURL(url) {
     return url.match(/\.(jpeg|jpg|gif|png)$/) != null;
@@ -25,7 +24,7 @@ export const ImageUpload = (injector: Injector, viewContainerRef: ViewContainerR
         name: 'imageUpload',
 
         addProseMirrorPlugins() {
-            const dotImageService = injector.get(DotImageService);
+            const dotUploadFileService = injector.get(DotUploadFileService);
             const editor = this.editor;
             function areImageFiles(event: ClipboardEvent | DragEvent): boolean {
                 let files: FileList;
@@ -71,7 +70,7 @@ export const ImageUpload = (injector: Injector, viewContainerRef: ViewContainerR
             function uploadImages(view: EditorView, files: File[], position: number) {
                 const placeHolderName = files[0].name;
                 setPlaceHolder(view, position, placeHolderName);
-                dotImageService
+                dotUploadFileService
                     .publishContent({ data: files[0] })
                     .pipe(take(1))
                     .subscribe(

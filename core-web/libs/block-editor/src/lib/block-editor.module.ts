@@ -13,7 +13,6 @@ import {
     BubbleLinkFormComponent,
     BubbleMenuButtonComponent,
     BubbleMenuComponent,
-    DotImageService,
     DragHandlerComponent,
     FormActionsComponent,
     LoaderComponent,
@@ -24,6 +23,7 @@ import { AssetFormModule } from './extensions/asset-form/asset-form.module';
 import { BubbleFormComponent } from './extensions/bubble-form/bubble-form.component';
 import { FloatingButtonComponent } from './extensions/floating-button/floating-button.component';
 import { ContentletBlockComponent } from './nodes';
+import { DotUploadFileService } from './shared';
 import { EditorDirective } from './shared/directives';
 import { PrimengModule } from './shared/primeng.module';
 import { SharedModule } from './shared/shared.module';
@@ -54,7 +54,7 @@ import { SharedModule } from './shared/shared.module';
         DotEditorCountBarComponent,
         FloatingButtonComponent
     ],
-    providers: [DotImageService, LoggerService, StringUtils],
+    providers: [DotUploadFileService, LoggerService, StringUtils],
     exports: [
         EditorDirective,
         ActionButtonComponent,

@@ -10,7 +10,7 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { DotUploadAssetComponent, STATUS } from './dot-upload-asset.component';
 
-import { DotImageService } from '../../../image-uploader/services/dot-image/dot-image.service';
+import { DotImageService } from '../../../../shared/services/dot-upload-file/dot-image.service';
 
 @Component({
     // eslint-disable-next-line @angular-eslint/component-selector

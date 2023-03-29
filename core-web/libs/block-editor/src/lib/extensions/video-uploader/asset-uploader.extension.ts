@@ -13,9 +13,8 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { VideoPlaceholderComponent } from './components/video-placeholder/video-placeholder.component';
 
 import { VideoNode } from '../../nodes';
-import { deselectCurrentNode } from '../../shared';
+import { deselectCurrentNode, DotUploadFileService } from '../../shared';
 import { PlaceholderPlugin } from '../image-uploader/plugins/placeholder.plugin';
-import { DotImageService } from '../image-uploader/services/dot-image/dot-image.service';
 
 interface UploadNode {
     view: EditorView;
@@ -28,12 +27,19 @@ export const AssetUploader = (injector: Injector, viewContainerRef: ViewContaine
         name: 'assetUploader',
 
         addProseMirrorPlugins() {
-            let subscription$: Subscription;
-            // let abortControler: AbortController;
-            const dotImageService = injector.get(DotImageService);
+            const dotUploadFileService = injector.get(DotUploadFileService);
             const editor = this.editor;
 
-            // Move to a Command
+            let subscription$: Subscription;
+            let abortControler: AbortController;
+
+            /**
+             * Upload file to the server.
+             *
+             * @param {EditorView} view
+             * @param {number} position
+             * @param {string} id
+             */
             function insertPlaceHolder(view: EditorView, position: number, id: string) {
                 const component: ComponentRef<VideoPlaceholderComponent> =
                     viewContainerRef.createComponent(VideoPlaceholderComponent);
@@ -41,10 +47,9 @@ export const AssetUploader = (injector: Injector, viewContainerRef: ViewContaine
 
                 component.instance.cancel.subscribe(() => {
                     removePlaceHolder(id);
+                    abortControler.abort();
                     subscription$.unsubscribe();
                 });
-
-                // VideoPlaceholderComponent.changeDetectorRef.detectChanges();
 
                 tr.setMeta(PlaceholderPlugin, {
                     add: {
@@ -57,7 +62,11 @@ export const AssetUploader = (injector: Injector, viewContainerRef: ViewContaine
                 view.dispatch(tr);
             }
 
-            // Move to a Command
+            /**
+             * Remove placeholder from the editor.
+             *
+             * @param {string} id
+             */
             function removePlaceHolder(id: string) {
                 const { view } = editor;
                 const { state } = view;
@@ -70,7 +79,7 @@ export const AssetUploader = (injector: Injector, viewContainerRef: ViewContaine
             }
 
             /**
-             * Get position from cursor current position when pasting an image
+             * Get position from cursor current position when pasting an image.
              *
              * @param {EditorView} view
              * @return {*}  {{ from: number; to: number }}
@@ -85,15 +94,20 @@ export const AssetUploader = (injector: Injector, viewContainerRef: ViewContaine
                 return { from, to };
             }
 
+            /**
+             * Upload asset and insert it in the editor when the upload is done.
+             *
+             * @param {UploadNode} { view, file, position }
+             */
             function uploadAsset({ view, file, position }: UploadNode) {
                 const placeHolderName = file.name;
                 insertPlaceHolder(view, position, placeHolderName);
 
-                // abortControler = new AbortController();
-                // const { signal } = abortControler;
+                abortControler = new AbortController();
+                const { signal } = abortControler;
 
-                subscription$ = dotImageService
-                    .publishContent({ data: file })
+                subscription$ = dotUploadFileService
+                    .publishContent({ data: file, signal })
                     .pipe(take(1))
                     .subscribe(
                         (dotAssets: DotCMSContentlet[]) => {
@@ -103,6 +117,10 @@ export const AssetUploader = (injector: Injector, viewContainerRef: ViewContaine
                         (error) => alert(error.message),
                         () => removePlaceHolder(placeHolderName)
                     );
+            }
+
+            function alertErrorMessage() {
+                alert('Can drop just one video at a time');
             }
 
             return [
@@ -130,6 +148,8 @@ export const AssetUploader = (injector: Injector, viewContainerRef: ViewContaine
                                         const pos = getCursorPosition(view);
                                         uploadAsset({ view, file, position: pos.from });
                                     }
+                                } else {
+                                    alertErrorMessage();
                                 }
                             },
 
@@ -149,6 +169,7 @@ export const AssetUploader = (injector: Injector, viewContainerRef: ViewContaine
                                     if (type.startsWith('video/')) {
                                         event.preventDefault();
                                         event.stopPropagation();
+
                                         const { clientX, clientY } = event;
                                         const { pos } = view.posAtCoords({
                                             left: clientX,
@@ -156,6 +177,8 @@ export const AssetUploader = (injector: Injector, viewContainerRef: ViewContaine
                                         });
                                         uploadAsset({ view, file, position: pos });
                                     }
+                                } else {
+                                    alertErrorMessage();
                                 }
                             }
                         }
@@ -165,48 +188,3 @@ export const AssetUploader = (injector: Injector, viewContainerRef: ViewContaine
         }
     });
 };
-
-// const getCurrentEditorPosition = (view: EditorView): number => {
-//     const { state } = view;
-//     const { selection } = state;
-//     const { ranges } = selection;
-//     const from = Math.min(...ranges.map((range) => range.$from.pos));
-
-//     return from;
-// }
-
-// const handlePasteVideo = (editor: Editor, view: EditorView, event: ClipboardEvent) => {
-//     const { clipboardData } = event;
-//     const { items } = clipboardData;
-//     const { length } = items;
-//     const video = items[0];
-
-// }
-
-// if (!isImageBlockAllowed()) {
-//     return true;
-// }
-
-// const url = event.clipboardData.getData('Text');
-// const { from } = getPositionFromCursor(view);
-
-// if (areImageFiles(event)) {
-//     // Avoid tiptap image extension default behavior on paste.
-//     event.preventDefault();
-//     if (event.clipboardData.files.length !== 1) {
-//         alert('Can paste just one image at a time');
-
-//         return true;
-//     }
-
-//     const files = Array.from(event.clipboardData.files);
-//     uploadImages(view, files, from);
-// } else if (checkImageURL(url)) {
-//     const node = {
-//         attrs: {
-//             src: url
-//         },
-//         type: ImageNode.name
-//     };
-//     editor.commands.insertContentAt(from, node);
-// }

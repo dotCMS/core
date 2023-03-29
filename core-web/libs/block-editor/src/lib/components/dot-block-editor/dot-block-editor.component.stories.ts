@@ -17,9 +17,7 @@ import { BlockEditorModule } from '../../block-editor.module';
 import {
     ActionButtonComponent,
     BubbleLinkFormComponent,
-    DotImageService,
     DragHandlerComponent,
-    FileStatus,
     AssetFormComponent,
     LoaderComponent
 } from '../../extensions';
@@ -30,7 +28,9 @@ import {
     SearchService,
     SuggestionsComponent,
     SuggestionsService,
-    ASSET_MOCK
+    DotUploadFileService,
+    ASSET_MOCK,
+    FileStatus
 } from '../../shared';
 
 export default {
@@ -51,7 +51,7 @@ export const primary = () => ({
         ],
         providers: [
             {
-                provide: DotImageService,
+                provide: DotUploadFileService,
                 useValue: {
                     publishContent({
                         data: _data,
@@ -92,7 +92,7 @@ export const primary = () => ({
                                 }
                             }
                         ]).pipe(
-                            delay(40000),
+                            delay(1500),
                             tap(() => statusCallback(FileStatus.IMPORT))
                         );
                     }
