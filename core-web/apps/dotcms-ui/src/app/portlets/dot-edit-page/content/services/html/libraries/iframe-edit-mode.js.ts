@@ -23,7 +23,6 @@ function initDragAndDrop () {
         getContainers().forEach(function(container) {
             const contentlets = Array.from(container.querySelectorAll('[data-dot-object="contentlet"]'));
             const placeholder = container.querySelector('#contentletPlaceholder');
-            const uuid = container.dataset.dotUuid;
             const contentletsId = contentlets
                 .map((contentlet) => {
                     // Replace current PlaceHolder position with the new contentlet Id that will be added
@@ -42,7 +41,7 @@ function initDragAndDrop () {
             
             model.push({
                 identifier: container.dataset.dotIdentifier,
-                uuid,
+                uuid: container.dataset.dotUuid,
                 contentletsId
             });
         });

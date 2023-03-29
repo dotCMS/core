@@ -2,8 +2,6 @@
 
 import { of } from 'rxjs';
 
-// throwError
-// import { HttpErrorResponse } from '@angular/common/http';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, ElementRef, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, fakeAsync, flush, TestBed, tick } from '@angular/core/testing';
@@ -188,7 +186,7 @@ const mockRenderedPageState = new DotPageRenderState(
     new DotPageRender(mockDotRenderedPage())
 );
 
-fdescribe('DotEditContentComponent', () => {
+describe('DotEditContentComponent', () => {
     const siteServiceMock = new SiteServiceMock();
     let component: DotEditContentComponent;
     let de: DebugElement;
@@ -1474,7 +1472,7 @@ fdescribe('DotEditContentComponent', () => {
         });
     });
 
-    fdescribe('errors', () => {
+    describe('errors', () => {
         beforeEach(() => {
             spyOn(dotConfigurationService, 'getKeyAsList').and.returnValue(
                 of(['host', 'vanityurl', 'persona', 'languagevariable'])

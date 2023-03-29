@@ -468,25 +468,25 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
 
     private iframeActionsHandler(event: string): (contentlet: DotIframeEditEvent) => void {
         const eventsHandlerMap = {
-            edit: ({ copyContent, dataset }) => {
-                const { dotInode: inode, onNumberOfPages } = dataset;
-                onNumberOfPages > 1
-                    ? this.openContentletEditModeSelector({ copyContent, inode })
-                    : this.editContentlet(inode);
-            },
+            edit: this.editHandlder.bind(this),
             code: ({ dataset }) => this.editContentlet(dataset.dotInode),
             add: this.searchContentlet.bind(this),
             remove: this.removeContentlet.bind(this),
             'add-content': this.addContentType.bind(this),
-            select: () => {
-                this.dotContentletEditorService.clear();
-            },
-            save: () => {
-                this.reload(null);
-            }
+            select: () => this.dotContentletEditorService.clear(),
+            save: () => this.reload(null)
         };
 
         return eventsHandlerMap[event];
+    }
+
+    private editHandlder($event: DotIframeEditEvent): void {
+        const { dataset, copyContent } = $event;
+        const { dotInode: inode, onNumberOfPages } = dataset;
+
+        Number(onNumberOfPages) > 1
+            ? this.openCopyContentModal({ copyContent, inode })
+            : this.editContentlet(inode);
     }
 
     private subscribeToNgEvents(): void {
@@ -664,13 +664,14 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
             })
         );
     }
+
     /**
      * Open the Dot EditContentletModeSelector component and subscribe to the onClose event
      *
      * @param boolean openDialog
-     * @memberof openContentletEditModeSelector
+     * @memberof openCopyContentModal
      */
-    private openContentletEditModeSelector({
+    private openCopyContentModal({
         copyContent,
         inode
     }: {
