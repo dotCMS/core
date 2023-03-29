@@ -45,6 +45,7 @@ export class DotExperimentsPublishVariantComponent implements OnInit {
     @ViewChild('dialog', { static: true }) dialog: DotDialogComponent;
 
     @Output() hide = new EventEmitter();
+    @Output() publish = new EventEmitter();
     constructor(private dotMessageService: DotMessageService) {}
 
     ngOnInit(): void {
@@ -65,15 +66,11 @@ export class DotExperimentsPublishVariantComponent implements OnInit {
         this.dialogActions.accept.disabled = this.selectedVariant === null;
     }
 
-    selectVariant() {
-        // console.log('test');
-    }
-
     private setDialogActions(): void {
         this.dialogActions = {
             accept: {
                 action: () => {
-                    this.selectVariant();
+                    this.publish.emit(this.selectedVariant);
                 },
                 label: this.dotMessageService.get('experiments.report.publish.assign.variant'),
                 disabled: true

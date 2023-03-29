@@ -70,6 +70,30 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
         );
     });
 
+    readonly promoteVariant = this.effect(
+        (variant$: Observable<{ experimentId: string; name: string }>) => {
+            return variant$.pipe(
+                tap(() => this.setComponentStatus(ComponentStatus.LOADING)),
+                switchMap((variant) =>
+                    this.dotExperimentsService
+                        .promoteVariant(variant.experimentId, variant.name)
+                        .pipe(
+                            tapResponse(
+                                (experiment) => {
+                                    this.patchState({
+                                        experiment: experiment
+                                    });
+                                },
+                                (error: HttpErrorResponse) =>
+                                    this.dotHttpErrorManagerService.handle(error),
+                                () => this.setComponentStatus(ComponentStatus.IDLE)
+                            )
+                        )
+                )
+            );
+        }
+    );
+
     readonly vm$: Observable<VmReportExperiment> = this.select(
         this.state$,
         this.isLoading$,

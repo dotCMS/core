@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs';
+import { merge, Observable } from 'rxjs';
 
 import { AsyncPipe, LowerCasePipe, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, ViewChild } from '@angular/core';
@@ -84,31 +84,29 @@ export class DotExperimentsReportsComponent implements OnInit {
     }
 
     /**
-     * Publish the variant
+     * Load modal to publish the selected variant
      * @returns void
      * @memberof DotExperimentsReportsComponent
      *
      */
     loadPublishVariant(experiment: DotExperiment) {
-        // console.log(experiment);
         const viewContainerRef = this.host.viewContainerRef;
         viewContainerRef.clear();
         const componentRef =
             viewContainerRef.createComponent<DotExperimentsPublishVariantComponent>(
                 DotExperimentsPublishVariantComponent
             );
+
         componentRef.instance.data = experiment;
 
-        componentRef.instance.hide.pipe(take(1)).subscribe(() => {
-            viewContainerRef.clear();
-        });
+        merge(componentRef.instance.hide, componentRef.instance.publish)
+            .pipe(take(1))
+            .subscribe((variant) => {
+                if (variant) {
+                    this.store.promoteVariant({ experimentId: experiment.id, name: variant.name });
+                }
 
-        // this.dialogService.open(DotExperimentsPublishVariantComponent, {
-        //     header: this.dotMessageService.get('experiments.report.publish.variant'),
-        //     width: '35rem',
-        //     contentStyle: { 'max-height': '500px', overflow: 'auto' },
-        //     baseZIndex: 10000,
-        //     data: experiment
-        // });
+                viewContainerRef.clear();
+            });
     }
 }

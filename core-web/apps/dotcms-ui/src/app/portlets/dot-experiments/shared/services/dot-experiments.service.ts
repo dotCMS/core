@@ -158,6 +158,22 @@ export class DotExperimentsService {
     }
 
     /**
+     * Promote variant of experiment
+     * @param  {string} experimentId
+     * @param {string} variantId
+     * @returns Observable<DotExperiment>
+     * @memberof DotExperimentsService
+     */
+    promoteVariant(experimentId: string, variantName: string): Observable<DotExperiment> {
+        return this.http
+            .post<DotCMSResponse<DotExperiment>>(
+                `${API_ENDPOINT}/${experimentId}/variants/${variantName}/_promote`,
+                {}
+            )
+            .pipe(pluck('entity'));
+    }
+
+    /**
      * Set a selectedGoal to an experiment
      * @param {Goal} selectedGoal
      * @returns Observable<DotExperiment>
