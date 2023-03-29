@@ -192,23 +192,4 @@ export class DotToolbarUserComponent implements OnInit {
             ? this.auth.loginAsUser.name || this.auth.loginAsUser.fullName
             : this.auth.user.name || this.auth.user.fullName;
     }
-
-    /**
-     * @description Creates the template to show as header on user menu
-     * @param photo the photo url obtained from gravatar service
-     * @returns HTML template as string
-     */
-    private getTemplateFromPhoto(photo: string | null) {
-        const { name } = this.userData;
-
-        const photoTemplate = photo
-            ? `<img src=${photo} alt="${name} gravatar" title="${name} gravatar" class="gravatar" />`
-            : `<div class="gravatar-placeholder">${name.charAt(0)}</div>`;
-
-        const nameTemplate = `<p class="toolbar-user__user-name" id="dot-toolbar-user-name">
-            ${name}
-        </p>`;
-
-        return photoTemplate + nameTemplate;
-    }
 }
