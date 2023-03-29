@@ -7,6 +7,7 @@
     position: relative;
     transition: box-shadow $basic-speed;
     background: $white;
+    border-radius: $border-radius-md;
 
     &:last-child {
         margin-bottom: 0;
@@ -17,6 +18,7 @@
     display: flex;
     background: $color-palette-gray-200;
     padding: $spacing-1;
+    border-radius: $border-radius-sm;
 }
 
 .row-columns__item {
@@ -86,6 +88,7 @@
 
     dot-content-type-field-dragabble-item {
         margin-bottom: $spacing-1;
+        border-radius: $border-radius-sm;
     }
 }
 
