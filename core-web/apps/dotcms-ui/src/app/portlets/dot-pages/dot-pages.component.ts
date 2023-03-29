@@ -6,7 +6,7 @@ import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/co
 import { Menu } from 'primeng/menu';
 
 import { Observable } from 'rxjs/internal/Observable';
-import { filter, map, skip, take, takeUntil } from 'rxjs/operators';
+import { filter, skip, take, takeUntil } from 'rxjs/operators';
 
 import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
@@ -87,10 +87,7 @@ export class DotPagesComponent implements OnInit, OnDestroy {
                     }
                 },
                 (error: HttpErrorResponse) => {
-                    return this.dotHttpErrorManagerService.handle(error).pipe(
-                        take(1),
-                        map(() => null)
-                    );
+                    this.dotHttpErrorManagerService.handle(error);
                 }
             );
     }

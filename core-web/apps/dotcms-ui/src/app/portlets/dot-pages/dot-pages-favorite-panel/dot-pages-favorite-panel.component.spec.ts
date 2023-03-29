@@ -1,3 +1,5 @@
+import { throwError } from 'rxjs';
+
 import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, Input } from '@angular/core';
@@ -16,7 +18,11 @@ import { MockDotHttpErrorManagerService } from '@dotcms/app/test/dot-http-error-
 import { DotMessagePipeModule } from '@dotcms/app/view/pipes/dot-message/dot-message-pipe.module';
 import { DotMessageService, DotPageRenderService } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock, HttpCode } from '@dotcms/dotcms-js';
-import { dotcmsContentletMock, MockDotMessageService } from '@dotcms/utils-testing';
+import {
+    dotcmsContentletMock,
+    MockDotMessageService,
+    mockResponseView
+} from '@dotcms/utils-testing';
 
 import { DotPagesCardModule } from './dot-pages-card/dot-pages-card.module';
 import { DotPagesCardEmptyModule } from './dot-pages-card-empty/dot-pages-card-empty.module';
@@ -288,7 +294,7 @@ describe('DotPagesFavoritePanelComponent', () => {
                 expect(dialogService.open).toHaveBeenCalledTimes(1);
             });
 
-            it('should throw error dialgo when call edit method to open favorite page dialog and user does not have access', () => {
+            it('should throw error dialog when call edit method to open favorite page dialog and user does not have access', () => {
                 spyOn(dotPageRenderService, 'checkPermission').and.returnValue(of(false));
                 spyOn(dotHttpErrorManagerService, 'handle');
                 fixture.detectChanges();
@@ -305,6 +311,19 @@ describe('DotPagesFavoritePanelComponent', () => {
                         })
                     )
                 );
+            });
+
+            it('should throw error dialog when call edit method to open favorite page dialog and url does not match with existing page', () => {
+                const error404 = mockResponseView(404);
+                spyOn(dotPageRenderService, 'checkPermission').and.returnValue(
+                    throwError(error404)
+                );
+                spyOn(dotHttpErrorManagerService, 'handle');
+                fixture.detectChanges();
+                const elem = de.query(By.css('dot-pages-card'));
+                elem.triggerEventHandler('edit', { ...favoritePagesInitialTestData[0] });
+
+                expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(error404);
             });
 
             it('should call showActionMenu method to send actions to parent component', () => {
