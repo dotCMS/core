@@ -36,8 +36,8 @@ describe('DotAppsCardComponent', () => {
         TestBed.configureTestingModule({
             imports: [
                 CardModule,
-                DotAvatarDirective,
                 AvatarModule,
+                DotAvatarDirective,
                 BadgeModule,
                 DotIconModule,
                 TooltipModule,
@@ -79,14 +79,13 @@ describe('DotAppsCardComponent', () => {
         });
 
         it('should have avatar with right values', () => {
-            const avatar = fixture.debugElement.query(By.css('p-avatar')).componentInstance;
+            const avatar = fixture.debugElement.query(By.css('p-avatar'));
 
-            expect(avatar.image).toBe(component.app.iconUrl);
-            expect(avatar.size).toBe('large');
+            const { image, size } = avatar.componentInstance;
 
-            component.app.iconUrl = undefined;
-            fixture.detectChanges();
-            expect(avatar.label).toBe(component.app.name.charAt(0).toUpperCase());
+            expect(image).toBe(component.app.iconUrl);
+            expect(size).toBe('large');
+            expect(avatar.attributes['ng-reflect-text']).toBe(component.app.name);
         });
 
         it('should set messages/values in DOM correctly', () => {

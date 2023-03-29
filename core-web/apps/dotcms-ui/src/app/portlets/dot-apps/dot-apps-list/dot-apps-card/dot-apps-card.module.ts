@@ -18,13 +18,13 @@ import { DotAppsCardComponent } from './dot-apps-card.component';
     imports: [
         CommonModule,
         CardModule,
-        DotAvatarDirective,
         AvatarModule,
         BadgeModule,
         DotIconModule,
         MarkdownModule.forChild(),
         TooltipModule,
-        DotPipesModule
+        DotPipesModule,
+        DotAvatarDirective
     ],
     declarations: [DotAppsCardComponent],
     exports: [DotAppsCardComponent]
