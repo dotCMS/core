@@ -120,7 +120,6 @@ export class FloatingActionsView {
             trigger: 'manual',
             placement: 'left',
             hideOnClick: 'toggle',
-            sticky: true,
             ...options
         });
     }
