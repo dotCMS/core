@@ -11,6 +11,7 @@ import java.util.List;
 import javax.inject.Inject;
 import javax.ws.rs.NotFoundException;
 
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -18,6 +19,9 @@ import org.wildfly.common.Assert;
 
 @QuarkusTest
 class SiteAPITest {
+
+    @ConfigProperty(name = "com.dotcms.starter.site", defaultValue = "default")
+    String siteName;
 
     @Inject
     AuthenticationContext authenticationContext;
@@ -48,9 +52,9 @@ class SiteAPITest {
     void Test_Find_Host_By_Name() {
         final ResponseEntityView<SiteView> sitesResponse = clientFactory.getClient(SiteAPI.class)
                 .findByName(
-                        GetSiteByNameRequest.builder().siteName("default").build());
+                        GetSiteByNameRequest.builder().siteName(siteName).build());
         Assertions.assertNotNull(sitesResponse);
-        Assertions.assertEquals("default",sitesResponse.entity().hostName());
+        Assertions.assertEquals(siteName,sitesResponse.entity().hostName());
     }
 
     @Test

@@ -42,13 +42,14 @@
                 [scheduling]="vm.experiment.scheduling"
             />
 
-            <p-card>
+            <p-card *ngIf="!!vm.experiment.description" data-testId="experiment-description">
                 {{ vm.experiment.description }}
             </p-card>
 
             <dot-experiments-configuration-variants />
             <dot-experiments-configuration-goals />
-            <dot-experiments-configuration-targeting />
+            <!--Hide until is implemented-->
+            <!--<dot-experiments-configuration-targeting />-->
             <dot-experiments-configuration-traffic />
             <dot-experiments-configuration-scheduling />
         </ng-container>
