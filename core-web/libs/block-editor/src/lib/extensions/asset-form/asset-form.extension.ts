@@ -56,6 +56,7 @@ export const BubbleAssetFormExtension = (viewContainerRef: ViewContainerRef) => 
     let formTippy: Instance | undefined;
     let component: ComponentRef<AssetFormComponent>;
     let element: Element;
+    let preventClose = false;
 
     function onStart({ editor, type, getPosition }: StartProps) {
         setUpTippy(editor);
@@ -70,6 +71,10 @@ export const BubbleAssetFormExtension = (viewContainerRef: ViewContainerRef) => 
     }
 
     function onHide(editor): void {
+        if (preventClose) {
+            return;
+        }
+
         editor.commands.closeAssetForm();
         formTippy?.hide();
         component?.destroy();
@@ -96,11 +101,24 @@ export const BubbleAssetFormExtension = (viewContainerRef: ViewContainerRef) => 
         component.instance.languageId = editor.storage.dotConfig.lang;
         component.instance.type = type;
         component.instance.onSelectAsset = (payload) => {
+            onPreventClose(editor, false);
             editor.chain().insertAsset({ type, payload }).addNextLine().closeAssetForm().run();
+        };
+
+        component.instance.preventClose = (value) => onPreventClose(editor, value);
+
+        component.instance.onHide = () => {
+            onPreventClose(editor, false);
+            onHide(editor);
         };
 
         element = component.location.nativeElement;
         component.changeDetectorRef.detectChanges();
+    }
+
+    function onPreventClose(editor, value) {
+        preventClose = value;
+        editor.setOptions({ editable: !value });
     }
 
     return BubbleMenu.extend<unknown>({
