@@ -41,11 +41,17 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
 import com.dotmarketing.quartz.job.ContentTypeDeleteJob;
 import com.dotmarketing.quartz.job.IdentifierDateJob;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.ActivityLogger;
+import com.dotmarketing.util.AdminLogger;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
+import io.vavr.Lazy;
+import io.vavr.control.Try;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -54,8 +60,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
-import io.vavr.control.Try;
 import org.elasticsearch.action.search.SearchResponse;
 
 /**
@@ -79,9 +83,9 @@ import org.elasticsearch.action.search.SearchResponse;
  */
 public class ContentTypeAPIImpl implements ContentTypeAPI {
 
-  public static final String CONTENT_TYPE_DELETE_ASYNC = "CONTENT_TYPE_DELETE_ASYNC";
+  public static final String DELETE_CONTENT_TYPE_ASYNC = "DELETE_CONTENT_TYPE_ASYNC";
 
-  public static final String CONTENT_TYPE_DELETE_ASYNC_JOB = "CONTENT_TYPE_DELETE_ASYNC_JOB";
+  public static final String DELETE_CONTENT_TYPE_ASYNC_WITH_JOB = "DELETE_CONTENT_TYPE_ASYNC_WITH_JOB";
 
   private final ContentTypeFactory contentTypeFactory;
   private final FieldFactory fieldFactory;
@@ -110,20 +114,43 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
         APILocator.getPermissionAPI(), APILocator.getContentTypeFieldAPI(), APILocator.getLocalSystemEventsAPI());
   }
 
+  final Lazy<Boolean>  deleteContentTypeAsynchronously =  Lazy.of(
+          ()->Config.getBooleanProperty(DELETE_CONTENT_TYPE_ASYNC, true)
+  );
+  final Lazy<Boolean>  deleteContentTypeAsynchronouslyUsingJob =  Lazy.of(
+          ()->Config.getBooleanProperty(DELETE_CONTENT_TYPE_ASYNC_WITH_JOB, true)
+  );
 
   @Override
   public void delete(ContentType type) throws DotSecurityException, DotDataException {
     if (!contentTypeCanBeDeleted(type)) {
-      Logger.warn(this, "Content Type " + type.name() + " cannot be deleted because it is referenced by other content types");
+      Logger.warn(this, "Content Type " + type.name()
+              + " cannot be deleted because it is referenced by other content types");
       return;
     }
-        final ContentType copy = relocateContentletsThenDispose(type);
+
+    final boolean asyncDelete = deleteContentTypeAsynchronously.get();
+    final boolean asyncDeleteWithJob = deleteContentTypeAsynchronouslyUsingJob.get();
+
+    if (!asyncDelete) {
+      Logger.debug(this, String.format(" Content type (%s) will be deleted sequentially.", type.name()));
+      transactionalDelete(type);
+    } else {
+      final ContentType copy = relocateContentletsThenDispose(type);
+      if (asyncDeleteWithJob) {
         //By default, the deletion process takes placed within job
-        tearDown(copy);
+        Logger.debug(this, String.format(" Content type (%s) will be deleted asynchronously using Quartz Job.", type.name()));
+        ContentTypeDeleteJob.triggerContentTypeDeletion(copy);
+      } else {
+        //This option comes handy from the Integration Tests perspective
+        Logger.debug(this, String.format(" Content type (%s) will be deleted asynchronously using Thread a Pool.", type.name()));
+        dispose(copy);
+      }
+    }
   }
 
   @CloseDBIfOpened
-  public void tearDown(final ContentType type) throws DotDataException {
+  private void dispose(final ContentType type) throws DotDataException {
 
       // default structure can't be deleted
       if (type.defaultType()) {
@@ -149,11 +176,10 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
       }
 
       try {
-         APILocator.getContentletDisposeAPI().sequentialTearDown(dbType);
+         APILocator.getContentTypeDestroyAPI().destroy(dbType);
       } catch (DotDataException | DotSecurityException e) {
         Logger.error(getClass(), String.format("Error Tearing down ContentType [%s]", dbType.variable()), e);
       }
-
   }
 
   /**
@@ -241,19 +267,28 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   @WrapInTransaction
   ContentType relocateContentletsThenDispose(final ContentType type) throws DotSecurityException, DotDataException {
       //If we're ok permissions wise, we need to remove the content from the index
-      //APILocator.getContentletIndexAPI().removeContentFromIndexByStructureInode(type.inode());
       //Then this quickly hides the content from the front end and APIS
       contentTypeFactory.markForDeletion(type);
 
       final ContentType copy = makeDisposableCopy(type);
 
-      APILocator.getContentletDisposeAPI().relocateContentletsForDeletion(type, copy);
+      APILocator.getContentTypeDestroyAPI().relocateContentletsForDeletion(type, copy);
       //Now that all the content is relocated, we're ready to destroy the original structure that held all content
       //System fields like Categories, Relationships and Containers will be deleted using the original structure
       contentTypeFactory.delete(type);
       //and destroy all associated content under the copy
       contentTypeFactory.markForDeletion(copy);
-      return copy;
+
+      HibernateUtil.addCommitListener(() -> {
+        try {
+          APILocator.getContentletIndexAPI().removeContentFromIndexByContentType(type);
+        } catch (DotDataException e) {
+            Logger.error(ContentTypeFactoryImpl.class, String.format("Error removing content from index for ContentType [%s]", type.variable()), e);
+        }
+      });
+
+     return copy;
+
   }
 
   @Override

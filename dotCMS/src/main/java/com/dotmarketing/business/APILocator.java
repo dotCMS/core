@@ -138,8 +138,6 @@ import com.dotmarketing.portlets.structure.business.StructureAPI;
 import com.dotmarketing.portlets.structure.business.StructureAPIImpl;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.business.TemplateAPIImpl;
-import com.dotcms.variant.VariantAPI;
-import com.dotcms.variant.VariantAPIImpl;
 import com.dotmarketing.portlets.widget.business.WidgetAPI;
 import com.dotmarketing.portlets.widget.business.WidgetAPIImpl;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
@@ -1126,8 +1124,8 @@ public class APILocator extends Locator<APIIndex> {
 		return (AnalyticsAPI) getInstance(APIIndex.ANALYTICS_API);
 	}
 
-	public static ContentletDisposeAPI getContentletDisposeAPI() {
-		return (ContentletDisposeAPI) getInstance(APIIndex.CONTENTLET_DISPOSE_API);
+	public static ContentTypeDestroyAPI getContentTypeDestroyAPI() {
+		return (ContentTypeDestroyAPI) getInstance(APIIndex.CONTENT_TYPE_DESTROY_API);
 	}
 
 	/**
@@ -1282,7 +1280,7 @@ enum APIIndex
 	EXPERIMENTS_API,
 	BAYESIAN_API,
 	ANALYTICS_API,
-	CONTENTLET_DISPOSE_API;
+	CONTENT_TYPE_DESTROY_API;
 
 	Object create() {
 		switch(this) {
@@ -1371,7 +1369,7 @@ enum APIIndex
 			case EXPERIMENTS_API: return new ExperimentsAPIImpl();
 			case BAYESIAN_API: return new BayesianAPIImpl();
 			case ANALYTICS_API: return new AnalyticsAPIImpl();
-			case CONTENTLET_DISPOSE_API: return new ContentletDisposeAPIImpl();
+			case CONTENT_TYPE_DESTROY_API: return new ContentTypeDestroyAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

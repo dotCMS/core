@@ -11,12 +11,12 @@ import io.vavr.control.Try;
 /**
  * Simple adds a new column to the structure table whn missing
  */
-public class Task230316AddMarkedForDeletionColumn implements StartupTask {
+public class Task230328AddMarkedForDeletionColumn implements StartupTask {
 
     @Override
     public boolean forceRun() {
         final DotDatabaseMetaData dotDatabaseMetaData = new DotDatabaseMetaData();
-        return  Try.of(()->dotDatabaseMetaData.hasColumn("structure", "marked_for_deletion")).getOrElse(false);
+        return  Try.of(()->!dotDatabaseMetaData.hasColumn("structure", "marked_for_deletion")).getOrElse(false);
     }
 
     @Override

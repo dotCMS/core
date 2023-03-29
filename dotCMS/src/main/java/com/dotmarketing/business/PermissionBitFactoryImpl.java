@@ -27,6 +27,7 @@ import com.dotmarketing.beans.PermissionableProxy;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.Params;
+import com.dotmarketing.common.reindex.ReindexQueueAPI;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.db.commands.DatabaseCommand.QueryReplacements;
@@ -2561,18 +2562,23 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				}).collect(Collectors.toList());
 
 		dbDeletePermissionReferences(proxies);
-
+		final ReindexQueueAPI reindexQueueAPI = APILocator.getReindexQueueAPI();
 		for (final PermissionReference reference : references) {
-			APILocator.getReindexQueueAPI().addIdentifierReindex(reference.getAssetId());
+			reindexQueueAPI.addIdentifierReindex(reference.getAssetId());
 		}
 
 		dbDeletePermissionReferences(Collections.singletonList(permissionable));
 
 		if (permissionable instanceof ContentType) {
-			APILocator.getReindexQueueAPI()
-					.addStructureReindexEntries((ContentType) permissionable);
+			final ContentType contentType = (ContentType) permissionable;
+			if(!contentType.markedForDeletion()){
+				reindexQueueAPI.addStructureReindexEntries(contentType);
+			}
 		} else if (permissionable instanceof Contentlet) {
-			APILocator.getReindexQueueAPI().addIdentifierReindex(permissionable.getPermissionId());
+			final Contentlet contentlet = (Contentlet) permissionable;
+			if(!contentlet.getContentType().markedForDeletion()){
+			    reindexQueueAPI.addIdentifierReindex(contentlet.getPermissionId());
+			}
 		}
 	}
 

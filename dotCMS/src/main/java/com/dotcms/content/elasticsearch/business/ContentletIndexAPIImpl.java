@@ -780,10 +780,12 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
         for (final Contentlet contentlet : contentToIndexSet) {
 
+            /*
+            TODO: This is temporaily commented out while we figure out if this is the source of an issue running our  intergration tests
             if(contentlet.getContentType().markedForDeletion()){
               Logger.debug(this, "Contentlet " + contentlet.getIdentifier() + " is marked for deletion. Skipping.");
               continue;
-            }
+            }*/
 
             final String id = contentlet.getIdentifier() + "_" + contentlet.getLanguageId()
                     + "_" + contentlet.getVariantId();
@@ -1149,11 +1151,18 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     public void removeContentFromIndexByStructureInode(final String structureInode)
             throws DotDataException, DotSecurityException {
         final ContentType contentType = APILocator.getContentTypeAPI(
-                APILocator.getUserAPI().getSystemUser()).find(structureInode);
+                APILocator.systemUser()).find(structureInode);
         if (contentType == null) {
             throw new DotDataException(
                     "ContentType with Inode or VarName: " + structureInode + "not found");
         }
+        removeContentFromIndexByContentType(contentType);
+    }
+
+
+    public void removeContentFromIndexByContentType(final ContentType contentType)
+            throws DotDataException {
+
         final String structureName = contentType.variable();
         final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
 

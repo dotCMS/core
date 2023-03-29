@@ -15,6 +15,7 @@ import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategy;
 import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategyResolver;
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.business.ContentTypeDestroyThreadLocal;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
@@ -2753,7 +2754,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             final Contentlet contentlet = contentletIterator.next();
             contentlet.getMap().put(Contentlet.DONT_VALIDATE_ME, true);
-            this.forceUnpublishArchiveOnDestroy(user, contentlet);
+            if(null == ContentTypeDestroyThreadLocal.INSTANCE.get().get()) {
+                this.forceUnpublishArchiveOnDestroy(user, contentlet);
+            }
             APILocator.getWorkflowAPI()
                     .deleteWorkflowTaskByContentletIdAnyLanguage(contentlet, user);
 

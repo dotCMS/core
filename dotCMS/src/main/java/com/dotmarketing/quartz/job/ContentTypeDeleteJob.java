@@ -2,7 +2,6 @@ package com.dotmarketing.quartz.job;
 
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -32,7 +31,7 @@ public class ContentTypeDeleteJob extends DotStatefulJob {
         try {
             final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find(inode);
             //Kick-off deletion
-            APILocator.getContentletDisposeAPI().tearDown(contentType);
+            APILocator.getContentTypeDestroyAPI().destroy(contentType);
         } catch (DotDataException | DotSecurityException e) {
             throw new JobExecutionException(
                     String.format("Error removing contentlets from CT with inode [%s] and [%s] .",inode, varName), e);
