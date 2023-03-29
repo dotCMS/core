@@ -15,10 +15,12 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.primitives.Ints;
 import io.vavr.control.Try;
+import org.apache.commons.lang.time.StopWatch;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.postgresql.util.PGobject;
 
@@ -134,6 +136,9 @@ public class PopulateContentletAsJSONUtil {
     private void populate(@Nullable String assetSubtype, @Nullable String excludingAssetSubtype)
             throws SQLException, DotDataException, IOException {
 
+        final StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
+
         final File populateJSONTaskDataFile = File.createTempFile("rows-task-230320", "tmp");
 
         Logger.debug(this, "File created: " + populateJSONTaskDataFile.getAbsolutePath());
@@ -158,6 +163,10 @@ public class PopulateContentletAsJSONUtil {
         } finally {
             HibernateUtil.closeSessionSilently();
         }
+
+        stopWatch.stop();
+        Logger.info(this, "Contentlet as JSON migration task DONE for assetSubtype: [%s] / " +
+                "excludingAssetSubtype [%s]. Duration:" + DateUtil.millisToSeconds(stopWatch.getTime()) + " seconds");
     }
 
     /**
