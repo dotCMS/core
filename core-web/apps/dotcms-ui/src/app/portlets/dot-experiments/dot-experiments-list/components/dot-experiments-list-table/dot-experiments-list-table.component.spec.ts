@@ -36,6 +36,7 @@ const ENDED_EXPERIMENT_MOCK = {
     ...getExperimentMock(2),
     status: DotExperimentStatusList.ENDED
 };
+
 const SCHEDULED_EXPERIMENT_MOCK = {
     ...getExperimentMock(1),
     status: DotExperimentStatusList.SCHEDULED
