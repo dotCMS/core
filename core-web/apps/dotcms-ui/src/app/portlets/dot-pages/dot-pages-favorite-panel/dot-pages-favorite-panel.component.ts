@@ -5,6 +5,8 @@ import { Component, EventEmitter, Output } from '@angular/core';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
+import { map, take } from 'rxjs/operators';
+
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotMessageService, DotPageRenderService } from '@dotcms/data-access';
 import { HttpCode } from '@dotcms/dotcms-js';
@@ -75,38 +77,46 @@ export class DotPagesFavoritePanelComponent {
             urlParams[entry[0]] = entry[1];
         }
 
-        this.dotPageRenderService.checkPermission(urlParams).subscribe((hasPermission: boolean) => {
-            if (hasPermission) {
-                this.dialogService.open(DotFavoritePageComponent, {
-                    header: this.dotMessageService.get('favoritePage.dialog.header.add.page'),
-                    width: '80rem',
-                    data: {
-                        page: {
-                            favoritePageUrl: favoritePage.url,
-                            favoritePage: favoritePage
-                        },
-                        onSave: () => {
-                            this.timeStamp = this.getTimeStamp();
-                            this.store.getFavoritePages(this.currentLimitSize);
-                        },
-                        onDelete: () => {
-                            this.timeStamp = this.getTimeStamp();
-                            this.store.getFavoritePages(this.currentLimitSize);
+        this.dotPageRenderService.checkPermission(urlParams).subscribe(
+            (hasPermission: boolean) => {
+                if (hasPermission) {
+                    this.dialogService.open(DotFavoritePageComponent, {
+                        header: this.dotMessageService.get('favoritePage.dialog.header.add.page'),
+                        width: '80rem',
+                        data: {
+                            page: {
+                                favoritePageUrl: favoritePage.url,
+                                favoritePage: favoritePage
+                            },
+                            onSave: () => {
+                                this.timeStamp = this.getTimeStamp();
+                                this.store.getFavoritePages(this.currentLimitSize);
+                            },
+                            onDelete: () => {
+                                this.timeStamp = this.getTimeStamp();
+                                this.store.getFavoritePages(this.currentLimitSize);
+                            }
                         }
-                    }
-                });
-            } else {
-                const error = new HttpErrorResponse(
-                    new HttpResponse({
-                        body: null,
-                        status: HttpCode.FORBIDDEN,
-                        headers: null,
-                        url: ''
-                    })
+                    });
+                } else {
+                    const error = new HttpErrorResponse(
+                        new HttpResponse({
+                            body: null,
+                            status: HttpCode.FORBIDDEN,
+                            headers: null,
+                            url: ''
+                        })
+                    );
+                    this.dotHttpErrorManagerService.handle(error);
+                }
+            },
+            (error: HttpErrorResponse) => {
+                return this.dotHttpErrorManagerService.handle(error).pipe(
+                    take(1),
+                    map(() => null)
                 );
-                this.dotHttpErrorManagerService.handle(error);
             }
-        });
+        );
     }
 
     private getTimeStamp() {

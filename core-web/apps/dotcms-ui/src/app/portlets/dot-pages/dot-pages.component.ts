@@ -6,7 +6,7 @@ import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/co
 import { Menu } from 'primeng/menu';
 
 import { Observable } from 'rxjs/internal/Observable';
-import { filter, skip, take, takeUntil } from 'rxjs/operators';
+import { filter, map, skip, take, takeUntil } from 'rxjs/operators';
 
 import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
@@ -70,21 +70,29 @@ export class DotPagesComponent implements OnInit, OnDestroy {
         this.dotPageRenderService
             .checkPermission(urlParams)
             .pipe(take(1))
-            .subscribe((hasPermission: boolean) => {
-                if (hasPermission) {
-                    this.dotRouterService.goToEditPage(urlParams);
-                } else {
-                    const error = new HttpErrorResponse(
-                        new HttpResponse({
-                            body: null,
-                            status: HttpCode.FORBIDDEN,
-                            headers: null,
-                            url: ''
-                        })
+            .subscribe(
+                (hasPermission: boolean) => {
+                    if (hasPermission) {
+                        this.dotRouterService.goToEditPage(urlParams);
+                    } else {
+                        const error = new HttpErrorResponse(
+                            new HttpResponse({
+                                body: null,
+                                status: HttpCode.FORBIDDEN,
+                                headers: null,
+                                url: ''
+                            })
+                        );
+                        this.dotHttpErrorManagerService.handle(error);
+                    }
+                },
+                (error: HttpErrorResponse) => {
+                    return this.dotHttpErrorManagerService.handle(error).pipe(
+                        take(1),
+                        map(() => null)
                     );
-                    this.dotHttpErrorManagerService.handle(error);
                 }
-            });
+            );
     }
 
     /**
