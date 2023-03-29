@@ -1,15 +1,15 @@
 <p-avatar
     *ngIf="persona.personalized"
-    [label]="persona.name"
+    [text]="persona.name"
     [image]="persona.photo"
     pBadge
-    shape="circle"
+    dotAvatar
 ></p-avatar>
 <p-avatar
     *ngIf="!persona.personalized"
-    [label]="persona.name"
+    [text]="persona.name"
     [image]="persona.photo"
-    shape="circle"
+    dotAvatar
 ></p-avatar>
 
 <!-- Inline CSS code added to allow ellipsis on 2nd line, if this is moved to the SCCS file the pre-compiler cries -->
