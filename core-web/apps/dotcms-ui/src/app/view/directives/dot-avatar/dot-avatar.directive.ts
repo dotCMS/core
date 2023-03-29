@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Directive, HostListener, Input } from '@angular/core';
+import { ChangeDetectorRef, Directive, HostListener, Input, OnInit } from '@angular/core';
 
 import { Avatar } from 'primeng/avatar';
 
@@ -6,11 +6,15 @@ import { Avatar } from 'primeng/avatar';
     selector: 'p-avatar[dotAvatar]',
     standalone: true
 })
-export class DotAvatarDirective {
+export class DotAvatarDirective implements OnInit {
     @Input() readonly text: string = 'Default';
 
     constructor(private avatar: Avatar, private cd: ChangeDetectorRef) {
         this.avatar.shape = 'circle';
+    }
+
+    ngOnInit(): void {
+        this.avatar.label = this.avatar.image ? undefined : this.text[0]?.toUpperCase();
     }
 
     @HostListener('onImageError', ['$event'])
