@@ -8,7 +8,7 @@ import { DotGravatarService } from '@dotcms/app/api/services/dot-gravatar-servic
     selector: 'p-avatar[dotGravatar]',
     standalone: true
 })
-export class DotAvatarDirective implements OnInit {
+export class DotGravatarDirective implements OnInit {
     @Input() readonly email: string;
 
     constructor(
