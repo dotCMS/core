@@ -215,10 +215,10 @@ public class PopulateContentletAsJSONUtil {
 
             do {
 
-                // Fetching batches of 100 records
                 if (DbConnectionFactory.isMsSql()) {
                     stmt.execute(FETCH_CURSOR_MSSQL);
                 } else {
+                    // Fetching batches of 100 records
                     stmt.execute(String.format(FETCH_CURSOR_POSTGRES, MAX_CURSOR_FETCH_SIZE));
                 }
 
@@ -252,7 +252,7 @@ public class PopulateContentletAsJSONUtil {
                             fileWriter.newLine();
                         }
 
-                        Logger.info(this, String.format("Added [%s] records for update to temp file", jsonDataArray.size()));
+                        Logger.debug(this, String.format("Added [%s] records for update to temp file", jsonDataArray.size()));
 
                     } else {
                         hasRows = false;

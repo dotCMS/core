@@ -7,13 +7,14 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.quartz.DotStatefulJob;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableMap;
-import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
+import org.quartz.Trigger;
 
 import java.io.IOException;
 import java.io.Serializable;
 import java.sql.SQLException;
+import java.util.Map;
 
 /**
  * Job created to populate in the Contentlet table missing contentlet_as_json columns.
@@ -25,11 +26,12 @@ public class PopulateContentAsJSONJob extends DotStatefulJob {
     @Override
     public void run(JobExecutionContext jobContext) throws JobExecutionException {
 
-        final JobDataMap jobDataMap = jobContext.getJobDetail().getJobDataMap();
+        final Trigger trigger = jobContext.getTrigger();
+        final Map<String, Serializable> executionData = getExecutionData(trigger, PopulateContentAsJSONJob.class);
 
         final String excludingAssetSubType;
-        if (jobDataMap.containsKey(EXCLUDING_ASSET_SUB_TYPE)) {
-            excludingAssetSubType = (String) jobDataMap.get(EXCLUDING_ASSET_SUB_TYPE);
+        if (executionData.containsKey(EXCLUDING_ASSET_SUB_TYPE)) {
+            excludingAssetSubType = (String) executionData.get(EXCLUDING_ASSET_SUB_TYPE);
         } else {
             excludingAssetSubType = null;
         }
@@ -44,8 +46,6 @@ public class PopulateContentAsJSONJob extends DotStatefulJob {
 
     /**
      * Fires the job to populate the missing contentlet_as_json columns.
-     *
-     * @param excludingAssetSubType
      */
     public static void fireJob(final String excludingAssetSubType) {
 
