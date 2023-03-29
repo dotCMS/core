@@ -165,8 +165,9 @@ public class PopulateContentletAsJSONUtil {
         }
 
         stopWatch.stop();
-        Logger.info(this, "Contentlet as JSON migration task DONE for assetSubtype: [%s] / " +
-                "excludingAssetSubtype [%s]. Duration:" + DateUtil.millisToSeconds(stopWatch.getTime()) + " seconds");
+        Logger.info(this, String.format("Contentlet as JSON migration task DONE for assetSubtype: [%s] / " +
+                "excludingAssetSubtype [%s]. Duration: [%s] seconds",
+                assetSubtype, excludingAssetSubtype, DateUtil.millisToSeconds(stopWatch.getTime())));
     }
 
     /**
