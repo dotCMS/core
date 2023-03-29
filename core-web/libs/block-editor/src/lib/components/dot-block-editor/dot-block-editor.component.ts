@@ -14,7 +14,7 @@ import {
 
 import { debounceTime, take, takeUntil } from 'rxjs/operators';
 
-import { AnyExtension, Content, Editor, generateHTML } from '@tiptap/core';
+import { AnyExtension, Content, Editor, JSONContent } from '@tiptap/core';
 import CharacterCount, { CharacterCountStorage } from '@tiptap/extension-character-count';
 import { Level } from '@tiptap/extension-heading';
 import { Highlight } from '@tiptap/extension-highlight';
@@ -46,7 +46,8 @@ import {
     BubbleAssetFormExtension,
     ImageUpload,
     FreezeScroll,
-    FREEZE_SCROLL_KEY
+    FREEZE_SCROLL_KEY,
+    NodeTypes
 } from '../../extensions';
 import { ContentletBlock, ImageNode, VideoNode } from '../../nodes';
 import {
@@ -97,7 +98,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
 
         this.setEditorJSONContent(content);
     }
-    @Output() valueChange = new EventEmitter<string>();
+    @Output() valueChange = new EventEmitter<JSONContent>();
 
     editor: Editor;
     subject = new Subject();
@@ -105,7 +106,6 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
 
     private _allowedBlocks: string[] = ['paragraph']; //paragraph should be always.
     private _customNodes: Map<string, AnyExtension> = new Map([
-
         ['image', ImageNode],
         ['video', VideoNode],
         ['table', DotTableExtension()]
@@ -160,17 +160,11 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
                     .subscribe(() => this.updateChartCount());
 
                 this.editor.on('update', ({ editor }) => {
-                    console.log('Inner HTML:', editor.view.dom.innerHTML);
-                    // eslint-disable-next-line no-console
-                    
-                   /*  console.log('generate content:', generateHTML(editor.getJSON(), [
-                        ...this.getEditorExtensions(),
-                        ...this.getEditorMarks(),
-                        ...this.getEditorNodes(),
-                        ...extensions
-                    ])); */
+                    this.valueChange.emit(editor.getJSON());
+                });
 
-                    this.valueChange.emit(JSON.stringify(editor.getJSON(),));
+                this.editor.on('transaction', ({ editor }) => {
+                    this.freezeScroll = FREEZE_SCROLL_KEY.getState(editor.view.state)?.freezeScroll;
                 });
 
                 this.editor.on('transaction', ({ editor }) => {
@@ -341,7 +335,6 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             return [...this._customNodes.values()];
         }
 
-  
         for (const block of this._allowedBlocks) {
             const node = this._customNodes.get(block);
             if (node) {
@@ -408,8 +401,12 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
      * @memberof DotBlockEditorComponent
      */
     private placeholder({ node }) {
-        if (node.type.name === 'heading') {
+        if (node.type.name === NodeTypes.HEADING) {
             return `${toTitleCase(node.type.name)} ${node.attrs.level}`;
+        }
+
+        if (node.type.name === NodeTypes.CODE_BLOCK) {
+            return;
         }
 
         return 'Type "/" for commmands';

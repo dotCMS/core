@@ -62,6 +62,7 @@ export class FloatingActionsView {
     command: (props: { editor: Editor; range: Range; props: SuggestionsCommandProps }) => void;
     key: PluginKey;
     invalidNodes = ['codeBlock', 'blockquote'];
+    tippyOptions: Partial<Props>;
 
     constructor({
         editor,
@@ -77,17 +78,14 @@ export class FloatingActionsView {
         this.view = view;
         this.element.addEventListener('mousedown', this.mousedownHandler, { capture: true });
         this.editor.on('focus', () => {
-           // this.tippy.unmount();
+            // this.tippy.unmount();
             this.update(this.editor.view);
         });
         this.element.style.visibility = 'visible';
         this.render = render;
         this.command = command;
         this.key = key;
-        this.createTooltip(tippyOptions);
-        this.editor.on('create', () => {
-            this.show(); 
-        });
+        this.tippyOptions = tippyOptions;
     }
 
     /**
@@ -108,6 +106,12 @@ export class FloatingActionsView {
      * @memberof FloatingActionsView
      */
     createTooltip(options: Partial<Props> = {}): void {
+        const { element: editorElement } = this.editor.options;
+        const editorIsAttached = !!editorElement.parentElement;
+        if (this.tippy || !editorIsAttached) {
+            return;
+        }
+
         this.tippy = tippy(this.view.dom, {
             duration: 0,
             getReferenceClientRect: () => posToDOMRect(this.editor.view, 1, 1),
@@ -140,7 +144,7 @@ export class FloatingActionsView {
         const next = this.key?.getState(view.state);
         const prev = prevState ? this.key?.getState(prevState) : null;
 
-       if (!prev?.open && (!isActive || !empty)) {
+        if (!prev?.open && (!isActive || !empty)) {
             this.hide();
 
             return;
@@ -153,10 +157,13 @@ export class FloatingActionsView {
             return;
         }
 
-        this.tippy.setProps({
-            getReferenceClientRect: () => posToDOMRect(view, from, to)
+        this.createTooltip(this.tippyOptions);
+        this.tippy?.setProps({
+            getReferenceClientRect: () => posToDOMRect(this.view, from, to)
         });
-        
+
+        this.show();
+
         if (next.open) {
             const { from, to } = this.editor.state.selection;
             const rect = posToDOMRect(this.view, from, to);
@@ -173,15 +180,15 @@ export class FloatingActionsView {
     }
 
     show() {
-        this.tippy.show();
+        this.tippy?.show();
     }
 
     hide() {
-        this.tippy.hide();
+        this.tippy?.hide();
     }
 
     destroy() {
-        this.tippy.destroy();
+        this.tippy?.destroy();
         this.element.removeEventListener('mousedown', this.mousedownHandler);
     }
 }
