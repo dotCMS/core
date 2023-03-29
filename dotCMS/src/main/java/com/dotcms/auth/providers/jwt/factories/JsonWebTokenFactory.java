@@ -134,7 +134,7 @@ public class JsonWebTokenFactory implements Serializable {
         private String getIssuer() {
 
             if (null == issuerId) {
-                issuerId = ClusterFactory.getClusterId();
+                issuerId = Config.getStringProperty("JWT_CLAIMS_ISSUER" , ClusterFactory.getClusterId());
             }
 
             return issuerId;
@@ -243,7 +243,7 @@ public class JsonWebTokenFactory implements Serializable {
             }
 
             // Validate the issuer is correct, meaning the same cluster id
-            if (!this.getIssuer().equals(body.getIssuer())) {
+            if (!this.getIssuer().equals(body.getIssuer()) && Config.getBooleanProperty("JWT_CLAIM_ISSUER_VALIDATE", false)) {
                 IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "Invalid JWT issuer. Expected:"  + this.getIssuer() + " and got:" + body.getIssuer());
                 claimException.setClaimName(Claims.ISSUER);
                 claimException.setClaimValue(body.getIssuer());
