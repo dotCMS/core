@@ -185,4 +185,19 @@ public class StoryBlockAPITest extends IntegrationTestBase {
         Assert.assertTrue(contentletIdList.contains(richTextContentlet2.getIdentifier()));
         Assert.assertTrue(contentletIdList.contains(richTextContentlet3.getIdentifier()));
     }
+
+    /**
+     * Method to test: {@link StoryBlockAPI#getDependencies(Object)}
+     * Given Scenario: Test a story block value that is a json (html in this case) see (https://github.com/dotCMS/core/issues/24299)
+     * ExpectedResult: Do not throw exception and must return zero dependencies
+     */
+    @Test
+    public void test_get_dependencies_with_non_json_value()  {
+
+        final Object newStoryBlockJson1        = "<html>pufff</html>";
+
+        final List<String> contentletIdList = APILocator.getStoryBlockAPI().getDependencies(newStoryBlockJson1);
+        Assert.assertNotNull(contentletIdList);
+        Assert.assertTrue(contentletIdList.isEmpty());
+    }
 }
