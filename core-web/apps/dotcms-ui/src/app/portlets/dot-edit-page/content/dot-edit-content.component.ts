@@ -1,4 +1,4 @@
-import { fromEvent, merge, Observable, of, Subject } from 'rxjs';
+import { fromEvent, merge, Observable, Subject } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild } from '@angular/core';
@@ -29,7 +29,6 @@ import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-u
 import {
     DotAlertConfirmService,
     DotCopyContentService,
-    DotEditPageService,
     DotESContentService,
     DotEventsService,
     DotLicenseService,
@@ -47,7 +46,6 @@ import {
     DotExperiment,
     DotIframeEditEvent,
     DotPageContainer,
-    DotPageContainerPersonalized,
     DotPageMode,
     DotPageRender,
     DotPageRenderState,
@@ -128,7 +126,6 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         private dialogService: DialogService,
         private dotContentletEditorService: DotContentletEditorService,
         private dotDialogService: DotAlertConfirmService,
-        private dotEditPageService: DotEditPageService,
         private dotGlobalMessageService: DotGlobalMessageService,
         private dotMessageService: DotMessageService,
         private dotPageStateService: DotPageStateService,
@@ -293,18 +290,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
      * @memberof DotEditContentComponent
      */
     onFormSelected(item: DotCMSContentType): void {
-        this.dotEditContentHtmlService
-            .renderAddedForm(item.id)
-            .subscribe((model: DotPageContainer[]) => {
-                if (model) {
-                    this.saveToPage(model)
-                        .pipe(take(1))
-                        .subscribe(() => {
-                            this.reload(null);
-                        });
-                }
-            });
-
+        this.dotEditContentHtmlService.renderAddedForm(item.id);
         this.editForm = false;
     }
 
@@ -403,59 +389,12 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         return this.route.snapshot.queryParams.url === url;
     }
 
-    private saveContent(event: PageModelChangeEvent): void {
-        this.saveToPage(event.model)
-            .pipe(
-                filter((message: string) => {
-                    return this.shouldReload(event.type) || message === 'error';
-                }),
-                take(1)
-            )
-            .subscribe(() => {
-                this.reload(null);
-            });
-    }
-
     private shouldReload(type: PageModelChangeEventType): boolean {
         return (
-            type !== PageModelChangeEventType.REMOVE_CONTENT &&
-            this.pageStateInternal.page.remoteRendered
+            (type !== PageModelChangeEventType.REMOVE_CONTENT &&
+                this.pageStateInternal.page.remoteRendered) ||
+            type === PageModelChangeEventType.SAVE_ERROR
         );
-    }
-
-    private saveToPage(model: DotPageContainer[]): Observable<string> {
-        this.dotGlobalMessageService.loading(
-            this.dotMessageService.get('dot.common.message.saving')
-        );
-
-        return this.dotEditPageService
-            .save(this.pageStateInternal.page.identifier, this.getPersonalizedModel(model) || model)
-            .pipe(
-                take(1),
-                tap(() => {
-                    this.dotGlobalMessageService.success();
-                }),
-                catchError((error: HttpErrorResponse) => {
-                    this.httpErrorManagerService.handle(error);
-
-                    return of('error');
-                })
-            );
-    }
-
-    private getPersonalizedModel(model: DotPageContainer[]): DotPageContainerPersonalized[] {
-        const persona = this.pageStateInternal.viewAs.persona;
-
-        if (persona && persona.personalized) {
-            return model.map((container: DotPageContainer) => {
-                return {
-                    ...container,
-                    personaTag: persona.keyTag
-                };
-            });
-        }
-
-        return null;
     }
 
     private addContentType($event: DotContentletEventAddContentType): void {
@@ -585,7 +524,9 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     }
 
     private renderPage(pageState: DotPageRenderState): void {
+        // console.log('LLAMADO');
         this.dotEditContentHtmlService.setCurrentPage(pageState.page);
+        this.dotEditContentHtmlService.setCurrentPersona(pageState.viewAs.persona);
 
         if (this.shouldEditMode(pageState)) {
             if (this.isEnterpriseLicense) {
@@ -650,7 +591,9 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
             .subscribe((event: PageModelChangeEvent) => {
                 this.ngZone.run(() => {
                     this.dotPageStateService.updatePageStateHaveContent(event);
-                    this.saveContent(event);
+                    if (this.shouldReload(event.type)) {
+                        this.reload(null);
+                    }
                 });
             });
     }
@@ -761,7 +704,10 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
      */
     private copyContentAndEdit(copyContent: DotCopyContent): void {
         this.dotCopyContentService
-            .copyContentInPage(copyContent)
+            .copyContentInPage({
+                ...copyContent,
+                personalization: this.dotPageStateService.pagePersonalization
+            })
             .pipe(
                 take(1),
                 tap(() => this.dotLoadingIndicatorService.show()),
@@ -770,6 +716,9 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                 ),
                 finalize(() => this.dotLoadingIndicatorService.hide())
             )
-            .subscribe(({ inode }: DotCMSContentlet) => this.editContentlet(inode));
+            .subscribe(({ inode }: DotCMSContentlet) => {
+                this.reload(null);
+                this.editContentlet(inode);
+            });
     }
 }

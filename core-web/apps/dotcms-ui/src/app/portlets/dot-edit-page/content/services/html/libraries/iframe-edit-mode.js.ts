@@ -18,17 +18,32 @@ function initDragAndDrop () {
         return containers;
     }
 
-    function getDotNgModel() {
-        var model = [];
+    function getDotNgModel(addedContentletId = null) {
+        const model = [];
         getContainers().forEach(function(container) {
-            var contentlets = Array.from(container.querySelectorAll('[data-dot-object="contentlet"]'));
-
-            model.push({
-                identifier: container.dataset.dotIdentifier,
-                uuid: container.dataset.dotUuid,
-                contentletsId: contentlets.map(function(contentlet) {
+            const contentlets = Array.from(container.querySelectorAll('[data-dot-object="contentlet"]'));
+            const placeholder = container.querySelector('#contentletPlaceholder');
+            const uuid = container.dataset.dotUuid;
+            const contentletsId = contentlets
+                .map((contentlet) => {
+                    // Replace current PlaceHolder position with the new contentlet Id that will be added
+                    if(contentlet === placeholder && addedContentletId) {
+                        return addedContentletId;
+                    }
                     return contentlet.dataset.dotIdentifier;
                 })
+                .filter((value) => !!value);
+
+            // If the placeholder is not present, add the new contentlet Id
+            // at the end of the array
+            if(!placeholder && addedContentletId) {
+                contentletsId.push(addedContentletId);
+            }
+            
+            model.push({
+                identifier: container.dataset.dotIdentifier,
+                uuid,
+                contentletsId
             });
         });
         return model;

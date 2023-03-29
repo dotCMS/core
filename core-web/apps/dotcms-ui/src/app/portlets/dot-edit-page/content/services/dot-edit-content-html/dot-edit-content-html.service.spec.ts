@@ -13,6 +13,7 @@ import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-er
 import { DotGlobalMessageService } from '@dotcms/app/view/components/_common/dot-global-message/dot-global-message.service';
 import {
     DotAlertConfirmService,
+    DotEditPageService,
     DotEventsService,
     DotLicenseService,
     DotMessageService,
@@ -183,6 +184,7 @@ xdescribe('DotEditContentHtmlService', () => {
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
     let mouseOverContentlet;
     let dotContainerContentletService: DotContainerContentletService;
+    let dotEditPageService: DotEditPageService;
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
@@ -200,6 +202,7 @@ xdescribe('DotEditContentHtmlService', () => {
                 ConfirmationService,
                 DotGlobalMessageService,
                 DotEventsService,
+                DotEditPageService,
                 {
                     provide: DotHttpErrorManagerService,
                     useValue: {
@@ -214,6 +217,7 @@ xdescribe('DotEditContentHtmlService', () => {
         service = TestBed.inject(DotEditContentHtmlService);
         dotEditContentToolbarHtmlService = TestBed.inject(DotEditContentToolbarHtmlService);
         dotLicenseService = TestBed.inject(DotLicenseService);
+        dotEditPageService = TestBed.inject(DotEditPageService);
         dotContainerContentletService = TestBed.inject(DotContainerContentletService);
         dotHttpErrorManagerService = TestBed.inject(DotHttpErrorManagerService);
 
@@ -1107,18 +1111,12 @@ xdescribe('DotEditContentHtmlService', () => {
 
             const doc: HTMLElement = <HTMLElement>fakeDocument.querySelector('html');
             expect(doc.id).toContain('iframeId');
-            expect(service.renderEditedContentlet).toHaveBeenCalledWith(
-                {
-                    identifier: '456',
-                    inode: '999',
-                    type: 'NewsWidgets',
-                    baseType: 'CONTENT'
-                },
-                {
-                    identifier: '456',
-                    inode: '999'
-                }
-            );
+            expect(service.renderEditedContentlet).toHaveBeenCalledWith({
+                identifier: '456',
+                inode: '999',
+                type: 'NewsWidgets',
+                baseType: 'CONTENT'
+            });
         });
 
         it('should render edit vtl', () => {
@@ -1154,18 +1152,12 @@ xdescribe('DotEditContentHtmlService', () => {
                 }
             });
 
-            expect(service.renderEditedContentlet).toHaveBeenCalledWith(
-                {
-                    identifier: '456',
-                    inode: '456',
-                    type: 'NewsWidgets',
-                    baseType: 'CONTENT'
-                },
-                {
-                    identifier: '456',
-                    inode: '888'
-                }
-            );
+            expect(service.renderEditedContentlet).toHaveBeenCalledWith({
+                identifier: '456',
+                inode: '456',
+                type: 'NewsWidgets',
+                baseType: 'CONTENT'
+            });
         });
 
         it('should render internal contentlet edit', () => {
@@ -1203,18 +1195,12 @@ xdescribe('DotEditContentHtmlService', () => {
                 }
             });
 
-            expect(service.renderEditedContentlet).toHaveBeenCalledWith(
-                {
-                    identifier: '456',
-                    inode: '67789',
-                    type: 'NewsWidgets',
-                    baseType: 'CONTENT'
-                },
-                {
-                    identifier: '34345',
-                    inode: '67789'
-                }
-            );
+            expect(service.renderEditedContentlet).toHaveBeenCalledWith({
+                identifier: '456',
+                inode: '67789',
+                type: 'NewsWidgets',
+                baseType: 'CONTENT'
+            });
         });
     });
 
@@ -1239,10 +1225,13 @@ xdescribe('DotEditContentHtmlService', () => {
             uuid: '456'
         };
 
+        let dotGlobalMessageService: DotGlobalMessageService;
+
         beforeEach(() => {
             spyOn(service, 'renderEditedContentlet');
 
             service.currentContainer = currentContainer;
+            dotGlobalMessageService = TestBed.get(DotGlobalMessageService);
         });
 
         it('should render added form', () => {
@@ -1256,20 +1245,10 @@ xdescribe('DotEditContentHtmlService', () => {
                 })
             );
 
-            service.renderAddedForm('4').subscribe((model) => {
-                expect(model).toEqual(
-                    [
-                        {
-                            identifier: '123',
-                            uuid: '456',
-                            contentletsId: ['456', 'tmpPlaceholder', '2']
-                        },
-                        { identifier: '321', uuid: '654', contentletsId: ['456'] },
-                        { identifier: '976', uuid: '156', contentletsId: ['367'] }
-                    ],
-                    'should tigger model change event'
-                );
-            });
+            service.renderAddedForm('4');
+
+            expect(dotGlobalMessageService.success).toHaveBeenCalledTimes(1);
+            expect(dotEditPageService.save).toHaveBeenCalledTimes(1);
 
             expect<any>(dotContainerContentletService.getFormToContainer).toHaveBeenCalledWith(
                 currentContainer,
@@ -1299,14 +1278,34 @@ xdescribe('DotEditContentHtmlService', () => {
                 })
             );
 
-            service.renderAddedForm(form.id).subscribe((model) => {
-                expect(model).toBeNull();
-            });
+            service.renderAddedForm(form.id);
 
             const doc = service.iframe.nativeElement.contentDocument;
             expect(doc.querySelector('.loader__overlay')).toBeNull();
         });
     });
+
+    describe('errors', () => {
+        let httpErrorManagerService: DotHttpErrorManagerService;
+
+        describe('Error on save', () => {
+            it('should handle error on save and emit SAVE_ERROR Event Type', (done) => {
+                const errorResponse = { error: { message: 'error' } } as HttpErrorResponse;
+                spyOn(dotEditPageService, 'save').and.returnValue(throwError(errorResponse));
+                spyOn(httpErrorManagerService, 'handle');
+
+                service.pageModel$.subscribe((model) => {
+                    expect(model.type).toEqual(PageModelChangeEventType.SAVE_ERROR);
+                    done();
+                });
+
+                service.renderAddedContentlet({ identifier: '123', inode: '' });
+
+                expect(httpErrorManagerService.handle).toHaveBeenCalledOnceWith(errorResponse);
+            });
+        });
+    });
+
     afterEach(() => {
         document.body.removeChild(fakeIframeEl);
     });
