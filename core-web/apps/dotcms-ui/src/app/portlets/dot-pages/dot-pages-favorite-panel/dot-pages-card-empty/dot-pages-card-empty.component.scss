@@ -1,7 +1,7 @@
 @use "variables" as *;
 
 .dot-pages-card-empty {
-    border: 1px solid $gray-lighter;
+    border: 1px solid $color-palette-gray-300;
     border-radius: 4px;
 }
 
@@ -9,7 +9,7 @@
     display: flex;
     width: 100%;
     height: 170px;
-    border-bottom: 1px solid $gray-lighter;
+    border-bottom: 1px solid $color-palette-gray-300;
 }
 
 .dot-pages-card-empty__body {
@@ -19,7 +19,7 @@
     ::ng-deep dot-icon {
         margin-right: $spacing-1;
         i {
-            color: $gray-lighter;
+            color: $color-palette-gray-300;
         }
     }
 }

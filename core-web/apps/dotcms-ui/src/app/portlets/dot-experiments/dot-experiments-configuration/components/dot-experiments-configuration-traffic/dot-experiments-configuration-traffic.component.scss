@@ -2,20 +2,17 @@
 
 h2 {
     margin: 0;
-    font-size: $font-size-large;
+    font-size: $font-size-lg;
     font-weight: 500;
     text-transform: uppercase;
 }
 
-:host ::ng-deep p-card .p-card-content {
-    .card-load {
-        border-bottom-left-radius: 0;
-        border-bottom-right-radius: 0;
-        border-bottom: 0;
-    }
+:host ::ng-deep {
+    dot-icon {
+        color: $color-palette-gray-500;
 
-    .card-split {
-        border-top-left-radius: 0;
-        border-top-right-radius: 0;
+        &.isDone {
+            color: $color-accessible-text-green;
+        }
     }
 }

@@ -1534,7 +1534,6 @@ public class WorkflowResource {
 
             return fireAction(request, fireActionForm, initDataObject.getUser(), contentlet, actionId, Optional.empty());
         } catch (Exception e) {
-
             Logger.error(this.getClass(),
                     "Exception on firing, workflow action: " + actionId +
                             ", inode: " + inode, e);

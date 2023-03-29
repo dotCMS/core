@@ -4,6 +4,7 @@ import com.dotcms.api.AuthenticationContext;
 import com.dotcms.cli.command.CommandTest;
 import com.dotcms.cli.common.InputOutputFormat;
 import io.quarkus.test.junit.QuarkusTest;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.*;
 import picocli.CommandLine;
 
@@ -15,7 +16,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 @QuarkusTest
-public class SiteCommandTest extends CommandTest {
+class SiteCommandTest extends CommandTest {
+
+    @ConfigProperty(name = "com.dotcms.starter.site", defaultValue = "default")
+    String siteName;
 
     @Inject
     AuthenticationContext authenticationContext;
@@ -70,7 +74,7 @@ public class SiteCommandTest extends CommandTest {
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
-            final int status = commandLine.execute(SiteCommand.NAME, SiteFind.NAME, "--name", "default");
+            final int status = commandLine.execute(SiteCommand.NAME, SiteFind.NAME, "--name", siteName);
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
             Assertions.assertTrue(output.startsWith("name:"));
@@ -115,7 +119,7 @@ public class SiteCommandTest extends CommandTest {
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
-            final int status = commandLine.execute(SiteCommand.NAME, SiteCopy.NAME, "--idOrName", "default");
+            final int status = commandLine.execute(SiteCommand.NAME, SiteCopy.NAME, "--idOrName", siteName);
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
             Assertions.assertTrue(output.startsWith("New Copy Site is"));

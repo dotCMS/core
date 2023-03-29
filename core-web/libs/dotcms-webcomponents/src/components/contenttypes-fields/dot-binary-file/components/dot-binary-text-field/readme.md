@@ -2,20 +2,22 @@
 
 <!-- Auto Generated Below -->
 
+
 ## Overview
 
 Represent a dotcms text field for the binary file element.
 
 ## Properties
 
-| Property      | Attribute     | Description                                                                                            | Type      | Default     |
-| ------------- | ------------- | ------------------------------------------------------------------------------------------------------ | --------- | ----------- |
-| `accept`      | `accept`      | (optional) Describes a type of file that may be selected by the user, separated by comma eg: .pdf,.jpg | `string`  | `undefined` |
-| `disabled`    | `disabled`    | (optional) Disables field's interaction                                                                | `boolean` | `false`     |
-| `hint`        | `hint`        | (optional) Hint text that suggest a clue of the field                                                  | `string`  | `''`        |
-| `placeholder` | `placeholder` | (optional) Placeholder specifies a short hint that describes the expected value of the input field     | `string`  | `''`        |
-| `required`    | `required`    | (optional) Determine if it is mandatory                                                                | `boolean` | `false`     |
-| `value`       | `value`       | Value specifies the value of the <input> element                                                       | `any`     | `null`      |
+| Property      | Attribute     | Description                                                                                             | Type      | Default     |
+| ------------- | ------------- | ------------------------------------------------------------------------------------------------------- | --------- | ----------- |
+| `accept`      | `accept`      | (optional) Describes a type of file that may be selected by the user, separated by comma  eg: .pdf,.jpg | `string`  | `undefined` |
+| `disabled`    | `disabled`    | (optional) Disables field's interaction                                                                 | `boolean` | `false`     |
+| `hint`        | `hint`        | (optional) Hint text that suggest a clue of the field                                                   | `string`  | `''`        |
+| `placeholder` | `placeholder` | (optional) Placeholder specifies a short hint that describes the expected value of the input field      | `string`  | `''`        |
+| `required`    | `required`    | (optional) Determine if it is mandatory                                                                 | `boolean` | `false`     |
+| `value`       | `value`       | Value specifies the value of the <input> element                                                        | `any`     | `null`      |
+
 
 ## Events
 
@@ -24,20 +26,20 @@ Represent a dotcms text field for the binary file element.
 | `fileChange` |             | `CustomEvent<DotBinaryFileEvent>` |
 | `lostFocus`  |             | `CustomEvent<any>`                |
 
+
 ## Dependencies
 
 ### Used by
 
--   [dot-binary-file](../..)
+ - [dot-binary-file](../..)
 
 ### Graph
-
 ```mermaid
 graph TD;
   dot-binary-file --> dot-binary-text-field
   style dot-binary-text-field fill:#f9f,stroke:#333,stroke-width:4px
 ```
 
----
+----------------------------------------------
 
-_Built with [StencilJS](https://stenciljs.com/)_
+*Built with [StencilJS](https://stenciljs.com/)*

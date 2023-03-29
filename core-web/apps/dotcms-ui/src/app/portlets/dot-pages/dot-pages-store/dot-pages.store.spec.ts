@@ -413,8 +413,8 @@ describe('DotPageStore', () => {
             expect(data.pages.menuActions[1].label).toEqual(mockWorkflowsActions[0].name);
             expect(data.pages.menuActions[2].label).toEqual(mockWorkflowsActions[1].name);
             expect(data.pages.menuActions[3].label).toEqual(mockWorkflowsActions[2].name);
-            expect(data.pages.menuActions[5].label).toEqual('contenttypes.content.push_publish');
-            expect(data.pages.menuActions[4].label).toEqual('contenttypes.content.add_to_bundle');
+            expect(data.pages.menuActions[4].label).toEqual('contenttypes.content.push_publish');
+            expect(data.pages.menuActions[5].label).toEqual('contenttypes.content.add_to_bundle');
             expect(data.pages.actionMenuDomId).toEqual('test1');
         });
 
