@@ -25,7 +25,6 @@ import {
 } from '@dotcms/utils-testing';
 
 import { DotPagesCardModule } from './dot-pages-card/dot-pages-card.module';
-import { DotPagesCardEmptyModule } from './dot-pages-card-empty/dot-pages-card-empty.module';
 import { DotPagesFavoritePanelComponent } from './dot-pages-favorite-panel.component';
 
 import { DotPageStore } from '../dot-pages-store/dot-pages.store';
@@ -118,7 +117,6 @@ describe('DotPagesFavoritePanelComponent', () => {
                     DotMessagePipeModule,
                     ButtonModule,
                     DotPagesCardModule,
-                    DotPagesCardEmptyModule,
                     PanelModule,
                     HttpClientTestingModule
                 ],
@@ -153,10 +151,9 @@ describe('DotPagesFavoritePanelComponent', () => {
         });
 
         it('should load empty pages cards container', () => {
-            expect(de.queryAll(By.css('dot-pages-card-empty')).length).toBe(5);
             expect(
                 de.query(By.css('.dot-pages-empty__container dot-icon')).componentInstance.name
-            ).toBe('library_add');
+            ).toBe('star_outline');
             expect(de.query(By.css('.dot-pages-empty__header')).nativeElement.outerText).toBe(
                 'favoritePage.listing.empty.header'
             );
@@ -202,7 +199,6 @@ describe('DotPagesFavoritePanelComponent', () => {
                     DotMessagePipeModule,
                     ButtonModule,
                     DotPagesCardModule,
-                    DotPagesCardEmptyModule,
                     PanelModule,
                     HttpClientTestingModule
                 ],
@@ -393,7 +389,6 @@ describe('DotPagesFavoritePanelComponent', () => {
                     DotMessagePipeModule,
                     ButtonModule,
                     DotPagesCardModule,
-                    DotPagesCardEmptyModule,
                     PanelModule,
                     HttpClientTestingModule
                 ],
