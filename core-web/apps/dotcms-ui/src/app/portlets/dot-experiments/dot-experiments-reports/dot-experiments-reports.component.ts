@@ -1,13 +1,19 @@
 import { Observable } from 'rxjs';
 
 import { AsyncPipe, LowerCasePipe, NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
+import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
 
+import { take } from 'rxjs/operators';
+
+import { DotMessageService } from '@dotcms/data-access';
+import { DotExperiment } from '@dotcms/dotcms-models';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotExperimentsConfigurationSkeletonComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-skeleton/dot-experiments-configuration-skeleton.component';
+import { DotExperimentsPublishVariantComponent } from '@portlets/dot-experiments/dot-experiments-reports/components/dot-experiments-publish-variant/dot-experiments-publish-variant.component';
 import { DotExperimentsReportsChartComponent } from '@portlets/dot-experiments/dot-experiments-reports/components/dot-experiments-reports-chart/dot-experiments-reports-chart.component';
 import { DotExperimentsReportsSkeletonComponent } from '@portlets/dot-experiments/dot-experiments-reports/components/dot-experiments-reports-skeleton/dot-experiments-reports-skeleton.component';
 import {
@@ -16,6 +22,7 @@ import {
 } from '@portlets/dot-experiments/dot-experiments-reports/store/dot-experiments-reports-store';
 import { DotExperimentsExperimentSummaryComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-experiment-summary/dot-experiments-experiment-summary.component';
 import { DotExperimentsUiHeaderComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
+import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
 
 @Component({
     selector: 'dot-experiments-reports',
@@ -31,21 +38,28 @@ import { DotExperimentsUiHeaderComponent } from '@portlets/dot-experiments/share
         DotExperimentsExperimentSummaryComponent,
         DotExperimentsReportsSkeletonComponent,
         DotExperimentsReportsChartComponent,
+        DotExperimentsPublishVariantComponent,
+        DotDynamicDirective,
         //PrimeNg
-        TagModule
+        TagModule,
+        ButtonModule
     ],
     templateUrl: './dot-experiments-reports.component.html',
     styleUrls: ['./dot-experiments-reports.component.scss'],
-    providers: [DotExperimentsReportsStore],
+    providers: [DotExperimentsReportsStore, DotMessageService],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsReportsComponent implements OnInit {
     vm$: Observable<VmReportExperiment> = this.store.vm$;
 
+    @ViewChild(DotDynamicDirective, { static: true }) host!: DotDynamicDirective;
+
     constructor(
         private readonly store: DotExperimentsReportsStore,
         private readonly router: Router,
-        private readonly route: ActivatedRoute
+        private readonly route: ActivatedRoute,
+
+        private dotMessageService: DotMessageService
     ) {}
 
     ngOnInit(): void {
@@ -67,5 +81,34 @@ export class DotExperimentsReportsComponent implements OnInit {
             },
             queryParamsHandling: 'merge'
         });
+    }
+
+    /**
+     * Publish the variant
+     * @returns void
+     * @memberof DotExperimentsReportsComponent
+     *
+     */
+    loadPublishVariant(experiment: DotExperiment) {
+        // console.log(experiment);
+        const viewContainerRef = this.host.viewContainerRef;
+        viewContainerRef.clear();
+        const componentRef =
+            viewContainerRef.createComponent<DotExperimentsPublishVariantComponent>(
+                DotExperimentsPublishVariantComponent
+            );
+        componentRef.instance.data = experiment;
+
+        componentRef.instance.hide.pipe(take(1)).subscribe(() => {
+            viewContainerRef.clear();
+        });
+
+        // this.dialogService.open(DotExperimentsPublishVariantComponent, {
+        //     header: this.dotMessageService.get('experiments.report.publish.variant'),
+        //     width: '35rem',
+        //     contentStyle: { 'max-height': '500px', overflow: 'auto' },
+        //     baseZIndex: 10000,
+        //     data: experiment
+        // });
     }
 }
