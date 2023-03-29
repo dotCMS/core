@@ -7,7 +7,7 @@
 
 .dot-empty-container__notice {
     .material-icons {
-        color: $brand-primary;
+        color: $color-palette-primary;
         font-size: 4rem;
     }
 
@@ -28,7 +28,7 @@
     }
 
     h3 {
-        font-size: $font-size-x-large;
+        font-size: $font-size-xl;
         margin: $spacing-3 $spacing-0 $spacing-2 $spacing-0;
         font-weight: $font-weight-semi-bold;
     }
@@ -39,11 +39,11 @@
 }
 
 .checkbox-dummy {
-    border: 2px solid $gray-bg;
+    border: 2px solid $color-palette-gray-200;
     background: $white;
     width: 1.3rem;
     height: 1.3rem;
-    border-radius: $border-radius;
+    border-radius: $border-radius-xs;
     position: relative;
 }
 
@@ -55,7 +55,7 @@
 
     tbody {
         tr {
-            border-top: 1px solid $gray-bg;
+            border-top: 1px solid $color-palette-gray-200;
             outline: 0 none;
             background: $white;
             transition: none;
@@ -70,7 +70,7 @@
                     padding-left: $spacing-5;
                 }
                 text-align: left;
-                border: 1px solid $gray-bg;
+                border: 1px solid $color-palette-gray-200;
                 border-width: 0 0 1px 0;
                 padding: 1.25rem $spacing-2;
                 width: 3.5%;
@@ -92,7 +92,7 @@
                     right: 0;
                     top: 50%;
                     bottom: 50%;
-                    background-color: $gray-bg;
+                    background-color: $color-palette-gray-200;
                     height: 0.71rem;
                     transform: translateY(-50%);
                     border-radius: 1.7rem;

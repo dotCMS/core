@@ -20,6 +20,8 @@ import { SidebarModule } from 'primeng/sidebar';
 import { takeUntil } from 'rxjs/operators';
 
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
+import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
+import { DotMessageService } from '@dotcms/data-access';
 import {
     ComponentStatus,
     GOAL_TYPES,
@@ -51,6 +53,7 @@ import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sideba
         DotSidebarDirective,
         DotExperimentsOptionsModule,
         DotDropdownDirective,
+        DotAutofocusModule,
         //PrimeNg
         SidebarModule,
         ButtonModule,
@@ -76,6 +79,7 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
 
     constructor(
         private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore,
+        private readonly dotMessageService: DotMessageService,
         private readonly cdr: ChangeDetectorRef
     ) {}
 
@@ -144,10 +148,13 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
     private initForm(): void {
         this.form = new FormGroup({
             primary: new FormGroup({
-                name: new FormControl('', {
-                    nonNullable: true,
-                    validators: [Validators.required]
-                }),
+                name: new FormControl(
+                    this.dotMessageService.get('experiments.configure.goals.name.default'),
+                    {
+                        nonNullable: true,
+                        validators: [Validators.required]
+                    }
+                ),
                 type: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
                 conditions: new FormArray([
                     new FormGroup({

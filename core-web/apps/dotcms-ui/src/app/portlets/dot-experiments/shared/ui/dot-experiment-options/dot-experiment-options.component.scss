@@ -6,8 +6,8 @@
     gap: $spacing-3;
 
     .dot-options__item {
-        border: 1px solid $color-gray-200;
-        border-radius: $border-radius-md;
+        border: 1px solid $color-palette-gray-200;
+        border-radius: $border-radius-sm;
         display: flex;
         flex-direction: column;
         transition-duration: $basic-speed;
@@ -22,17 +22,17 @@
             h2,
             p {
                 margin: 0;
-                color: $color-gray-600;
+                color: $color-palette-gray-600;
             }
 
             h2 {
-                font-size: $font-size-large;
+                font-size: $font-size-lg;
                 font-weight: $font-weight-bold;
             }
 
             p {
-                font-size: $font-size-medium;
-                color: $color-gray-500;
+                font-size: $font-size-md;
+                color: $color-palette-gray-500;
             }
         }
 
@@ -45,11 +45,11 @@
         }
 
         &.active {
-            background-color: $color-primary-200;
+            background-color: $color-palette-primary-200;
         }
 
         &:hover {
-            background-color: $color-primary-200;
+            background-color: $color-palette-primary-200;
         }
     }
 }

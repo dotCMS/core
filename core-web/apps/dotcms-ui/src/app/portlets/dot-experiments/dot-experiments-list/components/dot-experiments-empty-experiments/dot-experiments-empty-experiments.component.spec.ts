@@ -11,7 +11,7 @@ import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module
 import { DotExperimentsEmptyExperimentsComponent } from './dot-experiments-empty-experiments.component';
 
 const messageServiceMock = new MockDotMessageService({
-    'experimentspage.add.new.experiment': 'Add a new experiment'
+    'experimentspage.add.new.experiment': 'Create a new Experiment'
 });
 
 describe('DotExperimentsEmptyExperimentsComponent', () => {
@@ -48,7 +48,7 @@ describe('DotExperimentsEmptyExperimentsComponent', () => {
         expect(dotIcon).toExist();
 
         expect(spectator.query(byTestId('description'))).toHaveText(description);
-        expect(pButton.label).toBe('Add a new experiment');
+        expect(pButton.label).toBe('Create a new Experiment');
     });
 
     it('should show icon and title, not button', () => {

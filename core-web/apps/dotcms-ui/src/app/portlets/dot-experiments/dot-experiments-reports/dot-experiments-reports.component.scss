@@ -14,10 +14,10 @@
     width: 100%;
     overflow-y: scroll;
     height: 100%;
-    background-color: $color-gray-100;
+    background-color: $color-palette-gray-100;
 
     p {
-        font-size: $font-size-medium;
+        font-size: $font-size-md;
         line-height: $line-height;
     }
 
@@ -36,5 +36,11 @@
 @media only screen and (max-width: $screen-lg-max) {
     .content {
         width: calc(100% - 2rem);
+    }
+}
+
+@media only screen and (min-width: $screen-xl-min) {
+    .dot-experiment-report-content .container .content {
+        width: 1100px;
     }
 }

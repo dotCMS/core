@@ -1,0 +1,9 @@
+.tag-manager__tags-list {
+    .dojoxGridRow,
+    .dojoxGridHeader {
+        .dojoxGridRowTable .dojoxGridCell:first-child {
+            width: 40px !important;
+            padding-left: $spacing-1 * 3;
+        }
+    }
+}

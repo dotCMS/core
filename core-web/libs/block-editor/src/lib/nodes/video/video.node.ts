@@ -12,7 +12,7 @@ declare module '@tiptap/core' {
 }
 
 export const VideoNode = Node.create({
-    name: 'video',
+    name: 'dotVideo',
 
     addAttributes() {
         return {
@@ -121,12 +121,12 @@ const getVideoAttrs = (attrs: DotCMSContentlet | string) => {
         return { src: attrs };
     }
 
-    const { assetMetaData, asset, assetVersion, mineType } = attrs;
+    const { assetMetaData, asset, mineType, fileAsset } = attrs;
     const { width = 'auto', height = 'auto', contentType } = assetMetaData || {};
     const orientation = height > width ? 'vertical' : 'horizontal';
 
     return {
-        src: assetVersion || asset,
+        src: fileAsset || asset,
         data: {
             ...attrs
         },
