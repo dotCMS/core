@@ -1,23 +1,22 @@
-import * as md5 from 'md5';
 import { Observable } from 'rxjs';
 
 import { AsyncPipe, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Inject, OnInit, ViewChild } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
+import { AvatarModule } from 'primeng/avatar';
 import { Menu, MenuModule } from 'primeng/menu';
 
-import { map, switchMap, take } from 'rxjs/operators';
+import { map, take } from 'rxjs/operators';
 
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
-import { DotGravatarService } from '@dotcms/app/api/services/dot-gravatar-service';
+import { DotAvatarDirective } from '@directives/dot-avatar/dot-avatar.directive';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { LOCATION_TOKEN } from '@dotcms/app/providers';
 import { DotPipesModule } from '@dotcms/app/view/pipes/dot-pipes.module';
 import { DotMessageService } from '@dotcms/data-access';
 import { Auth, CurrentUser, LoggerService, LoginService, LOGOUT_URL } from '@dotcms/dotcms-js';
 
-import { DotGravatarComponent } from '../dot-gravatar/dot-gravatar.component';
 import { DotLoginAsModule } from '../dot-login-as/dot-login-as.module';
 import { DotMyAccountModule } from '../dot-my-account/dot-my-account.module';
 
@@ -28,7 +27,8 @@ import { DotMyAccountModule } from '../dot-my-account/dot-my-account.module';
     changeDetection: ChangeDetectionStrategy.OnPush,
     standalone: true,
     imports: [
-        DotGravatarComponent,
+        DotAvatarDirective,
+        AvatarModule,
         DotLoginAsModule,
         DotMyAccountModule,
         DotPipesModule,
@@ -57,8 +57,7 @@ export class DotToolbarUserComponent implements OnInit {
         private loginService: LoginService,
         private dotNavigationService: DotNavigationService,
         private dotRouterService: DotRouterService,
-        private dotMessageService: DotMessageService,
-        private dotGravatarService: DotGravatarService
+        private dotMessageService: DotMessageService
     ) {}
 
     ngOnInit(): void {
@@ -72,51 +71,50 @@ export class DotToolbarUserComponent implements OnInit {
         });
 
         this.items$ = this.loginService.getCurrentUser().pipe(
-            switchMap(({ loginAs }: CurrentUser) =>
-                this.dotGravatarService.getPhoto(md5(this.userData.email)).pipe(
-                    map(
-                        (photo: string) =>
-                            [
-                                {
-                                    id: 'toolbar-header',
-                                    label: `<div class="toolbar-user__header">
-                                    ${this.getTemplateFromPhoto(photo)}
-                                    </div>`,
-                                    escape: false
-                                },
-                                { separator: true },
-                                {
-                                    id: 'dot-toolbar-user-link-my-account',
-                                    label: this.dotMessageService.get('my-account'),
-                                    icon: 'pi pi-user-edit',
-                                    visible: !this.auth.loginAsUser,
-                                    command: () => this.toggleMyAccount()
-                                },
-                                {
-                                    id: 'dot-toolbar-user-link-login-as',
-                                    label: this.dotMessageService.get('login-as'),
-                                    icon: 'pi pi-sort-alt',
-                                    visible: !this.auth.loginAsUser && loginAs,
-                                    command: () => this.tooggleLoginAs()
-                                },
-                                { separator: true, visible: !this.auth.loginAsUser },
-                                {
-                                    id: 'dot-toolbar-user-link-logout',
-                                    label: this.dotMessageService.get('Logout'),
-                                    icon: 'pi pi-sign-out',
-                                    visible: !this.auth.loginAsUser,
-                                    url: this.logoutUrl
-                                },
-                                {
-                                    id: 'dot-toolbar-user-link-logout-as',
-                                    label: this.dotMessageService.get('logout-as'),
-                                    icon: 'pi pi-sign-out',
-                                    visible: !!this.auth.loginAsUser,
-                                    command: (event) => this.logoutAs(event.originalEvent)
-                                }
-                            ] as MenuItem[]
-                    )
-                )
+            map(
+                ({ loginAs }: CurrentUser) =>
+                    [
+                        {
+                            id: 'toolbar-header',
+                            label: `
+                              <div class="toolbar-user__header">
+                                  <p class="toolbar-user__user-name" id="dot-toolbar-user-name">
+                                    ${this.userData.name}
+                                  </p>
+                              </div>`,
+                            escape: false
+                        },
+                        { separator: true },
+                        {
+                            id: 'dot-toolbar-user-link-my-account',
+                            label: this.dotMessageService.get('my-account'),
+                            icon: 'pi pi-user-edit',
+                            visible: !this.auth.loginAsUser,
+                            command: () => this.toggleMyAccount()
+                        },
+                        {
+                            id: 'dot-toolbar-user-link-login-as',
+                            label: this.dotMessageService.get('login-as'),
+                            icon: 'pi pi-sort-alt',
+                            visible: !this.auth.loginAsUser && loginAs,
+                            command: () => this.tooggleLoginAs()
+                        },
+                        { separator: true, visible: !this.auth.loginAsUser },
+                        {
+                            id: 'dot-toolbar-user-link-logout',
+                            label: this.dotMessageService.get('Logout'),
+                            icon: 'pi pi-sign-out',
+                            visible: !this.auth.loginAsUser,
+                            url: this.logoutUrl
+                        },
+                        {
+                            id: 'dot-toolbar-user-link-logout-as',
+                            label: this.dotMessageService.get('logout-as'),
+                            icon: 'pi pi-sign-out',
+                            visible: !!this.auth.loginAsUser,
+                            command: (event) => this.logoutAs(event.originalEvent)
+                        }
+                    ] as MenuItem[]
             )
         );
     }

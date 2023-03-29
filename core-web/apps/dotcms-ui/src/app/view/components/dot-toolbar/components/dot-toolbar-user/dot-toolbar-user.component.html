@@ -1,9 +1,4 @@
-<dot-gravatar
-    class="gravatar-button"
-    id="dot-toolbar-user"
-    [email]="userData.email"
-    (click)="menu.toggle($event)"
-></dot-gravatar>
+<p-avatar [email]="userData.email" (click)="menu.toggle($event)" dotGravatar></p-avatar>
 <p-menu #menu [model]="items$ | async" [popup]="true" appendTo="body"></p-menu>
 
 <dot-login-as

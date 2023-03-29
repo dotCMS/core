@@ -1,9 +1,10 @@
-import { Observable, of } from 'rxjs';
+import md5 from 'md5';
+import { Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
-import { catchError, map, pluck } from 'rxjs/operators';
+import { map, pluck } from 'rxjs/operators';
 
 interface DotProfile {
     displayName: string;
@@ -38,13 +39,13 @@ export class DotGravatarService {
      * @returns {Observable<string>}
      * @memberof DotGravatarService
      */
-    getPhoto(hash: string): Observable<string> {
-        return this.http.jsonp(`//www.gravatar.com/${hash}.json?`, 'JSONP_CALLBACK').pipe(
-            pluck('_body'),
+    getPhoto(email: string): Observable<string> {
+        const hash = md5(email);
+
+        return this.http.jsonp(`//www.gravatar.com/${hash}.json?`, 'callback').pipe(
             pluck('entry'),
-            map((profiles: DotProfile[]) => profiles[0].photos[0].value),
-            catchError(() => {
-                return of(null);
+            map((profiles: DotProfile[]) => {
+                return profiles[0].photos[0].value;
             })
         );
     }

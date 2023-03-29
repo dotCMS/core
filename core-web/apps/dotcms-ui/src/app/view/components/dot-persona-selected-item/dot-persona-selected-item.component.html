@@ -8,13 +8,13 @@
         [label]="persona?.name || ('modes.persona.no.persona' | dm)"
         [image]="persona?.photo"
         pBadge
-        dotAvatar
+        shape="circle"
     ></p-avatar>
     <p-avatar
         *ngIf="!persona?.personalized"
         [label]="persona?.name || ('modes.persona.no.persona' | dm)"
         [image]="persona?.photo"
-        dotAvatar
+        shape="circle"
     ></p-avatar>
 
     <span class="dot-persona-selector__name">{{
