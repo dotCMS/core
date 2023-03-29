@@ -166,7 +166,7 @@ public class PopulateContentletAsJSONUtil {
 
         stopWatch.stop();
         Logger.info(this, String.format("Contentlet as JSON migration task DONE for assetSubtype: [%s] / " +
-                "excludingAssetSubtype [%s]. Duration: [%s] seconds",
+                        "excludingAssetSubtype [%s]. Duration: %s seconds",
                 assetSubtype, excludingAssetSubtype, DateUtil.millisToSeconds(stopWatch.getTime())));
     }
 
@@ -251,6 +251,9 @@ public class PopulateContentletAsJSONUtil {
                             fileWriter.write(jsonData);
                             fileWriter.newLine();
                         }
+
+                        Logger.info(this, String.format("Added [%s] records for update to temp file", jsonDataArray.size()));
+
                     } else {
                         hasRows = false;
                     }
