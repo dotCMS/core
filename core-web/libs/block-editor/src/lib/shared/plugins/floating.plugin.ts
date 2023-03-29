@@ -156,7 +156,7 @@ export class FloatingActionsView {
 
             return;
         }
-        console.log('selection', selection);
+
         this.createTooltip(this.tippyOptions);
         this.tippy?.setProps({
             getReferenceClientRect: () => posToDOMRect(this.view, from, to)
