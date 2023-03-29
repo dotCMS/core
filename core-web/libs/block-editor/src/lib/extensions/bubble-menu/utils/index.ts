@@ -8,7 +8,8 @@ import { BubbleMenuItem, ShouldShowProps } from '../models';
 const hideBubbleMenuOn = {
     tableCell: true,
     table: true,
-    video: true
+    video: true,
+    youtube: true
 };
 
 /**
