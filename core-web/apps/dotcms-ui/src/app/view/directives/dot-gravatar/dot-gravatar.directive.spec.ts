@@ -18,7 +18,7 @@ class TestHostComponent {
     email = 'jitewaboh@lagify.com';
 }
 
-fdescribe('DotGravatarDirective', () => {
+describe('DotGravatarDirective', () => {
     let fixture: ComponentFixture<TestHostComponent>;
     let component: TestHostComponent;
     let element: DebugElement;

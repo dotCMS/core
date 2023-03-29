@@ -10,6 +10,7 @@ import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
+import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { MenuModule } from 'primeng/menu';
@@ -20,6 +21,7 @@ import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
+import { DotGravatarDirective } from '@directives/dot-gravatar/dot-gravatar.directive';
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotGravatarService } from '@dotcms/app/api/services/dot-gravatar-service';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
@@ -45,7 +47,6 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotToolbarUserComponent } from './dot-toolbar-user.component';
 
-import { DotGravatarComponent } from '../dot-gravatar/dot-gravatar.component';
 import { DotLoginAsModule } from '../dot-login-as/dot-login-as.module';
 import { DotMyAccountModule } from '../dot-my-account/dot-my-account.module';
 
@@ -109,7 +110,8 @@ describe('DotToolbarUserComponent', () => {
                 DotLoginAsModule,
                 DotMyAccountModule,
                 DotToolbarUserComponent,
-                DotGravatarComponent
+                DotGravatarDirective,
+                AvatarModule
             ]
         });
 
@@ -145,7 +147,7 @@ describe('DotToolbarUserComponent', () => {
 
         fixture.detectChanges();
 
-        const dotGravatarComponent = de.query(By.css('dot-gravatar')).nativeElement;
+        const dotGravatarComponent = de.query(By.css('p-avatar')).nativeElement;
         dotGravatarComponent.click();
         fixture.detectChanges();
 
@@ -173,7 +175,7 @@ describe('DotToolbarUserComponent', () => {
 
         fixture.detectChanges();
 
-        const dotGravatarComponent = de.query(By.css('dot-gravatar')).nativeElement;
+        const dotGravatarComponent = de.query(By.css('p-avatar')).nativeElement;
         dotGravatarComponent.click();
         fixture.detectChanges();
 

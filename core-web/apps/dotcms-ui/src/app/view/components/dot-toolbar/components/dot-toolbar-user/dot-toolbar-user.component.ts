@@ -10,7 +10,7 @@ import { Menu, MenuModule } from 'primeng/menu';
 import { map, take } from 'rxjs/operators';
 
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
-import { DotAvatarDirective } from '@directives/dot-avatar/dot-avatar.directive';
+import { DotGravatarDirective } from '@directives/dot-gravatar/dot-gravatar.directive';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { LOCATION_TOKEN } from '@dotcms/app/providers';
 import { DotPipesModule } from '@dotcms/app/view/pipes/dot-pipes.module';
@@ -27,7 +27,7 @@ import { DotMyAccountModule } from '../dot-my-account/dot-my-account.module';
     changeDetection: ChangeDetectionStrategy.OnPush,
     standalone: true,
     imports: [
-        DotAvatarDirective,
+        DotGravatarDirective,
         AvatarModule,
         DotLoginAsModule,
         DotMyAccountModule,
