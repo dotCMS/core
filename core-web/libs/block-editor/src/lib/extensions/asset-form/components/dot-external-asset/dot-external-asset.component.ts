@@ -53,8 +53,6 @@ export class DotExternalAssetComponent {
         this.form.valueChanges.subscribe(({ url }) => {
             if (this.type === 'video' && !this.isInvalid) {
                 this.tryToPlayVideo(url);
-
-                return;
             }
         });
 
@@ -79,7 +77,7 @@ export class DotExternalAssetComponent {
      * @memberof DotExternalAssetComponent
      */
     private tryToPlayVideo(url: string): void {
-        const video = document.createElement('video') as HTMLVideoElement;
+        const video = document.createElement('video');
 
         this.disableAction = true;
 

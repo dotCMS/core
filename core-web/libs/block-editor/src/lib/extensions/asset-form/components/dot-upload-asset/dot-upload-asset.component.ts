@@ -112,10 +112,6 @@ export class DotUploadAssetComponent implements OnDestroy {
 
         this.cancelUploading();
         this.hide.emit(true);
-
-        return;
-
-        // this.preventClose.emit(false);
     }
     /**
      * End the uploading message animation
