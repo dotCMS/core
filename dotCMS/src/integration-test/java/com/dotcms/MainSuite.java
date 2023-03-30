@@ -102,6 +102,7 @@ import com.dotcms.storage.FileMetadataAPITest;
 import com.dotcms.storage.StoragePersistenceAPITest;
 import com.dotcms.storage.repository.HashedLocalFileRepositoryManagerTest;
 import com.dotcms.translate.GoogleTranslationServiceIntegrationTest;
+import com.dotcms.util.content.json.PopulateContentletAsJSONUtilTest;
 import com.dotcms.uuid.shorty.LegacyShortyIdApiTest;
 import com.dotcms.variant.VariantAPITest;
 import com.dotcms.variant.VariantFactoryTest;
@@ -656,7 +657,8 @@ import org.junit.runners.Suite.SuiteClasses;
         HashedLocalFileRepositoryManagerTest.class,
         ManifestUtilTest.class,
         ZipUtilTest.class,
-        Task230110MakeSomeSystemFieldsRemovableByBaseTypeTest.class
+        Task230110MakeSomeSystemFieldsRemovableByBaseTypeTest.class,
+        PopulateContentletAsJSONUtilTest.class
 })
 
 public class MainSuite {
