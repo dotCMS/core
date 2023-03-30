@@ -53,8 +53,6 @@ export class DotExternalAssetComponent {
         this.form.valueChanges.subscribe(({ url }) => {
             if (this.type === 'video' && !this.isInvalid) {
                 this.tryToPlayVideo(url);
-
-                return;
             }
         });
 
