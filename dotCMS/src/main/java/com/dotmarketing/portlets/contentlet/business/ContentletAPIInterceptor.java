@@ -1695,6 +1695,25 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
             post.refresh(type);
         }
     }
+
+	public Contentlet copyContentToVariant(final Contentlet contentlet, final String variantName,
+			final User user) throws DotDataException, DotSecurityException {
+		for(ContentletAPIPreHook pre : preHooks){
+			boolean preResult = pre.saveContentOnVariant(contentlet, variantName, user);
+			if(!preResult){
+				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+			}
+		}
+
+		final Contentlet saveContentOnVariant = conAPI.copyContentToVariant(contentlet, variantName, user);
+
+		for(ContentletAPIPostHook post : postHooks){
+			post.saveContentOnVariant(contentlet, variantName, user);
+		}
+
+		return saveContentOnVariant;
+    }
 	
 	
 	@Override

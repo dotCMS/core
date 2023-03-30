@@ -2258,4 +2258,14 @@ public interface ContentletAPI {
      */
     void refresh(ContentType type) throws DotReindexStateException;
 
+	/**
+	 * This method will create a new version of the contentlet but into variantName.
+	 *
+	 * @param contentlet  to be copied
+	 * @param variantName new variant version
+	 * @param user        user to check permissions
+	 * @return new contentlet version
+	 */
+	Contentlet copyContentToVariant(final Contentlet contentlet, final String variantName,
+			final User user) throws DotDataException, DotSecurityException;
 }
