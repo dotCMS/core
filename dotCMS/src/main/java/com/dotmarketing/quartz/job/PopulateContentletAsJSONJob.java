@@ -19,7 +19,7 @@ import java.util.Map;
 /**
  * Job created to populate in the Contentlet table missing contentlet_as_json columns.
  */
-public class PopulateContentAsJSONJob extends DotStatefulJob {
+public class PopulateContentletAsJSONJob extends DotStatefulJob {
 
     public static final String EXCLUDING_ASSET_SUB_TYPE = "excludingAssetSubType";
 
@@ -27,7 +27,7 @@ public class PopulateContentAsJSONJob extends DotStatefulJob {
     public void run(JobExecutionContext jobContext) throws JobExecutionException {
 
         final Trigger trigger = jobContext.getTrigger();
-        final Map<String, Serializable> executionData = getExecutionData(trigger, PopulateContentAsJSONJob.class);
+        final Map<String, Serializable> executionData = getExecutionData(trigger, PopulateContentletAsJSONJob.class);
 
         final String excludingAssetSubType;
         if (executionData.containsKey(EXCLUDING_ASSET_SUB_TYPE)) {
@@ -52,7 +52,7 @@ public class PopulateContentAsJSONJob extends DotStatefulJob {
         final ImmutableMap<String, Serializable> nextExecutionData = ImmutableMap
                 .of(EXCLUDING_ASSET_SUB_TYPE, excludingAssetSubType);
         try {
-            DotStatefulJob.enqueueTrigger(nextExecutionData, PopulateContentAsJSONJob.class);
+            DotStatefulJob.enqueueTrigger(nextExecutionData, PopulateContentletAsJSONJob.class);
         } catch (Exception e) {
             Logger.error(HostAssetsJobProxy.class, "Error scheduling populate content as JSON job", e);
             throw new DotRuntimeException("Error scheduling populate content as JSON job", e);
