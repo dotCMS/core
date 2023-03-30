@@ -1,6 +1,7 @@
 package com.dotcms.rendering.velocity.services;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -11,6 +12,9 @@ import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.rendering.velocity.directive.ParseContainer;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.repackage.com.google.common.collect.Lists;
+import com.dotcms.rest.ContentResource;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.dotcms.util.ConversionUtils;
 import com.dotcms.variant.VariantAPI;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.ContainerStructure;
@@ -47,6 +51,9 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.json.JSONObject;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
@@ -56,6 +63,7 @@ import io.vavr.control.Try;
 import org.apache.velocity.context.Context;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.text.SimpleDateFormat;
@@ -100,6 +108,8 @@ public class PageRenderUtil implements Serializable {
     final long languageId;
     final Host site;
     final TemplateLayout templateLayout;
+
+    private static final Lazy<Boolean> ADD_RELATIONSHIPS_ON_PAGE = Lazy.of(()->Config.getBooleanProperty("ADD_RELATIONSHIPS_ON_PAGE", false));
 
     /**
      * Creates an instance of this class for a given HTML Page.
@@ -342,36 +352,32 @@ public class PageRenderUtil implements Serializable {
         return raws;
     }
 
-    private static final Lazy<Boolean> ADD_RELATIONSHIPS_ON_PAGE = Lazy.of(()->Config.getBooleanProperty("ADD_RELATIONSHIPS_ON_PAGE", false));
     private void addRelationships(final Contentlet contentlet) {
 
-        if (ADD_RELATIONSHIPS_ON_PAGE.get()) {
+        final HttpServletRequest  request  = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        final HttpServletResponse response = HttpServletResponseThreadLocal.INSTANCE.getResponse();
+        if (ADD_RELATIONSHIPS_ON_PAGE.get() && null != response && null != request && null != request.getParameter("depth")) {
 
-            final List<Field> fields = contentlet.getContentType().fields();
-            final List<Relationship> relationships = APILocator.getRelationshipAPI().byContentType(contentlet.getContentType());
-            for (final Field field : fields) {
-
-                if (field instanceof RelationshipField) {
-                    addRelatedContent(contentlet, relationships, field);
-                }
-            }
-        }
-    }
-
-    private void addRelatedContent(final Contentlet contentlet,
-                                   final List<Relationship> relationships,
-                                   final Field field) {
-
-        for (final Relationship relationship : relationships) {
-
-            if (field.variable().equals(relationship.getChildRelationName()) ||
-                    field.variable().equals(relationship.getParentRelationName())) {
+            final int depth = ConversionUtils.toInt(request.getParameter("depth"), -1);
+            if (depth >= 0 && depth <= 3) {
 
                 try {
-                    contentlet.setProperty(field.variable(), APILocator.getContentletAPI().getRelatedContent(
-                            contentlet, relationship, this.user, this.mode.respectAnonPerms));
-                } catch (DotDataException | DotSecurityException e) {
+
+                    final JSONObject jsonWithRelationShips = ContentResource.addRelationshipsToJSON(request, response,
+                            request.getParameter("render"), user, depth, mode.respectAnonPerms, contentlet,
+                            new JSONObject(), null, languageId, mode.showLive, false,
+                            true);
+
+                    final HashMap<String,Object> relationshipsMap = DotObjectMapperProvider.getInstance()
+                            .getDefaultObjectMapper().readValue(jsonWithRelationShips.toString(), HashMap.class);
+
+                    if (UtilMethods.isSet(relationshipsMap)) {
+                        contentlet.getMap().putAll(relationshipsMap);
+                    }
+                } catch (Exception e) {
+
                     Logger.error(this, e.getMessage(), e);
+                    throw new RuntimeException(e);
                 }
             }
         }
