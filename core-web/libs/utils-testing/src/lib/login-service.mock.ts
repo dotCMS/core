@@ -1,4 +1,5 @@
 import { of, Observable, Subject } from 'rxjs';
+
 import { Auth, User } from '@dotcms/dotcms-js';
 import { DotLoginInformation } from '@dotcms/dotcms-models';
 
@@ -94,6 +95,10 @@ export class LoginServiceMock {
         /* */
     }
 
+    loadAuth() {
+        return of(mockAuth);
+    }
+
     loginAs(): Observable<boolean> {
         return of(true);
     }
@@ -106,7 +111,7 @@ export class LoginServiceMock {
         return of(mockUserWithRedirect);
     }
 
-    logOutUser(): Observable<User> {
+    logOutUser(): Observable<User | null> {
         return of(null);
     }
 

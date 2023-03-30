@@ -32,10 +32,10 @@ const INITIAL_STATE: DotToolbarUserState = {
     showLoginAs: false
 };
 
-const FINAL_LOGOUT_URL = `${LOGOUT_URL}?r=${new Date().getTime()}`;
-
 @Injectable()
 export class DotToolbarUserStore extends ComponentStore<DotToolbarUserState> {
+    private readonly FINAL_LOGOUT_URL = `${LOGOUT_URL}?r=${new Date().getTime()}`;
+
     readonly vm$: Observable<DotToolbarUserState> = this.select((state) => state).pipe(
         filter((vm) => !!vm.userData.email)
     );
@@ -145,7 +145,7 @@ export class DotToolbarUserStore extends ComponentStore<DotToolbarUserState> {
                 label: this.dotMessageService.get('Logout'),
                 icon: 'pi pi-sign-out',
                 visible: !auth.isLoginAs,
-                url: FINAL_LOGOUT_URL
+                url: this.FINAL_LOGOUT_URL
             },
             {
                 id: 'dot-toolbar-user-link-logout-as',
