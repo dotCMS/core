@@ -77,7 +77,7 @@ export class DotExternalAssetComponent {
      * @memberof DotExternalAssetComponent
      */
     private tryToPlayVideo(url: string): void {
-        const video = document.createElement('video');
+        const video = document.createElement('video') as HTMLVideoElement;
 
         this.disableAction = true;
 

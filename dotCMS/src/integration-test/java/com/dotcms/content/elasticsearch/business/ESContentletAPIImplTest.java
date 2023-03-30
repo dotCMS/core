@@ -22,6 +22,7 @@ import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
@@ -45,13 +46,11 @@ import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.*;
-import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
-import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -69,7 +68,6 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships.Content
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.google.common.io.Files;
@@ -1762,6 +1760,37 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     }
 
     /**
+     * Method to test: {@link ESContentletAPIImpl#findContentletByIdentifierAnyLanguageAnyVariant(String)} (String)}
+     * When: The contentlet had just one version not in the DEFAULT variant
+     * Should: return the {@link Contentlet} anyway
+     *
+     * @throws WebAssetException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void findContentletByIdentifierAnyLanguageAndVariant() throws DotDataException {
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final Language language = new LanguageDataGen().nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType)
+                .languageId(language.getId())
+                .host(host)
+                .variant(variant)
+                .nextPersisted();
+
+        final Contentlet contentletByIdentifierAnyLanguage = APILocator.getContentletAPI()
+                .findContentletByIdentifierAnyLanguageAnyVariant(contentlet.getIdentifier());
+
+        assertNotNull(contentletByIdentifierAnyLanguage);
+        assertEquals(contentlet.getIdentifier(), contentletByIdentifierAnyLanguage.getIdentifier());
+        assertEquals(contentlet.getInode(), contentletByIdentifierAnyLanguage.getInode());
+    }
+
+
+    /**
      * Method to test: {@link ESContentletAPIImpl#findContentletByIdentifierAnyLanguage(String)}
      * When: The contentlet had just one version not in the DEFAULT variant but it was archived
      * Should: return {@link Optional#empty()}
@@ -1959,4 +1988,122 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
 
         return APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
     }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#copyContentToVariant(Contentlet, String, User)}
+     * When:
+     * - Create a {@link Contentlet} in the DEFAULT Variant.
+     * - Create a new {@link Variant}.
+     * - Create a new Version of the newly created {@link Contentlet} into the newly {@link Variant}
+     * - Save a new version os the {@link Contentlet} in the specific {@link Variant} version.
+     * Should: Create  a copy from the specific {@link Variant} {@link Contentlet} Version to the DEFAULT {@link Variant}
+     */
+    @Test
+    public void saveContentToSpecificVariant() throws DotDataException, DotSecurityException {
+        final Language language = new LanguageDataGen().nextPersisted();
+        final Variant variant = new VariantDataGen().nextPersisted();
+
+        final Field titleField = new FieldDataGen()
+                .name("title")
+                .velocityVarName("title")
+                .dataType(DataTypes.TEXT)
+                .indexed(true)
+                .next();
+
+        final ContentType contentType = new ContentTypeDataGen().field(titleField).nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType)
+                .languageId(language.getId())
+                .setProperty("title", "Default Version")
+                .nextPersisted();
+
+        ContentletDataGen.createNewVersion(contentlet, variant, map("title", "Variant Version"));
+
+        APILocator.getContentletAPI().copyContentToVariant(contentlet, variant.name(),
+                APILocator.systemUser());
+
+        final Contentlet contentletByIdentifierSpecificVariant = APILocator.getContentletAPI()
+                .findContentletByIdentifier(contentlet.getIdentifier(), false,
+                        language.getId(), variant.name(), APILocator.systemUser(), false);
+
+        assertNotNull(contentletByIdentifierSpecificVariant);
+
+        assertEquals(contentlet.getIdentifier(), contentletByIdentifierSpecificVariant.getIdentifier());
+        assertEquals(contentlet.getLanguageId(), contentletByIdentifierSpecificVariant.getLanguageId());
+        assertEquals(variant.name(), contentletByIdentifierSpecificVariant.getVariantId());
+        assertEquals("Default Version", contentletByIdentifierSpecificVariant.getStringProperty("title"));
+
+        final Contentlet contentletByIdentifierDefaultVariant = APILocator.getContentletAPI()
+                .findContentletByIdentifier(contentlet.getIdentifier(), false,
+                        language.getId(), VariantAPI.DEFAULT_VARIANT.name(),
+                        APILocator.systemUser(), false);
+
+        assertNotNull(contentletByIdentifierDefaultVariant);
+
+        assertEquals(contentlet.getIdentifier(), contentletByIdentifierDefaultVariant.getIdentifier());
+        assertEquals(contentlet.getLanguageId(), contentletByIdentifierDefaultVariant.getLanguageId());
+        assertEquals(contentlet.getVariantId(), contentletByIdentifierDefaultVariant.getVariantId());
+        assertEquals("Default Version", contentletByIdentifierSpecificVariant.getStringProperty("title"));
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#copyContentToVariant(Contentlet, String, User)}
+     * When:
+     * - Creata a {@link Variant} let call it variant_1
+     * - Create a {@link Contentlet} with a version in variant_1, but not any version in DEFAULT Variant.
+     * - Create another {@link Variant}, let call it variant_2.
+     * - Save a new version os the {@link Contentlet} in variant_2.
+     * Should: Create  a copy from the variant_1 {@link Contentlet} Version to the DEFAULT {@link Variant}
+     */
+    @Test
+    public void saveContentToAnotherVariant() throws DotDataException, DotSecurityException {
+        final Language language = new LanguageDataGen().nextPersisted();
+        final Variant variant_1 = new VariantDataGen().nextPersisted();
+        final Variant variant_2 = new VariantDataGen().nextPersisted();
+
+        final Field titleField = new FieldDataGen()
+                .name("title")
+                .velocityVarName("title")
+                .dataType(DataTypes.TEXT)
+                .indexed(true)
+                .next();
+
+        final ContentType contentType = new ContentTypeDataGen().field(titleField).nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType)
+                .languageId(language.getId())
+                .setProperty("title", "Variant 1 Version")
+                .variant(variant_1)
+                .nextPersisted();
+        APILocator.getContentletAPI().copyContentToVariant(contentlet, variant_2.name(),
+                APILocator.systemUser());
+
+        final Contentlet contentletByIdentifierVariant1 = APILocator.getContentletAPI()
+                .findContentletByIdentifier(contentlet.getIdentifier(), false,
+                        language.getId(), variant_1.name(), APILocator.systemUser(), false);
+
+        assertNotNull(contentletByIdentifierVariant1);
+
+        assertEquals(contentlet.getIdentifier(), contentletByIdentifierVariant1.getIdentifier());
+        assertEquals(contentlet.getLanguageId(), contentletByIdentifierVariant1.getLanguageId());
+        assertEquals(variant_1.name(), contentletByIdentifierVariant1.getVariantId());
+        assertEquals("Variant 1 Version", contentletByIdentifierVariant1.getStringProperty("title"));
+
+        final Contentlet contentletByIdentifierDefaultVariant = APILocator.getContentletAPI()
+                .findContentletByIdentifier(contentlet.getIdentifier(), false,
+                        language.getId(), VariantAPI.DEFAULT_VARIANT.name(),
+                        APILocator.systemUser(), false);
+
+        assertNull(contentletByIdentifierDefaultVariant);
+
+        final Contentlet contentletByIdentifierVariant2 = APILocator.getContentletAPI()
+                .findContentletByIdentifier(contentlet.getIdentifier(), false,
+                        language.getId(), variant_2.name(), APILocator.systemUser(), false);
+
+        assertNotNull(contentletByIdentifierVariant2);
+
+        assertEquals(contentlet.getIdentifier(), contentletByIdentifierVariant2.getIdentifier());
+        assertEquals(contentlet.getLanguageId(), contentletByIdentifierVariant2.getLanguageId());
+        assertEquals(variant_2.name(), contentletByIdentifierVariant2.getVariantId());
+        assertEquals("Variant 1 Version", contentletByIdentifierVariant2.getStringProperty("title"));
+    }
+
 }

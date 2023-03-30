@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runalways;
 
+import com.dotcms.business.WrapInTransaction;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Map;
@@ -35,6 +36,7 @@ public class Task00040CheckAnonymousUser implements StartupTask{
 	}
 
 	@Override
+    @WrapInTransaction
 	public void executeUpgrade() throws DotDataException, DotRuntimeException {
         try {
             DbConnectionFactory.getConnection().setAutoCommit(true);

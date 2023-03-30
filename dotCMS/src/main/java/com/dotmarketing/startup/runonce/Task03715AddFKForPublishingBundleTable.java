@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotcms.business.WrapInTransaction;
 import java.sql.SQLException;
 
 import com.dotmarketing.common.db.DotConnect;
@@ -39,6 +40,7 @@ public class Task03715AddFKForPublishingBundleTable implements StartupTask {
     }
 
     @Override
+    @WrapInTransaction
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
         try {
             DbConnectionFactory.getConnection().setAutoCommit(true);

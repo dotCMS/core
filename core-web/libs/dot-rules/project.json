@@ -14,7 +14,7 @@
         },
         "test": {
             "executor": "@angular-devkit/build-angular:karma",
-            "outputs": ["coverage/libs/dot-rules"],
+            "outputs": ["{workspaceRoot}/coverage/libs/dot-rules"],
             "options": {
                 "main": "libs/dot-rules/src/test.ts",
                 "karmaConfig": "libs/dot-rules/karma.conf.js",

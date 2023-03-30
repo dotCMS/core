@@ -39,11 +39,8 @@ public class ReachPageExperimentAnalyzer implements MetricExperimentAnalyzer {
                 .collect(Collectors.toList());
 
         for (final Event event : events) {
-
-            final ImmutableList<Condition> conditions = goal.conditions();
-
             if (goal.validateConditions(event)) {
-                experimentResultBuilder.count(goal, session.getLookBackWindow(), event);
+                experimentResultBuilder.success(goal, session.getLookBackWindow(), event);
             }
         }
 

@@ -828,7 +828,8 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
        try {
            final SearchSourceBuilder searchSourceBuilder = SearchSourceBuilder.searchSource();
 
-           final int limit = (int)Math.random();
+           Random ran = new Random();
+           final int limit = ran.nextInt(100);
 
            Config.setProperty(ES_TRACK_TOTAL_HITS, Integer.toString(limit));
            instance.setTrackHits(searchSourceBuilder);

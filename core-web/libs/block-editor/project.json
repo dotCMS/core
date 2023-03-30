@@ -17,7 +17,7 @@
         },
         "test": {
             "executor": "@nrwl/jest:jest",
-            "outputs": ["coverage/libs/block-editor"],
+            "outputs": ["{workspaceRoot}/coverage/libs/block-editor"],
             "options": {
                 "jestConfig": "libs/block-editor/jest.config.ts",
                 "passWithNoTests": true
@@ -31,8 +31,14 @@
                 "browserTarget": "block-editor:build-storybook",
                 "compodoc": false,
                 "stylePreprocessorOptions": {
-                    "includePaths": ["libs/dot-primeng-theme-styles/src/scss"]
-                }
+                    "includePaths": ["libs/dotcms-scss/angular"]
+                },
+                "styles": [
+                    "libs/dotcms-scss/angular/styles.scss",
+                    "node_modules/primeicons/primeicons.css",
+                    "node_modules/primeflex/primeflex.css",
+                    "node_modules/primeng/resources/primeng.min.css"
+                ]
             },
             "configurations": {
                 "ci": {
@@ -49,7 +55,7 @@
                 "browserTarget": "block-editor:build-storybook",
                 "compodoc": false,
                 "stylePreprocessorOptions": {
-                    "includePaths": ["libs/dot-primeng-theme-styles/src/scss"]
+                    "includePaths": ["libs/dotcms-scss/angular"]
                 }
             },
             "configurations": {

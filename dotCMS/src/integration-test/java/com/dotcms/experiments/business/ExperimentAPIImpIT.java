@@ -7,6 +7,8 @@ import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -30,9 +32,8 @@ import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.exception.NotAllowedException;
 import com.dotcms.experiments.business.result.BrowserSession;
 import com.dotcms.experiments.business.result.ExperimentResults;
-import com.dotcms.experiments.business.result.ExperimentResults.VariantResult;
-import com.dotcms.experiments.business.result.ExperimentResult;
-import com.dotcms.experiments.business.result.ExperimentResult.GoalResult;
+import com.dotcms.experiments.business.result.VariantResults;
+import com.dotcms.experiments.business.result.VariantResults.ResultResumeItem;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.ExperimentVariant;
@@ -62,15 +63,17 @@ import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import java.net.HttpURLConnection;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import net.bytebuddy.utility.RandomString;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -80,6 +83,11 @@ import org.junit.Test;
  * Test of {@link ExperimentsAPIImpl}
  */
 public class ExperimentAPIImpIT {
+
+    private final DateTimeFormatter SIMPLE_FORMATTER = DateTimeFormatter.ofPattern("MM/dd/yyyy")
+            .withZone(ZoneId.systemDefault());
+    private final DateTimeFormatter EVENTS_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.n")
+            .withZone(ZoneId.systemDefault());
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -294,15 +302,17 @@ public class ExperimentAPIImpIT {
         final Experiment experiment = createExperimentWithReachPageGoalAndVariant("experiment_events_testing_1",
                 pageB, pageD);
 
-        final List<Map<String, String>> events_1 = createPageViewEvents(experiment, variantName_1, pageA,
-                pageB, pageD, pageC);
+        final List<Map<String, String>> events_1 = createPageViewEvents(Instant.now(), experiment,
+                variantName_1, pageA, pageB, pageD, pageC);
 
-        final List<Map<String, String>> events_2 = createPageViewEvents(experiment, variantName_1, pageD, pageC);
+        final List<Map<String, String>> events_2 = createPageViewEvents(Instant.now(), experiment,
+                variantName_1, pageD, pageC);
 
-        final List<Map<String, String>> events_3 = createPageViewEvents(experiment, variantName_2, pageA, pageB);
+        final List<Map<String, String>> events_3 = createPageViewEvents(Instant.now(), experiment,
+                variantName_2, pageA, pageB);
 
-        final List<Map<String, String>> events_4 = createPageViewEvents(experiment, variantName_2, pageA,
-                pageB, pageD, pageC);
+        final List<Map<String, String>> events_4 = createPageViewEvents(Instant.now(), experiment,
+                variantName_2, pageA, pageB, pageD, pageC);
 
         final Map<String, List<Map<String, String>>> sessions = new LinkedHashMap<>();
         sessions.put(events_1.get(0).get("Events.lookBackWindow"), events_1);
@@ -439,8 +449,9 @@ public class ExperimentAPIImpIT {
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
 
-        final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(experiment, variantName, pageA,
-                pageB, pageD, pageC);
+        final Instant firstEventStartDate = Instant.now();
+        final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(firstEventStartDate,
+                experiment, variantName, pageA, pageB, pageD, pageC);
 
         final Map<String, List<Map<String, String>>> cubeJsQueryResult =  map("data", cubeJsQueryData);
 
@@ -463,18 +474,23 @@ public class ExperimentAPIImpIT {
 
             mockhttpServer.validate();
 
-            assertEquals(1, experimentResults.getTotalSessions());
+            assertEquals(1, experimentResults.getSessions().getTotal());
 
-            for (VariantResult variantResult : experimentResults.getGoalResults().get(0).getVariants().values()) {
+            for (VariantResults variantResult : experimentResults.getGoals().get("primary").getVariants().values()) {
+                final int sessionExpected = variantResult.getVariantName().equals(variantName) ? 1 : 0;
 
-                if (variantResult.getVariantName().equals(variantName)) {
+                Assert.assertEquals(sessionExpected, variantResult.getUniqueBySession().getCount());
+                Assert.assertEquals(sessionExpected, variantResult.getMultiBySession());
+                Assert.assertEquals(sessionExpected, (long) experimentResults.getSessions().getVariants().get(variantResult.getVariantName()));
 
-                    Assert.assertEquals(1, variantResult.totalUniqueBySession());
-                    Assert.assertEquals(1, variantResult.totalMultiBySession());
-                } else {
-                    Assert.assertEquals(0, variantResult.totalUniqueBySession());
-                    Assert.assertEquals(0, variantResult.totalMultiBySession());
-                }
+                final Map<String, ResultResumeItem> details = variantResult.getDetails();
+                final ResultResumeItem resultResumeItem = details.get(
+                        SIMPLE_FORMATTER.format(firstEventStartDate));
+
+                assertNotNull(resultResumeItem);
+
+                Assert.assertEquals(sessionExpected, resultResumeItem.getUniqueBySession());
+                Assert.assertEquals(sessionExpected, resultResumeItem.getMultiBySession());
             }
         } finally {
             APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
@@ -516,8 +532,9 @@ public class ExperimentAPIImpIT {
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
 
-        final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(experiment, variantName, pageA,
-                pageC, pageD, pageB );
+        final Instant firstEventStartDate = Instant.now();
+        final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(firstEventStartDate,
+                experiment, variantName, pageA, pageC, pageD, pageB );
 
         final Map<String, List<Map<String, String>>> cubeJsQueryResult =  map("data", cubeJsQueryData);
 
@@ -539,18 +556,21 @@ public class ExperimentAPIImpIT {
 
             mockhttpServer.validate();
 
-            assertEquals(1, experimentResults.getTotalSessions());
+            assertEquals(1, experimentResults.getSessions().getTotal());
 
-            for (VariantResult variantResult : experimentResults.getGoalResults().get(0).getVariants().values()) {
-
+            for (VariantResults variantResult : experimentResults.getGoals().get("primary").getVariants().values()) {
                 if (variantResult.getVariantName().equals(variantName)) {
-
-                    Assert.assertEquals(0, variantResult.totalUniqueBySession());
-                    Assert.assertEquals(0, variantResult.totalMultiBySession());
+                    Assert.assertEquals(1, (long) experimentResults.getSessions().getVariants().get(variantName));
                 } else {
-                    Assert.assertEquals(0, variantResult.totalUniqueBySession());
-                    Assert.assertEquals(0, variantResult.totalMultiBySession());
+                    Assert.assertEquals(0, (long) experimentResults.getSessions().getVariants().get(variantResult.getVariantName()));
                 }
+
+                Assert.assertEquals(0, variantResult.getUniqueBySession().getCount());
+                Assert.assertEquals(0, variantResult.getMultiBySession());
+
+                final ResultResumeItem resultResumeItem = variantResult.getDetails()
+                        .get(SIMPLE_FORMATTER.format(firstEventStartDate));
+                assertNull(resultResumeItem);
             }
         } finally {
             APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
@@ -592,8 +612,9 @@ public class ExperimentAPIImpIT {
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
 
-        final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(experiment, variantName, pageA,
-                pageC );
+        final Instant firstEventStartDate = Instant.now();
+        final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(firstEventStartDate,
+                experiment, variantName, pageA, pageC );
 
         final Map<String, List<Map<String, String>>> cubeJsQueryResult =  map("data", cubeJsQueryData);
 
@@ -616,18 +637,17 @@ public class ExperimentAPIImpIT {
 
             mockhttpServer.validate();
 
-            assertEquals(0, experimentResults.getTotalSessions());
+            assertEquals(0, experimentResults.getSessions().getTotal());
 
-            for (VariantResult variantResult : experimentResults.getGoalResults().get(0).getVariants().values()) {
+            for (VariantResults variantResult : experimentResults.getGoals().get("primary").getVariants().values()) {
 
-                if (variantResult.getVariantName().equals(variantName)) {
+                Assert.assertEquals(0, variantResult.getUniqueBySession().getCount());
+                Assert.assertEquals(0, variantResult.getMultiBySession());
+                Assert.assertEquals(0, (long) experimentResults.getSessions().getVariants().get(variantResult.getVariantName()));
 
-                    Assert.assertEquals(0, variantResult.totalUniqueBySession());
-                    Assert.assertEquals(0, variantResult.totalMultiBySession());
-                } else {
-                    Assert.assertEquals(0, variantResult.totalUniqueBySession());
-                    Assert.assertEquals(0, variantResult.totalMultiBySession());
-                }
+                final ResultResumeItem resultResumeItem = variantResult.getDetails()
+                        .get(SIMPLE_FORMATTER.format(firstEventStartDate));
+                assertNull(resultResumeItem);
             }
         } finally {
             APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
@@ -669,8 +689,9 @@ public class ExperimentAPIImpIT {
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
 
-        final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(experiment, variantName, pageA,
-                pageC, pageD );
+        final Instant firstEventStartDate = Instant.now();
+        final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(firstEventStartDate,
+                experiment, variantName, pageA, pageC, pageD );
 
         final Map<String, List<Map<String, String>>> cubeJsQueryResult =  map("data", cubeJsQueryData);
 
@@ -693,18 +714,17 @@ public class ExperimentAPIImpIT {
 
             mockhttpServer.validate();
 
-            assertEquals(0, experimentResults.getTotalSessions());
+            assertEquals(0, experimentResults.getSessions().getTotal());
 
-            for (VariantResult variantResult : experimentResults.getGoalResults().get(0).getVariants().values()) {
+            for (VariantResults variantResult : experimentResults.getGoals().get("primary").getVariants().values()) {
 
-                if (variantResult.getVariantName().equals(variantName)) {
+                Assert.assertEquals(0, variantResult.getUniqueBySession().getCount());
+                Assert.assertEquals(0, variantResult.getMultiBySession());
+                Assert.assertEquals(0, (long) experimentResults.getSessions().getVariants().get(variantResult.getVariantName()));
 
-                    Assert.assertEquals(0, variantResult.totalUniqueBySession());
-                    Assert.assertEquals(0, variantResult.totalMultiBySession());
-                } else {
-                    Assert.assertEquals(0, variantResult.totalUniqueBySession());
-                    Assert.assertEquals(0, variantResult.totalMultiBySession());
-                }
+                final ResultResumeItem resultResumeItem = variantResult.getDetails()
+                        .get(SIMPLE_FORMATTER.format(firstEventStartDate));
+                assertNull(resultResumeItem);
             }
         } finally {
             APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
@@ -746,8 +766,9 @@ public class ExperimentAPIImpIT {
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
 
-        final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(experiment, variantName, pageA,
-                pageB, pageC, pageD);
+        final Instant firstEventStartDate = Instant.now();
+        final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(firstEventStartDate,
+                experiment, variantName, pageA, pageB, pageC, pageD);
 
         final Map<String, List<Map<String, String>>> cubeJsQueryResult =  map("data", cubeJsQueryData);
 
@@ -770,18 +791,22 @@ public class ExperimentAPIImpIT {
 
             mockhttpServer.validate();
 
-            assertEquals(1, experimentResults.getTotalSessions());
+            assertEquals(1, experimentResults.getSessions().getTotal());
 
-            for (VariantResult variantResult : experimentResults.getGoalResults().get(0).getVariants().values()) {
+            for (VariantResults variantResult : experimentResults.getGoals().get("primary").getVariants().values()) {
 
                 if (variantResult.getVariantName().equals(variantName)) {
-
-                    Assert.assertEquals(0, variantResult.totalUniqueBySession());
-                    Assert.assertEquals(0, variantResult.totalMultiBySession());
+                    Assert.assertEquals(1, (long) experimentResults.getSessions().getVariants().get(variantResult.getVariantName()));
                 } else {
-                    Assert.assertEquals(0, variantResult.totalUniqueBySession());
-                    Assert.assertEquals(0, variantResult.totalMultiBySession());
+                    Assert.assertEquals(0, (long) experimentResults.getSessions().getVariants().get(variantResult.getVariantName()));
                 }
+
+                Assert.assertEquals(0, variantResult.getUniqueBySession().getCount());
+                Assert.assertEquals(0, variantResult.getMultiBySession());
+
+                final ResultResumeItem resultResumeItem = variantResult.getDetails()
+                        .get(SIMPLE_FORMATTER.format(firstEventStartDate));
+                assertNull(resultResumeItem);
             }
         } finally {
             APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
@@ -823,8 +848,9 @@ public class ExperimentAPIImpIT {
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
 
-        final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(experiment, variantName, pageA,
-                pageC, pageB);
+        final Instant firstEventStartDate = Instant.now();
+        final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(firstEventStartDate,
+                experiment, variantName, pageA, pageC, pageB);
 
         final Map<String, List<Map<String, String>>> cubeJsQueryResult =  map("data", cubeJsQueryData);
 
@@ -846,17 +872,25 @@ public class ExperimentAPIImpIT {
 
             mockhttpServer.validate();
 
-            assertEquals(1, experimentResult.getTotalSessions());
+            assertEquals(1, experimentResult.getSessions().getTotal());
 
-            for (VariantResult variantResult : experimentResult.getGoalResults().get(0).getVariants().values()) {
-                if (variantResult.getVariantName().equals(variantName)) {
+            for (VariantResults variantResult : experimentResult.getGoals().get("primary").getVariants().values()) {
+                final int sessionExpected =
+                        variantResult.getVariantName().equals(variantName) ? 1 : 0;
 
-                    Assert.assertEquals(1, variantResult.totalUniqueBySession());
-                    Assert.assertEquals(1, variantResult.totalMultiBySession());
-                } else {
-                    Assert.assertEquals(0, variantResult.totalUniqueBySession());
-                    Assert.assertEquals(0, variantResult.totalMultiBySession());
-                }
+                Assert.assertEquals(sessionExpected, variantResult.getUniqueBySession().getCount());
+                Assert.assertEquals(sessionExpected, variantResult.getMultiBySession());
+                Assert.assertEquals(sessionExpected,
+                        (long) experimentResult.getSessions().getVariants()
+                                .get(variantResult.getVariantName()));
+
+                final ResultResumeItem resultResumeItem = variantResult.getDetails()
+                        .get(SIMPLE_FORMATTER.format(firstEventStartDate));
+
+                assertNotNull(resultResumeItem);
+
+                Assert.assertEquals(sessionExpected, resultResumeItem.getUniqueBySession());
+                Assert.assertEquals(sessionExpected, resultResumeItem.getMultiBySession());
             }
         } finally {
             APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
@@ -897,8 +931,9 @@ public class ExperimentAPIImpIT {
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
 
-        final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(experiment, variantName, pageA,
-                pageB, pageC);
+        final Instant firstEventStartDate = Instant.now();
+        final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(firstEventStartDate,
+                experiment, variantName, pageA, pageB, pageC);
 
         final Map<String, List<Map<String, String>>> cubeJsQueryResult =  map("data", cubeJsQueryData);
 
@@ -920,18 +955,23 @@ public class ExperimentAPIImpIT {
 
             mockhttpServer.validate();
 
-            assertEquals(1, experimentResults.getTotalSessions());
+            assertEquals(1, experimentResults.getSessions().getTotal());
 
-            for (VariantResult variantResult : experimentResults.getGoalResults().get(0).getVariants().values()) {
+            for (VariantResults variantResult : experimentResults.getGoals().get("primary").getVariants().values()) {
 
                 if (variantResult.getVariantName().equals(variantName)) {
-
-                    Assert.assertEquals(0, variantResult.totalUniqueBySession());
-                    Assert.assertEquals(0, variantResult.totalMultiBySession());
+                    Assert.assertEquals(1, (long) experimentResults.getSessions().getVariants().get(variantResult.getVariantName()));
                 } else {
-                    Assert.assertEquals(0, variantResult.totalUniqueBySession());
-                    Assert.assertEquals(0, variantResult.totalMultiBySession());
+                    Assert.assertEquals(0, (long) experimentResults.getSessions().getVariants().get(variantResult.getVariantName()));
                 }
+
+                Assert.assertEquals(0, variantResult.getUniqueBySession().getCount());
+                Assert.assertEquals(0, variantResult.getMultiBySession());
+
+                final ResultResumeItem resultResumeItem = variantResult.getDetails()
+                        .get(SIMPLE_FORMATTER.format(firstEventStartDate));
+
+                assertNull(resultResumeItem);
             }
         } finally {
             APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
@@ -972,8 +1012,9 @@ public class ExperimentAPIImpIT {
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
 
-        final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(experiment, variantName, pageA,
-                pageC);
+        final Instant firstEventStartDate = Instant.now();
+        final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(firstEventStartDate,
+                experiment, variantName, pageA, pageC);
 
         final Map<String, List<Map<String, String>>> cubeJsQueryResult =  map("data", cubeJsQueryData);
 
@@ -995,16 +1036,113 @@ public class ExperimentAPIImpIT {
 
             mockhttpServer.validate();
 
-            assertEquals(0, experimentResult.getTotalSessions());
+            assertEquals(0, experimentResult.getSessions().getTotal());
 
-            for (VariantResult variantResult : experimentResult.getGoalResults().get(0).getVariants().values()) {
+            for (VariantResults variantResult : experimentResult.getGoals().get("primary").getVariants().values()) {
+
+                Assert.assertEquals(0, variantResult.getUniqueBySession().getCount());
+                Assert.assertEquals(0, variantResult.getMultiBySession());
+
+                Assert.assertEquals(0, (long) experimentResult.getSessions().getVariants().get(variantResult.getVariantName()));
+
+                final ResultResumeItem resultResumeItem = variantResult.getDetails()
+                        .get(SIMPLE_FORMATTER.format(firstEventStartDate));
+                assertNull(resultResumeItem);
+            }
+        } finally {
+            APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
+
+            IPUtils.disabledIpPrivateSubnet(false);
+            mockhttpServer.stop();
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
+     * When:
+     * - You have four pages: A, B, C and D
+     * - You create an {@link Experiment} using the B page with a PAGE_REACH Goal: url EQUALS TO PAge D .
+     * - You have the follow page_view to the pages order by timestamp: A, B, D and C
+     * it happened twice in different days.
+     *
+     * Should:  get a Success PAGE_REACH
+     */
+    @Test
+    public void pageReachDirectRefererMultiDays() throws DotDataException, DotSecurityException {
+        final String cubeServerIp = "127.0.0.1";
+        final int cubeJsServerPort = 5000;
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset pageA = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageB = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageC = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageD = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = createExperimentWithReachPageGoalAndVariant("experiment_page_reach_testing_1",
+                pageB, pageD);
+
+        final String variantName = experiment.trafficProportion().variants().stream()
+                .filter(experimentVariant -> !experimentVariant.id().equals("DEFAULT"))
+                .map(experimentVariant -> experimentVariant.id())
+                .limit(1)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
+
+        final Instant firstBrowserSessionDate = Instant.now();
+        final List<Map<String, String>> firstCubeJsQueryData = createPageViewEvents(firstBrowserSessionDate,
+                experiment, variantName, pageA, pageB, pageD, pageC);
+
+        final Instant secondBrowserSessionDate = Instant.now().plus(1, ChronoUnit.DAYS);
+        final List<Map<String, String>> secondCubeJsQueryData = createPageViewEvents(secondBrowserSessionDate,
+                experiment, variantName, pageA, pageB, pageD, pageC);
+
+        final List<Map<String, String>> cubeJsQueryData = Stream.concat(firstCubeJsQueryData.stream(),
+                secondCubeJsQueryData.stream()).collect(Collectors.toList());
+
+        final Map<String, List<Map<String, String>>> cubeJsQueryResult =  map("data", cubeJsQueryData);
+
+        APILocator.getExperimentsAPI()
+                .start(experiment.getIdentifier(), APILocator.systemUser());
+
+        IPUtils.disabledIpPrivateSubnet(true);
+        final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment);
+
+        final MockHttpServer mockhttpServer = createMockHttpServerAndStart(cubeServerIp,
+                cubeJsServerPort, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        try {
+            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper(
+                    String.format("http://%s:%s", cubeServerIp, cubeJsServerPort));
+
+            final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+
+            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
+
+            mockhttpServer.validate();
+
+            assertEquals(2, experimentResults.getSessions().getTotal());
+
+            for (VariantResults variantResult : experimentResults.getGoals().get("primary").getVariants().values()) {
+                final int totalSessionExpected = variantResult.getVariantName().equals(variantName) ? 2 : 0;
+
+                Assert.assertEquals(totalSessionExpected, variantResult.getUniqueBySession().getCount());
+                Assert.assertEquals(totalSessionExpected, variantResult.getMultiBySession());
+                Assert.assertEquals(totalSessionExpected, (long) experimentResults.getSessions().getVariants().get(variantResult.getVariantName()));
+
                 if (variantResult.getVariantName().equals(variantName)) {
+                    final ResultResumeItem resultResumeItem = variantResult.getDetails()
+                            .get(SIMPLE_FORMATTER.format(firstBrowserSessionDate));
+                    assertNotNull(resultResumeItem);
+                    Assert.assertEquals(1, resultResumeItem.getUniqueBySession());
+                    Assert.assertEquals(1, resultResumeItem.getMultiBySession());
 
-                    Assert.assertEquals(0, variantResult.totalUniqueBySession());
-                    Assert.assertEquals(0, variantResult.totalMultiBySession());
-                } else {
-                    Assert.assertEquals(0, variantResult.totalUniqueBySession());
-                    Assert.assertEquals(0, variantResult.totalMultiBySession());
+                    final ResultResumeItem resultResumeItem_2 = variantResult.getDetails()
+                            .get(SIMPLE_FORMATTER.format(secondBrowserSessionDate));
+                    assertNotNull(resultResumeItem_2);
+                    Assert.assertEquals(1, resultResumeItem_2.getUniqueBySession());
+                    Assert.assertEquals(1, resultResumeItem_2.getMultiBySession());
                 }
             }
         } finally {
@@ -1026,20 +1164,21 @@ public class ExperimentAPIImpIT {
         return createExperiment(experimentName, experimentPage, metric);
     }
 
-    private List<Map<String, String>> createPageViewEvents(final Experiment experiment,
+    private List<Map<String, String>> createPageViewEvents(final Instant firstEventTime,
+            final Experiment experiment,
             final String variantName,
             final HTMLPageAsset... pages) {
 
         final String lookBackWindows = new RandomString(20).nextString();
         final List<Map<String, String>> dataList = new ArrayList<>();
-        Instant nextEventTriggerTime = Instant.now();
+        Instant nextEventTriggerTime = firstEventTime;
         HTMLPageAsset previousPage = null;
 
         for (final HTMLPageAsset page : pages) {
             dataList.add(map(
                     "Events.experiment", experiment.getIdentifier(),
                     "Events.variant", variantName,
-                    "Events.utcTime", nextEventTriggerTime.toString(),
+                    "Events.utcTime", EVENTS_FORMATTER.format(nextEventTriggerTime),
                     "Events.referer", UtilMethods.isSet(previousPage) ?
                             "http://127.0.0.1:5000/" + previousPage.getPageUrl() : StringPool.BLANK,
                     "Events.url", "http://127.0.0.1:5000/" + page.getPageUrl(),
@@ -1205,7 +1344,7 @@ public class ExperimentAPIImpIT {
                 assertEquals(reachPage.getPageUrl(), condition.value());
                 assertEquals(Operator.CONTAINS, condition.operator());
             } else if (condition.parameter().equals("referer")) {
-                assertEquals(experimentPage.getPageUrl(), condition.value());
+                assertEquals(experimentPage.getURI(), condition.value());
                 assertEquals(Operator.CONTAINS, condition.operator());
             }
         }
@@ -1293,7 +1432,7 @@ public class ExperimentAPIImpIT {
         assertEquals(1,  conditions.size());
 
         assertEquals("url", conditions.get(0).parameter());
-        assertEquals(experimentPage.getPageUrl(), conditions.get(0).value());
+        assertEquals(experimentPage.getURI(), conditions.get(0).value());
         assertEquals(Operator.CONTAINS, conditions.get(0).operator());
     }
 

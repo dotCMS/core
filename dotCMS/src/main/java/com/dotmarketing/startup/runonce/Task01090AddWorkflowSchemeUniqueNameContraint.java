@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotcms.business.WrapInTransaction;
 import java.sql.SQLException;
 
 import com.dotmarketing.common.db.DotConnect;
@@ -12,6 +13,8 @@ import com.dotmarketing.util.Logger;
 public class Task01090AddWorkflowSchemeUniqueNameContraint implements StartupTask{
 
 	final private String WORKFLOW_SCHEME_CONSTRAINT = "alter table workflow_scheme add constraint unique_workflow_scheme_name unique (name)";
+	@Override
+	@WrapInTransaction
 	public void executeUpgrade() throws DotDataException, DotRuntimeException {
 		DotConnect dc = new DotConnect();
 		  try {

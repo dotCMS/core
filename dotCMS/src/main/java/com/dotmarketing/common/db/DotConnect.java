@@ -252,7 +252,7 @@ public class DotConnect {
     public boolean executeStatement(String sql) throws SQLException {
         Connection conn = DbConnectionFactory.getConnection();
         Statement stmt = conn.createStatement();
-        Logger.info(this, "Executing " + sql);
+        Logger.debug(this, "Executing " + sql);
         boolean ret = stmt.execute(sql);
         stmt.close();
         return ret;
@@ -260,9 +260,9 @@ public class DotConnect {
 
     public boolean executeStatement(String sql, Connection con) throws SQLException {
         Statement stmt = con.createStatement();
-        Logger.info(this, "Executing " + sql);
+        Logger.debug(this, "Executing " + sql);
         boolean ret = stmt.execute(sql);
-        Logger.info(this, "Finished Executing " + sql);
+        Logger.debug(this, "Finished Executing " + sql);
         stmt.close();
         return ret;
     }
@@ -1149,7 +1149,8 @@ public class DotConnect {
         for (int i = 0; i < params.length; ++i) {
             final Object param = params[i];
             if (param != null && statementSetterHandlerMap.containsKey(param.getClass())) {
-                statementSetterHandlerMap.get(param.getClass()).execute(preparedStatement, i + 1, param);
+                statementSetterHandlerMap.get(param.getClass())
+                        .execute(preparedStatement, i + 1, param);
             } else {
                 preparedStatement.setObject(i + 1, param);
             }

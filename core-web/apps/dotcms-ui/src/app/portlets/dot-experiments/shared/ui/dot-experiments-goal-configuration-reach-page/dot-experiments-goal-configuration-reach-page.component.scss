@@ -1,0 +1,38 @@
+@use "variables" as *;
+
+.wrapper {
+    gap: $spacing-4;
+}
+
+.field {
+    margin: $spacing-0;
+
+    gap: $spacing-1;
+    margin: $spacing-0;
+
+    label {
+        font-weight: $font-weight-bold;
+        margin-bottom: $spacing-0;
+        font-size: $font-size-md;
+    }
+
+    p {
+        margin: $spacing-0;
+        color: $color-palette-gray-500;
+    }
+
+    h3 {
+        font-size: $font-size-md;
+        margin: $spacing-0;
+        margin-bottom: $spacing-1;
+        font-weight: $font-weight-bold;
+    }
+}
+
+.condition {
+    gap: $spacing-3;
+
+    label {
+        font-weight: $font-weight-bold;
+    }
+}

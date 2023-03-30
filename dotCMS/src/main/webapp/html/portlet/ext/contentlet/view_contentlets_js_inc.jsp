@@ -1261,38 +1261,60 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
             return selectedInodes;
         }
 
-
+        /**
+         * Renders the UI components -- i.e., text fields, radio buttons, dropdowns, etc. -- that represent each
+         * user-searchable field for a given Content Type.
+         *
+         * @param data The object array with the information of every field that must be rendered.
+         */
         function fillFields (data) {
-                currentStructureFields = data;
-                var htmlstr = "";
-                var hasHostField = false;
-                for(var i = 0; i < data.length; i++) {
-                        var type = data[i]["fieldFieldType"];
-                        if(type=='category' || type=='hidden'){
-                                continue;
-                        }
-                        if(type=='host or folder'){
-                           hasHostField = true;
-                        }
-
-                        htmlstr += "<dl class='vertical'>";
-                        htmlstr += "<dt><label>" + fieldName(data[i]) + "</label></dt>";
-                        htmlstr += "<dd style='min-height:0px'>" + renderSearchField(data[i]) + "</dd>";
-                        htmlstr += "</dl>";
-                        htmlstr += "<div class='clear'></div>";
+            currentStructureFields = data;
+            let htmlstr = "";
+            let siteFolderFieldHtml = "";
+            let hasSiteFolderField = false;
+            for (const element of data) {
+                const { fieldFieldType } = element;
+                if (fieldFieldType === 'category' || fieldFieldType === 'hidden') {
+                        continue;
                 }
-                $('search_fields_table').update(htmlstr);
-                <%if(APILocator.getPermissionAPI().doesUserHavePermission(APILocator.getHostAPI().findSystemHost(), PermissionAPI.PERMISSION_READ, user, true)){%>
-                  if(hasHostField){
-                     dojo.byId("filterSystemHostTable").style.display = "";
-                  }else{
-                     dojo.byId("filterSystemHostTable").style.display = "none";
-                  }
-           <%}%>
+                if (fieldFieldType == '<%= com.dotmarketing.portlets.structure.model.Field.FieldType.HOST_OR_FOLDER.toString() %>') {
+                   hasSiteFolderField = true;
+                }
+                htmlstr += `<dl class='vertical'>
+                        <dt>
+                         <label>${fieldName(element)}</label>
+                        </dt>
+                        <dd style='min-height:0px'>${renderSearchField(element)}</dd>
+                        </dl>
+                        <div class='clear'></div>`;
+            }  
+            if (!hasSiteFolderField) {
+                let defaultSiteFolderField = {
+                    "fieldName": "<%= LanguageUtil.get(pageContext, "Host-Folder") %>",
+                    "fieldFieldType": "<%= com.dotmarketing.portlets.structure.model.Field.FieldType.HOST_OR_FOLDER.toString() %>",
+                    "fieldVelocityVarName": "siteOrFolder",
+                    "fieldValues": "",
+                    "fieldContentlet": "system_field",
+                    "fieldStructureInode": structureInode
+                };
+                siteFolderFieldHtml = `<dl class='vertical'>
+                        <dt>
+                         <label>${fieldName(defaultSiteFolderField)}</label>
+                        </dt>
+                        <dd style='min-height:0px'> ${renderSearchField(defaultSiteFolderField) }</dd>
+                        </dl>
+                 <div class='clear'></div>`;
+            }  
 
-                dojo.parser.parse(dojo.byId("search_fields_table"));
-                eval(setDotFieldTypeStr);
-                loadingSearchFields = false;
+            $('search_fields_table').update(htmlstr);
+            $('site_folder_field').update(siteFolderFieldHtml);
+            <% if (APILocator.getPermissionAPI().doesUserHavePermission(APILocator.getHostAPI().findSystemHost(), PermissionAPI.PERMISSION_READ, user, true)) { %>
+                    dojo.byId("filterSystemHostTable").style.display = "";
+            <% } %>
+            dojo.parser.parse(dojo.byId("search_fields_table"));
+            dojo.parser.parse(dojo.byId("site_folder_field"));
+            eval(setDotFieldTypeStr);
+            loadingSearchFields = false;
         }
 
 
@@ -1999,9 +2021,6 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 				th.setAttribute("valign","bottom");
 				th.style.width="120px";
                 th.innerHTML = "<a class=\"beta\" href=\"javascript: doSearch (1, 'modDate')\"><%= LanguageUtil.get(pageContext, "Last-Edit-Date") %></a>";
-                row.appendChild(th);
-
-                th = document.createElement('th');
                 row.appendChild(th);
 
                 th = document.createElement('th');

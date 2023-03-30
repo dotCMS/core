@@ -126,8 +126,7 @@ public class VelocityServletIntegrationTest {
 
     /**
      * Method to test: {@link VelocityServlet#service(HttpServletRequest, HttpServletResponse)}
-     * when: There is exists a Content Type Url Map and is request
-     * Should: return 200 Http code
+     * when: There is exists a Content Type Url Map and is request Should: return 200 Http code
      *
      * @throws ServletException
      * @throws IOException
@@ -142,27 +141,27 @@ public class VelocityServletIntegrationTest {
         final Contentlet contentlet = createURLMapperContentType(newsPatternPrefix, host);
         ContentletDataGen.publish(contentlet);
 
-        final String contentletURLMap = newsPatternPrefix + contentlet.getStringProperty("urlTitle");
+        final String contentletURLMap =
+                newsPatternPrefix + contentlet.getStringProperty("urlTitle");
 
         when(request.getRequestURI()).thenReturn(contentletURLMap);
         when(request.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(host);
 
         velocityServlet.service(request, response);
 
-        verify(servletOutputStream).write(getNotExperimentJsCode().getBytes());
         verify(response, never()).sendError(HttpServletResponse.SC_NOT_FOUND);
     }
 
     /**
      * Method to test: {@link VelocityServlet#service(HttpServletRequest, HttpServletResponse)}
-     * when: There is exists a Content Type Url Map and is request
-     * Should: return 200 Http code
+     * when: There is exists a Content Type Url Map and is request Should: return 200 Http code
      *
      * @throws ServletException
      * @throws IOException
      */
     @Test
-    public void whenRequestVanityURL() throws ServletException, IOException, DotDataException, DotSecurityException {
+    public void whenRequestVanityURL()
+            throws ServletException, IOException, DotDataException, DotSecurityException {
 
         final VelocityServlet velocityServlet = new VelocityServlet();
 
@@ -183,29 +182,29 @@ public class VelocityServletIntegrationTest {
 
         velocityServlet.service(request, response);
 
-        verify(servletOutputStream).write(getNotExperimentJsCode().getBytes());
         verify(response, never()).sendError(HttpServletResponse.SC_NOT_FOUND);
     }
 
     private void createAndPublishVanityURL(final String forwardURL, final String VANITY_URI)
             throws DotDataException, DotSecurityException {
         final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
-        final Contentlet vanityUrl = FiltersUtil.getInstance().createVanityUrl("test", host, VANITY_URI,
-                forwardURL, 200, 0, defaultLanguage.getId());
+        final Contentlet vanityUrl = FiltersUtil.getInstance()
+                .createVanityUrl("test", host, VANITY_URI,
+                        forwardURL, 200, 0, defaultLanguage.getId());
 
         FiltersUtil.getInstance().publishVanityUrl(vanityUrl);
     }
 
     /**
      * Method to test: {@link VelocityServlet#service(HttpServletRequest, HttpServletResponse)}
-     * when: There is exists a VanityURL that forward to a URL Map
-     * Should: return 200 Http code
+     * when: There is exists a VanityURL that forward to a URL Map Should: return 200 Http code
      *
      * @throws ServletException
      * @throws IOException
      */
     @Test
-    public void whenRequestURLMapAndVanityURLTogether() throws ServletException, IOException, DotSecurityException, DotDataException {
+    public void whenRequestURLMapAndVanityURLTogether()
+            throws ServletException, IOException, DotSecurityException, DotDataException {
 
         final VelocityServlet velocityServlet = new VelocityServlet();
 
@@ -215,8 +214,7 @@ public class VelocityServletIntegrationTest {
         ContentletDataGen.publish(contentlet);
 
         final String uri = "/vanityURL/" + contentlet.getStringProperty("urlTitle");
-        
-        
+
         when(request.getRequestURI()).thenReturn(uri);
 
         final String VANITY_URI = "/vanityURL/([a-zA-Z0-9-_]+)";
@@ -224,24 +222,26 @@ public class VelocityServletIntegrationTest {
 
         createAndPublishVanityURL(FORWARD_URL, VANITY_URI);
 
-        when(request.getRequestURI()).thenReturn("/vanityURL/" + contentlet.getStringProperty("urlTitle"));
+        when(request.getRequestURI()).thenReturn(
+                "/vanityURL/" + contentlet.getStringProperty("urlTitle"));
         final FilterChain chain = Mockito.mock(FilterChain.class);
 
         final VanityURLFilter vanityURLFilter = new VanityURLFilter();
         vanityURLFilter.doFilter(request, response, chain);
 
-        
-        assert(request.getAttribute(com.dotmarketing.filters.Constants.CMS_FILTER_URI_OVERRIDE)!=null);
-        final String vanity = (String) request.getAttribute(com.dotmarketing.filters.Constants.CMS_FILTER_URI_OVERRIDE);
-        
-        assertEquals("vanity rewritten", vanity,FORWARD_URL.replace("$1", contentlet.getStringProperty("urlTitle")));
+        assert (request.getAttribute(com.dotmarketing.filters.Constants.CMS_FILTER_URI_OVERRIDE)
+                != null);
+        final String vanity = (String) request.getAttribute(
+                com.dotmarketing.filters.Constants.CMS_FILTER_URI_OVERRIDE);
+
+        assertEquals("vanity rewritten", vanity,
+                FORWARD_URL.replace("$1", contentlet.getStringProperty("urlTitle")));
         velocityServlet.service(request, response);
 
-        verify(servletOutputStream).write(getNotExperimentJsCode().getBytes());
         verify(response, never()).sendError(HttpServletResponse.SC_NOT_FOUND);
     }
 
-    private  Contentlet createURLMapperContentType(final String newsPatternPrefix, final Host host) {
+    private Contentlet createURLMapperContentType(final String newsPatternPrefix, final Host host) {
         final String urlMapPattern = newsPatternPrefix + "{urlTitle}";
         final HTMLPageAsset page = createPage();
 
@@ -257,7 +257,7 @@ public class VelocityServletIntegrationTest {
     }
 
 
-    private  HTMLPageAsset createPage(){
+    private HTMLPageAsset createPage() {
 
         final Folder folder = new FolderDataGen().site(host)
                 .nextPersisted();
@@ -268,23 +268,24 @@ public class VelocityServletIntegrationTest {
                 .title("news-detail")
                 .nextPersisted();
         ContentletDataGen.publish(htmlPageAsset);
-        return  htmlPageAsset;
+        return htmlPageAsset;
     }
 
     /**
      * Method to test: {@link VelocityServlet#service(HttpServletRequest, HttpServletResponse)}
-     *
-     * When: TimeMachine in running and request a existing Page
-     * Should: Return the page
+     * <p>
+     * When: TimeMachine in running and request a existing Page Should: Return the page
      */
     @Test
-    public void testingTimeMachine () throws Exception{
+    public void testingTimeMachine() throws Exception {
 
         final User systemUser = APILocator.systemUser();
-        final ContentType contentGenericType = APILocator.getContentTypeAPI(systemUser).find("webPageContent");
+        final ContentType contentGenericType = APILocator.getContentTypeAPI(systemUser)
+                .find("webPageContent");
 
         Container container = new ContainerDataGen().site(host).nextPersisted();
-        final Template template = new TemplateDataGen().site(host).withContainer(container.getIdentifier()).nextPersisted();
+        final Template template = new TemplateDataGen().site(host)
+                .withContainer(container.getIdentifier()).nextPersisted();
 
         final List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
         final ContainerStructure containerStructure = new ContainerStructure();
@@ -296,7 +297,7 @@ public class VelocityServletIntegrationTest {
         PublishFactory.publishAsset(container, systemUser, false, false);
 
         final boolean defaultContentToDefaultLanguage = Config.getBooleanProperty(
-                "DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", true);
+                "DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
         final boolean defaultPageToDefaultLanguage = Config.getBooleanProperty(
                 "DEFAULT_PAGE_TO_DEFAULT_LANGUAGE", true);
 
@@ -359,16 +360,19 @@ public class VelocityServletIntegrationTest {
             velocityServlet.service(mockRequest, mockResponse);
 
             verify(mockResponse, never()).sendError(anyInt());
-            verify(outputStream).write((getNotExperimentJsCode() + "<div>content1</div>").getBytes());
+            verify(outputStream).write("<div>content1</div>".getBytes());
         } finally {
-            Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", defaultContentToDefaultLanguage);
+            Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE",
+                    defaultContentToDefaultLanguage);
             Config.setProperty("DEFAULT_PAGE_TO_DEFAULT_LANGUAGE", defaultPageToDefaultLanguage);
         }
     }
 
     /**
-     * Here were testing that a logged in user with FE and BE roles will But login in the Front end will get the Page Per SE and not the Edit Mode
-     * More context here: https://github.com/dotcms/core/issues/22124
+     * Here were testing that a logged in user with FE and BE roles will But login in the Front end
+     * will get the Page Per SE and not the Edit Mode More context here:
+     * https://github.com/dotcms/core/issues/22124
+     *
      * @throws Exception
      */
     @Test
@@ -389,6 +393,7 @@ public class VelocityServletIntegrationTest {
 
     /**
      * This is the actual test body
+     *
      * @param user
      * @param mode
      * @throws IOException
@@ -398,7 +403,7 @@ public class VelocityServletIntegrationTest {
      */
     private void testServerPageFor(final User user, final LoginMode mode)
             throws IOException, DotSecurityException, DotDataException, ServletException {
-        final String pageContent = getNotExperimentJsCode() + "<html>lol</html>";
+        final String pageContent = "<html>lol</html>";
 
         VelocityRequestWrapper velocityRequest = mock(VelocityRequestWrapper.class);
         when(velocityRequest.getRequestURI()).thenReturn("/lol");
@@ -411,22 +416,22 @@ public class VelocityServletIntegrationTest {
         final ServletOutputStream outputStream = mock(ServletOutputStream.class);
         when(response.getOutputStream()).thenReturn(outputStream);
 
-        final HTMLPageAssetRenderedAPI pageAssetRenderedAPI = mock(HTMLPageAssetRenderedAPIImpl.class);
-        when(pageAssetRenderedAPI.getPageHtml(Mockito.any(PageContext.class),Mockito.any(HttpServletRequest.class), Mockito.any(HttpServletResponse.class))).thenReturn(
+        final HTMLPageAssetRenderedAPI pageAssetRenderedAPI = mock(
+                HTMLPageAssetRenderedAPIImpl.class);
+        when(pageAssetRenderedAPI.getPageHtml(Mockito.any(PageContext.class),
+                Mockito.any(HttpServletRequest.class),
+                Mockito.any(HttpServletResponse.class))).thenReturn(
                 pageContent);
 
-        final VelocityServlet velocityServlet = new VelocityServlet(WebAPILocator.getUserWebAPI(), pageAssetRenderedAPI);
+        final VelocityServlet velocityServlet = new VelocityServlet(WebAPILocator.getUserWebAPI(),
+                pageAssetRenderedAPI);
         velocityServlet.service(velocityRequest, response);
-        if(LoginMode.FE == mode){
+        if (LoginMode.FE == mode) {
             //Here we verify the page was served normally
             verify(outputStream, times(1)).write(pageContent.getBytes());
         } else {
             //Here the page never got served and a redirect occurred taking the user to EditMode
             verify(outputStream, never()).write(pageContent.getBytes());
         }
-    }
-
-    private String getNotExperimentJsCode(){
-        return "<SCRIPT>localStorage.removeItem('experiment_data');</SCRIPT>\n";
     }
 }

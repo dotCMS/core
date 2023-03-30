@@ -60,20 +60,24 @@ public class PublisherTestUtil {
 
     private final static String PROTOCOL = "http";
     public static final String FILE = "file";
+
     /**
      * Creates a generic TestEnvironment
+     *
      * @param user
      * @return
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    public static Environment createEnvironment (final User user) throws DotDataException, DotSecurityException {
+    public static Environment createEnvironment(final User user)
+            throws DotDataException, DotSecurityException {
 
-        final EnvironmentAPI environmentAPI               = APILocator.getEnvironmentAPI();
-        final Environment      environment1               = new Environment();
-        final List<Permission> permissions1               = new ArrayList<>();
+        final EnvironmentAPI environmentAPI = APILocator.getEnvironmentAPI();
+        final Environment environment1 = new Environment();
+        final List<Permission> permissions1 = new ArrayList<>();
         permissions1.add(new Permission(environment1.getId(),
-                APILocator.getRoleAPI().loadRoleByKey(user.getUserId()).getId(), PermissionAPI.PERMISSION_USE));
+                APILocator.getRoleAPI().loadRoleByKey(user.getUserId()).getId(),
+                PermissionAPI.PERMISSION_USE));
 
         environment1.setName("TestEnvironment_" + valueOf(new Date().getTime()));
         environment1.setPushToAll(false);
@@ -84,69 +88,76 @@ public class PublisherTestUtil {
 
     /**
      * Creates a generic TestEndpoint
+     *
      * @param environment
      * @return
      * @throws DotDataException
      */
-    public static PublishingEndPoint createEndpoint (final Environment environment) throws DotDataException {
+    public static PublishingEndPoint createEndpoint(final Environment environment)
+            throws DotDataException {
 
-        final PublishingEndPointAPI publisherEndPointAPI  = APILocator.getPublisherEndPointAPI();
+        final PublishingEndPointAPI publisherEndPointAPI = APILocator.getPublisherEndPointAPI();
         final PublishingEndPointFactory factory = new PublishingEndPointFactory();
         final PublishingEndPoint endpoint1 = factory.getPublishingEndPoint(PROTOCOL);
-        endpoint1.setServerName( new StringBuilder( "TestEndPoint" + valueOf( new Date().getTime() ) ) );
-        endpoint1.setAddress( "127.0.0.1" );
-        endpoint1.setPort( "999" );
+        endpoint1.setServerName(new StringBuilder("TestEndPoint" + System.nanoTime()));
+        endpoint1.setAddress("127.0.0.1");
+        endpoint1.setPort("999");
         endpoint1.setProtocol(PROTOCOL);
-        endpoint1.setAuthKey( new StringBuilder( PublicEncryptionFactory.encryptString( "1111" ) ) );
-        endpoint1.setEnabled( true );
-        endpoint1.setSending( false );
-        endpoint1.setGroupId( environment.getId() );
+        endpoint1.setAuthKey(new StringBuilder(PublicEncryptionFactory.encryptString("1111")));
+        endpoint1.setEnabled(true);
+        endpoint1.setSending(false);
+        endpoint1.setGroupId(environment.getId());
 
-        publisherEndPointAPI.saveEndPoint( endpoint1 );
+        publisherEndPointAPI.saveEndPoint(endpoint1);
 
         return endpoint1;
     } // createEndpoint
 
     /**
      * Creates a generic TestEndpoint
+     *
      * @param environment
      * @return
      * @throws DotDataException
      */
-    public static PublishingEndPoint createEndpoint (final Environment environment, final Key newKey, final String seedText)
+    public static PublishingEndPoint createEndpoint(final Environment environment, final Key newKey,
+            final String seedText)
             throws DotDataException, EncryptorException {
 
-        final PublishingEndPointAPI publisherEndPointAPI  = APILocator.getPublisherEndPointAPI();
+        final PublishingEndPointAPI publisherEndPointAPI = APILocator.getPublisherEndPointAPI();
         final PublishingEndPointFactory factory = new PublishingEndPointFactory();
         final PublishingEndPoint endpoint1 = factory.getPublishingEndPoint(PROTOCOL);
-        endpoint1.setServerName( new StringBuilder( "TestEndPoint" + valueOf( new Date().getTime() ) ) );
-        endpoint1.setAddress( "127.0.0.1" );
-        endpoint1.setPort( "999" );
+        endpoint1.setServerName(new StringBuilder("TestEndPoint" + valueOf(new Date().getTime())));
+        endpoint1.setAddress("127.0.0.1");
+        endpoint1.setPort("999");
         endpoint1.setProtocol(PROTOCOL);
 
-        final String encryptedKey =  Encryptor.encrypt(newKey,seedText);
-        endpoint1.setAuthKey( new StringBuilder( encryptedKey ) );
-        endpoint1.setEnabled( true );
-        endpoint1.setSending( false );
-        endpoint1.setGroupId( environment.getId() );
+        final String encryptedKey = Encryptor.encrypt(newKey, seedText);
+        endpoint1.setAuthKey(new StringBuilder(encryptedKey));
+        endpoint1.setEnabled(true);
+        endpoint1.setSending(false);
+        endpoint1.setGroupId(environment.getId());
 
-        publisherEndPointAPI.saveEndPoint( endpoint1 );
+        publisherEndPointAPI.saveEndPoint(endpoint1);
 
         return endpoint1;
     } // createEnd
 
     /**
-     * Deletes the bundle, endpoint and environment, specially util at the end of a PP process for testing
+     * Deletes the bundle, endpoint and environment, specially util at the end of a PP process for
+     * testing
+     *
      * @param bundle1
      * @param endpoint1
      * @param environment1
      */
-    public static void cleanBundleEndpointEnv (final Bundle bundle1, final PublishingEndPoint endpoint1,
-                                               final Environment environment1) {
+    public static void cleanBundleEndpointEnv(final Bundle bundle1,
+            final PublishingEndPoint endpoint1,
+            final Environment environment1) {
 
-        final BundleAPI bundleAPI                         = APILocator.getBundleAPI();
-        final PublishingEndPointAPI publisherEndPointAPI  = APILocator.getPublisherEndPointAPI();
-        final EnvironmentAPI   environmentAPI             = APILocator.getEnvironmentAPI();
+        final BundleAPI bundleAPI = APILocator.getBundleAPI();
+        final PublishingEndPointAPI publisherEndPointAPI = APILocator.getPublisherEndPointAPI();
+        final EnvironmentAPI environmentAPI = APILocator.getEnvironmentAPI();
 
         try {
             if (null != bundle1) {
@@ -154,7 +165,9 @@ public class PublisherTestUtil {
                 bundleAPI.deleteBundle(bundle1.getId());
             }
 
-        } catch (Exception e) { e.printStackTrace(); } finally {
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
 
             try {
                 if (null != endpoint1) {
@@ -162,7 +175,9 @@ public class PublisherTestUtil {
                     publisherEndPointAPI.deleteEndPointById(endpoint1.getId());
                 }
 
-            } catch (Exception e) { e.printStackTrace();  } finally {
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
 
                 if (null != environment1) {
                     try {
@@ -177,33 +192,38 @@ public class PublisherTestUtil {
 
     /**
      * Creates a folder generic based on a given name
+     *
      * @param testfolder
      * @return
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    public static  Folder createFolder(final String testfolder) throws DotDataException, DotSecurityException {
+    public static Folder createFolder(final String testfolder)
+            throws DotDataException, DotSecurityException {
 
         final User sysuser = APILocator.getUserAPI().getSystemUser();
-        final Host host    = APILocator.getHostAPI().findDefaultHost(sysuser, false);
+        final Host host = APILocator.getHostAPI().findDefaultHost(sysuser, false);
 
         return APILocator.getFolderAPI().createFolders(
-                testfolder + UUIDGenerator.generateUuid().replaceAll("-", "_"), host, sysuser, false);
+                testfolder + UUIDGenerator.generateUuid().replaceAll("-", "_"), host, sysuser,
+                false);
 
     }
 
     /**
      * Creates and saves bundle
+     *
      * @param bundleName
      * @param user
      * @return
      * @throws DotDataException
      */
-    public static Bundle createBundle (final String bundleName, final User user, final Environment environment)
+    public static Bundle createBundle(final String bundleName, final User user,
+            final Environment environment)
             throws DotDataException {
 
-        final BundleAPI  bundleAPI         = APILocator.getBundleAPI();
-        final Bundle     bundle1           = new Bundle(bundleName, null, null, user.getUserId());
+        final BundleAPI bundleAPI = APILocator.getBundleAPI();
+        final Bundle bundle1 = new Bundle(bundleName, null, null, user.getUserId());
 
         bundleAPI.saveBundle(bundle1);
         bundleAPI.saveBundleEnvironment(bundle1, environment);
@@ -212,23 +232,27 @@ public class PublisherTestUtil {
 
     /**
      * Creates a template, and a generic page based on it, saving the info in a given folder.
+     *
      * @param folder
      * @return
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    public static HTMLPageAsset createPage (final Folder folder, final User user) throws DotDataException, DotSecurityException {
+    public static HTMLPageAsset createPage(final Folder folder, final User user)
+            throws DotDataException, DotSecurityException {
 
-        final User sysuser      = APILocator.getUserAPI().getSystemUser();
-        final Host host         = APILocator.getHostAPI().findDefaultHost(sysuser, false);
-        Template template       = new Template();
-        template.setTitle("a template "+UUIDGenerator.generateUuid());
-        template. setBody("<html><body> I'm mostly empty </body></html>");
-        template                = APILocator.getTemplateAPI().saveTemplate(template, host, sysuser, false);
+        final User sysuser = APILocator.getUserAPI().getSystemUser();
+        final Host host = APILocator.getHostAPI().findDefaultHost(sysuser, false);
+        Template template = new Template();
+        template.setTitle("a template " + UUIDGenerator.generateUuid());
+        template.setBody("<html><body> I'm mostly empty </body></html>");
+        template = APILocator.getTemplateAPI().saveTemplate(template, host, sysuser, false);
 
-        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).languageId(1).nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).languageId(1)
+                .nextPersisted();
 
-        final HTMLPageAsset pageAsset = (HTMLPageAsset)APILocator.getHTMLPageAssetAPI().findPage(page.getInode(), sysuser, false);
+        final HTMLPageAsset pageAsset = (HTMLPageAsset) APILocator.getHTMLPageAssetAPI()
+                .findPage(page.getInode(), sysuser, false);
 
         pageAsset.setIndexPolicy(IndexPolicy.FORCE);
         pageAsset.setIndexPolicyDependencies(IndexPolicy.FORCE);
@@ -241,22 +265,26 @@ public class PublisherTestUtil {
         pageAsset.setBoolProperty(Contentlet.IS_TEST_MODE, true);
 
         APILocator.getContentletIndexAPI().addContentToIndex(pageAsset);
-        assertEquals(1, APILocator.getContentletAPI().indexCount("+inode:" + pageAsset.getInode() + " " + UUIDGenerator.ulid(), user, false));
+        assertEquals(1, APILocator.getContentletAPI()
+                .indexCount("+inode:" + pageAsset.getInode() + " " + UUIDGenerator.ulid(), user,
+                        false));
 
         return pageAsset;
     }
 
     /**
      * Get the assets to push based on a set of contentlet
+     *
      * @param bundle
      * @param contentlets
      * @return
      */
-    public static List<PublishQueueElement> getAssets(final Bundle bundle, final Contentlet... contentlets) {
+    public static List<PublishQueueElement> getAssets(final Bundle bundle,
+            final Contentlet... contentlets) {
 
         final List<PublishQueueElement> queueElements = new ArrayList<>();
 
-        for (final Contentlet contentlet: contentlets) {
+        for (final Contentlet contentlet : contentlets) {
 
             queueElements.add(getAsset(bundle, contentlet));
         }
@@ -266,15 +294,17 @@ public class PublisherTestUtil {
 
     /**
      * Get the assets to push based on a set of folders
+     *
      * @param bundle
      * @param folders
      * @return
      */
-    public static List<PublishQueueElement> getAssets(final Bundle bundle, final Folder... folders) {
+    public static List<PublishQueueElement> getAssets(final Bundle bundle,
+            final Folder... folders) {
 
         final List<PublishQueueElement> queueElements = new ArrayList<>();
 
-        for (final Folder folder: folders) {
+        for (final Folder folder : folders) {
 
             queueElements.add(getAsset(bundle, folder));
         }
@@ -284,17 +314,19 @@ public class PublisherTestUtil {
 
     /**
      * Push a list of assets into a bundle
+     *
      * @param assets
      * @param bundle
      * @throws DotPublisherException
      * @throws DotDataException
      */
-    public static PublishStatus push(final List<PublishQueueElement> assets, final Bundle bundle, final User user)
+    public static PublishStatus push(final List<PublishQueueElement> assets, final Bundle bundle,
+            final User user)
             throws DotPublisherException, DotDataException, IllegalAccessException, InstantiationException, DotSecurityException {
 
-        final PublishAuditStatus  status              = new PublishAuditStatus(bundle.getId());
-        final PublisherConfig     pushPublisherConfig = new PushPublisherConfig();
-        final PublishAuditHistory historyPojo         = new PublishAuditHistory();
+        final PublishAuditStatus status = new PublishAuditStatus(bundle.getId());
+        final PublisherConfig pushPublisherConfig = new PushPublisherConfig();
+        final PublishAuditHistory historyPojo = new PublishAuditHistory();
         final PublisherConfig.DeliveryStrategy deliveryStrategy =
                 PublisherConfig.DeliveryStrategy.ALL_ENDPOINTS;
 
@@ -302,22 +334,26 @@ public class PublisherTestUtil {
         pushPublisherConfig.setAssets(assets);
 
         audit(assets, status, historyPojo);
-        return pushPublish(preparePushConfiguration(assets, bundle, pushPublisherConfig, deliveryStrategy, PushPublisherConfig.Operation.PUBLISH), historyPojo);
+        return pushPublish(
+                preparePushConfiguration(assets, bundle, pushPublisherConfig, deliveryStrategy,
+                        PushPublisherConfig.Operation.PUBLISH), historyPojo);
     }
 
     /**
      * Push a remote remove
+     *
      * @param assets
      * @param bundle
      * @param user
      * @return
      */
-    public static PublishStatus remoteRemove(final List<PublishQueueElement> assets, final Bundle bundle, final User user)
+    public static PublishStatus remoteRemove(final List<PublishQueueElement> assets,
+            final Bundle bundle, final User user)
             throws DotPublisherException, DotDataException, IllegalAccessException, InstantiationException, DotSecurityException {
 
-        final PublishAuditStatus  status              = new PublishAuditStatus(bundle.getId());
-        final PublisherConfig     pushPublisherConfig = new PushPublisherConfig();
-        final PublishAuditHistory historyPojo         = new PublishAuditHistory();
+        final PublishAuditStatus status = new PublishAuditStatus(bundle.getId());
+        final PublisherConfig pushPublisherConfig = new PushPublisherConfig();
+        final PublishAuditHistory historyPojo = new PublishAuditHistory();
         final PublisherConfig.DeliveryStrategy deliveryStrategy =
                 PublisherConfig.DeliveryStrategy.ALL_ENDPOINTS;
 
@@ -325,14 +361,16 @@ public class PublisherTestUtil {
         pushPublisherConfig.setAssets(assets);
 
         audit(assets, status, historyPojo);
-        return pushPublish(preparePushConfiguration(assets, bundle, pushPublisherConfig, deliveryStrategy, PushPublisherConfig.Operation.UNPUBLISH), historyPojo);
+        return pushPublish(
+                preparePushConfiguration(assets, bundle, pushPublisherConfig, deliveryStrategy,
+                        PushPublisherConfig.Operation.UNPUBLISH), historyPojo);
     }
 
     private static PublishQueueElement getAsset(final Bundle bundle, final Contentlet contentlet) {
 
         final PublishQueueElement element = new PublishQueueElement();
 
-        element.setId((int)System.currentTimeMillis());
+        element.setId((int) System.currentTimeMillis());
         element.setAsset(contentlet.getIdentifier());
         element.setBundleId(bundle.getId());
         element.setEnteredDate(new Date());
@@ -346,7 +384,7 @@ public class PublisherTestUtil {
 
         final PublishQueueElement element = new PublishQueueElement();
 
-        element.setId((int)System.currentTimeMillis());
+        element.setId((int) System.currentTimeMillis());
         element.setAsset(folder.getIdentifier());
         element.setBundleId(bundle.getId());
         element.setEnteredDate(new Date());
@@ -357,18 +395,19 @@ public class PublisherTestUtil {
     }
 
 
-
-    private static PublishStatus pushPublish(final PublisherConfig publisherConfig, final PublishAuditHistory historyPojo) throws DotPublisherException {
+    private static PublishStatus pushPublish(final PublisherConfig publisherConfig,
+            final PublishAuditHistory historyPojo) throws DotPublisherException {
 
         final PublishAuditAPI publishAuditAPI = PublishAuditAPI.getInstance();
-        final PublisherAPI    publisherAPI    = PublisherAPI.getInstance();
-        PublishStatus         publishStatus   = null;
+        final PublisherAPI publisherAPI = PublisherAPI.getInstance();
+        PublishStatus publishStatus = null;
 
         try {
             publishStatus = APILocator.getPublisherAPI().publish(publisherConfig);
         } catch (DotPublishingException e) {
 
-            publishAuditAPI.updatePublishAuditStatus(publisherConfig.getId(), PublishAuditStatus.Status.FAILED_TO_BUNDLE, historyPojo);
+            publishAuditAPI.updatePublishAuditStatus(publisherConfig.getId(),
+                    PublishAuditStatus.Status.FAILED_TO_BUNDLE, historyPojo);
             publisherAPI.deleteElementsFromPublishQueueTable(publisherConfig.getId());
         }
 
@@ -376,17 +415,19 @@ public class PublisherTestUtil {
     }
 
     private static PublisherConfig preparePushConfiguration(final List<PublishQueueElement> assets,
-                                                            final Bundle bundle,
-                                                            final PublisherConfig publisherConfig,
-                                                            final PublisherConfig.DeliveryStrategy deliveryStrategy,
-                                                            final PublisherConfig.Operation operation) throws DotDataException, InstantiationException, IllegalAccessException {
+            final Bundle bundle,
+            final PublisherConfig publisherConfig,
+            final PublisherConfig.DeliveryStrategy deliveryStrategy,
+            final PublisherConfig.Operation operation)
+            throws DotDataException, InstantiationException, IllegalAccessException {
 
         publisherConfig.setLuceneQueries(PublisherUtil.prepareQueries(assets));
         publisherConfig.setId(bundle.getId());
         publisherConfig.setUser(APILocator.getUserAPI().getSystemUser());
         publisherConfig.setStartDate(new Date());
         publisherConfig.runNow();
-        publisherConfig.setPublishers(Arrays.asList(TestPushPublisher.class)); // we use our test PP, since we do not really do a http request
+        publisherConfig.setPublishers(Arrays.asList(
+                TestPushPublisher.class)); // we use our test PP, since we do not really do a http request
         publisherConfig.setDeliveryStrategy(deliveryStrategy);
         publisherConfig.setOperation(operation);
 
@@ -398,33 +439,39 @@ public class PublisherTestUtil {
 
         final List<Class> publishers = pconf.getPublishers();
         for (Class<?> publisher : publishers) {
-            pconf = ((Publisher)publisher.newInstance()).setUpConfig(pconf);
+            pconf = ((Publisher) publisher.newInstance()).setUpConfig(pconf);
         }
 
         return pconf;
     }
 
     private static void audit(final List<PublishQueueElement> assets,
-                              final PublishAuditStatus status, final PublishAuditHistory historyPojo) throws DotPublisherException {
+            final PublishAuditStatus status, final PublishAuditHistory historyPojo)
+            throws DotPublisherException {
 
-        final PublishAuditAPI     publishAuditAPI     = PublishAuditAPI.getInstance();
+        final PublishAuditAPI publishAuditAPI = PublishAuditAPI.getInstance();
 
-        historyPojo.setAssets(assets.stream().collect(Collectors.toMap(asset-> asset.getAsset(), asset-> asset.getType())));
+        historyPojo.setAssets(assets.stream()
+                .collect(Collectors.toMap(asset -> asset.getAsset(), asset -> asset.getType())));
         status.setStatusPojo(historyPojo);
 
         //Insert in Audit table
         publishAuditAPI.insertPublishAuditStatus(status);
     }
 
-    public static Optional<BundlerStatus> getBundleStatus(final List<BundlerStatus> bundlerStatuses, final Class<? extends IBundler> contentBundlerClass) {
+    public static Optional<BundlerStatus> getBundleStatus(final List<BundlerStatus> bundlerStatuses,
+            final Class<? extends IBundler> contentBundlerClass) {
 
-        return bundlerStatuses.stream().filter(status -> status.getBundlerClass().equals(contentBundlerClass.getName())).findFirst();
+        return bundlerStatuses.stream()
+                .filter(status -> status.getBundlerClass().equals(contentBundlerClass.getName()))
+                .findFirst();
     }
 
     public static boolean existsFolder(final String bundlePath, final Folder folder) {
 
-        final File folderTestPath   = new File(bundlePath, "/ROOT/" + folder.getName());
-        final File folderIdTestPath = new File(bundlePath, "/ROOT/" + folder.getIdentifier() + ".folder.xml");
+        final File folderTestPath = new File(bundlePath, "/ROOT/" + folder.getName());
+        final File folderIdTestPath = new File(bundlePath,
+                "/ROOT/" + folder.getIdentifier() + ".folder.xml");
 
         return folderTestPath.exists() && folderIdTestPath.exists();
     }
@@ -458,27 +505,29 @@ public class PublisherTestUtil {
         return exists;
     }
 
-    public static Map<String, Object> generateBundle ( final String bundleId, final PushPublisherConfig.Operation operation )
-    throws DotPublisherException, DotDataException, DotPublishingException, IllegalAccessException, InstantiationException, DotBundleException, IOException {
+    public static Map<String, Object> generateBundle(final String bundleId,
+            final PushPublisherConfig.Operation operation)
+            throws DotPublisherException, DotDataException, DotPublishingException, IllegalAccessException, InstantiationException, DotBundleException, IOException {
 
         final PushPublisherConfig pconf = new PushPublisherConfig();
         final PublisherAPI pubAPI = PublisherAPI.getInstance();
 
-        final List<PublishQueueElement> tempBundleContents = pubAPI.getQueueElementsByBundleId( bundleId );
+        final List<PublishQueueElement> tempBundleContents = pubAPI.getQueueElementsByBundleId(
+                bundleId);
         final List<PublishQueueElement> assetsToPublish = new ArrayList<PublishQueueElement>();
 
-        for ( final PublishQueueElement queueElement : tempBundleContents ) {
-            assetsToPublish.add( queueElement );
+        for (final PublishQueueElement queueElement : tempBundleContents) {
+            assetsToPublish.add(queueElement);
         }
 
-        pconf.setDownloading( true );
+        pconf.setDownloading(true);
         pconf.setOperation(operation);
 
-        pconf.setAssets( assetsToPublish );
+        pconf.setAssets(assetsToPublish);
         //Queries creation
-        pconf.setLuceneQueries( PublisherUtil.prepareQueries( tempBundleContents ) );
-        pconf.setId( bundleId );
-        pconf.setUser( APILocator.getUserAPI().getSystemUser() );
+        pconf.setLuceneQueries(PublisherUtil.prepareQueries(tempBundleContents));
+        pconf.setId(bundleId);
+        pconf.setUser(APILocator.getUserAPI().getSystemUser());
 
         //BUNDLERS
 
@@ -486,46 +535,46 @@ public class PublisherTestUtil {
         final List<IBundler> confBundlers = new ArrayList<IBundler>();
 
         final Publisher publisher = new PushPublisher();
-        publisher.init( pconf );
+        publisher.init(pconf);
         //Add the bundles for this publisher
-        for ( final Class <IBundler> clazz : publisher.getBundlers() ) {
-            if ( !bundlers.contains( clazz ) ) {
-                bundlers.add( clazz );
+        for (final Class<IBundler> clazz : publisher.getBundlers()) {
+            if (!bundlers.contains(clazz)) {
+                bundlers.add(clazz);
             }
         }
 
-        final File bundleRoot = BundlerUtil.getBundleRoot( pconf );
+        final File bundleRoot = BundlerUtil.getBundleRoot(pconf);
         final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(pconf);
 
         // Run bundlers
-        BundlerUtil.writeBundleXML( pconf, directoryBundleOutput);
-        for ( final Class<IBundler> aClass : bundlers ) {
+        BundlerUtil.writeBundleXML(pconf, directoryBundleOutput);
+        for (final Class<IBundler> aClass : bundlers) {
 
             final IBundler bundler = aClass.newInstance();
-            confBundlers.add( bundler );
-            bundler.setConfig( pconf );
+            confBundlers.add(bundler);
+            bundler.setConfig(pconf);
             bundler.setPublisher(publisher);
-            final BundlerStatus bundlerStatus = new BundlerStatus( bundler.getClass().getName() );
+            final BundlerStatus bundlerStatus = new BundlerStatus(bundler.getClass().getName());
 
             //Generate the bundler
             Logger.info(PublisherTestUtil.class, "Start of Bundler: " + aClass.getSimpleName());
-            bundler.generate( directoryBundleOutput, bundlerStatus );
+            bundler.generate(directoryBundleOutput, bundlerStatus);
             Logger.info(PublisherTestUtil.class, "End of Bundler: " + aClass.getSimpleName());
         }
 
-        pconf.setBundlers( confBundlers );
+        pconf.setBundlers(confBundlers);
 
         //Compressing bundle
         final List<File> list = new ArrayList<File>();
-        list.add( bundleRoot );
-        final File bundle = new File( bundleRoot + File.separator + ".." + File.separator + pconf.getId() + ".tar.gz" );
+        list.add(bundleRoot);
+        final File bundle = new File(
+                bundleRoot + File.separator + ".." + File.separator + pconf.getId() + ".tar.gz");
 
         final Map<String, Object> bundleData = new HashMap<String, Object>();
-        bundleData.put( "id", bundleId );
-        bundleData.put( FILE, PushUtils.compressFiles( list, bundle, bundleRoot.getAbsolutePath() ) );
+        bundleData.put("id", bundleId);
+        bundleData.put(FILE, PushUtils.compressFiles(list, bundle, bundleRoot.getAbsolutePath()));
         return bundleData;
     }
-
 
 
 }

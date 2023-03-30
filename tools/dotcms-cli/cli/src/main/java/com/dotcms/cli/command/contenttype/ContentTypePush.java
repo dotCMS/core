@@ -21,9 +21,9 @@ import java.util.concurrent.Callable;
         name = ContentTypePush.NAME,
         description = "@|bold,green Push / Create a Content-type from a given file definition.|@ @|bold,cyan --file|@ to send the descriptor. "
 )
-public class ContentTypePush extends ContentTypeCommand implements Callable<Integer> {
+public class ContentTypePush extends AbstractContentTypeCommand implements Callable<Integer> {
 
-    static final String NAME = "content-type-push";
+    static final String NAME = "push";
 
     @CommandLine.Mixin(name = "output")
     OutputOptionMixin output;
@@ -31,7 +31,7 @@ public class ContentTypePush extends ContentTypeCommand implements Callable<Inte
     @Inject
     RestClientFactory clientFactory;
 
-    @CommandLine.Option(names = { "-f", "--file" }, order = 1,required = true, description = " The json/yml formatted content-type descriptor file to be pushed. ")
+    @CommandLine.Parameters(index = "0", arity = "1", description = "The json/yml formatted content-type descriptor file to be pushed. ")
     File file;
 
     @Override

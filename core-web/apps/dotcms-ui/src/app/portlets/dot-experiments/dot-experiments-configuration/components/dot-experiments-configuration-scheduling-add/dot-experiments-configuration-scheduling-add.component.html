@@ -7,7 +7,7 @@
         <div class="experiment-scheduling-add__form-wrapper flex flex-column">
             <form class="p-fluid" [formGroup]="form" data-testId="add-scheduling-form" novalidate>
                 <div class="field">
-                    <label class="p-label-input-required">
+                    <label>
                         {{ 'experiments.configure.scheduling.start.time' | dm }}
                     </label>
                     <p-calendar
@@ -23,7 +23,7 @@
                     ></p-calendar>
                 </div>
                 <div class="field">
-                    <label class="p-label-input-required">
+                    <label>
                         {{ 'experiments.configure.scheduling.end.time' | dm }}
                     </label>
                     <p-calendar

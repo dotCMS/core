@@ -89,9 +89,11 @@ public  class WebResource {
 
     /**
      * <p>Checks if SSL is required. If it is required and no secure request is provided, throws a ForbiddenException.
-     *
+     * @deprecated
+     * @see {@link InitBuilder}
      * @param request  {@link HttpServletRequest}
      */
+    @Deprecated
     public void init(final HttpServletRequest request) {
         checkForceSSL(request);
     }
@@ -101,11 +103,13 @@ public  class WebResource {
      * <p>2) If 1) does not throw an exception, returns an {@link InitDataObject} with a <code>Map</code> containing
      * the keys and values extracted from <code>params</code>
      *
-     *
+     * @deprecated
+     * @see {@link InitBuilder}
      * @param params   {@link String} a string containing parameters in the /key/value form
      * @param request  {@link HttpServletRequest}
      * @return an initDataObject with the resulting <code>Map</code>
      */
+    @Deprecated
     public InitDataObject init(final String params, final HttpServletRequest request) {
 
         checkForceSSL(request);
@@ -135,13 +139,15 @@ public  class WebResource {
      * <br>3) Using username and password in Base64 contained in the <code>request</code> HEADER parameter AUTHORIZATION (BASIC Auth).
      * <br>4) From the session. It first tries to get the Backend logged in user. If no user found, tries to get the Frontend logged in user.
      *
-     *
+     * @deprecated
+     * @see {@link InitBuilder}
      * @param request  {@link HttpServletRequest}
      * @param response {@link HttpServletResponse}
      * @param rejectWhenNoUser determines whether a SecurityException is thrown or not when authentication fails.
      * @return an initDataObject with the resulting <code>Map</code>
      * @throws SecurityException
      */
+    @Deprecated
     public InitDataObject init(final HttpServletRequest request, final HttpServletResponse response,
                                final boolean rejectWhenNoUser) throws SecurityException {
 
@@ -776,7 +782,6 @@ public  class WebResource {
             this.response=response;
         }
 
-        @VisibleForTesting
         public InitBuilder(final WebResource webResource) {
             this.webResource = webResource;
         }

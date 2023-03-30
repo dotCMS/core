@@ -24,6 +24,9 @@ export class DotExperimentsListTableComponent {
     @Output()
     deleteItem = new EventEmitter<DotExperiment>();
 
+    @Output()
+    goToReport = new EventEmitter<DotExperiment>();
+
     constructor(
         private readonly dotMessageService: DotMessageService,
         private readonly confirmationService: ConfirmationService
@@ -65,5 +68,15 @@ export class DotExperimentsListTableComponent {
             icon: 'pi pi-exclamation-triangle',
             accept: () => this.deleteItem.emit(item)
         });
+    }
+
+    /**
+     * Go to report of experiment
+     * @param {DotExperiment} item
+     * @returns void
+     * @memberof DotExperimentsListTableComponent
+     */
+    viewReports(item: DotExperiment) {
+        this.goToReport.emit(item);
     }
 }

@@ -5,15 +5,16 @@ import {
     DotExperiment,
     Goals,
     GoalsLevels,
-    Variant
+    TrafficProportionTypes
 } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
-import { ExperimentMocks } from '@portlets/dot-experiments/test/mocks';
+import { getExperimentMock } from '@portlets/dot-experiments/test/mocks';
 
 const API_ENDPOINT = '/api/v1/experiments';
 const PAGE_Id = '123';
-const EXPERIMENT_ID = ExperimentMocks[0].id;
-const VARIANT_ID = ExperimentMocks[0].trafficProportion.variants[0].id;
+const EXPERIMENT_MOCK = getExperimentMock(0);
+const EXPERIMENT_ID = EXPERIMENT_MOCK.id;
+const VARIANT_ID = EXPERIMENT_MOCK.trafficProportion.variants[0].id;
 
 describe('DotExperimentsService', () => {
     let spectator: SpectatorHttp<DotExperimentsService>;
@@ -51,16 +52,18 @@ describe('DotExperimentsService', () => {
         spectator.expectOne(`${API_ENDPOINT}/${EXPERIMENT_ID}/_start`, HttpMethod.POST);
     });
 
+    it('should stop an experiment with experimentId as param', () => {
+        spectator.service.stop(EXPERIMENT_ID).subscribe();
+        spectator.expectOne(`${API_ENDPOINT}/${EXPERIMENT_ID}/_end`, HttpMethod.POST);
+    });
+
     it('should delete a experiment with experimentId', () => {
         spectator.service.delete(EXPERIMENT_ID).subscribe();
         spectator.expectOne(`${API_ENDPOINT}/${EXPERIMENT_ID}`, HttpMethod.DELETE);
     });
 
     it('should add a variant', () => {
-        const variant: Pick<Variant, 'name'> = {
-            name: 'cool name'
-        };
-        spectator.service.addVariant(EXPERIMENT_ID, variant).subscribe();
+        spectator.service.addVariant(EXPERIMENT_ID, 'cool name').subscribe();
         spectator.expectOne(`${API_ENDPOINT}/${EXPERIMENT_ID}/variants`, HttpMethod.POST);
     });
 
@@ -116,5 +119,17 @@ describe('DotExperimentsService', () => {
         const req = spectator.expectOne(`${API_ENDPOINT}/${EXPERIMENT_ID}`, HttpMethod.PATCH);
 
         expect(req.request.body['trafficAllocation']).toEqual(newValue);
+    });
+
+    it('should set traffic proportion to experiment', () => {
+        const newValue = {
+            type: TrafficProportionTypes.SPLIT_EVENLY,
+            variants: [{ id: '111', name: 'DEFAULT', weight: 100 }]
+        };
+        spectator.service.setTrafficProportion(EXPERIMENT_ID, newValue).subscribe();
+
+        const req = spectator.expectOne(`${API_ENDPOINT}/${EXPERIMENT_ID}`, HttpMethod.PATCH);
+
+        expect(req.request.body['trafficProportion']).toEqual(newValue);
     });
 });

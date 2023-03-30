@@ -1,9 +1,7 @@
 package com.dotcms.cli.command;
 
-import com.dotcms.cli.command.contenttype.ContentTypeFind;
-import com.dotcms.cli.command.contenttype.ContentTypePull;
-import com.dotcms.cli.command.contenttype.ContentTypePush;
-import com.dotcms.cli.command.contenttype.ContentTypeRemove;
+import com.dotcms.cli.command.contenttype.*;
+import com.dotcms.cli.command.language.LanguageCommand;
 import com.dotcms.cli.command.site.*;
 import io.quarkus.picocli.runtime.annotations.TopCommand;
 import picocli.CommandLine;
@@ -21,20 +19,11 @@ import picocli.CommandLine.Command;
            StatusCommand.class,
            InstanceCommand.class,
           //---- ContentType Related stuff
-           ContentTypeFind.class,
-           ContentTypePull.class,
-           ContentTypePush.class,
-           ContentTypeRemove.class,
+           ContentTypeCommand.class,
           //--- Site related stuff
-           SiteFind.class,
-           SitePull.class,
-           SitePush.class,
-           SiteArchive.class,
-           SiteStart.class,
-           SiteStop.class,
-           SiteCurrent.class,
-           SiteCopy.class,
-           SiteSwitch.class
+           SiteCommand.class,
+          //--- Language related stuff
+           LanguageCommand.class
         }
 )
 public class EntryCommand {

@@ -410,6 +410,9 @@ dependencies {
     testImplementation group: 'com.google.guava', name: 'guava', version: '19.0'
     testImplementation group: 'org.apache.tomcat', name: 'tomcat-jdbc', version: '9.0.41'
 
+    testImplementation group: 'org.awaitility', name: 'awaitility', version: '3.0.0'
+    testImplementation group: 'org.awaitility', name: 'awaitility-proxy', version: '3.0.0'
+
     /**
      * Order matters here: OSGI-Core must come after felix.
      */

@@ -1,13 +1,14 @@
 package com.dotcms.experiments.business.result;
 
 import com.dotcms.analytics.metrics.Metric;
+
 import com.dotcms.experiments.model.ExperimentVariant;
-import com.dotmarketing.util.UtilMethods;
-import java.util.ArrayList;
+import com.dotcms.util.DotPreconditions;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 
@@ -23,13 +24,12 @@ import java.util.stream.Collectors;
  *
  */
 public class ExperimentResults {
+    private TotalSession sessions;
 
-    private int totalSessions;
+    private Map<String, GoalResults> goals;
 
-    private List<GoalResult> goals;
-
-    private ExperimentResults(int totalSessions, final List<GoalResult> goalResults) {
-        this.totalSessions = totalSessions;
+    private ExperimentResults(final TotalSession sessions, final Map<String, GoalResults> goalResults) {
+        this.sessions = sessions;
         this.goals = goalResults;
     }
 
@@ -39,8 +39,8 @@ public class ExperimentResults {
      *
      * @return
      */
-    public int getTotalSessions() {
-        return totalSessions;
+    public TotalSession getSessions() {
+        return sessions;
     }
 
     /**
@@ -49,127 +49,104 @@ public class ExperimentResults {
      *
      * @return
      */
-    public List<GoalResult> getGoalResults() {
+    public Map<String, GoalResults> getGoals() {
         return goals;
     }
 
     public static class Builder {
 
-        private int totalSessions;
-        private List<GoalResult> goals = new ArrayList<>();
+        private TotalSessionBuilder totalSessionsBuilder;
+        private Map<String, GoalResultsBuilder> goals = new HashMap<>();
         private Collection<ExperimentVariant> variants;
 
-        public Builder setSessionTotal(final int totalSessions) {
-            this.totalSessions = totalSessions;
-            return this;
+        public Builder(final Collection<ExperimentVariant> variants){
+            this.variants = variants;
+            totalSessionsBuilder = new TotalSessionBuilder(variants);
         }
 
-        public Builder addGoal(final Metric goal) {
-            this.goals.add(new GoalResult(goal, variants));
+        public Builder addPrimaryGoal(final Metric goal) {
+            this.goals.put("primary", new GoalResultsBuilder(goal, variants));
             return this;
         }
 
         public ExperimentResults build() {
-            return new ExperimentResults(totalSessions, goals);
+            final TotalSession totalSessions = totalSessionsBuilder.build();
+
+            final Map<String, GoalResults> goalResultMap = goals.entrySet().stream()
+                    .collect(Collectors.toMap(Entry::getKey,
+                            entry -> entry.getValue().build(totalSessions)));
+
+            return new ExperimentResults(totalSessions, goalResultMap);
         }
 
-        public Builder addVariants(final Collection<ExperimentVariant> variants) {
-            this.variants = variants;
-            return this;
-        }
-
-        public Builder count(final Metric goal, final String lookBackWindow, final Event event) {
-            final GoalResult goalresult = this.goals.stream()
-                    .filter(goalResult -> goalResult.goal.name().equals(goal.name()))
+        public Builder success(final Metric goal, final String lookBackWindow, final Event event) {
+            final GoalResultsBuilder goalResultsBuilder = this.goals.values().stream()
+                    .filter(builder -> builder.goal.name().equals(goal.name()))
                     .limit(1)
                     .findFirst()
                     .orElseThrow(() -> new IllegalArgumentException("Goal does not exists"));
 
-            goalresult.count(lookBackWindow, event);
+            goalResultsBuilder.success(lookBackWindow, event);
             return this;
         }
-    }
 
-    public static class GoalResult {
-
-        private Metric goal;
-        final Map<String, VariantResult> variants;
-        public GoalResult(final Metric goal, final Collection<ExperimentVariant> variants) {
-            this.goal = goal;
-            this.variants = variants.stream()
-                    .collect(Collectors.toMap(ExperimentVariant::id,
-                            variant -> new VariantResult(variant.id())));
+        public void addSession(final BrowserSession browserSession) {
+            final String variantName = browserSession.getVariant().orElseThrow();
+            totalSessionsBuilder.count(variantName);
         }
 
-        public Metric getGoal() {
-            return goal;
-        }
+        private class TotalSessionBuilder {
+            private Map<String, Long> totalSessions = new HashMap<>();
 
-        public Map<String, VariantResult> getVariants() {
-            return variants;
-        }
+            private final List<String> variantsName;
 
-        public void count(final String lookBackWindow, final Event event) {
-            final String variantName = event.get("variant")
-                    .map(value -> value.toString())
-                    .orElseThrow(() -> new IllegalArgumentException("Attribute variant does not exists"));
-
-            final VariantResult variantResult = variants.get(variantName);
-
-            if (variantResult == null) {
-                throw new IllegalArgumentException(String.format("Variant %s does not exists in the Experiment", variantName));
+            public TotalSessionBuilder(Collection<ExperimentVariant> variantsName) {
+                this.variantsName = variantsName.stream()
+                        .map(experimentVariant -> experimentVariant.id())
+                        .collect(Collectors.toList());
             }
 
-            variantResult.count(lookBackWindow, event);
+            public void count(final String variantName) {
+                DotPreconditions.isTrue(variantsName.contains(variantName), "Variant does not exists");
+
+                final Long currentTotalSessionsVariant = totalSessions.getOrDefault(variantName, 0l) + 1;
+                totalSessions.put(variantName, currentTotalSessionsVariant);
+            }
+
+            private long getTotal() {
+                return totalSessions.values().stream().mapToLong(Long::longValue).sum();
+            }
+
+            public TotalSession build(){
+                final Map<String, Long> sessionsResult = new HashMap<>();
+
+                for (String variantName : variantsName) {
+                    final Long count = totalSessions.get(variantName);
+                    sessionsResult.put(variantName, count != null ? count : 0);
+                }
+
+                return new TotalSession(getTotal(), sessionsResult);
+            }
         }
+
+
     }
 
-    public static class VariantResult {
+    public static class TotalSession {
+        private long total;
+        private Map<String, Long> variants;
 
-        private String variantName;
-        private Map<String, List<Event>> events = new HashMap<>();
-
-        public VariantResult(final String variantName) {
-            this.variantName = variantName;
+        public TotalSession(long total, Map<String, Long> variants) {
+            this.total = total;
+            this.variants = variants;
         }
 
-        public String getVariantName() {
-            return variantName;
+        public long getTotal() {
+            return total;
         }
 
-        public void count(final String lookBackWindow, final Event event) {
-            final List<Event> sessionEvents = UtilMethods.isSet(events.get(lookBackWindow)) ?
-                    events.get(lookBackWindow) : createEventsList(lookBackWindow);
-
-            sessionEvents.add(event);
-        }
-
-        private  ArrayList<Event> createEventsList(final String lookBackWindow) {
-            final ArrayList<Event> list = new ArrayList<>();
-            events.put(lookBackWindow, list);
-            return list;
-        }
-
-        /**
-         * Return how many sessions the {@link com.dotcms.experiments.model.Goals} was success.
-         *
-         * @return
-         */
-        public int totalUniqueBySession() {
-            return events.size();
-        }
-
-        /**
-         * Return How many times the {@link com.dotcms.experiments.model.Goals} was success no matter
-         * if it was success several times in the same session when the user was using this Variant
-         *
-         * @return
-         */
-        public int totalMultiBySession() {
-            return events.values().stream()
-                    .map(sessionEvents -> sessionEvents.size())
-                    .mapToInt(Integer::intValue)
-                    .sum();
+        public Map<String, Long> getVariants() {
+            return variants;
         }
     }
 }

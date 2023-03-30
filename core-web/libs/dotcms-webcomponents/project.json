@@ -50,9 +50,7 @@
             "options": {
                 "uiFramework": "@storybook/html",
                 "port": 5500,
-                "config": {
-                    "configFolder": "libs/dotcms-webcomponents/.storybook"
-                }
+                "configDir": "libs/dotcms-webcomponents/.storybook"
             },
             "configurations": {
                 "ci": {
@@ -64,11 +62,9 @@
             "executor": "@nrwl/storybook:build",
             "options": {
                 "uiFramework": "@storybook/html",
-                "outputPath": "dist-docs/sb/dotcms-webcomponents",
                 "deleteOutputPath": false,
-                "config": {
-                    "configFolder": "libs/dotcms-webcomponents/.storybook"
-                }
+                "configDir": "libs/dotcms-webcomponents/.storybook",
+                "outputDir": "dist-docs/sb/dotcms-webcomponents"
             },
             "configurations": {
                 "ci": {

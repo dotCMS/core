@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runalways;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
@@ -9,14 +10,10 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.StartupTask;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.MaintenanceUtil;
-
 import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -35,6 +32,7 @@ import java.util.List;
 public class Task00001LoadSchema implements StartupTask {
 
 	@Override
+	@WrapInTransaction
 	public void executeUpgrade() throws DotDataException, DotRuntimeException {
 		Logger.info(this.getClass(), "Loading schema");
 		String schemaFile = null;

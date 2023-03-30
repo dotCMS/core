@@ -20,6 +20,7 @@ import {
     DotPersonalizeService
 } from '@dotcms/data-access';
 import {
+    DotExperimentStatusList,
     DotPageMode,
     DotPageRenderOptions,
     DotPageRenderState,
@@ -165,11 +166,20 @@ we want to show the lock off so the new user can steal the lock
     }
 
     private getStateModeOptions(pageState: DotPageRenderState): SelectItem[] {
-        const items = this.variant
-            ? [...(!this.variant.variant.isOriginal ? ['edit'] : []), 'preview']
-            : ['edit', 'preview', 'live'];
+        const items = this.variant ? this.getModesBasedOnVariant() : ['edit', 'preview', 'live'];
 
         return items.map((mode: string) => this.getModeOption(mode, pageState));
+    }
+
+    private getModesBasedOnVariant(): string[] {
+        return [...(this.canEditVariant() ? ['edit'] : []), 'preview'];
+    }
+
+    private canEditVariant(): boolean {
+        return (
+            !this.variant.variant.isOriginal &&
+            this.variant.experimentStatus === DotExperimentStatusList.DRAFT
+        );
     }
 
     private isLocked(pageState: DotPageRenderState): boolean {

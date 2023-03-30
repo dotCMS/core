@@ -1,0 +1,14 @@
+.history {
+    .contentIdentifier {
+        font-weight: bold;
+    }
+
+    .history__divider {
+        background-color: $color-palette-gray-400;
+        margin: $spacing-1 * 3 0;
+    }
+
+    .history__status {
+        overflow: hidden;
+    }
+}

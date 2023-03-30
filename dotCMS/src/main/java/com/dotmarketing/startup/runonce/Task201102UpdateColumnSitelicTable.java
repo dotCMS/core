@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -33,6 +34,7 @@ public class Task201102UpdateColumnSitelicTable implements StartupTask {
     }
 
     @Override
+    @WrapInTransaction
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
         final Optional<String> type = getColumnType();
         if (!type.isPresent()) {

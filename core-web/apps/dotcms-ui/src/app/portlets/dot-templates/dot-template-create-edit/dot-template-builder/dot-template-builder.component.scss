@@ -13,7 +13,12 @@
             display: flex;
             flex-direction: column;
             height: 100%;
+
+            form {
+                margin-right: 0;
+            }
         }
+
         .p-tabview-panel:not([hidden]) {
             height: 100%;
         }
