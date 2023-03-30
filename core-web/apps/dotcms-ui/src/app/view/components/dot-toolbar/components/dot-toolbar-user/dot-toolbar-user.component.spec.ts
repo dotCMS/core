@@ -85,7 +85,6 @@ describe('DotToolbarUserComponent', () => {
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotUiColorsService, useClass: MockDotUiColorsService },
                 UserModel,
-                DotcmsEventsService,
                 DotEventsSocket,
                 { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                 DotcmsConfigService,
