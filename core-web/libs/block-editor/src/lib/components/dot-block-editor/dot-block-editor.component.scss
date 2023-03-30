@@ -268,14 +268,18 @@
             width: auto;
         }
 
-        .horizontal-video,
-        .node-image {
+        .horizontal-video {
             height: auto;
             max-width: 50%;
         }
 
         .node-container {
             margin-bottom: $spacing-3;
+
+            img {
+                height: auto;
+                max-width: 50%;
+            }
         }
     }
 

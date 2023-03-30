@@ -15,7 +15,8 @@ declare module '@tiptap/core' {
              * Unset Image Link mark
              */
             unsetImageLink: () => ReturnType;
-            addDotImage: (attrs: DotCMSContentlet | string) => ReturnType;
+            insertImage: (attrs: DotCMSContentlet | string) => ReturnType;
+            insertImageAt: (attrs: DotCMSContentlet | string, position: number) => ReturnType;
         };
     }
 }
@@ -81,7 +82,7 @@ export const ImageNode = Image.extend({
                 ({ commands }) => {
                     return commands.updateAttributes(this.name, { href: '' });
                 },
-            addDotImage:
+            insertImage:
                 (attrs) =>
                 ({ chain, state }) => {
                     const { selection } = state;
@@ -91,6 +92,14 @@ export const ImageNode = Image.extend({
                     };
 
                     return chain().insertContentAt(selection.head, node).run();
+                },
+            insertImageAt:
+                (attrs, position) =>
+                ({ commands }) => {
+                    return commands.insertContentAt(position, {
+                        type: this.name,
+                        attrs: getImageAttr(attrs)
+                    });
                 }
         };
     },
@@ -100,7 +109,7 @@ export const ImageNode = Image.extend({
 
         return [
             'div',
-            { style, class: 'node-container node-image' },
+            { style, class: 'node-container' },
             href
                 ? imageLinkElement(this.options.HTMLAttributes, HTMLAttributes)
                 : imageElement(this.options.HTMLAttributes, HTMLAttributes)

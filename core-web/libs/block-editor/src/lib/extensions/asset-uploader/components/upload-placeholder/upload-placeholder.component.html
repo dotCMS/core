@@ -1,0 +1,22 @@
+<div class="container" [ngSwitch]="type">
+    <ng-container *ngSwitchCase="'video'">
+        <video class="video" src="" controls></video>
+
+        <div class="preview-container">
+            <div>
+                <dot-spinner size="30px"></dot-spinner>
+                Uploading video, wait until finished.
+            </div>
+            <button
+                class="p-button-md p-button-outlined"
+                (click)="cancel.emit(true)"
+                pButton
+                label="Cancel"
+            ></button>
+        </div>
+    </ng-container>
+
+    <ng-container *ngSwitchDefault>
+        <span class="default-message">Uploading...</span>
+    </ng-container>
+</div>

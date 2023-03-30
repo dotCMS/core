@@ -1,7 +1,8 @@
+@use "variables" as *;
+
 .container {
     display: flex;
     flex-direction: column;
-    // align-items: center;
     justify-content: center;
     width: 100%;
 }
@@ -15,4 +16,11 @@
     justify-content: space-between;
     width: 50%;
     padding: 1rem 0;
+}
+
+.default-message {
+    background-color: $color-palette-gray-200;
+    display: block;
+    padding: $dot-editor-size;
+    font-size: $font-size-lg;
 }
