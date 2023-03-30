@@ -19,8 +19,11 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletStateException
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 import java.io.File;
 import java.net.URL;
@@ -430,5 +433,58 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
         final Contentlet contentlet = nextPersisted();
         publish(contentlet);
         return contentlet;
+    }
+
+    /**
+     * Creates a new version of a {@link Contentlet} based on the given inode and variantId
+     *
+     * @param user to check permission
+     * @param oldContentletVersion old {@link Contentlet} version
+     * @param variantId Target {@link Variant}
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    public static Contentlet createNewVersion(final Contentlet oldContentletVersion,
+            final Variant variant, final Map<String, Object> properties) throws DotDataException, DotSecurityException {
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        return createNewVersion(oldContentletVersion, variant, defaultLanguage, properties);
+    }
+
+    public static Contentlet createNewVersion(final Contentlet oldContentletVersion,
+        final Variant variant, final Language language, final Map<String, Object> properties)
+            throws DotDataException, DotSecurityException {
+
+        final User user = APILocator.systemUser();
+        final Contentlet checkout = APILocator.getContentletAPI()
+                .checkout(oldContentletVersion.getInode(), user, false);
+
+        checkout.setVariantId(variant.name());
+        checkout.setLanguageId(language.getId());
+
+        if (properties != null) {
+            properties.forEach((key, value) -> checkout.getMap().put(key, value));
+        }
+
+        return APILocator.getContentletAPI().checkin(checkout, user, false);
+    }
+
+    /**
+     * Update a Contentlet using the given properties
+     *
+     * @param contentlet
+     * @param updatedProperties
+     */
+    public static void update(final Contentlet contentlet, final Map<String, Object> updatedProperties) {
+        try {
+            final Contentlet contentletToUpdate = APILocator.getContentletAPI().find(contentlet.getInode(), APILocator.systemUser(), false);
+            final Contentlet checkout = APILocator.getContentletAPI()
+                    .checkout(contentletToUpdate.getInode(), APILocator.systemUser(), false);
+            updatedProperties.forEach((key, value) -> checkout.getMap().put(key, value));
+            APILocator.getContentletAPI().checkin(checkout, APILocator.systemUser(), false);
+        } catch (DotDataException | DotSecurityException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 }

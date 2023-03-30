@@ -1167,7 +1167,8 @@ public class DotConnect {
         for (int i = 0; i < params.length; ++i) {
             final Object param = params[i];
             if (param != null && statementSetterHandlerMap.containsKey(param.getClass())) {
-                statementSetterHandlerMap.get(param.getClass()).execute(preparedStatement, i + 1, param);
+                statementSetterHandlerMap.get(param.getClass())
+                        .execute(preparedStatement, i + 1, param);
             } else {
                 preparedStatement.setObject(i + 1, param);
             }

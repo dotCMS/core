@@ -10,6 +10,13 @@
     align-items: center;
     flex-direction: column;
 
+    .error {
+        color: $error;
+        font-size: $font-size-lg;
+        max-width: 100%;
+        white-space: pre-wrap;
+    }
+
     .preview-container {
         align-items: center;
         display: flex;
@@ -17,6 +24,7 @@
         justify-content: center;
         overflow: hidden;
         width: 100%;
+        flex-direction: column;
 
         img {
             height: 100%;
@@ -25,11 +33,24 @@
         }
     }
 
-    .btn-container {
+    .action-container {
         display: flex;
-        gap: $spacing-3;
         height: fit-content;
-        justify-content: end;
+        justify-content: space-between;
         width: 100%;
+    }
+
+    .loading-message {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: $spacing-3;
+    }
+
+    .warning {
+        display: block;
+        font-style: normal;
+        text-align: center;
+        color: $black;
     }
 }

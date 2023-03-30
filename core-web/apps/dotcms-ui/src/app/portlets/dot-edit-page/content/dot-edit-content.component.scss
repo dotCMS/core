@@ -47,13 +47,6 @@ dot-whats-changed,
     padding-right: 80px;
 }
 
-.dot-edit__page-wrapper:after {
-    content: "";
-    display: block;
-    height: 1px;
-    width: 66.5rem;
-}
-
 .dot-edit__device-wrapper {
     flex-grow: 1;
     display: flex;
