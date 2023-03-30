@@ -17,6 +17,13 @@ h3 {
     font-size: $font-size-md;
 }
 
+.detail__title {
+    color: $black;
+    font-size: $font-size-md;
+    font-weight: $font-weight-bold;
+    margin: $spacing-0;
+}
+
 :host ::ng-deep {
     dot-icon {
         color: $color-palette-gray-500;
