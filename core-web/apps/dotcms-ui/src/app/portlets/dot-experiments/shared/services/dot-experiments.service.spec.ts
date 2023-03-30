@@ -42,6 +42,11 @@ describe('DotExperimentsService', () => {
         spectator.expectOne(`${API_ENDPOINT}/${EXPERIMENT_ID}`, HttpMethod.GET);
     });
 
+    it('should get experiment results', () => {
+        spectator.service.getResults(EXPERIMENT_ID).subscribe();
+        spectator.expectOne(`${API_ENDPOINT}/${EXPERIMENT_ID}/results`, HttpMethod.GET);
+    });
+
     it('should archive an experiment with experimentId', () => {
         spectator.service.archive(EXPERIMENT_ID).subscribe();
         spectator.expectOne(`${API_ENDPOINT}/${EXPERIMENT_ID}/_archive`, HttpMethod.PUT);
@@ -75,6 +80,11 @@ describe('DotExperimentsService', () => {
             `${API_ENDPOINT}/${EXPERIMENT_ID}/variants/${VARIANT_ID}`,
             HttpMethod.PUT
         );
+    });
+
+    it('should promote a variant', () => {
+        spectator.service.promoteVariant('variantName').subscribe();
+        spectator.expectOne(`${API_ENDPOINT}/variants/variantName/_promote`, HttpMethod.POST);
     });
 
     it('should delete a variant with experimentId', () => {
