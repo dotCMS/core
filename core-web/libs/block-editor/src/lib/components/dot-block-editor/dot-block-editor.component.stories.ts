@@ -19,7 +19,7 @@ import {
     BubbleLinkFormComponent,
     DragHandlerComponent,
     AssetFormComponent,
-    LoaderComponent
+    UploadPlaceholderComponent
 } from '../../extensions';
 import { ContentletBlockComponent } from '../../nodes';
 import {
@@ -187,7 +187,7 @@ export const primary = () => ({
             ContentletBlockComponent,
             ActionButtonComponent,
             DragHandlerComponent,
-            LoaderComponent,
+            UploadPlaceholderComponent,
             BubbleLinkFormComponent,
             AssetFormComponent
         ]
