@@ -18,7 +18,10 @@
                 <div class="flex flex-column gap-2 content">
                     <dot-experiments-reports-chart />
 
-                    <dot-experiments-details-table [data]="detailData" [title]="'Resume'">
+                    <dot-experiments-details-table
+                        [data]="detailData"
+                        [title]="'dot.experimental.reports.resume' | dm"
+                    >
                         <ng-template #headers>
                             <div class="flex col flex-wrap align-items-center">
                                 {{ 'dot.experimental.reports.variants' | dm }}
