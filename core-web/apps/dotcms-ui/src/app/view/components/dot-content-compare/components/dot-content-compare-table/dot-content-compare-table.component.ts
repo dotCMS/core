@@ -4,8 +4,6 @@ import { DotContentCompareTableData } from '@components/dot-content-compare/stor
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
-import { DomSanitizer} from '@angular/platform-browser'
-
 @Component({
     selector: 'dot-content-compare-table',
     templateUrl: './dot-content-compare-table.component.html',

@@ -106,6 +106,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
 
     private _allowedBlocks: string[] = ['paragraph']; //paragraph should be always.
     private _customNodes: Map<string, AnyExtension> = new Map([
+        ['dotContent', ContentletBlock(this.injector)],
         ['image', ImageNode],
         ['video', VideoNode],
         ['table', DotTableExtension()]
@@ -329,7 +330,6 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
      */
     private getAllowedCustomNodes(): AnyExtension[] {
         const whiteList = [];
-        this._customNodes.set('dotContent', ContentletBlock(this.injector, this.editor));
         // If only paragraph is included
         // We do not need to filter
         if (this._allowedBlocks.length <= 1) {

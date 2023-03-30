@@ -78,7 +78,7 @@ export class FloatingActionsView {
         this.view = view;
         this.element.addEventListener('mousedown', this.mousedownHandler, { capture: true });
         this.editor.on('focus', () => {
-            // this.tippy.unmount();
+            this.tippy.unmount();
             this.update(this.editor.view);
         });
         this.element.style.visibility = 'visible';
@@ -114,7 +114,7 @@ export class FloatingActionsView {
 
         this.tippy = tippy(this.view.dom, {
             duration: 0,
-            getReferenceClientRect: () => posToDOMRect(this.editor.view, 1, 1),
+            getReferenceClientRect: null,
             content: this.element,
             interactive: true,
             trigger: 'manual',
