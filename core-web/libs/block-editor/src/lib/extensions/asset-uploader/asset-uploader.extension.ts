@@ -14,7 +14,12 @@ import { UploadPlaceholderComponent } from './components/upload-placeholder/uplo
 import { PlaceholderPlugin } from './plugins/placeholder.plugin';
 
 import { ImageNode } from '../../nodes';
-import { deselectCurrentNode, DotUploadFileService } from '../../shared';
+import {
+    deselectCurrentNode,
+    DotUploadFileService,
+    getCursorPosition,
+    isImageURL
+} from '../../shared';
 
 interface UploadNode {
     view: EditorView;
@@ -34,6 +39,13 @@ interface PlaceHolderProps {
     type: EditorAssetTypes;
 }
 
+/**
+ * Asset Uploader Extension.
+ *
+ * @param {Injector} injector
+ * @param {ViewContainerRef} viewContainerRef
+ * @return {*}
+ */
 export const AssetUploader = (injector: Injector, viewContainerRef: ViewContainerRef) => {
     return Extension.create({
         name: 'assetUploader',
@@ -44,6 +56,24 @@ export const AssetUploader = (injector: Injector, viewContainerRef: ViewContaine
 
             let subscription$: Subscription;
             let abortControler: AbortController;
+
+            /**
+             * Get file type.
+             *
+             * @param {File} file
+             * @return {*}  {string}
+             */
+            function getFileType(file: File): string {
+                return file?.type.split('/')[0] || '';
+            }
+
+            /**
+             * Alert error message.
+             *
+             */
+            function alertErrorMessage(type: EditorAssetTypes) {
+                alert(`Can drop just one ${type} at a time`);
+            }
 
             /**
              * Upload file to the server.
@@ -78,16 +108,6 @@ export const AssetUploader = (injector: Injector, viewContainerRef: ViewContaine
             }
 
             /**
-             * Check if the text is an image URL.
-             *
-             * @param {string} text
-             * @return {*}  {boolean}
-             */
-            function isImageURL(text: string): boolean {
-                return text.match(/\.(jpeg|jpg|gif|png)$/) != null;
-            }
-
-            /**
              * Remove placeholder from the editor.
              *
              * @param {string} id
@@ -101,22 +121,6 @@ export const AssetUploader = (injector: Injector, viewContainerRef: ViewContaine
                     })
                 );
                 deselectCurrentNode(view);
-            }
-
-            /**
-             * Get position from cursor current position when pasting an image.
-             *
-             * @param {EditorView} view
-             * @return {*}  {{ from: number; to: number }}
-             */
-            function getCursorPosition(view: EditorView): { from: number; to: number } {
-                const { state } = view;
-                const { selection } = state;
-                const { ranges } = selection;
-                const from = Math.min(...ranges.map((range) => range.$from.pos));
-                const to = Math.max(...ranges.map((range) => range.$to.pos));
-
-                return { from, to };
             }
 
             /**
@@ -146,24 +150,6 @@ export const AssetUploader = (injector: Injector, viewContainerRef: ViewContaine
             }
 
             /**
-             * Alert error message.
-             *
-             */
-            function alertErrorMessage() {
-                alert('Can drop just one video at a time');
-            }
-
-            /**
-             * Get file type.
-             *
-             * @param {File} file
-             * @return {*}  {string}
-             */
-            function getFileType(file: File): string {
-                return file?.type.split('/')[0] || '';
-            }
-
-            /**
              * Check if the node is registered in the schema.
              *
              * @param {EditorAssetTypes} nodeType
@@ -173,6 +159,101 @@ export const AssetUploader = (injector: Injector, viewContainerRef: ViewContaine
                 return editor.commands.isNodeRegistered(assetsNameMap[nodeType]);
             }
 
+            /**
+             * Prevent open image link on click in Dev Mode.
+             *
+             * @param {EditorView} view
+             * @param {MouseEvent} event
+             * @return {*}
+             */
+            function hanlderClick(view: EditorView, event: MouseEvent) {
+                const { doc, selection } = view.state;
+                const { ranges } = selection;
+                const from = Math.min(...ranges.map((range) => range.$from.pos));
+                const node = doc.nodeAt(from);
+                const link = (event.target as HTMLElement)?.closest('a');
+
+                if (link && node.type.name === ImageNode.name) {
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    return true;
+                }
+            }
+
+            /**
+             * Handle Paste event.
+             *
+             * @param {EditorView} view
+             * @param {ClipboardEvent} event
+             * @return {*}
+             */
+            function hanlderPaste(view: EditorView, event: ClipboardEvent) {
+                const { clipboardData } = event;
+                const { files } = clipboardData;
+                const { length } = files;
+                const file = files[0];
+                const text = clipboardData.getData('Text') || '';
+                const type = getFileType(file) as EditorAssetTypes;
+
+                const { from } = getCursorPosition(view);
+
+                if (isImageURL(text) && isNodeRegistered('image')) {
+                    editor.commands.insertImageAt(text, from);
+
+                    return true;
+                }
+
+                if (!isNodeRegistered(type)) {
+                    return;
+                }
+
+                if (length > 1) {
+                    alertErrorMessage(type);
+
+                    return;
+                }
+
+                event.preventDefault();
+                event.stopPropagation();
+
+                uploadAsset({ view, file, position: from });
+            }
+
+            /**
+             * Handle Drop event.
+             *
+             * @param {EditorView} view
+             * @param {DragEvent} event
+             * @return {*}
+             */
+            function hanlderDrop(view: EditorView, event: DragEvent) {
+                const { files } = event.dataTransfer;
+                const { length } = files;
+                const file = files[0];
+                const type = getFileType(file) as EditorAssetTypes;
+
+                if (!isNodeRegistered(type)) {
+                    return;
+                }
+
+                if (length > 1) {
+                    alertErrorMessage(type);
+
+                    return;
+                }
+
+                event.preventDefault();
+                event.stopPropagation();
+                const { clientX, clientY } = event;
+                const { pos } = view.posAtCoords({
+                    left: clientX,
+                    top: clientY
+                });
+
+                uploadAsset({ view, file, position: pos });
+            }
+
             return [
                 PlaceholderPlugin,
                 new Plugin({
@@ -180,74 +261,15 @@ export const AssetUploader = (injector: Injector, viewContainerRef: ViewContaine
                     props: {
                         handleDOMEvents: {
                             click(view, event) {
-                                const { doc, selection } = view.state;
-                                const { ranges } = selection;
-                                const from = Math.min(...ranges.map((range) => range.$from.pos));
-                                const node = doc.nodeAt(from);
-                                const link = (event.target as HTMLElement)?.closest('a');
-
-                                if (link && node.type.name === ImageNode.name) {
-                                    event.preventDefault();
-                                }
+                                hanlderClick(view, event);
                             },
 
                             paste(view, event: ClipboardEvent) {
-                                const { clipboardData } = event;
-                                const { files } = clipboardData;
-                                const { length } = files;
-                                const file = files[0];
-                                const text = clipboardData.getData('Text');
-                                const nodeType = getFileType(file) as EditorAssetTypes;
-
-                                if (isImageURL(text)) {
-                                    editor.commands.insertImageAt(
-                                        text,
-                                        getCursorPosition(view).from
-                                    );
-
-                                    return;
-                                }
-
-                                if (!isNodeRegistered(nodeType)) {
-                                    return;
-                                } else if (length > 1) {
-                                    alertErrorMessage();
-
-                                    return;
-                                }
-
-                                event.preventDefault();
-                                event.stopPropagation();
-
-                                const pos = getCursorPosition(view);
-                                uploadAsset({ view, file, position: pos.from });
+                                hanlderPaste(view, event);
                             },
 
                             drop(view, event: DragEvent) {
-                                const { dataTransfer } = event;
-                                const { files } = dataTransfer;
-                                const { length } = files;
-                                const file = files[0];
-                                const nodeType = getFileType(file) as EditorAssetTypes;
-
-                                if (!isNodeRegistered(nodeType)) {
-                                    return;
-                                } else if (length > 1) {
-                                    alertErrorMessage();
-
-                                    return;
-                                }
-
-                                event.preventDefault();
-                                event.stopPropagation();
-
-                                const { clientX, clientY } = event;
-                                const { pos } = view.posAtCoords({
-                                    left: clientX,
-                                    top: clientY
-                                });
-
-                                uploadAsset({ view, file, position: pos });
+                                hanlderDrop(view, event);
                             }
                         }
                     }
