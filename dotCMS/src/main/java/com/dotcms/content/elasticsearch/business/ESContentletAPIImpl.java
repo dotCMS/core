@@ -39,7 +39,6 @@ import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
-import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.storage.FileMetadataAPI;
 import com.dotcms.storage.model.Metadata;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
@@ -3710,6 +3709,22 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
     }
+
+    @WrapInTransaction
+    @Override
+    public Contentlet copyContentToVariant(final Contentlet contentlet, final String variantName,
+            final User user) throws DotDataException, DotSecurityException {
+
+        final Contentlet contentletFromDataBase = find(contentlet.getInode(), user, false);
+
+        final Contentlet checkout = checkout(contentletFromDataBase.getInode(), user, false);
+        checkout.setVariantId(variantName);
+
+        return Try.of(() -> checkin(checkout, user, false))
+                 .getOrElseThrow(
+                        e -> new DotStateException("Unable to create a new version from Contentlet:" + contentlet.getInode(), e));
+    }
+
 
     /**
      * @param contentlet

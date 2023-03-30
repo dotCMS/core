@@ -19,6 +19,9 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletStateException
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
+
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -473,6 +476,7 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
 
     public static Contentlet createNewVersion(final Contentlet oldContentletVersion,
             final Variant variant, final Language language, final Map<String, Object> properties)
+
             throws DotDataException, DotSecurityException {
 
         final User user = APILocator.systemUser();
@@ -487,5 +491,24 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
         }
 
         return APILocator.getContentletAPI().checkin(checkout, user, false);
+    }
+
+    /**
+     * Update a Contentlet using the given properties
+     *
+     * @param contentlet
+     * @param updatedProperties
+     */
+    public static void update(final Contentlet contentlet, final Map<String, Object> updatedProperties) {
+        try {
+            final Contentlet contentletToUpdate = APILocator.getContentletAPI().find(contentlet.getInode(), APILocator.systemUser(), false);
+            final Contentlet checkout = APILocator.getContentletAPI()
+                    .checkout(contentletToUpdate.getInode(), APILocator.systemUser(), false);
+            updatedProperties.forEach((key, value) -> checkout.getMap().put(key, value));
+            APILocator.getContentletAPI().checkin(checkout, APILocator.systemUser(), false);
+        } catch (DotDataException | DotSecurityException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 }

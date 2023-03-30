@@ -1669,4 +1669,8 @@ public interface ContentletAPIPostHook {
 	default void getAllContentByVariants(User user, boolean respectFrontendRoles, String[] variantNames) {
 
 	}
+
+    default void saveContentOnVariant(Contentlet contentlet, String variantName, User user){
+
+	}
 }
