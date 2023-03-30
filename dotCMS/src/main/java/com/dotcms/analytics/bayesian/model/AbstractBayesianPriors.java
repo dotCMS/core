@@ -9,7 +9,8 @@ import javax.annotation.Nullable;
 
 
 /**
- * Single Bayesian Prior data class
+ * Single Bayesian Prior data class to store provided prior (or known) data.
+ * This data is required to make some more calculations regarding the quantiles, eventual histogram rendering, etc.
  *
  * @author vico
  */

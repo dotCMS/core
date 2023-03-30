@@ -1434,7 +1434,7 @@ public class ExperimentAPIImpIT {
     /**
      * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
      * When:
-     * - You have four pages: A, B and C
+     * - You have three pages: A, B and C
      * - You create an {@link Experiment} using the A page with a PAGE_REACH Goal: url EQUALS TO Page C .
      * - You have the follow page_view to the pages order by timestamp: A, B and C
      *
