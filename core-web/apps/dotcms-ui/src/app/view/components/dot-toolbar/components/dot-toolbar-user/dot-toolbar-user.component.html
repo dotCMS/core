@@ -1,13 +1,16 @@
-<p-avatar [email]="userData.email" (click)="menu.toggle($event)" dotGravatar></p-avatar>
-<p-menu #menu [model]="items$ | async" [popup]="true" appendTo="body"></p-menu>
+<ng-container *ngIf="vm$ | async as vm">
+    <p-avatar [email]="vm.userData.email" (click)="menu.toggle($event)" dotGravatar></p-avatar>
+    <p-menu #menu [model]="vm.items" [popup]="true" appendTo="body"></p-menu>
 
-<dot-login-as
-    *ngIf="showLoginAs"
-    [visible]="showLoginAs"
-    (cancel)="tooggleLoginAs($event)"
-></dot-login-as>
-<dot-my-account
-    *ngIf="showMyAccount"
-    [visible]="showMyAccount"
-    (shutdown)="toggleMyAccount()"
-></dot-my-account>
+    <dot-my-account
+        *ngIf="vm.showMyAccount"
+        [visible]="vm.showMyAccount"
+        (shutdown)="store.showMyAccount(false)"
+    ></dot-my-account>
+
+    <dot-login-as
+        *ngIf="vm.showLoginAs"
+        [visible]="vm.showLoginAs"
+        (cancel)="store.showLoginAs(false)"
+    ></dot-login-as>
+</ng-container>
