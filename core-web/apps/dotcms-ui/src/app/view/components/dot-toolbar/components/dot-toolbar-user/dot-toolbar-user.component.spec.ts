@@ -57,7 +57,7 @@ class DotGravatarServiceMock {
     }
 }
 
-fdescribe('DotToolbarUserComponent', () => {
+describe('DotToolbarUserComponent', () => {
     let fixture: ComponentFixture<DotToolbarUserComponent>;
     let de: DebugElement;
     let loginService: LoginService;
