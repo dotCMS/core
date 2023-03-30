@@ -127,7 +127,7 @@ export class DotToolbarUserStore extends ComponentStore<DotToolbarUserState> {
                 id: 'dot-toolbar-user-link-my-account',
                 label: this.dotMessageService.get('my-account'),
                 icon: 'pi pi-user-edit',
-                visible: !auth.loginAsUser,
+                visible: !auth.isLoginAs,
                 command: () => {
                     this.showMyAccount(true);
                 }
