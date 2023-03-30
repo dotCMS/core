@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
-import { ReactiveFormsModule } from '@angular/forms';
-// import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 // DotCMS JS
 import { LoggerService, StringUtils } from '@dotcms/dotcms-js';
@@ -31,7 +30,7 @@ import { SharedModule } from './shared/shared.module';
 @NgModule({
     imports: [
         CommonModule,
-        ReactiveFormsModule,
+        FormsModule,
         ReactiveFormsModule,
         SharedModule,
         PrimengModule,
