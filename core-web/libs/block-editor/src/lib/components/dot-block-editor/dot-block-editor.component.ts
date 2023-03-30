@@ -160,6 +160,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
                     .subscribe(() => this.updateChartCount());
 
                 this.editor.on('update', ({ editor }) => {
+                    console.log("dom:", editor.view.dom.innerHTML)
                     this.valueChange.emit(editor.getJSON());
                 });
 
