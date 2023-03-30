@@ -1,4 +1,4 @@
-import { CommonModule, JsonPipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -17,6 +17,7 @@ import { TagModule } from 'primeng/tag';
 import { DotDialogActions, DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotMessageService } from '@dotcms/data-access';
+import { DEFAULT_VARIANT_ID, DotResultSimpleVariant } from '@dotcms/dotcms-models';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 
 @Component({
@@ -27,7 +28,6 @@ import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module
     imports: [
         CommonModule,
         DotMessagePipeModule,
-        JsonPipe,
         TableModule,
         TagModule,
         ButtonModule,
@@ -38,27 +38,18 @@ import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module
     standalone: true
 })
 export class DotExperimentsPublishVariantComponent implements OnInit {
-    data;
+    data: DotResultSimpleVariant[];
     selectedVariant;
     dialogActions: DotDialogActions;
+    DEFAULT_VARIANT = DEFAULT_VARIANT_ID;
 
     @ViewChild('dialog', { static: true }) dialog: DotDialogComponent;
 
     @Output() hide = new EventEmitter();
-    @Output() publish = new EventEmitter();
+    @Output() publish = new EventEmitter<string>();
     constructor(private dotMessageService: DotMessageService) {}
 
     ngOnInit(): void {
-        this.data = {
-            variants: [
-                {
-                    id: '1',
-                    name: 'variant 1variant 1variant 1variant 1variant 1variant 1',
-                    weight: '10'
-                },
-                { id: '2', name: 'variant 2', weight: '90', winner: true }
-            ]
-        };
         this.setDialogActions();
     }
 

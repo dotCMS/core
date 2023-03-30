@@ -10,7 +10,7 @@ import { TagModule } from 'primeng/tag';
 import { take } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotExperiment } from '@dotcms/dotcms-models';
+import { DotResultSimpleVariant } from '@dotcms/dotcms-models';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotExperimentsConfigurationSkeletonComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-skeleton/dot-experiments-configuration-skeleton.component';
 import { DotExperimentsPublishVariantComponent } from '@portlets/dot-experiments/dot-experiments-reports/components/dot-experiments-publish-variant/dot-experiments-publish-variant.component';
@@ -85,11 +85,12 @@ export class DotExperimentsReportsComponent implements OnInit {
 
     /**
      * Load modal to publish the selected variant
+     * @param {DotResultSimpleVariant[]} variants
      * @returns void
      * @memberof DotExperimentsReportsComponent
      *
      */
-    loadPublishVariant(experiment: DotExperiment) {
+    loadPublishVariant(variants: DotResultSimpleVariant[]): void {
         const viewContainerRef = this.host.viewContainerRef;
         viewContainerRef.clear();
         const componentRef =
@@ -97,13 +98,13 @@ export class DotExperimentsReportsComponent implements OnInit {
                 DotExperimentsPublishVariantComponent
             );
 
-        componentRef.instance.data = experiment;
+        componentRef.instance.data = variants;
 
         merge(componentRef.instance.hide, componentRef.instance.publish)
             .pipe(take(1))
-            .subscribe((variant) => {
+            .subscribe((variant: string) => {
                 if (variant) {
-                    this.store.promoteVariant({ experimentId: experiment.id, name: variant.name });
+                    this.store.promoteVariant(variant);
                 }
 
                 viewContainerRef.clear();

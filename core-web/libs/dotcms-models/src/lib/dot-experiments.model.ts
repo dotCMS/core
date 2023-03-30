@@ -23,6 +23,44 @@ export interface DotExperiment {
     goals: Goals | null;
 }
 
+export interface DotExperimentResults {
+    goals: Record<GoalsLevels, DotResultGoal>;
+    sessions: DotResultSessions;
+}
+
+export interface DotResultGoal {
+    goal: Goal;
+    variants: Record<string, DotResultVariant>;
+}
+
+export interface DotResultVariant {
+    details: Record<string, DotResultDate>;
+    multiBySession: number;
+    uniqueBySession: DotResultUniqueBySession;
+    variantName: string;
+}
+
+export interface DotResultSimpleVariant {
+    variantName: string;
+    uniqueBySession: DotResultUniqueBySession;
+}
+
+export interface DotResultUniqueBySession {
+    count: number;
+    totalPercentage: number;
+    variantPercentage: number;
+}
+
+export interface DotResultDate {
+    multiBySession: number;
+    uniqueBySession: number;
+}
+
+export interface DotResultSessions {
+    total: number;
+    variants: Record<string, number>;
+}
+
 export interface TrafficProportion {
     type: TrafficProportionTypes;
     variants: Array<Variant>;

@@ -8,17 +8,18 @@
 >
     <p>{{ 'experiments.report.publish.variant.text' | dm }}</p>
 
-    <p-table [(selection)]="selectedVariant" [value]="data.variants" dataKey="id">
+    <p-table [(selection)]="selectedVariant" [value]="data" dataKey="variantName">
         <ng-template pTemplate="body" let-variant>
             <tr>
                 <td>
                     <p-tableRadioButton
-                        [value]="variant"
+                        *ngIf="variant.variantName !== DEFAULT_VARIANT"
+                        [value]="variant.variantName"
                         (click)="enableButton()"
                     ></p-tableRadioButton>
                 </td>
-                <td>{{ variant.name }}</td>
-                <td style="min-width: 50px">{{ variant.weight }}</td>
+                <td>{{ variant.variantName }}</td>
+                <td style="min-width: 50px">{{ variant.uniqueBySession.variantPercentage }}</td>
                 <td style="min-width: 150px">
                     <p-tag
                         class="sm p-tag-success"

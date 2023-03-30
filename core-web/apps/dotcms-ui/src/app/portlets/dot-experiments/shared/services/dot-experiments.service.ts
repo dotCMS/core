@@ -8,6 +8,7 @@ import { pluck } from 'rxjs/operators';
 import { DotCMSResponse } from '@dotcms/dotcms-js';
 import {
     DotExperiment,
+    DotExperimentResults,
     Goals,
     GoalsLevels,
     RangeOfDateAndTime,
@@ -55,6 +56,18 @@ export class DotExperimentsService {
     getById(experimentId: string): Observable<DotExperiment> {
         return this.http
             .get<DotCMSResponse<DotExperiment>>(`${API_ENDPOINT}/${experimentId}`)
+            .pipe(pluck('entity'));
+    }
+
+    /**
+     * Get results of an experiment
+     * @param {string} experimentId
+     * @returns Observable<DotExperiment>
+     * @memberof DotExperimentsService
+     */
+    getResults(experimentId: string): Observable<DotExperimentResults> {
+        return this.http
+            .get<DotCMSResponse<DotExperimentResults>>(`${API_ENDPOINT}/${experimentId}/results`)
             .pipe(pluck('entity'));
     }
 
@@ -164,10 +177,10 @@ export class DotExperimentsService {
      * @returns Observable<DotExperiment>
      * @memberof DotExperimentsService
      */
-    promoteVariant(experimentId: string, variantName: string): Observable<DotExperiment> {
+    promoteVariant(variantName: string): Observable<DotExperiment> {
         return this.http
             .post<DotCMSResponse<DotExperiment>>(
-                `${API_ENDPOINT}/${experimentId}/variants/${variantName}/_promote`,
+                `${API_ENDPOINT}/variants/${variantName}/_promote`,
                 {}
             )
             .pipe(pluck('entity'));

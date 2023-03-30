@@ -7,9 +7,9 @@
     >
         <button
             class="p-button-outlined"
-            (click)="loadPublishVariant(vm.experiment)"
+            [label]="'experiments.report.publish.variant' | dm"
+            (click)="loadPublishVariant(vm.variantResults)"
             data-testId="publish-variant-button"
-            label="{{ 'experiments.report.publish.variant' | dm }}"
             pButton
             pRipple
             type="button"
