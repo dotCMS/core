@@ -10,10 +10,15 @@ import {
     DotExperimentsReportsStore
 } from '@portlets/dot-experiments/dot-experiments-reports/store/dot-experiments-reports-store';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
-import { getExperimentMock } from '@portlets/dot-experiments/test/mocks';
+import {
+    getExperimentMock,
+    getExperimentResultsMock,
+    VARIANT_RESULT_MOCK
+} from '@portlets/dot-experiments/test/mocks';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 const EXPERIMENT_MOCK = getExperimentMock(0);
+const EXPERIMENT_MOCK_RESULTS = getExperimentResultsMock(0);
 
 const ActivatedRouteMock = {
     snapshot: {
@@ -48,6 +53,9 @@ describe('DotExperimentsReportsStore', () => {
         store = spectator.inject(DotExperimentsReportsStore);
         dotExperimentsService = spectator.inject(DotExperimentsService);
         dotExperimentsService.getById.and.callThrough().and.returnValue(of(EXPERIMENT_MOCK));
+        dotExperimentsService.getResults.and
+            .callThrough()
+            .and.returnValue(of(EXPERIMENT_MOCK_RESULTS));
     });
 
     it('should set initial data', (done) => {
@@ -55,7 +63,10 @@ describe('DotExperimentsReportsStore', () => {
 
         const expectedInitialState: DotExperimentsReportsState = {
             experiment: EXPERIMENT_MOCK,
-            status: ComponentStatus.IDLE
+            status: ComponentStatus.IDLE,
+            results: EXPERIMENT_MOCK_RESULTS,
+            variantResults: VARIANT_RESULT_MOCK,
+            chartResults: null
         };
 
         expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_MOCK.id);
@@ -116,6 +127,15 @@ describe('DotExperimentsReportsStore', () => {
                 expect(experiment).toEqual(EXPERIMENT_MOCK);
                 done();
             });
+        });
+        it('should promote variant', () => {
+            dotExperimentsService.promoteVariant.and
+                .callThrough()
+                .and.returnValue(of(EXPERIMENT_MOCK));
+
+            store.promoteVariant('variantName');
+
+            expect(dotExperimentsService.promoteVariant).toHaveBeenCalledWith('variantName');
         });
     });
 });

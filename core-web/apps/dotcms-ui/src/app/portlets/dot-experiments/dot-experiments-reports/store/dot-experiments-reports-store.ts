@@ -99,10 +99,8 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
             switchMap((variant) =>
                 this.dotExperimentsService.promoteVariant(variant).pipe(
                     tapResponse(
-                        (experiment) => {
-                            this.patchState({
-                                experiment: experiment
-                            });
+                        (_experiment) => {
+                            //TODO: Update the experiment in the store
                         },
                         (error: HttpErrorResponse) => this.dotHttpErrorManagerService.handle(error),
                         () => this.setComponentStatus(ComponentStatus.IDLE)

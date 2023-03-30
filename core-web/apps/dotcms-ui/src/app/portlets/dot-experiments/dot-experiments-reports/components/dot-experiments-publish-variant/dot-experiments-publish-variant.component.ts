@@ -21,7 +21,7 @@ import { DEFAULT_VARIANT_ID, DotResultSimpleVariant } from '@dotcms/dotcms-model
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 
 @Component({
-    selector: 'dot-dot-experiments-publish-variant',
+    selector: 'dot-experiments-publish-variant',
     templateUrl: './dot-experiments-publish-variant.component.html',
     styleUrls: ['./dot-experiments-publish-variant.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,

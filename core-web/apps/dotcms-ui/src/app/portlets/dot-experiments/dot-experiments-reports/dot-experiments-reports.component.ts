@@ -57,9 +57,7 @@ export class DotExperimentsReportsComponent implements OnInit {
     constructor(
         private readonly store: DotExperimentsReportsStore,
         private readonly router: Router,
-        private readonly route: ActivatedRoute,
-
-        private dotMessageService: DotMessageService
+        private readonly route: ActivatedRoute
     ) {}
 
     ngOnInit(): void {
