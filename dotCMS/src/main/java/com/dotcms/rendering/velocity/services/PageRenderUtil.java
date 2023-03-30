@@ -1,6 +1,8 @@
 package com.dotcms.rendering.velocity.services;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.LicenseUtil;
@@ -35,6 +37,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.model.IPersona;
 import com.dotmarketing.portlets.personas.model.Persona;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -48,6 +51,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.apache.velocity.context.Context;
 
@@ -55,11 +59,15 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
@@ -310,6 +318,7 @@ public class PageRenderUtil implements Serializable {
 
                     this.widgetPreExecute(contentlet);
                     this.addAccrueTags(contentlet);
+                    this.addRelationships(contentlet);
 
                     if (personalizedContentlet.getPersonalization().equals(includeContentFor)) {
 
@@ -331,6 +340,41 @@ public class PageRenderUtil implements Serializable {
         }
 
         return raws;
+    }
+
+    private static final Lazy<Boolean> ADD_RELATIONSHIPS_ON_PAGE = Lazy.of(()->Config.getBooleanProperty("ADD_RELATIONSHIPS_ON_PAGE", false));
+    private void addRelationships(final Contentlet contentlet) {
+
+        if (ADD_RELATIONSHIPS_ON_PAGE.get()) {
+
+            final List<Field> fields = contentlet.getContentType().fields();
+            final List<Relationship> relationships = APILocator.getRelationshipAPI().byContentType(contentlet.getContentType());
+            for (final Field field : fields) {
+
+                if (field instanceof RelationshipField) {
+                    addRelatedContent(contentlet, relationships, field);
+                }
+            }
+        }
+    }
+
+    private void addRelatedContent(final Contentlet contentlet,
+                                   final List<Relationship> relationships,
+                                   final Field field) {
+
+        for (final Relationship relationship : relationships) {
+
+            if (field.variable().equals(relationship.getChildRelationName()) ||
+                    field.variable().equals(relationship.getParentRelationName())) {
+
+                try {
+                    contentlet.setProperty(field.variable(), APILocator.getContentletAPI().getRelatedContent(
+                            contentlet, relationship, this.user, this.mode.respectAnonPerms));
+                } catch (DotDataException | DotSecurityException e) {
+                    Logger.error(this, e.getMessage(), e);
+                }
+            }
+        }
     }
 
     private Contentlet getContentletByVariantFallback(final String currentVariantId,
