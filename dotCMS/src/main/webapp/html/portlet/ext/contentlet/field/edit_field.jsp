@@ -9,6 +9,7 @@
 <%@page import="com.dotmarketing.exception.DotSecurityException"%>
 <%@page import="com.dotmarketing.portlets.categories.business.CategoryAPI"%>
 <%@page import="com.dotmarketing.portlets.categories.model.Category"%>
+<%@ page import="com.dotmarketing.portlets.contentlet.model.Contentlet" %>
 <%@page import="com.dotmarketing.portlets.contentlet.model.ResourceLink"%>
 <%@page import="com.dotmarketing.portlets.contentlet.model.ResourceLink.ResourceLinkBuilder"%>
 <%@page import="com.dotmarketing.portlets.contentlet.struts.ContentletForm"%>
@@ -747,6 +748,8 @@
     <%
        String maxFileLength="-1";
        String accept="*/*";
+       JSONObject fileMetaData = new JSONObject(contentlet.getMap());
+       
        List<FieldVariable> acceptTypes=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, false);
        for(FieldVariable fv : acceptTypes){
            if("accept".equalsIgnoreCase(fv.getKey())){
@@ -764,7 +767,7 @@
 
     <%-- File uploader --%>
 
-    <div
+    <!-- <div
             assetName="<%= contentlet.isFileAsset() ? resourceLink.getAssetName() : "" %>"
             resourceLink="<%= contentlet.isFileAsset() ? resourceLink.getResourceLinkAsString() : "" %>"
             resourceLinkUri="<%= contentlet.isFileAsset() ? resourceLink.getResourceLinkUriAsString() : "" %>"
@@ -790,24 +793,27 @@
             maxFileLength="<%= maxFileLength%>"
             licenseLevel="<%=LicenseUtil.getLevel() %>"
             accept="<%=accept %>" >
-    </div>
+    </div> -->
+    <input type="hidden" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>ValueField" <%= UtilMethods.isSet(fileName)?"value=\"" + fileName.replaceAll("\"", "\\\"") +"\"":"" %>    >
     <div class="file-asset-container">
         <dot-asset-drop-zone 
             id="dot-asset-drop-zone-<%=field.getVelocityVarName()%>"
             class="file-asset__drop-zone"
         ></dot-asset-drop-zone>
-            <dot-file-upload
-                id="dot-file-upload-<%=field.getVelocityVarName()%>"
-                dropFilesText='Drag and Drop or paste a file'
-                browserButtonText="Browser"
-                writeCodeButtonText="Write Code"
-                cancelButtonText="Cancel"
-                assets="[]"
-            ></dot-file-upload>
+        <dot-file-upload
+            id="dot-file-upload-<%=field.getVelocityVarName()%>"
+            drop-files-text='<%= LanguageUtil.get(pageContext, "drop-files-message") %>'
+            browser-button-text='<%= LanguageUtil.get(pageContext, "Browse") %>'
+            write-code-button-text='<%= LanguageUtil.get(pageContext, "Write-Code") %>'
+            cancel-button-text='<%= LanguageUtil.get(pageContext, "Cancel") %>'
+            accept="<%=accept %>"
+            assets="[]"
+        >
+        <iframe id="monaco-editor-iframe" src="/html/common/monaco-editor.html" style="width: 100%; height: 100%; display: none;" frameBorder="0"></iframe>
+    </dot-file-upload>
     </div>
     <script type="text/javascript">
         dojo.addOnLoad(() => {
-
         const uploadPlugin = ({files, onSuccess, updateProgress, onError}) => {
                 // Check if we get an array of files otherwise create array.
                 const data = Array.isArray(files) ? files : [files];
@@ -846,7 +852,7 @@
                     throw response;
                 });
             }
-            bindDotFileUploadListener("<%=field.getVelocityVarName()%>", uploadPlugin)
+            bindDotFileUploadListener("<%=field.getVelocityVarName()%>", "<%=field.getFieldContentlet()%>", '<%= fileMetaData %>', uploadPlugin)
         })
         function saveBinaryFileOnContent<%=field.getVelocityVarName()%>(fileName, dijitReference){
             saveBinaryFileOnContent('<%=field.getInode()%>','<%=field.getVelocityVarName()%>','<%=field.getFieldContentlet()%>', dijitReference.fileNameField.value);
@@ -857,7 +863,10 @@
             let fileNameField = dijit.byId("fileName");
             titleField.setValue(newAssetName);
             fileNameField.setValue(newAssetName);
-            dijit.byId('fileAsset-Dialog').hide();
+
+            if(dijit.byId('fileAsset-Dialog')){
+                dijit.byId('fileAsset-Dialog').hide();
+            }
         }
 
         function doNotReplaceFileAssetName() {
@@ -865,15 +874,6 @@
         }
 
     </script>
-
-    <% if (UtilMethods.isSet(value)) {
-            final boolean canUserWriteToContentlet = APILocator.getPermissionAPI().doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_WRITE, user);
-            if (canUserWriteToContentlet && resourceLink.isEditableAsText() && InodeUtils.isSet(binInode)) { %>
-                <%@ include file="/html/portlet/ext/contentlet/field/edit_file_asset_text_inc.jsp"%>
-         <% } %>
-    <% } else { %>
-            <%@ include file="/html/portlet/ext/contentlet/field/edit_file_asset_text_inc.jsp"%>
-    <% } %>
 
     <!--  END display -->
     <!-- javascript -->

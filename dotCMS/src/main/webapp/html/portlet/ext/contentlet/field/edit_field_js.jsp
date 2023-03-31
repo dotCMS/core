@@ -29,24 +29,6 @@
 
 <script src="/html/js/ace-builds-1.2.3/src-noconflict/ace.js" type="text/javascript"></script>
 <script type="text/javascript" src="/html/js/tinymce/js/tinymce/tinymce.min.js"></script>
-
-<!-- Monaco Editor -->
-<!-- <link
-	rel="stylesheet"
-	data-name="vs/editor/editor.main"
-	href="/html/js/monaco-editor/min/vs/editor/editor.main.css"
-/> -->
-<!-- <script>
-	var require = { paths: { vs: '/html/js/monaco-editor/min/vs' } };
-</script>
-<script src="/html/js/monaco-editor/min/vs/loader.js"></script>
-<script src="/html/js/monaco-editor/min/vs/editor/editor.main.nls.js"></script>
-<script src="/html/js/monaco-editor/min/vs/editor/editor.main.js"></script>
-<script>
-	console.log(require)
-</script> -->
-<!-- Monaco Editor -->
-
 <script type="text/javascript">
 
 	dojo.require("dotcms.dijit.form.HostFolderFilteringSelect");
@@ -93,24 +75,131 @@ function enableSiteKeyUpdate(dialogId, siteKeyInputId) {
     }, 500);
 }
 
+
+	let fileAssetFieldName = '';
+	let fileAssetFieldId = ''
+	let fielAssetInode = '';
+	let tempFileId = "new";
+
+// For Monaco Editor
+
+
+	// for listening Monaco Editor Event
+	window.addEventListener('message' , (event) => {
+		saveFileText(event.data.value)
+	})
+
+		/**
+	 * For text File Assets, creates a temporary file with the changes that the user made. Once the User saves/publishes
+	 * the Contentlet, these new changes will overwrite the existing file so that they can be persisted.
+	 */
+
+	 function saveFileText(text){
+		const fileName = dojo.byId("fileName").value;
+		if (fileName) {
+			const data = JSON.stringify({
+				"fileName": fileName,
+				"fileContent": text
+			});
+			const xhr = new XMLHttpRequest();
+
+			xhr.onload = function() {
+				const jsonData = JSON.parse(xhr.response);
+				const file = jsonData.tempFiles[0];
+				tempFileId = file.id;
+				const dotFileUpload = document.querySelector(`#dot-file-upload-${fileAssetFieldId}`)
+				dotFileUpload.assets = [file]
+				const elements = document.getElementsByName(fileAssetFieldName);
+				for (const element of elements) {
+					if (element.tagName.toLowerCase() === "input") {
+						element.value = tempFileId;
+					}
+				}
+			};
+
+			xhr.open("PUT", "/api/v1/temp/id/" + tempFileId);
+			xhr.setRequestHeader("Content-Type", "application/json");
+			xhr.send(data);
+		}
+	}
+
+
+// For Monaco Editor
+	
+
 // Dot Upload File
 
 
-	function bindDotFileUploadListener(id, uploadPlugin){
+	function bindDotFileUploadListener(id, fieldName , contentlet , uploadPlugin){
+		console.log(id, fieldName, contentlet)
 		const dotFileUpload = document.querySelector(`#dot-file-upload-${id}`)
 		const dotAssetDropZone = document.querySelector(`#dot-asset-drop-zone-${id}`);
+		const {fileName, folder, identifier, inode} = JSON.parse(contentlet);
+		fileAssetFieldId = id;
+		fileAssetFieldName = fieldName;
+		fielAssetInode = inode
+		if(identifier && fileName){
+			dotAssetDropZone.style.pointerEvents = "none";
+			dotFileUpload.assets = [{
+				fileName,
+				folder,
+				id: fileName,
+				image: null,
+				length: null,
+				mimeType: null,
+				referenceUrl: null,
+				thumbnailUrl: null
+			}]
+		}
+
+		//  we catch the event from dot-file-upload and pass into dotAssetDropZone because 
+		//  we also want to a drag and drop feature which is already developed dotAssetDropZone component 
 		dotFileUpload.addEventListener('fileUploaded', function (event){
+			// I try to create event from new Event but in DataTransfer obj there is no way to set data in files obj;
 			event.dataTransfer = {};
 			event.dataTransfer.files = event.detail;
 			dotAssetDropZone.ondrop(event);
 		})
 
-
+		// for upload file we create custom function
 		dotAssetDropZone.customUploadFiles = uploadPlugin;
-		dotAssetDropZone.addEventListener('uploadComplete', function(asset){
-			console.log("data", asset)
-			dotFileUpload.assets = [...asset.detail];
+		dotAssetDropZone.addEventListener('uploadComplete', function({detail}){
+			dotFileUpload.assets = [...detail];
 			dotAssetDropZone.style.pointerEvents = "none";
+			doReplaceFileAssetName(detail[0].fileName)
+
+		})
+
+		// When User cancel or change in data this event is triggered
+		dotFileUpload.addEventListener('dataChanges', function({detail}){
+			switch (detail.currentState) {
+				case 'UploadFile':
+					dotAssetDropZone.style.pointerEvents = "";
+					document.querySelector("#monaco-editor-iframe").style.display = "none";
+					break;
+				
+				case 'FileList':
+					document.querySelector("#monaco-editor-iframe").style.display = "none"
+					dotAssetDropZone.style.pointerEvents = "none";
+					break;
+				
+				case 'CodeEditor':
+					document.querySelector("#monaco-editor-iframe").style.display = ""
+					dotAssetDropZone.style.pointerEvents = "none";
+					break;
+			
+				default:
+					break;
+			}
+
+			const elements = document.getElementsByName(fieldName);
+
+			// update field values
+			for (const element of elements) {
+				if (element.tagName.toLowerCase() === "input") {
+					element.value = (detail?.assets.length ? detail.assets[0].id : '');
+				}
+			}
 		})
 	}
 

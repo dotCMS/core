@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Monaco Editor -->
+    <link rel="stylesheet" data-name="vs/editor/editor.main"
+        href="/html/js/monaco-editor/min/vs/editor/editor.main.css" />
+    <script src="/html/js/monaco-editor/min/vs/loader.js"></script>
+    <script>
+        require.config({ paths: { vs: '/html/js/monaco-editor/min/vs' } });
+    </script>
+    <script src="/html/js/monaco-editor/min/vs/editor/editor.main.nls.js"></script>
+    <script src="/html/js/monaco-editor/min/vs/editor/editor.main.js"></script>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+
+        #container {
+            height: 100%;
+        }
+    </style>
+    <!-- Monaco Editor -->
+</head>
+
+<body>
+    <div id="container"></div>
+    <script>
+        let lastEditorValue = '';
+        let editor = monaco.editor.create(document.getElementById('container'), {
+            value: '',
+            language: 'html',
+            automaticLayout: true
+        });
+
+        editor.onDidBlurEditorText(() => {
+            let editorValue = editor.getValue();
+            if(editorValue !== "" && lastEditorValue !== editorValue){
+                lastEditorValue = editorValue
+                window.parent.postMessage({value: editorValue})
+            }
+        })
+    </script>
+</body>
+
+</html>

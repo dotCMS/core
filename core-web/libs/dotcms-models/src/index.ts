@@ -53,4 +53,5 @@ export * from './lib/dot-field-variable.model';
 export * from './lib/dot-field-variable.model';
 export * from './lib/dot-experiments-constants';
 export * from './lib/dot-experiments.model';
+export * from './lib/dot-file-upload.model';
 export * from './lib/shared-models';
