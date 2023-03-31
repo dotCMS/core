@@ -7,17 +7,17 @@ import { AvatarModule } from 'primeng/avatar';
 import { DotAvatarDirective } from './dot-avatar.directive';
 
 @Component({
-    template: `<p-avatar [label]="label" [image]="image" dotAvatar></p-avatar> `
+    template: `<p-avatar [text]="text" [image]="image" dotAvatar></p-avatar> `
 })
 class TestHostComponent {
+    text: string;
     image: string;
-    label = 'test';
 }
-
 describe('DotAvatarDirective', () => {
     let fixture: ComponentFixture<TestHostComponent>;
     let component: TestHostComponent;
     let element: DebugElement;
+
     beforeEach(() => {
         TestBed.configureTestingModule({
             declarations: [TestHostComponent],
@@ -26,45 +26,25 @@ describe('DotAvatarDirective', () => {
         fixture = TestBed.createComponent(TestHostComponent);
         component = fixture.componentInstance;
         element = fixture.debugElement;
-
-        fixture.detectChanges();
     });
 
-    it('should show the first letter of the label', () => {
-        expect(element.query(By.css('.p-avatar-text')).nativeElement.textContent).toBe('T');
-    });
-    it("should show an image when it's provided", () => {
+    it('should show an image when the image is not broken', () => {
         component.image = 'https://dummyimage.com/600x400/000/fff';
+        component.text = 'test';
         fixture.detectChanges();
 
         expect(element.query(By.css('img'))).toBeTruthy();
     });
-    it('should remove the p-avatar-image class if the image is broken', (done) => {
-        component.image = 'test';
+    it('should fallback to label when the image is broken', (done) => {
+        component.image = 'https/dumyimage.om600x400/000/fff';
+        component.text = 'test';
         fixture.detectChanges();
 
         setTimeout(() => {
             fixture.detectChanges();
-            expect(element.query(By.css('.p-avatar-image'))).toBeFalsy();
-            done();
-        }, 100);
-    });
-    it('should show the first letter of the label if the image is broken', (done) => {
-        component.image = 'test';
-        fixture.detectChanges();
-        setTimeout(() => {
-            fixture.detectChanges();
-            expect(element.query(By.css('.p-avatar-text')).nativeElement.textContent).toBe('T');
-            done();
-        }, 100);
-    });
-    it('should set label to unknow when label is not provided', (done) => {
-        component.image = 'test';
-        component.label = undefined;
-        fixture.detectChanges();
-        setTimeout(() => {
-            fixture.detectChanges();
-            expect(element.query(By.css('.p-avatar-text')).nativeElement.textContent).toBe('U');
+            expect(element.query(By.css('p-avatar')).nativeElement.textContent).toBe(
+                component.text.charAt(0).toUpperCase()
+            );
             done();
         }, 100);
     });

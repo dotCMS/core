@@ -1,11 +1,4 @@
-import {
-    Directive,
-    ElementRef,
-    HostListener,
-    Input,
-    OnChanges,
-    SimpleChanges
-} from '@angular/core';
+import { ChangeDetectorRef, Directive, HostListener, Input, OnInit } from '@angular/core';
 
 import { Avatar } from 'primeng/avatar';
 
@@ -13,36 +6,21 @@ import { Avatar } from 'primeng/avatar';
     selector: 'p-avatar[dotAvatar]',
     standalone: true
 })
-export class DotAvatarDirective implements OnChanges {
-    private _label: string;
-    @Input() readonly image: string;
-    @Input() readonly label: string;
+export class DotAvatarDirective implements OnInit {
+    @Input() readonly text: string = 'Default';
 
-    constructor(private avatar: Avatar, private el: ElementRef) {
+    constructor(private avatar: Avatar, private cd: ChangeDetectorRef) {
         this.avatar.shape = 'circle';
     }
 
-    ngOnChanges(changes: SimpleChanges) {
-        if (changes.label) {
-            this._label = changes.label.currentValue
-                ? changes.label.currentValue.charAt(0).toUpperCase()
-                : 'U';
-            this.avatar.label = this._label;
-        }
-
-        if (changes.image)
-            // If theres an image we set the label to undefined
-            //so if it fails on loading the event is triggered
-            this.avatar.label = changes.image.currentValue
-                ? undefined
-                : this._label[0]?.toUpperCase();
+    ngOnInit(): void {
+        this.avatar.label = this.avatar.image ? undefined : this.text[0]?.toUpperCase();
     }
 
-    // This event doesn't trigger when label has a value, but I need to trigger it because
-    // "p-avatar-image" class is added to the element and breaks the styles
-    @HostListener('onImageError')
+    @HostListener('onImageError', ['$event'])
     onImageError() {
-        this.avatar.label = this._label[0]?.toUpperCase();
-        this.el.nativeElement.children[0].classList.remove('p-avatar-image');
+        this.avatar.label = this.text[0]?.toUpperCase();
+        this.avatar.image = null;
+        this.cd.detectChanges();
     }
 }

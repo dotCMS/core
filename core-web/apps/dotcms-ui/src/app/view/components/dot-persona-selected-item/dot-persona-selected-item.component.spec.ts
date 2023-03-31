@@ -68,18 +68,13 @@ describe('DotPersonaSelectedItemComponent', () => {
     });
 
     it('should have p-avatar with right properties', () => {
-        const hostComp = fixture.componentInstance;
+        const avatar = fixture.debugElement.query(By.css('p-avatar'));
 
-        const avatar: DebugElement = de.query(By.css('p-avatar'));
-        expect(avatar.componentInstance.image).toBe(mockDotPersona.photo);
+        const { image } = avatar.componentInstance;
 
-        //Show personalized blue dot
+        expect(image).toBe(mockDotPersona.photo);
         expect(avatar.query(By.css('.p-badge'))).toBeTruthy();
-
-        hostComp.persona.photo = undefined;
-        fixture.detectChanges();
-
-        expect(avatar.componentInstance.label).toBe(mockDotPersona.name.charAt(0).toUpperCase());
+        expect(avatar.attributes['ng-reflect-text']).toBe(mockDotPersona.name);
     });
 
     it('should render persona name and label', () => {

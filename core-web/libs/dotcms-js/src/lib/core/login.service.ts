@@ -113,7 +113,7 @@ export class LoginService {
                         this.setAuth(auth);
                     }
                 }),
-                map((auth: Auth) => auth)
+                map((auth: Auth) => this.getFullAuth(auth))
             );
     }
 
@@ -311,8 +311,13 @@ export class LoginService {
      * @memberof LoginService
      */
     setAuth(auth: Auth): void {
+        const isLoginAs = !!auth.loginAsUser || !!Object.keys(auth.loginAsUser || {}).length;
+
         this._auth = auth;
-        this._auth$.next(auth);
+        this._auth$.next({
+            ...auth,
+            isLoginAs
+        });
 
         // When not logged user we need to fire the observable chain
         if (!auth.user) {
@@ -335,6 +340,15 @@ export class LoginService {
 
     private logOutUser(): void {
         window.location.href = `${LOGOUT_URL}?r=${new Date().getTime()}`;
+    }
+
+    private getFullAuth(auth: Auth): Auth {
+        const isLoginAs = !!auth.loginAsUser || !!Object.keys(auth.loginAsUser || {}).length;
+
+        return {
+            ...auth,
+            isLoginAs
+        };
     }
 }
 

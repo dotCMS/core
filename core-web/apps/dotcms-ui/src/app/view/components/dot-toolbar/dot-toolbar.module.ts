@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { HttpClientJsonpModule } from '@angular/common/http';
 import { NgModule } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -22,7 +23,8 @@ import { DotToolbarComponent } from './dot-toolbar.component';
         DotSiteSelectorModule,
         DotToolbarNotificationModule,
         ToolbarModule,
-        DotToolbarUserComponent
+        DotToolbarUserComponent,
+        HttpClientJsonpModule
     ],
     declarations: [DotToolbarComponent],
     exports: [DotToolbarComponent],

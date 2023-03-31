@@ -1,13 +1,13 @@
 <p-avatar
     *ngIf="persona.personalized"
-    [label]="persona.name"
+    [text]="persona.name"
     [image]="persona.photo"
     pBadge
     dotAvatar
 ></p-avatar>
 <p-avatar
     *ngIf="!persona.personalized"
-    [label]="persona.name"
+    [text]="persona.name"
     [image]="persona.photo"
     dotAvatar
 ></p-avatar>

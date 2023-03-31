@@ -104,16 +104,15 @@ describe('DotAppsConfigurationHeaderComponent', () => {
         ).toBe(messageServiceMock.get('apps.confirmation.description.show.more'));
     });
 
-    it('should DotCopy & DotAvatar with right properties', () => {
-        const avatar = de.query(By.css('p-avatar')).componentInstance;
+    it('should DotCopy & p-avatar with right properties', () => {
         const dotCopy = de.query(By.css('dot-copy-link')).componentInstance;
+        const avatar = fixture.debugElement.query(By.css('p-avatar'));
 
-        expect(avatar.image).toBe(component.app.iconUrl);
-        expect(avatar.size).toBe('xlarge');
+        const { image, size } = avatar.componentInstance;
 
-        component.app.iconUrl = undefined;
-        fixture.detectChanges();
-        expect(avatar.label).toBe(component.app.name.charAt(0).toUpperCase());
+        expect(image).toBe(component.app.iconUrl);
+        expect(size).toBe('xlarge');
+        expect(avatar.attributes['ng-reflect-text']).toBe(component.app.name);
 
         expect(dotCopy.label).toBe(component.app.key);
         expect(dotCopy.copy).toBe(component.app.key);

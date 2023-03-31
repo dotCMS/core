@@ -5,14 +5,14 @@
 >
     <p-avatar
         *ngIf="persona?.personalized"
-        [label]="persona?.name || ('modes.persona.no.persona' | dm)"
+        [text]="persona?.name || ('modes.persona.no.persona' | dm)"
         [image]="persona?.photo"
         pBadge
         dotAvatar
     ></p-avatar>
     <p-avatar
         *ngIf="!persona?.personalized"
-        [label]="persona?.name || ('modes.persona.no.persona' | dm)"
+        [text]="persona?.name || ('modes.persona.no.persona' | dm)"
         [image]="persona?.photo"
         dotAvatar
     ></p-avatar>
