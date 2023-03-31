@@ -423,40 +423,42 @@ public class NavToolTest extends IntegrationTestBase{
     }
 
     @Test
-    public void testNavTool_rootLevel_returnItemsOnlyForSite() throws Exception
-    {
+    public void testNavTool_rootLevel_returnItemsOnlyForSite() throws Exception {
         //Get SystemFolder
         final Folder systemFolder = APILocator.getFolderAPI().findSystemFolder();
-
         //Create new Host
-        final Host newHost1 = new SiteDataGen().nextPersisted();
+        final Host newSite1 = new SiteDataGen().nextPersisted();
 
-        //Create contentlets on one host
+        //Create contentlets on Test Site 1
         final File file = File.createTempFile("fileTestEngTrue", ".txt");
         FileUtil.write(file, "helloworld");
         final Contentlet fileAssetOneHost = new FileAssetDataGen(systemFolder, file)
-                .host(newHost1).setProperty(FileAssetAPI.SHOW_ON_MENU, "true").nextPersisted();
+                .host(newSite1).setProperty(FileAssetAPI.SHOW_ON_MENU, "true").nextPersisted();
+        fileAssetOneHost.setIndexPolicy(IndexPolicy.FORCE);
         final Template template = new TemplateDataGen().nextPersisted();
         final Contentlet pageAssetOneHost = new HTMLPageDataGen(systemFolder, template)
-                .showOnMenu(true).host(newHost1).nextPersisted();
+                .showOnMenu(true).host(newSite1).nextPersisted();
+        pageAssetOneHost.setIndexPolicy(IndexPolicy.FORCE);
         ContentletDataGen.publish(pageAssetOneHost);
         ContentletDataGen.publish(fileAssetOneHost);
 
         //Create new Host
-        final Host newHost2 = new SiteDataGen().nextPersisted();
+        final Host newSite2 = new SiteDataGen().nextPersisted();
 
-        //Create contentlets on default host
+        //Create contentlets on Test Site 2
         final Contentlet fileAssetNewHost = new FileAssetDataGen(systemFolder, file)
-                .host(newHost2).setProperty(FileAssetAPI.SHOW_ON_MENU, "true").nextPersisted();
+                .host(newSite2).setProperty(FileAssetAPI.SHOW_ON_MENU, "true").nextPersisted();
+        fileAssetNewHost.setIndexPolicy(IndexPolicy.FORCE);
         final Contentlet pageAssetNewHost = new HTMLPageDataGen(systemFolder, template)
-                .showOnMenu(true).host(newHost2).nextPersisted();
+                .showOnMenu(true).host(newSite2).nextPersisted();
+        pageAssetNewHost.setIndexPolicy(IndexPolicy.FORCE);
         ContentletDataGen.publish(pageAssetNewHost);
         ContentletDataGen.publish(fileAssetNewHost);
 
-        NavResult navResult = new NavTool().getNav(newHost2, systemFolder.getPath());
+        final NavResult navResult = new NavTool().getNav(newSite2, systemFolder.getPath());
         assertNotNull(navResult);
-        assertEquals(2,navResult.getChildren().size());
-
+        assertEquals("NavTool should return 2 results (test page and file) for 'newSite2'", 2,
+                navResult.getChildren().size());
     }
 
     /**
