@@ -1,6 +1,6 @@
 {
   "name": "dotcms-ui",
-  "version": "23.3.0-next.16",
+  "version": "23.4.0-next.1",
   "license": "MIT",
   "engines": {
     "node": ">=16.13.2"
@@ -42,6 +42,7 @@
     "pretty-quick": "pretty-quick",
     "prepare": "cd .. && node core-web/prepare.js",
     "test:dotcms-ui": "nx run dotcms-ui:test",
+    "test:dotcms": "nx run-many --target=test --projects=dotcms-ui,data-access,dotcdn",
     "update": "nx migrate latest",
     "workspace-generator": "nx workspace-generator",
     "help": "nx help"
@@ -87,10 +88,10 @@
     "@tiptap/starter-kit": "^2.0.0-beta.218",
     "@tiptap/suggestion": "^2.0.0-beta.218",
     "@webcomponents/webcomponentsjs": "^2.6.0",
-    "chart.js": "^3.3.2",
+    "chart.js": "^4.2.1",
     "core-js": "^3.9.1",
     "cross-fetch": "^3.1.4",
-    "date-fns": "^2.25.0",
+    "date-fns": "^2.29.3",
     "date-fns-tz": "^1.1.6",
     "document-register-element": "^1.7.2",
     "dom-autoscroller": "^2.3.4",
@@ -156,7 +157,6 @@
     "@storybook/mdx2-csf": "^0.0.3",
     "@storybook/storybook-deployer": "^2.8.10",
     "@storybook/theming": "^6.5.10",
-    "@types/chart.js": "^2.9.32",
     "@types/googlemaps": "3.40.3",
     "@types/jasmine": "4.0.3",
     "@types/jasminewd2": "~2.0.8",
@@ -217,4 +217,3 @@
     "webpack-bundle-analyzer": "^4.5.0"
   }
 }
-

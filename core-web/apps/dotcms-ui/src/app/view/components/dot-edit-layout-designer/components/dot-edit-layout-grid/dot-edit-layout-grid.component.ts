@@ -2,7 +2,7 @@
 
 import { Subject } from 'rxjs';
 
-import { Component, forwardRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, forwardRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import {
     ControlValueAccessor,
     NG_VALUE_ACCESSOR,
@@ -42,7 +42,9 @@ interface DotAddClass {
         }
     ]
 })
-export class DotEditLayoutGridComponent implements OnInit, OnDestroy, ControlValueAccessor {
+export class DotEditLayoutGridComponent
+    implements OnInit, OnDestroy, ControlValueAccessor, AfterViewInit
+{
     @ViewChild(NgGrid, { static: true }) ngGrid: NgGrid;
 
     form: UntypedFormGroup;
@@ -87,6 +89,11 @@ export class DotEditLayoutGridComponent implements OnInit, OnDestroy, ControlVal
         public fb: UntypedFormBuilder
     ) {}
 
+    ngAfterViewInit(): void {
+        // needed it because the transition between content & layout.
+        this.resizeGrid();
+    }
+
     ngOnInit() {
         this.dotEventsService
             .listen('dot-side-nav-toggle')
@@ -101,9 +108,6 @@ export class DotEditLayoutGridComponent implements OnInit, OnDestroy, ControlVal
             .subscribe(() => {
                 this.resizeGrid();
             });
-
-        // needed it because the transition between content & layout.
-        this.resizeGrid();
 
         this.form = this.fb.group({
             classToAdd: ''
@@ -349,12 +353,9 @@ export class DotEditLayoutGridComponent implements OnInit, OnDestroy, ControlVal
         return !!(this.value && this.value.rows && this.value.rows.length);
     }
 
-    private resizeGrid(timeOut?): void {
-        setTimeout(
-            () => {
-                this.ngGrid.triggerResize();
-            },
-            timeOut ? timeOut : 0
-        );
+    private resizeGrid(timeOut = 0): void {
+        setTimeout(() => {
+            this.ngGrid.triggerResize();
+        }, timeOut);
     }
 }

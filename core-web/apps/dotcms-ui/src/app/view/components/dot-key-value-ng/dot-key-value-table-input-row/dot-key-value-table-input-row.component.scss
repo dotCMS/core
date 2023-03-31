@@ -14,10 +14,10 @@
 }
 
 .dot-key-value-table-input-row {
-    border-bottom: 1px solid $gray-bg;
+    border-bottom: 1px solid $color-palette-gray-200;
 
     &:hover {
-        background-color: $gray-bg;
+        background-color: $color-palette-gray-200;
     }
 
     td:nth-child(-n + 2) {

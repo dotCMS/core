@@ -4,6 +4,7 @@ import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
 import com.dotcms.util.transform.TransformerLocator;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
@@ -356,6 +357,18 @@ public abstract class ContentletFactory {
 	 * @throws DotSecurityException
 	 */
 	protected abstract List<Contentlet> findAllVersions(Identifier identifier, boolean bringOldVersions) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Retrieves all versions for a {@link Contentlet} identifier inside a {@link Variant}.
+	 *
+	 * @param identifier Contentlet identifier
+	 * @param variant Variant to search for
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	protected abstract List<Contentlet> findAllVersions(final Identifier identifier, final Variant variant)
+			throws DotDataException, DotSecurityException;
 
     /**
      * Retrieves all versions for a contentlet identifier.

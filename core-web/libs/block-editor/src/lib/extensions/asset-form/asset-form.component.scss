@@ -1,7 +1,7 @@
 @use "variables" as *;
 
 :host {
-    border: 1px solid $gray-light;
+    border: 1px solid $color-palette-gray-500;
     display: block;
 }
 
@@ -14,12 +14,16 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 25rem;
+    height: 100%;
     width: 100%;
 }
 
 :host::ng-deep {
     .p-tabview-nav {
         padding: 0 $spacing-5;
+    }
+
+    .p-tabview-panel {
+        height: 25rem;
     }
 }
