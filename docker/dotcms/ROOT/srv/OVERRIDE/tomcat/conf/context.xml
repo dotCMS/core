@@ -28,4 +28,6 @@
   <!--
   <Manager pathname="" />
   -->
+  ${REDIS_SESSION_VALVE}
+
 </Context>
