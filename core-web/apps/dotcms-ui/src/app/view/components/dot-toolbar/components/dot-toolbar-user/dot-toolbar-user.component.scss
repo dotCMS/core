@@ -26,24 +26,4 @@ p-avatar {
         font-size: $font-size-lg;
         color: $black;
     }
-
-    //Gravatar styles were taken from dot-avatar component
-    .gravatar {
-        border-radius: 50%;
-        width: 35px;
-        height: 35px;
-    }
-
-    .gravatar-placeholder {
-        width: 35px;
-        height: 35px;
-        line-height: 35px;
-        font-size: calc(35px - (35px * 25px) / 100px);
-
-        border-radius: 50%;
-        background-color: $color-palette-secondary;
-        color: $white;
-        font-family: "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
-        text-align: center;
-    }
 }
