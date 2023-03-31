@@ -9,7 +9,6 @@ import { TagModule } from 'primeng/tag';
 
 import { take } from 'rxjs/operators';
 
-import { DotMessageService } from '@dotcms/data-access';
 import { DotResultSimpleVariant } from '@dotcms/dotcms-models';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotExperimentsConfigurationSkeletonComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-skeleton/dot-experiments-configuration-skeleton.component';
@@ -46,7 +45,7 @@ import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.dir
     ],
     templateUrl: './dot-experiments-reports.component.html',
     styleUrls: ['./dot-experiments-reports.component.scss'],
-    providers: [DotExperimentsReportsStore, DotMessageService],
+    providers: [DotExperimentsReportsStore],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsReportsComponent implements OnInit {

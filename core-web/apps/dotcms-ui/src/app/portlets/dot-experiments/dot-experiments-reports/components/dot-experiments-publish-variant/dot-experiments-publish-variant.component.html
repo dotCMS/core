@@ -6,7 +6,9 @@
     (hide)="hide.emit('')"
     width="35rem"
 >
-    <p data-testId="variant-legend">{{ 'experiments.report.publish.variant.text' | dm }}</p>
+    <p class="m-0" data-testId="variant-legend">
+        {{ 'experiments.report.publish.variant.text' | dm }}
+    </p>
 
     <p-table [(selection)]="selectedVariant" [value]="data" dataKey="variantName">
         <ng-template pTemplate="body" let-variant>
