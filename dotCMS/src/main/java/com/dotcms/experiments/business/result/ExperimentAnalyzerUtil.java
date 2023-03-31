@@ -5,8 +5,6 @@ import static com.dotcms.util.CollectionsUtils.map;
 import com.dotcms.analytics.metrics.Metric;
 import com.dotcms.analytics.metrics.MetricType;
 
-import com.dotcms.cube.CubeJSResultSet;
-
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.experiments.model.Goals;
@@ -15,12 +13,9 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
-
-import java.util.stream.Collectors;
 
 
 /**
@@ -52,8 +47,7 @@ public enum ExperimentAnalyzerUtil {
      * @return
      */
     public ExperimentResults getExperimentResult(final Experiment experiment,
-
-            final List<BrowserSession> browserSessions)  {
+                                                 final List<BrowserSession> browserSessions)  {
         final Goals goals = experiment.goals()
                 .orElseThrow(() -> new IllegalArgumentException("The Experiment must have a Goal"));
 
@@ -73,11 +67,13 @@ public enum ExperimentAnalyzerUtil {
         for (final BrowserSession browserSession : browserSessions) {
 
             final boolean isIntoExperiment = browserSession.getEvents().stream()
-                    .map(event -> event.get("url").map(url -> url.toString()).orElse(StringPool.BLANK))
+                    .map(event -> event.get("url").map(Object::toString).orElse(StringPool.BLANK))
                     .anyMatch(url -> {
                         try {
                             final String uri = page.getURI();
-                            final String alternativeURI = uri.endsWith("index") ? uri.substring(0, uri.indexOf("index")):  uri;
+                            final String alternativeURI = uri.endsWith("index")
+                                ? uri.substring(0, uri.indexOf("index"))
+                                : uri;
                             return url.contains(uri) || url.contains(alternativeURI);
                         } catch (DotDataException e) {
                             throw new RuntimeException(e);
