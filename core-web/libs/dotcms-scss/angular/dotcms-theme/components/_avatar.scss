@@ -1,6 +1,10 @@
 @use "variables" as *;
 
 p-avatar {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
     .p-avatar.p-avatar-circle {
         overflow: unset;
 
@@ -43,6 +47,6 @@ p-avatar {
 
     .p-avatar-text {
         font-size: $spacing-4;
-        line-height: $spacing-4;
+        line-height: $spacing-5;
     }
 }
