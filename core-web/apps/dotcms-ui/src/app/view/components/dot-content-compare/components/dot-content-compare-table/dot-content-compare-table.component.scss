@@ -59,6 +59,8 @@
         &.cover {
             width: 94px;
             height: 94px;
+            display: block;
+            position: relative;
         }
     }
 
@@ -66,7 +68,7 @@
         &.p-component {
             border: 0;
             background: $white;
-            color: $color-palette-gray-700;;
+            color: $color-palette-gray-700;
             display: flex;
         }
 
