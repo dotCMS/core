@@ -18,11 +18,10 @@ declare module '@tiptap/core' {
         AssetTabviewForm: {
             openAssetForm: (data: { type: EditorAssetTypes }) => ReturnType;
             closeAssetForm: () => ReturnType;
-            insertAsset: (data: { type: EditorAssetTypes; payload }) => ReturnType;
-            insertAssetAt: (data: {
+            insertAsset: (data: {
                 type: EditorAssetTypes;
                 payload;
-                position: number;
+                position?: number;
             }) => ReturnType;
         };
     }
@@ -164,28 +163,14 @@ export const BubbleAssetFormExtension = (viewContainerRef: ViewContainerRef) => 
                             .run();
                     },
                 insertAsset:
-                    ({ type, payload }) =>
-                    ({ chain }) => {
-                        switch (type) {
-                            case 'video':
-                                return chain().insertVideo(payload).run();
-
-                            case 'image':
-                                return chain().insertImage(payload).run();
-                        }
-                    },
-                insertAssetAt:
                     ({ type, payload, position }) =>
                     ({ chain }) => {
                         switch (type) {
                             case 'video':
-                                return chain().insertVideoAt(payload, position).run();
+                                return chain().insertVideo(payload, position).run();
 
                             case 'image':
-                                return chain().insertImageAt(payload, position).run();
-
-                            default:
-                                return chain().run();
+                                return chain().insertImage(payload, position).run();
                         }
                     }
             };

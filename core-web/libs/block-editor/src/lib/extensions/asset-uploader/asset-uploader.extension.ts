@@ -68,7 +68,7 @@ export const AssetUploader = (injector: Injector, viewContainerRef: ViewContaine
             }
 
             /**
-             * Alert error message.
+             * Alert error message when the user try to drop more than one asset.
              *
              */
             function alertErrorMessage(type: EditorAssetTypes) {
@@ -142,7 +142,7 @@ export const AssetUploader = (injector: Injector, viewContainerRef: ViewContaine
                     .subscribe(
                         (dotAssets: DotCMSContentlet[]) => {
                             const data = dotAssets[0][Object.keys(dotAssets[0])[0]];
-                            editor.commands.insertAssetAt({ type, payload: data, position });
+                            editor.commands.insertAsset({ type, payload: data, position });
                         },
                         (error) => alert(error.message),
                         () => removePlaceHolder(placeHolderName)
@@ -199,7 +199,7 @@ export const AssetUploader = (injector: Injector, viewContainerRef: ViewContaine
                 const { from } = getCursorPosition(view);
 
                 if (isImageURL(text) && isNodeRegistered('image')) {
-                    editor.commands.insertImageAt(text, from);
+                    editor.commands.insertImage(text, from);
 
                     return true;
                 }
