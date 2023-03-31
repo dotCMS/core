@@ -10,10 +10,14 @@ import {
 import { DotStringTemplateOutletDirective } from '@portlets/shared/directives/dot-string-template-outlet.directive';
 
 /**
+ *
  * Component to display a table with a title and a list of data with its headers
  * using the index of the object as headers.
  * Can send the `headers` and `rows` as templates with content projection to
  * replace the defaults templates.
+ *
+ * @export
+ * @class DotExperimentsDetailsTableComponent
  */
 @Component({
     selector: 'dot-experiments-details-table',

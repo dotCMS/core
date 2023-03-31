@@ -15,8 +15,8 @@ class DotStringTemplateOutletContext {
 
 /**
  * Structural directive to give the ability of using an input of a component
- * to accept a string or a TemplateRef<any>, only add a ng-container with the structural directive (`*dotStringTemplateOutlet`)
- * and send the input to the directive.
+ * to accept a string or a TemplateRef<any>, only add a ng-container with the
+ * structural directive (`*dotStringTemplateOutlet`) $and send the input to the directive.
  *
  * at the component
  * @example
@@ -27,7 +27,7 @@ class DotStringTemplateOutletContext {
  * `<ng-container *dotStringTemplateOutlet="title">{{ title }}</ng-container>`
  *
  * And `title` shows the `TemplateRef` or the `string` sent by the input
- */
+ **/
 
 @Directive({
     standalone: true,
@@ -68,11 +68,6 @@ export class DotStringTemplateOutletDirective implements OnChanges {
     }
 
     private shouldRecreateView = (dotStringTemplateOutlet: SimpleChange): boolean => {
-        let shouldOutletRecreate = false;
-        if (dotStringTemplateOutlet.firstChange) {
-            shouldOutletRecreate = true;
-        }
-
-        return shouldOutletRecreate;
+        return !!dotStringTemplateOutlet.firstChange;
     };
 }
