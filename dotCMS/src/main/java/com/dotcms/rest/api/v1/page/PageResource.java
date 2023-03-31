@@ -6,6 +6,7 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.ema.EMAWebInterceptor;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.MapToContentletPopulator;
 import com.dotcms.rest.ResponseEntityBooleanView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -19,6 +20,7 @@ import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.security.apps.AppSecrets;
 import com.dotcms.security.apps.AppsAPI;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.HttpRequestDataUtil;
 import com.dotcms.util.PaginationUtil;
@@ -1086,7 +1088,7 @@ public class PageResource {
     @POST
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/actions")
-    public ResponseEntityWorkflowActionsView findAvailableActions(@Context final HttpServletRequest request,
+    public PageWorkflowActionsView findAvailableActions(@Context final HttpServletRequest request,
                                                          @Context final HttpServletResponse response,
                                                          final FindAvailableActionsForm findAvailableActionsForm) throws DotSecurityException, DotDataException {
 
@@ -1123,8 +1125,12 @@ public class PageResource {
             final List<WorkflowAction> actions = APILocator.getWorkflowAPI()
                     .findAvailableActions(page, user, findAvailableActionsForm.getRenderMode());
 
-            return new ResponseEntityWorkflowActionsView(actions.stream()
-                    .map(WorkflowResource::convertToWorkflowActionView).collect(Collectors.toList()));
+            return new PageWorkflowActionsView(
+                    new DotTransformerBuilder().defaultOptions().content(page).build()
+                            .toMaps().stream().findFirst().orElse(Collections.emptyMap()),
+
+                    actions.stream().map(WorkflowResource::convertToWorkflowActionView).collect(Collectors.toList())
+            );
         }
 
         throw new DoesNotExistException("The page: " + findAvailableActionsForm.getPath() + " do not exist");
