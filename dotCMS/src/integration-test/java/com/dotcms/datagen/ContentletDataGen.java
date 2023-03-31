@@ -19,7 +19,9 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletStateException
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
+
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -54,6 +56,8 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
     private IndexPolicy policy = null;
     private Date modDate;
     protected String variantId;
+    private User innerUser;
+
 
     public ContentletDataGen(final ContentType contentType) {
         this(contentType.id());
@@ -63,6 +67,16 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
         this.contentTypeId = contentTypeId;
     }
 
+    /**
+     * Sets the user property to the ContentletDataGen instance.
+     * This will be used when a new {@link Contentlet} instance is created
+     *
+     * @return
+     */
+    public ContentletDataGen user(final User user) {
+        this.innerUser = user;
+        return this;
+    }
     /**
      * Sets languageId property to the ContentletDataGen instance. 
      * This will be used when a new {@link Contentlet} instance is created
@@ -232,7 +246,7 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
      * @return
      */
     public Contentlet persist(final Contentlet contentlet, final List<Category> categories) {
-        final Contentlet checkin = checkin(contentlet, categories);
+        final Contentlet checkin = checkin(contentlet, categories, getUser());
 
         if (modDate != null) {
             updateContentletVersionDate(checkin, modDate);
@@ -296,6 +310,10 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
         }
     }
 
+    private User getUser() {
+        return user == null ? APILocator.systemUser() : user;
+    }
+
     @WrapInTransaction
     public static Contentlet checkin(Contentlet contentlet) {
         return checkin(contentlet, IndexPolicy.FORCE);
@@ -315,6 +333,11 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
 
     @WrapInTransaction
     public static Contentlet checkin(final Contentlet contentlet, final List<Category> categories) {
+        return  checkin(contentlet, categories, APILocator.systemUser());
+    }
+
+    @WrapInTransaction
+    private static Contentlet checkin(final Contentlet contentlet, final List<Category> categories, final User user) {
         try{
             contentlet.setIndexPolicy(IndexPolicy.FORCE);
             contentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
@@ -452,7 +475,8 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
     }
 
     public static Contentlet createNewVersion(final Contentlet oldContentletVersion,
-        final Variant variant, final Language language, final Map<String, Object> properties)
+            final Variant variant, final Language language, final Map<String, Object> properties)
+
             throws DotDataException, DotSecurityException {
 
         final User user = APILocator.systemUser();
