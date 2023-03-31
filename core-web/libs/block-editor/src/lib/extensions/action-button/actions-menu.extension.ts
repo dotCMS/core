@@ -244,7 +244,11 @@ export const ActionsMenu = (
             findParentNode(editor.view.state.selection.$from, [NodeTypes.TABLE_CELL])?.type.name ===
             NodeTypes.TABLE_CELL;
 
-        shouldShow = !isTableCell;
+        const isCodeBlock =
+            findParentNode(editor.view.state.selection.$from, [NodeTypes.CODE_BLOCK])?.type.name ===
+            NodeTypes.CODE_BLOCK;
+
+        shouldShow = !isTableCell && !isCodeBlock;
     }
 
     function setUpSuggestionComponent(editor: Editor, range: Range) {
@@ -274,7 +278,7 @@ export const ActionsMenu = (
 
     function getItems({ allowedBlocks = [], editor, range }): DotMenuItem[] {
         const items = allowedBlocks.length
-            ? suggestionOptions.filter((item) => this.allowedBlocks.includes(item.id))
+            ? suggestionOptions.filter((item) => allowedBlocks.includes(item.id))
             : suggestionOptions;
 
         const customItems = [...items, ...getCustomActions(customBlocks)];

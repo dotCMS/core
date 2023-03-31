@@ -1175,7 +1175,10 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                 .addParam(oldValue)
                 .loadResult();
 
-        pagesId.stream().forEach(pageId -> CacheLocator.getMultiTreeCache().removePageMultiTrees(pageId));
+        pagesId.stream().forEach(pageId -> {
+            CacheLocator.getMultiTreeCache().removePageMultiTrees(pageId);
+            CacheLocator.getHTMLPageCache().remove(pageId);
+        });
     }
 
     private String getFileContainerId(final String containerId) {

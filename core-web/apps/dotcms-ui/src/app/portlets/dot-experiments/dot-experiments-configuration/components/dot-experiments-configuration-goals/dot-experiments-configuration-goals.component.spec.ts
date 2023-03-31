@@ -21,6 +21,7 @@ import { DotExperimentsConfigurationGoalSelectComponent } from '@portlets/dot-ex
 import { DotExperimentsConfigurationGoalsComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-goals/dot-experiments-configuration-goals.component';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
+import { DotExperimentsDetailsTableComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-details-table/dot-experiments-details-table.component';
 import { getExperimentMock, GoalsMock } from '@portlets/dot-experiments/test/mocks';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
@@ -46,7 +47,8 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
             DotExperimentsConfigurationGoalSelectComponent,
             DotDynamicDirective,
             ConfirmPopupModule,
-            TooltipModule
+            TooltipModule,
+            DotExperimentsDetailsTableComponent
         ],
         component: DotExperimentsConfigurationGoalsComponent,
         componentProviders: [],
@@ -116,6 +118,7 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
 
         const addButton = spectator.query(byTestId('goals-add-button')) as HTMLButtonElement;
         expect(addButton.disabled).toBe(true);
+        expect(spectator.query(DotExperimentsDetailsTableComponent)).toExist();
     });
 
     it('should call openSelectGoalSidebar if you click the add goal button', () => {
