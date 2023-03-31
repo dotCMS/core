@@ -176,7 +176,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
       }
 
       try {
-         APILocator.getContentTypeDestroyAPI().destroy(dbType);
+         APILocator.getContentTypeDestroyAPI().destroy(dbType, APILocator.systemUser());
       } catch (DotDataException | DotSecurityException e) {
         Logger.error(getClass(), String.format("Error Tearing down ContentType [%s]", dbType.variable()), e);
       }

@@ -3,6 +3,7 @@ package com.dotcms.contenttype.business;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.liferay.portal.model.User;
 
 public interface ContentTypeDestroyAPI {
 
@@ -16,7 +17,7 @@ public interface ContentTypeDestroyAPI {
      */
     void relocateContentletsForDeletion(ContentType source, ContentType target) throws DotDataException;
 
-    void destroy(ContentType contentType) throws DotDataException, DotSecurityException;
+    void destroy(ContentType contentType, User user) throws DotDataException, DotSecurityException;
 
 
 }

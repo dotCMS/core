@@ -6,47 +6,35 @@ import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.contenttype.business.sql.ContentTypeSql;
 import com.dotcms.contenttype.model.event.ContentTypeDeletedEvent;
-import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.exception.BaseRuntimeInternationalizationException;
-import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.util.ContentTypeUtil;
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.MultiTree;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.exception.InvalidLicenseException;
-import com.dotmarketing.factories.MultiTreeAPI;
-import com.dotmarketing.portlets.categories.business.CategoryAPI;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.ContentletDestroyThreadLocal;
+import com.dotmarketing.portlets.contentlet.business.ContentletDestroyDelegate;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
-import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 
-import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
+import io.vavr.Lazy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
@@ -66,7 +54,8 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
             throw new DotDataException(
                     String.format(
                             "Incompatible source and target ContentTypes. source class is (%s) target class is (%s)",
-                            source.getClass().getSimpleName(), target.getClass().getSimpleName())
+                            source.getClass().getSimpleName(), target.getClass().getSimpleName()
+                    )
             );
         }
 
@@ -74,10 +63,6 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
 
         final String selectContentlets = "select c.inode from contentlet c where c.structure_inode =  ? \n";
         dotConnect.setSQL(selectContentlets).addParam(source.inode());
-        @SuppressWarnings("unchecked")
-        final List<Map<String, Object>> results =  dotConnect.loadResults();
-        final List<String> inodes = results.stream().map(map -> map.get("inode").toString())
-                .collect(Collectors.toList());
 
         final String updateContentlet = String.format(
                 "update contentlet c set structure_inode = ?, \n" +
@@ -87,15 +72,6 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
 
         dotConnect.setSQL(updateContentlet).addParam(target.inode()).addParam(source.inode())
                 .loadResult();
-
-        HibernateUtil.addCommitListener(() -> inodes.forEach(inode -> {
-            try {
-                CacheLocator.getContentletCache().remove(inode);
-            } catch (Exception e) {
-                Logger.warn(this, e.getMessage(), e);
-            }
-        }));
-
     }
 
 
@@ -105,13 +81,17 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
     }
 
     @CloseDBIfOpened
-    Map<String, List<InodeAndLanguage>> nextBatch(final ContentType type, int limit, int offset)
+    Map<String, List<ContentletVersionInfo>> nextBatch(final ContentType type, int limit, int offset)
             throws DotDataException {
 
-        final String selectContentlets = " select c.inode,  c.identifier , c.language_id \n"
+        final String selectContentlets = " select c.inode,  c.identifier , c.language_id, i.host_inode, \n"
+                + " (  \n"
+                + "  select coalesce(f.inode,'SYSTEM_HOST') as folder_inode from folder f, identifier id where f.identifier = id.id and id.asset_type = 'folder' and id.full_path_lc || '/' = i.parent_path  \n"
+                + ") \n"
                 + "  from contentlet c \n"
                 + "  join structure s on c.structure_inode  = s.inode  \n"
-                + "  where s.velocity_var_name = ? order by c.identifier\n";
+                + "  join identifier i on c.identifier = i.id \n"
+                + "  where s.velocity_var_name = ? order by c.identifier \n";
 
         final List<Map<String, Object>> list = new DotConnect().setSQL(selectContentlets)
                 .addParam(type.variable()).setMaxRows(limit).setStartRow(offset)
@@ -119,13 +99,17 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
 
         return list.stream().collect(
                 Collectors.groupingBy(row -> (String) row.get("identifier"), Collectors.mapping(
-                        row -> InodeAndLanguage.of((String) row.get("inode"),
-                                (Long) row.get("language_id")), Collectors.toList())));
+                        row -> ContentletVersionInfo.of(
+                                (String) row.get("inode"),
+                                (Long) row.get("language_id"),
+                                (String) row.get("host_inode"),
+                                (String) row.get("folder_inode")
+                        ), Collectors.toList())));
     }
 
 
     @Override
-    public void destroy(ContentType type) throws DotDataException, DotSecurityException {
+    public void destroy(ContentType type, User user) throws DotDataException, DotSecurityException {
         final long t1 = System.currentTimeMillis();
         final long allCount = countByType(type);
         final int limit = Config.getIntProperty("CT_DELETE_BATCH_SIZE", 600);
@@ -138,27 +122,23 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
 
         while (true) {
 
-            Map<String, List<InodeAndLanguage>> batch = nextBatch(type, limit, offset);
+            Map<String, List<ContentletVersionInfo>> batch = nextBatch(type, limit, offset);
             if (batch.isEmpty()) {
                 //We're done lets get out of here
                 Logger.info(getClass(), "We're done collecting batch!");
                 break;
             }
 
-            final List<Map<String, List<InodeAndLanguage>>> partitions = partitionInput(batch, partitionSize);
+            final List<Map<String, List<ContentletVersionInfo>>> partitions = partitionInput(batch, partitionSize);
             Logger.debug(getClass(),
                     String.format(" ::: Partitions size %d ", partitions.size()));
-            ContentTypeDestroyThreadLocal.INSTANCE.get().set(type);
-            try {
-                for (Map<String, List<InodeAndLanguage>> partition : partitions) {
+                for (Map<String, List<ContentletVersionInfo>> partition : partitions) {
                     destroy(partition, type);
                     Logger.info(getClass(),
                             String.format("Finished destroying a batch of (%d) contentlets!",
                                     partition.size()));
                 }
-            } finally {
-                ContentTypeDestroyThreadLocal.INSTANCE.get().remove();
-            }
+
             offset += limit;
             Logger.debug(getClass(),
                     String.format(" Offset is (%d) of (%d) total. ", offset, allCount));
@@ -177,37 +157,14 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
     }
 
     @WrapInTransaction
-    private void internalDestroy(ContentType type) {
+    private void internalDestroy(ContentType type) throws DotDataException{
         try {
             Logger.info(getClass(),
                     String.format("Destroying Content-Type with inode: [%s] and var: [%s].",
                             type.inode(), type.variable()));
 
-            // make sure folders don't refer to this structure as default fileasset structure
-
-            //updateFolderFileAssetReferences(type);
-
-            // delete container structures
-            //APILocator.getContainerAPI().deleteContainerStructureByContentType(type);
-
-            // delete workflow schema references
-            //deleteWorkflowSchemeReference(type);
-
-            // remove structure permissions
-            //APILocator.getPermissionAPI().removePermissions(type);
-
-            // delete relationships
-            //deleteRelationships(type);
-
-            //FactoryLocator.getFieldFactory().deleteByContentType(type);
-            // remove structure itself
-            DotConnect dc = new DotConnect();
-            dc.setSQL(ContentTypeSql.DELETE_TYPE_BY_INODE).addParam(type.id()).loadResult();
-            dc.setSQL(ContentTypeSql.DELETE_INODE_BY_INODE).addParam(type.id()).loadResult();
-            Logger.info(getClass(),
-                    String.format("We're done with Content-Type [%s],[%s].", type.inode(),
-                            type.variable()));
-
+            final ContentTypeFactory contentTypeFactory = FactoryLocator.getContentTypeFactory();
+            contentTypeFactory.delete(type);
             CacheLocator.getContentTypeCache2().remove(type);
 
             fireDeleteEvent(type, APILocator.systemUser());
@@ -216,6 +173,7 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
             Logger.error(getClass(),
                     String.format("Error Removing CT [%s],[%s].", type.inode(), type.variable()),
                     e);
+            throw new DotDataException(e);
         }
 
     }
@@ -228,7 +186,7 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
      */
     void fireDeleteEvent(ContentType type, User user) throws DotHibernateException {
         try {
-            String actionUrl = ContentTypeUtil.getInstance().getActionUrl(type, user);
+            final String actionUrl = ContentTypeUtil.getInstance().getActionUrl(type, user);
             ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = new ContentTypePayloadDataWrapper(actionUrl, type);
             APILocator.getSystemEventsAPI().pushAsync(SystemEventType.DELETE_BASE_CONTENT_TYPE, new Payload(
                     contentTypePayloadDataWrapper, Visibility.PERMISSION, String.valueOf(
@@ -241,120 +199,30 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
         HibernateUtil.addCommitListener(() -> localSystemEventsAPI.notify(new ContentTypeDeletedEvent(type.variable())));
     }
 
+    Lazy<ContentletDestroyDelegate> delegate = Lazy.of(ContentletDestroyDelegate::newInstance);
+
     /**
      * @param partition
      * @param type
      */
-    void destroy(final Map<String, List<InodeAndLanguage>> partition, ContentType type) {
-
+    void destroy(final Map<String, List<ContentletVersionInfo>> partition, ContentType type) {
         final User user = APILocator.systemUser();
         partition.forEach((identifier, inodeAndLanguages) -> {
             final List<Contentlet> contentlets = makeContentlets(identifier, inodeAndLanguages, type);
-            destroy(contentlets, user);
+            delegate.get().destroy(contentlets, user);
         });
-
     }
-
-
-    @WrapInTransaction
-    void destroy(List<Contentlet> contentlets, User user) {
-        try {
-            APILocator.getContentletAPI().destroy(contentlets, user, false);
-        } catch (DotDataException | DotSecurityException e) {
-           Logger.error(this, "Error destroying contents", e);
-        }
-
-/*
-        for (Contentlet contentlet : contentlets) 
-            try {
-                destroy(contentlet, user);
-            } catch (DotDataException | DotSecurityException e) {
-                Logger.error(this, "Error destroying contents", e);
-            }
-        }
- */
-    }
-
-    void destroy(Contentlet contentlet, User user) throws DotDataException, DotSecurityException {
-         destroyRules(contentlet, user);
-         destroyCategories(contentlet, user);
-         destroyRelationships(contentlet, user);
-         destroyMultiTree(contentlet);
-      //  deleteVersions(contentlet);
-      //  deleteBinaries(contentlet);
-      //  deleteElementsFromPublishQueueTable(contentlet);
-      //  destroyMetadata(contentlet);
-    }
-
-    void destroyRules(Contentlet contentlet, User user) throws  DotDataException, DotSecurityException{
-        try {
-            APILocator.getRulesAPI()
-                    .deleteRulesByParent(contentlet, user, false);
-        } catch (InvalidLicenseException  ile) {
-            Logger.warn(this, "An enterprise license is required to delete rules under pages.");
-        }
-    }
-
-    void destroyCategories(Contentlet contentlet, User user)
-            throws DotDataException, DotSecurityException {
-        final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
-        categoryAPI.removeChildren(contentlet, user, false);
-        categoryAPI.removeParents(contentlet, user, false);
-    }
-
-     void destroyRelationships(final Contentlet contentlet, final User user)
-            throws DotSecurityException, DotDataException {
-
-         final ContentletAPI contentletAPI = APILocator.getContentletAPI();
-         final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
-         final List<Relationship> relationships =
-                relationshipAPI.byContentType(contentlet.getStructure());
-        // Remove related contents
-        for (final Relationship relationship : relationships) {
-            final boolean hasParent = relationshipAPI.isParent(relationship, contentlet.getStructure());
-            contentletAPI.deleteRelatedContent(contentlet, relationship, hasParent, user, false);
-        }
-    }
-
-    private void destroyMultiTree(Contentlet contentlet) throws DotDataException {
-        final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
-        final List<MultiTree> multiTrees = multiTreeAPI.getMultiTreesByChild(contentlet.getIdentifier());
-        for (final MultiTree multiTree : multiTrees) {
-            if(contentlet.isHTMLPage()){
-                handlePage(multiTree, contentlet, APILocator.systemUser());
-            }
-            multiTreeAPI.deleteMultiTree(multiTree);
-        }
-    }
-
-    private void handlePage(MultiTree multiTree, Contentlet contentlet, User user)
-            throws DotDataException {
-
-        final HTMLPageAssetAPI htmlPageAssetAPI = APILocator.getHTMLPageAssetAPI();
-        final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
-        final Identifier pageIdentifier = identifierAPI.find(multiTree.getHtmlPage());
-        if (pageIdentifier != null && UtilMethods.isSet(pageIdentifier.getInode())) {
-            try {
-                final IHTMLPage page = htmlPageAssetAPI.fromContentlet(contentlet);
-                if (page != null && UtilMethods.isSet(page.getIdentifier())) {
-                    new PageLoader().invalidate(page);
-                }
-            } catch (DotStateException dcse) {
-                Logger.warn(this.getClass(), "Page with id:" + pageIdentifier.getId() + " does not exist");
-            }
-        }
-    }
-
 
     List<Contentlet> makeContentlets(final String identifier,
-            final List<InodeAndLanguage> inodeAndLanguages, final ContentType type) {
-        return inodeAndLanguages.stream().map(inodeAndLanguage -> {
+            final List<ContentletVersionInfo> contentletVersionInfos, final ContentType type) {
+        return contentletVersionInfos.stream().map(contentletVersionInfo -> {
             final Contentlet contentlet = new Contentlet();
-            contentlet.setInode(inodeAndLanguage.getInode());
+            contentlet.setInode(contentletVersionInfo.getInode());
             contentlet.setIdentifier(identifier);
-            contentlet.setLanguageId(inodeAndLanguage.getLanguageId());
+            contentlet.setLanguageId(contentletVersionInfo.getLanguageId());
+            contentlet.setHost(contentletVersionInfo.getHostInode());
+            contentlet.setFolder(contentletVersionInfo.getFolderInode());
             contentlet.setContentTypeId(type.id());
-            //set host???
             return contentlet;
         }).collect(Collectors.toList());
     }
@@ -368,8 +236,8 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
      * @param maxThreads
      * @return
      */
-    private List<Map<String, List<InodeAndLanguage>>> partitionInput(
-            Map<String, List<InodeAndLanguage>> contents, final int maxThreads) {
+    private List<Map<String, List<ContentletVersionInfo>>> partitionInput(
+            Map<String, List<ContentletVersionInfo>> contents, final int maxThreads) {
 
         final int partitionSize = Math
                 .max((contents.size() / maxThreads), 10);
@@ -388,31 +256,48 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
 
     }
 
-    static class InodeAndLanguage {
-
+    static class ContentletVersionInfo {
         final String inode;
-        final long languageId;
+        final Long languageId;
 
-        private InodeAndLanguage(final String inode, final long languageId) {
+        final String hostInode;
+
+        final String folderInode;
+
+        private ContentletVersionInfo(final String inode, final Long languageId, final String hostInode, final String folderInode) {
             this.inode = inode;
             this.languageId = languageId;
+            this.hostInode = hostInode;
+            this.folderInode = folderInode;
         }
 
-        public static InodeAndLanguage of(final String inode, final long languageId) {
-            return new InodeAndLanguage(inode, languageId);
+        public static ContentletVersionInfo of(final String inode, final long languageId, final String hostId, final String folderId) {
+            return new ContentletVersionInfo(inode, languageId, hostId, folderId);
         }
 
         @Override
         public String toString() {
-            return "InodeAndLanguage [inode=" + inode + ", languageId=" + languageId + "]";
+            return "ContentletVersionInfo{" +
+                    "inode='" + inode + '\'' +
+                    ", languageId=" + languageId +
+                    ", hostInode='" + hostInode + '\'' +
+                    ", folderInode='" + folderInode + '\'' +
+                    '}';
         }
 
         public String getInode() {
             return inode;
         }
 
-        public long getLanguageId() {
+        public Long getLanguageId() {
             return languageId;
+        }
+
+        public String getHostInode() {
+            return hostInode;
+        }
+        public String getFolderInode() {
+            return null == folderInode ? Host.SYSTEM_HOST : folderInode;
         }
 
     }

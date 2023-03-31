@@ -13,6 +13,7 @@ import com.dotcms.content.elasticsearch.business.ESIndexAPITest;
 import com.dotcms.content.elasticsearch.business.ElasticsearchUtilTest;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
 import com.dotcms.content.model.hydration.MetadataDelegateTest;
+import com.dotcms.contenttype.business.ContentTypeDestroyAPIImplTest;
 import com.dotcms.contenttype.business.ContentTypeInitializerTest;
 import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
 import com.dotcms.contenttype.business.SiteAndFolderResolverImplTest;
@@ -638,7 +639,8 @@ import org.junit.runners.Suite.SuiteClasses;
         HashedLocalFileRepositoryManagerTest.class,
         ManifestUtilTest.class,
         ZipUtilTest.class,
-        Task230110MakeSomeSystemFieldsRemovableByBaseTypeTest.class
+        Task230110MakeSomeSystemFieldsRemovableByBaseTypeTest.class,
+        ContentTypeDestroyAPIImplTest.class
 })
 
 public class MainSuite {

@@ -1,27 +1,27 @@
-package com.dotcms.contenttype.business;
+package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.contenttype.model.type.ContentType;
 
 /**
  * This class is used to store the content type that is being deleted in a thread local variable.
  */
-public class ContentTypeDestroyThreadLocal {
+public class ContentletDestroyThreadLocal {
 
-    private static final ThreadLocal<ContentType> threadLocal = new ThreadLocal<>();
+    private static final ThreadLocal<Boolean> threadLocal = new ThreadLocal<>();
 
     /**
      * This method is used to set the content type that is being deleted in a thread local variable.
      * @param type
      */
-    public void set(final ContentType type) {
-        threadLocal.set(type);
+    public void set(final Boolean flag) {
+        threadLocal.set(flag);
     }
 
     /**
      * This method is used to get the content type that is being deleted in a thread local variable.
      * @return
      */
-    public ContentType get() {
+    public Boolean get() {
         return threadLocal.get();
     }
 
@@ -38,9 +38,9 @@ public class ContentTypeDestroyThreadLocal {
      */
     public enum INSTANCE {
         INSTANCE;
-        private final ContentTypeDestroyThreadLocal helper = new ContentTypeDestroyThreadLocal();
+        private final ContentletDestroyThreadLocal helper = new ContentletDestroyThreadLocal();
 
-        public static ContentTypeDestroyThreadLocal get() {
+        public static ContentletDestroyThreadLocal get() {
             return INSTANCE.helper;
         }
 
