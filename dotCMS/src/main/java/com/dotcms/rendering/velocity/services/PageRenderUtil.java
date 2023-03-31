@@ -109,7 +109,9 @@ public class PageRenderUtil implements Serializable {
     final Host site;
     final TemplateLayout templateLayout;
 
-    private static final Lazy<Boolean> ADD_RELATIONSHIPS_ON_PAGE = Lazy.of(()->Config.getBooleanProperty("ADD_RELATIONSHIPS_ON_PAGE", false));
+
+    // it is true, even if the pattern is false because the client has to include the depth parameter to activate it
+    private static final Lazy<Boolean> ADD_RELATIONSHIPS_ON_PAGE = Lazy.of(()->Config.getBooleanProperty("ADD_RELATIONSHIPS_ON_PAGE", true));
 
     /**
      * Creates an instance of this class for a given HTML Page.
