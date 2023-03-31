@@ -53,6 +53,36 @@ export class DotWorkflowsActionsService {
             .pipe(pluck('entity'));
     }
 
+    /**
+     * Returns the workflow actions of the passed url, hostId and language
+     *
+     * @param {string} host_id
+     * @param {string} language_id
+     * @param {string} url
+     * @param {DotRenderMode} [renderMode]
+     * @returns {Observable<DotCMSWorkflowAction[]>}
+     * @memberof DotWorkflowsActionsService
+     */
+    getByUrl(
+        host_id: string,
+        language_id: string,
+        url: string,
+        renderMode?: DotRenderMode
+    ): Observable<DotCMSWorkflowAction[]> {
+        return this.coreWebService
+            .requestView({
+                method: 'POST',
+                url: `v1/page/actions`,
+                body: {
+                    host_id,
+                    language_id,
+                    url,
+                    renderMode
+                }
+            })
+            .pipe(pluck('entity'));
+    }
+
     private getWorkFlowId(workflow: DotCMSWorkflow): string {
         return workflow && workflow.id;
     }

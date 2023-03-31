@@ -392,17 +392,17 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         (params$: Observable<{ item: DotCMSContentlet; actionMenuDomId: string }>) => {
             return params$.pipe(
                 switchMap(({ item, actionMenuDomId }) => {
-                    return this.dotWorkflowsActionsService
-                        .getByInode(item.inode, DotRenderMode.LISTING)
-                        .pipe(
-                            take(1),
-                            map((actions: DotCMSWorkflowAction[]) => {
-                                return {
-                                    actions: this.getSelectActions(actions, item),
-                                    actionMenuDomId
-                                };
-                            })
-                        );
+                    // console.log('****item', item);
+
+                    return this.getWorflowActionsFn(item).pipe(
+                        take(1),
+                        map((actions: DotCMSWorkflowAction[]) => {
+                            return {
+                                actions: this.getSelectActions(actions, item),
+                                actionMenuDomId
+                            };
+                        })
+                    );
                 }),
                 tap(
                     ({
@@ -468,6 +468,25 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
 
         return `+conhost:${hostId} +deleted:false  +(urlmap:* OR basetype:5) ${langQuery} ${archivedQuery} ${keywordQuery} ${identifierQuery}`;
     }
+
+    private getWorflowActionsFn = (item: DotCMSContentlet): Observable<DotCMSWorkflowAction[]> => {
+        if (item?.contentType === 'dotFavoritePage') {
+            const urlParams: { [key: string]: string } = { url: item.url.split('?')[0] };
+            const searchParams = new URLSearchParams(item.url.split('?')[1]);
+
+            for (const entry of searchParams) {
+                urlParams[entry[0]] = entry[1];
+            }
+
+            const { host_id, language_id, url } = urlParams;
+
+            return this.dotWorkflowsActionsService.getByUrl(host_id, language_id, url);
+        } else {
+            return this.dotWorkflowsActionsService.getByInode(item.inode, DotRenderMode.LISTING);
+        }
+
+        return;
+    };
 
     private getPagesDataFn(
         isFavoritePage: boolean,
