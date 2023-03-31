@@ -363,8 +363,8 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             }),
             Placeholder.configure({ placeholder: this.placeholder }),
             Youtube.configure({
-                height: 400,
-                width: 500,
+                height: 300,
+                width: 400,
                 interfaceLanguage: 'us',
                 nocookie: true,
                 modestBranding: true
