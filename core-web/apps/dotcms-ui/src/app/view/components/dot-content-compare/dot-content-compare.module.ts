@@ -11,6 +11,7 @@ import { DotContentCompareTableComponent } from '@components/dot-content-compare
 import { DotContentComparePreviewFieldComponent } from '@components/dot-content-compare/components/fields/dot-content-compare-preview-field/dot-content-compare-preview-field.component';
 import { DotContentCompareComponent } from '@components/dot-content-compare/dot-content-compare.component';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
+import { BlockEditorModule } from '@dotcms/block-editor';
 import { DotContentletService, DotVersionableService } from '@dotcms/data-access';
 import { DotDiffPipeModule } from '@pipes/dot-diff/dot-diff.pipe.module';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
@@ -36,7 +37,8 @@ import { DotTransformVersionLabelPipe } from './pipes/dot-transform-version-labe
         FormsModule,
         DotMessagePipeModule,
         DotDiffPipeModule,
-        ButtonModule
+        ButtonModule,
+        BlockEditorModule
     ],
     providers: [DotContentletService, DotVersionableService]
 })

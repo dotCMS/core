@@ -1,9 +1,7 @@
 <p-table *ngIf="data" [value]="data.fields" styleClass="p-datatable-gridlines">
     <ng-template pTemplate="header">
         <tr>
-            <th>
-          
-            </th>
+            <th></th>
             <th>
                 <span class="dot-content-compare-table__title" data-testId="table-tittle">
                     {{ data.working?.title }}
@@ -114,7 +112,6 @@
                 </td>
             </ng-container>
 
-           
             <ng-container *ngSwitchCase="'JSON-Field'">
                 <td
                     [innerHTML]="data.working[field.variable] | json"
@@ -131,11 +128,9 @@
             </ng-container>
             <!--It needs to be update it with the proper fieldType -->
             <!-- <ng-container *ngSwitchCase="'BlockEditor'"> -->
+            <!--    -->
             <ng-container *ngSwitchDefault>
-                <td
-                    [innerHTML]="testHTMLtoWorking"
-                    data-testId="table-field-working"
-                ></td>
+                <td [innerHTML]="testHTMLtoWorking" data-testId="table-field-working"></td>
                 <td
                     [innerHTML]="testHTMLtoWorking | dotDiff : testHTMLtoCompare : showDiff"
                     data-testId="table-field-compare"
@@ -144,3 +139,4 @@
         </tr>
     </ng-template>
 </p-table>
+<dot-block-editor id="blockEditor" #blockEditor> </dot-block-editor>

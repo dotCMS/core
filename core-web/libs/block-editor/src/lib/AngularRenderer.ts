@@ -1,6 +1,5 @@
 import {
     ApplicationRef,
-    ComponentFactoryResolver,
     ComponentRef,
     createComponent,
     ElementRef,
@@ -14,16 +13,16 @@ export class AngularRenderer<C, P> {
 
     constructor(ViewComponent: Type<C>, injector: Injector, props: Partial<P>) {
         this.applicationRef = injector.get(ApplicationRef);
-    
+
         this.componentRef = createComponent(ViewComponent, {
-          environmentInjector: this.applicationRef.injector,
+            environmentInjector: this.applicationRef.injector
         });
-    
+
         // set input props to the component
         this.updateProps(props);
-    
+
         this.applicationRef.attachView(this.componentRef.hostView);
-      }
+    }
 
     get instance(): C {
         return this.componentRef.instance;
