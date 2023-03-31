@@ -10,6 +10,7 @@ import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.Debouncer;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.exception.DotDataException;
@@ -710,7 +711,12 @@ public class VersionableAPIImpl implements VersionableAPI {
         return versionableFactory.findAllContentletVersionInfos(identifier, variantName);
     }
 	
-	
+	@Override
+    @CloseDBIfOpened
+    public List<ContentletVersionInfo> findAllByVariant(final Variant variant) throws DotDataException{
+        return versionableFactory.findAllByVariant(variant);
+    }
+
 	@WrapInTransaction
 	@Override
 	public void saveVersionInfo(final VersionInfo vInfo) throws DotDataException, DotStateException {

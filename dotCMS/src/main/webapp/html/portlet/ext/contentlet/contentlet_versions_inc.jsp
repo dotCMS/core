@@ -16,13 +16,18 @@
 
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="com.dotmarketing.business.Permissionable"%>
+<%@ page import="com.dotcms.rendering.velocity.viewtools.WebAPI" %>
+<%@ page import="com.dotmarketing.business.web.WebAPILocator" %>
+<%@ page import="com.dotcms.variant.model.Variant" %>
+<%@ page import="com.dotcms.variant.VariantAPI" %>
 
 <%
 
 	String id=request.getParameter("contentletId");
 	Identifier ident = APILocator.getIdentifierAPI().find(id);
 	boolean isImage = UtilMethods.isImage(ident.getAssetName());
-	List<Contentlet> versions = APILocator.getContentletAPI().findAllVersions(ident, user, false);
+
+	List<Contentlet> versions = APILocator.getContentletAPI().findAllVersions(ident, VariantAPI.DEFAULT_VARIANT, user, false);
 	boolean canEdit  = false;
 
 	if(versions.size() > 0){
