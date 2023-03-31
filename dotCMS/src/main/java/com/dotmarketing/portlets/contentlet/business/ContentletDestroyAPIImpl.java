@@ -156,6 +156,7 @@ public class ContentletDestroyAPIImpl implements ContentletDestroyDelegate {
                     .map(Path::toFile)
                     // .peek(System.out::println)
                     .forEach(File::delete);
+            Files.deleteIfExists(rootPath);
         } catch (IOException e) {
             Logger.warn(this,
                     String.format("Unable to delete binaries under [%s] ", rootPath.toString()), e);

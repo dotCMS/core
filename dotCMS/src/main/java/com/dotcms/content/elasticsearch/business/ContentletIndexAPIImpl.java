@@ -780,13 +780,6 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
         for (final Contentlet contentlet : contentToIndexSet) {
 
-            /*
-            TODO: This is temporaily commented out while we figure out if this is the source of an issue running our  intergration tests
-            if(contentlet.getContentType().markedForDeletion()){
-              Logger.debug(this, "Contentlet " + contentlet.getIdentifier() + " is marked for deletion. Skipping.");
-              continue;
-            }*/
-
             final String id = contentlet.getIdentifier() + "_" + contentlet.getLanguageId()
                     + "_" + contentlet.getVariantId();
             Logger.debug(this,
