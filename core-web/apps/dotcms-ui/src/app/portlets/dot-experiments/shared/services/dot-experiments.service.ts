@@ -179,10 +179,7 @@ export class DotExperimentsService {
      */
     promoteVariant(variantName: string): Observable<DotExperiment> {
         return this.http
-            .post<DotCMSResponse<DotExperiment>>(
-                `${API_ENDPOINT}/variants/${variantName}/_promote`,
-                {}
-            )
+            .put<DotCMSResponse<DotExperiment>>(`/api/v1/variants/${variantName}/_promote`, {})
             .pipe(pluck('entity'));
     }
 

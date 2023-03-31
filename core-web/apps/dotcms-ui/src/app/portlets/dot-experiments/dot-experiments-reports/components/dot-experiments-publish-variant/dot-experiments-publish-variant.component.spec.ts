@@ -68,9 +68,7 @@ describe('DotExperimentsPublishVariantComponent', () => {
         spectator.click(spectator.query('input[type="radio"]'));
         spectator.click(spectator.query(byTestId('dotDialogAcceptAction')));
 
-        expect(spectator.component.publish.emit).toHaveBeenCalledWith(
-            VARIANT_RESULT_MOCK[1].variantName
-        );
+        expect(spectator.component.publish.emit).toHaveBeenCalledWith(VARIANT_RESULT_MOCK[1].id);
     });
 
     it('should close the dialog', () => {

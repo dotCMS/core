@@ -41,7 +41,7 @@ export class DotExperimentsPublishVariantComponent implements OnInit {
     data: DotResultSimpleVariant[];
     selectedVariant;
     dialogActions: DotDialogActions;
-    DEFAULT_VARIANT = DEFAULT_VARIANT_ID;
+    DEFAULT_VARIANT_ID = DEFAULT_VARIANT_ID;
 
     @ViewChild('dialog', { static: true }) dialog: DotDialogComponent;
 

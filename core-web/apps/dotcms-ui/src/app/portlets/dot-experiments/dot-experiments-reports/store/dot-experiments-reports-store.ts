@@ -75,15 +75,16 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
                     results: this.dotExperimentsService.getResults(experimentId)
                 }).pipe(
                     tapResponse(
-                        (data: { experiment: DotExperiment; results: DotExperimentResults }) => {
+                        ({ experiment, results }) => {
                             this.patchState({
-                                experiment: data.experiment,
-                                results: data.results,
+                                experiment: experiment,
+                                results: results,
                                 variantResults: this.reduceVariantsData(
-                                    data.results.goals.primary.variants
+                                    results.goals.primary.variants,
+                                    experiment
                                 )
                             });
-                            this.updateTabTitle(data.experiment);
+                            this.updateTabTitle(experiment);
                         },
                         (error: HttpErrorResponse) => this.dotHttpErrorManagerService.handle(error),
                         () => this.setComponentStatus(ComponentStatus.IDLE)
@@ -100,7 +101,8 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
                 this.dotExperimentsService.promoteVariant(variant).pipe(
                     tapResponse(
                         (_experiment) => {
-                            //TODO: Update the experiment in the store
+                            //TODO: Update the experiment & other props in the store
+                            // currently the enpoint is not returning the experiment
                         },
                         (error: HttpErrorResponse) => this.dotHttpErrorManagerService.handle(error),
                         () => this.setComponentStatus(ComponentStatus.IDLE)
@@ -148,10 +150,13 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
      * @memberof DotExperimentsReportsStore
      */
     private reduceVariantsData(
-        variants: Record<string, DotResultVariant>
+        variants: Record<string, DotResultVariant>,
+        experiment: DotExperiment
     ): DotResultSimpleVariant[] {
         return Object.values(variants).map(({ variantName, uniqueBySession }) => ({
-            variantName,
+            id: variantName,
+            name: experiment.trafficProportion.variants.find((variant) => variant.id == variantName)
+                .name,
             uniqueBySession
         }));
     }

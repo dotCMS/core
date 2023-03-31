@@ -41,7 +41,8 @@ export interface DotResultVariant {
 }
 
 export interface DotResultSimpleVariant {
-    variantName: string;
+    id: string;
+    name: string;
     uniqueBySession: DotResultUniqueBySession;
 }
 

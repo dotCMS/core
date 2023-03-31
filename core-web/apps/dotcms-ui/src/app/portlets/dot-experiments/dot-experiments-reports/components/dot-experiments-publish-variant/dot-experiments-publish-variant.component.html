@@ -15,12 +15,12 @@
             <tr>
                 <td>
                     <p-tableRadioButton
-                        *ngIf="variant.variantName !== DEFAULT_VARIANT"
-                        [value]="variant.variantName"
+                        *ngIf="variant.id !== DEFAULT_VARIANT_ID"
+                        [value]="variant.id"
                         (click)="enableButton()"
                     ></p-tableRadioButton>
                 </td>
-                <td>{{ variant.variantName }}</td>
+                <td>{{ variant.name }}</td>
                 <td style="min-width: 50px">{{ variant.uniqueBySession.variantPercentage }}</td>
                 <td style="min-width: 150px">
                     <p-tag

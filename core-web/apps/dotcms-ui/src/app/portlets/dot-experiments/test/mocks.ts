@@ -153,11 +153,13 @@ const ExperimentResultsMocks: Array<DotExperimentResults> = [
 
 export const VARIANT_RESULT_MOCK: DotResultSimpleVariant[] = [
     {
-        variantName: 'DEFAULT',
+        id: 'DEFAULT',
+        name: 'Original',
         uniqueBySession: { count: 2, totalPercentage: 100, variantPercentage: 100 }
     },
     {
-        variantName: 'dotexperiment-c92a20073d-variant-1',
+        id: 'dotexperiment-c92a20073d-variant-1',
+        name: 'Test Variant 1',
         uniqueBySession: { count: 0, totalPercentage: 0, variantPercentage: 0 }
     }
 ];

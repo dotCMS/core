@@ -84,7 +84,7 @@ describe('DotExperimentsService', () => {
 
     it('should promote a variant', () => {
         spectator.service.promoteVariant('variantName').subscribe();
-        spectator.expectOne(`${API_ENDPOINT}/variants/variantName/_promote`, HttpMethod.POST);
+        spectator.expectOne(`/api/v1/variants/variantName/_promote`, HttpMethod.PUT);
     });
 
     it('should delete a variant with experimentId', () => {
