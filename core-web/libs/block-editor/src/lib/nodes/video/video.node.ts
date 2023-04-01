@@ -5,7 +5,7 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
         videoBlock: {
-            setVideo: (attrs: DotCMSContentlet | string) => ReturnType;
+            insertVideo: (attrs: DotCMSContentlet | string, position?: number) => ReturnType;
         };
     }
 }
@@ -79,10 +79,13 @@ export const VideoNode = Node.create({
     addCommands() {
         return {
             ...this.parent?.(),
-            setVideo:
-                (attrs) =>
-                ({ commands }) => {
-                    return commands.insertContent({
+            insertVideo:
+                (attrs, position) =>
+                ({ commands, state }) => {
+                    const { selection } = state;
+                    const { head } = selection;
+
+                    return commands.insertContentAt(position ?? head, {
                         type: this.name,
                         attrs: getVideoAttrs(attrs)
                     });

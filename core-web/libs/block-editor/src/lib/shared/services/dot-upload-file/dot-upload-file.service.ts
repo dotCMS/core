@@ -24,12 +24,11 @@ interface PublishContentProps {
 
 /**
  *
- * TODO: Rename service as: "DotUploadFileService"
  * @export
  * @class DotImageService
  */
 @Injectable()
-export class DotImageService {
+export class DotUploadFileService {
     constructor(private http: HttpClient, private dotUploadService: DotUploadService) {}
 
     publishContent({

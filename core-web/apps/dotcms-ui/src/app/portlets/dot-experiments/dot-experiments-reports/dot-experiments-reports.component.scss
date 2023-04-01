@@ -33,6 +33,18 @@
     }
 }
 
+.pi-arrow-circle-down {
+    color: $color-alert-red;
+}
+
+.pi-arrow-circle-up {
+    color: $color-alert-green;
+}
+
+.prospect-winner {
+    font-weight: $font-weight-bold;
+}
+
 @media only screen and (max-width: $screen-lg-max) {
     .content {
         width: calc(100% - 2rem);
