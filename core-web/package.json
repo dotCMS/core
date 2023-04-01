@@ -85,6 +85,7 @@
     "@tiptap/extension-table-row": "^2.0.0-beta.218",
     "@tiptap/extension-text-align": "^2.0.0-beta.218",
     "@tiptap/extension-underline": "^2.0.0-beta.218",
+    "@tiptap/extension-youtube": "^2.0.0-beta.220",
     "@tiptap/starter-kit": "^2.0.0-beta.218",
     "@tiptap/suggestion": "^2.0.0-beta.218",
     "@webcomponents/webcomponentsjs": "^2.6.0",

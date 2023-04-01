@@ -23,6 +23,7 @@ import Placeholder from '@tiptap/extension-placeholder';
 import { TableRow } from '@tiptap/extension-table-row';
 import { TextAlign } from '@tiptap/extension-text-align';
 import { Underline } from '@tiptap/extension-underline';
+import { Youtube } from '@tiptap/extension-youtube';
 import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
 
 import {
@@ -359,6 +360,13 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             }),
             DotComands,
             Placeholder.configure({ placeholder: this.placeholder }),
+            Youtube.configure({
+                height: 300,
+                width: 400,
+                interfaceLanguage: 'us',
+                nocookie: true,
+                modestBranding: true
+            }),
             ActionsMenu(this.viewContainerRef, this.getParsedCustomBlocks()),
             DragHandler(this.viewContainerRef),
             BubbleLinkFormExtension(this.viewContainerRef),

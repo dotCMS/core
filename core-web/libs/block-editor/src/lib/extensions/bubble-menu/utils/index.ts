@@ -3,11 +3,12 @@ import { isTextSelection } from '@tiptap/core';
 import { ImageNode } from '../../../nodes';
 import { findParentNode } from '../../../shared';
 import { LINK_FORM_PLUGIN_KEY } from '../../bubble-link-form/bubble-link-form.extension';
-import { BubbleMenuItem, ShouldShowProps } from '../models';
+import { BubbleMenuItem, HideBubbleMenuExtensions, ShouldShowProps } from '../models';
 
-const hideBubbleMenuOn = {
+const hideBubbleMenuOn: HideBubbleMenuExtensions = {
     tableCell: true,
     table: true,
+    youtube: true,
     dotVideo: true
 };
 

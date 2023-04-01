@@ -167,7 +167,11 @@ export const BubbleAssetFormExtension = (viewContainerRef: ViewContainerRef) => 
                     ({ chain }) => {
                         switch (type) {
                             case 'video':
-                                return chain().insertVideo(payload, position).run();
+                                return (
+                                    // This method returns true if it was able to set the youtube video
+                                    chain().setYoutubeVideo({ src: payload }).run() ||
+                                    chain().insertVideo(payload, position).run()
+                                );
 
                             case 'image':
                                 return chain().insertImage(payload, position).run();
