@@ -37,6 +37,16 @@ export class DotPageStateService {
 
     private isInternalNavigation = false;
 
+    get pagePersonalization() {
+        const persona = this.currentState?.viewAs?.persona;
+
+        if (!persona) {
+            return `dot:default`;
+        }
+
+        return `dot:${persona.contentType}:${persona.keyTag}`;
+    }
+
     constructor(
         private dotContentletLockerService: DotContentletLockerService,
         private dotESContentService: DotESContentService,
