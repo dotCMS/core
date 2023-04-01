@@ -1,5 +1,6 @@
 package com.dotmarketing.business;
 
+import com.dotcms.variant.model.Variant;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -436,4 +437,13 @@ public interface VersionableAPI {
 	List<ContentletVersionInfo> findContentletVersionInfos(String identifier, String variantName)
 			throws DotDataException, DotStateException;
 
+	/**
+	 * Will return a list of all {@link ContentletVersionInfo} for a given {@link com.dotcms.variant.model.Variant},
+	 * if there are multiple languages it is going to return all the languages versions.
+	 *
+	 * @param variant
+	 * @return
+	 * @throws DotDataException
+	 */
+	List<ContentletVersionInfo> findAllByVariant(final Variant variant) throws DotDataException;
 }
