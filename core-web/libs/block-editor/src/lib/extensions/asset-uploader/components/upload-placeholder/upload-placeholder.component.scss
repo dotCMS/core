@@ -1,0 +1,27 @@
+@use "variables" as *;
+
+.placeholder-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: 100%;
+    padding: 0;
+}
+
+.video {
+    width: 50%;
+}
+
+.preview-container {
+    display: flex;
+    justify-content: space-between;
+    width: 50%;
+    padding: 1rem 0;
+}
+
+.default-message {
+    background-color: $color-palette-gray-200;
+    display: block;
+    padding: $dot-editor-size;
+    font-size: $font-size-lg;
+}

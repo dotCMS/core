@@ -1,9 +1,12 @@
 @use "variables" as *;
 
-@import "apps/dotcms-block-editor/src/fonts";
+@import "libs/block-editor/src/fonts";
 
-@import url("https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400&display=swap");
-@import url("https://fonts.googleapis.com/icon?family=Material+Icons");
+:host ::ng-deep {
+    @import "libs/dotcms-scss/angular/styles";
+    @import "node_modules/primeng/resources/primeng.min";
+    @import "node_modules/primeicons/primeicons";
+}
 
 :host {
     position: relative;
@@ -262,14 +265,18 @@
             width: auto;
         }
 
-        .horizontal-video,
-        .node-image {
+        .horizontal-video {
             height: auto;
             max-width: 50%;
         }
 
         .node-container {
             margin-bottom: $spacing-3;
+
+            img {
+                height: auto;
+                max-width: 50%;
+            }
         }
     }
 
