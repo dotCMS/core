@@ -44,9 +44,10 @@ import {
     DragHandler,
     DotFloatingButton,
     BubbleAssetFormExtension,
-    ImageUpload,
     FreezeScroll,
     FREEZE_SCROLL_KEY,
+    AssetUploader,
+    DotComands,
     NodeTypes
 } from '../../extensions';
 import { ContentletBlock, ImageNode, VideoNode } from '../../nodes';
@@ -356,10 +357,10 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
                 allowedContentTypes: this.allowedContentTypes,
                 allowedBlocks: this._allowedBlocks
             }),
+            DotComands,
             Placeholder.configure({ placeholder: this.placeholder }),
             ActionsMenu(this.viewContainerRef, this.getParsedCustomBlocks()),
             DragHandler(this.viewContainerRef),
-            ImageUpload(this.injector, this.viewContainerRef),
             BubbleLinkFormExtension(this.viewContainerRef),
             DotBubbleMenuExtension(this.viewContainerRef),
             BubbleFormExtension(this.viewContainerRef),
@@ -369,7 +370,8 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             DotTableHeaderExtension(),
             TableRow,
             FreezeScroll,
-            CharacterCount
+            CharacterCount,
+            AssetUploader(this.injector, this.viewContainerRef)
         ];
     }
 
