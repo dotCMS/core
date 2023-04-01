@@ -80,6 +80,6 @@ export declare type DotBubbleMenuViewProps = BubbleMenuViewProps & {
 export interface HideBubbleMenuExtensions {
     tableCell: boolean;
     table: boolean;
-    video: boolean;
+    dotVideo: boolean;
     youtube: boolean;
 }

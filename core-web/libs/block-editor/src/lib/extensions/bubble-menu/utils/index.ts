@@ -8,7 +8,7 @@ import { BubbleMenuItem, HideBubbleMenuExtensions, ShouldShowProps } from '../mo
 const hideBubbleMenuOn: HideBubbleMenuExtensions = {
     tableCell: true,
     table: true,
-    youtube: true
+    youtube: true,
     dotVideo: true
 };
 
