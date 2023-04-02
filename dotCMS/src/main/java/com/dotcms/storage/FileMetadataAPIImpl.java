@@ -564,6 +564,27 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
         return removedMetaPaths;
     }
 
+    public Map<String, Set<String>> removeMetadata(Set<String> paths) {
+        final Map<String,Set<String>> removedMetaPaths = new HashMap<>();
+        final StorageType storageType = StoragePersistenceProvider.getStorageType();
+        final String metadataBucketName = Config
+                .getStringProperty(METADATA_GROUP_NAME, DOT_METADATA);
+        try {
+            for (final String path : paths) {
+                if (fileStorageAPI.removeMetaData(
+                        new FetchMetadataParams.Builder()
+                                .storageKey(new StorageKey.Builder().group(metadataBucketName)
+                                        .path(path).storage(storageType).build()).build()
+                )) {
+                    removedMetaPaths.computeIfAbsent(metadataBucketName, k -> new HashSet<>()).add(path);
+                }
+            }
+        } catch (DotDataException e) {
+            Logger.error(FileMetadataAPIImpl.class, e);
+        }
+        return removedMetaPaths;
+    }
+
     /**
      * Given a contentlet this will iterate over all the binary fields it has and remove the associated metadata per the current version (inode)
      * Meaning all other versions of the conentlet will get to keep their own metadata

@@ -22,12 +22,10 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.business.ContentletDestroyThreadLocal;
 import com.dotmarketing.portlets.contentlet.business.ContentletDestroyDelegate;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-
 import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;

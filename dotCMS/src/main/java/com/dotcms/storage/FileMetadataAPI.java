@@ -156,6 +156,12 @@ public interface FileMetadataAPI {
     Map<String, Set<String>> removeMetadata(Contentlet contentlet);
 
     /**
+     * Removes All metadata for a given Contentlet
+     * @param paths
+     * @return @{@link Map} with the info of the entries removed
+     */
+    Map<String, Set<String>> removeMetadata(Set<String> paths);
+    /**
      * Removes metadata for a given Contentlet inode. Meaning all other versions of the contentlet will get to keep their md.
      * @param contentlet
      * @return @{@link Map} with the info of the entries removed
