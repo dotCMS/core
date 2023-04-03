@@ -80,7 +80,6 @@ export const mockAuth: Auth = {
 
 export class LoginServiceMock {
     _auth: Subject<Auth> = new Subject();
-    private watchUserFunc: (params: unknown) => void;
 
     constructor() {
         this._auth.next(mockAuth);
@@ -91,7 +90,7 @@ export class LoginServiceMock {
     }
 
     get auth$(): Observable<Auth> {
-        return this._auth;
+        return this._auth.asObservable();
     }
 
     setAuth(): void {
@@ -119,11 +118,7 @@ export class LoginServiceMock {
     }
 
     watchUser(func: (params: unknown) => void): void {
-        this.watchUserFunc = func;
-    }
-
-    tiggerWatchUser(): void {
-        this.watchUserFunc(mockAuth);
+        func(mockAuth);
     }
 
     triggerNewAuth(auth: Auth) {
