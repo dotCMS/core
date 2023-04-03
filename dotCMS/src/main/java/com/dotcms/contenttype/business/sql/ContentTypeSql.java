@@ -106,6 +106,6 @@ public abstract class ContentTypeSql {
 
 	public static String ORDER_BY = " ORDER BY %s";
 
-	public static final String MARK_FOR_DELETION = "update structure set marked_for_deletion = true where inode = ?";
+	public static final String MARK_FOR_DELETION = "update structure set marked_for_deletion = "+DbConnectionFactory.getDBTrue()+" where inode = ?";
 
 }

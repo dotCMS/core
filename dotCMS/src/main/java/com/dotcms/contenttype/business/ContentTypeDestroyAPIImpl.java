@@ -9,18 +9,23 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.event.ContentTypeDeletedEvent;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.exception.BaseRuntimeInternationalizationException;
+import com.dotcms.notifications.bean.NotificationLevel;
+import com.dotcms.notifications.bean.NotificationType;
+import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.util.ContentTypeUtil;
+import com.dotcms.util.I18NMessage;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletDestroyDelegate;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -62,11 +67,18 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
         final String selectContentlets = "select c.inode from contentlet c where c.structure_inode =  ? \n";
         dotConnect.setSQL(selectContentlets).addParam(source.inode());
 
-        final String updateContentlet = String.format(
+        String updateContentlet = String.format(
                 "update contentlet c set structure_inode = ?, \n" +
                         " contentlet_as_json = jsonb_set(contentlet_as_json,'{contentType}', '\"%s\"'::jsonb, false)  \n" +
                         " where c.structure_inode =  ? ", target.inode()
         );
+
+        if(DbConnectionFactory.isMsSql()){
+            updateContentlet =  String.format(
+                    "update contentlet set structure_inode = ?, \n" +
+                            " contentlet_as_json = json_modify(contentlet_as_json,'$.contentType', '%s')  \n" +
+                            " where structure_inode =  ? ", target.inode());
+        }
 
         dotConnect.setSQL(updateContentlet).addParam(target.inode()).addParam(source.inode())
                 .loadResult();
@@ -82,7 +94,7 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
     Map<String, List<ContentletVersionInfo>> nextBatch(final ContentType type, int limit, int offset)
             throws DotDataException {
 
-        final String selectContentlets = " select c.inode,  c.identifier , c.language_id, i.host_inode, \n"
+        String selectContentlets = " select c.inode,  c.identifier , c.language_id, i.host_inode, \n"
                 + " (  \n"
                 + "  select coalesce(f.inode,'SYSTEM_HOST') as folder_inode from folder f, identifier id where f.identifier = id.id and id.asset_type = 'folder' and id.full_path_lc || '/' = i.parent_path  \n"
                 + ") \n"
@@ -90,6 +102,17 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
                 + "  join structure s on c.structure_inode  = s.inode  \n"
                 + "  join identifier i on c.identifier = i.id \n"
                 + "  where s.velocity_var_name = ? order by c.identifier \n";
+
+        if(DbConnectionFactory.isMsSql()){
+            selectContentlets = " select c.inode,  c.identifier , c.language_id, i.host_inode, \n"
+                    + " (  \n"
+                    + "  select coalesce(f.inode,'SYSTEM_HOST') as folder_inode from folder f, identifier id where f.identifier = id.id and id.asset_type = 'folder' and concat(id.full_path_lc , '/') = i.parent_path  \n"
+                    + ") \n"
+                    + "  from contentlet c \n"
+                    + "  join structure s on c.structure_inode  = s.inode  \n"
+                    + "  join identifier i on c.identifier = i.id \n"
+                    + "  where s.velocity_var_name = ? order by c.identifier \n";
+        }
 
         final List<Map<String, Object>> list = new DotConnect().setSQL(selectContentlets)
                 .addParam(type.variable()).setMaxRows(limit).setStartRow(offset)
@@ -99,7 +122,7 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
                 Collectors.groupingBy(row -> (String) row.get("identifier"), Collectors.mapping(
                         row -> ContentletVersionInfo.of(
                                 (String) row.get("inode"),
-                                (Long) row.get("language_id"),
+                                (Number) row.get("language_id"),
                                 (String) row.get("host_inode"),
                                 (String) row.get("folder_inode")
                         ), Collectors.toList())));
@@ -164,8 +187,7 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
             final ContentTypeFactory contentTypeFactory = FactoryLocator.getContentTypeFactory();
             contentTypeFactory.delete(type);
             CacheLocator.getContentTypeCache2().remove(type);
-
-            fireDeleteEvent(type, APILocator.systemUser());
+            HibernateUtil.addCommitListener(()-> broadcastEvents(type, APILocator.systemUser()));
 
         } catch (DotDataException e) {
             Logger.error(getClass(),
@@ -177,12 +199,11 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
     }
 
     /**
-     *
+     * Broadcasts the events to the system events API and the local system events API.
      * @param type
      * @param user
-     * @throws DotHibernateException
      */
-    void fireDeleteEvent(ContentType type, User user) throws DotHibernateException {
+    void broadcastEvents(final ContentType type, final User user)  {
         try {
             final String actionUrl = ContentTypeUtil.getInstance().getActionUrl(type, user);
             ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = new ContentTypePayloadDataWrapper(actionUrl, type);
@@ -194,7 +215,8 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
             throw new BaseRuntimeInternationalizationException(e);
         }
         final LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
-        HibernateUtil.addCommitListener(() -> localSystemEventsAPI.notify(new ContentTypeDeletedEvent(type.variable())));
+        localSystemEventsAPI.notify(new ContentTypeDeletedEvent(type.variable()));
+        notifyContentTypeDestroyed(type);
     }
 
     Lazy<ContentletDestroyDelegate> delegate = Lazy.of(ContentletDestroyDelegate::newInstance);
@@ -217,7 +239,7 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
             final Contentlet contentlet = new Contentlet();
             contentlet.setInode(contentletVersionInfo.getInode());
             contentlet.setIdentifier(identifier);
-            contentlet.setLanguageId(contentletVersionInfo.getLanguageId());
+            contentlet.setLanguageId(contentletVersionInfo.getLanguageId().longValue());
             contentlet.setHost(contentletVersionInfo.getHostInode());
             contentlet.setFolder(contentletVersionInfo.getFolderInode());
             contentlet.setContentTypeId(type.id());
@@ -256,20 +278,20 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
 
     static class ContentletVersionInfo {
         final String inode;
-        final Long languageId;
+        final Number languageId;
 
         final String hostInode;
 
         final String folderInode;
 
-        private ContentletVersionInfo(final String inode, final Long languageId, final String hostInode, final String folderInode) {
+        private ContentletVersionInfo(final String inode, final Number languageId, final String hostInode, final String folderInode) {
             this.inode = inode;
             this.languageId = languageId;
             this.hostInode = hostInode;
             this.folderInode = folderInode;
         }
 
-        public static ContentletVersionInfo of(final String inode, final long languageId, final String hostId, final String folderId) {
+        public static ContentletVersionInfo of(final String inode, final Number languageId, final String hostId, final String folderId) {
             return new ContentletVersionInfo(inode, languageId, hostId, folderId);
         }
 
@@ -287,7 +309,7 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
             return inode;
         }
 
-        public Long getLanguageId() {
+        public Number getLanguageId() {
             return languageId;
         }
 
@@ -298,6 +320,31 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
             return null == folderInode ? Host.SYSTEM_HOST : folderInode;
         }
 
+    }
+
+    /**
+     * Send out a system-wide notification that a content type has been destroyed
+     * @param contentType
+     */
+    private void notifyContentTypeDestroyed(final ContentType contentType) {
+        try {
+            final NotificationAPI notificationAPI = APILocator.getNotificationAPI();
+            // Search for the CMS Admin role and System User
+            final Role cmsAdminRole = APILocator.getRoleAPI().loadCMSAdminRole();
+            final User systemUser = APILocator.systemUser();
+
+            notificationAPI.generateNotification(
+                    new I18NMessage("contenttype.destroy.complete.title"),
+                    new I18NMessage("contenttype.destroy.complete.message", null,
+                            contentType.name()), null,
+                    // no actions
+                    NotificationLevel.WARNING, NotificationType.GENERIC,
+                    Visibility.ROLE, cmsAdminRole.getId(), systemUser.getUserId(),
+                    systemUser.getLocale()
+            );
+        } catch (DotDataException e) {
+            Logger.error(getClass(), e.getMessage(), e);
+        }
     }
 
 

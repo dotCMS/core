@@ -8,6 +8,7 @@ import com.liferay.util.Encryptor;
 import com.liferay.util.HashBuilder;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
+import io.vavr.control.Option;
 import io.vavr.control.Try;
 import java.net.URL;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -331,6 +332,21 @@ public class FileUtil {
 
 		return sha256Builder.buildUnixHash();
 	} // sha256toUnixHash.
+
+
+	/**
+	 * Given an inode this gets the path to the binary file
+	 * @param con
+	 * @return
+	 */
+	public static Optional<Path> binaryPath(final Contentlet con) {
+		final String inode = con.getInode();
+		final String path = String.format("%s/%s/%s/%s",
+				APILocator.getFileAssetAPI().getRealAssetsRootPath(), inode.charAt(0),
+				inode.charAt(1), inode);
+		final Path p = Paths.get(path);
+		return p.toFile().exists() ? Optional.of(p) : Optional.empty();
+	}
 
 	/**
 	 * Reads the contents of the specified file, using the {@code Files.newInputStream} approach.

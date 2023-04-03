@@ -558,28 +558,33 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
      * @param metadataBucketName
      * @return
      */
-    private Map<String, Set<String>> removeMetadataFromPaths(final Contentlet contentlet, final StorageType storageType, final String metadataBucketName) {
+    private Map<String, Set<String>> removeMetadataFromPaths(final Contentlet contentlet,
+            final StorageType storageType, final String metadataBucketName) {
         final String prefix = APILocator.getFileAssetAPI().getRealAssetsRootPath();
         final String suffix = FileMetadataAPI.METADATA_JSON;
-        final Map<String,Set<String>> removedMetaPaths = new HashMap<>();
-        try (Stream<Path> walk = Files.walk(binaryPath(contentlet))) {
-            final Set<String> paths = walk.sorted(Comparator.reverseOrder())
-                    .filter(path -> path.toString().endsWith(suffix))
-                    .map(path -> path.toString().replace(prefix, File.separator))
-                    .collect(Collectors.toSet());
+        final Map<String, Set<String>> removedMetaPaths = new HashMap<>();
+        final Optional<Path> rootPath = binaryPath(contentlet);
+        if (rootPath.isPresent()) {
+            try (Stream<Path> walk = Files.walk(rootPath.get())) {
+                final Set<String> paths = walk.sorted(Comparator.reverseOrder())
+                        .filter(path -> path.toString().endsWith(suffix))
+                        .map(path -> path.toString().replace(prefix, File.separator))
+                        .collect(Collectors.toSet());
 
-            for (final String path : paths) {
-                if (fileStorageAPI.removeMetaData(
-                        new FetchMetadataParams.Builder()
-                                .storageKey(new StorageKey.Builder().group(metadataBucketName)
-                                        .path(path).storage(storageType).build()).build()
-                )) {
-                    removedMetaPaths.computeIfAbsent(metadataBucketName, k -> new HashSet<>()).add(path);
+                for (final String path : paths) {
+                    if (fileStorageAPI.removeMetaData(
+                            new FetchMetadataParams.Builder()
+                                    .storageKey(new StorageKey.Builder().group(metadataBucketName)
+                                            .path(path).storage(storageType).build()).build()
+                    )) {
+                        removedMetaPaths.computeIfAbsent(metadataBucketName, k -> new HashSet<>())
+                                .add(path);
+                    }
                 }
-            }
 
-        } catch (IOException | DotDataException e) {
-            Logger.error(ESContentletAPIImpl.class, e.getMessage(), e);
+            } catch (IOException | DotDataException e) {
+                Logger.error(ESContentletAPIImpl.class, e.getMessage(), e);
+            }
         }
         return removedMetaPaths;
     }

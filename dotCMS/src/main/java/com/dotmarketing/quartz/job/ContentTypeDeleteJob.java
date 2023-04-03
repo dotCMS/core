@@ -7,12 +7,11 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.quartz.DotStatefulJob;
 import com.dotmarketing.util.Logger;
+import java.io.Serializable;
+import java.util.Map;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.quartz.Trigger;
-
-import java.io.Serializable;
-import java.util.Map;
 /**
  * This job is responsible for removing all the contentlets associated to a content type
  * @author fabrizzio

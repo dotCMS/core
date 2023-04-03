@@ -242,7 +242,6 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
     ContentType copy = ContentTypeBuilder.builder(type)
             .id(null)
-            .name(newName)
             .variable(newName)
             .build();
 
