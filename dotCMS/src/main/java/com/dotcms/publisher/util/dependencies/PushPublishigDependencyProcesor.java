@@ -10,6 +10,7 @@ import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.publishing.PublisherFilter;
 import com.dotcms.publishing.manifest.ManifestItem;
 import com.dotcms.publishing.manifest.ManifestReason;
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -28,6 +29,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
@@ -56,6 +58,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Implementation class for the {@link DependencyProcessor} interface.
@@ -175,7 +178,7 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
                             PusheableAsset.CONTAINER));
 
             // Content dependencies
-            tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET,
+            tryToAddAllContentletsAndProcessDependencies(
                     pushPublishigDependencyProvider.getContentletByLuceneQuery(
                             "+conHost:" + site.getIdentifier()),
                     ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(site));
@@ -199,6 +202,17 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
             Logger.error(this, String.format("An error occurred when processing dependencies on Site '%s' [%s]: %s",
                     site, site.getIdentifier(), e.getMessage()), e);
         }
+    }
+
+    private void tryToAddAllContentletsAndProcessDependencies(final Collection<Contentlet> contentlets,
+            final String message) throws DotDataException, DotSecurityException {
+
+        final List<Contentlet> defaultVariantContentlet = contentlets.stream()
+                .filter(contentlet -> VariantAPI.DEFAULT_VARIANT.name()
+                        .equals(contentlet.getVariantId()))
+                .collect(Collectors.toList());
+
+        tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET, defaultVariantContentlet, message);
     }
 
     /**
@@ -412,7 +426,7 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
                     ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(link));
 
             // Content Dependencies
-            tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET,
+            tryToAddAllContentletsAndProcessDependencies(
                     pushPublishigDependencyProvider.getContentletsByLink(linkId),
                     ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(link));
         } catch (final Exception e) {
@@ -540,8 +554,8 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
                         final Folder contFolder=APILocator.getFolderAPI()
                                 .find(contentletWithDependenciesToProcess.getFolder(), user, false);
 
-                        tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET,
-                                pushPublishigDependencyProvider.getHTMLPages(contFolder),
+                        tryToAddAllPagesAndProcessDependencies(
+                                 pushPublishigDependencyProvider.getHTMLPages(contFolder),
                                 ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(contentletWithDependenciesToProcess));
                     }
                 } catch (Exception e) {
@@ -571,6 +585,13 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
             Logger.error(this, errorMsg, e);
             throw new DotBundleException(errorMsg, e);
         }
+    }
+
+    private void tryToAddAllPagesAndProcessDependencies(final Collection<IHTMLPage> pages, final String message)
+            throws DotDataException, DotSecurityException {
+
+        tryToAddAllContentletsAndProcessDependencies(
+                pages.stream().map(page -> (HTMLPageAsset) page).collect(Collectors.toList()), message);
     }
 
     /**

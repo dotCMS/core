@@ -15,6 +15,7 @@ import com.dotcms.publishing.manifest.CSVManifestBuilder;
 import com.dotcms.publishing.manifest.ManifestItem;
 import com.dotcms.publishing.manifest.ManifestItem.ManifestInfoBuilder;
 import com.dotcms.publishing.manifest.ManifestReason;
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -334,7 +335,7 @@ public class DependencyManager {
 			for (String id : contentIds) {
 				final Identifier ident = APILocator.getIdentifierAPI().find(id);
 				final List<Contentlet> contentlets = APILocator.getContentletAPI()
-						.findAllVersions(ident, false, user, false);
+						.findAllVersions(ident, VariantAPI.DEFAULT_VARIANT, user, false);
 				for (Contentlet con : contentlets) {
 					add(con, PusheableAsset.CONTENTLET);
 				}

@@ -1,6 +1,7 @@
 package com.dotcms.publisher.business;
 
 import com.dotcms.publisher.util.PusheableAsset;
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -101,14 +102,16 @@ public class PublishAuditUtil {
         We may added a contentlet that exist only in a NON default language so
         assuming the content will always exist in the default language is wrong.
          */
-        List<Contentlet> allLanguages = APILocator.getContentletAPI().search( "+identifier:" + identifier, 0, 0, "moddate", user, false );
+        List<Contentlet> allLanguages = APILocator.getContentletAPI()
+                .search( "+identifier:" + identifier, 0, 0, "moddate", user, false );
         if(!allLanguages.isEmpty()) {
             /*
             For display purposes we are trying to return the contentlet with the default language, if
             nothing found for the default language just return the first one.
              */
             for (Contentlet contentlet : allLanguages) {
-                if (contentlet.getLanguageId() == defaultLanguage.getId()) {
+                if (contentlet.getLanguageId() == defaultLanguage.getId() &&
+                        contentlet.getVariantId().equals(VariantAPI.DEFAULT_VARIANT.name())) {
                     foundContentlet = contentlet;
                 }
             }
