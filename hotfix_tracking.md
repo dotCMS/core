@@ -27,3 +27,4 @@ This maintenance release includes the following code fixes:
 18. https://github.com/dotCMS/core/issues/24380 : Error upgrading in Postgres #24380
 19. https://github.com/dotCMS/core/issues/24395 : Remove issuer check from JWT API keys #24395
 20. https://github.com/dotCMS/core/issues/24436 : Task05380ChangeContainerPathToAbsolute repeating site if container was added several times
+21. https://github.com/dotCMS/core/issues/24441 : Unable to copy a folder when the folder contains a page that has two versions live and draft #24441
