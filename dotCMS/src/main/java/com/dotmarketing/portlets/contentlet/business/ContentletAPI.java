@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.contentlet.business;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -1658,6 +1659,23 @@ public interface ContentletAPI {
 
 	public List<Contentlet> findAllVersions(Identifier identifier, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotStateException;
 
+	/**
+	 * Retrieves all versions even the old ones for a {@link Contentlet} identifier and {@link Variant
+	 * Note: This method could pull too many versions.
+	 *
+	 * @param identifier Contentlet identifier
+	 * @param user user to check permissions
+	 * @param respectFrontendRoles if it is true then the Frontend roles will be considered.
+	 * @param variant Variant to filter the contentlets
+	 *
+	 * @return List<Contentlet> List of Contents with all of its versions inside the Variant.
+	 *
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	List<Contentlet> findAllVersions(final Identifier identifier, final Variant variant,
+			final User user, boolean respectFrontendRoles)
+			throws DotSecurityException, DotDataException;
 	/**
 	 * Retrieves all versions for a contentlet identifier.
 	 * Note: This method could pull too many versions.

@@ -167,10 +167,6 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
                 this.editor.on('transaction', ({ editor }) => {
                     this.freezeScroll = FREEZE_SCROLL_KEY.getState(editor.view.state)?.freezeScroll;
                 });
-
-                this.editor.on('transaction', ({ editor }) => {
-                    this.freezeScroll = FREEZE_SCROLL_KEY.getState(editor.view.state)?.freezeScroll;
-                });
             });
     }
 
