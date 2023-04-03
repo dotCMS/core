@@ -19,7 +19,7 @@ p-tag.sm {
             padding: $spacing-1 $spacing-2;
 
             .p-tag-value {
-                line-height: 1rem;
+                line-height: $spacing-3;
             }
         }
     }

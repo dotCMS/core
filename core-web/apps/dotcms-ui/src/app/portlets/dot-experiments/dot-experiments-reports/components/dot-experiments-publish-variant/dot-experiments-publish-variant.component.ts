@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { NgIf, TitleCasePipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -26,14 +26,15 @@ import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module
     styleUrls: ['./dot-experiments-publish-variant.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        CommonModule,
         DotMessagePipeModule,
         TableModule,
         TagModule,
         ButtonModule,
         ConfirmDialogModule,
         DotDialogModule,
-        FormsModule
+        FormsModule,
+        NgIf,
+        TitleCasePipe
     ],
     standalone: true
 })
