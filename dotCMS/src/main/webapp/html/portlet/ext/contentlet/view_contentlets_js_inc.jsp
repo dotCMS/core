@@ -1289,7 +1289,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                         <div class='clear'></div>`;
             }  
             if (!hasSiteFolderField) {
-                siteFolderFieldHtml = getHostFielDefaultHTML();
+                siteFolderFieldHtml = getSiteFolderFieldDefaultHTML();
             }  
 
             $('search_fields_table').update(htmlstr);
@@ -1387,7 +1387,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
            return obj.value;
         }
 
-        function getHostFielDefaultHTML() {
+        function getSiteFolderFieldDefaultHTML() {
 
                 const defaultSiteFolderField = {
                     "fieldName": "<%= LanguageUtil.get(pageContext, "Host-Folder") %>",
