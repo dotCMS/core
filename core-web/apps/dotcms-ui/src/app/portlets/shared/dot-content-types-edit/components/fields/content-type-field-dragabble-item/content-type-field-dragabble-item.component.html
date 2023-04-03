@@ -13,6 +13,7 @@
         >
         </dot-copy-button>
         <p-button
+            id="field__actions-delete"
             *ngIf="!field.fixed"
             [pTooltip]="'contenttypes.action.delete' | dm"
             (click)="removeItem($event)"

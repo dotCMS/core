@@ -3,6 +3,10 @@ import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
+import { ButtonModule } from 'primeng/button';
+import { ChipModule } from 'primeng/chip';
+import { TooltipModule } from 'primeng/tooltip';
+
 import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 import { DotMessagePipeModule } from '@dotcms/app/view/pipes/dot-message/dot-message-pipe.module';
@@ -37,7 +41,10 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
                 DotIconModule,
                 DotCopyButtonModule,
                 HttpClientTestingModule,
-                DotMessagePipeModule
+                DotMessagePipeModule,
+                ChipModule,
+                ButtonModule,
+                TooltipModule
             ],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
@@ -111,15 +118,14 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
             velocityVarName: 'velocityName'
         };
 
+        const attrs = ['Required', 'Indexed', 'Show on list'];
+
         comp.field = field;
 
         fixture.detectChanges();
 
-        const container = de.query(By.css('.field__attribute'));
-        expect(container).not.toBeNull();
-        expect(container.nativeElement.textContent).toEqual(
-            'FieldLabel\u00A0\u00A0•\u00A0\u00A0Required\u00A0\u00A0•\u00A0\u00A0Indexed\u00A0\u00A0•\u00A0\u00A0Show on list'
-        );
+        const attrsChips = de.queryAll(By.css('p-chip')).map((e) => e.nativeElement.textContent);
+        expect(attrsChips).toEqual(attrs);
     });
 
     it('should has a remove button', () => {
@@ -137,9 +143,9 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
 
         fixture.detectChanges();
 
-        const button = de.query(By.css('.field__actions-delete'));
+        const button = de.query(By.css('#field__actions-delete'));
         expect(button).not.toBeNull();
-        expect(button.attributes['icon']).toEqual('delete');
+        expect(button.attributes['icon']).toEqual('pi pi-trash');
 
         let resp: DotCMSContentTypeField;
         comp.remove.subscribe((fieldItem) => (resp = fieldItem));
@@ -167,38 +173,8 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
 
         fixture.detectChanges();
 
-        const button = de.query(By.css('.field__actions-delete'));
+        const button = de.query(By.css('#field__actions-delete'));
         expect(button).toBeNull();
-    });
-
-    it('should have a edit button', () => {
-        const mockField = {
-            ...dotcmsContentTypeFieldBasicMock,
-            fieldType: 'fieldType',
-            fixed: true,
-            indexed: true,
-            name: 'Field name',
-            required: true,
-            velocityVarName: 'velocityName'
-        };
-
-        comp.field = mockField;
-
-        fixture.detectChanges();
-
-        const button = de.query(By.css('.field__actions-edit'));
-        expect(button).not.toBeNull();
-        expect(button.attributes['icon']).toEqual('edit');
-
-        let resp: DotCMSContentTypeField;
-        comp.edit.subscribe((field) => (resp = field));
-        button.triggerEventHandler('click', {
-            stopPropagation: () => {
-                //
-            }
-        });
-
-        expect(resp).toEqual(mockField);
     });
 
     it('should edit field on host click', () => {
