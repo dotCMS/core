@@ -127,6 +127,30 @@
     padding-right: $spacing-2;
 }
 
+.p-button.p-button-icon-only.p-button-sm.p-button-transparent {
+    height: $spacing-4;
+    background-color: transparent;
+    border: 0 none;
+    color: $color-palette-primary;
+    opacity: 0.5;
+
+    &:enabled {
+        &:hover {
+            opacity: 1;
+        }
+
+        &:active,
+        &:focus {
+            opacity: 1;
+        }
+    }
+
+    &:disabled {
+        background-color: transparent;
+        color: $color-palette-gray-500;
+    }
+}
+
 .p-button.p-button-icon-only .p-button-icon-left,
 .p-button.p-button-icon-only .p-button-icon-right {
     margin: 0;
