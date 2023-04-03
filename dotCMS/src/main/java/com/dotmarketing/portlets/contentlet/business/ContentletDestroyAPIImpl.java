@@ -1,7 +1,7 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import static com.dotmarketing.util.FileUtil.binaryPath;
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.rendering.velocity.services.PageLoader;
@@ -31,11 +31,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class ContentletDestroyAPIImpl implements ContentletDestroyDelegate {
@@ -167,31 +164,9 @@ public class ContentletDestroyAPIImpl implements ContentletDestroyDelegate {
         }
     }
 
-    Path binaryPath(final Contentlet con) {
-        String inode = con.getInode();
-        String path = String.format("%s/%s/%s/%s",
-                APILocator.getFileAssetAPI().getRealAssetsRootPath(), inode.charAt(0),
-                inode.charAt(1), inode);
-        return Paths.get(path);
-    }
-
     void destroyMetadata(final Contentlet contentlet) {
-        final String suffix = FileMetadataAPI.METADATA_JSON;
         final FileMetadataAPI fileMetadataAPI = APILocator.getFileMetadataAPI();
-        final Path rootPath = binaryPath(contentlet);
-        try (Stream<Path> walk = Files.walk(rootPath)) {
-            final Set<String> metadataPaths = walk.sorted(Comparator.reverseOrder())
-                    .filter(path -> !path.toString().endsWith(suffix))
-                    .map(path -> path.toString().replace(rootPath.toString(), ""))
-                    .collect(Collectors.toSet());
-            fileMetadataAPI.removeMetadata(metadataPaths);
-            Logger.debug(ESContentletAPIImpl.class,
-                    String.format("metadata removed for %s", contentlet.getIdentifier()));
-
-        } catch (IOException e) {
-            Logger.warn(this,
-                    String.format("Unable to delete binaries under [%s] ", rootPath.toString()), e);
-        }
+        fileMetadataAPI.removeMetadata(contentlet);
     }
 
     void deleteVersions(List<Contentlet> contentlets) {

@@ -1,6 +1,7 @@
 package com.dotcms.storage;
 
 
+import static com.dotmarketing.util.FileUtil.binaryPath;
 import static com.dotmarketing.util.UtilMethods.isSet;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;

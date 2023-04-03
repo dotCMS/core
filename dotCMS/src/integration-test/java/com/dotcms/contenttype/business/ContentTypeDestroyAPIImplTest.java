@@ -275,9 +275,14 @@ public class ContentTypeDestroyAPIImplTest extends IntegrationTestBase {
         Assert.assertFalse(searchIndex(personaLike.getInode(), true).isEmpty());
         Assert.assertFalse(searchIndex(personaLike.getInode(), false).isEmpty());
 
+        final int countBeforeDestroy = new DotConnect().setSQL("select count(*) from tag_inode ti where inode = ?").addParam(personaLike.getInode()).getInt("count");
+        Assert.assertTrue("There should be at least one tag entry ",countBeforeDestroy > 0);
+
         final ContentTypeDestroyAPIImpl impl = new ContentTypeDestroyAPIImpl();
         impl.destroy(contentType,APILocator.systemUser());
 
+        final int countAfterDestroy = new DotConnect().setSQL("select count(*) from tag_inode ti where inode = ?").addParam(personaLike.getInode()).getInt("count");
+        Assert.assertEquals("There should be at least one tag entry ",0,countAfterDestroy);
 
     }
 
