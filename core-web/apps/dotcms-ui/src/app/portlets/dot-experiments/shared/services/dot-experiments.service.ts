@@ -172,8 +172,7 @@ export class DotExperimentsService {
 
     /**
      * Promote variant of experiment
-     * @param  {string} experimentId
-     * @param {string} variantId
+     * @param  {string} variantName
      * @returns Observable<DotExperiment>
      * @memberof DotExperimentsService
      */
@@ -185,6 +184,7 @@ export class DotExperimentsService {
 
     /**
      * Set a selectedGoal to an experiment
+     * @param {string} experimentId
      * @param {Goal} selectedGoal
      * @returns Observable<DotExperiment>
      * @memberof DotExperimentsService
