@@ -21,6 +21,7 @@ export class DotCopyButtonComponent implements OnInit {
     @Input() copy = '';
     @Input() label: string;
     @Input() tooltipText: string;
+    @Input() showLabel = true;
 
     constructor(
         private dotClipboardUtil: DotClipboardUtil,

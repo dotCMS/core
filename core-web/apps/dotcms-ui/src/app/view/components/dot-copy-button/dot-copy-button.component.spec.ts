@@ -57,12 +57,18 @@ describe('DotCopyButtonComponent', () => {
     describe('with label', () => {
         beforeEach(() => {
             component.label = 'Label';
-            fixture.detectChanges();
             button = de.query(By.css('button'));
         });
 
         it('should show label', () => {
-            expect(button.nativeElement.textContent).toBe('content_copy Label\n');
+            fixture.detectChanges();
+            expect(button.nativeElement.textContent.trim()).toBe('Label');
+        });
+
+        it('should not show label', () => {
+            component.showLabel = false;
+            fixture.detectChanges();
+            expect(button.nativeElement.textContent.trim()).toBe('');
         });
 
         it('should have pTooltip attributes', () => {
