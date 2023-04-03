@@ -187,8 +187,7 @@ export class LoginService {
 
                     this.setAuth({
                         loginAsUser: userData.user,
-                        user: this._auth.user,
-                        isLoginAs: true
+                        user: this._auth.user
                     });
 
                     return res;
@@ -236,8 +235,7 @@ export class LoginService {
                 map((response) => {
                     const auth = {
                         loginAsUser: null,
-                        user: response.entity,
-                        isLoginAs: false
+                        user: response.entity
                     };
 
                     this.setAuth(auth);
@@ -268,8 +266,7 @@ export class LoginService {
                 map((res) => {
                     this.setAuth({
                         loginAsUser: null,
-                        user: this._auth.user,
-                        isLoginAs: true
+                        user: this._auth.user
                     });
 
                     return res.entity.logoutAs;
@@ -319,7 +316,7 @@ export class LoginService {
      * @memberof LoginService
      */
     setAuth(auth: Auth): void {
-        this._auth = auth;
+        this._auth = this.getFullAuth(auth);
         this._auth$.next(this.getFullAuth(auth));
 
         // When not logged user we need to fire the observable chain
