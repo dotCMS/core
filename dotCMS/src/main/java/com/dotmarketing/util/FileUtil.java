@@ -2,6 +2,8 @@ package com.dotmarketing.util;
 
 import com.dotcms.util.CloseUtils;
 import com.dotcms.util.DotPreconditions;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.liferay.util.Encryptor;
 import com.liferay.util.HashBuilder;
 import com.liferay.util.StringPool;

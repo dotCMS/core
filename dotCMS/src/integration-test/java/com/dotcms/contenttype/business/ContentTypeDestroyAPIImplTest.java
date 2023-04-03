@@ -278,9 +278,6 @@ public class ContentTypeDestroyAPIImplTest extends IntegrationTestBase {
         final ContentTypeDestroyAPIImpl impl = new ContentTypeDestroyAPIImpl();
         impl.destroy(contentType,APILocator.systemUser());
 
-        
-
-
 
     }
 

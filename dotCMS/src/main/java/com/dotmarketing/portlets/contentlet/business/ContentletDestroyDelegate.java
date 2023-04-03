@@ -13,8 +13,8 @@ public interface ContentletDestroyDelegate {
 
      static ContentletDestroyDelegate newInstance(){
          final String clazz = Config.getStringProperty("CONTENTLET_DESTROY_DELEGATE_CLASS",
-                 ContentletDestroyAPIImpl.class.getCanonicalName()
-                // ContentletDestroyDelegateImpl.class.getCanonicalName()
+                 //ContentletDestroyAPIImpl.class.getCanonicalName()
+                 ContentletDestroyDelegateImpl.class.getCanonicalName()
          );
          return  Try.of(() -> (ContentletDestroyDelegate) Class.forName(clazz).getDeclaredConstructor().newInstance())
                  .getOrElse(new ContentletDestroyAPIImpl());

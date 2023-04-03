@@ -27,7 +27,6 @@ import com.dotmarketing.beans.PermissionableProxy;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.Params;
-import com.dotmarketing.common.reindex.ReindexQueueAPI;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.db.commands.DatabaseCommand.QueryReplacements;
@@ -2573,10 +2572,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			APILocator.getReindexQueueAPI()
 					.addStructureReindexEntries((ContentType) permissionable);
 		} else if (permissionable instanceof Contentlet) {
-			Contentlet contentlet = (Contentlet) permissionable;
-			if(!contentlet.getContentType().markedForDeletion()){
-			  APILocator.getReindexQueueAPI().addIdentifierReindex(permissionable.getPermissionId());
-			}
+			APILocator.getReindexQueueAPI().addIdentifierReindex(permissionable.getPermissionId());
 		}
 	}
 
