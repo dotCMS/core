@@ -1,9 +1,12 @@
 import {
     ChangeDetectionStrategy,
+    ChangeDetectorRef,
     Component,
+    ElementRef,
     EventEmitter,
     HostListener,
     Input,
+    OnDestroy,
     OnInit,
     Output
 } from '@angular/core';
@@ -24,20 +27,31 @@ import { FieldService } from '../service';
     templateUrl: './content-type-field-dragabble-item.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class ContentTypesFieldDragabbleItemComponent implements OnInit {
+export class ContentTypesFieldDragabbleItemComponent implements OnInit, OnDestroy {
     @Input()
     field: DotCMSContentTypeField;
     @Output()
     remove: EventEmitter<DotCMSContentTypeField> = new EventEmitter();
     @Output()
     edit: EventEmitter<DotCMSContentTypeField> = new EventEmitter();
-    fieldAttributes: string;
 
-    constructor(private dotMessageService: DotMessageService, public fieldService: FieldService) {}
+    shouldResize = false;
+    small = false;
+    open = false;
+    fieldAttributes: string[];
+    icon: string;
+
+    private resizeObserver$: ResizeObserver;
+
+    constructor(
+        private dotMessageService: DotMessageService,
+        public fieldService: FieldService,
+        private el: ElementRef,
+        private cd: ChangeDetectorRef
+    ) {}
 
     ngOnInit(): void {
         this.fieldAttributes = [
-            { name: this.field.fieldTypeLabel, value: !!this.field.fieldTypeLabel },
             {
                 name: this.dotMessageService.get('contenttypes.field.atributes.required'),
                 value: this.field.required
@@ -52,8 +66,33 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit {
             }
         ]
             .filter((field) => field.value)
-            .map((field) => field.name)
-            .join('&nbsp;&nbsp;&#8226;&nbsp;&nbsp;');
+            .map((field) => field.name);
+
+        this.icon = this.fieldService.getIcon(this.field.clazz);
+
+        this.shouldResize = this.fieldAttributes.length > 1;
+
+        if (this.shouldResize) {
+            this.resizeObserver$ = new ResizeObserver((entries) => {
+                const [host] = entries;
+
+                if (host.contentRect.width < 300 && !this.small) {
+                    this.small = true;
+
+                    this.cd.detectChanges();
+                } else if (host.contentRect.width > 300 && this.small) {
+                    this.small = false;
+
+                    this.cd.detectChanges();
+                }
+            });
+
+            this.resizeObserver$.observe(this.el.nativeElement);
+        }
+    }
+
+    ngOnDestroy(): void {
+        if (this.shouldResize) this.resizeObserver$.disconnect();
     }
 
     @HostListener('click', ['$event'])
@@ -62,8 +101,20 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit {
         this.edit.emit(this.field);
     }
 
-    removeItem($event: MouseEvent): void {
-        this.remove.emit(this.field);
+    @HostListener('click', ['$event'])
+    openAttr($event: MouseEvent) {
         $event.stopPropagation();
+        this.open = true;
+    }
+
+    @HostListener('click', ['$event'])
+    closeAttr($event: MouseEvent) {
+        $event.stopPropagation();
+        this.open = false;
+    }
+
+    removeItem($event: MouseEvent): void {
+        $event.stopPropagation();
+        this.remove.emit(this.field);
     }
 }

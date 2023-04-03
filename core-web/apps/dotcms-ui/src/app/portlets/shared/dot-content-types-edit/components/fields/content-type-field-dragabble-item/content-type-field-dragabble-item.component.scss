@@ -5,8 +5,8 @@
     background: $white;
     cursor: move;
     display: flex;
-    height: 78px;
-    padding: $spacing-2 $spacing-3;
+    flex-direction: column;
+    height: $content-type-field-height;
     transition: box-shadow $basic-speed;
 
     &:hover {
@@ -23,60 +23,91 @@
     }
 }
 
-dot-icon-button-tooltip ::ng-deep .material-icons,
-dot-icon {
-    color: $color-palette-gray-700;
-}
-
-dot-icon {
-    margin-right: $spacing-1;
-}
-
-.field__properties,
-.field__icon {
-    display: flex;
-}
-
 .field__properties {
-    justify-content: center;
-    flex-direction: column;
+    background: $color-palette-primary-100;
+    padding: $spacing-2 $spacing-3;
+    display: flex;
+    align-items: center;
     flex-grow: 1;
+
+    dot-icon {
+        margin-right: $spacing-1;
+    }
+
+    .field__info {
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+        overflow: hidden;
+
+        .field__label {
+            color: $color-palette-gray-700;
+            font-size: $font-size-sm;
+            min-height: $font-size-sm;
+        }
+
+        .field__name {
+            @include truncate-text;
+            color: $black;
+            font-weight: $font-weight-semi-bold;
+        }
+    }
+
+    .field__actions {
+        display: flex;
+
+        flex-shrink: 0;
+        margin-left: 0.25rem;
+
+        & > * {
+            margin: 0 0.25rem;
+        }
+
+        dot-copy-button {
+            background-color: $white;
+        }
+    }
+}
+
+.field__attr__container {
+    padding: $spacing-2 $spacing-3;
+    display: flex;
+    justify-content: space-between;
+    background: $white;
+    z-index: 1;
+    border-radius: $border-radius-sm;
     overflow: hidden;
-}
 
-.field__name {
-    @include truncate-text;
-}
+    &.open {
+        overflow: visible;
+    }
 
-.field__name-inner {
-    align-items: center;
-    display: flex;
-    overflow: hidden;
-}
+    .field__attr {
+        display: flex;
+        gap: $spacing-1;
+    }
 
-.field__name-wrapper {
-    display: flex;
-    align-items: center;
-}
+    .small {
+        flex-direction: column;
+    }
 
-.field__info__container {
-    display: flex;
-    align-items: center;
-    padding-top: 0.25rem;
-    gap: $spacing-1;
-}
+    i {
+        height: fit-content;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: $color-palette-primary-500;
+        font-size: $font-size-md;
 
-.field__attribute {
-    color: gray;
-    font-size: $font-size-sm;
-    min-height: $font-size-sm;
-}
+        &.pi-angle-down {
+            margin-top: 8px;
+            align-self: flex-start;
+        }
 
-.field__actions {
-    flex-shrink: 0;
-    margin-left: 0.25rem;
-
-    & > * {
-        margin: 0 0.25rem;
+        &.pi-angle-up {
+            margin-bottom: 8px;
+            align-self: flex-end;
+        }
     }
 }
