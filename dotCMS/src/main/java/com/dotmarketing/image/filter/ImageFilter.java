@@ -79,7 +79,7 @@ public abstract class ImageFilter implements ImageFilterIf {
 			
             if (CROP.equals(thisFilter)) {
                 Optional<FocalPoint> optPoint = new FocalPointAPIImpl().parseFocalPointFromParams(parameters);
-                if(!optPoint.isPresent()) {
+                if(optPoint.isEmpty()) {
                     String fieldVar = parameters.get("fieldVarName")[0];
                     optPoint =new FocalPointAPIImpl().readFocalPoint(inode, fieldVar);
                 }

@@ -38,7 +38,6 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -852,7 +851,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 		if (resultSet == null) {
 			return null;
 		}
-		return new LanguageTransformer(Collections.singletonList(resultSet)).findFirst();
+		return new LanguageTransformer(List.of(resultSet)).findFirst();
 	}
 
 }

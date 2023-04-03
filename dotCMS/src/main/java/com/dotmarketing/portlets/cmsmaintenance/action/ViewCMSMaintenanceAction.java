@@ -403,8 +403,8 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 		}
 		finally
 		{
-			req.setAttribute(WebKeys.Cache.CACHE_NUMBER_LIVE_FILES,new Integer(liveCount));
-			req.setAttribute(WebKeys.Cache.CACHE_NUMBER_WORKING_FILES,new Integer(workingCount));
+			req.setAttribute(WebKeys.Cache.CACHE_NUMBER_LIVE_FILES,Integer.valueOf(liveCount));
+			req.setAttribute(WebKeys.Cache.CACHE_NUMBER_WORKING_FILES,Integer.valueOf(workingCount));
 		}
 	}
 

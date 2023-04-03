@@ -83,7 +83,7 @@ public class FixTasksExecutor  implements StatefulJob {
 					if (FixTask.class.isAssignableFrom(c)) {
 						FixTask task;
 						try {
-							task = (FixTask) c.newInstance();
+							task = (FixTask) c.getDeclaredConstructor().newInstance();
 						} catch (Exception e) {
 							throw new DotRuntimeException(e.getMessage(), e);
 						}

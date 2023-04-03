@@ -19,6 +19,7 @@ package org.apache.velocity.tools.view.tools;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import javax.servlet.ServletContext;
@@ -530,7 +531,7 @@ public class LinkTool implements ViewTool, Cloneable
                           + e + "). Using deprecated version.");
             }
         }
-        return URLEncoder.encode(url);
+        return URLEncoder.encode(url, StandardCharsets.UTF_8);
     }
 
 

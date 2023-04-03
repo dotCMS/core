@@ -24,7 +24,7 @@ public class DotJasperTask extends JspC {
 	}
 
 	private static Set<String> includeList = null;
-	private static final Integer mutex = new Integer(0);
+	private static final Integer mutex = Integer.valueOf(0);
 
 	private static void buildIncludeList() {
 		synchronized (mutex) {

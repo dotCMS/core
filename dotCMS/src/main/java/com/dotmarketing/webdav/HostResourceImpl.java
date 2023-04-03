@@ -83,7 +83,7 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
 	}
 
 	public Long getContentLength() {
-		return new Long(0);
+		return Long.valueOf(0);
 	}
 
 	public String getContentType(String accepts) {

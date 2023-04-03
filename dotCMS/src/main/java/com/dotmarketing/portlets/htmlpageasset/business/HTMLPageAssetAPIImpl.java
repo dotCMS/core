@@ -263,11 +263,11 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
                 Optional<ContentletVersionInfo> cinfo = versionableAPI
                         .getContentletVersionInfo( id.getId(), languageId, currentVariantId);
 
-                if (!cinfo.isPresent() || cinfo.get().getWorkingInode().equals( "NOTFOUND" )) {
+                if (cinfo.isEmpty() || cinfo.get().getWorkingInode().equals( "NOTFOUND" )) {
 
                     cinfo = versionableAPI.getContentletVersionInfo( id.getId(), languageId);
 
-                    if (!cinfo.isPresent() || cinfo.get().getWorkingInode().equals( "NOTFOUND" )) {
+                    if (cinfo.isEmpty() || cinfo.get().getWorkingInode().equals( "NOTFOUND" )) {
                         return null;
                     }
                 }
@@ -744,13 +744,13 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         
 
         Optional<ContentletVersionInfo> cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( ident.getId(), viewingLang );
-        if((!cinfo.isPresent() || cinfo.get().getLiveInode() == null)
+        if((cinfo.isEmpty() || cinfo.get().getLiveInode() == null)
                 && viewingLang!=languageAPI.getDefaultLanguage().getId()
                 && languageAPI.canDefaultPageToDefaultLanguage()){
           cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( ident.getId(), languageAPI.getDefaultLanguage().getId() );
         }
         // if we still have nothing.
-        if (!InodeUtils.isSet(ident.getId()) || !cinfo.isPresent()
+        if (!InodeUtils.isSet(ident.getId()) || cinfo.isEmpty()
                 || cinfo.get().getLiveInode() == null && liveMode) {
             throw new ResourceNotFoundException(String.format("Resource %s not found in Live mode!", uri));
         }

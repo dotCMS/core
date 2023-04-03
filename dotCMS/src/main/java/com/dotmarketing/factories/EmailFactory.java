@@ -69,7 +69,7 @@ import org.apache.velocity.exception.ResourceNotFoundException;
  */
 public class EmailFactory {
 
-	private static Long emailTime = new Long(System.currentTimeMillis());
+	private static Long emailTime = Long.valueOf(System.currentTimeMillis());
 
 	/**
 	 * Rewrites urls to point back to the redirection servlet to track links
@@ -442,7 +442,7 @@ public class EmailFactory {
 
                 File file;
                 synchronized (emailTime) {
-                    emailTime = new Long(emailTime.longValue() + 1);
+                    emailTime = Long.valueOf(emailTime.longValue() + 1);
                     if (UtilMethods.isSet(emailFolder)) {
                         new File(filePath + File.separator + emailFolder).mkdir();
                         filePath = filePath + File.separator + emailFolder;

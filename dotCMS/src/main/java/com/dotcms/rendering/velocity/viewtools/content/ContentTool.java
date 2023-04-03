@@ -141,7 +141,7 @@ public class ContentTool implements ViewTool {
 	 * @return  Returns empty List if no results are found
 	 */
 	public List<ContentMap> pull(String query, String limit, String sort){
-        int l = new Integer(limit);
+        int l = Integer.valueOf(limit);
         return pull(query, l, sort);
 	}
 	
@@ -564,7 +564,7 @@ public class ContentTool implements ViewTool {
 	
     private String addPersonalizationToQuery(String query) {
         Optional<Visitor> opt = APILocator.getVisitorAPI().getVisitor(this.req);
-        if (!opt.isPresent() || query == null) {
+        if (opt.isEmpty() || query == null) {
             return query;
         }
         query = query.toLowerCase();

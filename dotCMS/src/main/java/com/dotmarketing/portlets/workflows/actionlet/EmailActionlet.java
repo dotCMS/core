@@ -211,7 +211,7 @@ public class EmailActionlet extends WorkFlowActionlet {
                             Identifier id = APILocator.getIdentifierAPI().find(fileHost, filename);
                             Optional<ContentletVersionInfo> vinfo = APILocator.getVersionableAPI().getContentletVersionInfo(id.getId(),processor.getContentlet().getLanguageId());
 
-                            if(!vinfo.isPresent()) {
+                            if(vinfo.isEmpty()) {
                                 throw new DotDataException("Unable to find version info for attachment. Identifier: " + id.getId() + ", lang: " + processor.getContentlet().getLanguageId());
                             }
 

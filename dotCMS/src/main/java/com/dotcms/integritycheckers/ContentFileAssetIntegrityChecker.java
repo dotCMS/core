@@ -189,7 +189,7 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
         Long languageId;
         if (DbConnectionFactory.isOracle()) {
             BigDecimal lang = (BigDecimal) contentletData.get("language_id");
-            languageId = new Long(lang.toPlainString());
+            languageId = Long.valueOf(lang.toPlainString());
         } else {
             languageId = (Long) contentletData.get("language_id");
         }

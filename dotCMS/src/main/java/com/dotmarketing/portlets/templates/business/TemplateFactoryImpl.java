@@ -91,7 +91,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 	@SuppressWarnings("unchecked")
 	public List<Template> findTemplatesUserCanUse(final User user, final String hostId, final String query, final boolean searchHost , final int offset, final int limit) throws DotDataException, DotSecurityException {
 		return findTemplates(user, false,
-				UtilMethods.isSet(query) ? Collections.singletonMap("filter", query.toLowerCase())
+				UtilMethods.isSet(query) ? Map.of("filter", query.toLowerCase())
 						: null, hostId, null, null, null, offset, limit, "title");
 	}
 
@@ -289,7 +289,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 						final Template templateInode =
 								params != null ? find(params.get("filter").toString()) : null;
 						resultList =
-								templateInode != null ? Collections.singletonList(templateInode)
+								templateInode != null ? List.of(templateInode)
 										: Collections.emptyList();
 					}
 
@@ -700,7 +700,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		final Optional<ContentletVersionInfo> contentletVersionInfo = APILocator.getVersionableAPI().
 				getContentletVersionInfo(propertiesIdentifer.getId(), APILocator.getLanguageAPI().getDefaultLanguage().getId());
 
-		if(!contentletVersionInfo.isPresent()) {
+		if(contentletVersionInfo.isEmpty()) {
 			throw new DotDataException("Can't find ContentletVersionInfo. Identifier:"
 					+ propertiesIdentifer.getId() + ". Lang:"
 					+ APILocator.getLanguageAPI().getDefaultLanguage().getId());

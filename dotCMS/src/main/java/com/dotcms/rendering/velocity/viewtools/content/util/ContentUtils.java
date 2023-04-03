@@ -157,7 +157,7 @@ public class ContentUtils {
 		 * @return  Returns empty List if no results are found
 		 */
 		public static List<Contentlet> pull(String query, String limit, String sort,User user, String tmDate){
-				int l = new Integer(limit);
+				int l = Integer.valueOf(limit);
 				return pull(query, l, sort, user, tmDate);
 		}
 		

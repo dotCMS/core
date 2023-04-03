@@ -1239,7 +1239,7 @@ public class UtilMethods {
     }
 
     public static String prettyByteify(long memory) {
-    	Double x = new Double(memory);
+    	Double x = Double.valueOf(memory);
     	NumberFormat nf = new DecimalFormat("#.0");
         String myBytes = null;
         if (x > (1024 * 1024 * 1024)) {
@@ -3270,24 +3270,24 @@ public class UtilMethods {
     public static Number multiply(Number num1, Number num2) {
         Number product = null;
         if (num1 instanceof Double || num2 instanceof Double) {
-            product = new Double(((num1 instanceof Double) ? ((Double) num1).doubleValue() : (num1 instanceof Float) ? ((Float) num1).floatValue()
-                    : (num1 instanceof Long) ? ((Long) num1).longValue() : (num1 instanceof Integer) ? ((Integer) num1).intValue() : -1)
-                    * ((num2 instanceof Double) ? ((Double) num2).doubleValue() : (num2 instanceof Float) ? ((Float) num2).floatValue()
-                            : (num2 instanceof Long) ? ((Long) num2).longValue() : (num2 instanceof Integer) ? ((Integer) num2).intValue() : -1));
+            product = Double.valueOf(((num1 instanceof Double) ? ((Double)num1).doubleValue() : (num1 instanceof Float) ? ((Float)num1).floatValue()
+                    : (num1 instanceof Long) ? ((Long)num1).longValue() : (num1 instanceof Integer) ? ((Integer)num1).intValue() : -1)
+                    * ((num2 instanceof Double) ? ((Double)num2).doubleValue() : (num2 instanceof Float) ? ((Float)num2).floatValue()
+                    : (num2 instanceof Long) ? ((Long)num2).longValue() : (num2 instanceof Integer) ? ((Integer)num2).intValue() : -1));
 
         } else if (num1 instanceof Float || num2 instanceof Float) {
-            product = new Float(((num1 instanceof Float) ? ((Float) num1).floatValue() : (num1 instanceof Long) ? ((Long) num1).longValue()
-                    : (num1 instanceof Integer) ? ((Integer) num1).intValue() : -1)
-                    * ((num2 instanceof Float) ? ((Float) num2).floatValue() : (num2 instanceof Long) ? ((Long) num2).longValue()
-                            : (num2 instanceof Integer) ? ((Integer) num2).intValue() : -1));
+            product = Float.valueOf(((num1 instanceof Float) ? ((Float)num1).floatValue() : (num1 instanceof Long) ? ((Long)num1).longValue()
+                    : (num1 instanceof Integer) ? ((Integer)num1).intValue() : -1)
+                    * ((num2 instanceof Float) ? ((Float)num2).floatValue() : (num2 instanceof Long) ? ((Long)num2).longValue()
+                    : (num2 instanceof Integer) ? ((Integer)num2).intValue() : -1));
 
         } else if (num1 instanceof Long || num2 instanceof Long) {
-            product = new Long(((num1 instanceof Long) ? ((Long) num1).longValue() : (num1 instanceof Integer) ? ((Integer) num1).intValue() : -1)
-                    * ((num2 instanceof Long) ? ((Long) num2).longValue() : (num2 instanceof Integer) ? ((Integer) num2).intValue() : -1));
+            product = Long.valueOf(((num1 instanceof Long) ? ((Long)num1).longValue() : (num1 instanceof Integer) ? ((Integer)num1).intValue() : -1)
+                    * ((num2 instanceof Long) ? ((Long)num2).longValue() : (num2 instanceof Integer) ? ((Integer)num2).intValue() : -1));
 
         } else if (num1 instanceof Integer || num2 instanceof Integer) {
-            product = new Integer(((num1 instanceof Integer) ? ((Integer) num1).intValue() : -1)
-                    * ((num2 instanceof Integer) ? ((Integer) num2).intValue() : -1));
+            product = Integer.valueOf(((num1 instanceof Integer) ? ((Integer)num1).intValue() : -1)
+                    * ((num2 instanceof Integer) ? ((Integer)num2).intValue() : -1));
 
         }
         return product;

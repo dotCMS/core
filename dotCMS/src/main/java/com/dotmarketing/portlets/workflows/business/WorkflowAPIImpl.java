@@ -2121,7 +2121,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					while (st.hasMoreTokens()) {
 						String clazz = st.nextToken();
 						try {
-							WorkFlowActionlet actionlet = (WorkFlowActionlet) Class.forName(clazz.trim()).newInstance();
+							WorkFlowActionlet actionlet = (WorkFlowActionlet) Class.forName(clazz.trim()).getDeclaredConstructor().newInstance();
 							actionletList.add(actionlet);
 						} catch (Exception e) {
 							Logger.error(WorkflowAPIImpl.class, e.getMessage());
@@ -3543,7 +3543,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 					final Optional<WorkflowStep> workflowStepOptional = this.findFirstStep(scheme);
 
-					if (!workflowStepOptional.isPresent() ||
+					if (workflowStepOptional.isEmpty() ||
 							null == this.findAction(action.getId(), workflowStepOptional.get().getId(), user)) {
 
 						throw new IllegalArgumentException(LanguageUtil

@@ -857,8 +857,8 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         if (schemes != null) {
 
             // checks if any of the schemes has been invalidated (save recently and needs to refresh the schemes for the content type).
-            if (!schemes.stream().filter(scheme -> null == cache.getScheme(scheme.getId()))
-                    .findFirst().isPresent()) {
+            if (schemes.stream().filter(scheme -> null == cache.getScheme(scheme.getId()))
+                    .findFirst().isEmpty()) {
                 return schemes;
             }
         }

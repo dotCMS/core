@@ -196,7 +196,7 @@ public class ViewStructureAction extends DotPortletAction {
             	count = APILocator.getContentTypeAPI(user).count(queryCondition);
             }
 
-            req.setAttribute(countWebKey, new Integer(count));
+            req.setAttribute(countWebKey, Integer.valueOf(count));
             req.setAttribute(viewWebKey, contentTypes);
 
             Map<String, Long> entriesByContentTypes = APILocator.getContentTypeAPI(user, true).getEntriesByContentTypes();

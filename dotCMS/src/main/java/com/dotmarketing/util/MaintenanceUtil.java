@@ -132,7 +132,7 @@ public class MaintenanceUtil {
 			if (!x.equals(Inode.class)){
 				Object o;
 				try {
-					o = x.newInstance();
+					o = x.getDeclaredConstructor().newInstance();
 				} catch (Exception e) {
 					Logger.info(MaintenanceUtil.class, "Unable to instaniate object");
 					Logger.debug(MaintenanceUtil.class,"Unable to instaniate object", e);
@@ -153,7 +153,7 @@ public class MaintenanceUtil {
 			if (!x.equals(Inode.class)){
 				Object o;
 				try {
-					o = x.newInstance();
+					o = x.getDeclaredConstructor().newInstance();
 				} catch (Exception e) {
 					Logger.info(MaintenanceUtil.class,"Unable to instaniate object");
 					Logger.debug(MaintenanceUtil.class,"Unable to instaniate object", e);

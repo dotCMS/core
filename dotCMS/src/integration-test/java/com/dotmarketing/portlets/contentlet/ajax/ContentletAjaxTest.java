@@ -158,7 +158,7 @@ public class ContentletAjaxTest {
 		
 		List<Object> results=new ContentletAjax().searchContentletsByUser(structure.getInode(), fieldsValues, categories, false, false, false, false,1, "modDate Desc", 10,systemUser, null, null, null);
 		Map<String,Object> result = (Map<String,Object>)results.get(0);
-		Assert.assertEquals((Long)result.get("total"), new Long(1));
+		Assert.assertEquals((Long)result.get("total"), Long.valueOf(1));
 		result = (Map<String,Object>)results.get(3);
 		assertTrue(Long.parseLong(String.valueOf(result.get("languageId")))==defaultLang.getId());
 		contentlet = contentletAPI.find(String.valueOf(result.get("inode")),systemUser,false);
@@ -178,7 +178,7 @@ public class ContentletAjaxTest {
 
 		results=new ContentletAjax().searchContentletsByUser(structure.getInode(), fieldsValues, categories, false, false, false, false,1, "modDate Desc", 10,systemUser, null, null, null);
 		result = (Map<String,Object>)results.get(0);
-		Assert.assertEquals(new Long(1L), (Long)result.get("total"));
+		Assert.assertEquals(Long.valueOf(1L), (Long)result.get("total"));
 		result = (Map<String,Object>)results.get(3);
 		assertTrue(Long.parseLong(String.valueOf(result.get("languageId")))==language.getId());
 		contentlet = contentletAPI.find(String.valueOf(result.get("inode")),systemUser,false);

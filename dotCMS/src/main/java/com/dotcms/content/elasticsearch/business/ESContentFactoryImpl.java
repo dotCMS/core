@@ -476,11 +476,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
             for (String colkey : row.keySet()) {
                 if(colkey.startsWith("bool")){
                     if(fieldsMap.get(colkey) != null){
-                        m.put(fieldsMap.get(colkey).getVelocityVarName(), new Boolean(row.get(colkey)));
+                        m.put(fieldsMap.get(colkey).getVelocityVarName(), Boolean.valueOf(row.get(colkey)));
                     }
                 }else if(colkey.startsWith("float")){
                     if(fieldsMap.get(colkey) != null){
-                        m.put(fieldsMap.get(colkey).getVelocityVarName(), new Float(row.get(colkey)));
+                        m.put(fieldsMap.get(colkey).getVelocityVarName(), Float.valueOf(row.get(colkey)));
                     }
                 }else if(colkey.startsWith("date")){
                     if(fieldsMap.get(colkey) != null){
@@ -488,7 +488,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                     }
                 }else if(colkey.startsWith("integer")){
                     if(fieldsMap.get(colkey) != null){
-                        m.put(fieldsMap.get(colkey).getVelocityVarName(), new Integer(row.get(colkey)));
+                        m.put(fieldsMap.get(colkey).getVelocityVarName(), Integer.valueOf(row.get(colkey)));
                     }
                 }else if(colkey.startsWith("text")){
                     if(fieldsMap.get(colkey) != null){
@@ -496,11 +496,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
                     }
                 }else if(colkey.equals("working")){
                     if(fieldsMap.get(colkey) != null){
-                        m.put(fieldsMap.get(colkey).getVelocityVarName(), new Boolean(row.get(colkey)));
+                        m.put(fieldsMap.get(colkey).getVelocityVarName(), Boolean.valueOf(row.get(colkey)));
                     }
                 }else if(colkey.startsWith("deleted")){
                     if(fieldsMap.get(colkey) != null){
-                        m.put(fieldsMap.get(colkey).getVelocityVarName(), new Boolean(row.get(colkey)));
+                        m.put(fieldsMap.get(colkey).getVelocityVarName(), Boolean.valueOf(row.get(colkey)));
                     }
                 }else{
                     m.put(colkey, row.get(colkey));
@@ -2210,7 +2210,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             inode = UUIDGenerator.generateUuid();
         }
 
-        if (!findInDb(inode).isPresent()) {
+        if (findInDb(inode).isEmpty()) {
             final UpsertCommand upsertInodeCommand = UpsertCommandFactory.getUpsertCommand();
             final SimpleMapAppContext replacements = new SimpleMapAppContext();
 
@@ -2251,7 +2251,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         upsertValues.add(name);
         upsertValues.add(new Timestamp(contentlet.getModDate().getTime()));
         upsertValues.add(contentlet.getModUser());
-        upsertValues.add(new Long(contentlet.getSortOrder()).intValue());
+        upsertValues.add(Long.valueOf(contentlet.getSortOrder()).intValue());
 
         //insert friendly name
         upsertValues.add(name);

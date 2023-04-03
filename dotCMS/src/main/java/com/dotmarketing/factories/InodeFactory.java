@@ -60,7 +60,7 @@ public class InodeFactory {
 		}
 
 		try {
-			final String tableName = c.newInstance().getType();
+			final String tableName = c.getDeclaredConstructor().newInstance().getType();
 			final HibernateUtil dh = new HibernateUtil(c);
 
 			String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName + ", tree tree, inode "
@@ -215,7 +215,7 @@ public class InodeFactory {
 		}
 		try {
 
-			String tableName = ((Inode) c.newInstance()).getType();
+			String tableName = ((Inode) c.getDeclaredConstructor().newInstance()).getType();
 			DotConnect db = new DotConnect();
 			db
 			.setSQL("select count(*) as test from inode, tree where inode.inode = tree.child and tree.parent = ?  and inode.type = '"
@@ -245,7 +245,7 @@ public class InodeFactory {
 				int n = 0;
 
 				for(Class<? extends Inode> anInodeClass: inodeClasses) {
-					types[n++] = anInodeClass.newInstance().getType();
+					types[n++] = anInodeClass.getDeclaredConstructor().newInstance().getType();
 					arrayParams.append("?,");
 				}
 				

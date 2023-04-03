@@ -68,7 +68,7 @@ public class WebdavRootResourceImpl implements Resource, PropFindableResource, C
 
 	public Long getContentLength() {
 		// TODO Auto-generated method stub
-		return new Long(0);
+		return Long.valueOf(0);
 	}
 
 	public String getContentType(String accepts) {
@@ -159,7 +159,7 @@ public class WebdavRootResourceImpl implements Resource, PropFindableResource, C
 	}
 
 	public Long getMaxAgeSeconds() {
-		return new Long(60);
+		return Long.valueOf(60);
 	}
 
 	public LockToken getCurrentLock() {

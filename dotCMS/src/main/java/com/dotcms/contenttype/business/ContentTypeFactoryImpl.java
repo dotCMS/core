@@ -467,7 +467,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
                 .stream()
                 .filter(x -> requiredField.variable().equalsIgnoreCase(x.variable()))
                 .findFirst();
-        if (!foundField.isPresent()) {
+        if (foundField.isEmpty()) {
             fields.add(requiredField);
         }
     }
@@ -856,13 +856,13 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
       for (Field test : type.requiredFields()) {
         Optional<Field> optional =
             testFields.stream().filter(x -> test.variable().equalsIgnoreCase(x.variable())).findFirst();
-        if (!optional.isPresent()) {
+        if (optional.isEmpty()) {
           if (test instanceof HostFolderField) {
             optional = testFields.stream().filter(x -> x instanceof HostFolderField).findFirst();
           }
         }
 
-          if (!optional.isPresent()) {
+          if (optional.isEmpty()) {
               if (Config.getBooleanProperty("THROW_REQUIRED_FIELD_EXCEPTION", false)){
                   throw new DotValidationException("ContentType does not have the required Fields: " + test);
               } else {

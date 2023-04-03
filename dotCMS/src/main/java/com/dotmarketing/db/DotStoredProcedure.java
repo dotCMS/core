@@ -85,7 +85,7 @@ public class DotStoredProcedure {
 		Object obj = new Object();
 
 		try {
-			obj = getObject(Class.forName(x).newInstance());
+			obj = getObject(Class.forName(x).getDeclaredConstructor().newInstance());
 			return obj;
 		} catch (Exception e) {
 			Logger.error(this, "Create class Exception" + e, e);

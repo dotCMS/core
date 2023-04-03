@@ -48,7 +48,7 @@ public class NotifyAssigneeActionlet extends WorkFlowActionlet {
 	
 		if(params.get("isHtml") != null && params.get("isHtml").getValue()!=null){
 			try{
-				isHtml = new Boolean(params.get("isHtml").getValue());
+				isHtml = Boolean.valueOf(params.get("isHtml").getValue());
 			}
 			catch(Exception e){
 				

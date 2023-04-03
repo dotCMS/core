@@ -201,7 +201,7 @@ public class H22Cache extends CacheProvider {
 
 					 final Optional<Connection> opt = createConnection(true, db); 
 					 
-					if (!opt.isPresent()) {
+					if (opt.isEmpty()) {
 					    throw new SQLException("Unable to get connection when trying to remove groups " + groupName + " in H22Cache");
 					}
 
@@ -283,10 +283,10 @@ public class H22Cache extends CacheProvider {
 
 			for (int db = 0; db < numberOfDbs; db++) {
 				Optional<H22HikariPool> poolOpt = getPool(db);
-				if(!poolOpt.isPresent())continue;
+				if(poolOpt.isEmpty())continue;
 				H22HikariPool pool = poolOpt.get();
 				Optional<Connection> connOpt = pool.connection();
-				if(!connOpt.isPresent())continue;
+				if(connOpt.isEmpty())continue;
 				
 				try(Connection c = connOpt.get()){
 					pool.stop();
@@ -340,7 +340,7 @@ public class H22Cache extends CacheProvider {
 		try {
 			for (int db = 0; db < numberOfDbs; db++) {
 				Optional<Connection> opt = createConnection(true, db);
-				if (!opt.isPresent()) {
+				if (opt.isEmpty()) {
 					continue;
 				}
 				try(Connection c = opt.get()){
@@ -525,7 +525,7 @@ public class H22Cache extends CacheProvider {
 		}
 
 		Optional<Connection> opt = createConnection(true, db(fqn));
-		if (!opt.isPresent()) {
+		if (opt.isEmpty()) {
 			return worked;
 		}
 		
@@ -565,7 +565,7 @@ public class H22Cache extends CacheProvider {
 
 
 		Optional<Connection> opt = createConnection(true, db(fqn));
-		if (!opt.isPresent()) {
+		if (opt.isEmpty()) {
 			return null;
 		}
         try(Connection c = opt.get();
@@ -593,7 +593,7 @@ public class H22Cache extends CacheProvider {
 		}
 		String sql = "DELETE from " + TABLE_PREFIX + table(fqn) + " WHERE cache_id = ?";
 		Optional<Connection> opt = createConnection(true, db(fqn));
-		if (!opt.isPresent()) {
+		if (opt.isEmpty()) {
 			return;
 		}
 		try(Connection c = opt.get(); PreparedStatement pstmt = c.prepareStatement(sql)){
@@ -644,7 +644,7 @@ public class H22Cache extends CacheProvider {
 		try {
 			for (db = 0; db < numberOfDbs; db++) {
 				Optional<Connection> opt = createConnection(true, db);
-				if (!opt.isPresent()) {
+				if (opt.isEmpty()) {
 					continue;
 				}
 				Connection c = opt.get();
@@ -696,7 +696,7 @@ public class H22Cache extends CacheProvider {
 		long ret = 0;
 		for (int db = 0; db < numberOfDbs; db++) {
 			Optional<Connection> opt = createConnection(true, db);
-			if (!opt.isPresent()) {
+			if (opt.isEmpty()) {
 				continue;
 			}
 			Connection c = opt.get();
@@ -714,7 +714,7 @@ public class H22Cache extends CacheProvider {
 			}
 			c.close();
 		}
-		return new Long(ret).toString();
+		return Long.valueOf(ret).toString();
 	}
 
 	private int db(Fqn fqn) {

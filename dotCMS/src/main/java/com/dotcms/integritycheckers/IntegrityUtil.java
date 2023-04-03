@@ -633,7 +633,7 @@ public class IntegrityUtil {
                 if (type == IntegrityType.HTMLPAGES
                         || type == IntegrityType.FILEASSETS
                         || type == IntegrityType.HOSTS) {
-                    dc.addParam(new Long(csvFile.get(7))); // languageId
+                    dc.addParam(Long.valueOf(csvFile.get(7))); // languageId
                 }
 
                 dc.loadResult();

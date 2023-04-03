@@ -253,7 +253,7 @@ public class EditFolderAction extends DotPortletAction {
 		}
 				
         //show on menu
-		req.setAttribute(WebKeys.FOLDER_SHOWMENU, new Boolean(f.isShowOnMenu()));
+		req.setAttribute(WebKeys.FOLDER_SHOWMENU, Boolean.valueOf(f.isShowOnMenu()));
 
 	}
 

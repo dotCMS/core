@@ -250,14 +250,14 @@ public class ContentMap {
 				}
 				Identifier i = APILocator.getIdentifierAPI().find(fid);
 				Optional<ContentletVersionInfo> cvi =  APILocator.getVersionableAPI().getContentletVersionInfo(i.getId(), content.getLanguageId());
-				if(!cvi.isPresent()) {
+				if(cvi.isEmpty()) {
 				    final long defaultLanguageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
 				    if(content.getLanguageId() != defaultLanguageId && Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE",true)){
 				        cvi =  APILocator.getVersionableAPI().getContentletVersionInfo(i.getId(), defaultLanguageId);
 				    }
 				}
 
-				if(!cvi.isPresent()) {
+				if(cvi.isEmpty()) {
 					return null;
 				}
 

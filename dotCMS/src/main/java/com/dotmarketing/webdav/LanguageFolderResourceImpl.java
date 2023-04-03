@@ -297,7 +297,7 @@ public class LanguageFolderResourceImpl implements FolderResource, LockingCollec
 	 * @see com.bradmcevoy.http.GetableResource#getMaxAgeSeconds()
 	 */
 	public Long getMaxAgeSeconds() {
-		return new Long(60);
+		return Long.valueOf(60);
 	}
 
 	/* (non-Javadoc)

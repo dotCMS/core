@@ -27,7 +27,6 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -96,7 +95,7 @@ public class XmlTool implements ViewTool {
 	}
 
 	public XmlTool(Node node) {
-		this(Collections.singletonList(node));
+		this(List.of(node));
 	}
 
 	public XmlTool(List<Node> nodes) {

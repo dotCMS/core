@@ -83,7 +83,7 @@ public class OrderMenuAction extends DotPortletAction {
 			int startLevel = Integer.parseInt(req.getParameter("startLevel"));
 			int depth = Integer.parseInt(req.getParameter("depth"));
 
-			req.setAttribute("depth", new Integer(depth));
+			req.setAttribute("depth", Integer.valueOf(depth));
 			Hashtable h = _getMenuItems(req,res,config,form, startLevel);
 
 			List<Object> items = (List)h.get("menuItems");
@@ -140,8 +140,8 @@ public class OrderMenuAction extends DotPortletAction {
 				//This part is executed while listing
 
 
-				req.setAttribute("startLevel", new Integer(startLevel));
-				req.setAttribute("depth", new Integer(depth));
+				req.setAttribute("startLevel", Integer.valueOf(startLevel));
+				req.setAttribute("depth", Integer.valueOf(depth));
 
 				setForward(req, "portlet.ext.folders.order_menu");
 			}
@@ -234,7 +234,7 @@ public class OrderMenuAction extends DotPortletAction {
 			req.setAttribute(WebKeys.MENU_ITEMS,itemsList);
 		}
 
-		h.put("showSaveButton", new Boolean(userHasPublishPermission));
+		h.put("showSaveButton", Boolean.valueOf(userHasPublishPermission));
 		return h;
 	}
 
@@ -519,7 +519,7 @@ public class OrderMenuAction extends DotPortletAction {
 
 		List<Object> l = new ArrayList();
 		l.add(buildNavigationTree(items, depth, user));
-		l.add(new Boolean(hasMenuPubPer));
+		l.add(Boolean.valueOf(hasMenuPubPer));
 		return l;
 	}
 
@@ -586,7 +586,7 @@ public class OrderMenuAction extends DotPortletAction {
 		if (l != null && l.size() > 0) {
 			v.add(l.get(1));
 		} else {
-			v.add(new Boolean(false));
+			v.add(Boolean.valueOf(false));
 		}
 
 		return v;
@@ -695,7 +695,7 @@ public class OrderMenuAction extends DotPortletAction {
 
 		sb.append("</ul>\n");
 		v.add(sb);
-		v.add(new Boolean(show));
+		v.add(Boolean.valueOf(show));
 
 		return v;
 	}
@@ -828,7 +828,7 @@ public class OrderMenuAction extends DotPortletAction {
 		}
 		sb.append("</ul>\n");
 		v.add(sb);
-		v.add(new Boolean(show));
+		v.add(Boolean.valueOf(show));
 
 		return v;
 	}

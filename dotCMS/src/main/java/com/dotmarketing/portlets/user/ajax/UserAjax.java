@@ -1112,7 +1112,7 @@ public class UserAjax {
 			@Override
 			public int getUserCount() {
 				try {
-					return new Long(userAPI.getCountUsersByNameOrEmail(filter)).intValue();
+					return Long.valueOf(userAPI.getCountUsersByNameOrEmail(filter)).intValue();
 				} catch (DotDataException e) {
 					Logger.error(this, e.getMessage(), e);
 					return 0;
@@ -1199,7 +1199,7 @@ public class UserAjax {
 				@Override
 				public int getUserCount() {
 					try {
-						return new Long(userAPI.getCountUsersByNameOrEmailOrUserID(filter,false)).intValue();
+						return Long.valueOf(userAPI.getCountUsersByNameOrEmailOrUserID(filter, false)).intValue();
 					} catch (DotDataException e) {
 						Logger.error(this, e.getMessage(), e);
 						return 0;

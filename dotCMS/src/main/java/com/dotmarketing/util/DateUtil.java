@@ -351,7 +351,7 @@ public class DateUtil {
 
 			} else if (13 < diffDates.get(DateUtil.DIFF_DAYS)) {
 				sinceMessage =
-						LanguageUtil.format(locale, "x-weeks-ago", new Double(Math.floor(diffDates.get(DateUtil.DIFF_DAYS) / 7)).intValue());
+						LanguageUtil.format(locale, "x-weeks-ago", Double.valueOf(Math.floor(diffDates.get(DateUtil.DIFF_DAYS) / 7)).intValue());
 
 			} else if (6 < diffDates.get(DateUtil.DIFF_DAYS)) {
 				sinceMessage = LanguageUtil.get(locale, "last-week");

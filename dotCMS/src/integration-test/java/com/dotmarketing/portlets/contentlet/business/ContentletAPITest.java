@@ -4574,7 +4574,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         for (HTMLPageAsset liveHTMLPage : liveHTMLPages) {
             Contentlet htmlPageContentlet = APILocator.getContentletAPI()
                     .checkout(liveHTMLPage.getInode(), user, false);
-            htmlPageContentlet.getMap().put("languageId", new Long(spanish));
+            htmlPageContentlet.getMap().put("languageId", Long.valueOf(spanish));
 
             //Checkin and Publish.
             Contentlet working = APILocator.getContentletAPI()

@@ -71,7 +71,7 @@ public class ApiTokenAPI {
         }
 
         final Optional<ApiToken> optToken = cache.getApiToken(tokenId);
-        if (!optToken.isPresent()) {
+        if (optToken.isEmpty()) {
 
             final ApiToken token = this.findApiTokenDB(tokenId).orElse(TOKEN_404);
             cache.putApiToken(tokenId, token);
@@ -93,7 +93,7 @@ public class ApiTokenAPI {
     @CloseDBIfOpened
     public String getJWT(final ApiToken apiToken, final User user) {
 
-        if(!findApiToken(apiToken.id).isPresent()) {
+        if(findApiToken(apiToken.id).isEmpty()) {
 
             throw new DotStateException("You can only get a JWT from a APIToken that has been persisted to db. Call persistApiToken first");
         }

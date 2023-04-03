@@ -126,7 +126,7 @@ public class StartupTasksExecutor {
                 name = c.getCanonicalName();
                 name = name.substring(name.lastIndexOf(".") + 1);
                 if (StartupTask.class.isAssignableFrom(c)) {
-                    StartupTask  task = (StartupTask) c.newInstance();
+                    StartupTask  task = (StartupTask) c.getDeclaredConstructor().newInstance();
                     if (task.forceRun()) {
                         HibernateUtil.startTransaction();
                         Logger.info(this, "Running Startup Tasks : " + name);
@@ -188,7 +188,7 @@ public class StartupTasksExecutor {
                 if (StartupTask.class.isAssignableFrom(c) && taskId > Config.DB_VERSION) {
                     StartupTask task;
                     try {
-                        task = (StartupTask) c.newInstance();
+                        task = (StartupTask) c.getDeclaredConstructor().newInstance();
                     } catch (Exception e) {
                         throw new DotRuntimeException(e.getMessage(), e);
                     }
@@ -249,7 +249,7 @@ public class StartupTasksExecutor {
 		String id = getTaskId(name);
                 int taskId = Integer.parseInt(id); 
 		if (StartupTask.class.isAssignableFrom(c) && taskId > Config.DB_VERSION) {
-                    StartupTask  task = (StartupTask) c.newInstance();
+                    StartupTask  task = (StartupTask) c.getDeclaredConstructor().newInstance();
                     if (task.forceRun()) {
                         HibernateUtil.startTransaction();
                         Logger.info(this, "Running Backported Tasks : " + name);

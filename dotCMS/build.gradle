@@ -22,8 +22,16 @@ plugins {
     id "com.palantir.docker" version "0.32.0"  // reference:  https://github.com/palantir/gradle-docker
     id "org.sonarqube" version "3.4.0.2513"
     id "jacoco"
+    id("org.openrewrite.rewrite") version("5.38.0")
 
 }
+
+rewrite {
+    // https://docs.openrewrite.org/reference/recipes/java/migrate/java8tojava11
+    activeRecipe("org.openrewrite.java.migrate.Java8toJava11")
+}
+
+
 
 
 sonarqube {

@@ -1824,7 +1824,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			if (!InodeUtils.isSet(structure.getInode())) {
 				ActionRequestImpl reqImpl = (ActionRequestImpl) req;
 				HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
-				httpReq.getSession().setAttribute(WebKeys.Structure.STRUCTURE_TYPE, new Integer("1"));
+				httpReq.getSession().setAttribute(WebKeys.Structure.STRUCTURE_TYPE, Integer.valueOf("1"));
 				String selectedStructure = req.getParameter("selectedStructure");
 				if (InodeUtils.isSet(selectedStructure)) {
 					structure = CacheLocator.getContentTypeCache().getStructureByInode(selectedStructure);

@@ -795,12 +795,12 @@ public class BrowserAjax {
 		if(ident!=null && InodeUtils.isSet(ident.getId()) && ident.getAssetType().equals("contentlet")) {
 		    Optional<ContentletVersionInfo> vinfo=versionAPI.getContentletVersionInfo(ident.getId(), languageId);
 
-			if(!vinfo.isPresent() && Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", false)) {
+			if(vinfo.isEmpty() && Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", false)) {
 				languageId = languageAPI.getDefaultLanguage().getId();
 				vinfo=versionAPI.getContentletVersionInfo(ident.getId(), languageId);
 			}
 
-			if(!vinfo.isPresent()) {
+			if(vinfo.isEmpty()) {
 				throw new DotDataException("Can't find ContentletVersionInfo. Identifier: "
 						+ ident.getId() + ". Lang: " + languageId);
 			}

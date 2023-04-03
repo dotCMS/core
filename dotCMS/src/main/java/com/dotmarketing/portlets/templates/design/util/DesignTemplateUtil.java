@@ -441,7 +441,7 @@ public class DesignTemplateUtil {
     	final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
     	final Optional<ShortyId> shortyId = shortyIdAPI.getShorty(containerId);
 
-    	if (!shortyId.isPresent()) {
+    	if (shortyId.isEmpty()) {
     		return containerId;
 		}
 

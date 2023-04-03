@@ -221,7 +221,7 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
 				dc.addParam(htmlPageIdentifier);
 				dc.addParam((htmlPageParentPath + htmlPageAssetName).toLowerCase());
 				dc.addParam(htmlPageHostIdentifier);
-				dc.addParam(new Long(htmlPageLanguage));
+				dc.addParam(Long.valueOf(htmlPageLanguage));
 				dc.loadResult();
 			} catch (final DotDataException e) {
 				htmlpages.close();
@@ -651,7 +651,7 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
         Long languageId;
         if (DbConnectionFactory.isOracle()) {
             BigDecimal lang = (BigDecimal) pageData.get("language_id");
-            languageId = new Long(lang.toPlainString());
+            languageId = Long.valueOf(lang.toPlainString());
         } else {
             languageId = (Long) pageData.get("language_id");
         }

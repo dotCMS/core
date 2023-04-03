@@ -647,9 +647,9 @@ public class CategoryAPITest extends IntegrationTestBase {
             categoryAPI.sortChildren( parentCategory.getInode() );
 
             //Check new order.
-            assertEquals( new Integer( 3 ), categoryCache.get( childCategoryA.getCategoryId() ).getSortOrder() );
-            assertEquals( new Integer( 2 ), categoryCache.get( childCategoryB.getCategoryId() ).getSortOrder() );
-            assertEquals( new Integer( 1 ), categoryCache.get( childCategoryC.getCategoryId() ).getSortOrder() );
+            assertEquals( Integer.valueOf(3), categoryCache.get( childCategoryA.getCategoryId() ).getSortOrder() );
+            assertEquals( Integer.valueOf(2), categoryCache.get( childCategoryB.getCategoryId() ).getSortOrder() );
+            assertEquals( Integer.valueOf(1), categoryCache.get( childCategoryC.getCategoryId() ).getSortOrder() );
 
         } catch ( Exception e ) {
             fail( e.getMessage() );

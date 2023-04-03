@@ -119,7 +119,7 @@ public class ASTIndex extends SimpleNode
                   + "' when Integer was expected at " + VelocityException.formatFileString(node));
           }
           
-          argument = new Integer(sizeint + ((Integer)argument).intValue());
+          argument = Integer.valueOf(sizeint + ((Integer)argument).intValue());
       }
       
       // Nothing to do, return the original argument

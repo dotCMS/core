@@ -748,7 +748,7 @@ public class WebAssetFactory {
 
 			if(offset < 0) offset = 0;
 
-			String type = ((Inode) c.newInstance()).getType();
+			String type = ((Inode) c.getDeclaredConstructor().newInstance()).getType();
 			String tableName = Inode.Type.valueOf(type.toUpperCase()).getTableName();
 			String versionTable=Inode.Type.valueOf(type.toUpperCase()).getVersionTableName();
 

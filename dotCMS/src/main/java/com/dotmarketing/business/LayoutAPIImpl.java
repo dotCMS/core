@@ -165,7 +165,7 @@ public class LayoutAPIImpl implements LayoutAPI {
 		}
 		Collections.sort(layouts, new Comparator<Layout>() {
 			public int compare(Layout l1, Layout l2) {
-				return new Integer(l1.getTabOrder()).compareTo(new Integer(l2.getTabOrder()));
+				return Integer.valueOf(l1.getTabOrder()).compareTo(Integer.valueOf(l2.getTabOrder()));
 			}
 		});
 		return layouts;
@@ -198,7 +198,7 @@ public class LayoutAPIImpl implements LayoutAPI {
 		}
 		Collections.sort(layouts, new Comparator<Layout>() {
 			public int compare(Layout l1, Layout l2) {
-				return new Integer(l1.getTabOrder()).compareTo(new Integer(l2.getTabOrder()));
+				return Integer.valueOf(l1.getTabOrder()).compareTo(Integer.valueOf(l2.getTabOrder()));
 			}
 		});
 		return layouts;	
@@ -222,11 +222,11 @@ public class LayoutAPIImpl implements LayoutAPI {
         gettingStarted.setId(LayoutAPI.GETTING_STARTED_LAYOUT_ID);
         gettingStarted.setName(LayoutAPI.GETTING_STARTED_LAYOUT_NAME);
         gettingStarted.setDescription("whatshot");
-        gettingStarted.setPortletIds(Collections.singletonList("starter"));
+        gettingStarted.setPortletIds(List.of("starter"));
         gettingStarted.setTabOrder(-320000);
         Try.run(() -> {
             layoutFactory.saveLayout(gettingStarted);
-            layoutFactory.setPortletsToLayout(gettingStarted, Collections.singletonList("starter"));
+            layoutFactory.setPortletsToLayout(gettingStarted, List.of("starter"));
         }).onFailure(LayoutAPIImpl::accept);
 
         return gettingStarted;

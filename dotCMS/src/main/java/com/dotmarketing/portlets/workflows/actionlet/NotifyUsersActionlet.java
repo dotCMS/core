@@ -55,7 +55,7 @@ public class NotifyUsersActionlet extends WorkFlowActionlet {
 	
 		if(params.get("isHtml") != null ){
 			try{
-				isHtml = new Boolean(params.get("isHtml").getValue());
+				isHtml = Boolean.valueOf(params.get("isHtml").getValue());
 			}
 			catch(Exception e){
 				

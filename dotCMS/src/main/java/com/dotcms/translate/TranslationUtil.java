@@ -25,7 +25,7 @@ public class TranslationUtil {
             try {
                 String clazz = Config.getStringProperty("TRANSLATION_SERVICE",
                     GoogleTranslationService.class.getName());
-                SERVICE = (TranslationService) Class.forName(clazz).newInstance();
+                SERVICE = (TranslationService) Class.forName(clazz).getDeclaredConstructor().newInstance();
 
             } catch (Exception e) {
                 Logger.error(TranslationUtil.class, e.getMessage(), e);

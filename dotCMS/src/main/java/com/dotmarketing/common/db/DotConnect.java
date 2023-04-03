@@ -142,7 +142,7 @@ public class DotConnect {
         Object obj = new Object();
 
         try {
-            obj = getObject(Class.forName(x).newInstance());
+            obj = getObject(Class.forName(x).getDeclaredConstructor().newInstance());
             return obj;
         } catch (Exception e) {
             Logger.error(this, "Create class Exception" + e, e);
@@ -1012,10 +1012,10 @@ public class DotConnect {
         setSQL("SELECT COUNT(*) AS count FROM " + tableName + " " + whereClause);
         if (DbConnectionFactory.isOracle()) {
             BigDecimal result = (BigDecimal) loadObjectResults().get(0).get("count");
-            recordCount = new Long(result.toPlainString());
+            recordCount = Long.valueOf(result.toPlainString());
         } else if (DbConnectionFactory.isMsSql()) {
             Integer result = (Integer) loadObjectResults().get(0).get("count");
-            recordCount = new Long(result.toString());
+            recordCount = Long.valueOf(result.toString());
         } else {
             recordCount = (Long) loadObjectResults().get(0).get("count");
         }

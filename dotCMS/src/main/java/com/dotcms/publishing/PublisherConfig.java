@@ -454,7 +454,7 @@ public class PublisherConfig implements Map<String, Object>, Cloneable {
 		 List<IBundler> bs = new ArrayList<IBundler>();
 		 for(String name : x){
 			 try {
-				bs.add((IBundler) Class.forName(name).newInstance());
+				bs.add((IBundler) Class.forName(name).getDeclaredConstructor().newInstance());
 			} catch (Exception e) {
 				Logger.error(this.getClass(), "Cannont get bundler:" + e.getMessage(), e);
 			}
@@ -523,8 +523,8 @@ public class PublisherConfig implements Map<String, Object>, Cloneable {
 	}
 
 	public boolean runNow(){
-		return this.get(PushPublisherConfig.MyConfig.RUN_NOW.toString()) !=null && new Boolean((String) this.get(
-			PushPublisherConfig.MyConfig.RUN_NOW.toString()));
+		return this.get(PushPublisherConfig.MyConfig.RUN_NOW.toString()) !=null && Boolean.valueOf((String)this.get(
+                PushPublisherConfig.MyConfig.RUN_NOW.toString()));
 	}
 
 	public void setRunNow(boolean once){

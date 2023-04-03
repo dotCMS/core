@@ -632,7 +632,7 @@ public class ContentletLoader implements DotLoader {
     public InputStream writeObject(final VelocityResourceKey key)
             throws DotStateException, DotDataException, DotSecurityException {
 
-        long language = new Long(key.language);
+        long language = Long.valueOf(key.language);
         final RenderContext renderContext = WebAPILocator.getVariantWebAPI()
                 .getRenderContext(language, key.id1, key.mode, APILocator.systemUser());
 

@@ -444,7 +444,7 @@ public class CommentsWebAPI implements ViewTool {
 			initStructures();
 			validateCommentsRelation(contentlet);
 			validateCommentsCommentsRelation();
-			_commentsCreated.put(String.valueOf(contentlet.getStructure()), new Boolean(true));
+			_commentsCreated.put(String.valueOf(contentlet.getStructure()), Boolean.valueOf(true));
 		}
 	}
 /*
@@ -526,7 +526,7 @@ public class CommentsWebAPI implements ViewTool {
     		    commentNumber = Integer.parseInt(contentlet.getStringProperty(field.getVelocityVarName())) ;
     		    
     		}else {
-    			commentNumber = new Long(contentlet.getLongProperty(field.getVelocityVarName())).intValue();
+    			commentNumber = Long.valueOf(contentlet.getLongProperty(field.getVelocityVarName())).intValue();
     		}
     		
         }catch(DotDataException e){

@@ -673,14 +673,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             .getContentletVersionInfo(identifier, tryLanguage);
 
             // try the fallback if does not exists
-            if (tryLanguage != defaultLanguageId && (!contentletVersionInfo.isPresent()
+            if (tryLanguage != defaultLanguageId && (contentletVersionInfo.isEmpty()
                     || (live && contentletVersionInfo.get().getLiveInode() == null))) {
                 fallback = true;  // using the fallback
                 contentletVersionInfo = APILocator.getVersionableAPI()
                         .getContentletVersionInfo(identifier, defaultLanguageId);
             }
 
-            if (!contentletVersionInfo.isPresent()) {
+            if (contentletVersionInfo.isEmpty()) {
                 return Optional.empty();
             }
 
@@ -2614,7 +2614,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             final Optional<Boolean> deleteOpt = this.checkAndRunDestroyAsWorkflow(contentlet, user,
                     respectFrontendRoles);
-            if (!deleteOpt.isPresent()) {
+            if (deleteOpt.isEmpty()) {
 
                 contentletsToDelete.add(contentlet);
             } else {
@@ -7310,7 +7310,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             } else if (value instanceof String) {
                 try {
                     contentlet.setFloatProperty(field.getVelocityVarName(),
-                            new Float((String) value));
+                            Float.valueOf((String)value));
                 } catch (Exception e) {
                     if (value != null && value.toString().length() != 0) {
                         contentlet.getMap().put(field.getVelocityVarName(), (String) value);
@@ -7325,7 +7325,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             } else if (value instanceof String) {
                 try {
                     contentlet.setLongProperty(field.getVelocityVarName(),
-                            new Long((String) value));
+                            Long.valueOf((String)value));
                 } catch (Exception e) {
                     //If we throw this exception here.. the contentlet will never get to the validateContentlet Method
                     throw new DotContentletStateException("Unable to set string value as a Long");

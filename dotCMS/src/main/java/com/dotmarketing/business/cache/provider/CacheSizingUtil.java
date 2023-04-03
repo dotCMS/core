@@ -57,7 +57,7 @@ public class CacheSizingUtil {
             if (object instanceof Optional && ((Optional) object).isPresent()) {
                 object = ((Optional) object).get();
             }
-            if (object instanceof Optional && !((Optional) object).isPresent()) {
+            if (object instanceof Optional && ((Optional)object).isEmpty()) {
                 return 0;
             }
             totalSize += sizeOf(object);

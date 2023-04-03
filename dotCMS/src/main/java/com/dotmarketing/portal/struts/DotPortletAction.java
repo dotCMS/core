@@ -443,7 +443,7 @@ public class DotPortletAction extends PortletAction {
 		}
 		else {
 			// it is a new one
-			webAsset = (WebAsset) myClass.newInstance(); 
+			webAsset = (WebAsset) myClass.getDeclaredConstructor().newInstance(); 
 		}
 		
 		req.setAttribute(webkey, webAsset);
