@@ -53,6 +53,8 @@ $number-link-icon-size: 2.28rem;
         margin-left: $spacing-1;
         margin-bottom: $spacing-4;
         margin-right: $spacing-1;
+        overflow: hidden;
+        border-radius: $border-radius-md;
     }
 
     .dot-starter-top-main__block {
@@ -180,6 +182,7 @@ $number-link-icon-size: 2.28rem;
         overflow: hidden;
         padding: $spacing-3 0;
         transition: background-color $basic-speed ease-in;
+        border-radius: $border-radius-md;
 
         &:hover {
             background-color: $bg-hover;

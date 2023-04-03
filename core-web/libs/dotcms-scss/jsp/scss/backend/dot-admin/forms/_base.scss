@@ -277,16 +277,6 @@ dd {
     &Name {
         @extend #label;
 
-        & > a {
-            position: absolute;
-            left: 0;
-            top: -2px;
-
-            & + span + span {
-                padding-left: 20px;
-            }
-        }
-
         .hintIcon {
             color: $font-color-base;
         }

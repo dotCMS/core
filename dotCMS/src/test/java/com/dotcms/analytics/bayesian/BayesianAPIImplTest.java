@@ -1,6 +1,7 @@
 package com.dotcms.analytics.bayesian;
 
 import com.dotcms.analytics.bayesian.model.BayesianInput;
+import com.dotcms.analytics.bayesian.model.BayesianPriors;
 import com.dotcms.analytics.bayesian.model.BayesianResult;
 import org.junit.Assert;
 import org.junit.Before;
@@ -38,16 +39,15 @@ public class BayesianAPIImplTest {
     @Test
     public void test_calculateABTesting() {
         final BayesianInput input = BayesianInput.builder()
-                .priorAlpha(10)
-                .priorBeta(10)
-                .controlSuccesses(5)
-                .controlFailures(3)
-                .testSuccesses(6)
-                .testFailures(2)
-                .build();
-        final BayesianResult result = bayesianAPI.calcABTesting(input);
+            .priors(BayesianPriors.builder().alpha(10.0).beta(10.0).build())
+            .controlSuccesses(5)
+            .controlFailures(3)
+            .testSuccesses(6)
+            .testFailures(2)
+            .build();
+        final BayesianResult result = bayesianAPI.calcProbBOverA(input);
         Assert.assertNotNull(result);
-        Assert.assertEquals("0.69", String.format("%.2f", result.result()));
+        Assert.assertEquals("0.69", String.format("%.2f", result.value()));
     }
 
     /**
@@ -57,14 +57,13 @@ public class BayesianAPIImplTest {
     @Test(expected = IllegalArgumentException.class)
     public void test_calculateABTesting_invalidPriorAlpha() {
         final BayesianInput input = BayesianInput.builder()
-                .priorAlpha(0)
-                .priorBeta(10)
-                .controlSuccesses(5)
-                .controlFailures(3)
-                .testSuccesses(5)
-                .testFailures(3)
-                .build();
-        bayesianAPI.calcABTesting(input);
+            .priors(BayesianPriors.builder().alpha(0.0).beta(10.0).build())
+            .controlSuccesses(5)
+            .controlFailures(3)
+            .testSuccesses(5)
+            .testFailures(3)
+            .build();
+        bayesianAPI.calcProbBOverA(input);
     }
 
     /**
@@ -74,14 +73,13 @@ public class BayesianAPIImplTest {
     @Test(expected = IllegalArgumentException.class)
     public void test_calculateABTesting_invalidPriorBeta() {
         final BayesianInput input = BayesianInput.builder()
-                .priorAlpha(10)
-                .priorBeta(0)
-                .controlSuccesses(5)
-                .controlFailures(3)
-                .testSuccesses(5)
-                .testFailures(3)
-                .build();
-        bayesianAPI.calcABTesting(input);
+            .priors(BayesianPriors.builder().alpha(10.0).beta(0.0).build())
+            .controlSuccesses(5)
+            .controlFailures(3)
+            .testSuccesses(5)
+            .testFailures(3)
+            .build();
+        bayesianAPI.calcProbBOverA(input);
     }
 
     /**
@@ -91,14 +89,13 @@ public class BayesianAPIImplTest {
     @Test(expected = IllegalArgumentException.class)
     public void test_calculateABTesting_invalidControlSuccesses() {
         final BayesianInput input = BayesianInput.builder()
-                .priorAlpha(10)
-                .priorBeta(10)
-                .controlSuccesses(-1)
-                .controlFailures(3)
-                .testSuccesses(5)
-                .testFailures(3)
-                .build();
-        bayesianAPI.calcABTesting(input);
+            .priors(BayesianPriors.builder().alpha(10.0).beta(10.0).build())
+            .controlSuccesses(-1)
+            .controlFailures(3)
+            .testSuccesses(5)
+            .testFailures(3)
+            .build();
+        bayesianAPI.calcProbBOverA(input);
     }
 
     /**
@@ -108,14 +105,13 @@ public class BayesianAPIImplTest {
     @Test(expected = IllegalArgumentException.class)
     public void test_calculateABTesting_invalidControlFailures() {
         final BayesianInput input = BayesianInput.builder()
-                .priorAlpha(10)
-                .priorBeta(10)
-                .controlSuccesses(5)
-                .controlFailures(-1)
-                .testSuccesses(5)
-                .testFailures(3)
-                .build();
-        bayesianAPI.calcABTesting(input);
+            .priors(BayesianPriors.builder().alpha(10.0).beta(10.0).build())
+            .controlSuccesses(5)
+            .controlFailures(-1)
+            .testSuccesses(5)
+            .testFailures(3)
+            .build();
+        bayesianAPI.calcProbBOverA(input);
     }
 
     /**
@@ -125,14 +121,13 @@ public class BayesianAPIImplTest {
     @Test(expected = IllegalArgumentException.class)
     public void test_calculateABTesting_invalidTestSuccesses() {
         final BayesianInput input = BayesianInput.builder()
-                .priorAlpha(10)
-                .priorBeta(10)
-                .controlSuccesses(5)
-                .controlFailures(3)
-                .testSuccesses(-1)
-                .testFailures(3)
-                .build();
-        bayesianAPI.calcABTesting(input);
+            .priors(BayesianPriors.builder().alpha(10.0).beta(10.0).build())
+            .controlSuccesses(5)
+            .controlFailures(3)
+            .testSuccesses(-1)
+            .testFailures(3)
+            .build();
+        bayesianAPI.calcProbBOverA(input);
     }
 
     /**
@@ -142,14 +137,13 @@ public class BayesianAPIImplTest {
     @Test(expected = IllegalArgumentException.class)
     public void test_calculateABTesting_invalidTestFailures() {
         final BayesianInput input = BayesianInput.builder()
-                .priorAlpha(10)
-                .priorBeta(10)
-                .controlSuccesses(5)
-                .controlFailures(3)
-                .testSuccesses(5)
-                .testFailures(-1)
-                .build();
-        bayesianAPI.calcABTesting(input);
+            .priors(BayesianPriors.builder().alpha(10.0).beta(10.0).build())
+            .controlSuccesses(5)
+            .controlFailures(3)
+            .testSuccesses(5)
+            .testFailures(-1)
+            .build();
+        bayesianAPI.calcProbBOverA(input);
     }
 
 }
