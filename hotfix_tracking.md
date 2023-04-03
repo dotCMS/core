@@ -26,3 +26,4 @@ This maintenance release includes the following code fixes:
 17. https://github.com/dotCMS/core/issues/24344 : The content is becoming published automatically after unpublishing it manually without specifying any publish date #24344
 18. https://github.com/dotCMS/core/issues/24380 : Error upgrading in Postgres #24380
 19. https://github.com/dotCMS/core/issues/24395 : Remove issuer check from JWT API keys #24395
+20. https://github.com/dotCMS/core/issues/24436 : Task05380ChangeContainerPathToAbsolute repeating site if container was added several times
