@@ -378,7 +378,8 @@ public class PageRenderUtil implements Serializable {
                     }
                 } catch (Exception e) {
 
-                    Logger.error(this, e.getMessage(), e);
+                    Logger.error(this, "Error, contentlet id:" +
+                            contentlet.getIdentifier() + ", msg:" + e.getMessage(), e);
                     throw new RuntimeException(e);
                 }
             }
