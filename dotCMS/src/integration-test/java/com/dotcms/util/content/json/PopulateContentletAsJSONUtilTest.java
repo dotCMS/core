@@ -43,12 +43,14 @@ public class PopulateContentletAsJSONUtilTest extends IntegrationTestBase {
             throw new DotDataException(e.getMessage(), e);
         }
 
-        final DotConnect dotConnect = new DotConnect();
         try {
+            final DotConnect dotConnect = new DotConnect();
             dotConnect.setSQL("alter table contentlet drop column contentlet_as_json");
             dotConnect.loadResult();
         } catch (DotDataException e) {
             Logger.error(this, "Error removing contentlet_as_json column", e);
+        } finally {
+            DbConnectionFactory.closeSilently();
         }
     }
 
@@ -67,21 +69,24 @@ public class PopulateContentletAsJSONUtilTest extends IntegrationTestBase {
             type = "NVARCHAR(MAX)";
         }
 
-        final DotConnect dotConnect = new DotConnect();
         try {
+            final DotConnect dotConnect = new DotConnect();
             dotConnect.setSQL(String.format("ALTER TABLE contentlet ADD contentlet_as_json %s", type));
             dotConnect.loadResult();
         } catch (DotDataException e) {
             Logger.error(this, "Error creating contentlet_as_json column", e);
+        } finally {
+            DbConnectionFactory.closeSilently();
         }
     }
 
     /**
-     * Method to test: {@link PopulateContentletAsJSONUtil#populateForAssetSubType(String)}
-     *
-     * @throws SQLException
-     * @throws DotDataException
-     * @throws IOException
+     * <b>Method to test:</b> {@link PopulateContentletAsJSONUtil#populateForAssetSubType(String)}
+     * <p>
+     * <b>Given sceneario:</b> We create some hosts, then we drop the contentlet_as_json column, and we add it again to simulate
+     * contlentlets without data in the contentlet_as_json, to finally run the populateForAssetSubType method.
+     * <p>
+     * <b>Expected result:</b> We should have the contentlet_as_json column populated with the contentlet data in the test hosts.
      */
     @Test
     public void Test_populate_host() throws SQLException, DotDataException, IOException {
@@ -145,11 +150,13 @@ public class PopulateContentletAsJSONUtilTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link PopulateContentletAsJSONUtil#populateExcludingAssetSubType(String)}
-     *
-     * @throws SQLException
-     * @throws DotDataException
-     * @throws IOException
+     * <b>Method to test:</b> {@link PopulateContentletAsJSONUtil#populateExcludingAssetSubType(String)}
+     * <p>
+     * <b>Given sceneario:</b> We create some contentlets, then we drop the contentlet_as_json column, and we add it again to
+     * simulate contlentlets without data in the contentlet_as_json, to finally run the populateExcludingAssetSubType method.
+     * <p>
+     * <b>Expected result:</b> We should have the contentlet_as_json column populated with the contentlet data in the test
+     * contentlets.
      */
     @Test
     public void Test_populate_All_excluding_host() throws SQLException, DotDataException, IOException {

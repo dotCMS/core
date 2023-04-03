@@ -4,25 +4,21 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.json.ContentletJsonAPI;
 import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.repackage.com.google.common.base.Strings;
-import com.dotcms.util.CloseUtils;
+import com.dotcms.util.LogTime;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.db.DotPGobject;
 import com.dotmarketing.common.db.Params;
 import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.primitives.Ints;
-import io.vavr.control.Try;
-import org.apache.commons.lang.time.StopWatch;
 import org.apache.commons.lang3.mutable.MutableInt;
-import org.postgresql.util.PGobject;
 
 import javax.annotation.Nullable;
 import java.io.BufferedWriter;
@@ -33,14 +29,14 @@ import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static com.dotcms.content.business.json.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
 
 /**
  * Utility class to populate the contentlet_as_json column in the contentlet table.
@@ -103,7 +99,7 @@ public class PopulateContentletAsJSONUtil {
      * @throws DotDataException
      * @throws IOException
      */
-    public void populateForAssetSubType(String assetSubtype) throws SQLException, DotDataException, IOException {
+    public void populateForAssetSubType(final String assetSubtype) throws SQLException, DotDataException, IOException {
         Logger.info(this, String.format("Populate Contentlet as JSON task started for asset subtype [%s]", assetSubtype));
         populate(assetSubtype, null);
     }
@@ -117,7 +113,7 @@ public class PopulateContentletAsJSONUtil {
      * @throws DotDataException
      * @throws IOException
      */
-    public void populateExcludingAssetSubType(String assetSubtype) throws SQLException, DotDataException, IOException {
+    public void populateExcludingAssetSubType(final String assetSubtype) throws SQLException, DotDataException, IOException {
         Logger.info(this, String.format("Populate Contentlet as JSON task started excluding asset subtype [%s]", assetSubtype));
         populate(null, assetSubtype);
     }
@@ -129,45 +125,42 @@ public class PopulateContentletAsJSONUtil {
      * @param assetSubtype          Optional asset subtype (Content Type) to filter the contentlets to process, if null then all
      *                              the contentlets will be processed unless the excludingAssetSubtype is provided.
      * @param excludingAssetSubtype Optional asset subtype (Content Type) use to exclude contentlets from the query
-     * @throws SQLException
-     * @throws DotDataException
      * @throws IOException
      */
-    private void populate(@Nullable String assetSubtype, @Nullable String excludingAssetSubtype)
-            throws SQLException, DotDataException, IOException {
-
-        final StopWatch stopWatch = new StopWatch();
-        stopWatch.start();
+    @LogTime(loggingLevel = "INFO")
+    private void populate(@Nullable String assetSubtype, @Nullable String excludingAssetSubtype) throws IOException {
 
         final File populateJSONTaskDataFile = File.createTempFile("rows-task-230320", "tmp");
 
         Logger.debug(this, "File created: " + populateJSONTaskDataFile.getAbsolutePath());
 
-        try {
+        Runnable findAndStore = () -> {
+            try {
+                // First we need to find all the contentlets to process and write them into a file
+                findAndStoreToDisk(assetSubtype, excludingAssetSubtype, populateJSONTaskDataFile);
+            } catch (SQLException | DotDataException | IOException e) {
+                throw new DotRuntimeException("Error finding, generating JSON representation of Contentlets " +
+                        "and storing them in file.", e);
+            }
+        };
 
-            HibernateUtil.startTransaction();
+        Runnable processFile = () -> {
+            try {
+                // Now we need to process the file and each record on it
+                processFile(populateJSONTaskDataFile);
+            } catch (IOException e) {
+                throw new DotRuntimeException("Error processing file with the JSON representation of Contentlets to " +
+                        "update.", e);
+            }
+        };
 
-            // First we need to find all the contentlets to process and write them into a file
-            findAndStoreToDisk(assetSubtype, excludingAssetSubtype, populateJSONTaskDataFile);
-
-        } finally {
-            HibernateUtil.closeSessionSilently();
-        }
-
-        try {
-
-            HibernateUtil.startTransaction();
-
-            // Now we need to process the file and each record on it
-            processFile(populateJSONTaskDataFile);
-        } finally {
-            HibernateUtil.closeSessionSilently();
-        }
-
-        stopWatch.stop();
-        Logger.info(this, String.format("Contentlet as JSON migration task DONE for assetSubtype: [%s] / " +
-                        "excludingAssetSubtype [%s]. Duration: %s seconds",
-                assetSubtype, excludingAssetSubtype, DateUtil.millisToSeconds(stopWatch.getTime())));
+        CompletableFuture.
+                runAsync(findAndStore).
+                thenRunAsync(processFile).
+                thenAccept(unused -> Logger.info(this, String.format("Contentlet as JSON migration task " +
+                                "DONE for assetSubtype: [%s] / excludingAssetSubtype [%s].",
+                        assetSubtype, excludingAssetSubtype))).
+                join();// Block the current thread and wait for the CompletableFuture to complete
     }
 
     /**
@@ -176,40 +169,27 @@ public class PopulateContentletAsJSONUtil {
      * Each found contentlet is written into a file for a later processing.
      *
      * @param assetSubtype             The asset subtype (Content Type) to search for, if null all the contentlets will be searched.
+     * @param excludingAssetSubtype    The asset subtype (Content Type) to exclude in the search, if null no Content Type will be excluded.
      * @param populateJSONTaskDataFile The file where the contentlets will be written.
      * @throws SQLException
      * @throws DotDataException
      * @throws IOException
      */
     @WrapInTransaction
-    private void findAndStoreToDisk(@Nullable String assetSubtype,
-                                    @Nullable String excludingAssetSubtype,
+    private void findAndStoreToDisk(@Nullable final String assetSubtype,
+                                    @Nullable final String excludingAssetSubtype,
                                     final File populateJSONTaskDataFile) throws
             SQLException, DotDataException, IOException {
 
-        var fileWriter = new BufferedWriter(new FileWriter(populateJSONTaskDataFile));
-
         int recordsProcessed = 0;
 
-        try (final Connection conn = DbConnectionFactory.getConnection();
+        final Connection conn = DbConnectionFactory.getConnection();
+
+        try (var fileWriter = new BufferedWriter(new FileWriter(populateJSONTaskDataFile));
              var stmt = conn.createStatement()) {
 
             // Declaring the cursor
-            if (Strings.isNullOrEmpty(assetSubtype)) {
-                if (Strings.isNullOrEmpty(excludingAssetSubtype)) {
-                    stmt.execute(String.format(DECLARE_CURSOR, CONTENTS_WITH_NO_JSON));
-                } else {
-                    var selectQuery = String.format(CONTENTS_WITH_NO_JSON_AND_EXCLUDE, excludingAssetSubtype);
-                    stmt.execute(String.format(DECLARE_CURSOR, selectQuery));
-                }
-            } else {
-                var selectQuery = String.format(SUBTYPE_WITH_NO_JSON, assetSubtype);
-                stmt.execute(String.format(DECLARE_CURSOR, selectQuery));
-            }
-
-            if (DbConnectionFactory.isMsSql()) {
-                stmt.execute(OPEN_CURSOR_MSSQL);
-            }
+            declareCursor(stmt, assetSubtype, excludingAssetSubtype);
 
             boolean hasRows;
 
@@ -269,8 +249,6 @@ public class PopulateContentletAsJSONUtil {
             if (DbConnectionFactory.isMsSql()) {
                 stmt.execute(DEALLOCATE_CURSOR_MSSQL);
             }
-        } finally {
-            CloseUtils.closeQuietly(fileWriter);
         }
 
         Logger.info(this, "-- Records found to process: " + recordsProcessed);
@@ -304,6 +282,35 @@ public class PopulateContentletAsJSONUtil {
     }
 
     /**
+     * Declares the cursor to be used to find the contentlets that need to be updated with the contentlet_as_json
+     *
+     * @param stmt
+     * @param assetSubtype          The asset subtype (Content Type) to search for, if null all the contentlets will be searched.
+     * @param excludingAssetSubtype The asset subtype (Content Type) to exclude in the search, if null no Content Type will be excluded.
+     * @throws SQLException
+     */
+    private void declareCursor(final Statement stmt, @Nullable final String assetSubtype,
+                               @Nullable final String excludingAssetSubtype) throws SQLException {
+
+        // Declaring the cursor
+        if (Strings.isNullOrEmpty(assetSubtype)) {
+            if (Strings.isNullOrEmpty(excludingAssetSubtype)) {
+                stmt.execute(String.format(DECLARE_CURSOR, CONTENTS_WITH_NO_JSON));
+            } else {
+                var selectQuery = String.format(CONTENTS_WITH_NO_JSON_AND_EXCLUDE, excludingAssetSubtype);
+                stmt.execute(String.format(DECLARE_CURSOR, selectQuery));
+            }
+        } else {
+            var selectQuery = String.format(SUBTYPE_WITH_NO_JSON, assetSubtype);
+            stmt.execute(String.format(DECLARE_CURSOR, selectQuery));
+        }
+
+        if (DbConnectionFactory.isMsSql()) {
+            stmt.execute(OPEN_CURSOR_MSSQL);
+        }
+    }
+
+    /**
      * Processes the given line preparing the params for the batch update.
      *
      * @param line Line with the json representation of the contentlet.
@@ -317,11 +324,9 @@ public class PopulateContentletAsJSONUtil {
 
             final Object contentletAsJSON;
             if (DbConnectionFactory.isPostgres()) {
-                PGobject jsonObject = new PGobject();
-                jsonObject.setType("json");
-                Try.run(() -> jsonObject.setValue(line)).getOrElseThrow(
-                        () -> new IllegalArgumentException("Invalid JSON"));
-                contentletAsJSON = jsonObject;
+                contentletAsJSON = new DotPGobject.Builder()
+                        .jsonValue(line)
+                        .build();
             } else {
                 contentletAsJSON = line;
             }
@@ -352,7 +357,8 @@ public class PopulateContentletAsJSONUtil {
             // I need to have the JSON in a single line, so I can write it into a file
             return contentletAsJSON.replaceAll("[\\t\\n\\r]", "");
         } catch (JsonProcessingException e) {
-            throw new DotRuntimeException("Error creating the JSON representation of the Contentlet", e);
+            throw new DotRuntimeException(String.format("Error creating the JSON representation of Contentlet - " +
+                    "inode [%s]", contentlet.getInode()), e);
         }
     }
 
@@ -384,15 +390,7 @@ public class PopulateContentletAsJSONUtil {
      * This basically tells Weather or not we support saving content as json and if we have not turned it off.
      */
     public static boolean canPersistContentAsJson() {
-        return isJsonSupportedDatabase()
-                && Config.getBooleanProperty(SAVE_CONTENTLET_AS_JSON, true);
-    }
-
-    /**
-     * This tells us if we're running on a db that supports json
-     */
-    private static boolean isJsonSupportedDatabase() {
-        return DbConnectionFactory.isPostgres() || DbConnectionFactory.isMsSql();
+        return APILocator.getContentletJsonAPI().isPersistContentAsJson();
     }
 
 }
