@@ -111,3 +111,5 @@ This maintenance release includes the following code fixes:
 
 **Release-22.03.6**
 
+94. https://github.com/dotCMS/core/issues/24245 : Publishing contentlet takes a long time when there are many locales/relationships #24245
+95. 
