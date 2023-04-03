@@ -7,6 +7,8 @@ import com.dotcms.model.language.Language;
 import java.util.List;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -51,4 +53,24 @@ public interface LanguageAPI {
             summary = " Returns all the languages in the system"
     )
     ResponseEntityView<List<Language>> list();
+
+    @POST
+    @Operation(
+            summary = " Creates a new language in the system"
+    )
+    ResponseEntityView<Language> create(Language language);
+
+    @POST
+    @Path("/{languageTag}")
+    @Operation(
+            summary = " Creates a new language in the system given its tag"
+    )
+    ResponseEntityView<Language> create(@PathParam("languageTag") String languageTag);
+
+    @PUT
+    @Path("/{languageId}")
+    @Operation(
+            summary = " Updates an existing language in the system"
+    )
+    ResponseEntityView<Language> update(@PathParam("languageId") String languageId, Language language);
 }
