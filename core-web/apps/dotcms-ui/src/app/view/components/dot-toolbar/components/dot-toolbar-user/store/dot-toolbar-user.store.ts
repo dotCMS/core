@@ -5,7 +5,7 @@ import { Inject, Injectable } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
 
-import { filter, map, take } from 'rxjs/operators';
+import { filter, take } from 'rxjs/operators';
 
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
 import { LOCATION_TOKEN } from '@dotcms/app/providers';
@@ -66,25 +66,20 @@ export class DotToolbarUserStore extends ComponentStore<DotToolbarUserState> {
      * @memberof DotToolbarUserStore
      */
     init() {
-        this.loginService
-            .loadAuth()
-            .pipe(
-                map((auth: Auth) => {
-                    const userData = auth.loginAsUser || auth.user;
+        // There's an error were you always get redirected to first portlet
+        // this patches that error, I tried different options to avoid the use of this method and use a regular observable
+        // but all the options I tried didn't work, the redirect kept happening
+        this.loginService.watchUser((auth: Auth) => {
+            const userData = auth.loginAsUser || auth.user;
 
-                    return {
-                        items: this.getItems(auth),
-                        userData: {
-                            email: userData.emailAddress,
-                            name: userData.name || userData.fullName
-                        }
-                    };
-                }),
-                take(1)
-            )
-            .subscribe((state) => {
-                this.patchState(state);
+            this.patchState({
+                items: this.getItems(auth),
+                userData: {
+                    email: userData.emailAddress,
+                    name: userData.name || userData.fullName
+                }
             });
+        });
     }
 
     /**
@@ -128,9 +123,7 @@ export class DotToolbarUserStore extends ComponentStore<DotToolbarUserState> {
                 label: this.dotMessageService.get('my-account'),
                 icon: 'pi pi-user-edit',
                 visible: !auth.isLoginAs,
-                command: () => {
-                    this.showMyAccount(true);
-                }
+                command: () => this.showMyAccount(true)
             },
             {
                 id: 'dot-toolbar-user-link-login-as',
