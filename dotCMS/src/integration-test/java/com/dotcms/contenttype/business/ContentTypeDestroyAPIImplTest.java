@@ -56,9 +56,6 @@ public class ContentTypeDestroyAPIImplTest extends IntegrationTestBase {
     Tuple2<ContentType,Set<String>> simpleContentTypeWithData(int numContentlets)
             throws DotDataException {
 
-        final WorkflowScheme systemWorkflow = TestWorkflowUtils.getSystemWorkflow();
-        final WorkflowScheme documentWorkflow = TestWorkflowUtils.getDocumentWorkflow();
-
         final Host host = new SiteDataGen().nextPersisted();
         final long currentTime = System.currentTimeMillis();
         final String name =  String.format("Async_CT_Remove_%s", currentTime);
