@@ -36,11 +36,6 @@
 	</div>
 			
 </div>
-<div id="savingPermissionsDialog" dojoType="dijit.Dialog" title="<%= LanguageUtil.get(pageContext, "saving-permissions") %>" style="display: none;">
+<div id="savingPermissionsDialog" data-dojo-props="closable:false" dojoType="dijit.Dialog" title="<%= LanguageUtil.get(pageContext, "saving-permissions") %>" style="display: none;">
 	<div dojoType="dijit.ProgressBar" style="width:200px;text-align:center;" indeterminate="true" jsId="savePermissions" id="savePermissions"></div>
 </div>
-<script type="text/javascript">
-	dojo.addOnLoad(function () {
-		dojo.style(dijit.byId('savingPermissionsDialog').closeButtonNode, 'visibility', 'hidden');
-	});
-</script>

@@ -17,6 +17,7 @@ interface PluginState {
 }
 
 export const FreezeScroll = Extension.create({
+    name: 'freezeScroll',
     addCommands() {
         return {
             freezeScroll:

@@ -1,9 +1,10 @@
-import { formatDistanceStrict } from 'date-fns';
 import { Observable, of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Injectable } from '@angular/core';
-import { TestBed } from '@angular/core/testing';
+import { fakeAsync, TestBed, tick } from '@angular/core/testing';
+
+import { DialogService } from 'primeng/dynamicdialog';
 
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { PushPublishServiceMock } from '@components/_common/dot-push-publish-env-selector/dot-push-publish-env-selector.component.spec';
@@ -22,9 +23,11 @@ import {
     DotEventsService,
     DotLanguagesService,
     DotLicenseService,
+    DotPageTypesService,
     DotRenderMode,
     DotWorkflowActionsFireService,
-    DotWorkflowsActionsService
+    DotWorkflowsActionsService,
+    ESOrderDirection
 } from '@dotcms/data-access';
 import {
     CoreWebService,
@@ -37,9 +40,15 @@ import {
     SiteServiceMock,
     StringUtils
 } from '@dotcms/dotcms-js';
-import { DotCMSContentlet, ESContent } from '@dotcms/dotcms-models';
+import {
+    ComponentStatus,
+    DotCMSContentlet,
+    DotCMSContentType,
+    ESContent
+} from '@dotcms/dotcms-models';
 import {
     DotcmsConfigServiceMock,
+    dotcmsContentTypeBasicMock,
     DotcmsEventsServiceMock,
     DotLanguagesServiceMock,
     LoginServiceMock,
@@ -50,11 +59,13 @@ import {
 
 import { DotPageStore } from './dot-pages.store';
 
+import { contentTypeDataMock } from '../../dot-edit-page/components/dot-palette/dot-palette-content-type/dot-palette-content-type.component.spec';
 import { DotLicenseServiceMock } from '../../dot-edit-page/content/services/html/dot-edit-content-toolbar-html.service.spec';
 import {
     CurrentUserDataMock,
     DotCurrentUserServiceMock
 } from '../../dot-starter/dot-starter-resolver.service.spec';
+import { DotPagesCreatePageDialogComponent } from '../dot-pages-create-page-dialog/dot-pages-create-page-dialog.component';
 import { favoritePagesInitialTestData } from '../dot-pages.component.spec';
 
 @Injectable()
@@ -72,9 +83,18 @@ class MockESPaginatorService {
     }
 }
 
+@Injectable()
+export class DialogServiceMock {
+    open(): void {
+        /* */
+    }
+}
+
 describe('DotPageStore', () => {
     let dotPageStore: DotPageStore;
+    let dialogService: DialogService;
     let dotESContentService: DotESContentService;
+    let dotPageTypesService: DotPageTypesService;
     let dotWorkflowsActionsService: DotWorkflowsActionsService;
 
     beforeEach(() => {
@@ -85,12 +105,14 @@ describe('DotPageStore', () => {
                 DotGlobalMessageService,
                 DotIframeService,
                 DotPageStore,
+                DotPageTypesService,
                 DotWizardService,
                 DotWorkflowActionsFireService,
                 DotWorkflowsActionsService,
                 DotWorkflowEventHandlerService,
                 LoggerService,
                 StringUtils,
+                { provide: DialogService, useClass: DialogServiceMock },
                 { provide: DotcmsEventsService, useClass: DotcmsEventsServiceMock },
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotCurrentUserService, useClass: DotCurrentUserServiceMock },
@@ -107,8 +129,12 @@ describe('DotPageStore', () => {
             ]
         });
         dotPageStore = TestBed.inject(DotPageStore);
+        dialogService = TestBed.inject(DialogService);
         dotESContentService = TestBed.inject(DotESContentService);
+        dotPageTypesService = TestBed.inject(DotPageTypesService);
         dotWorkflowsActionsService = TestBed.inject(DotWorkflowsActionsService);
+
+        spyOn(dialogService, 'open').and.callThrough();
 
         dotPageStore.setInitialStateData(5);
     });
@@ -153,6 +179,18 @@ describe('DotPageStore', () => {
         });
     });
 
+    it('should get pages status', () => {
+        dotPageStore.getStatus$.subscribe((data) => {
+            expect(data).toEqual(ComponentStatus.INIT);
+        });
+    });
+
+    it('should get pages loading status', () => {
+        dotPageStore.isPagesLoading$.subscribe((data) => {
+            expect(data).toEqual(true);
+        });
+    });
+
     // Updaters
     it('should update Favorite Pages', () => {
         dotPageStore.setFavoritePages(favoritePagesInitialTestData);
@@ -186,6 +224,13 @@ describe('DotPageStore', () => {
         dotPageStore.setArchived('true');
         dotPageStore.state$.subscribe((data) => {
             expect(data.pages.archived).toEqual(true);
+        });
+    });
+
+    it('should update Pages Status', () => {
+        dotPageStore.setPagesStatus(ComponentStatus.LOADING);
+        dotPageStore.state$.subscribe((data) => {
+            expect(data.pages.status).toEqual(ComponentStatus.LOADING);
         });
     });
 
@@ -239,25 +284,31 @@ describe('DotPageStore', () => {
         expect(dotESContentService.get).toHaveBeenCalledTimes(1);
     });
 
-    it('should set all Pages value in store', () => {
-        const relativeDate = (date: string) => {
-            return formatDistanceStrict(
-                new Date(parseInt(new Date(date).getTime().toString(), 10)),
-                new Date(),
-                {
-                    addSuffix: true
-                }
-            );
-        };
+    it('should get all Page Types value in store and show dialog', () => {
+        const expectedInputArray = [{ ...dotcmsContentTypeBasicMock, ...contentTypeDataMock[0] }];
+        spyOn(dotPageTypesService, 'getPages').and.returnValue(
+            of(expectedInputArray as unknown as DotCMSContentType[])
+        );
+        dotPageStore.getPageTypes();
 
+        dotPageStore.state$.subscribe((data) => {
+            expect(data.pageTypes).toEqual(expectedInputArray);
+        });
+        expect(dotPageTypesService.getPages).toHaveBeenCalledTimes(1);
+        expect(dialogService.open).toHaveBeenCalledWith(DotPagesCreatePageDialogComponent, {
+            header: 'create.page',
+            width: '58rem',
+            data: expectedInputArray
+        });
+    });
+
+    it('should set all Pages value in store', () => {
         const expectedInputArray = [
             {
-                ...favoritePagesInitialTestData[0],
-                modDate: relativeDate(favoritePagesInitialTestData[0].modDate)
+                ...favoritePagesInitialTestData[0]
             },
             {
-                ...favoritePagesInitialTestData[1],
-                modDate: relativeDate(favoritePagesInitialTestData[1].modDate)
+                ...favoritePagesInitialTestData[1]
             }
         ];
         spyOn(dotESContentService, 'get').and.returnValue(
@@ -276,7 +327,78 @@ describe('DotPageStore', () => {
             expect(data.pages.items).toEqual(expectedInputArray);
         });
         expect(dotESContentService.get).toHaveBeenCalledTimes(1);
+        expect(dotESContentService.get).toHaveBeenCalledWith({
+            itemsPerPage: 40,
+            offset: '0',
+            query: '+conhost:123-xyz-567-xxl +deleted:false  +(urlmap:* OR basetype:5)    ',
+            sortField: 'title',
+            sortOrder: ESOrderDirection.ASC
+        });
     });
+
+    it('should keep fetching Pages data until new value comes from the DB in store', fakeAsync(() => {
+        dotPageStore.setPages(favoritePagesInitialTestData);
+        const old = {
+            contentTook: 0,
+            jsonObjectView: {
+                contentlets: favoritePagesInitialTestData as unknown as DotCMSContentlet[]
+            },
+            queryTook: 1,
+            resultsSize: 2
+        };
+
+        const updated = {
+            contentTook: 0,
+            jsonObjectView: {
+                contentlets: [
+                    { ...favoritePagesInitialTestData[0], modDate: '2020-09-02 16:50:15.569' },
+                    { ...favoritePagesInitialTestData[1] }
+                ] as unknown as DotCMSContentlet[]
+            },
+            queryTook: 1,
+            resultsSize: 4
+        };
+
+        const mockFunction = (times) => {
+            let count = 1;
+
+            return Observable.create((observer) => {
+                if (count++ > times) {
+                    observer.next(updated);
+                } else {
+                    observer.next(old);
+                }
+            });
+        };
+
+        spyOn(dotESContentService, 'get').and.returnValue(mockFunction(3));
+        spyOn(dotPageStore, 'setPagesStatus').and.callThrough();
+
+        dotPageStore.updateSinglePageData({ identifier: '123', isFavoritePage: false });
+
+        tick(3000);
+
+        // dotESContentService.get only is called 1 time, but "retryWhen" operator makes several request to the SpyOn
+        expect(dotESContentService.get).toHaveBeenCalledTimes(1);
+
+        // Testing to setPagesStatus to LOADING on the first fetch
+        expect((dotPageStore.setPagesStatus as jasmine.Spy).calls.argsFor(0).toString()).toBe(
+            ComponentStatus.LOADING
+        );
+
+        // Testing to pages.status to be LOADED on the last fetch (there can only be 2 calls during the whole process)
+        dotPageStore.state$.subscribe((data) => {
+            expect(data.pages.status).toBe(ComponentStatus.LOADED);
+        });
+
+        // Since dotESContentService.get can only be called 1 time (and once called the data will be changed on "mockFunction"),
+        // we test that the last fetch contains the updated data
+        (dotESContentService.get as jasmine.Spy).calls
+            .mostRecent()
+            .returnValue.subscribe((data) => {
+                expect(data).toEqual(updated);
+            });
+    }));
 
     it('should get all Workflow actions and static actions from a contentlet', () => {
         spyOn(dotWorkflowsActionsService, 'getByInode').and.returnValue(of(mockWorkflowsActions));
@@ -291,8 +413,8 @@ describe('DotPageStore', () => {
             expect(data.pages.menuActions[1].label).toEqual(mockWorkflowsActions[0].name);
             expect(data.pages.menuActions[2].label).toEqual(mockWorkflowsActions[1].name);
             expect(data.pages.menuActions[3].label).toEqual(mockWorkflowsActions[2].name);
-            expect(data.pages.menuActions[4].label).toEqual('contenttypes.content.add_to_bundle');
-            expect(data.pages.menuActions[5].label).toEqual('contenttypes.content.push_publish');
+            expect(data.pages.menuActions[4].label).toEqual('contenttypes.content.push_publish');
+            expect(data.pages.menuActions[5].label).toEqual('contenttypes.content.add_to_bundle');
             expect(data.pages.actionMenuDomId).toEqual('test1');
         });
 

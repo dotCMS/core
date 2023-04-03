@@ -1,7 +1,7 @@
 @use "variables" as *;
 
 :host {
-    color: $gray-dark;
+    color: $color-palette-gray-800;
 
     .wrapper {
         padding: $spacing-6;

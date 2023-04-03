@@ -8,7 +8,7 @@
         <dot-sidebar-header
             [actionButtonTpl]="actionHeaderBtnTpl"
             dotTitle="{{ 'experiments.configure.goals.sidebar.header' | dm }}"
-        ></dot-sidebar-header>
+        />
 
         <div class="experiment-goal-select__form-wrapper flex flex-column">
             <form
@@ -49,16 +49,14 @@
                                 [value]="goalsTypes.BOUNCE_RATE"
                                 detail="{{ goals.BOUNCE_RATE.description | dm }}"
                                 title="{{ goals.BOUNCE_RATE.label | dm }}"
-                            >
-                            </dot-experiment-options-item>
-
+                            />
                             <dot-experiment-options-item
                                 [value]="goalsTypes.REACH_PAGE"
                                 detail="{{ goals.REACH_PAGE.description | dm }}"
                                 title="{{ goals.REACH_PAGE.label | dm }}"
                             >
                                 <ng-template dotOptionContent>
-                                    <dot-experiments-experiment-goal-reach-page-config></dot-experiments-experiment-goal-reach-page-config>
+                                    <dot-experiments-goal-configuration-reach-page />
                                 </ng-template>
                             </dot-experiment-options-item>
                         </dot-experiment-options>

@@ -37,7 +37,7 @@
 <%@ page import="com.dotcms.contenttype.model.field.HostFolderField" %>
 <%@ page import="com.dotmarketing.beans.Host" %>
 <%@ page import="com.dotcms.contenttype.model.field.JSONField" %>
-
+<%@ page import="org.apache.commons.lang.StringEscapeUtils" %>
 
 <%
     long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
@@ -172,8 +172,7 @@
                 JSONValue = new JSONObject(textValue);
             } catch(Exception e) {
                 // Need it in case the value contains Single quote/backtick.
-                textValue = "`" + textValue.replaceAll("`", "&#96;") + "`";
-              
+                textValue = "`" + StringEscapeUtils.escapeJavaScript(textValue.replaceAll("`", "&#96;").replaceAll("\\$", "&#36;")) + "`"; 
             }
 
             List<FieldVariable> acceptTypes=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, false);
@@ -199,8 +198,8 @@
                 }
             }
             %>
-
             <script src="/html/dotcms-block-editor.js"></script>
+            <script src="/html/showdown.min.js"></script>
             <dotcms-block-editor
                 id="block-editor-<%=field.getVelocityVarName()%>"
                 allowed-content-types="<%=allowedContentTypes%>"
@@ -211,7 +210,7 @@
                 lang="<%=contentLanguage%>"
                 custom-blocks='<%=customBlocks%>'>
             </dotcms-block-editor>
-            <input type="hidden" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>"/>
+            <input type="hidden" name="<%=field.getFieldContentlet()%>" id="editor-input-value-<%=field.getVelocityVarName()%>"/>
 
             <script>
 
@@ -234,20 +233,30 @@
                         // Otherwise, we try to parse the "textValue".
                         content = JSONValue || JSON.parse(<%=textValue%>);
                     } catch (error) {
-                        content = <%=textValue%>;
+                        const text = (<%=textValue%>).replace(/&#96;/g, '`').replace(/&#36;/g, '$');
+                        const converter = new showdown.Converter({tables: true});
+                        content = converter.makeHtml(text);                      
                     }
 
                     const blockEditor = document.getElementById("block-editor-<%=field.getVelocityVarName()%>");
                     const block = blockEditor.querySelector('.ProseMirror');
-                    const field = document.querySelector('#<%=field.getVelocityVarName()%>');
+                    const field = document.querySelector('#editor-input-value-<%=field.getVelocityVarName()%>');
 
                     if (content) {
                         blockEditor.value = content;
-                        field.value = JSON.stringify(block.editor.getJSON());
+                        field.value = JSON.stringify(content); 
                     }
 
                     blockEditor.addEventListener('valueChange', (event) => {
-                        field.value = event.detail;
+                        // https://tiptap.dev/api/commands/clear-content
+                        // https://github.com/ueberdosis/tiptap/issues/154
+                        // By default Editor Initialize with default node p even if you clear nodes
+                        // block.editor.isEmpty not working in our block editor
+                        if(block.editor.getHTML().toLowerCase() === "<p></p>"){
+                            field.value = null;
+                        } else {
+                            field.value = JSON.stringify(event.detail);
+                        }
                     });
 
                     blockEditor.showVideoThumbnail = <%=showVideoThumbnail%>;
@@ -811,26 +820,13 @@
 
     </script>
 
-
-    <%
-
-        if(UtilMethods.isSet(value) && UtilMethods.isSet(resourceLink)){
-
-          boolean canUserWriteToContentlet = APILocator.getPermissionAPI().doesUserHavePermission(contentlet,PermissionAPI.PERMISSION_WRITE, user);
-
-    %>
-
-        <%if(canUserWriteToContentlet){%>
-            <% if (resourceLink.isEditableAsText()) { %>
-                <%
-                    if (InodeUtils.isSet(binInode) && canUserWriteToContentlet) {
-
-                %>
-                    <%@ include file="/html/portlet/ext/contentlet/field/edit_file_asset_text_inc.jsp"%>
-                <%  } %>
-            <% } %>
-
-        <% } %>
+    <% if (UtilMethods.isSet(value)) {
+            final boolean canUserWriteToContentlet = APILocator.getPermissionAPI().doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_WRITE, user);
+            if (canUserWriteToContentlet && resourceLink.isEditableAsText() && InodeUtils.isSet(binInode)) { %>
+                <%@ include file="/html/portlet/ext/contentlet/field/edit_file_asset_text_inc.jsp"%>
+         <% } %>
+    <% } else { %>
+            <%@ include file="/html/portlet/ext/contentlet/field/edit_file_asset_text_inc.jsp"%>
     <% } %>
 
     <!--  END display -->

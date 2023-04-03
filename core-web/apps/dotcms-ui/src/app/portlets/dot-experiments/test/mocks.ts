@@ -1,6 +1,9 @@
 import { of } from 'rxjs';
 
 import {
+    ComponentStatus,
+    DEFAULT_VARIANT_ID,
+    DEFAULT_VARIANT_NAME,
     DotExperiment,
     DotExperimentStatusList,
     GOAL_OPERATORS,
@@ -46,7 +49,7 @@ const ExperimentMocks: Array<DotExperiment> = [
         scheduling: { startDate: 1, endDate: 2 },
         trafficProportion: {
             type: TrafficProportionTypes.SPLIT_EVENLY,
-            variants: [{ id: '111', name: 'DEFAULT', weight: 100 }]
+            variants: [{ id: DEFAULT_VARIANT_ID, name: DEFAULT_VARIANT_NAME, weight: 100 }]
         },
         creationDate: new Date('2022-08-21 14:50:03'),
         modDate: new Date('2022-08-21 18:50:03'),
@@ -66,7 +69,7 @@ const ExperimentMocks: Array<DotExperiment> = [
         trafficProportion: {
             type: TrafficProportionTypes.SPLIT_EVENLY,
             variants: [
-                { id: '222', name: 'DEFAULT', weight: 50, url: 'test/1' },
+                { id: DEFAULT_VARIANT_ID, name: DEFAULT_VARIANT_NAME, weight: 50, url: 'test/1' },
                 { id: '111', name: 'variant a', weight: 50, url: 'test/2' }
             ]
         },
@@ -88,7 +91,7 @@ const ExperimentMocks: Array<DotExperiment> = [
         trafficProportion: {
             type: TrafficProportionTypes.SPLIT_EVENLY,
             variants: [
-                { id: '111', name: 'DEFAULT', weight: 50 },
+                { id: DEFAULT_VARIANT_ID, name: DEFAULT_VARIANT_NAME, weight: 50 },
                 { id: '222', name: 'Variant A', weight: 50 }
             ]
         },
@@ -98,21 +101,38 @@ const ExperimentMocks: Array<DotExperiment> = [
     }
 ];
 
-export const dotExperimentsCreateStoreStub = {
-    state$: () =>
-        of({
-            isSaving: false,
-            isOpenSidebar: false
-        }),
-    setCloseSidebar: () => of({}),
-    addExperiments: () => of([])
-};
-
 export const DotExperimentsListStoreMock = {
     addExperiment: () => of({}),
     setCloseSidebar: () => of({}),
     getPage$: of({
         pageId: '1111'
+    }),
+    vm$: of({
+        page: {
+            pageId: '',
+            pageTitle: ''
+        },
+        experiments: [],
+        filterStatus: [
+            DotExperimentStatusList.DRAFT,
+            DotExperimentStatusList.ENDED,
+            DotExperimentStatusList.RUNNING,
+            DotExperimentStatusList.SCHEDULED,
+            DotExperimentStatusList.ARCHIVED
+        ],
+        status: ComponentStatus.INIT,
+        sidebar: {
+            status: ComponentStatus.IDLE,
+            isOpen: false
+        }
+    }),
+    createVm$: of({
+        pageId: '',
+        sidebar: {
+            status: ComponentStatus.IDLE,
+            isOpen: true
+        },
+        isSaving: false
     })
 };
 
@@ -122,6 +142,7 @@ export const DotExperimentsConfigurationStoreMock = {
     openSidebar: () => of([]),
     closeSidebar: () => of([]),
     loadExperiment: () => of([]),
+    stopExperiment: () => of([]),
     getExperimentId$: of('1111111'),
     vm$: of({
         pageId: '',
@@ -145,6 +166,10 @@ export const DotExperimentsConfigurationStoreMock = {
         isExperimentADraft: true
     }),
     targetStepVm$: of({})
+};
+
+export const DotExperimentsReportsStoreMock = {
+    loadExperiment: () => of([])
 };
 
 export const DotExperimentsServiceMock = {

@@ -4,12 +4,12 @@ $number-link-icon-size: 2.28rem;
 
 :host {
     display: block;
-    font-size: $font-size-medium;
+    font-size: $font-size-md;
     height: 100%;
     overflow: auto;
 
     hr {
-        border-top: 1px solid $gray-lighter;
+        border-top: 1px solid $color-palette-gray-300;
     }
 
     a {
@@ -28,12 +28,12 @@ $number-link-icon-size: 2.28rem;
 
     .dot-starter-title {
         color: $black;
-        font-size: $font-size-x-large;
+        font-size: $font-size-xl;
         margin: $spacing-5 $spacing-3 $spacing-1;
     }
 
     .dot-starter-description {
-        color: $gray;
+        color: $color-palette-gray-700;
         margin: 0 $spacing-3 $spacing-5 $spacing-3;
     }
 
@@ -53,11 +53,13 @@ $number-link-icon-size: 2.28rem;
         margin-left: $spacing-1;
         margin-bottom: $spacing-4;
         margin-right: $spacing-1;
+        overflow: hidden;
+        border-radius: $border-radius-md;
     }
 
     .dot-starter-top-main__block {
         align-content: space-between;
-        border-bottom: 1px solid $gray-lighter;
+        border-bottom: 1px solid $color-palette-gray-300;
         display: flex;
         margin: 0;
         padding: $spacing-5 0;
@@ -75,7 +77,7 @@ $number-link-icon-size: 2.28rem;
 
         span {
             align-items: center;
-            background-color: $brand-primary;
+            background-color: $color-palette-primary;
             border-radius: 50%;
             color: $white;
             counter-increment: css-counter 1;
@@ -96,13 +98,13 @@ $number-link-icon-size: 2.28rem;
         flex-grow: 1;
 
         h4 {
-            color: $brand-primary;
-            font-size: $font-size-large;
+            color: $color-palette-primary;
+            font-size: $font-size-lg;
             font-weight: bold;
             margin: 0;
         }
         p {
-            color: $gray;
+            color: $color-palette-gray-700;
             margin: 0;
         }
     }
@@ -111,8 +113,8 @@ $number-link-icon-size: 2.28rem;
         align-self: center;
 
         i {
-            color: $gray-light;
-            font-size: $font-size-x-large;
+            color: $color-palette-gray-500;
+            font-size: $font-size-xl;
             margin-right: $spacing-3;
         }
     }
@@ -121,7 +123,7 @@ $number-link-icon-size: 2.28rem;
         margin-left: $spacing-1;
 
         h3 {
-            font-size: $font-size-large;
+            font-size: $font-size-lg;
             font-weight: $font-weight-semi-bold;
             margin: 0;
         }
@@ -136,14 +138,14 @@ $number-link-icon-size: 2.28rem;
         padding-top: 0;
 
         span {
-            color: $brand-primary;
-            fill: $brand-primary;
+            color: $color-palette-primary;
+            fill: $color-palette-primary;
             display: inline-flex;
             width: $number-link-icon-size;
         }
 
         svg {
-            fill: $brand-primary;
+            fill: $color-palette-primary;
             height: 1.71rem;
             width: $md-icon-size-normal;
         }
@@ -154,11 +156,11 @@ $number-link-icon-size: 2.28rem;
 
         h4 {
             color: $black;
-            font-size: $font-size-large;
+            font-size: $font-size-lg;
             margin: 0;
         }
         p {
-            color: $gray;
+            color: $color-palette-gray-700;
             margin: 0;
         }
     }
@@ -171,7 +173,7 @@ $number-link-icon-size: 2.28rem;
 
     .dot-starter-bottom__block {
         background-color: $white;
-        border-bottom: 1px solid $gray-lighter;
+        border-bottom: 1px solid $color-palette-gray-300;
         box-shadow: $md-shadow-4;
         display: flex;
         flex-grow: 1;
@@ -180,6 +182,7 @@ $number-link-icon-size: 2.28rem;
         overflow: hidden;
         padding: $spacing-3 0;
         transition: background-color $basic-speed ease-in;
+        border-radius: $border-radius-md;
 
         &:hover {
             background-color: $bg-hover;
@@ -192,7 +195,7 @@ $number-link-icon-size: 2.28rem;
         text-align: center;
 
         span {
-            color: $brand-primary;
+            color: $color-palette-primary;
             display: inline-flex;
         }
     }
@@ -204,11 +207,11 @@ $number-link-icon-size: 2.28rem;
 
         h4 {
             color: $black;
-            font-size: $font-size-large;
+            font-size: $font-size-lg;
             margin: 0;
         }
         p {
-            color: $gray;
+            color: $color-palette-gray-700;
             margin: 0;
         }
     }

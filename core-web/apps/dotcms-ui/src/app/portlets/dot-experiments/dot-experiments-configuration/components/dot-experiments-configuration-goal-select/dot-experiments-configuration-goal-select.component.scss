@@ -8,33 +8,20 @@
             gap: $spacing-3;
 
             label {
-                font-weight: $font-weight-semi-bold;
+                font-weight: $font-weight-bold;
                 margin-bottom: $spacing-0;
-                font-size: $font-size-medium;
+                font-size: $font-size-md;
             }
 
             p {
                 margin: $spacing-0;
-                color: $color-gray-500;
+                color: $color-palette-gray-500;
             }
 
             input {
-                border-color: $color-gray-300;
+                border-color: $color-palette-gray-300;
             }
         }
-
-        .condition {
-            gap: $spacing-3;
-
-            label {
-                font-weight: $font-weight-regular-bold;
-            }
-        }
-    }
-
-    .option-wrapper {
-        padding: $spacing-3;
-        gap: $spacing-3;
     }
 }
 

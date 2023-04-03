@@ -12,9 +12,11 @@ import { switchMap, tap } from 'rxjs/operators';
 import { DotMessageService } from '@dotcms/data-access';
 import {
     ComponentStatus,
+    ConditionDefaultByTypeOfGoal,
     DotExperiment,
     DotExperimentStatusList,
     ExperimentSteps,
+    Goal,
     Goals,
     GoalsLevels,
     RangeOfDateAndTime,
@@ -82,15 +84,22 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         ]).includes(experiment?.status)
     );
 
-    // Variants Step //
     readonly variantsStatus$ = this.select(this.state$, ({ stepStatusSidebar }) =>
         stepStatusSidebar.experimentStep === ExperimentSteps.VARIANTS ? stepStatusSidebar : null
     );
 
     // Goals Step //
-    readonly goals$: Observable<Goals> = this.select(({ experiment }) =>
-        experiment.goals ? experiment.goals : null
-    );
+    readonly goals$: Observable<Goals> = this.select(({ experiment }) => {
+        return experiment.goals
+            ? {
+                  ...experiment.goals,
+                  primary: {
+                      ...experiment.goals.primary,
+                      ...this.setDefaultGoalCondition(experiment.goals.primary)
+                  }
+              }
+            : null;
+    });
     readonly goalsStatus$ = this.select(this.state$, ({ stepStatusSidebar }) =>
         stepStatusSidebar.experimentStep === ExperimentSteps.GOAL ? stepStatusSidebar : null
     );
@@ -111,8 +120,14 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         experiment.trafficAllocation ? experiment.trafficAllocation : null
     );
 
-    readonly trafficStatus$ = this.select(this.state$, ({ stepStatusSidebar }) =>
-        stepStatusSidebar.experimentStep === ExperimentSteps.TRAFFIC ? stepStatusSidebar : null
+    readonly trafficLoadStatus$ = this.select(this.state$, ({ stepStatusSidebar }) =>
+        stepStatusSidebar.experimentStep === ExperimentSteps.TRAFFIC_LOAD ? stepStatusSidebar : null
+    );
+
+    readonly trafficSplitStatus$ = this.select(this.state$, ({ stepStatusSidebar }) =>
+        stepStatusSidebar.experimentStep === ExperimentSteps.TRAFFICS_SPLIT
+            ? stepStatusSidebar
+            : null
     );
 
     // Updaters
@@ -211,7 +226,34 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                             });
                             this.setExperiment(response);
                         },
-                        (error) => throwError(error),
+                        (error: HttpErrorResponse) => this.dotHttpErrorManagerService.handle(error),
+                        () => this.setComponentStatus(ComponentStatus.IDLE)
+                    )
+                )
+            )
+        );
+    });
+
+    readonly stopExperiment = this.effect((experiment$: Observable<DotExperiment>) => {
+        return experiment$.pipe(
+            tap(() => this.setComponentStatus(ComponentStatus.SAVING)),
+            switchMap((experiment) =>
+                this.dotExperimentsService.stop(experiment.id).pipe(
+                    tapResponse(
+                        (response) => {
+                            this.messageService.add({
+                                severity: 'info',
+                                summary: this.dotMessageService.get(
+                                    'experiments.action.stop.confirm-title'
+                                ),
+                                detail: this.dotMessageService.get(
+                                    'experiments.action.stop.confirm-message',
+                                    experiment.name
+                                )
+                            });
+                            this.setExperiment(response);
+                        },
+                        (error: HttpErrorResponse) => this.dotHttpErrorManagerService.handle(error),
                         () => this.setComponentStatus(ComponentStatus.IDLE)
                     )
                 )
@@ -458,7 +500,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                 tap(() => {
                     this.setSidebarStatus({
                         status: ComponentStatus.SAVING,
-                        experimentStep: ExperimentSteps.TRAFFIC
+                        experimentStep: ExperimentSteps.TRAFFIC_LOAD
                     });
                 }),
                 switchMap((data) => {
@@ -479,7 +521,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                                     });
                                     this.setSidebarStatus({
                                         status: ComponentStatus.IDLE,
-                                        experimentStep: ExperimentSteps.TRAFFIC,
+                                        experimentStep: ExperimentSteps.TRAFFIC_LOAD,
                                         isOpen: false
                                     });
                                 },
@@ -487,7 +529,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                                     this.dotHttpErrorManagerService.handle(response);
                                     this.setSidebarStatus({
                                         status: ComponentStatus.IDLE,
-                                        experimentStep: ExperimentSteps.TRAFFIC
+                                        experimentStep: ExperimentSteps.TRAFFIC_LOAD
                                     });
                                 }
                             )
@@ -508,7 +550,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                 tap(() => {
                     this.setSidebarStatus({
                         status: ComponentStatus.SAVING,
-                        experimentStep: ExperimentSteps.TRAFFIC
+                        experimentStep: ExperimentSteps.TRAFFICS_SPLIT
                     });
                 }),
                 switchMap((data) => {
@@ -529,7 +571,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                                     });
                                     this.setSidebarStatus({
                                         status: ComponentStatus.IDLE,
-                                        experimentStep: ExperimentSteps.TRAFFIC,
+                                        experimentStep: ExperimentSteps.TRAFFICS_SPLIT,
                                         isOpen: false
                                     });
                                 },
@@ -537,7 +579,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                                     this.dotHttpErrorManagerService.handle(response);
                                     this.setSidebarStatus({
                                         status: ComponentStatus.IDLE,
-                                        experimentStep: ExperimentSteps.TRAFFIC
+                                        experimentStep: ExperimentSteps.TRAFFICS_SPLIT
                                     });
                                 }
                             )
@@ -576,12 +618,18 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     );
 
     readonly variantsStepVm$: Observable<{
+        experimentId: string;
+        trafficProportion: TrafficProportion;
         status: StepStatus;
         isExperimentADraft: boolean;
     }> = this.select(
+        this.getExperimentId$,
+        this.trafficProportion$,
         this.variantsStatus$,
         this.isExperimentADraft$,
-        (status, isExperimentADraft) => ({
+        (experimentId, trafficProportion, status, isExperimentADraft) => ({
+            experimentId,
+            trafficProportion,
             status,
             isExperimentADraft
         })
@@ -629,7 +677,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         isExperimentADraft: boolean;
     }> = this.select(
         this.getExperimentId$,
-        this.trafficStatus$,
+        this.trafficLoadStatus$,
         this.isExperimentADraft$,
         (experimentId, status, isExperimentADraft) => ({
             experimentId,
@@ -648,13 +696,21 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         this.getExperimentId$,
         this.trafficProportion$,
         this.trafficAllocation$,
-        this.trafficStatus$,
+        this.trafficLoadStatus$,
+        this.trafficSplitStatus$,
         this.isExperimentADraft$,
-        (experimentId, trafficProportion, trafficAllocation, status, isExperimentADraft) => ({
+        (
             experimentId,
             trafficProportion,
             trafficAllocation,
-            status,
+            statusLoad,
+            statusSplit,
+            isExperimentADraft
+        ) => ({
+            experimentId,
+            trafficProportion,
+            trafficAllocation,
+            status: statusSplit ? statusSplit : statusLoad,
             isExperimentADraft
         })
     );
@@ -671,5 +727,21 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
 
     private updateTabTitle(experiment: DotExperiment) {
         this.title.setTitle(`${experiment.name} - ${this.title.getTitle()}`);
+    }
+
+    private setDefaultGoalCondition(goal: Goal): Goal {
+        const { type, conditions } = goal;
+
+        return {
+            ...goal,
+            conditions: [
+                ...conditions.map((condition) => {
+                    return {
+                        ...condition,
+                        isDefault: ConditionDefaultByTypeOfGoal[type] === condition.parameter
+                    };
+                })
+            ]
+        };
     }
 }

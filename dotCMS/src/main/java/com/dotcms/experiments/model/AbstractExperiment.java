@@ -2,8 +2,10 @@ package com.dotcms.experiments.model;
 
 import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 
+import com.dotcms.experiments.business.ConfigExperimentUtil;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.manifest.ManifestItem;
+import com.dotcms.util.TimeUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionSummary;
@@ -18,6 +20,7 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import org.immutables.value.Value;
 
 /**
@@ -90,10 +93,10 @@ public interface AbstractExperiment extends Serializable, ManifestItem, Ruleable
     @JsonProperty("targetingConditions")
     Optional<List<TargetingCondition>> targetingConditions();
 
-    @JsonProperty("lookbackWindow")
+    @JsonProperty("lookBackWindowExpireTime")
     @Value.Default
-    default int lookbackWindow() {
-        return 10;
+    default long lookBackWindowExpireTime() {
+        return ConfigExperimentUtil.INSTANCE.lookBackWindowDefaultExpireTime();
     }
 
     // Beginning Permissionable methods

@@ -14,6 +14,10 @@ import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 import static com.dotmarketing.util.DateUtil.isTimeReach;
 
 import com.dotcms.analytics.app.AnalyticsApp;
+import com.dotcms.analytics.bayesian.BayesianAPI;
+import com.dotcms.analytics.bayesian.model.BayesianInput;
+import com.dotcms.analytics.bayesian.model.BayesianPriors;
+import com.dotcms.analytics.bayesian.model.BayesianResult;
 import com.dotcms.analytics.helper.AnalyticsHelper;
 
 import com.dotcms.analytics.metrics.AbstractCondition.Operator;
@@ -34,6 +38,8 @@ import com.dotcms.experiments.business.result.ExperimentAnalyzerUtil;
 import com.dotcms.experiments.business.result.ExperimentResults;
 import com.dotcms.experiments.business.result.ExperimentResultsQueryFactory;
 import com.dotcms.exception.NotAllowedException;
+import com.dotcms.experiments.business.result.GoalResults;
+import com.dotcms.experiments.business.result.VariantResults;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.AbstractTrafficProportion.Type;
 import com.dotcms.experiments.model.Experiment;
@@ -42,9 +48,7 @@ import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.experiments.model.Goals;
 import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.experiments.model.TargetingCondition;
-
 import com.dotcms.experiments.model.TrafficProportion;
-
 
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.util.CollectionsUtils;
@@ -78,7 +82,6 @@ import com.dotmarketing.portlets.rules.model.LogicalOperator;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.rules.model.Rule.FireOn;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
@@ -99,13 +102,13 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import io.vavr.Lazy;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 public class ExperimentsAPIImpl implements ExperimentsAPI {
 
-    private Lazy<Boolean> isExperimentEnabled =
-            Lazy.of(() -> Config.getBooleanProperty("FEATURE_FLAG_EXPERIMENTS", false));
+    private static final String PRIMARY_GOAL = "primary";
+    private static final int VARIANTS_NUMBER_MAX = 2;
 
     final ExperimentsFactory factory = FactoryLocator.getExperimentsFactory();
     final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
@@ -116,6 +119,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
     final VersionableAPI versionableAPI = APILocator.getVersionableAPI();
     final HTMLPageAssetAPI pageAssetAPI = APILocator.getHTMLPageAssetAPI();
+    final BayesianAPI bayesianAPI = APILocator.getBayesianAPI();
 
     private final LicenseValiditySupplier licenseValiditySupplierSupplier =
             new LicenseValiditySupplier() {};
@@ -248,11 +252,15 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     private com.dotcms.analytics.metrics.Condition createConditionWithUrlValue(final HTMLPageAsset page,
             final String conditionName) {
 
-        return com.dotcms.analytics.metrics.Condition.builder()
-                .parameter(conditionName)
-                .operator(Operator.CONTAINS)
-                .value(page.getPageUrl())
-                .build();
+        try {
+            return com.dotcms.analytics.metrics.Condition.builder()
+                    .parameter(conditionName)
+                    .operator(Operator.CONTAINS)
+                    .value(page.getURI().replace("index", ""))
+                    .build();
+        } catch (DotDataException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void saveTargetingConditions(final Experiment experiment, final User user)
@@ -788,7 +796,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
     @Override
     public boolean isAnyExperimentRunning() throws DotDataException {
-        return isExperimentEnabled.get() &&
+        return ConfigExperimentUtil.INSTANCE.isExperimentEnabled() &&
                 !APILocator.getExperimentsAPI().getRunningExperiments().isEmpty();
     }
 
@@ -805,26 +813,109 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
      * @return
      */
     @Override
-    public ExperimentResults getResults(final Experiment experiment)
-            throws DotDataException, DotSecurityException {
-
-        final String experimentId = experiment.id().orElseThrow(
-                () -> new IllegalArgumentException("The Experiment must have an Identifier"));
-
-        final Experiment experimentFromDataBase = APILocator.getExperimentsAPI()
-                .find(experimentId, APILocator.systemUser())
+    public ExperimentResults getResults(final Experiment experiment) throws DotDataException, DotSecurityException {
+        final String experimentId = experiment.id()
+            .orElseThrow(() -> new IllegalArgumentException("The Experiment must have an Identifier"));
+        final Experiment experimentFromDataBase = find(experimentId, APILocator.systemUser())
                 .orElseThrow(() -> new NotFoundException("Experiment not found: " + experimentId));
 
-        DotPreconditions.isTrue(experimentFromDataBase.status() == RUNNING,
-                "The Experiment must be RUNNING");
-
+        DotPreconditions.isTrue(experimentFromDataBase.status() == RUNNING, "The Experiment must be RUNNING");
 
         final List<BrowserSession> events = getEvents(experiment);
-        return ExperimentAnalyzerUtil.INSTANCE.getExperimentResult(experiment, events);
+        final ExperimentResults experimentResults = ExperimentAnalyzerUtil.INSTANCE.getExperimentResult(
+            experiment,
+            events);
+        experimentResults.setBayesianResult(calcBayesian(experiment, experimentResults, null));
+        return experimentResults;
+    }
+
+    /**
+     * Calculates Bayesian results based on {@link ExperimentResults} object gathered results from cube.
+     *
+     * @param experiment experiment to get results from
+     * @param experimentResults experiments results
+     * @param goalName          goal name to get results from
+     * @return {@link BayesianResult} bayesian results instance
+     */
+    private BayesianResult calcBayesian(final Experiment experiment, final ExperimentResults experimentResults, final String goalName) {
+        DotPreconditions.checkNotNull(experimentResults, "Experiment results should not be null");
+        DotPreconditions.checkArgument(
+            experimentResults.getSessions().getVariants().size() >= 2,
+            "At least two variants should be put to test");
+        DotPreconditions.checkArgument(
+            experimentResults.getSessions().getVariants().size() <= VARIANTS_NUMBER_MAX,
+            "Currently more than variant is not supported");
+
+        return bayesianAPI.calcProbBOverA(
+            toBayesianInput(
+                experimentResults,
+                StringUtils.defaultIfBlank(goalName, PRIMARY_GOAL),
+                resolvePriors(experiment)));
+    }
+
+    private BayesianPriors resolvePriors(final Experiment experiment) {
+        //TODO: if and when priors this the place we need to resolve those values
+        return BayesianAPI.NULL_PRIORS;
+    }
+
+    private Optional<GoalResults> getGoalResults(final ExperimentResults experimentResults, final String goalName) {
+        return Optional.ofNullable(experimentResults.getGoals().get(goalName));
+    }
+
+    private long extractSuccesses(final VariantResults variantResults) {
+        return variantResults.getUniqueBySession().getCount();
+    }
+
+    private long extractFailures(final ExperimentResults experimentResult,
+                                 final String goalName,
+                                 final String variantName) {
+        final long total = Optional.ofNullable(experimentResult.getSessions().getVariants().get(variantName)).orElse(0L);
+        return total != 0
+            ? total - extractSuccesses(
+                Objects.requireNonNull(Optional
+                    .ofNullable(experimentResult.getGoals().get(goalName))
+                    .map(goal -> goal.getVariants().get(variantName))
+                    .orElse(null)))
+            : 0;
+    }
+
+    private BayesianInput toBayesianInput(final ExperimentResults experimentResults,
+                                          final String goalName,
+                                          final BayesianPriors priors) {
+        return getGoalResults(experimentResults, goalName)
+            .map(results -> {
+                final VariantResults controlResults = results.getVariants().get(DEFAULT_VARIANT.name());
+                if (Objects.isNull(controlResults)) {
+                    return null;
+                }
+
+                final VariantResults testResults = results
+                    .getVariants()
+                    .keySet()
+                    .stream()
+                    .filter(name -> !name.equals(DEFAULT_VARIANT.name()))
+                    .map(name -> results.getVariants().get(name))
+                    .findFirst()
+                    .orElse(null);
+                if (Objects.isNull(testResults)) {
+                    return null;
+                }
+
+                return BayesianInput
+                    .builder()
+                    .variants(new ArrayList<>(experimentResults.getSessions().getVariants().keySet()))
+                    .priors(priors)
+                    .controlSuccesses(extractSuccesses(controlResults))
+                    .controlFailures(extractFailures(experimentResults, goalName, DEFAULT_VARIANT.name()))
+                    .testSuccesses(extractSuccesses(testResults))
+                    .testFailures(extractFailures(experimentResults, goalName, testResults.getVariantName()))
+                    .build();
+            })
+            .orElse(null);
     }
 
     @Override
-    public List<BrowserSession> getEvents(Experiment experiment) {
+    public List<BrowserSession> getEvents(final Experiment experiment) {
         try{
             final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHost();
 
@@ -844,7 +935,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
             for (final ResultSetItem resultSetItem : cubeJSResultSet) {
                 final String currentLookBackWindow = resultSetItem.get("Events.lookBackWindow")
-                        .map(lookBackWindow -> lookBackWindow.toString())
+                        .map(Object::toString)
                         .orElse(StringPool.BLANK);
 
                 if (!currentLookBackWindow.equals(previousLookBackWindow)) {
@@ -1002,4 +1093,5 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     private boolean hasValidLicense(){
         return (licenseValiditySupplierSupplier.hasValidLicense());
     }
+
 }

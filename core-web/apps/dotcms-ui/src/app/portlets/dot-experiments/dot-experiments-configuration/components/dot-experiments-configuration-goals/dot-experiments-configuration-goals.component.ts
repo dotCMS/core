@@ -7,10 +7,12 @@ import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { ConfirmPopupModule } from 'primeng/confirmpopup';
+import { RippleModule } from 'primeng/ripple';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { tap } from 'rxjs/operators';
 
+import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { DotMessagePipe } from '@dotcms/app/view/pipes';
 import { DotMessageService } from '@dotcms/data-access';
@@ -26,6 +28,7 @@ import { DotIconModule } from '@dotcms/ui';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotExperimentsConfigurationGoalSelectComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-goal-select/dot-experiments-configuration-goal-select.component';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
+import { DotExperimentsDetailsTableComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-details-table/dot-experiments-details-table.component';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
 
 /**
@@ -41,11 +44,14 @@ import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.dir
         DotDynamicDirective,
         DotIconModule,
         UiDotIconButtonTooltipModule,
+        UiDotIconButtonModule,
+        DotExperimentsDetailsTableComponent,
         // PrimeNg
         ButtonModule,
         CardModule,
         ConfirmPopupModule,
-        TooltipModule
+        TooltipModule,
+        RippleModule
     ],
     templateUrl: './dot-experiments-configuration-goals.component.html',
     styleUrls: ['./dot-experiments-configuration-goals.component.scss'],
@@ -62,9 +68,10 @@ export class DotExperimentsConfigurationGoalsComponent {
         tap(({ status }) => this.handleSidebar(status))
     );
 
-    goalTypeMap = GOALS_METADATA_MAP;
     destroy$: Subject<boolean> = new Subject<boolean>();
     @ViewChild(DotDynamicDirective, { static: true }) sidebarHost!: DotDynamicDirective;
+    protected readonly GOALS_METADATA_MAP = GOALS_METADATA_MAP;
+
     private componentRef: ComponentRef<DotExperimentsConfigurationGoalSelectComponent>;
 
     constructor(

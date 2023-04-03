@@ -20,6 +20,8 @@ import { SidebarModule } from 'primeng/sidebar';
 import { takeUntil } from 'rxjs/operators';
 
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
+import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
+import { DotMessageService } from '@dotcms/data-access';
 import {
     ComponentStatus,
     GOAL_TYPES,
@@ -28,9 +30,9 @@ import {
     StepStatus
 } from '@dotcms/dotcms-models';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
-import { DotExperimentsExperimentGoalReachPageConfigComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-experiment-goal-reach-page-config/dot-experiments-experiment-goal-reach-page-config.component';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 import { DotExperimentsOptionsModule } from '@portlets/dot-experiments/shared/ui/dot-experiment-options/dot-experiments-options.module';
+import { DotExperimentsGoalConfigurationReachPageComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-goal-configuration-reach-page/dot-experiments-goal-configuration-reach-page.component';
 import { DotDropdownDirective } from '@portlets/shared/directives/dot-dropdown.directive';
 import {
     DotSidebarDirective,
@@ -51,6 +53,7 @@ import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sideba
         DotSidebarDirective,
         DotExperimentsOptionsModule,
         DotDropdownDirective,
+        DotAutofocusModule,
         //PrimeNg
         SidebarModule,
         ButtonModule,
@@ -58,7 +61,7 @@ import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sideba
         CardModule,
         InputTextModule,
         DropdownModule,
-        DotExperimentsExperimentGoalReachPageConfigComponent
+        DotExperimentsGoalConfigurationReachPageComponent
     ],
     templateUrl: './dot-experiments-configuration-goal-select.component.html',
     styleUrls: ['./dot-experiments-configuration-goal-select.component.scss'],
@@ -76,6 +79,7 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
 
     constructor(
         private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore,
+        private readonly dotMessageService: DotMessageService,
         private readonly cdr: ChangeDetectorRef
     ) {}
 
@@ -144,10 +148,13 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
     private initForm(): void {
         this.form = new FormGroup({
             primary: new FormGroup({
-                name: new FormControl('', {
-                    nonNullable: true,
-                    validators: [Validators.required]
-                }),
+                name: new FormControl(
+                    this.dotMessageService.get('experiments.configure.goals.name.default'),
+                    {
+                        nonNullable: true,
+                        validators: [Validators.required]
+                    }
+                ),
                 type: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
                 conditions: new FormArray([
                     new FormGroup({

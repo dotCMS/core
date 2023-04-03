@@ -11,12 +11,16 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import javax.inject.Inject;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
-public class FolderAPITest {
+class FolderAPITest {
+
+    @ConfigProperty(name = "com.dotcms.starter.site", defaultValue = "default")
+    String siteName;
 
     @Inject
     AuthenticationContext authenticationContext;
@@ -37,15 +41,15 @@ public class FolderAPITest {
     }
 
     @Test
-    public void Test_Make_Folder() {
+    void Test_Make_Folder() {
 
         final FolderAPI folderAPI = clientFactory.getClient(FolderAPI.class);
         final ResponseEntityView<List<Map<String, Object>>> makeFoldersResponse = folderAPI.makeFolders(
-                ImmutableList.of("/f1", "/f1/f2", "/f1/f2/f3"), "default");
+                ImmutableList.of("/f1", "/f1/f2", "/f1/f2/f3"), siteName);
         Assertions.assertNotNull(makeFoldersResponse.entity());
 
         final ResponseEntityView<List<Map<String, Object>>> byPathResponse = folderAPI.findByPath(
-                SearchByPathRequest.builder().path("//default/").build());
+                SearchByPathRequest.builder().path(String.format("//%s/",siteName)).build());
         Assertions.assertNotNull(byPathResponse.entity());
 
     }

@@ -33,13 +33,35 @@ if(clipboard ==null){
 
 <style>
 
+/* roboto-regular - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
+@font-face {
+    font-family: 'Roboto';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: local(''),
+        url('/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-regular.woff2')
+            format('woff2'),
+        url('/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-regular.woff')
+            format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+}
+
+body {
+	margin: 0;
+	font-family: 'Roboto', 'Helvetica Neue', Helvetica, Arial, 'Lucida Grande', sans-serif;
+}
+
+.mainContainer {
+	margin: 15px;
+}
+
 #imageContainer{
 	width:520px;
 	height:300px;
 	overflow: auto;
 	background: white;
 	border:1px solid gray;
-	margin: auto;
+	box-sizing: border-box;
 }
 .thumbContainer{
 	cursor:pointer;
@@ -69,9 +91,9 @@ if(clipboard ==null){
 	<script type="text/javascript" src="js/dialog.js"></script>
 </head>
 <body>
-<h2><%=LanguageUtil.get(pageContext, "Clipboard") %></h2>
-<%=LanguageUtil.get(pageContext, "Select-an-image-below") %>
-
+<div class="mainContainer">
+	<h2><%=LanguageUtil.get(pageContext, "Clipboard") %></h2>
+	<p><%=LanguageUtil.get(pageContext, "Select-an-image-below") %></p>
 
 
 <div id="imageContainer">
@@ -140,6 +162,8 @@ if(clipboard ==null){
 	
 	
 </div>
+</div>
+
 
 </body>
 </html>

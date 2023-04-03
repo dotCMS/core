@@ -1,16 +1,12 @@
 <ng-container *ngIf="vm$ | async as vm">
     <dot-experiments-header
         [isLoading]="vm.isLoading"
+        [status]="vm.experiment?.status"
+        [title]="vm.experiment?.name"
         [title]="vm.experiment?.name"
         (goBack)="goToExperimentList(vm.experiment.pageId)"
     >
-        <div class="flex flex-grow-1 align-items-center justify-content-between">
-            <p-tag
-                styleClass="{{ vm.experimentStatus | lowercase }}"
-                value="{{ vm.experimentStatus | lowercase | dm }} "
-            >
-            </p-tag>
-
+        <div class="flex flex-grow-0 align-items-center justify-content-between">
             <button
                 class="p-button-outlined"
                 *ngIf="vm.isExperimentADraft"
@@ -19,6 +15,18 @@
                 (click)="runExperiment(vm.experiment)"
                 data-testId="start-experiment-button"
                 label="{{ 'experiments.action.start-experiment' | dm }}"
+                pButton
+                pRipple
+                type="button"
+            ></button>
+            <button
+                class="p-button-outlined"
+                *ngIf="vm.experimentStatus === experimentStatus.RUNNING"
+                [disabled]="vm.disabledStartExperiment"
+                [loading]="vm.isSaving"
+                (click)="stopExperiment($event, vm.experiment)"
+                data-testId="stop-experiment-button"
+                label="{{ 'experiments.action.stop-experiment' | dm }}"
                 pButton
                 pRipple
                 type="button"
@@ -32,32 +40,22 @@
                 *ngIf="vm.showExperimentSummary"
                 [goals]="vm.experiment.goals"
                 [scheduling]="vm.experiment.scheduling"
-            ></dot-experiments-experiment-summary>
+            />
 
-            <p-card>
+            <p-card *ngIf="!!vm.experiment.description" data-testId="experiment-description">
                 {{ vm.experiment.description }}
             </p-card>
 
-            <dot-experiments-configuration-variants
-                [variants]="vm.experiment.trafficProportion.variants"
-                (delete)="deleteVariant($event, vm.experiment.id)"
-                (edit)="editVariant($event, vm.experiment.id)"
-                (goToEditPage)="goToEditPageVariant($event)"
-                (save)="saveVariant($event, vm.experiment.id)"
-                (sidebarStatusChanged)="sidebarStatusController($event, experimentSteps.VARIANTS)"
-            ></dot-experiments-configuration-variants>
-
-            <dot-experiments-configuration-goals></dot-experiments-configuration-goals>
-
-            <dot-experiments-configuration-targeting></dot-experiments-configuration-targeting>
-
-            <dot-experiments-configuration-traffic></dot-experiments-configuration-traffic>
-
-            <dot-experiments-configuration-scheduling></dot-experiments-configuration-scheduling>
+            <dot-experiments-configuration-variants />
+            <dot-experiments-configuration-goals />
+            <!--Hide until is implemented-->
+            <!--<dot-experiments-configuration-targeting />-->
+            <dot-experiments-configuration-traffic />
+            <dot-experiments-configuration-scheduling />
         </ng-container>
     </div>
 </ng-container>
 
 <ng-template #loadingTpl>
-    <dot-experiments-configuration-skeleton></dot-experiments-configuration-skeleton>
+    <dot-experiments-configuration-skeleton />
 </ng-template>

@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "7a512d11-7680-4168-bf0f-86fcac56b719",
+		"_postman_id": "93ad2329-1b15-469f-a58c-aa08b7836332",
 		"name": "Experiments Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "4500400"
+		"_exporter_id": "1549189"
 	},
 	"item": [
 		{
@@ -2525,7 +2525,7 @@
 									"    pm.expect(jsonData.entity.status).equal(\"DRAFT\");",
 									"    pm.expect(jsonData.entity.trafficAllocation).equal(20.0);",
 									"    pm.expect(jsonData.entity.trafficProportion.type).equal(\"SPLIT_EVENLY\");",
-									"    pm.expect(jsonData.entity.lookbackWindow).equal(20);",
+									"    pm.expect(jsonData.entity.lookBackWindowExpireTime).equal(20);",
 									"",
 									"});",
 									"",

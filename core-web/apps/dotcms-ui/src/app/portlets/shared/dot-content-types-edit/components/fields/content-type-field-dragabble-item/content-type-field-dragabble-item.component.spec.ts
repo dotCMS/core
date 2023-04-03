@@ -1,11 +1,13 @@
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
-import { ComponentFixture, waitForAsync } from '@angular/core/testing';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
 import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
-import { DotCopyLinkModule } from '@components/dot-copy-link/dot-copy-link.module';
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
+import { DotMessagePipeModule } from '@dotcms/app/view/pipes/dot-message/dot-message-pipe.module';
 import { DotMessageService } from '@dotcms/data-access';
+import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotIconModule } from '@dotcms/ui';
 import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
@@ -28,13 +30,26 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
     });
 
     beforeEach(waitForAsync(() => {
-        DOTTestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             declarations: [ContentTypesFieldDragabbleItemComponent],
-            imports: [UiDotIconButtonTooltipModule, DotIconModule, DotCopyLinkModule],
-            providers: [{ provide: DotMessageService, useValue: messageServiceMock }, FieldService]
+            imports: [
+                UiDotIconButtonTooltipModule,
+                DotIconModule,
+                DotCopyButtonModule,
+                HttpClientTestingModule,
+                DotMessagePipeModule
+            ],
+            providers: [
+                { provide: DotMessageService, useValue: messageServiceMock },
+                {
+                    provide: CoreWebService,
+                    useClass: CoreWebServiceMock
+                },
+                FieldService
+            ]
         });
 
-        fixture = DOTTestBed.createComponent(ContentTypesFieldDragabbleItemComponent);
+        fixture = TestBed.createComponent(ContentTypesFieldDragabbleItemComponent);
         comp = fixture.componentInstance;
         de = fixture.debugElement;
     }));
@@ -77,9 +92,9 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
 
         fixture.detectChanges();
 
-        const copyButton: DebugElement = de.query(By.css('dot-copy-link'));
+        const copyButton: DebugElement = de.query(By.css('dot-copy-button'));
         expect(copyButton.componentInstance.copy).toBe('test');
-        expect(copyButton.componentInstance.label).toBe('(test)');
+        expect(copyButton.componentInstance.tooltipText).toBe('test');
     });
 
     it('should have field attributes label', () => {

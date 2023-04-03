@@ -17,7 +17,7 @@ $icon-size: 24px;
     transition: background-color $basic-speed;
 
     dot-icon {
-        color: $gray;
+        color: $color-palette-gray-700;
         margin-right: $spacing-3;
         transition: color $basic-speed;
     }
@@ -26,11 +26,11 @@ $icon-size: 24px;
         background-color: $bg-hover;
 
         dot-icon {
-            color: $body-font-color;
+            color: $font-color-base;
         }
     }
 
     &:nth-child(2) {
-        border-bottom: solid 1px $gray-lighter;
+        border-bottom: solid 1px $color-palette-gray-300;
     }
 }

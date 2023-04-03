@@ -1,8 +1,8 @@
 @use "variables" as *;
 
 :host {
-    font-size: $font-size-small;
-    color: $gray-dark;
+    font-size: $font-size-sm;
+    color: $color-palette-gray-800;
     padding-right: $spacing-1;
-    font-weight: $font-weight-semi-bold;
+    font-weight: $font-weight-bold;
 }

@@ -1,6 +1,7 @@
 export * from './lib/add-to-bundle/add-to-bundle.service';
 export * from './lib/dot-devices/dot-devices.service';
 export * from './lib/dot-page-layout/dot-page-layout.service';
+export * from './lib/dot-page-types/dot-page-types.service';
 export * from './lib/dot-page-render/dot-page-render.service';
 export * from './lib/dot-alert-confirm/dot-alert-confirm.service';
 export * from './lib/dot-edit-page/dot-edit-page.service';
@@ -31,3 +32,4 @@ export * from './lib/dot-messages/dot-messages.service';
 export * from './lib/dot-tags/dot-tags.service';
 export * from './lib/paginator/paginator.service';
 export * from './lib/dot-session-storage/dot-session-storage.service';
+export * from './lib/dot-upload/dot-upload.service';

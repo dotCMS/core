@@ -164,8 +164,13 @@ public interface ExperimentsAPI {
             throws DotDataException, DotSecurityException;
 
     /**
-     * Return true if any {@link Experiment} is running right now, otherwise return false.
+     * Return true if Any {@link Experiment} is running right now and Experiment are enabled.
+     * Otherwise return false.
+     *
      * @return
+     *
+     * @see ConfigExperimentUtil#isExperimentEnabled()
+     *
      */
     boolean isAnyExperimentRunning() throws DotDataException;
 
@@ -192,4 +197,5 @@ public interface ExperimentsAPI {
      *     state and whose {@link  Scheduling#endDate()} is in the past
      */
     void endFinalizedExperiments(final User user) throws DotDataException;
+
 }

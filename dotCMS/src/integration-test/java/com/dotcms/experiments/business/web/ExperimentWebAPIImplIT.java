@@ -5,11 +5,13 @@ import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.datagen.ExperimentDataGen;
+import com.dotcms.experiments.business.web.SelectedExperiment.LookBackWindow;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.ExperimentVariant;
@@ -34,6 +36,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -79,6 +82,13 @@ public class ExperimentWebAPIImplIT {
                 assertEquals(experiment.id().get(), selectedExperiments.getIncludedExperimentIds().get(0));
 
                 assertTrue(selectedExperiments.getExcludedExperimentIds().isEmpty());
+
+                final LookBackWindow lookBackWindow = selectedExperiments.getExperiments().get(0)
+                        .getLookBackWindow();
+                assertNotNull(lookBackWindow);
+                assertNotNull(lookBackWindow.getValue());
+                assertEquals(TimeUnit.MINUTES.toMillis(30), lookBackWindow.getExpireMillis());
+
             }
         } finally {
             ExperimentDataGen.end(experiment);
@@ -128,6 +138,12 @@ public class ExperimentWebAPIImplIT {
                 assertTrue(selectedExperiments.getIncludedExperimentIds().contains(experiment_2.id().get()));
 
                 assertTrue(selectedExperiments.getExcludedExperimentIds().isEmpty());
+
+                final LookBackWindow lookBackWindow = selectedExperiments.getExperiments().get(0)
+                        .getLookBackWindow();
+                assertNotNull(lookBackWindow);
+                assertNotNull(lookBackWindow.getValue());
+                assertEquals(TimeUnit.MINUTES.toMillis(30), lookBackWindow.getExpireMillis());
             }
         } finally {
             ExperimentDataGen.end(experiment_1);
@@ -163,6 +179,12 @@ public class ExperimentWebAPIImplIT {
 
             assertTrue(selectedExperiments.getIncludedExperimentIds().isEmpty());
             assertTrue(selectedExperiments.getExcludedExperimentIds().isEmpty());
+
+            final LookBackWindow lookBackWindow = selectedExperiments.getExperiments().get(0)
+                    .getLookBackWindow();
+            assertNotNull(lookBackWindow);
+            assertNull(lookBackWindow.getValue());
+            assertEquals(TimeUnit.MINUTES.toMillis(30), lookBackWindow.getExpireMillis());
         }
     }
 

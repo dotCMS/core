@@ -1,0 +1,47 @@
+/* CRUMBTRAIL STYLES 2.0 */
+
+.subNavCrumbTrail {
+    display: none; // TODO: do it in the html
+
+    ul {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    li {
+        display: inline;
+        margin: 0;
+        list-style: none;
+        position: relative;
+        padding-right: $spacing-1 * 2;
+
+        &:after {
+            @include fa-icon();
+            content: $fa-var-chevron-right;
+            color: $color-palette-gray-500;
+            font-size: 9px;
+            position: absolute;
+            right: 5px;
+            top: 5px;
+        }
+
+        &.lastCrumb {
+            padding-right: 0;
+
+            &:after {
+                display: none;
+            }
+        }
+    }
+
+    a {
+        text-decoration: none;
+    }
+}
+
+#selectHostDiv {
+    cursor: pointer;
+    background: url($skin-sprite) repeat-x 0 -420px;
+    padding: 5px 10px 6px 15px;
+}

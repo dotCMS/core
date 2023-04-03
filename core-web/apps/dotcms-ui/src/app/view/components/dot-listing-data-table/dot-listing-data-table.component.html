@@ -33,7 +33,7 @@
     (onLazyLoad)="loadDataPaginationEvent($event)"
     (onRowSelect)="handleRowCheck()"
     (onRowUnselect)="handleRowCheck()"
-    loadingIcon="fa fa-circle-o-notch fa-spin"
+    loadingIcon="pi pi-spin pi-spinner"
 >
     <ng-template let-columns pTemplate="header">
         <tr *ngIf="items?.length" data-testClass="testHeadTableRow">
@@ -106,8 +106,11 @@
             <dot-icon name="{{ col.icon(rowData) }}"></dot-icon>
             <span>{{ col.textContent || rowData[col.fieldName] }}</span>
         </div>
-        <span *ngIf="!col.icon && col.fieldName !== 'nEntries'">
+        <span *ngIf="!col.icon && col.fieldName !== 'nEntries' && col.format !== 'date'">
             {{ rowData[col.fieldName] }}
+        </span>
+        <span *ngIf="!col.icon && col.fieldName !== 'nEntries' && col.format === 'date'">
+            {{ rowData[col.fieldName] | dotRelativeDate : true }}
         </span>
         <a
             *ngIf="col.fieldName === 'nEntries'"
@@ -117,7 +120,7 @@
         >
             {{
                 col.textContent
-                    ? (col.textContent | dotStringFormat: [rowData[col.fieldName]])
+                    ? (col.textContent | dotStringFormat : [rowData[col.fieldName]])
                     : rowData[col.fieldName]
             }}
         </a>

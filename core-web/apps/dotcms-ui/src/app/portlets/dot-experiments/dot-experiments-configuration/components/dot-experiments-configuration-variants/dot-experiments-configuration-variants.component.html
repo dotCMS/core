@@ -5,21 +5,27 @@
                 <h2 class="flex align-items-center gap-1 uppercase">
                     {{ 'experiments.configure.variants.name' | dm }}
                     <dot-icon
-                        [ngClass]="{ isDone: variants?.length > 1 }"
+                        [ngClass]="{ isDone: vm.trafficProportion.variants?.length > 1 }"
                         data-testId="variant-title-step-done"
                         name="check_circle"
                         size="16"
                     ></dot-icon>
                 </h2>
                 <dot-experiments-configuration-items-count
-                    [count]="variants?.length"
+                    [count]="vm.trafficProportion.variants?.length"
                     [maxLength]="maxVariantsAllowed"
                 >
                 </dot-experiments-configuration-items-count>
             </div>
         </ng-template>
 
-        <ng-container *ngFor="let variant of variants; let first = first; let last = last">
+        <ng-container
+            *ngFor="
+                let variant of vm.trafficProportion.variants;
+                let first = first;
+                let last = last
+            "
+        >
             <p-card [ngClass]="{ first: first, last: last }" data-testId="variant-row-card">
                 <div class="flex flex-row align-items-center align-content-between gap-2">
                     <div class="title flex flex-grow-1 flex-row align-items-center gap-2">
@@ -50,6 +56,7 @@
                         <button
                             class="p-button-sm p-button-link"
                             [disabled]="!vm.isExperimentADraft"
+                            (click)="changeTrafficProportion()"
                             data-testId="variant-weight"
                             label="{{ variant.weight | number : '2.2-2' }}% {{
                                 'experiments.configure.variants.weight' | dm
@@ -67,7 +74,7 @@
                     >
                         <button
                             class="p-button-sm p-button-outlined no-padding"
-                            (click)="goToEditPage.emit({variant, mode:'preview'})"
+                            (click)="goToEditPageVariant(variant, 'preview')"
                             data-testId="variant-preview-button"
                             label="{{ 'experiments.configure.variants.view' | dm }}"
                             pButton
@@ -89,7 +96,7 @@
                             [disabled]="
                                 variant.name === defaultVariantName || !vm.isExperimentADraft
                             "
-                            (click)="delete.emit(variant)"
+                            (click)="deleteVariant({$event, variant}, vm.experimentId)"
                             data-testId="variant-delete-button"
                             label="{{ 'experiments.configure.variants.delete' | dm }}"
                             pButton
@@ -103,7 +110,7 @@
             <ng-template #editableButtonTpl>
                 <button
                     class="p-button-sm p-button-outlined no-padding p-button-warning"
-                    (click)="goToEditPage.emit({variant, mode:'edit'})"
+                    (click)="goToEditPageVariant(variant, 'edit')"
                     data-testId="variant-edit-button"
                     label="{{ 'experiments.action.edit' | dm }}"
                     pButton
@@ -129,7 +136,9 @@
                                 #variantName
                                 [required]="true"
                                 [value]="variant.name"
-                                (keydown.enter)="editVariantName(variantName.value, variant)"
+                                (keydown.enter)="
+                                    editVariantName(variantName.value, variant, vm.experimentId)
+                                "
                                 data-testId="inplace-input"
                                 dotAutofocus
                                 pInputText
@@ -139,7 +148,7 @@
                         <button
                             class="p-button-rounded p-button-text"
                             [loading]="vm.status && vm.status.status === statusList.SAVING"
-                            (click)="editVariantName(variantName.value, variant)"
+                            (click)="editVariantName(variantName.value, variant, vm.experimentId)"
                             data-testId="variant-save-name-btn"
                             icon="pi pi-save"
                             pButton
@@ -154,14 +163,20 @@
             <div
                 class="inline-block"
                 [pTooltip]="'experiment.configure.edit.only.draft.status' | dm"
-                [tooltipDisabled]="vm.isExperimentADraft || variants?.length >= maxVariantsAllowed"
+                [tooltipDisabled]="
+                    vm.isExperimentADraft ||
+                    vm.trafficProportion.variants?.length >= maxVariantsAllowed
+                "
                 tooltipPosition="bottom"
                 data-testId="tooltip-on-disabled"
             >
                 <button
                     class="p-button-sm p-button-link"
-                    [disabled]="variants?.length >= maxVariantsAllowed || !vm.isExperimentADraft"
-                    (click)="sidebarStatusChanged.emit(sidebarStatusList.OPEN)"
+                    [disabled]="
+                        vm.trafficProportion.variants?.length >= maxVariantsAllowed ||
+                        !vm.isExperimentADraft
+                    "
+                    (click)="addVariant()"
                     data-testId="variant-add-button"
                     label="{{ 'experiments.configure.variants.add' | dm }}"
                     pButton
@@ -171,14 +186,7 @@
             </div>
         </ng-template>
     </p-card>
-
-    <dot-experiments-configuration-variants-add
-        [isSaving]="
-            experimentStepName === vm.status?.experimentStep &&
-            vm.status.status === statusList.SAVING
-        "
-        [isSidebarOpen]="experimentStepName === vm.status?.experimentStep && vm.status.isOpen"
-        (closedSidebar)="sidebarStatusChanged.emit(sidebarStatusList.CLOSE)"
-        (formValues)="save.emit($event)"
-    ></dot-experiments-configuration-variants-add>
 </ng-container>
+
+<ng-container dotDynamic></ng-container>
+<p-confirmPopup></p-confirmPopup>

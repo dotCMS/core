@@ -39,7 +39,6 @@ import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
-import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.storage.FileMetadataAPI;
 import com.dotcms.storage.model.Metadata;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
@@ -51,6 +50,7 @@ import com.dotcms.util.FunctionUtils;
 import com.dotcms.util.JsonUtil;
 import com.dotcms.util.ThreadContextUtil;
 import com.dotcms.variant.VariantAPI;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -728,7 +728,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @CloseDBIfOpened
     @Override
-    public Contentlet findContentletByIdentifierAnyLanguageAndVariant(final String identifier) throws DotDataException{
+    public Contentlet findContentletByIdentifierAnyLanguageAnyVariant(final String identifier) throws DotDataException{
 
         try {
             final ContentletVersionInfo anyContentletVersionInfoAnyVariant = FactoryLocator.getVersionableFactory()
@@ -3710,6 +3710,22 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     }
 
+    @WrapInTransaction
+    @Override
+    public Contentlet copyContentToVariant(final Contentlet contentlet, final String variantName,
+            final User user) throws DotDataException, DotSecurityException {
+
+        final Contentlet contentletFromDataBase = find(contentlet.getInode(), user, false);
+
+        final Contentlet checkout = checkout(contentletFromDataBase.getInode(), user, false);
+        checkout.setVariantId(variantName);
+
+        return Try.of(() -> checkin(checkout, user, false))
+                 .getOrElseThrow(
+                        e -> new DotStateException("Unable to create a new version from Contentlet:" + contentlet.getInode(), e));
+    }
+
+
     /**
      * @param contentlet
      * @throws DotReindexStateException
@@ -4786,6 +4802,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             List<Permission> permissions, User user,
             boolean respectFrontendRoles)
             throws IllegalArgumentException, DotDataException, DotSecurityException, DotContentletStateException {
+
         return checkin(contentlet, (Map<Relationship, List<Contentlet>>) null, cats, permissions,
                 user,
                 respectFrontendRoles);
@@ -4796,6 +4813,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public Contentlet checkin(Contentlet contentlet, List<Permission> permissions, User user,
             boolean respectFrontendRoles)
             throws IllegalArgumentException, DotDataException, DotSecurityException, DotContentletStateException {
+
         return checkin(contentlet, (ContentletRelationships) null, null, permissions, user,
                 respectFrontendRoles);
     }
@@ -4843,7 +4861,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
             List<Category> cats, List<Permission> permissions, User user,
             boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException, DotContentletStateException, DotContentletValidationException {
-        return checkin(contentlet, contentRelationships, cats, user, respectFrontendRoles, false);
+
+        final Contentlet contentletReturned = checkin(contentlet, contentRelationships, cats, user, respectFrontendRoles, false);
+
+        this.handlePermissions(permissions, user, respectFrontendRoles, contentletReturned);
+
+        return contentletReturned;
     }
 
     /**
@@ -4878,8 +4901,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
             List<Category> cats,
             List<Permission> permissions, User user, boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException, DotContentletStateException {
-        return checkin(contentlet, contentRelationships, cats, user, respectFrontendRoles, true,
+
+        final Contentlet contentletReturned =
+                    checkin(contentlet, contentRelationships, cats, user, respectFrontendRoles, true,
                 false);
+
+        this.handlePermissions(permissions, user, respectFrontendRoles, contentletReturned);
+
+        return contentletReturned;
     }
 
     private ContentletRelationships getContentletRelationshipsFromMap(final Contentlet contentlet,
@@ -4894,10 +4923,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
             Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats,
             List<Permission> permissions, User user, boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException, DotContentletStateException, DotContentletValidationException {
-        ContentletRelationships relationshipsData = getContentletRelationshipsFromMap(contentlet,
+
+        final ContentletRelationships relationshipsData = getContentletRelationshipsFromMap(contentlet,
                 contentRelationships);
-        return checkin(contentlet, relationshipsData, cats, user, respectFrontendRoles, false,
+        final Contentlet contentletReturned = checkin(contentlet, relationshipsData, cats, user, respectFrontendRoles, false,
                 false);
+
+        this.handlePermissions(permissions, user, respectFrontendRoles, contentletReturned);
+
+        return contentletReturned;
     }
 
     @CloseDBIfOpened
@@ -6887,6 +6921,26 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @CloseDBIfOpened
     @Override
+    public List<Contentlet> findAllVersions(final Identifier identifier, final Variant variant,
+            final User user, boolean respectFrontendRoles)
+            throws DotSecurityException, DotDataException {
+        final List<Contentlet> allVersions = contentFactory.findAllVersions(identifier, variant);
+
+        if (allVersions.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        if (!permissionAPI.doesUserHavePermission(allVersions.get(0), PermissionAPI.PERMISSION_READ,
+                user, respectFrontendRoles)) {
+            throw new DotSecurityException(
+                    "User: " + (identifier != null ? identifier.getId() : "Unknown")
+                            + " cannot read Contentlet So Unable to View Versions");
+        }
+        return allVersions;
+    }
+
+    @CloseDBIfOpened
+    @Override
     public List<Contentlet> findAllVersions(Identifier identifier, boolean bringOldVersions,
             User user, boolean respectFrontendRoles)
             throws DotSecurityException, DotDataException, DotStateException {
@@ -7212,13 +7266,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 if (((String) value).trim().length() > 0) {
                     try {
                         final String trimmedValue = ((String) value).trim();
-                        if (trimmedValue.equals("+0000") || trimmedValue.equals("00:00 +0000")) {
-                            contentlet.setDateProperty(field.getVelocityVarName(),
-                                    null);
-                        } else {
-                            contentlet.setDateProperty(field.getVelocityVarName(),
-                                    DateUtil.convertDate((String) value, dateFormats));
-                        }
+                        contentlet.setDateProperty(field.getVelocityVarName(),
+                                DateUtil.convertDate(trimmedValue, dateFormats));
                     } catch (Exception e) {
                         throw new DotContentletStateException(
                                 "Unable to convert string to date " + value);
@@ -9582,16 +9631,21 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 // if we are the latest and greatest and are a draft
                 if (working.getInode().equals(contentlet.getInode())) {
 
-                    return checkin(contentlet, contentletRelationships, cats,
+                    final Contentlet contentletReturned = checkin(contentlet, contentletRelationships, cats,
                             user, respectFrontendRoles, false, false);
 
+                    this.handlePermissions(permissions, user, respectFrontendRoles, contentletReturned);
+                    return contentletReturned;
                 } else {
                     final String workingInode = working.getInode();
                     copyProperties(working, contentlet.getMap());
                     working.setInode(workingInode);
                     working.setModUser(user.getUserId());
-                    return checkin(contentlet, contentletRelationships, cats,
+                    final Contentlet contentletReturned =  checkin(contentlet, contentletRelationships, cats,
                             user, respectFrontendRoles, false, false);
+
+                    this.handlePermissions(permissions, user, respectFrontendRoles, contentletReturned);
+                    return contentletReturned;
                 }
             }
 
@@ -9919,7 +9973,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
         final Contentlet contentletReturned = checkin(contentlet, contentRelationships, cats, user,
                 respectFrontendRoles, true, generateSystemEvent);
 
-        if (InodeUtils.isSet(contentletReturned.getInode()) && UtilMethods.isSet(
+        handlePermissions(selectedPermissions, user, respectFrontendRoles, contentletReturned);
+
+        return contentletReturned;
+    }
+
+    private void handlePermissions(final List<Permission> selectedPermissions,
+                                   final User user,
+                                   final boolean respectFrontendRoles,
+                                   final Contentlet contentlet) {
+
+        if (InodeUtils.isSet(contentlet.getInode()) && UtilMethods.isSet(
                 selectedPermissions)) {
 
             final Runnable savePermissions = () -> {
@@ -9929,14 +9993,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     Logger.debug(this,
                             () -> "Removing the permissions for: " + contentlet.getTitle() +
                                     ", id: " + contentlet.getIdentifier());
-                    this.permissionAPI.removePermissions(contentletReturned);
+                    this.permissionAPI.removePermissions(contentlet);
                     Logger.debug(this,
                             () -> "Saving the permissions for: " + contentlet.getTitle() +
                                     ", id: " + contentlet.getIdentifier());
                     this.permissionAPI.save(selectedPermissions.stream()
-                                    .map(permission -> new Permission(contentletReturned.getPermissionId(),
+                                    .map(permission -> new Permission(contentlet.getPermissionId(),
                                             permission.getRoleId(), permission.getPermission()))
-                                    .collect(Collectors.toList()), contentletReturned, user,
+                                    .collect(Collectors.toList()), contentlet, user,
                             respectFrontendRoles);
                 } catch (Exception e) {
 
@@ -9948,12 +10012,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
             };
 
             FunctionUtils.ifOrElse(DbConnectionFactory.inTransaction(),
-                    () -> HibernateUtil.addCommitListener(contentletReturned.getInode(),
-                            savePermissions),
+                    () -> HibernateUtil.addCommitListener(contentlet.getInode(), savePermissions),
                     () -> savePermissions.run());
         }
-
-        return contentletReturned;
     }
 
     @Override

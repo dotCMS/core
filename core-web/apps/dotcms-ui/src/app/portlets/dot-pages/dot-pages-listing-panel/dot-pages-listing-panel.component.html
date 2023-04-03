@@ -1,6 +1,7 @@
 <p-table
     *ngIf="vm$ | async as vm"
     [value]="vm.pages.items"
+    [loading]="vm.isPagesLoading"
     [scrollable]="true"
     [virtualScroll]="true"
     [virtualScrollItemSize]="47"
@@ -14,6 +15,7 @@
         <div class="flex justify-content-between dot-pages-listing-header">
             <div class="dot-pages-listing-header__inputs">
                 <input
+                    class="dot-pages-listing-header__filter-input"
                     [placeholder]="'Type-To-Search' | dm"
                     (input)="filterData($event.target.value)"
                     data-testid="dot-pages-listing-header__keyword-input"
@@ -22,6 +24,7 @@
                     dotAutofocus
                 />
                 <p-dropdown
+                    class="dot-pages-listing-header__language-input"
                     [options]="vm.languageOptions"
                     (onChange)="setPagesLanguage($event.value)"
                 ></p-dropdown>
@@ -34,14 +37,14 @@
             <button
                 class="p-button-primary"
                 [label]="'create.page' | dm"
-                routerLink="/c/content/new/htmlpageasset"
+                (click)="store.getPageTypes()"
                 data-testid="createPageButton"
                 pButton
             ></button>
         </div>
     </ng-template>
     <ng-template pTemplate="header">
-        <tr>
+        <tr *ngIf="vm.pages.items.length !== 0">
             <th pSortableColumn="title" style="width: 25%">
                 {{ 'title' | dm }}<p-sortIcon field="title"></p-sortIcon>
             </th>
@@ -58,7 +61,7 @@
                 {{ 'Last-Editor' | dm }}
             </th>
             <th pSortableColumn="modDate" style="width: 13%">
-                {{ 'last.edited' | dm }}<p-sortIcon field="modDate"></p-sortIcon>
+                {{ 'Last-Edited' | dm }}<p-sortIcon field="modDate"></p-sortIcon>
             </th>
             <th style="width: 5%"></th>
         </tr>
@@ -90,9 +93,7 @@
             <td>
                 {{ rowData['modUserName'] }}
             </td>
-            <td>
-                {{ rowData['modDate'] }}
-            </td>
+            <td>{{ rowData['modDate'] | dotRelativeDate }}</td>
             <td>
                 <dot-icon-button
                     id="pageActionButton-{{ rowIndex }}"
@@ -118,6 +119,13 @@
             <td><p-skeleton [ngStyle]="{ width: '13%' }"></p-skeleton></td>
             <td><p-skeleton [ngStyle]="{ width: '13%' }"></p-skeleton></td>
             <td><p-skeleton [ngStyle]="{ width: '5%' }"></p-skeleton></td>
+        </tr>
+    </ng-template>
+    <ng-template pTemplate="emptymessage">
+        <tr>
+            <td class="dot-pages-listing__empty-content" [attr.colspan]="7">
+                {{ 'favoritePage.listing.empty.table' | dm }}
+            </td>
         </tr>
     </ng-template>
 </p-table>

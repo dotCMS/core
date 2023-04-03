@@ -124,10 +124,10 @@ describe('ContainerSelectorComponent', () => {
                 'ng-reflect-persistent-placeholder': 'true',
                 'ng-reflect-placeholder': 'editpage.container.add.label',
                 'ng-reflect-rows': '5',
-                'ng-reflect-width': '172px',
+                'ng-reflect-width': 'fit-content',
                 overlayWidth: '440px',
                 persistentPlaceholder: 'true',
-                width: '172px'
+                width: 'fit-content'
             })
         );
     });
