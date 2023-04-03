@@ -66,7 +66,7 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
         ]).includes(experiment?.status)
     );
 
-    readonly loadExperiment = this.effect((experimentId$: Observable<string>) => {
+    readonly loadExperimentAndResults = this.effect((experimentId$: Observable<string>) => {
         return experimentId$.pipe(
             tap(() => this.setComponentStatus(ComponentStatus.LOADING)),
             switchMap((experimentId) =>

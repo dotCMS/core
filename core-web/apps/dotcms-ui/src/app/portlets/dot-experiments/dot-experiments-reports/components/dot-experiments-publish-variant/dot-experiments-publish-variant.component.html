@@ -1,13 +1,13 @@
 <dot-dialog
     #dialog
-    [header]="'experiments.report.publish.variant' | dm"
+    [header]="'experiments.report.promote.variant' | dm"
     [visible]="!!data"
     [actions]="dialogActions"
     (hide)="hide.emit('')"
     width="35rem"
 >
     <p class="m-0" data-testId="variant-legend">
-        {{ 'experiments.report.publish.variant.text' | dm }}
+        {{ 'experiments.report.promote.variant.text' | dm }}
     </p>
 
     <p-table [(selection)]="selectedVariant" [value]="data" dataKey="variantName">

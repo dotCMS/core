@@ -13,11 +13,11 @@ import { DotExperimentsService } from '@portlets/dot-experiments/shared/services
 import {
     getExperimentMock,
     getExperimentResultsMock,
-    VARIANT_RESULT_MOCK
+    VARIANT_RESULT_MOCK_1
 } from '@portlets/dot-experiments/test/mocks';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
-const EXPERIMENT_MOCK = getExperimentMock(0);
+const EXPERIMENT_MOCK = getExperimentMock(1);
 const EXPERIMENT_MOCK_RESULTS = getExperimentResultsMock(0);
 
 const ActivatedRouteMock = {
@@ -59,13 +59,13 @@ describe('DotExperimentsReportsStore', () => {
     });
 
     it('should set initial data', (done) => {
-        spectator.service.loadExperiment(EXPERIMENT_MOCK.id);
+        spectator.service.loadExperimentAndResults(EXPERIMENT_MOCK.id);
 
         const expectedInitialState: DotExperimentsReportsState = {
             experiment: EXPERIMENT_MOCK,
             status: ComponentStatus.IDLE,
             results: EXPERIMENT_MOCK_RESULTS,
-            variantResults: VARIANT_RESULT_MOCK,
+            variantResults: VARIANT_RESULT_MOCK_1,
             chartResults: null
         };
 
@@ -77,7 +77,7 @@ describe('DotExperimentsReportsStore', () => {
     });
 
     it('should have isLoading$ from the store', (done) => {
-        spectator.service.loadExperiment(EXPERIMENT_MOCK.id);
+        spectator.service.loadExperimentAndResults(EXPERIMENT_MOCK.id);
         store.isLoading$.subscribe((data) => {
             expect(data).toEqual(false);
             done();
@@ -94,7 +94,7 @@ describe('DotExperimentsReportsStore', () => {
 
     it('should get FALSE from showExperimentSummary$ if Experiment status is different of Running', (done) => {
         dotExperimentsService.getById.and.callThrough().and.returnValue(of(EXPERIMENT_MOCK));
-        spectator.service.loadExperiment(EXPERIMENT_MOCK.id);
+        spectator.service.loadExperimentAndResults(EXPERIMENT_MOCK.id);
 
         store.showExperimentSummary$.subscribe((value) => {
             expect(value).toEqual(false);
@@ -108,7 +108,7 @@ describe('DotExperimentsReportsStore', () => {
                 status: DotExperimentStatusList.RUNNING
             })
         );
-        spectator.service.loadExperiment(EXPERIMENT_MOCK.id);
+        spectator.service.loadExperimentAndResults(EXPERIMENT_MOCK.id);
 
         store.showExperimentSummary$.subscribe((value) => {
             expect(value).toEqual(true);
@@ -120,7 +120,7 @@ describe('DotExperimentsReportsStore', () => {
         it('should load experiment to store', (done) => {
             dotExperimentsService.getById.and.callThrough().and.returnValue(of(EXPERIMENT_MOCK));
 
-            store.loadExperiment(EXPERIMENT_MOCK.id);
+            store.loadExperimentAndResults(EXPERIMENT_MOCK.id);
             expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_MOCK.id);
 
             store.state$.subscribe(({ experiment }) => {

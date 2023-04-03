@@ -103,7 +103,7 @@ export class DotExperimentsReportsComponent implements OnInit {
     ) {}
 
     ngOnInit(): void {
-        this.store.loadExperiment(this.route.snapshot.params.experimentId);
+        this.store.loadExperimentAndResults(this.route.snapshot.params.experimentId);
     }
 
     /**

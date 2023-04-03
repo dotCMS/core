@@ -128,6 +128,12 @@ const ExperimentResultsMocks: Array<DotExperimentResults> = [
                     type: GOAL_TYPES.REACH_PAGE
                 },
                 variants: {
+                    '111': {
+                        details: { '03/29/2023': { multiBySession: 0, uniqueBySession: 0 } },
+                        multiBySession: 0,
+                        uniqueBySession: { count: 0, totalPercentage: 0.0, variantPercentage: 0.0 },
+                        variantName: '111'
+                    },
                     DEFAULT: {
                         details: { '03/29/2023': { multiBySession: 2, uniqueBySession: 2 } },
                         multiBySession: 2,
@@ -137,30 +143,24 @@ const ExperimentResultsMocks: Array<DotExperimentResults> = [
                             variantPercentage: 100.0
                         },
                         variantName: 'DEFAULT'
-                    },
-                    'dotexperiment-c92a20073d-variant-1': {
-                        details: { '03/29/2023': { multiBySession: 0, uniqueBySession: 0 } },
-                        multiBySession: 0,
-                        uniqueBySession: { count: 0, totalPercentage: 0.0, variantPercentage: 0.0 },
-                        variantName: 'dotexperiment-c92a20073d-variant-1'
                     }
                 }
             }
         },
-        sessions: { total: 2, variants: { DEFAULT: 2, 'dotexperiment-c92a20073d-variant-1': 0 } }
+        sessions: { total: 2, variants: { DEFAULT: 2, '111': 0 } }
     }
 ];
 
-export const VARIANT_RESULT_MOCK: DotResultSimpleVariant[] = [
+export const VARIANT_RESULT_MOCK_1: DotResultSimpleVariant[] = [
     {
-        id: 'DEFAULT',
-        name: 'Original',
-        uniqueBySession: { count: 2, totalPercentage: 100, variantPercentage: 100 }
+        id: '111',
+        name: 'variant a',
+        uniqueBySession: { count: 0, totalPercentage: 0, variantPercentage: 0 }
     },
     {
-        id: 'dotexperiment-c92a20073d-variant-1',
-        name: 'Test Variant 1',
-        uniqueBySession: { count: 0, totalPercentage: 0, variantPercentage: 0 }
+        id: DEFAULT_VARIANT_ID,
+        name: DEFAULT_VARIANT_NAME,
+        uniqueBySession: { count: 2, totalPercentage: 100, variantPercentage: 100 }
     }
 ];
 
@@ -232,7 +232,7 @@ export const DotExperimentsConfigurationStoreMock = {
 };
 
 export const DotExperimentsReportsStoreMock = {
-    loadExperiment: () => of([]),
+    loadExperimentAndResults: () => of([]),
     promoteVariant: () => of([])
 };
 

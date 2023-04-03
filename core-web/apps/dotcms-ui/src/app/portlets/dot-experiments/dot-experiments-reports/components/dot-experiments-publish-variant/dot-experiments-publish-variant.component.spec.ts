@@ -13,14 +13,14 @@ import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
-import { VARIANT_RESULT_MOCK } from '@portlets/dot-experiments/test/mocks';
+import { VARIANT_RESULT_MOCK_1 } from '@portlets/dot-experiments/test/mocks';
 
 import { DotExperimentsPublishVariantComponent } from './dot-experiments-publish-variant.component';
 
 const messageServiceMock = new MockDotMessageService({
-    'experiments.report.publish.variant': 'Publish Variant',
-    'experiments.report.publish.variant.text': 'Text copy',
-    'experiments.report.publish.assign.variant': 'Assign Variant',
+    'experiments.report.promote.variant': 'Publish Variant',
+    'experiments.report.promote.variant.text': 'Text copy',
+    'experiments.report.promote.assign.variant': 'Assign Variant',
     cancel: 'Cancel'
 });
 
@@ -49,7 +49,7 @@ describe('DotExperimentsPublishVariantComponent', () => {
 
     beforeEach(async () => {
         spectator = createComponent({ detectChanges: false });
-        spectator.component.data = VARIANT_RESULT_MOCK;
+        spectator.component.data = VARIANT_RESULT_MOCK_1;
         spectator.detectChanges();
     });
 
@@ -68,7 +68,7 @@ describe('DotExperimentsPublishVariantComponent', () => {
         spectator.click(spectator.query('input[type="radio"]'));
         spectator.click(spectator.query(byTestId('dotDialogAcceptAction')));
 
-        expect(spectator.component.publish.emit).toHaveBeenCalledWith(VARIANT_RESULT_MOCK[1].id);
+        expect(spectator.component.publish.emit).toHaveBeenCalledWith(VARIANT_RESULT_MOCK_1[0].id);
     });
 
     it('should close the dialog', () => {
