@@ -15,12 +15,21 @@ a:active {
 }
 
 .material-icons {
-    color: $color-primary-500;
-    font-size: $font-size-medium;
+    color: $color-palette-primary;
+    font-size: $font-size-default;
 }
 
-.p-button:hover,
+// This styles are the same as .p-button.p-button-outlined:enabled:hover in _buttons.scss,
+// the problem is the :enabled pseudoclass, hyperlink tag doesn't have that pseudoclass
+
+.p-button:hover {
+    background: rgba(66, 107, 240, 0.04);
+    color: $color-palette-primary;
+    border: 1px solid;
+}
+
 .p-button:active {
-    background: rgba(96, 125, 139, 0.04);
-    border-color: $brand-secondary;
+    background: rgba(66, 107, 240, 0.16);
+    color: $color-palette-primary;
+    border: 1px solid;
 }

@@ -139,14 +139,18 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
     @Override
     public List<String> getDependencies(final Object storyBlockValue) {
         final ImmutableList.Builder<String> contentletIdList = new ImmutableList.Builder<>();
+
         try {
-            final Map<String, Object> blockEditorMap = this.toMap(storyBlockValue);
-            final List<Map<String, Object>> contentsMap = (List) blockEditorMap.get(CONTENT_KEY);
-            for (final Map<String, Object> contentMapObject : contentsMap) {
-                if (UtilMethods.isSet(contentMapObject)) {
-                    final String type = contentMapObject.get(TYPE_KEY).toString();
-                    if (allowedTypes.contains(type)) {
-                        addDependencies(contentletIdList, contentMapObject);
+
+            if (null != storyBlockValue && JsonUtil.isValidJSON(storyBlockValue.toString())) {
+                final Map<String, Object> blockEditorMap = this.toMap(storyBlockValue);
+                final List<Map<String, Object>> contentsMap = (List) blockEditorMap.get(CONTENT_KEY);
+                for (final Map<String, Object> contentMapObject : contentsMap) {
+                    if (UtilMethods.isSet(contentMapObject)) {
+                        final String type = contentMapObject.get(TYPE_KEY).toString();
+                        if (allowedTypes.contains(type)) {
+                            addDependencies(contentletIdList, contentMapObject);
+                        }
                     }
                 }
             }

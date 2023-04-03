@@ -1,6 +1,11 @@
 <div class="tabview-container">
     <p-tabView>
-        <p-tabPanel [cache]="false" header="dotCMS" leftIcon="pi pi-images">
+        <p-tabPanel
+            [cache]="false"
+            [disabled]="disableTabs"
+            header="Library"
+            leftIcon="pi pi-images"
+        >
             <ng-template pTemplate="content">
                 <div class="wrapper">
                     <dot-asset-search
@@ -11,17 +16,29 @@
                 </div>
             </ng-template>
         </p-tabPanel>
-        <p-tabPanel [cache]="false" [header]="'Upload ' + type" leftIcon="pi pi-folder">
+        <p-tabPanel
+            [cache]="false"
+            [header]="'Upload ' + type"
+            [disabled]="disableTabs"
+            leftIcon="pi pi-folder"
+        >
             <ng-template pTemplate="content">
                 <div class="wrapper">
                     <dot-upload-asset
                         [type]="type"
                         (uploadedFile)="onSelectAsset($event)"
+                        (preventClose)="onPreventClose($event)"
+                        (hide)="onHide($event)"
                     ></dot-upload-asset>
                 </div>
             </ng-template>
         </p-tabPanel>
-        <p-tabPanel [cache]="false" [header]="type + ' URL'" leftIcon="pi pi-link">
+        <p-tabPanel
+            [cache]="false"
+            [header]="type + ' URL'"
+            [disabled]="disableTabs"
+            leftIcon="pi pi-link"
+        >
             <ng-template pTemplate="content">
                 <div class="wrapper">
                     <dot-external-asset

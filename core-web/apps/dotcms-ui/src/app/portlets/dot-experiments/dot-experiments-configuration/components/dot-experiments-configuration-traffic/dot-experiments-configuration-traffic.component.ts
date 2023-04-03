@@ -10,8 +10,8 @@ import { TooltipModule } from 'primeng/tooltip';
 import { tap } from 'rxjs/operators';
 
 import {
-    ExperimentSteps,
     ComponentStatus,
+    ExperimentSteps,
     StepStatus,
     TrafficProportion,
     TrafficProportionTypes
@@ -22,11 +22,6 @@ import { DotExperimentsConfigurationTrafficAllocationAddComponent } from '@portl
 import { DotExperimentsConfigurationTrafficSplitAddComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-traffic-split-add/dot-experiments-configuration-traffic-split-add.component';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
-
-enum TrafficConfig {
-    ALLOCATION = 'ALLOCATION',
-    SPLIT = 'SPLIT'
-}
 
 @Component({
     selector: 'dot-experiments-configuration-traffic',
@@ -63,7 +58,6 @@ export class DotExperimentsConfigurationTrafficComponent {
         | DotExperimentsConfigurationTrafficAllocationAddComponent
         | DotExperimentsConfigurationTrafficSplitAddComponent
     >;
-    private trafficConfig: TrafficConfig;
 
     constructor(
         private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore
@@ -75,22 +69,11 @@ export class DotExperimentsConfigurationTrafficComponent {
      * @memberof DotExperimentsConfigurationTrafficComponent
      */
     changeTrafficAllocation() {
-        this.trafficConfig = TrafficConfig.ALLOCATION;
-        this.dotExperimentsConfigurationStore.openSidebar(ExperimentSteps.TRAFFIC);
-    }
-
-    /**
-     * Open sidebar to set Traffic Proportion
-     * @returns void
-     * @memberof DotExperimentsConfigurationTrafficComponent
-     */
-    changeTrafficProportion() {
-        this.trafficConfig = TrafficConfig.SPLIT;
-        this.dotExperimentsConfigurationStore.openSidebar(ExperimentSteps.TRAFFIC);
+        this.dotExperimentsConfigurationStore.openSidebar(ExperimentSteps.TRAFFIC_LOAD);
     }
 
     private handleSidebar(status: StepStatus) {
-        if (status && status.isOpen) {
+        if (status && status.isOpen && status.status != ComponentStatus.SAVING) {
             this.loadSidebarComponent(status);
         } else {
             this.removeSidebarComponent();
@@ -98,18 +81,15 @@ export class DotExperimentsConfigurationTrafficComponent {
     }
 
     private loadSidebarComponent(status: StepStatus): void {
-        if (status && status.isOpen && status.status != ComponentStatus.SAVING) {
-            this.sidebarHost.viewContainerRef.clear();
-
-            this.componentRef =
-                this.trafficConfig == TrafficConfig.SPLIT
-                    ? this.sidebarHost.viewContainerRef.createComponent<DotExperimentsConfigurationTrafficSplitAddComponent>(
-                          DotExperimentsConfigurationTrafficSplitAddComponent
-                      )
-                    : this.sidebarHost.viewContainerRef.createComponent<DotExperimentsConfigurationTrafficAllocationAddComponent>(
-                          DotExperimentsConfigurationTrafficAllocationAddComponent
-                      );
-        }
+        this.sidebarHost.viewContainerRef.clear();
+        this.componentRef =
+            status.experimentStep == ExperimentSteps.TRAFFICS_SPLIT
+                ? this.sidebarHost.viewContainerRef.createComponent<DotExperimentsConfigurationTrafficSplitAddComponent>(
+                      DotExperimentsConfigurationTrafficSplitAddComponent
+                  )
+                : this.sidebarHost.viewContainerRef.createComponent<DotExperimentsConfigurationTrafficAllocationAddComponent>(
+                      DotExperimentsConfigurationTrafficAllocationAddComponent
+                  );
     }
 
     private removeSidebarComponent() {

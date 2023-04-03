@@ -8,7 +8,7 @@ $notification-icon-size: 16px;
 }
 
 dot-custom-time {
-    color: $gray;
+    color: $color-palette-gray-700;
     display: block;
 }
 
@@ -17,7 +17,7 @@ a {
 }
 
 .notification-item {
-    border-top: solid 1px $gray-bg;
+    border-top: solid 1px $color-palette-gray-200;
     position: relative;
 }
 
@@ -26,7 +26,7 @@ a {
 }
 
 .notification-item__close {
-    color: $gray;
+    color: $color-palette-gray-700;
     height: $notification-icon-size;
     position: absolute;
     right: 0;
@@ -40,7 +40,7 @@ a {
 }
 
 .notification-item__icon {
-    font-size: $font-size-large;
+    font-size: $font-size-lg;
     left: 0;
     position: absolute;
     top: 1rem;
@@ -48,7 +48,7 @@ a {
 }
 
 .notification-item__title {
-    font-size: $body-font-size-base;
+    font-size: $font-size-default;
 }
 
 .notification-item__title,
@@ -70,7 +70,7 @@ a {
     .notification-item__link,
     .notification-item__title,
     .notification-item__title a {
-        color: $brand-primary;
+        color: $color-palette-primary;
     }
 }
 
@@ -79,6 +79,6 @@ a {
     .notification-item__link,
     .notification-item__title,
     .notification-item__title a {
-        color: $brand-secondary;
+        color: $color-palette-secondary;
     }
 }
