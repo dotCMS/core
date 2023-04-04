@@ -199,8 +199,8 @@ public class TemplateFactoryImpl implements TemplateFactory {
 			int offset, int limit, String orderBy) throws DotSecurityException,
 			DotDataException {
 
-		PaginatedArrayList<Template> assets = new PaginatedArrayList<Template>();
-		List<Permissionable> toReturn = new ArrayList<Permissionable>();
+		PaginatedArrayList<Template> assets = new PaginatedArrayList<>();
+		List<Permissionable> toReturn = new ArrayList<>();
 		int internalLimit = 500;
 		int internalOffset = 0;
 		boolean done = false;
@@ -349,7 +349,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 	@Override
 	public List<Container> getContainersInTemplate(Template template, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
-		List<Container> result = new ArrayList<Container>();
+		List<Container> result = new ArrayList<>();
 		Collection<String> ids = getContainerIds(template);
 		for(String containerId : ids) {
 			Container container = APILocator.getContainerAPI().getWorkingContainerById(containerId, user, respectFrontendRoles);
@@ -409,7 +409,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 	}
 
 	private List<String> getContainerIdsFromHTML(String templateBody) {
-		Set<String> ids = new HashSet<String>();
+		Set<String> ids = new HashSet<>();
 		if(!UtilMethods.isSet(templateBody)){
 			return new ArrayList<>(ids);
 		}

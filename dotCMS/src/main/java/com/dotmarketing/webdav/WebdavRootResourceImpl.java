@@ -118,7 +118,7 @@ public class WebdavRootResourceImpl implements Resource, PropFindableResource, C
 	public List<? extends Resource> getChildren() {
 	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		List<Host> hosts = listHosts();
-		List<Resource> hrs = new ArrayList<Resource>();
+		List<Resource> hrs = new ArrayList<>();
 		for (Host host : hosts) {
 		    String sep="/";
             if(path.endsWith(sep)) sep="";

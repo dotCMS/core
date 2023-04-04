@@ -86,7 +86,7 @@ public class TempFolderResourceImpl implements FolderResource, LockableResource,
 	 */
 	public List<? extends Resource> getChildren() {
 		File[] children = folder.listFiles();
-		List<Resource> result = new ArrayList<Resource>();
+		List<Resource> result = new ArrayList<>();
 		for (File file : children) {
 			if(file.isDirectory()){
 				TempFolderResourceImpl tr = new TempFolderResourceImpl(file.getPath(), file, isAutoPub);

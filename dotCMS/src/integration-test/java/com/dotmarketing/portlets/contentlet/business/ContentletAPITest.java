@@ -4563,9 +4563,9 @@ public class ContentletAPITest extends ContentletBaseTest {
         // delete counter
         int deleted = 0;
         // Page list
-        List<HTMLPageAsset> liveHTMLPages = new ArrayList<HTMLPageAsset>();
+        List<HTMLPageAsset> liveHTMLPages = new ArrayList<>();
         // List of contentlets created for this test.
-        List<Contentlet> contentletsCreated = new ArrayList<Contentlet>();
+        List<Contentlet> contentletsCreated = new ArrayList<>();
 
         liveHTMLPages.add(pageEnglish1);
         liveHTMLPages.add(pageEnglish2);
@@ -4598,7 +4598,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         // 2 Spanish pages created, 2 should have been deleted
         assertEquals(2, deleted);
 
-        List<Contentlet> liveEnglish = new ArrayList<Contentlet>();
+        List<Contentlet> liveEnglish = new ArrayList<>();
         for (IHTMLPage page : liveHTMLPages) {
             liveEnglish.add(APILocator.getContentletAPI().find(page.getInode(), user, false));
         }

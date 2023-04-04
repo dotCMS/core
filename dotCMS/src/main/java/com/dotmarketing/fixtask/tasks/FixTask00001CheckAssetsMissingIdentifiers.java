@@ -32,7 +32,7 @@ import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 
 public class FixTask00001CheckAssetsMissingIdentifiers  implements FixTask {
 
-	private List <Map<String, String>> modifiedData= new  ArrayList <Map<String, String>>();
+	private List <Map<String, String>> modifiedData= new  ArrayList <>();
 	
 	
 	public List <Map <String,Object>> executeFix() throws DotDataException, DotRuntimeException {
@@ -40,7 +40,7 @@ public class FixTask00001CheckAssetsMissingIdentifiers  implements FixTask {
 		Logger.info(CMSMaintenanceFactory.class,
 				"Beginning fixAssetsInconsistencies");
 		int total = 0;
-    	List <Map <String,Object>> returnValue= new ArrayList <Map <String,Object>> ();
+    	List <Map <String,Object>> returnValue= new ArrayList <> ();
 
 
 		
@@ -90,7 +90,7 @@ public class FixTask00001CheckAssetsMissingIdentifiers  implements FixTask {
 				getModifiedData();
 				total =total + dc.getResults().size();
 				FixAssetsProcessStatus.setTotal(total);
-				List<String> inodesToClean = new ArrayList<String>();
+				List<String> inodesToClean = new ArrayList<>();
 				boolean runDelete = false;
 				for (HashMap<String, String> r : results) {
 					inodesToClean.add(r.get("inode"));

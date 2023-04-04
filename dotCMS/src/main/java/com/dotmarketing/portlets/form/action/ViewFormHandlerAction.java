@@ -71,7 +71,7 @@ public class ViewFormHandlerAction extends DotPortletAction {
 		}
 		boolean resetQuery = req.getParameter("resetQuery")!=null;
 		
-		List<Structure> structures = new java.util.ArrayList<Structure>();
+		List<Structure> structures = new java.util.ArrayList<>();
 
 		try {
 			String orderby = req.getParameter("orderBy");

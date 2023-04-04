@@ -43,7 +43,7 @@ public class CommentsWebAPI implements ViewTool {
 	 * Holds a list of comment relationships that have already been created
 	 * 
 	 */
-	private static final Map<String, Boolean> _commentsCreated = new HashMap<String, Boolean>();
+	private static final Map<String, Boolean> _commentsCreated = new HashMap<>();
 	private com.liferay.portal.model.User user = null;
 	private HttpServletRequest request;
 	private Context ctx;
@@ -108,7 +108,7 @@ public class CommentsWebAPI implements ViewTool {
 		} catch (Exception e) {
 			Logger.error(this,e.getMessage(),e);
 		}
-		return new ArrayList<Contentlet>();
+		return new ArrayList<>();
 	}
 	
 	
@@ -123,7 +123,7 @@ public class CommentsWebAPI implements ViewTool {
 			}
 			validateComments(contentlet);
 			if(!InodeUtils.isSet(contentlet.getInode())){
-				return new ArrayList<Contentlet>();
+				return new ArrayList<>();
 			}
 			List<Contentlet> comments = null;
 			if(contentlet.getStructure().getVelocityVarName().equals(commentsVelocityStructureName)){
@@ -156,13 +156,13 @@ public class CommentsWebAPI implements ViewTool {
 			return comments;
 		}catch (DotSecurityException se) {
 			Logger.error(this, "Unable to get comments becuase of user/security error",se);
-			return new ArrayList<Contentlet>();
+			return new ArrayList<>();
 		} catch (DotDataException e) {
 			Logger.error(CommentsWebAPI.class,e.getMessage(),e);
-			return new ArrayList<Contentlet>();
+			return new ArrayList<>();
 		} catch (Exception e) {
 			Logger.error(CommentsWebAPI.class,e.getMessage(),e);
-			return new ArrayList<Contentlet>();
+			return new ArrayList<>();
 		}
 				
 	}
@@ -274,7 +274,7 @@ public class CommentsWebAPI implements ViewTool {
 				StructureFactory.saveStructure(commentsStructure);
 				CacheLocator.getContentTypeCache().remove(commentsStructure);
 				CacheLocator.getContentTypeCache().add(commentsStructure);
-				List<Field> fields = new ArrayList<Field>();
+				List<Field> fields = new ArrayList<>();
 				String commentsStructureInode = commentsStructure.getInode();
 
 				// Save the fields

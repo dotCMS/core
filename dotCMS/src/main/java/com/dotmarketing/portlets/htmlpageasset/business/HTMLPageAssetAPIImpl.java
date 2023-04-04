@@ -332,7 +332,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 			boolean deleted, int limit, int offset, String sortBy, User user,
 			boolean respectFrontEndRoles) throws DotDataException,
 			DotSecurityException {
-		List<IHTMLPage> pages = new ArrayList<IHTMLPage>();
+		List<IHTMLPage> pages = new ArrayList<>();
 		StringBuffer query = new StringBuffer();
 		String liveWorkingDeleted = (live) ? " +live:true "
 				: (deleted) ? " +working:true +deleted:true "
@@ -562,7 +562,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     @Override
     public List<String> findUpdatedHTMLPageIdsByURI(Host host, String pattern,boolean include,Date startDate, Date endDate) {
 
-        Set<String> ret = new HashSet<String>();
+        Set<String> ret = new HashSet<>();
         
         String likepattern=RegEX.replaceAll(pattern, "%", "\\*");
         
@@ -674,7 +674,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
             Logger.error(this,"can't get modified page assets sql:"+bob,e);
         }
         
-        return new ArrayList<String>(ret);
+        return new ArrayList<>(ret);
     }
     
     @Override

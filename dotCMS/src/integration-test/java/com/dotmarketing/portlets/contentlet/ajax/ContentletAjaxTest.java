@@ -147,14 +147,14 @@ public class ContentletAjaxTest {
 		/*
 		 * Get english version
 		 */
-		List<String> fieldsValues = new ArrayList<String>();
+		List<String> fieldsValues = new ArrayList<>();
 		fieldsValues.add("conHost");
 		fieldsValues.add(host.getIdentifier());
 		fieldsValues.add("webPageContent.title");
 		fieldsValues.add(title);
 		fieldsValues.add("languageId");
 		fieldsValues.add(String.valueOf(defaultLang.getId()));
-		List<String> categories = new ArrayList<String>();
+		List<String> categories = new ArrayList<>();
 		
 		List<Object> results=new ContentletAjax().searchContentletsByUser(structure.getInode(), fieldsValues, categories, false, false, false, false,1, "modDate Desc", 10,systemUser, null, null, null);
 		Map<String,Object> result = (Map<String,Object>)results.get(0);
@@ -168,7 +168,7 @@ public class ContentletAjaxTest {
 		/*
 		 * Get italian version
 		 */
-		fieldsValues = new ArrayList<String>();
+		fieldsValues = new ArrayList<>();
 		fieldsValues.add("conHost");
 		fieldsValues.add(host.getIdentifier());
 		fieldsValues.add("webPageContent.title");

@@ -583,7 +583,7 @@ public class Config {
 
     public static Map<String, String> compareOverrides(Map<String, String> before) {
         Map<String, String> after = getOverrides();
-        Map<String, String> diff = new HashMap<String, String>();
+        Map<String, String> diff = new HashMap<>();
         for (String key : after.keySet()) {
             if (!before.containsKey(key) || !before.get(key).equals(after.get(key))) {
                 diff.put(key, after.get(key));

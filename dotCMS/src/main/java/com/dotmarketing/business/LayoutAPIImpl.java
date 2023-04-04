@@ -47,7 +47,7 @@ public class LayoutAPIImpl implements LayoutAPI {
 	@Override
 	@WrapInTransaction
 	public void setPortletsToLayout(final Layout layout, final List<Portlet> portlets) throws DotDataException {
-		List<String> portletIds = new ArrayList<String>();
+		List<String> portletIds = new ArrayList<>();
 		for(Portlet p : portlets) {
 			portletIds.add(p.getPortletId());
 		}
@@ -155,11 +155,11 @@ public class LayoutAPIImpl implements LayoutAPI {
 	public List<Layout> loadLayoutsForUser(final User user) throws DotDataException {
 		
 		final List<Role> urs = APILocator.getRoleAPI().loadRolesForUser(user.getUserId(), false);
-		final Set<String> lids = new HashSet<String>();
+		final Set<String> lids = new HashSet<>();
 		for (Role role : urs) {
 			 lids.addAll(APILocator.getRoleAPI().loadLayoutIdsForRole(role));	
 		}
-		List<Layout> layouts = new ArrayList<Layout>();
+		List<Layout> layouts = new ArrayList<>();
 		for (String lid : lids) {
 			layouts.add(loadLayout(lid));
 		}
@@ -190,9 +190,9 @@ public class LayoutAPIImpl implements LayoutAPI {
 
 	@Override
 	public List<Layout> loadLayoutsForRole(Role role) throws DotDataException {
-		Set<String> lids = new HashSet<String>();
+		Set<String> lids = new HashSet<>();
 		lids.addAll(APILocator.getRoleAPI().loadLayoutIdsForRole(role));	
-		List<Layout> layouts = new ArrayList<Layout>();
+		List<Layout> layouts = new ArrayList<>();
 		for (String lid : lids) {
 			layouts.add(loadLayout(lid));
 		}

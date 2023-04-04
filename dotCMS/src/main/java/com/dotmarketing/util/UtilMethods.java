@@ -120,7 +120,7 @@ public class UtilMethods {
 
     private static final java.text.SimpleDateFormat DATE_TO_PRETTY_HTML_DATE = new java.text.SimpleDateFormat("EEE, MMMM d yyyy");
 
-    private static final java.util.Map<String, String> _CC_MAPPINGS = new HashMap<String, String>();
+    private static final java.util.Map<String, String> _CC_MAPPINGS = new HashMap<>();
 
     private static final java.text.SimpleDateFormat PIDMS_TEXT_TO_DATE = new java.text.SimpleDateFormat("yyyy/MM/dd h:mm a");
 
@@ -1038,7 +1038,7 @@ public class UtilMethods {
 
     public static java.util.List getTimeList(int start, int duration) {
         java.util.Calendar cal = new java.util.GregorianCalendar();
-        List<String> out = new ArrayList<String>();
+        List<String> out = new ArrayList<>();
         cal.set(java.util.Calendar.HOUR, start);
         cal.set(java.util.Calendar.MINUTE, 0);
 
@@ -1715,7 +1715,7 @@ public class UtilMethods {
         StringBuffer sb = new StringBuffer();
 
         if (daysOfWeek == null) {
-            daysOfWeek = new HashMap<String, String>();
+            daysOfWeek = new HashMap<>();
             daysOfWeek.put("M", "Monday");
             daysOfWeek.put("T", "Tuesday");
             daysOfWeek.put("W", "Wednesday");
@@ -1821,7 +1821,7 @@ public class UtilMethods {
      */
     public static String[] specialSplit(String text, String delim, String textQualifier) throws IOException {
 
-        ArrayList<String> tokens = new ArrayList<String>();
+        ArrayList<String> tokens = new ArrayList<>();
         StringTokenizer tok = new StringTokenizer(text, delim, true);
         boolean delimFound = false;
         String lastToken = "";
@@ -2080,7 +2080,7 @@ public class UtilMethods {
      * @throws IOException
      */
     public static List<String[]> specialSplit(Reader reader, char delim, char textQualifier) throws IOException {
-		List<String[]> records = new ArrayList<String[]>();
+		List<String[]> records = new ArrayList<>();
 		CsvReader csvReader = new CsvReader (reader);
 		csvReader.setDelimiter(delim);
 		csvReader.setTextQualifier(textQualifier);
@@ -2359,7 +2359,7 @@ public class UtilMethods {
     }
 
     public static List<Object> randomList(List<Object> list, int number) {
-    	List<Object> randomList = new ArrayList<Object>();
+    	List<Object> randomList = new ArrayList<>();
 
     	if(list.size() > 0) {
 	    	int done = 0;
@@ -2409,7 +2409,7 @@ public class UtilMethods {
      */
     public static Map<String, Object> toMap(Object obj) {
 
-        HashMap<String, Object> map = new HashMap<String, Object>();
+        HashMap<String, Object> map = new HashMap<>();
 
         // Getting object properties
         PropertyDescriptor[] descs = PropertyUtils.getPropertyDescriptors(obj);
@@ -3330,7 +3330,7 @@ public class UtilMethods {
 
     @SuppressWarnings("unchecked")
     public static <T, E> HashMap<T, E> convertListToHashMap(List<E> arli, String methodToInvoke, Class T) throws Exception {
-        HashMap<T, E> hashi = new HashMap<T, E>();
+        HashMap<T, E> hashi = new HashMap<>();
         for (E e : arli) {
             Method m = e.getClass().getMethod(methodToInvoke);
             if (m.getReturnType() != T) {
@@ -3467,7 +3467,7 @@ public class UtilMethods {
     }
     
     public static Map<String,Object> getParameterMap(HttpServletRequest req) {
-        Map<String,Object> map=new HashMap<String,Object>();
+        Map<String,Object> map=new HashMap<>();
         Enumeration<String> names = req.getParameterNames();
         while(names.hasMoreElements()) {
             String ee=names.nextElement();

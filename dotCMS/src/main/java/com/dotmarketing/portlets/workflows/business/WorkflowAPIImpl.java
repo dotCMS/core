@@ -357,7 +357,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			// Register main service
 			BundleContext context = HostActivator.instance().getBundleContext();
 			if (null != context) {
-				Hashtable<String, String> props = new Hashtable<String, String>();
+				Hashtable<String, String> props = new Hashtable<>();
 				context.registerService(WorkflowAPIOsgiService.class.getName(), this, props);
 			} else {
 				Logger.error(this, "Bundle Context is null, WorkflowAPIOsgiService has been not registered");
@@ -2112,7 +2112,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			synchronized (this.getClass()) {
 				if (actionletMap == null) {
 
-					List<WorkFlowActionlet> actionletList = new ArrayList<WorkFlowActionlet>();
+					List<WorkFlowActionlet> actionletList = new ArrayList<>();
 
 					// get the dotmarketing-config.properties actionlet classes
 					String customActionlets = Config.getStringProperty(WebKeys.WORKFLOW_ACTIONLET_CLASSES, "");
@@ -2184,7 +2184,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@Override
 	public List<WorkFlowActionlet> findActionlets() throws DotDataException {
-		final List<WorkFlowActionlet> workFlowActionlets = new ArrayList<WorkFlowActionlet>();
+		final List<WorkFlowActionlet> workFlowActionlets = new ArrayList<>();
 		final Map<String,WorkFlowActionlet>  actionlets  = getActionlets();
 		for (final String actionletName : actionlets.keySet()) {
 			workFlowActionlets.add(getActionlets().get(actionletName));

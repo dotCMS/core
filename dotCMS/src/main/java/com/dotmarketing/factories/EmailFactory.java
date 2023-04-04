@@ -335,14 +335,14 @@ public class EmailFactory {
 
 		// Sort the forms' fields by the given order parameter
 		String order = (String)getMapValue("order", parameters);
-		Map<String, Object> orderedMap = new LinkedHashMap<String, Object>();
+		Map<String, Object> orderedMap = new LinkedHashMap<>();
 
 		// Parameter prettyOrder is used to map
 		// the pretty names of the variables used in the order field
 		// E.G: order = firstName, lastName
 		//		prettyOrder = First Name, Last Name
 		String prettyOrder = (String)getMapValue("prettyOrder", parameters);
-		Map<String, String> prettyVariableNamesMap = new LinkedHashMap<String, String>();
+		Map<String, String> prettyVariableNamesMap = new LinkedHashMap<>();
 
 		// Parameter attachFiles is used to specify the file kind of fields you want to attach
 		// to the mail is sent by this method
@@ -689,7 +689,7 @@ public class EmailFactory {
 
 		emailHTMLTableBody.append("</TABLE></BODY></HTML>");
 
-		Map<String, String> returnMap = new HashMap<String, String>();
+		Map<String, String> returnMap = new HashMap<>();
 		if(UtilMethods.isSet(emailHTMLBody.toString()))
 			returnMap.put("emailHTMLBody", emailHTMLBody.toString());
 		if(UtilMethods.isSet(emailHTMLTableBody.toString()))

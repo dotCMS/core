@@ -629,7 +629,7 @@ public class DotPortletAction extends PortletAction {
 		String query = req.getParameter("query");
 		String resetQuery = req.getParameter("resetQuery");
 
-		PaginatedArrayList<PermissionAsset>  results = new PaginatedArrayList<PermissionAsset>();
+		PaginatedArrayList<PermissionAsset>  results = new PaginatedArrayList<>();
 
 		try {
 

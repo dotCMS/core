@@ -412,7 +412,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 	private Map<String,String> searchAndReplace(CmsMaintenanceForm form) throws DotDataException{
 
 		String message="";
-		Map<String,String> messageResult = new HashMap<String,String>();
+		Map<String,String> messageResult = new HashMap<>();
 		boolean isAdmin = false;
 
 		if (UtilMethods.isSet(form.getUserId())) {

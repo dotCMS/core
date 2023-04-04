@@ -810,7 +810,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
     private Map<String, WorkflowActionClassParameter> loadDefaultActionClassParams(
             final WorkflowActionClass actionClass) {
 
-        final Map<String, WorkflowActionClassParameter> map = new LinkedHashMap<String, WorkflowActionClassParameter>();
+        final Map<String, WorkflowActionClassParameter> map = new LinkedHashMap<>();
 
         if (actionClass != null && actionClass.getActionlet() != null
                 && actionClass.getActionlet().getParameters() != null) {
@@ -1130,7 +1130,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
         hu.setQuery(
                 "from workflow_task_files in class com.dotmarketing.portlets.workflows.model.WorkFlowTaskFiles where workflowtask_id = ?");
         hu.setParam(task.getId());
-        List<Contentlet> contents = new ArrayList<Contentlet>();
+        List<Contentlet> contents = new ArrayList<>();
         List<WorkFlowTaskFiles> l = hu.list();
 
         for (WorkFlowTaskFiles f : l) {
@@ -1181,7 +1181,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
                 .doesUserHaveRole(searcher.getUser(), APILocator.getRoleAPI().loadCMSAdminRole())
                 || APILocator.getRoleAPI()
                 .doesUserHaveRole(searcher.getUser(), RoleAPI.WORKFLOW_ADMIN_ROLE_KEY))) {
-            final List<Role> userRoles = new ArrayList<Role>();
+            final List<Role> userRoles = new ArrayList<>();
             if (UtilMethods.isSet(searcher.getAssignedTo())) {
 
                 final Role r = APILocator.getRoleAPI().loadRoleById(searcher.getAssignedTo());

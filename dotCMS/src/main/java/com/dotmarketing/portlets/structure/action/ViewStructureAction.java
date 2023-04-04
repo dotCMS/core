@@ -126,7 +126,7 @@ public class ViewStructureAction extends DotPortletAction {
         String query = req.getParameter("query");
         String resetQuery = req.getParameter("resetQuery");
         String showSystem = req.getParameter("system");
-        List<Structure> contentTypes = new java.util.ArrayList<Structure>();
+        List<Structure> contentTypes = new java.util.ArrayList<>();
         APILocator.getPersonaAPI().createDefaultPersonaStructure();
 
         try {

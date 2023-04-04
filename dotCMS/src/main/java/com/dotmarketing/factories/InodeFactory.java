@@ -235,7 +235,7 @@ public class InodeFactory {
 			throw new DotStateException("Identifiers are no longer Inodes!");
 		}
 		try {
-			Map<String,Integer> statistics = new HashMap<String,Integer>();
+			Map<String,Integer> statistics = new HashMap<>();
 
 			if( inodeClasses != null && inodeClasses.length > 0 ) {
 
@@ -289,7 +289,7 @@ public class InodeFactory {
 		String InodeQuery = "Select count(*) as count from inode where inode = ?";
 		dc.setSQL(InodeQuery);
 		dc.addParam(inode);
-		ArrayList<Map<String, String>> results = new ArrayList<Map<String, String>>();
+		ArrayList<Map<String, String>> results = new ArrayList<>();
 		try {
 			results = dc.getResults();
 		} catch (DotDataException e) {

@@ -39,7 +39,7 @@ public class FieldVariableAjax {
 		boolean respectFrontendRoles = userWebAPI.isLoggedToFrontend(req);
 		FieldAPI fieldAPI = APILocator.getFieldAPI();
 		
-		List<Map<String, Object>> resultList = new LinkedList<Map<String,Object>>();
+		List<Map<String, Object>> resultList = new LinkedList<>();
 		List<FieldVariable> fieldVars = fieldAPI.getFieldVariablesForField(fieldId, user, respectFrontendRoles);
 		for(FieldVariable variable : fieldVars) {
 			Map<String, Object> variableMap = variable.getMap();

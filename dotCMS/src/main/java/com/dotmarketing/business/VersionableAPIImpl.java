@@ -203,7 +203,7 @@ public class VersionableAPIImpl implements VersionableAPI {
 			                                    DotStateException, DotSecurityException {
 
 		List<Versionable> versions = versionableFactory.findAllVersions(id);
-		List<Permissionable> pass  = new ArrayList<Permissionable>();
+		List<Permissionable> pass  = new ArrayList<>();
 
 		for (Versionable v : versions) {
 			if (v instanceof Permissionable) {
@@ -212,7 +212,7 @@ public class VersionableAPIImpl implements VersionableAPI {
 		}
 
 		pass = permissionAPI.filterCollection(pass, PermissionAPI.PERMISSION_READ, respectAnonPermissions, user);
-		versions = new ArrayList<Versionable>();
+		versions = new ArrayList<>();
 
 		for (Permissionable p : pass) {
 			if (p instanceof Versionable) {

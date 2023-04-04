@@ -458,7 +458,7 @@ public class ContentletLoader implements DotLoader {
 
                 // Initialize variables
                 String catInodes = "";
-                Set<Category> categoryList = new HashSet<Category>();
+                Set<Category> categoryList = new HashSet<>();
                 List<Category> categoryTree = categoryAPI.getAllChildren(category, systemUser, false);
 
                 if (selectedCategories.size() > 0 && categoryTree != null) {
@@ -526,7 +526,7 @@ public class ContentletLoader implements DotLoader {
 
         // get the contentlet categories to make a list
         String categories = "";
-        Set<Category> categoryList = new HashSet<Category>(categoryAPI.getParents(content, systemUser, false));
+        Set<Category> categoryList = new HashSet<>(categoryAPI.getParents(content, systemUser, false));
         if (categoryList != null && categoryList.size() > 0) {
             StringBuilder catbuilder = new StringBuilder();
             Iterator<Category> it = categoryList.iterator();

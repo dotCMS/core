@@ -212,7 +212,7 @@ public class WebAPI implements ViewTool {
 	}
 
 	public List<String> splitString(String str, String sep) {
-		ArrayList<String> list = new ArrayList<String>();
+		ArrayList<String> list = new ArrayList<>();
 		String[] splitArr = str.split(sep);
 		for (int i = 0; i < splitArr.length; i++) {
 			list.add(splitArr[i]);

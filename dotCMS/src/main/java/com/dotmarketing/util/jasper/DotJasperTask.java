@@ -30,7 +30,7 @@ public class DotJasperTask extends JspC {
 		synchronized (mutex) {
 			if (includeList != null)
 				return;
-			Set<String> set = new HashSet<String>();
+			Set<String> set = new HashSet<>();
 			// Load some defaults
 			set.add("contentlet_versions_inc.jsp");
 			set.add("view_contentlet_popup_inc.jsp");

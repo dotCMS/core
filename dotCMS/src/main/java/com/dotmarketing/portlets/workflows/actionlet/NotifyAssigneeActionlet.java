@@ -75,7 +75,7 @@ public class NotifyAssigneeActionlet extends WorkFlowActionlet {
 		if(paramList ==null){
 			synchronized (this.getClass()) {
 				if(paramList ==null){
-					paramList = new ArrayList<WorkflowActionletParameter>();
+					paramList = new ArrayList<>();
 					paramList.add(new WorkflowActionletParameter("emailSubject", "Email Subject", "", false));
 					paramList.add(new WorkflowActionletParameter("emailBody", "Email Message", null, false));
 					paramList.add(new WorkflowActionletParameter("isHtml", "Is Html?", "true", false));

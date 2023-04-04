@@ -87,7 +87,7 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
 
         // Generate counter to know how many version are for each identifier
         // with conflicts
-        Map<String, Integer> versionCount = new HashMap<String, Integer>();
+        Map<String, Integer> versionCount = new HashMap<>();
         for (Map<String, Object> result : results) {
             final String oldIdentifier = (String) result.get("local_identifier");
 

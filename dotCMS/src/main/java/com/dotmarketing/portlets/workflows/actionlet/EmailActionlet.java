@@ -37,7 +37,7 @@ public class EmailActionlet extends WorkFlowActionlet {
 
     @Override
     public List<WorkflowActionletParameter> getParameters() {
-        List<WorkflowActionletParameter> params = new ArrayList<WorkflowActionletParameter>();
+        List<WorkflowActionletParameter> params = new ArrayList<>();
 
         params.add(new WorkflowActionletParameter("fromEmail", "From Email", "", true));
         params.add(new WorkflowActionletParameter("fromName", "From Name", "", true));

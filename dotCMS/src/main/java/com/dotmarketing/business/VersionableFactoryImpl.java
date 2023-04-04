@@ -209,7 +209,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
             final Class<?> clazz = InodeUtils.getClassByDBType(identifier.getAssetType());
             if(clazz.equals(Inode.class)) {
 
-                return new ArrayList<Versionable>(1);
+                return new ArrayList<>(1);
             }
             if(clazz.equals(Template.class)){
                 final List<Versionable> templateAllVersions = new ArrayList<>();

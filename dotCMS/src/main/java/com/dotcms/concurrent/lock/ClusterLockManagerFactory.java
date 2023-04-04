@@ -9,6 +9,6 @@ public class ClusterLockManagerFactory implements DotKeyLockManagerFactory {
     @Override
     public DotKeyLockManager<String> create(final String name) {
 
-        return new ClusterLockManagerImpl<String>(name);
+        return new ClusterLockManagerImpl<>(name);
     }
 }

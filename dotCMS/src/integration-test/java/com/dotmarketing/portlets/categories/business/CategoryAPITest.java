@@ -241,7 +241,7 @@ public class CategoryAPITest extends IntegrationTestBase {
         Contentlet contentlet   = null;
         Structure testStructure = null;
 
-        List<Category> categories = new ArrayList<Category>();
+        List<Category> categories = new ArrayList<>();
 
         //***************************************************************
         //Creating new categories
@@ -371,7 +371,7 @@ public class CategoryAPITest extends IntegrationTestBase {
 
         CategoryCache categoryCache = CacheLocator.getCategoryCache();
 
-        List<Category> categories = new ArrayList<Category>();
+        List<Category> categories = new ArrayList<>();
 
         //***************************************************************
         //Creating new categories

@@ -29,7 +29,7 @@ public class PluginLoader {
 	
 	public void loadPlugins(String rootPath, String pluginPath) {
 		List<File> pluginJars = PluginUtil.getPluginJars(rootPath, pluginPath);
-		List<String> pluginIds = new ArrayList<String>();
+		List<String> pluginIds = new ArrayList<>();
 		
 		//initialize the pluginAPI
 		PluginAPI pluginAPI = APILocator.getPluginAPI();

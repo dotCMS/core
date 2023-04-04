@@ -93,7 +93,7 @@ public class IntegrityResource {
     }
 
     private static class EndpointState {
-        private final Map<String, Cookie> cookies = new ConcurrentHashMap<String, Cookie>();
+        private final Map<String, Cookie> cookies = new ConcurrentHashMap<>();
 
         public Map<String, Cookie> getCookies() {
             return cookies;

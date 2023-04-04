@@ -577,7 +577,7 @@ public class ContentMap {
     private Object retriveFieldValue(Field field) {
         if (fieldValueMap == null) {
             // Lazy init
-            fieldValueMap = new HashMap<String, Object>();
+            fieldValueMap = new HashMap<>();
         }
         return fieldValueMap.get(field.getVelocityVarName());
     }
@@ -590,7 +590,7 @@ public class ContentMap {
     private void addFieldValue(Field field, Object value) {
         if (fieldValueMap == null) {
             // Lazy init
-            fieldValueMap = new HashMap<String, Object>();
+            fieldValueMap = new HashMap<>();
         }
         fieldValueMap.put(field.getVelocityVarName(), value);
     }

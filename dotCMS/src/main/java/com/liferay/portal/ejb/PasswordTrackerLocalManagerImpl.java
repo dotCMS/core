@@ -82,7 +82,7 @@ public class PasswordTrackerLocalManagerImpl
 	public boolean isValidPassword(String userId, String password)
 		throws PortalException, SystemException {
 		RegExpToolkit regExpToolkit = new RegExpToolkit();
-		this.validationErrorsList = new ArrayList<Object>();
+		this.validationErrorsList = new ArrayList<>();
 		boolean successful = true;
 		// Validate character rules
 		if (!regExpToolkit.validate(password)) {

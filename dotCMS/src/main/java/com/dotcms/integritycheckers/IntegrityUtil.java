@@ -481,7 +481,7 @@ public class IntegrityUtil {
 
             final String resultsTableName = type.getResultsTableName();
             if (!type.hasResultsTable() || !doesTableExist(resultsTableName)) {
-                return new ArrayList<Map<String, Object>>();
+                return new ArrayList<>();
             }
 
             dc.setSQL("select * from " + resultsTableName + " where endpoint_id = ? ORDER BY " + type.getFirstDisplayColumnLabel());

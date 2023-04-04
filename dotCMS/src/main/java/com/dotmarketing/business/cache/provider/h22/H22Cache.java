@@ -336,7 +336,7 @@ public class H22Cache extends CacheProvider {
 	@Override
 	public Set<String> getGroups() {
 
-		Set<String> groups = new HashSet<String>();
+		Set<String> groups = new HashSet<>();
 		try {
 			for (int db = 0; db < numberOfDbs; db++) {
 				Optional<Connection> opt = createConnection(true, db);
@@ -638,7 +638,7 @@ public class H22Cache extends CacheProvider {
 	@Override
 	public Set<String> getKeys(String groupName) {
 
-		Set<String> keys = new HashSet<String>();
+		Set<String> keys = new HashSet<>();
 		int db = 0;
 		Fqn fqn = new Fqn(groupName);
 		try {

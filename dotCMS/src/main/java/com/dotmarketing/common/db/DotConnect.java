@@ -200,7 +200,7 @@ public class DotConnect {
             getResult();
         }
 
-        ArrayList<Object> bar = new ArrayList<Object>();
+        ArrayList<Object> bar = new ArrayList<>();
 
         for (cursor = 0; cursor < getNumRows(); cursor++) {
             bar.add(getObject(ObjName));
@@ -298,7 +298,7 @@ public class DotConnect {
     public DotConnect setSQL(String x) {
         cursor = 0;
         gotResult = false;
-        paramList = new ArrayList<Object>();
+        paramList = new ArrayList<>();
         SQL = x;
         startRow = 0;
         maxRows = -1;
@@ -609,7 +609,7 @@ public class DotConnect {
                             statement = m.get(SQL);
                         }
                     } else { // if it is not in the cache, put it there.
-                        m = new HashMap<String, PreparedStatement>();
+                        m = new HashMap<>();
                         synchronized (stmts) {
                             stmts.put(rconn, m);
                         }
@@ -719,8 +719,8 @@ public class DotConnect {
      */
     public void fromResultSet(ResultSet rs) throws SQLException {
 
-        results = new ArrayList<Object>();
-        objectResults = new ArrayList<Map<String, Object>>();
+        results = new ArrayList<>();
+        objectResults = new ArrayList<>();
         gotResult = true;
 
         if (rs != null) {
@@ -735,8 +735,8 @@ public class DotConnect {
             int i = 0;
 
             while (rs.next() && (maxRows <= 0 || i < maxRows)) {
-                HashMap<String, String> vars = new HashMap<String, String>();
-                HashMap<String, Object> objvars = new HashMap<String, Object>();
+                HashMap<String, String> vars = new HashMap<>();
+                HashMap<String, Object> objvars = new HashMap<>();
 
                 for (int j = 1; j <= rsmd.getColumnCount(); j++) {
                     String x = rsmd.getColumnLabel(j) + "";

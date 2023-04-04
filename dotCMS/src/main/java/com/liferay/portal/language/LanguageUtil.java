@@ -446,7 +446,7 @@ public class LanguageUtil {
 	public static String format(
 			Locale locale, String pattern, String[] arguments) throws LanguageException{
 		
-		List<LanguageWrapper> lw = new ArrayList<LanguageWrapper>();
+		List<LanguageWrapper> lw = new ArrayList<>();
 		for(int i=0;i< arguments.length;i++){
 			
 			lw.add(new LanguageWrapper("", arguments[i], ""));

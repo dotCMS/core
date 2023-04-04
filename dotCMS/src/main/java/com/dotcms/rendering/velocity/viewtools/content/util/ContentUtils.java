@@ -333,7 +333,7 @@ public class ContentUtils {
 		 */
 		public static PaginatedContentList<Contentlet> pullPerPage(String query, int currentPage, int contentsPerPage, String sort, User user, String tmDate){
 			PaginatedArrayList<Contentlet> cmaps = pullPagenated(query, contentsPerPage, contentsPerPage * (currentPage - 1), sort, user, tmDate);
-			PaginatedContentList<Contentlet> ret = new PaginatedContentList<Contentlet>();
+			PaginatedContentList<Contentlet> ret = new PaginatedContentList<>();
 			
 			if(cmaps.size()>0){
 				long minIndex = (currentPage - 1) * contentsPerPage;
@@ -386,7 +386,7 @@ public class ContentUtils {
 	                // as we need to load contentlets anyway to sort 
 	                // lets just call pull here
 	                List<Contentlet> conts=pull(query, limit, sort, user, tmDate);
-	                ret = new ArrayList<ContentletSearch>(conts.size());
+	                ret = new ArrayList<>(conts.size());
 	                for(Contentlet cm : conts) {
 	                    ContentletSearch cs=new ContentletSearch();
 	                    cs.setInode((String)cm.get("inode"));
@@ -402,7 +402,7 @@ public class ContentUtils {
 				Logger.error(ContentUtils.class,e.getMessage(),e);
 			}
 			if(ret == null){
-				ret = new ArrayList<ContentletSearch>();
+				ret = new ArrayList<>();
 			}
 			return ret;
 		}

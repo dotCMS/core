@@ -166,7 +166,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 		if(source.getMaxContentlets()>0) {
 
 			final List<ContainerStructure> sourceCS = getContainerStructures(source);
-			final List<ContainerStructure> newContainerCS = new LinkedList<ContainerStructure>();
+			final List<ContainerStructure> newContainerCS = new LinkedList<>();
 
 			for (final ContainerStructure oldCS : sourceCS) {
 

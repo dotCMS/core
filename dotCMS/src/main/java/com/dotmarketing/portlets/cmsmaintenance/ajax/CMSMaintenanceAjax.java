@@ -194,7 +194,7 @@ public class CMSMaintenanceAjax {
 			inodes[i] = inodes[i].trim();
 		}
 
-		List<Contentlet> contentlets = new ArrayList<Contentlet>();
+		List<Contentlet> contentlets = new ArrayList<>();
 
 		for (String inode : inodes) {
 			if (!inode.trim().equals("")) {

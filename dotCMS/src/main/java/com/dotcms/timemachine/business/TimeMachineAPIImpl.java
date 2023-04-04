@@ -34,7 +34,7 @@ public class TimeMachineAPIImpl implements TimeMachineAPI {
                                                 final List<Language> languages,
                                                 final boolean incremental)  {
 
-        final List<PublishStatus> publishStatusList = new ArrayList<PublishStatus>(languages.size()); // todo: could it be immutable?
+        final List<PublishStatus> publishStatusList = new ArrayList<>(languages.size()); // todo: could it be immutable?
         final Date currentDate = new Date();
 
         for(Language language : languages) {
@@ -64,7 +64,7 @@ public class TimeMachineAPIImpl implements TimeMachineAPI {
 	
 	@Override
 	public List<Host> getHostsWithTimeMachine() {
-	    final Set<Host> hostSet = new HashSet<Host>();
+	    final Set<Host> hostSet = new HashSet<>();
         final File timeMachinePath = new File(ConfigUtils.getTimeMachinePath());
 
         for ( File file : timeMachinePath.listFiles()) {
@@ -85,13 +85,13 @@ public class TimeMachineAPIImpl implements TimeMachineAPI {
                 }
             }
         }
-        return new ArrayList<Host>(hostSet);
+        return new ArrayList<>(hostSet);
 	}
 
 	@Override
 	public List<Date> getAvailableTimeMachineForSite(final Host host) throws DotDataException {
 
-		final List<Date> list = new ArrayList<Date>();
+		final List<Date> list = new ArrayList<>();
 		final File timeMachinePath = new File(ConfigUtils.getTimeMachinePath());
 
 		for ( File file : timeMachinePath.listFiles()) {
@@ -157,7 +157,7 @@ public class TimeMachineAPIImpl implements TimeMachineAPI {
 
     @Override
     public void setQuartzJobConfig(String cronExp, List<Host> hosts, boolean allhost, List<Language> langs, boolean incremental) {
-        Map<String,Object> config=new HashMap<String,Object>();
+        Map<String,Object> config=new HashMap<>();
         config.put("CRON_EXPRESSION",cronExp);
         config.put("hosts", hosts);
         config.put("langs", langs);

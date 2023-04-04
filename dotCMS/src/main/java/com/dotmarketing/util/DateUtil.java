@@ -171,7 +171,7 @@ public class DateUtil {
 	 *		- {@link DateUtil}.DIFF_MINUTES
 	 */
 	public static HashMap<String, Long> diffDates(final Date from, final Date to) {
-		final HashMap<String, Long> result = new HashMap<String, Long>(8);
+		final HashMap<String, Long> result = new HashMap<>(8);
 
 		try {
 

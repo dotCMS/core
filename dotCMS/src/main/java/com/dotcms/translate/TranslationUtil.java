@@ -53,7 +53,7 @@ public class TranslationUtil {
      */
     public List<Language> getLanguagesByLanguageCode(String languageCode) {
         List<Language> allLangs = APILocator.getLanguageAPI().getLanguages();
-        List<Language> returnLangs = new ArrayList<Language>();
+        List<Language> returnLangs = new ArrayList<>();
 
         if (!UtilMethods.isSet(languageCode)) {
             return returnLangs;
