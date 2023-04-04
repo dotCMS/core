@@ -143,16 +143,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
       transactionalDelete(type);
     } else {
       //We make a copy to hold all the contentlets that will be deleted asynchronously and then dispose the original one
-      final ContentType copy = relocateContentletsThenDispose(type);
-      if (asyncDeleteWithJob) {
-        //By default, the deletion process takes placed within job
-        Logger.debug(this, String.format(" Content type (%s) will be deleted asynchronously using Quartz Job.", type.name()));
-        ContentTypeDeleteJob.triggerContentTypeDeletion(copy);
-      } else {
-        //This option comes handy from the Integration Tests perspective
-        Logger.debug(this, String.format(" Content type (%s) will be deleted asynchronously using Thread a Pool.", type.name()));
-        dispose(copy);
-      }
+      relocateContentletsThenDispose(type, asyncDeleteWithJob);
     }
   }
 
@@ -276,8 +267,9 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
      * @throws DotSecurityException
      * @throws DotDataException
      */
-  @WrapInTransaction
-  ContentType relocateContentletsThenDispose(final ContentType type) throws DotSecurityException, DotDataException {
+    @WrapInTransaction
+    void relocateContentletsThenDispose(final ContentType type, final boolean asyncDeleteWithJob)
+            throws DotSecurityException, DotDataException {
       //If we're ok permissions wise, we need to remove the content from the index
       //Then this quickly hides the content from the front end and APIS
       contentTypeFactory.markForDeletion(type);
@@ -297,13 +289,33 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
           //Notify the system events API that the content type has been deleted, so it can take care of the WF clean up
           localSystemEventsAPI.notify(new ContentTypeDeletedEvent(type.variable()));
         } catch (DotDataException e) {
-            Logger.error(ContentTypeFactoryImpl.class, String.format("Error removing content from index for ContentType [%s]", type.variable()), e);
+          Logger.error(ContentTypeFactoryImpl.class,
+                  String.format("Error removing content from index for ContentType [%s]",
+                          type.variable()), e);
         }
       });
 
-     return copy;
+      HibernateUtil.addCommitListener(() -> {
+        if (asyncDeleteWithJob) {
+          //By default, the deletion process takes placed within job
+          Logger.debug(this, String.format(
+                  " Content type (%s) will be deleted asynchronously using Quartz Job.",
+                  type.name()));
+          ContentTypeDeleteJob.triggerContentTypeDeletion(copy);
+        } else {
+          //This option comes handy from the Integration Tests perspective
+          Logger.debug(this,
+                  String.format(" Content type (%s) will be deleted synchronously.", type.name()));
+          try {
+            dispose(copy);
+          } catch (DotDataException e) {
+            Logger.error(ContentTypeFactoryImpl.class,
+                    String.format("Error deleting content type [%s]", type.variable()), e);
+          }
+        }
+      });
 
-  }
+    }
 
   @Override
   @CloseDBIfOpened
