@@ -230,6 +230,7 @@ import com.dotmarketing.startup.runonce.Task221007AddVariantIntoPrimaryKey;
 import com.dotmarketing.startup.runonce.Task221018CreateVariantFieldInMultiTree;
 import com.dotmarketing.startup.runonce.Task230119MigrateContentToProperPersonaTagAndRemoveDupTags;
 import com.dotmarketing.startup.runonce.Task230110MakeSomeSystemFieldsRemovableByBaseType;
+import com.dotmarketing.startup.runonce.Task230320FixMissingContentletAsJSON;
 import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayList;
@@ -535,6 +536,7 @@ public class TaskLocatorUtil {
 		.add(Task221018CreateVariantFieldInMultiTree.class)
 		.add(Task230119MigrateContentToProperPersonaTagAndRemoveDupTags.class)
 	    .add(Task230110MakeSomeSystemFieldsRemovableByBaseType.class)
+	    .add(Task230320FixMissingContentletAsJSON.class)
 		.build();
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
