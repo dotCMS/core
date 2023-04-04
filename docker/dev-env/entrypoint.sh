@@ -19,6 +19,12 @@ setup_postgres () {
         su -c "psql -c \"CREATE USER dotcmsdbuser WITH PASSWORD 'password';\"" postgres
         su -c "psql -c \"ALTER DATABASE dotcms OWNER TO dotcmsdbuser;\"" postgres
     fi
+
+
+    # import database
+    cat $DB_FILE | gzip -d | PGPASSWORD=password psql -h 127.0.0.1 -Udotcmsdbuser dotcms
+
+
 }
 
 setup_opensearch () {
@@ -61,7 +67,7 @@ pull_dotcms_backups () {
     # GET Backup
     ASSETS_FILE=/data/shared/assets.zip
     DB_FILE=/data/shared/dotcms_db.sql.gz
-    rm -f $ASSETS_FILE $DB_FILE
+    #rm -f $ASSETS_FILE $DB_FILE
 
     echo "Using Auth Header: $AUTH_HEADER"
 
@@ -77,32 +83,37 @@ pull_dotcms_backups () {
         #su -c "wget --header=\"$AUTH_HEADER\" -t 1 -O - $DOTCMS_SOURCE_ENVIRONMENT/api/v1/maintenance/_downloadAssets | bsdtar -xvkf- -C /data/shared/" dotcms
         su -c "wget --header=\"$AUTH_HEADER\" -t 1 -O $ASSETS_FILE  $DOTCMS_SOURCE_ENVIRONMENT/api/v1/maintenance/_downloadAssets " dotcms
     fi
-    exit 0
+
     if [ -f "$DB_FILE" ]; then
         echo "- $DB_FILE exists, skipping"
     else
         echo "Downloading database"
 
-        su -c "wget --header=\"$AUTH_HEADER\" -t 1 -O - $DOTCMS_SOURCE_ENVIRONMENT/api/v1/maintenance/_downloadDb | gzip -d | PGPASSWORD=password psql -h 127.0.0.1 -Udotcmsdbuser dotcms" dotcms
-
+        #su -c "wget --header=\"$AUTH_HEADER\" -t 1 -O - $DOTCMS_SOURCE_ENVIRONMENT/api/v1/maintenance/_downloadDb | gzip -d | PGPASSWORD=password psql -h 127.0.0.1 -Udotcmsdbuser dotcms" dotcms
+        su -c "wget --header=\"$AUTH_HEADER\" -t 1 -O $DB_FILE $DOTCMS_SOURCE_ENVIRONMENT/api/v1/maintenance/_downloadDb"
 
         echo "Downloaded the Files"
     fi
 
 }
 
+
+
+
+
+
+
 start_dotcms () {
     export DB_BASE_URL=${DB_BASE_URL:-"jdbc:postgresql://127.0.0.1/dotcms"}
     export DOT_ES_ENDPOINTS=${DOT_ES_ENDPOINTS:-"https://127.0.0.1:9200"}
     /srv/entrypoint.sh
 }
+
 pull_dotcms_backups 
-exit 0
+
 setup_postgres
 
-
 setup_opensearch
-
 
 start_dotcms
 

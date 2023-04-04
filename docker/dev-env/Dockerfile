@@ -25,7 +25,7 @@ RUN useradd -l -d /srv -g $USER_GID -u $USER_UID $USER_NAME
 COPY --from=dotcms --chown=$USER_NAME:$USER_GROUP /srv/ /srv/
 
 ARG DEBIAN_FRONTEND=noninteractive
-ENV PG_VERSION=15
+ENV PG_VERSION=14
 ENV PGDATA=/data/postgres
 RUN mkdir /data
 RUN chmod 777 /data
@@ -34,10 +34,11 @@ RUN chmod 777 /data
 RUN apt update && \
     apt upgrade -y && \
     apt install -y --no-install-recommends bash zip unzip wget libtcnative-1\
-    tzdata tini ca-certificates openssl libapr1 libpq-dev curl \
-    vim libarchive-tools \
-  && sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list' \
-  && wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
+    tzdata tini ca-certificates openssl libapr1 libpq-dev curl gnupg\
+    vim libarchive-tools 
+RUN sh -c sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+
+RUN wget -qO- https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo tee /etc/apt/trusted.gpg.d/pgdg.asc &>/dev/null \
   && apt-get update -y \
   && apt-get upgrade -y \
   && apt-get install -y postgresql-$PG_VERSION
