@@ -127,9 +127,20 @@
                 ></td>
             </ng-container>
             <ng-container *ngSwitchCase="'Story-Block'">
-                <td data-testId="table-field-working"></td>
-                <td data-testId="table-field-compare">
-                    <dot-content-compare-editor [data]="data"></dot-content-compare-editor>
+                <td>
+                    <dot-content-compare-editor
+                        [label]="true"
+                        [showDiff]="showDiff"
+                        [field]="field.variable"
+                        [data]="data"
+                    ></dot-content-compare-editor>
+                </td>
+                <td>
+                    <dot-content-compare-editor
+                        [showDiff]="showDiff"
+                        [field]="field.variable"
+                        [data]="data"
+                    ></dot-content-compare-editor>
                 </td>
             </ng-container>
             <ng-container *ngSwitchDefault>
