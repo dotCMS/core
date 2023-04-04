@@ -15,11 +15,11 @@ public class ContentletDestroyDelegateImpl implements ContentletDestroyDelegate 
     @Override
     public void destroy(final List<Contentlet> contentlets, final User user) {
         try {
-            ContentletDestroyThreadLocal.INSTANCE.get().set(true);
+           // ContentletDestroyThreadLocal.INSTANCE.get().set(true);
             try {
                 APILocator.getContentletAPI().destroy(contentlets, user, false);
             } finally {
-                ContentletDestroyThreadLocal.INSTANCE.get().remove();
+             ///   ContentletDestroyThreadLocal.INSTANCE.get().remove();
             }
         } catch (DotDataException | DotSecurityException e) {
             Logger.error(this, "Error destroying contents", e);
