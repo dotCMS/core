@@ -113,19 +113,19 @@
     function preloadingPermissions(){
         try {
             //dwr.util.useLoadingMessage();
-            dojo.style(dijit.byId('savingPermissionsDialog').closeButtonNode, 'visibility', 'hidden');
             loadPermissions();
       }
       catch(err){
           //console.log("error",err)
       }
     }
-setTimeout(loadPermissions, 0);
-setTimeout(loadPermissions, 500);
-setTimeout(loadPermissions, 1000);
     var permissionsLoaded = false;
 	//Initialization
-	dojo.addOnLoad(preloadingPermissions);
+require(['dojo/ready'], function(ready){
+    ready(function() {
+        preloadingPermissions();
+    });
+});
     
     
     
