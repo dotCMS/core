@@ -30,10 +30,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -81,9 +78,8 @@ public class PopulateContentletAsJSONUtil {
     private final String CLOSE_CURSOR = "CLOSE missingContentletAsJSONCursor";
     private final String DEALLOCATE_CURSOR_MSSQL = "DEALLOCATE missingContentletAsJSONCursor";
 
-    protected static final int MAX_UPDATE_BATCH_SIZE = Config.getIntProperty("task.230320.maxupdatebatchsize", 100);
-    protected static final int MAX_CURSOR_FETCH_SIZE = Config.getIntProperty("task.230320.maxcursorfetchsize", 100);
-    protected final List<Params> paramsUpdate = new ArrayList<>();
+    private static final int MAX_UPDATE_BATCH_SIZE = Config.getIntProperty("task.230320.maxupdatebatchsize", 100);
+    private static final int MAX_CURSOR_FETCH_SIZE = Config.getIntProperty("task.230320.maxcursorfetchsize", 100);
 
     public PopulateContentletAsJSONUtil() {
         this.contentletJsonAPI = APILocator.getContentletJsonAPI();
@@ -265,14 +261,15 @@ public class PopulateContentletAsJSONUtil {
 
         Logger.info(this, "Updating records with missing Contentlet as JSON");
 
+        final Collection<Params> paramsUpdate = new ArrayList<>();
         final MutableInt totalUpdateAffected = new MutableInt(0);
 
         try (final Stream<String> streamLines = Files.lines(taskDataFile.toPath())) {
 
-            streamLines.forEachOrdered(line -> this.processLine(line, totalUpdateAffected));
+            streamLines.forEachOrdered(line -> this.processLine(paramsUpdate, line, totalUpdateAffected));
 
-            if (!this.paramsUpdate.isEmpty()) {
-                this.doUpdateBatch(totalUpdateAffected);
+            if (!paramsUpdate.isEmpty()) {
+                this.doUpdateBatch(paramsUpdate, totalUpdateAffected);
             }
         } finally {
             Logger.info(this, "-- total updates: " + totalUpdateAffected.intValue());
@@ -314,10 +311,10 @@ public class PopulateContentletAsJSONUtil {
      * Processes the given line preparing the params for the batch update.
      *
      * @param line Line with the json representation of the contentlet.
-     * @return
      * @throws JsonProcessingException
      */
-    private void processLine(final String line, final MutableInt totalInsertAffected) {
+    private void processLine(final Collection<Params> paramsUpdate, final String line,
+                             final MutableInt totalInsertAffected) {
 
         try {
             var contentlet = ContentletJsonHelper.INSTANCE.get().immutableFromJson(line);
@@ -331,11 +328,11 @@ public class PopulateContentletAsJSONUtil {
                 contentletAsJSON = line;
             }
 
-            this.paramsUpdate.add(new Params(contentletAsJSON, contentlet.inode()));
+            paramsUpdate.add(new Params(contentletAsJSON, contentlet.inode()));
 
             // Execute the batch for the updates if we have reached the max batch size
-            if (this.paramsUpdate.size() >= MAX_UPDATE_BATCH_SIZE) {
-                this.doUpdateBatch(totalInsertAffected);
+            if (paramsUpdate.size() >= MAX_UPDATE_BATCH_SIZE) {
+                this.doUpdateBatch(paramsUpdate, totalInsertAffected);
             }
         } catch (JsonProcessingException e) {
             throw new DotRuntimeException("Error processing line", e);
@@ -364,25 +361,23 @@ public class PopulateContentletAsJSONUtil {
 
     /**
      * Executes the batch of updates to fill the contentlet_as_json column.
-     *
-     * @param totalUpdateAffected
      */
-    private void doUpdateBatch(final MutableInt totalUpdateAffected) {
+    private void doUpdateBatch(final Collection<Params> paramsUpdate, final MutableInt totalUpdateAffected) {
 
         try {
             final List<Integer> batchResult =
                     Ints.asList(new DotConnect().executeBatch(
                             UPDATE_CONTENTLET_AS_JSON,
-                            this.paramsUpdate));
+                            paramsUpdate));
 
             final int rowsAffected = batchResult.stream().reduce(0, Integer::sum);
             Logger.info(this, "Batch rows to populate contentlet_as_json column, updated: " + rowsAffected + " rows");
             totalUpdateAffected.add(rowsAffected);
         } catch (DotDataException e) {
-            Logger.error(this, "Couldn't update these rows: " + this.paramsUpdate);
+            Logger.error(this, "Couldn't update these rows: " + paramsUpdate);
             Logger.error(this, e.getMessage(), e);
         } finally {
-            this.paramsUpdate.clear();
+            paramsUpdate.clear();
         }
     }
 
