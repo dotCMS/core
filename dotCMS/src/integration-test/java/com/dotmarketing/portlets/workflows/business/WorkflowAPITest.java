@@ -52,6 +52,7 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageDeletedEvent;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet;
@@ -74,8 +75,10 @@ import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowState;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import java.io.IOException;
@@ -4078,71 +4081,74 @@ public class WorkflowAPITest extends IntegrationTestBase {
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    /*
     @Test
     public void createContentletsWithRelationshipOneToManyCardinality_updateRelationship_shouldCreateRelationshipSuccessfully() throws DotSecurityException, DotDataException{
-        ContentType movie = null;
-        ContentType region = null;
+
+        ContentType movieContentType  = null;
+        ContentType regionContentType = null;
         try{
 
             //Create content types
-            movie = insertContentType("Movie", BaseContentType.CONTENT);
-            region = insertContentType("Region", BaseContentType.CONTENT);
-
-            Permission p = new Permission(region.getPermissionId(), contributor.getId(),
-                    editPermission, true);
-            permissionAPI.save(p, region, user, true);
-
-            p = new Permission(Contentlet.class.getCanonicalName(), region.getPermissionId(),
-                    contributor.getId(), editPermission, true);
-            permissionAPI.save(p, region, user, true);
-
-            p = new Permission(region.getPermissionId(), publisher.getId(), publishPermission,
-                    true);
-            permissionAPI.save(p, region, user, true);
-
-            p = new Permission(Contentlet.class.getCanonicalName(), region.getPermissionId(),
-                    publisher.getId(), publishPermission, true);
-            permissionAPI.save(p, region, user, true);
-
+            movieContentType  = insertContentType("Movie", BaseContentType.CONTENT);
+            regionContentType = insertContentType("Region", BaseContentType.CONTENT);
+            APILocator.getWorkflowAPI().saveSchemeIdsForContentType(movieContentType,  Set.of(new String[]{SystemWorkflowConstants.SYSTEM_WORKFLOW_ID}));
+            APILocator.getWorkflowAPI().saveSchemeIdsForContentType(regionContentType, Set.of(new String[]{SystemWorkflowConstants.SYSTEM_WORKFLOW_ID}));
 
             //Create Relationship Field
-            createRelationshipField("Regions", movie.id(),
-                    region.variable(), String.valueOf(
+            final Field relField = createRelationshipField("regions", movieContentType.id(),
+                    regionContentType.variable(), String.valueOf(
                             WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal()));
 
-            Contentlet africa = createContent("africa", region);
-            Contentlet asia = createContent("asia", region);
-
-            //As Publisher - publish
-            List<WorkflowAction> actions = workflowAPI.findAvailableActions(africa, chrisPublisher);
-            if (actions.isEmpty() || actions.size() != 2) {
-                assertTrue(INCORRECT_NUMBER_OF_ACTIONS_MESSAGE, false);
-            }
-            if (!RETURN_FOR_EDITS_ACTION_NAME.equals(actions.get(0).getName())) {
-                assertTrue(WRONG_ACTION_AVAILABLE_MESSAGE, false);
-            }
-            if (!PUBLISH_ACTION_NAME.equals(actions.get(1).getName())) {
-                assertTrue(WRONG_ACTION_AVAILABLE_MESSAGE, false);
-            }
-
-            final WorkflowAction publish = actions.get(1);
-
-            final ContentletRelationships contentletAfricaRelationships = APILocator.getContentletAPI()
-                    .getAllRelationships(africa);
+            Contentlet africa = createContent("africa", regionContentType);
+            Contentlet asia   = createContent("asia", regionContentType);
 
             //Publish
-            africa = fireWorkflowAction(africa, contentletAfricaRelationships, publish,
-                    StringPool.BLANK, StringPool.BLANK, chrisPublisher);
+            final WorkflowAction publishAction = APILocator.getWorkflowAPI().findAction(
+                    SystemWorkflowConstants.WORKFLOW_PUBLISH_ACTION_ID, APILocator.systemUser());
 
-           // assertTrue(africa.isLive());
+            africa.setIndexPolicy(IndexPolicy.WAIT_FOR);
+            africa = fireWorkflowAction(africa, null,
+                    publishAction,
+                    StringPool.BLANK, StringPool.BLANK, user);
 
-        }finally {
-            if(movie != null){
-                contentTypeAPI.delete(movie);
+            asia.setIndexPolicy(IndexPolicy.WAIT_FOR);
+            asia = fireWorkflowAction(asia, null,
+                    publishAction,
+                    StringPool.BLANK, StringPool.BLANK, user);
+
+            assertTrue(africa.isLive());
+            assertTrue(asia.isLive());
+
+            Contentlet movie   = createContent("movie", movieContentType);
+            movie.setProperty("Regions", Arrays.asList(africa, asia));
+
+            final List<Contentlet> records = new ArrayList<>(Arrays.asList(asia, africa));
+            final List<Relationship> relationships = APILocator.getRelationshipAPI().byContentType(movieContentType);
+            final Relationship relationship = APILocator.getRelationshipAPI().byInode(relationships.stream().findFirst().get().getInode());
+
+            final List<ContentletRelationships.ContentletRelationshipRecords> relationshipsRecords = new ArrayList<>();
+            final ContentletRelationships.ContentletRelationshipRecords contentletRelationshipRecords =
+                    new ContentletRelationships(null).new ContentletRelationshipRecords(relationship, true);
+
+            contentletRelationshipRecords.setRecords(records);
+            relationshipsRecords.add(contentletRelationshipRecords);
+
+            final ContentletRelationships contentletRelationships = new ContentletRelationships(movie, relationshipsRecords);
+            movie.setIndexPolicy(IndexPolicy.WAIT_FOR);
+            movie = fireWorkflowAction(movie, contentletRelationships,
+                    publishAction,
+                    StringPool.BLANK, StringPool.BLANK, user);
+
+            final List<Contentlet> movieContentRelated = APILocator.getContentletAPI().getRelatedContent(movie, relationship, user, false);
+
+            Assert.assertNotNull(movieContentRelated);
+            Assert.assertTrue(movieContentRelated.size() == 2);
+        } finally {
+            if(movieContentType != null){
+                contentTypeAPI.delete(movieContentType);
             }
-            if(region != null){
-                contentTypeAPI.delete(region);
+            if(regionContentType != null){
+                contentTypeAPI.delete(regionContentType);
             }
         }
     }
@@ -4155,5 +4161,5 @@ public class WorkflowAPITest extends IntegrationTestBase {
                 .contentTypeId(parentTypeId).values(cardinality).relationType(childTypeVar).build();
 
         return fieldAPI.save(field, user);
-    }*/
+    }
 }
