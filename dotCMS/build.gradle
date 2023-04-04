@@ -236,7 +236,7 @@ else {
 
 
 
-def eeType = dotcmsReleaseVersion == "master" ? '-SNAPSHOT' : ''
+
 def mavenUiVersion = "1.0.0-SNAPSHOT"
 
 dependencies {
@@ -296,10 +296,7 @@ dependencies {
     //integrationTestCompile sourceSets.test.output
 
 
-    if (!(project.gradle.startParameter.taskNames.contains('deployWarTomcatDev') || project.gradle.startParameter.taskNames.contains('testDev'))) {
 
-        implementation group: 'com.dotcms.enterprise', name: 'ee', version: dotcmsReleaseVersion + eeType, changing: true
-    }
 }
 
 import groovy.json.JsonSlurper
