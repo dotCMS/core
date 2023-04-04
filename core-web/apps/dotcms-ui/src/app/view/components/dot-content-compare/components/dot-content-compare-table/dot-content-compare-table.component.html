@@ -126,17 +126,24 @@
                     data-testId="table-json-compare"
                 ></td>
             </ng-container>
-            <!--It needs to be update it with the proper fieldType -->
-            <!-- <ng-container *ngSwitchCase="'BlockEditor'"> -->
-            <!--    -->
+            <ng-container *ngSwitchCase="'Story-Block'">
+                <td data-testId="table-field-working"></td>
+                <td data-testId="table-field-compare">
+                    <dot-content-compare-editor [data]="data"></dot-content-compare-editor>
+                </td>
+            </ng-container>
             <ng-container *ngSwitchDefault>
-                <td [innerHTML]="testHTMLtoWorking" data-testId="table-field-working"></td>
                 <td
-                    [innerHTML]="testHTMLtoWorking | dotDiff : testHTMLtoCompare : showDiff"
-                    data-testId="table-field-compare"
+                    [innerHTML]="data.working[field.variable]"
+                    data-testId="table-field-working"
+                ></td>
+                <td
+                    [innerHTML]="
+                        data.working[field.variable]
+                            | dotDiff : data.compare[field.variable] : showDiff
+                    "
                 ></td>
             </ng-container>
         </tr>
     </ng-template>
 </p-table>
-<dot-block-editor id="blockEditor" #blockEditor [ngStyle]="{ display: 'none' }"> </dot-block-editor>

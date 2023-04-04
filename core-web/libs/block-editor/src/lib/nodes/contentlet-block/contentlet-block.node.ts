@@ -38,8 +38,8 @@ export const ContentletBlock = (injector: Injector): Node<ContentletBlockOptions
             return [{ tag: 'dotcms-contentlet-block' }];
         },
 
-        renderHTML( props): DOMOutputSpec {
-            return ['dotcms-contentlet-block', mergeAttributes(props.HTMLAttributes)];
+        renderHTML(props): DOMOutputSpec {
+            return ['h1', mergeAttributes(props.HTMLAttributes)];
         },
 
         addNodeView(): NodeViewRenderer {

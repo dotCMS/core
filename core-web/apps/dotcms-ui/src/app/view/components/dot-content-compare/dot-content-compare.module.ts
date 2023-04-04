@@ -17,6 +17,7 @@ import { DotDiffPipeModule } from '@pipes/dot-diff/dot-diff.pipe.module';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 
 import { DotContentCompareDialogComponent } from './components/dot-content-compare-dialog/dot-content-compare-dialog.component';
+import { DotContentCompareEditorComponent } from './components/dot-content-compare-editor/dot-content-compare-editor.component';
 import { DotTransformVersionLabelPipe } from './pipes/dot-transform-version-label.pipe';
 
 @NgModule({
@@ -24,6 +25,7 @@ import { DotTransformVersionLabelPipe } from './pipes/dot-transform-version-labe
         DotContentCompareComponent,
         DotContentCompareTableComponent,
         DotContentCompareDialogComponent,
+        DotContentCompareEditorComponent,
         DotContentComparePreviewFieldComponent,
         DotTransformVersionLabelPipe
     ],
