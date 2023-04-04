@@ -5,7 +5,9 @@ import {
     DEFAULT_VARIANT_ID,
     DEFAULT_VARIANT_NAME,
     DotExperiment,
+    DotExperimentResults,
     DotExperimentStatusList,
+    DotResultSimpleVariant,
     GOAL_OPERATORS,
     GOAL_PARAMETERS,
     GOAL_TYPES,
@@ -33,6 +35,10 @@ export const getExperimentMock = (index: number): DotExperiment => {
 
 export const getExperimentAllMocks = (): Array<DotExperiment> => {
     return [{ ...getExperimentMock(0) }, { ...getExperimentMock(1) }, { ...getExperimentMock(2) }];
+};
+
+export const getExperimentResultsMock = (index: number): DotExperimentResults => {
+    return { ...ExperimentResultsMocks[index] };
 };
 
 const ExperimentMocks: Array<DotExperiment> = [
@@ -98,6 +104,63 @@ const ExperimentMocks: Array<DotExperiment> = [
         creationDate: new Date('2022-08-21 14:50:03'),
         modDate: new Date('2022-08-21 18:50:03'),
         goals: { ...GoalsMock }
+    }
+];
+
+const ExperimentResultsMocks: Array<DotExperimentResults> = [
+    {
+        goals: {
+            primary: {
+                goal: {
+                    conditions: [
+                        {
+                            operator: GOAL_OPERATORS.CONTAINS,
+                            parameter: GOAL_PARAMETERS.URL,
+                            value: '/destinations'
+                        },
+                        {
+                            operator: GOAL_OPERATORS.CONTAINS,
+                            parameter: GOAL_PARAMETERS.REFERER,
+                            value: '/blog/'
+                        }
+                    ],
+                    name: 'Primary Goal',
+                    type: GOAL_TYPES.REACH_PAGE
+                },
+                variants: {
+                    '111': {
+                        details: { '03/29/2023': { multiBySession: 0, uniqueBySession: 0 } },
+                        multiBySession: 0,
+                        uniqueBySession: { count: 0, totalPercentage: 0.0, variantPercentage: 0.0 },
+                        variantName: '111'
+                    },
+                    DEFAULT: {
+                        details: { '03/29/2023': { multiBySession: 2, uniqueBySession: 2 } },
+                        multiBySession: 2,
+                        uniqueBySession: {
+                            count: 2,
+                            totalPercentage: 100.0,
+                            variantPercentage: 100.0
+                        },
+                        variantName: 'DEFAULT'
+                    }
+                }
+            }
+        },
+        sessions: { total: 2, variants: { DEFAULT: 2, '111': 0 } }
+    }
+];
+
+export const VARIANT_RESULT_MOCK_1: DotResultSimpleVariant[] = [
+    {
+        id: '111',
+        name: 'variant a',
+        uniqueBySession: { count: 0, totalPercentage: 0, variantPercentage: 0 }
+    },
+    {
+        id: DEFAULT_VARIANT_ID,
+        name: DEFAULT_VARIANT_NAME,
+        uniqueBySession: { count: 2, totalPercentage: 100, variantPercentage: 100 }
     }
 ];
 
@@ -169,7 +232,8 @@ export const DotExperimentsConfigurationStoreMock = {
 };
 
 export const DotExperimentsReportsStoreMock = {
-    loadExperiment: () => of([])
+    loadExperimentAndResults: () => of([]),
+    promoteVariant: () => of([])
 };
 
 export const DotExperimentsServiceMock = {
