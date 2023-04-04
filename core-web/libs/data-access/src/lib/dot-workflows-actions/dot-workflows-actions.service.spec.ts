@@ -5,9 +5,17 @@ import { TestBed, getTestBed } from '@angular/core/testing';
 
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCMSWorkflowAction } from '@dotcms/dotcms-models';
-import { CoreWebServiceMock, mockWorkflows, mockWorkflowsActions } from '@dotcms/utils-testing';
+import {
+    CoreWebServiceMock,
+    dotcmsContentletMock,
+    mockWorkflows,
+    mockWorkflowsActions
+} from '@dotcms/utils-testing';
 
-import { DotWorkflowsActionsService } from './dot-workflows-actions.service';
+import {
+    DotCMSPageWorkflowState,
+    DotWorkflowsActionsService
+} from './dot-workflows-actions.service';
 
 describe('DotWorkflowsActionsService', () => {
     let injector: TestBed;
@@ -91,5 +99,27 @@ describe('DotWorkflowsActionsService', () => {
                 }
             ]
         });
+    });
+
+    it('should get actions by Url', () => {
+        const host_id = '1';
+        const url = '/about-us';
+        const language_id = '1';
+        const expectedResponse = { actions: [...mockWorkflowsActions], page: dotcmsContentletMock };
+
+        dotWorkflowsActionsService
+            .getByUrl(host_id, language_id, url)
+            .subscribe((data: DotCMSPageWorkflowState) => {
+                expect(data).toEqual(expectedResponse);
+            });
+
+        const req = httpMock.expectOne('v1/page/actions');
+        expect(req.request.method).toBe('POST');
+        expect(req.request.body).toEqual({
+            host_id,
+            language_id,
+            url
+        });
+        req.flush({ entity: expectedResponse });
     });
 });

@@ -5,11 +5,16 @@ import { Injectable } from '@angular/core';
 import { pluck } from 'rxjs/operators';
 
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { DotCMSWorkflowAction, DotCMSWorkflow } from '@dotcms/dotcms-models';
+import { DotCMSWorkflowAction, DotCMSWorkflow, DotCMSContentlet } from '@dotcms/dotcms-models';
 
 export enum DotRenderMode {
     LISTING = 'LISTING',
     EDITING = 'EDITING'
+}
+
+export interface DotCMSPageWorkflowState {
+    actions: DotCMSWorkflowAction[];
+    page: DotCMSContentlet;
 }
 
 @Injectable()
@@ -60,7 +65,7 @@ export class DotWorkflowsActionsService {
      * @param {string} language_id
      * @param {string} url
      * @param {DotRenderMode} [renderMode]
-     * @returns {Observable<DotCMSWorkflowAction[]>}
+     * @returns {Observable<DotCMSPageWorkflowState>}
      * @memberof DotWorkflowsActionsService
      */
     getByUrl(
@@ -68,7 +73,7 @@ export class DotWorkflowsActionsService {
         language_id: string,
         url: string,
         renderMode?: DotRenderMode
-    ): Observable<DotCMSWorkflowAction[]> {
+    ): Observable<DotCMSPageWorkflowState> {
         return this.coreWebService
             .requestView({
                 method: 'POST',
