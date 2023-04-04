@@ -1,5 +1,6 @@
 package com.dotcms.experiments.business;
 
+import static com.dotcms.experiments.model.AbstractExperiment.Status.ARCHIVED;
 import static com.dotcms.experiments.model.AbstractExperiment.Status.DRAFT;
 import static com.dotcms.experiments.model.AbstractExperiment.Status.ENDED;
 import static com.dotcms.experiments.model.AbstractExperiment.Status.RUNNING;
@@ -198,6 +199,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
         if(savedExperiment.get().status() != RUNNING &&
                 savedExperiment.get().status() != ENDED &&
+                savedExperiment.get().status() != ARCHIVED &&
                 !savedExperiment.get().scheduling().isEmpty()) {
             validateScheduling(savedExperiment.get().scheduling().get());
         }
@@ -394,7 +396,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 ()-> "Only ENDED experiments can be archived",
                 DotStateException.class);
 
-        final Experiment archived = persistedExperiment.get().withStatus(Status.ARCHIVED);
+        final Experiment archived = persistedExperiment.get().withStatus(ARCHIVED);
         return save(archived, user);
     }
 

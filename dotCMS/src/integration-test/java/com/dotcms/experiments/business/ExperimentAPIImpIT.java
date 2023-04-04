@@ -10,6 +10,10 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.analytics.app.AnalyticsApp;
@@ -38,8 +42,10 @@ import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.experiments.model.Goals;
+import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.http.server.mock.MockHttpServer;
 import com.dotcms.http.server.mock.MockHttpServerContext;
+import com.dotcms.rest.WebResource;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.JsonUtil;
 import com.dotcms.util.network.IPUtils;
@@ -1434,6 +1440,44 @@ public class ExperimentAPIImpIT {
         assertEquals("url", conditions.get(0).parameter());
         assertEquals(experimentPage.getURI(), conditions.get(0).value());
         assertEquals(Operator.CONTAINS, conditions.get(0).operator());
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#archive(String, User)}
+     * When: an Ended Experiment is archived
+     * Should: not call the validateSchedule method
+     */
+    @Test
+    public void testSaveExperiment_shouldNotValidateSchedule() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Metric metric = Metric.builder()
+                .name("Testing Metric")
+                .type(MetricType.BOUNCE_RATE)
+                .build();
+
+        final Goals goal = Goals.builder().primary(metric).build();
+
+        final Experiment experiment = new ExperimentDataGen()
+                .addVariant("Experiment Variant")
+                .page(experimentPage)
+                .addVariant("description")
+                .addGoal(goal)
+                .nextPersisted();
+
+
+        final ExperimentsAPI experimentsAPI = APILocator.getExperimentsAPI();
+        final ExperimentsAPI spiedExperimentAPI = spy(experimentsAPI);
+
+        final Experiment started = spiedExperimentAPI.start(experiment.id().orElseThrow(), APILocator.systemUser());
+        spiedExperimentAPI.end(started.id().orElseThrow(), APILocator.systemUser());
+        spiedExperimentAPI.archive(started.id().orElseThrow(), APILocator.systemUser());
+
+        verify(spiedExperimentAPI, never()).validateScheduling(started.scheduling().orElseThrow());
+
     }
 
 }
