@@ -102,7 +102,6 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.BinaryFileFilter;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.ContentletCache;
-import com.dotmarketing.portlets.contentlet.business.ContentletDestroyThreadLocal;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.business.DotLockException;
@@ -2760,9 +2759,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             final Contentlet contentlet = contentletIterator.next();
             contentlet.getMap().put(Contentlet.DONT_VALIDATE_ME, true);
-            if(null == ContentletDestroyThreadLocal.INSTANCE.get().get()) {
-                this.forceUnpublishArchiveOnDestroy(user, contentlet);
-            }
+            this.forceUnpublishArchiveOnDestroy(user, contentlet);
             APILocator.getWorkflowAPI()
                     .deleteWorkflowTaskByContentletIdAnyLanguage(contentlet, user);
 

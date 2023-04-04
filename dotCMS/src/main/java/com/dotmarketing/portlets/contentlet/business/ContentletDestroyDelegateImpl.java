@@ -9,18 +9,16 @@ import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import java.util.List;
 
+/**
+ * {@inheritDoc}
+ */
 public class ContentletDestroyDelegateImpl implements ContentletDestroyDelegate {
 
     @WrapInTransaction
     @Override
     public void destroy(final List<Contentlet> contentlets, final User user) {
         try {
-           // ContentletDestroyThreadLocal.INSTANCE.get().set(true);
-            try {
-                APILocator.getContentletAPI().destroy(contentlets, user, false);
-            } finally {
-             ///   ContentletDestroyThreadLocal.INSTANCE.get().remove();
-            }
+            APILocator.getContentletAPI().destroy(contentlets, user, false);
         } catch (DotDataException | DotSecurityException e) {
             Logger.error(this, "Error destroying contents", e);
         }

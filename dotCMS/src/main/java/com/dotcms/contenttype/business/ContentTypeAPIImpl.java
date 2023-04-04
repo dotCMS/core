@@ -121,6 +121,12 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
           ()->Config.getBooleanProperty(DELETE_CONTENT_TYPE_ASYNC_WITH_JOB, true)
   );
 
+  /**
+   * Content-Type Delete Entry point
+   * @param type Content Type that will be deleted
+   * @throws DotSecurityException
+   * @throws DotDataException
+   */
   @Override
   public void delete(ContentType type) throws DotSecurityException, DotDataException {
     if (!contentTypeCanBeDeleted(type)) {
@@ -136,6 +142,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
       Logger.debug(this, String.format(" Content type (%s) will be deleted sequentially.", type.name()));
       transactionalDelete(type);
     } else {
+      //We make a copy to hold all the contentlets that will be deleted asynchronously and then dispose the original one
       final ContentType copy = relocateContentletsThenDispose(type);
       if (asyncDeleteWithJob) {
         //By default, the deletion process takes placed within job
@@ -149,6 +156,12 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     }
   }
 
+  /**
+   * Call directly whn we want to skip CT creation through the Quartz Job
+   * Though internally the Quartz job makes use of this method
+   * @param type
+   * @throws DotDataException
+   */
   @CloseDBIfOpened
   private void dispose(final ContentType type) throws DotDataException {
 
@@ -281,6 +294,8 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
       HibernateUtil.addCommitListener(() -> {
         try {
           APILocator.getContentletIndexAPI().removeContentFromIndexByContentType(type);
+          //Notify the system events API that the content type has been deleted, so it can take care of the WF clean up
+          localSystemEventsAPI.notify(new ContentTypeDeletedEvent(type.variable()));
         } catch (DotDataException e) {
             Logger.error(ContentTypeFactoryImpl.class, String.format("Error removing content from index for ContentType [%s]", type.variable()), e);
         }
