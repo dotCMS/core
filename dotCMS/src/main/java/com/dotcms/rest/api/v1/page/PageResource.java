@@ -1088,7 +1088,7 @@ public class PageResource {
     @POST
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/actions")
-    public PageWorkflowActionsView findAvailableActions(@Context final HttpServletRequest request,
+    public ResponseEntityPageWorkflowActionsView findAvailableActions(@Context final HttpServletRequest request,
                                                          @Context final HttpServletResponse response,
                                                          final FindAvailableActionsForm findAvailableActionsForm) throws DotSecurityException, DotDataException {
 
@@ -1125,12 +1125,12 @@ public class PageResource {
             final List<WorkflowAction> actions = APILocator.getWorkflowAPI()
                     .findAvailableActions(page, user, findAvailableActionsForm.getRenderMode());
 
-            return new PageWorkflowActionsView(
+            return new ResponseEntityPageWorkflowActionsView(new PageWorkflowActionsView(
                     new DotTransformerBuilder().defaultOptions().content(page).build()
                             .toMaps().stream().findFirst().orElse(Collections.emptyMap()),
 
                     actions.stream().map(WorkflowResource::convertToWorkflowActionView).collect(Collectors.toList())
-            );
+            ));
         }
 
         throw new DoesNotExistException("The page: " + findAvailableActionsForm.getPath() + " do not exist");
