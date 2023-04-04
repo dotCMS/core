@@ -1,14 +1,18 @@
 /**
  * Created by oswaldogallango on 7/11/16.
  */
-import { CoreWebService } from './core-web.service';
-import { Injectable } from '@angular/core';
-import { Observable, Subject, of } from 'rxjs';
-import { HttpCode } from './util/http-code';
-import { pluck, tap, map } from 'rxjs/operators';
-import { DotcmsEventsService } from './dotcms-events.service';
+import { Observable, of, Subject } from 'rxjs';
+
 import { HttpResponse } from '@angular/common/http';
-import { DotLoginInformation } from '@dotcms/dotcms-models';
+import { Injectable } from '@angular/core';
+
+import { map, pluck, tap } from 'rxjs/operators';
+
+import { DotLoginInformation, SESSION_STORAGE_VARIATION_KEY } from '@dotcms/dotcms-models';
+
+import { CoreWebService } from './core-web.service';
+import { DotcmsEventsService } from './dotcms-events.service';
+import { HttpCode } from './util/http-code';
 
 export interface DotLoginParams {
     login: string;
@@ -26,10 +30,6 @@ export const LOGOUT_URL = '/dotAdmin/logout';
  */
 @Injectable()
 export class LoginService {
-    private _auth$: Subject<Auth> = new Subject<Auth>();
-    private _logout$: Subject<any> = new Subject<any>();
-    private _auth: Auth;
-    private _loginAsUsersList$: Subject<User[]>;
     private country = '';
     private lang = '';
     private urls: Record<string, string>;
@@ -52,7 +52,42 @@ export class LoginService {
         };
 
         // when the session is expired/destroyed
-        dotcmsEventsService.subscribeTo('SESSION_DESTROYED').subscribe(() => this.logOutUser());
+        dotcmsEventsService.subscribeTo('SESSION_DESTROYED').subscribe(() => {
+            this.logOutUser();
+            this.clearExperimentPersistence();
+        });
+    }
+
+    private _auth$: Subject<Auth> = new Subject<Auth>();
+
+    get auth$(): Observable<Auth> {
+        return this._auth$.asObservable();
+    }
+
+    private _logout$: Subject<any> = new Subject<any>();
+
+    get logout$(): Observable<any> {
+        return this._logout$.asObservable();
+    }
+
+    private _auth: Auth;
+
+    get auth(): Auth {
+        return this._auth;
+    }
+
+    private _loginAsUsersList$: Subject<User[]>;
+
+    get loginAsUsersList$(): Observable<User[]> {
+        return this._loginAsUsersList$.asObservable();
+    }
+
+    get isLogin$(): Observable<boolean> {
+        if (!!this.auth && !!this.auth.user) {
+            return of(true);
+        }
+
+        return this.loadAuth().pipe(map((auth) => !!auth && !!auth.user));
     }
 
     /**
@@ -69,30 +104,6 @@ export class LoginService {
             .pipe(
                 map((res: HttpResponse<CurrentUser>) => res)
             ) as unknown as Observable<CurrentUser>;
-    }
-
-    get loginAsUsersList$(): Observable<User[]> {
-        return this._loginAsUsersList$.asObservable();
-    }
-
-    get auth$(): Observable<Auth> {
-        return this._auth$.asObservable();
-    }
-
-    get logout$(): Observable<any> {
-        return this._logout$.asObservable();
-    }
-
-    get auth(): Auth {
-        return this._auth;
-    }
-
-    get isLogin$(): Observable<boolean> {
-        if (!!this.auth && !!this.auth.user) {
-            return of(true);
-        }
-
-        return this.loadAuth().pipe(map((auth) => !!auth && !!auth.user));
     }
 
     /**
@@ -185,6 +196,7 @@ export class LoginService {
                         user: this._auth.user,
                         isLoginAs: true
                     });
+
                     return res;
                 }),
                 pluck('entity', 'loginAs')
@@ -240,6 +252,7 @@ export class LoginService {
                         .subscribe(() => {
                             this.logOutUser();
                         });
+
                     return response.entity;
                 })
             );
@@ -264,6 +277,7 @@ export class LoginService {
                         user: this._auth.user,
                         isLoginAs: true
                     });
+
                     return res.entity.logoutAs;
                 })
             );
@@ -335,6 +349,10 @@ export class LoginService {
 
     private logOutUser(): void {
         window.location.href = `${LOGOUT_URL}?r=${new Date().getTime()}`;
+    }
+
+    private clearExperimentPersistence() {
+        sessionStorage.removeItem(SESSION_STORAGE_VARIATION_KEY);
     }
 }
 
