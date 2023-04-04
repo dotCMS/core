@@ -524,7 +524,6 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     }
 
     private renderPage(pageState: DotPageRenderState): void {
-        // console.log('LLAMADO');
         this.dotEditContentHtmlService.setCurrentPage(pageState.page);
         this.dotEditContentHtmlService.setCurrentPersona(pageState.viewAs.persona);
 
