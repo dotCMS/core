@@ -14,6 +14,7 @@ export enum TrafficProportionTypes {
     CUSTOM_PERCENTAGES = 'CUSTOM_PERCENTAGES'
 }
 
+// Keep the order of this enum is important to respect the order of the experiment listing.
 export enum DotExperimentStatusList {
     RUNNING = 'RUNNING',
     SCHEDULED = 'SCHEDULED',

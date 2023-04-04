@@ -11,19 +11,14 @@ import {
     ComponentStatus,
     DotExperiment,
     DotExperimentStatusList,
-    GroupedExperimentByStatus,
-    TrafficProportionTypes
+    GroupedExperimentByStatus
 } from '@dotcms/dotcms-models';
 import {
     DotExperimentsListStore,
     DotExperimentsState
 } from '@portlets/dot-experiments/dot-experiments-list/store/dot-experiments-list-store';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
-import {
-    getExperimentAllMocks,
-    getExperimentMock,
-    GoalsMock
-} from '@portlets/dot-experiments/test/mocks';
+import { getExperimentAllMocks, getExperimentMock } from '@portlets/dot-experiments/test/mocks';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 const routerParamsPageId = '1111-1111-111';
@@ -82,10 +77,10 @@ describe('DotExperimentsListStore', () => {
             },
             experiments: [],
             filterStatus: [
-                DotExperimentStatusList.DRAFT,
-                DotExperimentStatusList.ENDED,
                 DotExperimentStatusList.RUNNING,
                 DotExperimentStatusList.SCHEDULED,
+                DotExperimentStatusList.DRAFT,
+                DotExperimentStatusList.ENDED,
                 DotExperimentStatusList.ARCHIVED
             ],
             status: ComponentStatus.INIT,
@@ -147,54 +142,39 @@ describe('DotExperimentsListStore', () => {
 
     it('should get ordered experiment by status', () => {
         const endedExperiments: DotExperiment[] = [
-            {
-                id: '111',
-                identifier: '1111-1111-1111-1111',
-                pageId: '456',
-                status: DotExperimentStatusList.ENDED,
-                archived: false,
-                readyToStart: false,
-                description: 'Praesent at molestie mauris, quis vulputate augue.',
-                name: 'Praesent at molestie mauris',
-                trafficAllocation: 100,
-                scheduling: null,
-                trafficProportion: {
-                    type: TrafficProportionTypes.SPLIT_EVENLY,
-                    variants: [{ id: '111', name: 'DEFAULT', weight: 100.0 }]
-                },
-                creationDate: new Date('2022-08-21 14:50:03'),
-                modDate: new Date('2022-08-21 18:50:03'),
-                goals: { ...GoalsMock }
-            }
-        ];
+            { id: '111', status: DotExperimentStatusList.ENDED }
+        ] as DotExperiment[];
         const archivedExperiments: DotExperiment[] = [
-            {
-                id: '222',
-                identifier: '2222-2222-2222-2222',
-                pageId: '456',
-                status: DotExperimentStatusList.ARCHIVED,
-                archived: false,
-                readyToStart: false,
-                description: 'Praesent at molestie mauris, quis vulputate augue.',
-                name: 'Praesent at molestie mauris',
-                trafficAllocation: 100,
-                scheduling: null,
-                trafficProportion: {
-                    type: TrafficProportionTypes.SPLIT_EVENLY,
-                    variants: [{ id: '222', name: 'DEFAULT', weight: 100.0 }]
-                },
-                creationDate: new Date('2022-08-21 14:50:03'),
-                modDate: new Date('2022-08-21 18:50:03'),
-                goals: { ...GoalsMock }
-            }
+            { id: '10', status: DotExperimentStatusList.ARCHIVED }
+        ] as DotExperiment[];
+
+        const runningExperiments: DotExperiment[] = [
+            { id: '45', status: DotExperimentStatusList.RUNNING }
+        ] as DotExperiment[];
+
+        const draftExperiments: DotExperiment[] = [
+            { id: '33', status: DotExperimentStatusList.DRAFT }
+        ] as DotExperiment[];
+
+        const scheduledExperiments: DotExperiment[] = [
+            { id: '1', status: DotExperimentStatusList.SCHEDULED }
+        ] as DotExperiment[];
+
+        const expected: GroupedExperimentByStatus[] = [
+            { status: DotExperimentStatusList.RUNNING, experiments: [...runningExperiments] },
+            { status: DotExperimentStatusList.SCHEDULED, experiments: [...scheduledExperiments] },
+            { status: DotExperimentStatusList.ENDED, experiments: [...endedExperiments] },
+            { status: DotExperimentStatusList.DRAFT, experiments: [...draftExperiments] },
+            { status: DotExperimentStatusList.ARCHIVED, experiments: [...archivedExperiments] }
         ];
 
-        const expected: GroupedExperimentByStatus = {
-            [DotExperimentStatusList.ENDED]: [...endedExperiments],
-            [DotExperimentStatusList.ARCHIVED]: [...archivedExperiments]
-        };
-
-        store.setExperiments([...endedExperiments, ...archivedExperiments]);
+        store.setExperiments([
+            ...draftExperiments,
+            ...scheduledExperiments,
+            ...endedExperiments,
+            ...archivedExperiments,
+            ...runningExperiments
+        ]);
 
         store.getExperimentsFilteredAndGroupedByStatus$.subscribe((exp) => {
             expect(exp).toEqual(expected);

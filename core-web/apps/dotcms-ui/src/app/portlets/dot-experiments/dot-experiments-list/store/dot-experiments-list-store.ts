@@ -38,10 +38,10 @@ const initialState: DotExperimentsState = {
     },
     experiments: [],
     filterStatus: [
-        DotExperimentStatusList.DRAFT,
-        DotExperimentStatusList.ENDED,
         DotExperimentStatusList.RUNNING,
         DotExperimentStatusList.SCHEDULED,
+        DotExperimentStatusList.DRAFT,
+        DotExperimentStatusList.ENDED,
         DotExperimentStatusList.ARCHIVED
     ],
     status: ComponentStatus.INIT,
@@ -59,7 +59,7 @@ export interface VmListExperiments {
     };
     isLoading: boolean;
     experiments: DotExperiment[];
-    experimentsFiltered: { [key: string]: DotExperiment[] };
+    experimentsFiltered: GroupedExperimentByStatus[];
     filterStatus: Array<string>;
     sidebar: SidebarStatus;
 }
@@ -81,17 +81,33 @@ export class DotExperimentsListStore
     implements OnStoreInit
 {
     // Selectors
-    readonly getExperimentsFilteredAndGroupedByStatus$ = this.select(
-        ({ experiments, filterStatus }) =>
-            experiments
-                .filter((experiment) => filterStatus.includes(experiment.status))
-                .reduce<GroupedExperimentByStatus>((group, experiment) => {
-                    group[experiment.status] = group[experiment.status] ?? [];
-                    group[experiment.status].push(experiment);
+    readonly getExperimentsFilteredAndGroupedByStatus$: Observable<GroupedExperimentByStatus[]> =
+        this.select(({ experiments, filterStatus }) => {
+            const grouped: GroupedExperimentByStatus[] = [];
 
-                    return group;
-                }, <GroupedExperimentByStatus>{})
-    );
+            if (experiments.length) {
+                Object.keys(DotExperimentStatusList).forEach((key) =>
+                    grouped.push({ status: DotExperimentStatusList[key], experiments: [] })
+                );
+
+                experiments
+                    .filter((experiment) => filterStatus.includes(experiment.status))
+                    .forEach((experiment) => {
+                        const status = grouped.find((item) => item.status === experiment.status);
+
+                        if (status) {
+                            status.experiments.push(experiment);
+                        } else {
+                            grouped.push({
+                                status: experiment.status,
+                                experiments: [experiment]
+                            });
+                        }
+                    });
+            }
+
+            return grouped.filter((item) => !!item.experiments.length);
+        });
 
     readonly isLoading$: Observable<boolean> = this.select(
         (state) => state.status === ComponentStatus.LOADING || state.status === ComponentStatus.INIT
