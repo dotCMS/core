@@ -782,7 +782,6 @@ public  class WebResource {
             this.response=response;
         }
 
-        @VisibleForTesting
         public InitBuilder(final WebResource webResource) {
             this.webResource = webResource;
         }

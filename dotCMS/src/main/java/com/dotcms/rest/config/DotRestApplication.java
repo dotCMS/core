@@ -1,9 +1,22 @@
 package com.dotcms.rest.config;
 
 import com.dotcms.contenttype.model.field.FieldTypeResource;
+import com.dotcms.rest.AuditPublishingResource;
+import com.dotcms.rest.BundlePublisherResource;
+import com.dotcms.rest.BundleResource;
+import com.dotcms.rest.CMSConfigResource;
+import com.dotcms.rest.ClusterResource;
+import com.dotcms.rest.EnvironmentResource;
+import com.dotcms.rest.IntegrityResource;
+import com.dotcms.rest.JSPPortlet;
+import com.dotcms.rest.LicenseResource;
+import com.dotcms.rest.OSGIResource;
 import com.dotcms.rest.PublishQueueResource;
+import com.dotcms.rest.RestExamplePortlet;
 import com.dotcms.rest.RulesEnginePortlet;
+import com.dotcms.rest.StructureResource;
 import com.dotcms.rest.TagResource;
+import com.dotcms.rest.WidgetResource;
 import com.dotcms.rest.api.v1.apps.AppsResource;
 import com.dotcms.rest.api.v1.authentication.ApiTokenResource;
 import com.dotcms.rest.api.v1.authentication.AuthenticationResource;
@@ -28,10 +41,12 @@ import com.dotcms.rest.api.v1.experiments.ExperimentsResource;
 import com.dotcms.rest.api.v1.fileasset.FileAssetsResource;
 import com.dotcms.rest.api.v1.folder.FolderResource;
 import com.dotcms.rest.api.v1.form.FormResource;
+import com.dotcms.rest.api.v1.index.ESIndexResource;
 import com.dotcms.rest.api.v1.languages.LanguagesResource;
 import com.dotcms.rest.api.v1.maintenance.JVMInfoResource;
 import com.dotcms.rest.api.v1.maintenance.MaintenanceResource;
 import com.dotcms.rest.api.v1.menu.MenuResource;
+import com.dotcms.rest.api.v1.notification.NotificationResource;
 import com.dotcms.rest.api.v1.page.NavResource;
 import com.dotcms.rest.api.v1.page.PageResource;
 import com.dotcms.rest.api.v1.personalization.PersonalizationResource;
@@ -63,8 +78,11 @@ import com.dotcms.rest.api.v1.temp.TempFileResource;
 import com.dotcms.rest.api.v1.template.TemplateResource;
 import com.dotcms.rest.api.v1.theme.ThemeResource;
 import com.dotcms.rest.api.v1.user.UserResource;
+import com.dotcms.rest.api.v1.variants.VariantResource;
 import com.dotcms.rest.api.v1.versionable.VersionableResource;
 import com.dotcms.rest.api.v1.vtl.VTLResource;
+import com.dotcms.rest.api.v1.workflow.WorkflowResource;
+import com.dotcms.rest.elasticsearch.ESContentResourcePortlet;
 import com.dotcms.rest.personas.PersonasResourcePortlet;
 import com.dotcms.rest.servlet.ReloadableServletContainer;
 import com.google.common.collect.ImmutableSet;
@@ -124,25 +142,25 @@ public class DotRestApplication extends javax.ws.rs.core.Application {
 	 */
 	private final static Set<Class<?>> INTERNAL_CLASSES = ImmutableSet.<Class<?>>builder()
 			.add(MultiPartFeature.class)
-			.add(com.dotcms.rest.api.v1.index.ESIndexResource.class)
+			.add(ESIndexResource.class)
 			.add(com.dotcms.rest.RoleResource.class)
-			.add(com.dotcms.rest.BundleResource.class)
-			.add(com.dotcms.rest.StructureResource.class)
+			.add(BundleResource.class)
+			.add(StructureResource.class)
 			.add(com.dotcms.rest.ContentResource.class)
-			.add(com.dotcms.rest.BundlePublisherResource.class)
-			.add(com.dotcms.rest.JSPPortlet.class)
-			.add(com.dotcms.rest.AuditPublishingResource.class)
-			.add(com.dotcms.rest.WidgetResource.class)
-			.add(com.dotcms.rest.CMSConfigResource.class)
-			.add(com.dotcms.rest.OSGIResource.class)
+			.add(BundlePublisherResource.class)
+			.add(JSPPortlet.class)
+			.add(AuditPublishingResource.class)
+			.add(WidgetResource.class)
+			.add(CMSConfigResource.class)
+			.add(OSGIResource.class)
 			.add(com.dotcms.rest.UserResource.class)
-			.add(com.dotcms.rest.ClusterResource.class)
-			.add(com.dotcms.rest.EnvironmentResource.class)
-			.add(com.dotcms.rest.api.v1.notification.NotificationResource.class)
-			.add(com.dotcms.rest.IntegrityResource.class)
-			.add(com.dotcms.rest.LicenseResource.class)
-			.add(com.dotcms.rest.RestExamplePortlet.class)
-			.add(com.dotcms.rest.elasticsearch.ESContentResourcePortlet.class)
+			.add(ClusterResource.class)
+			.add(EnvironmentResource.class)
+			.add(NotificationResource.class)
+			.add(IntegrityResource.class)
+			.add(LicenseResource.class)
+			.add(RestExamplePortlet.class)
+			.add(ESContentResourcePortlet.class)
 			.add(PersonaResource.class)
 			.add(UserResource.class)
 			.add(TagResource.class)
@@ -184,7 +202,7 @@ public class DotRestApplication extends javax.ws.rs.core.Application {
 			.add(CategoriesResource.class)
 			.add(PageResource.class)
 			.add(ContentRelationshipsResource.class)
-			.add(com.dotcms.rest.api.v1.workflow.WorkflowResource.class)
+			.add(WorkflowResource.class)
 			.add(ContainerResource.class)
 			.add(ThemeResource.class)
 			.add(NavResource.class)
@@ -214,6 +232,7 @@ public class DotRestApplication extends javax.ws.rs.core.Application {
 			.add(AcceptHeaderOpenApiResource.class)
 			.add(ExperimentsResource.class)
 			.add(TailLogResource.class)
+			.add(VariantResource.class)
 			.build();
 
 
