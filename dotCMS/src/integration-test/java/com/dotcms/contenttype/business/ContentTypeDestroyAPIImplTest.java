@@ -40,6 +40,10 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+/**
+ * Here we test the {@link ContentTypeDestroyAPIImpl}
+ * @author Fabrizzio
+ */
 public class ContentTypeDestroyAPIImplTest extends IntegrationTestBase {
 
     @BeforeClass
@@ -50,7 +54,7 @@ public class ContentTypeDestroyAPIImplTest extends IntegrationTestBase {
 
 
     /**
-     * Creates a simple content type with a number of contentlets
+     * Creates a simple content type with a number of contentlets*
      * @return
      */
     Tuple2<ContentType,Set<String>> simpleContentTypeWithData(int numContentlets)
@@ -73,7 +77,8 @@ public class ContentTypeDestroyAPIImplTest extends IntegrationTestBase {
     }
 
     /**
-     * EXPECTATION: This test should return a map with the identifier as key and a list of contentlet version info
+     * Given scenario: We have a content type with a number of contentlets
+     * Expected Result: This test should return a map with the identifier as key and a list of contentlet version info from the given content type
      * @throws DotDataException
      */
     @Test
@@ -101,7 +106,8 @@ public class ContentTypeDestroyAPIImplTest extends IntegrationTestBase {
 
 
     /**
-     * EXPECTATION: This is a general test to verify contents are removed successfully
+     * Given scenario: This is a general test to verify contents are removed successfully
+     * Expected Result: The content type should be removed from the db and the index
      * @throws DotDataException
      */
     @Test
@@ -184,7 +190,8 @@ public class ContentTypeDestroyAPIImplTest extends IntegrationTestBase {
                 .esSearch(esQuery, live, APILocator.systemUser(), false);
     }
     /**
-     * This test will validate that when a content type holding a relationship is deleted, the relationship is also removed from the database
+     * Given Scenario: We create a Content Type with a relationship field
+     * Expected Result: This test will validate that when a content type holding a relationship is deleted, the relationship is also removed from the database
      * @throws DotSecurityException
      * @throws DotDataException
      */
@@ -237,7 +244,8 @@ public class ContentTypeDestroyAPIImplTest extends IntegrationTestBase {
     }
 
     /**
-     * Here we borrow the ContentType Persona to create another using all the defaults preset on the Original CT
+     * Given Scenario: Here we borrow the ContentType Persona to create another using all the defaults preset on the Original CT
+     * Expected Result: We should be able to create a new CT using the Persona CT as a base and then delete it without any issues
      * @throws DotSecurityException
      * @throws DotDataException
      */

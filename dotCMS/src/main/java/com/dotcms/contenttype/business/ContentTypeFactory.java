@@ -84,6 +84,12 @@ public interface ContentTypeFactory {
   
   	void updateModDate(ContentType type) throws DotDataException;
 
+	/**
+	 * This could be considered putting a shallow mark on the CT
+	 * This way we can immediately exclude it from any process that might want to use it
+	 * @param type
+	 * @throws DotDataException
+	 */
 	void markForDeletion(ContentType type) throws DotDataException;
 
 }

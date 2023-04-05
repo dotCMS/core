@@ -5,6 +5,12 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
 
+
+/**
+ * This API is responsible for deleting all the contentlets associated to a content type
+ * @author fabrizzio
+ *
+ */
 public interface ContentTypeDestroyAPI {
 
     /**
@@ -17,6 +23,13 @@ public interface ContentTypeDestroyAPI {
      */
     void relocateContentletsForDeletion(ContentType source, ContentType target) throws DotDataException;
 
+    /**
+     * Deletes all the contentlets associated to a content type
+     * @param contentType
+     * @param user
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     void destroy(ContentType contentType, User user) throws DotDataException, DotSecurityException;
 
 

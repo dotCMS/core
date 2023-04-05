@@ -15,6 +15,7 @@ import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.util.ContentTypeUtil;
 import com.dotcms.util.I18NMessage;
+import com.dotcms.util.LogTime;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -37,10 +38,15 @@ import io.vavr.Lazy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
+
+    Lazy<ContentletDestroyDelegate> delegate = Lazy.of(ContentletDestroyDelegate::newInstance);
+
+    Lazy<Integer> limitProp = Lazy.of(()->Config.getIntProperty("CT_DELETE_BATCH_SIZE", 100));
+
+    Lazy<Integer> partitionSizeProp = Lazy.of(()-> Config.getIntProperty("CT_DELETE_PARTITION_SIZE", 1));
 
     /**
      * This method relocates all contentlets from a given structure to another structure And returns
@@ -129,12 +135,12 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
     }
 
 
+    @LogTime(loggingLevel = "INFO")
     @Override
     public void destroy(ContentType type, User user) throws DotDataException, DotSecurityException {
-        final long t1 = System.currentTimeMillis();
         final long allCount = countByType(type);
-        final int limit = Config.getIntProperty("CT_DELETE_BATCH_SIZE", 600);
-        final int partitionSize = Config.getIntProperty("CT_DELETE_PARTITION_SIZE", 1);
+        final int limit = limitProp.get();
+        final int partitionSize = partitionSizeProp.get();
         Logger.info(getClass(), String.format(
                 "There are (%d) contents. Will remove then sequentially using (%d) batchSize ",
                 allCount, limit));
@@ -167,16 +173,15 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
 
         internalDestroy(type);
 
-        final long diff = System.currentTimeMillis() - t1;
-        final long hours = TimeUnit.MILLISECONDS.toHours(diff);
-        final long minutes = TimeUnit.MILLISECONDS.toMinutes(diff);
-        final long seconds = TimeUnit.MILLISECONDS.toSeconds(diff);
-        String timeInHHMMSS = String.format("%02d:%02d:%02d", hours, minutes, seconds);
         Logger.info(getClass(),
-                String.format(" it took me (%s) to tear down (%d) of CT (%s) ", timeInHHMMSS,
-                        allCount, type));
+                String.format(" I'm done destroying (%d) pieces of Content of type (%s). ", allCount, type));
     }
 
+    /**
+     * This the only method meant to be transaction here. We want to make sure we address transactional smaller batches of contentlets.
+     * @param type
+     * @throws DotDataException
+     */
     @WrapInTransaction
     private void internalDestroy(ContentType type) throws DotDataException{
         try {
@@ -219,9 +224,9 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
         notifyContentTypeDestroyed(type);
     }
 
-    Lazy<ContentletDestroyDelegate> delegate = Lazy.of(ContentletDestroyDelegate::newInstance);
 
     /**
+     * Middle man that basically calls the delegate
      * @param partition
      * @param type
      */
@@ -233,6 +238,13 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
         });
     }
 
+    /**
+     * Since all contetlets were moved under a disposable field-less content type, we need to create a list of contentlets including all the basic information
+     * @param identifier
+     * @param contentletVersionInfos
+     * @param type
+     * @return
+     */
     List<Contentlet> makeContentlets(final String identifier,
             final List<ContentletVersionInfo> contentletVersionInfos, final ContentType type) {
         return contentletVersionInfos.stream().map(contentletVersionInfo -> {
@@ -276,6 +288,9 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
 
     }
 
+    /**
+     * Contentlet and version info DTO
+     */
     static class ContentletVersionInfo {
         final String inode;
         final Number languageId;
@@ -343,7 +358,7 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
                     systemUser.getLocale()
             );
         } catch (DotDataException e) {
-            Logger.error(getClass(), e.getMessage(), e);
+            Logger.error(getClass(), String.format("Failed sending out notification for CT [%s]",contentType.name()), e);
         }
     }
 

@@ -33,7 +33,7 @@ public class ContentTypeDeleteJob extends DotStatefulJob {
             APILocator.getContentTypeDestroyAPI().destroy(contentType, APILocator.systemUser());
         } catch (DotDataException | DotSecurityException e) {
             throw new JobExecutionException(
-                    String.format("Error removing contentlets from CT with inode [%s] and [%s] .",inode, varName), e);
+                    String.format("Error removing contentlets from CT with inode [%s] and name [%s] .",inode, varName), e);
         }
 
     }

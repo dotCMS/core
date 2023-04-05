@@ -876,13 +876,12 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 	 dc.loadResult();
  }
 
+
     /**
-     * This could be considered putting a shallow mark on the CT
-     * This way we can immediately exclude it from any process that might want to use it
+     * {@inheritDoc}
      * @param type
      * @throws DotDataException
      */
-
    @Override
    public void markForDeletion(ContentType type) throws DotDataException {
        final DotConnect dotConnect = new DotConnect();
