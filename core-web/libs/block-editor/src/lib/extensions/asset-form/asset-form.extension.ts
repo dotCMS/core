@@ -6,7 +6,7 @@ import { ComponentRef, ViewContainerRef } from '@angular/core';
 import { Editor } from '@tiptap/core';
 import BubbleMenu from '@tiptap/extension-bubble-menu';
 
-import { EditorAssetTypes } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, EditorAssetTypes } from '@dotcms/dotcms-models';
 
 import { AssetFormComponent } from './asset-form.component';
 import { bubbleAssetFormPlugin } from './plugins/bubble-asset-form.plugin';
@@ -20,7 +20,7 @@ declare module '@tiptap/core' {
             closeAssetForm: () => ReturnType;
             insertAsset: (data: {
                 type: EditorAssetTypes;
-                payload;
+                payload: string | DotCMSContentlet;
                 position?: number;
             }) => ReturnType;
         };
@@ -166,12 +166,15 @@ export const BubbleAssetFormExtension = (viewContainerRef: ViewContainerRef) => 
                     ({ type, payload, position }) =>
                     ({ chain }) => {
                         switch (type) {
-                            case 'video':
-                                return (
-                                    // This method returns true if it was able to set the youtube video
-                                    chain().setYoutubeVideo({ src: payload }).run() ||
-                                    chain().insertVideo(payload, position).run()
-                                );
+                            case 'video': {
+                                if (typeof payload === 'string')
+                                    return (
+                                        // This method returns true if it was able to set the youtube video
+                                        chain().setYoutubeVideo({ src: payload }).run() ||
+                                        chain().insertVideo(payload, position).run()
+                                    );
+                                else return chain().insertVideo(payload, position).run();
+                            }
 
                             case 'image':
                                 return chain().insertImage(payload, position).run();
