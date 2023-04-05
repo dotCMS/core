@@ -243,8 +243,9 @@
                     const field = document.querySelector('#editor-input-value-<%=field.getVelocityVarName()%>');
 
                     if (content) {
-                        blockEditor.value = content;
-                        field.value = JSON.stringify(content); 
+                        block.editor?.commands.setContent(content);
+                        blockEditor.value = block.editor?.getJSON();
+                        field.value = JSON.stringify(block.editor?.getJSON()); 
                     }
 
                     blockEditor.addEventListener('valueChange', (event) => {
