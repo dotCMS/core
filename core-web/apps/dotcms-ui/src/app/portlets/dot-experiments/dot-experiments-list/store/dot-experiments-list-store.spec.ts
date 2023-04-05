@@ -163,8 +163,8 @@ describe('DotExperimentsListStore', () => {
         const expected: GroupedExperimentByStatus[] = [
             { status: DotExperimentStatusList.RUNNING, experiments: [...runningExperiments] },
             { status: DotExperimentStatusList.SCHEDULED, experiments: [...scheduledExperiments] },
-            { status: DotExperimentStatusList.ENDED, experiments: [...endedExperiments] },
             { status: DotExperimentStatusList.DRAFT, experiments: [...draftExperiments] },
+            { status: DotExperimentStatusList.ENDED, experiments: [...endedExperiments] },
             { status: DotExperimentStatusList.ARCHIVED, experiments: [...archivedExperiments] }
         ];
 

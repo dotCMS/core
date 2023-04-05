@@ -18,8 +18,8 @@ export enum TrafficProportionTypes {
 export enum DotExperimentStatusList {
     RUNNING = 'RUNNING',
     SCHEDULED = 'SCHEDULED',
-    ENDED = 'ENDED',
     DRAFT = 'DRAFT',
+    ENDED = 'ENDED',
     ARCHIVED = 'ARCHIVED'
 }
 
