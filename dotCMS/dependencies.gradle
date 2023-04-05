@@ -1,6 +1,8 @@
 //noinspection GroovyAssignabilityCheck
 println( "loading dependencies")
 println( "loading dependencies")
+def eeType = dotcmsReleaseVersion == "master" ? '-SNAPSHOT' : ''
+
 dependencies {
 
     def immutablesVersion = "2.9.1"
@@ -11,6 +13,10 @@ dependencies {
         because 'undated for security'
     }
 
+    if (!(project.gradle.startParameter.taskNames.contains('deployWarTomcatDev') || project.gradle.startParameter.taskNames.contains('testDev'))) {
+
+        implementation group: 'com.dotcms.enterprise', name: 'ee', version: dotcmsReleaseVersion + eeType, changing: true
+    }
 
     implementation group: 'com.sun.mail', name: 'jakarta.mail', version: '1.6.7'
 

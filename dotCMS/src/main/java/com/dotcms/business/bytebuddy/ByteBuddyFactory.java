@@ -3,6 +3,7 @@ package com.dotcms.business.bytebuddy;
 import com.dotcms.business.CloseDB;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.util.LogTime;
 import com.dotmarketing.util.Logger;
 import net.bytebuddy.agent.ByteBuddyAgent;
 import net.bytebuddy.agent.builder.AgentBuilder;
@@ -37,7 +38,8 @@ public class ByteBuddyFactory {
     private static final Map<Class<? extends Annotation>, Class<?>> adviceMap = Map.of(
             WrapInTransaction.class, WrapInTransactionAdvice.class,
             CloseDB.class, CloseDBAdvice.class,
-            CloseDBIfOpened.class, CloseDBIfOpenedAdvice.class
+            CloseDBIfOpened.class, CloseDBIfOpenedAdvice.class,
+            LogTime.class, LogTimeAdvice.class
     );
 
 
