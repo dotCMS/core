@@ -9,7 +9,7 @@ import com.dotmarketing.util.Logger;
 import io.vavr.control.Try;
 
 /**
- * Simple adds a new column to the structure table whn missing
+ * Simple adds a new column to the structure table when missing
  */
 public class Task230328AddMarkedForDeletionColumn implements StartupTask {
 
