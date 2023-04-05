@@ -77,6 +77,10 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
         this.dotExperimentsConfigurationStore.goalsStepVm$;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
+    private BOUNCE_RATE_LABEL;
+    private REACH_PAGE_LABEL;
+    private DEFAULT_NAME_LABEL;
+
     constructor(
         private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore,
         private readonly dotMessageService: DotMessageService,
@@ -146,15 +150,18 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
     }
 
     private initForm(): void {
+        this.BOUNCE_RATE_LABEL = this.dotMessageService.get(this.goals.BOUNCE_RATE.label);
+        this.REACH_PAGE_LABEL = this.dotMessageService.get(this.goals.REACH_PAGE.label);
+        this.DEFAULT_NAME_LABEL = this.dotMessageService.get(
+            'experiments.configure.goals.name.default'
+        );
+
         this.form = new FormGroup({
             primary: new FormGroup({
-                name: new FormControl(
-                    this.dotMessageService.get('experiments.configure.goals.name.default'),
-                    {
-                        nonNullable: true,
-                        validators: [Validators.required]
-                    }
-                ),
+                name: new FormControl(this.DEFAULT_NAME_LABEL, {
+                    nonNullable: true,
+                    validators: [Validators.required]
+                }),
                 type: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
                 conditions: new FormArray([
                     new FormGroup({
@@ -165,6 +172,30 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
                 ])
             })
         });
+
+        this.form.get('primary.type').valueChanges.subscribe((value) => {
+            this.defineDefaultName(value);
+        });
+    }
+
+    /**
+     * If the user don't set a custom name set the default name for the goal
+     * @param {string} typeValue
+     * @memberOf DotExperimentsConfigurationGoalSelectComponent
+     */
+    private defineDefaultName(typeValue: string): void {
+        const nameControl = this.form.get('primary.name') as FormControl;
+        if (
+            nameControl.value === this.DEFAULT_NAME_LABEL ||
+            nameControl.value === this.BOUNCE_RATE_LABEL ||
+            nameControl.value === this.REACH_PAGE_LABEL
+        ) {
+            nameControl.setValue(
+                typeValue === GOAL_TYPES.BOUNCE_RATE
+                    ? this.BOUNCE_RATE_LABEL
+                    : this.REACH_PAGE_LABEL
+            );
+        }
     }
 
     private addConditionsControlValidations(): void {
