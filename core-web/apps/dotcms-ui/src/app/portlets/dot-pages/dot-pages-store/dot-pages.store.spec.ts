@@ -48,6 +48,7 @@ import {
 } from '@dotcms/dotcms-models';
 import {
     DotcmsConfigServiceMock,
+    dotcmsContentletMock,
     dotcmsContentTypeBasicMock,
     DotcmsEventsServiceMock,
     DotLanguagesServiceMock,
@@ -422,5 +423,21 @@ describe('DotPageStore', () => {
             favoritePagesInitialTestData[0].inode,
             DotRenderMode.LISTING
         );
+    });
+
+    it('should get all Workflow actions and static actions from a favorite page', () => {
+        spyOn(dotWorkflowsActionsService, 'getByUrl').and.returnValue(
+            of({ actions: mockWorkflowsActions, page: dotcmsContentletMock })
+        );
+        dotPageStore.showActionsMenu({
+            item: { ...favoritePagesInitialTestData[0], contentType: 'dotFavoritePage' },
+            actionMenuDomId: 'test1'
+        });
+
+        expect(dotWorkflowsActionsService.getByUrl).toHaveBeenCalledWith({
+            host_id: 'A',
+            language_id: '1',
+            url: '/index1'
+        });
     });
 });

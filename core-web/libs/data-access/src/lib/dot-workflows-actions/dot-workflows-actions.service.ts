@@ -61,6 +61,7 @@ export class DotWorkflowsActionsService {
     /**
      * Returns the workflow actions of the passed url, hostId and language
      *
+     * @param { host_id: string; language_id: string; url: string; renderMode?: DotRenderMode; } params
      * @param {string} host_id
      * @param {string} language_id
      * @param {string} url
@@ -68,21 +69,21 @@ export class DotWorkflowsActionsService {
      * @returns {Observable<DotCMSPageWorkflowState>}
      * @memberof DotWorkflowsActionsService
      */
-    getByUrl(
-        host_id: string,
-        language_id: string,
-        url: string,
-        renderMode?: DotRenderMode
-    ): Observable<DotCMSPageWorkflowState> {
+    getByUrl(params: {
+        host_id: string;
+        language_id: string;
+        url: string;
+        renderMode?: DotRenderMode;
+    }): Observable<DotCMSPageWorkflowState> {
         return this.coreWebService
             .requestView({
                 method: 'POST',
                 url: `v1/page/actions`,
                 body: {
-                    host_id,
-                    language_id,
-                    url,
-                    renderMode
+                    host_id: params.host_id,
+                    language_id: params.language_id,
+                    url: params.url,
+                    renderMode: params.renderMode
                 }
             })
             .pipe(pluck('entity'));

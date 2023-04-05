@@ -470,16 +470,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
 
     private getWorflowActionsFn = (item: DotCMSContentlet): Observable<DotCMSPageWorkflowState> => {
         if (item?.contentType === 'dotFavoritePage') {
-            const urlParams: { [key: string]: string } = { url: item.url.split('?')[0] };
-            const searchParams = new URLSearchParams(item.url.split('?')[1]);
-
-            for (const entry of searchParams) {
-                urlParams[entry[0]] = entry[1];
-            }
-
-            const { host_id, language_id, url } = urlParams;
-
-            return this.dotWorkflowsActionsService.getByUrl(host_id, language_id, url);
+            return this.getFavoritePageWorflowActions(item);
         } else {
             return this.dotWorkflowsActionsService
                 .getByInode(item.inode, DotRenderMode.LISTING)
@@ -493,6 +484,20 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                 );
         }
     };
+
+    private getFavoritePageWorflowActions(
+        item: DotCMSContentlet
+    ): Observable<DotCMSPageWorkflowState> {
+        const urlParams: { [key: string]: string } = { url: item.url.split('?')[0] };
+        const searchParams = new URLSearchParams(item.url.split('?')[1]);
+        for (const entry of searchParams) {
+            urlParams[entry[0]] = entry[1];
+        }
+
+        const { host_id, language_id, url } = urlParams;
+
+        return this.dotWorkflowsActionsService.getByUrl({ host_id, language_id, url });
+    }
 
     private getPagesDataFn(
         isFavoritePage: boolean,
