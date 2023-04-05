@@ -77,9 +77,11 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
         this.dotExperimentsConfigurationStore.goalsStepVm$;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    private BOUNCE_RATE_LABEL;
-    private REACH_PAGE_LABEL;
-    private DEFAULT_NAME_LABEL;
+    private BOUNCE_RATE_LABEL = this.dotMessageService.get(this.goals.BOUNCE_RATE.label);
+    private REACH_PAGE_LABEL = this.dotMessageService.get(this.goals.REACH_PAGE.label);
+    private DEFAULT_NAME_LABEL = this.dotMessageService.get(
+        'experiments.configure.goals.name.default'
+    );
 
     constructor(
         private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore,
@@ -150,19 +152,16 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
     }
 
     private initForm(): void {
-        this.BOUNCE_RATE_LABEL = this.dotMessageService.get(this.goals.BOUNCE_RATE.label);
-        this.REACH_PAGE_LABEL = this.dotMessageService.get(this.goals.REACH_PAGE.label);
-        this.DEFAULT_NAME_LABEL = this.dotMessageService.get(
-            'experiments.configure.goals.name.default'
-        );
-
         this.form = new FormGroup({
             primary: new FormGroup({
                 name: new FormControl(this.DEFAULT_NAME_LABEL, {
                     nonNullable: true,
                     validators: [Validators.required]
                 }),
-                type: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+                type: new FormControl('', {
+                    nonNullable: true,
+                    validators: [Validators.required]
+                }),
                 conditions: new FormArray([
                     new FormGroup({
                         parameter: new FormControl(''),
@@ -179,7 +178,7 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
     }
 
     /**
-     * If the user don't set a custom name set the default name for the goal
+     * If the user don't set a custom name set the default name based on goal selection.
      * @param {string} typeValue
      * @memberOf DotExperimentsConfigurationGoalSelectComponent
      */
