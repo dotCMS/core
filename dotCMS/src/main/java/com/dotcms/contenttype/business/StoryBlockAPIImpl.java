@@ -8,6 +8,7 @@ import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
@@ -38,7 +39,6 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
     public StoryBlockReferenceResult refreshReferences(final Contentlet contentlet) {
         final MutableBoolean refreshed = new MutableBoolean(false);
         if (null != contentlet && contentlet.getContentType().hasStoryBlockFields()) {
-            //TODO: this method filters but creates a new list in memory
             contentlet.getContentType().fields(StoryBlockField.class)
                     .forEach(field -> {
 
@@ -80,7 +80,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                                                           "references: %s", e.getMessage());
             Logger.error(StoryBlockAPIImpl.class, errorMsg);
             Logger.debug(StoryBlockAPIImpl.class, errorMsg, e);
-            throw new RuntimeException(errorMsg, e);
+            throw new DotRuntimeException(errorMsg, e);
         }
         // Return the original value in case no data was refreshed
         return new StoryBlockReferenceResult(false, storyBlockValue);
@@ -105,12 +105,12 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         if (UtilMethods.isSet(attrsMap)) {
             final Map<String, Object> dataMap = (Map) attrsMap.get(DATA_KEY);
             if (UtilMethods.isSet(dataMap)) {
-                final String identifier = dataMap.get(IDENTIFIER_KEY).toString();
-                final String inode = dataMap.get(INODE_KEY).toString();
+                final String identifier = (String) dataMap.get(IDENTIFIER_KEY);
+                final String inode = (String) dataMap.get(INODE_KEY);
                 final long languageId = ConversionUtils.toLong(dataMap.get(LANGUAGE_ID_KEY), ()-> APILocator.getLanguageAPI().getDefaultLanguage().getId());
                 if (UtilMethods.isSet(identifier) && UtilMethods.isSet(inode)) {
                     final Optional<ContentletVersionInfo> versionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, languageId);
-                    if (null != versionInfo && versionInfo.isPresent() && UtilMethods.isSet(versionInfo.get().getLiveInode())  &&
+                    if (versionInfo.isPresent() && UtilMethods.isSet(versionInfo.get().getLiveInode())  &&
                                 !inode.equals(versionInfo.get().getLiveInode())) {
                         // The Inode in the JSON of the Story Block field does not match the latest version of the
                         // referenced Contentlet. This piece of content need to be refreshed
@@ -127,11 +127,11 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
     @Override
     public List<String> getDependencies(final Contentlet contentlet) {
         final ImmutableList.Builder<String> contentletIdList = new ImmutableList.Builder<>();
-        contentlet.getContentType().fields(StoryBlockField.class).forEach(field -> {
+        contentlet.getContentType().fields(StoryBlockField.class).forEach(field -> 
 
-            contentletIdList.addAll(this.getDependencies(contentlet.get(field.variable())));
+            contentletIdList.addAll(this.getDependencies(contentlet.get(field.variable())))
 
-        });
+        );
         return contentletIdList.build();
     }
 
@@ -159,7 +159,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                                                           " Block field: %s", e.getMessage());
             Logger.error(StoryBlockAPIImpl.class, errorMsg);
             Logger.debug(StoryBlockAPIImpl.class, errorMsg, e);
-            throw new RuntimeException(errorMsg, e);
+            throw new DotRuntimeException(errorMsg, e);
         }
         return contentletIdList.build();
     }
@@ -175,7 +175,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                                                           "field: %s", contentlet.getIdentifier(), e.getMessage());
             Logger.error(StoryBlockAPIImpl.class, errorMsg);
             Logger.debug(StoryBlockAPIImpl.class, errorMsg, e);
-            throw new RuntimeException(errorMsg, e);
+            throw new DotRuntimeException(errorMsg, e);
         }
     }
 
