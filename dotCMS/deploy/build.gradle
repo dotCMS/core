@@ -7,6 +7,18 @@ buildscript {
     }
 }
 
+println "Running gradle version: $gradle.gradleVersion"
+if (!gradle.gradleVersion.startsWith("6.9.")) {
+    throw new GradleException("Gradle version must be 6.9.x for deploy.gradle and not 7.x+ from gradlew")
+} else {
+    apply plugin: 'maven'
+}
+
+Properties props = new Properties()
+props.load(new FileInputStream("$project.rootDir/../gradle.properties"))
+props.each { prop ->
+    project.ext.set(prop.key, prop.value)
+}
 
 configurations {
     implementation
@@ -53,32 +65,32 @@ def taskDescription = """
 
         dotcms jar:
             Name convention: dotcms_version_hash.jar -> dotcms_3.0_a434224.jar
-            As snapshot: ./gradlew -b deploy.gradle uploadArchives -PgroupId=com.dotcms -PincludeDependencies=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/dotcms_3.0_a434224.jar
-            As release: ./gradlew -b deploy.gradle uploadArchives -PgroupId=com.dotcms -PincludeDependencies=true -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/dotcms_3.0_a434224.jar
+            As snapshot: ./gradlew uploadArchives -PgroupId=com.dotcms -PincludeDependencies=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/dotcms_3.0_a434224.jar
+            As release: ./gradlew uploadArchives -PgroupId=com.dotcms -PincludeDependencies=true -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/dotcms_3.0_a434224.jar
 
         Enterprise jar
             Name convention: ee_dotcmsversion.jar -> ee_3.6.jar
-            As snapshot: ./gradlew -b deploy.gradle uploadArchives -PgroupId=com.dotcms.enterprise -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/ee_3.6.jar
-            As release: ./gradlew -b deploy.gradle uploadArchives -PgroupId=com.dotcms.enterprise -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/ee_3.6.jar
+            As snapshot: ./gradlew uploadArchives -PgroupId=com.dotcms.enterprise -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/ee_3.6.jar
+            As release: ./gradlew uploadArchives -PgroupId=com.dotcms.enterprise -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/ee_3.6.jar
 
         Enterprise license jar
             Name convention: eelic_dotcmsversion.jar -> eelic_3.6.jar
-            As snapshot: ./gradlew -b deploy.gradle uploadArchives -PgroupId=com.dotcms.enterprise -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/eelic_3.6.jar
-            As release: ./gradlew -b deploy.gradle uploadArchives -PgroupId=com.dotcms.enterprise -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/eelic_3.6.jar
+            As snapshot: ./gradlew uploadArchives -PgroupId=com.dotcms.enterprise -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/eelic_3.6.jar
+            As release: ./gradlew uploadArchives -PgroupId=com.dotcms.enterprise -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/WEB-INF/lib/eelic_3.6.jar
 
         Full starter zip
             Name convention: starter_YYYYMMDD.zip -> starter_20220518.zip
-            As snapshot: ./gradlew -b deploy.gradle uploadArchives -PgroupId=com.dotcms -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/starter_20220518.zip
-            As release: ./gradlew -b deploy.gradle uploadArchives -PgroupId=com.dotcms -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/starter_20220518.zip
+            As snapshot: ./gradlew uploadArchives -PgroupId=com.dotcms -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/starter_20220518.zip
+            As release: ./gradlew uploadArchives -PgroupId=com.dotcms -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/starter_20220518.zip
         
         Empty starter zip
             Name convention: starter_empty_YYYYMMDD.zip -> starter_empty_20220518.zip
-            As snapshot: ./gradlew -b deploy.gradle uploadArchives -PgroupId=com.dotcms -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/starter_empty_20220518.zip
-            As release: ./gradlew -b deploy.gradle uploadArchives -PgroupId=com.dotcms -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/starter_empty_20220518.zip
+            As snapshot: ./gradlew uploadArchives -PgroupId=com.dotcms -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/starter_empty_20220518.zip
+            As release: ./gradlew uploadArchives -PgroupId=com.dotcms -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/starter_empty_20220518.zip
         
          Ant Tooling jar
             Name convention: ant-tooling_version.jar -> ant-tooling_1.1.jar
-            As release: ./gradlew -b deploy.gradle uploadArchives -PgroupId=com.dotcms -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/ant-tooling/build/libs/ant-tooling_1.1.jar
+            As release: ./gradlew uploadArchives -PgroupId=com.dotcms -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/ant-tooling/build/libs/ant-tooling_1.1.jar
 
     NOTE:
         For a known gradle bug we can not use the default snapshot behaviour and right now each snapshot have to be an artifact:
@@ -106,7 +118,7 @@ def taskDescription = """
 }
 help.description = 'Displays a help message'*/
 
-apply plugin: 'maven'
+
 
 import org.gradle.api.internal.artifacts.publish.DefaultPublishArtifact
 
@@ -122,7 +134,7 @@ ext {
     jarName         = ""
     submodulePath   = ""
 
-    git = org.ajoberstar.grgit.Grgit.open(file('..'))
+    git = org.ajoberstar.grgit.Grgit.open(file('../..'))
 
     releaseRepository  = "https://repo.dotcms.com/artifactory/libs-release-local"
     snapshotRepository = "https://repo.dotcms.com/artifactory/libs-snapshot-local"
@@ -185,14 +197,17 @@ ext {
 //We will only apply the dependencies for the dotcms_version.jar, adding these dependencies affects the creation of the pom file for this artifact
 if (useDependencies == "true") {
     //Import and apply the dependencies from the dependencies scripts
-    apply from: "$rootDir/dependencies.gradle"
+    apply from: "$rootDir/../dependencies.gradle"
 }
 
 File toUpload
 
 artifacts {
     if (fileToUpload.length() > 0) {
-        toUpload = file(project.file(fileToUpload))
+        if (!fileToUpload.startsWith("/")) {
+            fileToUpload = "$rootDir/../$fileToUpload"
+        }
+        toUpload = file(fileToUpload)
         def extension = toUpload.name.substring(toUpload.name.lastIndexOf(".") + 1, toUpload.name.length())
         def fileName = toUpload.name.replace("." + extension, "")
         archives new DefaultPublishArtifact(fileName, extension, extension, null, new Date(), toUpload)
@@ -207,7 +222,7 @@ uploadArchives {
         mavenDeployer {
 
             if (toUpload != null) {
-
+                println "Uploading $toUpload"
                 def isRelease = false
                 if (releaseUpload == "true") {
                     isRelease = true
@@ -243,11 +258,20 @@ uploadArchives {
                 // Add project dependencies to generated pom.xml file (Note: scope and exclusions not yet supported)
                 pom(fileName).withXml {
                     def dependenciesNode = asNode().appendNode('dependencies')
-                    configurations.implementation.allDependencies.each {
-                        def dependencyNode = dependenciesNode.appendNode('dependency')
-                        dependencyNode.appendNode('groupId', it.group)
-                        dependencyNode.appendNode('artifactId', it.name)
-                        dependencyNode.appendNode('version', it.version)
+                    configurations.all {
+                        it.allDependencies.all { dep ->
+                            if (dep.group && dep.name && dep.version) {
+                                def dependencyNode = dependenciesNode.appendNode('dependency')
+                                dependencyNode.appendNode('groupId', dep.group)
+                                dependencyNode.appendNode('artifactId', dep.name)
+                                dependencyNode.appendNode('version', dep.version)
+                                if (it.name == 'compileOnly') {
+                                    dependencyNode.appendNode('scope', 'provided')
+                                } else if (it.name == 'testImplementation') {
+                                    dependencyNode.appendNode('scope', 'test')
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -334,8 +358,8 @@ Parameters:
 Example of use:
 
 Name convention: ee_version.jar -> ee_3.6.jar
-As snapshot: ./gradlew -b deploy.gradle uploadEnterprise -Pusername=username -Ppassword=XYZ 
-As release: ./gradlew -b deploy.gradle uploadEnterprise -Prelease=true -Pusername=username -Ppassword=XYZ
+As snapshot: ./gradlew uploadEnterprise -Pusername=username -Ppassword=XYZ 
+As release: ./gradlew uploadEnterprise -Prelease=true -Pusername=username -Ppassword=XYZ
 """
 
 uploadEnterprise.group='dotCMS Upload Version'
@@ -355,8 +379,8 @@ Parameters:
 Example of use:
 
 Name convention: eelic_version.jar -> eelic_3.6.jar
-As snapshot: ./gradlew -b deploy.gradle uploadLicense -Pusername=username -Ppassword=XYZ 
-As release: ./gradlew -b deploy.gradle uploadLicense -Prelease=true -Pusername=username -Ppassword=XYZ
+As snapshot: ./gradlew uploadLicense -Pusername=username -Ppassword=XYZ 
+As release: ./gradlew uploadLicense -Prelease=true -Pusername=username -Ppassword=XYZ
 """
 
 uploadLicense.group='dotCMS Upload Version'
@@ -380,8 +404,8 @@ Parameters:
 Example of use:
 
 Name convention: dotcms_version_hash.jar -> dotcms_3.6_a434224.jar
-As snapshot: ./gradlew -b deploy.gradle uploadDotcms -Pusername=username -Ppassword=XYZ -PincludeDependencies=true
-As release: ./gradlew -b deploy.gradle uploadDotcms -Prelease=true -Pusername=username -Ppassword=XYZ -PincludeDependencies=true
+As snapshot: ./gradlew uploadDotcms -Pusername=username -Ppassword=XYZ -PincludeDependencies=true
+As release: ./gradlew uploadDotcms -Prelease=true -Pusername=username -Ppassword=XYZ -PincludeDependencies=true
 """
 
 uploadDotcms.group='dotCMS Upload Version'
@@ -403,8 +427,8 @@ Parameters:
 Example of use:
 Name convention:                    starter_timestamp.zip -> starter_20140805.zip
 Name convention for empty starter:  starter_empty_timestamp.zip -> starter_empty_20140805.zip
-As snapshot: ./gradlew -b deploy.gradle uploadStarter -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/starter_20140805.zip
-As release: ./gradlew -b deploy.gradle uploadStarter -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/starter_20140805.zip
+As snapshot: ./gradlew uploadStarter -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/starter_20140805.zip
+As release: ./gradlew uploadStarter -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/starter_20140805.zip
 """
 
 uploadStarter.group='dotCMS Upload Version'
@@ -425,8 +449,8 @@ Parameters:
 
 Example of use:
 Name convention: ant-tooling_version.jar -> ant-tooling_1.1.jar
-As snapshot: ./gradlew -b deploy.gradle uploadAntTooling -Pusername=username -Ppassword=XYZ -Pfile=/project/path/ant-tooling/build/libs/ant-tooling_1.1.jar
-As release: ./gradlew -b deploy.gradle uploadAntTooling -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/ant-tooling/build/libs/ant-tooling_1.1.jar
+As snapshot: ./gradlew uploadAntTooling -Pusername=username -Ppassword=XYZ -Pfile=/project/path/ant-tooling/build/libs/ant-tooling_1.1.jar
+As release: ./gradlew uploadAntTooling -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/ant-tooling/build/libs/ant-tooling_1.1.jar
 
 NOTE: BEFORE GENERATING A NEW VERSION OF THE JAR FILE, ALL UNIT TESTS FOUND IN THE ANT-TOOLING REPO MUST BE RUN AND ALL OF THE MUST PASS. 
 """
