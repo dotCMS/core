@@ -93,10 +93,12 @@ export class DotExperimentsListStore
                 experiments
                     .filter((experiment) => filterStatus.includes(experiment.status))
                     .forEach((experiment) => {
-                        const status = grouped.find((item) => item.status === experiment.status);
+                        const statusGroup = grouped.find(
+                            (item) => item.status === experiment.status
+                        );
 
-                        if (status) {
-                            status.experiments.push(experiment);
+                        if (statusGroup) {
+                            statusGroup.experiments.push(experiment);
                         } else {
                             grouped.push({
                                 status: experiment.status,
