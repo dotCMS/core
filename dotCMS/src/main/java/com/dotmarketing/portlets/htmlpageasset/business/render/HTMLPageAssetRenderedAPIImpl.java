@@ -7,6 +7,7 @@ import com.dotcms.experiments.business.ConfigExperimentUtil;
 import com.dotcms.experiments.business.web.ExperimentWebAPI;
 import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.variant.business.web.VariantWebAPI.RenderContext;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -25,6 +26,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.filters.Constants;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRendered;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRenderedBuilder;
@@ -470,8 +472,15 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
         final Language language = request != null ? this.getCurrentLanguage(request) : this.languageAPI.getDefaultLanguage();
 
-        return this.htmlPageAssetAPI.findByIdLanguageFallback(id, language.getId(), mode.showLive, userAPI.getSystemUser(),
-                mode.respectAnonPerms);
+        final RenderContext renderContext = WebAPILocator.getVariantWebAPI()
+                .getRenderContext(language.getId(), id, mode, userAPI.getSystemUser());
+
+        final ContentletVersionInfo contentletVersionInfo = APILocator.getVersionableAPI()
+                .getContentletVersionInfo(id, renderContext.getCurrentLanguageId(), renderContext.getCurrentVariantKey())
+                .orElseThrow();
+
+        final String inode = mode.showLive ? contentletVersionInfo.getLiveInode() : contentletVersionInfo.getWorkingInode();
+        return this.htmlPageAssetAPI.findPage(inode, userAPI.getSystemUser(), false);
     }
 
     private Language getCurrentLanguage(final HttpServletRequest request) {

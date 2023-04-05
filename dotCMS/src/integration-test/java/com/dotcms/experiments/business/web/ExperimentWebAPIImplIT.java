@@ -10,7 +10,12 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ExperimentDataGen;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.experiments.business.web.SelectedExperiment.LookBackWindow;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
@@ -19,13 +24,16 @@ import com.dotcms.experiments.model.TargetingCondition;
 import com.dotcms.experiments.model.TrafficProportion;
 import com.dotcms.mock.response.DotCMSMockResponse;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.rules.model.LogicalOperator;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import java.time.Duration;
@@ -77,6 +85,253 @@ public class ExperimentWebAPIImplIT {
                 assertEquals(1, selectedExperiments.getExperiments().size());
                 assertEquals(experiment.id().get(), selectedExperiments.getExperiments().get(0).id());
                 assertEquals(htmlPageAsset.getURI(), selectedExperiments.getExperiments().get(0).pageUrl());
+                assertEquals("^(http|https):\\/\\/.*:.*\\/" + htmlPageAsset.getPageUrl() + "(\\?.*)?$", selectedExperiments.getExperiments().get(0).redirectPattern());
+
+                assertEquals(1, selectedExperiments.getIncludedExperimentIds().size());
+                assertEquals(experiment.id().get(), selectedExperiments.getIncludedExperimentIds().get(0));
+
+                assertTrue(selectedExperiments.getExcludedExperimentIds().isEmpty());
+
+                final LookBackWindow lookBackWindow = selectedExperiments.getExperiments().get(0)
+                        .getLookBackWindow();
+                assertNotNull(lookBackWindow);
+                assertNotNull(lookBackWindow.getValue());
+                assertEquals(TimeUnit.MINUTES.toMillis(30), lookBackWindow.getExpireMillis());
+
+            }
+        } finally {
+            ExperimentDataGen.end(experiment);
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentWebAPIImpl#isUserIncluded(HttpServletRequest, HttpServletResponse, List)}
+     * When: You have one experiment running with 100% of traffic allocation and without targeting
+     * and using a page with uri equals to /blog/index.
+     * Should: Return this experiment all the time and the redirect pattern should be equals to
+     * <code>^.*\/blog(\/index|\/)?(\?.*)?$</>
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void isUserIncludedIntoExperimentWithBlogIndexPage() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+        final Folder folder = new FolderDataGen().name("blog").site(host).nextPersisted();
+
+        final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(folder, template)
+                .pageURL("index")
+                .nextPersisted();
+
+        final Experiment experiment = new ExperimentDataGen()
+                .page(htmlPageAsset)
+                .trafficAllocation(100)
+                .nextPersisted();
+
+        try {
+            final Experiment experimentStarted = ExperimentDataGen.start(experiment);
+
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+
+            for (int i = 0; i < 100; i++) {
+                final DotCMSMockResponse response = new DotCMSMockResponse();
+
+                final SelectedExperiments selectedExperiments = WebAPILocator.getExperimentWebAPI()
+                        .isUserIncluded(request, response, null);
+
+                assertEquals(1, selectedExperiments.getExperiments().size());
+                assertEquals(experiment.id().get(), selectedExperiments.getExperiments().get(0).id());
+                assertEquals(htmlPageAsset.getURI(), selectedExperiments.getExperiments().get(0).pageUrl());
+                final String regexExpected = "^(http|https):\\/\\/.*:.*\\/blog(\\/index|\\/)?(\\?.*)?$";
+                assertEquals(regexExpected, selectedExperiments.getExperiments().get(0).redirectPattern());
+
+                assertEquals(1, selectedExperiments.getIncludedExperimentIds().size());
+                assertEquals(experiment.id().get(), selectedExperiments.getIncludedExperimentIds().get(0));
+
+                assertTrue(selectedExperiments.getExcludedExperimentIds().isEmpty());
+
+                final LookBackWindow lookBackWindow = selectedExperiments.getExperiments().get(0)
+                        .getLookBackWindow();
+                assertNotNull(lookBackWindow);
+                assertNotNull(lookBackWindow.getValue());
+                assertEquals(TimeUnit.MINUTES.toMillis(30), lookBackWindow.getExpireMillis());
+
+            }
+        } finally {
+            ExperimentDataGen.end(experiment);
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentWebAPIImpl#isUserIncluded(HttpServletRequest, HttpServletResponse, List)}
+     * When: You have one experiment running with 100% of traffic allocation and without targeting
+     * and using a page with uri equals to /index.
+     * Should: Return this experiment all the time and the redirect pattern should be equals to
+     * <code>^.*\/blog(\/index|\/)?(\?.*)?$</>
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void isUserIncludedIntoExperimentWithIndexPage() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template)
+                .pageURL("index")
+                .nextPersisted();
+
+        final Experiment experiment = new ExperimentDataGen()
+                .page(htmlPageAsset)
+                .trafficAllocation(100)
+                .nextPersisted();
+
+        try {
+            final Experiment experimentStarted = ExperimentDataGen.start(experiment);
+
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+
+            for (int i = 0; i < 100; i++) {
+                final DotCMSMockResponse response = new DotCMSMockResponse();
+
+                final SelectedExperiments selectedExperiments = WebAPILocator.getExperimentWebAPI()
+                        .isUserIncluded(request, response, null);
+
+                assertEquals(1, selectedExperiments.getExperiments().size());
+                assertEquals(experiment.id().get(), selectedExperiments.getExperiments().get(0).id());
+                assertEquals(htmlPageAsset.getURI(), selectedExperiments.getExperiments().get(0).pageUrl());
+                assertEquals("^(http|https):\\/\\/.*:.*(\\/index|\\/)?(\\?.*)?$", selectedExperiments.getExperiments().get(0).redirectPattern());
+
+                assertEquals(1, selectedExperiments.getIncludedExperimentIds().size());
+                assertEquals(experiment.id().get(), selectedExperiments.getIncludedExperimentIds().get(0));
+
+                assertTrue(selectedExperiments.getExcludedExperimentIds().isEmpty());
+
+                final LookBackWindow lookBackWindow = selectedExperiments.getExperiments().get(0)
+                        .getLookBackWindow();
+                assertNotNull(lookBackWindow);
+                assertNotNull(lookBackWindow.getValue());
+                assertEquals(TimeUnit.MINUTES.toMillis(30), lookBackWindow.getExpireMillis());
+
+            }
+        } finally {
+            ExperimentDataGen.end(experiment);
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentWebAPIImpl#isUserIncluded(HttpServletRequest, HttpServletResponse, List)}
+     * When: You have one experiment running with 100% of traffic allocation and without targeting
+     * and using a UrlMap page with uri equals to /store/products/{name}.
+     * Should: Return this experiment all the time and the redirect pattern should be equals to
+     * <code>^.*\/store\/products\/(.+)?(\?.*)?$/</>
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void isUserIncludedIntoExperimentWithDetailPage() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template)
+                .pageURL("index")
+                .nextPersisted();
+
+        new ContentTypeDataGen()
+                .host(host)
+                .detailPage(htmlPageAsset.getIdentifier())
+                .urlMapPattern("/store/products/{name}")
+                .nextPersisted();
+
+        final Experiment experiment = new ExperimentDataGen()
+                .page(htmlPageAsset)
+                .trafficAllocation(100)
+                .nextPersisted();
+
+        try {
+            final Experiment experimentStarted = ExperimentDataGen.start(experiment);
+
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+
+            for (int i = 0; i < 100; i++) {
+                final DotCMSMockResponse response = new DotCMSMockResponse();
+
+                final SelectedExperiments selectedExperiments = WebAPILocator.getExperimentWebAPI()
+                        .isUserIncluded(request, response, null);
+
+                assertEquals(1, selectedExperiments.getExperiments().size());
+                assertEquals(experiment.id().get(), selectedExperiments.getExperiments().get(0).id());
+                assertEquals(htmlPageAsset.getURI(), selectedExperiments.getExperiments().get(0).pageUrl());
+                assertEquals("^(http|https):\\/\\/.*:.*\\/store\\/products\\/(.+)(\\?.*)?$", selectedExperiments.getExperiments().get(0).redirectPattern());
+
+                assertEquals(1, selectedExperiments.getIncludedExperimentIds().size());
+                assertEquals(experiment.id().get(), selectedExperiments.getIncludedExperimentIds().get(0));
+
+                assertTrue(selectedExperiments.getExcludedExperimentIds().isEmpty());
+
+                final LookBackWindow lookBackWindow = selectedExperiments.getExperiments().get(0)
+                        .getLookBackWindow();
+                assertNotNull(lookBackWindow);
+                assertNotNull(lookBackWindow.getValue());
+                assertEquals(TimeUnit.MINUTES.toMillis(30), lookBackWindow.getExpireMillis());
+
+            }
+        } finally {
+            ExperimentDataGen.end(experiment);
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentWebAPIImpl#isUserIncluded(HttpServletRequest, HttpServletResponse, List)}
+     * When: You have one experiment running with 100% of traffic allocation and without targeting
+     * and using a UrlMap page what i use as detail page for two ContentType with urlMap patter
+     * equals to /store/products/{name} and /products/detail/{name}.
+     * Should: Return this experiment all the time and the redirect pattern should be equals to
+     * <code>^.*\/store\/products\/(.+)\/(\?.*)?|.*\/products\/detail\/(.+)\/(\?.*)?$</>
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void isUserIncludedIntoExperimentWithDetailPageAndTwoContentTypes() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template)
+                .pageURL("index")
+                .nextPersisted();
+
+        new ContentTypeDataGen()
+                .host(host)
+                .detailPage(htmlPageAsset.getIdentifier())
+                .urlMapPattern("/store/products/{name}")
+                .nextPersisted();
+
+        new ContentTypeDataGen()
+                .host(host)
+                .detailPage(htmlPageAsset.getIdentifier())
+                .urlMapPattern("/products/detail/{name}")
+                .nextPersisted();
+
+        final Experiment experiment = new ExperimentDataGen()
+                .page(htmlPageAsset)
+                .trafficAllocation(100)
+                .nextPersisted();
+
+        try {
+            final Experiment experimentStarted = ExperimentDataGen.start(experiment);
+
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+
+            for (int i = 0; i < 100; i++) {
+                final DotCMSMockResponse response = new DotCMSMockResponse();
+
+                final SelectedExperiments selectedExperiments = WebAPILocator.getExperimentWebAPI()
+                        .isUserIncluded(request, response, null);
+
+                assertEquals(1, selectedExperiments.getExperiments().size());
+                assertEquals(experiment.id().get(), selectedExperiments.getExperiments().get(0).id());
+                assertEquals(htmlPageAsset.getURI(), selectedExperiments.getExperiments().get(0).pageUrl());
+                assertEquals("^(http|https):\\/\\/.*:.*\\/store\\/products\\/(.+)(\\?.*)?|(http|https):\\/\\/.*:.*\\/products\\/detail\\/(.+)(\\?.*)?$",
+                        selectedExperiments.getExperiments().get(0).redirectPattern());
 
                 assertEquals(1, selectedExperiments.getIncludedExperimentIds().size());
                 assertEquals(experiment.id().get(), selectedExperiments.getIncludedExperimentIds().get(0));

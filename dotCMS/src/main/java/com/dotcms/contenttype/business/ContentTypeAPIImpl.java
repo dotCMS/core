@@ -543,6 +543,15 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     return contentTypeFactory.findUrlMapped();
   }
 
+  @CloseDBIfOpened
+  @Override
+  public List<String> findUrlMappedPattern(final String pageIdentifier) throws DotDataException{
+
+    DotPreconditions.checkArgument(UtilMethods.isSet(pageIdentifier), "pageIdentifier is required");
+
+    return contentTypeFactory.findUrlMappedPattern(pageIdentifier);
+  }
+
   @WrapInTransaction
   @Override
   public ContentType save(ContentType contentType, List<Field> newFields)
