@@ -287,6 +287,7 @@ public class URLMapAPIImpl implements URLMapAPI {
             }
 
             contentlet = contentletSearches.get(idx);
+            checkContentPermission(context, contentlet);
 
             final String currentVariantId = WebAPILocator.getVariantWebAPI().currentVariantId();
 
