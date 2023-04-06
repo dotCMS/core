@@ -29,7 +29,9 @@ import { DotExperimentsConfigurationGoalSelectComponent } from './dot-experiment
 const messageServiceMock = new MockDotMessageService({
     'experiments.configure.goals.sidebar.header': 'Select a goal',
     'experiments.configure.goals.sidebar.header.button': 'Apply',
-    'experiments.configure.goals.name.default': 'Primary goal'
+    'experiments.configure.goals.name.default': 'Primary goal',
+    'experiments.goal.reach_page.name': 'Reach a page',
+    'experiments.goal.bounce_rate.name': 'Bounce rate'
 });
 
 const EXPERIMENT_MOCK = getExperimentMock(0);
@@ -84,6 +86,41 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
         expect(spectator.query(byTestId('goal-name-input'))).toHaveAttribute('dotAutofocus');
         expect((spectator.query(byTestId('goal-name-input')) as HTMLInputElement).value).toEqual(
             'Primary goal'
+        );
+    });
+
+    it('should set the default name when type change', () => {
+        expect((spectator.query(byTestId('goal-name-input')) as HTMLInputElement).value).toEqual(
+            'Primary goal'
+        );
+
+        const optionsRendered = spectator.queryAll(byTestId('dot-options-item-header'));
+
+        spectator.click(optionsRendered[0]);
+
+        expect((spectator.query(byTestId('goal-name-input')) as HTMLInputElement).value).toEqual(
+            'Bounce rate'
+        );
+
+        spectator.click(optionsRendered[1]);
+
+        expect((spectator.query(byTestId('goal-name-input')) as HTMLInputElement).value).toEqual(
+            'Reach a page'
+        );
+    });
+
+    it('should not change the name if the user set one', () => {
+        const customName = 'Test Goal';
+
+        spectator.typeInElement(customName, spectator.query(byTestId('goal-name-input')));
+
+        const optionsRendered = spectator.queryAll(byTestId('dot-options-item-header'));
+
+        spectator.click(optionsRendered[0]);
+        spectator.click(optionsRendered[1]);
+
+        expect((spectator.query(byTestId('goal-name-input')) as HTMLInputElement).value).toEqual(
+            customName
         );
     });
 
