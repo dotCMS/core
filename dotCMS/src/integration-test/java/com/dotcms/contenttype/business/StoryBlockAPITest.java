@@ -231,7 +231,22 @@ public class StoryBlockAPITest extends IntegrationTestBase {
         Assert.assertTrue(contentletIdList.isEmpty());
     }
     
+    @Test
+    public void test_get_refreshStoryBlockValueReferences_with_bad_content_value()  {
     
+        final Object newStoryBlockJson1        = "{\"test\":\"test\"}";
+        
+        StoryBlockReferenceResult result = APILocator.getStoryBlockAPI().refreshStoryBlockValueReferences(newStoryBlockJson1);
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result.isRefreshed());
+        
+        final Object newStoryBlockJson2        = "{\"content\":\"test\"}";
+        result = APILocator.getStoryBlockAPI().refreshStoryBlockValueReferences(newStoryBlockJson2);
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result.isRefreshed());
+    
+        
+    }
     
     
 }

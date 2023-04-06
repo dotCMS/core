@@ -63,8 +63,11 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         boolean refreshed = false;
         try {
             final LinkedHashMap<String, Object> blockEditorMap = this.toMap(storyBlockValue);
-            final List<Map<String, Object>> contentsMap = (List) blockEditorMap.get(CONTENT_KEY);
-            for (final Map<String, Object> contentMap : contentsMap) {
+            final Object contentsMap = blockEditorMap.get(CONTENT_KEY);
+            if(!UtilMethods.isSet(contentsMap) || !(contentsMap instanceof List)) {
+                return new StoryBlockReferenceResult(true, storyBlockValue);
+            }
+            for (final Map<String, Object> contentMap : (List<Map<String, Object>>) contentsMap) {
                 if (UtilMethods.isSet(contentMap)) {
                     final String type = contentMap.get(TYPE_KEY).toString();
                     if (allowedTypes.contains(type)) {
@@ -78,8 +81,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         } catch (final Exception e) {
             final String errorMsg = String.format("An error occurred when refreshing Story Block Contentlet " +
                                                           "references: %s", e.getMessage());
-            Logger.error(StoryBlockAPIImpl.class, errorMsg);
-            Logger.debug(StoryBlockAPIImpl.class, errorMsg, e);
+            Logger.warnAndDebug(StoryBlockAPIImpl.class, errorMsg,e);
             throw new DotRuntimeException(errorMsg, e);
         }
         // Return the original value in case no data was refreshed
