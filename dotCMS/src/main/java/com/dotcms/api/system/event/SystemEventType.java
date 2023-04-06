@@ -258,6 +258,6 @@ public enum SystemEventType {
 	// Osgi bundles push on the load folder
 	OSGI_BUNDLES_LOADED,
 
-	// Analytics App
+	SESSION_LOGOUT, // Analytics App
 	ANALYTICS_APP
 }

@@ -56,6 +56,10 @@ export class LoginService {
             this.logOutUser();
             this.clearExperimentPersistence();
         });
+
+        dotcmsEventsService.subscribeTo('SESSION_LOGOUT').subscribe(() => {
+            this.clearExperimentPersistence();
+        });
     }
 
     private _auth$: Subject<Auth> = new Subject<Auth>();
