@@ -177,7 +177,7 @@ public class PublisherAPIImplTest {
         prepare();
 
         return  new TestAsset[]{
-                /*getContentTypeWithHost(),
+                getContentTypeWithHost(),
                 getTemplateWithDependencies(),
                 getContainerWithDependencies(),
                 getFolderWithDependencies(),
@@ -185,9 +185,9 @@ public class PublisherAPIImplTest {
                 getLinkWithDependencies(),
                 getWorkflowWithDependencies(),
                 getLanguageWithDependencies(),
-                getRuleWithDependencies(),*/
-                getContentWithSeveralVersions()/*,
-                getUser()*/
+                getRuleWithDependencies(),
+                getContentWithSeveralVersions(),
+                getUser()
         };
     }
 
