@@ -23,6 +23,7 @@ import {
     mockSites,
     SiteService
 } from '@dotcms/dotcms-js';
+import { ComponentStatus } from '@dotcms/dotcms-models';
 import {
     dotcmsContentletMock,
     dotcmsContentTypeBasicMock,
@@ -102,6 +103,7 @@ const storeMock = {
     showActionsMenu: jasmine.createSpy(),
     setInitialStateData: jasmine.createSpy(),
     limitFavoritePages: jasmine.createSpy(),
+    setPortletStatus: jasmine.createSpy(),
     updateSinglePageData: jasmine.createSpy(),
     vm$: of({
         favoritePages: {
@@ -122,7 +124,8 @@ const storeMock = {
             items: [],
             addToBundleCTId: 'test1'
         },
-        pageTypes: []
+        pageTypes: [],
+        portletStatus: ComponentStatus.LOADED
     })
 };
 
@@ -220,12 +223,13 @@ describe('DotPagesComponent', () => {
         });
     });
 
-    it('should call goToUrl method from DotPagesFavoritePanel2', () => {
+    it('should call goToUrl method from DotPagesFavoritePanel and throw User permission error', () => {
         dotPageRenderService.checkPermission = jasmine.createSpy().and.returnValue(of(false));
 
         const elem = de.query(By.css('dot-pages-favorite-panel'));
         elem.triggerEventHandler('goToUrl', '/page/1?lang=1');
 
+        expect(store.setPortletStatus).toHaveBeenCalledWith(ComponentStatus.LOADED);
         expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(
             new HttpErrorResponse(
                 new HttpResponse({
@@ -265,6 +269,7 @@ describe('DotPagesComponent', () => {
         const elem = de.query(By.css('dot-pages-listing-panel'));
         elem.triggerEventHandler('goToUrl', '/page/1?lang=1');
 
+        expect(store.setPortletStatus).toHaveBeenCalledWith(ComponentStatus.LOADING);
         expect(dotRouterService.goToEditPage).toHaveBeenCalledWith({
             lang: '1',
             url: '/page/1'

@@ -14,7 +14,7 @@ import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-er
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotEventsService, DotPageRenderService } from '@dotcms/data-access';
 import { HttpCode, SiteService } from '@dotcms/dotcms-js';
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { DotPagesState, DotPageStore } from './dot-pages-store/dot-pages.store';
 
@@ -59,6 +59,8 @@ export class DotPagesComponent implements OnInit, OnDestroy {
      * @memberof DotPagesComponent
      */
     goToUrl(url: string): void {
+        this.store.setPortletStatus(ComponentStatus.LOADING);
+
         const splittedUrl = url.split('?');
         const urlParams = { url: splittedUrl[0] };
         const searchParams = new URLSearchParams(splittedUrl[1]);
@@ -83,6 +85,7 @@ export class DotPagesComponent implements OnInit, OnDestroy {
                         })
                     );
                     this.dotHttpErrorManagerService.handle(error);
+                    this.store.setPortletStatus(ComponentStatus.LOADED);
                 }
             });
     }

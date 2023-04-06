@@ -13,3 +13,56 @@
     padding: $spacing-4 $spacing-5 0;
     width: 100%;
 }
+
+.dot-pages__spinner-container {
+    height: 100%;
+    position: relative;
+}
+
+.dot-pages__spinner-overlay {
+    align-content: center;
+    background-color: $white;
+    display: flex;
+    flex-wrap: wrap;
+    height: calc(100% - $spacing-7);
+    justify-content: center;
+    position: absolute;
+    width: calc(100% - $spacing-8);
+}
+
+::ng-deep circle.p-progress-spinner-circle {
+    animation: p-progress-spinner-dash 1.5s ease-in-out infinite,
+        p-progress-spinner-color 6s ease-in-out infinite;
+}
+
+@keyframes p-progress-spinner-dash {
+    0% {
+        stroke-dasharray: 1, 200;
+        stroke-dashoffset: 0;
+    }
+    50% {
+        stroke-dasharray: 89, 200;
+        stroke-dashoffset: -35px;
+    }
+    100% {
+        stroke-dasharray: 89, 200;
+        stroke-dashoffset: -124px;
+    }
+}
+
+@keyframes p-progress-spinner-color {
+    100%,
+    0% {
+        stroke: $color-palette-primary-400;
+    }
+    40% {
+        stroke: $color-palette-primary-400;
+    }
+    66% {
+        stroke: $color-palette-primary-400;
+    }
+    80%,
+    90% {
+        stroke: $color-palette-primary-400;
+    }
+}
