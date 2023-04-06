@@ -44,7 +44,7 @@ public class FocalPointImageFilter extends ImageFilter {
     }
 
     @Override
-    protected File getResultsFile(final File file, final Map<String, String[]> parameters) throws DotRuntimeException {
+    public File getResultsFile(final File file, final Map<String, String[]> parameters) {
         return getResultsFile(file, parameters, UtilMethods.getFileExtension(file.getName()));
     }
 

@@ -1,9 +1,12 @@
 package com.dotmarketing.portlets.contentlet.business.exporter;
 
 import java.io.File;
+import java.util.Collection;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Semaphore;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.image.filter.ImageFilter;
 import com.dotmarketing.image.filter.ImageFilterApiImpl;
 import com.dotmarketing.image.filter.PDFImageFilter;
@@ -52,12 +55,21 @@ public class ImageFilterExporter implements BinaryContentExporter {
             
             // run pdf filter first (if a pdf)
             if(!filters.isEmpty() && "pdf".equals(UtilMethods.getFileExtension(file.getName())) && !filters.containsKey("pdf")) {
-                file = new PDFImageFilter().runFilter(file, parameters);
+                file = runFilter(new PDFImageFilter(), file, parameters);
+            }
+
+            Optional<File> tempFile = alreadyGenerated(filters.values(), file, parameters);
+
+            //short circuit if we already have it generated
+            if (tempFile.isPresent()) {
+                return new BinaryContentExporterData(tempFile.get());
             }
             
             for (final Class<ImageFilter> filter : filters.values()) {
                 errorClass=filter;
-                file = runFilter(filter, file, parameters);
+                final ImageFilter imageFilter =  filter.getDeclaredConstructor().newInstance();
+
+                file = runFilter(imageFilter, file, parameters);
             }
 
             return new BinaryContentExporterData(file);
@@ -68,9 +80,9 @@ public class ImageFilterExporter implements BinaryContentExporter {
         }
 
     }
-    
-    
-    private File runFilter(Class<ImageFilter> clazz, final File fileIn,final Map<String, String[]> parameters) throws Exception {
+
+
+    private File runFilter(ImageFilter imageFilter, final File fileIn,final Map<String, String[]> parameters) {
         
         boolean canRun=false;
         try {
@@ -80,13 +92,12 @@ public class ImageFilterExporter implements BinaryContentExporter {
             
             if(!canRun) {
                 Logger.warn(getClass(), "Image permits exhausted : " + allowedRequests + "/" + (allowedRequests-semaphore.availablePermits()));
-                
-                Try.run(()->{HttpServletResponseThreadLocal.INSTANCE.getResponse().setHeader("cache-control", "max-age=0");});
+                Try.run(()->HttpServletResponseThreadLocal.INSTANCE.getResponse().setHeader("cache-control", "max-age=0"));
                 
                 return fileIn;
                 
             }
-            final ImageFilter imageFilter =  clazz.getDeclaredConstructor().newInstance();
+
             return imageFilter.runFilter(fileIn, parameters);
         } 
         finally {
@@ -94,6 +105,24 @@ public class ImageFilterExporter implements BinaryContentExporter {
                 semaphore.release();
             }
         }
+    }
+
+    private Optional<File> alreadyGenerated(final Collection<Class<ImageFilter>> clazzes, final File fileIn,
+                                            final Map<String, String[]> parameters)  {
+
+        File fileToReturn = fileIn;
+
+        for (final Class<ImageFilter> filter : clazzes) {
+            final ImageFilter imageFilter =  Try.of(()-> filter.getDeclaredConstructor().newInstance()).getOrElseThrow(DotRuntimeException::new);
+            fileToReturn  = imageFilter.getResultsFile(fileToReturn, parameters);
+
+
+        }
+
+        if (fileToReturn == null || ! fileToReturn.exists() ||  fileToReturn.length() < 50) {
+            return Optional.empty();
+        }
+        return Optional.of(fileToReturn);
     }
 
     
