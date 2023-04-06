@@ -288,17 +288,26 @@ public class URLMapAPIImpl implements URLMapAPI {
 
             contentlet = contentletSearches.get(idx);
 
-            final RenderContext renderContext = WebAPILocator.getVariantWebAPI()
-                    .getRenderContext(context.getLanguageId(), contentlet.getIdentifier(), PageMode.LIVE, context.getUser());
+            final String currentVariantId = WebAPILocator.getVariantWebAPI().currentVariantId();
 
-            final ContentletVersionInfo contentletVersionInfo = APILocator.getVersionableAPI()
-                    .getContentletVersionInfo(contentlet.getIdentifier(),
-                            renderContext.getCurrentLanguageId(),
-                            renderContext.getCurrentVariantKey())
-                    .orElseThrow();
+            if (!VariantAPI.DEFAULT_VARIANT.name().equals(currentVariantId)) {
 
-            contentlet = APILocator.getContentletAPI().find(contentletVersionInfo.getLiveInode(),
-                    context.getUser(), false);
+                final RenderContext renderContext = WebAPILocator.getVariantWebAPI()
+                        .getRenderContext(context.getLanguageId(), contentlet.getIdentifier(),
+                                context.getMode(), context.getUser());
+
+                final ContentletVersionInfo contentletVersionInfo = APILocator.getVersionableAPI()
+                        .getContentletVersionInfo(contentlet.getIdentifier(),
+                                renderContext.getCurrentLanguageId(),
+                                renderContext.getCurrentVariantKey())
+                        .orElseThrow();
+
+                final String inode = context.getMode().showLive
+                        ? contentletVersionInfo.getLiveInode()
+                        : contentletVersionInfo.getWorkingInode();
+
+                contentlet = APILocator.getContentletAPI().find(inode, context.getUser(), false);
+            }
         }
 
        final Contentlet finalContentlet = contentlet;
