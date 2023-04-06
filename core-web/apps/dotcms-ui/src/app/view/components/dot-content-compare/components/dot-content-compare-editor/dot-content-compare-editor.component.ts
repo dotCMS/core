@@ -9,6 +9,7 @@ import { DotBlockEditorComponent } from '@dotcms/block-editor';
 })
 export class DotContentCompareEditorComponent implements AfterViewInit {
     @ViewChild('blockEditor') blockEditor: DotBlockEditorComponent;
+
     @Input() data: DotContentCompareTableData;
     @Input() showDiff: boolean;
     @Input() field: string;
@@ -16,14 +17,13 @@ export class DotContentCompareEditorComponent implements AfterViewInit {
 
     HTMLWorking: string;
     HTMLCompare: string;
-
     ngAfterViewInit(): void {
         setTimeout(() => {
-            this.blockEditor.editor.commands.setContent(this.data.working[this.field]);
-            this.HTMLWorking = this.blockEditor.editor.getHTML();
+            this.blockEditor?.editor?.commands.setContent(this.data.working[this.field]);
+            this.HTMLWorking = this.blockEditor?.editor?.getHTML();
 
-            this.blockEditor.editor.commands.setContent(this.data.compare[this.field]);
-            this.HTMLCompare = this.blockEditor.editor.getHTML();
+            this.blockEditor?.editor?.commands.setContent(this.data.compare[this.field]);
+            this.HTMLCompare = this.blockEditor?.editor.getHTML();
         }, 0);
     }
 }
