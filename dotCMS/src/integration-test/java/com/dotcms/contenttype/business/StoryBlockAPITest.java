@@ -200,4 +200,38 @@ public class StoryBlockAPITest extends IntegrationTestBase {
         Assert.assertNotNull(contentletIdList);
         Assert.assertTrue(contentletIdList.isEmpty());
     }
+    
+    /**
+     * Method to test: {@link StoryBlockAPI#getDependencies(Object)}
+     * Given Scenario: Test a story block value that is a json (html in this case) see (https://github.com/dotCMS/core/issues/24299)
+     * ExpectedResult: Do not throw exception and must return zero dependencies
+     */
+    @Test
+    public void test_get_dependencies_with_empty_json_value()  {
+
+        final Object newStoryBlockJson1        = "{\"test\":\"test\"}";
+
+        final List<String> contentletIdList = APILocator.getStoryBlockAPI().getDependencies(newStoryBlockJson1);
+        Assert.assertNotNull(contentletIdList);
+        Assert.assertTrue(contentletIdList.isEmpty());
+    }
+    
+    /**
+     * Method to test: {@link StoryBlockAPI#getDependencies(Object)}
+     * Given Scenario: Test a story block value that is a json (html in this case) see (https://github.com/dotCMS/core/issues/24299)
+     * ExpectedResult: Do not throw exception and must return zero dependencies
+     */
+    @Test
+    public void test_get_dependencies_with_bad_content_value()  {
+
+        final Object newStoryBlockJson1        = "{\"content\":\"test\"}";
+
+        final List<String> contentletIdList = APILocator.getStoryBlockAPI().getDependencies(newStoryBlockJson1);
+        Assert.assertNotNull(contentletIdList);
+        Assert.assertTrue(contentletIdList.isEmpty());
+    }
+    
+    
+    
+    
 }
