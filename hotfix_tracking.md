@@ -32,3 +32,4 @@ This maintenance release includes the following code fixes:
 23. https://github.com/dotCMS/core/issues/23889 : Design Template Permissions Tab Doesn't Load #23889
 24. https://github.com/dotCMS/core/issues/23807 : Make Image Permits less restrictive #23807
 25. https://github.com/dotCMS/core/issues/23915 : Increase Password Hash Iterations #23915
+26. https://github.com/dotCMS/core/issues/24093 : Create background task that converts fat content into json content #24093

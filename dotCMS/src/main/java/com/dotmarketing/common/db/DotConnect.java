@@ -541,9 +541,14 @@ public class DotConnect {
             return addObject(json);
         }
 
-        final String jsonStr = Try.of(()->
-                        mapper.writeValueAsString(json))
-                .getOrNull();
+        final String jsonStr;
+        if (!(json instanceof String)) {
+            jsonStr = Try.of(() ->
+                            mapper.writeValueAsString(json))
+                    .getOrNull();
+        } else {
+            jsonStr = (String) json;
+        }
         if(DbConnectionFactory.isPostgres()) {
             PGobject jsonObject = new PGobject();
             jsonObject.setType("json");
@@ -572,9 +577,6 @@ public class DotConnect {
      */
     private void executeQuery(Connection conn) throws SQLException {
         ResultSet rs = null;
-        ResultSetMetaData rsmd = null;
-        results = new ArrayList<Object>();
-        objectResults = new ArrayList<Map<String, Object>>();
         Statement stmt = null;
         // perform some query optimizations
         String starter = SQL.substring(0, 10);
@@ -642,7 +644,6 @@ public class DotConnect {
                     afterQueryExecution = System.nanoTime();
                     if (rs != null) {
                         beforeMetadata = afterQueryExecution;
-                        rsmd = rs.getMetaData();
                         afterMetadata = System.nanoTime();
                     }
                 } else { // if it is a SELECT
@@ -650,7 +651,6 @@ public class DotConnect {
                     rs = statement.executeQuery();
                     afterQueryExecution = System.nanoTime();
                     beforeMetadata = afterQueryExecution;
-                    rsmd = rs.getMetaData();
                     afterMetadata = System.nanoTime();
                 }
             } else {
@@ -667,7 +667,6 @@ public class DotConnect {
                     rs = stmt.executeQuery(SQL);
                     afterQueryExecution = System.nanoTime();
                     beforeMetadata = afterQueryExecution;
-                    rsmd = rs.getMetaData();
                     afterMetadata = System.nanoTime();
                 }
             }
@@ -690,66 +689,7 @@ public class DotConnect {
                                 + paramList.toString());
             }
 
-            if (rs != null) {
-                // move to the starter row
-                for (int i = 0; i < startRow; i++) {
-                    rs.next();
-                }
-
-                int i = 0;
-
-                while (rs.next() && (maxRows <= 0 || i < maxRows)) {
-                    HashMap<String, String> vars = new HashMap<String, String>();
-                    HashMap<String, Object> objvars = new HashMap<String, Object>();
-
-                    for (int j = 1; j <= rsmd.getColumnCount(); j++) {
-                        String x = rsmd.getColumnLabel(j) + "";
-                        try {
-                            if ((rs.getString(x) == null) || rs.getString(x).equals("null")) {
-                                x = x.toLowerCase();
-                                vars.put(x, "");
-
-                                if (rs.getObject(x) instanceof java.sql.Clob) {
-                                    objvars.put(x, rs.getString(x));
-
-                                } else  if (DbConnectionFactory.isMsSql() && rs.getObject(x) instanceof microsoft.sql.DateTimeOffset){
-                                    microsoft.sql.DateTimeOffset timeOffset = (microsoft.sql.DateTimeOffset)rs.getObject(x);
-                                    objvars.put(x, timeOffset.getTimestamp());
-                                } else {
-                                    objvars.put(x, rs.getObject(x));
-                                }
-                            } else {
-                                x = x.toLowerCase();
-                                vars.put(x, rs.getString(x) + "");
-
-                                if (rs.getObject(x) instanceof java.sql.Clob) {
-                                    objvars.put(x, rs.getString(x));
-                                } else  if (DbConnectionFactory.isMsSql() && rs.getObject(x) instanceof microsoft.sql.DateTimeOffset){
-                                    microsoft.sql.DateTimeOffset timeOffset = (microsoft.sql.DateTimeOffset)rs.getObject(x);
-                                    objvars.put(x, timeOffset.getTimestamp());
-                                } else {
-                                    objvars.put(x, rs.getObject(x));
-                                }
-
-                                // objvars.put(x, rs.getObject(x));
-                            }
-                        } catch (SQLException e) {
-                            Logger.error(this,
-                                    "This is usually caused by bad data in the db Setting RS column value to empty: " + e.getMessage(), e);
-                            x = x.toLowerCase();
-                            vars.put(x, "");
-                            objvars.put(x, null);
-                        }
-                    }
-                    vars.put("rownumber", Integer.toString(i));
-                    objvars.put("rownumber", i);
-                    vars.put("oddoreven", Integer.toString((i % 2)));
-                    objvars.put("oddoreven", (i % 2));
-                    results.add(vars);
-                    objectResults.add(objvars);
-                    i++;
-                }
-            }
+            fromResultSet(rs);
         } finally {
             try {
                 if (rs != null)
@@ -768,6 +708,83 @@ public class DotConnect {
             }
         }
 
+    }
+
+    /**
+     * Sets the results and objectResults from a given ResultSet
+     *
+     * @param rs
+     * @throws SQLException
+     */
+    public void fromResultSet(ResultSet rs) throws SQLException {
+
+        results = new ArrayList<Object>();
+        objectResults = new ArrayList<Map<String, Object>>();
+        gotResult = true;
+
+        if (rs != null) {
+
+            var rsmd = rs.getMetaData();
+
+            // move to the starter row
+            for (int i = 0; i < startRow; i++) {
+                rs.next();
+            }
+
+            int i = 0;
+
+            while (rs.next() && (maxRows <= 0 || i < maxRows)) {
+                HashMap<String, String> vars = new HashMap<String, String>();
+                HashMap<String, Object> objvars = new HashMap<String, Object>();
+
+                for (int j = 1; j <= rsmd.getColumnCount(); j++) {
+                    String x = rsmd.getColumnLabel(j) + "";
+                    try {
+                        if ((rs.getString(x) == null) || rs.getString(x).equals("null")) {
+                            x = x.toLowerCase();
+                            vars.put(x, "");
+
+                            if (rs.getObject(x) instanceof java.sql.Clob) {
+                                objvars.put(x, rs.getString(x));
+
+                            } else if (DbConnectionFactory.isMsSql() && rs.getObject(x) instanceof microsoft.sql.DateTimeOffset) {
+                                microsoft.sql.DateTimeOffset timeOffset = (microsoft.sql.DateTimeOffset) rs.getObject(x);
+                                objvars.put(x, timeOffset.getTimestamp());
+                            } else {
+                                objvars.put(x, rs.getObject(x));
+                            }
+                        } else {
+                            x = x.toLowerCase();
+                            vars.put(x, rs.getString(x) + "");
+
+                            if (rs.getObject(x) instanceof java.sql.Clob) {
+                                objvars.put(x, rs.getString(x));
+                            } else if (DbConnectionFactory.isMsSql() && rs.getObject(x) instanceof microsoft.sql.DateTimeOffset) {
+                                microsoft.sql.DateTimeOffset timeOffset = (microsoft.sql.DateTimeOffset) rs.getObject(x);
+                                objvars.put(x, timeOffset.getTimestamp());
+                            } else {
+                                objvars.put(x, rs.getObject(x));
+                            }
+
+                            // objvars.put(x, rs.getObject(x));
+                        }
+                    } catch (SQLException e) {
+                        Logger.error(this,
+                                "This is usually caused by bad data in the db Setting RS column value to empty: " + e.getMessage(), e);
+                        x = x.toLowerCase();
+                        vars.put(x, "");
+                        objvars.put(x, null);
+                    }
+                }
+                vars.put("rownumber", Integer.toString(i));
+                objvars.put("rownumber", i);
+                vars.put("oddoreven", Integer.toString((i % 2)));
+                objvars.put("oddoreven", (i % 2));
+                results.add(vars);
+                objectResults.add(objvars);
+                i++;
+            }
+        }
     }
 
     /**
