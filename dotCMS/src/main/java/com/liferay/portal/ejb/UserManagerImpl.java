@@ -19,20 +19,8 @@
 
 package com.liferay.portal.ejb;
 
-import com.liferay.util.StringPool;
-import java.io.IOException;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
-
-import javax.mail.internet.InternetAddress;
-
 import com.dotcms.api.system.user.UserService;
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.rest.api.v1.authentication.url.UrlStrategy;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import com.dotcms.enterprise.AuthPipeProxy;
 import com.dotcms.enterprise.PasswordFactoryProxy;
 import com.dotcms.enterprise.PasswordFactoryProxy.AuthenticationStatus;
@@ -40,6 +28,7 @@ import com.dotcms.enterprise.de.qaware.heimdall.PasswordException;
 import com.dotcms.repackage.com.liferay.mail.ejb.MailManagerUtil;
 import com.dotcms.rest.api.v1.authentication.DotInvalidTokenException;
 import com.dotcms.rest.api.v1.authentication.ResetPasswordTokenUtil;
+import com.dotcms.rest.api.v1.authentication.url.UrlStrategy;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.SecurityUtils;
 import com.dotcms.util.SecurityUtils.DelayStrategy;
@@ -62,6 +51,7 @@ import com.liferay.portal.UserActiveException;
 import com.liferay.portal.UserEmailAddressException;
 import com.liferay.portal.UserIdException;
 import com.liferay.portal.UserPasswordException;
+import com.liferay.portal.auth.AuthException;
 import com.liferay.portal.auth.Authenticator;
 import com.liferay.portal.auth.PrincipalException;
 import com.liferay.portal.auth.PrincipalFinder;
@@ -81,6 +71,14 @@ import com.liferay.util.KeyValuePair;
 import com.liferay.util.StringUtil;
 import com.liferay.util.Validator;
 import com.liferay.util.mail.MailMessage;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import javax.mail.internet.InternetAddress;
+import java.io.IOException;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
 
 import static com.dotcms.util.CollectionsUtils.map;
 
@@ -115,16 +113,14 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 
     @CloseDBIfOpened
     @Override
-    public int authenticateByEmailAddress(String companyId, String emailAddress, String password) throws PortalException, SystemException {
-
-        return _authenticate(companyId, emailAddress, password, true);
+    public int authenticateByEmailAddress(final String companyId, final String emailAddress, final String password) throws PortalException, SystemException {
+        return this.authenticate(companyId, emailAddress, password, true);
     }
 
     @CloseDBIfOpened
     @Override
-    public int authenticateByUserId(String companyId, String userId, String password) throws PortalException, SystemException {
-
-        return _authenticate(companyId, userId, password, false);
+    public int authenticateByUserId(final String companyId, final String userId, final String password) throws PortalException, SystemException {
+        return this.authenticate(companyId, userId, password, false);
     }
 
     @Override
@@ -521,180 +517,278 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
         }
     }
 
-    // Private methods
-
     /**
      * Authenticates the user based on their e-mail or user ID.
-     * 
-     * @param companyId - The ID of the company that the user belongs to.
-     * @param login - The identification mechanism: The user e-mail, or the user ID.
-     * @param password - The user password.
-     * @param byEmailAddress - If the user authentication is performed against e-mail, set this to
-     *        {@code true}. If it's against the user ID, set to {@code false}.
+     *
+     * @param companyId      The ID of the company that the user belongs to.
+     * @param login          The identification mechanism: The user e-mail, or the user ID.
+     * @param password       The user password.
+     * @param byEmailAddress If the user authentication is performed against e-mail, set this to {@code true}. If it's
+     *                       against the user ID, set to {@code false}.
+     *
      * @return A status code indicating the result of the operation: {@link Authenticator#SUCCESS},
-     *         {@link Authenticator#FAILURE}, or {@link Authenticator#DNE}.
-     * @throws PortalException - There's a problem with the information provided by or retrieved for the
-     *         user.
-     * @throws SystemException - User information could not be updated.
+     * {@link Authenticator#FAILURE}, or {@link Authenticator#DNE}.
+     *
+     * @throws PortalException There's a problem with the information provided by or retrieved for the user.
+     * @throws SystemException User information could not be updated.
      */
-    private int _authenticate(String companyId, String login, String password, boolean byEmailAddress)
+    private int authenticate(final String companyId, String login, final String password, final boolean byEmailAddress)
             throws PortalException, SystemException {
-
         login = login.trim().toLowerCase();
+        Logger.debug(this, String.format("Authenticating user '%s'", login));
+        this.validateInputData(login, password, byEmailAddress);
+        Logger.debug(this, String.format("Running Login PRE authenticators by %s for User '%s'", byEmailAddress ?
+                        "email" :
+                        "user ID",
+                login));
+        int authResult = this.runCustomAuthenticators(companyId, login, password, byEmailAddress,
+                PropsUtil.getArray(PropsUtil.AUTH_PIPELINE_PRE));
+        final User user = this.findUser(companyId, login, byEmailAddress);
+        if (null == user) {
+            this.delayRequest(1);
+            return Authenticator.DNE;
+        }
+        this.checkPasswordExpiration(login, user);
+        if (authResult == Authenticator.SUCCESS) {
+            authResult = LoginFactory.passwordMatch(password, user) ? Authenticator.SUCCESS : Authenticator.FAILURE;
+            Logger.debug(this, String.format("Does password for User '%s' match? %s", login,
+                    authResult == Authenticator.SUCCESS));
+            if (authResult == Authenticator.SUCCESS) {
+                this.checkUserStatus(user);
+                Logger.debug(this, String.format("Running Login POST authenticators by %s for User '%s'",
+                        byEmailAddress ? "email" : "user ID", login));
+                authResult = this.runCustomAuthenticators(companyId, login, password, byEmailAddress,
+                        PropsUtil.getArray(PropsUtil.AUTH_PIPELINE_POST));
+                if (authResult == Authenticator.SUCCESS && user.getFailedLoginAttempts() > 0) {
+                    // User authenticated, reset failed attempts
+                    Logger.debug(this, String.format("Setting failed login attempts for user '%s' to zero.",
+                            user.getUserId()));
+                    user.setFailedLoginAttempts(0);
+                    UserUtil.update(user);
+                }
+            }
+        }
+        if (authResult == Authenticator.FAILURE) {
+            this.processFailedLogin(user, login, companyId, byEmailAddress);
+        }
+        return authResult;
+    }
 
-        Logger.debug(this, "Doing authentication for: " + login);
-
+    /**
+     * Validates that the incoming authentication parameters are valid.
+     *
+     * @param login          The user's email or ID.
+     * @param password       The human-readable user's password.
+     * @param byEmailAddress If the current authentication method is via email, set this to {@code true}. If it's
+     *                       done via User ID, set to {@code false}.
+     *
+     * @throws UserEmailAddressException The specified email address has an invalid format.
+     * @throws UserIdException           The specified User ID is null or empty.
+     * @throws UserPasswordException     The specified password is null or empty.
+     */
+    private void validateInputData(final String login, final String password, final boolean byEmailAddress) throws UserEmailAddressException, UserIdException, UserPasswordException {
         if (byEmailAddress) {
             if (!Validator.isEmailAddress(login)) {
-
-                Logger.error(this, "Invalid email throwing a UserEmailAddressException: " + login);
+                Logger.error(this, String.format("Email '%s' is not valid.", login));
                 throw new UserEmailAddressException();
             }
         } else {
             if (Validator.isNull(login)) {
-
-                Logger.error(this, "User can not be null, throwing UserIdException: " + login);
+                Logger.error(this, String.format("User Id/email '%s' cannot be null or empty.", login));
                 throw new UserIdException();
             }
         }
-
         if (Validator.isNull(password)) {
-
-            Logger.error(this, "Password can not be null, throwing UserPasswordException");
+            Logger.error(this, "Password cannot be null");
             throw new UserPasswordException(UserPasswordException.PASSWORD_INVALID);
         }
+    }
 
-        int authResult = Authenticator.FAILURE;
+    /**
+     * Executes the list of custom authenticators. Developers can execute them before and/or after the default
+     * authentication process in dotCMS, in case an additional security layer is required. If the array of
+     * authenticators is empty, the {@link Authenticator#SUCCESS} will be returned by default.
+     * <p>Here are the properties that can be used to declare such authenticators:
+     * <ul>
+     *     <li>Pre-Authenticators: {@link PropsUtil#AUTH_PIPELINE_PRE}</li>
+     *     <li>Post-Authenticators: {@link PropsUtil#AUTH_PIPELINE_POST}</li>
+     * </ul>
+     * </p>
+     *
+     * @param companyId      The current Company ID.
+     * @param login          The user's email or ID.
+     * @param password       The human-readable user's password.
+     * @param byEmailAddress If the current authentication method is via email, set this to {@code true}. If it's
+     *                       done via User ID, set to {@code false}.
+     * @param classes        The list of pre- or post-authenticator classes, specified in either the
+     *                       {@link PropsUtil#AUTH_PIPELINE_PRE} or {@link PropsUtil#AUTH_PIPELINE_POST} properties.
+     *
+     * @return The result of the authentication process: {@link Authenticator#SUCCESS}, {@link Authenticator#FAILURE},
+     * or {@link Authenticator#DNE}.
+     *
+     * @throws AuthException An error occurred when executing one of the authenticators.
+     */
+    private int runCustomAuthenticators(final String companyId, final String login, final String password,
+                                        final boolean byEmailAddress, final String[] classes) throws AuthException {
+        return byEmailAddress ? AuthPipeProxy.authenticateByEmailAddress(classes, companyId, login, password) :
+                AuthPipeProxy.authenticateByUserId(classes, companyId, login, password);
+    }
 
-        if (byEmailAddress) {
-
-            Logger.debug(this, "Doing PRE authentication by email address for: " + login);
-
-            authResult =
-                    AuthPipeProxy.authenticateByEmailAddress(PropsUtil.getArray(PropsUtil.AUTH_PIPELINE_PRE), companyId, login, password);
-        } else {
-
-            Logger.debug(this, "Doing PRE authentication by userId for: " + login);
-
-            authResult = AuthPipeProxy.authenticateByUserId(PropsUtil.getArray(PropsUtil.AUTH_PIPELINE_PRE), companyId, login, password);
-        }
-
+    /**
+     * Finds the User in dotCMS that matches the specified email or user ID.
+     *
+     * @param companyId      The current Company ID.
+     * @param login          The user's email or ID.
+     * @param byEmailAddress If the current authentication method is via email, set this to {@code true}. If it's done
+     *                       via User ID, set to {@code false}.
+     *
+     * @return The {@link User} matching the specified email or user ID.
+     *
+     * @throws SystemException An error occurred when trying to find the specified user.
+     */
+    private User findUser(final String companyId, final String login, final boolean byEmailAddress) throws SystemException {
         User user = null;
-
         try {
-            if (byEmailAddress) {
-                user = UserUtil.findByC_EA(companyId, login);
-            } else {
-                user = UserUtil.findByC_U(companyId, login);
-            }
-        } catch (NoSuchUserException nsue) {
-
-            Logger.error(this, "Could not find the user: " + nsue.getMessage() + ", return DNE");
-
-            return Authenticator.DNE;
+            user = byEmailAddress ? UserUtil.findByC_EA(companyId, login) : UserUtil.findByC_U(companyId, login);
+        } catch (final NoSuchUserException e) {
+            Logger.error(this, String.format("User '%s' does not exist.", login));
         }
+        return user;
+    }
 
-        if (user.isPasswordExpired()) {
-
-            Logger.debug(this, "The Password expired for: " + login);
-
+    /**
+     * Verifies whether the User's password has expired or not. If it has, then such a User must be updated for dotCMS
+     * to force them to rest their password the next time they log in.
+     *
+     * @param login The User's email or ID.
+     * @param user  The {@link User} being checked.
+     *
+     * @throws SystemException An error occurred when updating the User's password reset status.
+     */
+    private void checkPasswordExpiration(final String login, final User user) throws SystemException {
+        if (null != user && user.isPasswordExpired()) {
+            Logger.debug(this, String.format("Password for user '%s' has expired.", login));
             user.setPasswordReset(true);
-
             UserUtil.update(user);
         }
+    }
 
-        if (authResult == Authenticator.SUCCESS) {
-            if (LoginFactory.passwordMatch(password, user)) {
-
-                Logger.debug(this, "The Password match for: " + login);
-                authResult = Authenticator.SUCCESS;
-            } else {
-
-                Logger.debug(this, "The Password does not match for: " + login);
-                authResult = Authenticator.FAILURE;
-            }
+    /**
+     * Checks whether the specified User is currently active or not.
+     *
+     * @param user The {@link User} being checked.
+     *
+     * @throws UserActiveException The specified User is NOT active.
+     */
+    private void checkUserStatus(final User user) throws UserActiveException {
+        if (null != user && !user.getActive()) {
+            final String errorMsg = String.format("User '%s' logged in successfully, but it's not active.",
+                    user.getUserId());
+            Logger.error(this, errorMsg);
+            throw new UserActiveException(errorMsg);
         }
+    }
 
-        if (authResult == Authenticator.SUCCESS) {
-            if (!user.getActive()) {
-
-                Logger.error(this, "Login was success but user is not active, throwing UserActiveException");
-                throw new UserActiveException();
-            }
-
-            if (byEmailAddress) {
-
-                Logger.debug(this, "Doing POST authentication by email address for: " + login);
-
-                authResult = AuthPipeProxy.authenticateByEmailAddress(PropsUtil.getArray(PropsUtil.AUTH_PIPELINE_POST), companyId, login,
-                        password);
-            } else {
-
-                Logger.debug(this, "Doing POST authentication by userId for: " + login);
-
-                authResult =
-                        AuthPipeProxy.authenticateByUserId(PropsUtil.getArray(PropsUtil.AUTH_PIPELINE_POST), companyId, login, password);
-            }
+    /**
+     * Executes the optional custom on-failure handlers and updates the User information after a failed login attempt.
+     *
+     * @param user           The {@link User} that failed to log in.
+     * @param login          The user's email or ID.
+     * @param companyId      The current Company ID.
+     * @param byEmailAddress If the current authentication method is via email, set this to {@code true}. If it's
+     *                       done via User ID, set to {@code false}.
+     */
+    private void processFailedLogin(final User user, final String login, final String companyId,
+                                    final boolean byEmailAddress) {
+        Logger.debug(this, String.format("Authentication for user '%s' has failed.", login));
+        try {
+            this.runCustomOnFailureHandlers(companyId, login, byEmailAddress);
+            this.handleFailedLoginAttempt(user, login, companyId, byEmailAddress);
+        } catch (final Exception e) {
+            final String errorMsg = String.format("An error occurred when handling failed login for User '%s': " +
+                    "%s", login, e.getMessage());
+            Logger.error(this, errorMsg, e);
         }
-        if (authResult == Authenticator.SUCCESS) {
-            // User authenticated, reset failed attempts
-            Logger.debug(this, "Setting the user: " + user.getUserId() + ", failed login attempts: 0");
-            user.setFailedLoginAttempts(0);
-            UserUtil.update(user);
+    }
+
+    /**
+     * Executes the list of custom failure handlers. They can be executed after a given User has failed to authenticate.
+     * It can be specified via the following property: {@link PropsUtil#AUTH_FAILURE}.
+     *
+     * @param companyId      The current Company ID.
+     * @param login          The user's email or ID.
+     * @param byEmailAddress If the current authentication method is via email, set this to {@code true}. If it's
+     *                       done via User ID, set to {@code false}.
+     *
+     * @throws AuthException An error occurred when executing one of the authenticators.
+     */
+    private void runCustomOnFailureHandlers(String companyId, String login, boolean byEmailAddress) throws AuthException {
+        if (byEmailAddress) {
+            AuthPipeProxy.onFailureByEmailAddress(PropsUtil.getArray(PropsUtil.AUTH_FAILURE), companyId, login);
+        } else {
+            AuthPipeProxy.onFailureByUserId(PropsUtil.getArray(PropsUtil.AUTH_FAILURE), companyId, login);
         }
-        
-        
-        if (authResult == Authenticator.FAILURE) {
+    }
 
-            Logger.debug(this, "Authenticated failed for: " + login);
-
-            try {
-                if (byEmailAddress) {
-                    AuthPipeProxy.onFailureByEmailAddress(PropsUtil.getArray(PropsUtil.AUTH_FAILURE), companyId, login);
-                } else {
-                    AuthPipeProxy.onFailureByUserId(PropsUtil.getArray(PropsUtil.AUTH_FAILURE), companyId, login);
-                }
-
-                int failedLoginAttempts = user.getFailedLoginAttempts();
-                Logger.debug(this, "Current failed login attempts for: " + login + ", is: " + failedLoginAttempts);
-
-                if (Config.getBooleanProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY_ENABLED, true)) {
-
-                    Logger.debug(this, "Making a delay request for failed login attempts for: " + login + ", with: " + failedLoginAttempts);
-                    delayRequest(failedLoginAttempts);
-                }
-
-                user.setFailedLoginAttempts(++failedLoginAttempts);
-                Logger.debug(this, "Increasing failed login attempts for: " + login + ", with: " + user.getFailedLoginAttempts());
-
-                UserUtil.update(user);
-
-                int maxFailures = GetterUtil.get(PropsUtil.get(PropsUtil.AUTH_MAX_FAILURES_LIMIT), 0);
-
-                Logger.debug(this, "Max failures: " + maxFailures);
-
-                if ((failedLoginAttempts >= maxFailures) && (maxFailures != 0)) {
-
-                    if (byEmailAddress) {
-
-                        Logger.debug(this, "Reporting Max failures by email, maxFailures: " + maxFailures + ", failed login attemps: "
-                                + failedLoginAttempts);
-
-                        AuthPipeProxy.onMaxFailuresByEmailAddress(PropsUtil.getArray(PropsUtil.AUTH_MAX_FAILURES), companyId, login);
-                    } else {
-
-                        Logger.debug(this, "Reporting Max failures by userId, maxFailures: " + maxFailures + ", failed login attemps: "
-                                + failedLoginAttempts);
-
-                        AuthPipeProxy.onMaxFailuresByUserId(PropsUtil.getArray(PropsUtil.AUTH_MAX_FAILURES), companyId, login);
-                    }
-                }
-            } catch (Exception e) {
-                Logger.error(this, e.getMessage(), e);
-            }
+    /**
+     * Handles all the process related to a User that effectively failed to log into the current dotCMS environment. For
+     * instance:
+     * <ul>
+     *     <li>Applies a login-delaying strategy to avoid brute-force attacks.</li>
+     *     <li>Increases the counter of failed login attempts for the User.</li>
+     *     <li>If the maximum number of failed login attempts has been reached, it executes the custom handlers for
+     *     maximum failed login attempts.</li>
+     * </ul>
+     *
+     * @param user           The {@link User} that tried to log into dotCMS.
+     * @param login          The User's email or ID.
+     * @param companyId      The current Company ID.
+     * @param byEmailAddress If the current authentication method is via email, set this to {@code true}. If it's
+     *                       done via User ID, set to {@code false}.
+     *
+     * @throws SystemException User failed attempts data could not be saved.
+     * @throws AuthException   An error occurred when executing the handlers for maximum failed loin attempts.
+     */
+    private void handleFailedLoginAttempt(final User user, final String login, final String companyId, final boolean byEmailAddress) throws SystemException, AuthException {
+        int failedLoginAttempts = user.getFailedLoginAttempts();
+        Logger.debug(this, String.format("Current failed login attempts for user '%s' is %s", login,
+                failedLoginAttempts));
+        if (Config.getBooleanProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY_ENABLED, true)) {
+            Logger.debug(this, String.format("Delaying login attempts for user '%s'", login));
+            this.delayRequest(failedLoginAttempts);
         }
+        user.setFailedLoginAttempts(++failedLoginAttempts);
+        Logger.debug(this, String.format("Setting failed login attempts for user '%s' to %s", login,
+                user.getFailedLoginAttempts()));
+        UserUtil.update(user);
+        final int maxFailures = GetterUtil.get(PropsUtil.get(PropsUtil.AUTH_MAX_FAILURES_LIMIT), 0);
+        Logger.debug(this, String.format("Maximum failed login attempts is %s", maxFailures));
+        if ((failedLoginAttempts >= maxFailures) && (maxFailures != 0)) {
+            Logger.debug(this, String.format("User '%s' failed to authenticate via '%s' after %s failed attempts",
+                    login, byEmailAddress ? "email" : "user ID", failedLoginAttempts));
+            this.runCustomMaxFailuresHandlers(login, companyId, byEmailAddress);
+        }
+    }
 
-        return authResult;
+    /**
+     * Executes the list of custom failure handlers when the maximum number of login attempts has been reached. It can
+     * be specified via the following property: {@link PropsUtil#AUTH_MAX_FAILURES}.
+     *
+     * @param login          The user's email or ID.
+     * @param companyId      The current Company ID.
+     * @param byEmailAddress If the current authentication method is via email, set this to {@code true}. If it's
+     *                       done via User ID, set to {@code false}.
+     *
+     * @throws AuthException An error occurred when executing one of the authenticators.
+     */
+    private void runCustomMaxFailuresHandlers(final String login, final String companyId,
+                                              final boolean byEmailAddress) throws AuthException {
+        if (byEmailAddress) {
+            AuthPipeProxy.onMaxFailuresByEmailAddress(PropsUtil.getArray(PropsUtil.AUTH_MAX_FAILURES), companyId,
+                    login);
+        } else {
+            AuthPipeProxy.onMaxFailuresByUserId(PropsUtil.getArray(PropsUtil.AUTH_MAX_FAILURES), companyId, login);
+        }
     }
 
     /**

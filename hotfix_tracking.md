@@ -31,3 +31,4 @@ This maintenance release includes the following code fixes:
 22. https://github.com/dotCMS/core/issues/24245 : Publishing contentlet takes a long time when there are many locales/relationships #24245
 23. https://github.com/dotCMS/core/issues/23889 : Design Template Permissions Tab Doesn't Load #23889
 24. https://github.com/dotCMS/core/issues/23807 : Make Image Permits less restrictive #23807
+25. https://github.com/dotCMS/core/issues/23915 : Increase Password Hash Iterations #23915
