@@ -17,6 +17,8 @@ import { handleLoadVideoError } from './utils';
 const regexURL =
     '^((http|https)://)[-a-zA-Z0-9@:%._\\+~#?&//=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%._\\+~#?&//=]*)$';
 
+const regexYoutube = /(youtube\.com\/watch\?v=.*)|(youtu\.be\/.*)/;
+
 @Component({
     selector: 'dot-external-asset',
     templateUrl: './dot-external-asset.component.html',
@@ -51,10 +53,10 @@ export class DotExternalAssetComponent {
         });
 
         this.form.valueChanges.subscribe(({ url }) => {
-            if (this.type === 'video' && !this.isInvalid) {
-                this.tryToPlayVideo(url);
+            this.disableAction = false;
 
-                return;
+            if (this.type === 'video' && !this.isInvalid && !url.match(regexYoutube)) {
+                this.tryToPlayVideo(url);
             }
         });
 
@@ -79,7 +81,7 @@ export class DotExternalAssetComponent {
      * @memberof DotExternalAssetComponent
      */
     private tryToPlayVideo(url: string): void {
-        const video = document.createElement('video') as HTMLVideoElement;
+        const video = document.createElement('video');
 
         this.disableAction = true;
 

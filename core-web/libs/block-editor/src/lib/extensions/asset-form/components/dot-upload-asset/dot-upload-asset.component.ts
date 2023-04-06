@@ -20,7 +20,7 @@ import { DotCMSContentlet, EditorAssetTypes } from '@dotcms/dotcms-models';
 
 import { shakeAnimation } from './animations';
 
-import { DotImageService } from '../../../image-uploader/services/dot-image/dot-image.service';
+import { DotUploadFileService } from '../../../../shared';
 
 export enum STATUS {
     SELECT = 'SELECT',
@@ -72,7 +72,7 @@ export class DotUploadAssetComponent implements OnDestroy {
 
     constructor(
         private readonly sanitizer: DomSanitizer,
-        private readonly imageService: DotImageService,
+        private readonly dotUploadFileService: DotUploadFileService,
         private readonly cd: ChangeDetectorRef,
         private readonly el: ElementRef
     ) {}
@@ -112,10 +112,6 @@ export class DotUploadAssetComponent implements OnDestroy {
 
         this.cancelUploading();
         this.hide.emit(true);
-
-        return;
-
-        // this.preventClose.emit(false);
     }
     /**
      * End the uploading message animation
@@ -149,7 +145,7 @@ export class DotUploadAssetComponent implements OnDestroy {
     private uploadFile() {
         this.controller = new AbortController();
         this.status = STATUS.UPLOAD;
-        this.$uploadRequestSubs = this.imageService
+        this.$uploadRequestSubs = this.dotUploadFileService
             .publishContent({ data: this.file, signal: this.controller.signal })
             .pipe(
                 take(1),

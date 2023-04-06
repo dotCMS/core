@@ -23,6 +23,7 @@ import Placeholder from '@tiptap/extension-placeholder';
 import { TableRow } from '@tiptap/extension-table-row';
 import { TextAlign } from '@tiptap/extension-text-align';
 import { Underline } from '@tiptap/extension-underline';
+import { Youtube } from '@tiptap/extension-youtube';
 import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
 
 import {
@@ -44,9 +45,10 @@ import {
     DragHandler,
     DotFloatingButton,
     BubbleAssetFormExtension,
-    ImageUpload,
     FreezeScroll,
     FREEZE_SCROLL_KEY,
+    AssetUploader,
+    DotComands,
     NodeTypes
 } from '../../extensions';
 import { ContentletBlock, ImageNode, VideoNode } from '../../nodes';
@@ -162,10 +164,6 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
 
                 this.editor.on('update', ({ editor }) => {
                     this.valueChange.emit(editor.getJSON());
-                });
-
-                this.editor.on('transaction', ({ editor }) => {
-                    this.freezeScroll = FREEZE_SCROLL_KEY.getState(editor.view.state)?.freezeScroll;
                 });
 
                 this.editor.on('transaction', ({ editor }) => {
@@ -359,10 +357,17 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
                 allowedContentTypes: this.allowedContentTypes,
                 allowedBlocks: this._allowedBlocks
             }),
+            DotComands,
             Placeholder.configure({ placeholder: this.placeholder }),
+            Youtube.configure({
+                height: 300,
+                width: 400,
+                interfaceLanguage: 'us',
+                nocookie: true,
+                modestBranding: true
+            }),
             ActionsMenu(this.viewContainerRef, this.getParsedCustomBlocks()),
             DragHandler(this.viewContainerRef),
-            ImageUpload(this.injector, this.viewContainerRef),
             BubbleLinkFormExtension(this.viewContainerRef),
             DotBubbleMenuExtension(this.viewContainerRef),
             BubbleFormExtension(this.viewContainerRef),
@@ -372,7 +377,8 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             DotTableHeaderExtension(),
             TableRow,
             FreezeScroll,
-            CharacterCount
+            CharacterCount,
+            AssetUploader(this.injector, this.viewContainerRef)
         ];
     }
 

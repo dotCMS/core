@@ -115,6 +115,7 @@ public class ContentletLoader implements DotLoader {
         final String contentTypeId = content.get("formId") == null ? content.getContentType().id() : content.get("formId").toString();
         sb.append("#set($CONTENT_TYPE_ID='").append(contentTypeId).append("' )");
         sb.append("#set($CONTENT_LANGUAGE='").append(content.getLanguageId()).append("' )");
+        sb.append("#set($CONTENT_VARIANT='").append(content.getVariantId()).append("' )");
 
         if(mode == PageMode.EDIT_MODE) {
             final Optional<Integer> pageReferences =
