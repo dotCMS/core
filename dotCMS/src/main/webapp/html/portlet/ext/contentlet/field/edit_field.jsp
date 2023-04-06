@@ -820,13 +820,26 @@
 
     </script>
 
-    <% if (UtilMethods.isSet(value)) {
-            final boolean canUserWriteToContentlet = APILocator.getPermissionAPI().doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_WRITE, user);
-            if (canUserWriteToContentlet && resourceLink.isEditableAsText() && InodeUtils.isSet(binInode)) { %>
-                <%@ include file="/html/portlet/ext/contentlet/field/edit_file_asset_text_inc.jsp"%>
-         <% } %>
-    <% } else { %>
-            <%@ include file="/html/portlet/ext/contentlet/field/edit_file_asset_text_inc.jsp"%>
+
+    <%
+
+        if(UtilMethods.isSet(value) && UtilMethods.isSet(resourceLink)){
+
+          boolean canUserWriteToContentlet = APILocator.getPermissionAPI().doesUserHavePermission(contentlet,PermissionAPI.PERMISSION_WRITE, user);
+
+    %>
+
+        <%if(canUserWriteToContentlet){%>
+            <% if (resourceLink.isEditableAsText()) { %>
+                <%
+                    if (InodeUtils.isSet(binInode) && canUserWriteToContentlet) {
+
+                %>
+                    <%@ include file="/html/portlet/ext/contentlet/field/edit_file_asset_text_inc.jsp"%>
+                <%  } %>
+            <% } %>
+
+        <% } %>
     <% } %>
 
     <!--  END display -->
