@@ -9,6 +9,9 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.analytics.app.AnalyticsApp;
@@ -57,7 +60,6 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableList;
-
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
@@ -67,7 +69,6 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -1432,6 +1433,44 @@ public class ExperimentAPIImpIT {
     }
 
     /**
+     * Method to test: {@link ExperimentsAPIImpl#archive(String, User)}
+     * When: an Ended Experiment is archived
+     * Should: not call the validateSchedule method
+     */
+    @Test
+    public void testSaveExperiment_shouldNotValidateSchedule() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Metric metric = Metric.builder()
+                .name("Testing Metric")
+                .type(MetricType.BOUNCE_RATE)
+                .build();
+
+        final Goals goal = Goals.builder().primary(metric).build();
+
+        final Experiment experiment = new ExperimentDataGen()
+                .addVariant("Experiment Variant")
+                .page(experimentPage)
+                .addVariant("description")
+                .addGoal(goal)
+                .nextPersisted();
+
+
+        final ExperimentsAPI experimentsAPI = APILocator.getExperimentsAPI();
+        final ExperimentsAPI spiedExperimentAPI = spy(experimentsAPI);
+
+        final Experiment started = spiedExperimentAPI.start(experiment.id().orElseThrow(), APILocator.systemUser());
+        spiedExperimentAPI.end(started.id().orElseThrow(), APILocator.systemUser());
+        spiedExperimentAPI.archive(started.id().orElseThrow(), APILocator.systemUser());
+
+        verify(spiedExperimentAPI, never()).validateScheduling(started.scheduling().orElseThrow());
+
+     }
+
+     /**
      * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
      * When:
      * - You have three pages: A, B and C
