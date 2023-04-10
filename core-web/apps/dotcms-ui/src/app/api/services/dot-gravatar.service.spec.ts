@@ -1,3 +1,5 @@
+import * as md5 from 'md5';
+
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { TestBed, waitForAsync } from '@angular/core/testing';
 
@@ -23,7 +25,6 @@ const mockProfile = {
 
 describe('DotGravatarService', () => {
     let service: DotGravatarService;
-    // let httpClient: HttpClient;
     let httpTestingController: HttpTestingController;
 
     beforeEach(waitForAsync(() => {
@@ -33,7 +34,6 @@ describe('DotGravatarService', () => {
         });
 
         service = TestBed.inject(DotGravatarService);
-        // httpClient = TestBed.inject(HttpClient);
         httpTestingController = TestBed.inject(HttpTestingController);
     }));
 
@@ -46,25 +46,27 @@ describe('DotGravatarService', () => {
         });
 
         const reqMock = httpTestingController.expectOne((req) => {
-            return req.url === '//www.gravatar.com/1.json?';
+            return req.url === `//www.gravatar.com/${md5('1')}.json?`;
         });
         expect(reqMock.request.method).toBe('JSONP');
         reqMock.flush({
-            _body: {
-                entry: [mockProfile]
-            }
+            entry: [mockProfile]
         });
     });
 
-    it('Should return null', (done) => {
-        service.getPhoto('1').subscribe((avatarUrl: string) => {
-            expect(avatarUrl).toEqual(null);
-            done();
-        });
+    it('Should return trigger an error', (done) => {
+        service.getPhoto('1').subscribe(
+            () => null,
+            (e) => {
+                expect(e).toBeTruthy();
+                done();
+            }
+        );
 
         const reqMock = httpTestingController.expectOne((req) => {
-            return req.url === '//www.gravatar.com/1.json?';
+            return req.url === `//www.gravatar.com/${md5('1')}.json?`;
         });
-        reqMock.error(new ErrorEvent('Error'));
+
+        reqMock.flush({ status: 404, statusText: 'Not Found' });
     });
 });
