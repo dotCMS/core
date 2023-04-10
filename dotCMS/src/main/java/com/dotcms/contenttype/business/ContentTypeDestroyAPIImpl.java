@@ -24,6 +24,7 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.db.Params;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -36,6 +37,7 @@ import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -48,16 +50,70 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
 
     Lazy<Integer> partitionSizeProp = Lazy.of(()-> Config.getIntProperty("CT_DELETE_PARTITION_SIZE", 1));
 
+    Lazy<Integer> updateBatchSizeProp = Lazy.of(()-> Config.getIntProperty("CT_UPDATE_BATCH_SIZE", 5000));
+
+    private DotConnect updateStatement(final DotConnect dotConnect, final ContentType target,
+            final ContentType source, final int offset, final int limit) {
+        final String updateStatement = DbConnectionFactory.isPostgres() ?
+                String.format(
+                        "update contentlet c set structure_inode = ?, \n" +
+                                " contentlet_as_json = jsonb_set(contentlet_as_json,'{contentType}', '\"%s\"'::jsonb, false)  \n"
+                                +
+                                " where c.structure_inode = ? and  c.inode in ( \n" +
+                                "   select con.inode from contentlet con where con.structure_inode = ? order by con.inode  limit ? offset ?  \n"
+                                +
+                                ") ", target.inode())
+                :
+                        String.format(
+                                "update contentlet set structure_inode = ?, \n" +
+                                        " contentlet_as_json = json_modify(contentlet_as_json,'$.contentType', '%s')  \n"
+                                        +
+                                        " where structure_inode =  ?  and  c.inode in ( \n  " +
+                                        "   select con.inode from contentlet con where con.structure_inode = ? order by con.inode  limit ? offset ?  \n"
+                                        +
+                                        ") ", target.inode());
+
+        return dotConnect.setSQL(updateStatement)
+                .addParam(target.inode())
+                .addParam(source.inode())
+                .addParam(source.inode())
+                .addParam(limit)
+                .addParam(offset);
+    }
+
+    private String updateStatement(final ContentType target) {
+        return DbConnectionFactory.isPostgres() ?
+                String.format(
+                        "update contentlet c set structure_inode = ?, \n" +
+                                " contentlet_as_json = jsonb_set(contentlet_as_json,'{contentType}', '\"%s\"'::jsonb, false)  \n"
+                                +
+                                " where c.structure_inode = ? and  c.inode in ( \n" +
+                                "   select con.inode from contentlet con where con.structure_inode = ? order by con.inode  limit ? offset ?  \n"
+                                +
+                                ") ", target.inode())
+                :
+                        String.format(
+                                "update contentlet set structure_inode = ?, \n" +
+                                        " contentlet_as_json = json_modify(contentlet_as_json,'$.contentType', '%s')  \n"
+                                        +
+                                        " where structure_inode =  ?  and  c.inode in ( \n  " +
+                                        "   select con.inode from contentlet con where con.structure_inode = ? order by con.inode  limit ? offset ?  \n"
+                                        +
+                                        ") ", target.inode());
+    }
+
     /**
      * This method relocates all contentlets from a given structure to another structure And returns
      * the new structure purged from fields
      *
      * @param source
      * @param target
+     * @return
      * @throws DotDataException
      */
     @WrapInTransaction
-    public void relocateContentletsForDeletion(final ContentType source, final ContentType target) throws DotDataException {
+    public int relocateContentletsForDeletion(final ContentType source, final ContentType target)
+            throws DotDataException {
 
         if (!source.getClass().equals(target.getClass())) {
             throw new DotDataException(
@@ -68,26 +124,22 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
             );
         }
 
-        final DotConnect dotConnect = new DotConnect();
-
-        final String selectContentlets = "select c.inode from contentlet c where c.structure_inode =  ? \n";
-        dotConnect.setSQL(selectContentlets).addParam(source.inode());
-
-        String updateContentlet = String.format(
-                "update contentlet c set structure_inode = ?, \n" +
-                        " contentlet_as_json = jsonb_set(contentlet_as_json,'{contentType}', '\"%s\"'::jsonb, false)  \n" +
-                        " where c.structure_inode =  ? ", target.inode()
-        );
-
-        if(DbConnectionFactory.isMsSql()){
-            updateContentlet =  String.format(
-                    "update contentlet set structure_inode = ?, \n" +
-                            " contentlet_as_json = json_modify(contentlet_as_json,'$.contentType', '%s')  \n" +
-                            " where structure_inode =  ? ", target.inode());
+        final List<Params> params = new ArrayList<>();
+        final int count = countByType(source);
+        final long offsetPercentage = Math.round(count * 0.1);
+        final long offsetSize = Math.max( offsetPercentage, 100);
+        int offset = 0;
+        while (offset <= count) {
+            params.add(new Params(target.inode(), source.inode(), source.inode(),
+                    offset,
+                    offsetSize)
+            );
+            offset += offsetSize;
         }
 
-        dotConnect.setSQL(updateContentlet).addParam(target.inode()).addParam(source.inode())
-                .loadResult();
+        final DotConnect dotConnect = new DotConnect();
+        final int[] batch = dotConnect.executeBatch(updateStatement(target), params);
+        return Arrays.stream(batch).sum();
     }
 
 

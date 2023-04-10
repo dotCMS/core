@@ -230,11 +230,8 @@ import com.dotmarketing.startup.runonce.Task221007AddVariantIntoPrimaryKey;
 import com.dotmarketing.startup.runonce.Task221018CreateVariantFieldInMultiTree;
 import com.dotmarketing.startup.runonce.Task230119MigrateContentToProperPersonaTagAndRemoveDupTags;
 import com.dotmarketing.startup.runonce.Task230110MakeSomeSystemFieldsRemovableByBaseType;
-<<<<<<< HEAD
 import com.dotmarketing.startup.runonce.Task230328AddMarkedForDeletionColumn;
-=======
 import com.dotmarketing.startup.runonce.Task230320FixMissingContentletAsJSON;
->>>>>>> master
 import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayList;

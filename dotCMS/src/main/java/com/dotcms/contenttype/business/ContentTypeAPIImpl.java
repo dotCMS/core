@@ -247,6 +247,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     ContentType copy = ContentTypeBuilder.builder(type)
             .id(null)
             .variable(newName)
+            .markedForDeletion(true)
             .build();
 
     copy = contentTypeFactory.save(copy);
@@ -257,6 +258,11 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
             type.variable(), type.inode(), copy.variable(), copy.inode())
     );
     return copy;
+  }
+
+  @WrapInTransaction
+  void xyz(ContentType type ){
+
   }
 
     /**
@@ -276,12 +282,16 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
       final ContentType copy = makeDisposableCopy(type);
 
-      APILocator.getContentTypeDestroyAPI().relocateContentletsForDeletion(type, copy);
+      final int relocated = APILocator.getContentTypeDestroyAPI()
+              .relocateContentletsForDeletion(type, copy);
+
+      Logger.info(getClass(), String.format("::: Relocated (%s) contentlets from CT (%s) to CT (%s) :::",
+              relocated, type.variable(), copy.variable()));
+
       //Now that all the content is relocated, we're ready to destroy the original structure that held all content
       //System fields like Categories, Relationships and Containers will be deleted using the original structure
       contentTypeFactory.delete(type);
       //and destroy all associated content under the copy
-      contentTypeFactory.markForDeletion(copy);
 
       HibernateUtil.addCommitListener(() -> {
         try {
