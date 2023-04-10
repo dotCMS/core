@@ -101,6 +101,12 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit, OnDestro
         this.edit.emit(this.field);
     }
 
+    @HostListener('window:click', ['$event'])
+    onWindowClick($event: MouseEvent) {
+        $event.stopPropagation();
+        this.open = false;
+    }
+
     openAttr($event: MouseEvent) {
         $event.stopPropagation();
         this.open = true;
