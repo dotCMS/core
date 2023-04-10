@@ -34,18 +34,7 @@ export class DotEditPageResolver implements Resolve<DotPageRenderState> {
         if (data) {
             return of(data);
         } else {
-            const options: DotPageRenderOptions = {
-                url: route.queryParams.url,
-                ...(route.queryParams.language_id
-                    ? {
-                          viewAs: {
-                              language: route.queryParams.language_id
-                          }
-                      }
-                    : {})
-            };
-
-            return this.dotPageStateService.requestPage(options).pipe(
+            return this.dotPageStateService.requestPage(this.getDotPageRenderOptions(route)).pipe(
                 tap((state: DotPageRenderState) => {
                     if (!state) {
                         this.dotRouterService.goToSiteBrowser();
@@ -99,5 +88,17 @@ export class DotEditPageResolver implements Resolve<DotPageRenderState> {
         } else {
             return of(dotRenderedPageState);
         }
+    }
+
+    private getDotPageRenderOptions(route: ActivatedRouteSnapshot): DotPageRenderOptions {
+        return {
+            url: route.queryParams.url,
+            ...(route.queryParams.mode && { mode: route.queryParams.mode }),
+            ...(route.queryParams.language_id && {
+                viewAs: {
+                    language: route.queryParams.language_id
+                }
+            })
+        };
     }
 }

@@ -299,7 +299,7 @@ describe('DotEditContentComponent', () => {
                             queryParams: {
                                 url: '/an/url/test',
                                 variantName: EXPERIMENT_MOCK.trafficProportion.variants[1].id,
-                                editPageTab: 'preview'
+                                mode: DotPageMode.PREVIEW
                             }
                         },
                         data: of({})
@@ -439,7 +439,7 @@ describe('DotEditContentComponent', () => {
                     experimentId: EXPERIMENT_MOCK.id,
                     experimentStatus: EXPERIMENT_MOCK.status,
                     experimentName: EXPERIMENT_MOCK.name,
-                    mode: 'preview'
+                    mode: DotPageMode.PREVIEW
                 });
             });
 
