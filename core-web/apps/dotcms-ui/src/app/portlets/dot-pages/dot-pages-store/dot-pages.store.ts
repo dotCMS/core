@@ -460,13 +460,13 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         const { keyword, languageId, archived } = this.get().pages;
         const hostId = this.siteService.currentSite.identifier;
         const langQuery = languageId ? `+languageId:${languageId}` : '';
-        const archivedQuery = archived ? `+archived:${archived}` : '';
+        const archivedQuery = archived ? `+deleted:${archived}` : '';
         const identifierQuery = identifier ? `+identifier:${identifier}` : '';
         const keywordQuery = keyword
             ? `+(title:${keyword}* OR path:*${keyword}* OR urlmap:*${keyword}*)`
             : '';
 
-        return `+conhost:${hostId} +deleted:false  +(urlmap:* OR basetype:5) ${langQuery} ${archivedQuery} ${keywordQuery} ${identifierQuery}`;
+        return `+conhost:${hostId} +working:true  +(urlmap:* OR basetype:5) ${langQuery} ${archivedQuery} ${keywordQuery} ${identifierQuery}`;
     }
 
     private getPagesDataFn(
