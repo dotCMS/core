@@ -23,6 +23,7 @@ import {
     DotLicenseService,
     DotMessageService,
     DotPageTypesService,
+    DotPageWorkflowsActionsService,
     DotRenderMode,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService,
@@ -496,7 +497,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
 
         const { host_id, language_id, url } = urlParams;
 
-        return this.dotWorkflowsActionsService.getByUrl({ host_id, language_id, url });
+        return this.dotPageWorkflowsActionsService.getByUrl({ host_id, language_id, url });
     }
 
     private getPagesDataFn(
@@ -621,6 +622,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         private dialogService: DialogService,
         private dotLanguagesService: DotLanguagesService,
         private dotPushPublishDialogService: DotPushPublishDialogService,
+        private dotPageWorkflowsActionsService: DotPageWorkflowsActionsService,
         private dotWorkflowsActionsService: DotWorkflowsActionsService,
         private dotWorkflowEventHandlerService: DotWorkflowEventHandlerService,
         private dotWorkflowActionsFireService: DotWorkflowActionsFireService,

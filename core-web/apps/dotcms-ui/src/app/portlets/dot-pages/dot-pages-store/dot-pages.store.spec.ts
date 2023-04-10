@@ -24,6 +24,7 @@ import {
     DotLanguagesService,
     DotLicenseService,
     DotPageTypesService,
+    DotPageWorkflowsActionsService,
     DotRenderMode,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService,
@@ -97,6 +98,7 @@ describe('DotPageStore', () => {
     let dotESContentService: DotESContentService;
     let dotPageTypesService: DotPageTypesService;
     let dotWorkflowsActionsService: DotWorkflowsActionsService;
+    let dotPageWorkflowsActionsService: DotPageWorkflowsActionsService;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -110,6 +112,7 @@ describe('DotPageStore', () => {
                 DotWizardService,
                 DotWorkflowActionsFireService,
                 DotWorkflowsActionsService,
+                DotPageWorkflowsActionsService,
                 DotWorkflowEventHandlerService,
                 LoggerService,
                 StringUtils,
@@ -134,6 +137,7 @@ describe('DotPageStore', () => {
         dotESContentService = TestBed.inject(DotESContentService);
         dotPageTypesService = TestBed.inject(DotPageTypesService);
         dotWorkflowsActionsService = TestBed.inject(DotWorkflowsActionsService);
+        dotPageWorkflowsActionsService = TestBed.inject(DotPageWorkflowsActionsService);
 
         spyOn(dialogService, 'open').and.callThrough();
 
@@ -426,7 +430,7 @@ describe('DotPageStore', () => {
     });
 
     it('should get all Workflow actions and static actions from a favorite page', () => {
-        spyOn(dotWorkflowsActionsService, 'getByUrl').and.returnValue(
+        spyOn(dotPageWorkflowsActionsService, 'getByUrl').and.returnValue(
             of({ actions: mockWorkflowsActions, page: dotcmsContentletMock })
         );
         dotPageStore.showActionsMenu({
@@ -434,7 +438,7 @@ describe('DotPageStore', () => {
             actionMenuDomId: 'test1'
         });
 
-        expect(dotWorkflowsActionsService.getByUrl).toHaveBeenCalledWith({
+        expect(dotPageWorkflowsActionsService.getByUrl).toHaveBeenCalledWith({
             host_id: 'A',
             language_id: '1',
             url: '/index1'
