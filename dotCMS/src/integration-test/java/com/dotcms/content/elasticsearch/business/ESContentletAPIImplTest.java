@@ -2334,4 +2334,85 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         assertEquals("Variant 1 Version", contentletByIdentifierVariant2.getStringProperty("title"));
     }
 
+    @Test
+    public void test_getUrlMapForContentlet_with_bad_detail_page() throws Exception{
+
+        ContentType type =  new ContentTypeDataGen()
+                .detailPage("bad detail page")
+                .nextPersisted();
+
+        Contentlet content = new ContentletDataGen(type.id()).nextPersisted();
+
+        assertNotNull(content);
+        assertNotNull(content.getIdentifier());
+        assertEquals(content.getContentTypeId(), type.id());
+
+        assertNull(APILocator.getContentletAPI().getUrlMapForContentlet(content,user,false));
+
+    }
+    
+    
+    
+
+    @Test
+    public void test_getUrlMapForContentlet_with_detail_page_but_no_pattern() throws Exception {
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template_A = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset htmlPageAsset = createHtmlPageAsset(VariantAPI.DEFAULT_VARIANT,
+                        APILocator.getLanguageAPI().getDefaultLanguage(), host, template_A);
+
+        Identifier id = APILocator.getIdentifierAPI().find(htmlPageAsset.getIdentifier());
+        ContentType type = new ContentTypeDataGen().detailPage(htmlPageAsset.getIdentifier()).nextPersisted();
+
+        Contentlet content = new ContentletDataGen(type.id()).nextPersisted();
+        assertNotNull(content);
+        assertNotNull(content.getIdentifier());
+        assertEquals(content.getContentTypeId(), type.id());
+
+        assertEquals(id.getPath() + "?id=" + content.getInode(), contentletAPI.getUrlMapForContentlet(content, user, false));
+
+    }
+
+    @Test
+    public void test_getUrlMapForContentlet_with_detail_page_and_pattern() throws Exception {
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template_A = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset htmlPageAsset = createHtmlPageAsset(VariantAPI.DEFAULT_VARIANT,
+                        APILocator.getLanguageAPI().getDefaultLanguage(), host, template_A);
+
+        List<Field> fields = List.of(
+                        new FieldDataGen().name("title").velocityVarName("title").next(),
+                        new FieldDataGen().name("urlMap1").velocityVarName("urlMap1").next(),
+                        new FieldDataGen().name("urlMap2").velocityVarName("urlMap2").next());
+        
+        
+        ContentType type = new ContentTypeDataGen()
+                        .detailPage(htmlPageAsset.getIdentifier())
+                        .urlMapPattern("/testing/{urlMap1}/{urlMap2}")
+                        .fields(fields)
+                        .nextPersisted();
+
+
+        
+        
+        
+        
+        Contentlet content = new ContentletDataGen(type.id())
+                        .setProperty("title", "title")
+                        .setProperty("urlMap1", "urlMapValue1")
+                        .setProperty("urlMap2", "urlMapValue2")
+                        .nextPersisted();
+        
+        
+        assertNotNull(content);
+        assertNotNull(content.getIdentifier());
+        assertEquals(content.getContentTypeId(), type.id());
+
+        assertEquals("/testing/urlMapValue1/urlMapValue2",contentletAPI.getUrlMapForContentlet(content, user, false));
+    }
+
 }
