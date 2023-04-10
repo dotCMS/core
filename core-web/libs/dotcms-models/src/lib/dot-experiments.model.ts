@@ -96,7 +96,10 @@ export interface RangeOfDateAndTime {
     endDate: number;
 }
 
-export type GroupedExperimentByStatus = Partial<Record<DotExperimentStatusList, DotExperiment[]>>;
+export type GroupedExperimentByStatus = {
+    status: DotExperimentStatusList;
+    experiments: DotExperiment[];
+};
 
 export interface SidebarStatus {
     status: ComponentStatus;
