@@ -91,11 +91,6 @@ public class PopulateContentletAsJSONUtilTest extends IntegrationTestBase {
     @Test
     public void Test_populate_host() throws SQLException, DotDataException, IOException {
 
-        Collection<Host> hosts = new ArrayList<>();
-
-            // First we need to create some hosts
-            final Host site = new SiteDataGen().nextPersisted();
-
             // We drop the contentlet_as_json column
             removeContentletAsJSONColumn();
 
@@ -148,11 +143,6 @@ public class PopulateContentletAsJSONUtilTest extends IntegrationTestBase {
      */
     @Test
     public void Test_populate_All_excluding_host() throws SQLException, DotDataException, IOException {
-
-            var defaultLanguageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-
-            // First we need to create some contentlets
-        final Contentlet contentlet1 = TestDataUtils.getGenericContentContent(true, defaultLanguageId);
 
             // We drop the contentlet_as_json column
             removeContentletAsJSONColumn();
