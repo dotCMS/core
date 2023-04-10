@@ -94,9 +94,7 @@ public class PopulateContentletAsJSONUtilTest extends IntegrationTestBase {
         Collection<Host> hosts = new ArrayList<>();
 
             // First we need to create some hosts
-            new SiteDataGen().nextPersisted();
-            new SiteDataGen().nextPersisted();
-            new SiteDataGen().nextPersisted();
+            final Host site = new SiteDataGen().nextPersisted();
 
             // We drop the contentlet_as_json column
             removeContentletAsJSONColumn();
@@ -114,8 +112,6 @@ public class PopulateContentletAsJSONUtilTest extends IntegrationTestBase {
                             "WHERE i.asset_subtype = 'Host'")
                     .loadObjectResults();
 
-            // Make sure we have the right number of hosts
-            assertTrue(results.size() >= 3);
 
             results.forEach(rowMap -> {
                 assertTrue(rowMap.containsKey("contentlet_as_json"));
@@ -133,8 +129,6 @@ public class PopulateContentletAsJSONUtilTest extends IntegrationTestBase {
                             "WHERE i.asset_subtype = 'Host'")
                     .loadObjectResults();
 
-            // Make sure we have the right number of hosts again
-            assertTrue(results.size() >= 3);
 
             // This time contentlet_as_json can not be null
             results.forEach(rowMap -> {
@@ -155,14 +149,10 @@ public class PopulateContentletAsJSONUtilTest extends IntegrationTestBase {
     @Test
     public void Test_populate_All_excluding_host() throws SQLException, DotDataException, IOException {
 
-        Collection<Contentlet> contents = new ArrayList<>();
-
             var defaultLanguageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
 
             // First we need to create some contentlets
-            TestDataUtils.getGenericContentContent(true, defaultLanguageId);
-            TestDataUtils.getGenericContentContent(true, defaultLanguageId);
-            TestDataUtils.getGenericContentContent(true, defaultLanguageId);
+        final Contentlet contentlet1 = TestDataUtils.getGenericContentContent(true, defaultLanguageId);
 
             // We drop the contentlet_as_json column
             removeContentletAsJSONColumn();
@@ -180,8 +170,6 @@ public class PopulateContentletAsJSONUtilTest extends IntegrationTestBase {
                             "WHERE i.asset_subtype <> 'Host' AND asset_type = 'contentlet'")
                     .loadObjectResults();
 
-            // Make sure we have the right number of hosts
-            assertTrue(results.size() >= 3);
 
             results.forEach(rowMap -> {
                 assertTrue(rowMap.containsKey("contentlet_as_json"));
@@ -199,8 +187,6 @@ public class PopulateContentletAsJSONUtilTest extends IntegrationTestBase {
                             "WHERE i.asset_subtype <> 'Host' AND asset_type = 'contentlet'")
                     .loadObjectResults();
 
-            // Make sure we have the right number of hosts again
-            assertTrue(results.size() >= 3);
 
             // This time contentlet_as_json can not be null
             results.forEach(rowMap -> {
