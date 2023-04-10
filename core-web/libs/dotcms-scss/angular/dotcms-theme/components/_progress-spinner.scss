@@ -1,0 +1,5 @@
+@use "variables" as *;
+
+p-progressspinner .p-progress-spinner-circle {
+    stroke: $color-palette-primary-400 !important;
+}
