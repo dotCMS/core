@@ -96,7 +96,7 @@ public class VersionableResource {
 
         if (null == type) {
 
-            throw new DoesNotExistException("The versionable inode: " + versionableInode + " does not exists");
+            throw new DoesNotExistException("The versionable inode: " + versionableInode + " does not exist");
         }
 
         this.versionableHelper.getAssetTypeByVersionableDeleteMap().getOrDefault(type,
@@ -114,7 +114,7 @@ public class VersionableResource {
      *
      * User executing the action needs to have View Permissions over the element.
      *
-     * If the UUID does not exists, 404 is returned.
+     * If the UUID does not exist, 404 is returned.
      *
      * @param versionableInodeOrIdentifier {@link String} UUID of the element
      * @return {@link VersionableView} versionable view object
@@ -140,7 +140,7 @@ public class VersionableResource {
         final String type = Try
                 .of(() -> InodeUtils.getAssetTypeFromDB(versionableInodeOrIdentifier)).getOrNull();
 
-        //Could mean 2 things: it's an identifier or uuid does not exists
+        //Could mean 2 things: it's an identifier or uuid does not exist
         if (null == type) {
             final Identifier identifier = APILocator.getIdentifierAPI()
                     .find(versionableInodeOrIdentifier);
@@ -148,7 +148,7 @@ public class VersionableResource {
             if (null == identifier || UtilMethods.isNotSet(identifier.getId())) {
                 throw new DoesNotExistException(
                         "The versionable with uuid: " + versionableInodeOrIdentifier
-                                + " does not exists");
+                                + " does not exist");
             }
 
             return Response.ok(new ResponseEntityView<>(
@@ -171,7 +171,7 @@ public class VersionableResource {
      *
      * User executing the action needs to have Edit Permissions over the element.
      *
-     * If the UUID does not exists, 404 is returned. If exists set the version and returns it
+     * If the UUID does not exist, 404 is returned. If exists set the version and returns it
      *
      * @param versionableInode {@link String} UUID of the element inode
      * @return {@link VersionableView} versionable view object
@@ -202,7 +202,7 @@ public class VersionableResource {
         if (null == type) {
 
             throw new DoesNotExistException(
-                    "The versionable with uuid: " + versionableInode + " does not exists");
+                    "The versionable with uuid: " + versionableInode + " does not exist");
         }
 
         final VersionableView versionable = this.versionableHelper

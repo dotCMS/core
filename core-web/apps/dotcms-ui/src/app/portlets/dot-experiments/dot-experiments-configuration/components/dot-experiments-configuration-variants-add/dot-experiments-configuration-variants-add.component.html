@@ -1,53 +1,55 @@
-<p-sidebar [(visible)]="isSidebarOpen" (onHide)="closedSidebarEvent()" dotSidebar>
-    <dot-sidebar-header
-        [actionButtonTpl]="actionHeaderBtnTpl"
-        dotTitle="{{ 'experiments.configure.variants.add' | dm }}"
-    ></dot-sidebar-header>
+<ng-container *ngIf="vm$ | async as vm">
+    <p-sidebar [(visible)]="vm.status.isOpen" (onHide)="closeSidebar()" dotSidebar>
+        <dot-sidebar-header
+            [actionButtonTpl]="actionHeaderBtnTpl"
+            dotTitle="{{ 'experiments.configure.variants.add' | dm }}"
+        ></dot-sidebar-header>
 
-    <div class="experiment-variant-add__form-wrapper">
-        <form
-            class="experiment-create__form p-fluid"
-            id="new-variant-form"
-            [formGroup]="form"
-            data-testId="new-variant-form"
-            novalidate
-        >
-            <div class="field">
-                <label dotFieldRequired for="name">{{
-                    'experiments.configure.variant.add.form.name.label' | dm
-                }}</label>
-                <input
-                    id="name"
-                    [tabindex]="1"
-                    data-testId="add-experiment-description-input"
-                    dotAutofocus
-                    formControlName="name"
-                    name="name"
-                    pInputText
-                    placeholder="{{
-                        'experiments.configure.variant.add.form.name.placeholder' | dm
-                    }}"
-                    required
-                    type="text"
-                />
-                <dot-field-validation-message
-                    [field]="form.controls.name"
-                ></dot-field-validation-message>
-            </div>
-        </form>
-    </div>
-</p-sidebar>
+        <div class="experiment-variant-add__form-wrapper">
+            <form
+                class="experiment-create__form p-fluid"
+                id="new-variant-form"
+                [formGroup]="form"
+                data-testId="new-variant-form"
+                novalidate
+            >
+                <div class="field">
+                    <label class="p-label-input-required" for="name">{{
+                        'experiments.configure.variant.add.form.name.label' | dm
+                    }}</label>
+                    <input
+                        id="name"
+                        [tabindex]="1"
+                        data-testId="add-experiment-description-input"
+                        dotAutofocus
+                        formControlName="name"
+                        name="name"
+                        pInputText
+                        placeholder="{{
+                            'experiments.configure.variant.add.form.name.placeholder' | dm
+                        }}"
+                        required
+                        type="text"
+                    />
+                    <dot-field-validation-message
+                        [field]="form.controls.name"
+                    ></dot-field-validation-message>
+                </div>
+            </form>
+        </div>
+    </p-sidebar>
 
-<ng-template #actionHeaderBtnTpl>
-    <button
-        [disabled]="!form.valid"
-        [loading]="isSaving"
-        (click)="saveForm()"
-        data-testId="add-variant-button"
-        form="new-variant-form"
-        label="{{ 'experiments.action.add' | dm }}"
-        pButton
-        pRipple
-        type="submit"
-    ></button>
-</ng-template>
+    <ng-template #actionHeaderBtnTpl>
+        <button
+            [disabled]="!form.valid"
+            [loading]="vm.status.status === stepStatus.SAVING"
+            (click)="saveVariant(vm.experimentId)"
+            data-testId="add-variant-button"
+            form="new-variant-form"
+            label="{{ 'experiments.action.add' | dm }}"
+            pButton
+            pRipple
+            type="submit"
+        ></button>
+    </ng-template>
+</ng-container>

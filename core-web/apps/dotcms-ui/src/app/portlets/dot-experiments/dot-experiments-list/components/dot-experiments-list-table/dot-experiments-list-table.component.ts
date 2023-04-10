@@ -3,7 +3,11 @@ import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from 
 import { ConfirmationService, MessageService } from 'primeng/api';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotExperiment, DotExperimentStatusList } from '@dotcms/dotcms-models';
+import {
+    DotExperiment,
+    DotExperimentStatusList,
+    GroupedExperimentByStatus
+} from '@dotcms/dotcms-models';
 import { DotActionMenuItem } from '@models/dot-action-menu/dot-action-menu-item.model';
 
 @Component({
@@ -14,26 +18,25 @@ import { DotActionMenuItem } from '@models/dot-action-menu/dot-action-menu-item.
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsListTableComponent {
-    experimentGroupedByStatus: { [key: string]: DotExperiment[] };
-    groupedExperimentsCount: number;
     rowActions: { [index: string]: DotActionMenuItem };
     experimentStatus = DotExperimentStatusList;
+
+    @Input() experimentsCount: number;
+
+    @Input() experimentGroupedByStatus: GroupedExperimentByStatus[];
 
     @Output()
     archiveItem = new EventEmitter<DotExperiment>();
     @Output()
     deleteItem = new EventEmitter<DotExperiment>();
 
+    @Output()
+    goToReport = new EventEmitter<DotExperiment>();
+
     constructor(
         private readonly dotMessageService: DotMessageService,
         private readonly confirmationService: ConfirmationService
     ) {}
-
-    @Input()
-    set experiments(items: { [key: string]: DotExperiment[] }) {
-        this.experimentGroupedByStatus = items;
-        this.groupedExperimentsCount = Object.keys(items).length;
-    }
 
     /**
      * Show a confirmation dialog to Archive an experiment
@@ -65,5 +68,15 @@ export class DotExperimentsListTableComponent {
             icon: 'pi pi-exclamation-triangle',
             accept: () => this.deleteItem.emit(item)
         });
+    }
+
+    /**
+     * Go to report of experiment
+     * @param {DotExperiment} item
+     * @returns void
+     * @memberof DotExperimentsListTableComponent
+     */
+    viewReports(item: DotExperiment) {
+        this.goToReport.emit(item);
     }
 }

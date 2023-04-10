@@ -102,6 +102,7 @@ import com.dotcms.storage.FileMetadataAPITest;
 import com.dotcms.storage.StoragePersistenceAPITest;
 import com.dotcms.storage.repository.HashedLocalFileRepositoryManagerTest;
 import com.dotcms.translate.GoogleTranslationServiceIntegrationTest;
+import com.dotcms.util.content.json.PopulateContentletAsJSONUtilTest;
 import com.dotcms.uuid.shorty.LegacyShortyIdApiTest;
 import com.dotcms.variant.VariantAPITest;
 import com.dotcms.variant.VariantFactoryTest;
@@ -219,6 +220,7 @@ import com.dotmarketing.util.UtilMethodsITest;
 import com.dotmarketing.util.ZipUtilTest;
 import com.dotmarketing.util.contentlet.pagination.PaginatedContentletsIntegrationTest;
 import com.liferay.portal.language.LanguageUtilTest;
+import org.apache.felix.framework.OSGIUtilTest;
 import org.apache.velocity.tools.view.tools.CookieToolTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite.SuiteClasses;
@@ -439,7 +441,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.quartz.job.BinaryCleanupJobTest.class,
         FocalPointAPITest.class,
         com.dotmarketing.tag.business.TagAPITest.class,
-        com.dotcms.osgi.OSGIUtilTest.class,
+        OSGIUtilTest.class,
         com.dotmarketing.fixTasks.FixTask00085FixEmptyParentPathOnIdentifierTest.class,
         com.dotmarketing.startup.runonce.Task05170DefineFrontEndAndBackEndRolesTest.class,
         com.dotmarketing.startup.runonce.Task04375UpdateCategoryKeyTest.class,
@@ -635,28 +637,11 @@ import org.junit.runners.Suite.SuiteClasses;
         StoryBlockAPITest.class,
         UtilMethodsITest.class,
         Task220912UpdateCorrectShowOnMenuPropertyTest.class,
-        PersonaActionletTest.class,
-        SendRedirectActionletTest.class,
-        SetRequestAttributeActionletTest.class,
-        StopProcessingActionletTest.class,
-        DateTimeConditionletTest.class,
-        HttpMethodConditionletTest.class,
-        PagesViewedConditionletTest.class,
-        PersonaConditionletTest.class,
-        ReferrerURLConditionletTest.class,
-        RequestAttributeConditionletTest.class,
-        RequestHeaderConditionletTest.class,
-        RequestParameterConditionletTest.class,
-        SessionAttributeConditionletTest.class,
-        UsersBrowserConditionletTest.class,
-        UsersCountryConditionletTest.class,
-        UsersPlatformConditionletTest.class,
-        VisitorsCurrentURLConditionletTest.class,
-        VisitorsGeolocationConditionletTest.class,
         HashedLocalFileRepositoryManagerTest.class,
         ManifestUtilTest.class,
         ZipUtilTest.class,
-        Task230110MakeSomeSystemFieldsRemovableByBaseTypeTest.class
+        Task230110MakeSomeSystemFieldsRemovableByBaseTypeTest.class,
+        PopulateContentletAsJSONUtilTest.class
 })
 
 public class MainSuite {

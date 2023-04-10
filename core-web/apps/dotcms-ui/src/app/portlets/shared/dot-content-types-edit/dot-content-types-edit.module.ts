@@ -31,6 +31,7 @@ import { IFrameModule } from '@components/_common/iframe';
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
 import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
 import { DotBaseTypeSelectorModule } from '@components/dot-base-type-selector';
+import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 import { DotCopyLinkModule } from '@components/dot-copy-link/dot-copy-link.module';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
@@ -155,7 +156,8 @@ import { DotAddToMenuModule } from '../dot-content-types-listing/components/dot-
         DotPortletBoxModule,
         DotMdIconSelectorModule,
         DotAddToMenuModule,
-        DotFieldRequiredDirective
+        DotFieldRequiredDirective,
+        DotCopyButtonModule
     ],
     providers: [
         DotContentTypesInfoService,

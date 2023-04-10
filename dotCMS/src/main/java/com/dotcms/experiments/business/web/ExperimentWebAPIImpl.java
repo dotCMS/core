@@ -116,6 +116,7 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
                     .pageUrl(htmlPageAsset.getURI())
                     .variant(variantSelected)
                     .lookBackWindow(nextLookBackWindow())
+                    .expireTime(experiment.lookBackWindowExpireTime())
                     .build();
         } catch (DotDataException e) {
             throw new DotRuntimeException(e);

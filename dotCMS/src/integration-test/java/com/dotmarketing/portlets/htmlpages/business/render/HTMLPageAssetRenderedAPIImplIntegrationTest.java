@@ -1668,19 +1668,12 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
     }
 
     private static String getExpectedExperimentJsCode(Experiment experiment) {
-        return "<script src=\"//localhost:8080/s/lib.js\" data-key=\"\"\n"
-                + "        data-init-only=\"false\"\n"
-                + "        defer>\n"
-                + "</script>\n"
-                + "\n"
-                + "<script>window.jitsu = window.jitsu || (function(){(window.jitsuQ = window.jitsuQ || []).push(arguments);})</script>\n"
-                + "<SCRIPT>\n"
-                + "function setJitsuExperimentData (experimentData) {\n"
+        return "function setJitsuExperimentData (experimentData) {\n"
                 + "    let experimentsShortData = {\n"
                 + "        experiments: experimentData.experiments.map((experiment) => ({\n"
                 + "                experiment: experiment.id,\n"
                 + "                variant: experiment.variant.name,\n"
-                + "                lookBackWindow: experiment.lookBackWindow\n"
+                + "                lookBackWindow: experiment.lookBackWindow.value\n"
                 + "            })\n"
                 + "        )\n"
                 + "    };\n"
@@ -1688,9 +1681,36 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                 + "    jitsu('set', experimentsShortData);\n"
                 + "}\n"
                 + "\n"
+                + "window.addEventListener(\"experiment_loaded\", function (event) {\n"
+                + "    let experimentData = event.detail;\n"
+                + "    setJitsuExperimentData(experimentData);\n"
+                + "\n"
+                + "    if (!location.href.includes(\"redirect=true\")) {\n"
+                + "        for (let i = 0; i < experimentData.experiments.length; i++) {\n"
+                + "            const pageUrl = experimentData.experiments[i].pageUrl;\n"
+                + "\n"
+                + "            const alternativePageUrl = experimentData.experiments[i].pageUrl.endsWith(\n"
+                + "                \"/index\") ?\n"
+                + "                experimentData.experiments[i].pageUrl.replace(\"index\", \"\")\n"
+                + "                : experimentData.experiments[i].pageUrl;\n"
+                + "\n"
+                + "            if (location.href.includes(pageUrl)\n"
+                + "                || location.href.endsWith(alternativePageUrl)) {\n"
+                + "\n"
+                + "                let url = experimentData.experiments[i].variant.url\n"
+                + "                const param = (url.includes(\"?\") ? \"&\" : \"?\")\n"
+                + "                    + \"redirect=true\";\n"
+                + "\n"
+                + "                location.href = url + param;\n"
+                + "                break;\n"
+                + "            }\n"
+                + "        }\n"
+                + "    }\n"
+                + "});\n"
+                + "\n"
                 + "let experimentAlreadyCheck = sessionStorage.getItem(\"experimentAlreadyCheck\");\n"
                 + "\n"
-                + "if (!experimentAlreadyCheck) {\n"
+                + "if (!experimentAlreadyCheck) {"
                 + "    let currentRunningExperimentsId = ['" + experiment.id().get() + "'];\n"
                 + "\n"
                 + "    function shouldHitEndPoint() {\n"
@@ -1712,13 +1732,16 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                 + "\n"
                 + "        if (experimentDataAsString) {\n"
                 + "            let experimentData = JSON.parse(experimentDataAsString);\n"
+                + "\n"
+                + "            var now = Date.now();\n"
+                + "\n"
                 + "            experimentData.experiments = experimentData.experiments\n"
-                + "            .filter(experiment => currentRunningExperimentsId.includes(\n"
-                + "                experiment.id));\n"
+                + "            .filter(experiment => currentRunningExperimentsId.includes(experiment.id))\n"
+                + "            .filter(experiment => experiment.lookBackWindow.expireTime > now);\n"
+                + "\n"
                 + "\n"
                 + "            experimentData.includedExperimentIds = experimentData.includedExperimentIds\n"
-                + "            .filter(experimentId => currentRunningExperimentsId.includes(\n"
-                + "                experimentId));\n"
+                + "            .filter(experimentId => currentRunningExperimentsId.includes(experimentId));\n"
                 + "\n"
                 + "            if (!experimentData.experiments.length) {\n"
                 + "                localStorage.removeItem('experiment_data');\n"
@@ -1727,34 +1750,6 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                 + "            }\n"
                 + "        }\n"
                 + "    }\n"
-                + "\n"
-                + "    window.addEventListener(\"experiment_loaded\", function (event) {\n"
-                + "\n"
-                + "        setJitsuExperimentData(event.detail);\n"
-                + "\n"
-                + "        if (!window.location.href.includes(\"redirect=true\")) {\n"
-                + "\n"
-                + "            for (let i = 0; i < experimentData.experiments.length; i++) {\n"
-                + "                let pageUrl = experimentData.experiments[i].pageUrl;\n"
-                + "\n"
-                + "                let alternativePageUrl = experimentData.experiments[i].pageUrl.endsWith(\n"
-                + "                    \"/index\") ?\n"
-                + "                    experimentData.experiments[i].pageUrl.replace(\"/index\", \"\")\n"
-                + "                    :\n"
-                + "                    experimentData.experiments[i].pageUrl;\n"
-                + "\n"
-                + "                if (window.location.href.includes(pageUrl)\n"
-                + "                    || window.location.href.includes(alternativePageUrl)) {\n"
-                + "\n"
-                + "                    let url = experimentData.experiments[i].variant.url\n"
-                + "                    const param = (url.includes(\"?\") ? \"&\" : \"?\")\n"
-                + "                        + \"redirect=true\";\n"
-                + "                    window.location.href = url + param;\n"
-                + "                    break;\n"
-                + "                }\n"
-                + "            }\n"
-                + "        }\n"
-                + "    });\n"
                 + "\n"
                 + "    if (shouldHitEndPoint()) {\n"
                 + "\n"
@@ -1795,6 +1790,16 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                 + "                    ];\n"
                 + "                }\n"
                 + "\n"
+                + "                var now = Date.now();\n"
+                + "\n"
+                + "                dataToStorage.experiments = dataToStorage.experiments.map(experiment => ({\n"
+                + "                    ...experiment,\n"
+                + "                    lookBackWindow: {\n"
+                + "                        ...experiment.lookBackWindow,\n"
+                + "                        expireTime: now + experiment.lookBackWindow.expireMillis\n"
+                + "                    }\n"
+                + "                }));\n"
+                + "\n"
                 + "                localStorage.setItem('experiment_data',\n"
                 + "                    JSON.stringify(dataToStorage));\n"
                 + "\n"
@@ -1819,10 +1824,12 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                 + "    sessionStorage.setItem(\"experimentAlreadyCheck\", true);\n"
                 + "} else {\n"
                 + "    let experimentData = JSON.parse(localStorage.getItem('experiment_data'));\n"
-                + "    setJitsuExperimentData(experimentData);\n"
-                + "}\n"
                 + "\n"
-                + "</SCRIPT>";
+                + "    const event = new CustomEvent('experiment_loaded',\n"
+                + "        {detail: experimentData});\n"
+                + "    window.dispatchEvent(event);\n"
+                + "}";
+
     }
 
     /**
@@ -2241,17 +2248,6 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
             ConfigExperimentUtil.INSTANCE.setExperimentEnabled(false);
             ConfigExperimentUtil.INSTANCE.setExperimentAutoJsInjection(false);
         }
-    }
-
-    /**
-     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
-     * When: You don't have any {@link Experiment} RUNNING but the Experiment and Auto Injection are ENABLED
-     * but the Page is not a HTML code.
-     * Should: not inject any code
-     */
-    @Test
-    public void experimentAndInjectionEnabledButNotHTMLPage(){
-        throw new RuntimeException();
     }
 
     private String getNotExperimentJsCode(){

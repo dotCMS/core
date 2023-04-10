@@ -1,12 +1,19 @@
 <ng-container *ngIf="vm$ | async as vm">
     <p-card>
         <ng-template pTemplate="title">
-            <h2 data-testId="traffic-card-title">
+            <h2 class="flex align-items-center gap-1 uppercase" data-testId="traffic-card-title">
                 {{ 'experiments.configure.traffic.name' | dm }}
+                <dot-icon
+                    class="inline-flex"
+                    [ngClass]="{ isDone: vm.trafficAllocation }"
+                    data-testId="traffic-step-done"
+                    name="check_circle"
+                    size="16"
+                ></dot-icon>
             </h2>
         </ng-template>
 
-        <p-card styleClass="card-load">
+        <p-card>
             <div class="flex flex-row align-items-center align-content-between gap-2">
                 <div class="title flex flex-grow-1 flex-column">
                     <span data-testId="card-title">{{
@@ -29,36 +36,6 @@
                     >
                         {{ vm.trafficAllocation }}%
                     </button>
-                </div>
-            </div>
-        </p-card>
-        <p-card styleClass="card-split">
-            <div class="flex flex-row align-items-center align-content-between gap-2">
-                <div class="title flex flex-grow-1 flex-column">
-                    <span data-testId="traffic-split-title">{{
-                        'experiments.configure.traffic.split.name' | dm
-                    }}</span>
-                </div>
-                <div
-                    [pTooltip]="'experiment.configure.edit.only.draft.status' | dm"
-                    [tooltipDisabled]="vm.isExperimentADraft"
-                    tooltipPosition="bottom"
-                    data-testId="tooltip-on-disabled"
-                >
-                    <button
-                        class="p-button-sm p-button-link"
-                        [disabled]="!vm.isExperimentADraft"
-                        (click)="changeTrafficProportion()"
-                        data-testId="traffic-split-change-button"
-                        label=" {{
-                            (vm.trafficProportion.type === splitEvenly
-                                ? 'experiments.configure.traffic.split.evenly'
-                                : 'experiments.configure.traffic.split.custom'
-                            ) | dm
-                        }}"
-                        pButton
-                        pRipple
-                    ></button>
                 </div>
             </div>
         </p-card>
