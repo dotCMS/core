@@ -13,6 +13,7 @@ import com.dotcms.content.elasticsearch.business.ESIndexAPITest;
 import com.dotcms.content.elasticsearch.business.ElasticsearchUtilTest;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
 import com.dotcms.content.model.hydration.MetadataDelegateTest;
+import com.dotcms.contenttype.business.ContentTypeDestroyAPIImplTest;
 import com.dotcms.contenttype.business.ContentTypeInitializerTest;
 import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
 import com.dotcms.contenttype.business.SiteAndFolderResolverImplTest;
@@ -211,6 +212,7 @@ import com.dotmarketing.startup.runonce.Task220912UpdateCorrectShowOnMenuPropert
 import com.dotmarketing.startup.runonce.Task220928AddLookbackWindowColumnToExperimentTest;
 import com.dotmarketing.startup.runonce.Task221007AddVariantIntoPrimaryKeyTest;
 import com.dotmarketing.startup.runonce.Task230110MakeSomeSystemFieldsRemovableByBaseTypeTest;
+import com.dotmarketing.startup.runonce.Task230328AddMarkedForDeletionColumnTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
@@ -227,6 +229,7 @@ import org.junit.runners.Suite.SuiteClasses;
 
 /* grep -l -r "@Test" dotCMS/src/integration-test */
 /* ./gradlew integrationTest -Dtest.single=com.dotcms.MainSuite */
+
 
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
@@ -641,7 +644,9 @@ import org.junit.runners.Suite.SuiteClasses;
         ManifestUtilTest.class,
         ZipUtilTest.class,
         Task230110MakeSomeSystemFieldsRemovableByBaseTypeTest.class,
-        PopulateContentletAsJSONUtilTest.class
+        PopulateContentletAsJSONUtilTest.class,
+        ContentTypeDestroyAPIImplTest.class,
+        Task230328AddMarkedForDeletionColumnTest.class
 })
 
 public class MainSuite {
