@@ -203,6 +203,7 @@ public class BrowserQuery {
         public Builder withFilter(@Nonnull String filter) {
             if (UtilMethods.isSet(filter)) {
                 luceneQuery.append(StringPool.SPACE).append(filter);
+                this.filter = filter;
             }
             return this;
         }
