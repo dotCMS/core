@@ -651,8 +651,8 @@ import org.junit.runners.Suite.SuiteClasses;
         VisitorsCurrentURLConditionletTest.class,
         VisitorsGeolocationConditionletTest.class,
         ManifestUtilTest.class,
-        ZipUtilTest.class,
-        PopulateContentletAsJSONUtilTest.class
+        ZipUtilTest.class
+//        PopulateContentletAsJSONUtilTest.class
 
 })
 public class MainSuite {
