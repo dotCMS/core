@@ -52,10 +52,8 @@ export const ImageNode = Image.extend({
             },
             data: {
                 default: null,
-                parseHTML: (element) => ({
-                    data: element.getAttribute('data')
-                }),
-                renderHTML: (attributes) => ({ data: attributes.data })
+                parseHTML: (element) => element.getAttribute('data'),
+                renderHTML: (attributes) => ({ data: JSON.stringify(attributes.data) })
             }
         };
     },

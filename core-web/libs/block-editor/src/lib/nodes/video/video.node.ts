@@ -45,7 +45,7 @@ export const VideoNode = Node.create({
             data: {
                 default: null,
                 parseHTML: (element) => element.getAttribute('data'),
-                renderHTML: (attributes) => ({ data: attributes.data })
+                renderHTML: (attributes) => ({ data: JSON.stringify(attributes.data) })
             }
         };
     },
