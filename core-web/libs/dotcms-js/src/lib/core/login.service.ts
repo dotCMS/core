@@ -1,14 +1,18 @@
 /**
  * Created by oswaldogallango on 7/11/16.
  */
-import { CoreWebService } from './core-web.service';
-import { Injectable } from '@angular/core';
 import { Observable, Subject, of } from 'rxjs';
-import { HttpCode } from './util/http-code';
-import { pluck, tap, map } from 'rxjs/operators';
-import { DotcmsEventsService } from './dotcms-events.service';
+
 import { HttpResponse } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+
+import { pluck, tap, map } from 'rxjs/operators';
+
 import { DotLoginInformation } from '@dotcms/dotcms-models';
+
+import { CoreWebService } from './core-web.service';
+import { DotcmsEventsService } from './dotcms-events.service';
+import { HttpCode } from './util/http-code';
 
 export interface DotLoginParams {
     login: string;
@@ -39,6 +43,7 @@ export class LoginService {
         private dotcmsEventsService: DotcmsEventsService
     ) {
         this._loginAsUsersList$ = <Subject<User[]>>new Subject();
+
         this.urls = {
             changePassword: 'v1/changePassword',
             getAuth: 'v1/authentication/logInUser',
@@ -113,7 +118,7 @@ export class LoginService {
                         this.setAuth(auth);
                     }
                 }),
-                map((auth: Auth) => auth)
+                map((auth: Auth) => this.getFullAuth(auth))
             );
     }
 
@@ -182,9 +187,9 @@ export class LoginService {
 
                     this.setAuth({
                         loginAsUser: userData.user,
-                        user: this._auth.user,
-                        isLoginAs: true
+                        user: this._auth.user
                     });
+
                     return res;
                 }),
                 pluck('entity', 'loginAs')
@@ -230,8 +235,7 @@ export class LoginService {
                 map((response) => {
                     const auth = {
                         loginAsUser: null,
-                        user: response.entity,
-                        isLoginAs: false
+                        user: response.entity
                     };
 
                     this.setAuth(auth);
@@ -240,6 +244,7 @@ export class LoginService {
                         .subscribe(() => {
                             this.logOutUser();
                         });
+
                     return response.entity;
                 })
             );
@@ -261,9 +266,9 @@ export class LoginService {
                 map((res) => {
                     this.setAuth({
                         loginAsUser: null,
-                        user: this._auth.user,
-                        isLoginAs: true
+                        user: this._auth.user
                     });
+
                     return res.entity.logoutAs;
                 })
             );
@@ -311,8 +316,8 @@ export class LoginService {
      * @memberof LoginService
      */
     setAuth(auth: Auth): void {
-        this._auth = auth;
-        this._auth$.next(auth);
+        this._auth = this.getFullAuth(auth);
+        this._auth$.next(this.getFullAuth(auth));
 
         // When not logged user we need to fire the observable chain
         if (!auth.user) {
@@ -335,6 +340,15 @@ export class LoginService {
 
     private logOutUser(): void {
         window.location.href = `${LOGOUT_URL}?r=${new Date().getTime()}`;
+    }
+
+    private getFullAuth(auth: Auth): Auth {
+        const isLoginAs = !!auth.loginAsUser || !!Object.keys(auth.loginAsUser || {}).length;
+
+        return {
+            ...auth,
+            isLoginAs
+        };
     }
 }
 

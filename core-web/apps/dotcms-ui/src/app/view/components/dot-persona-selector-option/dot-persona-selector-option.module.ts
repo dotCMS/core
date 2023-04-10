@@ -2,15 +2,25 @@ import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
+import { AvatarModule } from 'primeng/avatar';
+import { BadgeModule } from 'primeng/badge';
 import { ButtonModule } from 'primeng/button';
 
-import { DotAvatarModule } from '@components/_common/dot-avatar/dot-avatar.module';
+import { DotAvatarDirective } from '@directives/dot-avatar/dot-avatar.directive';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotPersonaSelectorOptionComponent } from './dot-persona-selector-option.component';
 
 @NgModule({
-    imports: [CommonModule, FormsModule, DotAvatarModule, ButtonModule, DotPipesModule],
+    imports: [
+        CommonModule,
+        FormsModule,
+        DotAvatarDirective,
+        AvatarModule,
+        BadgeModule,
+        ButtonModule,
+        DotPipesModule
+    ],
     declarations: [DotPersonaSelectorOptionComponent],
     exports: [DotPersonaSelectorOptionComponent]
 })
