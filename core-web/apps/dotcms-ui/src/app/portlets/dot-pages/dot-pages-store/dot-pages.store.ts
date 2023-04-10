@@ -297,7 +297,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                         )[0];
                     } else {
                         localPageData = this.get().pages.items.filter(
-                            (item) => item.identifier === identifier
+                            (item) => item?.identifier === identifier
                         )[0];
                         this.setPagesStatus(ComponentStatus.LOADING);
                     }
@@ -330,7 +330,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                                             this.setFavoritePages(pagesData);
                                         } else {
                                             const pagesData = this.get().pages.items.map((page) => {
-                                                return page.identifier === identifier
+                                                return page?.identifier === identifier
                                                     ? items.jsonObjectView.contentlets[0]
                                                     : page;
                                             });
