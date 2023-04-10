@@ -21,7 +21,7 @@ public abstract class AbstractLanguageCommand {
         return String.format(
                 "language: [@|bold,underline,blue %s|@] id: [@|bold,underline,cyan %s|@] code: [@|bold,underline,green %s|@] country:[@|bold,yellow %s|@] countryCode: [@|bold,yellow %s|@]",
                 language.language(),
-                language.id(),
+                language.id().get(),
                 language.languageCode(),
                 language.country(),
                 language.countryCode()

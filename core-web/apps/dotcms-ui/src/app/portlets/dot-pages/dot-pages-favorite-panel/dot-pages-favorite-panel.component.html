@@ -37,7 +37,11 @@
         <dot-pages-card
             *ngFor="let item of vm.favoritePages.items; let i = index"
             [actionButtonId]="'favoritePageActionButton-' + i"
-            [imageUri]="item.screenshot + '?language_id=' + item.languageId + '&' + timeStamp"
+            [imageUri]="
+                item.screenshot
+                    ? item.screenshot + '?language_id=' + item.languageId + '&' + timeStamp
+                    : ''
+            "
             [title]="item.title"
             [url]="item.url"
             [ownerPage]="item.owner === vm.loggedUser.id"

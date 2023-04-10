@@ -1222,6 +1222,7 @@ public class TemplateResourceTest {
                 .inode(template.getInode())
                 .layout(templateView.getLayout())
                 .title(template.getTitle())
+                .theme(template.getTheme())
                 .build();
 
         final PageContext pageContext =  new PageContext(APILocator.systemUser(),
@@ -1239,9 +1240,8 @@ public class TemplateResourceTest {
                 templateFromDaBaseBeforeUpdate.getDrawedBody());
         assertTrue(templateLayoutBeforeUpdate.existsContainer(container, uuid));
 
+        //Thread.sleep(10000);
         templateResource.save(request, response, templateForm);
-
-        Thread.sleep(3000);
 
         final Template templateFromDaBaseAfterUpdate = APILocator.getTemplateAPI()
                 .findWorkingTemplate(template.getIdentifier(), APILocator.systemUser(), false);
@@ -1250,9 +1250,12 @@ public class TemplateResourceTest {
                 templateFromDaBaseAfterUpdate.getDrawedBody());
         assertTrue(templateLayoutAfterUpdate.existsContainer(container, "1"));
 
+        System.out.println("SECOND TIME------------------------");
+
         final String pageHtml_2 = APILocator.getHTMLPageAssetRenderedAPI()
                 .getPageHtml(pageContext, request, response);
         assertTrue(pageHtml_2.contains("<div>Testing</div>"));
+
 
 
     }
