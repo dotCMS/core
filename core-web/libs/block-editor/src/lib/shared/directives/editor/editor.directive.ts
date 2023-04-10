@@ -48,7 +48,7 @@ export class EditorDirective implements OnInit, ControlValueAccessor, OnDestroy 
             this.outputFormat = 'html';
         }
 
-        this.editor.chain().setContent(value, false).run();
+        this.editor.chain().setContent(value, true).run();
     }
 
     // Registers a callback function that is called when the control's value changes in the UI.
