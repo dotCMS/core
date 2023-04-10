@@ -212,6 +212,7 @@ import com.dotmarketing.startup.runonce.Task220912UpdateCorrectShowOnMenuPropert
 import com.dotmarketing.startup.runonce.Task220928AddLookbackWindowColumnToExperimentTest;
 import com.dotmarketing.startup.runonce.Task221007AddVariantIntoPrimaryKeyTest;
 import com.dotmarketing.startup.runonce.Task230110MakeSomeSystemFieldsRemovableByBaseTypeTest;
+import com.dotmarketing.startup.runonce.Task230328AddMarkedForDeletionColumnTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
@@ -644,7 +645,8 @@ import org.junit.runners.Suite.SuiteClasses;
         ZipUtilTest.class,
         Task230110MakeSomeSystemFieldsRemovableByBaseTypeTest.class,
         PopulateContentletAsJSONUtilTest.class,
-        ContentTypeDestroyAPIImplTest.class
+        ContentTypeDestroyAPIImplTest.class,
+        Task230328AddMarkedForDeletionColumnTest.class
 })
 
 public class MainSuite {
