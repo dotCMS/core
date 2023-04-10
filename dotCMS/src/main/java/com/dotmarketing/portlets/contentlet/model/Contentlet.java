@@ -1703,7 +1703,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 			if (!ExceptionUtil.causedBy(e, NotFoundInDbException.class)) {
 				throw new DotStateException(e);
 			} else {
-				Logger.warn(this,
+				Logger.debug(this,
 						() -> String.format(
 								"Unable to find Content Type for Contentlet [%s], Content Type deleted? - [%s]",
 								this.getIdentifier(),

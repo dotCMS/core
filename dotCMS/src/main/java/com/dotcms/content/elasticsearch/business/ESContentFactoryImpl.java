@@ -7,6 +7,7 @@ import com.dotcms.content.elasticsearch.ESQueryCache;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.contenttype.business.StoryBlockReferenceResult;
 import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.notifications.bean.NotificationLevel;
@@ -1118,6 +1119,29 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 .add(String.valueOf(contentlet.getInode()), contentlet));
 
         return contentlets;
+    }
+
+    @Override
+    public int countByType(ContentType contentType, boolean includeAllVersion){
+        final DotConnect dotConnect = new DotConnect();
+        if(includeAllVersion){
+            dotConnect.setSQL(" select count(c.inode) as x \n" +
+                    " from contentlet c \n" +
+                    " join structure s on c.structure_inode  = s.inode  \n" +
+                    " where s.velocity_var_name =  ? ");
+        } else {
+           dotConnect.setSQL(" select count(c.inode) as x\n" +
+                   " from contentlet c \n" +
+                   " join structure s \n" +
+                   " on c.structure_inode  = s.inode \n" +
+                   " join contentlet_version_info cvi\n" +
+                   " on cvi.identifier = c.identifier and cvi.working_inode = c.inode  \n" +
+                   " join inode i  \n" +
+                   " on c.inode = i.inode \n" +
+                   " where s.velocity_var_name = ? \n ");
+        }
+        dotConnect.addParam(contentType.variable());
+        return dotConnect.getInt("x");
     }
 
 	@Override
