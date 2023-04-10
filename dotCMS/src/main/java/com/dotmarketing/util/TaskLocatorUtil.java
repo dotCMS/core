@@ -366,7 +366,7 @@ public class TaskLocatorUtil {
 		//UT that were backported to LTS
 	public static List<Class<?>> getBackportedUpgradeTaskClasses() {
 		final List<Class<?>> ret = new ArrayList<Class<?>>();
-		ret.add(Task230320FixMissingContentletAsJSON.class);
+//		ret.add(Task230320FixMissingContentletAsJSON.class);
 		return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
 
