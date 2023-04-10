@@ -1,12 +1,7 @@
-import {
-    GOAL_OPERATORS,
-    GOAL_PARAMETERS,
-    GOAL_TYPES,
-    Goals,
-    GoalSelectOption
-} from './dot-experiments.model';
+import { GOAL_OPERATORS, GOAL_PARAMETERS, GOAL_TYPES, Goals } from './dot-experiments.model';
+import { DotDropdownSelectOption } from './shared-models';
 
-export const MAX_VARIANTS_ALLOWED = 3;
+export const MAX_VARIANTS_ALLOWED = 2;
 
 export const DEFAULT_VARIANT_ID = 'DEFAULT';
 
@@ -19,85 +14,60 @@ export enum TrafficProportionTypes {
     CUSTOM_PERCENTAGES = 'CUSTOM_PERCENTAGES'
 }
 
+// Keep the order of this enum is important to respect the order of the experiment listing.
 export enum DotExperimentStatusList {
     RUNNING = 'RUNNING',
     SCHEDULED = 'SCHEDULED',
-    ENDED = 'ENDED',
     DRAFT = 'DRAFT',
+    ENDED = 'ENDED',
     ARCHIVED = 'ARCHIVED'
 }
 
-export const DOT_EXPERIMENT_STATUS_METADATA_MAP: Record<
-    DotExperimentStatusList,
-    { classz: string; label: string }
-> = {
-    [DotExperimentStatusList.RUNNING]: {
-        label: 'experimentspage.experiment.status.running',
-        classz: 'running'
-    },
-    [DotExperimentStatusList.ENDED]: {
-        label: 'experimentspage.experiment.status.ended',
-        classz: 'ended'
-    },
-    [DotExperimentStatusList.DRAFT]: {
-        label: 'experimentspage.experiment.status.draft',
-        classz: 'draft'
-    },
-    [DotExperimentStatusList.ARCHIVED]: {
-        label: 'experimentspage.experiment.status.archived',
-        classz: 'archived'
-    },
-    [DotExperimentStatusList.SCHEDULED]: {
-        label: 'experimentspage.experiment.status.scheduled',
-        classz: 'scheduled'
-    }
-};
-
-export const ExperimentsStatusList = [
+export const ExperimentsStatusList: Array<DotDropdownSelectOption<string>> = [
     {
-        label: 'experimentspage.experiment.status.draft',
+        label: 'draft',
         value: DotExperimentStatusList.DRAFT
     },
     {
-        label: 'experimentspage.experiment.status.running',
+        label: 'running',
         value: DotExperimentStatusList.RUNNING
     },
     {
-        label: 'experimentspage.experiment.status.ended',
+        label: 'ended',
         value: DotExperimentStatusList.ENDED
     },
     {
-        label: 'experimentspage.experiment.status.archived',
+        label: 'archived',
         value: DotExperimentStatusList.ARCHIVED
     },
     {
-        label: 'experimentspage.experiment.status.scheduled',
+        label: 'scheduled',
         value: DotExperimentStatusList.SCHEDULED
     }
 ];
 
-export const ExperimentsGoalsList: Array<GoalSelectOption> = [
+export const GoalsConditionsParametersList: Array<DotDropdownSelectOption<GOAL_PARAMETERS>> = [
     {
-        label: 'experiments.goal.reach_page.name',
-        value: GOAL_TYPES.REACH_PAGE,
-        description: 'experiments.goal.reach_page.description',
+        label: 'experiments.goal.conditions.params.url.label',
+        value: GOAL_PARAMETERS.URL,
         inactive: false
-    },
-    {
-        label: 'experiments.goal.bounce_rate.name',
-        value: GOAL_TYPES.BOUNCE_RATE,
-        description: 'experiments.goal.bounce_rate.description',
-        inactive: false
-    },
-    {
-        label: 'experiments.goal.click_on_element.name',
-        value: GOAL_TYPES.CLICK_ON_ELEMENT,
-        description: 'experiments.goal.click_on_element.description',
-        inactive: true
     }
 ];
 
-export enum SidebarStatus {
+export const GoalsConditionsOperatorsList: Array<DotDropdownSelectOption<GOAL_OPERATORS>> = [
+    {
+        label: 'experiments.goal.conditions.operators.contains.label',
+        value: GOAL_OPERATORS.CONTAINS,
+        inactive: false
+    },
+    {
+        label: 'experiments.goal.conditions.operators.equals.label',
+        value: GOAL_OPERATORS.EQUALS,
+        inactive: false
+    }
+];
+
+export enum SIDEBAR_STATUS {
     OPEN = 'OPEN',
     CLOSE = 'CLOSED'
 }
@@ -130,3 +100,13 @@ export const GOALS_METADATA_MAP: Record<GOAL_TYPES, { label: string; description
         description: 'experiments.goal.click_on_element.description'
     }
 };
+
+export const daysOfTheWeek = [
+    'Sunday',
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday'
+];

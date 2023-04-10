@@ -1,5 +1,7 @@
 package com.dotmarketing.util;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -19,11 +21,14 @@ import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.text.MessageFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Month;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -481,5 +486,63 @@ public class DateUtilTest extends UnitTestBase {
         assertNotNull(date1);
         assertEquals("Year should be 2015", 115,date1.getYear());
         assertEquals("Month should be Feb", Calendar.FEBRUARY, date1.getMonth());
+    }
+
+    /**
+     * Method to test: {@link DateUtil#isTimeReach(Instant)}
+     */
+    @Test
+    public void timeReach(){
+        //Now must be Reach
+        assertTrue(DateUtil.isTimeReach(Instant.now()));
+
+        //Tomorrow must not be reach
+        assertFalse(DateUtil.isTimeReach(Instant.now().plus(1, ChronoUnit.DAYS)));
+
+        //Yesterday must be reach
+        assertTrue(DateUtil.isTimeReach(Instant.now().plus(-1, ChronoUnit.DAYS)));
+    }
+
+    /**
+     * Method to test: {@link DateUtil#isTimeReach(Instant)}
+     * When: the time parameter is null
+     * Should: throw {@link IllegalArgumentException}
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void timeReachNullPointerException(){
+        //Null must retur false
+        assertFalse(DateUtil.isTimeReach(null));
+    }
+
+
+    /**
+     * Method to test: {@link DateUtil#isTimeReach(Instant, TemporalUnit)}
+     * When: You call the method with now no matter the {@link TemporalUnit}
+     * Should: Allways return true
+     */
+    @Test
+    public void timeReachWithTemporalUnit(){
+        final ChronoUnit[] chronoUnits = new ChronoUnit[]{ChronoUnit.DAYS, ChronoUnit.MINUTES, ChronoUnit.SECONDS, ChronoUnit.MILLIS};
+
+        for (ChronoUnit chronoUnit : chronoUnits) {
+            assertTrue(DateUtil.isTimeReach(Instant.now(), chronoUnit));
+        }
+    }
+
+    /**
+     * Method to test: {@link DateUtil#isTimeReach(Instant, TemporalUnit)}
+     * When: You call the method with two future times and {@link ChronoUnit#HOURS}:
+     * - One Day plus to now it should be false because the different is in DAYS
+     * - 30 Minutes plus to now should be true because the different is in MINUTES and the Minutes are truncate
+     */
+    @Test
+    public void timeReachWithTemporalUnitAndFuture(){
+        final Instant futureByDays = Instant.now().plus(1, ChronoUnit.DAYS);
+        assertFalse(DateUtil.isTimeReach(futureByDays, ChronoUnit.HOURS));
+
+        final Calendar futureByMinutes = Calendar.getInstance();
+        futureByMinutes.roll(Calendar.MINUTE, 30);
+
+        assertTrue(DateUtil.isTimeReach(futureByMinutes.toInstant(), ChronoUnit.HOURS));
     }
 }

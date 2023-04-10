@@ -39,6 +39,7 @@ export class ContentTypesLayoutComponent implements OnChanges, OnInit {
     relationshipURL: string;
     contentTypeNameInputSize: number;
     showPermissionsTab: Observable<boolean>;
+    addToMenuContentType = false;
 
     actions: MenuItem[];
 
@@ -133,5 +134,13 @@ export class ContentTypesLayoutComponent implements OnChanges, OnInit {
                 }
             }
         ];
+    }
+
+    /**
+     * Show Dialog of Add To Menu
+     * @memberof ContentTypesLayoutComponent
+     */
+    addContentInMenu() {
+        this.addToMenuContentType = true;
     }
 }

@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.contentlet.business;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -83,7 +84,7 @@ public interface ContentletAPI {
 	 * @throws DotDataException
 	 */
 	public Contentlet find(String inode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
-
+	
 	/**
 	 * Move the contentlet to a host path for instance //demo.dotcms.com/application
 	 * Indexing will be based on the {@link Contentlet#getIndexPolicy()}
@@ -218,13 +219,27 @@ public interface ContentletAPI {
     Contentlet findContentletByIdentifierAnyLanguage(String identifier, boolean includeDeleted) throws DotDataException;
 
     /**
-	 * Retrieves a contentlet from the database by its identifier and the working version. Ignores archived content
+	 * Retrieves a contentlet from the database by its identifier, the working version and the DEFAULT Variant.
+	 * Ignores archived content
+	 *
 	 * @param identifier
 	 * @return Contentlet object
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 */
 	public Contentlet findContentletByIdentifierAnyLanguage(String identifier) throws DotDataException;
+
+	/**
+	 * Retrieves a contentlet from the database by its identifier, the working version and any {@link com.dotcms.variant.model.Variant}.
+	 * Ignores archived content
+	 *
+	 * @param identifier
+	 * @return Contentlet object
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	Contentlet findContentletByIdentifierAnyLanguageAnyVariant(String identifier) throws DotDataException;
+
 
 	/**
 	 * Retrieves a contentlet from the database by its identifier, working version and variant. Ignores archived content
@@ -1645,6 +1660,23 @@ public interface ContentletAPI {
 	public List<Contentlet> findAllVersions(Identifier identifier, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotStateException;
 
 	/**
+	 * Retrieves all versions even the old ones for a {@link Contentlet} identifier and {@link Variant
+	 * Note: This method could pull too many versions.
+	 *
+	 * @param identifier Contentlet identifier
+	 * @param user user to check permissions
+	 * @param respectFrontendRoles if it is true then the Frontend roles will be considered.
+	 * @param variant Variant to filter the contentlets
+	 *
+	 * @return List<Contentlet> List of Contents with all of its versions inside the Variant.
+	 *
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	List<Contentlet> findAllVersions(final Identifier identifier, final Variant variant,
+			final User user, boolean respectFrontendRoles)
+			throws DotSecurityException, DotDataException;
+	/**
 	 * Retrieves all versions for a contentlet identifier.
 	 * Note: This method could pull too many versions.
 	 * @param identifier - Identifier object that belongs to a contentlet
@@ -2244,4 +2276,14 @@ public interface ContentletAPI {
      */
     void refresh(ContentType type) throws DotReindexStateException;
 
+	/**
+	 * This method will create a new version of the contentlet but into variantName.
+	 *
+	 * @param contentlet  to be copied
+	 * @param variantName new variant version
+	 * @param user        user to check permissions
+	 * @return new contentlet version
+	 */
+	Contentlet copyContentToVariant(final Contentlet contentlet, final String variantName,
+			final User user) throws DotDataException, DotSecurityException;
 }

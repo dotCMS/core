@@ -1619,7 +1619,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		return map.getOrDefault(VARIANT_ID, VariantAPI.DEFAULT_VARIANT.name()).toString();
 	}
 
-    private class ContentletHashMap extends ConcurrentHashMap<String, Object> {
+	@VisibleForTesting
+    public class ContentletHashMap extends ConcurrentHashMap<String, Object> {
 		 /**
 		 *
 		 */
@@ -1702,7 +1703,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 			if (!ExceptionUtil.causedBy(e, NotFoundInDbException.class)) {
 				throw new DotStateException(e);
 			} else {
-				Logger.warn(this,
+				Logger.debug(this,
 						() -> String.format(
 								"Unable to find Content Type for Contentlet [%s], Content Type deleted? - [%s]",
 								this.getIdentifier(),

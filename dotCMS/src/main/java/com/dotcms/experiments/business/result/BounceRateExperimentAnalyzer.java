@@ -1,11 +1,8 @@
 package com.dotcms.experiments.business.result;
 
-import com.dotcms.analytics.metrics.Condition;
 import com.dotcms.analytics.metrics.EventType;
 import com.dotcms.analytics.metrics.Metric;
 import com.dotcms.experiments.model.Experiment;
-import com.google.common.collect.ImmutableList;
-import com.liferay.util.StringPool;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -37,7 +34,7 @@ public class BounceRateExperimentAnalyzer implements MetricExperimentAnalyzer  {
         final Event lastEvent = events.get(events.size() - 1);
 
         if (goal.validateConditions(lastEvent)) {
-            experimentResultBuilder.count(goal, browserSession.getLookBackWindow(), lastEvent);
+            experimentResultBuilder.success(goal, browserSession.getLookBackWindow(), lastEvent);
         }
     }
 

@@ -1,6 +1,7 @@
 package com.dotmarketing.util;
 
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
+import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -8,6 +9,7 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.util.StringPool;
 import io.vavr.Function0;
+import java.time.temporal.TemporalUnit;
 import org.apache.commons.lang.StringUtils;
 
 import java.text.DateFormat;
@@ -747,5 +749,24 @@ public class DateUtil {
 				.substring(2)
 				.replaceAll("(\\d[HMS])(?!$)", "$1 ")
 				.toLowerCase();
+	}
+
+	/**
+	 * Return true if time is equals o before to now.
+	 *
+	 * @param time
+	 * @param Unit to truncate if you want
+	 * @return
+	 */
+	public static boolean isTimeReach(final Instant time,final TemporalUnit truncateTo) {
+		DotPreconditions.notNull(time, "Time must be not null");
+		final Instant now = Instant.now();
+		final Instant innerNow = truncateTo != null ? now.truncatedTo(truncateTo) : now;
+		final Instant innerTime = truncateTo != null ? time.truncatedTo(truncateTo) : time;
+		return (innerTime.isBefore(innerNow) || innerTime.equals(innerNow));
+	}
+
+	public static boolean isTimeReach(final Instant time) {
+		return isTimeReach(time, null);
 	}
 }

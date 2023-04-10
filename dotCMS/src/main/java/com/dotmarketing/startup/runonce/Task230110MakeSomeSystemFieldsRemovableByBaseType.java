@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
@@ -83,6 +84,7 @@ public class Task230110MakeSomeSystemFieldsRemovableByBaseType extends AbstractJ
     }
 
     @Override
+    @WrapInTransaction
     public void executeUpgrade() throws DotDataException {
         if (isPostgres() || isMsSql()) {
             for (final Map.Entry<Object, List<String>> entry : BASE_TYPES_AND_FIELDS.entrySet()) {

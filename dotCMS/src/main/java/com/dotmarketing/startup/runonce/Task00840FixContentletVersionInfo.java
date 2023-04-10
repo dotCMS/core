@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotcms.business.WrapInTransaction;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.Date;
@@ -244,7 +245,8 @@ public class Task00840FixContentletVersionInfo implements StartupTask {
            "alter table contentlet_version_info add constraint FK_con_ver_lockedby    " +
            "  foreign key (locked_by) references user_(userid)");
     }
-    
+    @Override
+    @WrapInTransaction
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
         try {
             DbConnectionFactory.getConnection().setAutoCommit(true);

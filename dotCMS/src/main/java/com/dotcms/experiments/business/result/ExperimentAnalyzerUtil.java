@@ -5,8 +5,6 @@ import static com.dotcms.util.CollectionsUtils.map;
 import com.dotcms.analytics.metrics.Metric;
 import com.dotcms.analytics.metrics.MetricType;
 
-import com.dotcms.cube.CubeJSResultSet;
-
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.experiments.model.Goals;
@@ -15,18 +13,15 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
-
-import java.util.stream.Collectors;
 
 
 /**
  * Analyze the {@link Event} into an {@link Experiment} to realize when the {@link com.dotcms.experiments.model.Goals}
  * was success into the {@link Experiment}, to put it in another way analyze a set of  {@link BrowserSession}
- * to return the {@link ExperimentResult}.
+ * to return the {@link ExperimentResults}.
  *
  */
 public enum ExperimentAnalyzerUtil {
@@ -52,8 +47,7 @@ public enum ExperimentAnalyzerUtil {
      * @return
      */
     public ExperimentResults getExperimentResult(final Experiment experiment,
-
-            final List<BrowserSession> browserSessions)  {
+                                                 final List<BrowserSession> browserSessions)  {
         final Goals goals = experiment.goals()
                 .orElseThrow(() -> new IllegalArgumentException("The Experiment must have a Goal"));
 
@@ -61,33 +55,38 @@ public enum ExperimentAnalyzerUtil {
         final MetricExperimentAnalyzer metricExperimentAnalyzer = experimentResultQueryHelpers.get()
                 .get(goalMetricType);
 
-        final  ExperimentResults.Builder builder = new ExperimentResults.Builder();
-
-
         final SortedSet<ExperimentVariant> variants = experiment.trafficProportion().variants();
-        builder.addVariants(variants);
+        final  ExperimentResults.Builder builder = new ExperimentResults.Builder(variants);
 
         final Metric goal = goals.primary();
-        builder.addGoal(goal);
+        builder.addPrimaryGoal(goal);
 
         final String pageId = experiment.pageId();
         final HTMLPageAsset page = getPage(pageId);
 
-        final List<BrowserSession> experimentSessions = new ArrayList<>();
-
         for (final BrowserSession browserSession : browserSessions) {
 
             final boolean isIntoExperiment = browserSession.getEvents().stream()
-                    .map(event -> event.get("url").map(url -> url.toString()).orElse(StringPool.BLANK))
-                    .anyMatch(url -> url.contains(page.getPageUrl()));
+                    .map(event -> event.get("url").map(Object::toString).orElse(StringPool.BLANK))
+                    .anyMatch(url -> {
+                        try {
+                            final String uri = page.getURI();
+                            final String alternativeURI = uri.endsWith("index")
+                                ? uri.substring(0, uri.indexOf("index"))
+                                : uri;
+                            return url.contains(uri) || url.contains(alternativeURI);
+                        } catch (DotDataException e) {
+                            throw new RuntimeException(e);
+                        }
+
+
+                    });
 
             if (isIntoExperiment) {
-                experimentSessions.add(browserSession);
+                builder.addSession(browserSession);
                 metricExperimentAnalyzer.addResults(goal, browserSession, builder);
             }
         }
-
-        builder.setSessionTotal(experimentSessions.size());
 
         return builder.build();
     }

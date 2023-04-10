@@ -19,7 +19,7 @@ import { ExperimentSteps } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
-import { ExperimentMocks } from '@portlets/dot-experiments/test/mocks';
+import { getExperimentMock } from '@portlets/dot-experiments/test/mocks';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotExperimentsConfigurationTrafficAllocationAddComponent } from './dot-experiments-configuration-traffic-allocation-add.component';
@@ -28,7 +28,8 @@ const messageServiceMock = new MockDotMessageService({
     Done: 'Done'
 });
 
-const EXPERIMENT_ID = ExperimentMocks[0].id;
+const EXPERIMENT_MOCK = getExperimentMock(0);
+
 describe('DotExperimentsConfigurationTrafficAllocationAddComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationTrafficAllocationAddComponent>;
     let store: DotExperimentsConfigurationStore;
@@ -58,11 +59,11 @@ describe('DotExperimentsConfigurationTrafficAllocationAddComponent', () => {
 
         store = spectator.inject(DotExperimentsConfigurationStore);
         dotExperimentsService = spectator.inject(DotExperimentsService);
-        dotExperimentsService.getById.and.returnValue(of(ExperimentMocks[0]));
+        dotExperimentsService.getById.and.returnValue(of(EXPERIMENT_MOCK));
 
-        store.loadExperiment(EXPERIMENT_ID);
+        store.loadExperiment(EXPERIMENT_MOCK.id);
         store.setSidebarStatus({
-            experimentStep: ExperimentSteps.TRAFFIC,
+            experimentStep: ExperimentSteps.TRAFFIC_LOAD,
             isOpen: true
         });
         spectator.detectChanges();
@@ -72,8 +73,8 @@ describe('DotExperimentsConfigurationTrafficAllocationAddComponent', () => {
         const slider: Slider = spectator.query(Slider);
         const input: HTMLInputElement = spectator.query(byTestId('traffic-allocation-input'));
 
-        expect(slider.value).toEqual(ExperimentMocks[0].trafficAllocation);
-        expect(parseInt(input.value)).toEqual(ExperimentMocks[0].trafficAllocation);
+        expect(slider.value).toEqual(EXPERIMENT_MOCK.trafficAllocation);
+        expect(parseInt(input.value)).toEqual(EXPERIMENT_MOCK.trafficAllocation);
     });
 
     it('should save form when is valid ', () => {
@@ -88,8 +89,8 @@ describe('DotExperimentsConfigurationTrafficAllocationAddComponent', () => {
 
         spectator.click(submitButton);
         expect(store.setSelectedAllocation).toHaveBeenCalledWith({
-            trafficAllocation: ExperimentMocks[0].trafficAllocation,
-            experimentId: EXPERIMENT_ID
+            trafficAllocation: EXPERIMENT_MOCK.trafficAllocation,
+            experimentId: EXPERIMENT_MOCK.id
         });
     });
 

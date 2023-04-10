@@ -8,10 +8,11 @@ import { pluck } from 'rxjs/operators';
 import { DotCMSResponse } from '@dotcms/dotcms-js';
 import {
     DotExperiment,
+    DotExperimentResults,
     Goals,
     GoalsLevels,
     RangeOfDateAndTime,
-    Variant
+    TrafficProportion
 } from '@dotcms/dotcms-models';
 
 const API_ENDPOINT = '/api/v1/experiments';
@@ -59,6 +60,18 @@ export class DotExperimentsService {
     }
 
     /**
+     * Get results of an experiment
+     * @param {string} experimentId
+     * @returns Observable<DotExperiment>
+     * @memberof DotExperimentsService
+     */
+    getResults(experimentId: string): Observable<DotExperimentResults> {
+        return this.http
+            .get<DotCMSResponse<DotExperimentResults>>(`${API_ENDPOINT}/${experimentId}/results`)
+            .pipe(pluck('entity'));
+    }
+
+    /**
      * Archive an experiment with its experimentId
      * @param {string} experimentId
      * @returns Observable<DotExperiment>
@@ -95,18 +108,29 @@ export class DotExperimentsService {
     }
 
     /**
-     * Add variant to experiment
-     * @param  {number} experimentId
-     * @param {Variant} variant
+     * Stop experiment
+     * @param {string} experimentId
      * @returns Observable<DotExperiment>
      * @memberof DotExperimentsService
      */
-    addVariant(experimentId: string, variant: Pick<Variant, 'name'>): Observable<DotExperiment> {
+    stop(experimentId: string): Observable<DotExperiment> {
         return this.http
-            .post<DotCMSResponse<DotExperiment>>(
-                `${API_ENDPOINT}/${experimentId}/variants`,
-                variant
-            )
+            .post<DotCMSResponse<DotExperiment>>(`${API_ENDPOINT}/${experimentId}/_end`, {})
+            .pipe(pluck('entity'));
+    }
+
+    /**
+     * Add variant to experiment
+     * @param  {number} experimentId
+     * @param {string} name
+     * @returns Observable<DotExperiment>
+     * @memberof DotExperimentsService
+     */
+    addVariant(experimentId: string, name: string): Observable<DotExperiment> {
+        return this.http
+            .post<DotCMSResponse<DotExperiment>>(`${API_ENDPOINT}/${experimentId}/variants`, {
+                description: name
+            })
             .pipe(pluck('entity'));
     }
 
@@ -147,7 +171,20 @@ export class DotExperimentsService {
     }
 
     /**
+     * Promote variant of experiment
+     * @param  {string} variantName
+     * @returns Observable<DotExperiment>
+     * @memberof DotExperimentsService
+     */
+    promoteVariant(variantName: string): Observable<DotExperiment> {
+        return this.http
+            .put<DotCMSResponse<DotExperiment>>(`/api/v1/variants/${variantName}/_promote`, {})
+            .pipe(pluck('entity'));
+    }
+
+    /**
      * Set a selectedGoal to an experiment
+     * @param {string} experimentId
      * @param {Goal} selectedGoal
      * @returns Observable<DotExperiment>
      * @memberof DotExperimentsService
@@ -188,6 +225,24 @@ export class DotExperimentsService {
         return this.http
             .patch<DotCMSResponse<DotExperiment>>(`${API_ENDPOINT}/${experimentId}`, {
                 trafficAllocation
+            })
+            .pipe(pluck('entity'));
+    }
+
+    /**
+     * Set traffic portion to an experiment
+     * @param {string} experimentId
+     * @param {TrafficProportion} trafficProportion
+     * @returns Observable<DotExperiment>
+     * @memberof DotExperimentsService
+     */
+    setTrafficProportion(
+        experimentId: string,
+        trafficProportion: TrafficProportion
+    ): Observable<DotExperiment> {
+        return this.http
+            .patch<DotCMSResponse<DotExperiment>>(`${API_ENDPOINT}/${experimentId}`, {
+                trafficProportion
             })
             .pipe(pluck('entity'));
     }

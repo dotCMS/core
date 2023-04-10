@@ -14,7 +14,7 @@
     }
 
     hr {
-        background: $gray;
+        background: $color-palette-gray-700;
         border: 0;
         bottom: 0;
         height: 1px;
@@ -27,12 +27,13 @@
 $tab-name-height: 32px;
 
 .tab__label {
-    border-color: $gray $gray $gray-bg $gray;
+    border-color: $color-palette-gray-700 $color-palette-gray-700 $color-palette-gray-200
+        $color-palette-gray-700;
     border-radius: 5px 5px 0 0;
     border-style: solid;
     border-width: 1px 1px 1px 1px;
     cursor: text;
-    font-size: $font-size-small;
+    font-size: $font-size-sm;
     height: $tab-name-height;
     line-height: $tab-name-height;
     min-width: 100px;

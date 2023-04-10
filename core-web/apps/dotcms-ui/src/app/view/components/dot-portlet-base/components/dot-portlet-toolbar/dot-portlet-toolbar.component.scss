@@ -2,13 +2,13 @@
 
 :host ::ng-deep .p-button {
     // TODO: move this to an extend
-    font-size: $font-size-small;
+    font-size: $font-size-sm;
     padding: $spacing-1 $spacing-2;
 }
 
 h3 {
     margin: 0 $spacing-2 0 0;
-    font-size: $font-size-xx-large;
+    font-size: $font-size-xxl;
     line-height: 1.6; // Default 39px height
 }
 

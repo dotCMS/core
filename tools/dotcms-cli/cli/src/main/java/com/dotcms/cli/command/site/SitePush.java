@@ -21,9 +21,9 @@ import java.util.concurrent.Callable;
 @CommandLine.Command(name = SitePush.NAME,
      description = "@|bold,green Retrieves Sites info.|@ Option params @|bold,cyan -n|@"
 )
-public class SitePush extends SiteCommand implements Callable<Integer>{
+public class SitePush extends AbstractSiteCommand implements Callable<Integer>{
 
-    static final String NAME = "site-push";
+    static final String NAME = "push";
 
     @CommandLine.Mixin(name = "output")
     OutputOptionMixin output;
@@ -31,11 +31,8 @@ public class SitePush extends SiteCommand implements Callable<Integer>{
     @Inject
     RestClientFactory clientFactory;
 
-    @CommandLine.Option(names = {"-f", "--file"}, order = 10, arity = "1", description = " The json/yaml formatted Site descriptor file to be pushed. ")
+    @CommandLine.Parameters(index = "0", arity = "1", description = " The json/yaml formatted Site descriptor file to be pushed. ")
     File siteFile;
-
-    @CommandLine.Option(names = {"-c", "--create"}, order = 20, arity = "1", description = " Quick way to create a site. Simply pass a site name. ")
-    String siteName;
 
     @Override
     public Integer call() {
@@ -73,15 +70,6 @@ public class SitePush extends SiteCommand implements Callable<Integer>{
                         siteFile.getAbsolutePath(), e.getMessage()));
                 return CommandLine.ExitCode.SOFTWARE;
             }
-        }
-
-        if ( null != siteName && !siteName.isEmpty()) {
-            final ResponseEntityView<SiteView> response = siteAPI.create(CreateUpdateSiteRequest.builder().siteName(siteName).build());
-            final SiteView siteView = response.entity();
-            output.info(" Site [%s] successfully created.");
-            output.info(String.format("Site @|bold,green [%s]|@ successfully created.",siteName));
-            output.info(shortFormat(siteView));
-            return CommandLine.ExitCode.OK;
         }
 
         return CommandLine.ExitCode.USAGE;

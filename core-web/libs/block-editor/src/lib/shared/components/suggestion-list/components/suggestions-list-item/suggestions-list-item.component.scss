@@ -14,7 +14,7 @@
     }
 
     &[disabled="true"] {
-        color: $gray-light;
+        color: $color-palette-gray-500;
         cursor: not-allowed;
     }
 }
@@ -65,7 +65,7 @@
     }
 
     .url {
-        color: $gray-light;
+        color: $color-palette-gray-500;
         font-size: 0.9 * $dot-editor-size;
     }
 

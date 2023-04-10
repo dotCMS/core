@@ -11,7 +11,7 @@ declare module '@tiptap/core' {
 }
 
 export const VideoNode = Node.create({
-    name: 'video',
+    name: 'dotVideo',
 
     addAttributes() {
         return {
@@ -34,6 +34,13 @@ export const VideoNode = Node.create({
                 default: null,
                 parseHTML: (element) => element.getAttribute('height'),
                 renderHTML: (attributes) => ({ height: attributes.height })
+            },
+            orientation: {
+                default: null,
+                parseHTML: (element) => element.getAttribute('orientation'),
+                renderHTML: ({ height, width }) => ({
+                    orientation: height > width ? 'vertical' : 'horizontal'
+                })
             },
             data: {
                 default: null,
@@ -84,10 +91,18 @@ export const VideoNode = Node.create({
     },
 
     renderHTML({ HTMLAttributes }) {
+        const { orientation = 'horizontal' } = HTMLAttributes;
+
         return [
             'div',
             { class: 'node-container' },
-            ['video', mergeAttributes(HTMLAttributes, { controls: true })]
+            [
+                'video',
+                mergeAttributes(HTMLAttributes, {
+                    controls: true,
+                    class: `${orientation}-video`
+                })
+            ]
         ];
     }
 });
@@ -97,14 +112,18 @@ const getVideoAttrs = (attrs: DotCMSContentlet | string) => {
         return { src: attrs };
     }
 
-    const { assetMetaData, asset, assetVersion, mimeType } = attrs;
-    const { width = 'auto', height = 'auto' } = assetMetaData || {};
+    const { assetMetaData, asset, mineType, fileAsset } = attrs;
+    const { width = 'auto', height = 'auto', contentType } = assetMetaData || {};
+    const orientation = height > width ? 'vertical' : 'horizontal';
 
     return {
-        src: assetVersion || asset,
-        data: attrs,
+        src: fileAsset || asset,
+        data: {
+            ...attrs
+        },
         width,
         height,
-        mimeType
+        mineType: mineType || contentType,
+        orientation
     };
 };

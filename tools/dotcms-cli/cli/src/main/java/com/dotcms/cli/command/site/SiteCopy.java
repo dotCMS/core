@@ -18,8 +18,8 @@ import java.util.concurrent.Callable;
 @CommandLine.Command(name = SiteCopy.NAME,
         description = "@|bold,green Copy Site |@ No params are expected. "
 )
-public class SiteCopy extends SiteCommand implements Callable<Integer> {
-    static final String NAME = "site-copy";
+public class SiteCopy extends AbstractSiteCommand implements Callable<Integer> {
+    static final String NAME = "copy";
 
     @CommandLine.Mixin(name = "output")
     protected OutputOptionMixin output;

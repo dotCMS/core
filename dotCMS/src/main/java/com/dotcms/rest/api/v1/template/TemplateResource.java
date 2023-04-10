@@ -7,6 +7,8 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.BulkResultView;
 import com.dotcms.rest.api.FailedResultView;
+import com.dotcms.rest.api.v1.template.TemplateLayoutView.ContainerUUIDChanged;
+import com.dotcms.rest.api.v1.template.TemplateLayoutView.ContainerUUIDChanges;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.ContainerPaginator;
 import com.dotcms.util.pagination.OrderDirection;
@@ -14,15 +16,18 @@ import com.dotcms.util.pagination.TemplatePaginator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.design.util.DesignTemplateUtil;
@@ -38,6 +43,10 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
@@ -371,7 +380,11 @@ public class TemplateResource {
         template.setTitle(templateForm.getTitle());
         template.setModUser(user.getUserId());
         template.setModDate(new Date());
+
+        ContainerUUIDChanges containerUUIDChanges = null;
+
         if (null != templateForm.getLayout()) {
+            containerUUIDChanges = templateForm.getLayout().updateUUIDOfContainers();
             template.setDrawedBody(this.templateHelper.toTemplateLayout(templateForm.getLayout()));
             template.setDrawed(true);
         } else {
@@ -396,17 +409,37 @@ public class TemplateResource {
             template.setBody(endBody.toString());
         }
 
-        if (draft) {
 
+        if (draft) {
             this.templateAPI.saveDraftTemplate(template, host, user, pageMode.respectAnonPerms);
         } else {
             this.templateAPI.saveTemplate(template, host, user, pageMode.respectAnonPerms);
+        }
+
+        if (UtilMethods.isSet(containerUUIDChanges) && UtilMethods.isSet(containerUUIDChanges.lostUUIDValues())){
+            updateMultiTree(template, containerUUIDChanges);
+
         }
 
         ActivityLogger.logInfo(this.getClass(), "Saved Template", "User " + user.getPrimaryKey()
                 + "Template: " + template.getTitle(), host.getTitle() != null? host.getTitle():"default");
 
         return template;
+    }
+
+    private static void updateMultiTree(final Template template, final ContainerUUIDChanges containerUUIDChanges)
+            throws DotDataException, DotSecurityException {
+        final List<Contentlet> pagesByTemplate = APILocator.getHTMLPageAssetAPI()
+                .findPagesByTemplate(template, APILocator.systemUser(), false);
+
+        final List<String> pagesId = pagesByTemplate.stream()
+                .map(contentlet -> contentlet.getIdentifier())
+                .collect(Collectors.toList());
+
+        for (ContainerUUIDChanged lostUUIDValue : containerUUIDChanges.lostUUIDValues()) {
+            APILocator.getMultiTreeAPI().updateMultiTrees(pagesId, lostUUIDValue.containerId, lostUUIDValue.oldValue,
+                    lostUUIDValue.newValue);
+        }
     }
 
     /**

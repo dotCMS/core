@@ -12,6 +12,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -80,21 +81,21 @@ public class IdentifierConsistencyIntegrationTest extends IntegrationTestBase {
             newAsset = insertIdentifier(prefix + "assetName", "/", CONTENTLET);
             insertIdentifier(prefix + "assetname", "/", CONTENTLET);
         } finally {
-           if(newAsset != null){
-              deleteIdentifier(newAsset.getId());
-           }
+            if (newAsset != null) {
+                deleteIdentifier(newAsset.getId());
+            }
         }
     }
 
     @Test(expected = DotDataException.class)
     public void Test_Identifier_Update_Dupe_Asset_Name_Expect_Name_Collision()
-            throws DotDataException, DotRuntimeException {
+            throws DotDataException, DotSecurityException {
 
         final Identifier identifier1 = insertIdentifier("anyAssetName", "/", CONTENTLET);
         final Identifier identifier2 = insertIdentifier("nonConflictingName", "/", CONTENTLET);
-        try{
+        try {
             updateIdentifier(identifier2, "anyassetname", "/");
-        }finally{
+        } finally {
             if (null != identifier1) {
                 deleteIdentifier(identifier1.getId());
             }
@@ -103,7 +104,6 @@ public class IdentifierConsistencyIntegrationTest extends IntegrationTestBase {
             }
         }
     }
-
 
 
     @Test
@@ -154,7 +154,8 @@ public class IdentifierConsistencyIntegrationTest extends IntegrationTestBase {
 
             try {
                 final String invalidParentPath = root.getPath() + "lol/";
-                updateIdentifier(testFolderIdentifier, testFolderIdentifier.getAssetName(), invalidParentPath);
+                updateIdentifier(testFolderIdentifier, testFolderIdentifier.getAssetName(),
+                        invalidParentPath);
                 fail("Parent '" + invalidParentPath
                         + "' does not exist and the update should have failed");
             } catch (DotDataException e) {
@@ -163,14 +164,15 @@ public class IdentifierConsistencyIntegrationTest extends IntegrationTestBase {
             }
 
         } finally {
-                CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(testFolderIdentifier.getId());
-                try {
-                    Logger.info(getClass(), () -> "Running Cleanup! ");
-                    folderAPI.delete(root, user, false);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    Logger.error(getClass(), "Error running cleanup routine.", e);
-                }
+            CacheLocator.getIdentifierCache()
+                    .removeFromCacheByIdentifier(testFolderIdentifier.getId());
+            try {
+                Logger.info(getClass(), () -> "Running Cleanup! ");
+                folderAPI.delete(root, user, false);
+            } catch (Exception e) {
+                e.printStackTrace();
+                Logger.error(getClass(), "Error running cleanup routine.", e);
+            }
 
         }
     }
@@ -199,7 +201,7 @@ public class IdentifierConsistencyIntegrationTest extends IntegrationTestBase {
                     .findByURIPattern(Identifier.ASSET_TYPE_FOLDER,
                             root.getPath() + "level-1/level-2", true, host);
 
-             assertEquals(1, identifiers1.size());
+            assertEquals(1, identifiers1.size());
 
             final List<Identifier> identifiers2 = identifierAPI
                     .findByURIPattern(Identifier.ASSET_TYPE_FOLDER,
@@ -215,8 +217,8 @@ public class IdentifierConsistencyIntegrationTest extends IntegrationTestBase {
             assertTrue(updatedLevel3.getParentPath().contains("level2"));
 
         } finally {
-            if(null != root){
-             folderAPI.delete(root, user, false);
+            if (null != root) {
+                folderAPI.delete(root, user, false);
             }
         }
     }
@@ -230,7 +232,8 @@ public class IdentifierConsistencyIntegrationTest extends IntegrationTestBase {
             final String prefix = System.currentTimeMillis() + "_";
             final String parentFolderName = String.format("/%sanyFolder", prefix);
             parentFolderIdentifier = insertIdentifier(parentFolderName, "/", FOLDER);
-            subFolderIdentifier = insertIdentifier("subFolder", parentFolderIdentifier.getPath(), FOLDER);
+            subFolderIdentifier = insertIdentifier("subFolder", parentFolderIdentifier.getPath(),
+                    FOLDER);
             insertIdentifier("SUBFOLDER", parentFolderIdentifier.getPath(), FOLDER);
             fail("should have failed inserting a subfolder.");
         } finally {
@@ -261,10 +264,12 @@ public class IdentifierConsistencyIntegrationTest extends IntegrationTestBase {
             final String prefix = System.currentTimeMillis() + "_";
             final String parentFolderName = String.format("/%sanyFolder", prefix);
             parentFolderIdentifier = insertIdentifier(parentFolderName, "/", FOLDER);
-            subFolderIdentifier1 = insertIdentifier("subFolder-1", parentFolderIdentifier.getPath(), FOLDER);
-            subFolderIdentifier2 = insertIdentifier("subFolder-2", parentFolderIdentifier.getPath(), FOLDER);
+            subFolderIdentifier1 = insertIdentifier("subFolder-1", parentFolderIdentifier.getPath(),
+                    FOLDER);
+            subFolderIdentifier2 = insertIdentifier("subFolder-2", parentFolderIdentifier.getPath(),
+                    FOLDER);
 
-            updateIdentifier(subFolderIdentifier2,"subFolder-1", parentFolderIdentifier.getPath());
+            updateIdentifier(subFolderIdentifier2, "subFolder-1", parentFolderIdentifier.getPath());
 
             fail("should have failed updating subfolder for the name's already taken.");
         } finally {
@@ -302,7 +307,8 @@ public class IdentifierConsistencyIntegrationTest extends IntegrationTestBase {
             final String prefix = System.currentTimeMillis() + "_";
             final String parentFolderName = String.format("%sparentFolder", prefix);
             parentFolderIdentifier = insertIdentifier(parentFolderName, "/", FOLDER);
-            subFolderIdentifier = insertIdentifier("subFolder", parentFolderIdentifier.getPath(), FOLDER);
+            subFolderIdentifier = insertIdentifier("subFolder", parentFolderIdentifier.getPath(),
+                    FOLDER);
 
             deleteIdentifier(parentFolderIdentifier.getId());
 
@@ -333,30 +339,30 @@ public class IdentifierConsistencyIntegrationTest extends IntegrationTestBase {
         final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
         final User user = APILocator.systemUser();
         final String rootFolderName = String.format("/%slevel-0", prefix);
-        Folder folder0,folder1,folder2,folder3;
+        Folder folder0, folder1, folder2, folder3;
         folder0 = folder1 = folder2 = folder3 = null;
         try {
-             folder0 = folderAPI
+            folder0 = folderAPI
                     .createFolders(rootFolderName, host, user, false);
 
-             folder1 = folderAPI
+            folder1 = folderAPI
                     .createFolders(folder0.getPath() + "level-1", host, user, false);
 
-             folder2 = folderAPI
+            folder2 = folderAPI
                     .createFolders(folder1.getPath() + "level-2", host, user, false);
 
-             folder3 = folderAPI
+            folder3 = folderAPI
                     .createFolders(folder2.getPath() + "level-3", host, user, false);
 
             final String newFolderName = "newName";
             updateFolder(folder1.getIdentifier(), folder1.getInode(), newFolderName);
             final Identifier identifier = identifierAPI.loadFromDb(folder1.getIdentifier());
-            assertEquals(identifier.getAssetName(),newFolderName);
+            assertEquals(identifier.getAssetName(), newFolderName);
 
             final Set<Identifier> subIdentifiers = collectSubIdentifiers(identifier);
             subIdentifiers.forEach(ident -> {
-                 // System.out.println(String.format("%s, %s ",ident.getPath(), ident.getAssetName()));
-                 assertTrue(ident.getPath().contains(newFolderName));
+                // System.out.println(String.format("%s, %s ",ident.getPath(), ident.getAssetName()));
+                assertTrue(ident.getPath().contains(newFolderName));
             });
 
         } finally {
@@ -376,14 +382,16 @@ public class IdentifierConsistencyIntegrationTest extends IntegrationTestBase {
     }
 
 
-    private Set<Identifier> collectSubIdentifiers(final Identifier identifier) throws DotDataException {
+    private Set<Identifier> collectSubIdentifiers(final Identifier identifier)
+            throws DotDataException {
         final Set<Identifier> children = new HashSet<>();
-        final String path =  identifier.getParentPath() + identifier.getAssetName() + "/";
+        final String path = identifier.getParentPath() + identifier.getAssetName() + "/";
         //System.out.println(path);
-        final List<Identifier> identifiers = APILocator.getIdentifierAPI().findByParentPath(identifier.getHostId(),path);
-        for(final Identifier id:identifiers){
-            if(!id.getId().equals(identifier.getId())){
-               children.addAll(collectSubIdentifiers(id));
+        final List<Identifier> identifiers = APILocator.getIdentifierAPI()
+                .findByParentPath(identifier.getHostId(), path);
+        for (final Identifier id : identifiers) {
+            if (!id.getId().equals(identifier.getId())) {
+                children.addAll(collectSubIdentifiers(id));
             }
         }
         children.addAll(identifiers);
@@ -392,7 +400,8 @@ public class IdentifierConsistencyIntegrationTest extends IntegrationTestBase {
 
 
     @WrapInTransaction
-    private Identifier insertIdentifier(final String assetName, final String parentPath, final String assetType)
+    private Identifier insertIdentifier(final String assetName, final String parentPath,
+            final String assetType)
             throws DotDataException, DotRuntimeException {
 
         Logger.debug(this,
@@ -473,33 +482,25 @@ public class IdentifierConsistencyIntegrationTest extends IntegrationTestBase {
 
     }
 
-    private void deleteIdentifier(final String identifier) throws DotDataException, DotRuntimeException {
-        try {
-            final Connection conn = DbConnectionFactory.getDataSource().getConnection();
-            conn.setAutoCommit(true);
+    private void deleteIdentifier(final String identifier)
+            throws DotDataException, DotSecurityException {
+        LocalTransaction.wrap(() -> {
+            final DotConnect dc = new DotConnect();
+            dc.setSQL(DELETE_IDENTIFIER_SQL);
+
+            dc.addParam(identifier);
+
             try {
-                final DotConnect dc = new DotConnect();
-                dc.setSQL(DELETE_IDENTIFIER_SQL);
-
-                dc.addParam(identifier);
-
-                try {
-                    dc.loadResult();
-                } catch (DotDataException e) {
-                    Logger.error(IdentifierFactoryImpl.class, UPDATE_IDENTIFIER_FAIL + e, e);
-                    throw new DotDataException(e);
-                }
-
-            } finally {
-                conn.setAutoCommit(false);
-                conn.close();
+                dc.loadResult();
+            } catch (DotDataException e) {
+                Logger.error(IdentifierFactoryImpl.class, UPDATE_IDENTIFIER_FAIL + e, e);
+                throw new DotDataException(e);
             }
-        } catch (Exception e) {
-            throw new DotDataException(e.getMessage(), e);
-        }
+        });
     }
 
-    private void updateFolder(final String identifier, final String inode, final String newFolderName) throws DotDataException, DotRuntimeException {
+    private void updateFolder(final String identifier, final String inode,
+            final String newFolderName) throws DotDataException, DotRuntimeException {
         try {
             final Connection conn = DbConnectionFactory.getDataSource().getConnection();
             conn.setAutoCommit(true);

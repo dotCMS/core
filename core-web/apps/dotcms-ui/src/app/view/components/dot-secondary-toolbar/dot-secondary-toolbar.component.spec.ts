@@ -34,7 +34,7 @@ describe('DotSecondaryToolbarComponent', () => {
         fixture.detectChanges();
     });
 
-    it('should have a dot-avatar', () => {
+    it('should have a p-avatar', () => {
         dotToolbarComponent = fixture.debugElement.query(By.css('dot-secondary-toolbar'));
         const primaryToolbarLeft = fixture.debugElement.query(
             By.css('dot-secondary-toolbar .dot-secondary-toolbar__main .main-toolbar-left')

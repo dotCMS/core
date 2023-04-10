@@ -1,5 +1,6 @@
 package com.dotmarketing.business;
 
+import com.dotcms.variant.model.Variant;
 import java.util.List;
 import java.util.Optional;
 
@@ -222,6 +223,19 @@ public abstract class VersionableFactory {
     protected abstract Optional<ContentletVersionInfo> findAnyContentletVersionInfo(String identifier) throws DotDataException;
 
 	/**
+	 * Return any version of the {@link com.dotmarketing.portlets.contentlet.model.Contentlet} in
+	 * the {@link com.dotcms.variant.VariantAPI#DEFAULT_VARIANT} no matter the
+	 * {@link com.dotmarketing.portlets.languagesmanager.model.Language}.
+	 *
+	 * @param identifier {@link com.dotmarketing.portlets.contentlet.model.Contentlet}'s Identifier that you are looking for
+	 * @param deleted If it is true then return just archived {@link com.dotmarketing.portlets.contentlet.model.Contentlet}.
+	 * @return
+	 * @throws DotDataException
+	 */
+	public abstract Optional<ContentletVersionInfo> findAnyContentletVersionInfo(final String identifier, final boolean deleted)
+			throws DotDataException;
+
+	/**
 	 * Return any version of the {@link com.dotmarketing.portlets.contentlet.model.Contentlet} no matter the
 	 * {@link com.dotmarketing.portlets.languagesmanager.model.Language} or the {@link com.dotcms.variant.model.Variant}
 	 *
@@ -230,7 +244,7 @@ public abstract class VersionableFactory {
 	 * @return
 	 * @throws DotDataException
 	 */
-	public abstract Optional<ContentletVersionInfo> findAnyContentletVersionInfo(final String identifier, final boolean deleted)
+	public abstract Optional<ContentletVersionInfo> findAnyContentletVersionInfoAnyVariant(final String identifier, final boolean deleted)
 			throws DotDataException;
 
 	public abstract Optional<ContentletVersionInfo> findAnyContentletVersionInfo(final String identifier, final String variant,
@@ -242,4 +256,14 @@ public abstract class VersionableFactory {
 
 	protected abstract List<ContentletVersionInfo> findAllContentletVersionInfos(String identifier, String variantName)
 			throws DotDataException, DotStateException ;
+
+	/**
+	 * Return all versions of the {@link com.dotmarketing.portlets.contentlet.model.Contentlet}
+	 * for the specific {@link com.dotcms.variant.model.Variant} no matter the {@Link Language}
+	 *
+	 * @param variant
+	 * @return
+	 */
+    public abstract List<ContentletVersionInfo> findAllByVariant(Variant variant)
+			throws DotDataException;
 }

@@ -427,15 +427,17 @@ public class ExperimentsResource {
     }
 
     /**
-     * Returns the partoal or total Result of a {@link Experiment}
+     * Returns the partial or total Result of a {@link Experiment}
      */
     @GET
     @NoCache
-    @Path("/{id}/result")
+    @Path("/{id}/results")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public ResponseEntityResultExperimentView getResult(@Context final HttpServletRequest request,
-            @Context final HttpServletResponse response, @PathParam("id") String id
-    ) throws DotDataException, DotSecurityException {
+    public ResponseEntityExperimentResults getResult(@Context final HttpServletRequest request,
+                                                     @Context final HttpServletResponse response,
+                                                     @PathParam("id") String id)
+        throws DotDataException, DotSecurityException {
+
         final InitDataObject initData = getInitData(request, response);
         final User user = initData.getUser();
 
@@ -445,7 +447,7 @@ public class ExperimentsResource {
 
         final ExperimentResults experimentResults = APILocator.getExperimentsAPI().getResults(experiment);
 
-        return new ResponseEntityResultExperimentView(experimentResults);
+        return new ResponseEntityExperimentResults(experimentResults);
     }
 
     private Experiment patchExperiment(final Experiment experimentToUpdate,
@@ -482,7 +484,7 @@ public class ExperimentsResource {
         }
 
         if(experimentForm.getLookbackWindow()>-1) {
-            builder.lookbackWindow(experimentForm.getLookbackWindow());
+            builder.lookBackWindowExpireTime(experimentForm.getLookbackWindow());
         }
 
         return builder.build();

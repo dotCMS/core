@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runalways;
 
+import com.dotcms.business.WrapInTransaction;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
@@ -45,6 +46,7 @@ public class Task00002LoadClusterLicenses implements StartupTask {
     }
 
     @Override
+    @WrapInTransaction
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
         
         for(File pack : licensePackFiles()){

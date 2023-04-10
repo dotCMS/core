@@ -74,28 +74,33 @@ project.ext {
     homeFolder = serverFolder + webAppRootFolder
     dotcmsHome = serverFolder + webAppRootFolder
 
-
-
-
-    if (project.gradle.startParameter.taskNames.contains('deployWarTomcat') || project.gradle.startParameter.taskNames.contains('createDist')|| project.gradle.startParameter.taskNames.contains('docker')){
-        try {
-            git = Grgit.open(file('..'))
-            dotcmsReleaseBuild = git.head().abbreviatedId // abbreviatedId of head() method.
-        } catch (Exception ignored) {
-            println "ERROR:>> " + ignored.getMessage()
-            //Do nothing, this will fail only if git is not installed on this machine
-        }
+    try {
+        dotcmsReleaseBuild = getCheckedOutGitCommitHash()
+        println "SETTING BUILD TO:>> " + dotcmsReleaseBuild
+        
+    } catch (Exception ignored) {
+        println "ERROR:>> " + ignored.getMessage()
+        //Do nothing, this will fail only if git is not installed on this machine
     }
+    
 
     tomcatDistBase = "$distLocation/$tomcatDistInstallLocation-$tomcatInstallVersion"
     dotcmsDistBase = "../$tomcatDistInstallLocation-$tomcatInstallVersion"
 }
 
+// this is way faster than Grgit
+def getCheckedOutGitCommitHash() {
+    grgit.head().abbreviatedId
+}
+
+
 
 if (project.hasProperty('jarBaseName')) {
     archivesBaseName = "$jarBaseName"
-}else{
-    archivesBaseName = 'dotcms_'+dotcmsReleaseVersion+'_'+dotcmsReleaseBuild
+}else if(System.getenv("DOT_JAR_BASE_NAME") != ""){
+    archivesBaseName = "dotcms_" + System.getenv("DOT_JAR_BASE_NAME")
+}else {
+    archivesBaseName = 'dotcms_' + dotcmsReleaseVersion + '_' + dotcmsReleaseBuild
 }
 
 // Utils
@@ -233,7 +238,7 @@ else {
 
 
 
-def eeType = dotcmsReleaseVersion == "master" ? '-SNAPSHOT' : ''
+
 def mavenUiVersion = "1.0.0-SNAPSHOT"
 
 dependencies {
@@ -293,10 +298,7 @@ dependencies {
     //integrationTestCompile sourceSets.test.output
 
 
-    if (!(project.gradle.startParameter.taskNames.contains('deployWarTomcatDev') || project.gradle.startParameter.taskNames.contains('testDev'))) {
 
-        implementation group: 'com.dotcms.enterprise', name: 'ee', version: dotcmsReleaseVersion + eeType, changing: true
-    }
 }
 
 import groovy.json.JsonSlurper

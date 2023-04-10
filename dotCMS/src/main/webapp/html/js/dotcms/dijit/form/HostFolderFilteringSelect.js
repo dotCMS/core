@@ -215,14 +215,22 @@ dojo.declare("dotcms.dijit.form.HostFolderFilteringSelect", [dijit._Widget, diji
 			return false;
 
 		var name = this.model.getLabel(item);
+		var fullPath = this.model.getFullPath(item);
 		var id = this.model.getIdentity(item);
 
 		this.value = id;
 		this.displayedValue = name;
 		this.selectedItem = item;
-		this.hostFolderSelectedName.value = name;
+		this.hostFolderSelectedName.value = fullPath;
 		this.hostFolderSelectedId.value = id;
 
+
+		// Update input element size
+		if(fullPath.length > this.hostFolderSelectedName.size){
+			this.hostFolderSelectedName.size = fullPath.length;
+
+		}
+		
 		if (this.hostFoldersTreeWrapper != null)
 			dojo.style(this.hostFoldersTreeWrapper, { display: 'none' });
 

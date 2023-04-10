@@ -12,10 +12,11 @@ import { switchMap, tap } from 'rxjs/operators';
 import { DotMessageService } from '@dotcms/data-access';
 import {
     ComponentStatus,
-    DOT_EXPERIMENT_STATUS_METADATA_MAP,
+    ConditionDefaultByTypeOfGoal,
     DotExperiment,
     DotExperimentStatusList,
     ExperimentSteps,
+    Goal,
     Goals,
     GoalsLevels,
     RangeOfDateAndTime,
@@ -46,10 +47,10 @@ export interface ConfigurationViewModel {
     experiment: DotExperiment;
     stepStatusSidebar: StepStatus;
     isLoading: boolean;
-    canStartExperiment: boolean;
+    isExperimentADraft: boolean;
     disabledStartExperiment: boolean;
     showExperimentSummary: boolean;
-    statusExperiment: { classz: string; label: string };
+    experimentStatus: DotExperimentStatusList;
     isSaving: boolean;
 }
 
@@ -64,20 +65,15 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     );
     readonly getExperimentId$: Observable<string> = this.select(({ experiment }) => experiment.id);
 
-    readonly canStartExperiment$: Observable<boolean> = this.select(
+    readonly isExperimentADraft$: Observable<boolean> = this.select(
         ({ experiment }) => experiment?.status === DotExperimentStatusList.DRAFT
     );
     readonly disabledStartExperiment$: Observable<boolean> = this.select(
         ({ experiment }) => experiment?.trafficProportion.variants.length < 2 || !experiment?.goals
     );
 
-    readonly getStatusExperiment$: Observable<{ label: string; classz: string }> = this.select(
-        ({ experiment }) => {
-            return {
-                ...DOT_EXPERIMENT_STATUS_METADATA_MAP[experiment?.status],
-                label: DOT_EXPERIMENT_STATUS_METADATA_MAP[experiment?.status]?.label
-            };
-        }
+    readonly getExperimentStatus$: Observable<DotExperimentStatusList> = this.select(
+        ({ experiment }) => experiment?.status
     );
 
     readonly showExperimentSummary$: Observable<boolean> = this.select(({ experiment }) =>
@@ -88,15 +84,22 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         ]).includes(experiment?.status)
     );
 
-    // Variants Step //
     readonly variantsStatus$ = this.select(this.state$, ({ stepStatusSidebar }) =>
         stepStatusSidebar.experimentStep === ExperimentSteps.VARIANTS ? stepStatusSidebar : null
     );
 
     // Goals Step //
-    readonly goals$: Observable<Goals> = this.select(({ experiment }) =>
-        experiment.goals ? experiment.goals : null
-    );
+    readonly goals$: Observable<Goals> = this.select(({ experiment }) => {
+        return experiment.goals
+            ? {
+                  ...experiment.goals,
+                  primary: {
+                      ...experiment.goals.primary,
+                      ...this.setDefaultGoalCondition(experiment.goals.primary)
+                  }
+              }
+            : null;
+    });
     readonly goalsStatus$ = this.select(this.state$, ({ stepStatusSidebar }) =>
         stepStatusSidebar.experimentStep === ExperimentSteps.GOAL ? stepStatusSidebar : null
     );
@@ -117,8 +120,14 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         experiment.trafficAllocation ? experiment.trafficAllocation : null
     );
 
-    readonly trafficStatus$ = this.select(this.state$, ({ stepStatusSidebar }) =>
-        stepStatusSidebar.experimentStep === ExperimentSteps.TRAFFIC ? stepStatusSidebar : null
+    readonly trafficLoadStatus$ = this.select(this.state$, ({ stepStatusSidebar }) =>
+        stepStatusSidebar.experimentStep === ExperimentSteps.TRAFFIC_LOAD ? stepStatusSidebar : null
+    );
+
+    readonly trafficSplitStatus$ = this.select(this.state$, ({ stepStatusSidebar }) =>
+        stepStatusSidebar.experimentStep === ExperimentSteps.TRAFFICS_SPLIT
+            ? stepStatusSidebar
+            : null
     );
 
     // Updaters
@@ -217,7 +226,34 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                             });
                             this.setExperiment(response);
                         },
-                        (error) => throwError(error),
+                        (error: HttpErrorResponse) => this.dotHttpErrorManagerService.handle(error),
+                        () => this.setComponentStatus(ComponentStatus.IDLE)
+                    )
+                )
+            )
+        );
+    });
+
+    readonly stopExperiment = this.effect((experiment$: Observable<DotExperiment>) => {
+        return experiment$.pipe(
+            tap(() => this.setComponentStatus(ComponentStatus.SAVING)),
+            switchMap((experiment) =>
+                this.dotExperimentsService.stop(experiment.id).pipe(
+                    tapResponse(
+                        (response) => {
+                            this.messageService.add({
+                                severity: 'info',
+                                summary: this.dotMessageService.get(
+                                    'experiments.action.stop.confirm-title'
+                                ),
+                                detail: this.dotMessageService.get(
+                                    'experiments.action.stop.confirm-message',
+                                    experiment.name
+                                )
+                            });
+                            this.setExperiment(response);
+                        },
+                        (error: HttpErrorResponse) => this.dotHttpErrorManagerService.handle(error),
                         () => this.setComponentStatus(ComponentStatus.IDLE)
                     )
                 )
@@ -227,7 +263,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
 
     // Variants
     readonly addVariant = this.effect(
-        (variant$: Observable<{ experimentId: string; data: Pick<DotExperiment, 'name'> }>) => {
+        (variant$: Observable<{ experimentId: string; name: string }>) => {
             return variant$.pipe(
                 tap(() =>
                     this.setSidebarStatus({
@@ -236,7 +272,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                     })
                 ),
                 switchMap((variant) =>
-                    this.dotExperimentsService.addVariant(variant.experimentId, variant.data).pipe(
+                    this.dotExperimentsService.addVariant(variant.experimentId, variant.name).pipe(
                         tapResponse(
                             (experiment) => {
                                 this.messageService.add({
@@ -246,7 +282,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                                     ),
                                     detail: this.dotMessageService.get(
                                         'experiments.configure.variant.add.confirm-message',
-                                        experiment.name
+                                        variant.name
                                     )
                                 });
 
@@ -464,7 +500,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                 tap(() => {
                     this.setSidebarStatus({
                         status: ComponentStatus.SAVING,
-                        experimentStep: ExperimentSteps.TRAFFIC
+                        experimentStep: ExperimentSteps.TRAFFIC_LOAD
                     });
                 }),
                 switchMap((data) => {
@@ -485,7 +521,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                                     });
                                     this.setSidebarStatus({
                                         status: ComponentStatus.IDLE,
-                                        experimentStep: ExperimentSteps.TRAFFIC,
+                                        experimentStep: ExperimentSteps.TRAFFIC_LOAD,
                                         isOpen: false
                                     });
                                 },
@@ -493,7 +529,57 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                                     this.dotHttpErrorManagerService.handle(response);
                                     this.setSidebarStatus({
                                         status: ComponentStatus.IDLE,
-                                        experimentStep: ExperimentSteps.TRAFFIC
+                                        experimentStep: ExperimentSteps.TRAFFIC_LOAD
+                                    });
+                                }
+                            )
+                        );
+                })
+            );
+        }
+    );
+
+    readonly setSelectedTrafficProportion = this.effect(
+        (
+            trafficProportion$: Observable<{
+                trafficProportion: TrafficProportion;
+                experimentId: string;
+            }>
+        ) => {
+            return trafficProportion$.pipe(
+                tap(() => {
+                    this.setSidebarStatus({
+                        status: ComponentStatus.SAVING,
+                        experimentStep: ExperimentSteps.TRAFFICS_SPLIT
+                    });
+                }),
+                switchMap((data) => {
+                    return this.dotExperimentsService
+                        .setTrafficProportion(data.experimentId, data.trafficProportion)
+                        .pipe(
+                            tapResponse(
+                                (experiment) => {
+                                    this.setTrafficProportion(experiment.trafficProportion);
+                                    this.messageService.add({
+                                        severity: 'info',
+                                        summary: this.dotMessageService.get(
+                                            'experiments.configure.traffic.split.add.confirm.title'
+                                        ),
+                                        detail: this.dotMessageService.get(
+                                            'experiments.configure.traffic.split.add.confirm.message'
+                                        )
+                                    });
+                                    this.setSidebarStatus({
+                                        status: ComponentStatus.IDLE,
+                                        experimentStep: ExperimentSteps.TRAFFICS_SPLIT,
+                                        isOpen: false
+                                    });
+                                },
+                                (response: HttpErrorResponse) => {
+                                    this.dotHttpErrorManagerService.handle(response);
+                                    this.setSidebarStatus({
+                                        status: ComponentStatus.IDLE,
+                                        experimentStep: ExperimentSteps.TRAFFICS_SPLIT
                                     });
                                 }
                             )
@@ -505,62 +591,98 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
 
     readonly vm$: Observable<ConfigurationViewModel> = this.select(
         this.state$,
-        this.canStartExperiment$,
+        this.isExperimentADraft$,
         this.isLoading$,
         this.disabledStartExperiment$,
         this.showExperimentSummary$,
         this.isSaving$,
-        this.getStatusExperiment$,
+        this.getExperimentStatus$,
         (
             { experiment, stepStatusSidebar },
-            canStartExperiment,
+            isExperimentADraft,
             isLoading,
             disabledStartExperiment,
             showExperimentSummary,
             isSaving,
-            statusExperiment
+            experimentStatus
         ) => ({
             experiment,
             stepStatusSidebar,
-            canStartExperiment,
+            isExperimentADraft,
             isLoading,
             disabledStartExperiment,
             showExperimentSummary,
             isSaving,
-            statusExperiment
+            experimentStatus
         })
     );
 
     readonly variantsStepVm$: Observable<{
+        experimentId: string;
+        trafficProportion: TrafficProportion;
         status: StepStatus;
-    }> = this.select(this.variantsStatus$, (status) => ({
-        status
-    }));
+        isExperimentADraft: boolean;
+    }> = this.select(
+        this.getExperimentId$,
+        this.trafficProportion$,
+        this.variantsStatus$,
+        this.isExperimentADraft$,
+        (experimentId, trafficProportion, status, isExperimentADraft) => ({
+            experimentId,
+            trafficProportion,
+            status,
+            isExperimentADraft
+        })
+    );
 
-    readonly goalsStepVm$: Observable<{ experimentId: string; goals: Goals; status: StepStatus }> =
-        this.select(
-            this.getExperimentId$,
-            this.goals$,
-            this.goalsStatus$,
-            (experimentId, goals, status) => ({
-                experimentId,
-                goals,
-                status
-            })
-        );
+    readonly goalsStepVm$: Observable<{
+        experimentId: string;
+        goals: Goals;
+        status: StepStatus;
+        isExperimentADraft: boolean;
+    }> = this.select(
+        this.getExperimentId$,
+        this.goals$,
+        this.goalsStatus$,
+        this.isExperimentADraft$,
+        (experimentId, goals, status, isExperimentADraft) => ({
+            experimentId,
+            goals,
+            status,
+            isExperimentADraft
+        })
+    );
 
     readonly schedulingStepVm$: Observable<{
         experimentId: string;
         scheduling: RangeOfDateAndTime;
         status: StepStatus;
+        isExperimentADraft: boolean;
     }> = this.select(
         this.getExperimentId$,
         this.scheduling$,
         this.schedulingStatus$,
-        (experimentId, scheduling, status) => ({
+        this.isExperimentADraft$,
+        (experimentId, scheduling, status, isExperimentADraft) => ({
             experimentId,
             scheduling,
-            status
+            status,
+            isExperimentADraft
+        })
+    );
+
+    readonly targetStepVm$: Observable<{
+        experimentId: string;
+        status: StepStatus;
+        isExperimentADraft: boolean;
+    }> = this.select(
+        this.getExperimentId$,
+        this.trafficLoadStatus$,
+        this.isExperimentADraft$,
+        (experimentId, status, isExperimentADraft) => ({
+            experimentId,
+            status,
+            isExperimentADraft
         })
     );
 
@@ -569,16 +691,27 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         trafficProportion: TrafficProportion;
         trafficAllocation: number;
         status: StepStatus;
+        isExperimentADraft: boolean;
     }> = this.select(
         this.getExperimentId$,
         this.trafficProportion$,
         this.trafficAllocation$,
-        this.trafficStatus$,
-        (experimentId, trafficProportion, trafficAllocation, status) => ({
+        this.trafficLoadStatus$,
+        this.trafficSplitStatus$,
+        this.isExperimentADraft$,
+        (
             experimentId,
             trafficProportion,
             trafficAllocation,
-            status
+            statusLoad,
+            statusSplit,
+            isExperimentADraft
+        ) => ({
+            experimentId,
+            trafficProportion,
+            trafficAllocation,
+            status: statusSplit ? statusSplit : statusLoad,
+            isExperimentADraft
         })
     );
 
@@ -594,5 +727,21 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
 
     private updateTabTitle(experiment: DotExperiment) {
         this.title.setTitle(`${experiment.name} - ${this.title.getTitle()}`);
+    }
+
+    private setDefaultGoalCondition(goal: Goal): Goal {
+        const { type, conditions } = goal;
+
+        return {
+            ...goal,
+            conditions: [
+                ...conditions.map((condition) => {
+                    return {
+                        ...condition,
+                        isDefault: ConditionDefaultByTypeOfGoal[type] === condition.parameter
+                    };
+                })
+            ]
+        };
     }
 }

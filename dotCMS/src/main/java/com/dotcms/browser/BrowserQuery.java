@@ -8,7 +8,6 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.Theme;
-import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -92,27 +91,54 @@ public class BrowserQuery {
         this.roles= Try.of(()->APILocator.getRoleAPI().loadRolesForUser(user.getUserId()).toArray(new Role[0])).getOrElse(new Role[0]);
     }
 
+    /**
+     * Returns the appropriate Site and Folder based on the input from the User or system configuration. It's worth
+     * noting that if the value of {@code parentId} points to the System Folder, then the value for
+     * {@code hostIdSystemFolder} must be set as well.
+     *
+     * @param parentId           The ID of the Folder or Site that has been selected or specified.
+     * @param user               The {@link User} executing this action.
+     * @param hostIdSystemFolder The ID of a specific Site, if required.
+     *
+     * @return A Tuple2 containing the Site and its Folder.
+     */
     @CloseDBIfOpened
     private Tuple2<Host, Folder> getParents(final String parentId, final User user, final String hostIdSystemFolder) {
         boolean respectFrontEndPermissions = PageMode.get().respectAnonPerms;
-        //check if the parentId exists
+        Folder folderObj;
+        boolean isSite = false;
         final Identifier identifier = Try.of(() -> APILocator.getIdentifierAPI().findFromInode(parentId)).getOrNull();
-        if ((identifier == null || UtilMethods.isEmpty(identifier.getId())) && (!parentId.equalsIgnoreCase(
-                Theme.SYSTEM_THEME))) {
-            Logger.error(this, "parentId doesn't belong to a Folder or a Host, id: " + parentId
-                    + ", maybe the Folder was modified in the background. If using SystemFolder must send hostIdSystemFolder.");
-            throw new DotRuntimeException("parentId doesn't belong to a Folder or a Host, id: " + parentId);
+        if (null != identifier && UtilMethods.isSet(identifier.getId()) && !parentId.equalsIgnoreCase(
+                Theme.SYSTEM_THEME) && Host.HOST_VELOCITY_VAR_NAME.equals(identifier.getAssetSubType())) {
+            // The ID belongs to a Site
+            folderObj = APILocator.getFolderAPI().findSystemFolder();
+            isSite = true;
+        } else {
+            // The ID belongs to a Folder
+            folderObj = parentId.equalsIgnoreCase(Theme.SYSTEM_THEME)
+                                ? APILocator.getFolderAPI().findSystemFolder()
+                                : Try.of(() -> APILocator.getFolderAPI().find(parentId, user, respectFrontEndPermissions)).getOrElse(new Folder());
         }
-
-        // gets folder parent
-        final Folder folder = Try.of(() -> APILocator.getFolderAPI().find(parentId, user, respectFrontEndPermissions)).toJavaOptional()
-                .orElse(APILocator.getFolderAPI().findSystemFolder());
-        final Host site = folder.isSystemFolder()
-                ? null != hostIdSystemFolder ? Try.of(() -> APILocator.getHostAPI().find(hostIdSystemFolder, user, respectFrontEndPermissions)).getOrNull()
-                :  Try.of(() -> WebAPILocator.getHostWebAPI().getCurrentHost()).getOrNull()
-                : Try.of(() -> APILocator.getHostAPI().find(folder.getHostId(), user, respectFrontEndPermissions)).getOrNull();
-
-        return Tuple.of(site, folder);
+        String calculatedSiteId = null;
+        // Determine the appropriate Site ID based on provided data
+        if (isSite) {
+            calculatedSiteId = UtilMethods.isSet(hostIdSystemFolder) ? hostIdSystemFolder : parentId;
+        } else {
+            if (null != folderObj) {
+                calculatedSiteId = Folder.SYSTEM_FOLDER.equals(folderObj.getInode()) && UtilMethods.isSet(hostIdSystemFolder) ? hostIdSystemFolder :
+                                           folderObj.getHostId();
+            }
+        }
+        final String siteId = calculatedSiteId;
+        final Host siteObj = Try.of(() -> APILocator.getHostAPI().find(siteId, user, respectFrontEndPermissions)).getOrNull();
+        if (null == folderObj || UtilMethods.isEmpty(folderObj.getIdentifier()) || null == siteObj || UtilMethods.isEmpty(siteObj.getIdentifier())) {
+            final String errorMsg = String.format("Parent ID '%s' [ %s ] does not match any existing Folder or Site.",
+                    parentId, siteId);
+            Logger.error(this, errorMsg + ". Maybe the Site/Folder was modified or deleted in the background. If " +
+                                       "System Folder is specified, then set a value for hostIdSystemFolder as well.");
+            throw new DotRuntimeException(errorMsg);
+        }
+        return Tuple.of(siteObj, folderObj);
     }
 
     /**
@@ -201,6 +227,7 @@ public class BrowserQuery {
         public Builder withFilter(@Nonnull String filter) {
             if (UtilMethods.isSet(filter)) {
                 luceneQuery.append(StringPool.SPACE).append(filter);
+                this.filter = filter;
             }
             return this;
         }

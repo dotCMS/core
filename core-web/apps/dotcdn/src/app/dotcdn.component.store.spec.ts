@@ -14,8 +14,6 @@ import { DotCDNStats } from './app.models';
 import { DotCDNStore } from './dotcdn.component.store';
 import { DotCDNService } from './dotcdn.service';
 
-import 'ts-jest/utils';
-
 const fakeResponseData: DotCDNStats = {
     stats: {
         bandwidthPretty: '114.42 MB',

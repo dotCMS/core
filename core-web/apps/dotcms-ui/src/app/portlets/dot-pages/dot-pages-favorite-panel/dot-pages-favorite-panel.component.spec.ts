@@ -1,3 +1,4 @@
+import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -10,12 +11,13 @@ import { PanelModule } from 'primeng/panel';
 
 import { of } from 'rxjs/internal/observable/of';
 
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { MockDotHttpErrorManagerService } from '@dotcms/app/test/dot-http-error-manager.service.mock';
 import { DotMessagePipeModule } from '@dotcms/app/view/pipes/dot-message/dot-message-pipe.module';
-import { DotMessageService } from '@dotcms/data-access';
-import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
+import { DotMessageService, DotPageRenderService } from '@dotcms/data-access';
+import { CoreWebService, CoreWebServiceMock, HttpCode } from '@dotcms/dotcms-js';
 import { dotcmsContentletMock, MockDotMessageService } from '@dotcms/utils-testing';
 
-import { DotPagesCardEmptyModule } from './dot-pages-card-empty/dot-pages-card-empty.module';
 import { DotPagesCardModule } from './dot-pages-card/dot-pages-card.module';
 import { DotPagesFavoritePanelComponent } from './dot-pages-favorite-panel.component';
 
@@ -48,6 +50,7 @@ export const favoritePagesInitialTestData = [
         ...dotcmsContentletMock,
         live: true,
         baseType: 'CONTENT',
+        languageId: '1',
         modDate: '2020-09-02 16:45:15.569',
         title: 'preview1',
         screenshot: 'test1',
@@ -57,6 +60,7 @@ export const favoritePagesInitialTestData = [
     {
         ...dotcmsContentletMock,
         title: 'preview2',
+        languageId: '1',
         modDate: '2020-09-02 16:45:15.569',
         screenshot: 'test2',
         url: '/index2',
@@ -70,6 +74,8 @@ describe('DotPagesFavoritePanelComponent', () => {
     let de: DebugElement;
     let store: DotPageStore;
     let dialogService: DialogService;
+    let dotPageRenderService: DotPageRenderService;
+    let dotHttpErrorManagerService: DotHttpErrorManagerService;
 
     class storeMock {
         get vm$() {
@@ -105,12 +111,16 @@ describe('DotPagesFavoritePanelComponent', () => {
                     DotMessagePipeModule,
                     ButtonModule,
                     DotPagesCardModule,
-                    DotPagesCardEmptyModule,
                     PanelModule,
                     HttpClientTestingModule
                 ],
                 providers: [
                     DialogService,
+                    DotPageRenderService,
+                    {
+                        provide: DotHttpErrorManagerService,
+                        useClass: MockDotHttpErrorManagerService
+                    },
                     { provide: CoreWebService, useClass: CoreWebServiceMock },
                     { provide: DotPageStore, useClass: storeMock },
                     { provide: DotMessageService, useValue: messageServiceMock }
@@ -135,10 +145,9 @@ describe('DotPagesFavoritePanelComponent', () => {
         });
 
         it('should load empty pages cards container', () => {
-            expect(de.queryAll(By.css('dot-pages-card-empty')).length).toBe(5);
             expect(
                 de.query(By.css('.dot-pages-empty__container dot-icon')).componentInstance.name
-            ).toBe('library_add');
+            ).toBe('star_outline');
             expect(de.query(By.css('.dot-pages-empty__header')).nativeElement.outerText).toBe(
                 'favoritePage.listing.empty.header'
             );
@@ -184,12 +193,16 @@ describe('DotPagesFavoritePanelComponent', () => {
                     DotMessagePipeModule,
                     ButtonModule,
                     DotPagesCardModule,
-                    DotPagesCardEmptyModule,
                     PanelModule,
                     HttpClientTestingModule
                 ],
                 providers: [
                     DialogService,
+                    DotPageRenderService,
+                    {
+                        provide: DotHttpErrorManagerService,
+                        useClass: MockDotHttpErrorManagerService
+                    },
                     { provide: CoreWebService, useClass: CoreWebServiceMock },
                     { provide: DotPageStore, useClass: storeMock },
                     { provide: DotMessageService, useValue: messageServiceMock }
@@ -198,6 +211,8 @@ describe('DotPagesFavoritePanelComponent', () => {
 
             store = TestBed.inject(DotPageStore);
             dialogService = TestBed.inject(DialogService);
+            dotPageRenderService = TestBed.inject(DotPageRenderService);
+            dotHttpErrorManagerService = TestBed.inject(DotHttpErrorManagerService);
             fixture = TestBed.createComponent(DotPagesFavoritePanelComponent);
             de = fixture.debugElement;
             component = fixture.componentInstance;
@@ -230,7 +245,7 @@ describe('DotPagesFavoritePanelComponent', () => {
             expect(elem.length).toBe(2);
             expect(
                 elem[0].componentInstance.imageUri.includes(
-                    favoritePagesInitialTestData[0].screenshot
+                    `${favoritePagesInitialTestData[0].screenshot}?language_id=${favoritePagesInitialTestData[0].languageId}`
                 )
             ).toBe(true);
             expect(elem[0].componentInstance.title).toBe(favoritePagesInitialTestData[0].title);
@@ -251,10 +266,41 @@ describe('DotPagesFavoritePanelComponent', () => {
             });
 
             it('should call edit method to open favorite page dialog', () => {
+                spyOn(dotPageRenderService, 'checkPermission').and.returnValue(of(true));
+                fixture.detectChanges();
                 const elem = de.query(By.css('dot-pages-card'));
                 elem.triggerEventHandler('edit', { ...favoritePagesInitialTestData[0] });
 
+                const urlParams = { url: favoritePagesInitialTestData[0].url.split('?')[0] };
+                const searchParams = new URLSearchParams(
+                    favoritePagesInitialTestData[0].url.split('?')[1]
+                );
+
+                for (const entry of searchParams) {
+                    urlParams[entry[0]] = entry[1];
+                }
+
+                expect(dotPageRenderService.checkPermission).toHaveBeenCalledWith(urlParams);
                 expect(dialogService.open).toHaveBeenCalledTimes(1);
+            });
+
+            it('should throw error dialgo when call edit method to open favorite page dialog and user does not have access', () => {
+                spyOn(dotPageRenderService, 'checkPermission').and.returnValue(of(false));
+                spyOn(dotHttpErrorManagerService, 'handle');
+                fixture.detectChanges();
+                const elem = de.query(By.css('dot-pages-card'));
+                elem.triggerEventHandler('edit', { ...favoritePagesInitialTestData[0] });
+
+                expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(
+                    new HttpErrorResponse(
+                        new HttpResponse({
+                            body: null,
+                            status: HttpCode.FORBIDDEN,
+                            headers: null,
+                            url: ''
+                        })
+                    )
+                );
             });
 
             it('should call showActionMenu method to send actions to parent component', () => {
@@ -324,12 +370,16 @@ describe('DotPagesFavoritePanelComponent', () => {
                     DotMessagePipeModule,
                     ButtonModule,
                     DotPagesCardModule,
-                    DotPagesCardEmptyModule,
                     PanelModule,
                     HttpClientTestingModule
                 ],
                 providers: [
                     DialogService,
+                    DotPageRenderService,
+                    {
+                        provide: DotHttpErrorManagerService,
+                        useClass: MockDotHttpErrorManagerService
+                    },
                     { provide: CoreWebService, useClass: CoreWebServiceMock },
                     { provide: DotPageStore, useClass: storeMock },
                     { provide: DotMessageService, useValue: messageServiceMock }

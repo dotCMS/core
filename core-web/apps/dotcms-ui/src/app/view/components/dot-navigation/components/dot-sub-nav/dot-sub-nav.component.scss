@@ -23,12 +23,12 @@ a {
     width: $navigation-width;
 
     &:hover {
-        background-color: rgba($white_rgb, 0.1);
+        background-color: rgba($white, 0.1);
     }
 
     &--active,
     &--active:hover {
-        background-color: $brand-primary;
+        background-color: $color-palette-primary;
     }
 }
 
@@ -39,7 +39,7 @@ a {
 }
 
 .dot-nav-sub__collapsed {
-    background-color: rgba($white_rgb, 0.1);
+    background-color: rgba($white, 0.1);
     padding: $spacing-1 0;
     min-width: $navigation-width;
 

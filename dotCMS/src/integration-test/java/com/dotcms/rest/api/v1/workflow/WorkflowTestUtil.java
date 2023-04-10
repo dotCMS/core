@@ -14,6 +14,7 @@ import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.RoleDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.WorkflowActionDataGen;
 import com.dotcms.datagen.WorkflowDataGen;
 import com.dotcms.datagen.WorkflowStepDataGen;
@@ -27,6 +28,7 @@ import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.common.reindex.ReindexQueueAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
@@ -36,6 +38,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowState;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.dotmarketing.portlets.workflows.util.WorkflowSchemeImportExportObject;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import java.util.ArrayList;
@@ -49,8 +52,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
+import javax.validation.constraints.AssertTrue;
 import javax.ws.rs.core.Response;
 import org.apache.commons.lang.RandomStringUtils;
+import org.junit.Assert;
 
 public abstract class WorkflowTestUtil {
 
@@ -114,7 +119,8 @@ public abstract class WorkflowTestUtil {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final WorkflowSchemeForm form = new WorkflowSchemeForm.Builder()
                 .schemeName(randomSchemaName).schemeDescription("").schemeArchived(false).build();
-        final Response saveResponse = workflowResource.saveScheme(request,  new EmptyHttpResponse(), form);
+        final Response saveResponse = workflowResource.saveScheme(request, new EmptyHttpResponse(),
+                form);
         assertEquals(Response.Status.OK.getStatusCode(), saveResponse.getStatus());
         final ResponseEntityView savedEv = ResponseEntityView.class.cast(saveResponse.getEntity());
         return WorkflowScheme.class.cast(savedEv.getEntity());
@@ -126,7 +132,8 @@ public abstract class WorkflowTestUtil {
     @SuppressWarnings("unchecked")
     static List<WorkflowScheme> findSchemes(final WorkflowResource workflowResource) {
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final Response findResponse = workflowResource.findSchemes(request,  new EmptyHttpResponse(), null, true);
+        final Response findResponse = workflowResource.findSchemes(request, new EmptyHttpResponse(),
+                null, true);
         assertEquals(Response.Status.OK.getStatusCode(), findResponse.getStatus());
         final ResponseEntityView listEv = ResponseEntityView.class.cast(findResponse.getEntity());
         return List.class.cast(listEv.getEntity());
@@ -145,7 +152,7 @@ public abstract class WorkflowTestUtil {
                     .stepName(randomStepName).schemeId(savedScheme.getId()).enableEscalation(false)
                     .escalationTime("0").escalationAction("").stepResolved(false).build();
             final Response addStepResponse = workflowResource
-                    .addStep(addStepRequest,  new EmptyHttpResponse(), workflowStepAddForm);
+                    .addStep(addStepRequest, new EmptyHttpResponse(), workflowStepAddForm);
             assertEquals(Response.Status.OK.getStatusCode(), addStepResponse.getStatus());
             final ResponseEntityView savedStepEntityView = ResponseEntityView.class
                     .cast(addStepResponse.getEntity());
@@ -158,7 +165,6 @@ public abstract class WorkflowTestUtil {
     }
 
     /**
-     *
      * @param savedScheme
      * @param roleId
      * @param workflowSteps
@@ -176,18 +182,19 @@ public abstract class WorkflowTestUtil {
             final HttpServletRequest saveActionRequest = mock(HttpServletRequest.class);
             final WorkflowActionForm form = new WorkflowActionForm.Builder()
                     .schemeId(savedScheme.getId()).
-                            stepId(ws.getId()).
-                            actionName(randomActionName).
-                            showOn(states).
-                            actionNextStep(nextStepIdIfAny(iterator, workflowSteps)).
-                            actionAssignable(false).
-                            actionCommentable(false).
-                            requiresCheckout(false).
-                            actionNextAssign(roleId).
-                            whoCanUse(Arrays.asList("")).
-                            actionCondition("").
-                            build();
-            final Response saveActionResponse = workflowResource.saveAction(saveActionRequest,  new EmptyHttpResponse(), form);
+                    stepId(ws.getId()).
+                    actionName(randomActionName).
+                    showOn(states).
+                    actionNextStep(nextStepIdIfAny(iterator, workflowSteps)).
+                    actionAssignable(false).
+                    actionCommentable(false).
+                    requiresCheckout(false).
+                    actionNextAssign(roleId).
+                    whoCanUse(Arrays.asList("")).
+                    actionCondition("").
+                    build();
+            final Response saveActionResponse = workflowResource.saveAction(saveActionRequest,
+                    new EmptyHttpResponse(), form);
             assertEquals(Response.Status.OK.getStatusCode(), saveActionResponse.getStatus());
             final ResponseEntityView savedActionEv = ResponseEntityView.class
                     .cast(saveActionResponse.getEntity());
@@ -211,14 +218,14 @@ public abstract class WorkflowTestUtil {
             final WorkflowScheme savedScheme) {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final Response findResponse = workflowResource
-                .findStepsByScheme(request,  new EmptyHttpResponse(), savedScheme.getId());
+                .findStepsByScheme(request, new EmptyHttpResponse(), savedScheme.getId());
         assertEquals(Response.Status.OK.getStatusCode(), findResponse.getStatus());
         final ResponseEntityView findResponseEv = ResponseEntityView.class
                 .cast(findResponse.getEntity());
         return List.class.cast(findResponseEv.getEntity());
     }
 
-    protected static Role roleAdmin () {
+    protected static Role roleAdmin() {
 
         //Creating a test role
         Role adminRole = null;
@@ -306,7 +313,8 @@ public abstract class WorkflowTestUtil {
         final WorkflowAction workflowAction3 = new WorkflowAction();
 
         workflowAction3.setId(UUIDGenerator.generateUuid());
-        workflowAction3.setShowOn(WorkflowState.LOCKED, WorkflowState.PUBLISHED, WorkflowState.EDITING);
+        workflowAction3.setShowOn(WorkflowState.LOCKED, WorkflowState.PUBLISHED,
+                WorkflowState.EDITING);
         workflowAction3.setNextStep(WorkflowAction.CURRENT_STEP);
         workflowAction3.setNextAssign(roleAdmin().getId());
         workflowAction3.setSchemeId(scheme.getId());
@@ -357,22 +365,25 @@ public abstract class WorkflowTestUtil {
 
         final WorkflowSchemeImportObjectForm exportObjectForm =
                 new WorkflowSchemeImportObjectForm(
-                        new WorkflowSchemeImportExportObjectView(WorkflowResource.VERSION, schemes, steps, actions,
-                                actionSteps, Collections.emptyList(), Collections.emptyList(), Collections.emptyList()),
+                        new WorkflowSchemeImportExportObjectView(WorkflowResource.VERSION, schemes,
+                                steps, actions,
+                                actionSteps, Collections.emptyList(), Collections.emptyList(),
+                                Collections.emptyList()),
                         permissions);
 
         return exportObjectForm;
     }
 
-    static  Map<ContentType, List<Contentlet>> findContentSamplesByType(
-            final List<ContentType> contentTypes, final WorkflowScheme scheme, final int limit) throws Exception {
+    static Map<ContentType, List<Contentlet>> findContentSamplesByType(
+            final List<ContentType> contentTypes, final WorkflowScheme scheme, final int limit)
+            throws Exception {
         final Map<ContentType, List<Contentlet>> contentTypeSamplesMap = new HashMap<>();
 
         for (final ContentType contentType : contentTypes) {
 
             final List<Contentlet> contentlets = APILocator.getContentletAPI()
                     .search("+contentType:" + contentType.variable() +
-                                    " +wfscheme:"+ scheme.getId() +
+                                    " +wfscheme:" + scheme.getId() +
                                     " +languageId:1 +deleted:false ", limit, 0,
                             "modDate desc",
                             APILocator.systemUser(), false);
@@ -384,44 +395,60 @@ public abstract class WorkflowTestUtil {
         return contentTypeSamplesMap;
     }
 
-    static Map<WorkflowScheme,Map<ContentType, List<Contentlet>>> collectSampleContent(final int limit) throws Exception{
+    static Map<WorkflowScheme, Map<ContentType, List<Contentlet>>> collectSampleContent(
+            final int limit) throws Exception {
+        boolean savedAutoAssign = Config.getBooleanProperty("AUTO_ASSIGN_WORKFLOW", true);
+        try {
+            Config.setProperty("AUTO_ASSIGN_WORKFLOW", false);
 
-        final WorkflowScheme workflowScheme_1 = new WorkflowDataGen().nextPersisted();
-        final WorkflowStep workflowStep_1 = new WorkflowStepDataGen(workflowScheme_1.getId()).nextPersisted();
-        final WorkflowAction workflowAction_1 = new WorkflowActionDataGen(workflowScheme_1.getId(), workflowStep_1.getId())
-                .nextPersisted();
+            ReindexQueueAPI queueAPI = APILocator.getReindexQueueAPI();
+            final WorkflowScheme workflowScheme_1 = new WorkflowDataGen().nextPersisted();
+            TestDataUtils.assertEmptyQueue();
+            final WorkflowStep workflowStep_1 = new WorkflowStepDataGen(
+                    workflowScheme_1.getId()).nextPersisted();
+            final WorkflowAction workflowAction_1 = new WorkflowActionDataGen(
+                    workflowScheme_1.getId(), workflowStep_1.getId())
+                    .nextPersisted();
 
-        final ContentType contentType_1 = new ContentTypeDataGen()
-            .field(new FieldDataGen()
-                .name("title")
-                .velocityVarName("title").next()
-            )
-           .workflowId(workflowScheme_1.getId()).nextPersisted();
+            TestDataUtils.assertEmptyQueue();
+            final ContentType contentType_1 = new ContentTypeDataGen()
+                    .field(new FieldDataGen()
+                            .name("title")
+                            .velocityVarName("title").next()
+                    )
+                    .workflowId(workflowScheme_1.getId()).nextPersisted();
+            TestDataUtils.assertEmptyQueue();
+            final Contentlet contentlet_1 = new ContentletDataGen(contentType_1.id())
+                    .setProperty("title", "content_1")
+                    .nextPersisted();
 
-        final Contentlet contentlet_1 = new ContentletDataGen(contentType_1.id())
-                .setProperty("title", "content_1")
-                .nextPersisted();
+            final WorkflowScheme workflowScheme_2 = new WorkflowDataGen().nextPersisted();
+            TestDataUtils.assertEmptyQueue();
+            final WorkflowStep workflowStep_2 = new WorkflowStepDataGen(
+                    workflowScheme_2.getId()).nextPersisted();
+            TestDataUtils.assertEmptyQueue();
+            final WorkflowAction workflowAction_2 = new WorkflowActionDataGen(
+                    workflowScheme_2.getId(), workflowStep_2.getId())
+                    .nextPersisted();
 
-        final WorkflowScheme workflowScheme_2 = new WorkflowDataGen().nextPersisted();
-        final WorkflowStep workflowStep_2 = new WorkflowStepDataGen(workflowScheme_2.getId()).nextPersisted();
-        final WorkflowAction workflowAction_2 = new WorkflowActionDataGen(workflowScheme_2.getId(), workflowStep_2.getId())
-                .nextPersisted();
-
-        final ContentType contentType_2 = new ContentTypeDataGen()
-                .field(new FieldDataGen()
-                        .name("title")
-                        .velocityVarName("title").next()
-                )
-                .workflowId(workflowScheme_2.getId()).nextPersisted();
-
-        final Contentlet contentlet_2 = new ContentletDataGen(contentType_2.id())
-                .setProperty("title", "content_2")
-                .nextPersisted();
-
-        return map(
-                workflowScheme_1, map(contentType_1, list(contentlet_1)),
-                workflowScheme_2, map(contentType_2, list(contentlet_2))
-        );
+            final ContentType contentType_2 = new ContentTypeDataGen()
+                    .field(new FieldDataGen()
+                            .name("title")
+                            .velocityVarName("title").next()
+                    )
+                    .workflowId(workflowScheme_2.getId()).nextPersisted();
+            TestDataUtils.assertEmptyQueue();
+            final Contentlet contentlet_2 = new ContentletDataGen(contentType_2.id())
+                    .setProperty("title", "content_2")
+                    .nextPersisted();
+            TestDataUtils.assertEmptyQueue();
+            return map(
+                    workflowScheme_1, map(contentType_1, list(contentlet_1)),
+                    workflowScheme_2, map(contentType_2, list(contentlet_2))
+            );
+        } finally {
+            Config.setProperty("AUTO_ASSIGN_WORKFLOW", savedAutoAssign);
+        }
     }
 
     static List<WorkflowAction> getAllWorkflowActions(final BulkWorkflowSchemeView workflowScheme) {

@@ -12,7 +12,13 @@ import {
     Output
 } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR, ReactiveFormsModule } from '@angular/forms';
+import {
+    ControlValueAccessor,
+    FormArray,
+    NG_VALUE_ACCESSOR,
+    ReactiveFormsModule,
+    Validators
+} from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ActivatedRoute } from '@angular/router';
@@ -154,7 +160,15 @@ const containerMockData = {
             preLoop: '',
             postLoop: ''
         },
-        contentTypes: []
+        contentTypes: [
+            {
+                code: '',
+                structureId: '778f3246-9b11-4a2a-a101-e7fdf111bdad',
+                containerId: 'eba434c6-e67a-4a64-9c88-1faffcafb40d',
+                containerInode: '',
+                contentTypeVar: 'Activity'
+            }
+        ]
     }
 };
 
@@ -338,13 +352,17 @@ describe('DotContainerPropertiesComponent', () => {
         it('should render content types when max-content greater then zero', fakeAsync(() => {
             spyOn(fixture.componentInstance, 'showContentTypeAndCode');
             fixture.componentInstance.form.get('maxContentlets').setValue(0);
+            fixture.componentInstance.form.get('maxContentlets').valueChanges.subscribe((value) => {
+                expect(value).toBe(5);
+            });
+            expect(fixture.componentInstance.form.get('maxContentlets').updateOn).toBe('change');
             fixture.componentInstance.form.get('maxContentlets').setValue(5);
             tick();
             fixture.detectChanges();
             const preLoopComponent = de.query(By.css('dot-loop-editor'));
-            const codeEditoromponent = de.query(By.css('dot-container-code'));
+            const codeEditorComponent = de.query(By.css('dot-container-code'));
             expect(preLoopComponent).toBeDefined();
-            expect(codeEditoromponent).toBeDefined();
+            expect(codeEditorComponent).toBeDefined();
             expect(fixture.componentInstance.showContentTypeAndCode).toHaveBeenCalled();
         }));
 
@@ -361,7 +379,7 @@ describe('DotContainerPropertiesComponent', () => {
                 title: 'FAQ',
                 friendlyName: 'ASD',
                 maxContentlets: 0,
-                code: 'hello',
+                code: '',
                 preLoop: null,
                 postLoop: null,
                 containerStructures: []
@@ -417,6 +435,22 @@ describe('DotContainerPropertiesComponent', () => {
             tick(200);
             fixture.detectChanges();
             expect(de.query(By.css('[data-testId="saveBtn"]')).attributes.disabled).toBeDefined();
+        }));
+
+        it('should save button disable but code field is not required', fakeAsync(() => {
+            fixture.componentInstance.form.get('maxContentlets').setValue(0);
+            fixture.componentInstance.form.get('maxContentlets').setValue(5);
+            tick(200);
+            fixture.detectChanges();
+            const saveBtn = de.query(By.css('[data-testId="saveBtn"]'));
+            saveBtn.triggerEventHandler('click');
+            fixture.detectChanges();
+            expect(de.query(By.css('[data-testId="saveBtn"]')).attributes.disabled).toBeDefined();
+            expect(
+                (fixture.componentInstance.form.get('containerStructures') as FormArray).controls[0]
+                    .get('code')
+                    .hasValidator(Validators.required)
+            ).toEqual(false);
         }));
 
         it('should redirect to containers list after save', () => {

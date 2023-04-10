@@ -31,6 +31,7 @@ export function DotBubbleMenuExtension(viewContainerRef: ViewContainerRef) {
     const changeToElement = changeToComponent.location.nativeElement;
 
     return BubbleMenu.extend<BubbleMenuOptions>({
+        name: 'bubbleMenu',
         // Default Options
         addOptions(): BubbleMenuOptions {
             return {

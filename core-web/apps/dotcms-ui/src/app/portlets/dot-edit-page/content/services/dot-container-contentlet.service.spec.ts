@@ -1,6 +1,7 @@
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { getTestBed, TestBed } from '@angular/core/testing';
 
+import { DotSessionStorageService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCMSContentType, DotPage, DotPageContainer } from '@dotcms/dotcms-models';
 import { CoreWebServiceMock, dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
@@ -19,7 +20,8 @@ describe('DotContainerContentletService', () => {
             imports: [HttpClientTestingModule],
             providers: [
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
-                DotContainerContentletService
+                DotContainerContentletService,
+                DotSessionStorageService
             ]
         });
         injector = getTestBed();
@@ -91,7 +93,49 @@ describe('DotContainerContentletService', () => {
         httpMock.expectOne(`v1/containers/form/2?containerId=1`);
     });
 
+    it('should do a request for get the contentlet html code in a specific variant', () => {
+        window.sessionStorage.setItem('variantName', 'Testing');
+
+        const pageContainer: DotPageContainer = {
+            identifier: '1',
+            uuid: '3'
+        };
+
+        const pageContent: DotPageContent = {
+            identifier: '2',
+            inode: '4',
+            type: 'content_type'
+        };
+
+        const dotPage: DotPage = {
+            canEdit: true,
+            canRead: true,
+            canLock: true,
+            identifier: '1',
+            pageURI: '/page_test',
+            shortyLive: 'shortyLive',
+            shortyWorking: 'shortyWorking',
+            workingInode: '2',
+            contentType: undefined,
+            fileAsset: false,
+            friendlyName: '',
+            host: '',
+            inode: '2',
+            name: '',
+            systemHost: false,
+            type: '',
+            uri: '',
+            versionType: ''
+        };
+
+        dotContainerContentletService
+            .getContentletToContainer(pageContainer, pageContent, dotPage)
+            .subscribe();
+        httpMock.expectOne(`v1/containers/content/2?containerId=1&pageInode=2&variantName=Testing`);
+    });
+
     afterEach(() => {
         httpMock.verify();
+        window.sessionStorage.removeItem('variantName');
     });
 });

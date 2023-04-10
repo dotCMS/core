@@ -1,5 +1,8 @@
 package com.dotcms.rest.api.v1.categories;
 
+import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.api.BulkResultView;
+import com.dotcms.util.pagination.OrderDirection;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -13,7 +16,10 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import io.vavr.control.Try;
+
+import javax.ws.rs.core.Response;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.function.Supplier;
@@ -49,9 +55,9 @@ public class CategoryHelper {
         return hostSupplier.get();
     }
 
-    public CategoryView toCategoryView(final Category category, final User user) {
+    public CategoryView toCategoryView(final Category category, final User user) throws DotDataException, DotSecurityException {
 
-        return new CategoryView.Builder()
+       return new CategoryView.Builder()
                 .inode(category.getInode())
                 .description(category.getDescription())
                 .keywords(category.getKeywords())
@@ -60,6 +66,24 @@ public class CategoryHelper {
                 .active(category.isActive())
                 .sortOrder(category.getSortOrder())
                 .categoryVelocityVarName(category.getCategoryVelocityVarName())
+                .build();
+    }
+
+    public CategoryWithChildCountView toCategoryWithChildCountView(final Category category, final User user) throws DotDataException, DotSecurityException {
+
+        final Integer childrenCategoriesCount = this.categoryAPI.findChildren(user, category.getInode(),
+                    false, StringPool.BLANK).size();
+
+       return new CategoryWithChildCountView.Builder()
+                .inode(category.getInode())
+                .description(category.getDescription())
+                .keywords(category.getKeywords())
+                .key(category.getKey())
+                .categoryName(category.getCategoryName())
+                .active(category.isActive())
+                .sortOrder(category.getSortOrder())
+                .categoryVelocityVarName(category.getCategoryVelocityVarName())
+                .childrenCount(childrenCategoriesCount)
                 .build();
     }
 

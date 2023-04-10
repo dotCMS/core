@@ -3,7 +3,6 @@ package com.dotcms.experiments.business;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.experiments.business.result.BrowserSession;
 import com.dotcms.experiments.business.result.ExperimentResults;
-import com.dotcms.experiments.business.result.ExperimentResult;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Scheduling;
@@ -165,8 +164,13 @@ public interface ExperimentsAPI {
             throws DotDataException, DotSecurityException;
 
     /**
-     * Return true if any {@link Experiment} is running right now, otherwise return false.
+     * Return true if Any {@link Experiment} is running right now and Experiment are enabled.
+     * Otherwise return false.
+     *
      * @return
+     *
+     * @see ConfigExperimentUtil#isExperimentEnabled()
+     *
      */
     boolean isAnyExperimentRunning() throws DotDataException;
 
@@ -193,4 +197,5 @@ public interface ExperimentsAPI {
      *     state and whose {@link  Scheduling#endDate()} is in the past
      */
     void endFinalizedExperiments(final User user) throws DotDataException;
+
 }

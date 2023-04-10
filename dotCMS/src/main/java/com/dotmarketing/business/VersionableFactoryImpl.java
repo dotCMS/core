@@ -6,6 +6,7 @@ import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotcms.variant.VariantAPI;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.VersionInfo;
@@ -405,6 +406,23 @@ public class VersionableFactoryImpl extends VersionableFactory {
 	}
 
 	@Override
+	public Optional<ContentletVersionInfo> findAnyContentletVersionInfoAnyVariant(final String identifier, final boolean deleted)
+			throws DotDataException {
+		final DotConnect dotConnect = new DotConnect()
+				.setSQL("SELECT * FROM contentlet_version_info WHERE identifier=  ? AND deleted = ?")
+				.addParam(identifier)
+				.addParam(deleted)
+				.setMaxRows(1);
+
+		final List<ContentletVersionInfo> versionInfos = TransformerLocator
+				.createContentletVersionInfoTransformer(dotConnect.loadObjectResults()).asList();
+
+		return versionInfos == null || versionInfos.isEmpty()
+				? Optional.empty()
+				: Optional.of(versionInfos.get(0));
+	}
+
+	@Override
 	public Optional<ContentletVersionInfo> findAnyContentletVersionInfo(final String identifier,
 			final String variant, final boolean deleted)
 			throws DotDataException {
@@ -466,6 +484,21 @@ public class VersionableFactoryImpl extends VersionableFactory {
 	protected List<ContentletVersionInfo> findAllContentletVersionInfos(final String identifier, final String variantName)
 			throws DotDataException, DotStateException {
 		return findContentletVersionInfos(identifier, variantName, -1);
+	}
+
+	public List<ContentletVersionInfo> findAllByVariant(Variant variant)
+			throws DotDataException {
+
+		final DotConnect dotConnect = new DotConnect()
+				.setSQL("SELECT * FROM contentlet_version_info WHERE variant_id = ?")
+				.addParam(variant.name());
+
+		final List<ContentletVersionInfo> versionInfos = TransformerLocator
+				.createContentletVersionInfoTransformer(dotConnect.loadObjectResults()).asList();
+
+		return versionInfos == null || versionInfos.isEmpty()
+				? Collections.emptyList()
+				: versionInfos;
 	}
 
     @Override

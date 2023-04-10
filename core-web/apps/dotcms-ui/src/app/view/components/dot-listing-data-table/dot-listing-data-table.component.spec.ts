@@ -1,6 +1,7 @@
 /* eslint-disable no-console */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import formatDistanceStrict from 'date-fns/formatDistanceStrict';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -24,12 +25,12 @@ import { CoreWebServiceMock, MockDotMessageService } from '@dotcms/utils-testing
 import { ActionHeaderOptions, ButtonAction } from '@models/action-header';
 import { DataTableColumn } from '@models/data-table';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { DotStringFormatPipe } from '@pipes/dot-string-format/dot-string-format.pipe';
 import { DotActionMenuItem } from '@shared/models/dot-action-menu/dot-action-menu-item.model';
 
 import { ActionHeaderComponent } from './action-header/action-header.component';
 import { DotListingDataTableComponent } from './dot-listing-data-table.component';
 
+import { DotRelativeDatePipe } from '../../pipes/dot-relative-date/dot-relative-date.pipe';
 import { DotActionButtonComponent } from '../_common/dot-action-button/dot-action-button.component';
 import { DotActionMenuButtonComponent } from '../_common/dot-action-menu-button/dot-action-menu-button.component';
 import { UiDotIconButtonModule } from '../_common/dot-icon-button/dot-icon-button.module';
@@ -131,6 +132,7 @@ describe('DotListingDataTableComponent', () => {
                 MenuModule,
                 DotMenuModule,
                 DotIconModule,
+                DotRelativeDatePipe,
                 UiDotIconButtonModule,
                 HttpClientTestingModule,
                 DotPipesModule,
@@ -312,7 +314,6 @@ describe('DotListingDataTableComponent', () => {
     }));
 
     it('renderer with format date column', fakeAsync(() => {
-        const dotStringFormatPipe = new DotStringFormatPipe();
         const itemsWithFormat = items.map((item) => {
             item.field3 = 1496178801000;
 
@@ -345,12 +346,13 @@ describe('DotListingDataTableComponent', () => {
                 cells.forEach((_cell, cellIndex) => {
                     if (cellIndex < 4) {
                         const textContent = cells[cellIndex].textContent;
-                        const itemContent = comp.columns[cellIndex].textContent
-                            ? dotStringFormatPipe.transform(
-                                  hostComponent.columns[cellIndex].textContent,
-                                  [item[comp.columns[cellIndex].fieldName]]
-                              )
-                            : item[comp.columns[cellIndex].fieldName];
+                        const itemContent =
+                            comp.columns[cellIndex].format === 'date'
+                                ? formatDistanceStrict(
+                                      item[comp.columns[cellIndex].fieldName],
+                                      new Date()
+                                  )
+                                : item[comp.columns[cellIndex].fieldName];
                         expect(textContent).toContain(itemContent);
                     }
                 });

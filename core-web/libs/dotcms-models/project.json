@@ -1,4 +1,5 @@
 {
+    "name": "dotcms-models",
     "$schema": "../../node_modules/nx/schemas/project-schema.json",
     "sourceRoot": "libs/dotcms-models/src",
     "projectType": "library",
