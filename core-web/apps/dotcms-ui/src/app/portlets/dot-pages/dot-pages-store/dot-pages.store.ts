@@ -94,12 +94,15 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                 label: this.dotMessageService.get('All'),
                 value: null
             });
-            languages.forEach((language) => {
-                languageOptions.push({
-                    label: `${language.language} (${language.countryCode})`,
-                    value: language.id
+
+            if (languages) {
+                languages.forEach((language) => {
+                    languageOptions.push({
+                        label: `${language.language} (${language.countryCode})`,
+                        value: language.id
+                    });
                 });
-            });
+            }
 
             return languageOptions;
         }
@@ -108,9 +111,11 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
     readonly languageLabels$: Observable<{ [id: string]: string }> = this.select(
         ({ languages }: DotPagesState) => {
             const langLabels = {};
-            languages.forEach((language) => {
-                langLabels[language.id] = `${language.languageCode}-${language.countryCode}`;
-            });
+            if (languages) {
+                languages.forEach((language) => {
+                    langLabels[language.id] = `${language.languageCode}-${language.countryCode}`;
+                });
+            }
 
             return langLabels;
         }
@@ -379,6 +384,11 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                                 this.setPages(currentPages);
                             },
                             (error: HttpErrorResponse) => {
+                                this.setPagesStatus(ComponentStatus.LOADED);
+
+                                // Deleting message to throw a generic error message
+                                error.error.message = '';
+
                                 return this.httpErrorManagerService.handle(error);
                             }
                         )
@@ -670,6 +680,34 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                             canWrite: {
                                 contentlets: permissions.CONTENTLETS.canWrite,
                                 htmlPages: permissions.HTMLPAGES.canWrite
+                            }
+                        },
+                        pages: {
+                            items: [],
+                            keyword: '',
+                            status: ComponentStatus.INIT
+                        }
+                    });
+                },
+                () => {
+                    this.setState({
+                        favoritePages: {
+                            items: [],
+                            showLoadMoreButton: false,
+                            total: 0
+                        },
+                        isEnterprise: false,
+                        environments: false,
+                        languages: null,
+                        loggedUser: {
+                            id: null,
+                            canRead: {
+                                contentlets: null,
+                                htmlPages: null
+                            },
+                            canWrite: {
+                                contentlets: null,
+                                htmlPages: null
                             }
                         },
                         pages: {

@@ -153,7 +153,6 @@ describe('DotPagesListingPanelComponent', () => {
             spyOn(store, 'setKeyword');
             spyOn(store, 'setLanguageId');
             spyOn(store, 'setArchived');
-            // spyOn(component.createPage, 'emit');
             spyOn(component.goToUrl, 'emit');
 
             fixture.detectChanges();

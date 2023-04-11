@@ -219,17 +219,17 @@ export class DotPageStateService {
                         })
                         .pipe(
                             take(1),
+                            catchError((error: HttpErrorResponse) => {
+                                // Deleting message to throw a generic error message
+                                error.error.message = '';
+                                this.dotHttpErrorManagerService.handle(error);
+
+                                return this.setLocalPageState(page);
+                            }),
                             switchMap((response: ESContent) => {
                                 const favoritePage = response.jsonObjectView?.contentlets[0];
-                                const pageState = new DotPageRenderState(
-                                    this.getCurrentUser(),
-                                    page,
-                                    favoritePage
-                                );
 
-                                this.setCurrentState(pageState);
-
-                                return of(pageState);
+                                return this.setLocalPageState(page, favoritePage);
                             })
                         );
                 }
@@ -237,6 +237,17 @@ export class DotPageStateService {
                 return of(this.currentState);
             })
         );
+    }
+
+    private setLocalPageState(
+        page: DotPageRenderParameters,
+        favoritePage?: DotCMSContentlet
+    ): Observable<DotPageRenderState> {
+        const pageState = new DotPageRenderState(this.getCurrentUser(), page, favoritePage);
+
+        this.setCurrentState(pageState);
+
+        return of(pageState);
     }
 
     private contentAdded(): void {

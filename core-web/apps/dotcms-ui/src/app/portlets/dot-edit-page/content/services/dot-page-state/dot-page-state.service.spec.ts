@@ -141,6 +141,23 @@ describe('DotPageStateService', () => {
                 query: `+contentType:DotFavoritePage +deleted:false +working:true +DotFavoritePage.url_dotraw:/an/url/test?&language_id=1&device_inode=`
             });
         });
+
+        it('should get with url from queryParams with a Failing fetch from ES Search (favorite page)', () => {
+            const error500 = mockResponseView(500, '/test', null, { message: 'error' });
+            dotESContentService.get = jasmine.createSpy().and.returnValue(throwError(error500));
+            service.get();
+
+            const subscribeCallback = jasmine.createSpy('spy');
+            service.haveContent$.subscribe(subscribeCallback);
+
+            expect(subscribeCallback).toHaveBeenCalledWith(true);
+            expect(subscribeCallback).toHaveBeenCalledTimes(1);
+
+            const mock = getDotPageRenderStateMock();
+            service.state$.subscribe((state: DotPageRenderState) => {
+                expect(state).toEqual(mock);
+            });
+        });
     });
 
     describe('$state', () => {
