@@ -32,8 +32,8 @@ export DOT_MAIL_SMTP_SSL_PROTOCOLS=${DOT_MAIL_SMTP_SSL_PROTOCOLS:-"TLSv1.2"}
 export DOT_SAMESITE_COOKIES=${DOT_SAMESITE_COOKIES:-"lax"}
 
 if [[ "${TOMCAT_REDIS_SESSION_ENABLED}" == 'true' ]]; then
-  export REDIS_SESSION_VALVE='<Valve className="tomcat.request.session.redis.SessionHandlerValve" /><Manager className="tomcat.request.session.redis.SessionManager" />'
-  export TOMCAT_REDIS_SESSION_HOSTS=${TOMCAT_REDIS_SESSION_HOSTS:-"127.0.0.1:6379"}
+  export REDIS_SESSION_VALVE=${REDIS_SESSION_VALVE:-'<Valve className="tomcat.request.session.redis.SessionHandlerValve" /><Manager className="tomcat.request.session.redis.SessionManager" />'}
+  export TOMCAT_REDIS_SESSION_HOSTS=${TOMCAT_REDIS_SESSION_HOSTS:-"redis:6379"}
   export TOMCAT_REDIS_SESSION_PASSWORD=${TOMCAT_REDIS_SESSION_PASSWORD:-"MY_SECRET_P4SS"}
   export TOMCAT_REDIS_SESSION_CLUSTER_ENABLED=${TOMCAT_REDIS_SESSION_CLUSTER_ENABLED:-"false"}
   export TOMCAT_REDIS_SESSION_SENTINEL_ENABLED=${TOMCAT_REDIS_SESSION_SENTINEL_ENABLED:-"false"}
