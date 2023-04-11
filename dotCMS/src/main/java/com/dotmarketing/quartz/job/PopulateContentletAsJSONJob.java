@@ -7,6 +7,7 @@ import com.dotmarketing.quartz.DotStatefulJob;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.google.common.annotations.VisibleForTesting;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.quartz.*;
@@ -19,8 +20,8 @@ import java.sql.SQLException;
  */
 public class PopulateContentletAsJSONJob extends DotStatefulJob {
 
-    public static final String EXCLUDING_ASSET_SUB_TYPE = "excludingAssetSubType";
-    public static final String CONFIG_PROPERTY_HOURS_INTERVAL = "populateContentletAsJSONJob.hours.interval";
+    private static final String EXCLUDING_ASSET_SUB_TYPE = "excludingAssetSubType";
+    private static final String CONFIG_PROPERTY_HOURS_INTERVAL = "populateContentletAsJSONJob.hours.interval";
     private static final Lazy<Integer> HOURS_INTERVAL = Lazy.of(() -> Config.getIntProperty(
             CONFIG_PROPERTY_HOURS_INTERVAL, 4));
 
@@ -41,7 +42,7 @@ public class PopulateContentletAsJSONJob extends DotStatefulJob {
             new PopulateContentletAsJSONUtil().populateExcludingAssetSubType(excludingAssetSubType);
 
             // Removing the job if everything went well
-            QuartzUtils.removeJob(getJobName(), getJobGroupName());
+            removeJob();
         } catch (SQLException | DotDataException | IOException e) {
             Logger.error(this, "Error executing Contentlet as JSON population job", e);
             throw new DotRuntimeException(e);
@@ -104,11 +105,21 @@ public class PopulateContentletAsJSONJob extends DotStatefulJob {
         }
     }
 
-    private static String getJobName() {
+    /**
+     * Removes the PopulateContentletAsJSONJob from the scheduler
+     */
+    @VisibleForTesting
+    static void removeJob() throws SchedulerException {
+        QuartzUtils.removeJob(getJobName(), getJobGroupName());
+    }
+
+    @VisibleForTesting
+    static String getJobName() {
         return PopulateContentletAsJSONJob.class.getSimpleName();
     }
 
-    private static String getJobGroupName() {
+    @VisibleForTesting
+    static String getJobGroupName() {
         return getJobName() + "_Group";
     }
 
