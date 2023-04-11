@@ -1,12 +1,16 @@
 <p-card (click)="goTo.emit(true)" data-testid="pageCard">
     <ng-template pTemplate="header">
-        <div
-            class="dot-pages-favorite-card-content__image"
-            [ngStyle]="{ 'background-image': 'url(' + imageUri + ')' }"
-            data-testId="favoriteCardImageContainer"
-        >
-            <img [alt]="title" [src]="imageUri" />
-        </div>
+        <dot-pages-favorite-page-empty-skeleton *ngIf="!imageUri; else FavoritePageThumbnail" />
+
+        <ng-template #FavoritePageThumbnail>
+            <div
+                class="dot-pages-favorite-card-content__image"
+                [ngStyle]="{ 'background-image': 'url(' + imageUri + ')' }"
+                data-testId="favoriteCardImageContainer"
+            >
+                <img [alt]="title" [src]="imageUri" />
+            </div>
+        </ng-template>
     </ng-template>
 
     <dot-icon-button

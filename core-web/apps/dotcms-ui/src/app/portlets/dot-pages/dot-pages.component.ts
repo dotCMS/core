@@ -70,21 +70,26 @@ export class DotPagesComponent implements OnInit, OnDestroy {
         this.dotPageRenderService
             .checkPermission(urlParams)
             .pipe(take(1))
-            .subscribe((hasPermission: boolean) => {
-                if (hasPermission) {
-                    this.dotRouterService.goToEditPage(urlParams);
-                } else {
-                    const error = new HttpErrorResponse(
-                        new HttpResponse({
-                            body: null,
-                            status: HttpCode.FORBIDDEN,
-                            headers: null,
-                            url: ''
-                        })
-                    );
+            .subscribe(
+                (hasPermission: boolean) => {
+                    if (hasPermission) {
+                        this.dotRouterService.goToEditPage(urlParams);
+                    } else {
+                        const error = new HttpErrorResponse(
+                            new HttpResponse({
+                                body: null,
+                                status: HttpCode.FORBIDDEN,
+                                headers: null,
+                                url: ''
+                            })
+                        );
+                        this.dotHttpErrorManagerService.handle(error);
+                    }
+                },
+                (error: HttpErrorResponse) => {
                     this.dotHttpErrorManagerService.handle(error);
                 }
-            });
+            );
     }
 
     /**

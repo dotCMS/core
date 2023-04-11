@@ -6,6 +6,7 @@ import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.language.Language;
 import java.util.List;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -73,4 +74,11 @@ public interface LanguageAPI {
             summary = " Updates an existing language in the system"
     )
     ResponseEntityView<Language> update(@PathParam("languageId") String languageId, Language language);
+
+    @DELETE
+    @Path("/{languageId}")
+    @Operation(
+            summary = " Deletes an existing language from the system"
+    )
+    ResponseEntityView<String> delete(@PathParam("languageId") String languageId);
 }

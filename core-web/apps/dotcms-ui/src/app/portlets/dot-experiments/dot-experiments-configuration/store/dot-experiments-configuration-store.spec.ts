@@ -26,6 +26,7 @@ import {
     TrafficProportionTypes,
     Variant
 } from '@dotcms/dotcms-models';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import {
     DotExperimentsConfigurationState,
     DotExperimentsConfigurationStore
@@ -47,6 +48,11 @@ const ActivatedRouteMock = {
     }
 };
 
+const messageServiceMock = new MockDotMessageService({
+    'experiments.action.schedule-experiment': 'schedule-experiment',
+    'experiments.action.start-experiment': 'run-experiment'
+});
+
 describe('DotExperimentsConfigurationStore', () => {
     let spectator: SpectatorService<DotExperimentsConfigurationStore>;
     let store: DotExperimentsConfigurationStore;
@@ -57,13 +63,16 @@ describe('DotExperimentsConfigurationStore', () => {
         service: DotExperimentsConfigurationStore,
         providers: [
             mockProvider(DotExperimentsService),
-            mockProvider(DotMessageService),
             mockProvider(MessageService),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(Title),
             {
                 provide: ActivatedRoute,
                 useValue: ActivatedRouteMock
+            },
+            {
+                provide: DotMessageService,
+                useValue: messageServiceMock
             },
             mockProvider(DotHttpErrorManagerService)
         ]
@@ -137,6 +146,29 @@ describe('DotExperimentsConfigurationStore', () => {
             expect(stepStatusSidebar.status).toEqual(ComponentStatus.IDLE);
             expect(stepStatusSidebar.isOpen).toEqual(false);
             expect(stepStatusSidebar.experimentStep).toEqual(null);
+            done();
+        });
+    });
+
+    it('should return `Schedule Experiment` when the experiment has schedule set', (done) => {
+        spectator.service.loadExperiment(EXPERIMENT_MOCK.id);
+
+        expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_MOCK.id);
+
+        store.vm$.subscribe(({ runExperimentBtnLabel }) => {
+            expect(runExperimentBtnLabel).toEqual('schedule-experiment');
+            done();
+        });
+    });
+
+    it('should return `Run Experiment` when the experiment has schedule set', (done) => {
+        dotExperimentsService.getById.and.callThrough().and.returnValue(of(EXPERIMENT_MOCK_1));
+        spectator.service.loadExperiment(EXPERIMENT_MOCK_1.id);
+
+        expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_MOCK_1.id);
+
+        store.vm$.subscribe(({ runExperimentBtnLabel }) => {
+            expect(runExperimentBtnLabel).toEqual('run-experiment');
             done();
         });
     });

@@ -1,5 +1,11 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
+import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
+import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PERSONA_NAME_KEY;
+
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
@@ -2797,7 +2803,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         this.deleteBinaryFiles(contentletsVersion, null);
         this.deleteElementFromPublishQueueTable(contentlets);
-        this.destroyMetadata(contentlets);
 
         return noErrors;
     }
@@ -8660,7 +8665,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @param field
      */
     private void deleteBinaryFiles(List<Contentlet> contentlets, Field field) {
-        contentlets.stream().forEach(con -> {
+        this.destroyMetadata(contentlets);
+        contentlets.forEach(con -> {
 
             String contentletAssetPath = getContentletAssetPath(con, field);
             String contentletAssetCachePath = getContentletCacheAssetPath(con, field);

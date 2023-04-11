@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import org.junit.Assert;
 import org.junit.Test;
 
 /**
@@ -173,5 +175,35 @@ public class ContentletFactoryTest extends ContentletBaseTest {
         }
     }
 
+    /**
+     * Here we test that...
+     * if we create 3 pieces of content of the same type our count method reflects that accurately
+     * Also if we create a new version of the same content and we count again we should still get 3
+     * That unless we use the param that will  include All Versions of the contentlets
+     */
+    @Test
+    public void Create_Contentlets_Then_Count() {
+        final ContentTypeDataGen contentTypeDataGen = new ContentTypeDataGen();
+        final ContentType contentType = contentTypeDataGen.name("any").nextPersisted();
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType.id());
+        //Create some content
+        final Contentlet con1 = contentletDataGen.nextPersisted();
+        final Contentlet con2 =  contentletDataGen.nextPersisted();
+        final Contentlet con3 =  contentletDataGen.nextPersisted();
+
+        long count = contentletFactory.countByType(contentType, false);
+        Assert.assertEquals(3, count);
+
+        //This should generate another version of con1
+        final Contentlet newVersion = ContentletDataGen.checkout(con1);
+        newVersion.setBoolProperty(Contentlet.DONT_VALIDATE_ME, true);
+        ContentletDataGen.checkin(newVersion);
+
+        count = contentletFactory.countByType(contentType, false);
+        Assert.assertEquals(3, count);
+
+        count = contentletFactory.countByType(contentType, true);
+        Assert.assertEquals(4, count);
+    }
 
 }
