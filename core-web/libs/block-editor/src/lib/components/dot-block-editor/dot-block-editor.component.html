@@ -1,10 +1,8 @@
 <ng-container *ngIf="editor">
     <div class="editor-wrapper" [style]="customStyles">
         <tiptap-editor
-            [ngModel]="content"
             [editor]="editor"
             [ngClass]="{ 'overflow-hidden': freezeScroll }"
-            (ngModelChange)="onChange($event)"
             (keyup)="subject.next()"
         ></tiptap-editor>
     </div>

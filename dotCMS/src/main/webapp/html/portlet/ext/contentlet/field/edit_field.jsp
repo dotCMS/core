@@ -245,6 +245,9 @@
                     /**
                      * We need to listen to the "valueChange" event BEFORE setting the value
                      * to the editor.
+                     * 
+                     * The block editor emits a "valueChange" event when the content initialize and
+                     * when the content changes.
                      */
                     blockEditor.addEventListener('valueChange', (event) => {
                         // https://tiptap.dev/api/commands/clear-content

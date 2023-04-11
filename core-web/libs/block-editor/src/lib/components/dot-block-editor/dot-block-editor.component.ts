@@ -52,12 +52,7 @@ import {
     NodeTypes
 } from '../../extensions';
 import { ContentletBlock, ImageNode, VideoNode } from '../../nodes';
-import {
-    formatHTML,
-    removeInvalidNodes,
-    SetDocAttrStep,
-    DotMarketingConfigService
-} from '../../shared';
+import { formatHTML, SetDocAttrStep, DotMarketingConfigService } from '../../shared';
 
 function toTitleCase(str) {
     return str.replace(/\p{L}+('\p{L}+)?/gu, function (txt) {
@@ -77,7 +72,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     @Input() displayCountBar: boolean | string = true;
     @Input() charLimit: number;
     @Input() customBlocks: string;
-    @Input() content: Content = '';
+
     @Input() set showVideoThumbnail(value) {
         this.dotMarketingConfigService.setProperty(
             EDITOR_MARKETING_KEYS.SHOW_VIDEO_THUMBNAIL,
@@ -92,13 +87,14 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     }
 
     @Input() set value(content: Content) {
-        if (typeof content === 'string') {
-            this.content = formatHTML(content);
+        // content could be a string of HTML or a JSONContent
+        let finalContent = content;
 
-            return;
+        if (typeof content === 'string') {
+            finalContent = formatHTML(content);
         }
 
-        this.setEditorJSONContent(content);
+        this.setContent(finalContent);
     }
     @Output() valueChange = new EventEmitter<JSONContent>();
 
@@ -158,23 +154,24 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
                 });
 
                 this.editor.on('create', () => this.updateChartCount());
+
+                this.editor.on('transaction', ({ editor, transaction }) => {
+                    if (transaction.docChanged) {
+                        this.valueChange.emit(editor.getJSON());
+                    }
+
+                    this.freezeScroll = FREEZE_SCROLL_KEY.getState(editor.view.state)?.freezeScroll;
+                });
+
                 this.subject
                     .pipe(takeUntil(this.destroy$), debounceTime(250))
                     .subscribe(() => this.updateChartCount());
-
-                this.editor.on('transaction', ({ editor }) => {
-                    this.freezeScroll = FREEZE_SCROLL_KEY.getState(editor.view.state)?.freezeScroll;
-                });
             });
     }
 
     ngOnDestroy() {
         this.destroy$.next(true);
         this.destroy$.complete();
-    }
-
-    onChange(value: JSONContent) {
-        this.valueChange.emit(value);
     }
 
     private updateChartCount(): void {
@@ -419,10 +416,8 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
         return 'Type "/" for commmands';
     }
 
-    private setEditorJSONContent(content: Content) {
-        this.content =
-            this._allowedBlocks?.length > 1
-                ? removeInvalidNodes(content, this._allowedBlocks)
-                : content;
+    private setContent(content: Content) {
+        this.editor?.chain().setContent(content).run();
+        this.valueChange.emit(this.editor.getJSON());
     }
 }
