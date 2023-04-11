@@ -35,13 +35,6 @@ export const VideoNode = Node.create({
                 parseHTML: (element) => element.getAttribute('height'),
                 renderHTML: (attributes) => ({ height: attributes.height })
             },
-            orientation: {
-                default: null,
-                parseHTML: (element) => element.getAttribute('orientation'),
-                renderHTML: ({ height, width }) => ({
-                    orientation: height > width ? 'vertical' : 'horizontal'
-                })
-            },
             data: {
                 default: null,
                 parseHTML: (element) => element.getAttribute('data'),
@@ -94,16 +87,13 @@ export const VideoNode = Node.create({
     },
 
     renderHTML({ HTMLAttributes }) {
-        const { orientation = 'horizontal' } = HTMLAttributes;
-
         return [
             'div',
             { class: 'node-container' },
             [
                 'video',
                 mergeAttributes(HTMLAttributes, {
-                    controls: true,
-                    class: `${orientation}-video`
+                    controls: true
                 })
             ]
         ];
@@ -117,7 +107,6 @@ const getVideoAttrs = (attrs: DotCMSContentlet | string) => {
 
     const { assetMetaData, asset, mimeType, fileAsset } = attrs;
     const { width = 'auto', height = 'auto', contentType } = assetMetaData || {};
-    const orientation = height > width ? 'vertical' : 'horizontal';
 
     return {
         src: fileAsset || asset,
@@ -126,7 +115,6 @@ const getVideoAttrs = (attrs: DotCMSContentlet | string) => {
         },
         width,
         height,
-        mimeType: mimeType || contentType,
-        orientation
+        mimeType: mimeType || contentType
     };
 };
