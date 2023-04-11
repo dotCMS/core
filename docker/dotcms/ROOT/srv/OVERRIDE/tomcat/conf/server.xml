@@ -115,6 +115,12 @@
              internalProxies="${CMS_REMOTEIP_INTERNALPROXIES}" 
         />
 
+        <!-- Do not show server details up on BadRequest -->
+        <Valve className="org.apache.catalina.valves.ErrorReportValve"
+               showReport="false"
+               showServerInfo="false"
+        />
+
         <!-- Access log processes all example.  Documentation at: /docs/config/valve.html -->
         <Valve
             className="org.apache.catalina.valves.AccessLogValve" 
