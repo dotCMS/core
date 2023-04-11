@@ -9540,6 +9540,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             return null;
         }
 
+        
         Identifier id = APILocator.getIdentifierAPI().find(contentlet.getIdentifier());
         Host host = APILocator.getHostAPI().find(id.getHostId(), user, respectFrontendRoles);
 
@@ -9561,7 +9562,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 if (UtilMethods.isSet(urlMapFieldValue)) {
                     result = result.replaceAll(urlMapField, urlMapFieldValue);
                 } else {
-                    result = result.replaceAll(urlMapField, "");
+                    // urlmap property not found on content
+                    result = null;
+                    break;
                 }
             }
         }
@@ -9589,10 +9592,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
         }
 
-        if (result == null) {
-            result = CONTENTLET_URL_MAP_FOR_CONTENT_404;
+        if (UtilMethods.isEmpty( result )) {
+            contentlet.setStringProperty(URL_MAP_FOR_CONTENT_KEY, CONTENTLET_URL_MAP_FOR_CONTENT_404);
+        }else {
+            contentlet.setStringProperty(URL_MAP_FOR_CONTENT_KEY, result);
         }
-        contentlet.setStringProperty(URL_MAP_FOR_CONTENT_KEY, result);
+
         return result;
     }
 
