@@ -197,4 +197,5 @@ public interface ExperimentsAPI {
      *     state and whose {@link  Scheduling#endDate()} is in the past
      */
     void endFinalizedExperiments(final User user) throws DotDataException;
+
 }

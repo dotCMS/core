@@ -1065,11 +1065,14 @@ public class PageResource {
                  APILocator.getHTMLPageAssetAPI().getPageByPath(
                     pageCheckPermissionForm.getPath(), currentHost, languageId, mode.showLive);
 
-        return null != page?
-                new ResponseEntityBooleanView(APILocator.getPermissionAPI().
+        if (null != page) {
+
+            return new ResponseEntityBooleanView(APILocator.getPermissionAPI().
                     doesUserHavePermission(page, pageCheckPermissionForm.getType().getType(),
-                            user, false)):
-                new ResponseEntityBooleanView(false);
+                            user, false));
+        }
+
+        throw new DoesNotExistException("The page: " + pageCheckPermissionForm.getPath() + " do not exist");
     } // checkPagePermission.
 
     /**

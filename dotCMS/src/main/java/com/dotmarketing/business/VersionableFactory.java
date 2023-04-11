@@ -1,5 +1,6 @@
 package com.dotmarketing.business;
 
+import com.dotcms.variant.model.Variant;
 import java.util.List;
 import java.util.Optional;
 
@@ -255,4 +256,14 @@ public abstract class VersionableFactory {
 
 	protected abstract List<ContentletVersionInfo> findAllContentletVersionInfos(String identifier, String variantName)
 			throws DotDataException, DotStateException ;
+
+	/**
+	 * Return all versions of the {@link com.dotmarketing.portlets.contentlet.model.Contentlet}
+	 * for the specific {@link com.dotcms.variant.model.Variant} no matter the {@Link Language}
+	 *
+	 * @param variant
+	 * @return
+	 */
+    public abstract List<ContentletVersionInfo> findAllByVariant(Variant variant)
+			throws DotDataException;
 }

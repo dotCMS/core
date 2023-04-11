@@ -1,4 +1,4 @@
-import { Subject } from 'rxjs';
+import { Subject, throwError } from 'rxjs';
 
 import { HttpClient, HttpErrorResponse, HttpHandler, HttpResponse } from '@angular/common/http';
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
@@ -26,7 +26,8 @@ import {
 import {
     dotcmsContentletMock,
     dotcmsContentTypeBasicMock,
-    MockDotRouterService
+    MockDotRouterService,
+    mockResponseView
 } from '@dotcms/utils-testing';
 
 import { DotPageStore } from './dot-pages-store/dot-pages.store';
@@ -220,7 +221,7 @@ describe('DotPagesComponent', () => {
         });
     });
 
-    it('should call goToUrl method from DotPagesFavoritePanel2', () => {
+    it('should throw error dialog when call GoTo and user does not have access', () => {
         dotPageRenderService.checkPermission = jasmine.createSpy().and.returnValue(of(false));
 
         const elem = de.query(By.css('dot-pages-favorite-panel'));
@@ -236,6 +237,18 @@ describe('DotPagesComponent', () => {
                 })
             )
         );
+    });
+
+    it('should throw error dialog when call GoTo and url does not match with existing page', () => {
+        const error404 = mockResponseView(404);
+        dotPageRenderService.checkPermission = jasmine
+            .createSpy()
+            .and.returnValue(throwError(error404));
+
+        const elem = de.query(By.css('dot-pages-favorite-panel'));
+        elem.triggerEventHandler('goToUrl', '/page/1?lang=1');
+
+        expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(error404);
     });
 
     it('should call showActionsMenu method from DotPagesFavoritePanel', () => {
@@ -330,6 +343,12 @@ describe('DotPagesComponent', () => {
             identifier: '123',
             isFavoritePage: true
         });
+    });
+
+    it('should reload portlet only when the site change', () => {
+        switchSiteSubject.next(mockSites[0]); // setting the site
+        switchSiteSubject.next(mockSites[1]); // switching the site
+        expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
     });
 
     it('should reload portlet only when the site change', () => {

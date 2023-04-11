@@ -283,7 +283,6 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
         remove(contentType, true);
     }
 
-    @WrapInTransaction
     public static void remove(final ContentType contentType, final Boolean failSilently) {
 
         if (null != contentType) {

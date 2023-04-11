@@ -1,9 +1,10 @@
 package com.dotmarketing.portlets.contentlet.business; 
 
-import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
 import com.dotcms.util.transform.TransformerLocator;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
@@ -16,6 +17,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import org.elasticsearch.ElasticsearchException;
@@ -27,7 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Consumer;
+
 
 /**
  * Provides utility methods to interact with {@link Contentlet} objects in
@@ -207,7 +209,16 @@ public abstract class ContentletFactory {
      */
     protected abstract List<Contentlet> findByStructure(String structureInode, Date maxDate,
             int limit, int offset) throws DotDataException, DotStateException, DotSecurityException;
-	
+
+	/**
+	 * select count contentlet by ContentType
+	 *
+	 * @param contentType
+	 * @param includeAllVersion when true all inode-versions versions are counted too
+	 * @return
+	 */
+	public abstract int countByType(ContentType contentType, boolean includeAllVersion);
+
 	/**
 	 * Saves a Contentlet
 	 * @param contentlet
@@ -356,6 +367,18 @@ public abstract class ContentletFactory {
 	 * @throws DotSecurityException
 	 */
 	protected abstract List<Contentlet> findAllVersions(Identifier identifier, boolean bringOldVersions) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Retrieves all versions for a {@link Contentlet} identifier inside a {@link Variant}.
+	 *
+	 * @param identifier Contentlet identifier
+	 * @param variant Variant to search for
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	protected abstract List<Contentlet> findAllVersions(final Identifier identifier, final Variant variant)
+			throws DotDataException, DotSecurityException;
 
     /**
      * Retrieves all versions for a contentlet identifier.

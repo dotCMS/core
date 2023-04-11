@@ -1140,15 +1140,36 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         removeContentFromIndex(content, true);
     }
 
+    /**
+     * Removes all content from the index for the given structure inode
+     * this one does go to the db therefore it needs the DB closed annotation
+     * @param structureInode
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @CloseDBIfOpened
+    @Override
     public void removeContentFromIndexByStructureInode(final String structureInode)
             throws DotDataException, DotSecurityException {
         final ContentType contentType = APILocator.getContentTypeAPI(
-                APILocator.getUserAPI().getSystemUser()).find(structureInode);
+                APILocator.systemUser()).find(structureInode);
         if (contentType == null) {
             throw new DotDataException(
                     "ContentType with Inode or VarName: " + structureInode + "not found");
         }
+        removeContentFromIndexByContentType(contentType);
+    }
+
+    /**
+     * Removes all content from the index for the given content type
+     * this one does NOT go to the db therefore it does NOT need the DB closed annotation
+     * @param contentType
+     * @throws DotDataException
+     */
+    @Override
+    public void removeContentFromIndexByContentType(final ContentType contentType)
+            throws DotDataException {
+
         final String structureName = contentType.variable();
         final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
 

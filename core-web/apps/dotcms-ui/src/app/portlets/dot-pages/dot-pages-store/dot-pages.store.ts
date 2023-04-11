@@ -297,7 +297,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                         )[0];
                     } else {
                         localPageData = this.get().pages.items.filter(
-                            (item) => item.identifier === identifier
+                            (item) => item?.identifier === identifier
                         )[0];
                         this.setPagesStatus(ComponentStatus.LOADING);
                     }
@@ -330,7 +330,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                                             this.setFavoritePages(pagesData);
                                         } else {
                                             const pagesData = this.get().pages.items.map((page) => {
-                                                return page.identifier === identifier
+                                                return page?.identifier === identifier
                                                     ? items.jsonObjectView.contentlets[0]
                                                     : page;
                                             });
@@ -460,13 +460,13 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         const { keyword, languageId, archived } = this.get().pages;
         const hostId = this.siteService.currentSite.identifier;
         const langQuery = languageId ? `+languageId:${languageId}` : '';
-        const archivedQuery = archived ? `+archived:${archived}` : '';
+        const archivedQuery = archived ? `+deleted:${archived}` : '';
         const identifierQuery = identifier ? `+identifier:${identifier}` : '';
         const keywordQuery = keyword
             ? `+(title:${keyword}* OR path:*${keyword}* OR urlmap:*${keyword}*)`
             : '';
 
-        return `+conhost:${hostId} +deleted:false  +(urlmap:* OR basetype:5) ${langQuery} ${archivedQuery} ${keywordQuery} ${identifierQuery}`;
+        return `+conhost:${hostId} +working:true  +(urlmap:* OR basetype:5) ${langQuery} ${archivedQuery} ${keywordQuery} ${identifierQuery}`;
     }
 
     private getWorflowActionsFn = (item: DotCMSContentlet): Observable<DotCMSWorkflowAction[]> => {

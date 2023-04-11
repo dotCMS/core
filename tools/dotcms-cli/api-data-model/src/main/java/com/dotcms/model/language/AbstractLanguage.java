@@ -3,6 +3,7 @@ package com.dotcms.model.language;
 import com.dotcms.model.annotation.ValueType;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import java.util.Optional;
 import org.immutables.value.Value;
 
 @ValueType
@@ -10,7 +11,8 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = Language.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public interface AbstractLanguage {
-    long id();
+
+    Optional<Long> id();
 
     String languageCode();
 
