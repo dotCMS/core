@@ -1,12 +1,9 @@
 <?xml version="1.0"?>
 <web-app xmlns="http://java.sun.com/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 		 xsi:schemaLocation="http://java.sun.com/xml/ns/javaee
-                      http://java.sun.com/xml/ns/javaee/web-app_4_0.xsd"
-		 version="4.0" metadata-complete="false">
+                      http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
+		 version="3.0" metadata-complete="true">
     <display-name>dotCMS</display-name>
-
-	<request-character-encoding>UTF-8</request-character-encoding>
-	<response-character-encoding>UTF-8</response-character-encoding>
 
 	<!-- Don't ever delete the following comment tags, it will break the build -->
 	<!-- BEGIN JSPS --> <!-- END JSPS -->
@@ -27,11 +24,11 @@
 		<filter-class>com.dotcms.filters.NormalizationFilter</filter-class>
 		<async-supported>true</async-supported>
 	</filter>
-	<filter>
-		<filter-name>RequestTrackingFilter</filter-name>
-		<filter-class>com.dotcms.filters.RequestTrackingFilter</filter-class>
-		<async-supported>true</async-supported>
-	</filter>
+    <filter>
+        <filter-name>ManagementRequestFilter</filter-name>
+        <filter-class>com.dotcms.filters.ManagementRequestFilter</filter-class>
+        <async-supported>true</async-supported>
+    </filter>
 	<filter>
 		<filter-name>InterceptorFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.InterceptorFilter</filter-class>
@@ -65,17 +62,13 @@
 		<filter-class>com.dotmarketing.filters.ThreadNameFilter</filter-class>
 		<async-supported>true</async-supported>
 	</filter>
-	<filter>
-		<filter-name>InfrastructureManagementFilter</filter-name>
-		<filter-class>com.dotcms.management.filters.InfrastructureManagementFilter</filter-class>
-		<async-supported>true</async-supported>
-	</filter>
+	
 	<filter>
 		<filter-name>CharsetEncodingFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.CharsetEncodingFilter</filter-class>
 		<async-supported>true</async-supported>
 	</filter>
-
+	
 	<filter>
 	    <filter-name>TimeMachineFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.TimeMachineFilter</filter-class>
@@ -107,7 +100,6 @@
 		<filter-class>com.dotmarketing.filters.LoginRequiredFilter</filter-class>
 		<async-supported>true</async-supported>
 	</filter>
-	
 	<filter>
 		<filter-name>Secure MainServlet Filter</filter-name>
 		<filter-class>com.dotcms.repackage.com.liferay.filters.secure.SecureFilter</filter-class>
@@ -122,11 +114,6 @@
         <filter-class>com.dotmarketing.filters.DotUrlRewriteFilter</filter-class>
 		<async-supported>true</async-supported>
     </filter>
-	<filter>
-		<filter-name>ScssQueryParamFilter</filter-name>
-		<filter-class>com.dotcms.csspreproc.ScssQueryParamFilter</filter-class>
-		<async-supported>true</async-supported>
-	</filter>
 	<!--END DOTMARKETING FILTERS-->
 	
 	
@@ -138,58 +125,38 @@
  	<!-- END FILTER-MAPPINGS -->
  	
 	<!--DOTMARKETING FILTER-MAPPINGS-->
-	<!-- Essential security and HTTP compliance filters run first -->
 	<filter-mapping>
 		<filter-name>NormalizationFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
-
-	<!-- Request tracking filter runs early to capture all requests for metrics and shutdown coordination -->
+    <filter-mapping>
+        <filter-name>ManagementRequestFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+    <filter-mapping>
+        <filter-name>HttpHeaderSecurityFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
 	<filter-mapping>
-		<filter-name>RequestTrackingFilter</filter-name>
+		<filter-name>InterceptorFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
-
-	<filter-mapping>
-		<filter-name>ScssQueryParamFilter</filter-name>
-		<url-pattern>*.scss</url-pattern>
-	</filter-mapping>
-
-	<filter-mapping>
-			<filter-name>HttpHeaderSecurityFilter</filter-name>
-			<url-pattern>/*</url-pattern>
-	</filter-mapping>
-
-	<filter-mapping>
-		<filter-name>CookiesFilter</filter-name>
-		<url-pattern>/*</url-pattern>
-	</filter-mapping>
-
-	<!-- CRITICAL: InfrastructureManagementFilter runs after essential security filters but before expensive ones
-	     Pattern must match InfrastructureConstants.MANAGEMENT_PATH_PREFIX + "/*" = "/dotmgt/*"
-	     Filter is service-agnostic - handles ANY service under /dotmgt prefix -->
-	<filter-mapping>
-		<filter-name>InfrastructureManagementFilter</filter-name>
-		<url-pattern>/dotmgt/*</url-pattern>
-	</filter-mapping>
-
+    
 	<filter-mapping>
 		<filter-name>CharsetEncodingFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
 	
-
+	<filter-mapping>
+		<filter-name>CookiesFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
 	
 	<filter-mapping>
 		<filter-name>ThreadNameFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
-
-	<filter-mapping>
-		<filter-name>InterceptorFilter</filter-name>
-		<url-pattern>/*</url-pattern>
-	</filter-mapping>
-
+	
 	<filter-mapping>
 		<filter-name>TimeMachineFilter</filter-name>
 		<url-pattern>/*</url-pattern>
@@ -204,27 +171,22 @@
         <filter-name>VanityURLFilter</filter-name>
         <url-pattern>/*</url-pattern>
     </filter-mapping>
-
-	<filter-mapping>
-		<filter-name>VisitorFilter</filter-name>
-		<url-pattern>/*</url-pattern>
-	</filter-mapping>
-
+    <filter-mapping>
+        <filter-name>VisitorFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
 	<filter-mapping>
 		<filter-name>AutoLoginFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
-
 	<filter-mapping>
 		<filter-name>LoginRequiredFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
-	
 	<filter-mapping>
 		<filter-name>CMSFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
-	
 	<filter-mapping>
 		<filter-name>Secure MainServlet Filter</filter-name>
 		<url-pattern>/c/*</url-pattern>
@@ -238,9 +200,6 @@
     
     
 	<!-- DOTMARKETING LISTENERS -->
-	<listener>
-		<listener-class>org.jboss.weld.environment.servlet.Listener</listener-class>
-	</listener>
 	<listener>
 		<listener-class>com.dotmarketing.listeners.ContextLifecycleListener</listener-class>
 	</listener>
@@ -291,20 +250,10 @@
 		<servlet-class>com.dotmarketing.servlets.InitServlet</servlet-class>
 		<load-on-startup>8</load-on-startup>
 	</servlet>
-
-	<servlet>
-		<servlet-name>FinalStartupServlet</servlet-name>
-		<servlet-class>com.dotmarketing.servlets.FinalStartupServlet</servlet-class>
-		<load-on-startup>99999</load-on-startup>
-	</servlet>
 	
 	<servlet>
 		<servlet-name>VelocityServlet</servlet-name>
 		<servlet-class>com.dotcms.rendering.velocity.servlet.VelocityServlet</servlet-class>
-	</servlet>
-	<servlet>
-		<servlet-name>JavascriptServlet</servlet-name>
-		<servlet-class>com.dotcms.rendering.js.JsServlet</servlet-class>
 	</servlet>
 	<servlet>
 		<servlet-name>SpeedyAssetServlet</servlet-name>
@@ -413,11 +362,12 @@
         <servlet-name>SassPreProcessServlet</servlet-name>
         <servlet-class>com.dotcms.csspreproc.SassPreProcessServlet</servlet-class>
     </servlet>
-
     <!-- REST -->
-  <servlet>
+    <servlet>
 		<servlet-name>RESTAPI</servlet-name>
-		<servlet-class>org.glassfish.jersey.servlet.ServletContainer</servlet-class>
+		<servlet-class>
+		  com.dotcms.rest.servlet.ReloadableServletContainer
+		</servlet-class>
 		<init-param>
 			<param-name>jersey.config.server.mediaTypeMappings</param-name>
 			<param-value>txt : text/plain, xml : application/xml, json : application/json, js : application/javascript</param-value>
@@ -430,19 +380,6 @@
 		<servlet-name>DotGraphQLHttpServlet</servlet-name>
 		<servlet-class>com.dotcms.graphql.DotGraphQLHttpServlet</servlet-class>
 	</servlet>
-
-	<servlet>
-		<servlet-name>HealthProbeServlet</servlet-name>
-		<servlet-class>com.dotcms.health.servlet.HealthProbeServlet</servlet-class>
-		<load-on-startup>1</load-on-startup>
-	</servlet>
-
-	<servlet>
-		<servlet-name>ManagementMetricsServlet</servlet-name>
-		<servlet-class>com.dotcms.metrics.servlet.ManagementMetricsServlet</servlet-class>
-		<load-on-startup>1</load-on-startup>
-	</servlet>
-
     
 	<!--END DOTMARKETING SERVLETS-->
 	
@@ -475,16 +412,10 @@
       <servlet-name>SassPreProcessServlet</servlet-name>
       <url-pattern>*.dotsass</url-pattern>
     </servlet-mapping>
-
     
     <servlet-mapping>
       <servlet-name>CSSPreProcessServlet</servlet-name>
       <url-pattern>/DOTSASS/*</url-pattern>
-    </servlet-mapping>
-    
-    <servlet-mapping>
-      <servlet-name>CSSPreProcessServlet</servlet-name>
-      <url-pattern>*.scss</url-pattern>
     </servlet-mapping>
     
     <servlet-mapping>
@@ -535,10 +466,6 @@
 		<url-pattern>/servlets/VelocityServlet</url-pattern>
 	</servlet-mapping>
 	<servlet-mapping>
-		<servlet-name>JavascriptServlet</servlet-name>
-		<url-pattern>/servlets/JavascriptServlet</url-pattern>
-	</servlet-mapping>
-	<servlet-mapping>
 		<servlet-name>SpeedyAssetServlet</servlet-name>
 		<url-pattern>/dotAsset/*</url-pattern>
 	</servlet-mapping>
@@ -579,40 +506,11 @@
 		<servlet-name>DotGraphQLHttpServlet</servlet-name>
 		<url-pattern>/api/v1/graphql</url-pattern>
 	</servlet-mapping>
-
-	<!-- Health service endpoint mappings
-	     These paths must match HealthEndpointConstants.Endpoints values:
-	     - LIVENESS  = /dotmgt/livez  (Kubernetes liveness probe)
-	     - READINESS = /dotmgt/readyz (Kubernetes readiness probe) 
-	     - HEALTH    = /dotmgt/health (Detailed health status)
-	     
-	     See: com.dotcms.health.config.HealthEndpointConstants for validation -->
 	<servlet-mapping>
-		<servlet-name>HealthProbeServlet</servlet-name>
-		<url-pattern>/dotmgt/livez</url-pattern>
+		<servlet-name>RESTAPI</servlet-name>
+		<url-pattern>/api/*</url-pattern>
 	</servlet-mapping>
-
-	<servlet-mapping>
-		<servlet-name>HealthProbeServlet</servlet-name>
-		<url-pattern>/dotmgt/readyz</url-pattern>
-	</servlet-mapping>
-
-	<servlet-mapping>
-		<servlet-name>HealthProbeServlet</servlet-name>
-		<url-pattern>/dotmgt/health</url-pattern>
-	</servlet-mapping>
-
-	<!-- Metrics service endpoint mappings
-	     These paths must match MetricsEndpointConstants.Endpoints values:
-	     - METRICS = /dotmgt/metrics (Prometheus metrics scraping)
-	     
-	     See: com.dotcms.metrics.config.MetricsEndpointConstants for validation -->
-	<servlet-mapping>
-		<servlet-name>ManagementMetricsServlet</servlet-name>
-		<url-pattern>/dotmgt/metrics</url-pattern>
-	</servlet-mapping>
-
-
+	
 	<!--END DOTMARKETING SERVLET-MAPPING-->
 	
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
@@ -658,10 +556,31 @@
 	</welcome-file-list>
 	
 	<error-page>
+	   <error-code>404</error-code>
 	   <location>/html/error/custom-error-page.jsp</location>
 	</error-page>
-
-    <jsp-config>
+	
+	<error-page>
+	   <error-code>401</error-code>
+	   <location>/html/error/custom-error-page.jsp</location>
+	</error-page>
+	
+	<error-page>
+	   <error-code>403</error-code>
+	   <location>/html/error/custom-error-page.jsp</location>
+	</error-page>
+	
+	<error-page>
+	   <error-code>500</error-code>
+	   <location>/html/error/custom-error-page.jsp</location>
+	</error-page>
+	
+	<error-page>
+	   <error-code>503</error-code>
+	   <location>/html/error/custom-error-page.jsp</location>
+	</error-page>
+	
+	<jsp-config>
 		<jsp-property-group>
 			<url-pattern>*.jsp</url-pattern>
 			<el-ignored>true</el-ignored>
