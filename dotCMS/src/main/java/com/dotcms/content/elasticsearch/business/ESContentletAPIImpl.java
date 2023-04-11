@@ -1,5 +1,11 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
+import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
+import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PERSONA_NAME_KEY;
+
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
@@ -39,7 +45,6 @@ import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
-import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.storage.FileMetadataAPI;
 import com.dotcms.storage.model.Metadata;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
@@ -51,6 +56,7 @@ import com.dotcms.util.FunctionUtils;
 import com.dotcms.util.JsonUtil;
 import com.dotcms.util.ThreadContextUtil;
 import com.dotcms.variant.VariantAPI;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -2797,7 +2803,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         this.deleteBinaryFiles(contentletsVersion, null);
         this.deleteElementFromPublishQueueTable(contentlets);
-        this.destroyMetadata(contentlets);
 
         return noErrors;
     }
@@ -3709,6 +3714,22 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
     }
+
+    @WrapInTransaction
+    @Override
+    public Contentlet copyContentToVariant(final Contentlet contentlet, final String variantName,
+            final User user) throws DotDataException, DotSecurityException {
+
+        final Contentlet contentletFromDataBase = find(contentlet.getInode(), user, false);
+
+        final Contentlet checkout = checkout(contentletFromDataBase.getInode(), user, false);
+        checkout.setVariantId(variantName);
+
+        return Try.of(() -> checkin(checkout, user, false))
+                 .getOrElseThrow(
+                        e -> new DotStateException("Unable to create a new version from Contentlet:" + contentlet.getInode(), e));
+    }
+
 
     /**
      * @param contentlet
@@ -6905,6 +6926,26 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @CloseDBIfOpened
     @Override
+    public List<Contentlet> findAllVersions(final Identifier identifier, final Variant variant,
+            final User user, boolean respectFrontendRoles)
+            throws DotSecurityException, DotDataException {
+        final List<Contentlet> allVersions = contentFactory.findAllVersions(identifier, variant);
+
+        if (allVersions.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        if (!permissionAPI.doesUserHavePermission(allVersions.get(0), PermissionAPI.PERMISSION_READ,
+                user, respectFrontendRoles)) {
+            throw new DotSecurityException(
+                    "User: " + (identifier != null ? identifier.getId() : "Unknown")
+                            + " cannot read Contentlet So Unable to View Versions");
+        }
+        return allVersions;
+    }
+
+    @CloseDBIfOpened
+    @Override
     public List<Contentlet> findAllVersions(Identifier identifier, boolean bringOldVersions,
             User user, boolean respectFrontendRoles)
             throws DotSecurityException, DotDataException, DotStateException {
@@ -8624,7 +8665,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @param field
      */
     private void deleteBinaryFiles(List<Contentlet> contentlets, Field field) {
-        contentlets.stream().forEach(con -> {
+        this.destroyMetadata(contentlets);
+        contentlets.forEach(con -> {
 
             String contentletAssetPath = getContentletAssetPath(con, field);
             String contentletAssetCachePath = getContentletCacheAssetPath(con, field);

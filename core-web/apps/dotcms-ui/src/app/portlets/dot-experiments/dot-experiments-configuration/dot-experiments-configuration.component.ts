@@ -6,7 +6,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ConfirmationService } from 'primeng/api';
 
 import { DotMessagePipe } from '@dotcms/app/view/pipes';
-import { DotExperiment, ExperimentSteps, DotExperimentStatusList } from '@dotcms/dotcms-models';
+import { DotExperiment, DotExperimentStatusList } from '@dotcms/dotcms-models';
 import {
     ConfigurationViewModel,
     DotExperimentsConfigurationStore
@@ -21,7 +21,6 @@ import {
 })
 export class DotExperimentsConfigurationComponent implements OnInit {
     vm$: Observable<ConfigurationViewModel> = this.dotExperimentsConfigurationStore.vm$;
-    experimentSteps = ExperimentSteps;
     experimentStatus = DotExperimentStatusList;
 
     constructor(

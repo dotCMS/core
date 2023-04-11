@@ -10,12 +10,11 @@ import com.dotcms.analytics.bayesian.model.BayesianInput;
  */
 public class BetaModel {
 
-    private double alpha;
-
-    private double beta;
+    private Double alpha;
+    private Double beta;
 
     public BetaModel(final BayesianInput input) {
-        setValues(input.priorAlpha(), input.priorBeta());
+        setValues(input.priors().alpha(), input.priors().beta());
     }
 
     /**
@@ -43,7 +42,7 @@ public class BetaModel {
      * @param alpha alpha value
      * @param beta beta value
      */
-    private void setValues(final double alpha, final double beta) {
+    private void setValues(final Double alpha, final Double beta) {
         this.alpha = alpha;
         this.beta = beta;
     }

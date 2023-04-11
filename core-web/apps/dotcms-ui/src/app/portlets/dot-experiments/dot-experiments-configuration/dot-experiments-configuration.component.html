@@ -3,7 +3,6 @@
         [isLoading]="vm.isLoading"
         [status]="vm.experiment?.status"
         [title]="vm.experiment?.name"
-        [title]="vm.experiment?.name"
         (goBack)="goToExperimentList(vm.experiment.pageId)"
     >
         <div class="flex flex-grow-0 align-items-center justify-content-between">
@@ -11,10 +10,10 @@
                 class="p-button-outlined"
                 *ngIf="vm.isExperimentADraft"
                 [disabled]="vm.disabledStartExperiment"
+                [label]="vm.runExperimentBtnLabel"
                 [loading]="vm.isSaving"
                 (click)="runExperiment(vm.experiment)"
                 data-testId="start-experiment-button"
-                label="{{ 'experiments.action.start-experiment' | dm }}"
                 pButton
                 pRipple
                 type="button"
@@ -42,7 +41,7 @@
                 [scheduling]="vm.experiment.scheduling"
             />
 
-            <p-card>
+            <p-card *ngIf="!!vm.experiment.description" data-testId="experiment-description">
                 {{ vm.experiment.description }}
             </p-card>
 

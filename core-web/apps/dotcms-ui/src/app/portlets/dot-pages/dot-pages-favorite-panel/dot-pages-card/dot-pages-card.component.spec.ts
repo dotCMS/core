@@ -14,6 +14,8 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotPagesCardComponent } from './dot-pages-card.component';
 
+import { DotPagesFavoritePageEmptySkeletonComponent } from '../../dot-pages-favorite-page-empty-skeleton/dot-pages-favorite-page-empty-skeleton.component';
+
 describe('DotPagesCardComponent', () => {
     let component: DotPagesCardComponent;
     let fixture: ComponentFixture<DotPagesCardComponent>;
@@ -29,6 +31,7 @@ describe('DotPagesCardComponent', () => {
                 CommonModule,
                 CardModule,
                 DotIconModule,
+                DotPagesFavoritePageEmptySkeletonComponent,
                 TooltipModule,
                 DotPipesModule,
                 UiDotIconButtonModule
@@ -140,6 +143,26 @@ describe('DotPagesCardComponent', () => {
                 fixture.debugElement.query(By.css('[data-testid="favoriteCardIconButton"]'))
                     .componentInstance.icon
             ).toBe('star_outline');
+        });
+    });
+
+    describe('Without thumbnail', () => {
+        beforeEach(() => {
+            component.imageUri = '';
+            component.title = 'test';
+            component.url = '/index';
+            component.ownerPage = true;
+
+            fixture.detectChanges();
+        });
+
+        it('should display empty skeleton component and hide favorite card component', () => {
+            expect(
+                fixture.debugElement.query(By.css('[data-testid="favoriteCardImageContainer"]'))
+            ).toBeNull();
+            expect(
+                fixture.debugElement.query(By.css('.dot-pages-favorite-page-empty-skeleton'))
+            ).toBeDefined();
         });
     });
 });

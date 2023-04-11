@@ -4,7 +4,6 @@ import com.dotcms.analytics.metrics.AbstractCondition.Operator;
 import com.dotcms.analytics.metrics.Condition;
 import com.dotcms.analytics.metrics.Metric;
 import com.dotcms.analytics.metrics.MetricType;
-import com.dotcms.cache.DotJSONCacheAddTestCase;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Experiment.Builder;
@@ -27,7 +26,8 @@ import java.util.Optional;
 import net.bytebuddy.utility.RandomString; 
 
 public class ExperimentDataGen  extends AbstractDataGen<Experiment> {
-    final Lazy<RandomString> randomString = Lazy.of(() ->new RandomString());
+
+    final Lazy<RandomString> randomString = Lazy.of(() -> new RandomString());
     private String name;
     private String description;
     private HTMLPageAsset experimentPage;
@@ -131,18 +131,14 @@ public class ExperimentDataGen  extends AbstractDataGen<Experiment> {
     @Override
     public Experiment persist(final Experiment experiment) {
         try {
-
-            Experiment experimentSaved = APILocator.getExperimentsAPI()
-                    .save(experiment, APILocator.systemUser());
+            Experiment experimentSaved = APILocator.getExperimentsAPI().save(experiment, APILocator.systemUser());
 
             if (UtilMethods.isSet(targetingConditions)) {
                 final Experiment experimentWithTargeting = Experiment.builder()
-                        .from(experimentSaved)
-                        .targetingConditions(targetingConditions)
-                        .build();
-
-                experimentSaved = APILocator.getExperimentsAPI()
-                        .save(experimentWithTargeting, user);
+                    .from(experimentSaved)
+                    .targetingConditions(targetingConditions)
+                    .build();
+                experimentSaved = APILocator.getExperimentsAPI().save(experimentWithTargeting, user);
             }
 
             if (!UtilMethods.isSet(variants)) {
@@ -150,8 +146,7 @@ public class ExperimentDataGen  extends AbstractDataGen<Experiment> {
             }
 
             for (Variant variant : variants) {
-                APILocator.getExperimentsAPI().addVariant(experimentSaved.getIdentifier(),
-                        variant.name(), user);
+                APILocator.getExperimentsAPI().addVariant(experimentSaved.getIdentifier(), variant.name(), user);
             }
 
             return APILocator.getExperimentsAPI().find(experimentSaved.id().get(), APILocator.systemUser()).get();
@@ -185,4 +180,5 @@ public class ExperimentDataGen  extends AbstractDataGen<Experiment> {
         this.goal = goal;
         return this;
     }
+
 }
