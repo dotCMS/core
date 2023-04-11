@@ -114,3 +114,4 @@ This maintenance release includes the following code fixes:
 94. https://github.com/dotCMS/core/issues/24245 : Publishing contentlet takes a long time when there are many locales/relationships #24245
 95. https://github.com/dotCMS/core/issues/23889 : Design Template Permissions Tab Doesn't Load #23889
 96. https://github.com/dotCMS/core/issues/22532 : Relationships are not respecting changes to requiredness #22532
+97. https://github.com/dotCMS/core/issues/21652 : [WebP] : Image file using the WebP filter loads with white background in Safari #21652

@@ -3,6 +3,7 @@ package com.dotmarketing.servlets;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.matches;
 
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
@@ -13,6 +14,8 @@ import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockServletPathRequest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockHttpCaptureResponse;
+import com.dotcms.mock.response.MockHttpContentTypeResponse;
+import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.mock.response.MockHttpStatusResponse;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
@@ -26,6 +29,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
@@ -256,4 +260,64 @@ public class BinaryExporterServletTest {
 
     }
 
+    @DataProvider
+    public static Object[][] testCasesWebp() {
+        return new Object[][] {
+                { "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.3 Safari/605.1.15", "image/webp" },
+                { "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1 Safari/605.1.15", "image/jpeg" },
+                { "Mozilla/5.0 (X11; CrOS x86_64 13982.82.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.157 Safari/537.36", "image/webp" },
+                { "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.85 Safari/537.36 Edg/90.0.818.46", "image/webp" },
+                { "Mozilla/5.0 (iPhone; CPU iPhone OS 14_7_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) FxiOS/36.0  Mobile/15E148 Safari/605.1.15", "image/webp" },
+
+        };
+    }
+
+    /**
+     * Method to test: BinaryExporterServlet.doGet
+     * Given scenario: Given a webp request
+     * Expected result: Should resolve as webp on any browser different than Safari version < 14.
+     * On Safari version below 14 should resolve as jpg
+     */
+    @UseDataProvider("testCasesWebp")
+    @Test
+    public void requestWebpImage(final String userAgent, final String expectedContentType)
+            throws DotDataException, DotSecurityException, ServletException, IOException {
+
+        Contentlet fileContentlet = null;
+
+        try {
+            File png = new File("src/integration-test/resources/images/issue21652.png");
+
+            fileContentlet = new FileAssetDataGen(png).host(host)
+                    .setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+
+            final String fileURI = "/contentAsset/image/" + fileContentlet.getInode()
+                    + "/fileAsset/byInode/true/quality_q/75/resize_w/600/quality_q/75/quality_q/75";
+            final HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
+            Mockito.when(request.getHeader("user-agent")).thenReturn(userAgent);
+            Mockito.when(request.getAttribute(WebKeys.USER)).thenReturn(APILocator.systemUser());
+            Mockito.when(request.getRequestURI()).thenReturn(fileURI);
+            Mockito.when(request.getServletPath()).thenReturn("/contentAsset");
+            Mockito.when(Config.CONTEXT.getMimeType(matches(".*\\.webp")))
+                    .thenReturn("image/webp");
+
+            Mockito.when(Config.CONTEXT.getMimeType(matches(".*\\.jpg")))
+                    .thenReturn("image/jpeg");
+
+            final HttpServletResponse response = new MockHttpContentTypeResponse(
+                    new MockHttpResponse().response());
+
+            // Send servlet request
+            final BinaryExporterServlet binaryExporterServlet = new BinaryExporterServlet();
+            binaryExporterServlet.init();
+            binaryExporterServlet.doGet(request, response);
+
+            assertEquals(expectedContentType, response.getContentType());
+        } finally {
+            if(fileContentlet!=null) {
+                ContentletDataGen.remove(fileContentlet);
+            }
+        }
+
+    }
 }
