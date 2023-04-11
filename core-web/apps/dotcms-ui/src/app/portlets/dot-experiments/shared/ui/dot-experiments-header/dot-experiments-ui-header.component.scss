@@ -1,4 +1,5 @@
 @use "variables" as *;
+@use "mixins" as *;
 
 .wrapper {
     padding: 0 $spacing-5 0 $spacing-5;
@@ -9,11 +10,11 @@
     border-bottom: 1px solid $color-palette-gray-300;
 
     a {
-        color: $color-palette-gray-700;
+        color: $color-alert-blue;
         font-weight: $font-weight-regular-bold;
 
         i {
-            font-size: $md-icon-size-extra-big;
+            font-size: $md-icon-size-big;
         }
     }
 }

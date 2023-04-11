@@ -12,23 +12,36 @@
     border-radius: $tag-radius-md;
 }
 
+p-tag.sm {
+    &.sm {
+        .p-tag {
+            font-size: $font-size-sm;
+            padding: $spacing-1 $spacing-2;
+
+            .p-tag-value {
+                line-height: $spacing-3;
+            }
+        }
+    }
+}
+
 .p-tag .p-tag-icon {
     margin-right: $spacing-1;
     font-size: $font-size-xs;
 }
 
-.p-tag {
-    &.p-tag-success {
+p-tag {
+    &.p-tag-success .p-tag {
         background-color: $color-alert-green-light;
         color: $color-alert-green;
     }
 
-    &.p-tag-info {
+    &.p-tag-info .p-tag {
         background-color: $color-alert-blue-light;
         color: $color-alert-blue;
     }
 
-    &.p-tag-warning {
+    &.p-tag-warning .p-tag {
         background-color: $color-alert-yellow-light;
         color: $color-alert-yellow;
     }

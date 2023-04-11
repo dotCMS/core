@@ -14,6 +14,7 @@ import com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.util.UtilMethods;
+import io.vavr.control.Try;
 
 public class DbContentTypeTransformer implements ContentTypeTransformer{
 	final List<ContentType> list;
@@ -143,6 +144,11 @@ public class DbContentTypeTransformer implements ContentTypeTransformer{
 			public int sortOrder() {
 				return UtilMethods.isSet(map.get("sort_order")) ?
 						DbConnectionFactory.getInt(map.get("sort_order").toString()) : 0;
+			}
+
+			@Override
+			public boolean markedForDeletion() {
+				return Try.of(()->DbConnectionFactory.isDBTrue(map.get("marked_for_deletion").toString())).getOrElse(false);
 			}
 
 			private Date convertSQLDate(Date d){
