@@ -242,11 +242,10 @@
                     const block = blockEditor.querySelector('.ProseMirror');
                     const field = document.querySelector('#editor-input-value-<%=field.getVelocityVarName()%>');
 
-                    if (content) {
-                        blockEditor.value = content;
-                        field.value = JSON.stringify(block.editor?.getJSON()); 
-                    }
-
+                    /**
+                     * We need to listen to the "valueChange" event BEFORE setting the value
+                     * to the editor.
+                     */
                     blockEditor.addEventListener('valueChange', (event) => {
                         // https://tiptap.dev/api/commands/clear-content
                         // https://github.com/ueberdosis/tiptap/issues/154
@@ -258,6 +257,10 @@
                             field.value = JSON.stringify(event.detail);
                         }
                     });
+
+                    if (content) {
+                        blockEditor.value = content;
+                    }
 
                     blockEditor.showVideoThumbnail = <%=showVideoThumbnail%>;
                 })();

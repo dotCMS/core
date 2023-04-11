@@ -26,7 +26,6 @@ import { Content, Editor, JSONContent } from '@tiptap/core';
 })
 export class EditorDirective implements OnInit, ControlValueAccessor, OnDestroy {
     @Input() editor!: Editor;
-    @Input() outputFormat: 'json' | 'html' = 'html';
 
     constructor(private el: ElementRef<HTMLElement>, private _renderer: Renderer2) {}
 
@@ -44,11 +43,7 @@ export class EditorDirective implements OnInit, ControlValueAccessor, OnDestroy 
             return;
         }
 
-        if (!this.outputFormat && typeof value === 'string') {
-            this.outputFormat = 'html';
-        }
-
-        this.editor.chain().setContent(value, false).run();
+        this.editor.chain().setContent(value, true).run();
     }
 
     // Registers a callback function that is called when the control's value changes in the UI.
@@ -69,12 +64,6 @@ export class EditorDirective implements OnInit, ControlValueAccessor, OnDestroy 
 
     private handleChange = ({ transaction }: { transaction: Transaction }): void => {
         if (!transaction.docChanged) {
-            return;
-        }
-
-        if (this.outputFormat === 'html') {
-            this.onChange(this.editor.getHTML());
-
             return;
         }
 
