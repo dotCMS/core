@@ -27,7 +27,12 @@
 	Identifier ident = APILocator.getIdentifierAPI().find(id);
 	boolean isImage = UtilMethods.isImage(ident.getAssetName());
 
-	List<Contentlet> versions = APILocator.getContentletAPI().findAllVersions(ident, VariantAPI.DEFAULT_VARIANT, user, false);
+	final String variantNameParameter = request.getParameter("variantName");
+	final Variant variant = variantNameParameter == null || VariantAPI.DEFAULT_VARIANT.equals(variantNameParameter) ?
+			VariantAPI.DEFAULT_VARIANT :
+			APILocator.getVariantAPI().get(variantNameParameter).orElse(VariantAPI.DEFAULT_VARIANT);
+
+	List<Contentlet> versions = APILocator.getContentletAPI().findAllVersions(ident,  variant, user, false);
 	boolean canEdit  = false;
 
 	if(versions.size() > 0){

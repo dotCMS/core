@@ -35,9 +35,6 @@ export class DotDropdownComponent implements OnChanges {
     icon = null;
 
     @Input()
-    gravatar = null;
-
-    @Input()
     title = null;
 
     @Input()
