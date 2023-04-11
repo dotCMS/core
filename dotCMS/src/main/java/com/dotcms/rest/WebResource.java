@@ -17,6 +17,7 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 
 import org.apache.commons.lang.StringUtils;
@@ -376,6 +377,22 @@ public  class WebResource {
                   String.format("User " + (user!=null ? user.getFullName() + ":" + user.getEmailAddress() : user) +" lacks one of the required role %s", builder.requiredRolesSet.toString()),
                   Response.Status.UNAUTHORIZED);
             }
+            
+            
+            if (builder.requiredRolesSet.contains(Role.DOTCMS_BACK_END_USER) &&
+                            builder.request != null &&
+                            builder.request.getRequestURL() != null) {
+                String host = builder.request.getHeader("host");
+                String portalUrl = APILocator.getCompanyAPI().getDefaultCompany().getPortalURL();
+                String scheme =  builder.request.getScheme();
+                
+                if(!StringUtils.containsIgnoreCase(scheme + "://" + host, portalUrl)) {
+                    SecurityLogger.logInfo(getClass(),builder.request.getRequestURL().toString() + " must use the portalUrl " + portalUrl.toLowerCase());          
+                    throw new SecurityException("Not Found",  Response.Status.NOT_FOUND);
+                }
+
+            }
+            
         }
         
 
@@ -395,6 +412,11 @@ public  class WebResource {
                 }
             }
         }
+        
+
+        
+        
+        
 
 
         initData.setUser(user);

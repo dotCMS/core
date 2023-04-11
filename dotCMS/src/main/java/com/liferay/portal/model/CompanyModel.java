@@ -22,9 +22,13 @@
 
 package com.liferay.portal.model;
 
+import java.net.URL;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Config;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.GetterUtil;
 import com.liferay.util.Xss;
+import io.vavr.control.Try;
 
 /**
  * <a href="CompanyModel.java.html"><b><i>View Source</i></b></a>
@@ -96,6 +100,7 @@ public class CompanyModel extends BaseModel {
 			XSS_ALLOW_BY_MODEL);
 	public static long LOCK_EXPIRATION_TIME = GetterUtil.getLong(PropsUtil.get(
 				"lock.expiration.time.com.liferay.portal.model.CompanyModel"));
+
 
 	public CompanyModel() {
 	}
@@ -170,22 +175,35 @@ public class CompanyModel extends BaseModel {
 		}
 	}
 
+	private static final String ADMIN_PORTAL_URL="ADMIN_PORTAL_URL";
+    private static final String DEFAULT_ADMIN_PORTAL_URL="https://local.dotcms.site";
+    
+	public boolean isPortalUrlSet() {
+	    return Config.getStringProperty(ADMIN_PORTAL_URL, null)!=null;
+	}
+	
 	public String getPortalURL() {
-		return _portalURL;
+	    if(isPortalUrlSet()){
+	       return Config.getStringProperty(ADMIN_PORTAL_URL, null);
+	    }
+	    if("localhost".equalsIgnoreCase(_portalURL)) {
+	        return DEFAULT_ADMIN_PORTAL_URL;
+	    }
+	    return _portalURL;
+
 	}
 
-	public void setPortalURL(String portalURL) {
-		if (((portalURL == null) && (_portalURL != null)) ||
-				((portalURL != null) && (_portalURL == null)) ||
-				((portalURL != null) && (_portalURL != null) &&
-				!portalURL.equals(_portalURL))) {
-			if (!XSS_ALLOW_PORTALURL) {
-				portalURL = Xss.strip(portalURL);
-			}
+	public void setPortalURL(final String portalURL) {
+	    if(isPortalUrlSet()){
+	        return;
+	    }
+	    
+	    URL url = Try.of(()->new URL(portalURL)).getOrElseThrow(DotRuntimeException::new);
 
-			_portalURL = portalURL;
-			setModified(true);
-		}
+
+		_portalURL = url.toString();
+		setModified(true);
+		
 	}
 
 	public String getHomeURL() {

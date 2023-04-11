@@ -24,6 +24,11 @@
 		<filter-class>com.dotcms.filters.NormalizationFilter</filter-class>
 		<async-supported>true</async-supported>
 	</filter>
+    <filter>
+        <filter-name>ManagementRequestFilter</filter-name>
+        <filter-class>com.dotcms.filters.ManagementRequestFilter</filter-class>
+        <async-supported>true</async-supported>
+    </filter>
 	<filter>
 		<filter-name>InterceptorFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.InterceptorFilter</filter-class>
@@ -124,6 +129,10 @@
 		<filter-name>NormalizationFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
+    <filter-mapping>
+        <filter-name>ManagementRequestFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
     <filter-mapping>
         <filter-name>HttpHeaderSecurityFilter</filter-name>
         <url-pattern>/*</url-pattern>
