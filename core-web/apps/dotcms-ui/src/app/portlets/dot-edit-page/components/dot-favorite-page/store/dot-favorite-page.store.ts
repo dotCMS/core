@@ -40,6 +40,7 @@ export interface DotFavoritePageState {
     imgWidth: number;
     imgHeight: number;
     renderThumbnail: boolean;
+    showFavoriteEmptySkeleton: boolean;
     loading: boolean;
     closeDialog: boolean;
     actionState: DotFavoritePageActionState;
@@ -68,6 +69,12 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
     readonly setRenderThumbnail = this.updater((state: DotFavoritePageState, data: boolean) => {
         return { ...state, renderThumbnail: data };
     });
+
+    readonly setShowFavoriteEmptySkeleton = this.updater(
+        (state: DotFavoritePageState, data: boolean) => {
+            return { ...state, showFavoriteEmptySkeleton: data };
+        }
+    );
 
     // EFFECTS
     readonly saveFavoritePage = this.effect((data$: Observable<DotFavoritePageFormData>) => {
@@ -139,21 +146,25 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
     });
 
     private createAndPublishFavoritePage = (formData: DotFavoritePageFormData) => {
-        const file = new File([formData.thumbnail], 'image.png');
+        if (formData.thumbnail) {
+            const file = new File([formData.thumbnail], 'image.png');
 
-        return this.dotTempFileUploadService.upload(file).pipe(
-            switchMap(([{ id, image }]: DotCMSTempFile[]) => {
-                if (!image) {
-                    return throwError(
-                        this.dotMessageService.get('favoritePage.dialog.error.tmpFile.upload')
-                    );
-                }
+            return this.dotTempFileUploadService.upload(file).pipe(
+                switchMap(([{ id, image }]: DotCMSTempFile[]) => {
+                    if (!image) {
+                        return throwError(
+                            this.dotMessageService.get('favoritePage.dialog.error.tmpFile.upload')
+                        );
+                    }
 
-                formData.thumbnail = id;
+                    formData.thumbnail = id;
 
-                return this.publishContentletAndWaitForIndex(formData);
-            })
-        );
+                    return this.publishContentletAndWaitForIndex(formData);
+                })
+            );
+        } else {
+            return this.publishContentletAndWaitForIndex(formData);
+        }
     };
 
     private publishContentletAndWaitForIndex = (formData: DotFavoritePageFormData) => {
@@ -209,6 +220,7 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
             imgWidth: null,
             imgHeight: null,
             renderThumbnail: null,
+            showFavoriteEmptySkeleton: null,
             loading: true,
             closeDialog: false,
             pageRenderedHtml: '',
@@ -254,6 +266,7 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
                         imgWidth: parseInt(pageRender.viewAs.device?.cssWidth, 10) || 1024,
                         pageRenderedHtml: pageRender.page.rendered,
                         renderThumbnail: !(favoritePage && !!favoritePage['screenshot']),
+                        showFavoriteEmptySkeleton: favoritePage && !favoritePage['screenshot'],
                         roleOptions: roles
                     });
                 }

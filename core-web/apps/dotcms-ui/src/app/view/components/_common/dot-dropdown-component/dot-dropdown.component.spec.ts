@@ -10,7 +10,6 @@ import { DotDropdownComponent } from './dot-dropdown.component';
 @Component({
     selector: 'dot-test-host-component',
     template: `<dot-dropdown-component
-        [gravatar]="gravatar"
         [icon]="icon"
         [title]="title"
         [disabled]="disabled"
@@ -18,24 +17,13 @@ import { DotDropdownComponent } from './dot-dropdown.component';
 })
 class DotTestHostComponent {
     disabled: boolean;
-    gravatar: string;
     icon: string;
     title: string;
 
     constructor() {
         this.icon = 'icon';
-        this.gravatar = 'test@test.com';
         this.title = 'test';
     }
-}
-
-@Component({
-    selector: 'dot-gravatar',
-    template: ''
-})
-class MockGravatarComponent {
-    @Input()
-    email;
 }
 
 @Component({
@@ -80,12 +68,7 @@ describe('DotDropdownComponent', () => {
 
     beforeEach(waitForAsync(() => {
         DOTTestBed.configureTestingModule({
-            declarations: [
-                DotDropdownComponent,
-                MockGravatarComponent,
-                MockDotIconButtonComponent,
-                DotTestHostComponent
-            ],
+            declarations: [DotDropdownComponent, MockDotIconButtonComponent, DotTestHostComponent],
             imports: [BrowserAnimationsModule]
         });
 
@@ -100,7 +83,6 @@ describe('DotDropdownComponent', () => {
     describe('Enabled', () => {
         let button: DebugElement;
         let titleButton: DebugElement;
-        let gravatar: DebugElement;
 
         beforeEach(() => {
             spyOn(comp.toggle, 'emit');
@@ -108,7 +90,6 @@ describe('DotDropdownComponent', () => {
             hostFixture.detectChanges();
             button = de.query(By.css('dot-icon-button'));
             titleButton = de.query(By.css('button'));
-            gravatar = de.query(By.css('dot-gravatar'));
         });
 
         it(`should dot-icon button be displayed & emit`, () => {
@@ -118,10 +99,6 @@ describe('DotDropdownComponent', () => {
 
         it(`should title button be displayed & emit`, () => {
             executeEnabled(titleButton, hostFixture, de, comp);
-        });
-
-        it(`should dot-gravatar be displayed & emit`, () => {
-            executeEnabled(gravatar, hostFixture, de, comp);
         });
     });
 

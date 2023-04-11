@@ -1,6 +1,7 @@
 package com.dotcms.datagen;
 
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
@@ -25,20 +26,28 @@ import com.dotcms.contenttype.model.field.TimeField;
 import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.ImmutablePersonaContentType;
+import com.dotcms.contenttype.model.type.PersonaContentType;
+import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.util.ConfigTestHelper;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.common.reindex.ReindexQueueAPI;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.personas.business.PersonaAPI;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
@@ -2487,11 +2496,23 @@ public class TestDataUtils {
         return parentCategory;
     }
 
-    /**
-     * This method waits for the reindex queue to be empty.
-     *
-     * @return the parent category
-     */
+    @WrapInTransaction
+    public static ContentType createPersonaLikeContentType(final String contentTypeName, Set<String> workflowIds)
+            throws DotDataException, DotSecurityException {
+        final User user = APILocator.systemUser();
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+
+        return contentTypeAPI.save(ContentTypeBuilder.builder(PersonaContentType.class).folder(
+                        FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name("Persona2")
+                .owner(user.getUserId()).build());
+    }
+
+
+        /**
+         * This method waits for the reindex queue to be empty.
+         *
+         * @return the parent category
+         */
     public static boolean waitForEmptyQueue() {
         final ReindexQueueAPI reindexQueueAPI = APILocator.getReindexQueueAPI();
         try {

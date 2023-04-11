@@ -761,7 +761,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     }
   }
 
-  private void deleteRelationships(ContentType type) throws DotDataException {
+    private void deleteRelationships(ContentType type) throws DotDataException {
 
       final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
       final FieldAPI contentTypeFieldAPI = APILocator.getContentTypeFieldAPI();
@@ -892,5 +892,20 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 	 dc.addParam(type.id());
 	 dc.loadResult();
  }
+
+
+    /**
+     * {@inheritDoc}
+     * @param type
+     * @throws DotDataException
+     */
+   @Override
+   public void markForDeletion(ContentType type) throws DotDataException {
+       final DotConnect dotConnect = new DotConnect();
+       dotConnect.setSQL(ContentTypeSql.MARK_FOR_DELETION);
+       dotConnect.addParam(type.inode());
+       dotConnect.loadResult();
+       cache.remove(type);
+    }
 
 }

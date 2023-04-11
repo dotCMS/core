@@ -47,6 +47,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -695,4 +696,43 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 	public void findUrlMappedByPageIdWithNull() throws DotDataException {
 		FactoryLocator.getContentTypeFactory().findUrlMappedPattern(null);
 	}
+
+	/**
+	 * Test the {@link com.dotcms.contenttype.business.ContentTypeFactoryImpl#markForDeletion(ContentType)} method
+	 * Wew want to corroborate that the content type is marked for deletion doesn't make it into the search results nor count methods
+	 * @throws Exception
+	 */
+	@Test
+	public void Test_Mark_ContentTypeForDeletion() throws Exception {
+		final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+		int searchCount = contentTypeFactory.searchCount(null);
+		List<ContentType> types = contentTypeFactory.search(String.format("velocity_var_name like '%s'",contentType.variable()), BaseContentType.ANY, "mod_date", -1, 0);
+		Assert.assertTrue(types.size() > 0);
+
+		ContentType found = contentTypeFactory.find(contentType.variable());
+		Assert.assertNotNull(found);
+
+		long count = contentTypeFactory.findAll().stream().filter(ct -> Objects.equals(ct.id(), contentType.id())).count();
+		Assert.assertEquals(1, count);
+
+		//MARK FOR DELETION
+		contentTypeFactory.markForDeletion(contentType);
+		Assert.assertTrue(contentTypeFactory.searchCount(null) <  searchCount );
+
+		//Marking the CT should exclude it from the search results
+		types = contentTypeFactory.search(String.format("velocity_var_name like '%s'",contentType.variable()), BaseContentType.ANY, "mod_date", -1, 0);
+		Assert.assertTrue(types.isEmpty());
+
+		//Also once marked it must disappear from the list of all content types
+		count = contentTypeFactory.findAll().stream().filter(ct -> Objects.equals(ct.id(), contentType.id())).count();
+		Assert.assertEquals(0, count);
+
+		//But If we have the id or varName we should still be able to find the content type even it is marked for deletion
+		found = contentTypeFactory.find(contentType.variable());
+		Assert.assertNotNull(found);
+
+		found = contentTypeFactory.find(contentType.id());
+		Assert.assertNotNull(found);
+	}
+
 }

@@ -39,15 +39,19 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
+import com.dotmarketing.quartz.job.ContentTypeDeleteJob;
 import com.dotmarketing.quartz.job.IdentifierDateJob;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.AdminLogger;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
+import io.vavr.Lazy;
+import io.vavr.control.Try;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -79,6 +83,10 @@ import org.elasticsearch.action.search.SearchResponse;
  */
 public class ContentTypeAPIImpl implements ContentTypeAPI {
 
+  public static final String DELETE_CONTENT_TYPE_ASYNC = "DELETE_CONTENT_TYPE_ASYNC";
+
+  public static final String DELETE_CONTENT_TYPE_ASYNC_WITH_JOB = "DELETE_CONTENT_TYPE_ASYNC_WITH_JOB";
+
   private final ContentTypeFactory contentTypeFactory;
   private final FieldFactory fieldFactory;
   private final PermissionAPI perms;
@@ -106,32 +114,208 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
         APILocator.getPermissionAPI(), APILocator.getContentTypeFieldAPI(), APILocator.getLocalSystemEventsAPI());
   }
 
-  @WrapInTransaction
+  final Lazy<Boolean>  deleteContentTypeAsynchronously =  Lazy.of(
+          ()->Config.getBooleanProperty(DELETE_CONTENT_TYPE_ASYNC, true)
+  );
+  final Lazy<Boolean>  deleteContentTypeAsynchronouslyUsingJob =  Lazy.of(
+          ()->Config.getBooleanProperty(DELETE_CONTENT_TYPE_ASYNC_WITH_JOB, true)
+  );
+
+  /**
+   * Content-Type Delete Entry point
+   * @param type Content Type that will be deleted
+   * @throws DotSecurityException
+   * @throws DotDataException
+   */
   @Override
   public void delete(ContentType type) throws DotSecurityException, DotDataException {
-    perms.checkPermission(type, PermissionLevel.EDIT_PERMISSIONS, user);
-
-    try {
-      contentTypeFactory.delete(type);
-    } catch (DotStateException | DotDataException e) {
-      Logger.error(ContentType.class, e.getMessage(), e);
-      throw new BaseRuntimeInternationalizationException(e);
-    }
-    try {
-      String actionUrl = ContentTypeUtil.getInstance().getActionUrl(type, user);
-      ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = new ContentTypePayloadDataWrapper(actionUrl, type);
-      APILocator.getSystemEventsAPI().pushAsync(SystemEventType.DELETE_BASE_CONTENT_TYPE, new Payload(
-          contentTypePayloadDataWrapper, Visibility.PERMISSION, String.valueOf(PermissionAPI.PERMISSION_READ)));
-    } catch (DotStateException | DotDataException e) {
-      Logger.error(ContentType.class, e.getMessage(), e);
-      throw new BaseRuntimeInternationalizationException(e);
+    if (!contentTypeCanBeDeleted(type)) {
+      Logger.warn(this, "Content Type " + type.name()
+              + " cannot be deleted because it is referenced by other content types");
+      return;
     }
 
-    HibernateUtil.addCommitListener(()-> {
-      localSystemEventsAPI.notify(new ContentTypeDeletedEvent(type.variable()));
-    });
+    final boolean asyncDelete = deleteContentTypeAsynchronously.get();
+    final boolean asyncDeleteWithJob = deleteContentTypeAsynchronouslyUsingJob.get();
 
+    if (!asyncDelete) {
+      Logger.debug(this, String.format(" Content type (%s) will be deleted sequentially.", type.name()));
+      transactionalDelete(type);
+    } else {
+      //We make a copy to hold all the contentlets that will be deleted asynchronously and then dispose the original one
+      relocateContentletsThenDispose(type, asyncDeleteWithJob);
+    }
   }
+
+  /**
+   * Call directly whn we want to skip CT creation through the Quartz Job
+   * Though internally the Quartz job makes use of this method
+   * @param type
+   * @throws DotDataException
+   */
+  @CloseDBIfOpened
+  private void dispose(final ContentType type) throws DotDataException {
+
+      // default structure can't be deleted
+      if (type.defaultType()) {
+        throw new DotDataException("contenttype.delete.cannot.delete.default.type");
+      }
+      if (type.system()) {
+        throw new DotDataException("contenttype.delete.cannot.delete.system.type");
+      }
+
+      //Force a database hit by removing the type from the cache
+      CacheLocator.getContentTypeCache2().remove(type);
+
+      //Refresh prior to delete
+      final ContentType dbType = Try.of(() -> find(type.id())).getOrNull();
+      if (null == dbType) {
+        Logger.warn(ContentTypeFactoryImpl.class, String.format("The ContentType with id `%s` does not exist ", type.id()));
+        return;
+      }
+
+      if (!dbType.markedForDeletion()) {
+        Logger.warn(ContentTypeFactoryImpl.class, String.format("The ContentType with id `%s` isn't marked for deletion ", type.id()));
+        return;
+      }
+
+      try {
+         APILocator.getContentTypeDestroyAPI().destroy(dbType, APILocator.systemUser());
+      } catch (DotDataException | DotSecurityException e) {
+        Logger.error(getClass(), String.format("Error Tearing down ContentType [%s]", dbType.variable()), e);
+      }
+  }
+
+  /**
+   * This method will delete the content type and all the content associated to it.
+   * This has been our traditional way to delete content types. and all its associated pieces of content.
+   * @param type
+   * @throws DotDataException
+   */
+  @WrapInTransaction
+  private void transactionalDelete(ContentType type) throws DotDataException {
+      try {
+        contentTypeFactory.delete(type);
+      } catch (DotStateException | DotDataException e) {
+        Logger.error(ContentType.class, e.getMessage(), e);
+        throw new BaseRuntimeInternationalizationException(e);
+      }
+      try {
+        String actionUrl = ContentTypeUtil.getInstance().getActionUrl(type, user);
+        ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = new ContentTypePayloadDataWrapper(actionUrl, type);
+        APILocator.getSystemEventsAPI().pushAsync(SystemEventType.DELETE_BASE_CONTENT_TYPE, new Payload(
+                contentTypePayloadDataWrapper, Visibility.PERMISSION, String.valueOf(PermissionAPI.PERMISSION_READ)));
+      } catch (DotStateException | DotDataException e) {
+        Logger.error(ContentType.class, e.getMessage(), e);
+        throw new BaseRuntimeInternationalizationException(e);
+      }
+      HibernateUtil.addCommitListener(() -> localSystemEventsAPI.notify(new ContentTypeDeletedEvent(type.variable())));
+  }
+
+  boolean contentTypeCanBeDeleted(ContentType type) throws DotDataException, DotSecurityException {
+
+      if (null == type.id()) {
+          throw new DotDataException("ContentType must have an id set");
+      }
+
+      //sometimes we might get an instance that has been called without having set the id therefore it will be missing certain fields
+      //This prevents that scenarios from happening
+      final String id = type.id();
+      type = Try.of(() -> contentTypeFactory.find(id)).getOrNull();
+      if (null == type) {
+        Logger.warn(this, "ContentType with id: " + id + " does not exist");
+        return false;
+      }
+
+      perms.checkPermission(type, PermissionLevel.EDIT_PERMISSIONS, user);
+      return true;
+  }
+
+  /**
+   * This can a heavy operation. depending on the amount of fields present in the CT we want to copy
+   * Therefor it is best if it happens in a separate transaction
+   * @param type
+   * @return
+   * @throws DotDataException
+   */
+
+  private ContentType makeDisposableCopy(final ContentType type) throws DotDataException {
+
+    //Now we need a copy of the CT that basically makes it possible relocating content for asynchronous deletion
+    final String newName = String.format("%s_disposed_%s", type.variable(), System.currentTimeMillis());
+
+    ContentType copy = ContentTypeBuilder.builder(type)
+            .id(null)
+            .variable(newName)
+            .build();
+
+    copy = contentTypeFactory.save(copy);
+
+    //A copy is made. but we need to refresh our var since the copy returned by the method is incomplete
+    copy = contentTypeFactory.find(copy.id());
+    Logger.info(getClass(), String.format("::: CT (%s) with inode:(%s) Will be deleted shortly. A Copy  with  name (%s) and inode (%s) will be used to dispose all contentlets in background. :::",
+            type.variable(), type.inode(), copy.variable(), copy.inode())
+    );
+    return copy;
+  }
+
+    /**
+     * This method will move all the content associated to the content type to a new content type and then delete the old
+     * content type.
+     * @param type
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @WrapInTransaction
+    void relocateContentletsThenDispose(final ContentType type, final boolean asyncDeleteWithJob)
+            throws DotSecurityException, DotDataException {
+      //If we're ok permissions wise, we need to remove the content from the index
+      //Then this quickly hides the content from the front end and APIS
+      contentTypeFactory.markForDeletion(type);
+
+      final ContentType copy = makeDisposableCopy(type);
+
+      APILocator.getContentTypeDestroyAPI().relocateContentletsForDeletion(type, copy);
+      //Now that all the content is relocated, we're ready to destroy the original structure that held all content
+      //System fields like Categories, Relationships and Containers will be deleted using the original structure
+      contentTypeFactory.delete(type);
+      //and destroy all associated content under the copy
+      contentTypeFactory.markForDeletion(copy);
+
+      HibernateUtil.addCommitListener(() -> {
+        try {
+          APILocator.getContentletIndexAPI().removeContentFromIndexByContentType(type);
+          //Notify the system events API that the content type has been deleted, so it can take care of the WF clean up
+          localSystemEventsAPI.notify(new ContentTypeDeletedEvent(type.variable()));
+        } catch (DotDataException e) {
+          Logger.error(ContentTypeFactoryImpl.class,
+                  String.format("Error removing content from index for ContentType [%s]",
+                          type.variable()), e);
+        }
+      });
+
+      HibernateUtil.addCommitListener(() -> {
+        if (asyncDeleteWithJob) {
+          //By default, the deletion process takes placed within job
+          Logger.debug(this, String.format(
+                  " Content type (%s) will be deleted asynchronously using Quartz Job.",
+                  type.name()));
+          ContentTypeDeleteJob.triggerContentTypeDeletion(copy);
+        } else {
+          //This option comes handy from the Integration Tests perspective
+          Logger.debug(this,
+                  String.format(" Content type (%s) will be deleted synchronously.", type.name()));
+          try {
+            dispose(copy);
+          } catch (DotDataException e) {
+            Logger.error(ContentTypeFactoryImpl.class,
+                    String.format("Error deleting content type [%s]", type.variable()), e);
+          }
+        }
+      });
+
+    }
 
   @Override
   @CloseDBIfOpened
