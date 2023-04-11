@@ -30,6 +30,7 @@ import com.dotcms.enterprise.publishing.remote.bundler.RuleBundlerTest;
 import com.dotcms.enterprise.publishing.remote.bundler.TemplateBundlerTest;
 import com.dotcms.enterprise.publishing.remote.bundler.WorkflowBundlerTest;
 import com.dotcms.enterprise.publishing.remote.handler.ContentHandlerTest;
+import com.dotcms.enterprise.publishing.remote.handler.ContentWorkflowHandlerTest;
 import com.dotcms.enterprise.publishing.remote.handler.HandlerUtilTest;
 import com.dotcms.enterprise.publishing.staticpublishing.LanguageFolderTest;
 import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTest;
@@ -493,7 +494,8 @@ import org.junit.runners.Suite.SuiteClasses;
         Task220912UpdateCorrectShowOnMenuPropertyTest.class,
         UtilMethodsITest.class,
         PaginatedContentletsIntegrationTest.class,
-        ContentletDependenciesTest.class
+        ContentletDependenciesTest.class,
+        ContentWorkflowHandlerTest.class
 })
 public class MainSuite {
 

@@ -116,3 +116,4 @@ This maintenance release includes the following code fixes:
 96. https://github.com/dotCMS/core/issues/22532 : Relationships are not respecting changes to requiredness #22532
 97. https://github.com/dotCMS/core/issues/21652 : [WebP] : Image file using the WebP filter loads with white background in Safari #21652
 98. https://github.com/dotCMS/core/issues/21742 : 400 Bad requests (such as malformed URIs) do not make it past Tomcat and display a stacktrace in the browser #21742
+99. https://github.com/dotCMS/core/issues/22087 : Content not assigned to workflow can fail to push publish #22087

@@ -1,0 +1,17 @@
+<com.dotcms.publisher.pusher.wrapper.PushContentWorkflowWrapper>
+    <task>
+        <id>967c3f43-0b7e-4f67-bcda-55dc38f4eebe</id>
+        <creationDate class="sql-timestamp">2022-05-09 20:09:36.558</creationDate>
+        <modDate class="sql-timestamp">2022-05-09 20:17:32.18</modDate>
+        <createdBy>e7d4e34e-5127-45fc-8123-d48b62d510e3</createdBy>
+        <assignedTo>e7d4e34e-5127-45fc-8123-d48b62d510e3</assignedTo>
+        <title>2_minutes.jpeg</title>
+        <description></description>
+        <webasset>00f9c5ac0cb5c71a194170a68d879ca6</webasset>
+        <languageId>1</languageId>
+    </task>
+    <history class="com.google.common.collect.RegularImmutableList" resolves-to="com.google.common.collect.ImmutableList$SerializedForm">
+        <elements/>
+    </history>
+    <comments class="com.google.common.collect.RegularImmutableList" reference="../history"/>
+</com.dotcms.publisher.pusher.wrapper.PushContentWorkflowWrapper>
