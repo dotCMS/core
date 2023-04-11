@@ -11,7 +11,8 @@ import com.dotmarketing.util.Config;
  * Wrapper class to a {@link DotSubmitter} instance used to execute instances of {@link EventLogRunnable}
  * <p>
  * It's configuration can be modified via the following properties:
- * <li>EVENT_LOG_POSTING_THREADS: Max active posting threads
+ * <li>EVENT_LOG_POSTING_THREADS: Initial active posting threads
+ * <li>EVENT_LOG_POSTING_THREADS_MAX: Max active posting threads
  * <li>EVENT_LOG_QUEUE_SIZE: Max size of the queue
  */
 public class EventLogSubmitter {
@@ -20,8 +21,8 @@ public class EventLogSubmitter {
 
     EventLogSubmitter(){
         final SubmitterConfig config = new DotConcurrentFactory.SubmitterConfigBuilder()
-            .poolSize(1)
-            .maxPoolSize(Config.getIntProperty("EVENT_LOG_POSTING_THREADS", 10))
+            .poolSize(Config.getIntProperty("EVENT_LOG_POSTING_THREADS", 8))
+            .maxPoolSize(Config.getIntProperty("EVENT_LOG_POSTING_THREADS_MAX", 16))
             .keepAliveMillis(1000)
             .queueCapacity(Config.getIntProperty("EVENT_LOG_QUEUE_SIZE", 10000))
             .rejectedExecutionHandler(new ThreadPoolExecutor.DiscardOldestPolicy())
