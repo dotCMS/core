@@ -20,10 +20,10 @@ export const VideoNode = Node.create({
                 parseHTML: (element) => element.getAttribute('src'),
                 renderHTML: (attributes) => ({ src: attributes.src })
             },
-            mineType: {
+            mimeType: {
                 default: null,
-                parseHTML: (element) => element.getAttribute('mineType'),
-                renderHTML: (attributes) => ({ mineType: attributes.mineType })
+                parseHTML: (element) => element.getAttribute('mimeType'),
+                renderHTML: (attributes) => ({ mimeType: attributes.mimeType })
             },
             width: {
                 default: null,
@@ -45,7 +45,7 @@ export const VideoNode = Node.create({
             data: {
                 default: null,
                 parseHTML: (element) => element.getAttribute('data'),
-                renderHTML: (attributes) => ({ data: attributes.data })
+                renderHTML: (attributes) => ({ data: JSON.stringify(attributes.data) })
             }
         };
     },
@@ -115,7 +115,7 @@ const getVideoAttrs = (attrs: DotCMSContentlet | string) => {
         return { src: attrs };
     }
 
-    const { assetMetaData, asset, mineType, fileAsset } = attrs;
+    const { assetMetaData, asset, mimeType, fileAsset } = attrs;
     const { width = 'auto', height = 'auto', contentType } = assetMetaData || {};
     const orientation = height > width ? 'vertical' : 'horizontal';
 
@@ -126,7 +126,7 @@ const getVideoAttrs = (attrs: DotCMSContentlet | string) => {
         },
         width,
         height,
-        mineType: mineType || contentType,
+        mimeType: mimeType || contentType,
         orientation
     };
 };
