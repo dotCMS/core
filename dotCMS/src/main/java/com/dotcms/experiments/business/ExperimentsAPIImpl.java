@@ -785,7 +785,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
     @Override
     public List<Experiment> getRunningExperiments() throws DotDataException {
-        final List<Experiment> cached = experimentsCache.get(ExperimentsCache.RUNNING_EXPERIMENTS_KEY);
+        final List<Experiment> cached = experimentsCache.get();
         if (Objects.nonNull(cached)) {
             return cached;
         }
@@ -842,7 +842,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final List<Experiment> experiments = FactoryLocator
             .getExperimentsFactory()
             .list(ExperimentFilter.builder().statuses(set(Status.RUNNING)).build());
-        experimentsCache.put(ExperimentsCache.RUNNING_EXPERIMENTS_KEY, experiments);
+        experimentsCache.put(experiments);
         return experiments;
     }
 

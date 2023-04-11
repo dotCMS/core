@@ -17,25 +17,22 @@ public interface ExperimentsCache extends Cachable {
     /**
      * Add a list of {@link Experiment} into the cache.
      *
-     * @param name name to use as key
      * @param experiments to be stored
      */
-    void put(String name, final List<Experiment> experiments);
+    void put(final List<Experiment> experiments);
 
     /**
      * Get a list of {@link Experiment} from cache by name.
      *
-     * @param name
      * @return
      */
-    List<Experiment> get(String name);
+    List<Experiment> get();
 
     /**
      * Remove a list of {@link Experiment} from cache identified by the provided name.
      *
-     * @param name name to use as key
      * @return
      */
-    void remove(final String name);
+    void remove();
 
 }

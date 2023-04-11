@@ -1,7 +1,6 @@
 package com.dotcms.experiments.business;
 
 import com.dotcms.experiments.model.Experiment;
-import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
@@ -19,25 +18,23 @@ public class ExperimentsCacheImpl implements ExperimentsCache {
      * {@inheritDoc}
      */
     @Override
-    public void put(final String name, final List<Experiment> experiments) {
-        DotPreconditions.checkNotNull(name);
-
+    public void put(final List<Experiment> experiments) {
         DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
-        cache.put(name, experiments, getPrimaryGroup());
+        cache.put(RUNNING_EXPERIMENTS_KEY, experiments, getPrimaryGroup());
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public List<Experiment> get(final String name) {
-        DotPreconditions.checkNotNull(name);
-
+    public List<Experiment> get() {
         DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
 
         try {
             @SuppressWarnings("unchecked")
-            final List<Experiment> experiments = (List<Experiment>) cache.get(name, getPrimaryGroup());
+            final List<Experiment> experiments = (List<Experiment>) cache.get(
+                RUNNING_EXPERIMENTS_KEY,
+                getPrimaryGroup());
             return experiments;
         } catch (DotCacheException e) {
             return null;
@@ -48,11 +45,10 @@ public class ExperimentsCacheImpl implements ExperimentsCache {
      * {@inheritDoc}
      */
     @Override
-    public void remove(final String name) {
-        DotPreconditions.checkNotNull(name);
+    public void remove() {
 
         DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
-        cache.remove(name, getPrimaryGroup());
+        cache.remove(RUNNING_EXPERIMENTS_KEY, getPrimaryGroup());
     }
 
     /**
