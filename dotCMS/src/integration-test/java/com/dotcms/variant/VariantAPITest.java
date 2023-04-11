@@ -23,6 +23,7 @@ import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.experiments.business.ExperimentsAPI;
 import com.dotcms.experiments.model.Experiment;
+import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.model.Variant;
@@ -902,13 +903,14 @@ public class VariantAPITest {
      * When: You try to promote a Variant that does not exist
      * Should: throw a Exception
      */
+    @Test
     public void promoteNonExistingVariant() throws DotDataException {
 
         final Variant doesNotExistsVariant = new VariantDataGen().next();
         try {
             APILocator.getVariantAPI().promote(doesNotExistsVariant, APILocator.systemUser());
             fail("Should throw a Exception");
-        } catch (IllegalArgumentException e) {
+        } catch (DoesNotExistException e) {
             //Expected
         }
     }
@@ -918,9 +920,28 @@ public class VariantAPITest {
      * When: You try to promote the DEFAULT Variant.
      * Should: throw a Exception
      */
+    @Test
     public void promoteDefaultVariant() throws DotDataException {
         try {
             APILocator.getVariantAPI().promote(VariantAPI.DEFAULT_VARIANT, APILocator.systemUser());
+            fail("Should throw a Exception");
+        } catch (IllegalArgumentException e) {
+            //Expected
+        }
+    }
+
+    /**
+     * Method to test: {@link VariantAPIImpl#promote(Variant, User)}
+     * When: You try to promote a Variant that is already promoted.
+     * Should: throw a Exception
+     */
+    @Test
+    public void promoteAlreadyPromoteVariant() throws DotDataException {
+        final Variant variant = new VariantDataGen().nextPersisted();
+        APILocator.getVariantAPI().promote(variant, APILocator.systemUser());
+
+        try {
+            APILocator.getVariantAPI().promote(variant, APILocator.systemUser());
             fail("Should throw a Exception");
         } catch (IllegalArgumentException e) {
             //Expected
