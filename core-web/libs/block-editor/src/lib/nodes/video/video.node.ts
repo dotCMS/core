@@ -94,16 +94,13 @@ export const VideoNode = Node.create({
     },
 
     renderHTML({ HTMLAttributes }) {
-        const { orientation = 'horizontal' } = HTMLAttributes;
-
         return [
             'div',
             { class: 'node-container' },
             [
                 'video',
                 mergeAttributes(HTMLAttributes, {
-                    controls: true,
-                    class: `${orientation}-video`
+                    controls: true
                 })
             ]
         ];
