@@ -48,6 +48,7 @@ export interface ConfigurationViewModel {
     stepStatusSidebar: StepStatus;
     isLoading: boolean;
     isExperimentADraft: boolean;
+    runExperimentBtnLabel: string;
     disabledStartExperiment: boolean;
     showExperimentSummary: boolean;
     experimentStatus: DotExperimentStatusList;
@@ -74,6 +75,12 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
 
     readonly getExperimentStatus$: Observable<DotExperimentStatusList> = this.select(
         ({ experiment }) => experiment?.status
+    );
+
+    readonly getRunExperimentBtnLabel$: Observable<string> = this.select(({ experiment }) =>
+        experiment && experiment.scheduling
+            ? this.dotMessageService.get('experiments.action.schedule-experiment')
+            : this.dotMessageService.get('experiments.action.start-experiment')
     );
 
     readonly showExperimentSummary$: Observable<boolean> = this.select(({ experiment }) =>
@@ -592,6 +599,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     readonly vm$: Observable<ConfigurationViewModel> = this.select(
         this.state$,
         this.isExperimentADraft$,
+        this.getRunExperimentBtnLabel$,
         this.isLoading$,
         this.disabledStartExperiment$,
         this.showExperimentSummary$,
@@ -600,6 +608,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         (
             { experiment, stepStatusSidebar },
             isExperimentADraft,
+            runExperimentBtnLabel,
             isLoading,
             disabledStartExperiment,
             showExperimentSummary,
@@ -609,6 +618,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
             experiment,
             stepStatusSidebar,
             isExperimentADraft,
+            runExperimentBtnLabel,
             isLoading,
             disabledStartExperiment,
             showExperimentSummary,

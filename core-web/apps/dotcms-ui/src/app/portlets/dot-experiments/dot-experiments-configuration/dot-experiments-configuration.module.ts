@@ -3,6 +3,7 @@ import { NgModule } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
+import { RippleModule } from 'primeng/ripple';
 import { TagModule } from 'primeng/tag';
 
 import { DotSessionStorageService } from '@dotcms/data-access';
@@ -39,7 +40,8 @@ import { DotExperimentsConfigurationComponent } from './dot-experiments-configur
         // PrimeNg
         ButtonModule,
         TagModule,
-        CardModule
+        CardModule,
+        RippleModule
     ],
     providers: [DotSessionStorageService]
 })

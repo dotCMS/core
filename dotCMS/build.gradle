@@ -97,8 +97,10 @@ def getCheckedOutGitCommitHash() {
 
 if (project.hasProperty('jarBaseName')) {
     archivesBaseName = "$jarBaseName"
-}else{
-    archivesBaseName = 'dotcms_'+dotcmsReleaseVersion+'_'+dotcmsReleaseBuild
+}else if(System.getenv("DOT_JAR_BASE_NAME") != ""){
+    archivesBaseName = "dotcms_" + System.getenv("DOT_JAR_BASE_NAME")
+}else {
+    archivesBaseName = 'dotcms_' + dotcmsReleaseVersion + '_' + dotcmsReleaseBuild
 }
 
 // Utils
@@ -236,7 +238,7 @@ else {
 
 
 
-def eeType = dotcmsReleaseVersion == "master" ? '-SNAPSHOT' : ''
+
 def mavenUiVersion = "1.0.0-SNAPSHOT"
 
 dependencies {
@@ -296,10 +298,7 @@ dependencies {
     //integrationTestCompile sourceSets.test.output
 
 
-    if (!(project.gradle.startParameter.taskNames.contains('deployWarTomcatDev') || project.gradle.startParameter.taskNames.contains('testDev'))) {
 
-        implementation group: 'com.dotcms.enterprise', name: 'ee', version: dotcmsReleaseVersion + eeType, changing: true
-    }
 }
 
 import groovy.json.JsonSlurper
