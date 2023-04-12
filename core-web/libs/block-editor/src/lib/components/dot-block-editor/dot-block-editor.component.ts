@@ -416,7 +416,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             return;
         }
 
-        return 'Type "/" for commmands';
+        return 'Type "/" for commands';
     }
 
     private setEditorJSONContent(content: Content) {

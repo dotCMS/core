@@ -86,6 +86,13 @@ export class FloatingActionsView {
         this.command = command;
         this.key = key;
         this.tippyOptions = tippyOptions;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const { from, to } = view.state.selection;
+            this.tippy?.setProps({
+                getReferenceClientRect: () => posToDOMRect(this.view, from, to)
+            });
+        });
     }
 
     /**
@@ -161,7 +168,6 @@ export class FloatingActionsView {
         this.tippy?.setProps({
             getReferenceClientRect: () => posToDOMRect(this.view, from, to)
         });
-
         this.show();
 
         if (next.open) {
