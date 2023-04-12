@@ -20,21 +20,19 @@ public class ExperimentsCacheImpl implements ExperimentsCache {
     @Override
     public void put(final List<Experiment> experiments) {
         DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
-        cache.put(RUNNING_EXPERIMENTS_KEY, experiments, getPrimaryGroup());
+        cache.put(CACHED_EXPERIMENTS_KEY, experiments, getPrimaryGroup());
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public List<Experiment> get() {
+    public List<Experiment> get(final String key) {
         DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
 
         try {
             @SuppressWarnings("unchecked")
-            final List<Experiment> experiments = (List<Experiment>) cache.get(
-                RUNNING_EXPERIMENTS_KEY,
-                getPrimaryGroup());
+            final List<Experiment> experiments = (List<Experiment>) cache.get(key, getPrimaryGroup());
             return experiments;
         } catch (DotCacheException e) {
             return null;
@@ -48,7 +46,7 @@ public class ExperimentsCacheImpl implements ExperimentsCache {
     public void remove() {
 
         DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
-        cache.remove(RUNNING_EXPERIMENTS_KEY, getPrimaryGroup());
+        cache.remove(CACHED_EXPERIMENTS_KEY, getPrimaryGroup());
     }
 
     /**

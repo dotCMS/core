@@ -28,7 +28,7 @@ public class ExperimentsCacheTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ExperimentsCacheImpl#put(List)} and {@link ExperimentsCacheImpl#get()}
+     * Method to test: {@link ExperimentsCacheImpl#put(List)} and {@link ExperimentsCacheImpl#get(String)}
      * When: Add a Experiment
      * Should: be able to get it by Name
      */
@@ -38,7 +38,7 @@ public class ExperimentsCacheTest extends IntegrationTestBase {
 
         CacheLocator.getExperimentsCache().put(List.of(experiment));
 
-        final List<Experiment> cached = CacheLocator.getExperimentsCache().get();
+        final List<Experiment> cached = CacheLocator.getExperimentsCache().get(ExperimentsCache.CACHED_EXPERIMENTS_KEY);
 
         assertFalse(cached.isEmpty());
         final Experiment cachedExperiment = cached.get(0);
@@ -49,7 +49,7 @@ public class ExperimentsCacheTest extends IntegrationTestBase {
     /**
      * Method to test: {@link ExperimentsCacheImpl#remove()}
      * When: Remove a Experiment from cache
-     * Should: get Null when call {@link ExperimentsCacheImpl#get()}
+     * Should: get Null when call {@link ExperimentsCacheImpl#get(String)}
      */
     @Test
     public void test_remove() {
@@ -82,13 +82,15 @@ public class ExperimentsCacheTest extends IntegrationTestBase {
     }
 
     private void checkFromCacheNotNull(final int size) {
-        final List<Experiment> experiments = CacheLocator.getExperimentsCache().get();
+        final List<Experiment> experiments = CacheLocator
+            .getExperimentsCache()
+            .get(ExperimentsCache.CACHED_EXPERIMENTS_KEY);
         assertNotNull(experiments);
         assertEquals(size, experiments.size());
     }
 
     private void checkFromCacheNull() {
-        assertNull(CacheLocator.getExperimentsCache().get());
+        assertNull(CacheLocator.getExperimentsCache().get(ExperimentsCache.CACHED_EXPERIMENTS_KEY));
     }
 
 }

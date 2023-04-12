@@ -12,7 +12,7 @@ import java.util.List;
  */
 public interface ExperimentsCache extends Cachable {
 
-    String RUNNING_EXPERIMENTS_KEY = "RUNNING_EXPERIMENTS";
+    String CACHED_EXPERIMENTS_KEY = "CACHED_EXPERIMENTS";
 
     /**
      * Add a list of {@link Experiment} into the cache.
@@ -26,7 +26,7 @@ public interface ExperimentsCache extends Cachable {
      *
      * @return
      */
-    List<Experiment> get();
+    List<Experiment> get(String key);
 
     /**
      * Remove a list of {@link Experiment} from cache identified by the provided name.

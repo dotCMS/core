@@ -785,7 +785,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
     @Override
     public List<Experiment> getRunningExperiments() throws DotDataException {
-        final List<Experiment> cached = experimentsCache.get();
+        final List<Experiment> cached = experimentsCache.get(ExperimentsCache.CACHED_EXPERIMENTS_KEY);
         if (Objects.nonNull(cached)) {
             return cached;
         }
