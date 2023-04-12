@@ -243,6 +243,16 @@
                     const field = document.querySelector('#editor-input-value-<%=field.getVelocityVarName()%>');
 
                     /**
+                     * Safeguard just in case the editor changes are not triggering the 
+                     * "valueChange" event.
+                     */
+                    if (typeof <%=textValue%> === 'object') {
+                        field.value = JSON.stringify(<%=textValue%>);
+                    } else {
+                        field.value = <%=textValue%>;
+                    }
+
+                    /**
                      * We need to listen to the "valueChange" event BEFORE setting the value
                      * to the editor.
                      */
