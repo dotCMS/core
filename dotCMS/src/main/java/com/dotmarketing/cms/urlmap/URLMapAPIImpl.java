@@ -1,11 +1,14 @@
 package com.dotmarketing.cms.urlmap;
 
+import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
+import com.dotcms.variant.VariantAPI;
+import com.dotcms.variant.business.web.VariantWebAPI.RenderContext;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -20,14 +23,17 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.filters.CMSUrlUtil;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.portlets.structure.StructureUtil;
 import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
+import io.vavr.API;
 import io.vavr.control.Try;
 import org.jetbrains.annotations.NotNull;
 
@@ -270,6 +276,7 @@ public class URLMapAPIImpl implements URLMapAPI {
                 ContentUtils.pull(query, 0, 2, "score",this.wuserAPI.getSystemUser(), true);
 
         if (!contentletSearches.isEmpty()) {
+
             int idx = 0;
             if (contentletSearches.size() == 2) {
                 // prefer session setting
@@ -281,6 +288,27 @@ public class URLMapAPIImpl implements URLMapAPI {
 
             contentlet = contentletSearches.get(idx);
             checkContentPermission(context, contentlet);
+
+            final String currentVariantId = WebAPILocator.getVariantWebAPI().currentVariantId();
+
+            if (!VariantAPI.DEFAULT_VARIANT.name().equals(currentVariantId)) {
+
+                final RenderContext renderContext = WebAPILocator.getVariantWebAPI()
+                        .getRenderContext(context.getLanguageId(), contentlet.getIdentifier(),
+                                context.getMode(), context.getUser());
+
+                final ContentletVersionInfo contentletVersionInfo = APILocator.getVersionableAPI()
+                        .getContentletVersionInfo(contentlet.getIdentifier(),
+                                renderContext.getCurrentLanguageId(),
+                                renderContext.getCurrentVariantKey())
+                        .orElseThrow();
+
+                final String inode = context.getMode().showLive
+                        ? contentletVersionInfo.getLiveInode()
+                        : contentletVersionInfo.getWorkingInode();
+
+                contentlet = APILocator.getContentletAPI().find(inode, context.getUser(), false);
+            }
         }
 
        final Contentlet finalContentlet = contentlet;
@@ -324,6 +352,8 @@ public class URLMapAPIImpl implements URLMapAPI {
 
         query.append("+contentType:")
             .append(contentType.variable())
+            .append(" +" + ESMappingConstants.VARIANT + ":")
+            .append(VariantAPI.DEFAULT_VARIANT.name())
             .append(" +deleted:false ")
             .append(" +(conhost:")
                 .append(context.getHost().getIdentifier())
