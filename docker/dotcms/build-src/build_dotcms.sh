@@ -14,7 +14,10 @@ mkdir -p "${build_target_dir}"
 
 build_by_commit() {
   cd /build/src/core
+  git config --global user.email "build@dotcms.com"
+  git config --global user.name "DotCMS Build"
 
+  git branch
   # if this is not a shallow checkout (meaning, we are not being built in github)
   if [[ -d "/build/src/core/.git" ]]; then
     git fetch --all
@@ -31,7 +34,7 @@ build_by_commit() {
     git clean -f -d
   fi
 
-  rm -rf /build/src/core/dist
+  rm -rf /build/src/core/dist /build/src/core/dotCMS/build /build/src/core/core-web/node_modules
   cd dotCMS && ./gradlew createDistPrep
   find ../dist/  -name "*.sh" -exec chmod 500 {} \;
   mv ../dist/* "${build_target_dir}"

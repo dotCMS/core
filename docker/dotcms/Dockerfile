@@ -2,7 +2,7 @@
 # ----------------------------------------------
 # Stage 1:  Build dotCMS from our builder image
 # ----------------------------------------------
-FROM dotcms/dotcms-seed:22.09 as build-cms
+FROM dotcms/dotcms-seed:24294 as build-cms
 
 LABEL com.dotcms.contact "support@dotcms.com"
 LABEL com.dotcms.vendor "dotCMS LLC"

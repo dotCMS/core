@@ -22,8 +22,9 @@ RUN apt update && \
 
 RUN mkdir -p /build/src \
     && echo "Pulling dotCMS src" \
-    && cd /build/src && git clone https://github.com/dotCMS/core.git core \
-    && cd /build/src/core/dotCMS \
+#    && cd /build/src && git clone https://github.com/dotCMS/core.git core \
+    && cd /build/src && git clone https://github.com/dotCMS/core.git core && cd core/dotCMS && git checkout issue-24294-vico \
+#    && cd core/dotCMS \
+    && git branch \
     && git gc --aggressive \
-    && ./gradlew  --no-daemon downloadDependencies clonePullTomcatDist -PuseGradleNode=false
-
+    && ./gradlew --no-daemon downloadDependencies clonePullTomcatDist -PuseGradleNode=false
