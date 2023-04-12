@@ -5,6 +5,7 @@ import { ChangeDetectionStrategy, Component, OnInit, ViewChild } from '@angular/
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
+import { RippleModule } from 'primeng/ripple';
 import { TagModule } from 'primeng/tag';
 
 import { take } from 'rxjs/operators';
@@ -45,7 +46,8 @@ import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.dir
         DotDynamicDirective,
         //PrimeNg
         TagModule,
-        ButtonModule
+        ButtonModule,
+        RippleModule
     ],
     templateUrl: './dot-experiments-reports.component.html',
     styleUrls: ['./dot-experiments-reports.component.scss'],
@@ -55,6 +57,13 @@ import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.dir
 export class DotExperimentsReportsComponent implements OnInit {
     vm$: Observable<VmReportExperiment> = this.store.vm$;
     defaultVariantId = DEFAULT_VARIANT_ID;
+
+    readonly chartConfig: { xAxisLabel: string; yAxisLabel: string; title: string } = {
+        xAxisLabel: 'dot.experimental.chart.xAxisLabel',
+        yAxisLabel: 'dot.experimental.chart.yAxisLabel',
+        title: 'dot.experimental.reports.chart.title'
+    };
+
     detailData = [
         {
             id: DEFAULT_VARIANT_ID,

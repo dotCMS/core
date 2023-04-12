@@ -66,7 +66,7 @@ describe('DotExperimentsReportsStore', () => {
             status: ComponentStatus.IDLE,
             results: EXPERIMENT_MOCK_RESULTS,
             variantResults: VARIANT_RESULT_MOCK_1,
-            chartResults: null
+            chartData: null
         };
 
         expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_MOCK.id);

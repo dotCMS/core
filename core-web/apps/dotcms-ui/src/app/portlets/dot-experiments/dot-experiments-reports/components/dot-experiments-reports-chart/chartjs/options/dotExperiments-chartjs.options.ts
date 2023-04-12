@@ -5,7 +5,7 @@ interface DotExperimentsChartjsOptions {
     yAxisLabel: string;
 }
 
-export const getDotExperimentChartJsOptions = ({
+export const getDotExperimentLineChartJsOptions = ({
     xAxisLabel,
     yAxisLabel
 }: DotExperimentsChartjsOptions) => {
@@ -64,9 +64,9 @@ export const getDotExperimentChartJsOptions = ({
                     padding: 5
                 },
                 ticks: {
-                    callback: function (val, index) {
-                        return index % 2 === 0 ? this.getLabelForValue(val as number) : '';
-                    },
+                    // callback: function (val, index) {
+                    //     return index % 2 === 0 ? this.getLabelForValue(val as number) : '';
+                    // },
                     color: ChartColors.ticks.hex,
                     autoSkip: true,
                     autoSkipPadding: 3,
