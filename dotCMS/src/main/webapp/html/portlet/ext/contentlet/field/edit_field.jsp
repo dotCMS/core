@@ -157,6 +157,8 @@
         // STORY BLOCK
         else if (field.getFieldType().equals(Field.FieldType.STORY_BLOCK_FIELD.toString())) {
             String textValue = UtilMethods.isSet(value) ? value.toString() : (UtilMethods.isSet(defaultValue) ? defaultValue : "");
+            final String initalValue = UtilMethods.isSet(value) ? value.toString() : (UtilMethods.isSet(defaultValue) ? defaultValue : "");
+            
             String customStyles = "";
             String customClassName = "";
             String allowedContentTypes = "";
@@ -210,7 +212,7 @@
                 lang="<%=contentLanguage%>"
                 custom-blocks='<%=customBlocks%>'>
             </dotcms-block-editor>
-            <input type="hidden" name="<%=field.getFieldContentlet()%>" id="editor-input-value-<%=field.getVelocityVarName()%>"/>
+            <input type="text" name="<%=field.getFieldContentlet()%>" id="editor-input-value-<%=field.getVelocityVarName()%>" value="<%=initalValue.replaceAll("\"" ,"\\\"" )%>" />
 
             <script>
 
