@@ -47,9 +47,9 @@ import java.util.Objects;
 public class SimpleFilter implements Filter {
     private String member;
     private Operator operator;
-    private String[] values;
+    private Object[] values;
 
-    public SimpleFilter(final String member, final Operator operator, final String[] values) {
+    public SimpleFilter(final String member, final Operator operator, final Object[] values) {
         this.member = member;
         this.operator = operator;
         this.values = values;
@@ -64,7 +64,7 @@ public class SimpleFilter implements Filter {
     }
 
     public String[] getValues() {
-        return values;
+        return Arrays.stream(values).map(Object::toString).toArray(String[]::new);
     }
 
     @Override

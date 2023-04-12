@@ -21,6 +21,9 @@ public class GoalResultsBuilder {
                 .collect(Collectors.toMap(ExperimentVariant::id, VariantResultsBuilder::new));
     }
 
+    public VariantResultsBuilder variant(final String variantId) {
+        return variants.get(variantId);
+    }
     public void success(final String lookBackWindow, final Event event) {
         final String variantName = event.getVariant()
                 .orElseThrow(() -> new IllegalArgumentException("Attribute variant does not exists"));

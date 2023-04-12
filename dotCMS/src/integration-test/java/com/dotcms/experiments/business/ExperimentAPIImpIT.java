@@ -1,6 +1,7 @@
 package com.dotcms.experiments.business;
 
 import static com.dotcms.experiments.model.AbstractExperimentVariant.ORIGINAL_VARIANT;
+import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 import static junit.framework.TestCase.assertEquals;
@@ -35,6 +36,7 @@ import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.exception.NotAllowedException;
 import com.dotcms.experiments.business.result.BrowserSession;
+import com.dotcms.experiments.business.result.ExperimentAnalyzerUtil;
 import com.dotcms.experiments.business.result.ExperimentResults;
 import com.dotcms.experiments.business.result.VariantResults;
 import com.dotcms.experiments.business.result.VariantResults.ResultResumeItem;
@@ -42,17 +44,24 @@ import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.experiments.model.Goals;
+import com.dotcms.http.CircuitBreakerUrl;
+import com.dotcms.http.CircuitBreakerUrl.Method;
+import com.dotcms.http.CircuitBreakerUrl.Response;
 import com.dotcms.http.server.mock.MockHttpServer;
 import com.dotcms.http.server.mock.MockHttpServerContext;
+import com.dotcms.http.server.mock.MockHttpServerContext.RequestContext;
+import com.dotcms.jitsu.EventLogRunnable;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.JsonUtil;
 import com.dotcms.util.network.IPUtils;
+import com.dotcms.variant.VariantAPI;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -63,6 +72,7 @@ import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
+import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -70,6 +80,8 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -450,6 +462,8 @@ public class ExperimentAPIImpIT {
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
 
+        final Variant variant = APILocator.getVariantAPI().get(variantName).orElseThrow();
+
         final Instant firstEventStartDate = Instant.now();
         final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(firstEventStartDate,
                 experiment, variantName, pageA, pageB, pageD, pageC);
@@ -462,12 +476,25 @@ public class ExperimentAPIImpIT {
         IPUtils.disabledIpPrivateSubnet(true);
         final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment);
 
-        final MockHttpServer mockhttpServer = createMockHttpServerAndStart(
-            cubeJSQueryExpected,
-            JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+        final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
+
+
+        addContext(mockhttpServer, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        final String queryTotalPageViews = getTotalPageViewsQuery(experiment.id().get(), "DEFAULT", variantName);
+        final List<Map<String, Object>> totalPageViewsResponseExpected = list(
+                map("Events.variant", variantName, "Events.count", "4")
+        );
+
+        addContext(mockhttpServer, queryTotalPageViews,
+                JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
+
+        mockhttpServer.start();
 
         try {
             final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+
+            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
 
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
 
@@ -478,6 +505,17 @@ public class ExperimentAPIImpIT {
             assertEquals(1, experimentResults.getSessions().getTotal());
 
             for (VariantResults variantResult : experimentResults.getGoals().get("primary").getVariants().values()) {
+
+                if (variantResult.getVariantName().equals(variantName)) {
+                    assertEquals(variant.description().get(), variantResult.getVariantDescription());
+                    assertEquals(4, variantResult.getTotalPageViews());
+                } else {
+
+                    assertEquals("DEFAULT", variantResult.getVariantName());
+                    assertEquals("Original", variantResult.getVariantDescription());
+                    assertEquals(0, variantResult.getTotalPageViews());
+                }
+
                 final int sessionExpected = variantResult.getVariantName().equals(variantName) ? 1 : 0;
 
                 Assert.assertEquals(sessionExpected, variantResult.getUniqueBySession().getCount());
@@ -499,6 +537,131 @@ public class ExperimentAPIImpIT {
             IPUtils.disabledIpPrivateSubnet(false);
             mockhttpServer.stop();
         }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
+     * When:
+     * - You have four pages: A, B, C and D
+     * - You create an {@link Experiment} using the B page with a PAGE_REACH Goal: url EQUALS TO PAge D .
+     * - You have the follow page_view to the pages order by timestamp: A, B, D and C
+     *
+     * Should:  get a Success PAGE_REACH
+     */
+    @Test
+    public void multiDaysEvent() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset pageA = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageB = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageC = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageD = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = createExperimentWithReachPageGoalAndVariant("experiment_page_reach_testing_1",
+                pageB, pageD);
+
+        final String variantName = experiment.trafficProportion().variants().stream()
+                .filter(experimentVariant -> !experimentVariant.id().equals("DEFAULT"))
+                .map(experimentVariant -> experimentVariant.id())
+                .limit(1)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
+
+        final Variant variant = APILocator.getVariantAPI().get(variantName).orElseThrow();
+
+        final Instant today = Instant.now();
+        final Instant yesterday = today.minus(1, ChronoUnit.DAYS);
+        final Instant tomorrow = today.plus(1, ChronoUnit.DAYS);
+
+        final List<Map<String, String>> todayCubeJsQueryData = createPageViewEvents(today,
+                experiment, variantName, pageA, pageB, pageD, pageC);
+
+        final List<Map<String, String>> yesterdayCubeJsQueryData = createPageViewEvents(yesterday,
+                experiment, variantName, pageA, pageB, pageD, pageC);
+
+        final List<Map<String, String>> tomorrowCubeJsQueryData = createPageViewEvents(tomorrow,
+                experiment, variantName, pageA, pageB, pageD, pageC);
+
+        final List<Map<String, String>> todayCubeJsQueryDataDefault = createPageViewEvents(today,
+                experiment, DEFAULT_VARIANT.name(), pageA, pageB, pageD, pageC);
+
+        final List<Map<String, String>> tomorrowCubeJsQueryDataDefault = createPageViewEvents(tomorrow,
+                experiment, DEFAULT_VARIANT.name(), pageA, pageB, pageC);
+
+        final Map<String, List<Map<String, String>>> cubeJsQueryResult =  map("data",
+                concat(todayCubeJsQueryData, tomorrowCubeJsQueryDataDefault, yesterdayCubeJsQueryData,
+                        tomorrowCubeJsQueryData, todayCubeJsQueryDataDefault)
+        );
+
+        APILocator.getExperimentsAPI()
+                .start(experiment.getIdentifier(), APILocator.systemUser());
+
+        IPUtils.disabledIpPrivateSubnet(true);
+        final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment);
+
+        final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
+
+
+        addContext(mockhttpServer, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        final String queryTotalPageViews = getTotalPageViewsQuery(experiment.id().get(), "DEFAULT", variantName);
+        final List<Map<String, Object>> totalPageViewsResponseExpected = list(
+                map("Events.variant", variantName, "Events.count", "12")
+        );
+
+        addContext(mockhttpServer, queryTotalPageViews,
+                JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
+
+        mockhttpServer.start();
+
+        try {
+            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+
+            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+
+            final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+
+            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
+
+            mockhttpServer.validate();
+
+        } finally {
+            APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
+
+            IPUtils.disabledIpPrivateSubnet(false);
+            mockhttpServer.stop();
+        }
+    }
+
+    private <T> List concat(final Collection<T>... collections) {
+        return Stream.of(collections).flatMap(Collection::stream).collect(Collectors.toList());
+    }
+
+    private String getTotalPageViewsQuery(final String experiment,final String... variants) {
+        return "{"
+                +   "\"measures\": [\"Events.count\"],"
+                +   "\"dimensions\": [\"Events.variant\"],"
+                + "  \"filters\": ["
+                + "    {"
+                + "      \"member\": \"Events.eventType\","
+                + "      \"operator\": \"equals\","
+                + "      \"values\": ["
+                + "        \"pageview\""
+                + "      ]"
+                + "    },"
+                + "    {"
+                + "      \"member\": \"Events.variant\","
+                + "      \"operator\": \"equals\","
+                + "      \"values\": [" + Arrays.stream(variants).map(variant -> "\"" + variant + "\"").collect(Collectors.joining(",")) + "]"
+                + "    },"
+                + "    {"
+                + "      \"member\": \"Events.experiment\","
+                + "      \"operator\": \"equals\","
+                + "      \"values\": [\"" + experiment + "\"]"
+                + "    }"
+                + "  ]"
+                + "}";
     }
 
     /**
@@ -530,6 +693,8 @@ public class ExperimentAPIImpIT {
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
 
+        final Variant variant = APILocator.getVariantAPI().get(variantName).orElseThrow();
+
         final Instant firstEventStartDate = Instant.now();
         final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(firstEventStartDate,
                 experiment, variantName, pageA, pageC, pageD, pageB );
@@ -542,13 +707,25 @@ public class ExperimentAPIImpIT {
         IPUtils.disabledIpPrivateSubnet(true);
         final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment);
 
-        final MockHttpServer mockhttpServer = createMockHttpServerAndStart(
-            cubeJSQueryExpected,
-            JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+        final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
+
+        addContext(mockhttpServer, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        final String queryTotalPageViews = getTotalPageViewsQuery(experiment.id().get(), "DEFAULT", variantName);
+        final List<Map<String, Object>> totalPageViewsResponseExpected = list(
+                map("Events.variant", variantName, "Events.count", "2")
+        );
+
+        addContext(mockhttpServer, queryTotalPageViews,
+                JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
+
+        mockhttpServer.start();
 
         try {
             final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+
             final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
 
             mockhttpServer.validate();
@@ -558,8 +735,12 @@ public class ExperimentAPIImpIT {
             for (VariantResults variantResult : experimentResults.getGoals().get("primary").getVariants().values()) {
                 if (variantResult.getVariantName().equals(variantName)) {
                     Assert.assertEquals(1, (long) experimentResults.getSessions().getVariants().get(variantName));
+                    assertEquals(variant.description().get(), variantResult.getVariantDescription());
+                    assertEquals(2, variantResult.getTotalPageViews());
                 } else {
                     Assert.assertEquals(0, (long) experimentResults.getSessions().getVariants().get(variantResult.getVariantName()));
+                    assertEquals("Original", variantResult.getVariantDescription());
+                    assertEquals(0, variantResult.getTotalPageViews());
                 }
 
                 Assert.assertEquals(0, variantResult.getUniqueBySession().getCount());
@@ -606,6 +787,8 @@ public class ExperimentAPIImpIT {
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
 
+        final Variant variant = APILocator.getVariantAPI().get(variantName).orElseThrow();
+
         final Instant firstEventStartDate = Instant.now();
         final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(firstEventStartDate,
                 experiment, variantName, pageA, pageC );
@@ -618,12 +801,25 @@ public class ExperimentAPIImpIT {
         IPUtils.disabledIpPrivateSubnet(true);
         final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment);
 
-        final MockHttpServer mockhttpServer = createMockHttpServerAndStart(
-            cubeJSQueryExpected,
-            JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+        final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
+
+
+        addContext(mockhttpServer, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        final String queryTotalPageViews = getTotalPageViewsQuery(experiment.id().get(), "DEFAULT", variantName);
+        final List<Map<String, Object>> totalPageViewsResponseExpected = list(
+                map("Events.variant", variantName, "Events.count", "2")
+        );
+
+        addContext(mockhttpServer, queryTotalPageViews,
+                JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
+
+        mockhttpServer.start();
+
         try {
             final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
 
             mockhttpServer.validate();
@@ -631,6 +827,14 @@ public class ExperimentAPIImpIT {
             assertEquals(0, experimentResults.getSessions().getTotal());
 
             for (VariantResults variantResult : experimentResults.getGoals().get("primary").getVariants().values()) {
+
+                if (variantResult.getVariantName().equals(variantName)) {
+                    assertEquals(variant.description().get(), variantResult.getVariantDescription());
+                    assertEquals(2, variantResult.getTotalPageViews());
+                } else {
+                    assertEquals("Original", variantResult.getVariantDescription());
+                    assertEquals(0, variantResult.getTotalPageViews());
+                }
 
                 Assert.assertEquals(0, variantResult.getUniqueBySession().getCount());
                 Assert.assertEquals(0, variantResult.getMultiBySession());
@@ -677,6 +881,8 @@ public class ExperimentAPIImpIT {
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
 
+        final Variant variant = APILocator.getVariantAPI().get(variantName).orElseThrow();
+
         final Instant firstEventStartDate = Instant.now();
         final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(firstEventStartDate,
                 experiment, variantName, pageA, pageC, pageD );
@@ -689,13 +895,26 @@ public class ExperimentAPIImpIT {
         IPUtils.disabledIpPrivateSubnet(true);
         final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment);
 
-        final MockHttpServer mockhttpServer = createMockHttpServerAndStart(
-            cubeJSQueryExpected,
-            JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+        final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
+
+
+        addContext(mockhttpServer, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        final String queryTotalPageViews = getTotalPageViewsQuery(experiment.id().get(), "DEFAULT", variantName);
+        final List<Map<String, Object>> totalPageViewsResponseExpected = list(
+                map("Events.variant", variantName, "Events.count", "2")
+        );
+
+        addContext(mockhttpServer, queryTotalPageViews,
+                JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
+
+        mockhttpServer.start();
 
         try {
             final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+
             final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
 
             mockhttpServer.validate();
@@ -703,6 +922,14 @@ public class ExperimentAPIImpIT {
             assertEquals(0, experimentResults.getSessions().getTotal());
 
             for (VariantResults variantResult : experimentResults.getGoals().get("primary").getVariants().values()) {
+
+                if (variantResult.getVariantName().equals(variantName)) {
+                    assertEquals(variant.description().get(), variantResult.getVariantDescription());
+                    assertEquals(2, variantResult.getTotalPageViews());
+                } else {
+                    assertEquals("Original", variantResult.getVariantDescription());
+                    assertEquals(0, variantResult.getTotalPageViews());
+                }
 
                 Assert.assertEquals(0, variantResult.getUniqueBySession().getCount());
                 Assert.assertEquals(0, variantResult.getMultiBySession());
@@ -749,6 +976,8 @@ public class ExperimentAPIImpIT {
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
 
+        final Variant variant = APILocator.getVariantAPI().get(variantName).orElseThrow();
+
         final Instant firstEventStartDate = Instant.now();
         final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(firstEventStartDate,
                 experiment, variantName, pageA, pageB, pageC, pageD);
@@ -761,13 +990,25 @@ public class ExperimentAPIImpIT {
         IPUtils.disabledIpPrivateSubnet(true);
         final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment);
 
-        final MockHttpServer mockhttpServer = createMockHttpServerAndStart(
-            cubeJSQueryExpected,
-            JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+        final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
+
+        addContext(mockhttpServer, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        final String queryTotalPageViews = getTotalPageViewsQuery(experiment.id().get(), "DEFAULT", variantName);
+
+        final List<Map<String, Object>> totalPageViewsResponseExpected = list(
+                map("Events.variant", variantName, "Events.count", "4")
+        );
+
+        addContext(mockhttpServer, queryTotalPageViews,
+                JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
+
+        mockhttpServer.start();
 
         try {
             final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
 
             mockhttpServer.validate();
@@ -778,8 +1019,14 @@ public class ExperimentAPIImpIT {
 
                 if (variantResult.getVariantName().equals(variantName)) {
                     Assert.assertEquals(1, (long) experimentResults.getSessions().getVariants().get(variantResult.getVariantName()));
+
+                    assertEquals(variant.description().get(), variantResult.getVariantDescription());
+                    assertEquals(4, variantResult.getTotalPageViews());
                 } else {
                     Assert.assertEquals(0, (long) experimentResults.getSessions().getVariants().get(variantResult.getVariantName()));
+
+                    assertEquals("Original", variantResult.getVariantDescription());
+                    assertEquals(0, variantResult.getTotalPageViews());
                 }
 
                 Assert.assertEquals(0, variantResult.getUniqueBySession().getCount());
@@ -826,6 +1073,8 @@ public class ExperimentAPIImpIT {
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
 
+        final Variant variant = APILocator.getVariantAPI().get(variantName).orElseThrow();
+
         final Instant firstEventStartDate = Instant.now();
         final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(firstEventStartDate,
                 experiment, variantName, pageA, pageC, pageB);
@@ -838,13 +1087,24 @@ public class ExperimentAPIImpIT {
         IPUtils.disabledIpPrivateSubnet(true);
         final String cubeJSQueryExpected = getExpectedBounceRateQuery(experiment);
 
-        final MockHttpServer mockhttpServer = createMockHttpServerAndStart(
-            cubeJSQueryExpected,
-            JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+        final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
+        addContext(mockhttpServer, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        final String queryTotalPageViews = getTotalPageViewsQuery(experiment.id().get(), "DEFAULT", variantName);
+
+        final List<Map<String, Object>> totalPageViewsResponseExpected = list(
+                map("Events.variant", variantName, "Events.count", "3")
+        );
+
+        addContext(mockhttpServer, queryTotalPageViews,
+                JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
+
+        mockhttpServer.start();
 
         try {
             final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentResults experimentResult = experimentsAPIImpl.getResults(experiment);
 
             mockhttpServer.validate();
@@ -854,6 +1114,14 @@ public class ExperimentAPIImpIT {
             for (VariantResults variantResult : experimentResult.getGoals().get("primary").getVariants().values()) {
                 final int sessionExpected =
                         variantResult.getVariantName().equals(variantName) ? 1 : 0;
+
+                if (variantResult.getVariantName().equals(variantName)) {
+                    assertEquals(variant.description().get(), variantResult.getVariantDescription());
+                    assertEquals(3, variantResult.getTotalPageViews());
+                } else {
+                    assertEquals("Original", variantResult.getVariantDescription());
+                    assertEquals(0, variantResult.getTotalPageViews());
+                }
 
                 Assert.assertEquals(sessionExpected, variantResult.getUniqueBySession().getCount());
                 Assert.assertEquals(sessionExpected, variantResult.getMultiBySession());
@@ -905,6 +1173,8 @@ public class ExperimentAPIImpIT {
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
 
+        final Variant variant = APILocator.getVariantAPI().get(variantName).orElseThrow();
+
         final Instant firstEventStartDate = Instant.now();
         final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(firstEventStartDate,
                 experiment, variantName, pageA, pageB, pageC);
@@ -917,13 +1187,24 @@ public class ExperimentAPIImpIT {
         IPUtils.disabledIpPrivateSubnet(true);
         final String cubeJSQueryExpected = getExpectedBounceRateQuery(experiment);
 
-        final MockHttpServer mockhttpServer = createMockHttpServerAndStart(
-            cubeJSQueryExpected,
-            JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+        final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
+        addContext(mockhttpServer, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        final String queryTotalPageViews = getTotalPageViewsQuery(experiment.id().get(), "DEFAULT", variantName);
+
+        final List<Map<String, Object>> totalPageViewsResponseExpected = list(
+                map("Events.variant", variantName, "Events.count", "3")
+        );
+
+        addContext(mockhttpServer, queryTotalPageViews,
+                JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
+
+        mockhttpServer.start();
 
         try {
             final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
 
             mockhttpServer.validate();
@@ -934,8 +1215,14 @@ public class ExperimentAPIImpIT {
 
                 if (variantResult.getVariantName().equals(variantName)) {
                     Assert.assertEquals(1, (long) experimentResults.getSessions().getVariants().get(variantResult.getVariantName()));
+
+                    assertEquals(variant.description().get(), variantResult.getVariantDescription());
+                    assertEquals(3, variantResult.getTotalPageViews());
                 } else {
                     Assert.assertEquals(0, (long) experimentResults.getSessions().getVariants().get(variantResult.getVariantName()));
+
+                    assertEquals("Original", variantResult.getVariantDescription());
+                    assertEquals(0, variantResult.getTotalPageViews());
                 }
 
                 Assert.assertEquals(0, variantResult.getUniqueBySession().getCount());
@@ -982,6 +1269,8 @@ public class ExperimentAPIImpIT {
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
 
+        final Variant variant = APILocator.getVariantAPI().get(variantName).orElseThrow();
+
         final Instant firstEventStartDate = Instant.now();
         final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(firstEventStartDate,
                 experiment, variantName, pageA, pageC);
@@ -994,13 +1283,24 @@ public class ExperimentAPIImpIT {
         IPUtils.disabledIpPrivateSubnet(true);
         final String cubeJSQueryExpected = getExpectedBounceRateQuery(experiment);
 
-        final MockHttpServer mockhttpServer = createMockHttpServerAndStart(
-            cubeJSQueryExpected,
-            JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+        final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
+        addContext(mockhttpServer, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        final String queryTotalPageViews = getTotalPageViewsQuery(experiment.id().get(), "DEFAULT", variantName);
+
+        final List<Map<String, Object>> totalPageViewsResponseExpected = list(
+                map("Events.variant", variantName, "Events.count", "2")
+        );
+
+        addContext(mockhttpServer, queryTotalPageViews,
+                JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
+
+        mockhttpServer.start();
 
         try {
             final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentResults experimentResult = experimentsAPIImpl.getResults(experiment);
 
             mockhttpServer.validate();
@@ -1008,6 +1308,14 @@ public class ExperimentAPIImpIT {
             assertEquals(0, experimentResult.getSessions().getTotal());
 
             for (VariantResults variantResult : experimentResult.getGoals().get("primary").getVariants().values()) {
+
+                if (variantResult.getVariantName().equals(variantName)) {
+                    assertEquals(variant.description().get(), variantResult.getVariantDescription());
+                    assertEquals(2, variantResult.getTotalPageViews());
+                } else {
+                    assertEquals("Original", variantResult.getVariantDescription());
+                    assertEquals(0, variantResult.getTotalPageViews());
+                }
 
                 Assert.assertEquals(0, variantResult.getUniqueBySession().getCount());
                 Assert.assertEquals(0, variantResult.getMultiBySession());
@@ -1059,6 +1367,8 @@ public class ExperimentAPIImpIT {
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
 
+        final Variant variant = APILocator.getVariantAPI().get(variantName).orElseThrow();
+
         final Instant firstBrowserSessionDate = Instant.now();
         final List<Map<String, String>> firstCubeJsQueryData = createPageViewEvents(firstBrowserSessionDate,
                 experiment, variantName, pageA, pageB, pageD, pageC);
@@ -1078,13 +1388,24 @@ public class ExperimentAPIImpIT {
         IPUtils.disabledIpPrivateSubnet(true);
         final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment);
 
-        final MockHttpServer mockhttpServer = createMockHttpServerAndStart(
-            cubeJSQueryExpected,
-            JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+        final MockHttpServer mockhttpServer = new MockHttpServer(cubeServerIp, cubeJsServerPort);
+
+        addContext(mockhttpServer, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        final String queryTotalPageViews = getTotalPageViewsQuery(experiment.id().get(), "DEFAULT", variantName);
+
+        final List<Map<String, Object>> totalPageViewsResponseExpected = list(
+                map("Events.variant", variantName, "Events.count", "4")
+        );
+
+        addContext(mockhttpServer, queryTotalPageViews,
+                JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
+
+        mockhttpServer.start();
 
         try {
             final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
-
+            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
 
             final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
@@ -1112,6 +1433,12 @@ public class ExperimentAPIImpIT {
                     assertNotNull(resultResumeItem_2);
                     Assert.assertEquals(1, resultResumeItem_2.getUniqueBySession());
                     Assert.assertEquals(1, resultResumeItem_2.getMultiBySession());
+
+                    assertEquals(variant.description().get(), variantResult.getVariantDescription());
+                    assertEquals(4, variantResult.getTotalPageViews());
+                } else {
+                    assertEquals("Original", variantResult.getVariantDescription());
+                    assertEquals(0, variantResult.getTotalPageViews());
                 }
             }
         } finally {
@@ -1276,8 +1603,37 @@ public class ExperimentAPIImpIT {
         return mockAnalyticsHelper;
     }
 
+    private static void addContext(final MockHttpServer mockHttpServer,
+            final String expectedQuery, final String responseBody) {
+
+        final MockHttpServerContext mockHttpServerContext = new  MockHttpServerContext.Builder()
+                .uri("/cubejs-api/v1/load")
+                .requestCondition((requestContext) ->
+                        String.format( "Cube JS Query is not right, \nExpected: %s \nCurrent %s",
+                                expectedQuery, requestContext.getRequestParameter("query")
+                                        .orElse(StringPool.BLANK)),
+                        requestContext -> isEquals(expectedQuery, requestContext))
+                .responseStatus(HttpURLConnection.HTTP_OK)
+                .mustBeCalled()
+                .responseBody(responseBody)
+                .build();
+
+        mockHttpServer.addContext(mockHttpServerContext);
+    }
+
+    private static boolean isEquals(final String expectedQuery, final RequestContext context) {
+        try {
+            return context.getRequestParameterAsMap("query")
+                    .orElse(Collections.emptyMap())
+                    .equals(JsonUtil.getJsonFromString(expectedQuery));
+        } catch (IOException e) {
+            throw new DotRuntimeException(e);
+        }
+    }
+
     private static MockHttpServer createMockHttpServerAndStart(final String expectedQuery, final String responseBody) {
         final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
+
         final MockHttpServerContext mockHttpServerContext = new  MockHttpServerContext.Builder()
                 .uri("/cubejs-api/v1/load")
                 .requestCondition("Cube JS Query is not right",
@@ -1288,6 +1644,7 @@ public class ExperimentAPIImpIT {
                 .mustBeCalled()
                 .responseBody(responseBody)
                 .build();
+
 
         mockhttpServer.addContext(mockHttpServerContext);
         mockhttpServer.start();
@@ -1505,13 +1862,26 @@ public class ExperimentAPIImpIT {
 
         IPUtils.disabledIpPrivateSubnet(true);
         final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment);
-        final MockHttpServer mockhttpServer = createMockHttpServerAndStart(
-            cubeJSQueryExpected,
-            JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
+
+        addContext(mockhttpServer, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        final String queryTotalPageViews = getTotalPageViewsQuery(experiment.id().get(), "DEFAULT", variantName);
+
+        final List<Map<String, Object>> totalPageViewsResponseExpected = list(
+                map("Events.variant", variantName, "Events.count", "20")
+        );
+
+        addContext(mockhttpServer, queryTotalPageViews,
+                JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
+
+        mockhttpServer.start();
 
         try {
             final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
             assertEquals(120, experimentResults.getSessions().getTotal());
 
@@ -1563,13 +1933,26 @@ public class ExperimentAPIImpIT {
 
         IPUtils.disabledIpPrivateSubnet(true);
         final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment);
-        final MockHttpServer mockhttpServer = createMockHttpServerAndStart(
-            cubeJSQueryExpected,
-            JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
+
+        addContext(mockhttpServer, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        final String queryTotalPageViews = getTotalPageViewsQuery(experiment.id().get(), "DEFAULT", variantName);
+
+        final List<Map<String, Object>> totalPageViewsResponseExpected = list(
+                map("Events.variant", variantName, "Events.count", "50")
+        );
+
+        addContext(mockhttpServer, queryTotalPageViews,
+                JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
+
+        mockhttpServer.start();
 
         try {
             final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
             assertEquals(120, experimentResults.getSessions().getTotal());
 
@@ -1621,13 +2004,27 @@ public class ExperimentAPIImpIT {
 
         IPUtils.disabledIpPrivateSubnet(true);
         final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment);
-        final MockHttpServer mockhttpServer = createMockHttpServerAndStart(
-            cubeJSQueryExpected,
-            JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
+
+        addContext(mockhttpServer, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        final String queryTotalPageViews = getTotalPageViewsQuery(experiment.id().get(), "DEFAULT", variantName);
+
+        final List<Map<String, Object>> totalPageViewsResponseExpected = list(
+                map("Events.variant", variantName, "Events.count", "4")
+        );
+
+        addContext(mockhttpServer, queryTotalPageViews,
+                JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
+
+        mockhttpServer.start();
 
         try {
             final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+
             final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
             assertEquals(120, experimentResults.getSessions().getTotal());
 
@@ -1679,13 +2076,26 @@ public class ExperimentAPIImpIT {
 
         IPUtils.disabledIpPrivateSubnet(true);
         final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment);
-        final MockHttpServer mockhttpServer = createMockHttpServerAndStart(
-            cubeJSQueryExpected,
-            JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
+
+        addContext(mockhttpServer, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        final String queryTotalPageViews = getTotalPageViewsQuery(experiment.id().get(), "DEFAULT", variantName);
+
+        final List<Map<String, Object>> totalPageViewsResponseExpected = list(
+                map("Events.variant", variantName, "Events.count", "50")
+        );
+
+        addContext(mockhttpServer, queryTotalPageViews,
+                JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
+
+        mockhttpServer.start();
 
         try {
             final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
             assertEquals(120, experimentResults.getSessions().getTotal());
 
