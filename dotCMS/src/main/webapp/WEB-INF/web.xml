@@ -26,7 +26,7 @@
 	</filter>
     <filter>
         <filter-name>ManagementRequestFilter</filter-name>
-        <filter-class>com.dotcms.filters.ManagementRequestFilter</filter-class>
+        <filter-class>com.dotcms.management.ManagementRequestFilter</filter-class>
         <async-supported>true</async-supported>
     </filter>
 	<filter>
