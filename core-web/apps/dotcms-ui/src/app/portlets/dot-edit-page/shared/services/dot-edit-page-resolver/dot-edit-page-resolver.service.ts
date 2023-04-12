@@ -91,14 +91,15 @@ export class DotEditPageResolver implements Resolve<DotPageRenderState> {
     }
 
     private getDotPageRenderOptions(route: ActivatedRouteSnapshot): DotPageRenderOptions {
-        const renderOptions: DotPageRenderOptions = { url: route.queryParams.url };
+        const queryParams = route.queryParams;
+        const renderOptions: DotPageRenderOptions = { url: queryParams.url };
 
-        if (route.queryParams.mode) {
-            renderOptions.mode = route.queryParams.mode;
+        if (queryParams.mode) {
+            renderOptions.mode = queryParams.mode;
         }
 
-        if (route.queryParams.language_id) {
-            renderOptions.viewAs = { language: route.queryParams.language_id };
+        if (queryParams.language_id) {
+            renderOptions.viewAs = { language: queryParams.language_id };
         }
 
         return renderOptions;
