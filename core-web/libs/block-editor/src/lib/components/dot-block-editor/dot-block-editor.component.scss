@@ -256,6 +256,7 @@
 
         video {
             height: 300px;
+            width: fit-content;
         }
 
         .node-container {
@@ -263,6 +264,7 @@
 
             img {
                 height: 300px;
+                width: fit-content;
             }
         }
     }
