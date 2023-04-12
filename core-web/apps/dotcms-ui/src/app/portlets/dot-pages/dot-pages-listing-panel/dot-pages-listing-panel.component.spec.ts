@@ -222,12 +222,10 @@ describe('DotPagesListingPanelComponent', () => {
 
         it('should send event to emit URL value', () => {
             const elem = de.query(By.css('p-table'));
-            elem.triggerEventHandler('onRowSelect', {
-                data: { url: 'abc123', host: '1', languageId: '1' }
-            });
+            elem.triggerEventHandler('onRowSelect', { data: { url: 'abc123', languageId: '1' } });
 
             expect(component.goToUrl.emit).toHaveBeenCalledOnceWith(
-                'abc123?host_id=1&language_id=1'
+                'abc123?language_id=1&device_inode='
             );
         });
     });
