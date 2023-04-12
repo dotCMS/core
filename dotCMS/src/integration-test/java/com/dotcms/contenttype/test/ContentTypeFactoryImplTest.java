@@ -690,7 +690,7 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 	/**
 	 * Method to test: {@link ContentTypeAPIImpl#findUrlMapped(String)}
 	 * when: Called the method with Null
-	 * should: Throw a {@link NullPointerException}
+	 * should: Throw a {@link IllegalArgumentException}
 	 */
 	@Test(expected = IllegalArgumentException.class)
 	public void findUrlMappedByPageIdWithNull() throws DotDataException {

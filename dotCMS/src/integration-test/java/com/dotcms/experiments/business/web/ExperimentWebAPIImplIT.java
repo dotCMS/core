@@ -109,7 +109,7 @@ public class ExperimentWebAPIImplIT {
      * When: You have one experiment running with 100% of traffic allocation and without targeting
      * and using a page with uri equals to /blog/index.
      * Should: Return this experiment all the time and the redirect pattern should be equals to
-     * <code>^.*\/blog(\/index|\/)?(\?.*)?$</>
+     * <code>^(http|https):\/\/.*:.*\/blog(\/index|\/)?(\?.*)?$</>
      *
      * @throws DotDataException
      */
@@ -167,7 +167,7 @@ public class ExperimentWebAPIImplIT {
      * When: You have one experiment running with 100% of traffic allocation and without targeting
      * and using a page with uri equals to /index.
      * Should: Return this experiment all the time and the redirect pattern should be equals to
-     * <code>^.*\/blog(\/index|\/)?(\?.*)?$</>
+     * <code>^(http|https):\/\/.*:.*(\/index|\/)?(\?.*)?$</>
      *
      * @throws DotDataException
      */
@@ -223,7 +223,7 @@ public class ExperimentWebAPIImplIT {
      * When: You have one experiment running with 100% of traffic allocation and without targeting
      * and using a UrlMap page with uri equals to /store/products/{name}.
      * Should: Return this experiment all the time and the redirect pattern should be equals to
-     * <code>^.*\/store\/products\/(.+)?(\?.*)?$/</>
+     * <code>^(http|https):\/\/.*:.*\/store\/products\/(.+)(\?.*)?$</>
      *
      * @throws DotDataException
      */
