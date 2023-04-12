@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "36cae92f-88b5-482a-8bb1-476d37875d3e",
+		"_postman_id": "e4ba8084-8b7d-4b85-addb-446eeca16790",
 		"name": "Page API - [api/v1/page]",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "781456"
@@ -5149,7 +5149,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"url\":\"/testPageCopy\",\n    \"type\":\"READ\",\n    \"language_id\":\"1\",\n    \"host_id\":\"{{host_id}}\"\n}",
+							"raw": "{\n    \"url\":\"/testPageCopyPermission\",\n    \"type\":\"READ\",\n    \"language_id\":\"1\",\n    \"host_id\":\"{{host_id}}\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -5264,7 +5264,7 @@
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.errors.length).to.eql(0);",
 									"    pm.expect(jsonData.entity.actions.length).to.greaterThan(0);",
-									"    pm.expect(jsonData.entity.page.pageUrl).to.eql('testPageAvailableActions');",
+									"    pm.expect(jsonData.entity.page.pageUrl).to.eql('testPageCopy');",
 									"});"
 								],
 								"type": "text/javascript"
@@ -5291,7 +5291,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"hostId\":\"{{host_id}}\",\n    \"url\":\"/testPageAvailableActions\"\n}",
+							"raw": "{\n    \"hostId\":\"{{host_id}}\",\n    \"url\":\"/testPageCopy\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
