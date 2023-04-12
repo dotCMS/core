@@ -22,7 +22,7 @@ import { DotSessionStorageService } from '@dotcms/data-access';
 import {
     ComponentStatus,
     DEFAULT_VARIANT_NAME,
-    EditPageTabs,
+    DotPageMode,
     ExperimentSteps,
     MAX_VARIANTS_ALLOWED,
     SIDEBAR_STATUS,
@@ -78,6 +78,7 @@ export class DotExperimentsConfigurationVariantsComponent {
     maxVariantsAllowed = MAX_VARIANTS_ALLOWED;
     defaultVariantName = DEFAULT_VARIANT_NAME;
     experimentStepName = ExperimentSteps.VARIANTS;
+    dotPageMode = DotPageMode;
 
     @ViewChild(DotDynamicDirective, { static: true }) sidebarHost!: DotDynamicDirective;
 
@@ -153,17 +154,17 @@ export class DotExperimentsConfigurationVariantsComponent {
     /**
      * Go to Edit Page / Content, set the VariantId to SessionStorage
      * @param {Variant} variant
-     * @param {EditPageTabs} mode
+     * @param {DotPageMode} mode
      * @returns void
      * @memberof DotExperimentsConfigurationVariantsComponent
      */
-    goToEditPageVariant(variant: Variant, mode: EditPageTabs) {
+    goToEditPageVariant(variant: Variant, mode: DotPageMode) {
         this.dotSessionStorageService.setVariationId(variant.id);
         this.router.navigate(['edit-page/content'], {
             queryParams: {
-                editPageTab: mode,
                 variantName: variant.id,
-                experimentId: this.route.snapshot.params.experimentId
+                experimentId: this.route.snapshot.params.experimentId,
+                mode: mode
             },
             queryParamsHandling: 'merge'
         });

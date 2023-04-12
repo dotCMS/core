@@ -110,8 +110,6 @@ export type StepStatus = SidebarStatus & {
     experimentStep: ExperimentSteps | null;
 };
 
-export type EditPageTabs = 'edit' | 'preview';
-
 export enum ExperimentSteps {
     VARIANTS = 'variants',
     GOAL = 'goal',
