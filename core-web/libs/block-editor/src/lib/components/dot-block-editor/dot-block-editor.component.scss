@@ -269,8 +269,9 @@
             margin-bottom: $spacing-3;
 
             img {
-                max-width: 50%;
+                width: auto;
                 max-height: 300px;
+                max-width: 50%;
             }
         }
     }
