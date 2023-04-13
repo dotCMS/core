@@ -3,41 +3,40 @@
 </div>
 
 <div class="dot-apps-configuration-list__host-key">
-    {{ 'apps.key' | dm }}
     <dot-copy-link
-        (click)="$event.stopPropagation()"
         [copy]="site.id"
-        [label]="site.id"
+        [label]="('apps.key' | dm) + ' ' + site.id"
+        (click)="$event.stopPropagation()"
     ></dot-copy-link>
 </div>
 
 <ng-container *ngIf="site.configured; else noConfigurations">
     <div class="dot-apps-configuration-list__host-configured">
         <dot-icon
-            data-testId="warning"
             *ngIf="site.secretsWithWarnings"
+            data-testId="warning"
             name="warning"
             pTooltip="{{ site.secretsWithWarnings + ' ' + ('apps.invalid.secrets' | dm) }}"
             size="18"
         ></dot-icon>
         <dot-icon-button
-            icon="vertical_align_bottom"
             (click)="exportConfiguration($event, site)"
+            icon="vertical_align_bottom"
         ></dot-icon-button>
         <dot-icon-button
-            icon="delete_outline"
             (click)="confirmDelete($event, site)"
+            icon="delete_outline"
         ></dot-icon-button>
         <dot-icon-button
-            icon="edit"
             (click)="editConfigurationSite($event, site)"
+            icon="edit"
         ></dot-icon-button>
     </div>
 </ng-container>
 
 <ng-template #noConfigurations>
     <dot-icon-button
-        icon="add_circle"
         (click)="editConfigurationSite($event, site)"
+        icon="add_circle"
     ></dot-icon-button>
 </ng-template>

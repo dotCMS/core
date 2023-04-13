@@ -102,7 +102,7 @@ describe('DotAppsConfigurationItemComponent', () => {
 
         it('should DotCopy with right properties', () => {
             const dotCopy = fixture.debugElement.query(By.css('dot-copy-link')).componentInstance;
-            expect(dotCopy.label).toBe(component.site.id);
+            expect(dotCopy.label).toBe('Key ' + component.site.id);
             expect(dotCopy.copy).toBe(component.site.id);
         });
 

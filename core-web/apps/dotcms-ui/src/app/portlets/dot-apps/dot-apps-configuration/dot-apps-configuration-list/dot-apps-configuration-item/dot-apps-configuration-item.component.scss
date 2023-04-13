@@ -21,9 +21,6 @@
         width: 100%;
         color: $color-palette-primary;
     }
-
-    dot-icon {
-    }
 }
 
 .dot-apps-configuration-list__host-configured {
@@ -37,7 +34,7 @@
 }
 
 .dot-apps-configuration-list__host-key {
-    color: $color-palette-gray-700;
+    // color: $color-palette-gray-700;
     display: flex;
     flex-grow: 1;
     align-items: center;
