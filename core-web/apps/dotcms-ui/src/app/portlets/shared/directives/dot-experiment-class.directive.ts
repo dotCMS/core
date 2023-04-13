@@ -43,9 +43,9 @@ export class DotExperimentClassDirective implements OnDestroy {
     }
 
     private isEditPageVariant(queryParams: Params) {
-        const { editPageTab, variantName, experimentId } = queryParams;
+        const { mode, variantName, experimentId } = queryParams;
 
-        return !!experimentId && !!editPageTab && !!variantName;
+        return !!experimentId && !!mode && !!variantName;
     }
 
     private setNavBarComponentIsVariantMode(state: boolean) {
