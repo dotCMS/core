@@ -23,7 +23,7 @@ const messageServiceMock = new MockDotMessageService({
     cancel: 'Cancel'
 });
 
-fdescribe('DotExperimentsPublishVariantComponent', () => {
+describe('DotExperimentsPublishVariantComponent', () => {
     let spectator: Spectator<DotExperimentsPublishVariantComponent>;
 
     const createComponent = createComponentFactory({
