@@ -87,8 +87,9 @@ describe('DotAppsConfigurationItemComponent', () => {
             ).toBe(sites[0].name);
 
             expect(
-                fixture.debugElement.query(By.css('.dot-apps-configuration-list__host-key'))
-                    .nativeElement.textContent
+                fixture.debugElement
+                    .query(By.css('.dot-apps-configuration-list__host-key'))
+                    .nativeElement.textContent.trim()
             ).toContain(`${messageServiceMock.get('apps.key')} ${sites[0].id}`);
         });
 
@@ -102,7 +103,7 @@ describe('DotAppsConfigurationItemComponent', () => {
 
         it('should DotCopy with right properties', () => {
             const dotCopy = fixture.debugElement.query(By.css('dot-copy-link')).componentInstance;
-            expect(dotCopy.label).toBe('Key ' + component.site.id);
+            expect(dotCopy.label).toBe(component.site.id);
             expect(dotCopy.copy).toBe(component.site.id);
         });
 
