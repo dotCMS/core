@@ -18,7 +18,8 @@ function initDragAndDrop () {
         return containers;
     }
 
-    function getDotNgModel(addedContentletId = null) {
+    function getDotNgModel(data) {
+        const { identifier, uuid, addedContentId } = data;
         const model = [];
         getContainers().forEach(function(container) {
             const contentlets = Array.from(container.querySelectorAll('[data-dot-object="contentlet"]'));
@@ -26,23 +27,30 @@ function initDragAndDrop () {
             const contentletsId = contentlets
                 .map((contentlet) => {
                     // Replace current PlaceHolder position with the new contentlet Id that will be added
-                    if(contentlet === placeholder && addedContentletId) {
-                        return addedContentletId;
+                    if(contentlet === placeholder) {
+                        return addedContentId;
                     }
-                    return contentlet.dataset.dotIdentifier;
-                })
-                .filter((value) => !!value);
 
-            // If the placeholder is not present, add the new contentlet Id
-            // at the end of the array
-            if(!placeholder && addedContentletId) {
-                contentletsId.push(addedContentletId);
+                    return contentlet.dataset.dotIdentifier;
+                });
+
+            const { dotIdentifier, dotUuid } = container.dataset;
+            const isSameUuid = uuid === dotUuid;
+            const isSameIdentifier = identifier === dotIdentifier;
+
+            // If the placeholder is not present and the containers matched
+            // add the new contentlet Id at the end of the array
+            if (isSameUuid && isSameIdentifier && !placeholder) {
+                contentletsId.push(addedContentId);
             }
-            
+
+            // Filter the array to remove the undefined values
+            const filteredContentletsId = contentletsId.filter((value) => !!value);
+
             model.push({
-                identifier: container.dataset.dotIdentifier,
-                uuid: container.dataset.dotUuid,
-                contentletsId
+                identifier: dotIdentifier,
+                uuid: dotUuid,
+                contentletsId: filteredContentletsId
             });
         });
         return model;

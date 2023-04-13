@@ -230,6 +230,27 @@ describe('DotHttpErrorManagerService', () => {
         });
     });
 
+    it('should handle 400 error on error.error', () => {
+        spyOn(dotDialogService, 'alert');
+
+        const responseView: HttpErrorResponse = mockResponseView(400, null, null, {
+            error: 'Server Error'
+        });
+
+        service.handle(responseView).subscribe((res) => {
+            result = res;
+        });
+
+        expect(result).toEqual({
+            redirected: false,
+            status: 400
+        });
+        expect(dotDialogService.alert).toHaveBeenCalledWith({
+            message: 'Server Error',
+            header: '400 Header'
+        });
+    });
+
     it('should handle 400 error and show reponse message', () => {
         spyOn(dotDialogService, 'alert');
 

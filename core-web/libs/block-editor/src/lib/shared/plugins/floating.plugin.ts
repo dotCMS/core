@@ -86,6 +86,9 @@ export class FloatingActionsView {
         this.command = command;
         this.key = key;
         this.tippyOptions = tippyOptions;
+        document.addEventListener('DOMContentLoaded', () => this.setButtonPosition(), {
+            once: true
+        });
     }
 
     /**
@@ -134,7 +137,7 @@ export class FloatingActionsView {
      */
     update(view: EditorView, prevState?: EditorState): void {
         const { selection } = view.state;
-        const { $anchor, empty, from, to } = selection;
+        const { $anchor, empty } = selection;
         const isRootDepth = $anchor.depth === 1;
         const isNodeEmpty =
             !selection.$anchor.parent.isLeaf && !selection.$anchor.parent.textContent;
@@ -158,10 +161,7 @@ export class FloatingActionsView {
         }
 
         this.createTooltip(this.tippyOptions);
-        this.tippy?.setProps({
-            getReferenceClientRect: () => posToDOMRect(this.view, from, to)
-        });
-
+        this.setButtonPosition();
         this.show();
 
         if (next.open) {
@@ -185,6 +185,13 @@ export class FloatingActionsView {
 
     hide() {
         this.tippy?.hide();
+    }
+
+    setButtonPosition() {
+        const { from, to } = this.view.state.selection;
+        this.tippy?.setProps({
+            getReferenceClientRect: () => posToDOMRect(this.view, from, to)
+        });
     }
 
     destroy() {

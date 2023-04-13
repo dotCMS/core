@@ -161,7 +161,8 @@ export class DotHttpErrorManagerService {
         if (Array.isArray(response['error']) || Array.isArray(response.error?.errors)) {
             msg = response.error[0]?.message || response.error?.errors[0]?.message;
         } else {
-            msg = response['error'] ? response['error']['message'] : null;
+            const error = response['error'];
+            msg = error?.message || error?.error;
         }
 
         return msg;

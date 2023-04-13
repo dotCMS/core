@@ -162,10 +162,6 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
                     .pipe(takeUntil(this.destroy$), debounceTime(250))
                     .subscribe(() => this.updateChartCount());
 
-                this.editor.on('update', ({ editor }) => {
-                    this.valueChange.emit(editor.getJSON());
-                });
-
                 this.editor.on('transaction', ({ editor }) => {
                     this.freezeScroll = FREEZE_SCROLL_KEY.getState(editor.view.state)?.freezeScroll;
                 });
@@ -175,6 +171,10 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     ngOnDestroy() {
         this.destroy$.next(true);
         this.destroy$.complete();
+    }
+
+    onChange(value: JSONContent) {
+        this.valueChange.emit(value);
     }
 
     private updateChartCount(): void {
@@ -416,7 +416,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             return;
         }
 
-        return 'Type "/" for commmands';
+        return 'Type "/" for commands';
     }
 
     private setEditorJSONContent(content: Content) {

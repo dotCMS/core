@@ -1,4 +1,4 @@
-import { fromEvent, of, Subject, Subscription } from 'rxjs';
+import { fromEvent, Subject, Subscription } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { ElementRef, Injectable, NgZone } from '@angular/core';
@@ -399,7 +399,13 @@ export class DotEditContentHtmlService {
      * @memberof DotEditContentHtmlService
      */
     getContentModel(addedContentId: string = ''): DotPageContainer[] {
-        return this.getEditPageIframe().contentWindow['getDotNgModel'](addedContentId);
+        const { uuid, identifier } = this.currentContainer;
+
+        return this.getEditPageIframe().contentWindow['getDotNgModel']({
+            uuid,
+            identifier,
+            addedContentId
+        });
     }
 
     private setMaterialIcons(): void {
@@ -979,14 +985,12 @@ export class DotEditContentHtmlService {
                     this.dotGlobalMessageService.success();
                 }),
                 catchError((error: HttpErrorResponse) => {
-                    this.dotHttpErrorManagerService.handle(error);
-
                     this.pageModel$.next({
                         model: this.getContentModel(),
                         type: PageModelChangeEventType.SAVE_ERROR
                     });
 
-                    return of('error');
+                    return this.dotHttpErrorManagerService.handle(error);
                 })
             );
     }
