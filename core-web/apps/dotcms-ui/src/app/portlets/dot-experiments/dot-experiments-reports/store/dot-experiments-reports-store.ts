@@ -190,7 +190,15 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
             : [];
     }
 
-    private addWeekdayToDateLabels(labels: Array<string>) {
+    /**
+     * Get the name of the weekday from the date
+     *
+     * @param labels
+     * @private
+     *  @returns {string[][]}
+     *  @memberof DotExperimentsReportsStore
+     */
+    private addWeekdayToDateLabels(labels: Array<string>): string[][] {
         return labels.map((item) => {
             const date = new Date(item).getDay();
 
@@ -211,11 +219,12 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
         experiment: DotExperiment
     ): ChartData<'line'>['datasets'] {
         const { trafficProportion } = experiment;
+        const variantsOrdered = this.orderVariants(Object.keys(result));
 
         let colorIndex = 0;
 
-        return Object.values(result).map((value) => {
-            const { details, variantName } = value;
+        return variantsOrdered.map((variantName) => {
+            const { details } = result[variantName];
 
             return {
                 label: this.getLabelName(trafficProportion, variantName),
@@ -253,5 +262,23 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
     //Todo: Remove this when the endpoint sends the name set by the user
     private getLabelName(trafficProportion: TrafficProportion, variantId: string) {
         return trafficProportion.variants.find((variant) => variant.id == variantId).name;
+    }
+
+    /**
+     * This function orders the variants array to show the default variant first
+     * @param arrayToOrder
+     * @private
+     * @returns {Array<string>}
+     *  @memberof DotExperimentsReportsStore
+     */
+    private orderVariants(arrayToOrder: Array<string>): Array<string> {
+        const index = arrayToOrder.indexOf(DEFAULT_VARIANT_ID);
+        if (index > -1) {
+            arrayToOrder.splice(index, 1);
+        }
+
+        arrayToOrder.unshift(DEFAULT_VARIANT_ID);
+
+        return arrayToOrder;
     }
 }

@@ -1,6 +1,6 @@
 import { ChartData } from 'chart.js';
 
-import { JsonPipe, NgIf } from '@angular/common';
+import { NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 
 import { ChartModule } from 'primeng/chart';
@@ -14,7 +14,7 @@ import { htmlLegendPlugin } from '@portlets/dot-experiments/dot-experiments-repo
 @Component({
     standalone: true,
     selector: 'dot-experiments-reports-chart',
-    imports: [ChartModule, SpinnerModule, NgIf, SkeletonModule, JsonPipe, DotMessagePipeModule],
+    imports: [ChartModule, SpinnerModule, NgIf, SkeletonModule, DotMessagePipeModule],
     templateUrl: './dot-experiments-reports-chart.component.html',
     styleUrls: ['./dot-experiments-reports-chart.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush

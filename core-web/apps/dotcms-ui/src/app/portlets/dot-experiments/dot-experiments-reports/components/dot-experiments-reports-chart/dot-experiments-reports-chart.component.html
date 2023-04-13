@@ -19,7 +19,7 @@
 </ng-container>
 
 <ng-template #loadingStateTpl>
-    <div class="grid">
+    <div class="grid" data-testId="loading-skeleton">
         <div class="col-2 mt-4">
             <p-skeleton height="1rem" width="100%"></p-skeleton>
         </div>
@@ -30,11 +30,14 @@
 </ng-template>
 
 <ng-template #emptyStateTpl>
-    <div class="empty flex justify-content-center align-items-center flex-column">
+    <div
+        class="empty flex justify-content-center align-items-center flex-column"
+        data-testId="empty-data-msg"
+    >
         <i class="empty_icon pi pi-chart-line mb-2"></i>
-        <p class="empty_message m-0">{{ 'dot.experimental.reports.chart.empty.title' | dm }}</p>
+        <p class="empty_message m-0">{{ 'experiments.reports.chart.empty.title' | dm }}</p>
         <p class="empty_description m-0">
-            {{ 'dot.experimental.reports.chart.empty.description' | dm }}
+            {{ 'experiments.reports.chart.empty.description' | dm }}
         </p>
     </div>
 </ng-template>
