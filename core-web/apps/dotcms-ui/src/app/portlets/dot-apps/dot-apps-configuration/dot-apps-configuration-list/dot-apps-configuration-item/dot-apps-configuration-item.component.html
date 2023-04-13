@@ -3,9 +3,10 @@
 </div>
 
 <div class="dot-apps-configuration-list__host-key">
+    {{ 'apps.key' | dm }}
     <dot-copy-link
         [copy]="site.id"
-        [label]="('apps.key' | dm) + ' ' + site.id"
+        [label]="site.id"
         (click)="$event.stopPropagation()"
     ></dot-copy-link>
 </div>
