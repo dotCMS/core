@@ -267,10 +267,9 @@
 
         .image-container {
             margin-bottom: $spacing-3;
-            max-width: 50%;
 
             img {
-                width: auto;
+                max-width: 400px;
                 max-height: 300px;
             }
         }
