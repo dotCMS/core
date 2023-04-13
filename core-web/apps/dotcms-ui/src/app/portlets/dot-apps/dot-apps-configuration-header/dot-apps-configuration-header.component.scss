@@ -40,13 +40,8 @@
     color: $color-palette-gray-700;
     display: inline-block;
     font-size: $font-size-lg;
-    margin-left: $spacing-3;
     display: flex;
     align-items: center;
-
-    dot-copy-link {
-        margin-left: $spacing-1;
-    }
 }
 
 .dot-apps-configuration__configurations {

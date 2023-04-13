@@ -94,7 +94,7 @@ describe('DotAppsConfigurationHeaderComponent', () => {
         expect(dotAvatar.label).toBe(component.app.name);
         expect(dotAvatar.size).toBe(112);
         expect(dotAvatar.url).toBe(component.app.iconUrl);
-        expect(dotCopy.label).toBe(component.app.key);
+        expect(dotCopy.label).toBe('Key ' + component.app.key);
         expect(dotCopy.copy).toBe(component.app.key);
     });
 

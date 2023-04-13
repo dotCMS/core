@@ -10,8 +10,10 @@
             {{ app.name }}
         </h3>
         <div class="dot-apps-configuration__service-key">
-            {{ 'apps.key' | dm }}
-            <dot-copy-link [copy]="app.key" [label]="app.key"></dot-copy-link>
+            <dot-copy-link
+                [copy]="app.key"
+                [label]="('apps.key' | dm) + ' ' + app.key"
+            ></dot-copy-link>
         </div>
     </header>
     <span class="dot-apps-configuration__configurations"
