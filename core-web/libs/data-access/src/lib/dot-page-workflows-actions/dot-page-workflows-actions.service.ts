@@ -1,11 +1,11 @@
 import { Observable } from 'rxjs';
 
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
 import { pluck } from 'rxjs/operators';
 
 import { DotRenderMode } from '@dotcms/data-access';
-import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCMSWorkflowAction, DotCMSContentlet } from '@dotcms/dotcms-models';
 
 export interface DotCMSPageWorkflowState {
@@ -15,7 +15,7 @@ export interface DotCMSPageWorkflowState {
 
 @Injectable()
 export class DotPageWorkflowsActionsService {
-    constructor(private coreWebService: CoreWebService) {}
+    constructor(private http: HttpClient) {}
 
     /**
      * Returns the workflow actions of the passed url, hostId and language
@@ -30,16 +30,12 @@ export class DotPageWorkflowsActionsService {
         url: string;
         renderMode?: DotRenderMode;
     }): Observable<DotCMSPageWorkflowState> {
-        return this.coreWebService
-            .requestView({
-                method: 'POST',
-                url: `v1/page/actions`,
-                body: {
-                    host_id: params.host_id,
-                    language_id: params.language_id,
-                    url: params.url,
-                    renderMode: params.renderMode
-                }
+        return this.http
+            .post('/api/v1/page/actions', {
+                host_id: params.host_id,
+                language_id: params.language_id,
+                url: params.url,
+                renderMode: params.renderMode
             })
             .pipe(pluck('entity'));
     }
