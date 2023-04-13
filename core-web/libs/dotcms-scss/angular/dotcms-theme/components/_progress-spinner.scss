@@ -1,5 +1,11 @@
 @use "variables" as *;
 
+p-progressspinner .p-progress-spinner {
+    height: 38px;
+    width: 38px;
+}
+
 p-progressspinner .p-progress-spinner-circle {
-    stroke: $color-palette-primary-400 !important;
+    stroke: $color-palette-primary-500 !important;
+    stroke-width: 6px;
 }
