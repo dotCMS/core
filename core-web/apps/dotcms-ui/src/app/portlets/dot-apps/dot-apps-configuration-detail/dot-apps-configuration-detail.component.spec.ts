@@ -254,7 +254,7 @@ describe('DotAppsConfigurationDetailComponent', () => {
         it('should have dot-copy-link with appKey value', () => {
             const copyBtn = fixture.debugElement.query(By.css('dot-copy-link')).componentInstance;
             expect(copyBtn.copy).toBe(component.apps.key);
-            expect(copyBtn.label).toBe(component.apps.key);
+            expect(copyBtn.label).toBe('Key ' + component.apps.key);
         });
 
         it('should save configuration when Save button clicked', async () => {
