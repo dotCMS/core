@@ -28,7 +28,6 @@
   <!--
   <Manager pathname="" />
   -->
-  <Valve className="tomcat.request.session.redis.SessionHandlerValve" />
-  <Manager className="tomcat.request.session.redis.SessionManager" />
+  ${REDIS_SESSION_VALVE}
 
 </Context>
