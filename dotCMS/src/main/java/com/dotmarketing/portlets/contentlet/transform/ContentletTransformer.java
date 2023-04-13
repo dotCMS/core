@@ -111,7 +111,6 @@ public class ContentletTransformer implements DBTransformer<Contentlet> {
 
         try {
            if(!hasJsonFields) {
-               contentlet.setProperty(Contentlet.TITTLE_KEY, map.get(Contentlet.TITTLE_KEY));
                populateFields(contentlet, map);
            }
             refreshStoryBlockReferences(contentlet);
@@ -246,10 +245,14 @@ public class ContentletTransformer implements DBTransformer<Contentlet> {
      */
     private static void populateFields(final Contentlet contentlet, final Map<String, Object> originalMap)
             throws DotDataException, DotSecurityException {
+
         final Map<String, Object> fieldsMap = new HashMap<>();
         final String inode = (String) originalMap.get(INODE);
         final String identifier = (String) originalMap.get(IDENTIFIER);
         final String contentTypeId = (String) originalMap.get(STRUCTURE_INODE);
+
+        // Populate the title
+        contentlet.setProperty(Contentlet.TITTLE_KEY, originalMap.get(Contentlet.TITTLE_KEY));
 
         final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser())
                 .find(contentTypeId);
@@ -277,6 +280,11 @@ public class ContentletTransformer implements DBTransformer<Contentlet> {
                             && FileAssetAPI.FILE_NAME_FIELD
                             .equals(field.getVelocityVarName())) {
                         value = APILocator.getIdentifierAPI().find(identifier).getAssetName();
+                    } else if (UtilMethods.isSet(identifier)
+                            && contentType instanceof FileAssetContentType
+                            && FileAssetAPI.META_DATA_FIELD.equals(field.getVelocityVarName())) {
+                        // We can ignore this metadata field, metadata will be generated directly from the asset
+                        value = Collections.emptyMap();
                     } else {
                         if (LegacyFieldTypes.BINARY.legacyValue()
                                 .equals(field.getFieldType())) {
