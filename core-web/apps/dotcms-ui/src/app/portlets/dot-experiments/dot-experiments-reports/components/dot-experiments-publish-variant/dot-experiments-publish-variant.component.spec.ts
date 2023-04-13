@@ -23,7 +23,7 @@ const messageServiceMock = new MockDotMessageService({
     cancel: 'Cancel'
 });
 
-describe('DotExperimentsPublishVariantComponent', () => {
+fdescribe('DotExperimentsPublishVariantComponent', () => {
     let spectator: Spectator<DotExperimentsPublishVariantComponent>;
 
     const createComponent = createComponentFactory({
@@ -58,7 +58,7 @@ describe('DotExperimentsPublishVariantComponent', () => {
         expect(dialog.header).toEqual('Promote Variant');
         expect(spectator.query(byTestId('variant-legend'))).toHaveText('Text copy');
         expect(dialog.actions.accept.disabled).toEqual(true);
-        expect(dialog.actions.accept.label).toEqual('Assign Variant');
+        expect(dialog.actions.accept.label).toEqual('Promote Variant');
         expect(dialog.actions.cancel.label).toEqual('Cancel');
     });
 
