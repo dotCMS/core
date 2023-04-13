@@ -165,7 +165,7 @@ public class PageResourceHelper implements Serializable {
                                 Contentlet contentlet =
                                         contentletAPI.findContentletByIdentifierAnyLanguage(contentletId, variantName);
 
-                                if (contentlet == null) {
+                                if (contentlet == null && !VariantAPI.DEFAULT_VARIANT.equals(variantName)) {
                                     contentlet = contentletAPI.findContentletByIdentifierAnyLanguage(contentletId,
                                             VariantAPI.DEFAULT_VARIANT.name());
                                 }
