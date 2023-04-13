@@ -48,6 +48,29 @@
     color: $black;
 }
 
+.p-button.p-button-text.p-button-sm {
+    font-size: $font-size-sm;
+    padding: $spacing-1 $spacing-2;
+    align-items: center;
+    gap: 4px;
+    color: $color-palette-gray-900;
+
+    i {
+        color: $color-palette-primary;
+    }
+
+    &:enabled:hover,
+    &:enabled:focus {
+        background-color: transparent;
+        color: $color-palette-gray-900;
+        box-shadow: none;
+
+        i {
+            color: $color-palette-primary;
+        }
+    }
+}
+
 .p-button.p-button-vertical {
     font-size: $font-size-md;
     padding: $spacing-1 $spacing-2;
