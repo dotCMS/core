@@ -20,7 +20,6 @@ import { DotExperimentsPublishVariantComponent } from './dot-experiments-publish
 const messageServiceMock = new MockDotMessageService({
     'experiments.report.promote.variant': 'Promote Variant',
     'experiments.report.promote.variant.text': 'Text copy',
-    'experiments.report.promote.assign.variant': 'Assign Variant',
     cancel: 'Cancel'
 });
 
