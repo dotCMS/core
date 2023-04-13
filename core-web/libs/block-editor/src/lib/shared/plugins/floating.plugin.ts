@@ -87,7 +87,7 @@ export class FloatingActionsView {
         this.key = key;
         this.tippyOptions = tippyOptions;
 
-        document.addEventListener('DOMContentLoaded', () => this.setButtonPosition());
+        document.addEventListener('DOMContentLoaded', this.setButtonPosition.bind(this));
     }
 
     /**
