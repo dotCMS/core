@@ -29,6 +29,7 @@
     display: flex;
     align-items: center;
     flex-grow: 1;
+    min-height: 73px;
 
     dot-icon {
         margin-right: $spacing-1;
@@ -42,44 +43,41 @@
 
         .field__label {
             color: $color-palette-gray-700;
-            font-size: $font-size-sm;
-            min-height: $font-size-sm;
+            font-size: $font-size-xs;
+            min-height: $font-size-xs;
         }
 
         .field__name {
             @include truncate-text;
-            color: $black;
-            font-weight: $font-weight-semi-bold;
+            color: black;
+            font-size: $font-size-md;
         }
     }
 
     .field__actions {
         display: flex;
-
         flex-shrink: 0;
-        margin-left: 0.25rem;
-
-        & > * {
-            margin: 0 0.25rem;
-        }
-
-        dot-copy-button {
-            background-color: $white;
-        }
+        margin-left: $spacing-1;
     }
 }
 
 .field__attr__container {
-    padding: $spacing-2 $spacing-3;
+    padding: $spacing-1 $spacing-3 $spacing-1;
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
     background: $white;
     z-index: 1;
     border-radius: $border-radius-sm;
     overflow: hidden;
+    gap: $spacing-1;
 
     &.open {
         overflow: visible;
+    }
+
+    .field__attr__group {
+        display: flex;
+        justify-content: space-between;
     }
 
     .field__attr {

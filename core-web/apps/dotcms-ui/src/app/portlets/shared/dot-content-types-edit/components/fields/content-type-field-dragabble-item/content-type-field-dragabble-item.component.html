@@ -5,13 +5,6 @@
         <span class="field__name"> {{ field.name }}</span>
     </div>
     <div class="field__actions">
-        <dot-copy-button
-            *ngIf="field.variable"
-            [copy]="field.variable"
-            [tooltipText]="field.variable"
-            [showLabel]="false"
-        >
-        </dot-copy-button>
         <p-button
             id="field__actions-delete"
             *ngIf="!field.fixed"
@@ -25,12 +18,19 @@
         ></p-button>
     </div>
 </div>
-<span class="field__attr__container" *ngIf="fieldAttributes.length" [class.open]="open">
-    <div class="field__attr" [class.small]="shouldResize && small">
-        <p-chip *ngFor="let field of fieldAttributes" [label]="field"></p-chip>
+<div class="field__attr__container" *ngIf="fieldAttributes.length" [class.open]="open">
+    <dot-copy-link
+        *ngIf="field.variable"
+        [label]="field.variable"
+        [copy]="field.variable"
+    ></dot-copy-link>
+    <div class="field__attr__group">
+        <div class="field__attr" [class.small]="shouldResize && small">
+            <p-chip *ngFor="let field of fieldAttributes" [label]="field"></p-chip>
+        </div>
+        <ng-container *ngIf="shouldResize && small">
+            <i class="pi pi-angle-down" *ngIf="!open" (click)="openAttr($event)"></i>
+            <i class="pi pi-angle-up" *ngIf="open" (click)="closeAttr($event)"></i>
+        </ng-container>
     </div>
-    <ng-container *ngIf="shouldResize && small">
-        <i class="pi pi-angle-down" *ngIf="!open" (click)="openAttr($event)"></i>
-        <i class="pi pi-angle-up" *ngIf="open" (click)="closeAttr($event)"></i>
-    </ng-container>
-</span>
+</div>
