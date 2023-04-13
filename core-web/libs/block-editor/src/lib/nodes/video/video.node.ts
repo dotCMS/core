@@ -96,7 +96,7 @@ export const VideoNode = Node.create({
     renderHTML({ HTMLAttributes }) {
         return [
             'div',
-            { class: 'node-container' },
+            { class: 'video-container' },
             [
                 'video',
                 mergeAttributes(HTMLAttributes, {
