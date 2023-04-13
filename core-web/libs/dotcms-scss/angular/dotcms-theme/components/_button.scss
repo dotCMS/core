@@ -76,6 +76,7 @@
     .p-button-label {
         @include truncate-text;
         text-transform: none;
+        font-weight: $font-weight-regular-bold;
     }
 }
 
