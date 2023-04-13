@@ -86,8 +86,9 @@ export class FloatingActionsView {
         this.command = command;
         this.key = key;
         this.tippyOptions = tippyOptions;
-
-        document.addEventListener('DOMContentLoaded', this.setButtonPosition.bind(this));
+        document.addEventListener('DOMContentLoaded', () => this.setButtonPosition(), {
+            once: true
+        });
     }
 
     /**
@@ -196,7 +197,6 @@ export class FloatingActionsView {
     destroy() {
         this.tippy?.destroy();
         this.element.removeEventListener('mousedown', this.mousedownHandler);
-        document.removeEventListener('DOMContentLoaded', this.setButtonPosition);
     }
 }
 
