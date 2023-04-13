@@ -6,6 +6,7 @@ p-chip {
     display: inline-block;
     padding: 0.25rem $spacing-1;
     position: relative;
+    width: fit-content;
 
     .p-chip-text {
         font-size: $font-size-sm;
