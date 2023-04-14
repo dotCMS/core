@@ -327,6 +327,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
      */
     private getAllowedCustomNodes(): AnyExtension[] {
         const whiteList = [];
+
         // If only paragraph is included
         // We do not need to filter
         if (this._allowedBlocks.length <= 1) {

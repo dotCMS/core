@@ -1,5 +1,6 @@
-import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { CUSTOM_ELEMENTS_SCHEMA, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 
 import { DotContentCompareTableData } from '@components/dot-content-compare/store/dot-content-compare.store';
 import { DotDiffPipeModule } from '@dotcms/app/view/pipes/dot-diff/dot-diff.pipe.module';
@@ -313,7 +314,7 @@ export const dotContentCompareTableDataMock: DotContentCompareTableData = {
 describe('DotContentCompareEditorComponent', () => {
     let component: DotContentCompareEditorComponent;
     let fixture: ComponentFixture<DotContentCompareEditorComponent>;
-
+    let de: DebugElement;
     const messageServiceMock = new MockDotMessageService({
         diff: 'Diff',
         plain: 'Plain'
@@ -334,11 +335,23 @@ describe('DotContentCompareEditorComponent', () => {
         fixture.detectChanges();
         component.data = dotContentCompareTableDataMock;
         component.field = 'html';
+        component.label = true;
     });
 
-    describe('Get working data for the field', () => {
+    describe('Get working and compare data for the field', () => {
         it('should get working data', () => {
             expect(component.data.working).toBeDefined();
         });
+
+        it('should get working data', () => {
+            expect(component.data.compare).toBeDefined();
+        });
+    });
+
+    describe('Get compare field for the field just as label', () => {
+        const compareFiled = de.query(By.css('[data-testId="table-editor-label"]')).nativeElement
+            .innerHTML;
+
+        expect(compareFiled).toEqual(dotContentCompareTableDataMock.compare.text);
     });
 });
