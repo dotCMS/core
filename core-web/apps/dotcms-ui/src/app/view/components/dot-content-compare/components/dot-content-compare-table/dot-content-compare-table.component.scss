@@ -3,6 +3,9 @@
 .dot-content-compare-table__controls {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: $spacing-3;
 
     p-dropdown {
         margin-right: $spacing-3;
