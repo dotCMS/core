@@ -1,9 +1,16 @@
 import { ChartData } from 'chart.js';
 
-import { NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { JsonPipe, NgIf } from '@angular/common';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    Input,
+    OnChanges,
+    SimpleChanges,
+    ViewChild
+} from '@angular/core';
 
-import { ChartModule } from 'primeng/chart';
+import { ChartModule, UIChart } from 'primeng/chart';
 import { SkeletonModule } from 'primeng/skeleton';
 import { SpinnerModule } from 'primeng/spinner';
 
@@ -14,12 +21,14 @@ import { htmlLegendPlugin } from '@portlets/dot-experiments/dot-experiments-repo
 @Component({
     standalone: true,
     selector: 'dot-experiments-reports-chart',
-    imports: [ChartModule, SpinnerModule, NgIf, SkeletonModule, DotMessagePipeModule],
+    imports: [ChartModule, SpinnerModule, NgIf, SkeletonModule, DotMessagePipeModule, JsonPipe],
     templateUrl: './dot-experiments-reports-chart.component.html',
     styleUrls: ['./dot-experiments-reports-chart.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsReportsChartComponent implements OnChanges {
+    @ViewChild('chart') chart: UIChart;
+
     options;
     isEmpty = true;
 

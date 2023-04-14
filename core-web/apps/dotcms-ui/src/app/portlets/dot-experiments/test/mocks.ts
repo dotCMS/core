@@ -185,15 +185,36 @@ const ExperimentResultsMocks: Array<DotExperimentResults> = [
     }
 ];
 
-export const CHARTJS_DATA_MOCK: ChartData<'line'> = {
-    labels: ['04/01/2023', '04/02/2023', '04/03/2023', '04/04/2023'],
+export const CHARTJS_DATA_MOCK_WITH_DATA: ChartData<'line'> = {
+    labels: [
+        ['Thursday', '04/01/2023'],
+        ['Friday', '04/02/2023'],
+        ['Saturday', '04/03/2023'],
+        ['Sunday', '04/04/2023']
+    ],
     datasets: [
         {
             label: DEFAULT_VARIANT_NAME,
-            data: [1, 2, 3, 4]
+            data: [1, 2, 3, 4],
+            ...ExperimentLineChartDatasetDefaultProperties
         }
+    ]
+};
+
+export const CHARTJS_DATA_MOCK_EMPTY: ChartData<'line'> = {
+    labels: [
+        ['Thursday', '04/01/2023'],
+        ['Friday', '04/02/2023'],
+        ['Saturday', '04/03/2023'],
+        ['Sunday', '04/04/2023']
     ],
-    ...ExperimentLineChartDatasetDefaultProperties
+    datasets: [
+        {
+            label: DEFAULT_VARIANT_NAME,
+            data: [],
+            ...ExperimentLineChartDatasetDefaultProperties
+        }
+    ]
 };
 
 export const VARIANT_RESULT_MOCK_1: DotResultSimpleVariant[] = [

@@ -158,13 +158,6 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
         this.title.setTitle(`${experiment.name} - ${this.title.getTitle()}`);
     }
 
-    /**
-     * Convert the variant object to array limited with variantName and uniqueBySession
-     * @param {Record<string, DotResultVariant>} variants
-     * @param experiment
-     * @returns {DotResultSimpleVariant[]}
-     * @memberof DotExperimentsReportsStore
-     */
     private reduceVariantsData(
         variants: Record<string, DotResultVariant>,
         experiment: DotExperiment
@@ -177,43 +170,6 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
         }));
     }
 
-    /**
-     * Extract the labels from the variant default variant
-     * @param variants
-     * @private
-     * @returns {string[]}
-     * @memberof DotExperimentsReportsStore
-     */
-    private getChartLabels(variants: DotResultGoal['variants']) {
-        return variants[DEFAULT_VARIANT_ID].details
-            ? this.addWeekdayToDateLabels(Object.keys(variants[DEFAULT_VARIANT_ID].details))
-            : [];
-    }
-
-    /**
-     * Get the name of the weekday from the date
-     *
-     * @param labels
-     * @private
-     *  @returns {string[][]}
-     *  @memberof DotExperimentsReportsStore
-     */
-    private addWeekdayToDateLabels(labels: Array<string>): string[][] {
-        return labels.map((item) => {
-            const date = new Date(item).getDay();
-
-            return [this.dotMessageService.get(daysOfTheWeek[date]), item];
-        });
-    }
-
-    /**
-     * Generate the chart datasets using results from the experiment
-     * @param result
-     * @param experiment
-     * @private
-     * @returns {ChartData<"line">["datasets"]}
-     * @memberof DotExperimentsReportsStore
-     */
     private getChartDatasets(
         result: DotResultGoal['variants'],
         experiment: DotExperiment
@@ -235,42 +191,28 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
         });
     }
 
-    /**
-     * This function returns an array of numbers from multiBySession property
-     * @private
-     *
-     * @param {Record<string, DotResultDate>} data
-     * @returns {number[]}
-     * @memberof DotExperimentsReportsStore
-     */
+    private getChartLabels(variants: DotResultGoal['variants']) {
+        return variants[DEFAULT_VARIANT_ID].details
+            ? this.addWeekdayToDateLabels(Object.keys(variants[DEFAULT_VARIANT_ID].details))
+            : [];
+    }
+
+    private addWeekdayToDateLabels(labels: Array<string>): string[][] {
+        return labels.map((item) => {
+            const date = new Date(item).getDay();
+
+            return [this.dotMessageService.get(daysOfTheWeek[date]), item];
+        });
+    }
+
     private getParsedChartData(data: Record<string, DotResultDate>): number[] {
         return Object.values(data).map((day) => day.multiBySession);
     }
 
-    /**
-     * This function returns the color properties of the variant
-     * @private
-     *
-     * @param {number} index
-     * @returns {LineChartColorsProperties}
-     * @memberof DotExperimentsReportsStore
-     */
     private getPropertyColors(index: number): LineChartColorsProperties {
         return ExperimentChartDatasetColorsVariants[index];
     }
 
-    //Todo: Remove this when the endpoint sends the name set by the user
-    private getLabelName(trafficProportion: TrafficProportion, variantId: string) {
-        return trafficProportion.variants.find((variant) => variant.id == variantId).name;
-    }
-
-    /**
-     * This function orders the variants array to show the default variant first
-     * @param arrayToOrder
-     * @private
-     * @returns {Array<string>}
-     *  @memberof DotExperimentsReportsStore
-     */
     private orderVariants(arrayToOrder: Array<string>): Array<string> {
         const index = arrayToOrder.indexOf(DEFAULT_VARIANT_ID);
         if (index > -1) {
@@ -280,5 +222,10 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
         arrayToOrder.unshift(DEFAULT_VARIANT_ID);
 
         return arrayToOrder;
+    }
+
+    //Todo: Remove this when the endpoint sends the name set by the user
+    private getLabelName(trafficProportion: TrafficProportion, variantId: string) {
+        return trafficProportion.variants.find((variant) => variant.id == variantId).name;
     }
 }
