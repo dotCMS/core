@@ -15,7 +15,6 @@ import { DotBlockEditorComponent } from './dot-block-editor.component';
 
 import { BlockEditorModule } from '../../block-editor.module';
 import {
-    ActionButtonComponent,
     BubbleLinkFormComponent,
     DragHandlerComponent,
     AssetFormComponent,
@@ -185,7 +184,6 @@ export const primary = () => ({
         entryComponents: [
             SuggestionsComponent,
             ContentletBlockComponent,
-            ActionButtonComponent,
             DragHandlerComponent,
             UploadPlaceholderComponent,
             BubbleLinkFormComponent,
