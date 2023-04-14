@@ -18,7 +18,7 @@ public interface BayesianAPI {
     String VARIANT_A = "A";
     String VARIANT_B = "B";
     String VARIANT_C = "C";
-    String TIE = "_TIE_";
+    String TIE = "TIE";
     String UNKNOWN = "_UNKNOWN_";
     BayesianPriors NULL_PRIORS = BayesianPriors.builder().alpha(null).beta(null).build();
     Predicate<String> DEFAULT_VARIANT_FILTER = variant -> variant.equals(VariantAPI.DEFAULT_VARIANT.name());
