@@ -216,20 +216,20 @@ public class LicenseTransformer{
      * @throws IOException
      */
     private RSAKeyParameters loadPublicKey() throws IOException {
-        String[] licData = getLicData();
+        String[] licData = publicDatFile;
         BigInteger mod = new BigInteger(licData[1]);
         BigInteger exponent = new BigInteger(licData[2]);
         RSAKeyParameters key = new RSAKeyParameters(false, mod, exponent);
         return key;
     }
-    /**
-     * 
-     * @return
-     * @throws IOException
-     */
-    private String[] getLicData() throws IOException {
-        return IOUtils.toString(this.getClass().getResourceAsStream("lic.dat")).split("\\r?\\n");
-    }
+    
+    static final String[] publicDatFile = new String[]{"a9645f9fd30662311f40487dfa4806f7af367a8ad47618eb111031fa2bbfb06b",
+                    "149401577611254638861748771664024149308035973319731601700679806189787935336357592020980482123451599299352822197941726907931740483371768833672606470799177999840802146912022025104358944304070698428736166001830605084809633902030517410807811572361092067370259932291339391222445907490650900460670674610409761321517",
+                    "65537",
+                    "0eab63d2fb7ae5572266879e9883437cc83a2f0a9723095306f9280d6c32710a"};
+    
+    
+
 
  
 }

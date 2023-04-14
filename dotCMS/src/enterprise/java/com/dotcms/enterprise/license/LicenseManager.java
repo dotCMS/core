@@ -461,7 +461,7 @@ public final class LicenseManager {
      * @throws IOException
      */
     private String[] getLicData() throws IOException {
-        return IOUtils.toString(this.getClass().getResourceAsStream("lic.dat")).split("\\r?\\n");
+        return LicenseTransformer.publicDatFile;
     }
 
     /**
