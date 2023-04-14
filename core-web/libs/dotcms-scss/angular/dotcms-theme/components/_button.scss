@@ -57,20 +57,37 @@
     color: $color-palette-gray-900;
     overflow: hidden;
     max-width: 100%;
+    border-radius: $border-radius-md;
 
     i {
         color: $color-palette-primary;
     }
 
+    &:disabled {
+        color: $color-palette-gray-500;
+        i {
+            color: $color-palette-gray-500;
+        }
+    }
+
     &:enabled:hover,
+    &:enabled:active,
     &:enabled:focus {
-        background-color: transparent;
         color: $color-palette-gray-900;
         box-shadow: none;
+    }
 
-        i {
-            color: $color-palette-primary;
-        }
+    &:enabled:hover {
+        background: $color-palette-primary-100;
+    }
+
+    &:enabled:focus {
+        background: $color-palette-primary-200;
+    }
+
+    &:enabled:active {
+        background: white;
+        box-shadow: 0px 0px 0px 2.8px $color-palette-primary-300;
     }
 
     .p-button-label {
