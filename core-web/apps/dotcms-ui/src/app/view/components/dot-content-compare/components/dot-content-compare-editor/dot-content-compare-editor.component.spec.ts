@@ -311,7 +311,7 @@ export const dotContentCompareTableDataMock: DotContentCompareTableData = {
     ]
 };
 
-describe('DotContentCompareEditorComponent', () => {
+fdescribe('DotContentCompareEditorComponent', () => {
     let component: DotContentCompareEditorComponent;
     let fixture: ComponentFixture<DotContentCompareEditorComponent>;
     let de: DebugElement;
@@ -332,10 +332,12 @@ describe('DotContentCompareEditorComponent', () => {
     beforeEach(() => {
         fixture = TestBed.createComponent(DotContentCompareEditorComponent);
         component = fixture.componentInstance;
-        fixture.detectChanges();
+
         component.data = dotContentCompareTableDataMock;
         component.field = 'html';
         component.label = true;
+        de = fixture.debugElement;
+        fixture.detectChanges();
     });
 
     describe('Get working and compare data for the field', () => {
@@ -343,15 +345,17 @@ describe('DotContentCompareEditorComponent', () => {
             expect(component.data.working).toBeDefined();
         });
 
-        it('should get working data', () => {
+        it('should get compare data', () => {
             expect(component.data.compare).toBeDefined();
         });
     });
 
     describe('Get compare field for the field just as label', () => {
-        const compareFiled = de.query(By.css('[data-testId="table-editor-label"]')).nativeElement
-            .innerHTML;
+        it('should get same value to compare', () => {
+            const compareFiled = de.query(By.css('[data-testId="table-editor-label"]'))
+                .nativeElement.innerHTML;
 
-        expect(compareFiled).toEqual(dotContentCompareTableDataMock.compare.text);
+            expect(compareFiled).toEqual(dotContentCompareTableDataMock.compare.html);
+        });
     });
 });
