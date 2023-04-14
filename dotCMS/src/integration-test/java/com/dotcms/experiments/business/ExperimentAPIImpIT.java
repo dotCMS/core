@@ -1517,8 +1517,7 @@ public class ExperimentAPIImpIT {
 
             final BayesianResult bayesianResult = experimentResults.getBayesianResult();
             Assert.assertEquals(0.99, bayesianResult.value(), 0.01);
-            Assert.assertEquals(BayesianAPI.VARIANT_B, bayesianResult.inFavorOf());
-            Assert.assertTrue(bayesianResult.suggested().startsWith("dotexperiment-"));
+            Assert.assertTrue(bayesianResult.suggestedWinner().startsWith("dotexperiment-"));
 
             mockhttpServer.validate();
         } finally {
@@ -1575,8 +1574,7 @@ public class ExperimentAPIImpIT {
 
             final BayesianResult bayesianResult = experimentResults.getBayesianResult();
             Assert.assertEquals(0.02, bayesianResult.value(), 0.01);
-            Assert.assertEquals(BayesianAPI.VARIANT_B, bayesianResult.inFavorOf());
-            Assert.assertTrue(bayesianResult.suggested().startsWith(DEFAULT_VARIANT.name()));
+            Assert.assertTrue(bayesianResult.suggestedWinner().startsWith(DEFAULT_VARIANT.name()));
 
             mockhttpServer.validate();
         } finally {
@@ -1633,8 +1631,7 @@ public class ExperimentAPIImpIT {
 
             final BayesianResult bayesianResult = experimentResults.getBayesianResult();
             Assert.assertEquals(0.57, bayesianResult.value(), 0.01);
-            Assert.assertEquals(BayesianAPI.VARIANT_B, bayesianResult.inFavorOf());
-            Assert.assertTrue(bayesianResult.suggested().startsWith("dotexperiment-"));
+            Assert.assertTrue(bayesianResult.suggestedWinner().startsWith("dotexperiment-"));
 
             mockhttpServer.validate();
         } finally {
@@ -1691,8 +1688,7 @@ public class ExperimentAPIImpIT {
 
             final BayesianResult bayesianResult = experimentResults.getBayesianResult();
             Assert.assertEquals(0.50, bayesianResult.value(), 0.000000001);
-            Assert.assertEquals(BayesianAPI.VARIANT_B, bayesianResult.inFavorOf());
-            Assert.assertTrue(bayesianResult.suggested().startsWith(BayesianAPI.TIE));
+            Assert.assertTrue(bayesianResult.suggestedWinner().startsWith(BayesianAPI.TIE));
 
             mockhttpServer.validate();
         } finally {

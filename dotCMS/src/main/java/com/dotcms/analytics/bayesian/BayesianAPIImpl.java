@@ -60,8 +60,7 @@ public class BayesianAPIImpl implements BayesianAPI {
             input.testFailures() + 1);
         BayesianResult.Builder builder = BayesianResult.builder()
             .value(value)
-            .inFavorOf(VARIANT_B)
-            .suggested(suggestWinner(value, input.variants()));
+            .suggestedWinner(suggestWinner(value, input.variants()));
         if (priorPresent) {
             builder = builder
                 .distributionPdfs(calcDistributionsPdfs(controlData, testData))
