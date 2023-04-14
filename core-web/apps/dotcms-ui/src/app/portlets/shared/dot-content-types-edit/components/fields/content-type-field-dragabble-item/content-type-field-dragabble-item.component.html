@@ -18,13 +18,13 @@
         ></p-button>
     </div>
 </div>
-<div class="field__attr__container" *ngIf="fieldAttributes.length" [class.open]="open">
+<div class="field__attr__container" [class.open]="open">
     <dot-copy-link
         *ngIf="field.variable"
         [label]="field.variable"
         [copy]="field.variable"
     ></dot-copy-link>
-    <div class="field__attr__group">
+    <div class="field__attr__group" *ngIf="fieldAttributes.length">
         <div class="field__attr" [class.small]="shouldResize && small">
             <p-chip *ngFor="let field of fieldAttributes" [label]="field"></p-chip>
         </div>
