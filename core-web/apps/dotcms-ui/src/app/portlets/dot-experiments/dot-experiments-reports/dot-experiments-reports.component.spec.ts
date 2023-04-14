@@ -135,7 +135,7 @@ describe('DotExperimentsReportsComponent', () => {
             ['/edit-page/experiments/', EXPERIMENT_MOCK.pageId],
             {
                 queryParams: {
-                    editPageTab: null,
+                    mode: null,
                     variantName: null,
                     experimentId: null
                 },
