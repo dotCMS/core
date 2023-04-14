@@ -5036,6 +5036,26 @@
 			"name": "Permissions",
 			"item": [
 				{
+					"name": "CallLogout",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "Create Test Page Permission",
 					"event": [
 						{
@@ -5077,7 +5097,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"contentType\":\"htmlpageasset\",\n        \"title\":\"testPageCopy\",\n        \"url\":\"testPageCopy\",\n        \"hostFolder\":\"default\",\n        \"template\":\"SYSTEM_TEMPLATE\",\n        \"friendlyName\":\"testPageCopy\",\n        \"cachettl\":0\n\t\t\n\t}\n}",
+							"raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"contentType\":\"htmlpageasset\",\n        \"title\":\"testPagePermission\",\n        \"url\":\"testPagePermission\",\n        \"hostFolder\":\"default\",\n        \"template\":\"SYSTEM_TEMPLATE\",\n        \"friendlyName\":\"testPagePermission\",\n        \"cachettl\":0\n\t\t\n\t}\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -5149,7 +5169,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"url\":\"/testPageCopyPermission\",\n    \"type\":\"READ\",\n    \"language_id\":\"1\",\n    \"host_id\":\"{{host_id}}\"\n}",
+							"raw": "{\n    \"url\":\"/testPagePermission\",\n    \"type\":\"READ\",\n    \"language_id\":\"1\",\n    \"host_id\":\"{{host_id}}\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -5176,6 +5196,26 @@
 		{
 			"name": "GetAvailableActionsPerPage",
 			"item": [
+				{
+					"name": "CallLogout",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
 				{
 					"name": "Create Test Page",
 					"event": [
