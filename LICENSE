@@ -1,9 +1,10 @@
 ************************************************************************
 All code and components under the "dotCMS/src/enterprise" directory of
 this repository are licensed under the "dotCMS Enterprise License" as
-defined in the file "dotCMS/src/enterprise/LICENSE". All third party
-components incorporated into the Software are licensed under the
-original license provided by the owner of the applicable component.
+defined in the file "dotCMS/src/enterprise/LICENSE" and/or at the url: 
+https://www.github.com/dotCMS/core/dotCMS/src/enterprise/LICENSE. All
+third party components incorporated into the Software are licensed under
+the original license provided by the owner of the applicable component.
 Unless otherwise granted by dotCMS, code and components in this
 repository, outside of the above mentioned directories or restrictions,
 are available under the "GPL3" license as defined below.
@@ -64,7 +65,7 @@ are available under the "GPL3" license as defined below.
   manufacturer can do so.  This is fundamentally incompatible with the
   aim of protecting users' freedom to change the software.  The
   systematic pattern of such abuse occurs in the area of products for
-  individuals to use, which is precisely where it is most unacceptable. 
+  individuals to use, which is precisely where it is most unacceptable.
   Therefore, we have designed this version of the GPL to prohibit the
   practice for those products.  If such problems arise substantially in
   other domains, we stand ready to extend this provision to those
@@ -176,7 +177,7 @@ are available under the "GPL3" license as defined below.
 
   You may make, run and propagate covered works that you do not convey,
   without conditions so long as your license otherwise remains in force.
-   You may convey covered works to others for the sole purpose of having
+  You may convey covered works to others for the sole purpose of having
   them make modifications exclusively for you, or provide you with
   facilities for running those works, provided that you comply with the
   terms of this License in conveying all material for which you do not
