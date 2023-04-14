@@ -14,7 +14,8 @@ import {
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService,
     DotPageRenderService,
-    DotPageTypesService
+    DotPageTypesService,
+    DotPageWorkflowsActionsService
 } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 
@@ -43,6 +44,7 @@ import { DotPagesComponent } from './dot-pages.component';
         DotPageTypesService,
         DotTempFileUploadService,
         DotWorkflowsActionsService,
+        DotPageWorkflowsActionsService,
         DotWorkflowActionsFireService,
         DotWorkflowEventHandlerService,
         DotRouterService,
