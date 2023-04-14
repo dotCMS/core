@@ -18,12 +18,16 @@ export class DotContentCompareEditorComponent implements AfterViewInit {
     HTMLWorking: string;
     HTMLCompare: string;
     ngAfterViewInit(): void {
-        document.addEventListener('DOMContentLoaded', () => {
-            this.blockEditor?.editor?.commands.setContent(this.data.working[this.field]);
-            this.HTMLWorking = this.blockEditor?.editor?.getHTML();
+        document.addEventListener(
+            'DOMContentLoaded',
+            () => {
+                this.blockEditor?.editor?.commands.setContent(this.data.working[this.field]);
+                this.HTMLWorking = this.blockEditor?.editor?.getHTML();
 
-            this.blockEditor?.editor?.commands.setContent(this.data.compare[this.field]);
-            this.HTMLCompare = this.blockEditor?.editor.getHTML();
-        });
+                this.blockEditor?.editor?.commands.setContent(this.data.compare[this.field]);
+                this.HTMLCompare = this.blockEditor?.editor.getHTML();
+            },
+            { once: true }
+        );
     }
 }
