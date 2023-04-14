@@ -99,6 +99,13 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit, OnDestro
     onClick($event: MouseEvent) {
         $event.stopPropagation();
         this.edit.emit(this.field);
+        this.open = false;
+    }
+
+    // To close the attrs on drag
+    @HostListener('mousedown')
+    onMouseDown() {
+        this.open = false;
     }
 
     @HostListener('window:click', ['$event'])
