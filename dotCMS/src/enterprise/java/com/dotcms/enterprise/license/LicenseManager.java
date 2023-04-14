@@ -45,6 +45,17 @@
 
 package com.dotcms.enterprise.license;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.exception.ExceptionUtils;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.cluster.ClusterUtils;
 import com.dotcms.enterprise.LicenseUtil;
@@ -56,24 +67,15 @@ import com.dotcms.enterprise.license.bouncycastle.crypto.paddings.PaddedBuffered
 import com.dotcms.enterprise.license.bouncycastle.crypto.params.KeyParameter;
 import com.dotcms.enterprise.license.bouncycastle.util.encoders.Base64;
 import com.dotcms.enterprise.license.bouncycastle.util.encoders.Hex;
-import org.apache.commons.io.IOUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.ChainableCacheAdministratorImpl;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.servlets.InitServlet;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.file.Files;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
-import org.apache.commons.lang.exception.ExceptionUtils;
 
 /**
  * Provides access to licensing information for a dotCMS instance. This allows the system to perform
@@ -102,6 +104,7 @@ public final class LicenseManager {
         String serverId;
         serverId = APILocator.getServerAPI().readServerId();
         this.license = readLicenseFile();
+        licenseMessage();
         return serverId;
     }
 
@@ -132,7 +135,7 @@ public final class LicenseManager {
                 }
             }
         }
-
+        licenseMessage();
         checkServerDuplicity();
     }
 
@@ -242,6 +245,7 @@ public final class LicenseManager {
         return license.serial;
     }
 
+    static final AtomicBoolean LICENSE_INITED = new AtomicBoolean(false);
     /**
      * Returns the official dotCMS license name based on the specified license level.
      * 
@@ -672,6 +676,7 @@ public final class LicenseManager {
      *         {@code false}.
      */
     public boolean isEnterprise() {
+        licenseMessage();
         return (this.license.level > LicenseLevel.COMMUNITY.level ) ;
 
     }
@@ -686,6 +691,30 @@ public final class LicenseManager {
       return (this.license.level == LicenseLevel.PLATFORM.level) ;
     }
 
+    
+    private void licenseMessage() {
+        if (license.level ==  LicenseLevel.COMMUNITY.level || LICENSE_INITED.get()) {
+            return;
+        }
+        
+        if(LICENSE_INITED.compareAndSet(false, true)) {
+            Logger.info(InitServlet.class,
+                            "");
+            Logger.info(InitServlet.class,
+                            " * Copyright (c) 2023 dotCMS Inc. ");
+            Logger.info(InitServlet.class,
+                            " * This software, code and any modifications to the code are licensed under the terms of the dotCMS Enterprise License ");
+            Logger.info(InitServlet.class,
+                            " * which can be found here : https://www.github.com/dotCMS/core/dotCMS/src/enterprise/LICENSE ");
+            Logger.info(InitServlet.class,
+                            "");
+        }
+        
+        
+    }
+    
+    
+    
     /**
      * Check for server duplication and if so log an error
      */
@@ -695,6 +724,7 @@ public final class LicenseManager {
             return false;
         }
 
+        
         final String serverId = APILocator.getServerAPI().readServerId();
         try {
             final boolean serverDuplicated = LicenseRepoDAO.isServerDuplicated(
