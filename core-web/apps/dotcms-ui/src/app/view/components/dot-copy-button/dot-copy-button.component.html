@@ -1,5 +1,5 @@
 <button
-    class="p-button-sm p-button-outlined"
+    class="p-button-sm p-button-text"
     [pTooltip]="tooltipText"
     (click)="copyUrlToClipboard($event)"
     pButton
@@ -9,5 +9,5 @@
     tooltipPosition="bottom"
 >
     <i class="pi pi-copy"></i>
-    {{ showLabel ? label : '' }}
+    <span class="p-button-label"> {{ showLabel ? label : '' }}</span>
 </button>
