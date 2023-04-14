@@ -705,7 +705,7 @@ public final class LicenseManager {
             Logger.info(InitServlet.class,
                             " * This software, code and any modifications to the code are licensed under the terms of the dotCMS Enterprise License ");
             Logger.info(InitServlet.class,
-                            " * which can be found here : https://www.github.com/dotCMS/core/dotCMS/src/enterprise/LICENSE ");
+                            " * which can be found here : https://www.github.com/dotCMS/core/LICENSE ");
             Logger.info(InitServlet.class,
                             "");
         }
