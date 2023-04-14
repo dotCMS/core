@@ -157,7 +157,7 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
 
     private static void assertCachedRunningExperiments(final List<String> experimentIds) {
         CacheLocator.getExperimentsCache()
-            .get(ExperimentsCache.CACHED_EXPERIMENTS_KEY)
+            .getList(ExperimentsCache.CACHED_EXPERIMENTS_KEY)
             .forEach(experiment -> assertTrue(experimentIds.contains(experiment.getIdentifier())));
     }
 

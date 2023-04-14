@@ -294,7 +294,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         Condition condition = targetingCondition.id().isPresent()
             ? Try.of(()->rulesAPI.getConditionById(targetingCondition.id().get(), user, false))
                 .getOrElseThrow(()->new IllegalArgumentException("Invalid targeting Condition Id provided. Id: " + targetingCondition.id().get()))
-            : createCondition(experimentRule, targetingCondition);
+            : createCondition(experimentRule);
 
         condition.setOperator(targetingCondition.operator());
         condition.setConditionletId(targetingCondition.conditionKey());
@@ -308,8 +308,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                         + condition.getConditionletId()));
     }
 
-    private Condition createCondition(final Rule experimentRule,
-            final TargetingCondition targetingCondition) {
+    private Condition createCondition(final Rule experimentRule) {
         final Condition condition = new Condition();
         condition.setConditionGroup(experimentRule.getGroups().get(0).getId());
         return condition;
@@ -785,7 +784,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
     @Override
     public List<Experiment> getRunningExperiments() throws DotDataException {
-        final List<Experiment> cached = experimentsCache.get(ExperimentsCache.CACHED_EXPERIMENTS_KEY);
+        final List<Experiment> cached = experimentsCache.getList(ExperimentsCache.CACHED_EXPERIMENTS_KEY);
         if (Objects.nonNull(cached)) {
             return cached;
         }
@@ -842,7 +841,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final List<Experiment> experiments = FactoryLocator
             .getExperimentsFactory()
             .list(ExperimentFilter.builder().statuses(set(Status.RUNNING)).build());
-        experimentsCache.put(experiments);
+        experimentsCache.putList(ExperimentsCache.CACHED_EXPERIMENTS_KEY, experiments);
         return experiments;
     }
 
