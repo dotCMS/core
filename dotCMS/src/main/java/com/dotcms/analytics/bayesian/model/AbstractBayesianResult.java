@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.immutables.value.Value;
 
 import javax.annotation.Nullable;
+import java.util.List;
 import java.util.Map;
 
 
@@ -27,6 +28,9 @@ public interface AbstractBayesianResult {
 
     @JsonProperty("suggestedWinner")
     String suggestedWinner();
+
+    @JsonProperty("probabilities")
+    List<VariantProbability> probabilities();
 
     @Nullable
     @JsonProperty("distributionPdfs")

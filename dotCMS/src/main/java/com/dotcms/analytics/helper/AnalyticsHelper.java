@@ -35,7 +35,7 @@ import java.util.function.BiPredicate;
  */
 public class AnalyticsHelper {
 
-    private static Lazy<AnalyticsHelper> analyticsHelper = Lazy.of(() -> new AnalyticsHelper());
+    private static final Lazy<AnalyticsHelper> analyticsHelper = Lazy.of(AnalyticsHelper::new);
 
     public static AnalyticsHelper get(){
         return analyticsHelper.get();
