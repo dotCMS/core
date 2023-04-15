@@ -171,8 +171,8 @@
                } else {
                    fieldValue = "";
                }
-			   fieldValue = UtilMethods.escapeDoubleQuotes(fieldValue);
-               return String.format("%s: \"%s\"", key, fieldValue);
+			   fieldValue = UtilMethods.makeHtmlSafe(fieldValue);
+			   return String.format("%s: \"%s\"", key, fieldValue);
            })
            .collect(Collectors.joining(","));
 %>
