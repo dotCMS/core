@@ -174,14 +174,25 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
             addConditionIfIsNeed(goals,
                     APILocator.getHTMLPageAssetAPI().fromContentlet(pageAsContent), builder);
-
         }
 
         if(experiment.targetingConditions().isPresent()) {
             saveTargetingConditions(experiment, user);
         }
 
-        final Experiment experimentToSave = builder.build();
+        Experiment experimentToSave = builder.build();
+
+        Optional<Experiment> existingExperiment = find(experimentToSave.id().get(), user);
+
+        if(experimentToSave.status() != RUNNING &&
+                experimentToSave.status() != ENDED &&
+                experimentToSave.status() != ARCHIVED &&
+                experimentToSave.scheduling().isPresent() &&
+                (existingExperiment.isPresent() && !existingExperiment.get().scheduling().
+                        equals(experimentToSave.scheduling()))) {
+            experimentToSave = experimentToSave.withScheduling(
+                    Optional.of(validateScheduling(experimentToSave.scheduling().get())));
+        }
 
         factory.save(experimentToSave);
 
@@ -198,13 +209,6 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 -> variant.description().equals(ORIGINAL_VARIANT)))) {
             savedExperiment = Optional.of(addVariant(savedExperiment.get().id().get(),
                     ORIGINAL_VARIANT, user));
-        }
-
-        if(savedExperiment.get().status() != RUNNING &&
-                savedExperiment.get().status() != ENDED &&
-                savedExperiment.get().status() != ARCHIVED &&
-                !savedExperiment.get().scheduling().isEmpty()) {
-            validateScheduling(savedExperiment.get().scheduling().get());
         }
 
         return savedExperiment.get();
@@ -1067,13 +1071,11 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         } else if(scheduling.startDate().isEmpty() && scheduling.endDate().isPresent()) {
             DotPreconditions.checkState(scheduling.endDate().get().isAfter(NOW),
                     "Invalid Scheduling. End date is in the past");
-            DotPreconditions.checkState(
-                    Instant.now().plus(EXPERIMENTS_MAX_DURATION.get(), ChronoUnit.DAYS)
-                            .isAfter(scheduling.endDate().get()),
-                    "Experiment duration must be less than "
-                            + EXPERIMENTS_MAX_DURATION.get() +" days. ");
 
-            toReturn = scheduling.withStartDate(Instant.now());
+            final Instant startDate = scheduling.endDate().get().minus(EXPERIMENTS_MAX_DURATION.get(),
+                    ChronoUnit.DAYS);
+
+            toReturn = scheduling.withStartDate(startDate);
         } else {
             DotPreconditions.checkState(scheduling.startDate().get().isAfter(NOW),
                     "Invalid Scheduling. Start date is in the past");
