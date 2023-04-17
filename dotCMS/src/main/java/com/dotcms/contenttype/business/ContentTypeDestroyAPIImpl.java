@@ -35,6 +35,7 @@ import com.dotmarketing.util.Logger;
 import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
+import io.vavr.control.Try;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -42,11 +43,37 @@ import java.util.stream.Collectors;
 
 public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
 
+    /**
+     * Delegate class to handle the contentlet deletion
+     */
     Lazy<ContentletDestroyDelegate> delegate = Lazy.of(ContentletDestroyDelegate::newInstance);
 
-    Lazy<Integer> limitProp = Lazy.of(()->Config.getIntProperty("CT_DELETE_BATCH_SIZE", 100));
+    /**
+     * Lazy property that says how many contentlets should be deleted per transaction
+     */
+    Lazy<Integer> pullLimitProp = Lazy.of(()->Config.getIntProperty("CT_DELETE_BATCH_SIZE", 100));
 
-    Lazy<Integer> partitionSizeProp = Lazy.of(()-> Config.getIntProperty("CT_DELETE_PARTITION_SIZE", 1));
+    /**
+     * Lazy property that says how many contentlets should be relocated per transaction
+     */
+    Lazy<Integer> relocateLimitProp = Lazy.of(()->Config.getIntProperty("CT_RELOCATE_BATCH_SIZE", 100));
+
+
+    private String updateStatement(final ContentType target, final String tempTableName, final int from, final int to ) {
+        return DbConnectionFactory.isPostgres() ?
+                String.format(
+                        "update contentlet c set structure_inode = '%s', \n" +
+                                " contentlet_as_json = jsonb_set(contentlet_as_json,'{contentType}', '\"%s\"'::jsonb, false)  \n"  +
+                                " from %s ctu \n" +
+                                " where ctu.inode = c.inode and ctu.row_num >= %d and ctu.row_num <= %d \n"
+                                , target.inode(), target.inode(), tempTableName, from, to )
+                :
+                        String.format(
+                                "update contentlet set structure_inode = ?, \n" +
+                                        " contentlet_as_json = json_modify(contentlet_as_json,'$.contentType', '%s')  \n" +
+                                        " where  c.inode in ( %s ) \n"
+                                        , target.inode(), "");
+    }
 
     /**
      * This method relocates all contentlets from a given structure to another structure And returns
@@ -54,10 +81,11 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
      *
      * @param source
      * @param target
+     * @return
      * @throws DotDataException
      */
-    @WrapInTransaction
-    public void relocateContentletsForDeletion(final ContentType source, final ContentType target) throws DotDataException {
+    public int relocateContentletsForDeletion(final ContentType source, final ContentType target)
+            throws DotDataException {
 
         if (!source.getClass().equals(target.getClass())) {
             throw new DotDataException(
@@ -68,32 +96,54 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
             );
         }
 
-        final DotConnect dotConnect = new DotConnect();
+        final String tempTableName = String.format("contentlets_to_be_updated_%d", System.currentTimeMillis());
 
-        final String selectContentlets = "select c.inode from contentlet c where c.structure_inode =  ? \n";
-        dotConnect.setSQL(selectContentlets).addParam(source.inode());
-
-        String updateContentlet = String.format(
-                "update contentlet c set structure_inode = ?, \n" +
-                        " contentlet_as_json = jsonb_set(contentlet_as_json,'{contentType}', '\"%s\"'::jsonb, false)  \n" +
-                        " where c.structure_inode =  ? ", target.inode()
+        //The quickest wa
+        String dumpContentletToUpdate = String.format(
+                " CREATE TEMP TABLE %s AS\n"
+                + " SELECT ROW_NUMBER() OVER(ORDER BY inode) row_num, inode\n"
+                + " FROM contentlet c where c.structure_inode = '%s' ;\n"
+                + " CREATE index ON %s(row_num); "
+                + " CREATE index ON %s(inode); "
+                , tempTableName
+                , source.inode()
+                , tempTableName
+                , tempTableName
         );
 
-        if(DbConnectionFactory.isMsSql()){
-            updateContentlet =  String.format(
-                    "update contentlet set structure_inode = ?, \n" +
-                            " contentlet_as_json = json_modify(contentlet_as_json,'$.contentType', '%s')  \n" +
-                            " where structure_inode =  ? ", target.inode());
+        Try.of(()->new DotConnect().executeStatement(dumpContentletToUpdate)).onFailure(e->{
+            Logger.error(this.getClass(), "Error trying to create temp table to update contentlets", e);
+            throw new DotStateException(e);
+        });
+
+        final int allCount = new DotConnect().setSQL(String.format("select count(*) as count from %s", tempTableName)).getInt("count");
+
+        int limit = relocateLimitProp.get();
+        int from = 0;
+        int to = limit;
+
+        int times = allCount <= limit ?  1 : (int)Math.ceil(allCount / (float)limit);
+        for (int i = 0; i < times; i++) {
+
+            Logger.debug(this.getClass(),
+                    String.format("Relocated from (%d) to (%d) of (%d) contentlets..", from, to, allCount));
+
+            final String updateStatement = updateStatement(target, tempTableName, from, to);
+            final DotConnect updateConnect = new DotConnect().setSQL(updateStatement);
+            updateConnect.loadResults();
+
+            from += limit;
+            to += limit;
+
         }
 
-        dotConnect.setSQL(updateContentlet).addParam(target.inode()).addParam(source.inode())
-                .loadResult();
+        return allCount;
     }
 
 
     @CloseDBIfOpened
-    private int countByType(ContentType type) {
-        return FactoryLocator.getContentletFactory().countByType(type, false);
+    private int countByType(final ContentType type) {
+        return FactoryLocator.getContentletFactory().countByType(type, true);
     }
 
     @CloseDBIfOpened
@@ -139,11 +189,10 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
     @Override
     public void destroy(ContentType type, User user) throws DotDataException, DotSecurityException {
         final long allCount = countByType(type);
-        final int limit = limitProp.get();
-        final int partitionSize = partitionSizeProp.get();
+        final int limit = pullLimitProp.get();
         Logger.info(getClass(), String.format(
-                "There are (%d) contents. Will remove then sequentially using (%d) batchSize ",
-                allCount, limit));
+                "There are (%d) contents of type (%s). Will remove them sequentially using (%d) batchSize ",
+                allCount, type.name(), limit));
 
         int offset = 0;
 
@@ -152,29 +201,26 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
             Map<String, List<ContentletVersionInfo>> batch = nextBatch(type, limit, offset);
             if (batch.isEmpty()) {
                 //We're done lets get out of here
-                Logger.info(getClass(), "We're done collecting batch!");
+                Logger.debug(getClass(), "We're done collecting contentlets to destroy.");
                 break;
             }
 
-            final List<Map<String, List<ContentletVersionInfo>>> partitions = partitionInput(batch, partitionSize);
-            Logger.debug(getClass(),
-                    String.format(" ::: Partitions size %d ", partitions.size()));
-                for (Map<String, List<ContentletVersionInfo>> partition : partitions) {
-                    destroy(partition, type);
-                    Logger.info(getClass(),
-                            String.format("Finished destroying a batch of (%d) contentlets!",
-                                    partition.size()));
-                }
+            Logger.debug(getClass(), String.format(" For (%s) This batch is (%d) Big. ",type.name(), batch.size()));
+
+            batch.forEach((identifier, versions) -> destroy(identifier, versions, type, user));
 
             offset += limit;
             Logger.debug(getClass(),
                     String.format(" Offset is (%d) of (%d) total. ", offset, allCount));
         }
 
+        final long leftovers = countByType(type);
+        Logger.info(getClass(),String.format(" :: for (%s) allCount is (%d) with leftovers (%d) :: ", type.name(), allCount, leftovers));
+
         internalDestroy(type);
 
         Logger.info(getClass(),
-                String.format(" I'm done destroying (%d) pieces of Content of type (%s). ", allCount, type));
+                String.format(" I'm done destroying (%d) pieces of Content from type (%s). ", allCount, type.variable()));
     }
 
     /**
@@ -227,15 +273,14 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
 
     /**
      * Middle man that basically calls the delegate
-     * @param partition
+     * @param identifier
+     * @param inodeAndLanguages
      * @param type
      */
-    void destroy(final Map<String, List<ContentletVersionInfo>> partition, ContentType type) {
-        final User user = APILocator.systemUser();
-        partition.forEach((identifier, inodeAndLanguages) -> {
-            final List<Contentlet> contentlets = makeContentlets(identifier, inodeAndLanguages, type);
-            delegate.get().destroy(contentlets, user);
-        });
+    void destroy(final String identifier, final List<ContentletVersionInfo> inodeAndLanguages, final ContentType type, final User user) {
+        Logger.info(getClass(), String.format(" For (%s) Destroying (%d) contentlets for identifier (%s) ", type.name(), inodeAndLanguages.size(), identifier));
+        final List<Contentlet> contentlets = makeContentlets(identifier, inodeAndLanguages, type);
+        delegate.get().destroy(contentlets, user);
     }
 
     /**
@@ -265,23 +310,12 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
      * feed threads as their assigned workload
      *
      * @param contents
-     * @param maxThreads
      * @return
      */
     private List<Map<String, List<ContentletVersionInfo>>> partitionInput(
-            Map<String, List<ContentletVersionInfo>> contents, final int maxThreads) {
+            Map<String, List<ContentletVersionInfo>> contents) {
 
-        final int partitionSize = Math
-                .max((contents.size() / maxThreads), 10);
-
-        Logger.info(getClass(),
-                String.format(
-                        "Number of threads is limited to (%d). Number of Contentlets to process is (%d). Load will be distributed in groups of (%d) ",
-                        maxThreads, contents.size(),
-                        partitionSize)
-        );
-
-        return Lists.partition(new ArrayList<>(contents.entrySet()), partitionSize).stream().map(
+        return Lists.partition(new ArrayList<>(contents.entrySet()), 1).stream().map(
                 partition -> partition.stream()
                         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
         ).collect(Collectors.toList());
