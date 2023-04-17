@@ -23,35 +23,8 @@
 }
 
 .p-button.p-button-text {
+    border-color: transparent;
     background-color: transparent;
-    color: $color-palette-primary;
-    border-color: transparent;
-}
-
-.p-button.p-button-text:enabled:hover,
-.p-button.p-button-text:enabled:focus {
-    background: $color-palette-primary-200;
-    color: $color-palette-primary;
-    border-color: transparent;
-}
-
-.p-button.p-button-text.p-button-plain {
-    color: $black;
-}
-
-.p-button.p-button-text.p-button-plain:enabled:hover {
-    background: rgba(0, 0, 0, 0.04);
-    color: $black;
-}
-
-.p-button.p-button-text.p-button-plain:enabled:active {
-    background: rgba(0, 0, 0, 0.16);
-    color: $black;
-}
-
-.p-button.p-button-text.p-button-sm {
-    font-size: $font-size-sm;
-    padding: 0.25rem $spacing-1;
     align-items: center;
     gap: 0.25rem;
     color: $color-palette-gray-900;
@@ -95,6 +68,20 @@
         text-transform: none;
         font-weight: $font-weight-regular-bold;
     }
+}
+
+.p-button.p-button-text.p-button-plain {
+    color: $black;
+}
+
+.p-button.p-button-text.p-button-plain:enabled:hover {
+    background: rgba(0, 0, 0, 0.04);
+    color: $black;
+}
+
+.p-button.p-button-text.p-button-plain:enabled:active {
+    background: rgba(0, 0, 0, 0.16);
+    color: $black;
 }
 
 .p-button.p-button-vertical {
@@ -213,7 +200,7 @@
 
 .p-button.p-button-sm {
     font-size: $font-size-sm;
-    padding: $spacing-1 $spacing-2;
+    padding: 0.25rem $spacing-1;
 }
 
 .p-button.p-button-sm.p-button-outlined {
