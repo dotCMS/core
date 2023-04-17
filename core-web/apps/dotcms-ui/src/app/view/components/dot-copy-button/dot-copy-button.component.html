@@ -9,5 +9,5 @@
     tooltipPosition="bottom"
 >
     <i class="pi pi-copy"></i>
-    <span class="p-button-label"> {{ showLabel ? label : '' }}</span>
+    <span class="p-button-label" *ngIf="!!showLabel">{{ label }}</span>
 </button>
