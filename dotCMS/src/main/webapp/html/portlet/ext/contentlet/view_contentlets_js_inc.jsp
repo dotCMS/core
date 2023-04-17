@@ -1387,18 +1387,6 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
            return obj.value;
         }
 
-        // Get all the elements with the class "dijitTreeExpandoOpened" and loop through them and call click() on them
-        function closeHostTreeNodes() {
-                const hostFolderTreeWrapper = dojo.byId('FolderHostSelector-hostFoldersTreeWrapper')
-                const treeNodes = Array.from(hostFolderTreeWrapper.getElementsByClassName('dijitTreeExpandoOpened'));
-                // Remove first element because it is the root node.
-                treeNodes.shift();
-                for (let i = 0; i < treeNodes.length; i++) {
-                        treeNodes[i].click();
-                }
-        }
-
-
         function getSiteFolderFieldDefaultHTML() {
 
                 const defaultSiteFolderField = {
@@ -2260,7 +2248,9 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                 dijit.byId("showingSelect").set("value", "all");
                 dijit.byId("allFieldTB").set("value", "");
                 dijit.byId('FolderHostSelector').set('value', "<%= conHostValue %>");
-                dijit.byId('FolderHostSelector-tree').set('selectedItem', "<%= conHostValue %>" );
+                const tree = dijit.byId('FolderHostSelector-tree');
+                tree.set('selectedItem', "<%= conHostValue %>" );
+                tree.collapseAll();
 
                 var div = document.getElementById("matchingResultsBottomDiv");
                 div.innerHTML = "";
@@ -2395,7 +2385,6 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 
 	        hideMatchingResults ();
             doSearch(1, DOTCMS_DEFAULT_CONTENT_SORT_BY);
-            closeHostTreeNodes();
 
         }
 
