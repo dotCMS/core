@@ -82,12 +82,12 @@
     }
 
     &:enabled:focus {
-        background: $color-palette-primary-200;
+        background: white;
+        box-shadow: 0px 0px 0px 2.8px $color-palette-primary-300;
     }
 
     &:enabled:active {
-        background: white;
-        box-shadow: 0px 0px 0px 2.8px $color-palette-primary-300;
+        background: $color-palette-primary-200;
     }
 
     .p-button-label {
