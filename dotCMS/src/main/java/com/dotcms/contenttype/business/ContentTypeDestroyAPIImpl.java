@@ -35,8 +35,8 @@ import com.dotmarketing.util.Logger;
 import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
+import io.vavr.control.Try;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -48,23 +48,20 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
     Lazy<Integer> limitProp = Lazy.of(()->Config.getIntProperty("CT_DELETE_BATCH_SIZE", 100));
 
 
-    String placeHolder(int size){
-        return Arrays.stream(new String[size]).map(s->"?").collect(Collectors.joining(","));
-    }
-
-    private String updateStatement(final ContentType target, final int placeHolders) {
+    private String updateStatement(final ContentType target, final String tempTableName, final int from, final int to ) {
         return DbConnectionFactory.isPostgres() ?
                 String.format(
-                        "update contentlet c set structure_inode = ?, \n" +
+                        "update contentlet c set structure_inode = '%s', \n" +
                                 " contentlet_as_json = jsonb_set(contentlet_as_json,'{contentType}', '\"%s\"'::jsonb, false)  \n"  +
-                                " where c.inode in ( %s ) \n"
-                                , target.inode(), placeHolder(placeHolders))
+                                " from %s ctu \n" +
+                                " where ctu.inode = c.inode and ctu.row_num >= %d and ctu.row_num <= %d \n"
+                                , target.inode(), target.inode(), tempTableName, from, to )
                 :
                         String.format(
                                 "update contentlet set structure_inode = ?, \n" +
                                         " contentlet_as_json = json_modify(contentlet_as_json,'$.contentType', '%s')  \n" +
                                         " where  c.inode in ( %s ) \n"
-                                        , target.inode(), placeHolder(placeHolders));
+                                        , target.inode(), "");
     }
 
     /**
@@ -88,39 +85,47 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
             );
         }
 
-        final int allCount = countByType(source);
-        int limit = 5000;
-        int relocatedCount = 0;
+        final String tempTableName = String.format("contentlets_to_be_updated_%d", System.currentTimeMillis());
 
-        while (true) {
+        String dumpContentletToUpdate = String.format(
+                " CREATE TEMP TABLE %s AS\n"
+                + " SELECT ROW_NUMBER() OVER(ORDER BY inode) row_num, inode\n"
+                + " FROM contentlet c where c.structure_inode = '%s' ;\n"
+                + " CREATE index ON %s(row_num); "
+                + " CREATE index ON %s(inode); "
+                , tempTableName
+                , source.inode()
+                , tempTableName
+                , tempTableName
+        );
 
-            //final int relocatedCount = countByType(source);
-            //Logger.info(this.getClass(), String.format("Relocating contentlets for deletion (%d). ",relocatedCount));
+        Try.of(()->new DotConnect().executeStatement(dumpContentletToUpdate)).onFailure(e->{
+            Logger.error(this.getClass(), "Error trying to create temp table to update contentlets", e);
+            throw new DotStateException(e);
+        });
 
-            final DotConnect  selectConnect = new DotConnect()
-                    .setSQL(" select c.inode from contentlet c where c.structure_inode = ? order by c.identifier limit ? ")
-                    .addParam(source.inode()).addParam(limit);
+        final int allCount = new DotConnect().setSQL(String.format("select count(*) as count from %s", tempTableName)).getInt("count");
 
-            final List<Map<String, Object>> list = selectConnect.loadObjectResults();
-            if (list.isEmpty()) {
-                break;
-            }
+        int limit = 300;
+        int from = 0;
+        int to = limit;
 
-            final List<String> inodes = list.stream().map(map -> (String)map.get("inode")).collect(Collectors.toList());
-            final String updateStatement = updateStatement(target, inodes.size());
-            final DotConnect  updateConnect = new DotConnect()
-                    .setSQL(updateStatement)
-                    .addParam(target.inode());
+        int times = allCount <= limit ?  1 : (int)Math.ceil(allCount / (float)limit);
+        for (int i = 0; i < times; i++) {
 
-            inodes.forEach(updateConnect::addParam);
+            Logger.info(this.getClass(),
+                    String.format("Relocated from (%d) to (%d) of (%d) contentlets..", from, to, allCount));
 
+            final String updateStatement = updateStatement(target, tempTableName, from, to);
+            final DotConnect updateConnect = new DotConnect().setSQL(updateStatement);
             updateConnect.loadResults();
 
-            relocatedCount += inodes.size();
-            Logger.info(this.getClass(),String.format("Relocating contentlets for deletion (%d) out of (%d). ",relocatedCount, allCount));
+            from += limit;
+            to += limit;
+
         }
 
-        return 1;
+        return allCount;
     }
 
 
