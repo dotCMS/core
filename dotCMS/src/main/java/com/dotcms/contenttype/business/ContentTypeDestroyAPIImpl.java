@@ -56,7 +56,7 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
     /**
      * Lazy property that says how many contentlets should be relocated per transaction
      */
-    Lazy<Integer> relocateLimitProp = Lazy.of(()->Config.getIntProperty("CT_RELOCATE_BATCH_SIZE", 100));
+    Lazy<Integer> relocateLimitProp = Lazy.of(()->Config.getIntProperty("CT_RELOCATE_BATCH_SIZE", 500));
 
 
     private String updateStatement(final ContentType target, final String tempTableName, final int from, final int to ) {

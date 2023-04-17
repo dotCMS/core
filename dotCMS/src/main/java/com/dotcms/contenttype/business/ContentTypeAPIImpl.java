@@ -276,13 +276,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
      contentTypeFactory.markForDeletion(type);
      final ContentType copy = makeDisposableCopy(type);
      //Once a copy has been mae, we need to relocate all the content to the dummy CT and then delete the original
-     HibernateUtil.addCommitListener(() -> {
-         try {
-            relocateThenDispose(type, copy, asyncDeleteWithJob);
-         } catch (ExecutionException | DotDataException | InterruptedException  e) {
-            Logger.error(ContentTypeFactoryImpl.class, e.getMessage(), e);
-         }
-     });
+     HibernateUtil.addCommitListener(() -> relocateThenDispose(type, copy, asyncDeleteWithJob));
 
    }
 
@@ -325,8 +319,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
    * @throws InterruptedException
    * @throws DotDataException
    */
-  void relocateThenDispose(final ContentType source, final ContentType target, final boolean asyncDeleteWithJob)
-          throws ExecutionException, InterruptedException, DotDataException {
+  void relocateThenDispose(final ContentType source, final ContentType target, final boolean asyncDeleteWithJob) {
 
     DotConcurrentFactory.getInstance()
             .getSingleSubmitter("ContentRelocationForDeletion").execute(() -> internalRelocateThenDispose(source, target, asyncDeleteWithJob));
