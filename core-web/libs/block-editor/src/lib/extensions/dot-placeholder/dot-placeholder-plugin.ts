@@ -1,4 +1,4 @@
-import { Extension } from '@tiptap/core';
+import { Editor, Extension } from '@tiptap/core';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
 
@@ -13,11 +13,49 @@ export interface PlaceholderOptions {
     includeChildren: boolean;
 }
 
+export enum PositionHeadings {
+    TOP_INITIAL = '40px',
+    TOP_CURRENT = '26px'
+}
+
 function toTitleCase(str) {
     return str.replace(/\p{L}+('\p{L}+)?/gu, function (txt) {
         return txt.charAt(0).toUpperCase() + txt.slice(1);
     });
 }
+
+const addPlusButton = (pos: number, node, editor: Editor) => {
+    const button = document.createElement('button');
+    button.classList.add('add-button');
+    button.style.position = 'absolute';
+    button.style.left = '-45px';
+    button.style.top = '-2px';
+    const div = document.createElement('div');
+    div.style.position = 'relative';
+    div.setAttribute('dragable', 'false');
+    if (pos === 0 && node.type.name === NodeTypes.HEADING) {
+        button.style.top = PositionHeadings.TOP_INITIAL;
+    }
+
+    if (pos !== 0 && node.type.name === NodeTypes.HEADING) {
+        button.style.top = PositionHeadings.TOP_CURRENT;
+    }
+
+    button.innerHTML = '<i class="pi pi-plus"></i>';
+    div.setAttribute('dragable', 'false');
+    button.addEventListener(
+        'mousedown',
+        (e) => {
+            e.preventDefault();
+            editor.chain().insertContent('/').run();
+        },
+        { once: true }
+    );
+
+    div.appendChild(button);
+
+    return div;
+};
 
 export const DotPlaceholder = Extension.create<PlaceholderOptions>({
     name: 'dotPlaceholder',
@@ -65,40 +103,26 @@ export const DotPlaceholder = Extension.create<PlaceholderOptions>({
                                     classes.push(this.options.emptyEditorClass);
                                 }
 
-                                const decoration = Decoration.widget(pos, () => {
-                                    const div = document.createElement('div');
+                                const decoration = Decoration.widget(
+                                    pos,
+                                    addPlusButton(pos, node, this.editor)
+                                );
 
-                                    if (node.type.name === NodeTypes.HEADING) {
-                                        const title = document.createElement(
-                                            `h${node.attrs.level}`
-                                        );
-                                        title.dataset.placeholder = `${toTitleCase(
-                                            node.type.name
-                                        )} ${node.attrs.level}`;
-                                        title.classList.add('is-empty');
-                                        div.appendChild(title);
-                                    } else {
-                                        const paragraph = document.createElement('p');
-                                        paragraph.dataset.placeholder = this.options.placeholder;
-                                        paragraph.classList.add(...classes);
-                                        div.appendChild(paragraph);
+                                const decorationContent = Decoration.node(
+                                    pos,
+                                    pos + node.nodeSize,
+                                    {
+                                        class: classes.join(' '),
+                                        'data-placeholder':
+                                            node.type.name === NodeTypes.HEADING
+                                                ? `${toTitleCase(node.type.name)} ${
+                                                      node.attrs.level
+                                                  }`
+                                                : this.options.placeholder
                                     }
+                                );
 
-                                    const button = document.createElement('button');
-                                    button.classList.add('add-button');
-                                    button.style.position = 'absolute';
-                                    button.style.left = '20px';
-                                    button.innerHTML = '<i class="material-icons">add</i>';
-                                    button.addEventListener('mousedown', (e) => {
-                                        e.preventDefault();
-                                        this.editor.chain().insertContent('/').run();
-                                    });
-
-                                    div.appendChild(button);
-
-                                    return div;
-                                });
-
+                                decorations.push(decorationContent);
                                 decorations.push(decoration);
                             }
 
