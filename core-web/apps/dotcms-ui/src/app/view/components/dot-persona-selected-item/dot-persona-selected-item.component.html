@@ -3,12 +3,20 @@
     [pTooltip]="disabled ? ('editpage.personalization.content.add.message' | dm) : null"
     [tooltipPosition]="disabled ? 'bottom' : null"
 >
-    <dot-avatar
-        [label]="persona?.name || ('modes.persona.no.persona' | dm)"
-        [showDot]="persona?.personalized || false"
-        [size]="24"
-        [url]="persona?.photo || ''"
-    ></dot-avatar>
+    <p-avatar
+        *ngIf="persona?.personalized"
+        [text]="persona?.name || ('modes.persona.no.persona' | dm)"
+        [image]="persona?.photo"
+        pBadge
+        dotAvatar
+    ></p-avatar>
+    <p-avatar
+        *ngIf="!persona?.personalized"
+        [text]="persona?.name || ('modes.persona.no.persona' | dm)"
+        [image]="persona?.photo"
+        dotAvatar
+    ></p-avatar>
+
     <span class="dot-persona-selector__name">{{
         persona?.name || ('modes.persona.no.persona' | dm)
     }}</span>

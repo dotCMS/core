@@ -11,6 +11,7 @@ import { DotFieldValidationMessageModule } from '@components/_common/dot-field-v
 import { DotFormDialogModule } from '@components/dot-form-dialog/dot-form-dialog.module';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { DotTempFileUploadService } from '@dotcms/app/api/services/dot-temp-file-upload/dot-temp-file-upload.service';
+import { DotPagesFavoritePageEmptySkeletonComponent } from '@dotcms/app/portlets/dot-pages/dot-pages-favorite-page-empty-skeleton/dot-pages-favorite-page-empty-skeleton.component';
 import { DotRolesService, DotWorkflowActionsFireService } from '@dotcms/data-access';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
@@ -25,6 +26,7 @@ import { DotFavoritePageComponent } from './dot-favorite-page.component';
         DotAutofocusModule,
         DotFormDialogModule,
         DotFieldValidationMessageModule,
+        DotPagesFavoritePageEmptySkeletonComponent,
         DotPipesModule,
         DropdownModule,
         InputTextModule,

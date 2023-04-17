@@ -24,16 +24,7 @@ import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPIImpl;
-import com.dotcms.contenttype.business.ContentTypeAPI;
-import com.dotcms.contenttype.business.ContentTypeAPIImpl;
-import com.dotcms.contenttype.business.ContentTypeFieldLayoutAPI;
-import com.dotcms.contenttype.business.ContentTypeFieldLayoutAPIImpl;
-import com.dotcms.contenttype.business.DotAssetAPI;
-import com.dotcms.contenttype.business.DotAssetAPIImpl;
-import com.dotcms.contenttype.business.FieldAPI;
-import com.dotcms.contenttype.business.FieldAPIImpl;
-import com.dotcms.contenttype.business.StoryBlockAPI;
-import com.dotcms.contenttype.business.StoryBlockAPIImpl;
+import com.dotcms.contenttype.business.*;
 import com.dotcms.device.DeviceAPI;
 import com.dotcms.device.DeviceAPIImpl;
 import com.dotcms.dotpubsub.DotPubSubProvider;
@@ -147,8 +138,6 @@ import com.dotmarketing.portlets.structure.business.StructureAPI;
 import com.dotmarketing.portlets.structure.business.StructureAPIImpl;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.business.TemplateAPIImpl;
-import com.dotcms.variant.VariantAPI;
-import com.dotcms.variant.VariantAPIImpl;
 import com.dotmarketing.portlets.widget.business.WidgetAPI;
 import com.dotmarketing.portlets.widget.business.WidgetAPIImpl;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
@@ -1135,6 +1124,10 @@ public class APILocator extends Locator<APIIndex> {
 		return (AnalyticsAPI) getInstance(APIIndex.ANALYTICS_API);
 	}
 
+	public static ContentTypeDestroyAPI getContentTypeDestroyAPI() {
+		return (ContentTypeDestroyAPI) getInstance(APIIndex.CONTENT_TYPE_DESTROY_API);
+	}
+
 	/**
 	 * Generates a unique instance of the specified dotCMS API.
 	 *
@@ -1286,7 +1279,8 @@ enum APIIndex
 	VARIANT_API,
 	EXPERIMENTS_API,
 	BAYESIAN_API,
-	ANALYTICS_API;
+	ANALYTICS_API,
+	CONTENT_TYPE_DESTROY_API;
 
 	Object create() {
 		switch(this) {
@@ -1375,6 +1369,7 @@ enum APIIndex
 			case EXPERIMENTS_API: return new ExperimentsAPIImpl();
 			case BAYESIAN_API: return new BayesianAPIImpl();
 			case ANALYTICS_API: return new AnalyticsAPIImpl();
+			case CONTENT_TYPE_DESTROY_API: return new ContentTypeDestroyAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

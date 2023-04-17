@@ -27,7 +27,8 @@
             </div>
 
             <dot-experiments-list-table
-                [experiments]="vm.experimentsFiltered"
+                [experimentGroupedByStatus]="vm.experimentsFiltered"
+                [experimentsCount]="vm.experiments.length"
                 (archiveItem)="archiveExperiment($event)"
                 (deleteItem)="deleteExperiment($event)"
                 (goToReport)="goToViewExperimentReport($event)"

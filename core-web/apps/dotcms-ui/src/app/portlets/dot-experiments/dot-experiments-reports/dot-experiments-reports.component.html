@@ -4,7 +4,17 @@
         [status]="vm?.experiment?.status"
         [title]="vm.experiment?.name"
         (goBack)="goToExperimentList(vm.experiment.pageId)"
-    />
+    >
+        <button
+            class="p-button-outlined"
+            [label]="'experiments.report.promote.variant' | dm"
+            (click)="loadPublishVariant(vm.variantResults)"
+            data-testId="publish-variant-button"
+            pButton
+            pRipple
+            type="button"
+        ></button>
+    </dot-experiments-header>
 
     <div class="flex flex-column dot-experiment-report-content">
         <ng-container *ngIf="!vm.isLoading; else loadingTpl">
@@ -125,3 +135,4 @@
 <ng-template #loadingTpl>
     <dot-experiments-reports-skeleton />
 </ng-template>
+<ng-template dotDynamic></ng-template>
