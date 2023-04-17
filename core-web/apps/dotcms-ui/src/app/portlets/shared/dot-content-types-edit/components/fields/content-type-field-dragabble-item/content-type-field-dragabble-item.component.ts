@@ -114,11 +114,13 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit, OnDestro
         this.open = false;
     }
 
+    // Opens the attributes list when the component is small
     openAttr($event: MouseEvent) {
         $event.stopPropagation();
         this.open = true;
     }
 
+    // Closes the attributes list when the component is small
     closeAttr($event: MouseEvent) {
         $event.stopPropagation();
         this.open = false;

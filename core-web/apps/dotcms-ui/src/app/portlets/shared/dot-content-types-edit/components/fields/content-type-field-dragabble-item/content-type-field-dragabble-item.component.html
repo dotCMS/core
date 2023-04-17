@@ -28,7 +28,7 @@
         <div class="field__attr" [class.small]="shouldResize && small">
             <p-chip *ngFor="let field of fieldAttributes" [label]="field"></p-chip>
         </div>
-        <ng-container *ngIf="shouldResize && small">
+        <ng-container *ngIf="small">
             <i class="pi pi-angle-down" *ngIf="!open" (click)="openAttr($event)"></i>
             <i class="pi pi-angle-up" *ngIf="open" (click)="closeAttr($event)"></i>
         </ng-container>
