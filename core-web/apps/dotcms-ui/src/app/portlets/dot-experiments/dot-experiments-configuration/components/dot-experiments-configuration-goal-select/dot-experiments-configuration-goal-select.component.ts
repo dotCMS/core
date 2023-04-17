@@ -77,8 +77,12 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
         this.dotExperimentsConfigurationStore.goalsStepVm$;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    private BOUNCE_RATE_LABEL = this.dotMessageService.get(this.goals.BOUNCE_RATE.label);
-    private REACH_PAGE_LABEL = this.dotMessageService.get(this.goals.REACH_PAGE.label);
+    private BOUNCE_RATE_LABEL = this.dotMessageService.get(
+        'experiments.goal.conditions.minimize.bounce.rate'
+    );
+    private REACH_PAGE_LABEL = this.dotMessageService.get(
+        'experiments.goal.conditions.maximize.reach.page'
+    );
 
     constructor(
         private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore,

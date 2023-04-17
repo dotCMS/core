@@ -30,8 +30,8 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.configure.goals.sidebar.header': 'Select a goal',
     'experiments.configure.goals.sidebar.header.button': 'Apply',
     'experiments.configure.goals.name.default': 'Primary goal',
-    'experiments.goal.reach_page.name': 'Reach a page',
-    'experiments.goal.bounce_rate.name': 'Bounce rate'
+    'experiments.goal.conditions.maximize.reach.page': 'Maximize Reaching a Page',
+    'experiments.goal.conditions.minimize.bounce.rate': 'Minimize Bounce Rate'
 });
 
 const EXPERIMENT_MOCK = getExperimentMock(0);
@@ -98,13 +98,13 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
         spectator.click(optionsRendered[0]);
 
         expect((spectator.query(byTestId('goal-name-input')) as HTMLInputElement).value).toEqual(
-            'Bounce rate'
+            'Minimize Bounce Rate'
         );
 
         spectator.click(optionsRendered[1]);
 
         expect((spectator.query(byTestId('goal-name-input')) as HTMLInputElement).value).toEqual(
-            'Reach a page'
+            'Maximize Reaching a Page'
         );
     });
 
