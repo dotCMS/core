@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "93ad2329-1b15-469f-a58c-aa08b7836332",
+		"_postman_id": "0f16e288-5ac6-4085-af8b-d0c03722c63a",
 		"name": "Experiments Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "1549189"
+		"_exporter_id": "4500400"
 	},
 	"item": [
 		{
@@ -1892,690 +1892,860 @@
 			"name": "PATCH Experiment",
 			"item": [
 				{
-					"name": "updateExperimentNameAndDesc_shoudSucceed",
-					"event": [
+					"name": "Update Name and Description",
+					"item": [
 						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var jsonData = pm.response.json();",
-									"",
-									"",
-									"pm.test(\"Status code should be ok 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"pm.test(\"Experiment should have the expected values\", function () {",
-									"    pm.expect(jsonData.entity.description).equal(\"my patched experiment description\");",
-									"    pm.expect(jsonData.entity.name).equal(\"my patched experiment\");",
-									"    pm.expect(jsonData.entity.pageId).equal(\"e424abd7e2e7a9031c5a0a3c18182f1b\");",
-									"    pm.expect(jsonData.entity.modDate).is.not.null;",
-									"    pm.expect(jsonData.entity.status).equal(\"DRAFT\");",
-									"    pm.expect(jsonData.entity.trafficAllocation).equal(100.0);",
-									"    pm.expect(jsonData.entity.trafficProportion.type).equal(\"SPLIT_EVENLY\");",
-									"",
-									"});",
-									"",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
+							"name": "updateExperimentNameAndDesc_shoudSucceed",
+							"event": [
 								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"",
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Experiment should have the expected values\", function () {",
+											"    pm.expect(jsonData.entity.description).equal(\"my patched experiment description\");",
+											"    pm.expect(jsonData.entity.name).equal(\"my patched experiment\");",
+											"    pm.expect(jsonData.entity.pageId).equal(\"e424abd7e2e7a9031c5a0a3c18182f1b\");",
+											"    pm.expect(jsonData.entity.modDate).is.not.null;",
+											"    pm.expect(jsonData.entity.status).equal(\"DRAFT\");",
+											"    pm.expect(jsonData.entity.trafficAllocation).equal(100.0);",
+											"    pm.expect(jsonData.entity.trafficProportion.type).equal(\"SPLIT_EVENLY\");",
+											"",
+											"});",
+											"",
+											""
+										],
+										"type": "text/javascript"
+									}
 								}
-							]
-						},
-						"method": "PATCH",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"name\": \"my patched experiment\",\n    \"description\": \"my patched experiment description\" \n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/experiments/{{experimentId}}",
-							"host": [
-								"{{serverURL}}"
 							],
-							"path": [
-								"api",
-								"v1",
-								"experiments",
-								"{{experimentId}}"
-							]
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"my patched experiment\",\n    \"description\": \"my patched experiment description\" \n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/experiments/{{experimentId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"experiments",
+										"{{experimentId}}"
+									]
+								}
+							},
+							"response": []
 						}
-					},
-					"response": []
+					]
 				},
 				{
-					"name": "updateExperimentTrafficAllocation_shoudSucceed",
-					"event": [
+					"name": "Update Traffic Allocation",
+					"item": [
 						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var jsonData = pm.response.json();",
-									"",
-									"",
-									"pm.test(\"Status code should be ok 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"pm.test(\"Experiment should have the expected values\", function () {",
-									"    pm.expect(jsonData.entity.description).equal(\"my patched experiment description\");",
-									"    pm.expect(jsonData.entity.name).equal(\"my patched experiment\");",
-									"    pm.expect(jsonData.entity.pageId).equal(\"e424abd7e2e7a9031c5a0a3c18182f1b\");",
-									"    pm.expect(jsonData.entity.modDate).is.not.null;",
-									"    pm.expect(jsonData.entity.status).equal(\"DRAFT\");",
-									"    pm.expect(jsonData.entity.trafficAllocation).equal(20.0);",
-									"    pm.expect(jsonData.entity.trafficProportion.type).equal(\"SPLIT_EVENLY\");",
-									"",
-									"});",
-									"",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
+							"name": "updateExperimentTrafficAllocation_shoudSucceed",
+							"event": [
 								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"",
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Experiment should have the expected values\", function () {",
+											"    pm.expect(jsonData.entity.description).equal(\"my patched experiment description\");",
+											"    pm.expect(jsonData.entity.name).equal(\"my patched experiment\");",
+											"    pm.expect(jsonData.entity.pageId).equal(\"e424abd7e2e7a9031c5a0a3c18182f1b\");",
+											"    pm.expect(jsonData.entity.modDate).is.not.null;",
+											"    pm.expect(jsonData.entity.status).equal(\"DRAFT\");",
+											"    pm.expect(jsonData.entity.trafficAllocation).equal(20.0);",
+											"    pm.expect(jsonData.entity.trafficProportion.type).equal(\"SPLIT_EVENLY\");",
+											"",
+											"});",
+											"",
+											""
+										],
+										"type": "text/javascript"
+									}
 								}
-							]
-						},
-						"method": "PATCH",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"trafficAllocation\": 20  \n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/experiments/{{experimentId}}",
-							"host": [
-								"{{serverURL}}"
 							],
-							"path": [
-								"api",
-								"v1",
-								"experiments",
-								"{{experimentId}}"
-							]
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"trafficAllocation\": 20  \n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/experiments/{{experimentId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"experiments",
+										"{{experimentId}}"
+									]
+								}
+							},
+							"response": []
 						}
-					},
-					"response": []
+					]
 				},
 				{
-					"name": "updateExperimentStartAndEndDate_shoudSucceed",
-					"event": [
+					"name": "Update Scheduling",
+					"item": [
 						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var jsonData = pm.response.json();",
-									"",
-									"",
-									"pm.test(\"Status code should be ok 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"pm.test(\"Experiment should have the expected values\", function () {",
-									"    pm.expect(jsonData.entity.description).equal(\"my patched experiment description\");",
-									"    pm.expect(jsonData.entity.name).equal(\"my patched experiment\");",
-									"    pm.expect(jsonData.entity.pageId).equal(\"e424abd7e2e7a9031c5a0a3c18182f1b\");",
-									"    pm.expect(jsonData.entity.modDate).is.not.null;",
-									"    pm.expect(jsonData.entity.scheduling.startDate).to.equal(2608661952000);",
-									"    pm.expect(jsonData.entity.scheduling.endDate).to.equal(2611340352000);",
-									"    pm.expect(jsonData.entity.status).equal(\"DRAFT\");",
-									"    pm.expect(jsonData.entity.trafficAllocation).equal(20.0);",
-									"    pm.expect(jsonData.entity.trafficProportion.type).equal(\"SPLIT_EVENLY\");",
-									"",
-									"});",
-									"",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
+							"name": "updateExperimentStartAndEndDate_shoudSucceed",
+							"event": [
 								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"",
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Experiment should have the expected values\", function () {",
+											"    pm.expect(jsonData.entity.description).equal(\"my patched experiment description\");",
+											"    pm.expect(jsonData.entity.name).equal(\"my patched experiment\");",
+											"    pm.expect(jsonData.entity.pageId).equal(\"e424abd7e2e7a9031c5a0a3c18182f1b\");",
+											"    pm.expect(jsonData.entity.modDate).is.not.null;",
+											"    pm.expect(jsonData.entity.scheduling.startDate).to.equal(2608661952000);",
+											"    pm.expect(jsonData.entity.scheduling.endDate).to.equal(2611340352000);",
+											"    pm.expect(jsonData.entity.status).equal(\"DRAFT\");",
+											"    pm.expect(jsonData.entity.trafficAllocation).equal(20.0);",
+											"    pm.expect(jsonData.entity.trafficProportion.type).equal(\"SPLIT_EVENLY\");",
+											"",
+											"});",
+											"",
+											""
+										],
+										"type": "text/javascript"
+									}
 								}
-							]
-						},
-						"method": "PATCH",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\"scheduling\": {\n    \"startDate\": \"2052-08-30T20:19:12Z\",\n    \"endDate\": \"2052-09-30T20:19:12Z\"\n}}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/experiments/{{experimentId}}",
-							"host": [
-								"{{serverURL}}"
 							],
-							"path": [
-								"api",
-								"v1",
-								"experiments",
-								"{{experimentId}}"
-							]
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"scheduling\": {\n    \"startDate\": \"2052-08-30T20:19:12Z\",\n    \"endDate\": \"2052-09-30T20:19:12Z\"\n}}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/experiments/{{experimentId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"experiments",
+										"{{experimentId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "updateExperimentStartAndEndDate with timestamp",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"",
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Experiment should have the expected values\", function () {",
+											"    pm.expect(jsonData.entity.description).equal(\"my patched experiment description\");",
+											"    pm.expect(jsonData.entity.name).equal(\"my patched experiment\");",
+											"    pm.expect(jsonData.entity.pageId).equal(\"e424abd7e2e7a9031c5a0a3c18182f1b\");",
+											"    pm.expect(jsonData.entity.modDate).is.not.null;",
+											"    pm.expect(jsonData.entity.scheduling.startDate).to.equal(2608661952010);",
+											"    pm.expect(jsonData.entity.scheduling.endDate).to.equal(2611340352010);",
+											"    pm.expect(jsonData.entity.status).equal(\"DRAFT\");",
+											"    pm.expect(jsonData.entity.trafficAllocation).equal(20.0);",
+											"    pm.expect(jsonData.entity.trafficProportion.type).equal(\"SPLIT_EVENLY\");",
+											"",
+											"});",
+											"",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"scheduling\": {\n    \"startDate\": 2608661952010,\n    \"endDate\": 2611340352010\n}}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/experiments/{{experimentId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"experiments",
+										"{{experimentId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "updateScheduling_startDateInPast_shouldFail",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"",
+											"pm.test(\"Status code should be ok 400\", function () {",
+											"    pm.response.to.have.status(400);",
+											"    pm.expect(jsonData.message).to.contain(\"Invalid Scheduling. Start date is in the past\");",
+											"});",
+											"",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"scheduling\": {\n    \"startDate\": \"2020-08-30T20:19:12Z\"\n}}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/experiments/{{experimentId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"experiments",
+										"{{experimentId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "updateScheduling_endDateInPast_shouldFail",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"",
+											"pm.test(\"Status code should be ok 400\", function () {",
+											"    pm.response.to.have.status(400);",
+											"    pm.expect(jsonData.message).to.contain(\"Invalid Scheduling. End date is in the past\");",
+											"});",
+											"",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"scheduling\": {\n    \"endDate\": \"2020-08-30T20:19:12Z\"\n}}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/experiments/{{experimentId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"experiments",
+										"{{experimentId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "updateScheduling_endDateBeforeStartDate_shouldFail",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"",
+											"pm.test(\"Status code should be ok 400\", function () {",
+											"    pm.response.to.have.status(400);",
+											"    pm.expect(jsonData.message).to.contain(\"Invalid Scheduling. End date must be after the start date\");",
+											"});",
+											"",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"scheduling\": {\n    \"startDate\": \"2051-08-30T20:19:12Z\",\n    \"endDate\": \"2050-08-30T20:19:12Z\"\n}}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/experiments/{{experimentId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"experiments",
+										"{{experimentId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "updateScheduling_experimentDurationMoreThanMax_shouldFail",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"",
+											"pm.test(\"Status code should be ok 400\", function () {",
+											"    pm.response.to.have.status(400);",
+											"    pm.expect(jsonData.message).to.contain(\"Experiment duration must be less than 35 days\");",
+											"});",
+											"",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"scheduling\": {\n    \"startDate\": \"2051-08-30T20:19:12Z\",\n    \"endDate\": \"2052-08-30T20:19:12Z\"\n}}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/experiments/{{experimentId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"experiments",
+										"{{experimentId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "updateScheduling_nullDates_shouldSucceed",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"",
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"    pm.expect(jsonData.entity.scheduling.startDate).to.be.null;",
+											"    pm.expect(jsonData.entity.scheduling.endDate).to.be.null;",
+											"});",
+											"",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"scheduling\": {\n    \"startDate\": null,\n    \"endDate\": null\n}}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/experiments/{{experimentId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"experiments",
+										"{{experimentId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "updateExperiment_validStartDate_nullEndDate_shouldSucceed",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"",
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Experiment should have the expected values\", function () {",
+											"    pm.expect(jsonData.entity.description).equal(\"my patched experiment description\");",
+											"    pm.expect(jsonData.entity.name).equal(\"my patched experiment\");",
+											"    pm.expect(jsonData.entity.pageId).equal(\"e424abd7e2e7a9031c5a0a3c18182f1b\");",
+											"    pm.expect(jsonData.entity.modDate).is.not.null;",
+											"    pm.expect(jsonData.entity.scheduling.startDate).to.equal(2608661952000);",
+											"    pm.expect(jsonData.entity.scheduling.endDate).to.equal(2611685952000);",
+											"    pm.expect(jsonData.entity.status).equal(\"DRAFT\");",
+											"    pm.expect(jsonData.entity.trafficAllocation).equal(20.0);",
+											"    pm.expect(jsonData.entity.trafficProportion.type).equal(\"SPLIT_EVENLY\");",
+											"",
+											"});",
+											"",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"scheduling\": {\n    \"startDate\": \"2052-08-30T20:19:12Z\",\n    \"endDate\": null\n}}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/experiments/{{experimentId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"experiments",
+										"{{experimentId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "updateExperiment_nullStartDate_validEndDate_shouldSucceed",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"",
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Experiment should have the expected values\", function () {",
+											"    pm.expect(jsonData.entity.description).equal(\"my patched experiment description\");",
+											"    pm.expect(jsonData.entity.name).equal(\"my patched experiment\");",
+											"    pm.expect(jsonData.entity.pageId).equal(\"e424abd7e2e7a9031c5a0a3c18182f1b\");",
+											"    pm.expect(jsonData.entity.modDate).is.not.null;",
+											"    pm.expect(jsonData.entity.scheduling.startDate).to.equal(2608316352000);",
+											"    pm.expect(jsonData.entity.scheduling.endDate).to.equal(2611340352000);",
+											"    pm.expect(jsonData.entity.status).equal(\"DRAFT\");",
+											"    pm.expect(jsonData.entity.trafficAllocation).equal(20.0);",
+											"    pm.expect(jsonData.entity.trafficProportion.type).equal(\"SPLIT_EVENLY\");",
+											"",
+											"});",
+											"",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"scheduling\": {\n    \"startDate\": null,\n    \"endDate\": \"2052-09-30T20:19:12Z\"\n}}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/experiments/{{experimentId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"experiments",
+										"{{experimentId}}"
+									]
+								}
+							},
+							"response": []
 						}
-					},
-					"response": []
+					]
 				},
 				{
-					"name": "updateExperimentStartAndEndDate with timestamp",
-					"event": [
+					"name": "Update LookbackWindow",
+					"item": [
 						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var jsonData = pm.response.json();",
-									"",
-									"",
-									"pm.test(\"Status code should be ok 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"pm.test(\"Experiment should have the expected values\", function () {",
-									"    pm.expect(jsonData.entity.description).equal(\"my patched experiment description\");",
-									"    pm.expect(jsonData.entity.name).equal(\"my patched experiment\");",
-									"    pm.expect(jsonData.entity.pageId).equal(\"e424abd7e2e7a9031c5a0a3c18182f1b\");",
-									"    pm.expect(jsonData.entity.modDate).is.not.null;",
-									"    pm.expect(jsonData.entity.scheduling.startDate).to.equal(2608661952010);",
-									"    pm.expect(jsonData.entity.scheduling.endDate).to.equal(2611340352010);",
-									"    pm.expect(jsonData.entity.status).equal(\"DRAFT\");",
-									"    pm.expect(jsonData.entity.trafficAllocation).equal(20.0);",
-									"    pm.expect(jsonData.entity.trafficProportion.type).equal(\"SPLIT_EVENLY\");",
-									"",
-									"});",
-									"",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
+							"name": "updateExperimentLookbackWindow_shoudSucceed",
+							"event": [
 								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"",
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Experiment should have the expected values\", function () {",
+											"    pm.expect(jsonData.entity.description).equal(\"my patched experiment description\");",
+											"    pm.expect(jsonData.entity.name).equal(\"my patched experiment\");",
+											"    pm.expect(jsonData.entity.pageId).equal(\"e424abd7e2e7a9031c5a0a3c18182f1b\");",
+											"    pm.expect(jsonData.entity.modDate).is.not.null;",
+											"    pm.expect(jsonData.entity.status).equal(\"DRAFT\");",
+											"    pm.expect(jsonData.entity.trafficAllocation).equal(20.0);",
+											"    pm.expect(jsonData.entity.trafficProportion.type).equal(\"SPLIT_EVENLY\");",
+											"    pm.expect(jsonData.entity.lookBackWindowExpireTime).equal(20);",
+											"",
+											"});",
+											"",
+											""
+										],
+										"type": "text/javascript"
+									}
 								}
-							]
-						},
-						"method": "PATCH",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\"scheduling\": {\n    \"startDate\": 2608661952010,\n    \"endDate\": 2611340352010\n}}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/experiments/{{experimentId}}",
-							"host": [
-								"{{serverURL}}"
 							],
-							"path": [
-								"api",
-								"v1",
-								"experiments",
-								"{{experimentId}}"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "updateScheduling_startDateInPast_shouldFail",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var jsonData = pm.response.json();",
-									"",
-									"",
-									"pm.test(\"Status code should be ok 400\", function () {",
-									"    pm.response.to.have.status(400);",
-									"    pm.expect(jsonData.message).to.contain(\"Invalid Scheduling. Start date is in the past\");",
-									"});",
-									"",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
 								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
-						"method": "PATCH",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\"scheduling\": {\n    \"startDate\": \"2020-08-30T20:19:12Z\"\n}}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/experiments/{{experimentId}}",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"experiments",
-								"{{experimentId}}"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "updateScheduling_endDateInPast_shouldFail",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var jsonData = pm.response.json();",
-									"",
-									"",
-									"pm.test(\"Status code should be ok 400\", function () {",
-									"    pm.response.to.have.status(400);",
-									"    pm.expect(jsonData.message).to.contain(\"Invalid Scheduling. End date is in the past\");",
-									"});",
-									"",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"lookbackWindow\": 20  \n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
 								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
+								"url": {
+									"raw": "{{serverURL}}/api/v1/experiments/{{experimentId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"experiments",
+										"{{experimentId}}"
+									]
 								}
-							]
-						},
-						"method": "PATCH",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\"scheduling\": {\n    \"endDate\": \"2020-08-30T20:19:12Z\"\n}}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/experiments/{{experimentId}}",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"experiments",
-								"{{experimentId}}"
-							]
+							},
+							"response": []
 						}
-					},
-					"response": []
-				},
-				{
-					"name": "updateScheduling_endDateBeforeStartDate_shouldFail",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var jsonData = pm.response.json();",
-									"",
-									"",
-									"pm.test(\"Status code should be ok 400\", function () {",
-									"    pm.response.to.have.status(400);",
-									"    pm.expect(jsonData.message).to.contain(\"Invalid Scheduling. End date must be after the start date\");",
-									"});",
-									"",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
-						"method": "PATCH",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\"scheduling\": {\n    \"startDate\": \"2051-08-30T20:19:12Z\",\n    \"endDate\": \"2050-08-30T20:19:12Z\"\n}}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/experiments/{{experimentId}}",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"experiments",
-								"{{experimentId}}"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "updateScheduling_experimentDurationMoreThanMax_shouldFail",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var jsonData = pm.response.json();",
-									"",
-									"",
-									"pm.test(\"Status code should be ok 400\", function () {",
-									"    pm.response.to.have.status(400);",
-									"    pm.expect(jsonData.message).to.contain(\"Experiment duration must be less than 35 days\");",
-									"});",
-									"",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
-						"method": "PATCH",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\"scheduling\": {\n    \"startDate\": \"2051-08-30T20:19:12Z\",\n    \"endDate\": \"2052-08-30T20:19:12Z\"\n}}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/experiments/{{experimentId}}",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"experiments",
-								"{{experimentId}}"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "updateScheduling_nullDates_shouldSucceed",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var jsonData = pm.response.json();",
-									"",
-									"",
-									"pm.test(\"Status code should be ok 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"    pm.expect(jsonData.entity.scheduling.startDate).to.be.null;",
-									"    pm.expect(jsonData.entity.scheduling.endDate).to.be.null;",
-									"});",
-									"",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
-						"method": "PATCH",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\"scheduling\": {\n    \"startDate\": null,\n    \"endDate\": null\n}}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/experiments/{{experimentId}}",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"experiments",
-								"{{experimentId}}"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "updateExperimentLookbackWindow_shoudSucceed",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var jsonData = pm.response.json();",
-									"",
-									"",
-									"pm.test(\"Status code should be ok 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"pm.test(\"Experiment should have the expected values\", function () {",
-									"    pm.expect(jsonData.entity.description).equal(\"my patched experiment description\");",
-									"    pm.expect(jsonData.entity.name).equal(\"my patched experiment\");",
-									"    pm.expect(jsonData.entity.pageId).equal(\"e424abd7e2e7a9031c5a0a3c18182f1b\");",
-									"    pm.expect(jsonData.entity.modDate).is.not.null;",
-									"    pm.expect(jsonData.entity.status).equal(\"DRAFT\");",
-									"    pm.expect(jsonData.entity.trafficAllocation).equal(20.0);",
-									"    pm.expect(jsonData.entity.trafficProportion.type).equal(\"SPLIT_EVENLY\");",
-									"    pm.expect(jsonData.entity.lookBackWindowExpireTime).equal(20);",
-									"",
-									"});",
-									"",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
-						"method": "PATCH",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"lookbackWindow\": 20  \n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/experiments/{{experimentId}}",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"experiments",
-								"{{experimentId}}"
-							]
-						}
-					},
-					"response": []
+					]
 				}
 			]
 		},
