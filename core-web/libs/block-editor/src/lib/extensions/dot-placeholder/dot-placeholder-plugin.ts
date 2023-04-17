@@ -32,7 +32,7 @@ const addPlusButton = (pos: number, node, editor: Editor) => {
     button.style.top = '-2px';
     const div = document.createElement('div');
     div.style.position = 'relative';
-    div.setAttribute('dragable', 'false');
+    div.setAttribute('draggable', 'false');
     if (pos === 0 && node.type.name === NodeTypes.HEADING) {
         button.style.top = PositionHeadings.TOP_INITIAL;
     }
@@ -42,7 +42,7 @@ const addPlusButton = (pos: number, node, editor: Editor) => {
     }
 
     button.innerHTML = '<i class="pi pi-plus"></i>';
-    button.setAttribute('dragable', 'false');
+    button.setAttribute('draggable', 'false');
     button.addEventListener(
         'mousedown',
         (e) => {
