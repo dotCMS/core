@@ -2611,7 +2611,7 @@
 											"    pm.expect(jsonData.entity.pageId).equal(\"e424abd7e2e7a9031c5a0a3c18182f1b\");",
 											"    pm.expect(jsonData.entity.modDate).is.not.null;",
 											"    pm.expect(jsonData.entity.scheduling.startDate).to.equal(2608316352000);",
-											"    pm.expect(jsonData.entity.scheduling.endDate).to.equal(2611685952000);",
+											"    pm.expect(jsonData.entity.scheduling.endDate).to.equal(2611340352000);",
 											"    pm.expect(jsonData.entity.status).equal(\"DRAFT\");",
 											"    pm.expect(jsonData.entity.trafficAllocation).equal(20.0);",
 											"    pm.expect(jsonData.entity.trafficProportion.type).equal(\"SPLIT_EVENLY\");",

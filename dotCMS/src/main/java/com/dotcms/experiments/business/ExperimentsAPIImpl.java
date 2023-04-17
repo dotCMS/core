@@ -184,12 +184,9 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
         Optional<Experiment> existingExperiment = find(experimentToSave.id().get(), user);
 
-        if(experimentToSave.status() != RUNNING &&
-                experimentToSave.status() != ENDED &&
-                experimentToSave.status() != ARCHIVED &&
-                experimentToSave.scheduling().isPresent() &&
-                (existingExperiment.isPresent() && !existingExperiment.get().scheduling().
-                        equals(experimentToSave.scheduling()))) {
+        if(experimentToSave.status() == DRAFT && experimentToSave.scheduling().isPresent()
+                && (existingExperiment.isEmpty() || isExistingSchedulingChanging(experimentToSave,
+                existingExperiment))) {
             experimentToSave = experimentToSave.withScheduling(
                     Optional.of(validateScheduling(experimentToSave.scheduling().get())));
         }
@@ -212,6 +209,12 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         }
 
         return savedExperiment.get();
+    }
+
+    private static boolean isExistingSchedulingChanging(Experiment experimentToSave,
+            Optional<Experiment> existingExperiment) {
+        return !existingExperiment.get().scheduling().
+                equals(experimentToSave.scheduling());
     }
 
     private void addConditionIfIsNeed(final Goals goals, final HTMLPageAsset page,
