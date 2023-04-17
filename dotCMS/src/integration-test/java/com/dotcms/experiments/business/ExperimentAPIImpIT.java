@@ -50,6 +50,7 @@ import com.dotcms.util.network.IPUtils;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -123,23 +124,25 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
             List<Experiment> experimentRunning = APILocator.getExperimentsAPI()
                     .getRunningExperiments();
 
-            List<String> experiemtnsId = experimentRunning.stream()
+            List<String> experimentIds = experimentRunning.stream()
                     .map(Experiment::getIdentifier).collect(Collectors.toList());
 
-            assertTrue(experiemtnsId.contains(runningExperiment.getIdentifier()));
-            assertFalse(experiemtnsId.contains(draftExperiment.getIdentifier()));
-            assertTrue(experiemtnsId.contains(stoppedExperiment.getIdentifier()));
+            assertTrue(experimentIds.contains(runningExperiment.getIdentifier()));
+            assertFalse(experimentIds.contains(draftExperiment.getIdentifier()));
+            assertTrue(experimentIds.contains(stoppedExperiment.getIdentifier()));
+            assertCachedRunningExperiments(experimentIds);
 
             ExperimentDataGen.end(stoppedExperiment);
 
             experimentRunning = APILocator.getExperimentsAPI()
                     .getRunningExperiments();
-            experiemtnsId = experimentRunning.stream()
-                    .map(experiment -> experiment.getIdentifier()).collect(Collectors.toList());
+            experimentIds = experimentRunning.stream()
+                    .map(Experiment::getIdentifier).collect(Collectors.toList());
 
-            assertTrue(experiemtnsId.contains(runningExperiment.getIdentifier()));
-            assertFalse(experiemtnsId.contains(draftExperiment.getIdentifier()));
-            assertFalse(experiemtnsId.contains(stoppedExperiment.getIdentifier()));
+            assertTrue(experimentIds.contains(runningExperiment.getIdentifier()));
+            assertFalse(experimentIds.contains(draftExperiment.getIdentifier()));
+            assertFalse(experimentIds.contains(stoppedExperiment.getIdentifier()));
+            assertCachedRunningExperiments(experimentIds);
         } finally {
             ExperimentDataGen.end(runningExperiment);
 
@@ -152,6 +155,11 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
         }
     }
 
+    private static void assertCachedRunningExperiments(final List<String> experimentIds) {
+        CacheLocator.getExperimentsCache()
+            .getList(ExperimentsCache.CACHED_EXPERIMENTS_KEY)
+            .forEach(experiment -> assertTrue(experimentIds.contains(experiment.getIdentifier())));
+    }
 
     /**
      * Method to test: {@link ExperimentsAPI#start(String, User)}
@@ -209,6 +217,11 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
                     .setContentlet(content2Live).nextPersisted();
 
             ExperimentDataGen.start(newExperiment);
+            assertCachedRunningExperiments(APILocator.getExperimentsAPI()
+                .getRunningExperiments()
+                .stream()
+                .map(Experiment::getIdentifier)
+                .collect(Collectors.toList()));
 
             List<Contentlet> experimentContentlets = APILocator.getContentletAPI()
                     .getAllContentByVariants(APILocator.systemUser(),
@@ -226,6 +239,11 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
         }finally {
             APILocator.getExperimentsAPI().end(newExperiment.id().orElseThrow()
                     , APILocator.systemUser());
+            assertCachedRunningExperiments(APILocator.getExperimentsAPI()
+                .getRunningExperiments()
+                .stream()
+                .map(Experiment::getIdentifier)
+                .collect(Collectors.toList()));
         }
 
     }

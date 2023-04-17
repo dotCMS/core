@@ -237,12 +237,10 @@ import org.junit.runners.Suite.SuiteClasses;
         StartEndScheduledExperimentsJobTest.class,
         RulesAPIImplIntegrationTest.class,
         Task220825CreateVariantFieldTest.class,
-//        AnalyticsAPIImplTest.class,
         Task221007AddVariantIntoPrimaryKeyTest.class,
         ESContentletAPIImplTest.class,
         ExperimentAPIImpIT.class,
         ExperimentWebAPIImplIT.class,
-//        AccessTokenRenewJobTest.class,
         ContentletWebAPIImplIntegrationTest.class, // moved to top because of failures on GHA
         DependencyBundlerTest.class, // moved to top because of failures on GHA
         SiteAndFolderResolverImplTest.class, //Moved up to avoid conflicts with CT deletion
@@ -648,7 +646,9 @@ import org.junit.runners.Suite.SuiteClasses;
         PopulateContentletAsJSONUtilTest.class,
         PopulateContentletAsJSONJobTest.class,
         ContentTypeDestroyAPIImplTest.class,
-        Task230328AddMarkedForDeletionColumnTest.class
+        Task230328AddMarkedForDeletionColumnTest.class,
+//        AnalyticsAPIImplTest.class,
+//        AccessTokenRenewJobTest.class,
 })
 
 public class MainSuite {
