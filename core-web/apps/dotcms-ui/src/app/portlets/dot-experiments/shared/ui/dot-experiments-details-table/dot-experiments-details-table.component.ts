@@ -7,6 +7,9 @@ import {
     TemplateRef
 } from '@angular/core';
 
+import { SkeletonModule } from 'primeng/skeleton';
+
+import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotStringTemplateOutletDirective } from '@portlets/shared/directives/dot-string-template-outlet.directive';
 
 /**
@@ -22,7 +25,7 @@ import { DotStringTemplateOutletDirective } from '@portlets/shared/directives/do
 @Component({
     selector: 'dot-experiments-details-table',
     standalone: true,
-    imports: [CommonModule, DotStringTemplateOutletDirective],
+    imports: [CommonModule, DotStringTemplateOutletDirective, SkeletonModule, DotMessagePipeModule],
     templateUrl: './dot-experiments-details-table.component.html',
     styleUrls: ['./dot-experiments-details-table.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -35,6 +38,12 @@ export class DotExperimentsDetailsTableComponent {
     //** List of data to display, without templates, use the index of the objet as a header */
     @Input()
     data!: Array<unknown>;
+
+    @Input()
+    loading = false;
+
+    @Input()
+    empty = true;
 
     //** Template to display the headers */
     @ContentChild('headers', { static: true }) headers!: TemplateRef<unknown>;

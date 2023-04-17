@@ -28,3 +28,20 @@
     min-height: 35px;
     gap: $spacing-3;
 }
+
+.empty {
+    height: 200px;
+}
+
+.empty_icon {
+    color: $color-accessible-text-red;
+}
+
+.empty_message {
+    font-size: $font-size-lg;
+}
+
+.empty_description {
+    font-size: $font-size-md;
+    color: $color-palette-gray-600;
+}
