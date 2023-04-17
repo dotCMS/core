@@ -19,6 +19,24 @@
                 novalidate
             >
                 <div formGroupName="primary">
+                    <div class="field">
+                        <dot-experiment-options formControlName="type">
+                            <dot-experiment-options-item
+                                [value]="goalsTypes.BOUNCE_RATE"
+                                detail="{{ goals.BOUNCE_RATE.description | dm }}"
+                                title="{{ goals.BOUNCE_RATE.label | dm }}"
+                            />
+                            <dot-experiment-options-item
+                                [value]="goalsTypes.REACH_PAGE"
+                                detail="{{ goals.REACH_PAGE.description | dm }}"
+                                title="{{ goals.REACH_PAGE.label | dm }}"
+                            >
+                                <ng-template dotOptionContent>
+                                    <dot-experiments-goal-configuration-reach-page />
+                                </ng-template>
+                            </dot-experiment-options-item>
+                        </dot-experiment-options>
+                    </div>
                     <div class="field flex-auto flex flex-column">
                         <label class="p-label-input-required">{{
                             'experiments.goal.reach_page.form.name.label' | dm
@@ -42,24 +60,6 @@
                                 [field]="goalNameControl"
                             ></dot-field-validation-message>
                         </div>
-                    </div>
-                    <div class="field">
-                        <dot-experiment-options formControlName="type">
-                            <dot-experiment-options-item
-                                [value]="goalsTypes.BOUNCE_RATE"
-                                detail="{{ goals.BOUNCE_RATE.description | dm }}"
-                                title="{{ goals.BOUNCE_RATE.label | dm }}"
-                            />
-                            <dot-experiment-options-item
-                                [value]="goalsTypes.REACH_PAGE"
-                                detail="{{ goals.REACH_PAGE.description | dm }}"
-                                title="{{ goals.REACH_PAGE.label | dm }}"
-                            >
-                                <ng-template dotOptionContent>
-                                    <dot-experiments-goal-configuration-reach-page />
-                                </ng-template>
-                            </dot-experiment-options-item>
-                        </dot-experiment-options>
                     </div>
                 </div>
             </form>

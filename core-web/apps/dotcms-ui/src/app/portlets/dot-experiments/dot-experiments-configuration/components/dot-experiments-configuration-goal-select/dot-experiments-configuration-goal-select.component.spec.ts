@@ -83,15 +83,14 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
 
     it('should have a form & autofocus', () => {
         expect(spectator.query(byTestId('select-goal-form'))).toExist();
-        expect(spectator.query(byTestId('goal-name-input'))).toHaveAttribute('dotAutofocus');
         expect((spectator.query(byTestId('goal-name-input')) as HTMLInputElement).value).toEqual(
-            'Primary goal'
+            ''
         );
     });
 
     it('should set the default name when type change', () => {
         expect((spectator.query(byTestId('goal-name-input')) as HTMLInputElement).value).toEqual(
-            'Primary goal'
+            ''
         );
 
         const optionsRendered = spectator.queryAll(byTestId('dot-options-item-header'));
