@@ -725,10 +725,10 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 
                  hasHostFolderField = true;
 
-                 // Set the previous selected value of the tree or the conHostValue after the tree is loaded. 
+                 // Set the previous selected value of the tree or the conostValue after the tree is loaded. 
                  setTimeout(()=> {
-                        dijit.byId('FolderHostSelector-tree')?.set('selectedItem', "<%= conHostValue %>");
-                        newTree.set('path', oldTree?.path ||  "<%= conHostValue %>");
+                        const newTree = dijit.byId('FolderHostSelector-tree');
+                        newTree.set('path', oldTre?.path ||  "<%= conHostValue %>");
                         newTree.set('selectedItem', oldTree?.selectedItem ||   "<%= conHostValue %>");
                  },1000);
 
