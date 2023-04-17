@@ -19,7 +19,6 @@ import CharacterCount, { CharacterCountStorage } from '@tiptap/extension-charact
 import { Level } from '@tiptap/extension-heading';
 import { Highlight } from '@tiptap/extension-highlight';
 import { Link } from '@tiptap/extension-link';
-import Placeholder from '@tiptap/extension-placeholder';
 import { TableRow } from '@tiptap/extension-table-row';
 import { TextAlign } from '@tiptap/extension-text-align';
 import { Underline } from '@tiptap/extension-underline';
@@ -48,9 +47,9 @@ import {
     FreezeScroll,
     FREEZE_SCROLL_KEY,
     AssetUploader,
-    DotComands,
-    NodeTypes
+    DotComands
 } from '../../extensions';
+import { DotPlaceholder } from '../../extensions/dot-placeholder/dot-placeholder-plugin';
 import { ContentletBlock, ImageNode, VideoNode } from '../../nodes';
 import {
     formatHTML,
@@ -58,12 +57,6 @@ import {
     SetDocAttrStep,
     DotMarketingConfigService
 } from '../../shared';
-
-function toTitleCase(str) {
-    return str.replace(/\p{L}+('\p{L}+)?/gu, function (txt) {
-        return txt.charAt(0).toUpperCase() + txt.slice(1);
-    });
-}
 
 @Component({
     selector: 'dot-block-editor',
@@ -359,7 +352,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
                 allowedBlocks: this._allowedBlocks
             }),
             DotComands,
-            Placeholder.configure({ placeholder: this.placeholder }),
+            DotPlaceholder.configure({ placeholder: 'Type "/" for commands' }),
             Youtube.configure({
                 height: 300,
                 width: 400,
@@ -397,26 +390,6 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             Highlight.configure({ HTMLAttributes: { style: 'background: #accef7;' } }),
             Link.configure({ autolink: false, openOnClick: false })
         ];
-    }
-
-    /**
-     * Placeholder function
-     *
-     * @private
-     * @param {*} { node }
-     * @return {*}
-     * @memberof DotBlockEditorComponent
-     */
-    private placeholder({ node }) {
-        if (node.type.name === NodeTypes.HEADING) {
-            return `${toTitleCase(node.type.name)} ${node.attrs.level}`;
-        }
-
-        if (node.type.name === NodeTypes.CODE_BLOCK) {
-            return;
-        }
-
-        return 'Type "/" for commands';
     }
 
     private setEditorJSONContent(content: Content) {
