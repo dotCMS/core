@@ -1,4 +1,3 @@
-export * from './action-button/action-button.component';
 export * from './action-button/actions-menu.extension';
 export * from './asset-form/asset-form.component';
 export * from './asset-form/asset-form.extension';
