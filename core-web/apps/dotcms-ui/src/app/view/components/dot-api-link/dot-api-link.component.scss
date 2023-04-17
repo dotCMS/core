@@ -16,7 +16,7 @@ a:active {
 
     &:focus {
         background: white;
-        box-shadow: $shadow-focused;
+        box-shadow: $md-shadow-1;
     }
 
     &:active {
