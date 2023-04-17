@@ -41,7 +41,7 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit, OnDestro
     fieldAttributes: string[];
     icon: string;
 
-    private resizeObserver$: ResizeObserver;
+    private resizeObserver: ResizeObserver;
 
     constructor(
         private dotMessageService: DotMessageService,
@@ -73,7 +73,7 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit, OnDestro
         this.shouldResize = this.fieldAttributes.length > 1;
 
         if (this.shouldResize) {
-            this.resizeObserver$ = new ResizeObserver((entries) => {
+            this.resizeObserver = new ResizeObserver((entries) => {
                 const [host] = entries;
 
                 if (host.contentRect.width < 300 && !this.small) {
@@ -87,12 +87,12 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit, OnDestro
                 }
             });
 
-            this.resizeObserver$.observe(this.el.nativeElement);
+            this.resizeObserver.observe(this.el.nativeElement);
         }
     }
 
     ngOnDestroy(): void {
-        if (this.shouldResize) this.resizeObserver$.disconnect();
+        if (this.shouldResize) this.resizeObserver.disconnect();
     }
 
     @HostListener('click', ['$event'])
