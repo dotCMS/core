@@ -16,11 +16,10 @@ a:active {
 
     &:focus {
         background: white;
-        box-shadow: 0px 0px 0px 2.8px $color-palette-primary-300;
+        box-shadow: $shadow-focused;
     }
 
     &:active {
         background: $color-palette-primary-200;
-        box-shadow: none;
     }
 }
