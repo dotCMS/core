@@ -25,8 +25,6 @@
 .p-button.p-button-text {
     border-color: transparent;
     background-color: transparent;
-    align-items: center;
-    gap: 0.25rem;
     color: $color-palette-gray-900;
     overflow: hidden;
     max-width: 100%;
@@ -38,7 +36,8 @@
 
     &:disabled {
         color: $color-palette-gray-500;
-        i {
+
+        .pi {
             color: $color-palette-gray-500;
         }
     }
@@ -201,6 +200,7 @@
 .p-button.p-button-sm {
     font-size: $font-size-sm;
     padding: 0.25rem $spacing-1;
+    gap: 0.25rem;
 }
 
 .p-button.p-button-sm.p-button-outlined {
