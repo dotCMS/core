@@ -1387,6 +1387,18 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
            return obj.value;
         }
 
+        // Get all the elements with the class "dijitTreeExpandoOpened" and loop through them and call click() on them
+        function closeAllTreeNodes() {
+                const treeNodes = document.getElementsByClassName('dijitTreeExpandoOpened');
+                const treeNodesArr = [...treeNodes];
+                treeNodesArr.shift();
+                // Remove first element
+                for (let i = 0; i < treeNodesArr.length; i++) {
+                        treeNodesArr[i].click();
+                }
+        }
+
+
         function getSiteFolderFieldDefaultHTML() {
 
                 const defaultSiteFolderField = {
@@ -2382,6 +2394,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 
 	        hideMatchingResults ();
             doSearch(1, DOTCMS_DEFAULT_CONTENT_SORT_BY);
+            closeAllTreeNodes();
 
         }
 
