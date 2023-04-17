@@ -488,7 +488,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         const { keyword, languageId, archived } = this.get().pages;
         const hostId = this.siteService.currentSite.identifier;
         const langQuery = languageId ? `+languageId:${languageId}` : '';
-        const archivedQuery = archived ? `+deleted:${archived}` : '';
+        const archivedQuery = archived ? `+deleted:true` : '+deleted:false';
         const identifierQuery = identifier ? `+identifier:${identifier}` : '';
         const keywordQuery = keyword
             ? `+(title:${keyword}* OR path:*${keyword}* OR urlmap:*${keyword}*)`

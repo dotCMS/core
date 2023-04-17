@@ -162,6 +162,7 @@ import com.dotmarketing.portlets.workflows.util.WorkflowEmailUtilTest;
 import com.dotmarketing.quartz.DotStatefulJobTest;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
 import com.dotmarketing.quartz.job.IntegrityDataGenerationJobTest;
+import com.dotmarketing.quartz.job.PopulateContentletAsJSONJobTest;
 import com.dotmarketing.quartz.job.StartEndScheduledExperimentsJobTest;
 import com.dotmarketing.startup.StartupTasksExecutorTest;
 import com.dotmarketing.startup.runalways.Task00050LoadAppsSecretsTest;
@@ -236,12 +237,10 @@ import org.junit.runners.Suite.SuiteClasses;
         StartEndScheduledExperimentsJobTest.class,
         RulesAPIImplIntegrationTest.class,
         Task220825CreateVariantFieldTest.class,
-//        AnalyticsAPIImplTest.class,
         Task221007AddVariantIntoPrimaryKeyTest.class,
         ESContentletAPIImplTest.class,
         ExperimentAPIImpIT.class,
         ExperimentWebAPIImplIT.class,
-//        AccessTokenRenewJobTest.class,
         ContentletWebAPIImplIntegrationTest.class, // moved to top because of failures on GHA
         DependencyBundlerTest.class, // moved to top because of failures on GHA
         SiteAndFolderResolverImplTest.class, //Moved up to avoid conflicts with CT deletion
@@ -645,8 +644,11 @@ import org.junit.runners.Suite.SuiteClasses;
         ZipUtilTest.class,
         Task230110MakeSomeSystemFieldsRemovableByBaseTypeTest.class,
         PopulateContentletAsJSONUtilTest.class,
+        PopulateContentletAsJSONJobTest.class,
         ContentTypeDestroyAPIImplTest.class,
-        Task230328AddMarkedForDeletionColumnTest.class
+        Task230328AddMarkedForDeletionColumnTest.class,
+//        AnalyticsAPIImplTest.class,
+//        AccessTokenRenewJobTest.class,
 })
 
 public class MainSuite {

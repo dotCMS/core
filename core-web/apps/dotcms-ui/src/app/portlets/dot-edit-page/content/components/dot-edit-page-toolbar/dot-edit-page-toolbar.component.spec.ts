@@ -109,7 +109,7 @@ class MockDotPageStateService {
 export class ActivatedRouteListStoreMock {
     get queryParams() {
         return of({
-            editPageTab: 'edit',
+            mode: DotPageMode.EDIT,
             variantName: 'Original',
             experimentId: '1232121212'
         });

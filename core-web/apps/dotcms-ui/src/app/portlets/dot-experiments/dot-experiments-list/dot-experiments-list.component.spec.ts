@@ -184,7 +184,7 @@ describe('ExperimentsListComponent', () => {
             ['/edit-page/experiments/reports/', EXPERIMENT_MOCK.id],
             {
                 queryParams: {
-                    editPageTab: null,
+                    mode: null,
                     variantName: null,
                     experimentId: null
                 },
