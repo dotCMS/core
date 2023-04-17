@@ -77,11 +77,13 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         ({ experiment }) => experiment?.status
     );
 
-    readonly getRunExperimentBtnLabel$: Observable<string> = this.select(({ experiment }) =>
-        experiment && !Object.values(experiment.scheduling).includes(null)
-            ? this.dotMessageService.get('experiments.action.schedule-experiment')
-            : this.dotMessageService.get('experiments.action.start-experiment')
-    );
+    readonly getRunExperimentBtnLabel$: Observable<string> = this.select(({ experiment }) => {
+        const { scheduling } = experiment ? experiment : { scheduling: null };
+
+        return scheduling === null || Object.values(experiment.scheduling).includes(null)
+            ? this.dotMessageService.get('experiments.action.start-experiment')
+            : this.dotMessageService.get('experiments.action.schedule-experiment');
+    });
 
     readonly showExperimentSummary$: Observable<boolean> = this.select(({ experiment }) =>
         Object.values([
