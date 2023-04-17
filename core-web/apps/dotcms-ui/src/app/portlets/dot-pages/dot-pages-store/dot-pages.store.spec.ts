@@ -356,7 +356,7 @@ describe('DotPageStore', () => {
         expect(dotESContentService.get).toHaveBeenCalledWith({
             itemsPerPage: 40,
             offset: '0',
-            query: '+conhost:123-xyz-567-xxl +working:true  +(urlmap:* OR basetype:5)    ',
+            query: '+conhost:123-xyz-567-xxl +working:true  +(urlmap:* OR basetype:5)  +deleted:false  ',
             sortField: 'title',
             sortOrder: ESOrderDirection.ASC
         });

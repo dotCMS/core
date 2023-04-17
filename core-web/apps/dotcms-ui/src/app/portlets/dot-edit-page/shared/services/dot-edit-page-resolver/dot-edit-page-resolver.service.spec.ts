@@ -19,7 +19,7 @@ import {
     DotPageRenderService
 } from '@dotcms/data-access';
 import { CoreWebService, HttpCode, LoginService } from '@dotcms/dotcms-js';
-import { DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
+import { DotPageMode, DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
 import {
     CoreWebServiceMock,
     LoginServiceMock,
@@ -86,6 +86,7 @@ describe('DotEditPageResolver', () => {
     beforeEach(() => {
         route.queryParams.url = 'edit-page/content';
         route.queryParams.language_id = '2';
+        route.queryParams.mode = DotPageMode.EDIT;
         route.children = [
             {
                 url: [
@@ -107,6 +108,7 @@ describe('DotEditPageResolver', () => {
 
         expect<any>(dotPageStateService.requestPage).toHaveBeenCalledWith({
             url: 'edit-page/content',
+            mode: DotPageMode.EDIT,
             viewAs: {
                 language: '2'
             }
