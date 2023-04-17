@@ -59,6 +59,7 @@ import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.PermissionableProxy;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -109,6 +110,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     private static final int VARIANTS_NUMBER_MAX = 3;
 
     final ExperimentsFactory factory = FactoryLocator.getExperimentsFactory();
+    final ExperimentsCache experimentsCache = CacheLocator.getExperimentsCache();
     final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
     final ContentletAPI contentletAPI = APILocator.getContentletAPI();
     final VariantAPI variantAPI = APILocator.getVariantAPI();
@@ -292,7 +294,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         Condition condition = targetingCondition.id().isPresent()
             ? Try.of(()->rulesAPI.getConditionById(targetingCondition.id().get(), user, false))
                 .getOrElseThrow(()->new IllegalArgumentException("Invalid targeting Condition Id provided. Id: " + targetingCondition.id().get()))
-            : createCondition(experimentRule, targetingCondition);
+            : createCondition(experimentRule);
 
         condition.setOperator(targetingCondition.operator());
         condition.setConditionletId(targetingCondition.conditionKey());
@@ -306,8 +308,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                         + condition.getConditionletId()));
     }
 
-    private Condition createCondition(final Rule experimentRule,
-            final TargetingCondition targetingCondition) {
+    private Condition createCondition(final Rule experimentRule) {
         final Condition condition = new Condition();
         condition.setConditionGroup(experimentRule.getGroups().get(0).getId());
         return condition;
@@ -471,9 +472,10 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             final Scheduling scheduling = startNowScheduling(persistedExperiment);
             toReturn = save(persistedExperiment.withScheduling(scheduling).withStatus(RUNNING), user);
             publishContentOnExperimentVariants(user, toReturn);
+            cacheRunningExperiments();
         } else {
             Scheduling scheduling = persistedExperiment.scheduling().get();
-            toReturn = save(persistedExperiment.withScheduling(scheduling).withStatus(SCHEDULED),user);
+            toReturn = save(persistedExperiment.withScheduling(scheduling).withStatus(SCHEDULED), user);
         }
 
         return toReturn;
@@ -551,7 +553,11 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
         final Experiment ended = persistedExperimentOpt.get().withStatus(ENDED)
                 .withScheduling(endedScheduling);
-        return save(ended, user);
+        final Experiment saved = save(ended, user);
+
+        cacheRunningExperiments();
+
+        return saved;
     }
 
     @WrapInTransaction
@@ -776,12 +782,14 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
     }
 
-    @CloseDBIfOpened
     @Override
     public List<Experiment> getRunningExperiments() throws DotDataException {
-        return FactoryLocator.getExperimentsFactory().list(
-                ExperimentFilter.builder().statuses(set(Status.RUNNING)).build()
-        );
+        final List<Experiment> cached = experimentsCache.getList(ExperimentsCache.CACHED_EXPERIMENTS_KEY);
+        if (Objects.nonNull(cached)) {
+            return cached;
+        }
+
+        return cacheRunningExperiments();
     }
 
     @Override
@@ -826,6 +834,15 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             events);
         experimentResults.setBayesianResult(calcBayesian(experimentResults, null));
         return experimentResults;
+    }
+
+    @CloseDBIfOpened
+    private List<Experiment> cacheRunningExperiments() throws DotDataException {
+        final List<Experiment> experiments = FactoryLocator
+            .getExperimentsFactory()
+            .list(ExperimentFilter.builder().statuses(set(Status.RUNNING)).build());
+        experimentsCache.putList(ExperimentsCache.CACHED_EXPERIMENTS_KEY, experiments);
+        return experiments;
     }
 
     /**
