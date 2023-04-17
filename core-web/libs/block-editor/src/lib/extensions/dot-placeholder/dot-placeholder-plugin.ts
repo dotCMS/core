@@ -42,7 +42,7 @@ const addPlusButton = (pos: number, node, editor: Editor) => {
     }
 
     button.innerHTML = '<i class="pi pi-plus"></i>';
-    div.setAttribute('dragable', 'false');
+    button.setAttribute('dragable', 'false');
     button.addEventListener(
         'mousedown',
         (e) => {
