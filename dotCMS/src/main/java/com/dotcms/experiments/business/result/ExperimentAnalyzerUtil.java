@@ -1,10 +1,7 @@
 package com.dotcms.experiments.business.result;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.analytics.metrics.Metric;
 import com.dotcms.analytics.metrics.MetricType;
-
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.experiments.model.Goals;
@@ -13,9 +10,12 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
+
 import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
+
+import static com.dotcms.util.CollectionsUtils.map;
 
 
 /**
@@ -29,8 +29,7 @@ public enum ExperimentAnalyzerUtil {
     INSTANCE;
 
     final static Lazy<Map<MetricType, MetricExperimentAnalyzer>> experimentResultQueryHelpers =
-            Lazy.of(() -> createHelpersMap());
-
+            Lazy.of(ExperimentAnalyzerUtil::createHelpersMap);
 
     private static Map<MetricType, MetricExperimentAnalyzer> createHelpersMap() {
         return map(
@@ -91,7 +90,7 @@ public enum ExperimentAnalyzerUtil {
         return builder.build();
     }
 
-    private static HTMLPageAsset getPage(String pageId) {
+    private HTMLPageAsset getPage(final String pageId) {
         try {
             return APILocator.getHTMLPageAssetAPI().fromContentlet(
                     APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(pageId)

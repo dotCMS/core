@@ -20,6 +20,7 @@
                     }}</label>
                     <input
                         id="name"
+                        [maxlength]="this.maxNameLength + 1"
                         [tabindex]="1"
                         data-testId="add-experiment-name-input"
                         dotAutofocus

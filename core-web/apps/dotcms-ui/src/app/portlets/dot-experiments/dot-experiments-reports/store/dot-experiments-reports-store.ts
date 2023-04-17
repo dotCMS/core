@@ -1,4 +1,5 @@
 import { ComponentStore, tapResponse } from '@ngrx/component-store';
+import { ChartData } from 'chart.js';
 import { forkJoin, Observable } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
@@ -7,13 +8,22 @@ import { Title } from '@angular/platform-browser';
 
 import { switchMap, tap } from 'rxjs/operators';
 
+import { DotMessageService } from '@dotcms/data-access';
 import {
     ComponentStatus,
+    daysOfTheWeek,
+    DEFAULT_VARIANT_ID,
     DotExperiment,
     DotExperimentResults,
     DotExperimentStatusList,
+    DotResultDate,
+    DotResultGoal,
     DotResultSimpleVariant,
-    DotResultVariant
+    DotResultVariant,
+    ExperimentChartDatasetColorsVariants,
+    ExperimentLineChartDatasetDefaultProperties,
+    LineChartColorsProperties,
+    TrafficProportion
 } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
@@ -23,15 +33,13 @@ export interface DotExperimentsReportsState {
     status: ComponentStatus;
     results: DotExperimentResults | null;
     variantResults: DotResultSimpleVariant[] | null;
-    chartResults: unknown | null;
 }
 
 const initialState: DotExperimentsReportsState = {
     experiment: null,
     status: ComponentStatus.INIT,
     results: null,
-    variantResults: null,
-    chartResults: null
+    variantResults: null
 };
 
 // ViewModel Interfaces
@@ -42,7 +50,7 @@ export interface VmReportExperiment {
     showSummary: boolean;
     results: DotExperimentResults;
     variantResults: DotResultSimpleVariant[] | null;
-    chartResults: unknown | null;
+    chartData: ChartData<'line'> | null;
 }
 
 @Injectable()
@@ -64,6 +72,15 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
             DotExperimentStatusList.RUNNING,
             DotExperimentStatusList.ARCHIVED
         ]).includes(experiment?.status)
+    );
+
+    readonly getChartData$: Observable<ChartData<'line'>> = this.select(({ experiment, results }) =>
+        experiment && results
+            ? {
+                  labels: this.getChartLabels(results.goals.primary.variants),
+                  datasets: this.getChartDatasets(results.goals.primary.variants, experiment)
+              }
+            : null
     );
 
     readonly loadExperimentAndResults = this.effect((experimentId$: Observable<string>) => {
@@ -116,24 +133,22 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
         this.state$,
         this.isLoading$,
         this.showExperimentSummary$,
-        (
-            { experiment, status, results, variantResults, chartResults },
-            isLoading,
-            showSummary
-        ) => ({
+        this.getChartData$,
+        ({ experiment, status, results, variantResults }, isLoading, showSummary, chartData) => ({
             experiment,
             status,
             isLoading,
             showSummary,
             results,
             variantResults,
-            chartResults
+            chartData
         })
     );
 
     constructor(
         private readonly dotExperimentsService: DotExperimentsService,
         private readonly dotHttpErrorManagerService: DotHttpErrorManagerService,
+        private readonly dotMessageService: DotMessageService,
         private readonly title: Title
     ) {
         super(initialState);
@@ -143,12 +158,6 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
         this.title.setTitle(`${experiment.name} - ${this.title.getTitle()}`);
     }
 
-    /**
-     * Convert the variant object to array limited with variantName and uniqueBySession
-     * @param {Record<string, DotResultVariant>} variants
-     * @returns {DotResultSimpleVariant[]}
-     * @memberof DotExperimentsReportsStore
-     */
     private reduceVariantsData(
         variants: Record<string, DotResultVariant>,
         experiment: DotExperiment
@@ -159,5 +168,64 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
                 .name,
             uniqueBySession
         }));
+    }
+
+    private getChartDatasets(
+        result: DotResultGoal['variants'],
+        experiment: DotExperiment
+    ): ChartData<'line'>['datasets'] {
+        const { trafficProportion } = experiment;
+        const variantsOrdered = this.orderVariants(Object.keys(result));
+
+        let colorIndex = 0;
+
+        return variantsOrdered.map((variantName) => {
+            const { details } = result[variantName];
+
+            return {
+                label: this.getLabelName(trafficProportion, variantName),
+                data: this.getParsedChartData(details),
+                ...this.getPropertyColors(colorIndex++),
+                ...ExperimentLineChartDatasetDefaultProperties
+            };
+        });
+    }
+
+    private getChartLabels(variants: DotResultGoal['variants']) {
+        return variants[DEFAULT_VARIANT_ID].details
+            ? this.addWeekdayToDateLabels(Object.keys(variants[DEFAULT_VARIANT_ID].details))
+            : [];
+    }
+
+    private addWeekdayToDateLabels(labels: Array<string>): string[][] {
+        return labels.map((item) => {
+            const date = new Date(item).getDay();
+
+            return [this.dotMessageService.get(daysOfTheWeek[date]), item];
+        });
+    }
+
+    private getParsedChartData(data: Record<string, DotResultDate>): number[] {
+        return Object.values(data).map((day) => day.multiBySession);
+    }
+
+    private getPropertyColors(index: number): LineChartColorsProperties {
+        return ExperimentChartDatasetColorsVariants[index];
+    }
+
+    private orderVariants(arrayToOrder: Array<string>): Array<string> {
+        const index = arrayToOrder.indexOf(DEFAULT_VARIANT_ID);
+        if (index > -1) {
+            arrayToOrder.splice(index, 1);
+        }
+
+        arrayToOrder.unshift(DEFAULT_VARIANT_ID);
+
+        return arrayToOrder;
+    }
+
+    //Todo: Remove this when the endpoint sends the name set by the user
+    private getLabelName(trafficProportion: TrafficProportion, variantId: string) {
+        return trafficProportion.variants.find((variant) => variant.id == variantId).name;
     }
 }

@@ -37,8 +37,8 @@ export class DotStateIcon {
         );
     }
 
-    private getType({ live, working, deleted, hasLiveVersion }: DotContentState): string {
-        if (this.isTrue(deleted)) {
+    private getType({ live, working, archived, deleted, hasLiveVersion }: DotContentState): string {
+        if (this.isTrue(deleted) || this.isTrue(archived)) {
             return 'archived'; // crossed
         }
 
