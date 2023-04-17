@@ -36,6 +36,7 @@ import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -76,6 +77,40 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
     }
 
     /**
+     * This method creates a temp table with the inodes of the contentlets to be relocated
+     * @param tempTableName
+     * @param source
+     * @return
+     */
+    private String dumpTableScript(final String tempTableName, final ContentType source){
+        return DbConnectionFactory.isPostgres() ?
+                String.format(
+                " CREATE TEMP TABLE %s AS\n"
+                        + " SELECT ROW_NUMBER() OVER(ORDER BY inode) row_num, inode\n"
+                        + " FROM contentlet c where c.structure_inode = '%s' ;\n"
+                        + " CREATE index ON %s(row_num); "
+                        + " CREATE index ON %s(inode); "
+                , tempTableName
+                , source.inode()
+                , tempTableName
+                , tempTableName
+        )
+                :
+                        String.format(
+                                         " SELECT ROW_NUMBER () OVER(ORDER BY inode) row_num , inode INTO %s\n"
+                                        + " FROM contentlet c where c.structure_inode = '%s' ;\n"
+                                        + " CREATE index idx_row_%s ON %s(row_num); "
+                                        + " CREATE index idx_inode_%s ON %s(inode); "
+                                , tempTableName
+                                , source.inode()
+                                , tempTableName
+                                , tempTableName
+                                , tempTableName
+                                , tempTableName
+                        );
+    }
+
+    /**
      * This method relocates all contentlets from a given structure to another structure And returns
      * the new structure purged from fields
      *
@@ -98,18 +133,8 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
 
         final String tempTableName = String.format("contentlets_to_be_updated_%d", System.currentTimeMillis());
 
-        //The quickest wa
-        String dumpContentletToUpdate = String.format(
-                " CREATE TEMP TABLE %s AS\n"
-                + " SELECT ROW_NUMBER() OVER(ORDER BY inode) row_num, inode\n"
-                + " FROM contentlet c where c.structure_inode = '%s' ;\n"
-                + " CREATE index ON %s(row_num); "
-                + " CREATE index ON %s(inode); "
-                , tempTableName
-                , source.inode()
-                , tempTableName
-                , tempTableName
-        );
+        //The quickest way to relocate contentlets is to create a temp table with the inodes of the contentlets to be relocated
+        final String dumpContentletToUpdate = dumpTableScript(tempTableName, source);
 
         Try.of(()->new DotConnect().executeStatement(dumpContentletToUpdate)).onFailure(e->{
             Logger.error(this.getClass(), "Error trying to create temp table to update contentlets", e);
@@ -123,6 +148,10 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
         int to = limit;
 
         int times = allCount <= limit ?  1 : (int)Math.ceil(allCount / (float)limit);
+
+        Logger.debug(this.getClass(),
+                String.format("Relocating (%d) contentlets from (%s) to (%s) in (%d) transactions..", allCount, source.name(), target.name(), times));
+
         for (int i = 0; i < times; i++) {
 
             Logger.debug(this.getClass(),
@@ -134,6 +163,11 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
 
             from += limit;
             to += limit;
+
+            if(i % 100 == 0){
+                Logger.info(this.getClass(),
+                        String.format("Relocated from (%d) to (%d) out of (%d) contentlets..", from, to, allCount));
+            }
 
         }
 
