@@ -162,9 +162,8 @@
     padding-right: $spacing-2;
 }
 
-.p-button.p-button-icon-only.p-button-sm.p-button-transparent {
+.p-button.p-button-icon-only.p-button-sm {
     height: $spacing-4;
-    background-color: transparent;
     border: 0 none;
     color: $color-palette-primary;
     opacity: 0.5;
@@ -181,7 +180,6 @@
     }
 
     &:disabled {
-        background-color: transparent;
         color: $color-palette-gray-500;
     }
 }

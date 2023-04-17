@@ -58,6 +58,15 @@
         display: flex;
         flex-shrink: 0;
         margin-left: $spacing-1;
+
+        ::ng-deep {
+            .p-button {
+                background-color: transparent;
+                &:disabled {
+                    background-color: transparent;
+                }
+            }
+        }
     }
 }
 
