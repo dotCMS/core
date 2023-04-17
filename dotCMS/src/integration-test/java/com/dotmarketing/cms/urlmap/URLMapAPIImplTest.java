@@ -215,7 +215,7 @@ public class URLMapAPIImplTest {
     /**
      * methodToTest {@link URLMapAPIImpl#processURLMap(UrlMapContext)}
      * Given Scenario: Process a URL Map url when both the Content Type and Content exists
-     * ExpectedResult: Should return a {@link URLMapInfo} with the right content ans detail page
+     * ExpectedResult: Should return a {@link URLMapInfo} with the right content and detail page
      */
     @Test
     public void shouldReturnContentletWhenTheContentExists()
@@ -235,6 +235,8 @@ public class URLMapAPIImplTest {
                 urlMapInfo.getContentlet().getStringProperty("urlMap"));
         assertEquals("/news-events/news/news-detail", urlMapInfo.getIdentifier().getURI());
     }
+
+
 
     /**
      * MethodToTest {@link URLMapAPIImpl#processURLMap(UrlMapContext)}

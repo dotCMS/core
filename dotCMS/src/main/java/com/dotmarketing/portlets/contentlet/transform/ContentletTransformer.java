@@ -106,9 +106,7 @@ public class ContentletTransformer implements DBTransformer<Contentlet> {
         contentlet.setModDate((Date) map.get("mod_date"));
         contentlet.setModUser((String) map.get("mod_user"));
         contentlet.setOwner((String) map.get("owner"));
-        contentlet.setProperty(Contentlet.TITTLE_KEY, map.get(Contentlet.TITTLE_KEY));
         contentlet.setSortOrder(ConversionUtils.toInt(map.get("sort_order"),0));
-
         contentlet.setLanguageId(ConversionUtils.toLong(map.get("language_id"), 0L));
 
         try {
@@ -247,10 +245,14 @@ public class ContentletTransformer implements DBTransformer<Contentlet> {
      */
     private static void populateFields(final Contentlet contentlet, final Map<String, Object> originalMap)
             throws DotDataException, DotSecurityException {
+
         final Map<String, Object> fieldsMap = new HashMap<>();
         final String inode = (String) originalMap.get(INODE);
         final String identifier = (String) originalMap.get(IDENTIFIER);
         final String contentTypeId = (String) originalMap.get(STRUCTURE_INODE);
+
+        // Populate the title
+        contentlet.setProperty(Contentlet.TITTLE_KEY, originalMap.get(Contentlet.TITTLE_KEY));
 
         final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser())
                 .find(contentTypeId);
@@ -278,6 +280,11 @@ public class ContentletTransformer implements DBTransformer<Contentlet> {
                             && FileAssetAPI.FILE_NAME_FIELD
                             .equals(field.getVelocityVarName())) {
                         value = APILocator.getIdentifierAPI().find(identifier).getAssetName();
+                    } else if (UtilMethods.isSet(identifier)
+                            && contentType instanceof FileAssetContentType
+                            && FileAssetAPI.META_DATA_FIELD.equals(field.getVelocityVarName())) {
+                        // We can ignore this metadata field, metadata will be generated directly from the asset
+                        value = Collections.emptyMap();
                     } else {
                         if (LegacyFieldTypes.BINARY.legacyValue()
                                 .equals(field.getFieldType())) {

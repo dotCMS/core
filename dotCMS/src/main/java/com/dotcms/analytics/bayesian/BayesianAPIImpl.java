@@ -1,19 +1,27 @@
 package com.dotcms.analytics.bayesian;
 
 
+import com.dotcms.analytics.bayesian.model.ABTestingType;
 import com.dotcms.analytics.bayesian.model.BayesianInput;
 import com.dotcms.analytics.bayesian.model.BayesianResult;
 import com.dotcms.analytics.bayesian.model.DifferenceData;
 import com.dotcms.analytics.bayesian.model.QuantilePair;
 import com.dotcms.analytics.bayesian.model.SampleData;
 import com.dotcms.analytics.bayesian.model.SampleGroup;
+import com.dotcms.analytics.bayesian.model.VariantInputPair;
+import com.dotcms.analytics.bayesian.model.VariantProbability;
+import com.dotcms.variant.VariantAPI;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableMap;
 import org.apache.commons.numbers.gamma.LogBeta;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -22,6 +30,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 
 /**
@@ -38,6 +47,8 @@ public class BayesianAPIImpl implements BayesianAPI {
     private static final BiFunction<Double, Double, Double> LOG_BETA_FN = LogBeta::value;
     private static final double HALF = 0.5;
     private static final double TIE_COMPARE_DELTA = 0.01;
+    private static final Comparator<VariantProbability> VARIANT_PROBABILITY_COMPARATOR =
+        Comparator.comparingDouble(VariantProbability::value);
 
     /**
      * {@inheritDoc}
@@ -45,44 +56,99 @@ public class BayesianAPIImpl implements BayesianAPI {
     @Override
     public BayesianResult calcProbBOverA(final BayesianInput input) {
         // validate input
-        validateInput(input);
+        final Optional<BayesianResult> noopResult = detectNoop(input);
+        if (noopResult.isPresent()) {
+            return noopResult.get();
+        }
 
         final boolean priorPresent = isPriorPresent(input);
         final BetaDistribution controlData = priorPresent ? new BetaModel(input).distribution() : null;
         final BetaDistribution testData = priorPresent ? new BetaModel(input).distribution() : null;
         final DifferenceData differenceData = generateDifferenceData(controlData, testData);
-
+        final VariantInputPair control = input.control();
+        final VariantInputPair test = input.variantPairs().get(0);
         // call calculation
-        final double value = calcABTesting(
-            input.controlSuccesses() + 1,
-            input.controlFailures() + 1,
-            input.testSuccesses() + 1,
-            input.testFailures() + 1);
+        final double value = calcABTesting(control, test);
+
         BayesianResult.Builder builder = BayesianResult.builder()
             .value(value)
-            .inFavorOf(VARIANT_B)
-            .suggested(suggestWinner(value, input.variants()));
+            .probabilities(List.of(
+                toProbability(input.control(), 1 - value),
+                toProbability(input.variantPairs().get(0), value)))
+            .suggestedWinner(suggestABWinner(value, control.variant(), input.variantPairs().get(0).variant()));
         if (priorPresent) {
             builder = builder
                 .distributionPdfs(calcDistributionsPdfs(controlData, testData))
                 .differenceData(differenceData)
-                .quantiles(calcQuantiles(differenceData.differences(), input.priors().alpha(), input.priors().beta()));
+                .quantiles(calcQuantiles(
+                    differenceData.differences(),
+                    input.priors().alpha(),
+                    input.priors().beta()));
         }
 
         return builder.build();
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public BayesianResult calcProbABC(final BayesianInput input) {
+        // validate input
+        final Optional<BayesianResult> noopResult = detectNoop(input);
+        if (noopResult.isPresent()) {
+            return noopResult.get();
+        }
+
+        final List<VariantProbability> results = calcABCTesting(
+            input.control(),
+            input.variantPairs().get(0),
+            input.variantPairs().get(1));
+
+        return BayesianResult.builder()
+            .value(results.get(0).value())
+            .probabilities(results)
+            .suggestedWinner(suggestABCWinner(results))
+            .build();
+    }
+
+    /**
+     * Resolves which variant could be considered as the winner of the test.
+     *
+     * @param value calculated probability that B (Test) beats A (Control)
+     * @param control control variant
+     * @param test test variant
+     * @return winner variant name
+     */
     @NotNull
-    private static String suggestWinner(final double value, final List<String> variants) {
+    private String suggestABWinner(final double value, final String control, final String test) {
         if (Double.compare(HALF, value) == 0 || Math.abs(HALF - value) <= TIE_COMPARE_DELTA) {
             return TIE;
         }
 
-        return variants
+        return value < 0.5 ? control : test;
+    }
+
+    /**
+     * Resolves which variant could be considered as the winner of the test.
+     *
+     * @param probabilities list of probabilities
+     * @return winner variant name
+     */
+    @NotNull
+    private String suggestABCWinner(final List<VariantProbability> probabilities) {
+        final VariantProbability controlProbability = probabilities.get(0);
+        if (probabilities
             .stream()
-            .filter(value < 0.5 ? DEFAULT_VARIANT_FILTER : OTHER_THAN_DEFAULT_VARIANT_FILTER)
-            .findFirst()
-            .orElse(UNKNOWN);
+            .allMatch(variantProbability -> variantProbability.value() == controlProbability.value())) {
+            return TIE;
+        }
+
+        return probabilities
+            .stream()
+            .max(VARIANT_PROBABILITY_COMPARATOR)
+            .map(VariantProbability::variant)
+            .orElse(NONE);
     }
 
     /**
@@ -104,6 +170,114 @@ public class BayesianAPIImpl implements BayesianAPI {
                     - logBeta(alphaA, betaA));
         }
         return result;
+    }
+
+    /**
+     * Calculates probability that B (Test) beats A (Control) just as main {@link #calcProbBOverA(BayesianInput)}
+     *
+     * @param control successes and failures
+     * @param test successes and failures
+     * @return result representing probability that B beats A
+     */
+    private double calcABTesting(final VariantInputPair control, final VariantInputPair test) {
+        return calcABTesting(
+            control.successes() + 1,
+            control.failures() + 1,
+            test.successes() + 1,
+            test.failures() + 1);
+    }
+
+    /**
+     * Calculates probability that C (Test) beats A (Control) and B (Test) just as main
+     * {@link #calcProbABC(BayesianInput)}
+     *
+     * @param alphaA control successes
+     * @param betaA control failures
+     * @param alphaB test B successes
+     * @param betaB test B failures
+     * @param alphaC test C successes
+     * @param betaC test C failures
+     * @return a list {@link VariantProbability} representing probability that C beats A and B
+     */
+    private Double calcABCTesting(final long alphaA, final long betaA,
+                                  final long alphaB, final long betaB,
+                                  final long alphaC, final long betaC) {
+        double total = 0.0;
+
+        for(int i = 0; i < alphaA; i++) {
+            for(int j = 0; j < alphaB; j++) {
+                total += Math.exp(
+                    logBeta(alphaC + i + j, betaA + betaB + betaC)
+                        - Math.log(betaA + i)
+                        - Math.log(betaB + j)
+                        - logBeta(1 + i, betaA)
+                        - logBeta(1 + j, betaB)
+                        - logBeta(alphaC, betaC));
+            }
+        }
+
+        final double probAOverC = calcABTesting(alphaC, betaC, alphaA, betaA);
+        final double probBOverC = calcABTesting(alphaC, betaC, alphaB, betaB);
+
+        return 1 - probAOverC - probBOverC + total;
+    }
+
+    /**
+     * Calculates probability that C (Test) beats A (Control) and B (Test) just as main
+     * {@link #calcProbABC(BayesianInput)}
+     *
+     * @param control successes and failures
+     * @param testB successes and failures
+     * @param testC successes and failures
+     * @return a list {@link VariantProbability} representing probability that C beats A and B
+     */
+    private VariantProbability calcSingleABCTesting(final VariantInputPair control,
+                                                    final VariantInputPair testB,
+                                                    final VariantInputPair testC) {
+        return toProbability(
+            testC,
+            calcABCTesting(
+                control.successes() + 1,
+                control.failures() + 1,
+                testB.successes() + 1,
+                testB.failures() + 1,
+                testC.successes() + 1,
+                testC.failures() + 1));
+    }
+
+    /**
+     * Calculates probability that C (Test) beats A (Control) and B (Test) just as main
+     * {@link #calcProbABC(BayesianInput)}
+     *
+     * @param control successes and failures
+     * @param testB successes and failures
+     * @param testC successes and failures
+     * @return a list {@link VariantProbability} representing probability that C beats A and B
+     */
+    private List<VariantProbability> calcABCTesting(final VariantInputPair control,
+                                                    final VariantInputPair testB,
+                                                    final VariantInputPair testC) {
+        return Stream
+            .of(
+                List.of(testC, testB, control),
+                List.of(control, testC, testB),
+                List.of(testB, control, testC))
+            .map(inputs -> calcSingleABCTesting(inputs.get(0), inputs.get(1), inputs.get(2)))
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * Converts variant pair information and the calculated probability into {@link VariantProbability} instance.
+     *
+     * @param pair variant pair
+     * @param value calculated probability
+     * @return {@link VariantProbability} instance
+     */
+    private VariantProbability toProbability(final VariantInputPair pair, final double value) {
+        return VariantProbability.builder()
+            .variant(pair.variant())
+            .value(value)
+            .build();
     }
 
     /**
@@ -239,8 +413,20 @@ public class BayesianAPIImpl implements BayesianAPI {
      *
      * @param input Bayesian calculation input
      */
-    private void validateInput(final BayesianInput input) {
+    private void validateInput(final BayesianInput input) throws DotDataException {
         Objects.requireNonNull(input, "Bayesian input is missing");
+
+        validateVariantPair(input.control());
+        input.variantPairs().forEach(this::validateVariantPair);
+
+        final List<VariantInputPair> variantPairs = new ArrayList<>(input.variantPairs());
+        variantPairs.add(input.control());
+        for (final VariantInputPair variantPair: variantPairs) {
+            validateVariantsSize(input, input.type() == ABTestingType.ABC ? 2 : 1);
+            if (variantPair.successes() + variantPair.failures() == 0) {
+                throw new DotDataException("Variant successes and failures cannot be zero");
+            }
+        }
 
         if (Objects.nonNull(input.priors().alpha()) && input.priors().alpha() <= 0.0) {
             throw new IllegalArgumentException("Prior alpha cannot have a zero or negative value");
@@ -249,24 +435,52 @@ public class BayesianAPIImpl implements BayesianAPI {
         if (Objects.nonNull(input.priors().beta()) && input.priors().beta() <= 0.0) {
             throw new IllegalArgumentException("Prior beta cannot have a zero or negative value");
         }
+    }
 
-        if (input.controlSuccesses() < 0) {
-            throw new IllegalArgumentException("Control successes cannot have negative value");
-        }
-
-        if (input.controlFailures() < 0) {
-            throw new IllegalArgumentException("Control failures cannot have negative value");
-        }
-
-        if (input.testSuccesses() < 0) {
-            throw new IllegalArgumentException("Test successes cannot have negative value");
-        }
-
-        if (input.testFailures() < 0) {
-            throw new IllegalArgumentException("Test failures cannot have negative value");
+    private void validateVariantsSize(final BayesianInput input, final int expected) {
+        if (input.variantPairs().size() != expected) {
+            throw new IllegalArgumentException(String.format("AB test must have only %d variant", expected));
         }
     }
 
+    /**
+     * Validates passed {@link VariantInputPair} instance to have the right parameters.
+     *
+     * @param variantPair variant pair
+     */
+    private void validateVariantPair(final VariantInputPair variantPair) {
+        if (variantPair.successes() < 0) {
+            throw new IllegalArgumentException("Variant successes cannot have negative value");
+        }
+
+        if (variantPair.failures() < 0) {
+            throw new IllegalArgumentException("Variant failures cannot have negative value");
+        }
+    }
+
+    /**
+     * Detects if the input has zero interactions and returns a NOOP result.
+     *
+     * @param input Bayesian calculation input
+     * @return Optional with NOOP result if input has zero interactions, empty otherwise
+     */
+    private Optional<BayesianResult> detectNoop(final BayesianInput input) {
+        try {
+            validateInput(input);
+            return Optional.empty();
+        } catch (final DotDataException e) {
+            Logger.error(
+                this,
+                String.format("Cannot calculate probability with zero interactions for input: %s", input), e);
+            return Optional.of(NOOP_RESULT);
+        }
+    }
+
+    /**
+     * Evaluates is prior is present in the input.
+     * @param input Bayesian calculation input
+     * @return true if prior is present, false otherwise
+     */
     private boolean isPriorPresent(final BayesianInput input) {
         return Objects.nonNull(input.priors().alpha()) && Objects.nonNull(input.priors().beta());
     }

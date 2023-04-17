@@ -15,6 +15,7 @@ import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus, DotExperimentStatusList } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotExperimentsPublishVariantComponent } from '@portlets/dot-experiments/dot-experiments-reports/components/dot-experiments-publish-variant/dot-experiments-publish-variant.component';
+import { DotExperimentsReportsChartComponent } from '@portlets/dot-experiments/dot-experiments-reports/components/dot-experiments-reports-chart/dot-experiments-reports-chart.component';
 import { DotExperimentsReportsSkeletonComponent } from '@portlets/dot-experiments/dot-experiments-reports/components/dot-experiments-reports-skeleton/dot-experiments-reports-skeleton.component';
 import {
     DotExperimentsReportsStore,
@@ -45,7 +46,7 @@ const defaultVmMock: VmReportExperiment = {
     experiment: getExperimentMock(3),
     results: getExperimentResultsMock(1),
     variantResults: null,
-    chartResults: null,
+    chartData: null,
     isLoading: false,
     showSummary: false,
     status: ComponentStatus.INIT
@@ -114,6 +115,13 @@ describe('DotExperimentsReportsComponent', () => {
         expect(spectator.query(DotExperimentsReportsSkeletonComponent)).not.toExist();
     });
 
+    it('should show DotExperimentsReportsChartComponent when no loading', () => {
+        spectator.component.vm$ = of({ ...defaultVmMock, isLoading: false });
+        spectator.detectChanges();
+
+        expect(spectator.query(DotExperimentsReportsChartComponent)).toExist();
+    });
+
     it('should show the SummaryComponent', () => {
         spectator.component.vm$ = of({
             ...defaultVmMock,
@@ -135,7 +143,7 @@ describe('DotExperimentsReportsComponent', () => {
             ['/edit-page/experiments/', EXPERIMENT_MOCK.pageId],
             {
                 queryParams: {
-                    editPageTab: null,
+                    mode: null,
                     variantName: null,
                     experimentId: null
                 },

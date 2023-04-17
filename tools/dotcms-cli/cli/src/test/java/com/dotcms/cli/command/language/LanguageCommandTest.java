@@ -20,6 +20,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import picocli.CommandLine;
+import picocli.CommandLine.ExitCode;
 
 @QuarkusTest
 public class LanguageCommandTest extends CommandTest {
@@ -45,7 +46,9 @@ public class LanguageCommandTest extends CommandTest {
     }
 
     /**
-     * Test the language pull command by id. This test will fail if the returned language is not English
+     * <b>Command to test:</b> language pull <br>
+     * <b>Given Scenario:</b> Test the language pull command by id. This test will fail if the returned language is not English <br>
+     * <b>Expected Result:</b> The language returned should be English
      * @throws JsonProcessingException
      */
     @Test
@@ -57,14 +60,16 @@ public class LanguageCommandTest extends CommandTest {
             final int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "1");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
-            final ObjectMapper mapper = new ObjectMapper();
+            final ObjectMapper mapper = new ClientObjectMapper().getContext(null);
             Language result = mapper.readValue(output, Language.class);
-            Assertions.assertEquals(1, result.id());
+            Assertions.assertEquals(1, result.id().get());
         }
     }
 
     /**
-     * Test the language pull command by tag (en-US). This test will fail if the returned language is not English
+     * <b>Command to test:</b> language pull <br>
+     * <b>Given Scenario:</b> Test the language pull command by tag (en-US). This test will fail if the returned language is not English <br>
+     * <b>Expected Result:</b> The language returned should be English
      * @throws JsonProcessingException
      */
     @Test
@@ -76,14 +81,17 @@ public class LanguageCommandTest extends CommandTest {
             final int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "en-US");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
-            final ObjectMapper mapper = new ObjectMapper();
+            final ObjectMapper mapper = new ClientObjectMapper().getContext(null);
             Language result = mapper.readValue(output, Language.class);
-            Assertions.assertEquals(1, result.id());
+            Assertions.assertEquals(1, result.id().get());
         }
     }
 
     /**
-     * Test the language find command. This test will fail if no languages are returned
+     * <b>Command to test:</b> language <br>
+     * <b>Given Scenario:</b>Running language command will internally execute the language find command.
+     * This test will fail if no languages are returned <br>
+     * <b>Expected Result:</b> All the languages in the system should be returned
      */
     @Test
     void Test_Command_Language_Find() {
@@ -99,7 +107,9 @@ public class LanguageCommandTest extends CommandTest {
     }
 
     /**
-     * Test the language push command. A new language with tag "es-VE" will be created.
+     * <b>Command to test:</b> language push<br>
+     * <b>Given Scenario:</b>Test the language push command. A new language with tag "es-VE" will be created.<br>
+     * <b>Expected Result:</b> The language returned should be Spanish
      */
     @Test
     void Test_Command_Language_Push_byTag() {
@@ -115,7 +125,10 @@ public class LanguageCommandTest extends CommandTest {
     }
 
     /**
-     * Test the language push command using a JSON file as an input. A new language with tag "it-IT" will be created.
+     * <b>Command to test:</b> language push<br>
+     * <b>Given Scenario:</b> Test the language push command using a JSON file as an input.
+     * A new language with tag "it-IT" will be created.<br>
+     * <b>Expected Result:</b> The language returned should be Italian
      */
     @Test
     void Test_Command_Language_Push_byFile_JSON() throws IOException {
@@ -136,7 +149,10 @@ public class LanguageCommandTest extends CommandTest {
     }
 
     /**
-     * Test the language push command using a YAML file as an input. A new language with tag "it-IT" will be created.
+     * <b>Command to test:</b> language push <br>
+     * <b>Given Scenario:</b> Test the language push command using a YAML file as an input.
+     * A new language with tag "it-IT" will be created. <br>
+     * <b>Expected Result:</b> The language returned should be Italian
      */
     @Test
     void Test_Command_Language_Push_byFile_YAML() throws IOException {
@@ -154,6 +170,62 @@ public class LanguageCommandTest extends CommandTest {
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
             Assertions.assertTrue(output.contains("Italian"));
+        }
+    }
+
+    /**
+     * <b>Command to test:</b> language remove <br>
+     * <b>Given Scenario:</b> Test the language remove command given a language tag.<br>
+     * <b>Expected Result:</b> The language with tag "es-VE" should be removed
+     */
+    @Test
+    void Test_Command_Language_Remove_byTag() {
+        final CommandLine commandLine = getFactory().create();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+
+            //A language with tag "es-VE" is pushed
+            commandLine.execute(LanguageCommand.NAME, LanguagePush.NAME, "--byTag", "es-VE");
+
+            //We remove the language with tag "es-VE"
+            int status = commandLine.execute(LanguageCommand.NAME, LanguageRemove.NAME, "es-VE", "--cli-test");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            //We check that the language with tag "es-VE" is not present
+            status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "es-VE");
+            Assertions.assertEquals(ExitCode.SOFTWARE, status);
+        }
+    }
+
+    /**
+     * <b>Command to test:</b> language remove <br>
+     * <b>Given Scenario:</b> Test the language remove command given a language id. <br>
+     * <b>Expected Result:</b> The language with tag "es-VE" should be removed
+     */
+    @Test
+    void Test_Command_Language_Remove_byId() throws JsonProcessingException {
+        final CommandLine commandLine = getFactory().create();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            //A language with tag "es-VE" is pushed
+            commandLine.execute(LanguageCommand.NAME, LanguagePush.NAME, "--byTag", "es-VE");
+            commandLine.setOut(out);
+            //we pull the language with tag "es-VE" to get its id
+            int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "es-VE");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            final String output = writer.toString();
+            final ObjectMapper mapper = new ClientObjectMapper().getContext(null);
+            Language result = mapper.readValue(output, Language.class);
+
+
+            //We remove the language with tag "es-VE"
+            status = commandLine.execute(LanguageCommand.NAME, LanguageRemove.NAME, String.valueOf(result.id().get()), "--cli-test");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            //We check that the language with tag "es-VE" is not present
+            status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "es-VE");
+            Assertions.assertEquals(ExitCode.SOFTWARE, status);
         }
     }
 }
