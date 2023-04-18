@@ -83,11 +83,15 @@ public class ExperimentsResource {
         final Experiment.Builder builder = Experiment.builder();
 
         builder.pageId(experimentForm.getPageId()).name(experimentForm.getName())
-                .description(experimentForm.getDescription()).createdBy(user.getUserId())
+                .createdBy(user.getUserId())
                 .lastModifiedBy(user.getUserId())
                 .trafficAllocation(experimentForm.getTrafficAllocation()>-1
                         ? experimentForm.getTrafficAllocation()
                         : 100);
+
+        if(experimentForm.getDescription()!=null) {
+            builder.description(experimentForm.getDescription());
+        }
 
         if(experimentForm.getTrafficProportion()!=null) {
             builder.trafficProportion(experimentForm.getTrafficProportion());
