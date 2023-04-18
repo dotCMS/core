@@ -118,7 +118,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
     readonly languageLabels$: Observable<{ [id: string]: string }> = this.select(
         ({ languages }: DotPagesState) => {
             const langLabels = {};
-            if (languages) {
+            if (languages?.length) {
                 languages.forEach((language) => {
                     langLabels[language.id] = `${language.languageCode}-${language.countryCode}`;
                 });
