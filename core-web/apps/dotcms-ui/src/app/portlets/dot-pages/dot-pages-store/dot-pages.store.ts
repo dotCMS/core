@@ -338,7 +338,6 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                                         throw false;
                                     } else {
                                         // Finished fetch loop and will proceed to set data on store
-
                                         if (isFavoritePage) {
                                             const pagesData = this.get().favoritePages.items.map(
                                                 (page) => {
@@ -350,11 +349,23 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
 
                                             this.setFavoritePages(pagesData);
                                         } else {
-                                            const pagesData = this.get().pages.items.map((page) => {
-                                                return page?.identifier === identifier
-                                                    ? items.jsonObjectView.contentlets[0]
-                                                    : page;
-                                            });
+                                            let pagesData = this.get().pages.items;
+
+                                            if (items.jsonObjectView.contentlets[0] === undefined) {
+                                                pagesData = pagesData.filter((page) => {
+                                                    return page?.identifier !== identifier;
+                                                });
+
+                                                // Add undefined to keep the same length of the array,
+                                                // otherwise the pagination(endless scroll) will break
+                                                pagesData.push(undefined);
+                                            } else {
+                                                pagesData = pagesData.map((page) => {
+                                                    return page?.identifier === identifier
+                                                        ? items.jsonObjectView.contentlets[0]
+                                                        : page;
+                                                });
+                                            }
 
                                             this.setPages(pagesData);
                                         }
