@@ -371,7 +371,7 @@ describe('DotPageStore', () => {
             expect(data.pages.status).toEqual(ComponentStatus.LOADED);
         });
         expect(dotESContentService.get).toHaveBeenCalledTimes(1);
-        expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(error500);
+        expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(error500, true);
     });
 
     it('should keep fetching Pages data until new value comes from the DB in store', fakeAsync(() => {

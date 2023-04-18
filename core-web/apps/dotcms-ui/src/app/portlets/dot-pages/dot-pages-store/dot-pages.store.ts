@@ -386,10 +386,12 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                             (error: HttpErrorResponse) => {
                                 this.setPagesStatus(ComponentStatus.LOADED);
 
-                                // Deleting message to throw a generic error message
-                                error.error.message = '';
+                                // Set message to throw a custom Favorite Page error message
+                                error.error.message = this.dotMessageService.get(
+                                    'favoritePage.error.fetching.data'
+                                );
 
-                                return this.httpErrorManagerService.handle(error);
+                                return this.httpErrorManagerService.handle(error, true);
                             }
                         )
                     );

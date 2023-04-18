@@ -13,6 +13,7 @@ import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router
 import {
     DotContentletLockerService,
     DotESContentService,
+    DotMessageService,
     DotPageRenderService
 } from '@dotcms/data-access';
 import { HttpCode, LoginService, User } from '@dotcms/dotcms-js';
@@ -41,6 +42,7 @@ export class DotPageStateService {
         private dotContentletLockerService: DotContentletLockerService,
         private dotESContentService: DotESContentService,
         private dotHttpErrorManagerService: DotHttpErrorManagerService,
+        private dotMessageService: DotMessageService,
         private dotPageRenderService: DotPageRenderService,
         private dotRouterService: DotRouterService,
         private loginService: LoginService
@@ -220,9 +222,12 @@ export class DotPageStateService {
                         .pipe(
                             take(1),
                             catchError((error: HttpErrorResponse) => {
-                                // Deleting message to throw a generic error message
-                                error.error.message = '';
-                                this.dotHttpErrorManagerService.handle(error);
+                                // Set message to throw a custom Favorite Page error message
+                                error.error.message = this.dotMessageService.get(
+                                    'favoritePage.error.fetching.data'
+                                );
+
+                                this.dotHttpErrorManagerService.handle(error, true);
 
                                 return this.setLocalPageState(page);
                             }),
