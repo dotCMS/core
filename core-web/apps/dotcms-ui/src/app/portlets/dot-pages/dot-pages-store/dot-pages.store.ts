@@ -69,6 +69,7 @@ export interface DotPagesState {
         status: ComponentStatus;
     };
     pageTypes?: DotCMSContentType[];
+    portletStatus: ComponentStatus;
 }
 
 const FAVORITE_PAGES_ES_QUERY = `+contentType:dotFavoritePage +deleted:false +working:true`;
@@ -81,6 +82,12 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         (state) =>
             state.pages.status === ComponentStatus.LOADING ||
             state.pages.status === ComponentStatus.INIT
+    );
+
+    readonly isPortletLoading$: Observable<boolean> = this.select(
+        (state) =>
+            state.portletStatus === ComponentStatus.LOADING ||
+            state.portletStatus === ComponentStatus.INIT
     );
 
     readonly actionMenuDomId$: Observable<string> = this.select(
@@ -180,6 +187,15 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             }
         };
     });
+
+    readonly setPortletStatus = this.updater<ComponentStatus>(
+        (state: DotPagesState, portletStatus: ComponentStatus) => {
+            return {
+                ...state,
+                portletStatus
+            };
+        }
+    );
 
     readonly setPagesStatus = this.updater<ComponentStatus>(
         (state: DotPagesState, status: ComponentStatus) => {
@@ -298,7 +314,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
 
                     if (isFavoritePage) {
                         localPageData = this.get().favoritePages.items.filter(
-                            (item) => item.identifier === identifier
+                            (item) => item?.identifier === identifier
                         )[0];
                     } else {
                         localPageData = this.get().pages.items.filter(
@@ -326,7 +342,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                                         if (isFavoritePage) {
                                             const pagesData = this.get().favoritePages.items.map(
                                                 (page) => {
-                                                    return page.identifier === identifier
+                                                    return page?.identifier === identifier
                                                         ? items.jsonObjectView.contentlets[0]
                                                         : page;
                                                 }
@@ -434,12 +450,22 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
     readonly vm$: Observable<DotPagesState> = this.select(
         this.state$,
         this.isPagesLoading$,
+        this.isPortletLoading$,
         this.languageOptions$,
         this.languageLabels$,
         this.pageTypes$,
         (
-            { favoritePages, isEnterprise, environments, languages, loggedUser, pages },
+            {
+                favoritePages,
+                isEnterprise,
+                environments,
+                languages,
+                loggedUser,
+                pages,
+                portletStatus
+            },
             isPagesLoading,
+            isPortletLoading,
             languageOptions,
             languageLabels,
             pageTypes
@@ -450,7 +476,9 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             languages,
             loggedUser,
             pages,
+            portletStatus,
             isPagesLoading,
+            isPortletLoading,
             languageOptions,
             languageLabels,
             pageTypes
@@ -688,7 +716,8 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                             items: [],
                             keyword: '',
                             status: ComponentStatus.INIT
-                        }
+                        },
+                        portletStatus: ComponentStatus.LOADED
                     });
                 },
                 () => {

@@ -217,6 +217,12 @@ describe('DotPageStore', () => {
         });
     });
 
+    it('should get portlet loading status', () => {
+        dotPageStore.isPortletLoading$.subscribe((data) => {
+            expect(data).toEqual(false);
+        });
+    });
+
     // Updaters
     it('should update Favorite Pages', () => {
         dotPageStore.setFavoritePages(favoritePagesInitialTestData);
@@ -257,6 +263,13 @@ describe('DotPageStore', () => {
         dotPageStore.setPagesStatus(ComponentStatus.LOADING);
         dotPageStore.state$.subscribe((data) => {
             expect(data.pages.status).toEqual(ComponentStatus.LOADING);
+        });
+    });
+
+    it('should update Portlet Status', () => {
+        dotPageStore.setPortletStatus(ComponentStatus.LOADING);
+        dotPageStore.state$.subscribe((data) => {
+            expect(data.portletStatus).toEqual(ComponentStatus.LOADING);
         });
     });
 
