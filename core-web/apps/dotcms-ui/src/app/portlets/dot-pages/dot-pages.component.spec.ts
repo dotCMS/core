@@ -230,7 +230,7 @@ describe('DotPagesComponent', () => {
         const elem = de.query(By.css('dot-pages-favorite-panel'));
         elem.triggerEventHandler('goToUrl', '/page/1?lang=1');
 
-        expect(store.setPortletStatus).toHaveBeenCalledWith(ComponentStatus.LOADED);
+        expect(store.setPortletStatus).toHaveBeenCalledWith(ComponentStatus.LOADING);
         expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(
             new HttpErrorResponse(
                 new HttpResponse({
