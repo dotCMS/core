@@ -61,7 +61,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import org.elasticsearch.action.search.SearchResponse;
 
@@ -283,12 +282,10 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   /**
    * This method will relocate all the content associated to the content type to the dummy CT and then delete the original
    * @param source
-   * @param target
-   * @param asyncDeleteWithJob
+   * @param target*
    */
   @WrapInTransaction
-  private void internalRelocateThenDispose(final ContentType source, final ContentType target,
-          final boolean asyncDeleteWithJob) {
+  private void internalRelocateThenDispose(final ContentType source, final ContentType target, final boolean asyncDeleteWithJob) {
     try {
       APILocator.getContentletIndexAPI().removeContentFromIndexByContentType(source);
       final Integer relocated = APILocator.getContentTypeDestroyAPI().relocateContentletsForDeletion(source, target);
@@ -297,7 +294,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
       HibernateUtil.addCommitListener(() -> {
         try {
-          disposeThenFireDeleteJob(source, target, asyncDeleteWithJob);
+          disposeSourceThenFireContentDelete(source, target, asyncDeleteWithJob);
         } catch (DotDataException e) {
             Logger.error(ContentTypeFactoryImpl.class, String.format("Error removing content from index for ContentType [%s]", source.variable()), e);
         }
@@ -309,72 +306,63 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
   /**
    * Relocating contentlets allows us to delete the content type without having to wait for the content to be deleted
-   * @param source
-   * @param target
-   * @param asyncDeleteWithJob
-   * @throws ExecutionException
-   * @throws InterruptedException
-   * @throws DotDataException
+   * @param source source content type
+   * @param target destination content type
+   * @param asynchronously if true, the content will be relocated in a separate thread
    */
-  void relocateThenDispose(final ContentType source, final ContentType target, final boolean asyncDeleteWithJob) {
-
-    DotConcurrentFactory.getInstance()
-            .getSingleSubmitter("ContentRelocationForDeletion").execute(() -> internalRelocateThenDispose(source, target, asyncDeleteWithJob));
-
+  void relocateThenDispose(final ContentType source, final ContentType target,
+          final boolean asynchronously) {
+    if (asynchronously) {
+       DotConcurrentFactory.getInstance().getSingleSubmitter("ContentRelocationForDeletion")
+              .execute(() -> internalRelocateThenDispose(source, target, true));
+    } else {
+       //Generally speaking we want to go down this path when we're running integration tests
+       internalRelocateThenDispose(source, target, false);
+    }
   }
 
   @WrapInTransaction
-  private void disposeThenFireDeleteJob( final ContentType source, final ContentType target, final boolean asyncDeleteWithJob)
-          throws DotDataException {
+  private void disposeSourceThenFireContentDelete( final ContentType source, final ContentType target, final boolean asyncDeleteWithJob) throws DotDataException {
 
-    //Now that all the content is relocated, we're ready to destroy the original structure that held all content
-    //But first a few checks to make sure nothing remains outside the relocation process
-    final int sourceCount = new DotConnect().setSQL("select count (*) as x from contentlet where structure_inode = ?")
-            .addParam(source.inode())
-            .getInt("x");
+      //Now that all the content is relocated, we're ready to destroy the original structure that held all content
+      //But first a few checks to make sure nothing remains outside the relocation process
+      final int sourceCount = new DotConnect().setSQL("select count (*) as x from contentlet where structure_inode = ?")
+              .addParam(source.inode())
+              .getInt("x");
 
-    Logger.debug(getClass(),String.format(" ::: Content still remaining on source sourceCount-type: (%s) is (%d) ::: ", source.name(), sourceCount));
+      Logger.debug(getClass(),String.format(" ::: Content still remaining on source sourceCount-type: (%s) is (%d) ::: ", source.name(), sourceCount));
 
-    int targetCount = new DotConnect().setSQL("select count (*) as x from contentlet where structure_inode = ?")
-            .addParam(target.inode())
-            .getInt("x");
+      int targetCount = new DotConnect().setSQL("select count (*) as x from contentlet where structure_inode = ?")
+              .addParam(target.inode())
+              .getInt("x");
 
-    Logger.debug(getClass(),String.format(" ::: Content moved to target type: (%s) is (%d) ::: ", target.name(), targetCount));
+      Logger.debug(getClass(),String.format(" ::: Content moved to target type: (%s) is (%d) ::: ", target.name(), targetCount));
 
-    if(sourceCount > 0){
-       Logger.error(getClass(),String.format(" ::: Content still remaining on source sourceCount-type: (%s) is (%d) ::: ", source.name(), sourceCount));
-       return;
-    }
-
-
-    //Now that all the content is relocated, we're ready to destroy the original structure that held all content
-    //System fields like Categories, Relationships and Containers will be deleted using the original structure
-    contentTypeFactory.delete(source);
-    //and destroy all associated content under the copy
-
-    HibernateUtil.addCommitListener(() -> {
-
-      //Notify the system events API that the content type has been deleted, so it can take care of the WF clean up
-      localSystemEventsAPI.notify(new ContentTypeDeletedEvent(source.variable()));
-
-      if (asyncDeleteWithJob) {
-        //By default, the deletion process takes placed within job
-        Logger.info(this, String.format(
-                " Content type (%s) will be deleted asynchronously using Quartz Job.",
-                source.name()));
-        ContentTypeDeleteJob.triggerContentTypeDeletion(target);
-      } else {
-        //This option comes handy from the Integration Tests perspective
-        Logger.info(this,
-                String.format(" Content type (%s) will be deleted synchronously.", source.name()));
-        try {
-          dispose(target);
-        } catch (DotDataException e) {
-          Logger.error(ContentTypeFactoryImpl.class,
-                  String.format("Error deleting content type [%s]", source.variable()), e);
-        }
+      if(sourceCount > 0){
+         Logger.error(getClass(),String.format(" ::: Content still remaining on source sourceCount-type: (%s) is (%d) ::: ", source.name(), sourceCount));
+         return;
       }
-    });
+
+      //Now that all the content is relocated, we're ready to destroy the original structure that held all content
+      //System fields like Categories, Relationships and Containers will be deleted using the original structure
+      contentTypeFactory.delete(source);
+      //and destroy all associated content under the copy
+
+      HibernateUtil.addCommitListener(() -> {
+        //Notify the system events API that the content type has been deleted, so it can take care of the WF clean up
+        localSystemEventsAPI.notify(new ContentTypeDeletedEvent(source.variable()));
+          //By default, the deletion process takes placed within job
+          Logger.info(this, String.format(" Content type (%s) will be deleted asynchronously using Quartz Job.", source.name()));
+          if(asyncDeleteWithJob) {
+            ContentTypeDeleteJob.triggerContentTypeDeletion(target);
+          } else {
+            try {
+              APILocator.getContentTypeDestroyAPI().destroy(target, APILocator.systemUser());
+            } catch (DotDataException | DotSecurityException e) {
+               Logger.error(ContentTypeFactoryImpl.class, String.format("Error deleting content type [%s]", target.variable()), e);
+            }
+          }
+      });
 
   }
 

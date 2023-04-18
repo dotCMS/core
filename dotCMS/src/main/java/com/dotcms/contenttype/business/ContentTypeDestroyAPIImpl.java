@@ -15,7 +15,6 @@ import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.util.ContentTypeUtil;
 import com.dotcms.util.I18NMessage;
-import com.dotcms.util.LogTime;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -39,6 +38,7 @@ import io.vavr.control.Try;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
@@ -218,9 +218,9 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
     }
 
 
-    @LogTime(loggingLevel = "INFO")
     @Override
     public void destroy(ContentType type, User user) throws DotDataException, DotSecurityException {
+        final long t1 = System.currentTimeMillis();
         final long allCount = countByType(type);
         final int limit = pullLimitProp.get();
         Logger.info(getClass(), String.format(
@@ -252,8 +252,18 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
 
         internalDestroy(type);
 
+        //Some custom formatted stats logging
+        final long diff = System.currentTimeMillis() - t1;
+        final long hours = TimeUnit.MILLISECONDS.toHours(diff);
+        final long minutes = TimeUnit.MILLISECONDS.toMinutes(diff);
+        final long seconds = TimeUnit.MILLISECONDS.toSeconds(diff);
+        final String timeInHHMMSS = String.format("%02d:%02d:%02d", hours, minutes, seconds);
         Logger.info(getClass(),
-                String.format(" I'm done destroying (%d) pieces of Content from type (%s). ", allCount, type.variable()));
+            String.format(
+                    " I'm done destroying (%d) pieces of Content of type (%s). it took me : [%s] ", allCount, type.variable(), timeInHHMMSS
+            )
+        );
+
     }
 
     /**
