@@ -2111,13 +2111,28 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
         APILocator.getExperimentsAPI().start(experiment.getIdentifier(), APILocator.systemUser());
 
         IPUtils.disabledIpPrivateSubnet(true);
+
         final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment);
-        final MockHttpServer mockhttpServer = createMockHttpServerAndStart(
-                cubeJSQueryExpected,
-                JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
+
+        addContext(mockhttpServer, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        final String queryTotalPageViews = getTotalPageViewsQuery(experiment.id().get(), "DEFAULT", variantBName, variantCName);
+
+        final List<Map<String, Object>> totalPageViewsResponseExpected = list(
+                map("Events.variant", variantBName, "Events.count", "50"),
+                map("Events.variant", variantCName, "Events.count", "50")
+        );
+
+        addContext(mockhttpServer, queryTotalPageViews,
+                JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
+
+        mockhttpServer.start();
 
         try {
             final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
             final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
             assertEquals(180, experimentResults.getSessions().getTotal());
