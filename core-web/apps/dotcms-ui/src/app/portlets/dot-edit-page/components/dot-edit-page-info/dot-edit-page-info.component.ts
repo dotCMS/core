@@ -17,4 +17,13 @@ export class DotEditPageInfoComponent {
     @Input() title: string;
     @Input() url: string;
     @Input() apiLink: string;
+
+    previewURl() {
+        console.log('apiLink', this.apiLink);
+        const frontEndUrl = `${this.apiLink.replace('api/v1/page/render', '')}`;
+
+        return `${frontEndUrl}${
+            frontEndUrl.indexOf('?') != -1 ? '&' : '?'
+        }disabledNavigateMode=true`;
+    }
 }
