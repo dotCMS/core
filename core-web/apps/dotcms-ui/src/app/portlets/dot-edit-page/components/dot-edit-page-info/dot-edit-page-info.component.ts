@@ -19,7 +19,6 @@ export class DotEditPageInfoComponent {
     @Input() apiLink: string;
 
     previewURl() {
-        console.log('apiLink', this.apiLink);
         const frontEndUrl = `${this.apiLink.replace('api/v1/page/render', '')}`;
 
         return `${frontEndUrl}${

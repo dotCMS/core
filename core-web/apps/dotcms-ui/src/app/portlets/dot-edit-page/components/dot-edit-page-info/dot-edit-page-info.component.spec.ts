@@ -9,7 +9,7 @@ import { DotMessagePipe } from '@pipes/dot-message/dot-message.pipe';
 
 import { DotEditPageInfoComponent } from './dot-edit-page-info.component';
 
-fdescribe('DotEditPageInfoComponent', () => {
+describe('DotEditPageInfoComponent', () => {
     let component: DotEditPageInfoComponent;
     let fixture: ComponentFixture<DotEditPageInfoComponent>;
     let de: DebugElement;
