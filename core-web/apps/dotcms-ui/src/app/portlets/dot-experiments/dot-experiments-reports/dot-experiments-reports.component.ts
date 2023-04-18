@@ -1,14 +1,16 @@
 import { merge, Observable } from 'rxjs';
 
 import { AsyncPipe, LowerCasePipe, NgClass, NgIf, PercentPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
+import { RippleModule } from 'primeng/ripple';
 import { TagModule } from 'primeng/tag';
 
 import { take } from 'rxjs/operators';
 
+import { DotMessageService } from '@dotcms/data-access';
 import { DEFAULT_VARIANT_ID, DotResultSimpleVariant } from '@dotcms/dotcms-models';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotExperimentsConfigurationSkeletonComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-skeleton/dot-experiments-configuration-skeleton.component';
@@ -45,7 +47,8 @@ import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.dir
         DotDynamicDirective,
         //PrimeNg
         TagModule,
-        ButtonModule
+        ButtonModule,
+        RippleModule
     ],
     templateUrl: './dot-experiments-reports.component.html',
     styleUrls: ['./dot-experiments-reports.component.scss'],
@@ -54,7 +57,15 @@ import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.dir
 })
 export class DotExperimentsReportsComponent implements OnInit {
     vm$: Observable<VmReportExperiment> = this.store.vm$;
-    defaultVariantId = DEFAULT_VARIANT_ID;
+    dotMessageService = inject(DotMessageService);
+
+    readonly chartConfig: { xAxisLabel: string; yAxisLabel: string; title: string } = {
+        xAxisLabel: this.dotMessageService.get('experiments.chart.xAxisLabel'),
+        yAxisLabel: this.dotMessageService.get('experiments.chart.yAxisLabel'),
+        title: this.dotMessageService.get('experiments.reports.chart.title')
+    };
+
+    //Todo: Remove this mock data
     detailData = [
         {
             id: DEFAULT_VARIANT_ID,
@@ -95,6 +106,8 @@ export class DotExperimentsReportsComponent implements OnInit {
     ];
 
     @ViewChild(DotDynamicDirective, { static: true }) host!: DotDynamicDirective;
+
+    protected readonly defaultVariantId = DEFAULT_VARIANT_ID;
 
     constructor(
         private readonly store: DotExperimentsReportsStore,

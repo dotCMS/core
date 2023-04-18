@@ -1,5 +1,6 @@
 package com.dotcms.experiments.business.result;
 
+
 import static com.dotcms.util.CollectionsUtils.map;
 
 import com.dotcms.analytics.app.AnalyticsApp;
@@ -13,6 +14,10 @@ import com.dotcms.cube.CubeJSQuery;
 import com.dotcms.cube.CubeJSQuery.Builder;
 import com.dotcms.cube.CubeJSResultSet;
 import com.dotcms.cube.filters.SimpleFilter.Operator;
+
+import com.dotcms.analytics.metrics.Metric;
+import com.dotcms.analytics.metrics.MetricType;
+
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.experiments.model.Goals;
@@ -25,9 +30,12 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.liferay.util.StringPool;
 import graphql.VisibleForTesting;
 import io.vavr.Lazy;
+
 import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
+
+import static com.dotcms.util.CollectionsUtils.map;
 
 
 /**
@@ -43,8 +51,7 @@ public enum ExperimentAnalyzerUtil {
     private static AnalyticsHelper analyticsHelper = AnalyticsHelper.get();
 
     final static Lazy<Map<MetricType, MetricExperimentAnalyzer>> experimentResultQueryHelpers =
-            Lazy.of(() -> createHelpersMap());
-
+            Lazy.of(ExperimentAnalyzerUtil::createHelpersMap);
 
     private static Map<MetricType, MetricExperimentAnalyzer> createHelpersMap() {
         return map(
@@ -143,7 +150,8 @@ public enum ExperimentAnalyzerUtil {
         return cubeClient.send(cubeJSQuery);
     }
 
-    private static HTMLPageAsset getPage(String pageId) {
+    private HTMLPageAsset getPage(final String pageId) {
+
         try {
             return APILocator.getHTMLPageAssetAPI().fromContentlet(
                     APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(pageId)

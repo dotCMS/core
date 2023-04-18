@@ -38,6 +38,7 @@ import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot
 const EXPERIMENT_MOCK = getExperimentMock(0);
 const EXPERIMENT_MOCK_1 = getExperimentMock(1);
 const EXPERIMENT_MOCK_2 = getExperimentMock(2);
+const EXPERIMENT_MOCK_3 = getExperimentMock(3);
 
 const ActivatedRouteMock = {
     snapshot: {
@@ -161,11 +162,23 @@ describe('DotExperimentsConfigurationStore', () => {
         });
     });
 
-    it('should return `Run Experiment` when the experiment has schedule set', (done) => {
+    it('should return `Run Experiment` when the experiment has schedule `null` ', (done) => {
         dotExperimentsService.getById.and.callThrough().and.returnValue(of(EXPERIMENT_MOCK_1));
         spectator.service.loadExperiment(EXPERIMENT_MOCK_1.id);
 
         expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_MOCK_1.id);
+
+        store.vm$.subscribe(({ runExperimentBtnLabel }) => {
+            expect(runExperimentBtnLabel).toEqual('run-experiment');
+            done();
+        });
+    });
+
+    it('should return `Run Experiment` when the experiment has schedule startDate/endDate `null`', (done) => {
+        dotExperimentsService.getById.and.callThrough().and.returnValue(of(EXPERIMENT_MOCK_3));
+        spectator.service.loadExperiment(EXPERIMENT_MOCK_3.id);
+
+        expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_MOCK_3.id);
 
         store.vm$.subscribe(({ runExperimentBtnLabel }) => {
             expect(runExperimentBtnLabel).toEqual('run-experiment');

@@ -26,22 +26,16 @@ import java.util.List;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public interface AbstractBayesianInput {
 
+    @JsonProperty("type")
+    ABTestingType type();
+
+    @JsonProperty("control")
+    VariantInputPair control();
+
+    @JsonProperty("variantPairs")
+    List<VariantInputPair> variantPairs();
+
     @JsonProperty("priors")
     BayesianPriors priors();
-
-    @JsonProperty("controlSuccesses")
-    long controlSuccesses();
-
-    @JsonProperty("controlFailures")
-    long controlFailures();
-
-    @JsonProperty("testSuccesses")
-    long testSuccesses();
-
-    @JsonProperty("testFailures")
-    long testFailures();
-
-    @JsonProperty("variants")
-    List<String> variants();
 
 }
