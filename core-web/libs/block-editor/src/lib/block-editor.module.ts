@@ -9,7 +9,6 @@ import { LoggerService, StringUtils } from '@dotcms/dotcms-js';
 import { DotBlockEditorComponent } from './components/dot-block-editor/dot-block-editor.component';
 import { DotEditorCountBarComponent } from './components/dot-editor-count-bar/dot-editor-count-bar.component';
 import {
-    ActionButtonComponent,
     BubbleLinkFormComponent,
     BubbleMenuButtonComponent,
     BubbleMenuComponent,
@@ -40,7 +39,6 @@ import { SharedModule } from './shared/shared.module';
     declarations: [
         EditorDirective,
         ContentletBlockComponent,
-        ActionButtonComponent,
         DragHandlerComponent,
         BubbleMenuComponent,
         BubbleMenuButtonComponent,
@@ -55,7 +53,6 @@ import { SharedModule } from './shared/shared.module';
     providers: [DotUploadFileService, LoggerService, StringUtils],
     exports: [
         EditorDirective,
-        ActionButtonComponent,
         BubbleMenuComponent,
         BubbleLinkFormComponent,
         ReactiveFormsModule,
