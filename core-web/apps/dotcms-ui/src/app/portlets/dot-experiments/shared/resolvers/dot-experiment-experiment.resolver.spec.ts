@@ -9,6 +9,8 @@ import { ActivatedRouteSnapshot } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
 
+import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import {
     DotAlertConfirmService,
     DotContentletLockerService,
@@ -37,7 +39,7 @@ const route: any = jasmine.createSpyObj<ActivatedRouteSnapshot>('ActivatedRouteS
 
 route.queryParams = {};
 
-describe('DotEditPageResolver', () => {
+describe('DotExperimentExperimentResolver', () => {
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
     let dotPageStateService: DotPageStateService;
     let dotPageStateServiceRequestPageSpy: jasmine.Spy;
@@ -60,6 +62,7 @@ describe('DotEditPageResolver', () => {
                 ConfirmationService,
                 DotFormatDateService,
                 DotESContentService,
+                { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 {
                     provide: ActivatedRouteSnapshot,
