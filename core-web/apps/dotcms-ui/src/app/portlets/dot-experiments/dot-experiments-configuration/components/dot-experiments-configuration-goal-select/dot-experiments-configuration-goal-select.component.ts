@@ -77,10 +77,11 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
         this.dotExperimentsConfigurationStore.goalsStepVm$;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    private BOUNCE_RATE_LABEL = this.dotMessageService.get(this.goals.BOUNCE_RATE.label);
-    private REACH_PAGE_LABEL = this.dotMessageService.get(this.goals.REACH_PAGE.label);
-    private DEFAULT_NAME_LABEL = this.dotMessageService.get(
-        'experiments.configure.goals.name.default'
+    private BOUNCE_RATE_LABEL = this.dotMessageService.get(
+        'experiments.goal.conditions.minimize.bounce.rate'
+    );
+    private REACH_PAGE_LABEL = this.dotMessageService.get(
+        'experiments.goal.conditions.maximize.reach.page'
     );
 
     constructor(
@@ -154,7 +155,7 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
     private initForm(): void {
         this.form = new FormGroup({
             primary: new FormGroup({
-                name: new FormControl(this.DEFAULT_NAME_LABEL, {
+                name: new FormControl('', {
                     nonNullable: true,
                     validators: [Validators.required]
                 }),
@@ -185,7 +186,7 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
     private defineDefaultName(typeValue: string): void {
         const nameControl = this.form.get('primary.name') as FormControl;
         if (
-            nameControl.value === this.DEFAULT_NAME_LABEL ||
+            nameControl.value === '' ||
             nameControl.value === this.BOUNCE_RATE_LABEL ||
             nameControl.value === this.REACH_PAGE_LABEL
         ) {
