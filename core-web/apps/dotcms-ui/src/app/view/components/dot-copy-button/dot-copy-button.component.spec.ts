@@ -66,7 +66,7 @@ describe('DotCopyButtonComponent', () => {
         });
 
         it('should not show label', () => {
-            component.showLabel = false;
+            component.label = null;
             fixture.detectChanges();
             expect(button.nativeElement.textContent.trim()).toBe('');
         });

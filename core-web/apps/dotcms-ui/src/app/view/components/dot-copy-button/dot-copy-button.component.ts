@@ -21,7 +21,6 @@ export class DotCopyButtonComponent implements OnInit {
     @Input() copy = '';
     @Input() label: string;
     @Input() tooltipText: string;
-    @Input() showLabel = true;
 
     constructor(
         private dotClipboardUtil: DotClipboardUtil,
@@ -30,7 +29,6 @@ export class DotCopyButtonComponent implements OnInit {
 
     ngOnInit() {
         this.tooltipText = this.tooltipText || this.dotMessageService.get('Copy');
-        this.label = this.label || this.dotMessageService.get('editpage.header.copy');
     }
 
     /**
