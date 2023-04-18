@@ -280,23 +280,20 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
    }
 
+  /**
+   * This method will relocate all the content associated to the content type to the dummy CT and then delete the original
+   * @param source
+   * @param target
+   * @param asyncDeleteWithJob
+   */
   @WrapInTransaction
   private void internalRelocateThenDispose(final ContentType source, final ContentType target,
           final boolean asyncDeleteWithJob) {
     try {
+      APILocator.getContentletIndexAPI().removeContentFromIndexByContentType(source);
       final Integer relocated = APILocator.getContentTypeDestroyAPI().relocateContentletsForDeletion(source, target);
 
       Logger.info(ContentTypeFactoryImpl.class, String.format("::: Relocated %d contentlets for ContentType [%s] to [%s] :::", relocated, source.variable(), target.variable()));
-
-      HibernateUtil.addCommitListener(() -> {
-        try {
-          APILocator.getContentletIndexAPI().removeContentFromIndexByContentType(source);
-          //Notify the system events API that the content type has been deleted, so it can take care of the WF clean up
-          localSystemEventsAPI.notify(new ContentTypeDeletedEvent(source.variable()));
-        } catch (DotDataException e) {
-            Logger.error(ContentTypeFactoryImpl.class, String.format("Error removing content from index for ContentType [%s].", source.variable()), e);
-        }
-      });
 
       HibernateUtil.addCommitListener(() -> {
         try {
@@ -356,6 +353,10 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     //and destroy all associated content under the copy
 
     HibernateUtil.addCommitListener(() -> {
+
+      //Notify the system events API that the content type has been deleted, so it can take care of the WF clean up
+      localSystemEventsAPI.notify(new ContentTypeDeletedEvent(source.variable()));
+
       if (asyncDeleteWithJob) {
         //By default, the deletion process takes placed within job
         Logger.info(this, String.format(
