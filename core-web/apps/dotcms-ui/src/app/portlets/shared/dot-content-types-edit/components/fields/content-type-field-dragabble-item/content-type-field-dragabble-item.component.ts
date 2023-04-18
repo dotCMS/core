@@ -95,6 +95,11 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit, OnDestro
         if (this.shouldResize) this.resizeObserver.disconnect();
     }
 
+    /**
+     * This method opens the edit modal when the user clicks on the field
+     * @param {MouseEvent} $event
+     * @memberof ContentTypesFieldDragabbleItemComponent
+     */
     @HostListener('click', ['$event'])
     onClick($event: MouseEvent) {
         $event.stopPropagation();
@@ -102,30 +107,51 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit, OnDestro
         this.open = false;
     }
 
-    // To close the attrs on drag
+    /**
+     * This emthod is used to close the attributes list when the user drags the field
+     * @memberof ContentTypesFieldDragabbleItemComponent
+     */
     @HostListener('mousedown')
     onMouseDown() {
         this.open = false;
     }
 
+    /**
+     * This method is used to close the attributes list when the user clicks outside the field
+     * @param {MouseEvent} $event
+     * @memberof ContentTypesFieldDragabbleItemComponent
+     */
     @HostListener('window:click', ['$event'])
     onWindowClick($event: MouseEvent) {
         $event.stopPropagation();
         this.open = false;
     }
 
-    // Opens the attributes list when the component is small
+    /**
+     * This method is used to open the attributes list when the user clicks on the open button
+     * @param {MouseEvent} $event
+     * @memberof ContentTypesFieldDragabbleItemComponent
+     */
     openAttr($event: MouseEvent) {
         $event.stopPropagation();
         this.open = true;
     }
 
-    // Closes the attributes list when the component is small
+    /**
+     * This method is used to close the attributes list when the user clicks on the close button
+     * @param {MouseEvent} $event
+     * @memberof ContentTypesFieldDragabbleItemComponent
+     */
     closeAttr($event: MouseEvent) {
         $event.stopPropagation();
         this.open = false;
     }
 
+    /**
+     * This method is used to remove the field from the Content Type
+     * @param {MouseEvent} $event
+     * @memberof ContentTypesFieldDragabbleItemComponent
+     */
     removeItem($event: MouseEvent): void {
         $event.stopPropagation();
         this.remove.emit(this.field);
