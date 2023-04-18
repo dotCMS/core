@@ -35,3 +35,4 @@ This maintenance release includes the following code fixes:
 26. https://github.com/dotCMS/core/issues/24093 : Create background task that converts fat content into json content #24093
 27. https://github.com/dotCMS/core/issues/23449 : Filter does not work on the image selector for image fields #23449
 28. https://github.com/dotCMS/core/issues/23396 : Double quotes in content title - error trying to show data in relate table. #23396
+29. https://github.com/dotCMS/core/issues/24565 : Unable to save content converted from WYSIWYG to Block Editor #24565

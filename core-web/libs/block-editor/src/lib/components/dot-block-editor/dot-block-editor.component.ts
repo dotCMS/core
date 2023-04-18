@@ -1,9 +1,18 @@
-import { Component, Injector, Input, OnInit, ViewContainerRef, OnDestroy } from '@angular/core';
+import {
+    Component,
+    EventEmitter,
+    Injector,
+    Input,
+    OnDestroy,
+    OnInit,
+    Output,
+    ViewContainerRef
+} from '@angular/core';
 
 import { Subject } from 'rxjs';
 import { debounceTime, takeUntil } from 'rxjs/operators';
 
-import { AnyExtension, Content, Editor } from '@tiptap/core';
+import { AnyExtension, Content, Editor, JSONContent } from '@tiptap/core';
 import { HeadingOptions, Level } from '@tiptap/extension-heading';
 import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -66,11 +75,17 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
         this.content = typeof content === 'string' ? formatHTML(content) : content;
     }
 
+    @Output() valueChange = new EventEmitter<JSONContent>();
+
     editor: Editor;
     subject = new Subject();
 
     private _allowedBlocks = ['paragraph']; //paragraph should be always.
     private destroy$: Subject<boolean> = new Subject<boolean>();
+
+    onChange(value: JSONContent) {
+        this.valueChange.emit(value);
+    }
 
     get characterCount(): CharacterCountStorage {
         return this.editor.storage.characterCount;
@@ -97,7 +112,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             extensions: this.setEditorExtensions()
         });
 
-        this.editor.on('create', () => this.updateChartCount());
+        this.editor.on('update', () => this.updateChartCount());
         this.subject
             .pipe(takeUntil(this.destroy$), debounceTime(250))
             .subscribe(() => this.updateChartCount());
