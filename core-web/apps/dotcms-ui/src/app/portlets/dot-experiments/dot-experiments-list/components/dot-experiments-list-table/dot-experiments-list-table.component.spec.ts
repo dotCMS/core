@@ -206,6 +206,20 @@ describe('DotExperimentsListTableComponent', () => {
                 uiDotIconButtonTooltipComponent = spectator.query(UiDotIconButtonTooltipComponent);
                 expect(uiDotIconButtonTooltipComponent.icon).toBe('bar_chart');
             });
+
+            it('should the row  has REPORTS icon when is RUNNING', () => {
+                const groupedExperimentByStatus: GroupedExperimentByStatus[] = [
+                    {
+                        status: DotExperimentStatusList.ENDED,
+                        experiments: [RUNNING_EXPERIMENT_MOCK]
+                    }
+                ];
+
+                spectator.setInput('experimentGroupedByStatus', groupedExperimentByStatus);
+
+                uiDotIconButtonTooltipComponent = spectator.query(UiDotIconButtonTooltipComponent);
+                expect(uiDotIconButtonTooltipComponent.icon).toBe('bar_chart');
+            });
         });
     });
 
