@@ -175,8 +175,10 @@ describe('DotExperimentsListTableComponent', () => {
 
                 spectator.setInput('experimentGroupedByStatus', groupedExperimentByStatus);
 
-                uiDotIconButtonTooltipComponent = spectator.query(UiDotIconButtonTooltipComponent);
-                expect(uiDotIconButtonTooltipComponent.icon).toBe('archive');
+                expect(spectator.queryAll(UiDotIconButtonTooltipComponent)[0].icon).toBe(
+                    'bar_chart'
+                );
+                expect(spectator.queryAll(UiDotIconButtonTooltipComponent)[1].icon).toBe('archive');
             });
 
             it('should the row not has any icon in action column', () => {
