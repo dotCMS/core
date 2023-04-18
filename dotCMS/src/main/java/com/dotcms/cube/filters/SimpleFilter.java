@@ -64,6 +64,10 @@ public class SimpleFilter implements Filter {
     }
 
     public String[] getValues() {
+        if (values == null) {
+            return new String[0];
+        }
+
         return Arrays.stream(values).map(Object::toString).toArray(String[]::new);
     }
 

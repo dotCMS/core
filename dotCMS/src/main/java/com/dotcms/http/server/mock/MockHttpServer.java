@@ -88,9 +88,8 @@ public class MockHttpServer {
     private static String getErrorMessage(List<MockHttpServerContext> contexts,
             RequestContext requestContext) {
         return "New Request:" + contexts.stream()
-                    .flatMap(context -> context.getRequestConditions().stream()
-                            .map(requestCondition -> requestCondition.getMessage(requestContext))
-                    )
+                    .flatMap(context -> context.getRequestConditions().stream())
+                    .map(requestCondition -> requestCondition.getMessage(requestContext))
                     .collect(Collectors.joining("\n"));
     }
 

@@ -38,6 +38,7 @@ import com.dotcms.exception.NotAllowedException;
 import com.dotcms.experiments.business.result.BrowserSession;
 import com.dotcms.experiments.business.result.ExperimentAnalyzerUtil;
 import com.dotcms.experiments.business.result.ExperimentResults;
+import com.dotcms.experiments.business.result.GoalResults;
 import com.dotcms.experiments.business.result.VariantResults;
 import com.dotcms.experiments.business.result.VariantResults.ResultResumeItem;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
@@ -543,13 +544,61 @@ public class ExperimentAPIImpIT {
      * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
      * When:
      * - You have four pages: A, B, C and D
-     * - You create an {@link Experiment} using the B page with a PAGE_REACH Goal: url EQUALS TO PAge D .
-     * - You have the follow page_view to the pages order by timestamp: A, B, D and C
+     * - You create an {@link Experiment} using the B page with a PAGE_REACH Goal: url EQUALS TO PAge D.
+     * * Create a Variant inside the Experiment let call it variant_1
+     * - You have the follow page_view Events for each browser sessions:
+     * First Session:
+     *      Variant: variant_1
+     *      Date: Yesterday
+     *      page View events: A, B, D and C
      *
-     * Should:  get a Success PAGE_REACH
+     * Second Session:
+     *   Variant: variant_1
+     *   Date: Today
+     *   page View events: A, B, D and C
+     *
+     * Third Session:
+     *  Variant: DEFAULT
+     *  Date: Today
+     *  page View events: A, B, D and C
+     *
+     * Fourth Session:
+     *   Variant: variant_1
+     *   Date: Tomorrow
+     *   page View events: A, B, D and C
+     *
+     * Fifth Session:
+     *  Variant: DEFAULT
+     *  Date: Tomorrow
+     *  page View events: A, B and C
+     *
+     * Should:  Got the follow results
+     *
+     * Variant: variant_1
+     * - Total Page Views: 12
+     * - Unique By Session: 3
+     * - Multi By Session: 3
+     * - Total Sessions: 3
+     * - Details:
+     *     - Yesterday: 1
+     *     - Today: 1
+     *     - Tomorrow: 1
+     *
+     * Variant: Default
+     * - Total Page Views: 8
+     * - Unique By Session: 1
+     * - Multi By Session: 1
+     * - Total Sessions: 2
+     * - Details:
+     *     - Yesterday: 0
+     *     - Today: 1
+     *     - Tomorrow: 0
      */
     @Test
     public void multiDaysEvent() throws DotDataException, DotSecurityException {
+        final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("MM/dd/yyyy")
+                .withZone(ZoneId.systemDefault());
+
         final Host host = new SiteDataGen().nextPersisted();
         final Template template = new TemplateDataGen().host(host).nextPersisted();
 
@@ -568,23 +617,23 @@ public class ExperimentAPIImpIT {
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
 
-        final Variant variant = APILocator.getVariantAPI().get(variantName).orElseThrow();
+        final Variant variant_1 = APILocator.getVariantAPI().get(variantName).orElseThrow();
 
         final Instant today = Instant.now();
         final Instant yesterday = today.minus(1, ChronoUnit.DAYS);
         final Instant tomorrow = today.plus(1, ChronoUnit.DAYS);
 
-        final List<Map<String, String>> todayCubeJsQueryData = createPageViewEvents(today,
-                experiment, variantName, pageA, pageB, pageD, pageC);
-
         final List<Map<String, String>> yesterdayCubeJsQueryData = createPageViewEvents(yesterday,
                 experiment, variantName, pageA, pageB, pageD, pageC);
 
-        final List<Map<String, String>> tomorrowCubeJsQueryData = createPageViewEvents(tomorrow,
+        final List<Map<String, String>> todayCubeJsQueryData = createPageViewEvents(today,
                 experiment, variantName, pageA, pageB, pageD, pageC);
 
         final List<Map<String, String>> todayCubeJsQueryDataDefault = createPageViewEvents(today,
                 experiment, DEFAULT_VARIANT.name(), pageA, pageB, pageD, pageC);
+
+        final List<Map<String, String>> tomorrowCubeJsQueryData = createPageViewEvents(tomorrow,
+                experiment, variantName, pageA, pageB, pageD, pageC);
 
         final List<Map<String, String>> tomorrowCubeJsQueryDataDefault = createPageViewEvents(tomorrow,
                 experiment, DEFAULT_VARIANT.name(), pageA, pageB, pageC);
@@ -607,7 +656,8 @@ public class ExperimentAPIImpIT {
 
         final String queryTotalPageViews = getTotalPageViewsQuery(experiment.id().get(), "DEFAULT", variantName);
         final List<Map<String, Object>> totalPageViewsResponseExpected = list(
-                map("Events.variant", variantName, "Events.count", "12")
+                map("Events.variant", variantName, "Events.count", "12"),
+                 map("Events.variant", "DEFAULT", "Events.count", "8")
         );
 
         addContext(mockhttpServer, queryTotalPageViews,
@@ -625,6 +675,38 @@ public class ExperimentAPIImpIT {
             final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
 
             mockhttpServer.validate();
+
+            final GoalResults primary = experimentResults.getGoals().get("primary");
+
+            assertEquals(5, experimentResults.getSessions().getTotal());
+            assertEquals(2, primary.getVariants().size());
+
+            final VariantResults variantResults = primary.getVariants().get(variantName);
+            final VariantResults defaultVariantResults = primary.getVariants().get(DEFAULT_VARIANT.name());
+
+            assertEquals(12, variantResults.getTotalPageViews());
+            assertEquals(3, variantResults.getUniqueBySession().getCount());
+            assertEquals(3, variantResults.getMultiBySession());
+            assertEquals(3, variantResults.getDetails().size());
+            assertEquals(1, variantResults.getDetails().get(FORMATTER.format(yesterday)).getUniqueBySession());
+            assertEquals(1, variantResults.getDetails().get(FORMATTER.format(yesterday)).getMultiBySession());
+            assertEquals(1, variantResults.getDetails().get(FORMATTER.format(today)).getUniqueBySession());
+            assertEquals(1, variantResults.getDetails().get(FORMATTER.format(today)).getMultiBySession());
+            assertEquals(1, variantResults.getDetails().get(FORMATTER.format(tomorrow)).getUniqueBySession());
+            assertEquals(1, variantResults.getDetails().get(FORMATTER.format(tomorrow)).getMultiBySession());
+            assertEquals(3l, experimentResults.getSessions().getVariants().get(variantName).longValue());
+
+            assertEquals(2, experimentResults.getSessions().getVariants().get(DEFAULT_VARIANT.name()).longValue());
+            assertEquals(8, defaultVariantResults.getTotalPageViews());
+            assertEquals(1, defaultVariantResults.getUniqueBySession().getCount());
+            assertEquals(1, defaultVariantResults.getMultiBySession());
+            assertEquals(3, defaultVariantResults.getDetails().size());
+            assertEquals(0, defaultVariantResults.getDetails().get(FORMATTER.format(yesterday)).getUniqueBySession());
+            assertEquals(0, defaultVariantResults.getDetails().get(FORMATTER.format(yesterday)).getMultiBySession());
+            assertEquals(1, defaultVariantResults.getDetails().get(FORMATTER.format(today)).getUniqueBySession());
+            assertEquals(1, defaultVariantResults.getDetails().get(FORMATTER.format(today)).getMultiBySession());
+            assertEquals(0, defaultVariantResults.getDetails().get(FORMATTER.format(tomorrow)).getUniqueBySession());
+            assertEquals(0, defaultVariantResults.getDetails().get(FORMATTER.format(tomorrow)).getMultiBySession());
 
         } finally {
             APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
