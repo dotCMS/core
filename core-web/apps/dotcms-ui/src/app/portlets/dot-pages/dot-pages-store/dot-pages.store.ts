@@ -103,12 +103,15 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                 label: this.dotMessageService.get('All'),
                 value: null
             });
-            languages.forEach((language) => {
-                languageOptions.push({
-                    label: `${language.language} (${language.countryCode})`,
-                    value: language.id
+
+            if (languages?.length) {
+                languages.forEach((language) => {
+                    languageOptions.push({
+                        label: `${language.language} (${language.countryCode})`,
+                        value: language.id
+                    });
                 });
-            });
+            }
 
             return languageOptions;
         }
@@ -117,9 +120,11 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
     readonly languageLabels$: Observable<{ [id: string]: string }> = this.select(
         ({ languages }: DotPagesState) => {
             const langLabels = {};
-            languages.forEach((language) => {
-                langLabels[language.id] = `${language.languageCode}-${language.countryCode}`;
-            });
+            if (languages?.length) {
+                languages.forEach((language) => {
+                    langLabels[language.id] = `${language.languageCode}-${language.countryCode}`;
+                });
+            }
 
             return langLabels;
         }
@@ -397,7 +402,14 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                                 this.setPages(currentPages);
                             },
                             (error: HttpErrorResponse) => {
-                                return this.httpErrorManagerService.handle(error);
+                                this.setPagesStatus(ComponentStatus.LOADED);
+
+                                // Set message to throw a custom Favorite Page error message
+                                error.error.message = this.dotMessageService.get(
+                                    'favoritePage.error.fetching.data'
+                                );
+
+                                return this.httpErrorManagerService.handle(error, true);
                             }
                         )
                     );
@@ -730,6 +742,35 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                             canWrite: {
                                 contentlets: permissions.CONTENTLETS.canWrite,
                                 htmlPages: permissions.HTMLPAGES.canWrite
+                            }
+                        },
+                        pages: {
+                            items: [],
+                            keyword: '',
+                            status: ComponentStatus.INIT
+                        },
+                        portletStatus: ComponentStatus.LOADED
+                    });
+                },
+                () => {
+                    this.setState({
+                        favoritePages: {
+                            items: [],
+                            showLoadMoreButton: false,
+                            total: 0
+                        },
+                        isEnterprise: false,
+                        environments: false,
+                        languages: null,
+                        loggedUser: {
+                            id: null,
+                            canRead: {
+                                contentlets: null,
+                                htmlPages: null
+                            },
+                            canWrite: {
+                                contentlets: null,
+                                htmlPages: null
                             }
                         },
                         pages: {
