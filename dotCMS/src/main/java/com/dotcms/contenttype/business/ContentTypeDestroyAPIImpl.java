@@ -110,14 +110,14 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
     }
 
     /**
-     * This method relocates all contentlets from a given structure to another structure And returns
-     * the new structure purged from fields
-     *
-     * @param source
-     * @param target
-     * @return
+     * This method relocates all contentlets from a given structure to another structure
+     * @param source the structure to be deleted
+     * @param target the structure to be used as temp replacement
+     * @return the number of contentlets relocated
      * @throws DotDataException
      */
+
+    @WrapInTransaction
     public int relocateContentletsForDeletion(final ContentType source, final ContentType target)
             throws DotDataException {
 
@@ -218,6 +218,15 @@ public class ContentTypeDestroyAPIImpl implements ContentTypeDestroyAPI {
     }
 
 
+    /**
+     * This method isn't meant to be transactional.
+     * So DO NOT ADD a WrapInTransaction annotation here
+     * It is meant to operate destroying small batches of contentlets transactionally every time.
+     * @param type
+     * @param user
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @Override
     public void destroy(ContentType type, User user) throws DotDataException, DotSecurityException {
         final long t1 = System.currentTimeMillis();

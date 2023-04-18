@@ -1,6 +1,7 @@
 package com.dotcms.contenttype.business;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.contenttype.business.ContentTypeDestroyAPIImpl.ContentletVersionInfo;
 import com.dotcms.contenttype.model.field.Field;
@@ -311,6 +312,7 @@ public class ContentTypeDestroyAPIImplTest extends IntegrationTestBase {
      * @param numOfContentlets
      * @throws DotDataException
      */
+    @CloseDBIfOpened
     void TestContentRelocation(int numOfContentlets) throws DotDataException{
         final Tuple2<ContentType,Set<String>> source = simpleContentTypeWithData(numOfContentlets);
         final Tuple2<ContentType, Set<String>> target = simpleContentTypeWithData(0);

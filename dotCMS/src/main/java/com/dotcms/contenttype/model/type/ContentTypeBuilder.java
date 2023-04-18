@@ -61,6 +61,12 @@ public interface ContentTypeBuilder {
 
 	ContentTypeBuilder sortOrder(int variable);
 
+	/**
+	 * if used the content type will be marked for deletion and will be deleted
+	 * Using this only makes sense when creating a mock content type that will be used to temporarily hold contentlets that are about to be deleted
+	 * @param variable
+	 * @return
+	 */
 	ContentTypeBuilder markedForDeletion(boolean variable);
 
 	public static ContentTypeBuilder builder(ContentType type) throws DotStateException {
