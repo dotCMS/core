@@ -71,6 +71,7 @@ export interface DotPagesState {
         status: ComponentStatus;
     };
     pageTypes?: DotCMSContentType[];
+    portletStatus: ComponentStatus;
 }
 
 const FAVORITE_PAGES_ES_QUERY = `+contentType:dotFavoritePage +deleted:false +working:true`;
@@ -83,6 +84,12 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         (state) =>
             state.pages.status === ComponentStatus.LOADING ||
             state.pages.status === ComponentStatus.INIT
+    );
+
+    readonly isPortletLoading$: Observable<boolean> = this.select(
+        (state) =>
+            state.portletStatus === ComponentStatus.LOADING ||
+            state.portletStatus === ComponentStatus.INIT
     );
 
     readonly actionMenuDomId$: Observable<string> = this.select(
@@ -177,6 +184,15 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             }
         };
     });
+
+    readonly setPortletStatus = this.updater<ComponentStatus>(
+        (state: DotPagesState, portletStatus: ComponentStatus) => {
+            return {
+                ...state,
+                portletStatus
+            };
+        }
+    );
 
     readonly setPagesStatus = this.updater<ComponentStatus>(
         (state: DotPagesState, status: ComponentStatus) => {
@@ -422,12 +438,22 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
     readonly vm$: Observable<DotPagesState> = this.select(
         this.state$,
         this.isPagesLoading$,
+        this.isPortletLoading$,
         this.languageOptions$,
         this.languageLabels$,
         this.pageTypes$,
         (
-            { favoritePages, isEnterprise, environments, languages, loggedUser, pages },
+            {
+                favoritePages,
+                isEnterprise,
+                environments,
+                languages,
+                loggedUser,
+                pages,
+                portletStatus
+            },
             isPagesLoading,
+            isPortletLoading,
             languageOptions,
             languageLabels,
             pageTypes
@@ -438,7 +464,9 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             languages,
             loggedUser,
             pages,
+            portletStatus,
             isPagesLoading,
+            isPortletLoading,
             languageOptions,
             languageLabels,
             pageTypes
@@ -460,7 +488,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         const { keyword, languageId, archived } = this.get().pages;
         const hostId = this.siteService.currentSite.identifier;
         const langQuery = languageId ? `+languageId:${languageId}` : '';
-        const archivedQuery = archived ? `+deleted:${archived}` : '';
+        const archivedQuery = archived ? `+deleted:true` : '+deleted:false';
         const identifierQuery = identifier ? `+identifier:${identifier}` : '';
         const keywordQuery = keyword
             ? `+(title:${keyword}* OR path:*${keyword}* OR urlmap:*${keyword}*)`
@@ -708,7 +736,8 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                             items: [],
                             keyword: '',
                             status: ComponentStatus.INIT
-                        }
+                        },
+                        portletStatus: ComponentStatus.LOADED
                     });
                 }
             );

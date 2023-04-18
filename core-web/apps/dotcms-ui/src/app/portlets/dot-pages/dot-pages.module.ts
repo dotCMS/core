@@ -3,6 +3,7 @@ import { NgModule } from '@angular/core';
 
 import { DialogService } from 'primeng/dynamicdialog';
 import { MenuModule } from 'primeng/menu';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
@@ -34,7 +35,8 @@ import { DotPagesComponent } from './dot-pages.component';
         DotPagesFavoritePanelModule,
         DotPagesListingPanelModule,
         DotPagesRoutingModule,
-        MenuModule
+        MenuModule,
+        ProgressSpinnerModule
     ],
     providers: [
         DialogService,

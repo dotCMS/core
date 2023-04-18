@@ -196,6 +196,12 @@ describe('DotPageStore', () => {
         });
     });
 
+    it('should get portlet loading status', () => {
+        dotPageStore.isPortletLoading$.subscribe((data) => {
+            expect(data).toEqual(false);
+        });
+    });
+
     // Updaters
     it('should update Favorite Pages', () => {
         dotPageStore.setFavoritePages(favoritePagesInitialTestData);
@@ -236,6 +242,13 @@ describe('DotPageStore', () => {
         dotPageStore.setPagesStatus(ComponentStatus.LOADING);
         dotPageStore.state$.subscribe((data) => {
             expect(data.pages.status).toEqual(ComponentStatus.LOADING);
+        });
+    });
+
+    it('should update Portlet Status', () => {
+        dotPageStore.setPortletStatus(ComponentStatus.LOADING);
+        dotPageStore.state$.subscribe((data) => {
+            expect(data.portletStatus).toEqual(ComponentStatus.LOADING);
         });
     });
 
@@ -335,7 +348,7 @@ describe('DotPageStore', () => {
         expect(dotESContentService.get).toHaveBeenCalledWith({
             itemsPerPage: 40,
             offset: '0',
-            query: '+conhost:123-xyz-567-xxl +working:true  +(urlmap:* OR basetype:5)    ',
+            query: '+conhost:123-xyz-567-xxl +working:true  +(urlmap:* OR basetype:5)  +deleted:false  ',
             sortField: 'title',
             sortOrder: ESOrderDirection.ASC
         });
