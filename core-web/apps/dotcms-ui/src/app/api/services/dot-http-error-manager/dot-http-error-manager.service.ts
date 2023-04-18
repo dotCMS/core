@@ -48,11 +48,11 @@ export class DotHttpErrorManagerService {
      * Handle the http error message and return a true if it did a redirect
      *
      * @param ResponseView err
-     * @param boolean [unobtrusive]
+     * @param boolean unobtrusive
      * @returns Observable<boolean>
      * @memberof DotHttpErrorManagerService
      */
-    handle(err: HttpErrorResponse, unobtrusive?: boolean): Observable<DotHttpErrorHandled> {
+    handle(err: HttpErrorResponse, unobtrusive = false): Observable<DotHttpErrorHandled> {
         this._unobtrusive = unobtrusive;
 
         const result: DotHttpErrorHandled = {
@@ -97,11 +97,7 @@ export class DotHttpErrorManagerService {
         const header = this.dotMessageService.get('dot.common.http.error.403.header');
         const message = this.dotMessageService.get('dot.common.http.error.403.message');
 
-        if (this._unobtrusive) {
-            this.showToastMessage(message);
-        } else {
-            this.showAlertDialog(header, message);
-        }
+        this.showErrorMessage(message, header);
 
         return false;
     }
@@ -110,11 +106,7 @@ export class DotHttpErrorManagerService {
         const header = this.dotMessageService.get('dot.common.http.error.403.license.header');
         const message = this.dotMessageService.get('dot.common.http.error.403.license.message');
 
-        if (this._unobtrusive) {
-            this.showToastMessage(message);
-        } else {
-            this.showAlertDialog(header, message);
-        }
+        this.showErrorMessage(message, header);
 
         return false;
     }
@@ -123,11 +115,7 @@ export class DotHttpErrorManagerService {
         const header = this.dotMessageService.get('dot.common.http.error.404.header');
         const message = this.dotMessageService.get('dot.common.http.error.404.message');
 
-        if (this._unobtrusive) {
-            this.showToastMessage(message);
-        } else {
-            this.showAlertDialog(header, message);
-        }
+        this.showErrorMessage(message, header);
 
         return false;
     }
@@ -138,11 +126,7 @@ export class DotHttpErrorManagerService {
             this.getErrorMessage(response) ||
             this.dotMessageService.get('dot.common.http.error.500.message');
 
-        if (this._unobtrusive) {
-            this.showToastMessage(message);
-        } else {
-            this.showAlertDialog(header, message);
-        }
+        this.showErrorMessage(message, header);
 
         return false;
     }
@@ -153,11 +137,7 @@ export class DotHttpErrorManagerService {
             this.getErrorMessage(response) ||
             this.dotMessageService.get('dot.common.http.error.400.message');
 
-        if (this._unobtrusive) {
-            this.showToastMessage(message);
-        } else {
-            this.showAlertDialog(header, message);
-        }
+        this.showErrorMessage(message, header);
 
         return false;
     }
@@ -168,29 +148,25 @@ export class DotHttpErrorManagerService {
             this.getErrorMessage(response) ||
             this.dotMessageService.get('dot.common.http.error.204.message');
 
-        if (this._unobtrusive) {
-            this.showToastMessage(message);
-        } else {
-            this.showAlertDialog(header, message);
-        }
+        this.showErrorMessage(message, header);
 
         return false;
     }
 
-    private showAlertDialog(header: string, message: string): void {
-        this.dotDialogService.alert({
-            message,
-            header
-        });
-    }
-
-    private showToastMessage(message: string): void {
-        this.dotMessageDisplayService.push({
-            life: 3000,
-            message,
-            severity: DotMessageSeverity.ERROR,
-            type: DotMessageType.SIMPLE_MESSAGE
-        });
+    private showErrorMessage(message: string, header?: string): void {
+        if (this._unobtrusive) {
+            this.dotMessageDisplayService.push({
+                life: 3000,
+                message,
+                severity: DotMessageSeverity.ERROR,
+                type: DotMessageType.SIMPLE_MESSAGE
+            });
+        } else {
+            this.dotDialogService.alert({
+                message,
+                header
+            });
+        }
     }
 
     private handleUnathorized(): boolean {

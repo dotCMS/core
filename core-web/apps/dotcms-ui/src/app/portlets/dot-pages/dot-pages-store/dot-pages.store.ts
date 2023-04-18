@@ -102,7 +102,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                 value: null
             });
 
-            if (languages) {
+            if (languages?.length) {
                 languages.forEach((language) => {
                     languageOptions.push({
                         label: `${language.language} (${language.countryCode})`,
@@ -745,7 +745,8 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                             items: [],
                             keyword: '',
                             status: ComponentStatus.INIT
-                        }
+                        },
+                        portletStatus: ComponentStatus.LOADED
                     });
                 }
             );
