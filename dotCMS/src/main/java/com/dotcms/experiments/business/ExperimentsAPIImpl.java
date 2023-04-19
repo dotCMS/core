@@ -960,7 +960,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                                         .getOrElseThrow(()-> new DotRuntimeException("Unable to promote variant. Variant name: " + variantName));
                                 return variant.withPromoted(true);
                             } else {
-                                return variant;
+                                return variant.withPromoted(false);
                             }
                         }).collect(Collectors.toCollection(TreeSet::new));
 
