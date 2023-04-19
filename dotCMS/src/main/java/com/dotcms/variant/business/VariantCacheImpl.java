@@ -6,7 +6,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
 
-public class VariantCacheImpl implements VariantCache{
+public class VariantCacheImpl implements VariantCache {
 
     static final String VARIANT_BY_ID = "VARIANT_BY_ID_";
     static final String VARIANT_BY_NAME = "VARIANT_BY_NAME_";
@@ -72,8 +72,7 @@ public class VariantCacheImpl implements VariantCache{
     @Override
     public void put(final String name, final Variant variant) {
         DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
-        cache.put(getKeyByName(name), variant, getPrimaryGroup());
-
+        cache.put(getKeyById(name), variant, getPrimaryGroup());
         cache.put(getKeyByName(name), variant, getPrimaryGroup());
     }
 }
