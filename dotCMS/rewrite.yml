@@ -1,9 +1,23 @@
 ---
 type: specs.openrewrite.org/v1beta/recipe
+name: dotcms.java.cleanup.Java11BaseCleanup
+displayName: DotCMS Java 11 cleanup
+description: >
+   General cleanup and static analysis for Java 11 code that 
+   should be safe to make on any Java 11 branch
+recipeList:
+   - org.openrewrite.java.migrate.Java8toJava11
+   - dotcms.java.cleanup.CommonStaticAnalysis
+---
+type: specs.openrewrite.org/v1beta/recipe
 name: dotcms.java.cleanup.CommonStaticAnalysis
 displayName: Common static analysis issues
-description: Resolve common static analysis issues discovered through 3rd party tools.
+description: > 
+   Resolve common static analysis issues discovered through 3rd party tools. 
+   Based upon org.openrewrite.java.cleanup.CommonStaticAnalysis 
+   allowing progressive fixup and testing of each component
 recipeList:
+   - org.openrewrite.java.cleanup.UseDiamondOperator
 #  - org.openrewrite.java.cleanup.AddSerialVersionUidToSerializable
 #  - org.openrewrite.java.cleanup.AtomicPrimitiveEqualsUsesGet
 #  - org.openrewrite.java.cleanup.BigDecimalRoundingConstantsToEnums
@@ -62,7 +76,6 @@ recipeList:
 #  - org.openrewrite.java.cleanup.UnnecessaryParentheses
 #  - org.openrewrite.java.cleanup.UnnecessaryPrimitiveAnnotations
 #  - org.openrewrite.java.cleanup.UpperCaseLiteralSuffixes
-   - org.openrewrite.java.cleanup.UseDiamondOperator
 #  - org.openrewrite.java.cleanup.UseJavaStyleArrayDeclarations
 #  - org.openrewrite.java.cleanup.UseLambdaForFunctionalInterface
 #  - org.openrewrite.java.cleanup.WhileInsteadOfFor

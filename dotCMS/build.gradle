@@ -29,8 +29,7 @@ plugins {
 rewrite {
     // https://docs.openrewrite.org/reference/recipes/java/migrate/java8tojava11
     activeRecipe(
-            "org.openrewrite.java.migrate.Java8toJava11",
-    "dotcms.java.cleanup.CommonStaticAnalysis"
+            "dotcms.java.cleanup.Java11BaseCleanup"
     )
 }
 
