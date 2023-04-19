@@ -29,6 +29,7 @@ public class VariantResultsBuilder {
     private Map<String, List<Event>> eventsByLookBackWindow = new HashMap<>();
     private long totalSessions;
     private long totalVariantSessions;
+    private long pageViews;
 
     VariantResultsBuilder(final ExperimentVariant experimentVariant) {
         this.experimentVariant = experimentVariant;
@@ -40,6 +41,10 @@ public class VariantResultsBuilder {
         return list;
     }
 
+    public void pageView(final long pageViews) {
+        this.pageViews += pageViews;
+
+    }
 
     public void success(final String lookBackWindow, final Event event) {
         final List<Event> sessionEvents = UtilMethods.isSet(eventsByLookBackWindow.get(lookBackWindow)) ?
@@ -60,7 +65,7 @@ public class VariantResultsBuilder {
         return events.size();
     }
 
-    public VariantResults build(List<Instant> allDates) {
+    public VariantResults build(final List<Instant> allDates) {
         final VariantResults.UniqueBySessionResume uniqueBySessionResume = new VariantResults.UniqueBySessionResume(
                 totalUniqueBySession(eventsByLookBackWindow),
                 totalVariantSessions,
@@ -68,10 +73,10 @@ public class VariantResultsBuilder {
 
         final Map<String, ResultResumeItem> details = getDetails(allDates);
 
-        return new VariantResults(experimentVariant.id(),
+        return new VariantResults(experimentVariant.id(), experimentVariant.description(),
                 totalMultiBySession(eventsByLookBackWindow),
                 uniqueBySessionResume,
-                details);
+                details, pageViews);
     }
 
     private Map<String, ResultResumeItem> getDetails(List<Instant> allDates) {
