@@ -74,6 +74,7 @@ import com.dotcms.storage.model.Metadata;
 import com.dotcms.publishing.*;
 import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.publishing.output.BundleOutput;
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.IdentifierAPI;
@@ -284,7 +285,7 @@ public class ContentBundler implements IBundler {
 		final ContentletAPI contentletAPI = APILocator.getContentletAPI();
 
 		final List<ContentletVersionInfo> contentletVersionInfos = APILocator.getVersionableAPI()
-				.findContentletVersionInfos(contentIdentifier);
+				.findContentletVersionInfos(contentIdentifier, VariantAPI.DEFAULT_VARIANT.name());
 
 		Map<String, Contentlet> contents = new HashMap<String, Contentlet>();
 
@@ -423,7 +424,7 @@ public class ContentBundler implements IBundler {
             //Find the MultiTree records for this html page and add them to the wrapper
 			final HTMLPageAsset htmlPageAsset = APILocator.getHTMLPageAssetAPI().fromContentlet(con);
 			final Table<String, String, Set<PersonalizedContentlet>> pageContents =
-					APILocator.getMultiTreeAPI().getPageMultiTrees(htmlPageAsset, false);
+					APILocator.getMultiTreeAPI().getPageMultiTrees(htmlPageAsset, VariantAPI.DEFAULT_VARIANT.name(), false);
 
 			for (final String containerId : pageContents.rowKeySet()) {
 				for (final String uniqueId : pageContents.row(containerId).keySet()) {
