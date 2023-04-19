@@ -53,9 +53,11 @@ export class SiteService {
             .subscribe(({ data }: DotEventTypeWrapper<Site>) => this.setCurrentSite(data));
 
         loginService.watchUser((auth: Auth) => {
-            if (!auth.isLoginAs) {
-                this.loadCurrentSite();
-            }
+            // TODO: This is a workaround to fix Current site not being updated when login as
+            // the bug is related to a change made here https://github.com/dotCMS/core/blob/fb41c6e6bf0216f86637f73d4dd1c3981490c07f/core-web/libs/dotcms-js/src/lib/core/login.service.ts#L353
+            // if (!auth.isLoginAs) {
+            this.loadCurrentSite();
+            // }
         });
     }
 
