@@ -7,7 +7,6 @@ import { catchError, filter, switchMap, take, tap } from 'rxjs/operators';
 
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { MODEL_VAR_NAME } from '@dotcms/app/portlets/dot-edit-page/content/services/html/libraries/iframe-edit-mode.js';
 import { INLINE_TINYMCE_SCRIPTS } from '@dotcms/app/portlets/dot-edit-page/content/services/html/libraries/inline-edit-mode.js';
 import {
     DotAlertConfirmService,
@@ -34,6 +33,7 @@ import {
     DotContentletEvent,
     DotContentletEventDragAndDropDotAsset,
     DotContentletEventRelocate,
+    DotContentletEventReorder,
     DotContentletEventSave,
     DotContentletEventSelect,
     DotInlineEditContent,
@@ -65,6 +65,7 @@ export class DotEditContentHtmlService {
     contentletEvents$: Subject<
         | DotContentletEventDragAndDropDotAsset
         | DotContentletEventRelocate
+        | DotContentletEventReorder
         | DotContentletEventSelect
         | DotContentletEventSave
         | DotContentletEvent<DotInlineEditContent>
@@ -157,7 +158,6 @@ export class DotEditContentHtmlService {
             const iframeElement = this.getEditPageIframe();
 
             iframeElement.addEventListener('load', () => {
-                iframeElement.contentWindow[MODEL_VAR_NAME] = this.pageModel$;
                 iframeElement.contentWindow['contentletEvents'] = this.contentletEvents$;
 
                 this.bindGlobalEvents();
@@ -399,7 +399,7 @@ export class DotEditContentHtmlService {
      * @memberof DotEditContentHtmlService
      */
     getContentModel(addedContentId: string = ''): DotPageContainer[] {
-        const { uuid, identifier } = this.currentContainer;
+        const { uuid, identifier } = this.currentContainer || {};
 
         return this.getEditPageIframe().contentWindow['getDotNgModel']({
             uuid,
@@ -804,11 +804,22 @@ export class DotEditContentHtmlService {
                     name: 'select'
                 });
             },
-            // When a user drag and drop a contentlet in the iframe
+            // When a user drag and drop a contentlet in the anohter container in the iframe
             relocate: (relocateInfo: DotRelocatePayload) => {
                 if (!this.remoteRendered) {
                     this.renderRelocatedContentlet(relocateInfo);
                 }
+            },
+            // When a user drag and drop a contentlet in the same container in the iframe
+            reorder: (model: DotPageContainer[]) => {
+                this.savePage(model)
+                    .pipe(take(1))
+                    .subscribe(() => {
+                        this.pageModel$.next({
+                            type: PageModelChangeEventType.MOVE_CONTENT,
+                            model
+                        });
+                    });
             },
             'deleted-contenlet': () => {
                 this.removeCurrentContentlet();
