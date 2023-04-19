@@ -164,6 +164,7 @@
                             <goals>
                                 <goal>check</goal>
                             </goals>
+                            <phase>validate</phase>
                             <configuration>
                                 <skip>${skipFormat}</skip>
                             </configuration>
