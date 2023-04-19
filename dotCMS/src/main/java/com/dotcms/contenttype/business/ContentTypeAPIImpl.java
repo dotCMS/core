@@ -274,7 +274,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
       //Then this quickly hides the content from the front end and APIS
      contentTypeFactory.markForDeletion(type);
      final ContentType copy = makeDisposableCopy(type);
-     //Once a copy has been mae, we need to relocate all the content to the dummy CT and then delete the original
+     //Once a copy has been made, we need to relocate all the content to the dummy CT and then delete the original
      HibernateUtil.addCommitListener(() -> relocateThenDispose(type, copy, asyncDeleteWithJob));
 
    }
