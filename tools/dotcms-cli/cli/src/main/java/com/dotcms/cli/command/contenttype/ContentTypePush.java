@@ -2,6 +2,7 @@ package com.dotcms.cli.command.contenttype;
 
 import com.dotcms.api.ContentTypeAPI;
 import com.dotcms.api.client.RestClientFactory;
+import com.dotcms.cli.common.FormatOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.model.ResponseEntityView;
@@ -28,6 +29,9 @@ public class ContentTypePush extends AbstractContentTypeCommand implements Calla
     @CommandLine.Mixin(name = "output")
     OutputOptionMixin output;
 
+    @CommandLine.Mixin(name = "format")
+    FormatOptionMixin formatOptionMixin;
+
     @Inject
     RestClientFactory clientFactory;
 
@@ -46,7 +50,7 @@ public class ContentTypePush extends AbstractContentTypeCommand implements Calla
             return CommandLine.ExitCode.SOFTWARE;
         }
 
-        final ObjectMapper objectMapper = output.objectMapper();
+        final ObjectMapper objectMapper = formatOptionMixin.objectMapper();
 
         try {
             final ContentType contentType = objectMapper

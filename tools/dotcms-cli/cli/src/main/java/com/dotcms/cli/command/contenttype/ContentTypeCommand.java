@@ -1,12 +1,11 @@
 package com.dotcms.cli.command.contenttype;
 
-import com.dotcms.cli.common.HelpOption;
+import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import picocli.CommandLine;
 
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.stream.Collectors;
 
 @CommandLine.Command(
         name = ContentTypeCommand.NAME,
@@ -28,7 +27,7 @@ public class ContentTypeCommand implements Callable<Integer> {
     protected OutputOptionMixin output;
 
     @CommandLine.Mixin
-    protected HelpOption helpOption;
+    protected HelpOptionMixin helpOption;
 
     @CommandLine.Spec
     protected CommandLine.Model.CommandSpec spec;
@@ -47,8 +46,9 @@ public class ContentTypeCommand implements Callable<Integer> {
         //Upon not proving a sub command exec the default
         output.info("Listing content-types (default action, see --help).");
         CommandLine.ParseResult result = spec.commandLine().getParseResult();
-        List<String> args = result.originalArgs().stream().filter(x -> !NAME.equals(x) && !ALIAS.equals(x)).collect(Collectors.toList());
         CommandLine listCommand = spec.subcommands().get(ContentTypeFind.NAME);
-        return listCommand.execute(args.toArray(new String[0]));
+        return listCommand.execute(
+                result.originalArgs().stream().filter(x -> !NAME.equals(x) && !ALIAS.equals(x))
+                        .toArray(String[]::new));
     }
 }

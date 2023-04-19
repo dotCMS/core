@@ -49,9 +49,9 @@ public class SiteRemove extends AbstractSiteCommand implements Callable<Integer>
         final SiteView siteView = site.get();
         ResponseEntityView<Boolean> delete = siteAPI.delete(siteView.identifier());
         if(Boolean.TRUE.equals(delete.entity())){
-            output.info("Site [%s] delete successfully.");
+            output.info(String.format("Site [%s] delete successfully.",siteView.hostName()));
         } else {
-            output.info("Site [%s] archived successfully.");
+            output.info(String.format("Site [%s] archived successfully.",siteView.hostName()));
         }
         return CommandLine.ExitCode.OK;
     }

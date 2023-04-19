@@ -2,7 +2,9 @@ package com.dotcms.cli.command.language;
 
 import static com.dotcms.cli.common.Utils.nextFileName;
 
+import com.dotcms.cli.common.FormatOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
+import com.dotcms.cli.common.ShortOutputOptionMixin;
 import com.dotcms.model.language.Language;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
@@ -31,6 +33,12 @@ public class LanguagePull extends AbstractLanguageCommand implements Callable<In
     @CommandLine.Mixin(name = "output")
     OutputOptionMixin output;
 
+    @CommandLine.Mixin(name = "format")
+    FormatOptionMixin formatOption;
+
+    @CommandLine.Mixin(name = "shorten")
+    ShortOutputOptionMixin shortOutputOption;
+
     @Parameters(index = "0", arity = "1", description = "Language Id or Tag.")
     String languageIdOrTag;
 
@@ -48,9 +56,9 @@ public class LanguagePull extends AbstractLanguageCommand implements Callable<In
                 return CommandLine.ExitCode.SOFTWARE;
             }
             final Language language = result.get();
-            final ObjectMapper objectMapper = output.objectMapper();
+            final ObjectMapper objectMapper = formatOption.objectMapper();
 
-            if(output.isShortenOutput()) {
+            if(shortOutputOption.isShortOutput()) {
                 final String asString = shortFormat(language);
                 output.info(asString);
             } else {
@@ -63,7 +71,7 @@ public class LanguagePull extends AbstractLanguageCommand implements Callable<In
                     path = saveAs.toPath();
                 } else {
                     //But this behavior can be modified if we explicitly add a file name
-                    final String fileName = String.format("%s.%s",language.language(),output.getInputOutputFormat().getExtension());
+                    final String fileName = String.format("%s.%s", language.language(), formatOption.getInputOutputFormat().getExtension());
                     final Path next = Path.of(".", fileName);
                     path = nextFileName(next);
                 }

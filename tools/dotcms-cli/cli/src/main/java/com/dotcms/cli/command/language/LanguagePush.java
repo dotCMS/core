@@ -2,9 +2,9 @@ package com.dotcms.cli.command.language;
 
 import com.dotcms.api.LanguageAPI;
 import com.dotcms.api.client.RestClientFactory;
-import com.dotcms.cli.common.HelpOption;
+import com.dotcms.cli.common.FormatOptionMixin;
+import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
-import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.language.Language;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,8 +32,11 @@ public class LanguagePush extends AbstractLanguageCommand implements Callable<In
     @CommandLine.Mixin(name = "output")
     OutputOptionMixin output;
 
+    @CommandLine.Mixin(name = "format")
+    FormatOptionMixin formatOption;
+
     @CommandLine.Mixin
-    protected HelpOption helpOption;
+    protected HelpOptionMixin helpOptionMixin;
 
     @CommandLine.Option(names = {"--byTag"}, description = "Tag to be used to create a new language. Used when no file is specified. For example: en-us")
     String languageTag;
@@ -53,7 +56,7 @@ public class LanguagePush extends AbstractLanguageCommand implements Callable<In
             return CommandLine.ExitCode.SOFTWARE;
         }
 
-        final ObjectMapper objectMapper = output.objectMapper();
+        final ObjectMapper objectMapper = formatOption.objectMapper();
 
         ResponseEntityView<Language> responseEntityView;
         if (null != file) {

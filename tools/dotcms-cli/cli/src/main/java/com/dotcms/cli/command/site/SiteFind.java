@@ -1,6 +1,7 @@
 package com.dotcms.cli.command.site;
 
 import com.dotcms.api.SiteAPI;
+import com.dotcms.cli.common.InteractiveOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.site.Site;
@@ -41,6 +42,9 @@ public class SiteFind extends AbstractSiteCommand implements Callable<Integer> {
 
     @CommandLine.ArgGroup(exclusive = false, order = 1, heading = "\nSearch Sites\n")
     FilterOptions filter;
+
+    @CommandLine.Mixin
+    InteractiveOptionMixin interactiveOption;
 
     @Override
     public Integer call() {
@@ -88,7 +92,7 @@ public class SiteFind extends AbstractSiteCommand implements Callable<Integer> {
                 }
                 page++;
             }
-            if(output.isInteractive() && !BooleanUtils.toBoolean(System.console().readLine("Load next page? y/n:" ))){
+            if(interactiveOption.isInteractive() && !BooleanUtils.toBoolean(System.console().readLine("Load next page? y/n:" ))){
                 break;
             }
         }

@@ -13,7 +13,7 @@ import java.util.concurrent.Callable;
 @ActivateRequestContext
 @CommandLine.Command(
         name = ContentTypeRemove.NAME,
-        header = "@|bold,green Use his command to remove Content-types.|@",
+        header = "@|bold,green Use this command to remove Content-types.|@",
         description = "@|bold,green Remove a Content-type from a given CT name or Id.|@.",
         sortOptions = false
 )
@@ -27,7 +27,7 @@ public class ContentTypeRemove extends AbstractContentTypeCommand implements Cal
     @Inject
     RestClientFactory clientFactory;
 
-    @CommandLine.Parameters(index = "0", arity = "1", description = "CT name Or Id.")
+    @CommandLine.Parameters(index = "0", arity = "1", description = "Name Or Id.")
     String idOrVar;
 
     /**

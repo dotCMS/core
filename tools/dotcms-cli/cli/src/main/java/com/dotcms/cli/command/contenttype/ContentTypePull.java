@@ -2,7 +2,10 @@ package com.dotcms.cli.command.contenttype;
 
 import com.dotcms.api.ContentTypeAPI;
 import com.dotcms.api.client.RestClientFactory;
+import com.dotcms.cli.common.FormatOptionMixin;
+import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
+import com.dotcms.cli.common.ShortOutputOptionMixin;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.model.ResponseEntityView;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -22,7 +25,7 @@ import static com.dotcms.cli.common.Utils.nextFileName;
 @ActivateRequestContext
 @CommandLine.Command(
         name = ContentTypePull.NAME,
-        description = "@|bold,green Get a Content-type from a given  idOrVar |@ Use @|bold,cyan --idOrVar|@ to pass the CT identifier or var name."
+        description = "@|bold,green Get a Content-type from a given id or Name |@ Use @|bold,cyan --idOrVar|@ to pass the CT identifier or name."
 )
 public class ContentTypePull extends AbstractContentTypeCommand implements Callable<Integer> {
 
@@ -30,11 +33,19 @@ public class ContentTypePull extends AbstractContentTypeCommand implements Calla
 
     @CommandLine.Mixin(name = "output")
     OutputOptionMixin output;
+    @CommandLine.Mixin(name = "format")
+    FormatOptionMixin formatOption;
+
+    @CommandLine.Mixin(name = "shorten")
+    ShortOutputOptionMixin shortOutputOption;
+
+    @CommandLine.Mixin
+    HelpOptionMixin helpOption;
 
     @Inject
     RestClientFactory clientFactory;
 
-    @Parameters(index = "0", arity = "1", description = "CT Identifier or varName.")
+    @Parameters(index = "0", arity = "1", description = "Identifier or Name.")
     String idOrVar;
 
     @CommandLine.Option(names = {"-to", "--saveTo"}, order = 5, description = "Save Pulled CT to a file.")
@@ -47,9 +58,9 @@ public class ContentTypePull extends AbstractContentTypeCommand implements Calla
             try {
                 final ResponseEntityView<ContentType> responseEntityView = contentTypeAPI.getContentType(idOrVar, null, null);
                 final ContentType contentType = responseEntityView.entity();
-                final ObjectMapper objectMapper = output.objectMapper();
+                final ObjectMapper objectMapper = formatOption.objectMapper();
 
-                if(output.isShortenOutput()) {
+                if(shortOutputOption.isShortOutput()) {
                     final String asString = shortFormat(contentType);
                     output.info(asString);
                 } else {
@@ -62,7 +73,7 @@ public class ContentTypePull extends AbstractContentTypeCommand implements Calla
                        path = saveAs.toPath();
                     } else {
                         //But this behavior can be modified if we explicitly add a file name
-                        final String fileName = String.format("%s.%s",contentType.variable(),output.getInputOutputFormat().getExtension());
+                        final String fileName = String.format("%s.%s",contentType.variable(), formatOption.getInputOutputFormat().getExtension());
                         final Path next = Path.of(".", fileName);
                         path = nextFileName(next);
                     }

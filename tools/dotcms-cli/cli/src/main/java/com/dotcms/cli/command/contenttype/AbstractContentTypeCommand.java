@@ -21,15 +21,15 @@ public abstract class AbstractContentTypeCommand {
         return Optional.empty();
     }
 
-    final SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-     String shortFormat(final ContentType contentType) {
+    String shortFormat(final ContentType contentType) {
         return String.format(
                 "varName: [@|bold,underline,blue %s|@] id: [@|bold,underline,cyan %s|@] host: [@|bold,underline,green %s|@] modDate:[@|bold,yellow %s|@] desc: [@|bold,yellow %s|@]",
                 contentType.variable(),
                 contentType.id(),
                 contentType.host(),
-                contentType.modDate() != null ? format.format(contentType.modDate()): "n/a" ,
+                contentType.modDate() != null ? simpleDateFormat.format(contentType.modDate()): "n/a" ,
                 StringUtils.isNotEmpty(contentType.description()) ? StringUtils.abbreviate(
                         contentType.description(), 50) : "n/a"
         );

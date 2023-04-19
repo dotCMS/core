@@ -2,6 +2,7 @@ package com.dotcms.cli.command.site;
 
 import com.dotcms.api.SiteAPI;
 import com.dotcms.api.client.RestClientFactory;
+import com.dotcms.cli.common.FormatOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.site.CreateUpdateSiteRequest;
@@ -28,6 +29,9 @@ public class SitePush extends AbstractSiteCommand implements Callable<Integer>{
     @CommandLine.Mixin(name = "output")
     OutputOptionMixin output;
 
+    @CommandLine.Mixin(name = "format")
+    FormatOptionMixin formatOption;
+
     @Inject
     RestClientFactory clientFactory;
 
@@ -52,7 +56,7 @@ public class SitePush extends AbstractSiteCommand implements Callable<Integer>{
             }
 
             try {
-                final ObjectMapper objectMapper = output.objectMapper();
+                final ObjectMapper objectMapper = formatOption.objectMapper();
                 final CreateUpdateSiteRequest createUpdateSiteRequest = objectMapper.readValue(siteFile, CreateUpdateSiteRequest.class);
                 final String returnedSiteName = createUpdateSiteRequest.siteName();
                 if(update(siteAPI, createUpdateSiteRequest, returnedSiteName)){

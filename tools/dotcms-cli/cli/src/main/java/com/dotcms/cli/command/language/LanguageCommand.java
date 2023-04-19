@@ -1,6 +1,6 @@
 package com.dotcms.cli.command.language;
 
-import com.dotcms.cli.common.HelpOption;
+import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -30,7 +30,7 @@ public class LanguageCommand implements Callable<Integer> {
     protected OutputOptionMixin output;
 
     @CommandLine.Mixin
-    protected HelpOption helpOption;
+    protected HelpOptionMixin helpOptionMixin;
 
     @CommandLine.Spec
     protected CommandLine.Model.CommandSpec spec;

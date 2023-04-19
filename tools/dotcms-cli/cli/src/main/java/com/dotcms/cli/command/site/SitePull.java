@@ -1,20 +1,20 @@
 package com.dotcms.cli.command.site;
 
+import static com.dotcms.cli.common.Utils.nextFileName;
+
+import com.dotcms.cli.common.FormatOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
-import com.dotcms.cli.common.Utils;
+import com.dotcms.cli.common.ShortOutputOptionMixin;
 import com.dotcms.model.site.SiteView;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import picocli.CommandLine;
-
-import javax.enterprise.context.control.ActivateRequestContext;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.concurrent.Callable;
-
-import static com.dotcms.cli.common.Utils.nextFileName;
+import javax.enterprise.context.control.ActivateRequestContext;
+import picocli.CommandLine;
 
 @ActivateRequestContext
 @CommandLine.Command(name = SitePull.NAME,
@@ -26,6 +26,12 @@ public class SitePull extends AbstractSiteCommand implements Callable<Integer> {
 
     @CommandLine.Mixin(name = "output")
     OutputOptionMixin output;
+
+    @CommandLine.Mixin(name = "format")
+    FormatOptionMixin formatOption;
+
+    @CommandLine.Mixin(name = "shorten")
+    ShortOutputOptionMixin shortOutputOption;
 
     @CommandLine.Parameters(index = "0", arity = "1", description = "Site name Or Id.")
     String siteNameOrId;
@@ -50,21 +56,21 @@ public class SitePull extends AbstractSiteCommand implements Callable<Integer> {
 
         final SiteView siteView = site.get();
         try {
-            if (output.isShortenOutput()) {
+            if (shortOutputOption.isShortOutput()) {
                 final String shortFormat = shortFormat(siteView);
                 output.info(shortFormat);
                 if (null != saveAs) {
                     Files.writeString(saveAs.toPath(), shortFormat);
                 }
             } else {
-                ObjectMapper objectMapper = output.objectMapper();
+                ObjectMapper objectMapper = formatOption.objectMapper();
                 final String asString = objectMapper.writeValueAsString(siteView);
                 output.info(asString);
                 Path path;
                 if (null != saveAs) {
                     path = saveAs.toPath();
                 } else {
-                    final String fileName = String.format("%s.%s",siteView.hostName(),output.getInputOutputFormat().getExtension());
+                    final String fileName = String.format( "%s.%s", siteView.hostName(), formatOption.getInputOutputFormat().getExtension());
                     final Path next = Path.of(".", fileName);
                     path = nextFileName(next);
                 }
