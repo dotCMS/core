@@ -3,8 +3,10 @@ import { MarkdownModule } from 'ngx-markdown';
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 
-import { DotAvatarModule } from '@components/_common/dot-avatar/dot-avatar.module';
+import { AvatarModule } from 'primeng/avatar';
+
 import { DotCopyLinkModule } from '@components/dot-copy-link/dot-copy-link.module';
+import { DotAvatarDirective } from '@directives/dot-avatar/dot-avatar.directive';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotAppsConfigurationHeaderComponent } from './dot-apps-configuration-header.component';
@@ -12,7 +14,8 @@ import { DotAppsConfigurationHeaderComponent } from './dot-apps-configuration-he
 @NgModule({
     imports: [
         CommonModule,
-        DotAvatarModule,
+        AvatarModule,
+        DotAvatarDirective,
         DotCopyLinkModule,
         DotPipesModule,
         MarkdownModule.forChild()

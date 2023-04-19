@@ -13,6 +13,7 @@ import com.dotcms.content.elasticsearch.business.ESIndexAPITest;
 import com.dotcms.content.elasticsearch.business.ElasticsearchUtilTest;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
 import com.dotcms.content.model.hydration.MetadataDelegateTest;
+import com.dotcms.contenttype.business.ContentTypeDestroyAPIImplTest;
 import com.dotcms.contenttype.business.ContentTypeInitializerTest;
 import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
 import com.dotcms.contenttype.business.SiteAndFolderResolverImplTest;
@@ -161,6 +162,7 @@ import com.dotmarketing.portlets.workflows.util.WorkflowEmailUtilTest;
 import com.dotmarketing.quartz.DotStatefulJobTest;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
 import com.dotmarketing.quartz.job.IntegrityDataGenerationJobTest;
+import com.dotmarketing.quartz.job.PopulateContentletAsJSONJobTest;
 import com.dotmarketing.quartz.job.StartEndScheduledExperimentsJobTest;
 import com.dotmarketing.startup.StartupTasksExecutorTest;
 import com.dotmarketing.startup.runalways.Task00050LoadAppsSecretsTest;
@@ -211,6 +213,7 @@ import com.dotmarketing.startup.runonce.Task220912UpdateCorrectShowOnMenuPropert
 import com.dotmarketing.startup.runonce.Task220928AddLookbackWindowColumnToExperimentTest;
 import com.dotmarketing.startup.runonce.Task221007AddVariantIntoPrimaryKeyTest;
 import com.dotmarketing.startup.runonce.Task230110MakeSomeSystemFieldsRemovableByBaseTypeTest;
+import com.dotmarketing.startup.runonce.Task230328AddMarkedForDeletionColumnTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
@@ -228,17 +231,16 @@ import org.junit.runners.Suite.SuiteClasses;
 /* grep -l -r "@Test" dotCMS/src/integration-test */
 /* ./gradlew integrationTest -Dtest.single=com.dotcms.MainSuite */
 
+
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
         StartEndScheduledExperimentsJobTest.class,
         RulesAPIImplIntegrationTest.class,
         Task220825CreateVariantFieldTest.class,
-//        AnalyticsAPIImplTest.class,
         Task221007AddVariantIntoPrimaryKeyTest.class,
         ESContentletAPIImplTest.class,
         ExperimentAPIImpIT.class,
         ExperimentWebAPIImplIT.class,
-//        AccessTokenRenewJobTest.class,
         ContentletWebAPIImplIntegrationTest.class, // moved to top because of failures on GHA
         DependencyBundlerTest.class, // moved to top because of failures on GHA
         SiteAndFolderResolverImplTest.class, //Moved up to avoid conflicts with CT deletion
@@ -641,7 +643,12 @@ import org.junit.runners.Suite.SuiteClasses;
         ManifestUtilTest.class,
         ZipUtilTest.class,
         Task230110MakeSomeSystemFieldsRemovableByBaseTypeTest.class,
-        PopulateContentletAsJSONUtilTest.class
+        PopulateContentletAsJSONUtilTest.class,
+        PopulateContentletAsJSONJobTest.class,
+        ContentTypeDestroyAPIImplTest.class,
+        Task230328AddMarkedForDeletionColumnTest.class,
+//        AnalyticsAPIImplTest.class,
+//        AccessTokenRenewJobTest.class,
 })
 
 public class MainSuite {

@@ -63,6 +63,7 @@ const defaultVmMock: ConfigurationViewModel = {
     },
     isLoading: false,
     isExperimentADraft: false,
+    runExperimentBtnLabel: '',
     disabledStartExperiment: false,
     showExperimentSummary: false,
     isSaving: false,

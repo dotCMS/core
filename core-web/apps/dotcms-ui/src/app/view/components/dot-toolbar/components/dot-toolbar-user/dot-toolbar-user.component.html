@@ -1,88 +1,16 @@
-<dot-dropdown-component
-    [gravatar]="auth.loginAsUser === null ? auth.user.emailAddress : auth.loginAsUser.emailAddress"
-    inverted="true"
-    position="right"
-    *ngIf="auth.user"
-    id="dot-toolbar-user"
-    (wasOpen)="iframeOverlayService.show()"
-    (shutdown)="iframeOverlayService.hide()"
->
-    <div class="toolbar-user__content">
-        <header class="toolbar-user__header">
-            <dot-gravatar
-                class="toolbar-user__header-gravatar"
-                size="40"
-                [email]="
-                    auth.loginAsUser === null
-                        ? auth.user.emailAddress
-                        : auth.loginAsUser.emailAddress
-                "
-            ></dot-gravatar>
-            <div class="toolbar-user__header-info">
-                <h5 class="toolbar-user__user-name" id="dot-toolbar-user-name">
-                    {{
-                        auth.loginAsUser
-                            ? auth.loginAsUser.name || auth.loginAsUser.fullName
-                            : auth.user.name || auth.user.fullName
-                    }}
-                </h5>
-                <p class="toolbar-user__email" id="dot-toolbar-email">
-                    {{ auth.loginAsUser ? auth.loginAsUser.emailAddress : auth.user.emailAddress }}
-                </p>
-            </div>
-        </header>
-        <ul class="toolbar-user__menu" id="dot-toolbar-user-menu">
-            <li class="user-menu__item">
-                <a
-                    href="#"
-                    (click)="toggleMyAccount()"
-                    *ngIf="!auth.loginAsUser"
-                    id="dot-toolbar-user-link-my-account"
-                    [textContent]="'my-account' | dm"
-                ></a>
-            </li>
-            <li
-                data-testId="login-as"
-                class="user-menu__item"
-                *ngIf="!auth.loginAsUser && (this.haveLoginAsPermission$ | async)"
-            >
-                <a
-                    href="#"
-                    (click)="tooggleLoginAs($event)"
-                    id="dot-toolbar-user-link-login-as"
-                    [textContent]="'login-as' | dm"
-                    >login-as</a
-                >
-            </li>
-            <li class="user-menu__item">
-                <a
-                    [href]="logoutUrl"
-                    *ngIf="!auth.loginAsUser"
-                    id="dot-toolbar-user-link-logout"
-                    [textContent]="'Logout' | dm"
-                ></a>
-            </li>
-            <li class="user-menu__item">
-                <a
-                    href="#"
-                    (click)="logoutAs($event)"
-                    *ngIf="auth.loginAsUser"
-                    id="dot-toolbar-user-link-logout-as"
-                    [textContent]="'logout-as' | dm"
-                    >logout-as</a
-                >
-            </li>
-        </ul>
-    </div>
-</dot-dropdown-component>
+<ng-container *ngIf="vm$ | async as vm">
+    <p-avatar [email]="vm.userData.email" (click)="menu.toggle($event)" dotGravatar></p-avatar>
+    <p-menu #menu [model]="vm.items" [popup]="true" appendTo="body"></p-menu>
 
-<dot-login-as
-    *ngIf="showLoginAs"
-    [visible]="showLoginAs"
-    (cancel)="tooggleLoginAs($event)"
-></dot-login-as>
-<dot-my-account
-    *ngIf="showMyAccount"
-    [visible]="showMyAccount"
-    (shutdown)="toggleMyAccount()"
-></dot-my-account>
+    <dot-my-account
+        *ngIf="vm.showMyAccount"
+        [visible]="vm.showMyAccount"
+        (shutdown)="store.showMyAccount(false)"
+    ></dot-my-account>
+
+    <dot-login-as
+        *ngIf="vm.showLoginAs"
+        [visible]="vm.showLoginAs"
+        (cancel)="store.showLoginAs(false)"
+    ></dot-login-as>
+</ng-container>

@@ -13,7 +13,8 @@ import picocli.CommandLine;
         subcommands = {
                 LanguagePull.class,
                 LanguageFind.class,
-                LanguagePush.class
+                LanguagePush.class,
+                LanguageRemove.class
         }
 )
 /**

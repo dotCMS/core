@@ -1,4 +1,4 @@
-import { Observable, of } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Injectable } from '@angular/core';
@@ -54,6 +54,7 @@ import {
     LoginServiceMock,
     mockDotLanguage,
     MockDotRouterService,
+    mockResponseView,
     mockWorkflowsActions
 } from '@dotcms/utils-testing';
 
@@ -96,6 +97,7 @@ describe('DotPageStore', () => {
     let dotESContentService: DotESContentService;
     let dotPageTypesService: DotPageTypesService;
     let dotWorkflowsActionsService: DotWorkflowsActionsService;
+    let dotHttpErrorManagerService: DotHttpErrorManagerService;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -132,9 +134,11 @@ describe('DotPageStore', () => {
         dialogService = TestBed.inject(DialogService);
         dotESContentService = TestBed.inject(DotESContentService);
         dotPageTypesService = TestBed.inject(DotPageTypesService);
+        dotHttpErrorManagerService = TestBed.inject(DotHttpErrorManagerService);
         dotWorkflowsActionsService = TestBed.inject(DotWorkflowsActionsService);
 
         spyOn(dialogService, 'open').and.callThrough();
+        spyOn(dotHttpErrorManagerService, 'handle');
 
         dotPageStore.setInitialStateData(5);
     });
@@ -152,6 +156,28 @@ describe('DotPageStore', () => {
             expect(data.loggedUser.canWrite).toEqual({ contentlets: true, htmlPages: true });
             expect(data.pages.items).toEqual([]);
             expect(data.pages.keyword).toEqual('');
+            expect(data.pages.status).toEqual(ComponentStatus.INIT);
+        });
+    });
+
+    it('should load null Favorite Pages data when error on initial data fetch', () => {
+        const error500 = mockResponseView(500, '/test', null, { message: 'error' });
+        spyOn(dotESContentService, 'get').and.returnValue(throwError(error500));
+        dotPageStore.setInitialStateData(5);
+
+        dotPageStore.state$.subscribe((data) => {
+            expect(data.environments).toEqual(false);
+            expect(data.favoritePages.items).toEqual([]);
+            expect(data.favoritePages.showLoadMoreButton).toEqual(false);
+            expect(data.favoritePages.total).toEqual(0);
+            expect(data.isEnterprise).toEqual(false);
+            expect(data.languages).toEqual(null);
+            expect(data.loggedUser.id).toEqual(null);
+            expect(data.loggedUser.canRead).toEqual({ contentlets: null, htmlPages: null });
+            expect(data.loggedUser.canWrite).toEqual({ contentlets: null, htmlPages: null });
+            expect(data.pages.items).toEqual([]);
+            expect(data.pages.keyword).toEqual('');
+            expect(data.pages.status).toEqual(ComponentStatus.INIT);
         });
     });
 
@@ -188,6 +214,12 @@ describe('DotPageStore', () => {
     it('should get pages loading status', () => {
         dotPageStore.isPagesLoading$.subscribe((data) => {
             expect(data).toEqual(true);
+        });
+    });
+
+    it('should get portlet loading status', () => {
+        dotPageStore.isPortletLoading$.subscribe((data) => {
+            expect(data).toEqual(false);
         });
     });
 
@@ -231,6 +263,13 @@ describe('DotPageStore', () => {
         dotPageStore.setPagesStatus(ComponentStatus.LOADING);
         dotPageStore.state$.subscribe((data) => {
             expect(data.pages.status).toEqual(ComponentStatus.LOADING);
+        });
+    });
+
+    it('should update Portlet Status', () => {
+        dotPageStore.setPortletStatus(ComponentStatus.LOADING);
+        dotPageStore.state$.subscribe((data) => {
+            expect(data.portletStatus).toEqual(ComponentStatus.LOADING);
         });
     });
 
@@ -330,10 +369,22 @@ describe('DotPageStore', () => {
         expect(dotESContentService.get).toHaveBeenCalledWith({
             itemsPerPage: 40,
             offset: '0',
-            query: '+conhost:123-xyz-567-xxl +deleted:false  +(urlmap:* OR basetype:5)    ',
+            query: '+conhost:123-xyz-567-xxl +working:true  +(urlmap:* OR basetype:5)  +deleted:false  ',
             sortField: 'title',
             sortOrder: ESOrderDirection.ASC
         });
+    });
+
+    it('should handle error when get Pages value fails', () => {
+        const error500 = mockResponseView(500, '/test', null, { message: 'error' });
+        spyOn(dotESContentService, 'get').and.returnValue(throwError(error500));
+        dotPageStore.getPages({ offset: 0, sortField: 'title', sortOrder: 1 });
+
+        dotPageStore.state$.subscribe((data) => {
+            expect(data.pages.status).toEqual(ComponentStatus.LOADED);
+        });
+        expect(dotESContentService.get).toHaveBeenCalledTimes(1);
+        expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(error500, true);
     });
 
     it('should keep fetching Pages data until new value comes from the DB in store', fakeAsync(() => {

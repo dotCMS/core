@@ -18,21 +18,14 @@ window.addEventListener("experiment_loaded", function (event) {
 
     if (!location.href.includes("redirect=true")) {
         for (let i = 0; i < experimentData.experiments.length; i++) {
-            const pageUrl = experimentData.experiments[i].pageUrl;
+            const pattern = new RegExp(experimentData.experiments[i].redirectPattern);
 
-            const alternativePageUrl = experimentData.experiments[i].pageUrl.endsWith(
-                "/index") ?
-                experimentData.experiments[i].pageUrl.replace("index", "")
-                : experimentData.experiments[i].pageUrl;
+            if (pattern.test(location.href)) {
 
-            if (location.href.includes(pageUrl)
-                || location.href.endsWith(alternativePageUrl)) {
+                const param = (location.href.includes("?") ? "&" : "?")
+                    + `variantName=${experimentData.experiments[i].variant.name}&redirect=true`;
 
-                let url = experimentData.experiments[i].variant.url
-                const param = (url.includes("?") ? "&" : "?")
-                    + "redirect=true";
-
-                location.href = url + param;
+                location.href = location.href + param;
                 break;
             }
         }
@@ -81,6 +74,8 @@ if (!experimentAlreadyCheck) {
             }
         }
     }
+
+    cleanExperimentDataUp();
 
     if (shouldHitEndPoint()) {
 
@@ -141,7 +136,6 @@ if (!experimentAlreadyCheck) {
         });
     }
 
-    cleanExperimentDataUp();
     let experimentDataAsString = localStorage.getItem('experiment_data');
 
     if (experimentDataAsString) {
@@ -160,4 +154,3 @@ if (!experimentAlreadyCheck) {
         {detail: experimentData});
     window.dispatchEvent(event);
 }
-

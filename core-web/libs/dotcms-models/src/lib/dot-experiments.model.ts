@@ -30,7 +30,7 @@ export interface DotExperimentResults {
 
 export interface DotResultGoal {
     goal: Goal;
-    variants: Record<string, DotResultVariant>;
+    variants: Record<'DEFAULT' | string, DotResultVariant>;
 }
 
 export interface DotResultVariant {
@@ -96,7 +96,10 @@ export interface RangeOfDateAndTime {
     endDate: number;
 }
 
-export type GroupedExperimentByStatus = Partial<Record<DotExperimentStatusList, DotExperiment[]>>;
+export type GroupedExperimentByStatus = {
+    status: DotExperimentStatusList;
+    experiments: DotExperiment[];
+};
 
 export interface SidebarStatus {
     status: ComponentStatus;
@@ -106,8 +109,6 @@ export interface SidebarStatus {
 export type StepStatus = SidebarStatus & {
     experimentStep: ExperimentSteps | null;
 };
-
-export type EditPageTabs = 'edit' | 'preview';
 
 export enum ExperimentSteps {
     VARIANTS = 'variants',
@@ -168,28 +169,30 @@ export const ChartColors = {
     black: '#000000'
 };
 
-export const DefaultExperimentChartDatasetColors: Record<
-    'DEFAULT' | 'VARIANT1' | 'VARIANT2',
-    { borderColor: string; backgroundColor: string; pointBackgroundColor: string }
-> = {
-    DEFAULT: {
+export type LineChartColorsProperties = Pick<
+    ChartDataset<'line'>,
+    'borderColor' | 'backgroundColor' | 'pointBackgroundColor'
+>;
+
+export const ExperimentChartDatasetColorsVariants: Array<LineChartColorsProperties> = [
+    {
         borderColor: ChartColors.primary.rgb,
         pointBackgroundColor: ChartColors.primary.rgb,
         backgroundColor: ChartColors.primary.rgba_10
     },
-    VARIANT1: {
+    {
         borderColor: ChartColors.secondary.rgb,
         pointBackgroundColor: ChartColors.secondary.rgb,
         backgroundColor: ChartColors.secondary.rgba_10
     },
-    VARIANT2: {
+    {
         borderColor: ChartColors.accent.rgb,
         pointBackgroundColor: ChartColors.accent.rgb,
         backgroundColor: ChartColors.accent.rgba_10
     }
-};
+];
 
-export const DefaultExperimentChartDatasetOption: Partial<ChartDataset<'line'>> = {
+export const ExperimentLineChartDatasetDefaultProperties: Partial<ChartDataset<'line'>> = {
     type: 'line',
     pointRadius: 4,
     pointHoverRadius: 6,

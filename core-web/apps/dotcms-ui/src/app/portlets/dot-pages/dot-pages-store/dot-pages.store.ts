@@ -69,6 +69,7 @@ export interface DotPagesState {
         status: ComponentStatus;
     };
     pageTypes?: DotCMSContentType[];
+    portletStatus: ComponentStatus;
 }
 
 const FAVORITE_PAGES_ES_QUERY = `+contentType:dotFavoritePage +deleted:false +working:true`;
@@ -83,6 +84,12 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             state.pages.status === ComponentStatus.INIT
     );
 
+    readonly isPortletLoading$: Observable<boolean> = this.select(
+        (state) =>
+            state.portletStatus === ComponentStatus.LOADING ||
+            state.portletStatus === ComponentStatus.INIT
+    );
+
     readonly actionMenuDomId$: Observable<string> = this.select(
         ({ pages }) => pages.actionMenuDomId
     ).pipe(filter((i) => i !== null));
@@ -94,12 +101,15 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                 label: this.dotMessageService.get('All'),
                 value: null
             });
-            languages.forEach((language) => {
-                languageOptions.push({
-                    label: `${language.language} (${language.countryCode})`,
-                    value: language.id
+
+            if (languages?.length) {
+                languages.forEach((language) => {
+                    languageOptions.push({
+                        label: `${language.language} (${language.countryCode})`,
+                        value: language.id
+                    });
                 });
-            });
+            }
 
             return languageOptions;
         }
@@ -108,9 +118,11 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
     readonly languageLabels$: Observable<{ [id: string]: string }> = this.select(
         ({ languages }: DotPagesState) => {
             const langLabels = {};
-            languages.forEach((language) => {
-                langLabels[language.id] = `${language.languageCode}-${language.countryCode}`;
-            });
+            if (languages?.length) {
+                languages.forEach((language) => {
+                    langLabels[language.id] = `${language.languageCode}-${language.countryCode}`;
+                });
+            }
 
             return langLabels;
         }
@@ -175,6 +187,15 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             }
         };
     });
+
+    readonly setPortletStatus = this.updater<ComponentStatus>(
+        (state: DotPagesState, portletStatus: ComponentStatus) => {
+            return {
+                ...state,
+                portletStatus
+            };
+        }
+    );
 
     readonly setPagesStatus = this.updater<ComponentStatus>(
         (state: DotPagesState, status: ComponentStatus) => {
@@ -293,11 +314,11 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
 
                     if (isFavoritePage) {
                         localPageData = this.get().favoritePages.items.filter(
-                            (item) => item.identifier === identifier
+                            (item) => item?.identifier === identifier
                         )[0];
                     } else {
                         localPageData = this.get().pages.items.filter(
-                            (item) => item.identifier === identifier
+                            (item) => item?.identifier === identifier
                         )[0];
                         this.setPagesStatus(ComponentStatus.LOADING);
                     }
@@ -321,7 +342,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                                         if (isFavoritePage) {
                                             const pagesData = this.get().favoritePages.items.map(
                                                 (page) => {
-                                                    return page.identifier === identifier
+                                                    return page?.identifier === identifier
                                                         ? items.jsonObjectView.contentlets[0]
                                                         : page;
                                                 }
@@ -330,7 +351,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                                             this.setFavoritePages(pagesData);
                                         } else {
                                             const pagesData = this.get().pages.items.map((page) => {
-                                                return page.identifier === identifier
+                                                return page?.identifier === identifier
                                                     ? items.jsonObjectView.contentlets[0]
                                                     : page;
                                             });
@@ -379,7 +400,14 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                                 this.setPages(currentPages);
                             },
                             (error: HttpErrorResponse) => {
-                                return this.httpErrorManagerService.handle(error);
+                                this.setPagesStatus(ComponentStatus.LOADED);
+
+                                // Set message to throw a custom Favorite Page error message
+                                error.error.message = this.dotMessageService.get(
+                                    'favoritePage.error.fetching.data'
+                                );
+
+                                return this.httpErrorManagerService.handle(error, true);
                             }
                         )
                     );
@@ -422,12 +450,22 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
     readonly vm$: Observable<DotPagesState> = this.select(
         this.state$,
         this.isPagesLoading$,
+        this.isPortletLoading$,
         this.languageOptions$,
         this.languageLabels$,
         this.pageTypes$,
         (
-            { favoritePages, isEnterprise, environments, languages, loggedUser, pages },
+            {
+                favoritePages,
+                isEnterprise,
+                environments,
+                languages,
+                loggedUser,
+                pages,
+                portletStatus
+            },
             isPagesLoading,
+            isPortletLoading,
             languageOptions,
             languageLabels,
             pageTypes
@@ -438,7 +476,9 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             languages,
             loggedUser,
             pages,
+            portletStatus,
             isPagesLoading,
+            isPortletLoading,
             languageOptions,
             languageLabels,
             pageTypes
@@ -460,13 +500,13 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         const { keyword, languageId, archived } = this.get().pages;
         const hostId = this.siteService.currentSite.identifier;
         const langQuery = languageId ? `+languageId:${languageId}` : '';
-        const archivedQuery = archived ? `+archived:${archived}` : '';
+        const archivedQuery = archived ? `+deleted:true` : '+deleted:false';
         const identifierQuery = identifier ? `+identifier:${identifier}` : '';
         const keywordQuery = keyword
             ? `+(title:${keyword}* OR path:*${keyword}* OR urlmap:*${keyword}*)`
             : '';
 
-        return `+conhost:${hostId} +deleted:false  +(urlmap:* OR basetype:5) ${langQuery} ${archivedQuery} ${keywordQuery} ${identifierQuery}`;
+        return `+conhost:${hostId} +working:true  +(urlmap:* OR basetype:5) ${langQuery} ${archivedQuery} ${keywordQuery} ${identifierQuery}`;
     }
 
     private getPagesDataFn(
@@ -676,7 +716,37 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                             items: [],
                             keyword: '',
                             status: ComponentStatus.INIT
-                        }
+                        },
+                        portletStatus: ComponentStatus.LOADED
+                    });
+                },
+                () => {
+                    this.setState({
+                        favoritePages: {
+                            items: [],
+                            showLoadMoreButton: false,
+                            total: 0
+                        },
+                        isEnterprise: false,
+                        environments: false,
+                        languages: null,
+                        loggedUser: {
+                            id: null,
+                            canRead: {
+                                contentlets: null,
+                                htmlPages: null
+                            },
+                            canWrite: {
+                                contentlets: null,
+                                htmlPages: null
+                            }
+                        },
+                        pages: {
+                            items: [],
+                            keyword: '',
+                            status: ComponentStatus.INIT
+                        },
+                        portletStatus: ComponentStatus.LOADED
                     });
                 }
             );

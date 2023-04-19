@@ -28,7 +28,7 @@
             .p-widget-content {
                 background-color: $white;
             }
-            .avatar__img {
+            img {
                 filter: unset;
             }
         }
@@ -41,7 +41,7 @@
         .p-card {
             background: $color-palette-gray-200;
         }
-        .avatar__img {
+        img {
             filter: grayscale(1);
         }
         .p-widget-content {
@@ -58,7 +58,7 @@ p-header {
     padding-top: $spacing-4;
 }
 
-dot-avatar {
+p-avatar {
     border-radius: 50%;
     box-shadow: $md-shadow-2;
     margin: 0 $spacing-3 0;
@@ -72,7 +72,6 @@ dot-avatar {
     font-weight: bold;
     height: $spacing-3;
     line-height: $spacing-3;
-    overflow: hidden;
     text-overflow: ellipsis;
     transition: color $basic-speed ease;
 }

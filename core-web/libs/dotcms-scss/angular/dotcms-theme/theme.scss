@@ -3,6 +3,7 @@
 @use "misc";
 
 @use "components/autocomplete";
+@use "components/avatar";
 @use "components/badge";
 @use "components/breadcrumb";
 @use "components/button";
@@ -27,6 +28,7 @@
 @use "components/overlaypanel";
 @use "components/paginator";
 @use "components/progressbar";
+@use "components/progress-spinner";
 @use "components/radiobutton";
 @use "components/selectbutton";
 @use "components/splitbutton";
