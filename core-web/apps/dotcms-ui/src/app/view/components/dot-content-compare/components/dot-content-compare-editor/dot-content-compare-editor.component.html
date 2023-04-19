@@ -1,8 +1,6 @@
-<span *ngIf="label" [innerHTML]="HTMLWorking" data-testId="table-editor-label"></span>
-<span
-    *ngIf="!label"
-    [innerHtml]="HTMLWorking | dotDiff : HTMLCompare : showDiff"
-    data-testId="table-editor-compare"
-></span>
+<div #HtmlWorking *ngIf="label" data-testId="table-editor-label"></div>
+<div #HtmlCompare *ngIf="!label" data-testId="table-editor-compare"></div>
 
 <dot-block-editor id="blockEditor" #blockEditor [ngStyle]="{ display: 'none' }"> </dot-block-editor>
+<dot-block-editor id="blockEditorCompare" #blockEditorCompare [ngStyle]="{ display: 'none' }">
+</dot-block-editor>
