@@ -7,7 +7,6 @@ import { catchError, filter, switchMap, take, tap } from 'rxjs/operators';
 
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { MODEL_VAR_NAME } from '@dotcms/app/portlets/dot-edit-page/content/services/html/libraries/iframe-edit-mode.js';
 import { INLINE_TINYMCE_SCRIPTS } from '@dotcms/app/portlets/dot-edit-page/content/services/html/libraries/inline-edit-mode.js';
 import {
     DotAlertConfirmService,
@@ -157,7 +156,8 @@ export class DotEditContentHtmlService {
             const iframeElement = this.getEditPageIframe();
 
             iframeElement.addEventListener('load', () => {
-                iframeElement.contentWindow[MODEL_VAR_NAME] = this.pageModel$;
+                iframeElement.contentWindow['handlerContentReorder'] =
+                    this.handlerContentReorder.bind(this);
                 iframeElement.contentWindow['contentletEvents'] = this.contentletEvents$;
 
                 this.bindGlobalEvents();
@@ -379,6 +379,24 @@ export class DotEditContentHtmlService {
                     }
                 });
         }
+    }
+
+    /**
+     * handler move/reorder contentlet
+     *
+     * @private
+     * @param {DotPageContainer[]} model
+     * @memberof DotEditContentHtmlService
+     */
+    handlerContentReorder(model: DotPageContainer[]) {
+        this.savePage(model)
+            .pipe(take(1))
+            .subscribe(() => {
+                this.pageModel$.next({
+                    type: PageModelChangeEventType.MOVE_CONTENT,
+                    model
+                });
+            });
     }
 
     /**
