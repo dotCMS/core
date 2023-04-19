@@ -28,6 +28,7 @@ export class DotContentCompareEditorComponent implements AfterViewInit {
         this.blockEditor.value = this.data.working[this.field];
         this.blockEditor?.valueChange.subscribe(() => {
             this.htmlWorkingValue = this.blockEditor.editor.getHTML();
+
             if (this.htmlWorking) {
                 this.htmlWorking.nativeElement.innerHTML = this.htmlWorkingValue;
             }
@@ -35,11 +36,11 @@ export class DotContentCompareEditorComponent implements AfterViewInit {
 
         this.blockEditorCompare.value = this.data.compare[this.field];
         this.blockEditorCompare?.valueChange.subscribe(() => {
-            this.htmlWorkingValue = this.blockEditorCompare.editor.getHTML();
+            this.htmlCompareValue = this.blockEditorCompare.editor.getHTML();
             if (this.htmlCompare) {
                 this.htmlCompare.nativeElement.innerHTML = this.dotDiffPipe.transform(
-                    this.htmlWorkingValue,
                     this.htmlCompareValue,
+                    this.htmlWorkingValue,
                     true
                 );
             }
