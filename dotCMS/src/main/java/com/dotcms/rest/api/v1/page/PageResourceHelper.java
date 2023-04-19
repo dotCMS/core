@@ -500,8 +500,11 @@ public class PageResourceHelper implements Serializable {
         Logger.debug(this, ()-> "Saving current contentlet multi tree: " + currentMultitree);
         APILocator.getMultiTreeAPI().saveMultiTree(newMultitree);
 
-        HibernateUtil.addCommitListener(()->
-                new ContentletLoader().invalidate(originalContentlet, PageMode.EDIT_MODE));
+        if (null != originalContentlet) {
+            HibernateUtil.addCommitListener(()->
+                    new ContentletLoader().invalidate(originalContentlet, PageMode.EDIT_MODE));
+        }
+
 
         return copiedContentlet;
     }
