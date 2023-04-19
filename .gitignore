@@ -116,6 +116,7 @@ yarn-error.log
 testem.log
 /core-web/typings
 karma_html/
+/dotCMS/dotsecure
 
 # e2e
 /core-web/e2e/*.js
@@ -131,6 +132,10 @@ dist-docs/
 
 /**/**/*.css.map
 
+# Auto ignore any developer folder or file backups
+*_bak
+
 # Maven
 installs/
 target/
+

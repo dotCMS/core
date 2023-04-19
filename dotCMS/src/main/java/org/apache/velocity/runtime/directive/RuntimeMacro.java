@@ -1,7 +1,4 @@
 package org.apache.velocity.runtime.directive;
-
-import com.dotcms.rendering.velocity.services.DotResourceCache;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -20,7 +17,7 @@ import com.dotcms.rendering.velocity.services.DotResourceCache;
  * specific language governing permissions and limitations
  * under the License.
  */
-
+import com.dotcms.rendering.velocity.services.DotResourceCache;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.VelocityUtil;
