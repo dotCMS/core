@@ -30,7 +30,6 @@ import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -202,14 +201,14 @@ public class ContentTypeDestroyAPIImplTest extends IntegrationTestBase {
         final ContentType parent = new ContentTypeDataGen()
                 .host(host)
                 .fields(
-                        Collections.singletonList(new FieldDataGen().name("Title").velocityVarName("title").next())
+                        List.of(new FieldDataGen().name("Title").velocityVarName("title").next())
                 )
                 .nextPersisted();
 
         final ContentType child = new ContentTypeDataGen()
                 .host(host)
                 .fields(
-                        Collections.singletonList(new FieldDataGen().name("Title").velocityVarName("title").next())
+                        List.of(new FieldDataGen().name("Title").velocityVarName("title").next())
                 )
                 .nextPersisted();
 
@@ -229,7 +228,7 @@ public class ContentTypeDestroyAPIImplTest extends IntegrationTestBase {
                 .nextPersisted();
 
         final Contentlet parentCheckout = ContentletDataGen.checkout(parentInstance);
-        parentCheckout.setProperty(relationship.getChildRelationName(), Collections.singletonList(childInstance));
+        parentCheckout.setProperty(relationship.getChildRelationName(), List.of(childInstance));
         ContentletDataGen.checkin(parentCheckout);
 
         final ContentTypeDestroyAPIImpl impl = new ContentTypeDestroyAPIImpl();

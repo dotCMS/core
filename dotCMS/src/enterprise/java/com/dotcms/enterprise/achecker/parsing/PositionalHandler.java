@@ -59,7 +59,7 @@ import org.xml.sax.helpers.DefaultHandler;
 public class PositionalHandler extends DefaultHandler implements LexicalHandler {
 
 	private Locator locator;
-	private Stack<Element> elementStack =  new Stack<Element>();
+	private Stack<Element> elementStack =  new Stack<>();
 	private StringBuilder textBuffer = new StringBuilder(); 
 	private Document doc  = null;
 	private DoctypeBean doctypeBean;
