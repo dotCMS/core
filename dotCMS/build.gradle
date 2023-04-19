@@ -31,6 +31,17 @@ rewrite {
     activeRecipe(
             "dotcms.java.cleanup.Java11BaseCleanup"
     )
+
+    exclusion(
+            "**/*.mmdb",
+            "**/*.zip",
+            "**/*.tar.gz",
+            "**/*.log",
+            "**/*.json"
+    )
+
+    failOnDryRunResults = true
+    sizeThresholdMb = 20
 }
 
 
