@@ -90,7 +90,7 @@ describe('DotEditPageInfoComponent', () => {
             expect(button).toBeNull();
         });
 
-        fit('should not have preview button', () => {
+        it('should not have preview button', () => {
             const previewButton: DebugElement = de.query(By.css('a[title="Preview"]'));
             expect(previewButton).toBeNull();
         });
