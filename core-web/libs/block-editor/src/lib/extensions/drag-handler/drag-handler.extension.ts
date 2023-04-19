@@ -20,7 +20,7 @@ export const DragHandler = (viewContainerRef: ViewContainerRef) => {
             const dragHandler =
                 viewContainerRef.createComponent(DragHandlerComponent).location.nativeElement;
 
-            function getPositon(container, node) {
+            function getPositon(container: HTMLElement, node: HTMLElement) {
                 const top =
                     node.getBoundingClientRect().top - container.getBoundingClientRect().top;
                 const left =
@@ -29,7 +29,7 @@ export const DragHandler = (viewContainerRef: ViewContainerRef) => {
                 return { top, left };
             }
 
-            function removeNode(node) {
+            function removeNode(node: Node) {
                 if (node && node.parentNode) {
                     node.parentNode.removeChild(node);
                 }
@@ -50,7 +50,7 @@ export const DragHandler = (viewContainerRef: ViewContainerRef) => {
                 return null;
             }
 
-            function dragStart(e, view: EditorView) {
+            function dragStart(e: DragEvent, view: EditorView) {
                 if (!e.dataTransfer) return;
                 const coords = { left: e.clientX + HANDLER_GAP, top: e.clientY };
                 const pos = blockPosAtCoords(coords, view);
@@ -93,12 +93,14 @@ export const DragHandler = (viewContainerRef: ViewContainerRef) => {
 
             function bindEventsToDragHandler(editorView: EditorView) {
                 dragHandler.setAttribute('draggable', 'true');
-                dragHandler.addEventListener('dragstart', (e) => dragStart(e, editorView));
+                dragHandler.addEventListener('dragstart', (e: DragEvent) =>
+                    dragStart(e, editorView)
+                );
                 dragHandler.classList.remove('visible');
                 editorView.dom.parentElement.appendChild(dragHandler);
             }
 
-            function hanlderScroll() {
+            function handlerScroll() {
                 dragHandler.classList.remove('visible');
             }
 
@@ -123,12 +125,12 @@ export const DragHandler = (viewContainerRef: ViewContainerRef) => {
                         // Called before the browser performs the next repaint
                         requestAnimationFrame(() => bindEventsToDragHandler(editorView));
                         // We need to also react to page scrolling.
-                        document.body.addEventListener('scroll', hanlderScroll, true);
+                        document.body.addEventListener('scroll', handlerScroll, true);
 
                         return {
                             destroy() {
                                 removeNode(dragHandler);
-                                document.body.removeEventListener('scroll', hanlderScroll, true);
+                                document.body.removeEventListener('scroll', handlerScroll, true);
                             }
                         };
                     },
@@ -136,6 +138,7 @@ export const DragHandler = (viewContainerRef: ViewContainerRef) => {
                         handleDOMEvents: {
                             drop(view: EditorView, dragEvent: DragEvent) {
                                 const directChildNode = getDirectChild(dragEvent.target);
+
                                 // Disable the drop in the table node;
                                 if (directChildNode.nodeName === 'TABLE') {
                                     return true;
@@ -144,11 +147,6 @@ export const DragHandler = (viewContainerRef: ViewContainerRef) => {
                                 requestAnimationFrame(() => {
                                     hideDragHandler();
                                     deselectCurrentNode(view);
-                                    // remove table node because prosmirror duplicate the node on D&D
-                                    // https://github.com/ueberdosis/tiptap/issues/2250
-                                    if (nodeToBeDragged.nodeName === 'TABLE') {
-                                        removeNode(nodeToBeDragged);
-                                    }
                                 });
 
                                 return false;
@@ -161,6 +159,7 @@ export const DragHandler = (viewContainerRef: ViewContainerRef) => {
                                 const position = view.posAtCoords(coords);
                                 if (position && nodeHasContent(view, position.inside)) {
                                     nodeToBeDragged = getDirectChild(view.nodeDOM(position.inside));
+
                                     if (canDragNode(nodeToBeDragged)) {
                                         const { top, left } = getPositon(
                                             view.dom.parentElement,
