@@ -128,11 +128,13 @@ function initDragAndDrop () {
     drake.on('drop', function(el, target, source, sibling) {
         const updatedModel = getDotNgModel();
         if (JSON.stringify(updatedModel) !== JSON.stringify(currentModel)) {
-            window?.handlerContentReorder(getDotNgModel());
+            window.contentletEvents.next({
+                name: 'reorder',
+                data: updatedModel
+            });
         }
 
         if (target !== source) {
-            console.log('relocate');
             window.contentletEvents.next({
                 name: 'relocate',
                 data: {
