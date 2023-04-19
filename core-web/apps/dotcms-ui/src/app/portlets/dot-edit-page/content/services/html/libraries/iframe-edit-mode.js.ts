@@ -1,5 +1,3 @@
-export const MODEL_VAR_NAME = 'dotNgModel';
-
 export const EDIT_PAGE_JS = `
 (function () {
     var forbiddenTarget;
@@ -18,7 +16,7 @@ function initDragAndDrop () {
         return containers;
     }
 
-    function getDotNgModel(data) {
+    function getDotNgModel(data = {}) {
         const { identifier, uuid, addedContentId } = data;
         const model = [];
         getContainers().forEach(function(container) {
@@ -130,9 +128,9 @@ function initDragAndDrop () {
     drake.on('drop', function(el, target, source, sibling) {
         const updatedModel = getDotNgModel();
         if (JSON.stringify(updatedModel) !== JSON.stringify(currentModel)) {
-            window.${MODEL_VAR_NAME}.next({
-                model: getDotNgModel(),
-                type: 'MOVE_CONTENT',
+            window.contentletEvents.next({
+                name: 'reorder',
+                data: updatedModel
             });
         }
 
