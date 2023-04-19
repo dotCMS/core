@@ -653,7 +653,6 @@ import org.junit.runners.Suite.SuiteClasses;
         VisitorsGeolocationConditionletTest.class,
         ManifestUtilTest.class,
         ZipUtilTest.class,
-        PopulateContentletAsJSONUtilTest.class,
         PopulateContentletAsJSONJobTest.class
 
 })
