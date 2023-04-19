@@ -20,7 +20,7 @@ window.addEventListener("experiment_loaded", function (event) {
         for (let i = 0; i < experimentData.experiments.length; i++) {
             const pattern = new RegExp(experimentData.experiments[i].redirectPattern);
 
-            if (pattern.test(location.href)) {
+            if (experimentData.experiments[i].variant.name !== 'DEFAULT' && pattern.test(location.href)) {
 
                 const param = (location.href.includes("?") ? "&" : "?")
                     + `variantName=${experimentData.experiments[i].variant.name}&redirect=true`;
@@ -129,7 +129,7 @@ if (!experimentAlreadyCheck) {
                 localStorage.setItem('experiment_data',
                     JSON.stringify(dataToStorage));
 
-                const event = new CustomEvent('experiment_data_loaded',
+                const event = new CustomEvent('experiment_loaded',
                     {detail: dataToStorage});
                 window.dispatchEvent(event);
             }
