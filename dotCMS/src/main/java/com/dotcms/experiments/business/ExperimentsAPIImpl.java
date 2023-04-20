@@ -508,6 +508,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 DotStateException.class);
 
         Experiment running = save(persistedExperiment.withStatus(RUNNING), user);
+        cacheRunningExperiments();
         publishContentOnExperimentVariants(user, running);
 
         return running;
