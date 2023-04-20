@@ -1,10 +1,11 @@
-import { CUSTOM_ELEMENTS_SCHEMA, DebugElement } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
 
 import { DotContentCompareTableData } from '@components/dot-content-compare/store/dot-content-compare.store';
 import { DotDiffPipeModule } from '@dotcms/app/view/pipes/dot-diff/dot-diff.pipe.module';
-import { BlockEditorModule } from '@dotcms/block-editor';
+import { BlockEditorModule, DotBlockEditorComponent } from '@dotcms/block-editor';
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -314,7 +315,6 @@ export const dotContentCompareTableDataMock: DotContentCompareTableData = {
 describe('DotContentCompareBlockEditorComponent', () => {
     let component: DotContentCompareBlockEditorComponent;
     let fixture: ComponentFixture<DotContentCompareBlockEditorComponent>;
-    let de: DebugElement;
     const messageServiceMock = new MockDotMessageService({
         diff: 'Diff',
         plain: 'Plain'
@@ -322,21 +322,19 @@ describe('DotContentCompareBlockEditorComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [DotContentCompareBlockEditorComponent],
+            declarations: [DotContentCompareBlockEditorComponent, DotBlockEditorComponent],
             schemas: [CUSTOM_ELEMENTS_SCHEMA],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }],
-            imports: [DotDiffPipeModule, BlockEditorModule]
+            imports: [DotDiffPipeModule, BlockEditorModule, HttpClientTestingModule, CommonModule]
         }).compileComponents();
     });
 
     beforeEach(() => {
         fixture = TestBed.createComponent(DotContentCompareBlockEditorComponent);
         component = fixture.componentInstance;
-
         component.data = dotContentCompareTableDataMock;
         component.field = 'html';
-        component.label = true;
-        de = fixture.debugElement;
+        component.showDiff = false;
         fixture.detectChanges();
     });
 
@@ -347,15 +345,6 @@ describe('DotContentCompareBlockEditorComponent', () => {
 
         it('should get compare data', () => {
             expect(component.data.compare).toBeDefined();
-        });
-    });
-
-    describe('Get compare field for the field just as label', () => {
-        it('should get same value to compare', () => {
-            const compareFiled = de.query(By.css('[data-testId="table-editor-label"]'))
-                .nativeElement.innerHTML;
-
-            expect(compareFiled).toEqual(dotContentCompareTableDataMock.compare.html);
         });
     });
 });

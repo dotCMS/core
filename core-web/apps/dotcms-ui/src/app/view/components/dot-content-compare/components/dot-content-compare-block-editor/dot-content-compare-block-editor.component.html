@@ -1,15 +1,12 @@
 <div
-    #HtmlWorking
-    *ngIf="label"
-    [innerHTML]="htmlWorkingValue$ | async"
-    data-testId="table-editor-label"
+    *ngIf="showDiff; else compareValue"
+    [innerHTML]="htmlWorkingValue$ | async | dotDiff : (htmlCompareValue$ | async) : showDiff"
+    data-testId="div-working"
 ></div>
-<div
-    #HtmlCompare
-    *ngIf="!label"
-    [innerHTML]="htmlWorkingValue$ | async | dotDiff : htmlCompareValue$ : showDiff"
-    data-testId="table-editor-compare"
-></div>
+
+<ng-template #compareValue>
+    <div [innerHTML]="htmlWorkingValue$ | async" data-testId="div-compare"></div>
+</ng-template>
 
 <dot-block-editor
     id="blockEditor"
