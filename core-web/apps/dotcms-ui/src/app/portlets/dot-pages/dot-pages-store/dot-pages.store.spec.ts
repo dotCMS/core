@@ -456,6 +456,50 @@ describe('DotPageStore', () => {
             });
     }));
 
+    it('should remove page archived from pages collection and add undefined at the bottom', fakeAsync(() => {
+        dotPageStore.setPages(favoritePagesInitialTestData);
+        const old = {
+            contentTook: 0,
+            jsonObjectView: {
+                contentlets: favoritePagesInitialTestData as unknown as DotCMSContentlet[]
+            },
+            queryTook: 1,
+            resultsSize: 2
+        };
+
+        const updated = {
+            contentTook: 0,
+            jsonObjectView: {
+                contentlets: [] as unknown as DotCMSContentlet[]
+            },
+            queryTook: 1,
+            resultsSize: 4
+        };
+
+        const mockFunction = (times) => {
+            let count = 1;
+
+            return Observable.create((observer) => {
+                if (count++ > times) {
+                    observer.next(updated);
+                } else {
+                    observer.next(old);
+                }
+            });
+        };
+
+        spyOn(dotESContentService, 'get').and.returnValue(mockFunction(3));
+
+        dotPageStore.updateSinglePageData({ identifier: '123', isFavoritePage: false });
+
+        tick(3000);
+
+        // Testing page archived removed from pages collection and added undefined at the bottom
+        dotPageStore.state$.subscribe((data) => {
+            expect(data.pages.items).toEqual([favoritePagesInitialTestData[1], undefined]);
+        });
+    }));
+
     it('should get all Workflow actions and static actions from a contentlet', () => {
         spyOn(dotWorkflowsActionsService, 'getByInode').and.returnValue(of(mockWorkflowsActions));
         dotPageStore.showActionsMenu({
