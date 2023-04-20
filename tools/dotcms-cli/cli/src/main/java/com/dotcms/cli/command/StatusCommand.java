@@ -28,7 +28,7 @@ import java.util.concurrent.Callable;
                 " The info includes API URL, active user and the current profile.",
                 " This should give the user enough information to know which instance is active",
                 " and which user is logged in.",
-                "\n"
+                "" // empty line left here on purpose to make room at the end
         })
 public class StatusCommand implements Callable<Integer> {
 

@@ -34,7 +34,7 @@ import static org.apache.commons.lang3.BooleanUtils.toStringYesNo;
                 " Located in the user's home directory.",
                 " Use to activate/switch dotCMS instance. @|bold,cyan -a  --activate|@",
                 " followed by the instance name.",
-                "\n"
+                "" // empty line left here on purpose to make room at the end
         }
 )
 public class InstanceCommand implements Callable<Integer> {

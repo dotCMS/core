@@ -1,6 +1,7 @@
 package com.dotcms.cli.command.site;
 
 import com.dotcms.api.SiteAPI;
+import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.InteractiveOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.ResponseEntityView;
@@ -14,13 +15,17 @@ import java.util.concurrent.Callable;
 
 @ActivateRequestContext
 @CommandLine.Command(name = SiteFind.NAME,
+     header = "@|bold,red Use this command to find Sites.|@",
      description = "@|bold,green Retrieves Sites info.|@  @|bold,cyan --all|@ Brings them all.  Use in conjunction params @|bold,cyan -n|@ to filter by name. @|bold,cyan -a|@ Shows archived sites. @|bold,cyan -l|@ Shows live Sites. @|bold,cyan -p|@ (Page) @|bold,cyan -ps|@ (PageSize) Can be used combined for pagination."
 )
 public class SiteFind extends AbstractSiteCommand implements Callable<Integer> {
     static final String NAME = "find";
 
     @CommandLine.Mixin(name = "output")
-     OutputOptionMixin output;
+    OutputOptionMixin output;
+
+    @CommandLine.Mixin
+    HelpOptionMixin helpOptionMixin;
 
     static class FilterOptions {
         @CommandLine.Option(names = {"-n", "--name"}, arity = "1" ,description = "Filter by site name.")

@@ -10,7 +10,12 @@ import java.util.concurrent.Callable;
 @CommandLine.Command(
         name = ContentTypeCommand.NAME,
         aliases = { ContentTypeCommand.ALIAS },
-        header = "Content type CRUD operations.",
+        header = "Content type operations.",
+        description = {
+                "Use the list of available sub-commands to manage content-types.",
+                "Use @|bold,blue --help|@ to see the available subcommands.",
+                "For help on a specific sub command do @|bold,blue content-type [SUBCOMMAND] --help|@ to see all available options and params."
+        },
         subcommands = {
           ContentTypeFind.class,
           ContentTypePull.class,

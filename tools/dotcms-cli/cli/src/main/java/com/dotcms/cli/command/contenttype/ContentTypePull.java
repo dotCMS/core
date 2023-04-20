@@ -25,7 +25,7 @@ import static com.dotcms.cli.common.Utils.nextFileName;
 @ActivateRequestContext
 @CommandLine.Command(
         name = ContentTypePull.NAME,
-        header = "@|bold,green Get a Content-type from a given Id or Name |@",
+        header = "@|bold,red Get a Content-type from a given Id or Name |@",
         description = {
                 " This gets you a Content-type from a given Id or Name.",
                 " The content-type descriptor will be retried and saved to a file.",
@@ -39,7 +39,7 @@ import static com.dotcms.cli.common.Utils.nextFileName;
                 " format can be either @|bold,cyan JSON|@ or @|bold,cyan YAML|@.",
                 " File location can be changed using the @|bold,cyan --saveTo|@ option.",
                 " Use @|bold,cyan --idOrName|@ to pass the CT identifier or name.",
-                "\n"
+                "" // empty line left here on purpose to make room at the end
         }
 )
 public class ContentTypePull extends AbstractContentTypeCommand implements Callable<Integer> {

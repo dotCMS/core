@@ -10,7 +10,12 @@ import java.util.concurrent.Callable;
 @CommandLine.Command(
         name = SiteCommand.NAME,
         aliases = { SiteCommand.ALIAS },
-        header = "Site CRUD operations.",
+        header = "Site operations.",
+        description = {
+                "Use the list of available sub-commands to manage sites.",
+                "Use @|bold,blue --help|@ to see the available subcommands.",
+                "For help on a specific sub command do @|bold,blue site [SUBCOMMAND] --help|@ to see all available options and params."
+        },
         subcommands = {
                 SiteFind.class,
                 SitePull.class,
@@ -32,10 +37,10 @@ public class SiteCommand implements Callable<Integer> {
     static final String ALIAS = "host";
 
     @CommandLine.Mixin(name = "output")
-    protected OutputOptionMixin output;
+    OutputOptionMixin output;
 
     @CommandLine.Mixin
-    protected HelpOptionMixin helpOptionMixin;
+    HelpOptionMixin helpOptionMixin;
 
     @CommandLine.Spec
     protected CommandLine.Model.CommandSpec spec;

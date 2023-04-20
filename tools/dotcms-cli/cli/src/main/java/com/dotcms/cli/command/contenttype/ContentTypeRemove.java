@@ -4,6 +4,7 @@ import com.dotcms.api.ContentTypeAPI;
 import com.dotcms.api.client.RestClientFactory;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.ResponseEntityView;
+import org.apache.commons.lang3.BooleanUtils;
 import picocli.CommandLine;
 import picocli.CommandLine.ExitCode;
 import javax.enterprise.context.control.ActivateRequestContext;
@@ -13,7 +14,7 @@ import java.util.concurrent.Callable;
 @ActivateRequestContext
 @CommandLine.Command(
         name = ContentTypeRemove.NAME,
-        header = "@|bold,green Use this command to remove Content-types.|@",
+        header = "@|bold,red Use this command to remove Content-types.|@",
         description = "@|bold,green Remove a Content-type from a given CT name or Id.|@.",
         sortOptions = false
 )
@@ -36,10 +37,22 @@ public class ContentTypeRemove extends AbstractContentTypeCommand implements Cal
      */
     @Override
     public Integer call() {
-        final ContentTypeAPI contentTypeAPI = clientFactory.getClient(ContentTypeAPI.class);
-        final ResponseEntityView<String> responseEntityView = contentTypeAPI.delete(idOrVar);
-        final String entity = responseEntityView.entity();
-        output.info(entity);
-        return ExitCode.OK;
+        if (output.isCliTest() || isDeleteConfirmed(idOrVar)) {
+            final ContentTypeAPI contentTypeAPI = clientFactory.getClient(ContentTypeAPI.class);
+            final ResponseEntityView<String> responseEntityView = contentTypeAPI.delete(idOrVar);
+            final String entity = responseEntityView.entity();
+            output.info(entity);
+            return ExitCode.OK;
+        } else {
+            output.info("Delete cancelled");
+            return ExitCode.SOFTWARE;
+        }
     }
+
+    private boolean isDeleteConfirmed(final String idOrVar) {
+        final String confirmation = String.format("%nPlease confirm that you want to remove content-type identified by [%s] ? [y/n]: ", idOrVar);
+        return BooleanUtils.toBoolean(
+                System.console().readLine(confirmation));
+    }
+
 }

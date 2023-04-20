@@ -18,7 +18,7 @@ import java.util.concurrent.Callable;
 @ActivateRequestContext
 @CommandLine.Command(
         sortOptions = false,
-        name = ContentTypeFind.NAME,header = "@|bold,green Use this command to find Content-types.|@",
+        name = ContentTypeFind.NAME,header = "@|bold,red Use this command to find Content-types.|@",
         description = {
                 "Search or Get a List with all available Content-types.",
                 "Use @|bold,blue --name|@ in conjunction with @|bold,blue Filter/Search Options.|@"

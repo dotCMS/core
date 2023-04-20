@@ -3,6 +3,7 @@ package com.dotcms.cli.command.contenttype;
 import com.dotcms.api.ContentTypeAPI;
 import com.dotcms.api.client.RestClientFactory;
 import com.dotcms.cli.common.FormatOptionMixin;
+import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.model.ResponseEntityView;
@@ -20,9 +21,18 @@ import java.util.concurrent.Callable;
 @ActivateRequestContext
 @CommandLine.Command(
         name = ContentTypePush.NAME,
-        header = "@|bold,green Use this command to push a Content-type descriptor file.|@",
+        header = "@|bold,red Use this command to push a Content-type from a file.|@",
         description = {
-                ""
+                " This command will push a content-type to the current active",
+                " remote instance of dotCMS from a given file.",
+                " When pulling a content-type from a remote dotCMS instance",
+                " the content-type is saved to a file.",
+                " The file name will be the content-type's variable name.",
+                " To make changes to the a Content-type",
+                " modify the file and push it back to the remote instance.",
+                " The file can also be used as a base to create a brand new content-type.",
+                " The format can be changed using the @|bold,cyan --format|@ option.",
+                "" // empty line left here on purpose to make room at the end
         }
 )
 public class ContentTypePush extends AbstractContentTypeCommand implements Callable<Integer> {
@@ -34,6 +44,9 @@ public class ContentTypePush extends AbstractContentTypeCommand implements Calla
 
     @CommandLine.Mixin(name = "format")
     FormatOptionMixin formatOptionMixin;
+
+    @CommandLine.Mixin
+    HelpOptionMixin helpOption;
 
     @Inject
     RestClientFactory clientFactory;

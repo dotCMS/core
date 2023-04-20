@@ -20,7 +20,7 @@ import picocli.CommandLine.ExitCode;
                 " @|bold Both parameters are mandatory.|@",
                 " If the password is not provided, the command will prompt for it.",
                 " if you're not sure which instance is active, use the @|bold,green status|@ command.",
-                "\n"
+                "" // empty line left here on purpose to make room at the end
         }
 )
 public class LoginCommand implements Callable<Integer> {
