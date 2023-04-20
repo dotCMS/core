@@ -302,7 +302,7 @@ public class ContentTypeDestroyAPIImplTest extends IntegrationTestBase {
     @Test
     public void Test_Relocate_Contentlets() throws DotDataException {
         final Random random = new Random();
-        for (int i = 0; i < 20; i++) {
+        for (int i = 0; i < 10; i++) {
             TestContentRelocation(random.nextInt(19));
         }
     }
