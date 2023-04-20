@@ -9,11 +9,15 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import io.vavr.control.Try;
 
@@ -30,6 +34,8 @@ public class ContentTypeInitializer implements DotInitializer {
 
     public static final String LEGACY_FAVORITE_PAGE_VAR_NAME = "favoritePage";
     static final String FAVORITE_PAGE_VAR_NAME = "dotFavoritePage";
+
+    private static final boolean DO_DEFAULT_PAGE_PERMISSIONS = Config.getBooleanProperty("DO_DEFAULT_PAGE_PERMISSIONS", true);
 
     @Override
     public void init() {
@@ -94,9 +100,33 @@ public class ContentTypeInitializer implements DotInitializer {
 
             APILocator.getWorkflowAPI().saveSchemeIdsForContentType(savedContentType, workflowIds);
             Logger.debug(ContentTypeInitializer.class, "dotFavoritePage CT Saved.");
+
+            checkDefaultPermissions(savedContentType);
         } catch (DotDataException | DotSecurityException e) {
 
             Logger.warnAndDebug(this.getClass(), e);
+        }
+    }
+
+    private void checkDefaultPermissions(final ContentType savedContentType) {
+
+        if (DO_DEFAULT_PAGE_PERMISSIONS) {
+
+            try {
+
+                final int permissionType = PermissionAPI.PERMISSION_USE | PermissionAPI.PERMISSION_EDIT |PermissionAPI.PERMISSION_PUBLISH;
+                final Role backendRole = APILocator.getRoleAPI().loadBackEndUserRole();
+                if (!APILocator.getPermissionAPI().doesRoleHavePermission(
+                        savedContentType, permissionType, backendRole)) {
+
+                    Logger.info(this, "Adding default permissions to the Favorite Page Content Type...");
+                    final Permission permission = new Permission(savedContentType.getPermissionId(), backendRole.getId(),permissionType);
+                    APILocator.getPermissionAPI().save(permission, savedContentType, APILocator.systemUser(), false);
+                }
+            } catch (DotDataException | DotSecurityException e) {
+
+                Logger.error(this, e.getMessage(), e);
+            }
         }
     }
 }
