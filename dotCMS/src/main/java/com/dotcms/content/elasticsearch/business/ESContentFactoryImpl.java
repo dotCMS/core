@@ -1127,8 +1127,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         if(includeAllVersion){
             dotConnect.setSQL(" select count(c.inode) as x \n" +
                     " from contentlet c \n" +
-                    " join structure s on c.structure_inode  = s.inode  \n" +
-                    " where s.velocity_var_name =  ? ");
+                    " where c.structure_inode =  ? ");
         } else {
            dotConnect.setSQL(" select count(c.inode) as x\n" +
                    " from contentlet c \n" +
@@ -1138,9 +1137,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
                    " on cvi.identifier = c.identifier and cvi.working_inode = c.inode  \n" +
                    " join inode i  \n" +
                    " on c.inode = i.inode \n" +
-                   " where s.velocity_var_name = ? \n ");
+                   " where s.inode = ? \n ");
         }
-        dotConnect.addParam(contentType.variable());
+        dotConnect.addParam(contentType.inode());
         return dotConnect.getInt("x");
     }
 
