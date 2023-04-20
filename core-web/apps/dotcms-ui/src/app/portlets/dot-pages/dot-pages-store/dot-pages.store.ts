@@ -15,6 +15,7 @@ import { DotWorkflowEventHandlerService } from '@dotcms/app/api/services/dot-wor
 import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
 import { DotEnvironment } from '@dotcms/app/shared/models/dot-environment/dot-environment';
 import {
+    DotCMSPageWorkflowState,
     DotCurrentUserService,
     DotESContentService,
     DotEventsService,
@@ -22,6 +23,7 @@ import {
     DotLicenseService,
     DotMessageService,
     DotPageTypesService,
+    DotPageWorkflowsActionsService,
     DotRenderMode,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService,
@@ -420,17 +422,15 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         (params$: Observable<{ item: DotCMSContentlet; actionMenuDomId: string }>) => {
             return params$.pipe(
                 switchMap(({ item, actionMenuDomId }) => {
-                    return this.dotWorkflowsActionsService
-                        .getByInode(item.inode, DotRenderMode.LISTING)
-                        .pipe(
-                            take(1),
-                            map((actions: DotCMSWorkflowAction[]) => {
-                                return {
-                                    actions: this.getSelectActions(actions, item),
-                                    actionMenuDomId
-                                };
-                            })
-                        );
+                    return this.getWorflowActionsFn(item).pipe(
+                        take(1),
+                        map((data: DotCMSPageWorkflowState) => {
+                            return {
+                                actions: this.getSelectActions(data.actions, data.page),
+                                actionMenuDomId
+                            };
+                        })
+                    );
                 }),
                 tap(
                     ({
@@ -509,6 +509,37 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             : '';
 
         return `${hostIdQuery} +working:true  +(urlmap:* OR basetype:5) ${langQuery} ${archivedQuery} ${keywordQuery} ${identifierQuery}`;
+    }
+
+    private getWorflowActionsFn = (item: DotCMSContentlet): Observable<DotCMSPageWorkflowState> => {
+        if (item?.contentType === 'dotFavoritePage') {
+            return this.getFavoritePageWorflowActions(item);
+        } else {
+            return this.dotWorkflowsActionsService
+                .getByInode(item.inode, DotRenderMode.LISTING)
+                .pipe(
+                    map((workflowActions: DotCMSWorkflowAction[]) => {
+                        return {
+                            actions: workflowActions,
+                            page: item
+                        };
+                    })
+                );
+        }
+    };
+
+    private getFavoritePageWorflowActions(
+        item: DotCMSContentlet
+    ): Observable<DotCMSPageWorkflowState> {
+        const urlParams: { [key: string]: string } = { url: item.url.split('?')[0] };
+        const searchParams = new URLSearchParams(item.url.split('?')[1]);
+        for (const entry of searchParams) {
+            urlParams[entry[0]] = entry[1];
+        }
+
+        const { host_id, language_id, url } = urlParams;
+
+        return this.dotPageWorkflowsActionsService.getByUrl({ host_id, language_id, url });
     }
 
     private getPagesDataFn(
@@ -633,6 +664,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         private dialogService: DialogService,
         private dotLanguagesService: DotLanguagesService,
         private dotPushPublishDialogService: DotPushPublishDialogService,
+        private dotPageWorkflowsActionsService: DotPageWorkflowsActionsService,
         private dotWorkflowsActionsService: DotWorkflowsActionsService,
         private dotWorkflowEventHandlerService: DotWorkflowEventHandlerService,
         private dotWorkflowActionsFireService: DotWorkflowActionsFireService,
