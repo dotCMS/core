@@ -24,6 +24,7 @@ import {
     DotLanguagesService,
     DotLicenseService,
     DotPageTypesService,
+    DotPageWorkflowsActionsService,
     DotRenderMode,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService,
@@ -48,6 +49,7 @@ import {
 } from '@dotcms/dotcms-models';
 import {
     DotcmsConfigServiceMock,
+    dotcmsContentletMock,
     dotcmsContentTypeBasicMock,
     DotcmsEventsServiceMock,
     DotLanguagesServiceMock,
@@ -97,6 +99,7 @@ describe('DotPageStore', () => {
     let dotESContentService: DotESContentService;
     let dotPageTypesService: DotPageTypesService;
     let dotWorkflowsActionsService: DotWorkflowsActionsService;
+    let dotPageWorkflowsActionsService: DotPageWorkflowsActionsService;
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
 
     beforeEach(() => {
@@ -111,6 +114,7 @@ describe('DotPageStore', () => {
                 DotWizardService,
                 DotWorkflowActionsFireService,
                 DotWorkflowsActionsService,
+                DotPageWorkflowsActionsService,
                 DotWorkflowEventHandlerService,
                 LoggerService,
                 StringUtils,
@@ -136,6 +140,7 @@ describe('DotPageStore', () => {
         dotPageTypesService = TestBed.inject(DotPageTypesService);
         dotHttpErrorManagerService = TestBed.inject(DotHttpErrorManagerService);
         dotWorkflowsActionsService = TestBed.inject(DotWorkflowsActionsService);
+        dotPageWorkflowsActionsService = TestBed.inject(DotPageWorkflowsActionsService);
 
         spyOn(dialogService, 'open').and.callThrough();
         spyOn(dotHttpErrorManagerService, 'handle');
@@ -473,5 +478,21 @@ describe('DotPageStore', () => {
             favoritePagesInitialTestData[0].inode,
             DotRenderMode.LISTING
         );
+    });
+
+    it('should get all Workflow actions and static actions from a favorite page', () => {
+        spyOn(dotPageWorkflowsActionsService, 'getByUrl').and.returnValue(
+            of({ actions: mockWorkflowsActions, page: dotcmsContentletMock })
+        );
+        dotPageStore.showActionsMenu({
+            item: { ...favoritePagesInitialTestData[0], contentType: 'dotFavoritePage' },
+            actionMenuDomId: 'test1'
+        });
+
+        expect(dotPageWorkflowsActionsService.getByUrl).toHaveBeenCalledWith({
+            host_id: 'A',
+            language_id: '1',
+            url: '/index1'
+        });
     });
 });
