@@ -1,12 +1,10 @@
 package com.dotcms.rendering.velocity.viewtools.navigation;
 
 
-import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.Versionable;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -335,7 +333,7 @@ public class NavTool implements ViewTool {
 
     public NavResult getNav(String path) throws DotDataException, DotSecurityException {
         if(path.contains("/api/v1/containers")){
-            final String folderInode = ((BrowserAjax)this.request.getSession().getAttribute("BrowserAjax")).getActiveFolderInode();
+            final String folderInode = ((BrowserAjax)this.request.getSession().getAttribute("BrowserAjax")).getActiveFolderId();
             final String folderIdentifier = APILocator.getFolderAPI().find(folderInode,systemUser,false).getIdentifier();
             path = APILocator.getIdentifierAPI().find(folderIdentifier).getPath();
         }

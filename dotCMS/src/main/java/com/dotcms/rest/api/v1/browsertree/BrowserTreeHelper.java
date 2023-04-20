@@ -5,7 +5,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Treeable;
-import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -22,8 +21,10 @@ import io.vavr.control.Try;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -33,7 +34,6 @@ public class BrowserTreeHelper {
 
     private final HostAPI hostAPI;
     private final FolderAPI folderAPI;
-    private final UserAPI userAPI;
 
     public static final String OPEN_FOLDER_IDS = "siteBrowserOpenFolderIds";
     public static final String ACTIVE_FOLDER_ID = "siteBrowserActiveFolderInode";
@@ -44,7 +44,6 @@ public class BrowserTreeHelper {
     private BrowserTreeHelper () {
         this.hostAPI = APILocator.getHostAPI();
         this.folderAPI = APILocator.getFolderAPI();
-        this.userAPI = APILocator.getUserAPI();
     }
 
     private static class SingletonHolder {
@@ -89,15 +88,13 @@ public class BrowserTreeHelper {
     /**
      * Tries to find the select folder
      * @return Optional String, present if the folder select exists
-     * @throws DotDataException
-     * @throws DotSecurityException
      */
-    public Optional<String> findSelectedFolder (final HttpServletRequest request) throws DotDataException, DotSecurityException {
+    public Optional<String> findSelectedFolder (final HttpServletRequest request) {
 
         final BrowserAjax browserAjax = (BrowserAjax)request.getSession().getAttribute("BrowserAjax");
         String siteBrowserActiveFolderInode = (String)request.getSession().getAttribute("siteBrowserActiveFolderInode");
         return Optional.ofNullable(null == siteBrowserActiveFolderInode && null != browserAjax?
-                browserAjax.getActiveFolderInode(): siteBrowserActiveFolderInode);
+                browserAjax.getActiveFolderId(): siteBrowserActiveFolderInode);
     }
 
     private Optional<Host> findHostFromPath(final String folderPath, final User user) {
@@ -134,18 +131,22 @@ public class BrowserTreeHelper {
     }
 
     /**
-     * Set the session configuration to select on the site browser a particular folder
-     * @param request {@link HttpServletRequest}
-     * @param fullFolderPath
-     * @param user
-     * @param respectFrontendRoles
-     * @throws DotDataException
-     * @throws DotSecurityException
+     * Sets all the Session parameters that are required for the Site Browser to display a specific folder path in the
+     * folder tree. This is useful, for instance, when a User clicks a Container as File and is taken to the exact
+     * location where the Container's files live in the Site Browser.
+     *
+     * @param request              The current {@link HttpServletRequest} instance.
+     * @param fullFolderPath       The full path of the folder to select.
+     * @param user                 The current {@link User} that is calling this action.
+     * @param respectFrontendRoles If {@code true}, permissions will be checked against the User's roles.
+     *
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     * @throws DotSecurityException The current User does not have the required permissions to perform this action.
      */
     public void selectFolder(final HttpServletRequest request, final String fullFolderPath, final User user,
                              final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         final Optional<Host> siteOpt = this.findHostFromPath(fullFolderPath, user);
-        final Host site              = siteOpt.isPresent()? siteOpt.get(): this.hostAPI.findDefaultHost(user, respectFrontendRoles);
+        final Host site              = siteOpt.isPresent() ? siteOpt.get() : this.hostAPI.findDefaultHost(user, respectFrontendRoles);
         final Host currentSite       = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
         final String folderPath      = this.getFolderPath(fullFolderPath);
         final Folder folder          = this.folderAPI.findFolderByPath(folderPath, site, user, respectFrontendRoles);
@@ -160,9 +161,12 @@ public class BrowserTreeHelper {
         session.setAttribute(ACTIVE_FOLDER_ID, folder.getInode());
         final Folder leafFolder = this.folderAPI.find(folder.getInode(), user, false);
         if (null != leafFolder && UtilMethods.isSet(leafFolder.getIdentifier())) {
-            final List<String> openFolderIds = new ArrayList<>();
-            openFolderIds.add(folder.getInode());
+            Set<String> openFolderIds = (Set<String>) session.getAttribute(OPEN_FOLDER_IDS);
+            if (null == openFolderIds) {
+                openFolderIds = new HashSet<>();
+            }
             session.setAttribute(OPEN_FOLDER_IDS, openFolderIds);
+            openFolderIds.add(folder.getInode());
             Permissionable parent = leafFolder.getParentPermissionable();
             while (parent != null) {
                 if (parent instanceof Folder) {
@@ -172,4 +176,5 @@ public class BrowserTreeHelper {
             }
         }
     }
+
 }
