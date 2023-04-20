@@ -97,7 +97,8 @@ public class StartupTasksExecutor {
     /**
      * This will create the data version table if it does not already exist
      */
-    private boolean insureDataVersionTable() {
+    @VisibleForTesting
+    boolean insureDataVersionTable() {
 
         try {
             currentDataVersion();
@@ -125,7 +126,8 @@ public class StartupTasksExecutor {
     /**
      * Returns the current data version. Runs with a separate DB connection
      */
-    private int currentDataVersion() {
+    @VisibleForTesting
+    int currentDataVersion() {
         try (Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
             DotConnect db =  new DotConnect().setSQL(SELECT_DATA_VERSION);
             return  db.loadInt("test");
