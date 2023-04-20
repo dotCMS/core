@@ -1,14 +1,34 @@
 package com.dotcms.experiments.business.result;
 
+
+import static com.dotcms.util.CollectionsUtils.map;
+
+import com.dotcms.analytics.app.AnalyticsApp;
+import com.dotcms.analytics.helper.AnalyticsHelper;
+import com.dotcms.analytics.metrics.EventType;
 import com.dotcms.analytics.metrics.Metric;
 import com.dotcms.analytics.metrics.MetricType;
+
+import com.dotcms.cube.CubeJSClient;
+import com.dotcms.cube.CubeJSQuery;
+import com.dotcms.cube.CubeJSQuery.Builder;
+import com.dotcms.cube.CubeJSResultSet;
+import com.dotcms.cube.filters.SimpleFilter.Operator;
+
+import com.dotcms.analytics.metrics.Metric;
+import com.dotcms.analytics.metrics.MetricType;
+
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.experiments.model.Goals;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.liferay.util.StringPool;
+import graphql.VisibleForTesting;
 import io.vavr.Lazy;
 
 import java.util.List;
@@ -28,6 +48,8 @@ public enum ExperimentAnalyzerUtil {
 
     INSTANCE;
 
+    private static AnalyticsHelper analyticsHelper = AnalyticsHelper.get();
+
     final static Lazy<Map<MetricType, MetricExperimentAnalyzer>> experimentResultQueryHelpers =
             Lazy.of(ExperimentAnalyzerUtil::createHelpersMap);
 
@@ -38,6 +60,11 @@ public enum ExperimentAnalyzerUtil {
         );
     }
 
+    @VisibleForTesting
+    public static void setAnalyticsHelper(final AnalyticsHelper analyticsHelper) {
+        ExperimentAnalyzerUtil.analyticsHelper = analyticsHelper;
+    }
+
     /**
      * Return the {@link ExperimentResults} from a set of {@link BrowserSession} and an {@link Experiment}
      *
@@ -46,7 +73,9 @@ public enum ExperimentAnalyzerUtil {
      * @return
      */
     public ExperimentResults getExperimentResult(final Experiment experiment,
-                                                 final List<BrowserSession> browserSessions)  {
+                                                 final List<BrowserSession> browserSessions)
+            throws DotDataException, DotSecurityException {
+
         final Goals goals = experiment.goals()
                 .orElseThrow(() -> new IllegalArgumentException("The Experiment must have a Goal"));
 
@@ -55,10 +84,22 @@ public enum ExperimentAnalyzerUtil {
                 .get(goalMetricType);
 
         final SortedSet<ExperimentVariant> variants = experiment.trafficProportion().variants();
+
+        final CubeJSResultSet pageViewsByVariants = getPageViewsByVariants(experiment, variants);
+
         final  ExperimentResults.Builder builder = new ExperimentResults.Builder(variants);
 
         final Metric goal = goals.primary();
         builder.addPrimaryGoal(goal);
+
+        pageViewsByVariants.forEach(row -> {
+            final String variantId = row.get("Events.variant").map(variant -> variant.toString())
+                    .orElse(StringPool.BLANK);
+            final long pageViews = row.get("Events.count").map(object -> Long.parseLong(object.toString()))
+                    .orElse(0L);
+
+            builder.goal(goal).variant(variantId).pageView(pageViews);
+        });
 
         final String pageId = experiment.pageId();
         final HTMLPageAsset page = getPage(pageId);
@@ -77,8 +118,6 @@ public enum ExperimentAnalyzerUtil {
                         } catch (DotDataException e) {
                             throw new RuntimeException(e);
                         }
-
-
                     });
 
             if (isIntoExperiment) {
@@ -90,7 +129,29 @@ public enum ExperimentAnalyzerUtil {
         return builder.build();
     }
 
+    private static CubeJSResultSet getPageViewsByVariants(
+            final Experiment experiment, final SortedSet<ExperimentVariant> variants)
+            throws DotDataException, DotSecurityException {
+
+        final CubeJSQuery cubeJSQuery = new Builder()
+                .dimensions("Events.variant")
+                .measures("Events.count")
+                .filter("Events.eventType", Operator.EQUALS, EventType.PAGE_VIEW.getName())
+                .filter("Events.variant", Operator.EQUALS, variants.stream().map(ExperimentVariant::id).toArray())
+                .filter("Events.experiment", Operator.EQUALS, experiment.getIdentifier())
+                .build();
+
+        final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHost();
+        final AnalyticsApp analyticsApp = analyticsHelper.appFromHost(currentHost);
+
+        final CubeJSClient cubeClient = new CubeJSClient(
+                analyticsApp.getAnalyticsProperties().analyticsReadUrl());
+
+        return cubeClient.send(cubeJSQuery);
+    }
+
     private HTMLPageAsset getPage(final String pageId) {
+
         try {
             return APILocator.getHTMLPageAssetAPI().fromContentlet(
                     APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(pageId)

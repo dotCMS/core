@@ -90,15 +90,12 @@ public class ExperimentResults {
             return new ExperimentResults(totalSessions, goalResultMap);
         }
 
-        public Builder success(final Metric goal, final String lookBackWindow, final Event event) {
-            final GoalResultsBuilder goalResultsBuilder = this.goals.values().stream()
+        public GoalResultsBuilder goal(final Metric goal) {
+            return this.goals.values().stream()
                     .filter(builder -> builder.goal.name().equals(goal.name()))
                     .limit(1)
                     .findFirst()
                     .orElseThrow(() -> new IllegalArgumentException("Goal does not exists"));
-
-            goalResultsBuilder.success(lookBackWindow, event);
-            return this;
         }
 
         public void addSession(final BrowserSession browserSession) {

@@ -5,6 +5,8 @@ import com.dotcms.analytics.metrics.Condition;
 import com.dotcms.analytics.metrics.Condition.Builder;
 import com.dotcms.http.CircuitBreakerUrlBuilder;
 import com.dotcms.repackage.com.sun.xml.ws.client.ResponseContext;
+import com.dotcms.util.JsonUtil;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import com.sun.net.httpserver.Headers;
@@ -129,6 +131,12 @@ public class MockHttpServerContext {
             return this;
         }
 
+        public Builder requestCondition(final Function<RequestContext, String> messageFunc,
+                final Function<RequestContext, Boolean> handler) {
+            this.requestConditions.add(new Condition(handler, messageFunc));
+            return this;
+        }
+
         public Builder responseStatus(final int status) {
             this.status = status;
             return this;
@@ -183,6 +191,16 @@ public class MockHttpServerContext {
                     Optional.empty();
         }
 
+        public Optional<Map<String, Object>> getRequestParameterAsMap(final String name) {
+            try {
+                return this.requestParameters.get(name) != null ?
+                        Optional.ofNullable(JsonUtil.getJsonFromString(this.requestParameters.get(name))) :
+                        Optional.empty();
+            } catch (IOException e) {
+                throw new DotRuntimeException(e);
+            }
+        }
+
         public Headers getHeaders() {
             return this.httpExchange.getRequestHeaders();
         }
@@ -190,19 +208,36 @@ public class MockHttpServerContext {
 
     public static class Condition {
         private Function<RequestContext, Boolean> validation;
-        private String message;
+        private  Function<RequestContext, String>  message;
 
-        public Condition(Function<RequestContext, Boolean> validation, String message) {
+        public Condition(final Function<RequestContext, Boolean> validation, final String message) {
+            this(validation, (context) -> message);
+        }
+
+        public Condition(final Function<RequestContext, Boolean> validation,
+                final Function<RequestContext, String> message) {
             this.validation = validation;
             this.message = message;
         }
+
 
         public Function<RequestContext, Boolean> getValidation() {
             return validation;
         }
 
-        public String getMessage() {
-            return message;
+        public String getMessage(final RequestContext context) {
+            return message.apply(context);
         }
+    }
+
+    @Override
+    public String toString() {
+        return "MockHttpServerContext{" +
+                "uri='" + uri + '\'' +
+                ", status=" + status +
+                ", body='" + body + '\'' +
+                ", conditions=" + conditions +
+                ", mustBeCalled=" + mustBeCalled +
+                '}';
     }
 }

@@ -837,9 +837,10 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
         final List<BrowserSession> events = getEvents(experiment);
         final ExperimentResults experimentResults = ExperimentAnalyzerUtil.INSTANCE.getExperimentResult(
-            experiment,
-            events);
+            experiment, events);
+
         experimentResults.setBayesianResult(calcBayesian(experimentResults, null));
+
         return experimentResults;
     }
 
