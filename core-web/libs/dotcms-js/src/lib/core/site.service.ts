@@ -7,7 +7,7 @@ import { pluck, map, take } from 'rxjs/operators';
 import { CoreWebService } from './core-web.service';
 import { DotcmsEventsService } from './dotcms-events.service';
 import { LoggerService } from './logger.service';
-import { LoginService, Auth } from './login.service';
+import { LoginService } from './login.service';
 import { DotEventTypeWrapper } from './models/dot-events/dot-event-type-wrapper';
 
 /**
