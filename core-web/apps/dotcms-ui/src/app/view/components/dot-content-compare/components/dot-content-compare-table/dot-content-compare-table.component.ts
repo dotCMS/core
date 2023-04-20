@@ -1,7 +1,6 @@
-import { Component, EventEmitter, Input, Output, ViewChild } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 
 import { DotContentCompareTableData } from '@components/dot-content-compare/store/dot-content-compare.store';
-import { DotBlockEditorComponent } from '@dotcms/block-editor';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
@@ -11,7 +10,6 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
     styleUrls: ['./dot-content-compare-table.component.scss']
 })
 export class DotContentCompareTableComponent {
-    @ViewChild('blockEditor') blockEditor: DotBlockEditorComponent;
     @Input() data: DotContentCompareTableData;
     @Input() showDiff: boolean;
 

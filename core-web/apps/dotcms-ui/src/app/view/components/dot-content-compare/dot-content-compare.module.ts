@@ -16,8 +16,8 @@ import { DotContentletService, DotVersionableService } from '@dotcms/data-access
 import { DotDiffPipeModule } from '@pipes/dot-diff/dot-diff.pipe.module';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 
+import { DotContentCompareBlockEditorComponent } from './components/dot-content-compare-block-editor/dot-content-compare-block-editor.component';
 import { DotContentCompareDialogComponent } from './components/dot-content-compare-dialog/dot-content-compare-dialog.component';
-import { DotContentCompareEditorComponent } from './components/dot-content-compare-editor/dot-content-compare-editor.component';
 import { DotTransformVersionLabelPipe } from './pipes/dot-transform-version-label.pipe';
 
 @NgModule({
@@ -25,7 +25,7 @@ import { DotTransformVersionLabelPipe } from './pipes/dot-transform-version-labe
         DotContentCompareComponent,
         DotContentCompareTableComponent,
         DotContentCompareDialogComponent,
-        DotContentCompareEditorComponent,
+        DotContentCompareBlockEditorComponent,
         DotContentComparePreviewFieldComponent,
         DotTransformVersionLabelPipe
     ],

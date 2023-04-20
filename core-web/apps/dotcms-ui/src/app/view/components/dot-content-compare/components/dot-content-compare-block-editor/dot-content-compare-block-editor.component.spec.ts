@@ -8,7 +8,7 @@ import { BlockEditorModule } from '@dotcms/block-editor';
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
-import { DotContentCompareEditorComponent } from './dot-content-compare-editor.component';
+import { DotContentCompareBlockEditorComponent } from './dot-content-compare-block-editor.component';
 
 export const dotContentCompareTableDataMock: DotContentCompareTableData = {
     working: {
@@ -311,9 +311,9 @@ export const dotContentCompareTableDataMock: DotContentCompareTableData = {
     ]
 };
 
-describe('DotContentCompareEditorComponent', () => {
-    let component: DotContentCompareEditorComponent;
-    let fixture: ComponentFixture<DotContentCompareEditorComponent>;
+describe('DotContentCompareBlockEditorComponent', () => {
+    let component: DotContentCompareBlockEditorComponent;
+    let fixture: ComponentFixture<DotContentCompareBlockEditorComponent>;
     let de: DebugElement;
     const messageServiceMock = new MockDotMessageService({
         diff: 'Diff',
@@ -322,7 +322,7 @@ describe('DotContentCompareEditorComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [DotContentCompareEditorComponent],
+            declarations: [DotContentCompareBlockEditorComponent],
             schemas: [CUSTOM_ELEMENTS_SCHEMA],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }],
             imports: [DotDiffPipeModule, BlockEditorModule]
@@ -330,7 +330,7 @@ describe('DotContentCompareEditorComponent', () => {
     });
 
     beforeEach(() => {
-        fixture = TestBed.createComponent(DotContentCompareEditorComponent);
+        fixture = TestBed.createComponent(DotContentCompareBlockEditorComponent);
         component = fixture.componentInstance;
 
         component.data = dotContentCompareTableDataMock;

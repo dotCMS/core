@@ -1,0 +1,27 @@
+<div
+    #HtmlWorking
+    *ngIf="label"
+    [innerHTML]="htmlWorkingValue$ | async"
+    data-testId="table-editor-label"
+></div>
+<div
+    #HtmlCompare
+    *ngIf="!label"
+    [innerHTML]="htmlWorkingValue$ | async | dotDiff : htmlCompareValue$ : showDiff"
+    data-testId="table-editor-compare"
+></div>
+
+<dot-block-editor
+    id="blockEditor"
+    #blockEditor
+    [value]="data.working[field]"
+    [ngStyle]="{ display: 'none' }"
+>
+</dot-block-editor>
+<dot-block-editor
+    id="blockEditorCompare"
+    #blockEditorCompare
+    [value]="data.compare[field]"
+    [ngStyle]="{ display: 'none' }"
+>
+</dot-block-editor>
