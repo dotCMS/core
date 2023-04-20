@@ -106,6 +106,28 @@ const ExperimentMocks: Array<DotExperiment> = [
         creationDate: new Date('2022-08-21 14:50:03'),
         modDate: new Date('2022-08-21 18:50:03'),
         goals: { ...GoalsMock }
+    },
+    {
+        id: '444',
+        identifier: '3333-3333-3333-3333',
+        pageId: '456',
+        status: DotExperimentStatusList.DRAFT,
+        archived: false,
+        readyToStart: false,
+        description: 'Praesent at molestie mauris, quis vulputate augue.',
+        name: 'Praesent at molestie mauris',
+        trafficAllocation: 100,
+        scheduling: { startDate: null, endDate: null },
+        trafficProportion: {
+            type: TrafficProportionTypes.SPLIT_EVENLY,
+            variants: [
+                { id: DEFAULT_VARIANT_ID, name: DEFAULT_VARIANT_NAME, weight: 50 },
+                { id: '222', name: 'Variant A', weight: 50 }
+            ]
+        },
+        creationDate: new Date('2022-08-21 14:50:03'),
+        modDate: new Date('2022-08-21 18:50:03'),
+        goals: { ...GoalsMock }
     }
 ];
 

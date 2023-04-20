@@ -14,6 +14,8 @@ import { IframeOverlayService } from '@components/_common/iframe/service/iframe-
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
 import { DotAddPersonaDialogComponent } from '@components/dot-add-persona-dialog/dot-add-persona-dialog.component';
 import { DotAddPersonaDialogModule } from '@components/dot-add-persona-dialog/dot-add-persona-dialog.module';
+import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotPersonaSelectedItemModule } from '@components/dot-persona-selected-item/dot-persona-selected-item.module';
 import { DotPersonaSelectorOptionModule } from '@components/dot-persona-selector-option/dot-persona-selector-option.module';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
@@ -103,6 +105,7 @@ describe('DotPersonaSelectorComponent', () => {
                     useValue: messageServiceMock
                 },
                 { provide: PaginatorService, useClass: TestPaginatorService },
+                { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
                 { provide: LoginService, useClass: LoginServiceMock },
                 { provide: SiteService, useValue: siteServiceMock }
             ]

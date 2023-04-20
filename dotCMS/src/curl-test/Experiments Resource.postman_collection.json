@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "0f16e288-5ac6-4085-af8b-d0c03722c63a",
+		"_postman_id": "ad899a42-70d0-4958-864e-c3c3e67c599c",
 		"name": "Experiments Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "4500400"
@@ -1865,6 +1865,79 @@
 						"body": {
 							"mode": "raw",
 							"raw": "{\n    \"pageId\": \"e424abd7e2e7a9031c5a0a3c18182f1b\",\n    \"name\": \"my experiment\",\n    \"description\": \"my experiment description\" \n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/experiments/",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"experiments",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "createExperimentNoDescription_shoudSucceed",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Experiment should have the expected values\", function () {",
+									"    pm.expect(jsonData.entity.description).equal(\"\");",
+									"    pm.expect(jsonData.entity.name).equal(\"my experiment\");",
+									"    pm.expect(jsonData.entity.pageId).equal(\"e424abd7e2e7a9031c5a0a3c18182f1b\");",
+									"    pm.expect(jsonData.entity.modDate).is.not.null;",
+									"    pm.expect(jsonData.entity.status).equal(\"DRAFT\");",
+									"    pm.expect(jsonData.entity.trafficAllocation).equal(100.0);",
+									"    pm.expect(jsonData.entity.trafficProportion.type).equal(\"SPLIT_EVENLY\");",
+									"});",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"pageId\": \"e424abd7e2e7a9031c5a0a3c18182f1b\",\n    \"name\": \"my experiment\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
