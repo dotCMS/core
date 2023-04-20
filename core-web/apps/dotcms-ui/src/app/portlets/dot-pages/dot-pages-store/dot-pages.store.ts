@@ -553,6 +553,37 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         return this.dotPageWorkflowsActionsService.getByUrl({ host_id, language_id, url });
     }
 
+    private getWorflowActionsFn = (item: DotCMSContentlet): Observable<DotCMSPageWorkflowState> => {
+        if (item?.contentType === 'dotFavoritePage') {
+            return this.getFavoritePageWorflowActions(item);
+        } else {
+            return this.dotWorkflowsActionsService
+                .getByInode(item.inode, DotRenderMode.LISTING)
+                .pipe(
+                    map((workflowActions: DotCMSWorkflowAction[]) => {
+                        return {
+                            actions: workflowActions,
+                            page: item
+                        };
+                    })
+                );
+        }
+    };
+
+    private getFavoritePageWorflowActions(
+        item: DotCMSContentlet
+    ): Observable<DotCMSPageWorkflowState> {
+        const urlParams: { [key: string]: string } = { url: item.url.split('?')[0] };
+        const searchParams = new URLSearchParams(item.url.split('?')[1]);
+        for (const entry of searchParams) {
+            urlParams[entry[0]] = entry[1];
+        }
+
+        const { host_id, language_id, url } = urlParams;
+
+        return this.dotPageWorkflowsActionsService.getByUrl({ host_id, language_id, url });
+    }
+
     private getPagesDataFn(
         isFavoritePage: boolean,
         sortOrderValue: ESOrderDirection,
