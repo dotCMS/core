@@ -19,32 +19,32 @@ public class StartupTasksExecutor {
 
 	private static StartupTasksExecutor executor;
 
-	private final String pgCreate  = "CREATE TABLE db_version (db_version integer NOT NULL, date_update timestamp with time zone NOT NULL, CONSTRAINT db_version_pkey PRIMARY KEY (db_version));";
-	private final String pgCreateDataVersion  = "CREATE TABLE data_version (data_version integer NOT NULL, date_update timestamp with time zone NOT NULL, CONSTRAINT data_version_pkey PRIMARY KEY (data_version));";
-	private final String myCreate  = "CREATE TABLE `db_version` (`db_version` INTEGER UNSIGNED NOT NULL,`date_update` DATETIME NOT NULL, PRIMARY KEY (`db_version`))";
-	private final String myCreateDataVersion  = "CREATE TABLE `data_version` (`data_version` INTEGER UNSIGNED NOT NULL,`date_update` DATETIME NOT NULL, PRIMARY KEY (`data_version`))";
-	private final String oraCreate = "CREATE TABLE \"DB_VERSION\" ( \"DB_VERSION\" INTEGER NOT NULL , \"DATE_UPDATE\" TIMESTAMP NOT NULL, PRIMARY KEY (\"DB_VERSION\") )";
-	private final String oraCreateDataVersion = "CREATE TABLE \"DATA_VERSION\" ( \"DATA_VERSION\" INTEGER NOT NULL , \"DATE_UPDATE\" TIMESTAMP NOT NULL, PRIMARY KEY (\"DATA_VERSION\") )";
-	private final String msCreate  = "CREATE TABLE db_version (	db_version int NOT NULL , date_update datetime NOT NULL, PRIMARY KEY (db_version) )";
-	private final String msCreateDataVersion  = "CREATE TABLE data_version ( data_version int NOT NULL , date_update datetime NOT NULL, PRIMARY KEY (data_version) )";
+    private final String pgCreate  = "CREATE TABLE db_version (db_version integer NOT NULL, date_update timestamp with time zone NOT NULL, CONSTRAINT db_version_pkey PRIMARY KEY (db_version));";
+    private final String pgCreateDataVersion  = "CREATE TABLE data_version (data_version integer NOT NULL, date_update timestamp with time zone NOT NULL, CONSTRAINT data_version_pkey PRIMARY KEY (data_version));";
+    private final String myCreate  = "CREATE TABLE `db_version` (`db_version` INTEGER UNSIGNED NOT NULL,`date_update` DATETIME NOT NULL, PRIMARY KEY (`db_version`))";
+    private final String myCreateDataVersion  = "CREATE TABLE `data_version` (`data_version` INTEGER UNSIGNED NOT NULL,`date_update` DATETIME NOT NULL, PRIMARY KEY (`data_version`))";
+    private final String oraCreate = "CREATE TABLE \"DB_VERSION\" ( \"DB_VERSION\" INTEGER NOT NULL , \"DATE_UPDATE\" TIMESTAMP NOT NULL, PRIMARY KEY (\"DB_VERSION\") )";
+    private final String oraCreateDataVersion = "CREATE TABLE \"DATA_VERSION\" ( \"DATA_VERSION\" INTEGER NOT NULL , \"DATE_UPDATE\" TIMESTAMP NOT NULL, PRIMARY KEY (\"DATA_VERSION\") )";
+    private final String msCreate  = "CREATE TABLE db_version (	db_version int NOT NULL , date_update datetime NOT NULL, PRIMARY KEY (db_version) )";
+    private final String msCreateDataVersion  = "CREATE TABLE data_version ( data_version int NOT NULL , date_update datetime NOT NULL, PRIMARY KEY (data_version) )";
 
-	private final String SELECT = "SELECT max(db_version) AS test FROM db_version";
-	private final String SELECT_DATA_VERSION = "SELECT max(data_version) AS test FROM data_version";
-	private final String INSERT = "INSERT INTO db_version (db_version,date_update) VALUES (?,?)";
-	private final String INSERT_DATA_VERSION = "INSERT INTO data_version (data_version,date_update) VALUES (?,?)";
+    private final String SELECT = "SELECT max(db_version) AS test FROM db_version";
+    private final String SELECT_DATA_VERSION = "SELECT max(data_version) AS test FROM data_version";
+    private final String INSERT = "INSERT INTO db_version (db_version,date_update) VALUES (?,?)";
+    private final String INSERT_DATA_VERSION = "INSERT INTO data_version (data_version,date_update) VALUES (?,?)";
 
 	private static final Pattern TASK_ID_PATTERN = Pattern.compile("[0-9]+");
 
 	final boolean firstTimeStart;
 
-	private StartupTasksExecutor() {
+    private StartupTasksExecutor() {
 
-	    insureDbVersionTable();
+        insureDbVersionTable();
         insureDataVersionTable();
-	    Config.DB_VERSION = currentDbVersion();
-	    Config.DATA_VERSION = currentDataVersion();
+        Config.DB_VERSION = currentDbVersion();
+        Config.DATA_VERSION = currentDataVersion();
         this.firstTimeStart = (Config.DB_VERSION==0);
-	}
+    }
 
 	public static synchronized StartupTasksExecutor getInstance() {
 		if (executor == null)
@@ -69,14 +69,14 @@ public class StartupTasksExecutor {
      */
     private final String createDataVersionTableSQL() {
 
-	       return (DbConnectionFactory.isPostgres())
-	                        ? pgCreateDataVersion
-	                        : DbConnectionFactory.isMySql()
-	                            ? myCreateDataVersion
-	                            : DbConnectionFactory.isOracle()
-	                                ? oraCreateDataVersion
-	                                : msCreateDataVersion;
-	}
+        return (DbConnectionFactory.isPostgres())
+                ? pgCreateDataVersion
+                : DbConnectionFactory.isMySql()
+                        ? myCreateDataVersion
+                        : DbConnectionFactory.isOracle()
+                                ? oraCreateDataVersion
+                                : msCreateDataVersion;
+    }
 
     /**
      * This will create the db version table if it does not already exist
@@ -129,8 +129,8 @@ public class StartupTasksExecutor {
     @VisibleForTesting
     int currentDataVersion() {
         try (Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
-            DotConnect db =  new DotConnect().setSQL(SELECT_DATA_VERSION);
-            return  db.loadInt("test");
+            DotConnect db = new DotConnect().setSQL(SELECT_DATA_VERSION);
+            return db.loadInt("test");
 
         } catch (Exception e) {
             throw new DotRuntimeException(e);
@@ -289,10 +289,11 @@ public class StartupTasksExecutor {
     }
 
     /**
-     * Runs the data upgrade tasks, those that are not related to the database schema upgrade tasks, data tasks are
-     * mostly tasks to solve data issues using our existing APIs.
+     * Runs the data upgrade tasks, those that are not related to the database schema upgrade tasks,
+     * data tasks are mostly tasks to solve data issues using our existing APIs.
      * <p>
-     * The list of data upgrade tasks is obtained from the {@link TaskLocatorUtil#getStartupRunOnceDataTaskClasses()}
+     * The list of data upgrade tasks is obtained from the
+     * {@link TaskLocatorUtil#getStartupRunOnceDataTaskClasses()}
      *
      * @throws DotDataException
      */
