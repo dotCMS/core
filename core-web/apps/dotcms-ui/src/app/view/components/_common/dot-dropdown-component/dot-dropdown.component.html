@@ -12,14 +12,6 @@
     iconPos="right"
 ></button>
 
-<dot-gravatar
-    class="dropdown-component__gravatar"
-    *ngIf="gravatar"
-    [email]="gravatar"
-    (click)="onToggle()"
-    size="32"
-></dot-gravatar>
-
 <div
     class="dropdown-content"
     *ngIf="show"

@@ -12,7 +12,9 @@ import picocli.CommandLine;
         header = "Language CRUD operations.",
         subcommands = {
                 LanguagePull.class,
-                LanguageFind.class
+                LanguageFind.class,
+                LanguagePush.class,
+                LanguageRemove.class
         }
 )
 /**

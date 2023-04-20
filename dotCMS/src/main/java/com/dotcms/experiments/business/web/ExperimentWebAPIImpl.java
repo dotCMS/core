@@ -1,7 +1,9 @@
 package com.dotcms.experiments.business.web;
 
 import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotmarketing.util.FileUtil.getFileContentFromResourceContext;
+import static org.junit.Assert.assertEquals;
 
 import com.dotcms.experiments.business.ConfigExperimentUtil;
 import com.dotcms.experiments.model.Experiment;
@@ -15,6 +17,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.rules.model.Rule;
+import com.dotmarketing.portlets.structure.StructureUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
@@ -24,11 +27,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import net.bytebuddy.utility.RandomString;
+import org.jetbrains.annotations.NotNull;
 
 
 /**
@@ -36,6 +42,8 @@ import net.bytebuddy.utility.RandomString;
  */
 public class ExperimentWebAPIImpl implements ExperimentWebAPI {
 
+    public static final String INDEX = "/index";
+    public static String REDIRECT_REGEX_TEMPLATE = "(http|https):\\/\\/.*:.*%s(\\?.*)?";
     @Override
     public SelectedExperiments isUserIncluded(final HttpServletRequest request,
             final HttpServletResponse response, final List<String> idsToExclude)
@@ -117,10 +125,59 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
                     .variant(variantSelected)
                     .lookBackWindow(nextLookBackWindow())
                     .expireTime(experiment.lookBackWindowExpireTime())
+                    .redirectPattern(calculateRedirectPattern(htmlPageAsset))
                     .build();
         } catch (DotDataException e) {
             throw new DotRuntimeException(e);
         }
+    }
+
+    private String calculateRedirectPattern(final HTMLPageAsset htmlPageAsset) {
+
+        try {
+            String resulRegex = null;
+
+            final List<String> urlMappedPattern = APILocator.getContentTypeAPI(
+                            APILocator.systemUser())
+                    .findUrlMappedPattern(htmlPageAsset.getIdentifier());
+
+            if (UtilMethods.isSet(urlMappedPattern)) {
+                final List<String> regexs = new ArrayList<>();
+
+                for (String urlMap : urlMappedPattern) {
+                    String regExForURLMap = StructureUtil.generateRegExForURLMap(urlMap);
+                    regExForURLMap = regExForURLMap.substring(0, regExForURLMap.length() - 1);
+                    final String uriForRegex = getUriForRegex(regExForURLMap);
+
+                    regexs.add(String.format(REDIRECT_REGEX_TEMPLATE, uriForRegex));
+                }
+
+                resulRegex = String.join("|", regexs);
+
+            } else if (htmlPageAsset.getURI().equals(INDEX)) {
+                resulRegex =  String.format(REDIRECT_REGEX_TEMPLATE, "(\\/index|\\/)?");
+            } else if (htmlPageAsset.getURI().endsWith(INDEX)) {
+                final String uriWithoutIndex = htmlPageAsset.getURI().substring(0,
+                        htmlPageAsset.getURI().length() - INDEX.length());
+                final String uriForRegex = getUriForRegex(uriWithoutIndex) + "(\\/index|\\/)?";
+                resulRegex = String.format(REDIRECT_REGEX_TEMPLATE, uriForRegex);
+            } else {
+
+                final String uriForRegex = getUriForRegex(htmlPageAsset.getURI());
+                resulRegex = String.format(REDIRECT_REGEX_TEMPLATE, uriForRegex);
+            }
+
+            return String.format("^%s$",  resulRegex);
+
+        } catch (DotDataException e) {
+            throw new RuntimeException(String.format("It is not possible to get the URI for %s",
+                    htmlPageAsset.getInode()), e);
+        }
+    }
+
+    @NotNull
+    private static String getUriForRegex(final String uri) throws DotDataException {
+        return uri.replaceAll("/", "\\\\/");
     }
 
     private List<Experiment> pickExperiments(final List<Experiment> runningExperiments,
@@ -186,22 +243,62 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
     private String getJSCode(final Host host, final HttpServletRequest request) {
 
         try {
-            final String analyticsKey = ConfigExperimentUtil.INSTANCE.getAnalyticsKey(host);
-            final String jsJitsuCode =  getFileContentFromResourceContext("experiment/html/experiment_head.html")
-                    .replaceAll("\\$\\{jitsu_key}", analyticsKey)
-                    .replaceAll("\\$\\{site}", getLocalServerName(request));
+            final String jsJitsuCode =  replaceIntoHTMLCode(
+                    getFileContentFromResourceContext("experiment/html/experiment_head.html"),
+                    host, request);
 
-            final String runningExperimentsId = APILocator.getExperimentsAPI().getRunningExperiments().stream()
-                    .map(experiment -> "'" + experiment.id().get() + "'")
-                    .collect(Collectors.joining(","));
-
-            final String shouldBeInExperimentCalled =  getFileContentFromResourceContext("experiment/js/init_script.js")
-                    .replaceAll("\\$\\{running_experiments_list}", runningExperimentsId);
+            final String shouldBeInExperimentCalled =  replaceIntoJsCode(
+                    getFileContentFromResourceContext("experiment/js/init_script.js"),
+                    APILocator.getExperimentsAPI().getRunningExperiments());
 
             return jsJitsuCode + "\n<SCRIPT>" + shouldBeInExperimentCalled + "</SCRIPT>";
         } catch (IOException | DotDataException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private String replaceIntoJsCode(final String jsCode, final List<Experiment> experiments) {
+
+            final String runningExperimentsId = experiments.stream()
+                    .map(experiment -> "'" + experiment.id().get() + "'")
+                    .collect(Collectors.joining(","));
+
+            final Map<String, String> subStringToReplace = map(
+                    "${running_experiments_list}", runningExperimentsId
+            );
+
+            return replace(jsCode, subStringToReplace);
+    }
+
+    private String replaceIntoHTMLCode(final String htmlCode, final Host host,
+            final HttpServletRequest request) {
+
+        final Map<String, String> subStringToReplace = map(
+                "${jitsu_key}", ConfigExperimentUtil.INSTANCE.getAnalyticsKey(host),
+                "${site}", getLocalServerName(request)
+        );
+
+        return replace(htmlCode, subStringToReplace);
+    }
+
+    private static String replace(final String htmlCode,
+            final Map<String, String> subStringToReplace) {
+
+        String result = htmlCode;
+
+        for (final Entry<String, String> subStringEntry : subStringToReplace.entrySet()) {
+            final String toReplace = subStringEntry.getKey();
+            final int index = result.indexOf(toReplace);
+
+            if (index != -1) {
+                final String before = result.substring(0, index);
+                final String after = result.substring(index + toReplace.length());
+
+                result = before + subStringEntry.getValue() + after;
+            }
+        }
+
+        return result;
     }
 
     private String getLocalServerName(HttpServletRequest request) {

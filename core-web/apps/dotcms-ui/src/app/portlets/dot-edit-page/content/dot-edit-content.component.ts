@@ -240,7 +240,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
             ],
             {
                 queryParams: {
-                    editPageTab: null,
+                    mode: null,
                     variantName: null,
                     experimentId: null
                 },
@@ -637,7 +637,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     }
 
     private getExperimentResolverData(): void {
-        const { variantName, editPageTab } = this.route.snapshot.queryParams;
+        const { variantName, mode } = this.route.snapshot.queryParams;
         this.variantData = this.route.parent.parent.data.pipe(
             take(1),
             pluck('experiment'),
@@ -658,7 +658,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                     experimentId: experiment.id,
                     experimentStatus: experiment.status,
                     experimentName: experiment.name,
-                    mode: editPageTab
+                    mode: mode
                 } as DotVariantData;
             })
         );

@@ -7,6 +7,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { InputTextareaModule } from 'primeng/inputtextarea';
+import { RippleModule } from 'primeng/ripple';
 import { SidebarModule } from 'primeng/sidebar';
 
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
@@ -44,7 +45,8 @@ interface CreateForm {
         InputTextareaModule,
         InputTextModule,
         SidebarModule,
-        ButtonModule
+        ButtonModule,
+        RippleModule
     ],
     templateUrl: './dot-experiments-create.component.html',
     styleUrls: ['./dot-experiments-create.component.scss'],
@@ -54,6 +56,7 @@ export class DotExperimentsCreateComponent implements OnInit {
     vm$: Observable<VmCreateExperiments> = this.dotExperimentsListStore.createVm$;
 
     form: FormGroup<CreateForm>;
+    protected readonly maxNameLength = 50;
 
     constructor(private readonly dotExperimentsListStore: DotExperimentsListStore) {}
 
@@ -92,7 +95,7 @@ export class DotExperimentsCreateComponent implements OnInit {
             }),
             name: new FormControl<string>('', {
                 nonNullable: true,
-                validators: [Validators.required, Validators.maxLength(255)]
+                validators: [Validators.required, Validators.maxLength(this.maxNameLength)]
             }),
             description: new FormControl<string>('', {
                 validators: [Validators.maxLength(255)]

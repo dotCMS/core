@@ -66,7 +66,7 @@ const dotVariantDataMock: DotVariantData = {
     experimentId: EXPERIMENT_MOCK.id,
     experimentStatus: EXPERIMENT_MOCK.status,
     experimentName: EXPERIMENT_MOCK.name,
-    mode: 'preview'
+    mode: DotPageMode.PREVIEW
 };
 
 const pageRenderStateMock: DotPageRenderState = new DotPageRenderState(

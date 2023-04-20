@@ -1,9 +1,9 @@
 <div class="dot-experiment-list-table">
-    <ng-container *ngIf="groupedExperimentsCount; else noExperimentsTpl">
-        <ng-container *ngFor="let group of experimentGroupedByStatus | keyvalue">
-            <p-table [value]="group.value" styleClass="experiment-list">
+    <ng-container *ngIf="experimentsCount; else noExperimentsTpl">
+        <ng-container *ngFor="let group of experimentGroupedByStatus">
+            <p-table [value]="group.experiments" styleClass="experiment-list">
                 <ng-template pTemplate="caption">
-                    {{ group.key }}
+                    {{ group.status | lowercase | dm | uppercase }}
                 </ng-template>
                 <ng-template pTemplate="header">
                     <tr>

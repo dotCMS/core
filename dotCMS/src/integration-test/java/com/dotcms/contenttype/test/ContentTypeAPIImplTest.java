@@ -19,6 +19,8 @@ import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProvider;
@@ -2386,6 +2388,64 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 					", expected='" + expected + '\'' +
 					'}';
 		}
+	}
+
+	/**
+	 * Method to test: {@link ContentTypeAPIImpl#findUrlMappedPattern(String)}
+	 * When: Create a {@link ContentType} with a urlMapPattern and detailPage
+	 * and call the method with the page's id
+	 * Should: Return the {@link ContentType}
+	 */
+	@Test
+	public void findUrlMappedByPageId() throws DotDataException {
+		final Host host = new SiteDataGen().nextPersisted();
+		final Template template = new TemplateDataGen().nextPersisted();
+		final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
+
+		final ContentType contentType_1 = new ContentTypeDataGen()
+				.detailPage(htmlPageAsset.getIdentifier())
+				.urlMapPattern("/test_1")
+				.nextPersisted();
+
+		final ContentType contentType_2 = new ContentTypeDataGen()
+				.detailPage(htmlPageAsset.getIdentifier())
+				.urlMapPattern("/test_2")
+				.nextPersisted();
+
+		final List<String> urlMapped = APILocator.getContentTypeAPI(APILocator.systemUser())
+				.findUrlMappedPattern(htmlPageAsset.getIdentifier());
+
+		Assert.assertEquals(2, urlMapped.size());
+		Assert.assertTrue(urlMapped.contains("/test_1"));
+		Assert.assertTrue(urlMapped.contains("/test_2"));
+	}
+
+	/**
+	 * Method to test: {@link ContentTypeAPIImpl#findUrlMappedPattern(String)}
+	 * When: Called the method with a Page'id that not have any ContentType link with it
+	 * Should: Return an empty list
+	 */
+	@Test
+	public void findUrlMappedByPageIdWithoutContentType() throws DotDataException {
+		final Host host = new SiteDataGen().nextPersisted();
+		final Template template = new TemplateDataGen().nextPersisted();
+		final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
+
+		final List<String> urlMapped = APILocator.getContentTypeAPI(APILocator.systemUser())
+				.findUrlMappedPattern(htmlPageAsset.getIdentifier());
+
+		Assert.assertTrue(urlMapped.isEmpty());
+	}
+
+	/**
+	 * Method to test: {@link ContentTypeAPIImpl#findUrlMappedPattern(String)}
+	 * when: Called the method with Null
+	 * should: Throw a {@link IllegalArgumentException}
+	 */
+	@Test(expected = IllegalArgumentException.class)
+	public void findUrlMappedByPageIdWithNull() throws DotDataException {
+		APILocator.getContentTypeAPI(APILocator.systemUser())
+				.findUrlMappedPattern(null);
 	}
 
 }
