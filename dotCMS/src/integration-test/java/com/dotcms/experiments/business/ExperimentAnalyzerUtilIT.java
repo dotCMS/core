@@ -25,6 +25,8 @@ import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.experiments.model.Goals;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.UtilMethods;
@@ -68,7 +70,7 @@ public class ExperimentAnalyzerUtilIT {
      * - Multi Session: 3
      */
     @Test
-    public void analyzerDataReachPage(){
+    public void analyzerDataReachPage() throws DotDataException, DotSecurityException {
         final Host host = new SiteDataGen().nextPersisted();
         final Template template = new TemplateDataGen().host(host).nextPersisted();
 
@@ -181,7 +183,7 @@ public class ExperimentAnalyzerUtilIT {
      * - Multi Session: 1 (Really we can not have more than one Bounce Rate by session)
      */
     @Test
-    public void analyzerDataBounceRate(){
+    public void analyzerDataBounceRate() throws DotDataException, DotSecurityException {
         final Host host = new SiteDataGen().nextPersisted();
         final Template template = new TemplateDataGen().host(host).nextPersisted();
 

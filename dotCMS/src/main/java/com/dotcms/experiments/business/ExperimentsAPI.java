@@ -199,4 +199,9 @@ public interface ExperimentsAPI {
      */
     void endFinalizedExperiments(final User user) throws DotDataException;
 
+    /**
+     * Promotes a Variant to the default one for the given Experiment
+     */
+    Experiment promoteVariant(String experimentId, String variantName, User user)
+            throws DotDataException, DotSecurityException;
 }

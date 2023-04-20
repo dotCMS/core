@@ -68,6 +68,7 @@ import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.factories.MultiTreeAPI;
@@ -837,9 +838,10 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
         final List<BrowserSession> events = getEvents(experiment);
         final ExperimentResults experimentResults = ExperimentAnalyzerUtil.INSTANCE.getExperimentResult(
-            experiment,
-            events);
+            experiment, events);
+
         experimentResults.setBayesianResult(calcBayesian(experimentResults, null));
+
         return experimentResults;
     }
 
@@ -935,6 +937,38 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         finalizedExperiments.forEach((experiment ->
                 Try.of(()->end(experiment.id().orElseThrow(), user)).getOrElseThrow((e)->
                         new DotStateException("Unable to end Experiment. Cause:" + e))));
+    }
+
+    @Override
+    public Experiment promoteVariant(String experimentId, String variantName, User user)
+            throws DotDataException, DotSecurityException {
+
+        final Experiment persistedExperiment = find(experimentId, user)
+                .orElseThrow(()->new DoesNotExistException("Experiment with provided id not found"));
+
+        DotPreconditions.isTrue(variantName!= null &&
+                        variantName.contains(shortyIdAPI.shortify(experimentId)), ()->"Invalid Variant provided",
+                IllegalArgumentException.class);
+
+        final Variant variantToPromote = variantAPI.get(variantName)
+                .orElseThrow(()->new DoesNotExistException("Provided Variant not found"));
+
+        final TreeSet<ExperimentVariant> variantsAfterPromotion =
+                persistedExperiment.trafficProportion()
+                        .variants().stream().map((variant) -> {
+                            if (variant.id().equals(variantName)) {
+                                Try.run(()->variantAPI.promote(variantToPromote, user))
+                                        .getOrElseThrow(()-> new DotRuntimeException("Unable to promote variant. Variant name: " + variantName));
+                                return variant.withPromoted(true);
+                            } else {
+                                return variant.withPromoted(false);
+                            }
+                        }).collect(Collectors.toCollection(TreeSet::new));
+
+        final TrafficProportion trafficProportion = persistedExperiment.trafficProportion()
+                .withVariants(variantsAfterPromotion);
+        final Experiment withUpdatedTraffic = persistedExperiment.withTrafficProportion(trafficProportion);
+        return save(withUpdatedTraffic, user);
     }
 
     @Override
