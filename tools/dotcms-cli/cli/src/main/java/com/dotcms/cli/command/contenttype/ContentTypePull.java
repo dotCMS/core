@@ -25,7 +25,22 @@ import static com.dotcms.cli.common.Utils.nextFileName;
 @ActivateRequestContext
 @CommandLine.Command(
         name = ContentTypePull.NAME,
-        description = "@|bold,green Get a Content-type from a given id or Name |@ Use @|bold,cyan --idOrVar|@ to pass the CT identifier or name."
+        header = "@|bold,green Get a Content-type from a given Id or Name |@",
+        description = {
+                " This gets you a Content-type from a given Id or Name.",
+                " The content-type descriptor will be retried and saved to a file.",
+                " The file name will be the content-type's variable name.",
+                " if a file is pulled more than once",
+                " the file name will be appended with a number.",
+                " e.g. If a file called 'myContentType' is pulled twice",
+                " the second file will be named 'myContentType(1)'.",
+                " By default files are saved to the current directory. in json format.",
+                " The format can be changed using the @|bold,cyan --format|@ option.",
+                " format can be either @|bold,cyan JSON|@ or @|bold,cyan YAML|@.",
+                " File location can be changed using the @|bold,cyan --saveTo|@ option.",
+                " Use @|bold,cyan --idOrName|@ to pass the CT identifier or name.",
+                "\n"
+        }
 )
 public class ContentTypePull extends AbstractContentTypeCommand implements Callable<Integer> {
 
@@ -45,7 +60,7 @@ public class ContentTypePull extends AbstractContentTypeCommand implements Calla
     @Inject
     RestClientFactory clientFactory;
 
-    @Parameters(index = "0", arity = "1", description = "Identifier or Name.")
+    @Parameters( paramLabel = "idOrName", index = "0", arity = "1", description = "Identifier or Name.")
     String idOrVar;
 
     @CommandLine.Option(names = {"-to", "--saveTo"}, order = 5, description = "Save Pulled CT to a file.")

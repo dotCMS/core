@@ -2,6 +2,7 @@ package com.dotcms.cli.command;
 
 import com.dotcms.api.client.DotCmsClientConfig;
 import com.dotcms.api.client.ServiceManager;
+import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.annotation.SecuredPassword;
 import com.dotcms.model.config.ServiceBean;
@@ -25,8 +26,16 @@ import static org.apache.commons.lang3.BooleanUtils.toStringYesNo;
 @ActivateRequestContext
 @CommandLine.Command(
         name = InstanceCommand.NAME,
-        description = "@|bold,green Prints a list of available dotCMS instances.|@ "
-                + "Use to activate/switch dotCMS instance. @|bold,cyan -a  --activate|@ followed by the profile name."
+        header = "@|bold,green Prints a list of available dotCMS instances.|@",
+        description = {
+                " A List with all the available dotCMS instances is printed.",
+                " The info includes API URL, active user and the current profile.",
+                " This list of available servers comes from the [dot-service.yml]",
+                " Located in the user's home directory.",
+                " Use to activate/switch dotCMS instance. @|bold,cyan -a  --activate|@",
+                " followed by the instance name.",
+                "\n"
+        }
 )
 public class InstanceCommand implements Callable<Integer> {
 
@@ -35,6 +44,9 @@ public class InstanceCommand implements Callable<Integer> {
     @CommandLine.Mixin(name = "output")
     protected OutputOptionMixin output;
 
+    @CommandLine.Mixin
+    HelpOptionMixin helpOption;
+
     @Inject
     DotCmsClientConfig clientConfig;
 
@@ -42,7 +54,7 @@ public class InstanceCommand implements Callable<Integer> {
     @Inject
     ServiceManager serviceManager;
 
-    @CommandLine.Option(names = {"-act", "--activate"}, arity = "1", description = "Activate a profile by entering it's name.")
+    @CommandLine.Option(names = {"-act", "--activate"}, arity = "1", description = "Activate an instance by entering it's name.")
     String activate;
 
     @Override
@@ -88,7 +100,7 @@ public class InstanceCommand implements Callable<Integer> {
                     serviceBean = serviceBean.withActive(true);
                     try {
                         serviceManager.persist(serviceBean);
-                        output.info(String.format(" The instance name [@|bold,underline,green %s|@] is now the active profile.", activate));
+                        output.info(String.format(" The instance name [@|bold,underline,green %s|@] is now the active one.", activate));
                     } catch (IOException e) {
                         output.error("Unable to persist the new selected service ",e);
                         return ExitCode.SOFTWARE;

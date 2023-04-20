@@ -20,7 +20,10 @@ import java.util.concurrent.Callable;
 @ActivateRequestContext
 @CommandLine.Command(
         name = ContentTypePush.NAME,
-        description = "@|bold,green Push / Create a Content-type from a given file definition.|@ @|bold,cyan --file|@ to send the descriptor. "
+        header = "@|bold,green Use this command to push a Content-type descriptor file.|@",
+        description = {
+                ""
+        }
 )
 public class ContentTypePush extends AbstractContentTypeCommand implements Callable<Integer> {
 
