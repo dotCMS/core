@@ -87,6 +87,7 @@ describe('DotExperimentsConfigurationSchedulingAddComponent', () => {
         expect(startDateCalendar.readonlyInput).toEqual(true);
         expect(startDateCalendar.showIcon).toEqual(true);
         expect(startDateCalendar.showClear).toEqual(true);
+
         expect(endDateCalendar.stepMinute).toEqual(30);
         expect(endDateCalendar.readonlyInput).toEqual(true);
         expect(endDateCalendar.showIcon).toEqual(true);
@@ -108,6 +109,27 @@ describe('DotExperimentsConfigurationSchedulingAddComponent', () => {
             scheduling: EXPERIMENT_MOCK.scheduling,
             experimentId: EXPERIMENT_MOCK.id
         });
+    });
+
+    it('should set min dates correctly', function () {
+        const startDateCalendar: Calendar = spectator.query(Calendar);
+        const endDateCalendar: Calendar = spectator.queryLast(Calendar);
+
+        const component = spectator.component;
+        const mockDate = new Date(1682099633467);
+        const mockMinEndDate = 1682099633467 + 1000 * 60 * 30; // 30 minutes
+        jasmine.clock().install();
+        jasmine.clock().mockDate(mockDate);
+
+        component.form.get('startDate').setValue(new Date());
+        startDateCalendar.onSelect.emit();
+
+        spectator.detectChanges();
+
+        expect(endDateCalendar.minDate.getTime()).toEqual(mockMinEndDate);
+        expect(endDateCalendar.defaultDate.getTime()).toEqual(mockMinEndDate);
+
+        jasmine.clock().uninstall();
     });
 
     it('should close sidebar', () => {
