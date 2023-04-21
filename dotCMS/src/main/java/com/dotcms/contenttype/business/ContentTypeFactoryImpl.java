@@ -577,6 +577,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     dc.addParam(type.modDate());
     dc.addParam(type.icon());
     dc.addParam(type.sortOrder());
+    dc.addParam(type.markedForDeletion());
     dc.addParam(type.id());
     dc.loadResult();
   }
@@ -604,6 +605,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     dc.addParam(type.modDate());
     dc.addParam(type.icon());
     dc.addParam(type.sortOrder());
+    dc.addParam(type.markedForDeletion());
     dc.loadResult();
   }
 
