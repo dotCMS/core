@@ -2,7 +2,7 @@ import { DomSanitizer } from '@angular/platform-browser';
 
 import { DotSafeHtmlPipe } from './dot-safe-html.pipe';
 
-fdescribe('SafeHtmlPipe', () => {
+describe('SafeHtmlPipe', () => {
     let pipe: DotSafeHtmlPipe;
     let sanitizer: DomSanitizer;
 

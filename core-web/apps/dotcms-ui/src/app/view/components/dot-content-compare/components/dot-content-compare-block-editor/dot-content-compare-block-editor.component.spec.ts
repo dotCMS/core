@@ -11,6 +11,8 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { BlockEditorMockComponent } from './block-editor-mock/block-editor-mock.component';
 import { DotContentCompareBlockEditorComponent } from './dot-content-compare-block-editor.component';
+import { DotPipesModule } from '@dotcms/app/view/pipes/dot-pipes.module';
+import { DotDiffPipe } from '@dotcms/app/view/pipes';
 
 export const dotContentCompareTableDataMock: DotContentCompareTableData = {
     working: {
@@ -220,7 +222,7 @@ export const dotContentCompareTableDataMock: DotContentCompareTableData = {
     ]
 };
 
-fdescribe('DotContentCompareBlockEditorComponent', () => {
+describe('DotContentCompareBlockEditorComponent', () => {
     let component: DotContentCompareBlockEditorComponent;
     let fixture: ComponentFixture<DotContentCompareBlockEditorComponent>;
     let de: DebugElement;
@@ -238,7 +240,8 @@ fdescribe('DotContentCompareBlockEditorComponent', () => {
                 DotDiffPipeModule,
                 HttpClientTestingModule,
                 CommonModule,
-                BlockEditorMockComponent
+                BlockEditorMockComponent,
+                DotPipesModule
             ]
         }).compileComponents();
     });
@@ -253,32 +256,34 @@ fdescribe('DotContentCompareBlockEditorComponent', () => {
         fixture.detectChanges();
     });
 
-    describe('Get working and compare data for the field', () => {
-        it('should get working data', () => {
-            expect(component.data.working).toBeDefined();
-        });
-
-        it('should get compare data', () => {
-            expect(component.data.compare).toBeDefined();
-        });
-    });
-
-    describe('Block Editor to be defined', () => {
-        it('Block Editor should be defined', () => {
-            expect(component.blockEditor).toBeDefined();
-        });
-    });
-
-    describe('Checking if we are passing HTML to the compare table elements', () => {
-        it('Should contain same HTML for compare', async () => {
-            fixture.detectChanges();
+    describe('Checking if we are passing HTML to the working field', () => {
+        it('Should contain same HTML for working than the Block Editor', async () => {
             await fixture.whenStable();
-
             fixture.detectChanges();
-            await fixture.whenStable();
             const workingField = de.query(By.css('[data-testId="div-working"]')).nativeElement
                 .innerHTML;
             expect(workingField).toEqual(component.blockEditor.editor.getHTML());
+        });
+    });
+
+    describe('Checking if we are passing HTML to the compare field', () => {
+        beforeEach(() => {
+            component.showDiff = true;
+            fixture.detectChanges();
+        });
+        it('Should contain same HTML for working than the Block Editor', async () => {
+            await fixture.whenStable();
+            fixture.detectChanges();
+
+            const pipe = new DotDiffPipe();
+            const diff = pipe.transform(
+                component.blockEditor.editor.getHTML(),
+                component.blockEditorCompare.editor.getHTML()
+            );
+
+            const compareField = de.query(By.css('[data-testId="div-compare"]')).nativeElement
+                .innerHTML;
+            expect(compareField).toEqual(diff);
         });
     });
 });
