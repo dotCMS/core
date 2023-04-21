@@ -117,8 +117,4 @@ describe('DotExperimentsConfigurationSchedulingAddComponent', () => {
 
         expect(store.closeSidebar).toHaveBeenCalledTimes(1);
     });
-
-    //TODO: Will be tested once defined the rules of edit.
-    // eslint-disable-next-line
-    xit('should not submit the form when invalid', () => {});
 });
