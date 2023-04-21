@@ -59,13 +59,15 @@
 
     <ng-template #emptyState>
         <div class="dot-pages-empty__container">
-            <dot-icon name="star_outline" size="18"></dot-icon>
+            <dot-icon name="star_outline" size="32"></dot-icon>
             <div class="dot-pages-empty__header">
                 {{ 'favoritePage.listing.empty.header' | dm }}
             </div>
-            <p class="dot-pages-empty__content" data-testid="dot-pages-empty__content">
-                {{ 'favoritePage.listing.empty.content' | dm }}
-            </p>
+            <p
+                class="dot-pages-empty__content"
+                data-testid="dot-pages-empty__content"
+                innerHTML="{{ 'favoritePage.listing.empty.content' | dm }}"
+            ></p>
         </div>
     </ng-template>
 </p-panel>
