@@ -491,7 +491,8 @@ import org.junit.runners.Suite.SuiteClasses;
         PermissionBitFactoryImplTest.class,
         Task220912UpdateCorrectShowOnMenuPropertyTest.class,
         UtilMethodsITest.class,
-        PaginatedContentletsIntegrationTest.class
+        PaginatedContentletsIntegrationTest.class,
+        Task230420AlterVarcharLengthOfLockedByColTest.class
 })
 public class MainSuite {
 

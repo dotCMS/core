@@ -311,6 +311,7 @@ public class TaskLocatorUtil {
 		.add(Task211101AddContentletAsJsonColumn.class)
 		.add(Task211103RenameHostNameLabel.class)
 		.add(Task220202RemoveFKStructureFolderConstraint.class)
+		.add(Task230420AlterVarcharLengthOfLockedByCol.class)
 		.build();
         
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
