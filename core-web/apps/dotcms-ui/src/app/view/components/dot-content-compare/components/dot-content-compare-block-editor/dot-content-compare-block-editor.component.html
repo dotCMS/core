@@ -1,11 +1,13 @@
 <div
     *ngIf="showDiff; else compareValue"
-    [innerHTML]="htmlWorkingValue$ | async | dotDiff : (htmlCompareValue$ | async) : showDiff"
-    data-testId="div-working"
+    [innerHTML]="
+        htmlWorkingValue$ | async | dotDiff : (htmlCompareValue$ | async) : showDiff | safeHtml
+    "
+    data-testId="div-compare"
 ></div>
 
 <ng-template #compareValue>
-    <div [innerHTML]="htmlWorkingValue$ | async" data-testId="div-compare"></div>
+    <div [innerHTML]="htmlWorkingValue$ | async" data-testId="div-working"></div>
 </ng-template>
 
 <dot-block-editor

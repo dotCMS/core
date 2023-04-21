@@ -69,7 +69,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     @Input() customStyles: string;
     @Input() displayCountBar: boolean | string = true;
     @Input() charLimit: number;
-    @Input() customBlocks: string;
+    @Input() customBlocks = '';
     @Input() content: Content = '';
     @Input() set showVideoThumbnail(value) {
         this.dotMarketingConfigService.setProperty(

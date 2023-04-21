@@ -25,16 +25,13 @@ export class DotContentCompareBlockEditorComponent implements AfterViewInit {
 
     constructor(private sanitizer: DomSanitizer) {}
 
-    getSafeHtml(html: string): SafeHtml {
-        return this.sanitizer.bypassSecurityTrustHtml(html);
-    }
-
     ngAfterViewInit(): void {
         this.htmlCompareValue$ = this.blockEditorCompare?.valueChange.pipe(
-            map(() => this.getSafeHtml(this.blockEditorCompare.editor.getHTML()))
+            map(() => this.blockEditorCompare.editor.getHTML())
         );
+
         this.htmlWorkingValue$ = this.blockEditor?.valueChange.pipe(
-            map(() => this.getSafeHtml(this.blockEditor.editor.getHTML()))
+            map(() => this.blockEditor.editor.getHTML())
         );
     }
 }

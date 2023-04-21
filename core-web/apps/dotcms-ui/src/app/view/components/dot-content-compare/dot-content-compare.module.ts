@@ -20,6 +20,7 @@ import { DotContentCompareBlockEditorComponent } from './components/dot-content-
 import { DotContentCompareDialogComponent } from './components/dot-content-compare-dialog/dot-content-compare-dialog.component';
 import { DotTransformVersionLabelPipe } from './pipes/dot-transform-version-label.pipe';
 
+import { DotPipesModule } from '../../pipes/dot-pipes.module';
 @NgModule({
     declarations: [
         DotContentCompareComponent,
@@ -40,7 +41,8 @@ import { DotTransformVersionLabelPipe } from './pipes/dot-transform-version-labe
         DotMessagePipeModule,
         DotDiffPipeModule,
         ButtonModule,
-        BlockEditorModule
+        BlockEditorModule,
+        DotPipesModule
     ],
     providers: [DotContentletService, DotVersionableService]
 })

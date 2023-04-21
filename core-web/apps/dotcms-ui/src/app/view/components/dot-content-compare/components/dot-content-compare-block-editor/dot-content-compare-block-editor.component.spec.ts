@@ -1,14 +1,15 @@
 import { CommonModule } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { CUSTOM_ELEMENTS_SCHEMA, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 
 import { DotContentCompareTableData } from '@components/dot-content-compare/store/dot-content-compare.store';
 import { DotDiffPipeModule } from '@dotcms/app/view/pipes/dot-diff/dot-diff.pipe.module';
-import { BlockEditorModule, DotBlockEditorComponent } from '@dotcms/block-editor';
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
+import { BlockEditorMockComponent } from './block-editor-mock/block-editor-mock.component';
 import { DotContentCompareBlockEditorComponent } from './dot-content-compare-block-editor.component';
 
 export const dotContentCompareTableDataMock: DotContentCompareTableData = {
@@ -43,136 +44,9 @@ export const dotContentCompareTableDataMock: DotContentCompareTableData = {
                 },
                 {
                     attrs: {
-                        data: {
-                            URL_MAP_FOR_CONTENT: '/activities/snowboarding',
-                            __icon__: 'contentIcon',
-                            altTag: 'Snowboarding',
-                            archived: false,
-                            baseType: 'CONTENT',
-                            body: "<p>As with skiing, there are different styles of riding. Free-riding is all-mountain snowboarding on the slopes, in the trees, down the steeps and through the moguls. Freestyle is snowboarding in a pipe or park filled with rails, fun boxes and other features.<br /><br />Snowboarding parks are designed for specific skill levels, from beginner parks with tiny rails hugging the ground to terrain parks with roller-coaster rails, fun boxes and tabletops for more experienced snowboarders.<br /><br />Whether you're a first-timer or already comfortable going lip-to-lip in a pipe, there are classes and special clinics for you at our ski and snowboard resorts. Our resorts offer multiday clinics, so if you're headed to ski this winter, consider wrapping your vacation dates around a snowboarding clinic.</p>",
-                            contentType: 'Activity',
-                            contentTypeIcon: 'paragliding',
-                            description:
-                                "Snowboarding, once a prime route for teen rebellion, today is definitely mainstream. Those teens — both guys and Shred Bettys, who took up snowboarding in the late '80s and '90s now are riding with their kids.",
-                            folder: 'SYSTEM_FOLDER',
-                            hasLiveVersion: true,
-                            hasTitleImage: true,
-                            host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
-                            hostName: 'demo.dotcms.com',
-                            identifier: '574f0aec-185a-4160-9c17-6d037b298318',
-                            image: '/dA/574f0aec-185a-4160-9c17-6d037b298318/image/box-info-2-270x270.jpg',
-                            imageContentAsset: '574f0aec-185a-4160-9c17-6d037b298318/image',
-                            imageMetaData: {
-                                contentType: 'image/jpeg',
-                                fileSize: 15613,
-                                height: 270,
-                                isImage: true,
-                                length: 15613,
-                                modDate: 1680040290173,
-                                name: 'box-info-2-270x270.jpg',
-                                sha256: '01bed04a0807b45245d38188da3bece44e42fcdd0cf8e8bfe0585e8bd7a61913',
-                                title: 'box-info-2-270x270.jpg',
-                                version: 20220201,
-                                width: 270
-                            },
-                            imageVersion:
-                                '/dA/d77576ce-6e3a-4cf3-b412-8e5209f56cae/image/box-info-2-270x270.jpg',
-                            inode: 'd77576ce-6e3a-4cf3-b412-8e5209f56cae',
-                            language: 'en-US',
-                            languageId: 1,
-                            live: true,
-                            locked: false,
-                            modDate: '2021-04-08 13:53:32.618',
-                            modUser: 'dotcms.org.1',
-                            modUserName: 'Admin User',
-                            owner: 'dotcms.org.1',
-                            publishDate: '2021-04-08 13:53:32.618',
-                            sortOrder: 0,
-                            stInode: '778f3246-9b11-4a2a-a101-e7fdf111bdad',
-                            tags: 'snowboarding,winterenthusiast:persona',
-                            title: 'Snowboarding',
-                            titleImage: 'image',
-                            url: '/content.2f6fe5b8-a2cc-4ecb-a868-db632d695fca',
-                            urlMap: '/activities/snowboarding',
-                            urlTitle: 'snowboarding',
-                            variantId: 'DEFAULT',
-                            working: true
-                        }
-                    },
-                    type: 'dotContent'
-                },
-                {
-                    attrs: {
                         textAlign: 'left'
                     },
                     type: 'paragraph'
-                },
-                {
-                    attrs: {
-                        alt: 'shark-feeding.jpeg',
-                        data: {
-                            __icon__: 'jpegIcon',
-                            archived: false,
-                            asset: '/dA/1acf2998-b36d-4dd7-bb73-06ce2531ee09/asset/shark-feeding.jpeg',
-                            assetContentAsset: '1acf2998-b36d-4dd7-bb73-06ce2531ee09/asset',
-                            assetMetaData: {
-                                contentType: 'image/jpeg',
-                                fileSize: 98885,
-                                height: 413,
-                                isImage: true,
-                                length: 98885,
-                                modDate: 1680040289210,
-                                name: 'shark-feeding.jpeg',
-                                sha256: '03fc29afd486f484b22d5b19408d61bde01314d5164f36f02bacb0d140780065',
-                                title: 'shark-feeding.jpeg',
-                                version: 20220201,
-                                width: 780
-                            },
-                            assetVersion:
-                                '/dA/7f71124d-8dd8-4081-b6a0-eb036464e940/asset/shark-feeding.jpeg',
-                            baseType: 'DOTASSET',
-                            contentType: 'PDF',
-                            contentTypeIcon: 'picture_as_pdf',
-                            extension: 'jpeg',
-                            folder: 'SYSTEM_FOLDER',
-                            hasLiveVersion: true,
-                            hasTitleImage: true,
-                            host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
-                            hostName: 'demo.dotcms.com',
-                            identifier: '1acf2998-b36d-4dd7-bb73-06ce2531ee09',
-                            inode: '7f71124d-8dd8-4081-b6a0-eb036464e940',
-                            isContentlet: true,
-                            language: 'en-US',
-                            languageId: 1,
-                            live: true,
-                            locked: false,
-                            mimeType: 'image/jpeg',
-                            modDate: '2022-04-12 20:18:32.787',
-                            modUser: 'dotcms.org.1',
-                            modUserName: 'Admin User',
-                            name: 'shark-feeding.jpeg',
-                            owner: 'dotcms.org.1',
-                            path: '/content.7f71124d-8dd8-4081-b6a0-eb036464e940',
-                            publishDate: '2022-04-12 20:18:32.787',
-                            size: 98885,
-                            sortOrder: 0,
-                            stInode: '657897dfb36ef211ebfb4128de818787',
-                            statusIcons:
-                                "<span class='greyDotIcon' style='opacity:.4'></span><span class='liveIcon'></span>",
-                            title: 'shark-feeding.jpeg',
-                            titleImage: 'asset',
-                            type: 'dotasset',
-                            url: '/content.7f71124d-8dd8-4081-b6a0-eb036464e940',
-                            variantId: 'DEFAULT',
-                            working: true
-                        },
-                        href: null,
-                        src: '/dA/1acf2998-b36d-4dd7-bb73-06ce2531ee09/asset/shark-feeding.jpeg',
-                        style: null,
-                        textAlign: 'left',
-                        title: 'shark-feeding.jpeg'
-                    },
-                    type: 'dotImage'
                 },
                 {
                     attrs: {
@@ -210,7 +84,41 @@ export const dotContentCompareTableDataMock: DotContentCompareTableData = {
         hasTitleImage: false,
         host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
         hostName: 'demo.dotcms.com',
-        html: '',
+        html: {
+            attrs: {
+                chartCount: 16,
+                readingTime: 1,
+                wordCount: 5
+            },
+            content: [
+                {
+                    attrs: {
+                        level: 2,
+                        textAlign: 'left'
+                    },
+                    content: [
+                        {
+                            text: 'This is a blog to compare',
+                            type: 'text'
+                        }
+                    ],
+                    type: 'heading'
+                },
+                {
+                    attrs: {
+                        textAlign: 'left'
+                    },
+                    type: 'paragraph'
+                },
+                {
+                    attrs: {
+                        textAlign: 'left'
+                    },
+                    type: 'paragraph'
+                }
+            ],
+            type: 'doc'
+        },
         identifier: '32c7545acfdff13b6f5d71ca16bc411d',
         inode: '32865e81-9e30-42bd-ab5b-5c98161acffc',
         languageId: 1,
@@ -312,9 +220,10 @@ export const dotContentCompareTableDataMock: DotContentCompareTableData = {
     ]
 };
 
-describe('DotContentCompareBlockEditorComponent', () => {
+fdescribe('DotContentCompareBlockEditorComponent', () => {
     let component: DotContentCompareBlockEditorComponent;
     let fixture: ComponentFixture<DotContentCompareBlockEditorComponent>;
+    let de: DebugElement;
     const messageServiceMock = new MockDotMessageService({
         diff: 'Diff',
         plain: 'Plain'
@@ -322,10 +231,15 @@ describe('DotContentCompareBlockEditorComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [DotContentCompareBlockEditorComponent, DotBlockEditorComponent],
+            declarations: [DotContentCompareBlockEditorComponent],
             schemas: [CUSTOM_ELEMENTS_SCHEMA],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }],
-            imports: [DotDiffPipeModule, BlockEditorModule, HttpClientTestingModule, CommonModule]
+            imports: [
+                DotDiffPipeModule,
+                HttpClientTestingModule,
+                CommonModule,
+                BlockEditorMockComponent
+            ]
         }).compileComponents();
     });
 
@@ -335,6 +249,7 @@ describe('DotContentCompareBlockEditorComponent', () => {
         component.data = dotContentCompareTableDataMock;
         component.field = 'html';
         component.showDiff = false;
+        de = fixture.debugElement;
         fixture.detectChanges();
     });
 
@@ -345,6 +260,25 @@ describe('DotContentCompareBlockEditorComponent', () => {
 
         it('should get compare data', () => {
             expect(component.data.compare).toBeDefined();
+        });
+    });
+
+    describe('Block Editor to be defined', () => {
+        it('Block Editor should be defined', () => {
+            expect(component.blockEditor).toBeDefined();
+        });
+    });
+
+    describe('Checking if we are passing HTML to the compare table elements', () => {
+        it('Should contain same HTML for compare', async () => {
+            fixture.detectChanges();
+            await fixture.whenStable();
+
+            fixture.detectChanges();
+            await fixture.whenStable();
+            const workingField = de.query(By.css('[data-testId="div-working"]')).nativeElement
+                .innerHTML;
+            expect(workingField).toEqual(component.blockEditor.editor.getHTML());
         });
     });
 });
