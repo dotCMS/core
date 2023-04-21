@@ -164,6 +164,7 @@ import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
 import com.dotmarketing.quartz.job.IntegrityDataGenerationJobTest;
 import com.dotmarketing.quartz.job.PopulateContentletAsJSONJobTest;
 import com.dotmarketing.quartz.job.StartEndScheduledExperimentsJobTest;
+import com.dotmarketing.startup.StartupTasksExecutorDataTest;
 import com.dotmarketing.startup.StartupTasksExecutorTest;
 import com.dotmarketing.startup.runalways.Task00050LoadAppsSecretsTest;
 import com.dotmarketing.startup.runonce.Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflowTest;
@@ -647,6 +648,7 @@ import org.junit.runners.Suite.SuiteClasses;
         PopulateContentletAsJSONJobTest.class,
         ContentTypeDestroyAPIImplTest.class,
         Task230328AddMarkedForDeletionColumnTest.class,
+        StartupTasksExecutorDataTest.class,
 //        AnalyticsAPIImplTest.class,
 //        AccessTokenRenewJobTest.class,
 })
