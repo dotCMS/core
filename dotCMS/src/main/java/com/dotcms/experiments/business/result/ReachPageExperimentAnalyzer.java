@@ -40,7 +40,7 @@ public class ReachPageExperimentAnalyzer implements MetricExperimentAnalyzer {
 
         for (final Event event : events) {
             if (goal.validateConditions(event)) {
-                experimentResultBuilder.success(goal, session.getLookBackWindow(), event);
+                experimentResultBuilder.goal(goal).success(session.getLookBackWindow(), event);
             }
         }
 
