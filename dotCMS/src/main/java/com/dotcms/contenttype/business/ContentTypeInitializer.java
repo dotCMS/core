@@ -66,17 +66,25 @@ public class ContentTypeInitializer implements DotInitializer {
                     .variable(FAVORITE_PAGE_VAR_NAME)
                     .host(Host.SYSTEM_HOST)
                     .host(Folder.SYSTEM_FOLDER)
-                    .fixed(true)
-            ;
+                    .fixed(true);
             final SimpleContentType simpleContentType = builder.build();
 
             saveFavoritePageFields(contentTypeAPI, simpleContentType);
         } else {
             // if the content type exists, we need to see if latest changes are there, otherwise we need to redefine the content type.
-            if (contentType.fieldMap().get("url").unique() || !contentType.fieldMap().get("order").indexed() || !contentType.fixed()) {
+            if (contentType.fieldMap().get("url").unique() || !contentType.fieldMap().get("order").indexed()) {
                 Logger.debug(ContentTypeInitializer.class, "dotFavoritePage CT Needs to be regenerated.");
-                this.saveFavoritePageFields(contentTypeAPI, contentType);
+                if (!contentType.fixed()) { // if the content type is not unchangeable
+                    this.saveFavoritePageFields(contentTypeAPI, contentType);
+                }
             }
+        }
+
+        contentType = null == contentType?Try.of(
+                ()->contentTypeAPI.find(FAVORITE_PAGE_VAR_NAME)).getOrNull(): contentType;
+
+        if (null != contentType) {
+            checkDefaultPermissions(contentType);
         }
     }
 
@@ -100,8 +108,6 @@ public class ContentTypeInitializer implements DotInitializer {
 
             APILocator.getWorkflowAPI().saveSchemeIdsForContentType(savedContentType, workflowIds);
             Logger.debug(ContentTypeInitializer.class, "dotFavoritePage CT Saved.");
-
-            checkDefaultPermissions(savedContentType);
         } catch (DotDataException | DotSecurityException e) {
 
             Logger.warnAndDebug(this.getClass(), e);
@@ -114,8 +120,9 @@ public class ContentTypeInitializer implements DotInitializer {
 
             try {
 
-                final int permissionType = PermissionAPI.PERMISSION_USE | PermissionAPI.PERMISSION_EDIT |PermissionAPI.PERMISSION_PUBLISH;
-                final Role backendRole = APILocator.getRoleAPI().loadBackEndUserRole();
+                final int permissionType = PermissionAPI.PERMISSION_USE | PermissionAPI.PERMISSION_EDIT |
+                        PermissionAPI.PERMISSION_PUBLISH | PermissionAPI.PERMISSION_EDIT_PERMISSIONS;
+                final Role backendRole = APILocator.getRoleAPI().loadCMSOwnerRole();
                 if (!APILocator.getPermissionAPI().doesRoleHavePermission(
                         savedContentType, permissionType, backendRole)) {
 
