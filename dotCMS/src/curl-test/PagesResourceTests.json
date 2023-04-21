@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "e4ba8084-8b7d-4b85-addb-446eeca16790",
+		"_postman_id": "98af464f-bfb7-495e-89a3-d26545fecc9c",
 		"name": "Page API - [api/v1/page]",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "781456"
@@ -5080,8 +5080,8 @@
 							"listen": "prerequest",
 							"script": {
 								"exec": [
-									"    const pagePost = Math.floor(Math.random()*100+1)",
-									"    pm.globals.set(\"pagePost\", pagePost);"
+									"const pagePost = Math.floor(Math.random()*100+1)",
+									"pm.globals.set(\"pagePost\", pagePost)"
 								],
 								"type": "text/javascript"
 							}
@@ -5246,6 +5246,16 @@
 								],
 								"type": "text/javascript"
 							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const pagePost = Math.floor(Math.random()*100+1)",
+									"pm.globals.set(\"pagePost2\", pagePost)"
+								],
+								"type": "text/javascript"
+							}
 						}
 					],
 					"request": {
@@ -5268,7 +5278,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"contentType\":\"htmlpageasset\",\n        \"title\":\"testPageCopy\",\n        \"url\":\"testPageCopy\",\n        \"hostFolder\":\"default\",\n        \"template\":\"SYSTEM_TEMPLATE\",\n        \"friendlyName\":\"testPageCopy\",\n        \"cachettl\":0\n\t\t\n\t}\n}",
+							"raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"contentType\":\"htmlpageasset\",\n        \"title\":\"testPageCopy{{pagePost2}}\",\n        \"url\":\"testPageCopy{{pagePost2}}\",\n        \"hostFolder\":\"default\",\n        \"template\":\"SYSTEM_TEMPLATE\",\n        \"friendlyName\":\"testPageCopy{{pagePost2}}\",\n        \"cachettl\":0\n\t\t\n\t}\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -5314,7 +5324,7 @@
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.errors.length).to.eql(0);",
 									"    pm.expect(jsonData.entity.actions.length).to.greaterThan(0);",
-									"    pm.expect(jsonData.entity.page.pageUrl).to.eql('testPageCopy');",
+									"    pm.expect(jsonData.entity.page.pageUrl).to.contains('testPageCopy');",
 									"});"
 								],
 								"type": "text/javascript"
@@ -5341,7 +5351,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"hostId\":\"{{host_id}}\",\n    \"url\":\"/testPageCopy\"\n}",
+							"raw": "{\n    \"hostId\":\"{{host_id}}\",\n    \"url\":\"/testPageCopy{{pagePost2}}\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -5362,245 +5372,6 @@
 								"actions"
 							]
 						}
-					},
-					"response": []
-				}
-			]
-		},
-		{
-			"name": "Depth-Relationships",
-			"item": [
-				{
-					"name": "Create ContentType Child",
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
-						"method": "POST",
-						"header": [],
-						"description": "Given a content type payload containing field variables.\nWhen sending a POST.\nExpect that code is 200.\nExpect content type is created with the provided fields.\nExpect that new properties of content types are set (icon and sortOrder)."
-					},
-					"response": []
-				},
-				{
-					"name": "Create ContentType Parent",
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
-						"method": "POST",
-						"header": [],
-						"description": "Given a content type payload containing field variables.\nWhen sending a POST.\nExpect that code is 200.\nExpect content type is created with the provided fields.\nExpect that new properties of content types are set (icon and sortOrder)."
-					},
-					"response": []
-				},
-				{
-					"name": "Save Multiple Child Contentlets",
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
-						"method": "POST",
-						"header": []
-					},
-					"response": []
-				},
-				{
-					"name": "CreatsParentContent",
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
-						"method": "PUT",
-						"header": [],
-						"description": "Fires an PUBLISH default action"
-					},
-					"response": []
-				},
-				{
-					"name": "Get Default Site",
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
-						"method": "POST",
-						"header": [],
-						"description": "Gets the Identifier of the \"default\" Site."
-					},
-					"response": []
-				},
-				{
-					"name": "CreateTestPage",
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
-						"method": "PUT",
-						"header": []
-					},
-					"response": []
-				},
-				{
-					"name": "Add Parent Contentlet To DepthPage",
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
-						"method": "POST",
-						"header": []
-					},
-					"response": []
-				},
-				{
-					"name": "RenderPageWithDepthZero",
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": []
-					},
-					"response": []
-				},
-				{
-					"name": "RenderPageWithDepthOne",
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": []
-					},
-					"response": []
-				},
-				{
-					"name": "RenderPageWithNODepth",
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": []
 					},
 					"response": []
 				}

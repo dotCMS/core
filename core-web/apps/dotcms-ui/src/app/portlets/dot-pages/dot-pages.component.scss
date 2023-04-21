@@ -13,3 +13,19 @@
     padding: $spacing-4 $spacing-5 0;
     width: 100%;
 }
+
+.dot-pages__spinner-container {
+    height: 100%;
+    position: relative;
+}
+
+.dot-pages__spinner-overlay {
+    align-content: center;
+    background-color: $white;
+    display: flex;
+    flex-wrap: wrap;
+    height: calc(100% - $spacing-7);
+    justify-content: center;
+    position: absolute;
+    width: calc(100% - $spacing-8);
+}

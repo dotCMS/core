@@ -78,6 +78,19 @@ public interface ContentTypeFactory {
 
 	List<ContentType> findUrlMapped() throws DotDataException;
 
+	/**
+	 * Returns a list of {@link ContentType#urlMapPattern()} for a specified
+	 * {@link com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset}'s id.
+	 *
+	 * @param pageIdentifier The {@link com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset}'s id to search for.
+	 *
+	 * @return The list of {@link ContentType#urlMapPattern()}  that are link to the specified
+	 * {@link com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset}'s id.
+	 *
+	 * @throws DotDataException An error occurred when interacting with the data source.
+	 */
+	List<String> findUrlMappedPattern(final String pageIdentifier) throws DotDataException;
+
 	List<ContentType> search(String search, int limit) throws DotDataException;
 
   	void validateFields(ContentType type);

@@ -24,6 +24,7 @@ import {
     DEFAULT_VARIANT_ID,
     DEFAULT_VARIANT_NAME,
     DotExperimentStatusList,
+    DotPageMode,
     ExperimentSteps
 } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -229,7 +230,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
             expect(dotSessionStorageService.setVariationId).toHaveBeenCalledWith(variants[0].id);
             expect(router.navigate).toHaveBeenCalledWith(['edit-page/content'], {
                 queryParams: {
-                    editPageTab: 'preview',
+                    mode: DotPageMode.PREVIEW,
                     variantName: variants[0].id,
                     experimentId: 'test'
                 },
@@ -243,7 +244,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
             expect(dotSessionStorageService.setVariationId).toHaveBeenCalledWith(variants[1].id);
             expect(router.navigate).toHaveBeenCalledWith(['edit-page/content'], {
                 queryParams: {
-                    editPageTab: 'edit',
+                    mode: DotPageMode.EDIT,
                     variantName: variants[1].id,
                     experimentId: 'test'
                 },

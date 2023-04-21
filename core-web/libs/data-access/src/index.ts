@@ -27,6 +27,7 @@ export * from './lib/dot-license/dot-license.service';
 export * from './lib/dot-current-user/dot-current-user.service';
 export * from './lib/dot-localstorage/dot-localstorage.service';
 export * from './lib/dot-site-browser/dot-site-browser.service';
+export * from './lib/dot-page-workflows-actions/dot-page-workflows-actions.service';
 export * from './lib/dot-workflows-actions/dot-workflows-actions.service';
 export * from './lib/dot-messages/dot-messages.service';
 export * from './lib/dot-tags/dot-tags.service';

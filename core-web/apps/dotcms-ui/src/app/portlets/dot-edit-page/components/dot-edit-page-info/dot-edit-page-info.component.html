@@ -5,3 +5,15 @@
     [tooltipText]="'dot.common.message.pageurl.copy.clipboard' | dm"
 ></dot-copy-button>
 <dot-api-link *ngIf="apiLink" [href]="apiLink"></dot-api-link>
+
+<a
+    class="p-button-sm p-button-outlined"
+    *ngIf="apiLink"
+    [href]="previewURl()"
+    title="Preview"
+    pButton
+    target="_blank"
+>
+    <i class="material-icons">preview</i>
+    {{ 'editpage.preview' | dm }}
+</a>

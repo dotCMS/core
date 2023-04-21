@@ -1,5 +1,6 @@
 package com.dotcms.contenttype.business;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.business.sql.ContentTypeSql;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.*;
@@ -8,6 +9,7 @@ import com.dotcms.contenttype.transform.contenttype.DbContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.ImplClassContentTypeTransformer;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
+import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.business.*;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
@@ -176,6 +178,21 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
   @Override
   public List<ContentType> findUrlMapped() throws DotDataException {
       return dbSearch(" url_map_pattern is not null ", BaseContentType.ANY.getType(), "mod_date", -1, 0, null);
+  }
+
+  @Override
+  @CloseDBIfOpened
+  public List<String> findUrlMappedPattern(final String pageIdentifier) throws DotDataException {
+
+    DotPreconditions.checkArgument(UtilMethods.isSet(pageIdentifier), "pageIdentifier is required");
+
+    return new DotConnect()
+        .setSQL("select url_map_pattern from structure where url_map_pattern is not null and page_detail=?")
+        .addParam(pageIdentifier)
+        .loadObjectResults()
+        .stream()
+        .map(map -> (String) map.get("url_map_pattern"))
+        .collect(Collectors.toList());
   }
 
   @Override
@@ -560,6 +577,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     dc.addParam(type.modDate());
     dc.addParam(type.icon());
     dc.addParam(type.sortOrder());
+    dc.addParam(type.markedForDeletion());
     dc.addParam(type.id());
     dc.loadResult();
   }
@@ -587,6 +605,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     dc.addParam(type.modDate());
     dc.addParam(type.icon());
     dc.addParam(type.sortOrder());
+    dc.addParam(type.markedForDeletion());
     dc.loadResult();
   }
 
