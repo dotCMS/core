@@ -39,7 +39,7 @@ describe('DotEditPageInfoComponent', () => {
 
     describe('default', () => {
         beforeEach(() => {
-            component.apiLink = '/api/v1/page/render/an/url/test?language_id=1';
+            component.apiLink = 'api/v1/page/render/an/url/test?language_id=1';
             component.title = 'A title';
             component.url = 'http://demo.dotcms.com:9876/an/url/test';
             fixture.detectChanges();
@@ -53,7 +53,14 @@ describe('DotEditPageInfoComponent', () => {
         it('should have api link', () => {
             const apiLink: DebugElement = de.query(By.css('dot-api-link'));
             expect(apiLink.componentInstance.link).toBe(
-                '/api/v1/page/render/an/url/test?language_id=1'
+                'api/v1/page/render/an/url/test?language_id=1'
+            );
+        });
+
+        it('should have preview link', () => {
+            const previewLink: HTMLElement = de.query(By.css('a[title="Preview"]')).nativeElement;
+            expect(previewLink.attributes['href'].value).toBe(
+                '/an/url/test?language_id=1&disabledNavigateMode=true'
             );
         });
 
@@ -81,6 +88,11 @@ describe('DotEditPageInfoComponent', () => {
         it('should not have copy button', () => {
             const button: DebugElement = de.query(By.css('dot-copy-button '));
             expect(button).toBeNull();
+        });
+
+        it('should not have preview button', () => {
+            const previewButton: DebugElement = de.query(By.css('a[title="Preview"]'));
+            expect(previewButton).toBeNull();
         });
     });
 });
