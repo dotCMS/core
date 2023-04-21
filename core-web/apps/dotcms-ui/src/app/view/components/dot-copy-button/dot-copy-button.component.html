@@ -1,5 +1,5 @@
 <button
-    class="p-button-sm p-button-outlined"
+    class="p-button-sm p-button-text"
     [pTooltip]="tooltipText"
     (click)="copyUrlToClipboard($event)"
     pButton
@@ -8,6 +8,6 @@
     hideDelay="800"
     tooltipPosition="bottom"
 >
-    <i class="material-icons">content_copy</i>
-    {{ label }}
+    <i class="pi pi-copy"></i>
+    <span class="p-button-label" *ngIf="!!label">{{ label }}</span>
 </button>
