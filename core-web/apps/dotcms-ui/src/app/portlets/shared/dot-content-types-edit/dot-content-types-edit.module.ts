@@ -6,6 +6,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
+import { ChipModule } from 'primeng/chip';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
 import { DropdownModule } from 'primeng/dropdown';
@@ -156,7 +157,8 @@ import { DotAddToMenuModule } from '../dot-content-types-listing/components/dot-
         DotPortletBoxModule,
         DotMdIconSelectorModule,
         DotAddToMenuModule,
-        DotCopyButtonModule
+        DotCopyButtonModule,
+        ChipModule
     ],
     providers: [
         DotContentTypesInfoService,

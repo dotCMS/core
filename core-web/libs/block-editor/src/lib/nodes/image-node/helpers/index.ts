@@ -9,7 +9,7 @@ export const imageLinkElement = (attrs, newAttrs) => {
 };
 
 export const imageElement = (attrs, newAttrs) => {
-    return ['img', mergeAttributes(attrs, newAttrs)];
+    return ['div', { style: newAttrs.style }, ['img', mergeAttributes(attrs, newAttrs)]];
 };
 
 export const getImageAttr = (attrs: DotCMSContentlet | string) => {
