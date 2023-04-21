@@ -1,10 +1,13 @@
-import { Injectable } from '@angular/core';
-import { CoreWebService } from './core-web.service';
 import { Observable, Subject, of, merge } from 'rxjs';
+
+import { Injectable } from '@angular/core';
+
 import { pluck, map, take } from 'rxjs/operators';
-import { LoginService, Auth } from './login.service';
-import { LoggerService } from './logger.service';
+
+import { CoreWebService } from './core-web.service';
 import { DotcmsEventsService } from './dotcms-events.service';
+import { LoggerService } from './logger.service';
+import { Auth, LoginService } from './login.service';
 import { DotEventTypeWrapper } from './models/dot-events/dot-event-type-wrapper';
 
 /**
@@ -53,11 +56,9 @@ export class SiteService {
             .subscribe(({ data }: DotEventTypeWrapper<Site>) => this.setCurrentSite(data));
 
         loginService.watchUser((auth: Auth) => {
-            // TODO: This is a workaround to fix Current site not being updated when login as
-            // the bug is related to a change made here https://github.com/dotCMS/core/blob/fb41c6e6bf0216f86637f73d4dd1c3981490c07f/core-web/libs/dotcms-js/src/lib/core/login.service.ts#L353
-            // if (!auth.isLoginAs) {
-            this.loadCurrentSite();
-            // }
+            if (!auth.isLoginAs) {
+                this.loadCurrentSite();
+            }
         });
     }
 

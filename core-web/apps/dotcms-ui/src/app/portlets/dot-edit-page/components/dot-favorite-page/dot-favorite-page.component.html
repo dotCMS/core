@@ -35,6 +35,7 @@
                         </div>
                         <button
                             class="p-button-secondary dot-favorite-dialog__image-reload"
+                            *ngIf="vm.pageRenderedHtml !== ''"
                             [label]="'favoritePage.dialog.reload.image.button' | dm"
                             (click)="renderThumbnail()"
                             data-testid="dotFavoriteDialogReloadThumbnailButton"
