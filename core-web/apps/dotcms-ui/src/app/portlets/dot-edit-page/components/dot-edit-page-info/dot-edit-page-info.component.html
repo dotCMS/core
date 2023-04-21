@@ -3,5 +3,6 @@
     *ngIf="url"
     [copy]="url"
     [tooltipText]="'dot.common.message.pageurl.copy.clipboard' | dm"
+    [label]="'editpage.header.copy' | dm"
 ></dot-copy-button>
 <dot-api-link *ngIf="apiLink" [href]="apiLink"></dot-api-link>

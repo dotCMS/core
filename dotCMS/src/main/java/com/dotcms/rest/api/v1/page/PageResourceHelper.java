@@ -55,6 +55,8 @@ import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.jetbrains.annotations.NotNull;
@@ -459,8 +461,10 @@ public class PageResourceHelper implements Serializable {
                                       final PageMode pageMode, final Language language)
             throws DotDataException, DotSecurityException {
 
-        final Contentlet copiedContentlet = this.copyContent(copyContentletForm, user, pageMode, language.getId());
+        final Tuple2<Contentlet, Contentlet> tuple2 = this.copyContent(copyContentletForm, user, pageMode, language.getId());
 
+        final Contentlet copiedContentlet   = tuple2._1();
+        final Contentlet originalContentlet = tuple2._2();
         final String htmlPage   = copyContentletForm.getPageId();
         String container        = copyContentletForm.getContainerId();
         final String contentId  = copyContentletForm.getContentId();
@@ -496,6 +500,12 @@ public class PageResourceHelper implements Serializable {
         Logger.debug(this, ()-> "Saving current contentlet multi tree: " + currentMultitree);
         APILocator.getMultiTreeAPI().saveMultiTree(newMultitree);
 
+        if (null != originalContentlet) {
+            HibernateUtil.addCommitListener(()->
+                    new ContentletLoader().invalidate(originalContentlet, PageMode.EDIT_MODE));
+        }
+
+
         return copiedContentlet;
     }
 
@@ -520,7 +530,7 @@ public class PageResourceHelper implements Serializable {
      * @throws DotDataException     An error occurred when interacting with the data source.
      * @throws DotSecurityException The specified User does not have the required permissions to execute this action.
      */
-    private Contentlet copyContent(final CopyContentletForm copyContentletForm, final User user,
+    private Tuple2<Contentlet, Contentlet> copyContent(final CopyContentletForm copyContentletForm, final User user,
                                    final PageMode pageMode, final long languageId) throws DotDataException, DotSecurityException {
         Logger.debug(this, ()-> "Copying existing contentlet: " + copyContentletForm.getContentId());
 
@@ -539,7 +549,7 @@ public class PageResourceHelper implements Serializable {
         final Contentlet copiedContentlet  = this.contentletAPI.copyContentlet(currentContentlet, user, pageMode.respectAnonPerms);
         Logger.debug(this, ()-> "Contentlet: " + copiedContentlet.getIdentifier() + " has been copied");
 
-        return copiedContentlet;
+        return Tuple.of(copiedContentlet, currentContentlet);
     }
 
 }
