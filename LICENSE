@@ -1,13 +1,13 @@
 ************************************************************************
 All code and components under the "dotCMS/src/enterprise" directory of
 this repository are licensed under the "dotCMS Enterprise License" as
-defined in the file "dotCMS/src/enterprise/LICENSE" and/or at the url: 
-https://www.github.com/dotCMS/core/dotCMS/src/enterprise/LICENSE. All
-third party components incorporated into the Software are licensed under
-the original license provided by the owner of the applicable component.
-Unless otherwise granted by dotCMS, code and components in this
-repository, outside of the above mentioned directories or restrictions,
-are available under the "GPL3" license as defined below.
+defined in the file "dotCMS/src/enterprise/LICENSE" and/or at the url:
+https://github.com/dotCMS/core/blob/master/dotCMS/src/enterprise/LICENSE
+. All third party components incorporated into the Software are licensed
+under the original license provided by the owner of the applicable
+component. Unless otherwise granted by dotCMS, code and components in
+this repository, outside of the above mentioned directories or
+restrictions, are available under the "GPL3" license as defined below.
 ************************************************************************
 
 

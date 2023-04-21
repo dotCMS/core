@@ -1,13 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 
-import { DotImageService } from './dot-image.service';
+import { DotUploadFileService } from './dot-upload-file.service';
 
-describe('DotAssetService', () => {
-    let service: DotImageService;
+describe('DotUploadFileService', () => {
+    let service: DotUploadFileService;
 
     beforeEach(() => {
         TestBed.configureTestingModule({ teardown: { destroyAfterEach: false } });
-        service = TestBed.inject(DotImageService);
+        service = TestBed.inject(DotUploadFileService);
     });
 
     it('should be created', () => {

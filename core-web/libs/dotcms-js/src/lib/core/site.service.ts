@@ -7,7 +7,7 @@ import { pluck, map, take } from 'rxjs/operators';
 import { CoreWebService } from './core-web.service';
 import { DotcmsEventsService } from './dotcms-events.service';
 import { LoggerService } from './logger.service';
-import { Auth, LoginService } from './login.service';
+import { LoginService } from './login.service';
 import { DotEventTypeWrapper } from './models/dot-events/dot-event-type-wrapper';
 
 /**
@@ -55,11 +55,7 @@ export class SiteService {
             .subscribeToEvents<Site>(['SWITCH_SITE'])
             .subscribe(({ data }: DotEventTypeWrapper<Site>) => this.setCurrentSite(data));
 
-        loginService.watchUser((auth: Auth) => {
-            if (!auth.isLoginAs) {
-                this.loadCurrentSite();
-            }
-        });
+        loginService.watchUser(() => this.loadCurrentSite());
     }
 
     /**
