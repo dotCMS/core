@@ -78,7 +78,6 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     @Output() valueChange = new EventEmitter<JSONContent>();
 
     editor: Editor;
-    subject = new Subject();
 
     private _allowedBlocks = ['paragraph']; //paragraph should be always.
     private destroy$: Subject<boolean> = new Subject<boolean>();
@@ -112,8 +111,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             extensions: this.setEditorExtensions()
         });
 
-        this.editor.on('update', () => this.updateChartCount());
-        this.subject
+        this.valueChange
             .pipe(takeUntil(this.destroy$), debounceTime(250))
             .subscribe(() => this.updateChartCount());
     }
