@@ -3,6 +3,7 @@ package com.dotmarketing.startup.runonce;
 
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.DbType;
 import com.dotmarketing.exception.DotDataException;
 import org.junit.Test;
 
@@ -15,7 +16,7 @@ public class Task230420AlterVarcharLengthOfLockedByColTest {
     // Change the length to recreate the scenario
     private void setMinLengthBeforeTask (String tblName) throws SQLException {
         String query = "";
-        if (DbConnectionFactory.getDBType().equals("PostgreSQL")){
+        if (DbType.POSTGRESQL == DbType.getDbType(DbConnectionFactory.getDBType())){
             query = "alter table "+tblName+" alter column locked_by type varchar (36);";
         }
 

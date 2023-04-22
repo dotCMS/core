@@ -7,6 +7,11 @@ import com.dotmarketing.startup.StartupTask;
 
 import java.sql.SQLException;
 
+/**
+ * This class alter the locked_by column in four different tables.
+ * The locked_by column in some coses has a length of 36. With this class
+ * we are increasing that length to 100.
+ */
 public class Task230420AlterVarcharLengthOfLockedByCol implements StartupTask {
     private void alterTables() throws SQLException {
         DotConnect dc = new DotConnect();
