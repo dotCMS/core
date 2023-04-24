@@ -1801,5 +1801,115 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         assertTrue(multiTreeContentlets.contains(contentlet1.getIdentifier()));
         assertTrue(multiTreeContentlets.contains(contentlet2.getIdentifier()));
     }
-    ///
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#copyMultiTree(String, List, String)}}
+     * When:
+     * - Have a Page with several MultiTree into the DEFAULT Variant and different Peraonalization.
+     * - And copy the MUltiTree to a new {@link Variant}
+     *
+     * Should: Copy all the MultiTree to the new Variant and must keep the same Peraonalization
+     */
+    @Test
+    public void copyMultiTreeToNewVariant() throws DotDataException {
+        final Variant targetVariant = new VariantDataGen().nextPersisted();
+        final Variant extraVariant = new VariantDataGen().nextPersisted();
+        final Language language = new LanguageDataGen().nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType.id())
+                .languageId(language.getId())
+                .nextPersisted();
+
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType.id())
+                .languageId(language.getId())
+                .nextPersisted();
+
+        final Contentlet contentlet_3 = new ContentletDataGen(contentType.id())
+                .languageId(language.getId())
+                .nextPersisted();
+
+        final Contentlet contentlet_4 = new ContentletDataGen(contentType.id())
+                .languageId(language.getId())
+                .nextPersisted();
+
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+
+        final Container container = new ContainerDataGen().maxContentlets(1).nextPersisted();
+
+        final MultiTree multiTree_1 = new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setContentlet(contentlet_1)
+                .setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(1)
+                .nextPersisted();
+
+        final MultiTree multiTree_2 = new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setContentlet(contentlet_2)
+                .setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(2)
+                .nextPersisted();
+
+        final MultiTree multiTree_3 = new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setContentlet(contentlet_3)
+                .setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(3)
+                .nextPersisted();
+
+        final MultiTree multiTree_4 = new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setContentlet(contentlet_4)
+                .setInstanceID(UUIDGenerator.shorty())
+                .setPersonalization("personalization")
+                .setTreeOrder(1)
+                .setVariant(extraVariant)
+                .nextPersisted();
+
+        APILocator.getMultiTreeAPI().copyMultiTree(page.getIdentifier(),
+                list(multiTree_1, multiTree_2, multiTree_3), targetVariant.name());
+
+        final List<Map<String, String>> multiTrees = new DotConnect().setSQL(
+                        "SELECT * FROM multi_tree WHERE parent1 = ?")
+                .addParam(page.getIdentifier())
+                .loadResults();
+
+        assertEquals(7, multiTrees.size());
+
+        final Set<String> contentletsTargetVariant = multiTrees.stream()
+                .filter(multiTreeMap -> targetVariant.name().equals(multiTreeMap.get("variant_id")))
+                .map(multiTreeMap -> multiTreeMap.get("child"))
+                .collect(Collectors.toSet());
+
+        assertEquals(3, contentletsTargetVariant.size());
+        assertTrue(contentletsTargetVariant.contains(contentlet_1.getIdentifier()));
+        assertTrue(contentletsTargetVariant.contains(contentlet_2.getIdentifier()));
+        assertTrue(contentletsTargetVariant.contains(contentlet_3.getIdentifier()));
+
+        final Set<String> contentletsExtraVariant = multiTrees.stream()
+                .filter(multiTreeMap -> extraVariant.name().equals(multiTreeMap.get("variant_id")))
+                .map(multiTreeMap -> multiTreeMap.get("child"))
+                .collect(Collectors.toSet());
+
+        assertEquals(1, contentletsExtraVariant.size());
+        assertTrue(contentletsExtraVariant.contains(contentlet_4.getIdentifier()));
+
+        final Set<String> contentletsDefaultVariant = multiTrees.stream()
+                .filter(multiTreeMap -> VariantAPI.DEFAULT_VARIANT.name().equals(multiTreeMap.get("variant_id")))
+                .map(multiTreeMap -> multiTreeMap.get("child"))
+                .collect(Collectors.toSet());
+
+        assertEquals(3, contentletsDefaultVariant.size());
+        assertTrue(contentletsDefaultVariant.contains(contentlet_1.getIdentifier()));
+        assertTrue(contentletsDefaultVariant.contains(contentlet_2.getIdentifier()));
+        assertTrue(contentletsDefaultVariant.contains(contentlet_3.getIdentifier()));
+    }
+
 }

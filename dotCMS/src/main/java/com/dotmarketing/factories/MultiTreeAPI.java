@@ -470,6 +470,10 @@ public interface MultiTreeAPI {
                                              final String variantId
                                         ) throws DotDataException;
 
+    void copyMultiTree(final String pageId, final List<MultiTree> multiTrees,
+            String currentVariantId)
+            throws DotDataException;
+
     /**
      * Updates the current personalization to a new personalization
      *

@@ -671,36 +671,60 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
         if (!multiTrees.isEmpty()) {
 
-            final List<Params> insertParams = Lists.newArrayList();
-
-            for (final MultiTree tree : multiTrees) {
-                //This is for checking if the content we are trying to add is already added into the container
-                db.setSQL(SELECT_COUNT_MULTI_TREE_BY_RELATION_PERSONALIZATION_PAGE_CONTAINER_AND_CHILD)
-                        .addParam(tree.getRelationType())
-                        .addParam(tree.getPersonalization())
-                        .addParam(pageId)
-                        .addParam(tree.getContainerAsID())
-                        .addParam(tree.getContentlet())
-                        .addParam(tree.getVariantId());
-                final int contentExist = Integer.parseInt(db.loadObjectResults().get(0).get("cc").toString());
-                if(contentExist != 0){
-                    final String contentletTitle = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(tree.getContentlet()).getTitle();
-                    final String errorMsg = String.format("Content '%s' [ %s ] has already been added to Container " +
-                                                                  "'%s'", contentletTitle, tree.getContentlet(),
-                            tree.getContainer());
-                    Logger.debug(this,errorMsg);
-                    throw new IllegalArgumentException(errorMsg);
-                }
-
-                insertParams
-                        .add(new Params(pageId, tree.getContainerAsID(), tree.getContentlet(),
-                                tree.getRelationType(), tree.getTreeOrder(), tree.getPersonalization(), tree.getVariantId()));
-            }
-            db.executeBatch(INSERT_SQL, insertParams);
+            copyMultiTree(pageId, multiTrees);
         }
         this.refreshContentletReferenceCount(originalContentletIds, multiTrees);
         updateHTMLPageVersionTS(pageId, variantId);
         refreshPageInCache(pageId, variantId);
+    }
+
+    public void copyMultiTree(final String pageId, final List<MultiTree> multiTrees) throws DotDataException {
+        copyMultiTree(pageId, multiTrees, null);
+    }
+
+
+    /**
+     * Copy a collection of {@link MultiTree} but to a different {@link Variant}.
+     *
+     * @param pageId {@link String} Page's identifier
+     * @param multiTrees {@link List} of {@link MultiTree} to copy
+     * @param variantName {@link String} name of the variant to copy to
+     * @throws DotDataException
+     */
+    @Override
+    public void copyMultiTree(final String pageId, final List<MultiTree> multiTrees,
+            final String variantName) throws DotDataException {
+        final DotConnect db = new DotConnect();
+        final List<Params> insertParams = Lists.newArrayList();
+
+        for (final MultiTree tree : multiTrees) {
+            final String copiedMultiTreeVariantId =
+                    UtilMethods.isSet(variantName) ? variantName : tree.getVariantId();
+
+            //This is for checking if the content we are trying to add is already added into the container
+            db.setSQL(SELECT_COUNT_MULTI_TREE_BY_RELATION_PERSONALIZATION_PAGE_CONTAINER_AND_CHILD)
+                    .addParam(tree.getRelationType())
+                    .addParam(tree.getPersonalization())
+                    .addParam(pageId)
+                    .addParam(tree.getContainerAsID())
+                    .addParam(tree.getContentlet())
+                    .addParam(copiedMultiTreeVariantId);
+            final int contentExist = Integer.parseInt(db.loadObjectResults().get(0).get("cc").toString());
+            if(contentExist != 0){
+                final String contentletTitle = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(tree.getContentlet()).getTitle();
+                final String errorMsg = String.format("Content '%s' [ %s ] has already been added to Container " +
+                                                              "'%s'", contentletTitle, tree.getContentlet(),
+                        tree.getContainer());
+                Logger.debug(MultiTreeAPIImpl.class, errorMsg);
+                throw new IllegalArgumentException(errorMsg);
+            }
+
+            insertParams
+                    .add(new Params(pageId, tree.getContainerAsID(), tree.getContentlet(),
+                            tree.getRelationType(), tree.getTreeOrder(), tree.getPersonalization(),
+                            copiedMultiTreeVariantId));
+        }
+        db.executeBatch(INSERT_SQL, insertParams);
     }
 
     @Override
