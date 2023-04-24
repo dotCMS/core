@@ -174,7 +174,9 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
         const tr = this.editor.state.tr
             .step(new SetDocAttrStep('chartCount', this.characterCount.characters()))
             .step(new SetDocAttrStep('wordCount', this.characterCount.words()))
-            .step(new SetDocAttrStep('readingTime', this.readingTime));
+            .step(new SetDocAttrStep('readingTime', this.readingTime))
+            .setMeta('addToHistory', false);
+
         this.editor.view.dispatch(tr);
     }
 
