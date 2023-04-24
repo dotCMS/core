@@ -5,10 +5,10 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Treeable;
+import com.dotmarketing.business.ajax.DwrUtil;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.browser.ajax.BrowserAjax;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -90,11 +90,10 @@ public class BrowserTreeHelper {
      * @return Optional String, present if the folder select exists
      */
     public Optional<String> findSelectedFolder (final HttpServletRequest request) {
-
-        final BrowserAjax browserAjax = (BrowserAjax)request.getSession().getAttribute("BrowserAjax");
+        final String activeFolderId = (String) DwrUtil.getSession().getAttribute(ACTIVE_FOLDER_ID);
         String siteBrowserActiveFolderInode = (String)request.getSession().getAttribute("siteBrowserActiveFolderInode");
-        return Optional.ofNullable(null == siteBrowserActiveFolderInode && null != browserAjax?
-                browserAjax.getActiveFolderId(): siteBrowserActiveFolderInode);
+        return Optional.ofNullable(null == siteBrowserActiveFolderInode && null != activeFolderId?
+                                           activeFolderId: siteBrowserActiveFolderInode);
     }
 
     private Optional<Host> findHostFromPath(final String folderPath, final User user) {
