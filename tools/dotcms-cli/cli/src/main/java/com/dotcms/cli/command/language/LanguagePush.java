@@ -20,7 +20,13 @@ import picocli.CommandLine;
 @ActivateRequestContext
 @CommandLine.Command(
         name = LanguagePush.NAME,
-        description = "@|bold,green Save or update a language given a Language object (in JSON or YML format) or tag (e.g.: en-us)|@"
+        header = "@|bold,blue Push a language|@",
+        description = {
+                " Save or update a language given a Language object (in JSON or YML format) or tag (e.g.: en-us)",
+                " Push a language given a Language object (in JSON or YML format) or tag (e.g.: en-us)",
+                " If no file is specified, a new language will be created using the tag provided.",
+                "" // empty string to add a new line
+        }
 )
 /**
  * Command to push a language given a Language object (in JSON or YML format) or tag (e.g.: en-us)

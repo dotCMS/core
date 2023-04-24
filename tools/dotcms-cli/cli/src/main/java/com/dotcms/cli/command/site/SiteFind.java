@@ -15,8 +15,12 @@ import java.util.concurrent.Callable;
 
 @ActivateRequestContext
 @CommandLine.Command(name = SiteFind.NAME,
-     header = "@|bold,red Use this command to find Sites.|@",
-     description = "@|bold,green Retrieves Sites info.|@  @|bold,cyan --all|@ Brings them all.  Use in conjunction params @|bold,cyan -n|@ to filter by name. @|bold,cyan -a|@ Shows archived sites. @|bold,cyan -l|@ Shows live Sites. @|bold,cyan -p|@ (Page) @|bold,cyan -ps|@ (PageSize) Can be used combined for pagination."
+     header = "@|bold,blue Use this command to Search / Find Sites.|@",
+     description = {
+            "Search or Get a List with all available Sites.",
+            "Use @|yellow --name|@ in conjunction with @|bold,blue Filter/Search|@ Options.",
+             "" // This is needed to add a new line after the description.
+    }
 )
 public class SiteFind extends AbstractSiteCommand implements Callable<Integer> {
     static final String NAME = "find";
@@ -45,7 +49,7 @@ public class SiteFind extends AbstractSiteCommand implements Callable<Integer> {
 
     }
 
-    @CommandLine.ArgGroup(exclusive = false, order = 1, heading = "\nSearch Sites\n")
+    @CommandLine.ArgGroup(exclusive = false, order = 1, heading = "\n@|bold,blue Filter/Search Options. |@\n")
     FilterOptions filter;
 
     @CommandLine.Mixin

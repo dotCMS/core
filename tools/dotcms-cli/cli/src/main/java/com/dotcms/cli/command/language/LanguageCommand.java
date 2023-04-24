@@ -9,7 +9,14 @@ import picocli.CommandLine;
 @CommandLine.Command(
         name = com.dotcms.cli.command.language.LanguageCommand.NAME,
         aliases = { com.dotcms.cli.command.language.LanguageCommand.ALIAS },
-        header = "Language CRUD operations.",
+        header = "@|bold,blue Language operations.|@",
+        description = {
+                " Use the list of available sub-commands to manage languages.",
+                " Use @|yellow --help|@ to see the available subcommands.",
+                " For help on a specific subcommand do @|yellow language [SUBCOMMAND] --help|@",
+                " to see all available options and params.",
+                "" // empty line to separate from the subcommands
+        },
         subcommands = {
                 LanguagePull.class,
                 LanguageFind.class,
@@ -27,13 +34,13 @@ public class LanguageCommand implements Callable<Integer> {
     static final String ALIAS = "lang";
 
     @CommandLine.Mixin(name = "output")
-    protected OutputOptionMixin output;
+    OutputOptionMixin output;
 
     @CommandLine.Mixin
-    protected HelpOptionMixin helpOptionMixin;
+    HelpOptionMixin helpOptionMixin;
 
     @CommandLine.Spec
-    protected CommandLine.Model.CommandSpec spec;
+     CommandLine.Model.CommandSpec spec;
 
     @CommandLine.Unmatched // avoids throwing errors for unmatched arguments
     List<String> unmatchedArgs;

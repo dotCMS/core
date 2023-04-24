@@ -3,6 +3,7 @@ package com.dotcms.cli.command.site;
 import com.dotcms.api.SiteAPI;
 import com.dotcms.api.client.RestClientFactory;
 import com.dotcms.cli.common.FormatOptionMixin;
+import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.site.CreateUpdateSiteRequest;
@@ -20,7 +21,19 @@ import java.util.concurrent.Callable;
 
 @ActivateRequestContext
 @CommandLine.Command(name = SitePush.NAME,
-     description = "@|bold,green Retrieves Sites info.|@ Option params @|bold,cyan -n|@"
+     header = "@|bold,blue Push a Site from a given file |@",
+     description = {
+             " This command will push a site to the current active",
+             " remote instance of dotCMS from a given file.",
+             " When pulling a site from a remote dotCMS instance",
+             " the site is saved to a file.",
+             " The file name will be the site's name.",
+             " To make changes to the a Site",
+             " modify the file and push it back to the remote instance.",
+             " The file can also be used as a base to create a brand new Site.",
+             " The format can be changed using the @|yellow --format|@ option.",
+             "" // empty line left here on purpose to make room at the end
+     }
 )
 public class SitePush extends AbstractSiteCommand implements Callable<Integer>{
 
@@ -31,6 +44,9 @@ public class SitePush extends AbstractSiteCommand implements Callable<Integer>{
 
     @CommandLine.Mixin(name = "format")
     FormatOptionMixin formatOption;
+
+    @CommandLine.Mixin
+    HelpOptionMixin helpOption;
 
     @Inject
     RestClientFactory clientFactory;

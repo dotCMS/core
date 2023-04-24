@@ -2,43 +2,81 @@ package com.dotcms.cli.command.site;
 
 import com.dotcms.api.SiteAPI;
 import com.dotcms.api.client.RestClientFactory;
+import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.site.CopySiteRequest;
 import com.dotcms.model.site.CreateUpdateSiteRequest;
 import com.dotcms.model.site.SiteView;
-import picocli.CommandLine;
-
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import javax.enterprise.context.control.ActivateRequestContext;
+import javax.inject.Inject;
+import picocli.CommandLine;
 
 @ActivateRequestContext
 @CommandLine.Command(name = SiteCopy.NAME,
-        description = "@|bold,green Copy Site |@ No params are expected. "
+        header = "@|bold,blue Use this command to copy an existing site.|@",
+        description = {
+           " The command provides the ability to copy individually site elements such as: ",
+           " pages, folders, links, template containers, and site variables. ",
+           " Or everything at once through the use of the @|yellow --all|@ param. ",
+           " The new site will be created with the name specified in the param @|yellow --copyName|@ ",
+           "" // empty line left here on purpose to make room at the end
+        }
 )
 public class SiteCopy extends AbstractSiteCommand implements Callable<Integer> {
     static final String NAME = "copy";
 
     @CommandLine.Mixin(name = "output")
-    protected OutputOptionMixin output;
+    OutputOptionMixin output;
 
     @Inject
     RestClientFactory clientFactory;
 
-    @CommandLine.Option(names = {"-in", "--idOrName"},
-            order = 10, description = "Pull Site by id or name", required = true)
-    String siteNameOrId;
-
-    @CommandLine.Option(names = {"-d", "--deep"},
-            order = 20, description = "Pull Site by id or name", defaultValue = "false")
-    boolean deepCopy;
-
-    @CommandLine.Option(names = {"-cn", "--copyName"},
-            order = 10, description = "New Site name")
+    @CommandLine.Option(names = {"-cn", "--copyName"},  paramLabel = "copyName", description = "New Site name.")
     String copySiteName;
 
+    @CommandLine.Option(names = {"-in",
+            "--idOrName"}, paramLabel = "idOrName", description = "Site name or Id.", required = true)
+    String siteNameOrId;
+    @CommandLine.Option(names = {"-a",
+            "--all"}, paramLabel = "All", description = "if specified everything will be copied.", defaultValue = "false")
+    boolean copyAll;
+
+
+    static class CopyOptions {
+
+        @CommandLine.Option(names = {"-p",
+                "--page"}, paramLabel = "pages", description = "if specified content on pages will be copied.", defaultValue = "false")
+        boolean copyContentOnPages;
+
+        @CommandLine.Option(names = {"-c",
+                "--content"}, paramLabel = "Content", description = "if specified content on site will be copied.", defaultValue = "false")
+        boolean copyContentOnSite;
+
+        @CommandLine.Option(names = {"-f",
+                "--folder"}, paramLabel = "Folders", description = "if specified folders will be copied.", defaultValue = "false")
+        boolean copyFolders;
+
+        @CommandLine.Option(names = {"-l",
+                "--link"}, paramLabel = "Links", description = "if specified links will be copied.", defaultValue = "false")
+        boolean copyLinks;
+
+        @CommandLine.Option(names = {"-t",
+                "--template"}, paramLabel = "Templates", description = "if specified templates will be copied.", defaultValue = "false")
+        boolean copyTemplateContainers;
+
+        @CommandLine.Option(names = {"-v",
+                "--var"}, paramLabel = "Variables", description = "if specified site variables will be copied.", defaultValue = "false")
+        boolean copySiteVariables;
+    }
+
+    @CommandLine.ArgGroup(exclusive = false,  heading = "\n@|bold,blue Individual Copy Options. |@\n")
+    CopyOptions copyOptions;
+
+    @CommandLine.Mixin
+    HelpOptionMixin helpOptionMixin;
 
     @Override
     public Integer call() {
@@ -59,7 +97,8 @@ public class SiteCopy extends AbstractSiteCommand implements Callable<Integer> {
         final SiteView siteView = site.get();
 
         try {
-            ResponseEntityView<SiteView> copy = siteAPI.copy(fromSite(siteView, copySiteName, deepCopy));
+            ResponseEntityView<SiteView> copy = siteAPI.copy(fromSite(siteView, copySiteName,
+                    copyAll));
             output.info(String.format("New Copy Site is [%s].", copy.entity().hostName()));
         }catch (Exception e){
             output.error(String.format("An Error occurred copying site [%s] with error:[%s]. ",siteView.hostName(), e.getMessage()));
@@ -77,15 +116,33 @@ public class SiteCopy extends AbstractSiteCommand implements Callable<Integer> {
         CreateUpdateSiteRequest siteRequest = CreateUpdateSiteRequest.builder().siteName(
                 copyName
         ).build();
+
+        boolean copyContentOnPages = false;
+        boolean copyContentOnSite = false;
+        boolean copyFolders = false;
+        boolean copyLinks = false;
+        boolean copyTemplateContainers = false;
+        boolean copySiteVariables = false;
+
+        if(null != copyOptions){
+            copyContentOnPages = copyOptions.copyContentOnPages;
+            copyContentOnSite = copyOptions.copyContentOnSite;
+            copyFolders = copyOptions.copyFolders;
+            copyLinks = copyOptions.copyLinks;
+            copyTemplateContainers = copyOptions.copyTemplateContainers;
+            copySiteVariables = copyOptions.copySiteVariables;
+        }
+
+
         return CopySiteRequest.builder()
                .copyFromSiteId(fromSite.identifier())
                .copyAll(deepCopy)
-               .copyContentOnPages(deepCopy)
-               .copyContentOnSite(deepCopy)
-               .copyFolders(deepCopy)
-               .copyLinks(deepCopy)
-               .copyTemplatesContainers(deepCopy)
-               .copySiteVariables(deepCopy)
+               .copyContentOnPages(copyContentOnPages)
+               .copyContentOnSite(copyContentOnSite)
+               .copyFolders(copyFolders)
+               .copyLinks(copyLinks)
+               .copyTemplatesContainers(copyTemplateContainers)
+               .copySiteVariables(copySiteVariables)
                .site(siteRequest)
                .build();
     }

@@ -10,11 +10,11 @@ import java.util.concurrent.Callable;
 @CommandLine.Command(
         name = SiteCommand.NAME,
         aliases = { SiteCommand.ALIAS },
-        header = "Site operations.",
+        header = "@|bold,blue Site operations.|@",
         description = {
                 "Use the list of available sub-commands to manage sites.",
-                "Use @|bold,blue --help|@ to see the available subcommands.",
-                "For help on a specific sub command do @|bold,blue site [SUBCOMMAND] --help|@ to see all available options and params."
+                "Use @|yellow --help|@ to see the available subcommands.",
+                "For help on a specific subcommand do @|yellow site [SUBCOMMAND] --help|@ to see all available options and params."
         },
         subcommands = {
                 SiteFind.class,
@@ -43,7 +43,7 @@ public class SiteCommand implements Callable<Integer> {
     HelpOptionMixin helpOptionMixin;
 
     @CommandLine.Spec
-    protected CommandLine.Model.CommandSpec spec;
+    CommandLine.Model.CommandSpec spec;
 
     @CommandLine.Unmatched // avoids throwing errors for unmatched arguments
     List<String> unmatchedArgs;

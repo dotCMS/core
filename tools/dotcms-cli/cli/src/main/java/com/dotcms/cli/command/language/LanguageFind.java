@@ -2,6 +2,7 @@ package com.dotcms.cli.command.language;
 
 import com.dotcms.api.LanguageAPI;
 import com.dotcms.api.client.RestClientFactory;
+import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.language.Language;
 import java.util.List;
@@ -13,7 +14,12 @@ import picocli.CommandLine;
 @ActivateRequestContext
 @CommandLine.Command(
         name = LanguageFind.NAME,
-        description = "@|bold,green Get all existing languages|@"
+        header = "@|bold,blue Get all existing languages|@",
+        description = {
+                "This command will list all the languages available in the system.",
+                "The output will be a list of languages with their respective information.",
+                "" // empty line left here on purpose to make room at the end
+        }
 )
 /**
  * Command to list all languages
@@ -25,6 +31,9 @@ public class LanguageFind extends AbstractLanguageCommand implements Callable<In
 
     @CommandLine.Mixin(name = "output")
     OutputOptionMixin output;
+
+    @CommandLine.Mixin
+    HelpOptionMixin helpOptionMixin;
 
     @Inject
     RestClientFactory clientFactory;

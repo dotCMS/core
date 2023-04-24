@@ -26,13 +26,13 @@ import static org.apache.commons.lang3.BooleanUtils.toStringYesNo;
 @ActivateRequestContext
 @CommandLine.Command(
         name = InstanceCommand.NAME,
-        header = "@|bold,green Prints a list of available dotCMS instances.|@",
+        header = "@|bold,blue Prints a list of available dotCMS instances.|@",
         description = {
                 " A List with all the available dotCMS instances is printed.",
                 " The info includes API URL, active user and the current profile.",
-                " This list of available servers comes from the [dot-service.yml]",
-                " Located in the user's home directory.",
-                " Use to activate/switch dotCMS instance. @|bold,cyan -a  --activate|@",
+                " This list of available servers comes from the file [dot-service.yml]",
+                " Located in a folder named dotCMS under the user's home directory.",
+                " Use to activate/switch dotCMS instance. @|yellow -a  --activate|@",
                 " followed by the instance name.",
                 "" // empty line left here on purpose to make room at the end
         }

@@ -10,11 +10,11 @@ import java.util.concurrent.Callable;
 @CommandLine.Command(
         name = ContentTypeCommand.NAME,
         aliases = { ContentTypeCommand.ALIAS },
-        header = "Content type operations.",
+        header = "@|bold,blue Content type operations.|@",
         description = {
                 "Use the list of available sub-commands to manage content-types.",
-                "Use @|bold,blue --help|@ to see the available subcommands.",
-                "For help on a specific sub command do @|bold,blue content-type [SUBCOMMAND] --help|@ to see all available options and params."
+                "Use @|yellow --help|@ to see the available subcommands.",
+                "For help on a specific subcommand do @|yellow content-type [SUBCOMMAND] --help|@ to see all available options and params."
         },
         subcommands = {
           ContentTypeFind.class,
@@ -29,13 +29,13 @@ public class ContentTypeCommand implements Callable<Integer> {
     static final String ALIAS = "ct";
 
     @CommandLine.Mixin(name = "output")
-    protected OutputOptionMixin output;
+    OutputOptionMixin output;
 
     @CommandLine.Mixin
-    protected HelpOptionMixin helpOption;
+    HelpOptionMixin helpOption;
 
     @CommandLine.Spec
-    protected CommandLine.Model.CommandSpec spec;
+    CommandLine.Model.CommandSpec spec;
 
     @CommandLine.Unmatched // avoids throwing errors for unmatched arguments
     List<String> unmatchedArgs;

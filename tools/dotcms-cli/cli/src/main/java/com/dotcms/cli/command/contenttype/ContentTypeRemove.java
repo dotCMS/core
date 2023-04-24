@@ -2,6 +2,7 @@ package com.dotcms.cli.command.contenttype;
 
 import com.dotcms.api.ContentTypeAPI;
 import com.dotcms.api.client.RestClientFactory;
+import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.ResponseEntityView;
 import org.apache.commons.lang3.BooleanUtils;
@@ -14,8 +15,11 @@ import java.util.concurrent.Callable;
 @ActivateRequestContext
 @CommandLine.Command(
         name = ContentTypeRemove.NAME,
-        header = "@|bold,red Use this command to remove Content-types.|@",
-        description = "@|bold,green Remove a Content-type from a given CT name or Id.|@.",
+        header = "@|bold,blue Use this command to remove Content-types.|@",
+        description = {
+                " Remove a Content-type from a given CT name or Id.",
+                "" // Empty line left on purpose to make some room
+        },
         sortOptions = false
 )
 public class ContentTypeRemove extends AbstractContentTypeCommand implements Callable<Integer> {
@@ -27,6 +31,9 @@ public class ContentTypeRemove extends AbstractContentTypeCommand implements Cal
 
     @Inject
     RestClientFactory clientFactory;
+
+    @CommandLine.Mixin
+    HelpOptionMixin helpOption;
 
     @CommandLine.Parameters(index = "0", arity = "1", description = "Name Or Id.")
     String idOrVar;

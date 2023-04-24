@@ -3,6 +3,7 @@ package com.dotcms.cli.command.site;
 import static com.dotcms.cli.common.Utils.nextFileName;
 
 import com.dotcms.cli.common.FormatOptionMixin;
+import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.ShortOutputOptionMixin;
 import com.dotcms.model.site.SiteView;
@@ -18,7 +19,19 @@ import picocli.CommandLine;
 
 @ActivateRequestContext
 @CommandLine.Command(name = SitePull.NAME,
-        description = "@|bold,green Retrieves Sites info.|@ Option params @|bold,cyan idOrName|@ to get a site by name or id. @|bold,cyan -l|@ Shows live Sites. "
+        header = "@|bold,blue Retrieves a site descriptor from a name or d.|@",
+        description = {
+           "  This retrieves Sites info.",
+           "  The Site info will be retrieved and saved to a file.",
+           "  The file name will be the Site's host name.",
+           "  if a file is pulled more than once",
+           "  the file gets override.",
+           "  By default files are saved to the current directory. in json format.",
+           "  The format can be changed using the @|yellow --format|@ option.",
+           "  format can be either @|yellow JSON|@ or @|yellow YAML|@.",
+           "  File location can be changed using the @|yellow --saveTo|@ option.",
+           "" // empty line left here on purpose to make room at the end
+        }
 )
 public class SitePull extends AbstractSiteCommand implements Callable<Integer> {
 
@@ -33,7 +46,10 @@ public class SitePull extends AbstractSiteCommand implements Callable<Integer> {
     @CommandLine.Mixin(name = "shorten")
     ShortOutputOptionMixin shortOutputOption;
 
-    @CommandLine.Parameters(index = "0", arity = "1", description = "Site name Or Id.")
+    @CommandLine.Mixin
+    HelpOptionMixin helpOption;
+
+    @CommandLine.Parameters(index = "0", arity = "1", paramLabel = "idOrName", description = "Site name or Id.")
     String siteNameOrId;
 
     @CommandLine.Option(names = {"-to", "--saveTo"}, order = 5, description = "Save to.")

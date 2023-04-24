@@ -21,7 +21,7 @@ import java.util.concurrent.Callable;
 @ActivateRequestContext
 @CommandLine.Command(
         name = ContentTypePush.NAME,
-        header = "@|bold,red Use this command to push a Content-type from a file.|@",
+        header = "@|bold,blue Use this command to push a Content-type from a file.|@",
         description = {
                 " This command will push a content-type to the current active",
                 " remote instance of dotCMS from a given file.",
@@ -31,7 +31,7 @@ import java.util.concurrent.Callable;
                 " To make changes to the a Content-type",
                 " modify the file and push it back to the remote instance.",
                 " The file can also be used as a base to create a brand new content-type.",
-                " The format can be changed using the @|bold,cyan --format|@ option.",
+                " The format can be changed using the @|yellow --format|@ option.",
                 "" // empty line left here on purpose to make room at the end
         }
 )

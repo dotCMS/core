@@ -3,6 +3,7 @@ package com.dotcms.cli.command.language;
 import static com.dotcms.cli.common.Utils.nextFileName;
 
 import com.dotcms.cli.common.FormatOptionMixin;
+import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.ShortOutputOptionMixin;
 import com.dotcms.model.language.Language;
@@ -21,7 +22,16 @@ import picocli.CommandLine.Parameters;
 @ActivateRequestContext
 @CommandLine.Command(
         name = LanguagePull.NAME,
-        description = "@|bold,green Get a language given its id or tag (e.g.: en-us)|@"
+        header = "@|bold,blue dotCMS Language Pull|@",
+        description = {
+                " This command pulls a language given its id or tag (e.g.: en-us).",
+                " A language descriptor file will be created in the current directory.",
+                " If the language already exists, it will be overwritten.",
+                " The file name will be the language's tag (e.g.: en-us.json).",
+                " if a lang is pulled with the same name as an existing one,",
+                " the existing one will be overwritten.",
+                "" // empty string here so we can have a new line
+        }
 )
 /**
  * Command to pull a language given its id or tag (e.g.: en-us)
@@ -39,10 +49,13 @@ public class LanguagePull extends AbstractLanguageCommand implements Callable<In
     @CommandLine.Mixin(name = "shorten")
     ShortOutputOptionMixin shortOutputOption;
 
-    @Parameters(index = "0", arity = "1", description = "Language Id or Tag.")
+    @CommandLine.Mixin
+    HelpOptionMixin helpOptionMixin;
+
+    @Parameters(index = "0", arity = "1", paramLabel = "idOrTag", description = "Language Id or Tag.")
     String languageIdOrTag;
 
-    @CommandLine.Option(names = {"-to", "--saveTo"}, order = 5, description = "Save the returned language to a file.")
+    @CommandLine.Option(names = {"-to", "--saveTo"}, paramLabel = "saveTo", description = "Save the returned language to a file.")
     File saveAs;
 
     @Override

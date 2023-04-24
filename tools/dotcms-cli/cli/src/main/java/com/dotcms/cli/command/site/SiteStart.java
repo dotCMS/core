@@ -2,6 +2,7 @@ package com.dotcms.cli.command.site;
 
 import com.dotcms.api.SiteAPI;
 import com.dotcms.api.client.RestClientFactory;
+import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.site.SiteView;
@@ -14,7 +15,13 @@ import java.util.concurrent.Callable;
 
 @ActivateRequestContext
 @CommandLine.Command(name = SiteStart.NAME,
-     description = "@|bold,green Start Site |@ Option params @|bold,cyan --idOrName|@ site name or site id."
+        header = "@|bold,blue Use this command to start a site.|@",
+     description = {
+                " Before a site can be used it must be started first.",
+                " You can think og this as a way to publish a site.",
+                " Once a site is started it is available for use. ",
+                " See @|bold,cyan site:stop|@ command. ",
+             }
 )
 public class SiteStart extends AbstractSiteCommand implements Callable<Integer> {
 
@@ -23,10 +30,13 @@ public class SiteStart extends AbstractSiteCommand implements Callable<Integer> 
     @CommandLine.Mixin(name = "output")
     OutputOptionMixin output;
 
+    @CommandLine.Mixin
+    HelpOptionMixin helpOptionMixin;
+
     @Inject
     RestClientFactory clientFactory;
 
-    @CommandLine.Parameters(index = "0", arity = "1", description = "Site name Or Id.")
+    @CommandLine.Parameters(index = "0", arity = "1", paramLabel = "idOrName", description = "Site name Or Id.")
     String siteNameOrId;
 
     @Override

@@ -25,20 +25,18 @@ import static com.dotcms.cli.common.Utils.nextFileName;
 @ActivateRequestContext
 @CommandLine.Command(
         name = ContentTypePull.NAME,
-        header = "@|bold,red Get a Content-type from a given Id or Name |@",
+        header = "@|bold,blue Retrieves a Content-type descriptor from a given name or Id.|@",
         description = {
                 " This gets you a Content-type from a given Id or Name.",
                 " The content-type descriptor will be retried and saved to a file.",
                 " The file name will be the content-type's variable name.",
                 " if a file is pulled more than once",
-                " the file name will be appended with a number.",
-                " e.g. If a file called 'myContentType' is pulled twice",
-                " the second file will be named 'myContentType(1)'.",
+                " the file gets override.",
                 " By default files are saved to the current directory. in json format.",
-                " The format can be changed using the @|bold,cyan --format|@ option.",
-                " format can be either @|bold,cyan JSON|@ or @|bold,cyan YAML|@.",
-                " File location can be changed using the @|bold,cyan --saveTo|@ option.",
-                " Use @|bold,cyan --idOrName|@ to pass the CT identifier or name.",
+                " The format can be changed using the @|yellow --format|@ option.",
+                " format can be either @|yellow JSON|@ or @|yellow YAML|@.",
+                " File location can be changed using the @|yellow --saveTo|@ option.",
+                " Use @|yellow --idOrName|@ to pass the CT identifier or name.",
                 "" // empty line left here on purpose to make room at the end
         }
 )

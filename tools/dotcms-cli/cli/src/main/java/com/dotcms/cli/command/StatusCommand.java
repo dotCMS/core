@@ -22,7 +22,7 @@ import java.util.concurrent.Callable;
 @ActivateRequestContext
 @CommandLine.Command(
         name = StatusCommand.NAME,
-        header = {"@|bold,green Provides Current User logged-in and dotCMS instance Status.|@"},
+        header = {"@|bold,blue Provides Current User logged-in and dotCMS instance Status.|@"},
         description = {
                 " This command provides a list with all the available dotCMS instance.",
                 " The info includes API URL, active user and the current profile.",

@@ -2,6 +2,7 @@ package com.dotcms.cli.command.site;
 
 import com.dotcms.api.SiteAPI;
 import com.dotcms.api.client.RestClientFactory;
+import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.site.SiteView;
@@ -14,7 +15,17 @@ import java.util.concurrent.Callable;
 
 @ActivateRequestContext
 @CommandLine.Command(name = SiteRemove.NAME,
-     description = "@|bold,green Remove/Delete Site |@ Option params @|bold,cyan --idOrName|@ site name or site id."
+     header = "@|bold,blue Use this command to remove a site.|@",
+     description = {
+        " This operation is irreversible.",
+        " So be mindful of what you are doing.",
+        " Just like everything else in dotCMS. Sites must follow certain rules.",
+        " Before they can be deleted",
+        " The Site Not be the default site.",
+        " The Site must be stopped first. See @|bold,cyan site:stop|@ command.",
+        " The site must be archived first. See @|bold,cyan site:archive|@ command. ",
+        "" // empty line left here on purpose to make room at the end
+    }
 )
 public class SiteRemove extends AbstractSiteCommand implements Callable<Integer> {
 
@@ -23,10 +34,13 @@ public class SiteRemove extends AbstractSiteCommand implements Callable<Integer>
     @CommandLine.Mixin(name = "output")
     OutputOptionMixin output;
 
+    @CommandLine.Mixin
+    HelpOptionMixin helpOption;
+
     @Inject
     RestClientFactory clientFactory;
 
-    @CommandLine.Parameters(index = "0", arity = "1", description = "Site name Or Id.")
+    @CommandLine.Parameters(index = "0", arity = "1", paramLabel = "idOrName", description = "Site name Or Id.")
     String siteNameOrId;
 
     @Override
