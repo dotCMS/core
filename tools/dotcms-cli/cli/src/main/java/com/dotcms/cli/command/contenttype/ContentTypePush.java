@@ -1,22 +1,17 @@
 package com.dotcms.cli.command.contenttype;
 
 import com.dotcms.api.ContentTypeAPI;
-import com.dotcms.api.client.RestClientFactory;
 import com.dotcms.cli.common.FormatOptionMixin;
-import com.dotcms.cli.common.HelpOptionMixin;
-import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.model.ResponseEntityView;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.lang3.StringUtils;
-import picocli.CommandLine;
-
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.Callable;
+import javax.enterprise.context.control.ActivateRequestContext;
+import org.apache.commons.lang3.StringUtils;
+import picocli.CommandLine;
 
 @ActivateRequestContext
 @CommandLine.Command(
@@ -39,17 +34,8 @@ public class ContentTypePush extends AbstractContentTypeCommand implements Calla
 
     static final String NAME = "push";
 
-    @CommandLine.Mixin(name = "output")
-    OutputOptionMixin output;
-
     @CommandLine.Mixin(name = "format")
     FormatOptionMixin formatOptionMixin;
-
-    @CommandLine.Mixin
-    HelpOptionMixin helpOption;
-
-    @Inject
-    RestClientFactory clientFactory;
 
     @CommandLine.Parameters(index = "0", arity = "1", description = "The json/yml formatted content-type descriptor file to be pushed. ")
     File file;

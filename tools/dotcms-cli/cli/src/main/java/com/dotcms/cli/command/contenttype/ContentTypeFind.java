@@ -1,19 +1,14 @@
 package com.dotcms.cli.command.contenttype;
 
 import com.dotcms.api.ContentTypeAPI;
-import com.dotcms.api.client.RestClientFactory;
-import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.InteractiveOptionMixin;
-import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.model.ResponseEntityView;
-import org.apache.commons.lang3.BooleanUtils;
-import picocli.CommandLine;
-
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
 import java.util.List;
 import java.util.concurrent.Callable;
+import javax.enterprise.context.control.ActivateRequestContext;
+import org.apache.commons.lang3.BooleanUtils;
+import picocli.CommandLine;
 
 @ActivateRequestContext
 @CommandLine.Command(
@@ -28,17 +23,8 @@ public class ContentTypeFind extends AbstractContentTypeCommand implements Calla
 
     static final String NAME = "find";
 
-    @CommandLine.Mixin(name = "output")
-    OutputOptionMixin output;
-
     @CommandLine.Mixin
     InteractiveOptionMixin interactiveOption;
-
-    @CommandLine.Mixin
-    HelpOptionMixin helpOption;
-
-    @Inject
-    RestClientFactory clientFactory;
 
     /**
      * Here we encapsulate Filter endpoint options

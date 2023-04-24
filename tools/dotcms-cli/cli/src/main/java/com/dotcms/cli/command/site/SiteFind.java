@@ -1,17 +1,14 @@
 package com.dotcms.cli.command.site;
 
 import com.dotcms.api.SiteAPI;
-import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.InteractiveOptionMixin;
-import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.site.Site;
-import org.apache.commons.lang3.BooleanUtils;
-import picocli.CommandLine;
-
-import javax.enterprise.context.control.ActivateRequestContext;
 import java.util.List;
 import java.util.concurrent.Callable;
+import javax.enterprise.context.control.ActivateRequestContext;
+import org.apache.commons.lang3.BooleanUtils;
+import picocli.CommandLine;
 
 @ActivateRequestContext
 @CommandLine.Command(name = SiteFind.NAME,
@@ -24,12 +21,6 @@ import java.util.concurrent.Callable;
 )
 public class SiteFind extends AbstractSiteCommand implements Callable<Integer> {
     static final String NAME = "find";
-
-    @CommandLine.Mixin(name = "output")
-    OutputOptionMixin output;
-
-    @CommandLine.Mixin
-    HelpOptionMixin helpOptionMixin;
 
     static class FilterOptions {
         @CommandLine.Option(names = {"-n", "--name"}, arity = "1" ,description = "Filter by site name.")

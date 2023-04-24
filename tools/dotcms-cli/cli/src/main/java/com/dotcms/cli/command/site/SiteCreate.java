@@ -1,17 +1,12 @@
 package com.dotcms.cli.command.site;
 
 import com.dotcms.api.SiteAPI;
-import com.dotcms.api.client.RestClientFactory;
-import com.dotcms.cli.common.HelpOptionMixin;
-import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.site.CreateUpdateSiteRequest;
 import com.dotcms.model.site.SiteView;
-import picocli.CommandLine;
-
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
 import java.util.concurrent.Callable;
+import javax.enterprise.context.control.ActivateRequestContext;
+import picocli.CommandLine;
 
 @ActivateRequestContext
 @CommandLine.Command(name = SiteCreate.NAME,
@@ -31,15 +26,6 @@ public class SiteCreate extends AbstractSiteCommand implements Callable<Integer>
 
     static final String NAME = "create";
 
-    @CommandLine.Mixin(name = "output")
-    OutputOptionMixin output;
-
-    @CommandLine.Mixin
-    HelpOptionMixin helpOptionMixin;
-
-    @Inject
-    RestClientFactory clientFactory;
-
     @CommandLine.Parameters(index = "0", arity = "1", description = " Site name. ")
     String siteName;
 
@@ -51,7 +37,6 @@ public class SiteCreate extends AbstractSiteCommand implements Callable<Integer>
 
             final ResponseEntityView<SiteView> response = siteAPI.create(CreateUpdateSiteRequest.builder().siteName(siteName).build());
             final SiteView siteView = response.entity();
-            output.info(" Site [%s] successfully created.");
             output.info(String.format("Site @|bold,green [%s]|@ successfully created.",siteName));
             output.info(shortFormat(siteView));
             return CommandLine.ExitCode.OK;

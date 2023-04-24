@@ -40,17 +40,11 @@ import picocli.CommandLine.Parameters;
 public class LanguagePull extends AbstractLanguageCommand implements Callable<Integer> {
     static final String NAME = "pull";
 
-    @CommandLine.Mixin(name = "output")
-    OutputOptionMixin output;
-
     @CommandLine.Mixin(name = "format")
     FormatOptionMixin formatOption;
 
     @CommandLine.Mixin(name = "shorten")
     ShortOutputOptionMixin shortOutputOption;
-
-    @CommandLine.Mixin
-    HelpOptionMixin helpOptionMixin;
 
     @Parameters(index = "0", arity = "1", paramLabel = "idOrTag", description = "Language Id or Tag.")
     String languageIdOrTag;
@@ -85,7 +79,7 @@ public class LanguagePull extends AbstractLanguageCommand implements Callable<In
                 } else {
                     //But this behavior can be modified if we explicitly add a file name
                     final String fileName = String.format("%s.%s", language.language(), formatOption.getInputOutputFormat().getExtension());
-                    final Path next = Path.of(".", fileName);
+                    final Path next = Path.of(fileName);
                     path = nextFileName(next);
                 }
                 Files.writeString(path, asString);

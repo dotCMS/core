@@ -1,17 +1,12 @@
 package com.dotcms.cli.command.site;
 
 import com.dotcms.api.SiteAPI;
-import com.dotcms.api.client.RestClientFactory;
-import com.dotcms.cli.common.HelpOptionMixin;
-import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.site.SiteView;
-import picocli.CommandLine;
-
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import javax.enterprise.context.control.ActivateRequestContext;
+import picocli.CommandLine;
 
 @ActivateRequestContext
 @CommandLine.Command(name = SiteStart.NAME,
@@ -26,15 +21,6 @@ import java.util.concurrent.Callable;
 public class SiteStart extends AbstractSiteCommand implements Callable<Integer> {
 
     static final String NAME = "start";
-
-    @CommandLine.Mixin(name = "output")
-    OutputOptionMixin output;
-
-    @CommandLine.Mixin
-    HelpOptionMixin helpOptionMixin;
-
-    @Inject
-    RestClientFactory clientFactory;
 
     @CommandLine.Parameters(index = "0", arity = "1", paramLabel = "idOrName", description = "Site name Or Id.")
     String siteNameOrId;

@@ -29,7 +29,7 @@ import picocli.CommandLine.Parameters;
         name = LanguageRemove.NAME,
         header = "@|bold,blue Remove a language|@",
         description = {
-                "Remove a language given its id or tag (e.g.: en-us)",
+                " Remove a language given its id or tag (e.g.: en-us)",
                 "" // empty string here so we can have a new line
         }
 )
@@ -39,18 +39,8 @@ import picocli.CommandLine.Parameters;
  */
 public class LanguageRemove extends AbstractLanguageCommand implements Callable<Integer> {
     static final String NAME = "remove";
-
-    @CommandLine.Mixin(name = "output")
-    OutputOptionMixin output;
-
     @Parameters(index = "0", arity = "1", description = "Language Id or Tag.")
     String languageIdOrTag;
-
-    @CommandLine.Mixin
-    HelpOptionMixin helpOptionMixin;
-
-    @Inject
-    RestClientFactory clientFactory;
 
     @Override
     public Integer call() throws Exception {

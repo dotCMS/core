@@ -28,15 +28,6 @@ public class SiteArchive extends AbstractSiteCommand implements Callable<Integer
 
     static final String NAME = "archive";
 
-    @CommandLine.Mixin(name = "output")
-    OutputOptionMixin output;
-
-    @CommandLine.Mixin
-    HelpOptionMixin helpOptionMixin;
-
-    @Inject
-    RestClientFactory clientFactory;
-
     @CommandLine.Parameters(index = "0", arity = "1", paramLabel = "idOrName", description = "Site name Or Id.")
     String siteNameOrId;
 

@@ -1,16 +1,11 @@
 package com.dotcms.cli.command.site;
 
 import com.dotcms.api.SiteAPI;
-import com.dotcms.api.client.RestClientFactory;
-import com.dotcms.cli.common.HelpOptionMixin;
-import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.site.Site;
-import picocli.CommandLine;
-
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
 import java.util.concurrent.Callable;
+import javax.enterprise.context.control.ActivateRequestContext;
+import picocli.CommandLine;
 
 @ActivateRequestContext
 @CommandLine.Command(name = SiteCurrent.NAME,
@@ -26,15 +21,6 @@ import java.util.concurrent.Callable;
 )
 public class SiteCurrent extends AbstractSiteCommand implements Callable<Integer> {
     static final String NAME = "current";
-
-    @CommandLine.Mixin(name = "output")
-    OutputOptionMixin output;
-
-    @CommandLine.Mixin
-    HelpOptionMixin helpOptionMixin;
-
-    @Inject
-    RestClientFactory clientFactory;
 
     @Override
     public Integer call() {

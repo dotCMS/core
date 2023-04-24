@@ -3,8 +3,6 @@ package com.dotcms.cli.command.site;
 import static com.dotcms.cli.common.Utils.nextFileName;
 
 import com.dotcms.cli.common.FormatOptionMixin;
-import com.dotcms.cli.common.HelpOptionMixin;
-import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.ShortOutputOptionMixin;
 import com.dotcms.model.site.SiteView;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -37,17 +35,11 @@ public class SitePull extends AbstractSiteCommand implements Callable<Integer> {
 
     static final String NAME = "pull";
 
-    @CommandLine.Mixin(name = "output")
-    OutputOptionMixin output;
-
     @CommandLine.Mixin(name = "format")
     FormatOptionMixin formatOption;
 
     @CommandLine.Mixin(name = "shorten")
     ShortOutputOptionMixin shortOutputOption;
-
-    @CommandLine.Mixin
-    HelpOptionMixin helpOption;
 
     @CommandLine.Parameters(index = "0", arity = "1", paramLabel = "idOrName", description = "Site name or Id.")
     String siteNameOrId;
@@ -66,7 +58,7 @@ public class SitePull extends AbstractSiteCommand implements Callable<Integer> {
 
         if (site.isEmpty()) {
             output.error(String.format(
-                    "Error occurred while pulling Site Info: [%s].", siteNameOrId));
+                    "Failed pulling Site: [%s].", siteNameOrId));
             return CommandLine.ExitCode.SOFTWARE;
         }
 
@@ -87,7 +79,7 @@ public class SitePull extends AbstractSiteCommand implements Callable<Integer> {
                     path = saveAs.toPath();
                 } else {
                     final String fileName = String.format( "%s.%s", siteView.hostName(), formatOption.getInputOutputFormat().getExtension());
-                    final Path next = Path.of(".", fileName);
+                    final Path next = Path.of(fileName);
                     path = nextFileName(next);
                 }
                 Files.writeString(path, asString);

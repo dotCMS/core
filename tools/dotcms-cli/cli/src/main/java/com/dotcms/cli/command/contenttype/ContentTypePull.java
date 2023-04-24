@@ -1,26 +1,22 @@
 package com.dotcms.cli.command.contenttype;
 
+import static com.dotcms.cli.common.Utils.nextFileName;
+
 import com.dotcms.api.ContentTypeAPI;
-import com.dotcms.api.client.RestClientFactory;
 import com.dotcms.cli.common.FormatOptionMixin;
-import com.dotcms.cli.common.HelpOptionMixin;
-import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.common.ShortOutputOptionMixin;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.model.ResponseEntityView;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import picocli.CommandLine;
-import picocli.CommandLine.Parameters;
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
-import javax.ws.rs.NotFoundException;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.Callable;
-
-import static com.dotcms.cli.common.Utils.nextFileName;
+import javax.enterprise.context.control.ActivateRequestContext;
+import javax.ws.rs.NotFoundException;
+import picocli.CommandLine;
+import picocli.CommandLine.Parameters;
 
 @ActivateRequestContext
 @CommandLine.Command(
@@ -43,20 +39,11 @@ import static com.dotcms.cli.common.Utils.nextFileName;
 public class ContentTypePull extends AbstractContentTypeCommand implements Callable<Integer> {
 
     static final String NAME = "pull";
-
-    @CommandLine.Mixin(name = "output")
-    OutputOptionMixin output;
     @CommandLine.Mixin(name = "format")
     FormatOptionMixin formatOption;
 
     @CommandLine.Mixin(name = "shorten")
     ShortOutputOptionMixin shortOutputOption;
-
-    @CommandLine.Mixin
-    HelpOptionMixin helpOption;
-
-    @Inject
-    RestClientFactory clientFactory;
 
     @Parameters( paramLabel = "idOrName", index = "0", arity = "1", description = "Identifier or Name.")
     String idOrVar;
@@ -87,7 +74,7 @@ public class ContentTypePull extends AbstractContentTypeCommand implements Calla
                     } else {
                         //But this behavior can be modified if we explicitly add a file name
                         final String fileName = String.format("%s.%s",contentType.variable(), formatOption.getInputOutputFormat().getExtension());
-                        final Path next = Path.of(".", fileName);
+                        final Path next = Path.of(fileName);
                         path = nextFileName(next);
                     }
                     Files.writeString(path, asString);

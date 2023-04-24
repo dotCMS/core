@@ -1,9 +1,6 @@
 package com.dotcms.cli.command.site;
 
 import com.dotcms.api.SiteAPI;
-import com.dotcms.api.client.RestClientFactory;
-import com.dotcms.cli.common.HelpOptionMixin;
-import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.site.CopySiteRequest;
 import com.dotcms.model.site.CreateUpdateSiteRequest;
@@ -11,7 +8,6 @@ import com.dotcms.model.site.SiteView;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
 import picocli.CommandLine;
 
 @ActivateRequestContext
@@ -27,12 +23,6 @@ import picocli.CommandLine;
 )
 public class SiteCopy extends AbstractSiteCommand implements Callable<Integer> {
     static final String NAME = "copy";
-
-    @CommandLine.Mixin(name = "output")
-    OutputOptionMixin output;
-
-    @Inject
-    RestClientFactory clientFactory;
 
     @CommandLine.Option(names = {"-cn", "--copyName"},  paramLabel = "copyName", description = "New Site name.")
     String copySiteName;
@@ -74,9 +64,6 @@ public class SiteCopy extends AbstractSiteCommand implements Callable<Integer> {
 
     @CommandLine.ArgGroup(exclusive = false,  heading = "\n@|bold,blue Individual Copy Options. |@\n")
     CopyOptions copyOptions;
-
-    @CommandLine.Mixin
-    HelpOptionMixin helpOptionMixin;
 
     @Override
     public Integer call() {

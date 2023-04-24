@@ -1,17 +1,12 @@
 package com.dotcms.cli.command.site;
 
 import com.dotcms.api.SiteAPI;
-import com.dotcms.api.client.RestClientFactory;
-import com.dotcms.cli.common.HelpOptionMixin;
-import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.site.SiteView;
-import picocli.CommandLine;
-
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import javax.enterprise.context.control.ActivateRequestContext;
+import picocli.CommandLine;
 
 @ActivateRequestContext
 @CommandLine.Command(name = SiteSwitch.NAME,
@@ -24,15 +19,6 @@ import java.util.concurrent.Callable;
 public class SiteSwitch extends AbstractSiteCommand implements Callable<Integer> {
 
     static final String NAME = "switch";
-
-    @CommandLine.Mixin(name = "output")
-    OutputOptionMixin output;
-
-    @Inject
-    RestClientFactory clientFactory;
-
-    @CommandLine.Mixin
-    HelpOptionMixin helpOptionMixin;
 
     @CommandLine.Option(names = { "-in", "--idOrName" }, arity = "1", paramLabel = "idOrName", description = "Site name or Id.", required = true)
     String siteNameOrId;
