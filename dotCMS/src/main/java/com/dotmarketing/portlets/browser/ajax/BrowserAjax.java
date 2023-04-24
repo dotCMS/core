@@ -110,6 +110,7 @@ public class BrowserAjax {
 	private final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
 
 	String activeHostId = "";
+	private static final String ALL_SITES_ID = "allHosts";
 
     private static final String SELECTED_BROWSER_PATH_OBJECT = "SELECTED_BROWSER_PATH_OBJECT";
 
@@ -163,7 +164,7 @@ public class BrowserAjax {
 		final User user = DwrUtil.getLoggedInUser();
         siteId = UtilMethods.isSet(siteId) ? siteId : this.getCurrentHost();
         final Role[] roles = DwrUtil.getUserRoles(user);
-		final List<Host> siteList = !UtilMethods.isSet(siteId) || siteId.equals("allHosts")
+		final List<Host> siteList = !UtilMethods.isSet(siteId) || siteId.equals(ALL_SITES_ID)
 										 ? this.hostAPI.findAllFromCache(user, false)
 										 : List.of(this.hostAPI.find(siteId, user, false));
 
@@ -846,7 +847,7 @@ public class BrowserAjax {
 			folderDataMap.put("open", false);
 			// For backwards compatibility, we need to check the folder-selected status using both folder Inode and
 			// Identifier
-			if (null != openFolderIds && (openFolderIds.contains(folder.getIdentifier()) || openFolderIds.contains(folder.getInode()))) {
+			if (openFolderIds.contains(folder.getIdentifier()) || openFolderIds.contains(folder.getInode())) {
         		final List<Map> childrenMaps = this.getFoldersTree(folder, roles);
         		folderDataMap.put("open", true);
         		folderDataMap.put("childrenFolders", childrenMaps);
@@ -2189,7 +2190,7 @@ public class BrowserAjax {
 		if(permissions.contains(PERMISSION_READ)){
 			Host allHosts = new Host();
 			allHosts.setHostname("All Hosts");
-			allHosts.setIdentifier("allHosts");
+			allHosts.setIdentifier(ALL_SITES_ID);
 			hostsToReturn.add(hostMap(allHosts));
 		}
 
@@ -2198,7 +2199,7 @@ public class BrowserAjax {
 
 
 	public List<Map<String, Object>> getHostSubfolders(String hostId) throws PortalException, SystemException, DotDataException, DotSecurityException {
-		if(hostId.equals("allHosts")){
+		if(hostId.equals(ALL_SITES_ID)){
 			return  new ArrayList<Map<String,Object>>();
 		}
     	UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
@@ -2373,7 +2374,7 @@ public class BrowserAjax {
 	}
 
 	public List<Map<String, Object>> getHostThemes(String hostId) throws PortalException, SystemException, DotDataException, DotSecurityException {
-		if(hostId.equals("allHosts")){
+		if(hostId.equals(ALL_SITES_ID)){
 			return  new ArrayList<Map<String,Object>>();
 		}
     	UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
