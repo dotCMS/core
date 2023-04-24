@@ -81,7 +81,9 @@
         top: 45px;
         width: max-content;
 
-        dot-icon {
+        i.pi {
+            color: $color-palette-primary;
+            font-size: $font-size-xxl;
             margin-bottom: $spacing-3;
         }
     }

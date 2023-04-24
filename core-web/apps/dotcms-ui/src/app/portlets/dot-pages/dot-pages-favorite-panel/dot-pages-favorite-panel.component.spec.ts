@@ -152,8 +152,11 @@ describe('DotPagesFavoritePanelComponent', () => {
 
         it('should load empty pages cards container', () => {
             expect(
-                de.query(By.css('.dot-pages-empty__container dot-icon')).componentInstance.name
-            ).toBe('star_outline');
+                de
+                    .query(By.css('.dot-pages-empty__container i'))
+                    .nativeElement.classList.contains('pi-star')
+            ).toBeTrue();
+
             expect(de.query(By.css('.dot-pages-empty__header')).nativeElement.outerText).toBe(
                 'favoritePage.listing.empty.header'
             );
