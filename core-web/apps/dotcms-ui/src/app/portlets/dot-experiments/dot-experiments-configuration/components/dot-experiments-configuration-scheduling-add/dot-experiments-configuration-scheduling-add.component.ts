@@ -127,14 +127,14 @@ export class DotExperimentsConfigurationSchedulingAddComponent implements OnInit
             this.minEndDate = null;
         }
 
-        this.clearEndDate();
-    }
-
-    private clearEndDate(): void {
-        if (this.form.value.startDate && this.form.value.startDate > this.form.value.endDate) {
+        if (this.isStatDateMoreRecent()) {
             this.form.patchValue({
                 endDate: null
             });
         }
+    }
+
+    private isStatDateMoreRecent(): boolean {
+        return this.form.value.startDate && this.form.value.startDate > this.form.value.endDate;
     }
 }
