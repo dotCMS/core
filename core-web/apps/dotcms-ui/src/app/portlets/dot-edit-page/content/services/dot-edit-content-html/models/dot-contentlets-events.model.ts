@@ -12,6 +12,8 @@ export type DotContentletEventAddContentType = DotContentletEvent<DotAddContentT
 
 export type DotContentletEventRelocate = DotContentletEvent<DotRelocatePayload>;
 
+export type DotContentletEventReorder = DotContentletEvent<DotPageContainer>;
+
 export type DotContentletEventSelect = DotContentletEvent<DotPageContent>;
 
 export type DotContentletEventSave = DotContentletEvent<DotPageContent>;
