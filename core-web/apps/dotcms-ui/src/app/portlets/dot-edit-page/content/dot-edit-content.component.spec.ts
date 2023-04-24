@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { of, throwError } from 'rxjs';
+import { of } from 'rxjs';
 
-import { HttpErrorResponse } from '@angular/common/http';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, ElementRef, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, fakeAsync, flush, TestBed, tick } from '@angular/core/testing';
@@ -14,7 +13,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
-import { DialogService } from 'primeng/dynamicdialog';
+import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotOverlayMaskModule } from '@components/_common/dot-overlay-mask/dot-overlay-mask.module';
@@ -24,6 +23,7 @@ import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
 import { DotContentletEditorModule } from '@components/dot-contentlet-editor/dot-contentlet-editor.module';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotDownloadBundleDialogService } from '@dotcms/app/api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
@@ -103,6 +103,23 @@ import { DotEditPageInfoModule } from '../components/dot-edit-page-info/dot-edit
 import { DotPageContent } from '../shared/models';
 
 const EXPERIMENT_MOCK = getExperimentMock(1);
+
+const CONTENT_EDIT_OPTIONS = {
+    option1: {
+        value: 'current',
+        message: 'editpage.content.edit.content.in.this.page.message',
+        icon: 'article',
+        label: 'editpage.content.edit.content.in.this.page',
+        buttonLabel: 'editpage.content.edit.content.in.this.page.button.label'
+    },
+    option2: {
+        value: 'all',
+        message: 'editpage.content.edit.content.in.all.pages.message',
+        icon: 'dynamic_feed',
+        label: 'editpage.content.edit.content.in.all.pages',
+        buttonLabel: 'editpage.content.edit.content.in.all.pages.button.label'
+    }
+};
 
 @Component({
     selector: 'dot-global-message',
@@ -216,7 +233,8 @@ describe('DotEditContentComponent', () => {
             'dot.common.content.search': 'Content Search',
             'an-unexpected-system-error-occurred': 'Error msg',
             'editpage.content.contentlet.remove.confirmation_message.header': 'header',
-            'editpage.content.contentlet.remove.confirmation_message.message': 'message'
+            'editpage.content.contentlet.remove.confirmation_message.message': 'message',
+            'Edit-Content': 'Edit Content'
         });
 
         TestBed.configureTestingModule({
@@ -305,7 +323,7 @@ describe('DotEditContentComponent', () => {
                         data: of({})
                     }
                 },
-                DotMessageDisplayService,
+                { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
                 ConfirmationService,
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 DotEventsService,
@@ -351,9 +369,7 @@ describe('DotEditContentComponent', () => {
         router = de.injector.get(Router);
         spyOn(dotPageStateService, 'reload');
 
-        spyOn(dotEditContentHtmlService, 'renderAddedForm').and.returnValue(
-            of([{ identifier: '123', uuid: 'uui-1' }])
-        );
+        spyOn(dotEditContentHtmlService, 'renderAddedForm');
     });
 
     describe('elements', () => {
@@ -391,12 +407,6 @@ describe('DotEditContentComponent', () => {
                     expect<any>(dotEditContentHtmlService.renderAddedForm).toHaveBeenCalledWith(
                         '123'
                     );
-                    expect(dotEditPageService.save).toHaveBeenCalledWith('123', [
-                        { identifier: '123', uuid: 'uui-1' }
-                    ]);
-
-                    expect(dotGlobalMessageService.success).toHaveBeenCalledTimes(1);
-                    expect(dotPageStateService.reload).toHaveBeenCalledTimes(1);
                     expect(dotFormSelector.componentInstance.show).toBe(false);
                 });
 
@@ -1075,6 +1085,38 @@ describe('DotEditContentComponent', () => {
                         });
                     });
 
+                    it('should open dialog if onNumberPages is greater than 1 ', () => {
+                        spyOn(dialogService, 'open').and.returnValue({
+                            onClose: of('')
+                        } as DynamicDialogRef);
+
+                        spyOn(dotContentletEditorService, 'edit');
+
+                        fixture.detectChanges();
+
+                        dotEditContentHtmlService.iframeActions$.next({
+                            name: 'edit',
+                            dataset: {
+                                dotInode: 'test_inode',
+                                onNumberOfPages: '2'
+                            },
+                            target: {
+                                contentWindow: {
+                                    ngEditContentletEvents: null
+                                }
+                            }
+                        });
+
+                        expect(dialogService.open).toHaveBeenCalledTimes(1);
+                        expect(dialogService.open).toHaveBeenCalledWith(jasmine.any(Function), {
+                            header: 'Edit Content',
+                            width: '37rem',
+                            data: { options: CONTENT_EDIT_OPTIONS },
+                            contentStyle: { padding: '0px' }
+                        });
+                        expect(dotContentletEditorService.edit).not.toHaveBeenCalled();
+                    });
+
                     it('should handle code event', (done) => {
                         spyOn(dotContentletEditorService, 'edit').and.callFake((param) => {
                             expect(param.data.inode).toBe('test_inode');
@@ -1427,38 +1469,25 @@ describe('DotEditContentComponent', () => {
                 fixture.detectChanges();
 
                 expect<any>(dotEditContentHtmlService.renderAddedForm).toHaveBeenCalledWith('123');
-
-                expect<any>(dotEditPageService.save).toHaveBeenCalledWith('123', [
-                    { identifier: '123', uuid: 'uui-1', personaTag: 'SuperPersona' }
-                ]);
             });
         });
     });
 
     describe('errors', () => {
-        let httpErrorManagerService: DotHttpErrorManagerService;
         beforeEach(() => {
-            httpErrorManagerService = de.injector.get(DotHttpErrorManagerService);
             spyOn(dotConfigurationService, 'getKeyAsList').and.returnValue(
                 of(['host', 'vanityurl', 'persona', 'languagevariable'])
             );
+            fixture.detectChanges();
         });
 
         describe('iframe events', () => {
-            it('should handle error message add reload content', () => {
-                const errorResponse = { error: { message: 'error' } } as HttpErrorResponse;
-                spyOn(dotEditPageService, 'save').and.returnValue(throwError(errorResponse));
-                spyOn(dotPageStateService, 'updatePageStateHaveContent');
-                spyOn(httpErrorManagerService, 'handle');
-
-                fixture.detectChanges();
-
+            it('should reload content on SAVE_ERROR', () => {
                 dotEditContentHtmlService.pageModel$.next({
                     model: [{ identifier: 'test', uuid: '111' }],
-                    type: PageModelChangeEventType.ADD_CONTENT
+                    type: PageModelChangeEventType.SAVE_ERROR
                 });
 
-                expect(httpErrorManagerService.handle).toHaveBeenCalledOnceWith(errorResponse);
                 expect(dotPageStateService.reload).toHaveBeenCalledTimes(1);
             });
         });

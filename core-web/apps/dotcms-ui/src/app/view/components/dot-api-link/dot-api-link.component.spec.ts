@@ -40,7 +40,7 @@ describe('DotApiLinkComponent', () => {
     });
 
     it('should show label', () => {
-        expect(link.nativeElement.textContent).toBe('link API ');
+        expect(link.nativeElement.textContent).toBe('API');
     });
 
     it('should set link properties and attr correctly', () => {
