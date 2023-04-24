@@ -14,11 +14,11 @@ import java.sql.SQLException;
  */
 public class Task230420AlterVarcharLengthOfLockedByCol implements StartupTask {
     private void alterTables() throws SQLException {
-        DotConnect dc = new DotConnect();
-        dc.executeStatement("alter table contentlet_version_info alter column locked_by type varchar (100);");
-        dc.executeStatement("alter table container_version_info alter column locked_by type varchar (100);");
-        dc.executeStatement("alter table template_version_info alter column locked_by type varchar (100);");
-        dc.executeStatement("alter table link_version_info alter column locked_by type varchar (100);");
+        final DotConnect dc = new DotConnect();
+        dc.executeStatement("alter table contentlet_version_info alter column locked_by type varchar (100)");
+        dc.executeStatement("alter table container_version_info alter column locked_by type varchar (100)");
+        dc.executeStatement("alter table template_version_info alter column locked_by type varchar (100)");
+        dc.executeStatement("alter table link_version_info alter column locked_by type varchar (100)");
     }
     @Override
     public boolean forceRun() {
