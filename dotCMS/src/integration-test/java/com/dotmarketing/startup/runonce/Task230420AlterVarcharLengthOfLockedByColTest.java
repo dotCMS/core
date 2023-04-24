@@ -3,7 +3,6 @@ package com.dotmarketing.startup.runonce;
 
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.DbType;
 import com.dotmarketing.exception.DotDataException;
 import org.junit.Test;
 
