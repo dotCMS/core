@@ -7,13 +7,16 @@ export const INLINE_TINYMCE_SCRIPTS = `
             const dataset = ed.targetElm.dataset;
             const element = ed.targetElm;
             const container = ed.bodyElement.closest('[data-dot-object="container"]');
-
+            const contentlet = container.querySelector('[data-dot-object="contentlet"]');
             const data = {
                 dataset,
                 innerHTML: content,
                 element,
                 eventType,
                 isNotDirty: ed.isNotDirty,
+                container,
+                contentlet,
+                initEditor
             }
 
             // For full editor we are adding pointer-events: none to all it children, 
@@ -107,4 +110,28 @@ export const INLINE_TINYMCE_SCRIPTS = `
             });
         }
     });
+
+
+    function initEditor(element) {
+        const { dataset } = element;
+        const dataSelector =
+        '[data-inode="' +
+        dataset.inode +
+        '"][data-field-name="' +
+        dataset.fieldName +
+        '"]';
+
+    // if the mode is truthy we initialize tinymce
+        if (dataset.mode) {
+
+            tinymce
+            .init({
+                ...tinyMCEConfig[dataset.mode || 'minimal'],
+                selector: dataSelector,
+            })
+            .then(([ed]) => {
+                ed?.editorCommands.execCommand("mceFocus");
+            });
+        }
+    }
 `;

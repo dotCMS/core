@@ -41,6 +41,7 @@ import {
 } from './models/dot-contentlets-events.model';
 
 import { DotContainerContentletService } from '../dot-container-contentlet.service';
+import { DotCopyContentModalService } from '../dot-copy-content-modal/dot-copy-content-modal.service';
 import { DotDOMHtmlUtilService } from '../html/dot-dom-html-util.service';
 import { DotDragDropAPIHtmlService } from '../html/dot-drag-drop-api-html.service';
 import { DotEditContentToolbarHtmlService } from '../html/dot-edit-content-toolbar-html.service';
@@ -87,6 +88,7 @@ export class DotEditContentHtmlService {
     private docClickSubscription: Subscription;
     private updateContentletInode = false;
     private remoteRendered: boolean;
+    private askToCopy = true;
 
     private readonly docClickHandlers;
 
@@ -102,7 +104,8 @@ export class DotEditContentHtmlService {
         private dotGlobalMessageService: DotGlobalMessageService,
         private dotWorkflowActionsFireService: DotWorkflowActionsFireService,
         private ngZone: NgZone,
-        private dotLicenseService: DotLicenseService
+        private dotLicenseService: DotLicenseService,
+        private readonly dotCopyContentModalService: DotCopyContentModalService
     ) {
         this.contentletEvents$.subscribe(
             (
@@ -297,6 +300,11 @@ export class DotEditContentHtmlService {
                 this.currentPage
             );
 
+            // console.log('containerEl');
+            // console.log(containerEl);
+            // console.log('contentlet');
+            // console.log(contentlet);
+
             this.savePage(this.getContentModel(contentlet.identifier))
                 .pipe(
                     switchMap(() => contentletHTML$),
@@ -306,6 +314,9 @@ export class DotEditContentHtmlService {
                     if (contentletHtml) {
                         const contentletEl: HTMLElement =
                             this.generateNewContentlet(contentletHtml);
+
+                        // console.log('contentletEl');
+                        // console.log(contentletEl);
                         containerEl.replaceChild(contentletEl, contentletPlaceholder);
 
                         // Update the model with the recently added contentlet
@@ -399,7 +410,7 @@ export class DotEditContentHtmlService {
      * @memberof DotEditContentHtmlService
      */
     getContentModel(addedContentId: string = ''): DotPageContainer[] {
-        const { uuid, identifier } = this.currentContainer;
+        const { uuid, identifier } = this.currentContainer || {};
 
         return this.getEditPageIframe().contentWindow['getDotNgModel']({
             uuid,
@@ -728,6 +739,7 @@ export class DotEditContentHtmlService {
     private handleTinyMCEOnBlurEvent(content: DotInlineEditContent) {
         // If editor is dirty then we continue making the request
         if (!content.isNotDirty) {
+            this.askToCopy = true;
             // Add the loading indicator to the field
             content.element.classList.add('inline-editing--saving');
 
@@ -740,6 +752,7 @@ export class DotEditContentHtmlService {
                 .pipe(take(1))
                 .subscribe(
                     () => {
+                        // console.log(data.body);
                         // onSuccess
                         content.element.classList.remove('inline-editing--saving');
                         delete this.inlineCurrentContent[content.element.id];
@@ -788,13 +801,36 @@ export class DotEditContentHtmlService {
                     }, 1800);
                 }
             },
-            inlineEdit: (contentlet: DotInlineEditContent) => {
-                if (contentlet.eventType === 'focus') {
-                    this.handleTinyMCEOnFocusEvent(contentlet);
+            inlineEdit: (inlineEditData: DotInlineEditContent) => {
+                // const { contentlet: contentletHTML, container, initEditor } = inlineEditData;
+                const { contentlet: contentletHTML, container } = inlineEditData;
+                const copyContent = this.getCopyContentData(contentletHTML, container);
+                // const numberOfPages = +this.getContentletNumberOfPages(contentletHTML);
+                const type = inlineEditData.eventType;
+                // const elementId = inlineEditData.element;
+
+                if (type === 'focus' && this.askToCopy) {
+                    this.dotCopyContentModalService
+                        .openCopyContentModal({
+                            copyContent,
+                            inode: inlineEditData.dataset.inode
+                        })
+                        .subscribe((data) => {
+                            this.test(contentletHTML, data);
+                            // const { inode, identifier } = data;
+                            // const { inode } = data;
+                            // console.log(data);
+                            // if (inode) {
+                            //     this.askToCopy = false;
+                            //     initEditor(elementId);
+                            // }
+                        });
+                } else if (type === 'focus') {
+                    this.handleTinyMCEOnFocusEvent(inlineEditData);
                 }
 
-                if (contentlet.eventType === 'blur') {
-                    this.handleTinyMCEOnBlurEvent(contentlet);
+                if (type === 'blur') {
+                    this.handleTinyMCEOnBlurEvent(inlineEditData);
                 }
             },
             // When a user select a content from the search jsp
@@ -1006,5 +1042,34 @@ export class DotEditContentHtmlService {
         }
 
         return null;
+    }
+
+    private test(_currentHTML: HTMLElement, _contentlet: DotPageContent): void {
+        // console.log(currentHTML);
+        // console.log(contentlet);
+        // console.log(this.currentContainer);
+        // const contentletHTML$ = this.dotContainerContentletService.getContentletToContainer(
+        //     this.currentContainer,
+        //     contentlet,
+        //     this.currentPage
+        // );
+        // this.savePage(this.getContentModel(contentlet.identifier))
+        //     .pipe(
+        //         switchMap(() => contentletHTML$),
+        //         take(1)
+        //     )
+        //     .subscribe((contentletHtml: string) => {
+        //         if (contentletHtml) {
+        //             const contentletEl: HTMLElement = this.generateNewContentlet(contentletHtml);
+        //             containerEl.replaceChild(contentletEl, current);
+        //             // Update the model with the recently added contentlet
+        //             this.pageModel$.next({
+        //                 model: this.getContentModel(),
+        //                 type: PageModelChangeEventType.ADD_CONTENT
+        //             });
+        //             this.currentAction = DotContentletAction.EDIT;
+        //             this.updateContainerToolbar(containerEl.dataset.dotIdentifier);
+        //         }
+        //     });
     }
 }
