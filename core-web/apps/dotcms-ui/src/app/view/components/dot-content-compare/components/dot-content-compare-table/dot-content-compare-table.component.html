@@ -111,6 +111,7 @@
                     </dot-content-compare-preview-field>
                 </td>
             </ng-container>
+
             <ng-container *ngSwitchCase="'JSON-Field'">
                 <td
                     [innerHTML]="data.working[field.variable] | json"
@@ -124,6 +125,21 @@
                     "
                     data-testId="table-json-compare"
                 ></td>
+            </ng-container>
+            <ng-container *ngSwitchCase="'Story-Block'">
+                <td>
+                    <dot-content-compare-block-editor
+                        [field]="field.variable"
+                        [data]="data"
+                    ></dot-content-compare-block-editor>
+                </td>
+                <td>
+                    <dot-content-compare-block-editor
+                        [showDiff]="showDiff"
+                        [field]="field.variable"
+                        [data]="data"
+                    ></dot-content-compare-block-editor>
+                </td>
             </ng-container>
             <ng-container *ngSwitchDefault>
                 <td
