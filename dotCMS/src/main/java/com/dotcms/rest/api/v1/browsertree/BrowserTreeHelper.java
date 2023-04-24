@@ -85,17 +85,6 @@ public class BrowserTreeHelper {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Tries to find the select folder
-     * @return Optional String, present if the folder select exists
-     */
-    public Optional<String> findSelectedFolder (final HttpServletRequest request) {
-        final String activeFolderId = (String) DwrUtil.getSession().getAttribute(ACTIVE_FOLDER_ID);
-        String siteBrowserActiveFolderInode = (String)request.getSession().getAttribute("siteBrowserActiveFolderInode");
-        return Optional.ofNullable(null == siteBrowserActiveFolderInode && null != activeFolderId?
-                                           activeFolderId: siteBrowserActiveFolderInode);
-    }
-
     private Optional<Host> findHostFromPath(final String folderPath, final User user) {
 
         final int hostIndicatorIndex = folderPath.indexOf(HostUtil.HOST_INDICATOR);
