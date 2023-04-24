@@ -1,5 +1,3 @@
-export const MODEL_VAR_NAME = 'dotNgModel';
-
 export const EDIT_PAGE_JS = `
 (function () {
     var forbiddenTarget;
@@ -18,17 +16,39 @@ function initDragAndDrop () {
         return containers;
     }
 
-    function getDotNgModel() {
-        var model = [];
+    function getDotNgModel(data = {}) {
+        const { identifier, uuid, addedContentId } = data;
+        const model = [];
         getContainers().forEach(function(container) {
-            var contentlets = Array.from(container.querySelectorAll('[data-dot-object="contentlet"]'));
+            const contentlets = Array.from(container.querySelectorAll('[data-dot-object="contentlet"]'));
+            const placeholder = container.querySelector('#contentletPlaceholder');
+            const contentletsId = contentlets
+                .map((contentlet) => {
+                    // Replace current PlaceHolder position with the new contentlet Id that will be added
+                    if(contentlet === placeholder) {
+                        return addedContentId;
+                    }
+
+                    return contentlet.dataset.dotIdentifier;
+                });
+
+            const { dotIdentifier, dotUuid } = container.dataset;
+            const isSameUuid = uuid === dotUuid;
+            const isSameIdentifier = identifier === dotIdentifier;
+
+            // If the placeholder is not present and the containers matched
+            // add the new contentlet Id at the end of the array
+            if (isSameUuid && isSameIdentifier && !placeholder) {
+                contentletsId.push(addedContentId);
+            }
+
+            // Filter the array to remove the undefined values
+            const filteredContentletsId = contentletsId.filter((value) => !!value);
 
             model.push({
-                identifier: container.dataset.dotIdentifier,
-                uuid: container.dataset.dotUuid,
-                contentletsId: contentlets.map(function(contentlet) {
-                    return contentlet.dataset.dotIdentifier;
-                })
+                identifier: dotIdentifier,
+                uuid: dotUuid,
+                contentletsId: filteredContentletsId
             });
         });
         return model;
@@ -108,9 +128,9 @@ function initDragAndDrop () {
     drake.on('drop', function(el, target, source, sibling) {
         const updatedModel = getDotNgModel();
         if (JSON.stringify(updatedModel) !== JSON.stringify(currentModel)) {
-            window.${MODEL_VAR_NAME}.next({
-                model: getDotNgModel(),
-                type: 'MOVE_CONTENT',
+            window.contentletEvents.next({
+                name: 'reorder',
+                data: updatedModel
             });
         }
 

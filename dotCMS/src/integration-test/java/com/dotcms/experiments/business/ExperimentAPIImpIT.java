@@ -2075,6 +2075,65 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
      * - You have four pages: A, B and C
      * - You create an {@link Experiment} using the A page with a PAGE_REACH Goal: url EQUALS TO Page C .
      * - You have the follow page_view to the pages order by timestamp: A, B and C
+     * Then:
+     * - The experiment is ended
+     * Should: calculate the probability that B beats A by 0.02
+     */
+    @Test
+    public void test_calcBayesian_AOverB_ended() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+        final HTMLPageAsset pageA = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageB = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageC = new HTMLPageDataGen(host, template).nextPersisted();
+        final Experiment experiment = createExperimentWithReachPageGoalAndVariant(
+            "experiment_page_reach_testing_1",
+            pageA, pageC);
+        final String variantName = experiment.trafficProportion().variants().stream()
+            .map(ExperimentVariant::id)
+            .filter(id -> !id.equals("DEFAULT"))
+            .limit(1)
+            .findFirst()
+            .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
+        final List<Map<String, String>> data = createPageViewEvents(35, experiment, variantName, 2, pageA, pageC);
+        data.addAll(createPageViewEvents(25, experiment, variantName, 2, pageA, pageB));
+        data.addAll(createPageViewEvents(45, experiment, DEFAULT_VARIANT.name(), 2, pageA, pageC));
+        data.addAll(createPageViewEvents(15, experiment, DEFAULT_VARIANT.name(), 2, pageA, pageB));
+        final Map<String, List<Map<String, String>>> cubeJsQueryResult = map("data", data);
+
+        APILocator.getExperimentsAPI().start(experiment.getIdentifier(), APILocator.systemUser());
+
+        IPUtils.disabledIpPrivateSubnet(true);
+        final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment);
+        final MockHttpServer mockhttpServer = createMockHttpServerAndStart(
+            cubeJSQueryExpected,
+            JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        try {
+            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
+
+            final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
+            assertEquals(120, experimentResults.getSessions().getTotal());
+
+            final BayesianResult bayesianResult = experimentResults.getBayesianResult();
+            Assert.assertEquals(0.02, bayesianResult.value(), 0.01);
+            Assert.assertEquals(DEFAULT_VARIANT.name(), bayesianResult.suggestedWinner());
+
+            mockhttpServer.validate();
+        } finally {
+            IPUtils.disabledIpPrivateSubnet(false);
+            mockhttpServer.stop();
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
+     * When:
+     * - You have four pages: A, B and C
+     * - You create an {@link Experiment} using the A page with a PAGE_REACH Goal: url EQUALS TO Page C .
+     * - You have the follow page_view to the pages order by timestamp: A, B and C
      *
      * Should: calculate the probability that B beats A is 0.99
      */

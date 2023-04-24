@@ -72,3 +72,14 @@ export declare type DotBubbleMenuViewProps = BubbleMenuViewProps & {
     changeToComponent: ComponentRef<SuggestionsComponent>;
     changeToElement: HTMLElement;
 };
+
+/**
+ * If you need to to hide the bubble menu on another extension,
+ * add the extension name here first
+ */
+export interface HideBubbleMenuExtensions {
+    tableCell: boolean;
+    table: boolean;
+    dotVideo: boolean;
+    youtube: boolean;
+}
