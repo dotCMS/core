@@ -55,7 +55,8 @@ import {
     formatHTML,
     removeInvalidNodes,
     SetDocAttrStep,
-    DotMarketingConfigService
+    DotMarketingConfigService,
+    RestoreDefaultDOMAttrs
 } from '../../shared';
 
 @Component({
@@ -171,11 +172,16 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     }
 
     private updateChartCount(): void {
-        const tr = this.editor.state.tr
-            .step(new SetDocAttrStep('chartCount', this.characterCount.characters()))
-            .step(new SetDocAttrStep('wordCount', this.characterCount.words()))
-            .step(new SetDocAttrStep('readingTime', this.readingTime))
-            .setMeta('addToHistory', false);
+        const tr = this.editor.state.tr.setMeta('addToHistory', false);
+
+        if (this.characterCount.characters() != 0) {
+            tr.step(new SetDocAttrStep('chartCount', this.characterCount.characters()))
+                .step(new SetDocAttrStep('wordCount', this.characterCount.words()))
+                .step(new SetDocAttrStep('readingTime', this.readingTime));
+        } else {
+            // If the content is empty, we need to remove the attributes
+            tr.step(new RestoreDefaultDOMAttrs());
+        }
 
         this.editor.view.dispatch(tr);
     }
