@@ -68,6 +68,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import graphql.VisibleForTesting;
 import org.apache.commons.lang3.StringUtils;
 
 
@@ -78,6 +80,7 @@ public class PublishDateUpdater {
 
     private final static String GET_CONTENT_TYPE_WITH_PUBLISH_FIELD = "SELECT velocity_var_name from structure where publish_date_var is not null AND publish_date_var != ''";
 
+    @VisibleForTesting
     public static List<String> getContentTypeVariableWithPublishField() throws DotDataException {
         return new DotConnect()
                 .setSQL(GET_CONTENT_TYPE_WITH_PUBLISH_FIELD)
