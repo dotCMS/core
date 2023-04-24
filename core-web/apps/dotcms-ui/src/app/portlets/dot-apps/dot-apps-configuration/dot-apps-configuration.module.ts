@@ -7,7 +7,6 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
-import { DotAvatarModule } from '@components/_common/dot-avatar/dot-avatar.module';
 import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
@@ -25,7 +24,6 @@ import { DotAppsImportExportDialogModule } from '../dot-apps-import-export-dialo
         InputTextModule,
         ButtonModule,
         CommonModule,
-        DotAvatarModule,
         DotActionButtonModule,
         DotCopyButtonModule,
         DotAppsConfigurationHeaderModule,

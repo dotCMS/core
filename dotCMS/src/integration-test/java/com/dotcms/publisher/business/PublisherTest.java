@@ -2,14 +2,14 @@ package com.dotcms.publisher.business;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
-import com.dotcms.contenttype.model.field.DataTypes;
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.FieldBuilder;
-import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
+import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.enterprise.publishing.PublishDateUpdater;
 import com.dotcms.enterprise.publishing.remote.bundler.ContentBundler;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
@@ -24,6 +24,7 @@ import com.dotcms.publishing.PublisherAPIImplTest;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.repackage.org.apache.struts.Globals;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -42,23 +43,17 @@ import com.liferay.portal.struts.MultiMessageResources;
 import com.liferay.portal.struts.MultiMessageResourcesFactory;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import java.io.IOException;
-import java.util.Map;
-import org.apache.felix.framework.OSGIUtil;
+import java.util.*;
+
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.File;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.when;
 
 /**
@@ -189,6 +184,57 @@ public class PublisherTest extends IntegrationTestBase {
 
         }
 
+    }
+
+    /**
+     * Method to test: {@link com.dotcms.enterprise.publishing.PublishDateUpdater#updatePublishExpireDates(Date)}
+     * When:
+     * - Create a ContentType with publish date field
+     * - Create a {@link Contentlet} withput a publish date set
+     * Should: The {@link Contentlet} shouldn't be returned by the query for auto published content
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void dontAutoPublishContentWithoutPublishDate() throws DotDataException, DotSecurityException {
+
+        // create a content type with a publish date field
+        final Field publishField = new FieldDataGen().defaultValue(null)
+                .type(DateTimeField.class).next();
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .field(publishField)
+                .publishDateFieldVarName(publishField.variable())
+                .nextPersisted();
+
+        Contentlet contentlet = null;
+
+        try {
+
+            // create a contentlet without a publish date
+            contentlet = new ContentletDataGen(contentType)
+                    .nextPersisted();
+
+            // query content to be auto published
+            final Date versionTs = APILocator.getVersionableAPI()
+                    .getVersionInfo(contentlet.getIdentifier()).getVersionTs();
+            final Date triggerDate = Date.from(versionTs.toInstant().plusSeconds(60));
+
+            final String queryContentToPublish = PublishDateUpdater.getPublishLuceneQuery(
+                    triggerDate, CollectionsUtils.list(contentType.variable()));
+            final List<Contentlet> contentToPublish = APILocator.getContentletAPI().search(
+                    queryContentToPublish, 0, 0, null, APILocator.systemUser(), false);
+
+            // check that the content was not included in the auto publish query results
+            assertTrue(contentToPublish.isEmpty());
+
+        } finally {
+
+            ContentletDataGen.remove(contentlet);
+            ContentTypeDataGen.remove(contentType);
+
+        }
     }
 
     private FolderPage createNewPage (final  FolderPage folderPage, final User user) throws Exception {

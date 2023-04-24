@@ -7,6 +7,8 @@ import com.dotcms.mock.request.HttpServletRequestParameterDecoratorWrapper;
 import com.dotcms.mock.request.LanguageIdParameterDecorator;
 import com.dotcms.mock.request.ParameterDecorator;
 import com.dotcms.rendering.velocity.directive.ParseContainer;
+import com.dotcms.rendering.velocity.services.ContentletLoader;
+import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.rest.api.v1.page.PageContainerForm.ContainerEntry;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.util.CollectionsUtils;
@@ -20,6 +22,8 @@ import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.db.FlushCacheRunnable;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -51,6 +55,9 @@ import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
+import io.vavr.control.Try;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.jetbrains.annotations.NotNull;
 
@@ -134,15 +141,13 @@ public class PageResourceHelper implements Serializable {
     public void saveContent(final String pageId,
             final List<ContainerEntry> containerEntries,
             final Language language, String variantName) throws DotDataException {
-
         final Map<String, List<MultiTree>> multiTreesMap = new HashMap<>();
         for (final PageContainerForm.ContainerEntry containerEntry : containerEntries) {
             int i = 0;
-            final  List<String> contentIds = containerEntry.getContentIds();
+            final List<String> contentIds = containerEntry.getContentIds();
             final String personalization = UtilMethods.isSet(containerEntry.getPersonaTag()) ?
                     Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + containerEntry.getPersonaTag() :
                     MultiTree.DOT_PERSONALIZATION_DEFAULT;
-
             if (UtilMethods.isSet(contentIds)) {
                 for (final String contentletId : contentIds) {
                     final MultiTree multiTree = new MultiTree().setContainer(containerEntry.getContainerId())
@@ -151,21 +156,40 @@ public class PageResourceHelper implements Serializable {
                             .setTreeOrder(i++)
                             .setHtmlPage(pageId)
                             .setVariantId(variantName);
-
                     CollectionsUtils.computeSubValueIfAbsent(
                             multiTreesMap, personalization, MultiTree.personalized(multiTree, personalization),
                             CollectionsUtils::add,
                             (String key, MultiTree multitree) -> CollectionsUtils.list(multitree));
+                    HibernateUtil.addCommitListener(new FlushCacheRunnable() {
+
+                        @Override
+                        public void run() {
+                            try {
+                                Contentlet contentlet =
+                                        contentletAPI.findContentletByIdentifierAnyLanguage(contentletId, variantName);
+
+                                if (contentlet == null && !VariantAPI.DEFAULT_VARIANT.equals(variantName)) {
+                                    contentlet = contentletAPI.findContentletByIdentifierAnyLanguage(contentletId,
+                                            VariantAPI.DEFAULT_VARIANT.name());
+                                }
+
+                                new ContentletLoader().invalidate(contentlet, PageMode.EDIT_MODE);
+                            } catch (final DotDataException e) {
+                                Logger.warn(this, String.format("Contentlet with ID '%s' could not be invalidated " +
+                                                                        "from cache: %s", contentletId,
+                                        e.getMessage()));
+                            }
+                        }
+
+                    });
                 }
             } else {
                 multiTreesMap.computeIfAbsent(personalization, key -> new ArrayList<>());
             }
         }
-
         for (final String personalization : multiTreesMap.keySet()) {
-
             multiTreeAPI.overridesMultitreesByPersonalization(pageId, personalization,
-                    multiTreesMap.get(personalization), Optional.ofNullable(language.getId()),
+                    multiTreesMap.get(personalization), Optional.of(language.getId()),
                     variantName);
         }
     }
@@ -443,16 +467,26 @@ public class PageResourceHelper implements Serializable {
                                       final PageMode pageMode, final Language language)
             throws DotDataException, DotSecurityException {
 
-        final Contentlet copiedContentlet = this.copyContent(copyContentletForm, user, pageMode, language.getId());
+        final Tuple2<Contentlet, Contentlet> tuple2 = this.copyContent(copyContentletForm, user, pageMode, language.getId());
 
+        final Contentlet copiedContentlet   = tuple2._1();
+        final Contentlet originalContentlet = tuple2._2();
         final String htmlPage   = copyContentletForm.getPageId();
-        final String container  = copyContentletForm.getContainerId();
+        String container        = copyContentletForm.getContainerId();
         final String contentId  = copyContentletForm.getContentId();
         final String instanceId = copyContentletForm.getRelationType();
         final String variant    = copyContentletForm.getVariantId();
         final int treeOrder     = copyContentletForm.getTreeOrder();
         final String personalization = copyContentletForm.getPersonalization();
 
+        if (FileAssetContainerUtil.getInstance().isFolderAssetContainerId(container)) {
+
+            final Container containerObject = APILocator.getContainerAPI().getLiveContainerByFolderPath(container, user, pageMode.respectAnonPerms,
+                    ()-> Try.of(()->APILocator.getHostAPI().findDefaultHost(user, pageMode.respectAnonPerms)).getOrNull());
+            if (null != containerObject) {
+                container =containerObject.getIdentifier();
+            }
+        }
 
         Logger.debug(this, ()-> "Deleting current contentlet multi tree: " + copyContentletForm);
         final MultiTree currentMultitree = APILocator.getMultiTreeAPI().getMultiTree(htmlPage, container, contentId, instanceId,
@@ -471,6 +505,12 @@ public class PageResourceHelper implements Serializable {
                 null == variant? VariantAPI.DEFAULT_VARIANT.name(): variant);
         Logger.debug(this, ()-> "Saving current contentlet multi tree: " + currentMultitree);
         APILocator.getMultiTreeAPI().saveMultiTree(newMultitree);
+
+        if (null != originalContentlet) {
+            HibernateUtil.addCommitListener(()->
+                    new ContentletLoader().invalidate(originalContentlet, PageMode.EDIT_MODE));
+        }
+
 
         return copiedContentlet;
     }
@@ -496,9 +536,10 @@ public class PageResourceHelper implements Serializable {
      * @throws DotDataException     An error occurred when interacting with the data source.
      * @throws DotSecurityException The specified User does not have the required permissions to execute this action.
      */
-    private Contentlet copyContent(final CopyContentletForm copyContentletForm, final User user,
+    private Tuple2<Contentlet, Contentlet> copyContent(final CopyContentletForm copyContentletForm, final User user,
                                    final PageMode pageMode, final long languageId) throws DotDataException, DotSecurityException {
         Logger.debug(this, ()-> "Copying existing contentlet: " + copyContentletForm.getContentId());
+
         Contentlet currentContentlet = this.contentletAPI.findContentletByIdentifier(
                 copyContentletForm.getContentId(), pageMode.showLive, languageId, user, pageMode.respectAnonPerms);
         if (null == currentContentlet || UtilMethods.isNotSet(currentContentlet.getIdentifier())) {
@@ -514,7 +555,7 @@ public class PageResourceHelper implements Serializable {
         final Contentlet copiedContentlet  = this.contentletAPI.copyContentlet(currentContentlet, user, pageMode.respectAnonPerms);
         Logger.debug(this, ()-> "Contentlet: " + copiedContentlet.getIdentifier() + " has been copied");
 
-        return copiedContentlet;
+        return Tuple.of(copiedContentlet, currentContentlet);
     }
 
 }

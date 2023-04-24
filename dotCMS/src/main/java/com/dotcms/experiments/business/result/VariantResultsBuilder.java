@@ -5,13 +5,16 @@ import com.dotcms.experiments.business.result.VariantResults.ResultResumeItem;
 import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotmarketing.util.UtilMethods;
 
+import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.TreeSet;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -21,12 +24,12 @@ public class VariantResultsBuilder {
     private final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("MM/dd/yyyy")
             .withZone(ZoneId.systemDefault());
 
-    private final DateTimeFormatter PARSER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.n")
-            .withZone(ZoneId.systemDefault());
+
     final ExperimentVariant experimentVariant;
     private Map<String, List<Event>> eventsByLookBackWindow = new HashMap<>();
     private long totalSessions;
     private long totalVariantSessions;
+    private long pageViews;
 
     VariantResultsBuilder(final ExperimentVariant experimentVariant) {
         this.experimentVariant = experimentVariant;
@@ -38,6 +41,10 @@ public class VariantResultsBuilder {
         return list;
     }
 
+    public void pageView(final long pageViews) {
+        this.pageViews += pageViews;
+
+    }
 
     public void success(final String lookBackWindow, final Event event) {
         final List<Event> sessionEvents = UtilMethods.isSet(eventsByLookBackWindow.get(lookBackWindow)) ?
@@ -58,23 +65,37 @@ public class VariantResultsBuilder {
         return events.size();
     }
 
-    public VariantResults build() {
+    public VariantResults build(final List<Instant> allDates) {
         final VariantResults.UniqueBySessionResume uniqueBySessionResume = new VariantResults.UniqueBySessionResume(
                 totalUniqueBySession(eventsByLookBackWindow),
                 totalVariantSessions,
                 totalSessions);
 
-        final Map<String, ResultResumeItem> details = getDetails();
+        final Map<String, ResultResumeItem> details = getDetails(allDates);
 
-        return new VariantResults(experimentVariant.id(),
+        return new VariantResults(experimentVariant.id(), experimentVariant.description(),
                 totalMultiBySession(eventsByLookBackWindow),
                 uniqueBySessionResume,
-                details);
+                details, pageViews);
     }
 
-    private Map<String, ResultResumeItem> getDetails() {
+    private Map<String, ResultResumeItem> getDetails(List<Instant> allDates) {
         final Map<String, Map<String, List<Event>>> eventsOrderByDate = orderEventsByDate();
         final Map<String, ResultResumeItem> result = new HashMap<>();
+
+        for (final Instant date : allDates) {
+            final String dateAsString = FORMATTER.format(date);
+            final Map<String, List<Event>> events = eventsOrderByDate.get(dateAsString);
+
+            if (UtilMethods.isSet(events)) {
+                result.put(dateAsString, new ResultResumeItem(totalMultiBySession(events),
+                        totalUniqueBySession(events)
+                ));
+            } else {
+                result.put(dateAsString, new ResultResumeItem(0, 0));
+            }
+        }
+
 
         for (Entry<String, Map<String, List<Event>>> entry : eventsOrderByDate.entrySet()) {
             final String dateAsString = entry.getKey();
@@ -88,6 +109,26 @@ public class VariantResultsBuilder {
         return result;
     }
 
+    /**
+     * Return the dates when at least one Event was caught.
+     *
+     * @return
+     */
+    public Collection<Instant> getEventDates(){
+        final Collection<Instant> dates = new TreeSet<>();
+
+        for (Entry<String, List<Event>> entry : eventsByLookBackWindow.entrySet()) {
+            final List<Event> events = entry.getValue();
+
+            if (UtilMethods.isSet(events)) {
+                final Event event = events.get(0);
+                dates.add(event.getDate().orElseThrow());
+            }
+
+        }
+        return dates;
+    }
+
     @NotNull
     private Map<String, Map<String, List<Event>>> orderEventsByDate() {
         final Map<String, Map<String, List<Event>>> eventsOrderByDate = new HashMap<>();
@@ -97,9 +138,7 @@ public class VariantResultsBuilder {
 
             for (Event event : entry.getValue()) {
 
-                final String eventDateFormatted = event.get("utcTime")
-                        .map(dateAsObject -> dateAsObject.toString())
-                        .map(dateAsString -> PARSER.parse(dateAsString))
+                final String eventDateFormatted = event.getDate()
                         .map(eventDate -> FORMATTER.format(eventDate))
                         .orElseThrow();
 
@@ -112,6 +151,7 @@ public class VariantResultsBuilder {
                 detailsByDate.put(lookBackWindow, events);
             }
         }
+
         return eventsOrderByDate;
     }
 

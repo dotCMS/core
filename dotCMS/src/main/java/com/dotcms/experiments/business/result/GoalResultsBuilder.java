@@ -3,6 +3,7 @@ package com.dotcms.experiments.business.result;
 import com.dotcms.analytics.metrics.Metric;
 import com.dotcms.experiments.business.result.ExperimentResults.TotalSession;
 import com.dotcms.experiments.model.ExperimentVariant;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -20,6 +21,9 @@ public class GoalResultsBuilder {
                 .collect(Collectors.toMap(ExperimentVariant::id, VariantResultsBuilder::new));
     }
 
+    public VariantResultsBuilder variant(final String variantId) {
+        return variants.get(variantId);
+    }
     public void success(final String lookBackWindow, final Event event) {
         final String variantName = event.getVariant()
                 .orElseThrow(() -> new IllegalArgumentException("Attribute variant does not exists"));
@@ -34,6 +38,14 @@ public class GoalResultsBuilder {
     }
 
     public GoalResults build(final TotalSession totalSessions) {
+
+        final List<Instant> allDates = variants.values().stream()
+                .map(variantResultsBuilder -> variantResultsBuilder.getEventDates())
+                .flatMap(variantDates -> variantDates.stream())
+                .sorted()
+                .distinct()
+                .collect(Collectors.toList());
+
         final List<VariantResults> variantResults = variants.values().stream()
                 .map(variantResultsBuilder -> {
                     final String variantId = variantResultsBuilder.experimentVariant.id();
@@ -42,7 +54,7 @@ public class GoalResultsBuilder {
                             totalSessions.getVariants().get(variantId));
                     return variantResultsBuilder;
                 })
-                .map(variantResultsBuilder -> variantResultsBuilder.build())
+                .map(variantResultsBuilder -> variantResultsBuilder.build(allDates))
                 .collect(Collectors.toList());
 
         final Map<String, VariantResults> variantResultMap = variantResults.stream()

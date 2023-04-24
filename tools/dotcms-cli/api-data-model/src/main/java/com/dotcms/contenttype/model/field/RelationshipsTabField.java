@@ -13,6 +13,6 @@ public abstract class RelationshipsTabField extends Field {
     @Override
     public DataTypes dataType(){
         return DataTypes.SYSTEM;
-    };
+    }
 
 }

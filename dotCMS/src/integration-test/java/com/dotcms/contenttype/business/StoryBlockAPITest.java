@@ -185,4 +185,68 @@ public class StoryBlockAPITest extends IntegrationTestBase {
         Assert.assertTrue(contentletIdList.contains(richTextContentlet2.getIdentifier()));
         Assert.assertTrue(contentletIdList.contains(richTextContentlet3.getIdentifier()));
     }
+
+    /**
+     * Method to test: {@link StoryBlockAPI#getDependencies(Object)}
+     * Given Scenario: Test a story block value that is a json (html in this case) see (https://github.com/dotCMS/core/issues/24299)
+     * ExpectedResult: Do not throw exception and must return zero dependencies
+     */
+    @Test
+    public void test_get_dependencies_with_non_json_value()  {
+
+        final Object newStoryBlockJson1        = "<html>pufff</html>";
+
+        final List<String> contentletIdList = APILocator.getStoryBlockAPI().getDependencies(newStoryBlockJson1);
+        Assert.assertNotNull(contentletIdList);
+        Assert.assertTrue(contentletIdList.isEmpty());
+    }
+    
+    /**
+     * Method to test: {@link StoryBlockAPI#getDependencies(Object)}
+     * Given Scenario: Test a story block value that is a json (html in this case) see (https://github.com/dotCMS/core/issues/24299)
+     * ExpectedResult: Do not throw exception and must return zero dependencies
+     */
+    @Test
+    public void test_get_dependencies_with_empty_json_value()  {
+
+        final Object newStoryBlockJson1        = "{\"test\":\"test\"}";
+
+        final List<String> contentletIdList = APILocator.getStoryBlockAPI().getDependencies(newStoryBlockJson1);
+        Assert.assertNotNull(contentletIdList);
+        Assert.assertTrue(contentletIdList.isEmpty());
+    }
+    
+    /**
+     * Method to test: {@link StoryBlockAPI#getDependencies(Object)}
+     * Given Scenario: Test a story block value that is a json (html in this case) see (https://github.com/dotCMS/core/issues/24299)
+     * ExpectedResult: Do not throw exception and must return zero dependencies
+     */
+    @Test
+    public void test_get_dependencies_with_bad_content_value()  {
+
+        final Object newStoryBlockJson1        = "{\"content\":\"test\"}";
+
+        final List<String> contentletIdList = APILocator.getStoryBlockAPI().getDependencies(newStoryBlockJson1);
+        Assert.assertNotNull(contentletIdList);
+        Assert.assertTrue(contentletIdList.isEmpty());
+    }
+    
+    @Test
+    public void test_get_refreshStoryBlockValueReferences_with_bad_content_value()  {
+    
+        final Object newStoryBlockJson1        = "{\"test\":\"test\"}";
+        
+        StoryBlockReferenceResult result = APILocator.getStoryBlockAPI().refreshStoryBlockValueReferences(newStoryBlockJson1);
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result.isRefreshed());
+        
+        final Object newStoryBlockJson2        = "{\"content\":\"test\"}";
+        result = APILocator.getStoryBlockAPI().refreshStoryBlockValueReferences(newStoryBlockJson2);
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result.isRefreshed());
+    
+        
+    }
+    
+    
 }

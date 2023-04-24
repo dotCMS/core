@@ -1,8 +1,11 @@
 @use "variables" as *;
 
-.dot-content-compare-table__controls{
+.dot-content-compare-table__controls {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: $spacing-3;
 
     p-dropdown {
         margin-right: $spacing-3;
@@ -15,24 +18,23 @@
 
 .dot-content-compare-table__title {
     color: $black;
-    font-size: $font-size-large;
+    font-size: $font-size-lg;
 }
 
 :host ::ng-deep .p-datatable {
-
     table {
         border-collapse: separate;
         border-spacing: 0;
 
         th {
-            border-top: 1px solid $gray-lighter;
-            border-bottom: 1px solid $gray-lighter;
-            border-right: 1px solid $gray-lighter;
+            border-top: 1px solid $color-palette-gray-300;
+            border-bottom: 1px solid $color-palette-gray-300;
+            border-right: 1px solid $color-palette-gray-300;
         }
 
         td {
-            border-bottom: 1px solid $gray-lighter;
-            border-right: 1px solid $gray-lighter;
+            border-bottom: 1px solid $color-palette-gray-300;
+            border-right: 1px solid $color-palette-gray-300;
 
             img {
                 max-width: 100%;
@@ -42,7 +44,7 @@
 
         th:first-child,
         td:first-child {
-            border-left: 1px solid $gray-lighter;
+            border-left: 1px solid $color-palette-gray-300;
         }
 
         thead th {
@@ -50,6 +52,9 @@
             top: 0;
             z-index: 1;
 
+            &:not(:first-of-type) {
+                width: 45%;
+            }
         }
     }
 }

@@ -14,15 +14,15 @@ import {
 
 import { debounceTime, take, takeUntil } from 'rxjs/operators';
 
-import { AnyExtension, Content, Editor } from '@tiptap/core';
+import { AnyExtension, Content, Editor, JSONContent } from '@tiptap/core';
 import CharacterCount, { CharacterCountStorage } from '@tiptap/extension-character-count';
 import { Level } from '@tiptap/extension-heading';
 import { Highlight } from '@tiptap/extension-highlight';
 import { Link } from '@tiptap/extension-link';
-import Placeholder from '@tiptap/extension-placeholder';
 import { TableRow } from '@tiptap/extension-table-row';
 import { TextAlign } from '@tiptap/extension-text-align';
 import { Underline } from '@tiptap/extension-underline';
+import { Youtube } from '@tiptap/extension-youtube';
 import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
 
 import {
@@ -44,10 +44,12 @@ import {
     DragHandler,
     DotFloatingButton,
     BubbleAssetFormExtension,
-    ImageUpload,
     FreezeScroll,
-    FREEZE_SCROLL_KEY
+    FREEZE_SCROLL_KEY,
+    AssetUploader,
+    DotComands
 } from '../../extensions';
+import { DotPlaceholder } from '../../extensions/dot-placeholder/dot-placeholder-plugin';
 import { ContentletBlock, ImageNode, VideoNode } from '../../nodes';
 import {
     formatHTML,
@@ -55,12 +57,6 @@ import {
     SetDocAttrStep,
     DotMarketingConfigService
 } from '../../shared';
-
-function toTitleCase(str) {
-    return str.replace(/\p{L}+('\p{L}+)?/gu, function (txt) {
-        return txt.charAt(0).toUpperCase() + txt.slice(1);
-    });
-}
 
 @Component({
     selector: 'dot-block-editor',
@@ -97,7 +93,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
 
         this.setEditorJSONContent(content);
     }
-    @Output() valueChange = new EventEmitter<string>();
+    @Output() valueChange = new EventEmitter<JSONContent>();
 
     editor: Editor;
     subject = new Subject();
@@ -159,10 +155,6 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
                     .pipe(takeUntil(this.destroy$), debounceTime(250))
                     .subscribe(() => this.updateChartCount());
 
-                this.editor.on('update', ({ editor }) => {
-                    this.valueChange.emit(JSON.stringify(editor.getJSON()));
-                });
-
                 this.editor.on('transaction', ({ editor }) => {
                     this.freezeScroll = FREEZE_SCROLL_KEY.getState(editor.view.state)?.freezeScroll;
                 });
@@ -172,6 +164,10 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     ngOnDestroy() {
         this.destroy$.next(true);
         this.destroy$.complete();
+    }
+
+    onChange(value: JSONContent) {
+        this.valueChange.emit(value);
     }
 
     private updateChartCount(): void {
@@ -214,7 +210,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             extensions: []
         };
 
-        if (!this.customBlocks.length) {
+        if (!this.customBlocks?.length) {
             return emptyExtentions;
         }
 
@@ -355,10 +351,17 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
                 allowedContentTypes: this.allowedContentTypes,
                 allowedBlocks: this._allowedBlocks
             }),
-            Placeholder.configure({ placeholder: this.placeholder }),
+            DotComands,
+            DotPlaceholder.configure({ placeholder: 'Type "/" for commands' }),
+            Youtube.configure({
+                height: 300,
+                width: 400,
+                interfaceLanguage: 'us',
+                nocookie: true,
+                modestBranding: true
+            }),
             ActionsMenu(this.viewContainerRef, this.getParsedCustomBlocks()),
             DragHandler(this.viewContainerRef),
-            ImageUpload(this.injector, this.viewContainerRef),
             BubbleLinkFormExtension(this.viewContainerRef),
             DotBubbleMenuExtension(this.viewContainerRef),
             BubbleFormExtension(this.viewContainerRef),
@@ -368,7 +371,8 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             DotTableHeaderExtension(),
             TableRow,
             FreezeScroll,
-            CharacterCount
+            CharacterCount,
+            AssetUploader(this.injector, this.viewContainerRef)
         ];
     }
 
@@ -386,22 +390,6 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             Highlight.configure({ HTMLAttributes: { style: 'background: #accef7;' } }),
             Link.configure({ autolink: false, openOnClick: false })
         ];
-    }
-
-    /**
-     * Placeholder function
-     *
-     * @private
-     * @param {*} { node }
-     * @return {*}
-     * @memberof DotBlockEditorComponent
-     */
-    private placeholder({ node }) {
-        if (node.type.name === 'heading') {
-            return `${toTitleCase(node.type.name)} ${node.attrs.level}`;
-        }
-
-        return 'Type "/" for commmands';
     }
 
     private setEditorJSONContent(content: Content) {

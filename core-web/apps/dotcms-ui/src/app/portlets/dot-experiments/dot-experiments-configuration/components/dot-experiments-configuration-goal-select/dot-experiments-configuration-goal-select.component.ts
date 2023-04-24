@@ -20,6 +20,8 @@ import { SidebarModule } from 'primeng/sidebar';
 import { takeUntil } from 'rxjs/operators';
 
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
+import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
+import { DotMessageService } from '@dotcms/data-access';
 import {
     ComponentStatus,
     GOAL_TYPES,
@@ -51,6 +53,7 @@ import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sideba
         DotSidebarDirective,
         DotExperimentsOptionsModule,
         DotDropdownDirective,
+        DotAutofocusModule,
         //PrimeNg
         SidebarModule,
         ButtonModule,
@@ -74,8 +77,16 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
         this.dotExperimentsConfigurationStore.goalsStepVm$;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
+    private BOUNCE_RATE_LABEL = this.dotMessageService.get(
+        'experiments.goal.conditions.minimize.bounce.rate'
+    );
+    private REACH_PAGE_LABEL = this.dotMessageService.get(
+        'experiments.goal.conditions.maximize.reach.page'
+    );
+
     constructor(
         private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore,
+        private readonly dotMessageService: DotMessageService,
         private readonly cdr: ChangeDetectorRef
     ) {}
 
@@ -148,7 +159,10 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
                     nonNullable: true,
                     validators: [Validators.required]
                 }),
-                type: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+                type: new FormControl('', {
+                    nonNullable: true,
+                    validators: [Validators.required]
+                }),
                 conditions: new FormArray([
                     new FormGroup({
                         parameter: new FormControl(''),
@@ -158,6 +172,30 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
                 ])
             })
         });
+
+        this.form.get('primary.type').valueChanges.subscribe((value) => {
+            this.defineDefaultName(value);
+        });
+    }
+
+    /**
+     * If the user don't set a custom name set the default name based on goal selection.
+     * @param {string} typeValue
+     * @memberOf DotExperimentsConfigurationGoalSelectComponent
+     */
+    private defineDefaultName(typeValue: string): void {
+        const nameControl = this.form.get('primary.name') as FormControl;
+        if (
+            nameControl.value === '' ||
+            nameControl.value === this.BOUNCE_RATE_LABEL ||
+            nameControl.value === this.REACH_PAGE_LABEL
+        ) {
+            nameControl.setValue(
+                typeValue === GOAL_TYPES.BOUNCE_RATE
+                    ? this.BOUNCE_RATE_LABEL
+                    : this.REACH_PAGE_LABEL
+            );
+        }
     }
 
     private addConditionsControlValidations(): void {

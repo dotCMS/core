@@ -1,35 +1,36 @@
 <div class="field__properties">
-    <div class="field__name-wrapper">
-        <dot-icon name="{{ fieldService.getIcon(field.clazz) }}"></dot-icon>
-        <div class="field__name-inner">
-            <span class="field__name">{{ field.name }}</span>
-            <ng-container *ngIf="field.variable">
-                <span class="field__variable">
-                    <dot-copy-link [copy]="field.variable" [label]="'(' + field.variable + ')'">
-                    </dot-copy-link>
-                </span>
-            </ng-container>
-        </div>
+    <dot-icon name="{{ icon }}"></dot-icon>
+    <div class="field__info">
+        <span class="field__label">{{ field.fieldTypeLabel }}</span>
+        <span class="field__name"> {{ field.name }}</span>
     </div>
-    <div class="field__attribute" innerHTML="{{ fieldAttributes }}" *ngIf="fieldAttributes"></div>
+    <div class="field__actions">
+        <p-button
+            id="field__actions-delete"
+            *ngIf="!field.fixed"
+            [pTooltip]="'contenttypes.action.delete' | dm"
+            (click)="removeItem($event)"
+            icon="pi pi-trash"
+            styleClass="p-button-sm p-button-icon-only"
+            appendTo="body"
+            hideDelay="800"
+            tooltipPosition="bottom"
+        ></p-button>
+    </div>
 </div>
-
-<div class="field__actions">
-    <dot-icon-button-tooltip
-        tiny
-        *ngIf="!field.fixed"
-        class="field__actions-delete"
-        icon="delete"
-        [tooltipText]="'contenttypes.action.delete' | dm"
-        (click)="removeItem($event)"
-    >
-    </dot-icon-button-tooltip>
-    <dot-icon-button-tooltip
-        tiny
-        class="field__actions-edit"
-        icon="edit"
-        [tooltipText]="'contenttypes.action.edit' | dm"
-        (click)="this.onClick($event)"
-    >
-    </dot-icon-button-tooltip>
+<div class="field__attr__container" [class.open]="open">
+    <dot-copy-link
+        *ngIf="field.variable"
+        [label]="field.variable"
+        [copy]="field.variable"
+    ></dot-copy-link>
+    <div class="field__attr__group" *ngIf="fieldAttributes.length">
+        <div class="field__attr" [class.small]="shouldResize && small">
+            <p-chip *ngFor="let field of fieldAttributes" [label]="field"></p-chip>
+        </div>
+        <ng-container *ngIf="small">
+            <i class="pi pi-angle-down" *ngIf="!open" (click)="openAttr($event)"></i>
+            <i class="pi pi-angle-up" *ngIf="open" (click)="closeAttr($event)"></i>
+        </ng-container>
+    </div>
 </div>

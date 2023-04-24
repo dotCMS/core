@@ -2,10 +2,12 @@ import { Component } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
+import { AvatarModule } from 'primeng/avatar';
+import { BadgeModule } from 'primeng/badge';
 import { CardModule } from 'primeng/card';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotAvatarModule } from '@components/_common/dot-avatar/dot-avatar.module';
+import { DotAvatarDirective } from '@directives/dot-avatar/dot-avatar.directive';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotIconModule } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -32,7 +34,15 @@ describe('DotAppsCardComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [CardModule, DotAvatarModule, DotIconModule, TooltipModule, DotPipesModule],
+            imports: [
+                CardModule,
+                AvatarModule,
+                DotAvatarDirective,
+                BadgeModule,
+                DotIconModule,
+                TooltipModule,
+                DotPipesModule
+            ],
             declarations: [DotAppsCardComponent, MockMarkdownComponent],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
         }).compileComponents();
@@ -69,11 +79,13 @@ describe('DotAppsCardComponent', () => {
         });
 
         it('should have avatar with right values', () => {
-            const avatar = fixture.debugElement.query(By.css('dot-avatar')).componentInstance;
-            expect(avatar.size).toBe(40);
-            expect(avatar.showDot).toBe(true);
-            expect(avatar.url).toBe(component.app.iconUrl);
-            expect(avatar.label).toBe(component.app.name);
+            const avatar = fixture.debugElement.query(By.css('p-avatar'));
+
+            const { image, size } = avatar.componentInstance;
+
+            expect(image).toBe(component.app.iconUrl);
+            expect(size).toBe('large');
+            expect(avatar.attributes['ng-reflect-text']).toBe(component.app.name);
         });
 
         it('should set messages/values in DOM correctly', () => {
@@ -131,9 +143,7 @@ describe('DotAppsCardComponent', () => {
         });
 
         it('should have avatar with right values', () => {
-            expect(fixture.debugElement.query(By.css('dot-avatar')).componentInstance.showDot).toBe(
-                false
-            );
+            expect(fixture.debugElement.query(By.css('.p-badge'))).toBeFalsy();
         });
 
         it('should set messages/values in DOM correctly', () => {

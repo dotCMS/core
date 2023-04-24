@@ -1,27 +1,34 @@
-<dot-avatar
-    [label]="persona.name"
-    [showDot]="persona.personalized"
-    [size]="32"
-    [url]="persona.photo"
-></dot-avatar>
+<p-avatar
+    *ngIf="persona.personalized"
+    [text]="persona.name"
+    [image]="persona.photo"
+    pBadge
+    dotAvatar
+></p-avatar>
+<p-avatar
+    *ngIf="!persona.personalized"
+    [text]="persona.name"
+    [image]="persona.photo"
+    dotAvatar
+></p-avatar>
 
 <!-- Inline CSS code added to allow ellipsis on 2nd line, if this is moved to the SCCS file the pre-compiler cries -->
 <span
     class="dot-persona-selector-option__label"
-    style="-webkit-box-orient: vertical; -moz-box-orient: vertical"
     [ngClass]="{
         'dot-persona-selector-option__personalized': persona.personalized,
         'dot-persona-selector-option__selected': selected
     }"
+    style="-webkit-box-orient: vertical; -moz-box-orient: vertical"
     >{{ persona.name }}
 </span>
 
 <button
-    (click)="deletePersonalized($event)"
+    class="p-button-secondary p-button-sm"
     *ngIf="canDespersonalize && persona.personalized"
-    icon="fa fa-times"
+    (click)="deletePersonalized($event)"
+    icon="pi pi-times"
     iconPos="right"
     label="{{ 'modes.persona.personalized' | dm }}"
     pButton
-    class="p-button-secondary p-button-sm"
 ></button>

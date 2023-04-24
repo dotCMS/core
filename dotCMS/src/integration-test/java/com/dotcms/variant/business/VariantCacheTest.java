@@ -66,7 +66,6 @@ public class VariantCacheTest {
         assertNull(CacheLocator.getVariantCache().get("NotExists"));
     }
 
-
     /**
      * Method to test: {@link VariantCacheImpl#get(String)}
      * When: Call the method with null

@@ -6,7 +6,7 @@ import { ComponentRef, ViewContainerRef } from '@angular/core';
 import { Editor } from '@tiptap/core';
 import BubbleMenu from '@tiptap/extension-bubble-menu';
 
-import { EditorAssetTypes } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, EditorAssetTypes } from '@dotcms/dotcms-models';
 
 import { AssetFormComponent } from './asset-form.component';
 import { bubbleAssetFormPlugin } from './plugins/bubble-asset-form.plugin';
@@ -18,7 +18,11 @@ declare module '@tiptap/core' {
         AssetTabviewForm: {
             openAssetForm: (data: { type: EditorAssetTypes }) => ReturnType;
             closeAssetForm: () => ReturnType;
-            insertAsset: (data: { type: EditorAssetTypes; payload }) => ReturnType;
+            insertAsset: (data: {
+                type: EditorAssetTypes;
+                payload: string | DotCMSContentlet;
+                position?: number;
+            }) => ReturnType;
         };
     }
 }
@@ -56,6 +60,7 @@ export const BubbleAssetFormExtension = (viewContainerRef: ViewContainerRef) => 
     let formTippy: Instance | undefined;
     let component: ComponentRef<AssetFormComponent>;
     let element: Element;
+    let preventClose = false;
 
     function onStart({ editor, type, getPosition }: StartProps) {
         setUpTippy(editor);
@@ -70,6 +75,10 @@ export const BubbleAssetFormExtension = (viewContainerRef: ViewContainerRef) => 
     }
 
     function onHide(editor): void {
+        if (preventClose) {
+            return;
+        }
+
         editor.commands.closeAssetForm();
         formTippy?.hide();
         component?.destroy();
@@ -96,11 +105,24 @@ export const BubbleAssetFormExtension = (viewContainerRef: ViewContainerRef) => 
         component.instance.languageId = editor.storage.dotConfig.lang;
         component.instance.type = type;
         component.instance.onSelectAsset = (payload) => {
+            onPreventClose(editor, false);
             editor.chain().insertAsset({ type, payload }).addNextLine().closeAssetForm().run();
+        };
+
+        component.instance.preventClose = (value) => onPreventClose(editor, value);
+
+        component.instance.onHide = () => {
+            onPreventClose(editor, false);
+            onHide(editor);
         };
 
         element = component.location.nativeElement;
         component.changeDetectorRef.detectChanges();
+    }
+
+    function onPreventClose(editor, value) {
+        preventClose = value;
+        editor.setOptions({ editable: !value });
     }
 
     return BubbleMenu.extend<unknown>({
@@ -141,14 +163,21 @@ export const BubbleAssetFormExtension = (viewContainerRef: ViewContainerRef) => 
                             .run();
                     },
                 insertAsset:
-                    ({ type, payload }) =>
+                    ({ type, payload, position }) =>
                     ({ chain }) => {
                         switch (type) {
-                            case 'video':
-                                return chain().setVideo(payload).run();
+                            case 'video': {
+                                if (typeof payload === 'string')
+                                    return (
+                                        // This method returns true if it was able to set the youtube video
+                                        chain().setYoutubeVideo({ src: payload }).run() ||
+                                        chain().insertVideo(payload, position).run()
+                                    );
+                                else return chain().insertVideo(payload, position).run();
+                            }
 
                             case 'image':
-                                return chain().addDotImage(payload).run();
+                                return chain().insertImage(payload, position).run();
                         }
                     }
             };

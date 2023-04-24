@@ -89,7 +89,25 @@ export class DotExperimentsListComponent {
     goToBrowserBack(): void {
         this.router.navigate(['edit-page/content'], {
             queryParams: {
-                editPageTab: null,
+                mode: null,
+                variantName: null,
+                experimentId: null
+            },
+            queryParamsHandling: 'merge'
+        });
+    }
+
+    /**
+     * Opens the experiment report page for a given experiment
+     * @param {DotExperiment} experiment The experiment whose report page needs to be opened
+     * @returns void
+     * @memberof DotExperimentsShellComponent
+     */
+
+    goToViewExperimentReport(experiment: DotExperiment) {
+        this.router.navigate(['/edit-page/experiments/reports/', experiment.id], {
+            queryParams: {
+                mode: null,
                 variantName: null,
                 experimentId: null
             },

@@ -63,7 +63,7 @@ describe('DotExperimentsConfigurationTrafficAllocationAddComponent', () => {
 
         store.loadExperiment(EXPERIMENT_MOCK.id);
         store.setSidebarStatus({
-            experimentStep: ExperimentSteps.TRAFFIC,
+            experimentStep: ExperimentSteps.TRAFFIC_LOAD,
             isOpen: true
         });
         spectator.detectChanges();
@@ -92,6 +92,13 @@ describe('DotExperimentsConfigurationTrafficAllocationAddComponent', () => {
             trafficAllocation: EXPERIMENT_MOCK.trafficAllocation,
             experimentId: EXPERIMENT_MOCK.id
         });
+    });
+
+    it('should set inputs limits', () => {
+        const slider: Slider = spectator.query(Slider);
+
+        expect(slider.min).toEqual(1);
+        expect(slider.max).toEqual(100);
     });
 
     it('should close sidebar ', () => {

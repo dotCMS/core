@@ -1,25 +1,28 @@
-import { fromEvent, Observable, of, Subject, Subscription } from 'rxjs';
+import { fromEvent, Subject, Subscription } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { ElementRef, Injectable, NgZone } from '@angular/core';
 
-import { filter, map, take } from 'rxjs/operators';
+import { catchError, filter, switchMap, take, tap } from 'rxjs/operators';
 
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { MODEL_VAR_NAME } from '@dotcms/app/portlets/dot-edit-page/content/services/html/libraries/iframe-edit-mode.js';
 import { INLINE_TINYMCE_SCRIPTS } from '@dotcms/app/portlets/dot-edit-page/content/services/html/libraries/inline-edit-mode.js';
 import {
     DotAlertConfirmService,
+    DotEditPageService,
     DotLicenseService,
     DotMessageService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import {
+    DotCopyContent,
     DotIframeEditEvent,
     DotPage,
     DotPageContainer,
-    DotPageRenderState
+    DotPageContainerPersonalized,
+    DotPageRenderState,
+    DotPersona
 } from '@dotcms/dotcms-models';
 import { DotPageContent } from '@portlets/dot-edit-page/shared/models';
 
@@ -30,6 +33,7 @@ import {
     DotContentletEvent,
     DotContentletEventDragAndDropDotAsset,
     DotContentletEventRelocate,
+    DotContentletEventReorder,
     DotContentletEventSave,
     DotContentletEventSelect,
     DotInlineEditContent,
@@ -41,9 +45,17 @@ import { DotDOMHtmlUtilService } from '../html/dot-dom-html-util.service';
 import { DotDragDropAPIHtmlService } from '../html/dot-drag-drop-api-html.service';
 import { DotEditContentToolbarHtmlService } from '../html/dot-edit-content-toolbar-html.service';
 import { getEditPageCss } from '../html/libraries/iframe-edit-mode.css';
+
 export enum DotContentletAction {
     EDIT,
     ADD
+}
+
+export enum DotContentletMenuAction {
+    add = 'ADD',
+    code = 'CODE',
+    edit = 'EDIT',
+    remove = 'REMOVE'
 }
 
 export const CONTENTLET_PLACEHOLDER_SELECTOR = '#contentletPlaceholder';
@@ -53,6 +65,7 @@ export class DotEditContentHtmlService {
     contentletEvents$: Subject<
         | DotContentletEventDragAndDropDotAsset
         | DotContentletEventRelocate
+        | DotContentletEventReorder
         | DotContentletEventSelect
         | DotContentletEventSave
         | DotContentletEvent<DotInlineEditContent>
@@ -67,9 +80,11 @@ export class DotEditContentHtmlService {
     mutationConfig = { attributes: false, childList: true, characterData: false };
     datasetMissing: string[];
     private currentPage: DotPage;
+    private currentPersona: DotPersona;
 
     private inlineCurrentContent: { [key: string]: string } = {};
     private currentAction: DotContentletAction;
+    private currentMenuAction: DotContentletMenuAction;
     private docClickSubscription: Subscription;
     private updateContentletInode = false;
     private remoteRendered: boolean;
@@ -77,6 +92,7 @@ export class DotEditContentHtmlService {
     private readonly docClickHandlers;
 
     constructor(
+        private dotEditPageService: DotEditPageService,
         private dotContainerContentletService: DotContainerContentletService,
         private dotDragDropAPIHtmlService: DotDragDropAPIHtmlService,
         private dotEditContentToolbarHtmlService: DotEditContentToolbarHtmlService,
@@ -118,6 +134,15 @@ export class DotEditContentHtmlService {
     }
 
     /**
+     * Set the current Persona
+     *
+     * @param DotPersona persona
+     */
+    setCurrentPersona(persona: DotPersona) {
+        this.currentPersona = persona;
+    }
+
+    /**
      * Load code into iframe
      *
      * @param string editPageHTML
@@ -133,7 +158,6 @@ export class DotEditContentHtmlService {
             const iframeElement = this.getEditPageIframe();
 
             iframeElement.addEventListener('load', () => {
-                iframeElement.contentWindow[MODEL_VAR_NAME] = this.pageModel$;
                 iframeElement.contentWindow['contentletEvents'] = this.contentletEvents$;
 
                 this.bindGlobalEvents();
@@ -178,6 +202,8 @@ export class DotEditContentHtmlService {
 
         contenletEl.remove();
 
+        this.savePage(this.getContentModel()).subscribe();
+
         this.pageModel$.next({
             model: this.getContentModel(),
             type: PageModelChangeEventType.REMOVE_CONTENT
@@ -203,6 +229,7 @@ export class DotEditContentHtmlService {
                     `[data-dot-object="contentlet"][data-dot-identifier="${contentlet.identifier}"]`
                 )
             );
+
             currentContentlets.forEach((currentContentlet: HTMLElement) => {
                 contentlet.type = currentContentlet.dataset.dotType;
                 const containerEl = <HTMLElement>currentContentlet.parentNode;
@@ -264,19 +291,32 @@ export class DotEditContentHtmlService {
                 containerEl.appendChild(contentletPlaceholder);
             }
 
-            this.dotContainerContentletService
-                .getContentletToContainer(this.currentContainer, contentlet, this.currentPage)
-                .pipe(take(1))
+            const contentletHTML$ = this.dotContainerContentletService.getContentletToContainer(
+                this.currentContainer,
+                contentlet,
+                this.currentPage
+            );
+
+            this.savePage(this.getContentModel(contentlet.identifier))
+                .pipe(
+                    switchMap(() => contentletHTML$),
+                    take(1)
+                )
                 .subscribe((contentletHtml: string) => {
-                    const contentletEl: HTMLElement = this.generateNewContentlet(contentletHtml);
-                    containerEl.replaceChild(contentletEl, contentletPlaceholder);
-                    // Update the model with the recently added contentlet
-                    this.pageModel$.next({
-                        model: this.getContentModel(),
-                        type: PageModelChangeEventType.ADD_CONTENT
-                    });
-                    this.currentAction = DotContentletAction.EDIT;
-                    this.updateContainerToolbar(containerEl.dataset.dotIdentifier);
+                    if (contentletHtml) {
+                        const contentletEl: HTMLElement =
+                            this.generateNewContentlet(contentletHtml);
+                        containerEl.replaceChild(contentletEl, contentletPlaceholder);
+
+                        // Update the model with the recently added contentlet
+                        this.pageModel$.next({
+                            model: this.getContentModel(),
+                            type: PageModelChangeEventType.ADD_CONTENT
+                        });
+
+                        this.currentAction = DotContentletAction.EDIT;
+                        this.updateContainerToolbar(containerEl.dataset.dotIdentifier);
+                    }
                 });
         }
     }
@@ -288,7 +328,7 @@ export class DotEditContentHtmlService {
      * @param booblean isDroppedAsset
      * @memberof DotEditContentHtmlService
      */
-    renderAddedForm(formId: string, isDroppedForm = false): Observable<DotPageContainer[]> {
+    renderAddedForm(formId: string, isDroppedForm = false): void {
         const doc = this.getEditPageDocument();
 
         if (isDroppedForm) {
@@ -306,8 +346,6 @@ export class DotEditContentHtmlService {
         if (this.isFormExistInContainer(formId, containerEl)) {
             this.showContentAlreadyAddedError();
             this.removeContentletPlaceholder();
-
-            return of(null);
         } else {
             let contentletPlaceholder = doc.querySelector(CONTENTLET_PLACEHOLDER_SELECTOR);
 
@@ -316,20 +354,30 @@ export class DotEditContentHtmlService {
                 containerEl.appendChild(contentletPlaceholder);
             }
 
-            return this.dotContainerContentletService
+            this.dotContainerContentletService
                 .getFormToContainer(this.currentContainer, formId)
                 .pipe(
-                    map(({ content }: { content: { [key: string]: string } }) => {
+                    tap(({ content }: { content: { [key: string]: string } }) => {
                         const { identifier, inode } = content;
+                        const formContentlet = this.renderFormContentlet(identifier, inode);
+                        containerEl.replaceChild(formContentlet, contentletPlaceholder);
+                    }),
+                    switchMap(() => this.savePage(this.getContentModel()))
+                )
+                .subscribe(() => {
+                    const model = this.getContentModel();
+                    if (model) {
+                        // Update the model with the recently added contentlet
+                        this.pageModel$.next({
+                            model: model,
+                            type: PageModelChangeEventType.ADD_CONTENT
+                        });
 
-                        containerEl.replaceChild(
-                            this.renderFormContentlet(identifier, inode),
-                            contentletPlaceholder
-                        );
-
-                        return this.getContentModel();
-                    })
-                );
+                        this.iframeActions$.next({
+                            name: 'save'
+                        });
+                    }
+                });
         }
     }
 
@@ -350,8 +398,14 @@ export class DotEditContentHtmlService {
      * @returns *
      * @memberof DotEditContentHtmlService
      */
-    getContentModel(): DotPageContainer[] {
-        return this.getEditPageIframe().contentWindow['getDotNgModel']();
+    getContentModel(addedContentId: string = ''): DotPageContainer[] {
+        const { uuid, identifier } = this.currentContainer || {};
+
+        return this.getEditPageIframe().contentWindow['getDotNgModel']({
+            uuid,
+            identifier,
+            addedContentId
+        });
     }
 
     private setMaterialIcons(): void {
@@ -609,12 +663,21 @@ export class DotEditContentHtmlService {
 
     private buttonClickHandler(target: HTMLElement, type: string) {
         this.updateContentletInode = this.shouldUpdateContentletInode(target);
+        this.currentMenuAction = DotContentletMenuAction[type];
 
         const container = <HTMLElement>target.closest('[data-dot-object="container"]');
+        const contentlet = <HTMLElement>target.closest('[data-dot-object="contentlet"]');
+
+        const dataset = {
+            ...target.dataset,
+            onNumberOfPages: this.getContentletNumberOfPages(contentlet)
+        };
+
         this.iframeActions$.next({
             name: type,
-            dataset: target.dataset,
-            container: container ? container.dataset : null
+            dataset,
+            container: container ? container.dataset : null,
+            copyContent: this.getCopyContentData(contentlet, container)
         });
     }
 
@@ -706,6 +769,12 @@ export class DotEditContentHtmlService {
         const contentletEventsMap = {
             // When an user create or edit a contentlet from the jsp
             save: (contentlet: DotPageContent) => {
+                /*
+                 * The Save event is triggered when the user edit a contentlet or edit the vtl code from the jsp.
+                 * When the user edit the vtl code from the jsp the data sent is the vtl code information.
+                 */
+                const contentletEdited = this.isEditAction() ? contentlet : this.currentContentlet;
+
                 if (this.currentAction === DotContentletAction.ADD) {
                     this.renderAddedContentlet(contentlet);
                 } else {
@@ -715,7 +784,7 @@ export class DotEditContentHtmlService {
                     // because: https://github.com/dotCMS/core/issues/21818
 
                     setTimeout(() => {
-                        this.renderEditedContentlet(this.currentContentlet);
+                        this.renderEditedContentlet(contentletEdited || this.currentContentlet);
                     }, 1800);
                 }
             },
@@ -735,11 +804,22 @@ export class DotEditContentHtmlService {
                     name: 'select'
                 });
             },
-            // When a user drag and drop a contentlet in the iframe
+            // When a user drag and drop a contentlet in the anohter container in the iframe
             relocate: (relocateInfo: DotRelocatePayload) => {
                 if (!this.remoteRendered) {
                     this.renderRelocatedContentlet(relocateInfo);
                 }
+            },
+            // When a user drag and drop a contentlet in the same container in the iframe
+            reorder: (model: DotPageContainer[]) => {
+                this.savePage(model)
+                    .pipe(take(1))
+                    .subscribe(() => {
+                        this.pageModel$.next({
+                            type: PageModelChangeEventType.MOVE_CONTENT,
+                            model
+                        });
+                    });
             },
             'deleted-contenlet': () => {
                 this.removeCurrentContentlet();
@@ -757,19 +837,7 @@ export class DotEditContentHtmlService {
                 this.renderAddedContentlet(dotAssetData.contentlet, true);
             },
             'add-form': (formId: string) => {
-                this.renderAddedForm(formId, true)
-                    .pipe(take(1))
-                    .subscribe((model: DotPageContainer[]) => {
-                        if (model) {
-                            this.pageModel$.next({
-                                model: model,
-                                type: PageModelChangeEventType.ADD_CONTENT
-                            });
-                            this.iframeActions$.next({
-                                name: 'save'
-                            });
-                        }
-                    });
+                this.renderAddedForm(formId, true);
             },
             'handle-http-error': (err: HttpErrorResponse) => {
                 this.dotHttpErrorManagerService.handle(err).pipe(take(1)).subscribe();
@@ -812,7 +880,6 @@ export class DotEditContentHtmlService {
     private loadCodeIntoIframe(pageState: DotPageRenderState): void {
         const doc = this.getEditPageDocument();
         const html = this.updateHtml(pageState);
-
         doc.open();
         doc.write(html);
         doc.close();
@@ -883,5 +950,72 @@ export class DotEditContentHtmlService {
         `;
 
         return <HTMLElement>div.children[0];
+    }
+
+    private getCopyContentData(contentlet: HTMLElement, container: HTMLElement): DotCopyContent {
+        try {
+            /* Get Copy content Data from the contentlet and Container*/
+            const { dotIdentifier: contentId, dotVariant: variantId } = contentlet.dataset;
+            const { dotUuid: relationType, dotIdentifier: containerId } = container.dataset;
+
+            return {
+                pageId: this.currentPage.identifier,
+                treeOrder: this.getTreeOrder(contentlet).toString(),
+                containerId,
+                contentId,
+                relationType,
+                variantId
+            };
+        } catch {
+            return null;
+        }
+    }
+
+    private getTreeOrder(element: HTMLElement): number {
+        return Array.from(element.parentElement.children).indexOf(element);
+    }
+
+    private getContentletNumberOfPages(contentlet: HTMLElement): string {
+        return contentlet?.dataset?.dotOnNumberOfPages || '0';
+    }
+
+    private isEditAction() {
+        return this.currentMenuAction === DotContentletMenuAction.edit;
+    }
+
+    private savePage(model: DotPageContainer[]) {
+        this.dotGlobalMessageService.loading(
+            this.dotMessageService.get('dot.common.message.saving')
+        );
+
+        return this.dotEditPageService
+            .save(this.currentPage.identifier, this.getPersonalizedModel(model) || model)
+            .pipe(
+                take(1),
+                tap(() => {
+                    this.dotGlobalMessageService.success();
+                }),
+                catchError((error: HttpErrorResponse) => {
+                    this.pageModel$.next({
+                        model: this.getContentModel(),
+                        type: PageModelChangeEventType.SAVE_ERROR
+                    });
+
+                    return this.dotHttpErrorManagerService.handle(error);
+                })
+            );
+    }
+
+    private getPersonalizedModel(model: DotPageContainer[]): DotPageContainerPersonalized[] {
+        if (this.currentPersona && this.currentPersona.personalized) {
+            return model.map((container: DotPageContainer) => {
+                return {
+                    ...container,
+                    personaTag: this.currentPersona.keyTag
+                };
+            });
+        }
+
+        return null;
     }
 }

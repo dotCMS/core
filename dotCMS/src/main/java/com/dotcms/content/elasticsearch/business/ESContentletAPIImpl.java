@@ -1,5 +1,11 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
+import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
+import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PERSONA_NAME_KEY;
+
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
@@ -39,7 +45,6 @@ import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
-import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.storage.FileMetadataAPI;
 import com.dotcms.storage.model.Metadata;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
@@ -51,6 +56,7 @@ import com.dotcms.util.FunctionUtils;
 import com.dotcms.util.JsonUtil;
 import com.dotcms.util.ThreadContextUtil;
 import com.dotcms.variant.VariantAPI;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -728,7 +734,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @CloseDBIfOpened
     @Override
-    public Contentlet findContentletByIdentifierAnyLanguageAndVariant(final String identifier) throws DotDataException{
+    public Contentlet findContentletByIdentifierAnyLanguageAnyVariant(final String identifier) throws DotDataException{
 
         try {
             final ContentletVersionInfo anyContentletVersionInfoAnyVariant = FactoryLocator.getVersionableFactory()
@@ -2797,7 +2803,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         this.deleteBinaryFiles(contentletsVersion, null);
         this.deleteElementFromPublishQueueTable(contentlets);
-        this.destroyMetadata(contentlets);
 
         return noErrors;
     }
@@ -3709,6 +3714,22 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
     }
+
+    @WrapInTransaction
+    @Override
+    public Contentlet copyContentToVariant(final Contentlet contentlet, final String variantName,
+            final User user) throws DotDataException, DotSecurityException {
+
+        final Contentlet contentletFromDataBase = find(contentlet.getInode(), user, false);
+
+        final Contentlet checkout = checkout(contentletFromDataBase.getInode(), user, false);
+        checkout.setVariantId(variantName);
+
+        return Try.of(() -> checkin(checkout, user, false))
+                 .getOrElseThrow(
+                        e -> new DotStateException("Unable to create a new version from Contentlet:" + contentlet.getInode(), e));
+    }
+
 
     /**
      * @param contentlet
@@ -6905,6 +6926,26 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @CloseDBIfOpened
     @Override
+    public List<Contentlet> findAllVersions(final Identifier identifier, final Variant variant,
+            final User user, boolean respectFrontendRoles)
+            throws DotSecurityException, DotDataException {
+        final List<Contentlet> allVersions = contentFactory.findAllVersions(identifier, variant);
+
+        if (allVersions.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        if (!permissionAPI.doesUserHavePermission(allVersions.get(0), PermissionAPI.PERMISSION_READ,
+                user, respectFrontendRoles)) {
+            throw new DotSecurityException(
+                    "User: " + (identifier != null ? identifier.getId() : "Unknown")
+                            + " cannot read Contentlet So Unable to View Versions");
+        }
+        return allVersions;
+    }
+
+    @CloseDBIfOpened
+    @Override
     public List<Contentlet> findAllVersions(Identifier identifier, boolean bringOldVersions,
             User user, boolean respectFrontendRoles)
             throws DotSecurityException, DotDataException, DotStateException {
@@ -7230,13 +7271,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 if (((String) value).trim().length() > 0) {
                     try {
                         final String trimmedValue = ((String) value).trim();
-                        if (trimmedValue.equals("+0000") || trimmedValue.equals("00:00 +0000")) {
-                            contentlet.setDateProperty(field.getVelocityVarName(),
-                                    null);
-                        } else {
-                            contentlet.setDateProperty(field.getVelocityVarName(),
-                                    DateUtil.convertDate((String) value, dateFormats));
-                        }
+                        contentlet.setDateProperty(field.getVelocityVarName(),
+                                DateUtil.convertDate(trimmedValue, dateFormats));
                     } catch (Exception e) {
                         throw new DotContentletStateException(
                                 "Unable to convert string to date " + value);
@@ -8629,7 +8665,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @param field
      */
     private void deleteBinaryFiles(List<Contentlet> contentlets, Field field) {
-        contentlets.stream().forEach(con -> {
+        this.destroyMetadata(contentlets);
+        contentlets.forEach(con -> {
 
             String contentletAssetPath = getContentletAssetPath(con, field);
             String contentletAssetCachePath = getContentletCacheAssetPath(con, field);
@@ -9477,17 +9514,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
         contentFactory.updateUserReferences(userToReplace, replacementUserId, user);
     }
 
+    static final String CONTENTLET_URL_MAP_FOR_CONTENT_404 = "URL_MAP_FOR_CONTENT_404";
+
     @CloseDBIfOpened
     @Override
     public String getUrlMapForContentlet(Contentlet contentlet, User user,
             boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
         // no structure, no inode, no workee
-        if (!InodeUtils.isSet(contentlet.getInode()) || !InodeUtils.isSet(
-                contentlet.getStructureInode())) {
+        if (UtilMethods.isEmpty(()->contentlet.getInode())) {//NOSONAR
             return null;
         }
 
-        final String CONTENTLET_URL_MAP_FOR_CONTENT_404 = "URL_MAP_FOR_CONTENT_404";
         String result = (String) contentlet.getMap().get(URL_MAP_FOR_CONTENT_KEY);
         if (result != null) {
             if (CONTENTLET_URL_MAP_FOR_CONTENT_404.equals(result)) {
@@ -9497,9 +9534,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         // if there is no detail page, return
-        Structure structure = CacheLocator.getContentTypeCache()
-                .getStructureByInode(contentlet.getStructureInode());
-        if (!UtilMethods.isSet(structure.getDetailPage())) {
+        ContentType type = Try.of(contentlet::getContentType).getOrNull();
+        if (UtilMethods.isEmpty(() -> type.detailPage())) { //NOSONAR
             return null;
         }
 
@@ -9507,11 +9543,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
         Host host = APILocator.getHostAPI().find(id.getHostId(), user, respectFrontendRoles);
 
         // URL MAPPed
-        if (UtilMethods.isSet(structure.getUrlMapPattern())) {
-            List<RegExMatch> matches = RegEX.find(structure.getUrlMapPattern(), "({[^{}]+})");
+        if (UtilMethods.isSet(type.urlMapPattern())) {
+            List<RegExMatch> matches = RegEX.find(type.urlMapPattern(), "({[^{}]+})");
             String urlMapField;
             String urlMapFieldValue;
-            result = structure.getUrlMapPattern();
+            result = type.urlMapPattern();
             for (RegExMatch match : matches) {
                 urlMapField = match.getMatch();
                 urlMapFieldValue = contentlet.getStringProperty(
@@ -9524,17 +9560,24 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 if (UtilMethods.isSet(urlMapFieldValue)) {
                     result = result.replaceAll(urlMapField, urlMapFieldValue);
                 } else {
-                    result = result.replaceAll(urlMapField, "");
+                    // urlmap property not found on content
+                    result = null;
+                    break;
                 }
             }
         }
 
         // or Detail page with id=uuid
         else {
-            IHTMLPage p = loadPageByIdentifier(structure.getDetailPage(), false, user,
-                    respectFrontendRoles);
-            if (p != null && UtilMethods.isSet(p.getIdentifier())) {
-                result = p.getURI() + "?id=" + contentlet.getInode();
+            final Identifier detailPageId = APILocator.getIdentifierAPI().find(type.detailPage());
+            if (UtilMethods.isEmpty(() -> detailPageId.getPath())) { //NOSONAR
+                contentlet.setStringProperty(URL_MAP_FOR_CONTENT_KEY, CONTENTLET_URL_MAP_FOR_CONTENT_404);
+                return null;
+            }
+
+
+            if (UtilMethods.isSet(() -> detailPageId.getId())) { //NOSONAR
+                result = detailPageId.getPath() + "?id=" + contentlet.getInode();
             }
         }
 
@@ -9547,10 +9590,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
         }
 
-        if (result == null) {
-            result = CONTENTLET_URL_MAP_FOR_CONTENT_404;
+        if (UtilMethods.isEmpty( result )) {
+            contentlet.setStringProperty(URL_MAP_FOR_CONTENT_KEY, CONTENTLET_URL_MAP_FOR_CONTENT_404);
+        }else {
+            contentlet.setStringProperty(URL_MAP_FOR_CONTENT_KEY, result);
         }
-        contentlet.setStringProperty(URL_MAP_FOR_CONTENT_KEY, result);
         return result;
     }
 

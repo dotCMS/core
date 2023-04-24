@@ -8,7 +8,7 @@ import {
 import { of } from 'rxjs';
 
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -33,7 +33,8 @@ import {
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import {
     ActivatedRouteListStoreMock,
-    getExperimentAllMocks
+    getExperimentAllMocks,
+    getExperimentMock
 } from '@portlets/dot-experiments/test/mocks';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
@@ -42,6 +43,8 @@ import { DotExperimentsListComponent } from './dot-experiments-list.component';
 
 const EXPERIMENT_MOCKS = getExperimentAllMocks();
 
+const EXPERIMENT_MOCK = getExperimentMock(0);
+
 describe('ExperimentsListComponent', () => {
     let spectator: Spectator<DotExperimentsListComponent>;
     let dotExperimentsStatusFilterComponent: DotExperimentsStatusFilterComponent;
@@ -49,6 +52,7 @@ describe('ExperimentsListComponent', () => {
     let dotExperimentsListSkeletonComponent: DotExperimentsListSkeletonComponent;
 
     let dotExperimentsService: SpyObject<DotExperimentsService>;
+    let router: SpyObject<Router>;
 
     const createComponent = createComponentFactory({
         imports: [
@@ -70,6 +74,7 @@ describe('ExperimentsListComponent', () => {
             DotExperimentsListTableComponent
         ],
         providers: [
+            mockProvider(Router),
             mockProvider(DotMessagePipe),
             mockProvider(DotMessageService),
             mockProvider(DotExperimentsService),
@@ -89,6 +94,7 @@ describe('ExperimentsListComponent', () => {
             detectChanges: false
         });
 
+        router = spectator.inject(Router);
         dotExperimentsService = spectator.inject(DotExperimentsService);
         dotExperimentsService.getAll.and.returnValue(of(EXPERIMENT_MOCKS));
     });
@@ -101,7 +107,7 @@ describe('ExperimentsListComponent', () => {
             },
             experiments: [],
             filterStatus: [],
-            experimentsFiltered: {},
+            experimentsFiltered: [],
             isLoading: true,
             sidebar: {
                 status: ComponentStatus.IDLE,
@@ -123,7 +129,7 @@ describe('ExperimentsListComponent', () => {
             },
             experiments: [],
             filterStatus: [],
-            experimentsFiltered: {},
+            experimentsFiltered: [],
             isLoading: false,
             sidebar: {
                 status: ComponentStatus.IDLE,
@@ -147,7 +153,7 @@ describe('ExperimentsListComponent', () => {
             },
             experiments: getExperimentAllMocks(),
             filterStatus: [],
-            experimentsFiltered: {},
+            experimentsFiltered: [],
             isLoading: false,
             sidebar: {
                 status: ComponentStatus.IDLE,
@@ -169,5 +175,21 @@ describe('ExperimentsListComponent', () => {
         spectator.detectComponentChanges();
 
         expect(spectator.query(DotExperimentsCreateComponent)).toExist();
+    });
+
+    it('should go to Report Container', () => {
+        spectator.detectComponentChanges();
+        spectator.component.goToViewExperimentReport(EXPERIMENT_MOCK);
+        expect(router.navigate).toHaveBeenCalledWith(
+            ['/edit-page/experiments/reports/', EXPERIMENT_MOCK.id],
+            {
+                queryParams: {
+                    mode: null,
+                    variantName: null,
+                    experimentId: null
+                },
+                queryParamsHandling: 'merge'
+            }
+        );
     });
 });

@@ -62,7 +62,7 @@ describe('DotCopyLinkComponent', () => {
         });
 
         it('should show label', () => {
-            expect(button.nativeElement.textContent).toBe('Label content_copy');
+            expect(button.nativeElement.textContent.trim()).toBe('Label');
         });
 
         it('should show copy icon', () => {

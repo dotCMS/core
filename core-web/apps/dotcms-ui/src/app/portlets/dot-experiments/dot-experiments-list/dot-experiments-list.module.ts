@@ -16,6 +16,7 @@ import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-i
 import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { DotIconModule } from '@dotcms/ui';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { DotRelativeDatePipe } from '@pipes/dot-relative-date/dot-relative-date.pipe';
 import { DotExperimentsListRoutingModule } from '@portlets/dot-experiments/dot-experiments-list/dot-experiments-list-routing.module';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { DotExperimentsUiHeaderComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
@@ -58,7 +59,8 @@ import { DotExperimentsListComponent } from './dot-experiments-list.component';
         MenuModule,
         ConfirmDialogModule,
         ConfirmPopupModule,
-        ToastModule
+        ToastModule,
+        DotRelativeDatePipe
     ],
     providers: [DotExperimentsService]
 })

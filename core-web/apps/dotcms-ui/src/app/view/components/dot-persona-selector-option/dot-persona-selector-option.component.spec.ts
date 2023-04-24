@@ -1,20 +1,28 @@
-import { DebugElement } from '@angular/core';
+import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
+import { AvatarModule } from 'primeng/avatar';
+import { BadgeModule } from 'primeng/badge';
 import { ButtonModule } from 'primeng/button';
 
-import { DotAvatarModule } from '@components/_common/dot-avatar/dot-avatar.module';
+import { DotAvatarDirective } from '@directives/dot-avatar/dot-avatar.directive';
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService, mockDotPersona } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotPersonaSelectorOptionComponent } from './dot-persona-selector-option.component';
 
+@Component({
+    template: `<dot-persona-selector-option [persona]="persona"></dot-persona-selector-option>`
+})
+class TestHostComponent {
+    persona = mockDotPersona;
+}
 describe('DotPersonaSelectorOptionComponent', () => {
     let component: DotPersonaSelectorOptionComponent;
-    let fixture: ComponentFixture<DotPersonaSelectorOptionComponent>;
+    let fixture: ComponentFixture<TestHostComponent>;
     let de: DebugElement;
 
     const messageServiceMock = new MockDotMessageService({
@@ -23,8 +31,15 @@ describe('DotPersonaSelectorOptionComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [DotPersonaSelectorOptionComponent],
-            imports: [BrowserAnimationsModule, DotAvatarModule, DotPipesModule, ButtonModule],
+            declarations: [DotPersonaSelectorOptionComponent, TestHostComponent],
+            imports: [
+                BrowserAnimationsModule,
+                DotAvatarDirective,
+                BadgeModule,
+                AvatarModule,
+                DotPipesModule,
+                ButtonModule
+            ],
             providers: [
                 {
                     provide: DotMessageService,
@@ -33,10 +48,11 @@ describe('DotPersonaSelectorOptionComponent', () => {
             ]
         }).compileComponents();
 
-        fixture = TestBed.createComponent(DotPersonaSelectorOptionComponent);
-        component = fixture.componentInstance;
-        de = fixture.debugElement;
-        component.persona = mockDotPersona;
+        fixture = TestBed.createComponent(TestHostComponent);
+        component = fixture.debugElement.query(
+            By.css('dot-persona-selector-option')
+        ).componentInstance;
+        de = fixture.debugElement.query(By.css('dot-persona-selector-option'));
     });
 
     describe('elements', () => {
@@ -44,18 +60,20 @@ describe('DotPersonaSelectorOptionComponent', () => {
             fixture.detectChanges();
         });
 
-        it('should have dot-avatar with right properties', () => {
-            const avatar: DebugElement = de.query(By.css('dot-avatar'));
-            expect(avatar.componentInstance.label).toBe(mockDotPersona.name);
-            expect(avatar.componentInstance.showDot).toBe(mockDotPersona.personalized);
-            expect(avatar.componentInstance.url).toBe(mockDotPersona.photo);
-            expect(avatar.componentInstance.size).toBe(32);
+        it('should have p-avatar with right properties', () => {
+            const avatar = fixture.debugElement.query(By.css('p-avatar'));
+
+            const { image } = avatar.componentInstance;
+
+            expect(image).toBe(mockDotPersona.photo);
+            expect(avatar.query(By.css('.p-badge'))).toBeTruthy();
+            expect(avatar.attributes['ng-reflect-text']).toBe(mockDotPersona.name);
         });
 
         it('should have personalized button with right properties', () => {
             const btnElement: DebugElement = de.query(By.css('button'));
             expect(btnElement.nativeElement.innerText).toBe('PERSONALIZED');
-            expect(btnElement.attributes.icon).toBe('fa fa-times');
+            expect(btnElement.attributes.icon).toBe('pi pi-times');
             expect(btnElement.attributes.iconPos).toBe('right');
         });
 
@@ -72,7 +90,8 @@ describe('DotPersonaSelectorOptionComponent', () => {
 
     describe('not personalize', () => {
         it('should label not set personalized class', () => {
-            component.persona = {
+            const hostComp = fixture.componentInstance;
+            hostComp.persona = {
                 ...mockDotPersona,
                 personalized: false
             };
@@ -88,7 +107,8 @@ describe('DotPersonaSelectorOptionComponent', () => {
         });
 
         it('should not display personalized button when personalized is false', () => {
-            component.persona = {
+            const hostComp = fixture.componentInstance;
+            hostComp.persona = {
                 ...mockDotPersona,
                 personalized: false
             };
@@ -99,9 +119,6 @@ describe('DotPersonaSelectorOptionComponent', () => {
         });
 
         it('should not display personalized button when canDespersonalize is false', () => {
-            component.persona = {
-                ...mockDotPersona
-            };
             component.canDespersonalize = false;
             fixture.detectChanges();
 

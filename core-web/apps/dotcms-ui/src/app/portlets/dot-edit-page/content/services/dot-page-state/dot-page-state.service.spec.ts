@@ -5,6 +5,8 @@ import { getTestBed, TestBed } from '@angular/core/testing';
 
 import { ConfirmationService } from 'primeng/api';
 
+import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
@@ -66,6 +68,7 @@ describe('DotPageStateService', () => {
                 ConfirmationService,
                 DotFormatDateService,
                 DotESContentService,
+                { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 {
@@ -134,6 +137,29 @@ describe('DotPageStateService', () => {
                 },
                 {}
             ]);
+
+            expect(dotESContentService.get).toHaveBeenCalledWith({
+                itemsPerPage: 10,
+                offset: '0',
+                query: `+contentType:DotFavoritePage +deleted:false +working:true +DotFavoritePage.url_dotraw:/an/url/test?&language_id=1&device_inode=`
+            });
+        });
+
+        it('should get with url from queryParams with a Failing fetch from ES Search (favorite page)', () => {
+            const error500 = mockResponseView(500, '/test', null, { message: 'error' });
+            dotESContentService.get = jasmine.createSpy().and.returnValue(throwError(error500));
+            service.get();
+
+            const subscribeCallback = jasmine.createSpy('spy');
+            service.haveContent$.subscribe(subscribeCallback);
+
+            expect(subscribeCallback).toHaveBeenCalledWith(true);
+            expect(subscribeCallback).toHaveBeenCalledTimes(1);
+
+            const mock = getDotPageRenderStateMock();
+            service.state$.subscribe((state: DotPageRenderState) => {
+                expect(state).toEqual(mock);
+            });
         });
     });
 

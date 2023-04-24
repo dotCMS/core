@@ -115,6 +115,7 @@ public class ContentletLoader implements DotLoader {
         final String contentTypeId = content.get("formId") == null ? content.getContentType().id() : content.get("formId").toString();
         sb.append("#set($CONTENT_TYPE_ID='").append(contentTypeId).append("' )");
         sb.append("#set($CONTENT_LANGUAGE='").append(content.getLanguageId()).append("' )");
+        sb.append("#set($CONTENT_VARIANT='").append(content.getVariantId()).append("' )");
 
         if(mode == PageMode.EDIT_MODE) {
             final Optional<Integer> pageReferences =
@@ -176,14 +177,32 @@ public class ContentletLoader implements DotLoader {
 
             if (field instanceof StoryBlockField) {
                 contFieldValueObject = conAPI.getFieldValue(content, field);
-                sb.append("#set($").append(field.variable());
                 if (JsonUtil.isValidJSON(contFieldValueObject.toString())) {
-                    sb.append("= $json.generate(").append(contFieldValueObject).append("))");
+                    sb.append("#set($")
+                        .append(field.variable())
+                        .append("= $json.generate(")
+                        .append(contFieldValueObject)
+                        .append("))");
                 } else {
                     Logger.warn(this, String.format("Story Block field '%s' in contentlet with ID '%s' does not " +
                                                             "contain valid JSON data. Please try to re-publish it.",
                             field.variable(), content.getIdentifier()));
-                    sb.append("= \"").append(contFieldValueObject).append("\")");
+                    if (contFieldValueObject.toString().contains("$") || contFieldValueObject.toString().contains("#")) {
+                        String velPath = new VelocityResourceKey(field, Optional.of(content), mode).path ;
+                        sb.append("#set($")
+                                .append(field.variable())
+                                .append("= $velutil.mergeTemplate(\"")
+                                .append(velPath)
+
+                                .append("\"))");
+                    } else {
+                        sb.append("#set($")
+                                .append(field.variable())
+                                .append("= \"")
+                                .append(UtilMethods.espaceForVelocity(contFieldValueObject.toString()).trim())
+                                .append("\")");
+                    }
+                    
                 }
                 continue;
             }

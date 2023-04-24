@@ -1,7 +1,7 @@
 @use "variables" as *;
 
 :host {
-    border: 1px solid $gray-lighter;
+    border: 1px solid $color-palette-gray-300;
     cursor: pointer;
     display: flex;
     margin-right: $spacing-3;
@@ -19,10 +19,7 @@
         margin-right: $spacing-3;
         text-align: end;
         width: 100%;
-        color: $brand-primary;
-    }
-
-    dot-icon {
+        color: $color-palette-primary;
     }
 }
 
@@ -37,7 +34,7 @@
 }
 
 .dot-apps-configuration-list__host-key {
-    color: $gray;
+    color: $color-palette-gray-700;
     display: flex;
     flex-grow: 1;
     align-items: center;

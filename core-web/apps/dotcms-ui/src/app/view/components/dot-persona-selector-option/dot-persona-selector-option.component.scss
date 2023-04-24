@@ -15,7 +15,7 @@
         background-color: $bg-highlight;
     }
 
-    dot-avatar {
+    p-avatar {
         margin: 0 $spacing-3;
     }
 
@@ -28,7 +28,7 @@
         overflow: hidden;
 
         &.dot-persona-selector-option__personalized {
-            color: $body-font-color;
+            color: $font-color-base;
         }
 
         &.dot-persona-selector-option__selected {

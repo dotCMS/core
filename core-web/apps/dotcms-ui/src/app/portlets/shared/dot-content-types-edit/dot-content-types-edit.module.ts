@@ -6,6 +6,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
+import { ChipModule } from 'primeng/chip';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
 import { DropdownModule } from 'primeng/dropdown';
@@ -31,6 +32,7 @@ import { IFrameModule } from '@components/_common/iframe';
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
 import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
 import { DotBaseTypeSelectorModule } from '@components/dot-base-type-selector';
+import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 import { DotCopyLinkModule } from '@components/dot-copy-link/dot-copy-link.module';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
@@ -154,7 +156,9 @@ import { DotAddToMenuModule } from '../dot-content-types-listing/components/dot-
         DotRelationshipTreeModule,
         DotPortletBoxModule,
         DotMdIconSelectorModule,
-        DotAddToMenuModule
+        DotAddToMenuModule,
+        DotCopyButtonModule,
+        ChipModule
     ],
     providers: [
         DotContentTypesInfoService,

@@ -61,7 +61,11 @@ export class DotPagesListingPanelComponent {
      * @memberof DotPagesListingPanelComponent
      */
     onRowSelect(event: Event): void {
-        this.goToUrl.emit(event['data'].urlMap || event['data'].url);
+        const url = `${event['data'].urlMap || event['data'].url}?language_id=${
+            event['data'].languageId
+        }&device_inode=`;
+
+        this.goToUrl.emit(url);
     }
 
     /**

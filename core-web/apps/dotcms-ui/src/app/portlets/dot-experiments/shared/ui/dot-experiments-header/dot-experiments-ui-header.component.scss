@@ -1,19 +1,54 @@
 @use "variables" as *;
+@use "mixins" as *;
 
 .wrapper {
     padding: 0 $spacing-5 0 $spacing-5;
     min-height: $experiment-header-height;
     background-color: $white;
     color: $black;
-    font-size: $font-size-x-large;
-    border-bottom: 1px solid $gray-lighter;
+    font-size: $font-size-xl;
+    border-bottom: 1px solid $color-palette-gray-300;
 
     a {
-        color: $gray;
+        color: $color-alert-blue;
         font-weight: $font-weight-regular-bold;
 
         i {
-            font-size: $md-icon-size-extra-big;
+            font-size: $md-icon-size-big;
+        }
+    }
+}
+
+::ng-deep {
+    p-tag .p-tag {
+        &.p-tag-danger {
+            background-color: $color-alert-red-light;
+            color: $color-alert-red;
+        }
+
+        &.running {
+            color: $color-accessible-text-green;
+            background-color: $color-accessible-text-green-bg;
+        }
+
+        &.draft {
+            color: $color-accessible-text-yellow;
+            background-color: $color-accessible-text-yellow-bg;
+        }
+
+        &.scheduled {
+            color: $color-accessible-text-purple;
+            background-color: $color-accessible-text-purple-bg;
+        }
+
+        &.ended {
+            color: $color-accessible-text-blue;
+            background-color: $color-accessible-text-blue-bg;
+        }
+
+        &.archived {
+            color: $color-accessible-text-gray;
+            background-color: $color-accessible-text-gray-bg;
         }
     }
 }

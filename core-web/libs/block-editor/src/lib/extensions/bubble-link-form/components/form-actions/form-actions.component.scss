@@ -1,4 +1,4 @@
-@import "libs/dot-primeng-theme-styles/src/scss/variables";
+@use "variables" as *;
 
 .form-actions {
     align-items: center;
