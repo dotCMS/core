@@ -5,7 +5,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Treeable;
-import com.dotmarketing.business.ajax.DwrUtil;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
