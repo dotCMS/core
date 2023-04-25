@@ -135,6 +135,6 @@ export class DotExperimentsConfigurationSchedulingAddComponent implements OnInit
     }
 
     private isStatDateMoreRecent(): boolean {
-        return this.form.value.startDate && this.form.value.startDate > this.form.value.endDate;
+        return this.form.value.startDate && this.form.value.startDate >= this.form.value.endDate;
     }
 }
