@@ -24,6 +24,7 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.DotAssetContentType;
+import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.datagen.*;
 import com.dotcms.datagen.TestDataUtils.TestFile;
 import com.dotcms.exception.ExceptionUtil;
@@ -108,6 +109,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
 import com.google.common.io.Files;
+import com.liferay.portal.auth.PrincipalThreadLocal;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
@@ -7534,6 +7536,65 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         }finally {
             Config.setProperty(SAVE_CONTENTLET_AS_JSON, defaultValue);
+        }
+    }
+
+    @DataProvider
+    public static Object[][] testCasesDateTimeWithTimeZone() {
+        return new Object[][]{
+                {"UTC", "2023-03-15 15:45 +0000"},                    // UTC
+                {"America/New_York", "2023-02-15 15:45 -0500"},       // EST
+                {"America/New_York", "2023-03-15 16:45 -0400"},       // EDT
+                {"America/Chicago", "2023-02-15 14:45 -0600"},        // CST
+                {"America/Chicago", "2023-03-15 15:45 -0500"},        // CDT
+                {"America/Los_Angeles", "2023-02-15 12:45 -0800"},    // PST
+                {"America/Los_Angeles", "2023-03-15 13:45 -0700"}     // PDT
+        };
+    }
+
+    /**
+     * Given scenario: Contentlet with a {@link DateTimeField} when the system timezone is different from UTC (+0000)
+     */
+    @Test
+    @UseDataProvider("testCasesDateTimeWithTimeZone")
+    public void setDateTimeFieldValueWithTimeZone(String timeZoneId, String dateToSave) throws Exception {
+
+        // save current timezone and language
+        PrincipalThreadLocal.setName(APILocator.systemUser().getUserId());
+        final TimeZone currentTimeZone = APILocator.systemTimeZone();
+        final String currentLanguageId = APILocator.getCompanyAPI().getDefaultCompany().getLocale().getLanguage();
+        try {
+
+            // set system timezone
+            APILocator.getCompanyAPI().updateDefaultUserSettings(currentLanguageId, timeZoneId,
+                    null, false, false, null);
+
+            // create content type with JSON field
+            final ContentType typeWithDateTimeField = new ContentTypeDataGen().nextPersisted();
+            com.dotcms.contenttype.model.field.Field dateTimeField = new FieldDataGen()
+                    .type(DateTimeField.class)
+                    .contentTypeId(typeWithDateTimeField.id())
+                    .defaultValue(null)
+                    .nextPersisted();
+
+            Contentlet contentletWithDate = new ContentletDataGen(typeWithDateTimeField)
+                    .next();
+
+            contentletAPI.setContentletProperty(contentletWithDate,
+                    new LegacyFieldTransformer(dateTimeField).asOldField(), dateToSave);
+
+            // Save the content
+            contentletWithDate = contentletAPI.checkin(contentletWithDate, user, Boolean.TRUE);
+
+            final Date expectedDate = DateUtil.convertDate(dateToSave);
+
+            assertEquals(expectedDate, contentletWithDate.getDateProperty(dateTimeField.variable()));
+
+        } finally {
+            // restore timezone and language
+            APILocator.getCompanyAPI().updateDefaultUserSettings(currentLanguageId, currentTimeZone.getID(),
+                    null, false, false, null);
+            PrincipalThreadLocal.setName(null);
         }
     }
 
