@@ -120,7 +120,7 @@ export class DotExperimentsConfigurationSchedulingAddComponent implements OnInit
      * @returns void
      * @memberof DotExperimentsConfigurationSchedulingAddComponent
      */
-    private setMinEndDate(): void {
+    setMinEndDate(): void {
         if (this.form.value.startDate) {
             this.minEndDate = new Date(this.form.value.startDate.getTime() + 1000 * 60 * 30);
         } else {
