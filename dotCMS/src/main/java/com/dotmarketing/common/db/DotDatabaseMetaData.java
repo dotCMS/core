@@ -699,5 +699,38 @@ public class DotDatabaseMetaData {
         return indexMeta.stream().map(map -> map.get("index_name").toString()).collect(Collectors.toList());
     }
 
+
+    /**
+     * Get the length of a modified column in a specified table.
+     *
+     * @param tableName
+     *            - The name of the table to be queried.
+     * @param columnName
+     *            - The name of the column that wants to be queried.
+     * @return Map<String, String>
+     *            - the length of the field and if is nullable
+     *
+     * @throws SQLException
+     *             An error occurred when executing the SQL query.
+     */
+    public Map<String, String> getModifiedColumnLength ( final String tableName, final String columnName) throws SQLException, DotDataException {
+        final DotConnect dotConnect = new DotConnect();
+
+        //the same query works for both supported sql versions
+        if(DbConnectionFactory.isPostgres() || DbConnectionFactory.isMsSql() ) {
+            return getColPropertiesQuery(dotConnect, tableName, columnName);
+        }
+
+        throw new DotDataException("Unknown database type.");
+    } // getModifiedColumnLength.
+
+    private Map<String, String> getColPropertiesQuery(DotConnect dotConnect, String tableName, String columnName) throws DotDataException {
+        final String query = "select character_maximum_length as field_length, is_nullable as nullable_value " +
+                "from information_schema.columns " +
+                "where table_name = '"+tableName+"' and column_name='"+columnName+"'";
+        dotConnect.setSQL(query);
+        return (Map<String, String>)dotConnect.loadResults().get(0);
+    }
+
 } // E:O:F:DotDatabaseMetaData.
 

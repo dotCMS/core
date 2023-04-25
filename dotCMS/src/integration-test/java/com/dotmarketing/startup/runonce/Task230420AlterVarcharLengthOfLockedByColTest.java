@@ -2,6 +2,7 @@ package com.dotmarketing.startup.runonce;
 
 
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import org.junit.Test;
@@ -44,7 +45,9 @@ public class Task230420AlterVarcharLengthOfLockedByColTest {
     @Test
     public void test_executeUpgrade_GivenIncreaseLockedByLength_LengthShouldBeMoreThan36() throws SQLException, DotDataException {
         final String[] tableNames = { "contentlet_version_info", "container_version_info", "template_version_info", "link_version_info" };
+        final String colName = "locked_by";
         Map<String, String> result;
+        final DotDatabaseMetaData dotDatabaseMetaData = new DotDatabaseMetaData();
 
         //The method is created and tested only for postgres
         if (DbConnectionFactory.isPostgres()){
@@ -53,7 +56,7 @@ public class Task230420AlterVarcharLengthOfLockedByColTest {
             for (String tableName : tableNames) {
                 setMinLengthBeforeTask(tableName);
                 //set the length 36 to recreate the given scenario
-                result = getColProperties(tableName);
+                result = dotDatabaseMetaData.getModifiedColumnLength(tableName, colName);
                 assertEquals("36", result.get("field_length"));
             }
 
@@ -63,7 +66,7 @@ public class Task230420AlterVarcharLengthOfLockedByColTest {
 
             //Check if the length was increased to 100
             for (String tableName : tableNames) {
-                result = getColProperties(tableName);
+                result = dotDatabaseMetaData.getModifiedColumnLength(tableName, colName);;
                 assertEquals("100", result.get("field_length"));
             }
         }
