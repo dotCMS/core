@@ -1,33 +1,26 @@
 package com.dotcms.cli.command.site;
 
 import com.dotcms.api.SiteAPI;
-import com.dotcms.api.client.RestClientFactory;
-import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.site.SiteView;
-import picocli.CommandLine;
-
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import javax.enterprise.context.control.ActivateRequestContext;
+import picocli.CommandLine;
 
 @ActivateRequestContext
 @CommandLine.Command(name = SiteSwitch.NAME,
-     description = "@|bold,green Switch Site |@ Option params @|bold,cyan --idOrName|@ site name or site id."
+       header = "@|bold,blue Use this command to move between sites.|@",
+       description = {
+               " As @|bold,underline,blue dotCMS|@ is a multi-tenant application, you can switch between sites. ",
+               "" // This is needed to add a new line after the description.
+       }
 )
 public class SiteSwitch extends AbstractSiteCommand implements Callable<Integer> {
 
     static final String NAME = "switch";
 
-    @CommandLine.Mixin(name = "output")
-    protected OutputOptionMixin output;
-
-    @Inject
-    RestClientFactory clientFactory;
-
-    @CommandLine.Option(names = { "-in", "--idOrName" },
-            order = 2, arity = "1", description = "Site by id or name", required = true)
+    @CommandLine.Option(names = { "-in", "--idOrName" }, arity = "1", paramLabel = "idOrName", description = "Site name or Id.", required = true)
     String siteNameOrId;
 
     @Override
