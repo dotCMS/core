@@ -132,6 +132,25 @@ describe('DotExperimentsConfigurationSchedulingAddComponent', () => {
         jasmine.clock().uninstall();
     });
 
+    it('should clear end date if start date is equal or more', function () {
+        const startDateCalendar: Calendar = spectator.query(Calendar);
+
+        const component = spectator.component;
+        const mockDate = new Date(16820996334200);
+        jasmine.clock().install();
+        jasmine.clock().mockDate(mockDate);
+
+        component.form.get('startDate').setValue(new Date());
+        component.form.get('endDate').setValue(new Date());
+        startDateCalendar.onSelect.emit();
+
+        spectator.detectChanges();
+
+        expect(component.form.get('endDate').value).toEqual(null);
+
+        jasmine.clock().uninstall();
+    });
+
     it('should close sidebar', () => {
         spyOn(store, 'closeSidebar');
         sidebar = spectator.query(Sidebar);
