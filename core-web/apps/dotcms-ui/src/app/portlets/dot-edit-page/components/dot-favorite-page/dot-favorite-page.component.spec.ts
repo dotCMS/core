@@ -419,7 +419,7 @@ describe('DotFavoritePageComponent', () => {
                 setLoaded: jasmine.createSpy(),
                 setInitialStateData: jasmine.createSpy(),
                 vm$: of({
-                    pageRenderedHtml: '',
+                    pageRenderedHtml: 'test',
                     roleOptions: [],
                     currentUserRoleId: '',
                     formState: { ...formStateMock, inode: 'abc123', thumbnail: '123' },

@@ -509,7 +509,9 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
 
     private getESQuery(identifier?: string) {
         const { keyword, languageId, archived } = this.get().pages;
-        const hostId = this.siteService.currentSite.identifier;
+        const hostIdQuery = this.siteService.currentSite
+            ? `+conhost:${this.siteService.currentSite?.identifier}`
+            : '';
         const langQuery = languageId ? `+languageId:${languageId}` : '';
         const archivedQuery = archived ? `+deleted:true` : '+deleted:false';
         const identifierQuery = identifier ? `+identifier:${identifier}` : '';
@@ -517,7 +519,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             ? `+(title:${keyword}* OR path:*${keyword}* OR urlmap:*${keyword}*)`
             : '';
 
-        return `+conhost:${hostId} +working:true  +(urlmap:* OR basetype:5) ${langQuery} ${archivedQuery} ${keywordQuery} ${identifierQuery}`;
+        return `${hostIdQuery} +working:true  +(urlmap:* OR basetype:5) ${langQuery} ${archivedQuery} ${keywordQuery} ${identifierQuery}`;
     }
 
     private getWorflowActionsFn = (item: DotCMSContentlet): Observable<DotCMSPageWorkflowState> => {
