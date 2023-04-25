@@ -202,6 +202,7 @@ import com.dotmarketing.util.UtilMethodsITest;
 import com.dotmarketing.util.ZipUtilTest;
 import com.dotmarketing.util.contentlet.pagination.PaginatedContentletsIntegrationTest;
 import com.liferay.portal.language.LanguageUtilTest;
+import org.apache.felix.framework.OSGIUtilTest;
 import org.apache.velocity.tools.view.tools.CookieToolTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite.SuiteClasses;
@@ -422,7 +423,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.quartz.job.BinaryCleanupJobTest.class,
         FocalPointAPITest.class,
         com.dotmarketing.tag.business.TagAPITest.class,
-        com.dotcms.osgi.OSGIUtilTest.class,
+        OSGIUtilTest.class,
         com.dotmarketing.fixTasks.FixTask00085FixEmptyParentPathOnIdentifierTest.class,
         com.dotmarketing.startup.runonce.Task05170DefineFrontEndAndBackEndRolesTest.class,
         com.dotmarketing.startup.runonce.Task04375UpdateCategoryKeyTest.class,
