@@ -1,4 +1,4 @@
-import { Observable, of } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Injectable } from '@angular/core';
@@ -24,7 +24,8 @@ import {
     dotcmsContentletMock,
     MockDotMessageService,
     mockDotRenderedPage,
-    mockProcessedRoles
+    mockProcessedRoles,
+    mockResponseView
 } from '@dotcms/utils-testing';
 
 import { DotFavoritePageActionState, DotFavoritePageStore } from './dot-favorite-page.store';
@@ -116,12 +117,14 @@ describe('DotFavoritePageStore', () => {
 
     describe('New Favorite Page', () => {
         beforeEach(() => {
+            spyOn(dotPageRenderService, 'checkPermission').and.returnValue(of(true));
+
             dotFavoritePageStore.setInitialStateData({
                 favoritePageUrl: ''
             });
         });
 
-        it('should set initial data', (done) => {
+        it('should set initial data for a page with total user access', (done) => {
             const expectedInitialState = {
                 roleOptions: mockProcessedRoles,
                 formState: {
@@ -415,14 +418,13 @@ describe('DotFavoritePageStore', () => {
             owner: 'admin'
         };
 
-        beforeEach(() => {
+        it('should set initial data', (done) => {
+            spyOn(dotPageRenderService, 'checkPermission').and.returnValue(of(true));
             dotFavoritePageStore.setInitialStateData({
                 favoritePageUrl: existingDataMock.url,
                 favoritePage: { ...existingDataMock }
             });
-        });
 
-        it('should set initial data', (done) => {
             const expectedInitialState = {
                 roleOptions: mockProcessedRoles,
                 formState: {
@@ -452,6 +454,47 @@ describe('DotFavoritePageStore', () => {
             expect(dotRolesService.search).toHaveBeenCalledTimes(1);
             expect(dotCurrentUser.getCurrentUser).toHaveBeenCalledTimes(1);
             expect(dotPageRenderService.get).toHaveBeenCalledTimes(1);
+        });
+
+        it('should set initial data for an unknown 404 page', (done) => {
+            const error404 = mockResponseView(404);
+            dotPageRenderService.checkPermission = jasmine
+                .createSpy()
+                .and.returnValue(throwError(error404));
+
+            dotFavoritePageStore.setInitialStateData({
+                favoritePageUrl: existingDataMock.url,
+                favoritePage: { ...existingDataMock }
+            });
+
+            const expectedInitialState = {
+                roleOptions: mockProcessedRoles,
+                formState: {
+                    currentUserRoleId: 'e7d23sde-5127-45fc-8123-d424fd510e3',
+                    inode: '',
+                    order: 1,
+                    permissions: ['a1', 'b1'],
+                    thumbnail: 'test1',
+                    title: 'preview1',
+                    url: '/index1?host_id=A&language_id=1&device_inode=123'
+                },
+                isAdmin: true,
+                imgWidth: 1024,
+                imgHeight: 1.333,
+                renderThumbnail: false,
+                loading: false,
+                pageRenderedHtml: '',
+                showFavoriteEmptySkeleton: false,
+                closeDialog: false,
+                actionState: null
+            };
+
+            dotFavoritePageStore.state$.subscribe((state) => {
+                expect(state).toEqual(expectedInitialState);
+                done();
+            });
+            expect(dotRolesService.search).toHaveBeenCalledTimes(1);
+            expect(dotCurrentUser.getCurrentUser).toHaveBeenCalledTimes(1);
         });
     });
 });

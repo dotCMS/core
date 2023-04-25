@@ -15,6 +15,7 @@ import { DotWorkflowEventHandlerService } from '@dotcms/app/api/services/dot-wor
 import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
 import { DotEnvironment } from '@dotcms/app/shared/models/dot-environment/dot-environment';
 import {
+    DotCMSPageWorkflowState,
     DotCurrentUserService,
     DotESContentService,
     DotEventsService,
@@ -22,6 +23,7 @@ import {
     DotLicenseService,
     DotMessageService,
     DotPageTypesService,
+    DotPageWorkflowsActionsService,
     DotRenderMode,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService,
@@ -338,7 +340,6 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                                         throw false;
                                     } else {
                                         // Finished fetch loop and will proceed to set data on store
-
                                         if (isFavoritePage) {
                                             const pagesData = this.get().favoritePages.items.map(
                                                 (page) => {
@@ -350,11 +351,23 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
 
                                             this.setFavoritePages(pagesData);
                                         } else {
-                                            const pagesData = this.get().pages.items.map((page) => {
-                                                return page?.identifier === identifier
-                                                    ? items.jsonObjectView.contentlets[0]
-                                                    : page;
-                                            });
+                                            let pagesData = this.get().pages.items;
+
+                                            if (items.jsonObjectView.contentlets[0] === undefined) {
+                                                pagesData = pagesData.filter((page) => {
+                                                    return page?.identifier !== identifier;
+                                                });
+
+                                                // Add undefined to keep the same length of the array,
+                                                // otherwise the pagination(endless scroll) will break
+                                                pagesData.push(undefined);
+                                            } else {
+                                                pagesData = pagesData.map((page) => {
+                                                    return page?.identifier === identifier
+                                                        ? items.jsonObjectView.contentlets[0]
+                                                        : page;
+                                                });
+                                            }
 
                                             this.setPages(pagesData);
                                         }
@@ -420,17 +433,15 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         (params$: Observable<{ item: DotCMSContentlet; actionMenuDomId: string }>) => {
             return params$.pipe(
                 switchMap(({ item, actionMenuDomId }) => {
-                    return this.dotWorkflowsActionsService
-                        .getByInode(item.inode, DotRenderMode.LISTING)
-                        .pipe(
-                            take(1),
-                            map((actions: DotCMSWorkflowAction[]) => {
-                                return {
-                                    actions: this.getSelectActions(actions, item),
-                                    actionMenuDomId
-                                };
-                            })
-                        );
+                    return this.getWorflowActionsFn(item).pipe(
+                        take(1),
+                        map((data: DotCMSPageWorkflowState) => {
+                            return {
+                                actions: this.getSelectActions(data.actions, data.page),
+                                actionMenuDomId
+                            };
+                        })
+                    );
                 }),
                 tap(
                     ({
@@ -498,7 +509,9 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
 
     private getESQuery(identifier?: string) {
         const { keyword, languageId, archived } = this.get().pages;
-        const hostId = this.siteService.currentSite.identifier;
+        const hostIdQuery = this.siteService.currentSite
+            ? `+conhost:${this.siteService.currentSite?.identifier}`
+            : '';
         const langQuery = languageId ? `+languageId:${languageId}` : '';
         const archivedQuery = archived ? `+deleted:true` : '+deleted:false';
         const identifierQuery = identifier ? `+identifier:${identifier}` : '';
@@ -506,7 +519,38 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             ? `+(title:${keyword}* OR path:*${keyword}* OR urlmap:*${keyword}*)`
             : '';
 
-        return `+conhost:${hostId} +working:true  +(urlmap:* OR basetype:5) ${langQuery} ${archivedQuery} ${keywordQuery} ${identifierQuery}`;
+        return `${hostIdQuery} +working:true  +(urlmap:* OR basetype:5) ${langQuery} ${archivedQuery} ${keywordQuery} ${identifierQuery}`;
+    }
+
+    private getWorflowActionsFn = (item: DotCMSContentlet): Observable<DotCMSPageWorkflowState> => {
+        if (item?.contentType === 'dotFavoritePage') {
+            return this.getFavoritePageWorflowActions(item);
+        } else {
+            return this.dotWorkflowsActionsService
+                .getByInode(item.inode, DotRenderMode.LISTING)
+                .pipe(
+                    map((workflowActions: DotCMSWorkflowAction[]) => {
+                        return {
+                            actions: workflowActions,
+                            page: item
+                        };
+                    })
+                );
+        }
+    };
+
+    private getFavoritePageWorflowActions(
+        item: DotCMSContentlet
+    ): Observable<DotCMSPageWorkflowState> {
+        const urlParams: { [key: string]: string } = { url: item.url.split('?')[0] };
+        const searchParams = new URLSearchParams(item.url.split('?')[1]);
+        for (const entry of searchParams) {
+            urlParams[entry[0]] = entry[1];
+        }
+
+        const { host_id, language_id, url } = urlParams;
+
+        return this.dotPageWorkflowsActionsService.getByUrl({ host_id, language_id, url });
     }
 
     private getPagesDataFn(
@@ -631,6 +675,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         private dialogService: DialogService,
         private dotLanguagesService: DotLanguagesService,
         private dotPushPublishDialogService: DotPushPublishDialogService,
+        private dotPageWorkflowsActionsService: DotPageWorkflowsActionsService,
         private dotWorkflowsActionsService: DotWorkflowsActionsService,
         private dotWorkflowEventHandlerService: DotWorkflowEventHandlerService,
         private dotWorkflowActionsFireService: DotWorkflowActionsFireService,

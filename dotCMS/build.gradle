@@ -120,8 +120,6 @@ def replaceText(filePath, fromString, toString) {
 
 
 jar{
-    exclude 'com/dotcms/enterprise/**'
-
     if (gradle.startParameter.taskNames.contains("deployWarTomcatTests")) {
         from project.sourceSets.main.output + project.sourceSets.test.output + project.sourceSets.integrationTest.output
     }
@@ -134,10 +132,10 @@ sourceSets {
 
         java {
             //We only want to compile using the submodules code when using the deployWarTomcatDev task
-            srcDirs = ["${project.projectDir}/src/main/java", "$enterpriseProjectHome/src/main/java",generatedSourcesDir]
+            srcDirs = ["${project.projectDir}/src/main/java", "${project.projectDir}/src/enterprise/java",generatedSourcesDir]
         }
         resources {
-            srcDirs = ["${project.projectDir}/src/main/resources","$enterpriseProjectHome/src/main/resources"]
+            srcDirs = ["${project.projectDir}/src/main/resources"]
         }
         compileClasspath = project.configurations.compileClasspath
         runtimeClasspath = project.configurations.runtimeClasspath
@@ -268,17 +266,7 @@ dependencies {
     felix group: 'org.slf4j', name: 'jcl-over-slf4j', version: '1.7.25'
 
     //// Felix system configuration
-    felixsystem group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.25'
-    felixsystem group: 'org.slf4j', name: 'jcl-over-slf4j', version: '1.7.25'
-
-    felixsystem(group: 'org.apache.tika', name: 'tika-core', version: '1.19') {
-        transitive = false
-    }
-    felixsystem(group: 'org.apache.tika', name: 'tika-bundle', version: '1.19') {
-        transitive = false
-    }
-    felixsystem group: 'com.dotcms.tika', name: 'com.dotcms.tika', version: '0.2'
-
+    felixsystem group: 'com.dotcms.tika', name: 'com.dotcms.tika', version: '2.7.0'
     felixsystem group: 'com.dotcms.samlbundle', name: 'com.dotcms.samlbundle', version: '22.03'
 
     //// starter config
@@ -311,7 +299,7 @@ import java.text.SimpleDateFormat
 apply from: "$rootDir/dependencies.gradle"
 
 
-def enterpriseSrcFolder = file("$enterpriseProjectHome/src/main/java")
+
 idea {
 
     module {
@@ -328,7 +316,7 @@ idea {
         testOutputDir = file('build/classes/test')
 
         //Extra source dirs
-        sourceDirs += file('src/main/enterprise/src/main/java')
+        sourceDirs += file('src/enterprise/java')
         sourceDirs += generatedSourcesDir
         generatedSourceDirs += generatedSourcesDir
         excludeDirs += file('src/main/enterprise/build')
@@ -857,14 +845,6 @@ task deployWarTomcatDist(type: DeployWarTomcatTask) {
     tomcatPath = tomcatDistBase
 }
 
-//Same as deployWarTomcat but will use the no obfuscated version of the enterprise jars.
-//(Useful for development)
-task deployWarTomcatDev (dependsOn: 'deployWarTomcat') {
-
-}
-deployWarTomcatDev.finalizedBy 'generateMoveCleanEnterpriseTomcat'
-deployWarTomcatDev.group='dotCMS Development'
-deployWarTomcatDev.description='Same as deployWarTomcat but will use the no obfuscated version of the enterprise jar. (Useful for development)'
 
 //Executes a pull or clone to get tomcat from the repository
 task clonePullTomcat(type: ClonePullTomcatTask) {
@@ -1164,30 +1144,6 @@ task restoreBackupWarTomcatData() {
     }
 }
 
-
-
-
-//Generates a no obfuscated version of the enterprise jar
-task generateMoveCleanEnterpriseTomcat(type: GradleBuild) {
-    group='dotCMS Util'
-    description='Creates a no-obfuscated enterprise JAR and moves it into WEB-INF/lib .'
-
-    dir=file("$enterpriseProjectHome/build.gradle")
-    tasks = gradle.startParameter.taskNames.contains('clean') ? ['clean', 'build'] : ['build']
-    startParameter.projectProperties = [dotcmsReleaseVersion: "$dotcmsReleaseVersion"]
-
-    doLast {
-        delete fileTree("$tomcatInstallLocation$webAppRootFolder/WEB-INF/lib"){
-            include "ee-*", "ee_*"
-        }
-
-        copy{
-            from "$enterpriseProjectHome/build/libs"
-            into "$tomcatInstallLocation$webAppRootFolder/WEB-INF/lib"
-            include "ee_clean.jar"
-        }
-    }
-}
 
 
 

@@ -13,10 +13,6 @@ dependencies {
         because 'undated for security'
     }
 
-    if (!(project.gradle.startParameter.taskNames.contains('deployWarTomcatDev') || project.gradle.startParameter.taskNames.contains('testDev'))) {
-
-        implementation group: 'com.dotcms.enterprise', name: 'ee', version: dotcmsReleaseVersion + eeType, changing: true
-    }
 
     implementation group: 'com.sun.mail', name: 'jakarta.mail', version: '1.6.7'
 

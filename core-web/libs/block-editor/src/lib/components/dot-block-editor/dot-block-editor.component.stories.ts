@@ -15,13 +15,10 @@ import { DotBlockEditorComponent } from './dot-block-editor.component';
 
 import { BlockEditorModule } from '../../block-editor.module';
 import {
-    ActionButtonComponent,
     BubbleLinkFormComponent,
-    DotImageService,
     DragHandlerComponent,
-    FileStatus,
     AssetFormComponent,
-    LoaderComponent
+    UploadPlaceholderComponent
 } from '../../extensions';
 import { ContentletBlockComponent } from '../../nodes';
 import {
@@ -30,7 +27,9 @@ import {
     SearchService,
     SuggestionsComponent,
     SuggestionsService,
-    ASSET_MOCK
+    DotUploadFileService,
+    ASSET_MOCK,
+    FileStatus
 } from '../../shared';
 
 export default {
@@ -51,7 +50,7 @@ export const primary = () => ({
         ],
         providers: [
             {
-                provide: DotImageService,
+                provide: DotUploadFileService,
                 useValue: {
                     publishContent({
                         data: _data,
@@ -185,9 +184,8 @@ export const primary = () => ({
         entryComponents: [
             SuggestionsComponent,
             ContentletBlockComponent,
-            ActionButtonComponent,
             DragHandlerComponent,
-            LoaderComponent,
+            UploadPlaceholderComponent,
             BubbleLinkFormComponent,
             AssetFormComponent
         ]

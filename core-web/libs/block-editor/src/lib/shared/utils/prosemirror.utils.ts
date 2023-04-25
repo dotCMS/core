@@ -261,3 +261,29 @@ export class SetDocAttrStep extends Step {
         };
     }
 }
+
+/**
+ * Get position from cursor current position when pasting an image.
+ *
+ * @param {EditorView} view
+ * @return {*}  {{ from: number; to: number }}
+ */
+export const getCursorPosition = (view: EditorView): { from: number; to: number } => {
+    const { state } = view;
+    const { selection } = state;
+    const { ranges } = selection;
+    const from = Math.min(...ranges.map((range) => range.$from.pos));
+    const to = Math.max(...ranges.map((range) => range.$to.pos));
+
+    return { from, to };
+};
+
+/**
+ * Check if the text is an image URL.
+ *
+ * @param {string} text
+ * @return {*}  {boolean}
+ */
+export const isImageURL = (url: string): boolean => {
+    return /^https?:\/\/.+\.(jpg|jpeg|png|webp|avif|gif|svg)$/.test(url);
+};

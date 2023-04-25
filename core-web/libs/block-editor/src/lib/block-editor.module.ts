@@ -9,20 +9,19 @@ import { LoggerService, StringUtils } from '@dotcms/dotcms-js';
 import { DotBlockEditorComponent } from './components/dot-block-editor/dot-block-editor.component';
 import { DotEditorCountBarComponent } from './components/dot-editor-count-bar/dot-editor-count-bar.component';
 import {
-    ActionButtonComponent,
     BubbleLinkFormComponent,
     BubbleMenuButtonComponent,
     BubbleMenuComponent,
-    DotImageService,
     DragHandlerComponent,
     FormActionsComponent,
-    LoaderComponent,
-    SuggestionPageComponent
+    SuggestionPageComponent,
+    UploadPlaceholderComponent
 } from './extensions';
 import { AssetFormModule } from './extensions/asset-form/asset-form.module';
 import { BubbleFormComponent } from './extensions/bubble-form/bubble-form.component';
 import { FloatingButtonComponent } from './extensions/floating-button/floating-button.component';
 import { ContentletBlockComponent } from './nodes';
+import { DotUploadFileService } from './shared';
 import { EditorDirective } from './shared/directives';
 import { PrimengModule } from './shared/primeng.module';
 import { SharedModule } from './shared/shared.module';
@@ -34,14 +33,13 @@ import { SharedModule } from './shared/shared.module';
         ReactiveFormsModule,
         SharedModule,
         PrimengModule,
-        AssetFormModule
+        AssetFormModule,
+        UploadPlaceholderComponent
     ],
     declarations: [
         EditorDirective,
         ContentletBlockComponent,
-        ActionButtonComponent,
         DragHandlerComponent,
-        LoaderComponent,
         BubbleMenuComponent,
         BubbleMenuButtonComponent,
         BubbleLinkFormComponent,
@@ -52,10 +50,9 @@ import { SharedModule } from './shared/shared.module';
         DotEditorCountBarComponent,
         FloatingButtonComponent
     ],
-    providers: [DotImageService, LoggerService, StringUtils],
+    providers: [DotUploadFileService, LoggerService, StringUtils],
     exports: [
         EditorDirective,
-        ActionButtonComponent,
         BubbleMenuComponent,
         BubbleLinkFormComponent,
         ReactiveFormsModule,

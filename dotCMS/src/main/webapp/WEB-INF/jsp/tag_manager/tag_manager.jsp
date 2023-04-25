@@ -119,7 +119,7 @@ td {font-size: 100%;}
     var batchDeleteErrorMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.tags.delete.tags.error")) %>';
     var fileRequiredMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlet.file.required"))%>';
     var someTagsImportFailedMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.tags.imported.some.failed"))%>';
-    
+
     var currentHostId = '<%=currentHostId %>';
     var tagStoreHostIdentifier = '<%= tagStoreHostIdentifier %>';
     var tagStoreHostName = '<%= tagStoreHostName %>';
@@ -457,22 +457,22 @@ td {font-size: 100%;}
                    }
               return unicodeString;
         }
-        
+
    </script>
-   
+
 
 <jsp:include page="/html/portlet/ext/browser/sub_nav.jsp"></jsp:include>
 
 <div class="portlet-wrapper">
    <div class="portlet-main tag-manager">
-	<div class="portlet-toolbar">
+	<div class="portlet-toolbar" style="margin-top: 1rem;">
 		<div class="portlet-toolbar__actions-primary">
 			<!-- Start Filter -->
 			<div id="advancedSearch">
                 <div class="inline-form" id="filters">
 		            <input type="hidden" name="host_id" id="host_id" value="<%=(String)session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID)%>">
 		            <input type="text" name="filterBox" value="" dojoType="dijit.form.TextBox" placeHolder="Filter" trim="true" id="filterBox" intermediateChanges="true" onChange="searchTagByName();" onBlur="alterFocus(document.activeElement, this);" >
-		            
+
 		            <button dojoType="dijit.form.Button" class="dijitButtonFlat" id="resetButton" onClick="resetSearch()">
 		               <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Reset")) %>
 		            </button>
@@ -481,7 +481,7 @@ td {font-size: 100%;}
                         <input type="checkbox" name="showGlobal" id="showGlobal" dojoType="dijit.form.CheckBox" value="" onChange="checkGlobalTags()"/>
                         <label for="showGlobal"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "show-global-tags")) %></label>
                     </div>
-		            
+
 
 		            <input type="hidden" name="globalFilter" id="globalFilter" value="0">
 		        </div>
@@ -491,10 +491,10 @@ td {font-size: 100%;}
 		<div class="portlet-toolbar__info"></div>
         <div class="portlet-toolbar__actions-secondary">
         	<!-- START Actions -->
-        		<form name="export_form" id="export_form" method="get">		
+        		<form name="export_form" id="export_form" method="get">
 					<div data-dojo-type="dijit/form/DropDownButton" data-dojo-props='iconClass:"fa-plus", class:"dijitDropDownActionButton"'>
 	            		<span></span>
-	
+
 	            		<div data-dojo-type="dijit/Menu" class="contentlet-menu-actions">
             				<div data-dojo-type="dijit/MenuItem" onClick="addNewTag()">
 							    <%= LanguageUtil.get(pageContext, "add-tag") %>
@@ -515,7 +515,7 @@ td {font-size: 100%;}
 			<!-- End Actions -->
 		</div>
 	</div>
-	
+
 	<div id="loadingTagsWrapper" style="text-align:center"><img src="/html/js/dojo/custom-build/dojox/widget/Standby/images/loading.gif"></div>
 
     <div id="tagsGridWrapper" style="overflow-y:auto;overflow-x:hidden;">
@@ -575,7 +575,7 @@ td {font-size: 100%;}
 
                     <script type="text/javascript">
                         dojo.addOnLoad(verifyHiddenFields);
-            
+
                         function verifyHiddenFields() {
                             var txtIndexObj = document.getElementById('tagStorage');
                             txtIndexObj.value = dijit.byId('tagStorage_dropDown').get('value');

@@ -378,6 +378,35 @@ public class ExperimentsResource {
     }
 
     /**
+     * Promotes a Variant to become the DEFAULT variant of the Page of the Experiment
+     * Returns the updated version of the Experiment.
+     */
+    @PUT
+    @Path("/{experimentId}/variants/{name}/_promote")
+    @JSONP
+    @NoCache
+    @Consumes({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public ResponseEntitySingleExperimentView promoteVariant(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("experimentId") final String experimentId,
+            @PathParam("name") final String variantName,
+            ExperimentVariantForm experimentVariantForm) throws DotDataException, DotSecurityException {
+        final InitDataObject initData = getInitData(request, response);
+        final User user = initData.getUser();
+
+        final Optional<Experiment> experimentToUpdate =  experimentsAPI.find(experimentId, user);
+
+        if(experimentToUpdate.isEmpty()) {
+            throw new NotFoundException("Experiment with id: " + experimentId + " not found.");
+        }
+
+        final Experiment persistedExperiment = experimentsAPI.promoteVariant(experimentId,
+                variantName, user);
+        return new ResponseEntitySingleExperimentView(persistedExperiment);
+    }
+
+    /**
      * Deletes the {@link TargetingCondition} with the given id from the {@link Experiment} with the given experimentId
      *
      */
