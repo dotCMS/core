@@ -127,7 +127,7 @@ public class InstanceCommandTest extends CommandTest {
                 Assertions.assertEquals(ExitCode.OK, status);
                 final String output = writer.toString();
                 Assertions.assertTrue(output.contains(
-                        String.format("The instance name [%s] is now the active profile.",
+                        String.format("The instance name [%s] is now the active one.",
                                 newProfile)),()->output);
             }
         }
