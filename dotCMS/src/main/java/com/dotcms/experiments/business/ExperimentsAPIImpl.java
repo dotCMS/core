@@ -473,6 +473,39 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         DotPreconditions.checkState(persistedExperiment.goals().isPresent(), "The Experiment needs to "
                 + "have the Goal set.");
 
+        final List<Experiment> runningExperimentsOnPage = list(ExperimentFilter.builder()
+                .pageId(persistedExperiment.pageId())
+                .statuses(Set.of(RUNNING))
+                .build(), user);
+
+        if(!runningExperimentsOnPage.isEmpty()) {
+            if(persistedExperiment.scheduling().isEmpty()) {
+                throw new DotStateException("There is a running Experiment on the same page. "
+                        + runningExperimentsOnPage.get(0).id());
+            }
+
+            final Experiment runningExperiment = runningExperimentsOnPage.get(0);
+            DotPreconditions.isTrue(runningExperiment.scheduling().orElseThrow().endDate()
+                    .orElseThrow().isBefore(persistedExperiment.scheduling().orElseThrow().startDate().orElseThrow()),
+                    ()-> "Start date of the Experiment is before the end date of the running Experiment. "
+                            + runningExperiment.id(),
+                    DotStateException.class);
+        }
+
+        final List<Experiment> scheduledExperimentsOnPage = list(ExperimentFilter.builder()
+                .pageId(persistedExperiment.pageId())
+                .statuses(Set.of(SCHEDULED))
+                .build(), user);
+
+
+        if(!scheduledExperimentsOnPage.isEmpty()) {
+            DotPreconditions.isTrue(
+                    noSchedulingConflictsBetweenExperiments(scheduledExperimentsOnPage, persistedExperiment),
+                    ()-> "There is a scheduling conflict between the Experiment and the scheduled Experiment. "
+                            + scheduledExperimentsOnPage.get(0).id(),
+                    DotStateException.class);
+        }
+
         Experiment toReturn;
 
         if(persistedExperiment.scheduling().isEmpty() ||
@@ -488,6 +521,16 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         }
 
         return toReturn;
+    }
+
+    private boolean noSchedulingConflictsBetweenExperiments(final List<Experiment> scheduledExperimentsOnPage,
+            final Experiment experimentToCheck) {
+        return scheduledExperimentsOnPage.stream().allMatch(scheduledExperiment -> {
+            final Scheduling scheduling = scheduledExperiment.scheduling().orElseThrow();
+            final Scheduling schedulingToCheck = experimentToCheck.scheduling().orElseThrow();
+            return schedulingToCheck.startDate().orElseThrow().isAfter(scheduling.endDate().orElseThrow()) ||
+                    schedulingToCheck.endDate().orElseThrow().isBefore(scheduling.startDate().orElseThrow());
+        });
     }
 
     @Override
