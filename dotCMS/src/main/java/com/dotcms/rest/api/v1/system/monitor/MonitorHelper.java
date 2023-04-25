@@ -200,29 +200,42 @@ class MonitorHelper {
 
     }
 
+    final class FileSystemTest implements Callable<Boolean> {
+
+        final String initialPath;
+
+        public FileSystemTest(String initialPath) {
+            this.initialPath = initialPath.endsWith(File.separator) ? initialPath : initialPath + File.separator;
+        }
+
+        @Override
+        public Boolean call() throws Exception {
+            // TODO Auto-generated method stub
+            final String uuid=UUIDUtil.uuid();
+            final String realPath = initialPath
+                    + "monitor"
+                    + File.separator
+                    + uuid;
+            final File file = new File(realPath);
+            if(file.mkdirs() && file.delete() && file.createNewFile()) {
+                try(OutputStream os = Files.newOutputStream(file.toPath())){
+                    os.write(uuid.getBytes());
+                }
+                return file.delete();
+            }
+            return false;
+        }
+
+
+    }
+
     private boolean isLocalFileSystemHealthy(final long timeOut) throws Throwable {
 
         return Failsafe
                 .with(breaker())
                 .withFallback(Boolean.FALSE)
-                .get(this.failFastBooleanPolicy(timeOut, () -> {
-
-                    final String realPath = ConfigUtils.getDynamicContentPath()
-                            + File.separator
-                            + "monitor"
-                            + File.separator
-                            + System.currentTimeMillis();
-                    final File file = new File(realPath);
-                    file.mkdirs();
-                    file.delete();
-                    file.createNewFile();
-
-                    try(OutputStream os = Files.newOutputStream(file.toPath())){
-                        os.write(UUIDUtil.uuid().getBytes());
-                    }
-                    file.delete();
-                    return Boolean.TRUE;
-                }));
+                .get(this.failFastBooleanPolicy(timeOut, new FileSystemTest(ConfigUtils.getDynamicContentPath())
+                ));
     }
 
 
@@ -231,20 +244,8 @@ class MonitorHelper {
         return Failsafe
                 .with(breaker())
                 .withFallback(Boolean.FALSE)
-                .get(this.failFastBooleanPolicy(timeOut, () -> {
-                    final String realPath =APILocator.getFileAssetAPI().getRealAssetPath(UUIDUtil.uuid());
-                    final File file = new File(realPath);
-                    file.mkdirs();
-                    file.delete();
-                    file.createNewFile();
-
-                    try(OutputStream os = Files.newOutputStream(file.toPath())){
-                        os.write(UUIDUtil.uuid().getBytes());
-                    }
-                    file.delete();
-
-                    return true;
-                }));
+                .get(this.failFastBooleanPolicy(timeOut, new FileSystemTest(ConfigUtils.getAbsoluteAssetsRootPath())
+                ));
     }
 
     private Callable<Boolean> failFastBooleanPolicy(long thresholdMilliseconds, final Callable<Boolean> callable) throws Throwable{

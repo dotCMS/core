@@ -118,3 +118,4 @@ This maintenance release includes the following code fixes:
 98. https://github.com/dotCMS/core/issues/21742 : 400 Bad requests (such as malformed URIs) do not make it past Tomcat and display a stacktrace in the browser #21742
 99. https://github.com/dotCMS/core/issues/22087 : Content not assigned to workflow can fail to push publish #22087
 100. https://github.com/dotCMS/core/issues/22667 : Cannot change date or time fields to never on an existing contentlet #22667
+101. https://github.com/dotCMS/core/issues/23267 : Healthcheck function doesn't clean up after itself - 5.3.4.1 #23267
