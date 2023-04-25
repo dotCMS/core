@@ -78,7 +78,7 @@ if (!experimentAlreadyCheck) {
     cleanExperimentDataUp();
 
     if (shouldHitEndPoint()) {
-
+        window.stop();
         let experimentData = localStorage.getItem('experiment_data');
         let body = experimentData ?
             {

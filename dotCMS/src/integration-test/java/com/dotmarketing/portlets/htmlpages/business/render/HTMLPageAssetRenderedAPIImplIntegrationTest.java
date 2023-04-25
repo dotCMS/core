@@ -1759,7 +1759,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                 + "\n"
                 + "    cleanExperimentDataUp();\n\n"
                 + "    if (shouldHitEndPoint()) {\n"
-                + "\n"
+                + "        window.stop();\n"
                 + "        let experimentData = localStorage.getItem('experiment_data');\n"
                 + "        let body = experimentData ?\n"
                 + "            {\n"
