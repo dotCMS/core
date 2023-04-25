@@ -1,10 +1,10 @@
 import { ComponentStore, tapResponse } from '@ngrx/component-store';
-import { Observable, throwError, of, forkJoin } from 'rxjs';
+import { Observable, throwError, of } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
-import { switchMap, take } from 'rxjs/operators';
+import { mergeMap, switchMap, take } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotTempFileUploadService } from '@dotcms/app/api/services/dot-temp-file-upload/dot-temp-file-upload.service';
@@ -234,12 +234,10 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
             .checkPermission(urlParams)
             .pipe(
                 take(1),
-                switchMap(() => {
-                    return forkJoin([this.dotPageRenderService.get({ url: favoritePageUrl })]);
-                })
+                mergeMap(() => this.dotPageRenderService.get({ url: favoritePageUrl }))
             )
             .subscribe(
-                ([pageRender]: [DotPageRenderParameters]): void => {
+                (pageRender: DotPageRenderParameters): void => {
                     this.patchState({
                         loading: false,
                         formState: {
