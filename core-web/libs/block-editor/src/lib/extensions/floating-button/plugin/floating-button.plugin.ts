@@ -12,11 +12,8 @@ import { Editor } from '@tiptap/core';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { ImageNode } from '../../../nodes';
+import { DotUploadFileService, FileStatus } from '../../../shared';
 import { getNodeCoords } from '../../bubble-menu/utils';
-import {
-    DotImageService,
-    FileStatus
-} from '../../image-uploader/services/dot-image/dot-image.service';
 import { FloatingButtonComponent } from '../floating-button.component';
 
 export const setCoords = ({ viewCoords, nodeCoords }): DOMRect => {
@@ -50,16 +47,16 @@ export class DotFloatingButtonPluginView {
     private tippy: Instance | undefined;
     private preventHide = false;
     private $destroy = new Subject<boolean>();
-    private dotImageService: DotImageService;
+    private dotUploadFileService: DotUploadFileService;
     private imageUrl: string;
 
     /* @Overrrider */
-    constructor({ dotImageService, editor, component, element, view }) {
+    constructor({ dotUploadFileService, editor, component, element, view }) {
         this.editor = editor;
         this.element = element;
         this.view = view;
         this.component = component;
-        this.dotImageService = dotImageService;
+        this.dotUploadFileService = dotUploadFileService;
 
         this.component.instance.byClick
             .pipe(takeUntil(this.$destroy))
@@ -162,7 +159,7 @@ export class DotFloatingButtonPluginView {
 
     private uploadImagedotCMS() {
         this.updateButtonLoading(true);
-        this.dotImageService
+        this.dotUploadFileService
             .publishContent({
                 data: this.imageUrl,
                 statusCallback: (status: string) => this.updateButtonLabel(status)
