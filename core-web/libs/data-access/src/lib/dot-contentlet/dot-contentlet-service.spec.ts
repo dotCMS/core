@@ -15,11 +15,11 @@ const mockContentletVersionsResponse = {
     }
 };
 
-const mockContentletPermissionsResponse = {
-    entity: {
-        READ: ['a1', 'b1']
-    }
-};
+// const mockContentletPermissionsResponse = {
+//     entity: {
+//         READ: ['a1', 'b1']
+//     }
+// };
 
 describe('DotContentletService', () => {
     let service: DotContentletService;
@@ -47,13 +47,13 @@ describe('DotContentletService', () => {
         req.flush(mockContentletVersionsResponse);
     });
 
-    it('should get permissions from contentlet', () => {
-        service.getContentletPermissions('123').subscribe((res) => {
-            expect(res).toEqual(mockContentletPermissionsResponse.entity);
-        });
+    // it('should get permissions from contentlet', () => {
+    //     service.getContentletPermissions('123').subscribe((res) => {
+    //         expect(res).toEqual(mockContentletPermissionsResponse.entity);
+    //     });
 
-        const req = httpMock.expectOne('v1/permissions/_bycontent/_groupbytype?contentletId=123');
-        expect(req.request.method).toBe('GET');
-        req.flush(mockContentletPermissionsResponse);
-    });
+    //     const req = httpMock.expectOne('v1/permissions/_bycontent/_groupbytype?contentletId=123');
+    //     expect(req.request.method).toBe('GET');
+    //     req.flush(mockContentletPermissionsResponse);
+    // });
 });

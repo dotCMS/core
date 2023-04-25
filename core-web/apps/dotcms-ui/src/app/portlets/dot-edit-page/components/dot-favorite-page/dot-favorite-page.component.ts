@@ -22,13 +22,13 @@ export interface DotFavoritePageProps {
 }
 
 export interface DotFavoritePageFormData {
-    currentUserRoleId: string;
+    // currentUserRoleId: string;
     inode?: string;
     thumbnail?: string;
     title: string;
     url: string;
     order: number;
-    permissions?: string[];
+    // permissions?: string[];
 }
 
 @Component({
@@ -69,13 +69,13 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
             )
             .subscribe((formStateData: DotFavoritePageFormData) => {
                 this.form = this.fb.group({
-                    currentUserRoleId: [formStateData?.currentUserRoleId, Validators.required],
+                    // currentUserRoleId: [formStateData?.currentUserRoleId, Validators.required],
                     inode: [formStateData?.inode],
                     thumbnail: [formStateData?.thumbnail],
                     title: [formStateData?.title, Validators.required],
                     url: [formStateData?.url, Validators.required],
-                    order: [formStateData?.order, Validators.required],
-                    permissions: [formStateData?.permissions]
+                    order: [formStateData?.order, Validators.required]
+                    // permissions: [formStateData?.permissions]
                 });
 
                 this.isFormValid$ = this.form.valueChanges.pipe(
