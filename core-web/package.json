@@ -106,7 +106,7 @@
     "node-fetch": "^2.6.1",
     "primeflex": "^3.3.0",
     "primeicons": "^6.0.1",
-    "primeng": "^15.1.1",
+    "primeng": "15.1.1",
     "prosemirror-model": "^1.16.1",
     "prosemirror-view": "^1.23.12",
     "react": "^18.2.0",
