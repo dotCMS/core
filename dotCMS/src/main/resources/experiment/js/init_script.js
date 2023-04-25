@@ -12,23 +12,51 @@ function setJitsuExperimentData (experimentData) {
     jitsu('set', experimentsShortData);
 }
 
-window.addEventListener("experiment_loaded", function (event) {
-    let experimentData = event.detail;
-    setJitsuExperimentData(experimentData);
+function stopRender(){
+    window.stop();
+}
+
+function getParams (experimentData) {
+    return (location.href.includes("?") ? "&" : "?") + `variantName=${experimentData.variant.name}&redirect=true`;
+}
+
+function redirectIfNeedIt(experimentsData,
+    additionalValidation = (experimentData) => true){
 
     if (!location.href.includes("redirect=true")) {
-        for (let i = 0; i < experimentData.experiments.length; i++) {
-            const pattern = new RegExp(experimentData.experiments[i].redirectPattern);
 
-            if (experimentData.experiments[i].variant.name !== 'DEFAULT' && pattern.test(location.href)) {
+        for (let i = 0; i < experimentsData.experiments.length; i++) {
+            const pattern = new RegExp(experimentsData.experiments[i].redirectPattern);
 
-                const param = (location.href.includes("?") ? "&" : "?")
-                    + `variantName=${experimentData.experiments[i].variant.name}&redirect=true`;
+            if (additionalValidation(experimentsData.experiments[i]) &&
+                pattern.test(location.href)) {
+
+                const param = experimentsData.experiments[i].variant.name === 'DEFAULT' ?
+                    '' : getParams(experimentsData.experiments[i]);
 
                 location.href = location.href + param;
-                break;
+
+                return true;
             }
         }
+    }
+
+    return false;
+}
+
+window.addEventListener("experiment_loaded", function (event) {
+    let experimentsData = event.detail;
+    setJitsuExperimentData(experimentsData);
+    redirectIfNeedIt(experimentsData, (experimentData) => experimentData.variant.name !== 'DEFAULT');
+});
+
+window.addEventListener("experiment_loaded_from_endpoint", function (event) {
+    let experimentsData = event.detail;
+    setJitsuExperimentData(experimentsData);
+    const wasRedirect = redirectIfNeedIt(experimentsData);
+
+    if (!wasRedirect) {
+        location.reload();
     }
 });
 
@@ -41,8 +69,8 @@ if (!experimentAlreadyCheck) {
         let experimentData = localStorage.getItem('experiment_data');
 
         if (experimentData) {
-            let includedExperimentIds = JSON.parse(
-                experimentData).includedExperimentIds;
+            let includedExperimentIds = JSON.parse(experimentData)
+                .includedExperimentIds;
 
             return !currentRunningExperimentsId.every(
                 element => includedExperimentIds.includes(element));
@@ -78,7 +106,7 @@ if (!experimentAlreadyCheck) {
     cleanExperimentDataUp();
 
     if (shouldHitEndPoint()) {
-        window.stop();
+        stopRender();
         let experimentData = localStorage.getItem('experiment_data');
         let body = experimentData ?
             {
@@ -129,7 +157,7 @@ if (!experimentAlreadyCheck) {
                 localStorage.setItem('experiment_data',
                     JSON.stringify(dataToStorage));
 
-                const event = new CustomEvent('experiment_loaded',
+                const event = new CustomEvent('experiment_loaded_from_endpoint',
                     {detail: dataToStorage});
                 window.dispatchEvent(event);
             }
