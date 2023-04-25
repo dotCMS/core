@@ -132,7 +132,7 @@ public class ContentTypeInitializer implements DotInitializer {
                 }
             } catch (DotDataException | DotSecurityException e) {
 
-                Logger.error(this, e.getMessage(), e);
+                Logger.error(this, "Favorite pages: " + e.getMessage(), e);
             }
         }
     }
