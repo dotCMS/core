@@ -7,6 +7,7 @@ export const INLINE_TINYMCE_SCRIPTS = `
             const dataset = ed.targetElm.dataset;
             const element = ed.targetElm;
             const container = ed.bodyElement.closest('[data-dot-object="container"]');
+            const contentlet = container.querySelector('[data-dot-object="contentlet"]');
 
             const data = {
                 dataset,
@@ -14,6 +15,9 @@ export const INLINE_TINYMCE_SCRIPTS = `
                 element,
                 eventType,
                 isNotDirty: ed.isNotDirty,
+                container,
+                contentlet,
+                initEditor
             }
 
             // For full editor we are adding pointer-events: none to all it children, 
@@ -81,21 +85,22 @@ export const INLINE_TINYMCE_SCRIPTS = `
     };
 
     document.addEventListener("click", function (event) {
-        
-    const { target: { dataset } } = event;
+        const { target } = event;
+        initEditor(target, event);
+    });
 
-    const dataSelector =
-        '[data-inode="' +
-        dataset.inode +
-        '"][data-field-name="' +
-        dataset.fieldName +
-        '"]';
-
-    // if the mode is truthy we initialize tinymce
+    function initEditor(element, event) {
+        const { dataset } = element;
+        const dataSelector =
+            '[data-inode="' +
+            dataset.inode +
+            '"][data-field-name="' +
+            dataset.fieldName +
+            '"]';
+        // if the mode is truthy we initialize tinymce
         if (dataset.mode) {
-
-            event.stopPropagation();
-            event.preventDefault();
+            event?.stopPropagation();
+            event?.preventDefault();
 
             tinymce
             .init({
@@ -106,5 +111,5 @@ export const INLINE_TINYMCE_SCRIPTS = `
                 ed?.editorCommands.execCommand("mceFocus");
             });
         }
-    });
+    }
 `;

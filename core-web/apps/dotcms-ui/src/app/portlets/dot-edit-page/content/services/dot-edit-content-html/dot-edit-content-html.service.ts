@@ -1,9 +1,9 @@
-import { fromEvent, Subject, Subscription } from 'rxjs';
+import { fromEvent, of, Subject, Subscription } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { ElementRef, Injectable, NgZone } from '@angular/core';
 
-import { catchError, filter, switchMap, take, tap } from 'rxjs/operators';
+import { catchError, filter, map, switchMap, take, tap } from 'rxjs/operators';
 
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
@@ -41,6 +41,7 @@ import {
 } from './models/dot-contentlets-events.model';
 
 import { DotContainerContentletService } from '../dot-container-contentlet.service';
+import { DotCopyContentModalService } from '../dot-copy-content-modal/dot-copy-content-modal.service';
 import { DotDOMHtmlUtilService } from '../html/dot-dom-html-util.service';
 import { DotDragDropAPIHtmlService } from '../html/dot-drag-drop-api-html.service';
 import { DotEditContentToolbarHtmlService } from '../html/dot-edit-content-toolbar-html.service';
@@ -88,6 +89,7 @@ export class DotEditContentHtmlService {
     private docClickSubscription: Subscription;
     private updateContentletInode = false;
     private remoteRendered: boolean;
+    private askToCopy = true;
 
     private readonly docClickHandlers;
 
@@ -103,7 +105,8 @@ export class DotEditContentHtmlService {
         private dotGlobalMessageService: DotGlobalMessageService,
         private dotWorkflowActionsFireService: DotWorkflowActionsFireService,
         private ngZone: NgZone,
-        private dotLicenseService: DotLicenseService
+        private dotLicenseService: DotLicenseService,
+        private dotCopyContentModalService: DotCopyContentModalService
     ) {
         this.contentletEvents$.subscribe(
             (
@@ -726,6 +729,7 @@ export class DotEditContentHtmlService {
     }
 
     private handleTinyMCEOnBlurEvent(content: DotInlineEditContent) {
+        this.askToCopy = true;
         // If editor is dirty then we continue making the request
         if (!content.isNotDirty) {
             // Add the loading indicator to the field
@@ -788,13 +792,22 @@ export class DotEditContentHtmlService {
                     }, 1800);
                 }
             },
-            inlineEdit: (contentlet: DotInlineEditContent) => {
-                if (contentlet.eventType === 'focus') {
-                    this.handleTinyMCEOnFocusEvent(contentlet);
+            inlineEdit: (inlineEditData: DotInlineEditContent) => {
+                const { eventType: type, contentlet } = inlineEditData;
+                const numberOfPages = +this.getContentletNumberOfPages(contentlet);
+
+                if (type === 'focus' && numberOfPages > 1 && this.askToCopy) {
+                    this.copyInlineContent(inlineEditData);
+
+                    return;
                 }
 
-                if (contentlet.eventType === 'blur') {
-                    this.handleTinyMCEOnBlurEvent(contentlet);
+                if (type === 'focus') {
+                    this.handleTinyMCEOnFocusEvent(inlineEditData);
+                }
+
+                if (type === 'blur') {
+                    this.handleTinyMCEOnBlurEvent(inlineEditData);
                 }
             },
             // When a user select a content from the search jsp
@@ -1017,5 +1030,54 @@ export class DotEditContentHtmlService {
         }
 
         return null;
+    }
+
+    private copyInlineContent(inlineEditData): void {
+        const { contentlet: contentletHTML, element, container, initEditor } = inlineEditData;
+        const copyContent = this.getCopyContentData(contentletHTML, container);
+        const data = {
+            ...copyContent,
+            inode: inlineEditData.dataset.inode
+        };
+
+        this.setContainterToAppendContentlet({
+            identifier: container.dataset['dotIdentifier'],
+            uuid: container.dataset['dotUuid']
+        });
+
+        this.dotCopyContentModalService
+            .openCopyContentModal(data)
+            .pipe(
+                take(1),
+                filter((data) => !!data),
+                switchMap((data) => {
+                    if (!data) {
+                        return of({ copied: false, resp: null });
+                    }
+
+                    const { copied, inode, contentlet } = data;
+
+                    return copied
+                        ? this.dotContainerContentletService
+                              .getContentletToContainer(
+                                  this.currentContainer,
+                                  contentlet,
+                                  this.currentPage
+                              )
+                              .pipe(map((resp: string) => ({ copied: true, resp })))
+                        : of({ copied: false, resp: inode });
+                })
+            )
+            .subscribe(({ copied, resp }) => {
+                if (copied) {
+                    const contentletEl: HTMLElement = this.generateNewContentlet(resp);
+                    container.replaceChild(contentletEl, contentletHTML);
+                    initEditor(contentletEl.querySelector('[data-mode]'));
+                } else {
+                    initEditor(element);
+                }
+
+                this.askToCopy = false;
+            });
     }
 }
