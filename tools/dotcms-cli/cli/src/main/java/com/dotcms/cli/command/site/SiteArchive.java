@@ -20,7 +20,7 @@ import java.util.concurrent.Callable;
                 " Before a site can be delete it must be archived first.",
                 " Archiving a site means it is no longer available for use. ",
                 " It is not visible in the UI and it is not available via API.",
-                " but this process can be undone. See  @|bold,cyan site:unarchive|@ command. ",
+                " but this process can be undone. See @|bold,cyan site:unarchive|@ command. ",
                 "" // empty line left here on purpose to make room at the end
         }
 )
