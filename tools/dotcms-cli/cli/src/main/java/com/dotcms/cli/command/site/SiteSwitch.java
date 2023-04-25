@@ -3,9 +3,11 @@ package com.dotcms.cli.command.site;
 import com.dotcms.api.SiteAPI;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.site.SiteView;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import javax.enterprise.context.control.ActivateRequestContext;
+import org.apache.commons.lang3.BooleanUtils;
 import picocli.CommandLine;
 
 @ActivateRequestContext
@@ -20,7 +22,7 @@ public class SiteSwitch extends AbstractSiteCommand implements Callable<Integer>
 
     static final String NAME = "switch";
 
-    @CommandLine.Option(names = { "-in", "--idOrName" }, arity = "1", paramLabel = "idOrName", description = "Site name or Id.", required = true)
+    @CommandLine.Parameters(index = "0", arity = "1", paramLabel = "idOrName", description = "Site name Or Id.")
     String siteNameOrId;
 
     @Override
@@ -41,12 +43,13 @@ public class SiteSwitch extends AbstractSiteCommand implements Callable<Integer>
 
         final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
         final SiteView siteView = site.get();
-        ResponseEntityView<Boolean> switchSite = siteAPI.switchSite(siteView.identifier());
-        if(Boolean.TRUE.equals(switchSite.entity())) {
-            output.info(String.format("Successfully switched to site: [%s]. ",siteView.hostName()));
+        ResponseEntityView<Map<String,String>> switchSite = siteAPI.switchSite(siteView.identifier());
+        final Map<String, String> entity = switchSite.entity();
+        if(null != entity &&  BooleanUtils.toBoolean(entity.get("hostSwitched"))) {
+            output.info(String.format("Successfully switching to site: [%s]. ",siteView.hostName()));
             return CommandLine.ExitCode.OK;
         } else {
-            output.info(String.format("switched to site: [%s] failed. ",siteView.hostName()));
+            output.info(String.format("switching to site: [%s] failed. ",siteView.hostName()));
             return CommandLine.ExitCode.SOFTWARE;
         }
 
