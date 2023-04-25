@@ -1378,7 +1378,6 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
               obj = dojo.byId("step_id");
            return obj.value;
         }
-        //
         function getSiteFolderFieldDefaultHTML() {
 
                 const defaultSiteFolderField = {
