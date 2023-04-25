@@ -1,6 +1,7 @@
 package com.dotcms.cli.command.contenttype;
 
 import com.dotcms.api.ContentTypeAPI;
+import com.dotcms.cli.common.InteractiveOptionMixin;
 import com.dotcms.model.ResponseEntityView;
 import java.util.concurrent.Callable;
 import javax.enterprise.context.control.ActivateRequestContext;
@@ -21,6 +22,9 @@ import picocli.CommandLine.ExitCode;
 public class ContentTypeRemove extends AbstractContentTypeCommand implements Callable<Integer> {
 
     static final String NAME = "remove";
+
+    @CommandLine.Mixin
+    InteractiveOptionMixin interactiveOption;
 
     @CommandLine.Parameters(index = "0", arity = "1", description = "Name Or Id.")
     String idOrVar;
@@ -44,9 +48,15 @@ public class ContentTypeRemove extends AbstractContentTypeCommand implements Cal
     }
 
     private boolean isDeleteConfirmed(final String idOrVar) {
-        final String confirmation = String.format("%nPlease confirm that you want to remove content-type identified by [%s] ? [y/n]: ", idOrVar);
-        return BooleanUtils.toBoolean(
-                System.console().readLine(confirmation));
+       if (interactiveOption.isInteractive()) {
+
+           final String confirmation = String.format(
+                   "%nPlease confirm that you want to remove content-type identified by [%s] ? [y/n]: ",
+                   idOrVar);
+           return BooleanUtils.toBoolean(
+                   System.console().readLine(confirmation));
+       }
+         return true;
     }
 
 }

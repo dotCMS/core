@@ -14,6 +14,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import picocli.CommandLine.ExitCode;
 
 @QuarkusTest
 class SiteCommandTest extends CommandTest {
@@ -42,6 +43,10 @@ class SiteCommandTest extends CommandTest {
         authenticationContext.login(user, passwd);
     }
 
+    /**
+     * Given scenario: Simply call current site
+     * Expected Result: Verify the command completes successfully
+     */
     @Test
     void Test_Command_Current_Site() {
         final CommandLine commandLine = getFactory().create();
@@ -55,6 +60,10 @@ class SiteCommandTest extends CommandTest {
         }
     }
 
+    /**
+     * Given scenario: Simply call list all
+     * Expected Result: Verify the command completes successfully
+     */
     @Test
     void Test_Command_Site_List_All() {
         final CommandLine commandLine = getFactory().create();
@@ -68,6 +77,10 @@ class SiteCommandTest extends CommandTest {
         }
     }
 
+    /**
+     * Given scenario: Simply call find by name command
+     * Expected Result: Verify the command completes successfully
+     */
     @Test
     void Test_Command_Site_Find_By_Name() {
         final CommandLine commandLine = getFactory().create();
@@ -82,6 +95,10 @@ class SiteCommandTest extends CommandTest {
     }
 
 
+    /**
+     * Given scenario: Simply call create command
+     * Expected Result: Verify the command completes successfully Then test delete and verify it's gone
+     */
     @Test
     void Test_Command_Site_Push_Publish_UnPublish_Then_Archive() throws IOException {
 
@@ -113,6 +130,10 @@ class SiteCommandTest extends CommandTest {
         }
     }
 
+    /**
+     * Given scenario: Simply call create command followed by copy
+     * Expected Result: We simply verify the command completes successfully
+     */
     @Test
     void Test_Command_Copy() {
         final CommandLine commandLine = getFactory().create();
@@ -123,6 +144,51 @@ class SiteCommandTest extends CommandTest {
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
             Assertions.assertTrue(output.startsWith("New Copy Site is"));
+        }
+    }
+
+    /**
+     * Given scenario: Create a new site, pull it, push it, and pull it again.
+     * Expected Result: The site should be created. Pulled so we can test push. At the end we delete it and verify it's gone.
+     * @throws IOException
+     */
+    @Test
+    void Test_Command_Create_Then_Pull_Then_Push() throws IOException {
+
+        final String newSiteName = String.format("new.dotcms.site%d", System.currentTimeMillis());
+        final CommandLine commandLine = getFactory().create();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            commandLine.setErr(out);
+
+            int status = commandLine.execute(SiteCommand.NAME, SiteCreate.NAME, newSiteName);
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            status = commandLine.execute(SiteCommand.NAME, SitePull.NAME, newSiteName, "-saveTo="+newSiteName );
+
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            status = commandLine.execute(SiteCommand.NAME, SiteArchive.NAME, newSiteName);
+
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            status = commandLine.execute(SiteCommand.NAME, SiteRemove.NAME, newSiteName, "--cli-test");
+
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            status = commandLine.execute(SiteCommand.NAME, SitePull.NAME, newSiteName, "-saveTo="+newSiteName );
+
+            Assertions.assertEquals(ExitCode.SOFTWARE, status);
+
+            final String output = writer.toString();
+
+            Assertions.assertTrue(output.contains("archived successfully."));
+            Assertions.assertTrue(output.contains("delete successfully."));
+            Assertions.assertTrue(output.contains("Failed pulling Site:"));
+
+        } finally {
+            Files.deleteIfExists(Path.of(".", String.format("%s.%s", newSiteName, InputOutputFormat.defaultFormat().getExtension())));
         }
     }
 
