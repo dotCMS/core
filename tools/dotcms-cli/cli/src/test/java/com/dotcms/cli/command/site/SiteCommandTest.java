@@ -4,8 +4,11 @@ import com.dotcms.api.AuthenticationContext;
 import com.dotcms.cli.command.CommandTest;
 import com.dotcms.cli.common.InputOutputFormat;
 import io.quarkus.test.junit.QuarkusTest;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.*;
+import org.wildfly.common.Assert;
 import picocli.CommandLine;
 
 import javax.inject.Inject;
@@ -186,6 +189,46 @@ class SiteCommandTest extends CommandTest {
             Assertions.assertTrue(output.contains("archived successfully."));
             Assertions.assertTrue(output.contains("delete successfully."));
             Assertions.assertTrue(output.contains("Failed pulling Site:"));
+
+        } finally {
+            Files.deleteIfExists(Path.of(".", String.format("%s.%s", newSiteName, InputOutputFormat.defaultFormat().getExtension())));
+        }
+    }
+
+
+    /**
+     * Given scenario: Create a new site, Find out what the current site is and switch to the new site then restore the original site
+     * Expected Result: We must be able to switch to the new site and then switch back to the original site
+     * @throws IOException
+     */
+    @Test
+    void Test_Command_Switch_Create_Then_Switch() throws IOException {
+
+        final String newSiteName = String.format("new.dotcms.site%d", System.currentTimeMillis());
+        final CommandLine commandLine = getFactory().create();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+
+            int status = commandLine.execute(SiteCommand.NAME, SiteCreate.NAME, newSiteName);
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            //We're interested in the output of the current site
+            commandLine.setOut(out);
+            status = commandLine.execute(SiteCommand.NAME, SiteCurrent.NAME);
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            final String output = writer.toString();
+            Assertions.assertTrue(output.contains("Current Site is"));
+            //Since the command prints the current site name in brackets, we need to extract it
+            final Matcher matcher = Pattern.compile("\\[(.*?)\\]").matcher(output);
+            String currentSiteName = null;
+            while(matcher.find()) {
+                currentSiteName = matcher.group(1);
+            }
+            status = commandLine.execute(SiteCommand.NAME, SiteSwitch.NAME, newSiteName);
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+            status = commandLine.execute(SiteCommand.NAME, SiteSwitch.NAME, currentSiteName);
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
 
         } finally {
             Files.deleteIfExists(Path.of(".", String.format("%s.%s", newSiteName, InputOutputFormat.defaultFormat().getExtension())));
