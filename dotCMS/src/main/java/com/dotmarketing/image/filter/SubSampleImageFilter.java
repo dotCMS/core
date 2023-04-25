@@ -23,7 +23,7 @@ public class SubSampleImageFilter extends ImageFilter {
 
 
 
-        File resultFile = getResultsFile(file, parameters, "png");
+        File resultFile = this.getResultsFile(file, parameters);
 
         if (!overwrite(resultFile, parameters)) {
             return resultFile;
@@ -49,14 +49,12 @@ public class SubSampleImageFilter extends ImageFilter {
     
     
     @Override
-    protected File getResultsFile(File file, Map<String, String[]> parameters, String fileExtension) {
+    public File getResultsFile(File file, Map<String, String[]> parameters) {
         try {
-            return super.getResultsFile(file, parameters, fileExtension);
+            return super.getResultsFile(file, parameters, "png");
+        } catch (Exception e) {
+            return new File(System.getProperty("java.io.tmpdir") + file.separator + System.currentTimeMillis() + "." + "png");
         }
-        catch(Exception e) {
-            return new File(System.getProperty("java.io.tmpdir") + file.separator + System.currentTimeMillis() + "." + fileExtension);
-        }
-
     }
     
 

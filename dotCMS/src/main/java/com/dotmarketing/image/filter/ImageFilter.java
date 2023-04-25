@@ -20,6 +20,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.WebKeys;
 import io.vavr.Lazy;
+import io.vavr.control.Try;
 
 public abstract class ImageFilter implements ImageFilterIf {
 	protected static final String FILE_EXT = "png";
@@ -164,7 +165,7 @@ public abstract class ImageFilter implements ImageFilterIf {
 	 * @throws IOException
 	 * @throws DotRuntimeException
 	 */
-	protected File getResultsFile(File file, Map<String, String[]> parameters) throws DotRuntimeException{
+	public File getResultsFile(File file, Map<String, String[]> parameters) {
 		return  getResultsFile(file, parameters, FILE_EXT);
 	}
 
@@ -178,40 +179,31 @@ public abstract class ImageFilter implements ImageFilterIf {
 	 * @throws IOException
 	 * @throws DotRuntimeException
 	 */
-	protected File getResultsFile(File file, Map<String, String[]> parameters, String fileExt) throws DotRuntimeException{
+	protected final File getResultsFile(File file, Map<String, String[]> parameters, String fileExt) {
 		String fileFolderPath = file.getParent();
 
 		String inode =null;
 
-		try{
-			if(file.getName().startsWith(WebKeys.GENERATED_FILE)){
-				inode = file.getName();
-				String fileNameNoExt = this.getUniqueFileName(file, parameters, inode);
-				String resultFilePath =fileFolderPath+ File.separator + fileNameNoExt + "." + fileExt;
-				return  new File(resultFilePath);
+		if (file.getName().startsWith(WebKeys.GENERATED_FILE)) {
+			inode = file.getName();
+			String fileNameNoExt = this.getUniqueFileName(file, parameters, inode);
+			String resultFilePath = fileFolderPath + File.separator + fileNameNoExt + "." + fileExt;
+			return new File(resultFilePath);
+		} else {
+			try {
+				inode = RegEX.find(file.getCanonicalPath(), "[\\w]{8}(-[\\w]{4}){3}-[\\w]{12}").get(0).getMatch();
+			} catch (Exception e) {
+				inode = parameters.get("assetInodeOrIdentifier")[0];
 			}
-			else{
-				try{
-					inode = RegEX.find(file.getCanonicalPath(), "[\\w]{8}(-[\\w]{4}){3}-[\\w]{12}").get(0).getMatch();
-				}
-				catch (Exception e){
-					inode = parameters.get("assetInodeOrIdentifier")[0];
-				}
-
-				File dirs = new File(ConfigUtils.getDotGeneratedPath()  + File.separator + inode.charAt(0) + File.separator + inode.charAt(1));
-				if(!dirs.exists()){
-				    dirs.mkdirs();
+				File dirs = new File(ConfigUtils.getDotGeneratedPath() + File.separator + inode.charAt(0) + File.separator
+						+ inode.charAt(1));
+				if (!dirs.exists()) {
+					dirs.mkdirs();
 				}
 				String fileNameNoExt = this.getUniqueFileName(file, parameters, inode);
-				String resultFilePath = dirs.getCanonicalPath() + File.separator + fileNameNoExt + "." + fileExt;
-				return  new File(resultFilePath);
-			}
-
-
-
-		}
-		catch(Exception e){
-			throw new DotRuntimeException("Cannot find the inode of the file : " + e.getMessage(),e);
+				String finalPath = Try.of(dirs::getCanonicalPath).getOrElseThrow(DotRuntimeException::new);
+				String resultFilePath = finalPath + File.separator + fileNameNoExt + "." + fileExt;
+				return new File(resultFilePath);
 		}
 	}
 

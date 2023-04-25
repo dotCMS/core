@@ -120,3 +120,4 @@ This maintenance release includes the following code fixes:
 100. https://github.com/dotCMS/core/issues/22667 : Cannot change date or time fields to never on an existing contentlet #22667
 101. https://github.com/dotCMS/core/issues/23267 : Healthcheck function doesn't clean up after itself - 5.3.4.1 #23267
 102. https://github.com/dotCMS/core/issues/23449 : Filter does not work on the image selector for image fields #23449
+103. https://github.com/dotCMS/core/issues/23807 : Make Image Permits less restrictive #23807

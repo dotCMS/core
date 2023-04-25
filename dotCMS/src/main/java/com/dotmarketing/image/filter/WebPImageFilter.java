@@ -23,7 +23,7 @@ public class WebPImageFilter extends ImageFilter {
 	    Float quality = new Float(qualityParam);
 	    quality = quality/100;
 
-	    final File resultFile = getResultsFile(file, parameters, "webp");
+		final File resultFile = getResultsFile(file, parameters);
 
 	    if(!overwrite(resultFile,parameters)){
 	        return resultFile;
@@ -57,5 +57,16 @@ public class WebPImageFilter extends ImageFilter {
         }
 
 	    return resultFile;
+	}
+
+	@Override
+	public File getResultsFile(File file, Map<String, String[]> parameters) {
+		try {
+			return super.getResultsFile(file, parameters, "webp");
+		}
+		catch(Exception e) {
+			return new File(System.getProperty("java.io.tmpdir") + file.separator + System.currentTimeMillis() + "." + "webp");
+		}
+
 	}
 }
