@@ -222,7 +222,7 @@ export const dotContentCompareTableDataMock: DotContentCompareTableData = {
     ]
 };
 
-fdescribe('DotContentCompareBlockEditorComponent', () => {
+describe('DotContentCompareBlockEditorComponent', () => {
     let component: DotContentCompareBlockEditorComponent;
     let fixture: ComponentFixture<DotContentCompareBlockEditorComponent>;
     let de: DebugElement;
