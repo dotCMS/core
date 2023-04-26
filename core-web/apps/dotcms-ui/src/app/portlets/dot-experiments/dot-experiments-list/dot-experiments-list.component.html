@@ -4,7 +4,6 @@
         [title]="vm.page.pageTitle"
         (goBack)="goToBrowserBack()"
     />
-
     <div class="dot-experiment">
         <ng-container
             *ngIf="vm.experiments.length; else vm.isLoading ? loadingExperiments : noExperiments"

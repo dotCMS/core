@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
@@ -14,8 +14,8 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
     selector: 'dot-experiments-header',
     templateUrl: './dot-experiments-ui-header.component.html',
     styleUrls: ['./dot-experiments-ui-header.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [DotIconModule, CommonModule, RouterLink, DotPipesModule, SkeletonModule, TagModule]
+    imports: [NgIf, DotIconModule, RouterLink, DotPipesModule, SkeletonModule, TagModule],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsUiHeaderComponent {
     @Input()

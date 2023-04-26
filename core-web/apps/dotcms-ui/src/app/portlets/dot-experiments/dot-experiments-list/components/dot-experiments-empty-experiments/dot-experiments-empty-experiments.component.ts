@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from 
 
 // TODO: make more generic
 @Component({
+    standalone: true,
     selector: 'dot-experiments-empty-experiments',
     templateUrl: './dot-experiments-empty-experiments.component.html',
     styleUrls: ['./dot-experiments-empty-experiments.component.scss'],

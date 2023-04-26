@@ -58,9 +58,9 @@ const dotEditPage: Routes = [
                 loadChildren: async () =>
                     (
                         await import(
-                            '../dot-experiments/dot-experiments-shell/dot-experiments-shell.module'
+                            '../dot-experiments/dot-experiments-shell/dot-experiments-shell-routes'
                         )
-                    ).DotExperimentsShellModule
+                    ).DotExperimentsShellRoutes
             }
         ]
     },

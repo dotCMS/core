@@ -337,7 +337,7 @@ export class DotExperimentsListStore
             ...initialState,
             page: {
                 pageId: route.snapshot.params.pageId,
-                pageTitle: route.snapshot.parent?.parent?.parent?.parent.data?.content?.page?.title
+                pageTitle: route.snapshot.parent?.parent?.parent?.data?.content?.page?.title
             }
         });
     }
