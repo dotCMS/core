@@ -27,6 +27,9 @@ jobs:
             type=sha,enable=true,priority=100,prefix=master_,suffix=_SNAPSHOT,format=short
             type=raw,value=master_latest_SNAPSHOT
       -
+        name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      -
         name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       -
