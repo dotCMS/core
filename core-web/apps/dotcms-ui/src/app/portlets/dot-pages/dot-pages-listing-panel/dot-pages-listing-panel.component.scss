@@ -1,6 +1,10 @@
 @use "variables" as *;
 
 ::ng-deep {
+    .p-datatable .p-datatable-thead th.p-sortable-column:hover {
+        background-color: $white;
+    }
+
     .p-datatable .p-datatable-tbody tr td {
         white-space: nowrap;
         overflow: hidden;

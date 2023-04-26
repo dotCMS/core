@@ -384,6 +384,45 @@ describe('DotFavoritePageStore', () => {
             expect(dotPageRenderService.get).toHaveBeenCalledTimes(1);
         });
 
+        it('should set right title if it is urlContentMap', (done) => {
+            spyOn(dotPageRenderService, 'checkPermission').and.returnValue(of(true));
+
+            dotPageRenderService.get = jasmine
+                .createSpy()
+                .and.returnValue(
+                    of({ ...mockDotRenderedPage(), urlContentMap: { title: 'test urlContentMap' } })
+                );
+
+            dotFavoritePageStore.setInitialStateData({
+                favoritePageUrl: existingDataMock.url,
+                favoritePage: { ...existingDataMock }
+            });
+
+            const expectedInitialState = {
+                formState: {
+                    inode: '',
+                    order: 1,
+                    thumbnail: existingDataMock.screenshot,
+                    title: 'test urlContentMap',
+                    url: existingDataMock.url
+                },
+                imgWidth: 1024,
+                imgHeight: 768.192048012003,
+                renderThumbnail: false,
+                loading: false,
+                pageRenderedHtml: '<html><head></header><body><p>Hello World</p></body></html>',
+                showFavoriteEmptySkeleton: false,
+                closeDialog: false,
+                actionState: null
+            };
+
+            dotFavoritePageStore.state$.subscribe((state) => {
+                expect(state).toEqual(expectedInitialState);
+                done();
+            });
+            expect(dotPageRenderService.get).toHaveBeenCalledTimes(1);
+        });
+
         it('should set initial data for an unknown 404 page', (done) => {
             const error404 = mockResponseView(404);
             dotPageRenderService.checkPermission = jasmine
