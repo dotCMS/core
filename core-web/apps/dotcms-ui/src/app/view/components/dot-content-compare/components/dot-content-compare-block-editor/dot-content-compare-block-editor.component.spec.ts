@@ -252,6 +252,7 @@ describe('DotContentCompareBlockEditorComponent', () => {
         component.data = dotContentCompareTableDataMock;
         component.field = 'html';
         component.showDiff = false;
+        component.showAsCompare = false;
         de = fixture.debugElement;
         fixture.detectChanges();
     });
@@ -269,9 +270,10 @@ describe('DotContentCompareBlockEditorComponent', () => {
     describe('Checking if we are passing HTML to the compare field', () => {
         beforeEach(() => {
             component.showDiff = true;
+            component.showAsCompare = true;
             fixture.detectChanges();
         });
-        it('Should contain same HTML for working than the Block Editor', async () => {
+        it('Should contain same HTML for compare than the Block Editor', async () => {
             await fixture.whenStable();
             fixture.detectChanges();
 
@@ -284,6 +286,22 @@ describe('DotContentCompareBlockEditorComponent', () => {
             const compareField = de.query(By.css('[data-testId="div-compare"]')).nativeElement
                 .innerHTML;
             expect(compareField).toEqual(diff);
+        });
+    });
+
+    describe('Checking if we are comparing the plain HTML to the compare field', () => {
+        beforeEach(() => {
+            component.showDiff = false;
+            component.showAsCompare = true;
+            fixture.detectChanges();
+        });
+        it('Should contain same plain HTML for compare than the Block Editor', async () => {
+            await fixture.whenStable();
+            fixture.detectChanges();
+
+            const compareField = de.query(By.css('[data-testId="div-compare"]')).nativeElement
+                .innerHTML;
+            expect(compareField).toEqual(component.blockEditorCompare.editor.getHTML());
         });
     });
 });

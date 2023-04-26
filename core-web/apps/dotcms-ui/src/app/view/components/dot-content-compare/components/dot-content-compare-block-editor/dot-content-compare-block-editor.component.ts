@@ -18,6 +18,7 @@ export class DotContentCompareBlockEditorComponent implements AfterViewInit {
 
     @Input() data: DotContentCompareTableData;
     @Input() showDiff: boolean;
+    @Input() showAsCompare: boolean;
     @Input() field: string;
 
     htmlCompareValue$: Observable<SafeHtml>;
