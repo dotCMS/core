@@ -65,7 +65,7 @@
 
         .p-datatable-tbody tr > td {
             &:last-child {
-                padding-right: 0.75rem;
+                padding-right: $spacing-2;
             }
         }
     }
