@@ -76,7 +76,7 @@ describe('DotExperimentsListTableComponent', () => {
         ],
         component: DotExperimentsListTableComponent,
         componentMocks: [ConfirmPopup],
-        declarations: [MockDatePipe, DotExperimentsEmptyExperimentsComponent],
+        declarations: [MockDatePipe],
         providers: [
             {
                 provide: DotMessageService,

@@ -1,7 +1,7 @@
 import { provideComponentStore } from '@ngrx/component-store';
 import { Observable } from 'rxjs';
 
-import { AsyncPipe, JsonPipe, NgIf } from '@angular/common';
+import { AsyncPipe, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ComponentRef, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
 
@@ -47,12 +47,10 @@ const DOT_EXPERIMENT_LIST_COMPONENTS = [
         ...DOT_EXPERIMENT_LIST_COMPONENTS,
         DotExperimentsUiHeaderComponent,
         DotDynamicDirective,
-        DotMessagePipeModule,
         // PrimeNG
+        DotMessagePipeModule,
         ButtonModule,
-        RippleModule,
-        DotExperimentsStatusFilterComponent,
-        JsonPipe
+        RippleModule
     ],
     templateUrl: './dot-experiments-list.component.html',
     styleUrls: ['./dot-experiments-list.component.scss'],

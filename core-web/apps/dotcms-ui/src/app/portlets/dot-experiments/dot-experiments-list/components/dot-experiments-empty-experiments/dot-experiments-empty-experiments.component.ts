@@ -1,4 +1,10 @@
+import { NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
+
+import { ButtonModule } from 'primeng/button';
+
+import { DotIconModule } from '@dotcms/ui';
+import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 
 // TODO: make more generic
 @Component({
@@ -6,6 +12,7 @@ import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from 
     selector: 'dot-experiments-empty-experiments',
     templateUrl: './dot-experiments-empty-experiments.component.html',
     styleUrls: ['./dot-experiments-empty-experiments.component.scss'],
+    imports: [NgIf, ButtonModule, DotIconModule, DotMessagePipeModule],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsEmptyExperimentsComponent {

@@ -12,6 +12,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { ConfirmPopupModule } from 'primeng/confirmpopup';
 import { SkeletonModule } from 'primeng/skeleton';
 
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
@@ -24,7 +25,6 @@ import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module
 import { DotExperimentsCreateComponent } from '@portlets/dot-experiments/dot-experiments-list/components/dot-experiments-create/dot-experiments-create.component';
 import { DotExperimentsEmptyExperimentsComponent } from '@portlets/dot-experiments/dot-experiments-list/components/dot-experiments-empty-experiments/dot-experiments-empty-experiments.component';
 import { DotExperimentsListSkeletonComponent } from '@portlets/dot-experiments/dot-experiments-list/components/dot-experiments-list-skeleton/dot-experiments-list-skeleton.component';
-import { DotExperimentsListTableComponent } from '@portlets/dot-experiments/dot-experiments-list/components/dot-experiments-list-table/dot-experiments-list-table.component';
 import { DotExperimentsStatusFilterComponent } from '@portlets/dot-experiments/dot-experiments-list/components/dot-experiments-status-filter/dot-experiments-status-filter.component';
 import {
     DotExperimentsListStore,
@@ -63,23 +63,22 @@ describe('ExperimentsListComponent', () => {
             UiDotIconButtonModule,
             DotExperimentsCreateComponent,
             DotDynamicDirective,
-            ButtonModule
+            ButtonModule,
+            DotExperimentsStatusFilterComponent,
+            DotExperimentsEmptyExperimentsComponent,
+            DotExperimentsListSkeletonComponent,
+            ConfirmPopupModule
         ],
         component: DotExperimentsListComponent,
         componentProviders: [DotExperimentsListStore],
-        declarations: [
-            DotExperimentsStatusFilterComponent,
-            DotExperimentsListSkeletonComponent,
-            DotExperimentsEmptyExperimentsComponent,
-            DotExperimentsListTableComponent
-        ],
+
         providers: [
+            ConfirmationService,
             mockProvider(Router),
             mockProvider(DotMessagePipe),
             mockProvider(DotMessageService),
             mockProvider(DotExperimentsService),
             mockProvider(MessageService),
-            mockProvider(ConfirmationService),
             mockProvider(DotHttpErrorManagerService),
             {
                 provide: ActivatedRoute,

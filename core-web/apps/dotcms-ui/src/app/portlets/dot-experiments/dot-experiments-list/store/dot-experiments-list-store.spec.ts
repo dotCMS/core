@@ -27,7 +27,7 @@ const ActivatedRouteMock = {
         params: {
             pageId: routerParamsPageId
         },
-        parent: { parent: { parent: { parent: { data: { content: { page: { title: '' } } } } } } }
+        parent: { parent: { parent: { data: { content: { page: { title: '' } } } } } }
     }
 };
 
