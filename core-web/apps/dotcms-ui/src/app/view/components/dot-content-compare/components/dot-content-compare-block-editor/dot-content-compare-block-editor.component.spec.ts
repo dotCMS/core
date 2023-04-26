@@ -222,7 +222,7 @@ export const dotContentCompareTableDataMock: DotContentCompareTableData = {
     ]
 };
 
-describe('DotContentCompareBlockEditorComponent', () => {
+fdescribe('DotContentCompareBlockEditorComponent', () => {
     let component: DotContentCompareBlockEditorComponent;
     let fixture: ComponentFixture<DotContentCompareBlockEditorComponent>;
     let de: DebugElement;
@@ -252,6 +252,7 @@ describe('DotContentCompareBlockEditorComponent', () => {
         component.data = dotContentCompareTableDataMock;
         component.field = 'html';
         component.showDiff = false;
+        component.showAsCompare = false;
         de = fixture.debugElement;
         fixture.detectChanges();
     });
@@ -269,6 +270,7 @@ describe('DotContentCompareBlockEditorComponent', () => {
     describe('Checking if we are passing HTML to the compare field', () => {
         beforeEach(() => {
             component.showDiff = true;
+            component.showAsCompare = true;
             fixture.detectChanges();
         });
         it('Should contain same HTML for working than the Block Editor', async () => {

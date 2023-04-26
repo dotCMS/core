@@ -62,5 +62,11 @@
                 width: 45%;
             }
         }
+
+        .p-datatable-tbody tr > td {
+            &:last-child {
+                padding-right: 0.75rem;
+            }
+        }
     }
 }
