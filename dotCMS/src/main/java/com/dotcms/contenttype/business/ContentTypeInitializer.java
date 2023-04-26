@@ -19,6 +19,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
 
 import java.util.ArrayList;
@@ -35,7 +36,7 @@ public class ContentTypeInitializer implements DotInitializer {
     public static final String LEGACY_FAVORITE_PAGE_VAR_NAME = "favoritePage";
     static final String FAVORITE_PAGE_VAR_NAME = "dotFavoritePage";
 
-    private static final boolean DO_DEFAULT_PAGE_PERMISSIONS = Config.getBooleanProperty("DO_DEFAULT_PAGE_PERMISSIONS", true);
+    private static final Lazy<Boolean> doDefaultPagePermissions = Lazy.of(()->Config.getBooleanProperty("DO_DEFAULT_PAGE_PERMISSIONS", true));
 
     @Override
     public void init() {
@@ -116,7 +117,7 @@ public class ContentTypeInitializer implements DotInitializer {
 
     private void checkDefaultPermissions(final ContentType savedContentType) {
 
-        if (DO_DEFAULT_PAGE_PERMISSIONS) {
+        if (doDefaultPagePermissions.get()) {
 
             try {
 
