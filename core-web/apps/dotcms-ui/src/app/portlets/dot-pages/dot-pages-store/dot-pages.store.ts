@@ -74,7 +74,7 @@ export interface DotPagesState {
     portletStatus: ComponentStatus;
 }
 
-const FAVORITE_PAGES_ES_QUERY = `+contentType:dotFavoritePage +deleted:false +working:true`;
+const FAVORITE_PAGES_ES_QUERY = `+contentType:dotFavoritePage +deleted:false +working:true +owner:dotcms.org.2795`;
 
 @Injectable()
 export class DotPageStore extends ComponentStore<DotPagesState> {
