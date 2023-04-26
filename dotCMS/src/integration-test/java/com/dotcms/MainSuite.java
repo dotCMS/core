@@ -103,7 +103,6 @@ import com.dotcms.storage.FileMetadataAPITest;
 import com.dotcms.storage.StoragePersistenceAPITest;
 import com.dotcms.storage.repository.HashedLocalFileRepositoryManagerTest;
 import com.dotcms.translate.GoogleTranslationServiceIntegrationTest;
-import com.dotcms.util.ThreadUtilsTest;
 import com.dotcms.util.content.json.PopulateContentletAsJSONUtilTest;
 import com.dotcms.uuid.shorty.LegacyShortyIdApiTest;
 import com.dotcms.variant.VariantAPITest;
@@ -648,7 +647,7 @@ import org.junit.runners.Suite.SuiteClasses;
         PopulateContentletAsJSONJobTest.class,
         ContentTypeDestroyAPIImplTest.class,
         Task230328AddMarkedForDeletionColumnTest.class,
-        StartupTasksExecutorDataTest.class
+        StartupTasksExecutorDataTest.class,
 //        AnalyticsAPIImplTest.class,
 //        AccessTokenRenewJobTest.class,
 })
