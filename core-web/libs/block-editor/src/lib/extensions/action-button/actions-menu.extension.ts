@@ -13,8 +13,6 @@ import Suggestion, { SuggestionOptions, SuggestionProps } from '@tiptap/suggesti
 
 import { RemoteCustomExtensions } from '@dotcms/dotcms-models';
 
-import { ActionButtonComponent } from './action-button.component';
-
 import {
     SuggestionPopperModifiers,
     SuggestionsCommandProps,
@@ -426,13 +424,10 @@ export const ActionsMenu = (
         },
 
         addProseMirrorPlugins() {
-            const button = viewContainerRef.createComponent(ActionButtonComponent);
-
             return [
                 FloatingActionsPlugin({
                     command: execCommand,
                     editor: this.editor,
-                    element: button.location.nativeElement,
                     render: () => {
                         return {
                             onStart,

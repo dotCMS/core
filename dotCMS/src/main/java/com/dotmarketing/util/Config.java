@@ -64,6 +64,7 @@ public class Config {
     public static final String DOTCMS_USEWATCHERMODE = "dotcms.usewatchermode";
     public static final String USE_CONFIG_TEST_OVERRIDE_TRACKER = "USE_CONFIG_TEST_OVERRIDE_TRACKER";
     public static int DB_VERSION = 0;
+    public static int DATA_VERSION = 0;
 
     //Object Config properties      n
     public static javax.servlet.ServletContext CONTEXT = null;

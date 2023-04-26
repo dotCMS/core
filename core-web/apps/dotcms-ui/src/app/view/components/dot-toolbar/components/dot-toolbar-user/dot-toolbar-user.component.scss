@@ -3,39 +3,27 @@
 
 :host {
     display: block;
+}
 
-    .toolbar-user__content {
-        min-width: 250px;
-    }
+p-avatar {
+    cursor: pointer;
+}
 
-    .toolbar-user__email {
-        margin: 0;
-    }
+::ng-deep #toolbar-header:hover {
+    cursor: default;
+    background-color: white;
+}
 
+::ng-deep .p-menuitem-text {
     .toolbar-user__header {
-        background: $color-palette-gray-200;
-        padding: $spacing-1 $spacing-3;
         display: flex;
         align-items: center;
+        gap: $spacing-1;
     }
-
-    .toolbar-user__header-gravatar {
-        margin-right: $spacing-1;
-    }
-
-    .toolbar-user__menu {
-        @include naked-list();
-        margin: $spacing-3;
-        white-space: nowrap;
-    }
-
     .toolbar-user__user-name {
         margin: 0;
         white-space: nowrap;
-    }
-
-    .user-menu__item {
-        display: block;
-        padding: 0.25rem 0;
+        font-size: $font-size-lg;
+        color: $black;
     }
 }

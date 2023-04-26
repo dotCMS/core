@@ -75,36 +75,45 @@ export class DotPagesFavoritePanelComponent {
             urlParams[entry[0]] = entry[1];
         }
 
-        this.dotPageRenderService.checkPermission(urlParams).subscribe((hasPermission: boolean) => {
-            if (hasPermission) {
-                this.dialogService.open(DotFavoritePageComponent, {
-                    header: this.dotMessageService.get('favoritePage.dialog.header.add.page'),
-                    width: '80rem',
-                    data: {
-                        page: {
-                            favoritePageUrl: favoritePage.url,
-                            favoritePage: favoritePage
-                        },
-                        onSave: () => {
-                            this.timeStamp = this.getTimeStamp();
-                            this.store.getFavoritePages(this.currentLimitSize);
-                        },
-                        onDelete: () => {
-                            this.timeStamp = this.getTimeStamp();
-                            this.store.getFavoritePages(this.currentLimitSize);
-                        }
-                    }
-                });
-            } else {
-                const error = new HttpErrorResponse(
-                    new HttpResponse({
-                        body: null,
-                        status: HttpCode.FORBIDDEN,
-                        headers: null,
-                        url: ''
-                    })
-                );
-                this.dotHttpErrorManagerService.handle(error);
+        this.dotPageRenderService.checkPermission(urlParams).subscribe(
+            (hasPermission: boolean) => {
+                if (hasPermission) {
+                    this.displayFavoritePageDialog(favoritePage);
+                } else {
+                    const error = new HttpErrorResponse(
+                        new HttpResponse({
+                            body: null,
+                            status: HttpCode.FORBIDDEN,
+                            headers: null,
+                            url: ''
+                        })
+                    );
+                    this.dotHttpErrorManagerService.handle(error);
+                }
+            },
+            () => {
+                this.displayFavoritePageDialog(favoritePage);
+            }
+        );
+    }
+
+    private displayFavoritePageDialog(favoritePage: DotCMSContentlet) {
+        this.dialogService.open(DotFavoritePageComponent, {
+            header: this.dotMessageService.get('favoritePage.dialog.header.add.page'),
+            width: '80rem',
+            data: {
+                page: {
+                    favoritePageUrl: favoritePage.url,
+                    favoritePage: favoritePage
+                },
+                onSave: () => {
+                    this.timeStamp = this.getTimeStamp();
+                    this.store.getFavoritePages(this.currentLimitSize);
+                },
+                onDelete: () => {
+                    this.timeStamp = this.getTimeStamp();
+                    this.store.getFavoritePages(this.currentLimitSize);
+                }
             }
         });
     }

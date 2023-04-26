@@ -1,5 +1,11 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
+import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
+import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PERSONA_NAME_KEY;
+
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
@@ -2797,7 +2803,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         this.deleteBinaryFiles(contentletsVersion, null);
         this.deleteElementFromPublishQueueTable(contentlets);
-        this.destroyMetadata(contentlets);
 
         return noErrors;
     }
@@ -8660,7 +8665,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @param field
      */
     private void deleteBinaryFiles(List<Contentlet> contentlets, Field field) {
-        contentlets.stream().forEach(con -> {
+        this.destroyMetadata(contentlets);
+        contentlets.forEach(con -> {
 
             String contentletAssetPath = getContentletAssetPath(con, field);
             String contentletAssetCachePath = getContentletCacheAssetPath(con, field);
@@ -9508,17 +9514,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
         contentFactory.updateUserReferences(userToReplace, replacementUserId, user);
     }
 
+    static final String CONTENTLET_URL_MAP_FOR_CONTENT_404 = "URL_MAP_FOR_CONTENT_404";
+
     @CloseDBIfOpened
     @Override
     public String getUrlMapForContentlet(Contentlet contentlet, User user,
             boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
         // no structure, no inode, no workee
-        if (!InodeUtils.isSet(contentlet.getInode()) || !InodeUtils.isSet(
-                contentlet.getStructureInode())) {
+        if (UtilMethods.isEmpty(()->contentlet.getInode())) {//NOSONAR
             return null;
         }
 
-        final String CONTENTLET_URL_MAP_FOR_CONTENT_404 = "URL_MAP_FOR_CONTENT_404";
         String result = (String) contentlet.getMap().get(URL_MAP_FOR_CONTENT_KEY);
         if (result != null) {
             if (CONTENTLET_URL_MAP_FOR_CONTENT_404.equals(result)) {
@@ -9528,9 +9534,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         // if there is no detail page, return
-        Structure structure = CacheLocator.getContentTypeCache()
-                .getStructureByInode(contentlet.getStructureInode());
-        if (!UtilMethods.isSet(structure.getDetailPage())) {
+        ContentType type = Try.of(contentlet::getContentType).getOrNull();
+        if (UtilMethods.isEmpty(() -> type.detailPage())) { //NOSONAR
             return null;
         }
 
@@ -9538,11 +9543,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
         Host host = APILocator.getHostAPI().find(id.getHostId(), user, respectFrontendRoles);
 
         // URL MAPPed
-        if (UtilMethods.isSet(structure.getUrlMapPattern())) {
-            List<RegExMatch> matches = RegEX.find(structure.getUrlMapPattern(), "({[^{}]+})");
+        if (UtilMethods.isSet(type.urlMapPattern())) {
+            List<RegExMatch> matches = RegEX.find(type.urlMapPattern(), "({[^{}]+})");
             String urlMapField;
             String urlMapFieldValue;
-            result = structure.getUrlMapPattern();
+            result = type.urlMapPattern();
             for (RegExMatch match : matches) {
                 urlMapField = match.getMatch();
                 urlMapFieldValue = contentlet.getStringProperty(
@@ -9555,17 +9560,24 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 if (UtilMethods.isSet(urlMapFieldValue)) {
                     result = result.replaceAll(urlMapField, urlMapFieldValue);
                 } else {
-                    result = result.replaceAll(urlMapField, "");
+                    // urlmap property not found on content
+                    result = null;
+                    break;
                 }
             }
         }
 
         // or Detail page with id=uuid
         else {
-            IHTMLPage p = loadPageByIdentifier(structure.getDetailPage(), false, user,
-                    respectFrontendRoles);
-            if (p != null && UtilMethods.isSet(p.getIdentifier())) {
-                result = p.getURI() + "?id=" + contentlet.getInode();
+            final Identifier detailPageId = APILocator.getIdentifierAPI().find(type.detailPage());
+            if (UtilMethods.isEmpty(() -> detailPageId.getPath())) { //NOSONAR
+                contentlet.setStringProperty(URL_MAP_FOR_CONTENT_KEY, CONTENTLET_URL_MAP_FOR_CONTENT_404);
+                return null;
+            }
+
+
+            if (UtilMethods.isSet(() -> detailPageId.getId())) { //NOSONAR
+                result = detailPageId.getPath() + "?id=" + contentlet.getInode();
             }
         }
 
@@ -9578,10 +9590,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
         }
 
-        if (result == null) {
-            result = CONTENTLET_URL_MAP_FOR_CONTENT_404;
+        if (UtilMethods.isEmpty( result )) {
+            contentlet.setStringProperty(URL_MAP_FOR_CONTENT_KEY, CONTENTLET_URL_MAP_FOR_CONTENT_404);
+        }else {
+            contentlet.setStringProperty(URL_MAP_FOR_CONTENT_KEY, result);
         }
-        contentlet.setStringProperty(URL_MAP_FOR_CONTENT_KEY, result);
         return result;
     }
 

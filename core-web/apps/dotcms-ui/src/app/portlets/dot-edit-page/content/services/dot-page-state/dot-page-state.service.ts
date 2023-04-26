@@ -13,6 +13,7 @@ import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router
 import {
     DotContentletLockerService,
     DotESContentService,
+    DotMessageService,
     DotPageRenderService
 } from '@dotcms/data-access';
 import { HttpCode, LoginService, User } from '@dotcms/dotcms-js';
@@ -37,10 +38,21 @@ export class DotPageStateService {
 
     private isInternalNavigation = false;
 
+    get pagePersonalization() {
+        const persona = this.currentState?.viewAs?.persona;
+
+        if (!persona) {
+            return `dot:default`;
+        }
+
+        return `dot:${persona.contentType}:${persona.keyTag}`;
+    }
+
     constructor(
         private dotContentletLockerService: DotContentletLockerService,
         private dotESContentService: DotESContentService,
         private dotHttpErrorManagerService: DotHttpErrorManagerService,
+        private dotMessageService: DotMessageService,
         private dotPageRenderService: DotPageRenderService,
         private dotRouterService: DotRouterService,
         private loginService: LoginService
@@ -219,17 +231,20 @@ export class DotPageStateService {
                         })
                         .pipe(
                             take(1),
-                            switchMap((response: ESContent) => {
-                                const favoritePage = response.jsonObjectView?.contentlets[0];
-                                const pageState = new DotPageRenderState(
-                                    this.getCurrentUser(),
-                                    page,
-                                    favoritePage
+                            catchError((error: HttpErrorResponse) => {
+                                // Set message to throw a custom Favorite Page error message
+                                error.error.message = this.dotMessageService.get(
+                                    'favoritePage.error.fetching.data'
                                 );
 
-                                this.setCurrentState(pageState);
+                                this.dotHttpErrorManagerService.handle(error, true);
 
-                                return of(pageState);
+                                return this.setLocalPageState(page);
+                            }),
+                            switchMap((response: ESContent) => {
+                                const favoritePage = response.jsonObjectView?.contentlets[0];
+
+                                return this.setLocalPageState(page, favoritePage);
                             })
                         );
                 }
@@ -237,6 +252,17 @@ export class DotPageStateService {
                 return of(this.currentState);
             })
         );
+    }
+
+    private setLocalPageState(
+        page: DotPageRenderParameters,
+        favoritePage?: DotCMSContentlet
+    ): Observable<DotPageRenderState> {
+        const pageState = new DotPageRenderState(this.getCurrentUser(), page, favoritePage);
+
+        this.setCurrentState(pageState);
+
+        return of(pageState);
     }
 
     private contentAdded(): void {

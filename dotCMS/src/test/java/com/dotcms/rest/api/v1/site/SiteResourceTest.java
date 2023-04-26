@@ -282,7 +282,7 @@ public class SiteResourceTest extends UnitTestBase {
         Contentlet contentlet = new Contentlet(mapAll(
                 map(
                         "hostName", "system.dotcms.com",
-                        "googleMap", "AIzaSyDXvD7JA5Q8S5VgfviI8nDinAq9x5Utru0",
+                        "googleMap", "TEST_GOOGLE_MAP_KEY",
                         "modDate", Integer.parseInt("125466"),
                         "aliases", "",
                         "keywords", "CMS, System Web Content Management, Open Source, Java, J2EE",
@@ -293,7 +293,7 @@ public class SiteResourceTest extends UnitTestBase {
                         "hostname", "system.dotcms.com"),
                 map(
                         "__DOTNAME__", "system.dotcms.com",
-                        "addThis", "ra-4e02119211875e7b",
+                        "addThis", "TEST_ADD_THIS_KEY",
                         "disabledWYSIWYG", new Object[]{},
                         "host", "SYSTEM_HOST",
                         "stInode", "855a2d72-f2f3-4169-8b04-ac5157c4380d",
@@ -305,7 +305,7 @@ public class SiteResourceTest extends UnitTestBase {
                 map(
                         "isDefault", true,
                         "folder", "SYSTEM_FOLDER",
-                        "googleAnalytics", "UA-9877660-3",
+                        "googleAnalytics", "TEST_GOOGLE_ANALYTICS_KEY",
                         "tagStorage", "48190c8c-42c4-46af-8d1a-0cd5db894799",
                         "isSystemHost", true,
                         "sortOrder", 0,
@@ -346,7 +346,7 @@ public class SiteResourceTest extends UnitTestBase {
                         "hostname", "demo.dotcms.com"),
                 map(
                         "__DOTNAME__", "demo.dotcms.com",
-                        "addThis", "ra-4e02119211875e7b",
+                        "addThis", "TEST_ADD_THIS_KEY",
                         "disabledWYSIWYG", new Object[]{},
                         "host", "SYSTEM_HOST",
                         "stInode", "855a2d72-f2f3-4169-8b04-ac5157c4380c",
@@ -359,7 +359,7 @@ public class SiteResourceTest extends UnitTestBase {
                 map(
                         "isDefault", true,
                         "folder", "SYSTEM_FOLDER",
-                        "googleAnalytics", "UA-9877660-3",
+                        "googleAnalytics", "TEST_GOOGLE_ANALYTICS_KEY",
                         "tagStorage", "48190c8c-42c4-46af-8d1a-0cd5db894797",
                         "isSystemHost", false,
                         "sortOrder", 0,
@@ -368,7 +368,7 @@ public class SiteResourceTest extends UnitTestBase {
         )), new Contentlet(mapAll(
                 map(
                         "hostName", "system.dotcms.com",
-                        "googleMap", "AIzaSyDXvD7JA5Q8S5VgfviI8nDinAq9x5Utru0",
+                        "googleMap", "TEST_GOOGLE_MAP_KEY",
                         "modDate", Integer.parseInt("125466"),
                         "aliases", "",
                         "keywords", "CMS, System Web Content Management, Open Source, Java, J2EE",
@@ -379,7 +379,7 @@ public class SiteResourceTest extends UnitTestBase {
                         "hostname", "system.dotcms.com"),
                 map(
                         "__DOTNAME__", "system.dotcms.com",
-                        "addThis", "ra-4e02119211875e7b",
+                        "addThis", "TEST_ADD_THIS_KEY",
                         "disabledWYSIWYG", new Object[]{},
                         "host", "SYSTEM_HOST",
                         "stInode", "855a2d72-f2f3-4169-8b04-ac5157c4380d",
@@ -391,7 +391,7 @@ public class SiteResourceTest extends UnitTestBase {
                 map(
                         "isDefault", true,
                         "folder", "SYSTEM_FOLDER",
-                        "googleAnalytics", "UA-9877660-3",
+                        "googleAnalytics", "TEST_GOOGLE_ANALYTICS_KEY",
                         "tagStorage", "48190c8c-42c4-46af-8d1a-0cd5db894799",
                         "isSystemHost", true,
                         "sortOrder", 0,
@@ -430,7 +430,7 @@ public class SiteResourceTest extends UnitTestBase {
         List<Host> temp = list(new Host(new Contentlet(mapAll(
                 map(
                         "hostName", "demo.awesome.dotcms.com",
-                        "googleMap", "AIzaSyDXvD7JA5Q8S5VgfviI8nDinAq9x5Utru0",
+                        "googleMap", "TEST_GOOGLE_MAP_KEY",
                         "modDate", Integer.parseInt("125466"),
                         "aliases", "",
                         "keywords", "CMS, System Web Content Management, Open Source, Java, J2EE",
@@ -441,7 +441,7 @@ public class SiteResourceTest extends UnitTestBase {
                         "hostname", "system.dotcms.com"),
                 map(
                         "__DOTNAME__", "demo.awesome.dotcms.com",
-                        "addThis", "ra-4e02119211875e7b",
+                        "addThis", "TEST_ADD_THIS_KEY",
                         "disabledWYSIWYG", new Object[]{},
                         "host", "SYSTEM_HOST",
                         "stInode", "855a2d72-f2f3-4169-8b04-ac5157c4380d",
@@ -453,7 +453,7 @@ public class SiteResourceTest extends UnitTestBase {
                 map(
                         "isDefault", true,
                         "folder", "SYSTEM_FOLDER",
-                        "googleAnalytics", "UA-9877660-3",
+                        "googleAnalytics", "TEST_GOOGLE_ANALYTICS_KEY",
                         "tagStorage", "48190c8c-42c4-46af-8d1a-0cd5db894799",
                         "isSystemHost", false,
                         "sortOrder", 0,
@@ -477,7 +477,7 @@ public class SiteResourceTest extends UnitTestBase {
                         "hostname", "demo.dotcms.com"),
                 map(
                         "__DOTNAME__", "demo.dotcms.com",
-                        "addThis", "ra-4e02119211875e7b",
+                        "addThis", "TEST_ADD_THIS_KEY",
                         "disabledWYSIWYG", new Object[]{},
                         "host", "SYSTEM_HOST",
                         "stInode", "855a2d72-f2f3-4169-8b04-ac5157c4380c",
@@ -490,7 +490,7 @@ public class SiteResourceTest extends UnitTestBase {
                 map(
                         "isDefault", true,
                         "folder", "SYSTEM_FOLDER",
-                        "googleAnalytics", "UA-9877660-3",
+                        "googleAnalytics", "TEST_GOOGLE_ANALYTICS_KEY",
                         "tagStorage", "48190c8c-42c4-46af-8d1a-0cd5db894797",
                         "isSystemHost", false,
                         "sortOrder", 0,

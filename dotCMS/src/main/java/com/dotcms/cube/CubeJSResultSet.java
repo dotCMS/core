@@ -15,9 +15,11 @@ import org.jetbrains.annotations.NotNull;
  * Represent a Result from running a CubeJS Query in a CubeJS Server.
  */
 public class CubeJSResultSet implements Iterable<ResultSetItem> {
-    private List<ResultSetItem> data;
+
+    private final List<ResultSetItem> data;
+
     public CubeJSResultSet(final List<Map<String, Object>> data){
-        this.data = data.stream().map(map -> new ResultSetItem(map)).collect(Collectors.toList());
+        this.data = data.stream().map(ResultSetItem::new).collect(Collectors.toList());
     }
 
     public int size() {
@@ -43,7 +45,8 @@ public class CubeJSResultSet implements Iterable<ResultSetItem> {
     public static class ResultSetItem {
 
         private Map<String, Object> item;
-        ResultSetItem(final Map<String, Object> item) {
+
+        private ResultSetItem(final Map<String, Object> item) {
             this.item = item;
         }
 
@@ -64,6 +67,7 @@ public class CubeJSResultSet implements Iterable<ResultSetItem> {
         public Map<String, Object> getAll(){
             return new HashMap<>(item);
         }
+
     }
 
 }

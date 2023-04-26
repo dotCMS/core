@@ -40,7 +40,6 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.liferay.portal.model.User;
-import graphql.AssertException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -439,11 +438,6 @@ public class VariantAPITest {
 
         checkVersion(contentlet2, false, VariantAPI.DEFAULT_VARIANT, "contentlet2_variant",
                 titleField);
-
-        final Variant variantFromDataBase = APILocator.getVariantAPI().get(variant.name())
-                .orElseThrow(() -> new DotStateException("Unable to find Variant"));
-
-        assertTrue(variantFromDataBase.archived());
     }
 
     /**
@@ -902,13 +896,14 @@ public class VariantAPITest {
      * When: You try to promote a Variant that does not exist
      * Should: throw a Exception
      */
+    @Test
     public void promoteNonExistingVariant() throws DotDataException {
 
         final Variant doesNotExistsVariant = new VariantDataGen().next();
         try {
             APILocator.getVariantAPI().promote(doesNotExistsVariant, APILocator.systemUser());
             fail("Should throw a Exception");
-        } catch (IllegalArgumentException e) {
+        } catch (DoesNotExistException e) {
             //Expected
         }
     }
@@ -918,6 +913,7 @@ public class VariantAPITest {
      * When: You try to promote the DEFAULT Variant.
      * Should: throw a Exception
      */
+    @Test
     public void promoteDefaultVariant() throws DotDataException {
         try {
             APILocator.getVariantAPI().promote(VariantAPI.DEFAULT_VARIANT, APILocator.systemUser());
@@ -925,6 +921,18 @@ public class VariantAPITest {
         } catch (IllegalArgumentException e) {
             //Expected
         }
+    }
+
+    /**
+     * Method to test: {@link VariantAPIImpl#promote(Variant, User)}
+     * When: You try to promote a Variant that is already promoted.
+     * Should: not fail
+     */
+    @Test
+    public void promoteAlreadyPromoteVariant() throws DotDataException {
+        final Variant variant = new VariantDataGen().nextPersisted();
+        APILocator.getVariantAPI().promote(variant, APILocator.systemUser());
+        APILocator.getVariantAPI().promote(variant, APILocator.systemUser());
     }
 
     /**

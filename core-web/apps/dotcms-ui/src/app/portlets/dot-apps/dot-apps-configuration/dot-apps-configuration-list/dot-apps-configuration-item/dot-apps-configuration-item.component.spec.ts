@@ -87,8 +87,9 @@ describe('DotAppsConfigurationItemComponent', () => {
             ).toBe(sites[0].name);
 
             expect(
-                fixture.debugElement.query(By.css('.dot-apps-configuration-list__host-key'))
-                    .nativeElement.textContent
+                fixture.debugElement
+                    .query(By.css('.dot-apps-configuration-list__host-key'))
+                    .nativeElement.textContent.trim()
             ).toContain(`${messageServiceMock.get('apps.key')} ${sites[0].id}`);
         });
 
