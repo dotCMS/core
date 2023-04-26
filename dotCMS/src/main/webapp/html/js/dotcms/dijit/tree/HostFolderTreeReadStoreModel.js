@@ -37,7 +37,6 @@ dojo.declare("dotcms.dijit.tree.HostFolderTreeReadStoreModel", null, {
 	},
 
 	getChildren: function(/*dojo.data.Item*/ parentItem, /*function(items)*/ onComplete, /*function*/ onError) {
-
 		var parentItemId = this.getIdentity(parentItem);
 		if(parentItem.isRoot) {
 			if (this.hostId == ''){
@@ -116,8 +115,9 @@ dojo.declare("dotcms.dijit.tree.HostFolderTreeReadStoreModel", null, {
 	},
 
 	getFullPath: function(item) {
-		const [ host ] = item.fullPath.split(":");
-		return item.type === "host" ? host : `${host}${item.folderPath}`
+		const { folderPath , fullPath } = item;
+		const [host, ...path] = fullPath.split(":");
+		return item.type === "host" ? host : `${host}${folderPath ?? path}`;
 	},
 
 	newItem: function(/* dojo.dnd.Item */ args, /*Item*/ parent, /*int?*/ insertIndex){

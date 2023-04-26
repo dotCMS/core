@@ -78,24 +78,7 @@ export class DotPagesFavoritePanelComponent {
         this.dotPageRenderService.checkPermission(urlParams).subscribe(
             (hasPermission: boolean) => {
                 if (hasPermission) {
-                    this.dialogService.open(DotFavoritePageComponent, {
-                        header: this.dotMessageService.get('favoritePage.dialog.header.add.page'),
-                        width: '80rem',
-                        data: {
-                            page: {
-                                favoritePageUrl: favoritePage.url,
-                                favoritePage: favoritePage
-                            },
-                            onSave: () => {
-                                this.timeStamp = this.getTimeStamp();
-                                this.store.getFavoritePages(this.currentLimitSize);
-                            },
-                            onDelete: () => {
-                                this.timeStamp = this.getTimeStamp();
-                                this.store.getFavoritePages(this.currentLimitSize);
-                            }
-                        }
-                    });
+                    this.displayFavoritePageDialog(favoritePage);
                 } else {
                     const error = new HttpErrorResponse(
                         new HttpResponse({
@@ -108,10 +91,31 @@ export class DotPagesFavoritePanelComponent {
                     this.dotHttpErrorManagerService.handle(error);
                 }
             },
-            (error: HttpErrorResponse) => {
-                this.dotHttpErrorManagerService.handle(error);
+            () => {
+                this.displayFavoritePageDialog(favoritePage);
             }
         );
+    }
+
+    private displayFavoritePageDialog(favoritePage: DotCMSContentlet) {
+        this.dialogService.open(DotFavoritePageComponent, {
+            header: this.dotMessageService.get('favoritePage.dialog.header.add.page'),
+            width: '80rem',
+            data: {
+                page: {
+                    favoritePageUrl: favoritePage.url,
+                    favoritePage: favoritePage
+                },
+                onSave: () => {
+                    this.timeStamp = this.getTimeStamp();
+                    this.store.getFavoritePages(this.currentLimitSize);
+                },
+                onDelete: () => {
+                    this.timeStamp = this.getTimeStamp();
+                    this.store.getFavoritePages(this.currentLimitSize);
+                }
+            }
+        });
     }
 
     private getTimeStamp() {

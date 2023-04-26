@@ -109,6 +109,7 @@ import org.jetbrains.annotations.NotNull;
 public class ExperimentsAPIImpl implements ExperimentsAPI {
 
     private static final int VARIANTS_NUMBER_MAX = 3;
+    private static final List<Status> RESULTS_QUERY_VALID_STATUSES = List.of(RUNNING, ENDED);
 
     final ExperimentsFactory factory = FactoryLocator.getExperimentsFactory();
     final ExperimentsCache experimentsCache = CacheLocator.getExperimentsCache();
@@ -508,6 +509,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 DotStateException.class);
 
         Experiment running = save(persistedExperiment.withStatus(RUNNING), user);
+        cacheRunningExperiments();
         publishContentOnExperimentVariants(user, running);
 
         return running;
@@ -834,7 +836,9 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final Experiment experimentFromDataBase = find(experimentId, APILocator.systemUser())
                 .orElseThrow(() -> new NotFoundException("Experiment not found: " + experimentId));
 
-        DotPreconditions.isTrue(experimentFromDataBase.status() == RUNNING, "The Experiment must be RUNNING");
+        DotPreconditions.isTrue(
+            RESULTS_QUERY_VALID_STATUSES.contains(experimentFromDataBase.status()),
+            "The Experiment must be RUNNING or ENDED to get results");
 
         final List<BrowserSession> events = getEvents(experiment);
         final ExperimentResults experimentResults = ExperimentAnalyzerUtil.INSTANCE.getExperimentResult(

@@ -1,35 +1,25 @@
 @use "variables" as *;
 
-:host {
-    display: inline-flex;
-}
-
 a,
 a:focus,
 a:active {
     text-decoration: none;
 }
 
-.p-button {
-    gap: 0.25rem;
-}
-
-.material-icons {
-    color: $color-palette-primary;
-    font-size: $font-size-default;
-}
-
-// This styles are the same as .p-button.p-button-outlined:enabled:hover in _buttons.scss,
+// This styles are the same as .p-button.p-button-text in _buttons.scss,
 // the problem is the :enabled pseudoclass, hyperlink tag doesn't have that pseudoclass
 
-.p-button:hover {
-    background: rgba(66, 107, 240, 0.04);
-    color: $color-palette-primary;
-    border: 1px solid;
-}
+.p-button {
+    &:hover {
+        background: $color-palette-primary-100;
+    }
 
-.p-button:active {
-    background: rgba(66, 107, 240, 0.16);
-    color: $color-palette-primary;
-    border: 1px solid;
+    &:focus {
+        background: white;
+        box-shadow: $md-shadow-1;
+    }
+
+    &:active {
+        background: $color-palette-primary-200;
+    }
 }

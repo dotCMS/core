@@ -193,6 +193,45 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
             : of({ READ: [] });
     };
 
+    private setUnknownPageInitialStateData(
+        formInitialState: DotFavoritePageFormData,
+        favoritePage: DotCMSContentlet
+    ) {
+        forkJoin([
+            this.dotRolesService.search(),
+            this.dotCurrentUser.getCurrentUser(),
+            this.getContentletPermissionsObservable(favoritePage?.identifier)
+        ])
+            .pipe(take(1))
+            .subscribe(
+                ([roles, currentUser, permissionsStored]: [
+                    DotRole[],
+                    DotCurrentUser,
+                    DotContentletPermissions
+                ]): void => {
+                    this.patchState({
+                        loading: false,
+                        isAdmin: currentUser.admin,
+                        formState: {
+                            ...formInitialState,
+                            currentUserRoleId: currentUser.roleId,
+                            permissions: permissionsStored.READ,
+                            title: favoritePage?.title
+                        },
+                        imgHeight: IMG_RATIO_43,
+                        imgWidth: 1024,
+                        pageRenderedHtml: '',
+                        renderThumbnail: !(favoritePage && !!favoritePage['screenshot']),
+                        showFavoriteEmptySkeleton: favoritePage && !favoritePage['screenshot'],
+                        roleOptions: roles
+                    });
+                },
+                (error: HttpErrorResponse) => {
+                    this.dotHttpErrorManagerService.handle(error);
+                }
+            );
+    }
+
     constructor(
         private dotCurrentUser: DotCurrentUserService,
         private dotPageRenderService: DotPageRenderService,
@@ -236,13 +275,27 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
             title: favoritePage?.title || '',
             url: favoritePageUrl
         };
-        forkJoin([
-            this.dotRolesService.search(),
-            this.dotCurrentUser.getCurrentUser(),
-            this.dotPageRenderService.get({ url: favoritePageUrl }),
-            this.getContentletPermissionsObservable(favoritePage?.identifier) // TODO: replace with new Permissions endpoint
-        ])
-            .pipe(take(1))
+
+        const urlParams = { url: favoritePageUrl.split('?')[0] };
+        const searchParams = new URLSearchParams(favoritePageUrl.split('?')[1]);
+
+        for (const entry of searchParams) {
+            urlParams[entry[0]] = entry[1];
+        }
+
+        this.dotPageRenderService
+            .checkPermission(urlParams)
+            .pipe(
+                take(1),
+                switchMap(() => {
+                    return forkJoin([
+                        this.dotRolesService.search(),
+                        this.dotCurrentUser.getCurrentUser(),
+                        this.dotPageRenderService.get({ url: favoritePageUrl }),
+                        this.getContentletPermissionsObservable(favoritePage?.identifier)
+                    ]);
+                })
+            )
             .subscribe(
                 ([roles, currentUser, pageRender, permissionsStored]: [
                     DotRole[],
@@ -269,6 +322,13 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
                         showFavoriteEmptySkeleton: favoritePage && !favoritePage['screenshot'],
                         roleOptions: roles
                     });
+                },
+                (error: HttpErrorResponse) => {
+                    if (error.status === 404) {
+                        this.setUnknownPageInitialStateData(formInitialState, favoritePage);
+                    } else {
+                        this.dotHttpErrorManagerService.handle(error);
+                    }
                 }
             );
     }
