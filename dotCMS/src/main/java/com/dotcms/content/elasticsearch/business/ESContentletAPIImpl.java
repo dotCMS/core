@@ -4820,7 +4820,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             //ContentletRaw keeps a copy with everything that was originally sent from the front-end including binaries etc..
             //While the original contentlet first will get stuff marked for delete and then refreshed after saved in the database.
-            final Contentlet contentletRaw = populateHost(contentlet);
+            Contentlet contentletRaw = populateHost(contentlet);
 
             if ( contentlet.getMap().get( "_use_mod_date" ) != null ) {
                     /*
@@ -4875,6 +4875,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             contentlet = includeSystemFields(contentlet, contentletRaw, tagsValues, categories, user);
 
             contentlet = applyNullProperties(contentlet);
+            contentletRaw = applyNullProperties(contentletRaw);
             //This is executed first hand to create the inode-contentlet relationship.
             if(InodeUtils.isSet(existingInode)) {
                 contentlet = contentFactory.save(contentlet, existingInode);
