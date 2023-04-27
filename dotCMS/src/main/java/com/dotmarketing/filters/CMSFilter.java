@@ -33,8 +33,26 @@ public class CMSFilter implements Filter {
     private final String RELATIVE_ASSET_PATH = APILocator.getFileAssetAPI().getRelativeAssetsRootPath();
     public static final String CMS_INDEX_PAGE = Config.getStringProperty("CMS_INDEX_PAGE", "index");
 
+    /*
+    * This enum is used to determine what the current request is.
+    * It is used to determine if the request is a page, a file, a folder, or nothing in the CMS.
+    * In some cases we have to know if the request is a page or if it is an index page. For example, if the request is
+    * an UrlMapping and ends with slash, then it needs to be treated as a page and not as an index page.
+    * */
     public enum IAm {
-        PAGE, FOLDER, FILE, NOTHING_IN_THE_CMS
+        PAGE(true),
+        INDEX_PAGE(true),
+        FOLDER(false),
+        FILE(false),
+        NOTHING_IN_THE_CMS(false);
+
+        private final boolean isPage;
+        IAm(boolean isPage) {
+            this.isPage = isPage;
+        }
+        public boolean isPage() {
+            return this.isPage;
+        }
     }
 
     @Override
@@ -94,20 +112,21 @@ public class CMSFilter implements Filter {
         final IAm iAm  = this.urlUtil.resolveResourceType(IAm.NOTHING_IN_THE_CMS, uri, site, languageId);
 
         // if I am a folder without a slash
+
         if (iAm == IAm.FOLDER && !uri.endsWith("/")) {
             response.setHeader("Location", UtilMethods.isSet(queryString) ? uri + "/?" + queryString : uri + "/");
             Try.run(()->response.setStatus(301));
             return;
         }
 
-        // if I am a Page with a slash
-        if (iAm == IAm.PAGE && uri.endsWith("/")) {
-           uri = uri + CMS_INDEX_PAGE;
 
+        // if I am a Page with a trailing slash
+        if (iAm == IAm.INDEX_PAGE && uri.endsWith("/")) {
+            uri = uri + CMS_INDEX_PAGE;
         }
-        
 
-        if (iAm == IAm.PAGE) {
+
+        if (iAm.isPage()) {
             countPageVisit(request);
             countSiteVisit(request, response);
             request.setAttribute(Constants.CMS_FILTER_URI_OVERRIDE,
@@ -138,7 +157,7 @@ public class CMSFilter implements Filter {
             return;
         }
 
-        if (iAm == IAm.PAGE) {
+        if (iAm.isPage()) {
 
             final StringWriter forward = new StringWriter().append("/servlets/VelocityServlet");
 

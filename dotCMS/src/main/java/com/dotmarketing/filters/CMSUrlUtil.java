@@ -125,7 +125,7 @@ public class CMSUrlUtil {
         if(isFolder(uriWithoutQueryString, site)) {
             // resolves correctly for folders with index pages
             return uriWithoutQueryString.endsWith("/") && isPageAsset(uriWithoutQueryString + CMSFilter.CMS_INDEX_PAGE, site, languageId) 
-                        ? IAm.PAGE
+                        ? IAm.INDEX_PAGE
                         : IAm.FOLDER;     
             
         }
