@@ -44,7 +44,7 @@ export interface DotInlineEditContent {
     isNotDirty: boolean;
     eventType: string;
     container: HTMLElement;
-    contentletHTML: HTMLElement;
+    contentlet: HTMLElement;
     initEditor: (element: HTMLElement) => void;
 }
 

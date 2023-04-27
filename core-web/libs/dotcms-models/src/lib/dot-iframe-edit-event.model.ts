@@ -4,5 +4,4 @@ export interface DotIframeEditEvent<T = { [key: string]: DOMStringMap }> {
     data?: T;
     name: string;
     target?: unknown;
-    numberOfPages?: number;
 }

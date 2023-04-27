@@ -6,9 +6,8 @@ export const INLINE_TINYMCE_SCRIPTS = `
             const content = ed.getContent();
             const dataset = ed.targetElm.dataset;
             const element = ed.targetElm;
-            const bodyElement = ed.bodyElement;
-            const container = bodyElement.closest('[data-dot-object="container"]');
-            const contentletHTML = bodyElement.closest('[data-dot-object="contentlet"]');
+            const container = ed.bodyElement.closest('[data-dot-object="container"]');
+            const contentlet = ed.bodyElement.closest('[data-dot-object="contentlet"]');
 
             const data = {
                 dataset,
@@ -17,7 +16,7 @@ export const INLINE_TINYMCE_SCRIPTS = `
                 eventType,
                 isNotDirty: ed.isNotDirty,
                 container,
-                contentletHTML,
+                contentlet,
                 initEditor
             }
 
@@ -26,12 +25,12 @@ export const INLINE_TINYMCE_SCRIPTS = `
             // is initialized and clicked we set the pointer-events: auto so users can use the editor as intended.
             if (eventType === "focus" && dataset.mode) {
                 container.classList.add("inline-editing")
-                bodyElement.classList.add("active");
+                ed.bodyElement.classList.add("active");
             }
 
-            if (eventType === "blur" && bodyElement.classList.contains("active")) {
+            if (eventType === "blur" && ed.bodyElement.classList.contains("active")) {
                 container.classList.remove("inline-editing")
-                bodyElement.classList.remove("active");
+                ed.bodyElement.classList.remove("active");
             }
 
             if (eventType === "blur") {
