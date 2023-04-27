@@ -10,12 +10,10 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.rules.business.RulesEngine;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.*;
 import io.vavr.control.Try;
-import org.apache.commons.logging.LogFactory;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
