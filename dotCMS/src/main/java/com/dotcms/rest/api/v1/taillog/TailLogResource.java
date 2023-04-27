@@ -45,6 +45,8 @@ public class TailLogResource {
 
     public static final int LINES_PER_PAGE = Config.getIntProperty("TAIL_LOG_LINES_PER_PAGE",10);
 
+    //This is in secodns
+    public static final int KEEP_ALIVE_EVENT_INTERVAL = Config.getIntProperty("KEEP_ALIVE_EVENT_INTERVAL",20);
 
     @GET
     @Path("/{fileName}/_tail")
@@ -202,7 +204,7 @@ public class TailLogResource {
                             count = 1;
                         }
                     } else {
-                        if(System.currentTimeMillis() > timeMark + TimeUnit.SECONDS.toMillis(20)){
+                        if(System.currentTimeMillis() > timeMark + TimeUnit.SECONDS.toMillis(KEEP_ALIVE_EVENT_INTERVAL)){
                             Logger.debug(this.getClass(), String.format(" Thread [%s] is sending keepAlive event for file [%s] ", getName(), fileName));
                             eventBuilder.name("keepAlive");
                             eventBuilder.data(Map.class,
