@@ -104,6 +104,7 @@ export class DotPagesComponent implements OnInit, OnDestroy {
      */
     showActionsMenu({ event, actionMenuDomId, item }: DotActionsMenuEventParams): void {
         event.stopPropagation();
+        this.store.clearMenuActions();
         this.menu.hide();
 
         if (event?.currentTarget['id'] !== this.domIdMenuAttached) {
@@ -117,7 +118,6 @@ export class DotPagesComponent implements OnInit, OnDestroy {
      * @memberof DotPagesComponent
      */
     closedActionsMenu() {
-        this.store.clearMenuActions();
         this.domIdMenuAttached = '';
     }
 
@@ -129,10 +129,12 @@ export class DotPagesComponent implements OnInit, OnDestroy {
             )
             .subscribe((actionMenuDomId: string) => {
                 const target = this.element.nativeElement.querySelector(`#${actionMenuDomId}`);
-                if (target) {
+                if (target && actionMenuDomId.includes('pageActionButton')) {
                     this.menu.show({ currentTarget: target });
                     this.domIdMenuAttached = actionMenuDomId;
-                }
+
+                    // To hide when the contextMenu is openned
+                } else this.menu.hide();
             });
 
         this.dotEventsService
