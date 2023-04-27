@@ -6,8 +6,9 @@ export const INLINE_TINYMCE_SCRIPTS = `
             const content = ed.getContent();
             const dataset = ed.targetElm.dataset;
             const element = ed.targetElm;
-            const container = ed.bodyElement.closest('[data-dot-object="container"]');
-            const contentlet = container.querySelector('[data-dot-object="contentlet"]');
+            const bodyElement = ed.bodyElement;
+            const container = bodyElement.closest('[data-dot-object="container"]');
+            const contentletHTML = bodyElement.closest('[data-dot-object="contentlet"]');
 
             const data = {
                 dataset,
@@ -16,7 +17,7 @@ export const INLINE_TINYMCE_SCRIPTS = `
                 eventType,
                 isNotDirty: ed.isNotDirty,
                 container,
-                contentlet,
+                contentletHTML,
                 initEditor
             }
 
@@ -25,12 +26,12 @@ export const INLINE_TINYMCE_SCRIPTS = `
             // is initialized and clicked we set the pointer-events: auto so users can use the editor as intended.
             if (eventType === "focus" && dataset.mode) {
                 container.classList.add("inline-editing")
-                ed.bodyElement.classList.add("active");
+                bodyElement.classList.add("active");
             }
 
-            if (eventType === "blur" && ed.bodyElement.classList.contains("active")) {
+            if (eventType === "blur" && bodyElement.classList.contains("active")) {
                 container.classList.remove("inline-editing")
-                ed.bodyElement.classList.remove("active");
+                bodyElement.classList.remove("active");
             }
 
             if (eventType === "blur") {
@@ -89,6 +90,7 @@ export const INLINE_TINYMCE_SCRIPTS = `
         initEditor(target, event);
     });
 
+    // Register this function into the windows (?) so we can call it from the Angular
     function initEditor(element, event) {
         const { dataset } = element;
         const dataSelector =

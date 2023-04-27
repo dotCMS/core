@@ -1,22 +1,23 @@
-import { fromEvent, of, Subject, Subscription } from 'rxjs';
+import { fromEvent, Observable, of, Subject, Subscription } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { ElementRef, Injectable, NgZone } from '@angular/core';
 
-import { catchError, filter, map, switchMap, take, tap } from 'rxjs/operators';
+import { catchError, filter, finalize, map, switchMap, take, tap } from 'rxjs/operators';
 
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { INLINE_TINYMCE_SCRIPTS } from '@dotcms/app/portlets/dot-edit-page/content/services/html/libraries/inline-edit-mode.js';
 import {
     DotAlertConfirmService,
+    DotCopyContentService,
     DotEditPageService,
     DotLicenseService,
     DotMessageService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import {
-    DotCopyContent,
+    DotTreeNode,
     DotIframeEditEvent,
     DotPage,
     DotPageContainer,
@@ -24,6 +25,7 @@ import {
     DotPageRenderState,
     DotPersona
 } from '@dotcms/dotcms-models';
+import { DotLoadingIndicatorService } from '@dotcms/utils';
 import { DotPageContent } from '@portlets/dot-edit-page/shared/models';
 
 import { PageModelChangeEvent, PageModelChangeEventType } from './models';
@@ -75,7 +77,7 @@ export class DotEditContentHtmlService {
     currentContentlet: DotPageContent;
     iframe: ElementRef;
     iframeActions$: Subject<
-        DotIframeEditEvent<Record<string, unknown> | DotAddContentTypePayload>
+        DotIframeEditEvent<Record<string, unknown> | DotAddContentTypePayload | DotTreeNode>
     > = new Subject();
     pageModel$: Subject<PageModelChangeEvent> = new Subject();
     mutationConfig = { attributes: false, childList: true, characterData: false };
@@ -93,6 +95,14 @@ export class DotEditContentHtmlService {
 
     private readonly docClickHandlers;
 
+    get pagePersonalization() {
+        if (!this.currentPersona) {
+            return `dot:default`;
+        }
+
+        return `dot:${this.currentPersona.contentType}:${this.currentPersona.keyTag}`;
+    }
+
     constructor(
         private dotEditPageService: DotEditPageService,
         private dotContainerContentletService: DotContainerContentletService,
@@ -106,7 +116,9 @@ export class DotEditContentHtmlService {
         private dotWorkflowActionsFireService: DotWorkflowActionsFireService,
         private ngZone: NgZone,
         private dotLicenseService: DotLicenseService,
-        private dotCopyContentModalService: DotCopyContentModalService
+        private dotCopyContentModalService: DotCopyContentModalService,
+        private dotCopyContentService: DotCopyContentService,
+        public dotLoadingIndicatorService: DotLoadingIndicatorService
     ) {
         this.contentletEvents$.subscribe(
             (
@@ -468,8 +480,9 @@ export class DotEditContentHtmlService {
         this.docClickSubscription = fromEvent(doc, 'click').subscribe(($event: MouseEvent) => {
             const target = <HTMLElement>$event.target;
             const method = this.docClickHandlers[target.dataset.dotObject];
+
             if (method) {
-                method(target);
+                this.ngZone.run(() => method(target));
             }
 
             if (!target.classList.contains('dotedit-menu__button')) {
@@ -601,10 +614,7 @@ export class DotEditContentHtmlService {
                     editBlockEditorNodes.forEach((node) => {
                         node.classList.add('dotcms__inline-edit-field');
                         node.addEventListener('click', (event) => {
-                            const customEvent = new CustomEvent('ng-event', {
-                                detail: { name: 'edit-block-editor', data: event.target }
-                            });
-                            window.top.document.dispatchEvent(customEvent);
+                            this.ngZone.run(() => this.blockEditorClickHandler(event));
                         });
                     });
                 });
@@ -670,18 +680,30 @@ export class DotEditContentHtmlService {
 
         const container = <HTMLElement>target.closest('[data-dot-object="container"]');
         const contentlet = <HTMLElement>target.closest('[data-dot-object="contentlet"]');
+        const numberOfPages = this.getContentletNumberOfPages(contentlet);
 
-        const dataset = {
-            ...target.dataset,
-            onNumberOfPages: this.getContentletNumberOfPages(contentlet)
+        const eventData = {
+            name: type,
+            dataset: target.dataset,
+            container: container ? container.dataset : null
         };
 
-        this.iframeActions$.next({
-            name: type,
-            dataset,
-            container: container ? container.dataset : null,
-            copyContent: this.getCopyContentData(contentlet, container)
-        });
+        if (type === 'edit' && numberOfPages > 1) {
+            this.showCopyModal(contentlet, container).subscribe((contentlet) => {
+                if (!contentlet) {
+                    return;
+                }
+
+                this.iframeActions$.next({
+                    ...eventData,
+                    dataset: {
+                        dotInode: contentlet.dataset.dotInode
+                    }
+                });
+            });
+        } else {
+            this.iframeActions$.next(eventData);
+        }
     }
 
     private closeContainersToolBarMenu(activeElement?: Node): void {
@@ -729,6 +751,7 @@ export class DotEditContentHtmlService {
     }
 
     private handleTinyMCEOnBlurEvent(content: DotInlineEditContent) {
+        // TODO: Remove it from here and add it to the TinyMCE component
         this.askToCopy = true;
         // If editor is dirty then we continue making the request
         if (!content.isNotDirty) {
@@ -793,11 +816,20 @@ export class DotEditContentHtmlService {
                 }
             },
             inlineEdit: (inlineEditData: DotInlineEditContent) => {
-                const { eventType: type, contentlet } = inlineEditData;
-                const numberOfPages = +this.getContentletNumberOfPages(contentlet);
+                const { eventType: type, contentletHTML, initEditor, container } = inlineEditData;
+                const numberOfPages = this.getContentletNumberOfPages(contentletHTML);
 
                 if (type === 'focus' && numberOfPages > 1 && this.askToCopy) {
-                    this.copyInlineContent(inlineEditData);
+                    this.showCopyModal(contentletHTML, container).subscribe((contentlet) => {
+                        if (!contentlet) {
+                            return;
+                        }
+
+                        // Remove this
+                        this.askToCopy = false;
+                        const tinyMCE = contentlet.querySelector('[data-mode]');
+                        initEditor(tinyMCE as HTMLElement);
+                    });
 
                     return;
                 }
@@ -965,7 +997,7 @@ export class DotEditContentHtmlService {
         return <HTMLElement>div.children[0];
     }
 
-    private getCopyContentData(contentlet: HTMLElement, container: HTMLElement): DotCopyContent {
+    private getTreeNodeData(contentlet: HTMLElement, container: HTMLElement): DotTreeNode {
         try {
             /* Get Copy content Data from the contentlet and Container*/
             const { dotIdentifier: contentId, dotVariant: variantId } = contentlet.dataset;
@@ -977,7 +1009,8 @@ export class DotEditContentHtmlService {
                 containerId,
                 contentId,
                 relationType,
-                variantId
+                variantId,
+                personalization: this.pagePersonalization
             };
         } catch {
             return null;
@@ -988,8 +1021,8 @@ export class DotEditContentHtmlService {
         return Array.from(element.parentElement.children).indexOf(element);
     }
 
-    private getContentletNumberOfPages(contentlet: HTMLElement): string {
-        return contentlet?.dataset?.dotOnNumberOfPages || '0';
+    private getContentletNumberOfPages(contentlet: HTMLElement): number {
+        return +contentlet?.dataset?.dotOnNumberOfPages || 0;
     }
 
     private isEditAction() {
@@ -1032,52 +1065,100 @@ export class DotEditContentHtmlService {
         return null;
     }
 
-    private copyInlineContent(inlineEditData): void {
-        const { contentlet: contentletHTML, element, container, initEditor } = inlineEditData;
-        const copyContent = this.getCopyContentData(contentletHTML, container);
-        const data = {
-            ...copyContent,
-            inode: inlineEditData.dataset.inode
-        };
-
-        this.setContainterToAppendContentlet({
-            identifier: container.dataset['dotIdentifier'],
-            uuid: container.dataset['dotUuid']
-        });
-
-        this.dotCopyContentModalService
-            .openCopyContentModal(data)
-            .pipe(
-                take(1),
-                filter((data) => !!data),
-                switchMap((data) => {
-                    if (!data) {
-                        return of({ copied: false, resp: null });
-                    }
-
-                    const { copied, inode, contentlet } = data;
-
-                    return copied
-                        ? this.dotContainerContentletService
-                              .getContentletToContainer(
-                                  this.currentContainer,
-                                  contentlet,
-                                  this.currentPage
-                              )
-                              .pipe(map((resp: string) => ({ copied: true, resp })))
-                        : of({ copied: false, resp: inode });
-                })
-            )
-            .subscribe(({ copied, resp }) => {
-                if (copied) {
-                    const contentletEl: HTMLElement = this.generateNewContentlet(resp);
-                    container.replaceChild(contentletEl, contentletHTML);
-                    initEditor(contentletEl.querySelector('[data-mode]'));
-                } else {
-                    initEditor(element);
+    private showCopyModal(contentletHTML, container): Observable<HTMLElement> {
+        return this.dotCopyContentModalService.open().pipe(
+            take(1),
+            switchMap(({ closed, shouldCopie }) => {
+                if (closed) {
+                    return of(null);
                 }
 
-                this.askToCopy = false;
+                return shouldCopie
+                    ? this.copyContent(contentletHTML, container)
+                    : of(contentletHTML);
+            })
+        );
+    }
+
+    /**
+     * Copy content
+     *
+     * @param {DotCopyContent} content
+     * @param {*} inode
+     * @return {*}  {Observable<ModelCopyContentResponse>}
+     * @memberof DotCopyContentModalService
+     */
+    private copyContent(contentlet, container): Observable<HTMLElement> {
+        const content = this.getTreeNodeData(contentlet, container);
+
+        return this.dotCopyContentService.copyInPage(content).pipe(
+            take(1),
+            tap(() => this.dotLoadingIndicatorService.show()),
+            switchMap((newContentlet) => {
+                return this.replaceHTMLContentlet({ newContentlet, container, contentlet });
+            }),
+            catchError((error: HttpErrorResponse) => {
+                throw this.dotHttpErrorManagerService.handle(error);
+            }),
+            finalize(() => this.dotLoadingIndicatorService.hide())
+        );
+    }
+
+    /**
+     * TODO: Call this from `dot-edit-content` to replace the contentlet
+     *
+     * @private
+     * @param {*} data
+     * @return {*}  {Observable<HTMLElement>}
+     * @memberof DotEditContentHtmlService
+     */
+    private replaceHTMLContentlet({
+        newContentlet,
+        container,
+        contentlet
+    }): Observable<HTMLElement> {
+        const { dotIdentifier, dotUuid } = container.dataset;
+        const dotPageContainer = {
+            identifier: dotIdentifier,
+            uuid: dotUuid
+        };
+
+        return this.dotContainerContentletService
+            .getContentletToContainer(dotPageContainer, newContentlet, this.currentPage)
+            .pipe(
+                map((resp: string) => {
+                    const contentletEl: HTMLElement = this.generateNewContentlet(resp);
+                    container.replaceChild(contentletEl, contentlet);
+
+                    return contentletEl;
+                })
+            );
+    }
+
+    private blockEditorClickHandler(event): void {
+        const target = event.target;
+        const contentlet = (target as HTMLElement).closest('[data-dot-object="contentlet"]');
+        const container = (target as HTMLElement).closest('[data-dot-object="container"]');
+        const onNumberOfPages = this.getContentletNumberOfPages(contentlet as HTMLElement);
+        if (onNumberOfPages > 1) {
+            this.showCopyModal(contentlet, container).subscribe((contentlet) => {
+                if (!contentlet) {
+                    return;
+                }
+
+                const editor = contentlet.querySelector('[data-block-editor-content]');
+                editor.addEventListener('click', this.blockEditorClickHandler.bind(this));
+                this.emitEditorEvent(editor);
             });
+        } else {
+            this.emitEditorEvent(target);
+        }
+    }
+
+    private emitEditorEvent(target) {
+        const customEvent = new CustomEvent('ng-event', {
+            detail: { name: 'edit-block-editor', data: target }
+        });
+        window.top.document.dispatchEvent(customEvent);
     }
 }

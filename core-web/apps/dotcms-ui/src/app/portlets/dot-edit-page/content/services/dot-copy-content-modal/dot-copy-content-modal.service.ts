@@ -1,47 +1,35 @@
-import { Observable, of } from 'rxjs';
+import { Observable } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { map, switchMap, take } from 'rxjs/operators';
+import { map, take } from 'rxjs/operators';
 
 import {
     DotBinaryOptionSelectorComponent,
     BINARY_OPTION
 } from '@dotcms/app/portlets/shared/dot-binary-option-selector/dot-binary-option-selector.component';
-import { DotCopyContentService, DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentlet, DotCopyContent } from '@dotcms/dotcms-models';
-
-export interface ModelCopyContentData {
-    containerId: string;
-    contentId: string;
-    pageId: string;
-    relationType: string;
-    treeOrder: string;
-    variantId: string;
-    personalization?: string;
-    inode: string;
-}
+import { DotMessageService } from '@dotcms/data-access';
+import { DotLoadingIndicatorService } from '@dotcms/utils';
 
 export interface ModelCopyContentResponse {
-    copied: boolean;
-    inode: string;
-    contentlet?: DotCMSContentlet;
+    shouldCopie?: boolean;
+    closed?: boolean;
 }
 
 @Injectable()
 export class DotCopyContentModalService {
     private readonly CONTENT_EDIT_OPTIONS: BINARY_OPTION = {
         option1: {
-            value: 'current',
+            value: 'Copy',
             message: 'editpage.content.edit.content.in.this.page.message',
             icon: 'article',
             label: 'editpage.content.edit.content.in.this.page',
             buttonLabel: 'editpage.content.edit.content.in.this.page.button.label'
         },
         option2: {
-            value: 'all',
+            value: 'NotCopy',
             message: 'editpage.content.edit.content.in.all.pages.message',
             icon: 'dynamic_feed',
             label: 'editpage.content.edit.content.in.all.pages',
@@ -51,19 +39,17 @@ export class DotCopyContentModalService {
 
     constructor(
         private dialogService: DialogService,
-        private dotCopyContentService: DotCopyContentService,
-        private dotMessageService: DotMessageService
+        private dotMessageService: DotMessageService,
+        public dotLoadingIndicatorService: DotLoadingIndicatorService
     ) {}
 
     /**
-     *
      *
      * @private
      * @param {DotCopyContent} copyContent
      * @memberof DotEditContentComponent
      */
-    openCopyContentModal(data: ModelCopyContentData): Observable<ModelCopyContentResponse> {
-        const { inode, ...copyContent } = data;
+    open(): Observable<ModelCopyContentResponse> {
         const ref = this.dialogService.open(DotBinaryOptionSelectorComponent, {
             header: this.dotMessageService.get('Edit-Content'),
             width: '37rem',
@@ -73,34 +59,12 @@ export class DotCopyContentModalService {
 
         return ref.onClose.pipe(
             take(1),
-            switchMap((value) => {
+            map((value) => {
                 if (!value) {
-                    return of(null);
+                    return { closed: true };
                 }
 
-                return this.CONTENT_EDIT_OPTIONS.option1.value === value
-                    ? this.copyContent(copyContent, inode)
-                    : of({ inode, copied: false });
-            })
-        );
-    }
-
-    /**
-     * Copy content
-     *
-     * @param {DotCopyContent} copyContent
-     * @param {*} inode
-     * @return {*}  {Observable<ModelCopyContentResponse>}
-     * @memberof DotCopyContentModalService
-     */
-    copyContent(copyContent: DotCopyContent, inode): Observable<ModelCopyContentResponse> {
-        return this.dotCopyContentService.copyContentInPage(copyContent).pipe(
-            map((contentlet) => {
-                return {
-                    copied: true,
-                    contentlet,
-                    inode
-                };
+                return { shouldCopie: this.CONTENT_EDIT_OPTIONS.option1.value === value };
             })
         );
     }
