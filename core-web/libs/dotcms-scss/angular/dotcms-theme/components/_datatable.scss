@@ -80,7 +80,6 @@ $datatable-bg-hover: rgba($color-palette-secondary, 0.05);
 }
 
 .p-datatable .p-sortable-column:not(.p-highlight):hover {
-    background: $datatable-bg-hover;
     color: $text-color-hover;
 }
 

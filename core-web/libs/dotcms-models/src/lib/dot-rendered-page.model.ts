@@ -19,7 +19,7 @@ export interface DotPageRenderParameters {
     canCreateTemplate: boolean;
     viewAs: DotEditPageViewAs;
     numberContents: number;
-    urlContentMap?: { title?: string };
+    urlContentMap?: { title: string };
 }
 
 export class DotPageRender {
