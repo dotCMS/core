@@ -54,12 +54,10 @@ export class DotPagesListingPanelComponent implements OnInit, OnDestroy {
                 filter((actionMenuDomId) => !!actionMenuDomId)
             )
             .subscribe((actionMenuDomId: string) => {
-                const target = this.element.nativeElement.querySelector(`#${actionMenuDomId}`);
-                if (target && actionMenuDomId.includes('tableRow')) {
+                if (actionMenuDomId.includes('tableRow')) {
                     this.cm.show();
                     this.domIdMenuAttached = actionMenuDomId;
-
-                    // To hide when is the menu is openned
+                    // To hide when is the menu is opened
                 } else this.cm.hide();
             });
     }

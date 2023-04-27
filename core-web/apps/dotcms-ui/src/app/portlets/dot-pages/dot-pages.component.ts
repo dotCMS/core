@@ -133,7 +133,7 @@ export class DotPagesComponent implements OnInit, OnDestroy {
                     this.menu.show({ currentTarget: target });
                     this.domIdMenuAttached = actionMenuDomId;
 
-                    // To hide when the contextMenu is openned
+                    // To hide when the contextMenu is opened
                 } else this.menu.hide();
             });
 
