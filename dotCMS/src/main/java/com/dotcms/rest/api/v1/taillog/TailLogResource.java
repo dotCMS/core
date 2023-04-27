@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.taillog;
 import static com.dotcms.util.CollectionsUtils.map;
 
 import com.dotcms.rest.InitDataObject;
+import java.util.concurrent.TimeUnit;
 import javax.ws.rs.QueryParam;
 import org.apache.commons.io.input.TailerListenerAdapter;
 import com.dotcms.rest.EmptyHttpResponse;
@@ -176,6 +177,7 @@ public class TailLogResource {
 
             final OutboundEvent.Builder eventBuilder = new OutboundEvent.Builder();
             try {
+                long timeMark = 0;
                 int logNumber = 0;
                 int count = 1;
                 int pageNumber = 1;
@@ -198,6 +200,17 @@ public class TailLogResource {
                         if (count % (LINES_PER_PAGE + 1) == 0) {
                             pageNumber++;
                             count = 1;
+                        }
+                    } else {
+                        if(System.currentTimeMillis() > timeMark + TimeUnit.SECONDS.toMillis(20)){
+                            Logger.debug(this.getClass(), String.format(" Thread [%s] is sending keepAlive event for file [%s] ", getName(), fileName));
+                            eventBuilder.name("keepAlive");
+                            eventBuilder.data(Map.class,
+                                    map("keepAlive", true ));
+                            eventBuilder.mediaType(MediaType.APPLICATION_JSON_TYPE);
+                            final OutboundEvent event = eventBuilder.build();
+                            eventOutput.write(event);
+                            timeMark = System.currentTimeMillis();
                         }
                     }
                     Thread.sleep(1000);
