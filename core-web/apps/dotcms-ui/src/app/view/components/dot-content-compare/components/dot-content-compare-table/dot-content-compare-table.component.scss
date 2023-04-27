@@ -43,8 +43,9 @@
             }
 
             video {
+                aspect-ratio: 16/9;
                 max-width: 100%;
-                height: auto;
+                height: 300px;
             }
         }
 
