@@ -17,6 +17,10 @@ import com.dotcms.rest.RulesEnginePortlet;
 import com.dotcms.rest.StructureResource;
 import com.dotcms.rest.TagResource;
 import com.dotcms.rest.WidgetResource;
+import com.dotcms.rest.annotation.HeaderFilter;
+import com.dotcms.rest.annotation.RequestFilter;
+import com.dotcms.rest.api.CorsFilter;
+import com.dotcms.rest.api.MyObjectMapperProvider;
 import com.dotcms.rest.api.v1.apps.AppsResource;
 import com.dotcms.rest.api.v1.authentication.ApiTokenResource;
 import com.dotcms.rest.api.v1.authentication.AuthenticationResource;
@@ -69,7 +73,6 @@ import com.dotcms.rest.api.v1.system.i18n.I18NResource;
 import com.dotcms.rest.api.v1.system.logger.LoggerResource;
 import com.dotcms.rest.api.v1.system.monitor.MonitorResource;
 import com.dotcms.rest.api.v1.system.permission.PermissionResource;
-import com.dotcms.rest.api.v1.system.redis.RedisResource;
 import com.dotcms.rest.api.v1.system.role.RoleResource;
 import com.dotcms.rest.api.v1.system.ruleengine.actionlets.ActionletsResource;
 import com.dotcms.rest.api.v1.system.ruleengine.conditionlets.ConditionletsResource;
@@ -83,28 +86,48 @@ import com.dotcms.rest.api.v1.versionable.VersionableResource;
 import com.dotcms.rest.api.v1.vtl.VTLResource;
 import com.dotcms.rest.api.v1.workflow.WorkflowResource;
 import com.dotcms.rest.elasticsearch.ESContentResourcePortlet;
+import com.dotcms.rest.exception.mapper.DefaultDotBadRequestExceptionMapper;
+import com.dotcms.rest.exception.mapper.DoesNotExistExceptionMapper;
+import com.dotcms.rest.exception.mapper.DotBadRequestExceptionMapper;
+import com.dotcms.rest.exception.mapper.DotDataExceptionMapper;
+import com.dotcms.rest.exception.mapper.DotSecurityExceptionMapper;
+import com.dotcms.rest.exception.mapper.ElasticsearchStatusExceptionMapper;
+import com.dotcms.rest.exception.mapper.HttpStatusCodeExceptionMapper;
+import com.dotcms.rest.exception.mapper.InvalidFormatExceptionMapper;
+import com.dotcms.rest.exception.mapper.InvalidLicenseExceptionMapper;
+import com.dotcms.rest.exception.mapper.JsonMappingExceptionMapper;
+import com.dotcms.rest.exception.mapper.JsonParseExceptionMapper;
+import com.dotcms.rest.exception.mapper.NotAllowedExceptionMapper;
+import com.dotcms.rest.exception.mapper.NotFoundInDbExceptionMapper;
+import com.dotcms.rest.exception.mapper.ParamExceptionMapper;
+import com.dotcms.rest.exception.mapper.ResourceNotFoundExceptionMapper;
+import com.dotcms.rest.exception.mapper.RuntimeExceptionMapper;
+import com.dotcms.rest.exception.mapper.UnrecognizedPropertyExceptionMapper;
+import com.dotcms.rest.exception.mapper.WorkflowPortletAccessExceptionMapper;
 import com.dotcms.rest.personas.PersonasResourcePortlet;
 import com.dotcms.rest.servlet.ReloadableServletContainer;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.exception.AlreadyExistException;
+import com.dotmarketing.portlets.folders.exception.InvalidFolderNameException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.util.ReleaseInfo;
 import io.swagger.v3.jaxrs2.integration.resources.AcceptHeaderOpenApiResource;
 import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
-import io.swagger.v3.oas.annotations.enums.SecuritySchemeIn;
-import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
-import io.swagger.v3.oas.annotations.info.Contact;
 import io.swagger.v3.oas.annotations.info.Info;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import io.swagger.v3.oas.annotations.security.SecurityRequirements;
-import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.servers.Server;
-import io.swagger.v3.oas.annotations.servers.ServerVariable;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.glassfish.jersey.media.multipart.MultiPartFeature;
-
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
+import javax.ws.rs.core.Application;
+import org.glassfish.jersey.media.multipart.MultiPartFeature;
+import org.glassfish.jersey.server.ResourceConfig;
+import org.glassfish.jersey.server.spi.AbstractContainerLifecycleListener;
+import org.glassfish.jersey.server.spi.Container;
 
 /**
  * This class provides the list of all the REST end-points in dotCMS. Every new
@@ -134,9 +157,11 @@ import java.util.concurrent.ConcurrentHashMap;
 		}
 )
 
-public class DotRestApplication extends javax.ws.rs.core.Application {
+public class DotRestApplication extends Application {
 
 	private static final String RELEASE_VERSION = ReleaseInfo.getVersion();
+
+	private static final Reloader reloader = new Reloader();
 	/**
 	 * these are system resources and should never change
 	 */
@@ -249,7 +274,7 @@ public class DotRestApplication extends javax.ws.rs.core.Application {
 		if(clazz==null)return;
 		if(!customClasses.containsKey(clazz)) {
 			customClasses.put(clazz, true);
-			ReloadableServletContainer.reload(new DotRestApplication());
+			reloader.reload();
 		}
 	}
 
@@ -261,7 +286,7 @@ public class DotRestApplication extends javax.ws.rs.core.Application {
 		if(clazz==null)return;
 		if(customClasses.containsKey(clazz)) {
 			customClasses.remove(clazz);
-			ReloadableServletContainer.reload(new DotRestApplication());
+			reloader.reload();
 		}
 	}
 
@@ -274,6 +299,56 @@ public class DotRestApplication extends javax.ws.rs.core.Application {
 
 	}
 
+	private static class Reloader extends AbstractContainerLifecycleListener {
 
+		AtomicReference<Container> container = new AtomicReference<>();
+		@Override
+		public void onStartup(Container container) {
+			this.container.set(container);
+		}
+		public void reload() {
+			Container container = this.container.get();
+			if (container!=null) {
+				container.reload(createResourceConfig(DotRestApplication.class));
+			}
+		}
+	}
+
+	private static ResourceConfig createResourceConfig(Class<? extends Application> appClass) {
+		return configureResourceConfig(ResourceConfig.forApplicationClass(appClass));
+	}
+
+	private static ResourceConfig configureResourceConfig(ResourceConfig config) {
+		return config
+				.register(RequestFilter.class)
+				.register(HeaderFilter.class)
+				.register(CorsFilter.class)
+				.register(MyObjectMapperProvider.class)
+				.register(JacksonJaxbJsonProvider.class)
+				.register(HttpStatusCodeExceptionMapper.class)
+				.register(ResourceNotFoundExceptionMapper.class)
+				.register(InvalidFormatExceptionMapper.class)
+				.register(JsonParseExceptionMapper.class)
+				.register(ParamExceptionMapper.class)
+				.register(JsonMappingExceptionMapper.class)
+				.register(UnrecognizedPropertyExceptionMapper.class)
+				.register(InvalidLicenseExceptionMapper.class)
+				.register(WorkflowPortletAccessExceptionMapper.class)
+				.register(NotFoundInDbExceptionMapper.class)
+				.register(DoesNotExistExceptionMapper.class)
+				.register((new DotBadRequestExceptionMapper<AlreadyExistException>(){}).getClass())
+				.register((new DotBadRequestExceptionMapper<IllegalArgumentException>(){}).getClass())
+				.register((new DotBadRequestExceptionMapper<DotStateException>(){}).getClass())
+				.register(DefaultDotBadRequestExceptionMapper.class)
+				.register((new DotBadRequestExceptionMapper<JsonProcessingException>(){}).getClass())
+				.register((new DotBadRequestExceptionMapper<NumberFormatException>(){}).getClass())
+				.register(DotSecurityExceptionMapper.class)
+				.register(DotDataExceptionMapper.class)
+				.register(ElasticsearchStatusExceptionMapper.class)
+				.register((new DotBadRequestExceptionMapper<InvalidFolderNameException>(){}).getClass())
+						.register(NotAllowedExceptionMapper.class)
+				.register(RuntimeExceptionMapper.class);
+		//.register(ExceptionMapper.class); // temporaly unregister since some services are expecting just a plain message as an error instead of a json, so to keep the compatibility we won't apply this change yet.
+	}
 
 }
