@@ -492,45 +492,50 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                     DotStateException.class);
         }
 
-        final List<Experiment> scheduledExperimentsOnPage = list(ExperimentFilter.builder()
-                .pageId(persistedExperiment.pageId())
-                .statuses(Set.of(SCHEDULED))
-                .build(), user);
-
-
-        if(!scheduledExperimentsOnPage.isEmpty()) {
-            DotPreconditions.isTrue(
-                    noSchedulingConflictsBetweenExperiments(scheduledExperimentsOnPage, persistedExperiment),
-                    ()-> "There is a scheduling conflict between the Experiment and the scheduled Experiment. "
-                            + scheduledExperimentsOnPage.get(0).id(),
-                    DotStateException.class);
-        }
-
         Experiment toReturn;
 
-        if(persistedExperiment.scheduling().isEmpty() ||
-                (persistedExperiment.scheduling().get().startDate()).isEmpty()
-                        && persistedExperiment.scheduling().get().endDate().isEmpty()) {
+        if(emptyScheduling(persistedExperiment)) {
             final Scheduling scheduling = startNowScheduling(persistedExperiment);
-            toReturn = save(persistedExperiment.withScheduling(scheduling).withStatus(RUNNING), user);
+            final Experiment experimentToSave = persistedExperiment.withScheduling(scheduling).withStatus(RUNNING);
+            validateNoConflictsWithScheduledExperiments(experimentToSave, user);
+            toReturn = save(experimentToSave, user);
             publishContentOnExperimentVariants(user, toReturn);
             cacheRunningExperiments();
         } else {
             Scheduling scheduling = persistedExperiment.scheduling().get();
-            toReturn = save(persistedExperiment.withScheduling(scheduling).withStatus(SCHEDULED), user);
+            final Experiment experimentToSave = persistedExperiment.withScheduling(scheduling).withStatus(SCHEDULED);
+            validateNoConflictsWithScheduledExperiments(experimentToSave, user);
+            toReturn = save(experimentToSave.withScheduling(scheduling).withStatus(SCHEDULED), user);
         }
 
         return toReturn;
     }
 
-    private boolean noSchedulingConflictsBetweenExperiments(final List<Experiment> scheduledExperimentsOnPage,
-            final Experiment experimentToCheck) {
-        return scheduledExperimentsOnPage.stream().allMatch(scheduledExperiment -> {
+    private static boolean emptyScheduling(Experiment persistedExperiment) {
+        return persistedExperiment.scheduling().isEmpty() ||
+                (persistedExperiment.scheduling().get().startDate()).isEmpty()
+                        && persistedExperiment.scheduling().get().endDate().isEmpty();
+    }
+
+    private void validateNoConflictsWithScheduledExperiments(final Experiment experimentToCheck,
+            final User user) throws DotDataException {
+
+        final List<Experiment> scheduledExperimentsOnPage = list(ExperimentFilter.builder()
+                .pageId(experimentToCheck.pageId())
+                .statuses(Set.of(SCHEDULED))
+                .build(), user);
+
+        final boolean noConflicts = scheduledExperimentsOnPage.isEmpty() ||
+                scheduledExperimentsOnPage.stream().allMatch(scheduledExperiment -> {
             final Scheduling scheduling = scheduledExperiment.scheduling().orElseThrow();
             final Scheduling schedulingToCheck = experimentToCheck.scheduling().orElseThrow();
             return schedulingToCheck.startDate().orElseThrow().isAfter(scheduling.endDate().orElseThrow()) ||
                     schedulingToCheck.endDate().orElseThrow().isBefore(scheduling.startDate().orElseThrow());
         });
+
+        DotPreconditions.isTrue(noConflicts, ()-> "There is a scheduling conflict between the Experiment and the scheduled Experiment. "
+                + scheduledExperimentsOnPage.get(0).id(),
+                DotStateException.class);
     }
 
     @Override
