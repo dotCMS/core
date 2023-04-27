@@ -215,6 +215,7 @@ import com.dotmarketing.startup.runonce.Task220928AddLookbackWindowColumnToExper
 import com.dotmarketing.startup.runonce.Task221007AddVariantIntoPrimaryKeyTest;
 import com.dotmarketing.startup.runonce.Task230110MakeSomeSystemFieldsRemovableByBaseTypeTest;
 import com.dotmarketing.startup.runonce.Task230328AddMarkedForDeletionColumnTest;
+import com.dotmarketing.startup.runonce.Task230426AlterVarcharLengthOfLockedByColTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
@@ -648,6 +649,7 @@ import org.junit.runners.Suite.SuiteClasses;
         ContentTypeDestroyAPIImplTest.class,
         Task230328AddMarkedForDeletionColumnTest.class,
         StartupTasksExecutorDataTest.class,
+        Task230426AlterVarcharLengthOfLockedByColTest.class
 //        AnalyticsAPIImplTest.class,
 //        AccessTokenRenewJobTest.class,
 })
