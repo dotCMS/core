@@ -8,17 +8,18 @@
     <description>DotCMS</description>
     <modules>
         <module>core-web</module>
+        <module>osgi-base</module>
         <module>dotCMS</module>
         <!--<module>bom/application</module>
      <module>bom/test</module>
      <module>build-parent</module>
-     <module>osgi-base</module>
+
     
      <module>dotcms-integration</module>
      -->
     </modules>
     <properties>
-        <dependency-check-maven.version>7.3.0</dependency-check-maven.version>
+        <dependency-check-maven.version>8.2.1</dependency-check-maven.version>
         <elasticsearch.version>7.10.2</elasticsearch.version>
         <gib.fetchBaseBranch>true</gib.fetchBaseBranch>
         <gib.referenceBranch>refs/remotes/origin/master</gib.referenceBranch>
@@ -86,9 +87,15 @@
         <version.versions.plugin>2.8.1</version.versions.plugin>
         <version.war.plugin>3.2.3</version.war.plugin>
     </properties>
+
     <build>
         <pluginManagement>
             <plugins>
+                <plugin>
+                    <groupId>org.owasp</groupId>
+                    <artifactId>dependency-check-maven</artifactId>
+                    <version>${dependency-check-maven.version}</version>
+                </plugin>
                 <plugin>
                     <groupId>com.diffplug.spotless</groupId>
                     <artifactId>spotless-maven-plugin</artifactId>
