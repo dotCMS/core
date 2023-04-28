@@ -2,9 +2,7 @@ import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { DotApiLinkComponent } from './dot-api-link.component';
-import { DotLinkModule } from '@components/dot-link/dot-link.module';
-import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotLinkComponent } from '././dot-link.component';
 
 @Component({
     template: `<dot-api-link [href]="href"></dot-api-link>`
@@ -17,7 +15,7 @@ class TestHostComponent {
     }
 }
 
-fdescribe('DotApiLinkComponent', () => {
+describe('DotApiLinkComponent', () => {
     let hostFixture: ComponentFixture<TestHostComponent>;
     let hostDe: DebugElement;
     let hostComp: TestHostComponent;
@@ -26,8 +24,7 @@ fdescribe('DotApiLinkComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [TestHostComponent, DotApiLinkComponent],
-            imports: [DotLinkModule, MockDotMessageService]
+            declarations: [TestHostComponent, DotLinkComponent]
         }).compileComponents();
     }));
 
@@ -39,21 +36,20 @@ fdescribe('DotApiLinkComponent', () => {
         de = hostDe.query(By.css('dot-api-link'));
 
         hostFixture.detectChanges();
-        link = de.query(By.css('dot-link'));
+        link = de.query(By.css('a'));
     });
 
     it('should show label', () => {
-        console.log(link.componentInstance);
-        expect(link.nativeElement.label).toBe('API');
+        expect(link.nativeElement.textContent).toBe('API');
     });
 
-    xit('should set link properties and attr correctly', () => {
+    it('should set link properties and attr correctly', () => {
         expect(link.attributes.target).toEqual('_blank');
         expect(link.properties.href).toEqual('/api/v1/123');
         expect(link.properties.title).toEqual('/api/v1/123');
     });
 
-    xit('should update link when href is change', () => {
+    it('should update link when href is change', () => {
         expect(link.properties.href).toEqual('/api/v1/123');
         expect(link.properties.title).toEqual('/api/v1/123');
 
@@ -64,7 +60,7 @@ fdescribe('DotApiLinkComponent', () => {
         expect(link.properties.title).toEqual('/api/new/1000');
     });
 
-    xit('should set the link relative always', () => {
+    it('should set the link relative always', () => {
         hostComp.updateLink('api/no/start/slash');
         hostFixture.detectChanges();
 
