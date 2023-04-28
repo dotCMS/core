@@ -1,14 +1,6 @@
 import { Observable, Subject } from 'rxjs';
 
-import {
-    Component,
-    ElementRef,
-    EventEmitter,
-    OnDestroy,
-    OnInit,
-    Output,
-    ViewChild
-} from '@angular/core';
+import { Component, EventEmitter, OnDestroy, OnInit, Output, ViewChild } from '@angular/core';
 
 import { LazyLoadEvent } from 'primeng/api';
 import { ContextMenu } from 'primeng/contextmenu';
@@ -41,11 +33,7 @@ export class DotPagesListingPanelComponent implements OnInit, OnDestroy {
         draft: this.dotMessageService.get('Draft')
     };
 
-    constructor(
-        private store: DotPageStore,
-        private dotMessageService: DotMessageService,
-        private element: ElementRef
-    ) {}
+    constructor(private store: DotPageStore, private dotMessageService: DotMessageService) {}
 
     ngOnInit() {
         this.store.actionMenuDomId$
@@ -57,7 +45,7 @@ export class DotPagesListingPanelComponent implements OnInit, OnDestroy {
                 if (actionMenuDomId.includes('tableRow')) {
                     this.cm.show();
                     this.domIdMenuAttached = actionMenuDomId;
-                    // To hide when is the menu is opened
+                    // To hide when the menu is opened
                 } else this.cm.hide();
             });
     }
