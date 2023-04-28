@@ -353,13 +353,14 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 					}
                 }
 				
-				// If the permissionable is a ContentType on the SYSTEM_HOST without a host/folder field
-				// then we allow CMS_OWNER to access it if so permissioned
+                // If the permissionable is a ContentType on the SYSTEM_HOST without a host/folder field
+                // then we allow CMS_OWNER to access it if so permissioned
                 if (PERMISSION_WRITE >= expecterPermissionType 
-                                && permissionable instanceof ContentType 
-                                && p.getRoleId().equals(cmsOwnerRole.getId())) {
-                    ContentType type = (ContentType)permissionable;
-                    if(type.fields(HostFolderField.class).isEmpty() && Host.SYSTEM_HOST.equals(type.host())){
+                                && permissionable instanceof ContentType
+                                && p.getRoleId().equals(cmsOwnerRole.getId())
+                                && user.isBackendUser()) {
+                    ContentType type = (ContentType) permissionable;
+                    if (type.fields(HostFolderField.class).isEmpty() && Host.SYSTEM_HOST.equals(type.host())) {
                         return true;
                     }
                 }
