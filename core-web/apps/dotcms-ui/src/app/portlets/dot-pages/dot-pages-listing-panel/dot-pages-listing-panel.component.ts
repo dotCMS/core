@@ -1,6 +1,14 @@
 import { Observable, Subject } from 'rxjs';
 
-import { Component, EventEmitter, OnDestroy, OnInit, Output, ViewChild } from '@angular/core';
+import {
+    Component,
+    EventEmitter,
+    HostListener,
+    OnDestroy,
+    OnInit,
+    Output,
+    ViewChild
+} from '@angular/core';
 
 import { LazyLoadEvent } from 'primeng/api';
 import { ContextMenu } from 'primeng/contextmenu';
@@ -56,6 +64,19 @@ export class DotPagesListingPanelComponent implements OnInit, OnDestroy {
     }
 
     /**
+     * Closes the context menu when the user clicks outside of it
+     *
+     * @memberof DotPagesListingPanelComponent
+     */
+    @HostListener('window:click')
+    closeContextMenu(): void {
+        if (this.domIdMenuAttached.includes('tableRow')) {
+            this.cm.hide();
+            this.store.clearMenuActions();
+        }
+    }
+
+    /**
      * Event lazy loads pages data
      *
      * @param {LazyLoadEvent} event
@@ -80,9 +101,7 @@ export class DotPagesListingPanelComponent implements OnInit, OnDestroy {
         this.store.clearMenuActions();
         this.cm.hide();
 
-        if (event?.currentTarget['id'] !== this.domIdMenuAttached) {
-            this.store.showActionsMenu({ item, actionMenuDomId });
-        }
+        this.store.showActionsMenu({ item, actionMenuDomId });
     }
 
     /**
