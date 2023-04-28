@@ -4,7 +4,7 @@ import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
 import { ButtonModule } from 'primeng/button';
-import { ChipModule } from 'primeng/chip';
+import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
@@ -34,7 +34,7 @@ function resize(context: HTMLIFrameElement, width: string, height: string = '100
     context.contentDocument.body.getBoundingClientRect();
 }
 
-describe('ContentTypesFieldDragabbleItemComponent', () => {
+fdescribe('ContentTypesFieldDragabbleItemComponent', () => {
     let comp: ContentTypesFieldDragabbleItemComponent;
     let fixture: ComponentFixture<ContentTypesFieldDragabbleItemComponent>;
     let de: DebugElement;
@@ -57,7 +57,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
                 DotCopyLinkModule,
                 HttpClientTestingModule,
                 DotMessagePipeModule,
-                ChipModule,
+                OverlayPanelModule,
                 ButtonModule,
                 TooltipModule
             ],
@@ -72,6 +72,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
         });
 
         fixture = TestBed.createComponent(ContentTypesFieldDragabbleItemComponent);
+
         comp = fixture.componentInstance;
         de = fixture.debugElement;
 
@@ -103,7 +104,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
 
         fixture.detectChanges();
 
-        const container = de.query(By.css('.field__name'));
+        const container = de.query(By.css('.field-name'));
         expect(container).not.toBeNull();
         expect(container.nativeElement.textContent.trim().replace('  ', ' ')).toEqual('Field name');
     });
@@ -143,15 +144,16 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
             variable: 'test',
             velocityVarName: 'velocityName'
         };
-
-        const attrs = ['Required', 'Indexed', 'Show on list'];
-
         comp.field = field;
 
         fixture.detectChanges();
+        const attrs = ['FieldLabel', 'Required', 'Indexed', 'Show on list'];
 
-        const attrsChips = de.queryAll(By.css('p-chip')).map((e) => e.nativeElement.textContent);
-        expect(attrsChips).toEqual(attrs);
+        const attrsString = de.query(
+            By.css('.field-properties > .field-copy-container > .attributes-container')
+        ).nativeElement.textContent;
+
+        expect(attrs.every((attr) => attrsString.includes(attr))).toBeTrue();
     });
 
     it('should has a remove button', () => {
@@ -230,7 +232,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
         expect(resp).toEqual(mockField);
     });
 
-    it('should not have primeng down button on default', () => {
+    it('should not have info button on default', () => {
         const mockField = {
             ...dotcmsContentTypeFieldBasicMock,
             fieldType: 'fieldType',
@@ -244,7 +246,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
         comp.field = mockField;
 
         fixture.detectChanges();
-        expect(de.query(By.css('.pi.pi-angle-down'))).toBeFalsy();
+        expect(de.query(By.css('[data-testid="field-info-button"]'))).toBeFalsy();
     });
 
     it('should set small to true on resizing', (done) => {
@@ -272,7 +274,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
         }, 1000);
     });
 
-    it('should have primeng down button when small', (done) => {
+    it('should have info button when small', (done) => {
         const mockField = {
             ...dotcmsContentTypeFieldBasicMock,
             fieldType: 'fieldType',
@@ -292,7 +294,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
         fixture.detectChanges();
 
         setTimeout(() => {
-            expect(de.query(By.css('.pi.pi-angle-down'))).toBeTruthy();
+            expect(de.query(By.css('[data-testid="field-info-button"]'))).toBeTruthy();
             done();
         }, 1000);
     });

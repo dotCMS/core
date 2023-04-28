@@ -23,7 +23,9 @@
         <div *ngIf="small; else attributes">
             <p-button
                 *ngIf="true"
+                [class.open]="open"
                 (click)="openAttr($event)"
+                data-testid="field-info-button"
                 styleClass="p-button-text p-button-sm  p-button-rounded"
                 icon="pi pi-info-circle"
             >
@@ -32,10 +34,10 @@
     </div>
 </div>
 
-<p-overlayPanel #op appendTo="body">
+<p-overlayPanel #op appendTo="body" styleClass="contentType__overlayPanel">
     <div class="overlay-attributes-container">
         <p class="field-name">{{ fieldTypeLabel }}</p>
-        <p class="attributes-text">
+        <p class="attributes-text" *ngIf="fieldAttributesString.length">
             {{ fieldAttributesString }}
         </p>
     </div>
