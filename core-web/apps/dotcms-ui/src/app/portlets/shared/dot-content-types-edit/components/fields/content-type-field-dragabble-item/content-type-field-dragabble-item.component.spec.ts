@@ -34,7 +34,7 @@ function resize(context: HTMLIFrameElement, width: string, height: string = '100
     context.contentDocument.body.getBoundingClientRect();
 }
 
-fdescribe('ContentTypesFieldDragabbleItemComponent', () => {
+describe('ContentTypesFieldDragabbleItemComponent', () => {
     let comp: ContentTypesFieldDragabbleItemComponent;
     let fixture: ComponentFixture<ContentTypesFieldDragabbleItemComponent>;
     let de: DebugElement;
