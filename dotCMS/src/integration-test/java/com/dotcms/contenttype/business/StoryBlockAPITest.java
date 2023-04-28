@@ -29,6 +29,59 @@ import java.util.Optional;
  */
 public class StoryBlockAPITest extends IntegrationTestBase {
 
+    private static final String JSON_EM =
+
+            "{\n" +
+                    "            \"type\":\"doc\",\n" +
+                    "            \"content\":[\n" +
+                    "               {\n" +
+                    "                  \"type\":\"horizontalRule\"\n" +
+                    "               },\n" +
+                    "               {\n" +
+                    "                  \"type\":\"heading\",\n" +
+                    "                  \"content\":[\n" +
+                    "                     {\n" +
+                    "                        \"text\":\"Heading\",\n" +
+                    "                        \"type\":\"text\"\n" +
+                    "                     },\n" +
+                    "                     {\n" +
+                    "                        \"marks\":[\n" +
+                    "                           {\n" +
+                    "                              \"type\":\"italic\"\n" +
+                    "                           }\n" +
+                    "                        ],\n" +
+                    "                        \"text\":\" 1\",\n" +
+                    "                        \"type\":\"text\"\n" +
+                    "                     }\n" +
+                    "                  ],\n" +
+                    "                  \"attrs\":{\n" +
+                    "                     \"textAlign\":\"left\",\n" +
+                    "                     \"level\":1\n" +
+                    "                  }\n" +
+                    "               },\n" +
+                    "               {\n" +
+                    "                  \"type\":\"paragraph\",\n" +
+                    "                  \"content\":[\n" +
+                    "                     {\n" +
+                    "                        \"text\":\"Paragraph\",\n" +
+                    "                        \"type\":\"text\"\n" +
+                    "                     },\n" +
+                    "                     {\n" +
+                    "                        \"marks\":[\n" +
+                    "                           {\n" +
+                    "                              \"type\":\"bold\"\n" +
+                    "                           }\n" +
+                    "                        ],\n" +
+                    "                        \"text\":\" yeah\",\n" +
+                    "                        \"type\":\"text\"\n" +
+                    "                     }\n" +
+                    "                  ],\n" +
+                    "                  \"attrs\":{\n" +
+                    "                     \"textAlign\":\"left\"\n" +
+                    "                  }\n" +
+                    "               }\n" +
+                    "            ]\n" +
+                    "         }";
     private static final String JSON =
 
                     "{\n" +
@@ -92,7 +145,7 @@ public class StoryBlockAPITest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link StoryBlockAPI#refreshStoryBlockValueReferences(Object)}
+     * Method to test: {@link StoryBlockAPI#refreshStoryBlockValueReferences(Object,String)}
      * Given Scenario: This will create a story block contentlet, adds a rich content and retrieve the json.
      * Then, will update the rich content previously added, the story block contentlet should reflect the new rich text changed.
      * ExpectedResult: The new json will reflect the rich text changes
@@ -132,7 +185,7 @@ public class StoryBlockAPITest extends IntegrationTestBase {
                 APILocator.getContentletAPI().checkin(newRichTextContentlet, APILocator.systemUser(), false), APILocator.systemUser(), false);
 
         // 5) ask for refreshing references, the new changes of the rich text contentlet should be reflected on the json
-        final StoryBlockReferenceResult refreshResult = APILocator.getStoryBlockAPI().refreshStoryBlockValueReferences(newStoryBlockJson);
+        final StoryBlockReferenceResult refreshResult = APILocator.getStoryBlockAPI().refreshStoryBlockValueReferences(newStoryBlockJson, "1234");
 
         // 6) check if the results are ok.
         Assert.assertTrue(refreshResult.isRefreshed());
@@ -236,12 +289,12 @@ public class StoryBlockAPITest extends IntegrationTestBase {
     
         final Object newStoryBlockJson1        = "{\"test\":\"test\"}";
         
-        StoryBlockReferenceResult result = APILocator.getStoryBlockAPI().refreshStoryBlockValueReferences(newStoryBlockJson1);
+        StoryBlockReferenceResult result = APILocator.getStoryBlockAPI().refreshStoryBlockValueReferences(newStoryBlockJson1, "xxx");
         Assert.assertNotNull(result);
         Assert.assertTrue(result.isRefreshed());
         
         final Object newStoryBlockJson2        = "{\"content\":\"test\"}";
-        result = APILocator.getStoryBlockAPI().refreshStoryBlockValueReferences(newStoryBlockJson2);
+        result = APILocator.getStoryBlockAPI().refreshStoryBlockValueReferences(newStoryBlockJson2, "xxx");
         Assert.assertNotNull(result);
         Assert.assertTrue(result.isRefreshed());
     
