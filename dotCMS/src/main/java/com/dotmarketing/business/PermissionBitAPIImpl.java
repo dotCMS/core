@@ -353,8 +353,15 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 					}
                 }
 				
-                // If the permissionable is a ContentType on the SYSTEM_HOST without a host/folder field
-                // then we allow CMS_OWNER to access it if so permissioned
+                
+                // If the permissionable is a ContentType with :
+				// CMS_OWNER = READ or WRITE
+				// ContentType on the SYSTEM_HOST 
+				// ContentType does not have a host/folder field 
+				// and the user is a BACK_END user
+				// then we allow the user to access it.  This is to grant users to save content
+				// to this type and be able to manage the content CMS_OWNER permissions.
+
                 if (PERMISSION_WRITE >= expecterPermissionType 
                                 && permissionable instanceof ContentType
                                 && p.getRoleId().equals(cmsOwnerRole.getId())
