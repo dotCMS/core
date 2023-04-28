@@ -4180,7 +4180,7 @@
 											"",
 											"pm.test(\"Started Experiment with expected values\", function () {",
 											"    pm.response.to.have.status(200);",
-											"    pm.expect(jsonData.entity.status).equal(\"SCHEDULED\");",
+											"    pm.expect(jsonData.entity.status).equal(\"RUNNING\");",
 											"    pm.expect(jsonData.entity.scheduling.startDate).to.be.not.null;",
 											"    pm.expect(jsonData.entity.scheduling.endDate).to.be.not.null;",
 											"});",
@@ -4238,71 +4238,355 @@
 					]
 				},
 				{
-					"name": "startExperiment_shouldSucceed",
-					"event": [
+					"name": "AttemptToStartSecondExperimentNow_shouldFail",
+					"item": [
 						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var jsonData = pm.response.json();",
-									"",
-									"",
-									"pm.test(\"Started Experiment with expected values\", function () {",
-									"    pm.response.to.have.status(200);",
-									"    pm.expect(jsonData.entity.status).equal(\"RUNNING\");",
-									"    pm.expect(jsonData.entity.scheduling.startDate).to.be.not.null;",
-									"    pm.expect(jsonData.entity.scheduling.endDate).to.be.not.null;",
-									"});",
-									"",
-									"",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
+							"name": "pre_createExperiment",
+							"event": [
 								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"",
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.collectionVariables.set(\"secondExperimentToStartNow\", jsonData.entity.id);",
+											"",
+											"",
+											"",
+											""
+										],
+										"type": "text/javascript"
+									}
 								}
-							]
-						},
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/experiments/{{experimentToAddVariant}}/_start",
-							"host": [
-								"{{serverURL}}"
 							],
-							"path": [
-								"api",
-								"v1",
-								"experiments",
-								"{{experimentToAddVariant}}",
-								"_start"
-							]
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"pageId\": \"e424abd7e2e7a9031c5a0a3c18182f1b\",\n    \"name\": \"20220901\",\n    \"description\": \"experiment with goals and variants\", \n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                },\n                {\n                    \"parameter\": \"referer\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"home\"\n                }\n            ]\n        }\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/experiments/",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"experiments",
+										""
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "pre_addVariantToExperiment",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"",
+											"pm.test(\"Variants with correct weight\", function () {",
+											"    pm.response.to.have.status(200);",
+											"    pm.expect(jsonData.entity.trafficProportion.type).equal(\"SPLIT_EVENLY\");",
+											"    pm.expect(jsonData.entity.trafficProportion.variants.length).equal(2);",
+											"    pm.expect(jsonData.entity.trafficProportion.variants[0].name).equal(\"Original\");",
+											"    pm.expect(jsonData.entity.trafficProportion.variants[0].weight).equal(50.0);",
+											"    pm.expect(jsonData.entity.trafficProportion.variants[1].name).equal(\"I wanna be promoted!\");",
+											"    pm.expect(jsonData.entity.trafficProportion.variants[1].weight).equal(50.0);",
+											"    ",
+											"    pm.collectionVariables.set(\"originalVariant\", jsonData.entity.trafficProportion.variants[0].id);",
+											"    pm.collectionVariables.set(\"variantToPromote\", jsonData.entity.trafficProportion.variants[1].id);",
+											"",
+											"});",
+											"",
+											"",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"description\": \"I wanna be promoted!\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/experiments/{{secondExperimentToStartNow}}/variants",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"experiments",
+										"{{secondExperimentToStartNow}}",
+										"variants"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "pre_setExperimentGoal",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"",
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Experiment should have the expected values\", function () {",
+											"    pm.expect(jsonData.entity.goals.primary.type).equal(\"REACH_PAGE\");",
+											"    pm.expect(jsonData.entity.goals.primary.name).equal(\"Reach thank-you page\");",
+											"    pm.expect(jsonData.entity.goals.primary.conditions[0].operator).equal(\"EQUALS\");",
+											"    pm.expect(jsonData.entity.goals.primary.conditions[0].parameter).equal(\"url\");",
+											"    pm.expect(jsonData.entity.goals.primary.conditions[0].value).equal(\"thank-you\");",
+											"    pm.expect(jsonData.entity.goals.primary.conditions[1].operator).equal(\"EQUALS\");",
+											"    pm.expect(jsonData.entity.goals.primary.conditions[1].parameter).equal(\"referer\");",
+											"    pm.expect(jsonData.entity.goals.primary.conditions[1].value).equal(\"home\");",
+											"",
+											"});",
+											"",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                },\n                {\n                    \"parameter\": \"referer\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"home\"\n                }\n            ]\n        }\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/experiments/{{secondExperimentToStartNow}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"experiments",
+										"{{secondExperimentToStartNow}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "startExperiment_shouldSucceed",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"",
+											"pm.test(\"Started Experiment with expected values\", function () {",
+											"    pm.response.to.have.status(400);",
+											"    pm.expect(jsonData.message).contains(\"There is a running Experiment on the same page\");",
+											"});",
+											"",
+											"",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/experiments/{{secondExperimentToStartNow}}/_start",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"experiments",
+										"{{secondExperimentToStartNow}}",
+										"_start"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "endFirstExperiment",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"",
+											"pm.test(\"Ended Experiment with expected values\", function () {",
+											"    pm.response.to.have.status(200);",
+											"    pm.expect(jsonData.entity.status).equal(\"ENDED\");",
+											"    pm.expect(jsonData.entity.scheduling.startDate).to.be.not.null;",
+											"    pm.expect(jsonData.entity.scheduling.endDate).to.be.not.null;",
+											"});",
+											"",
+											"",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/experiments/{{experimentToStartNow}}/_end",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"experiments",
+										"{{experimentToStartNow}}",
+										"_end"
+									]
+								}
+							},
+							"response": []
 						}
-					},
-					"response": []
+					]
 				},
 				{
 					"name": "pre_createExperiment_NoGoal_NoVariant",
@@ -7481,6 +7765,10 @@
 		},
 		{
 			"key": "experimentToStartNow",
+			"value": ""
+		},
+		{
+			"key": "secondExperimentToStartNow",
 			"value": ""
 		}
 	]
