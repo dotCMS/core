@@ -10,13 +10,13 @@ source ./test-results.sh
 case "${INPUT_PARTIAL}" in
   init)
     initResults
-    exit 0
     ;;
   close)
     closeResults
+    rc=$?
     setOutputs
     printStatus
-    exit 0
+    exit $rc
     ;;
   *)
     copyResults
@@ -26,6 +26,7 @@ case "${INPUT_PARTIAL}" in
     persistResults
     setOutputs
     printStatus
-    exit 0
     ;;
 esac
+
+exit 0

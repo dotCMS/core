@@ -253,6 +253,7 @@ describe('DotPagesComponent', () => {
         elem.triggerEventHandler('goToUrl', '/page/1?lang=1');
 
         expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(error404);
+        expect(store.setPortletStatus).toHaveBeenCalledWith(ComponentStatus.LOADED);
     });
 
     it('should call showActionsMenu method from DotPagesFavoritePanel', () => {

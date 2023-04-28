@@ -4,6 +4,7 @@ import static com.dotcms.cli.common.Utils.nextFileName;
 
 import com.dotcms.api.LanguageAPI;
 import com.dotcms.api.client.RestClientFactory;
+import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.language.Language;
@@ -26,7 +27,11 @@ import picocli.CommandLine.Parameters;
 @ActivateRequestContext
 @CommandLine.Command(
         name = LanguageRemove.NAME,
-        description = "@|bold,green Remove a language given its id or tag (e.g.: en-us)|@"
+        header = "@|bold,blue Remove a language|@",
+        description = {
+                " Remove a language given its id or tag (e.g.: en-us)",
+                "" // empty string here so we can have a new line
+        }
 )
 /**
  * Command to delete a language given its id or tag (e.g.: en-us)
@@ -34,15 +39,8 @@ import picocli.CommandLine.Parameters;
  */
 public class LanguageRemove extends AbstractLanguageCommand implements Callable<Integer> {
     static final String NAME = "remove";
-
-    @CommandLine.Mixin(name = "output")
-    OutputOptionMixin output;
-
     @Parameters(index = "0", arity = "1", description = "Language Id or Tag.")
     String languageIdOrTag;
-
-    @Inject
-    RestClientFactory clientFactory;
 
     @Override
     public Integer call() throws Exception {

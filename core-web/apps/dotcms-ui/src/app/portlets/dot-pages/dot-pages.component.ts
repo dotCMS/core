@@ -86,6 +86,7 @@ export class DotPagesComponent implements OnInit, OnDestroy {
                             })
                         );
                         this.dotHttpErrorManagerService.handle(error);
+                        this.store.setPortletStatus(ComponentStatus.LOADED);
                     }
                 },
                 (error: HttpErrorResponse) => {

@@ -149,6 +149,8 @@ public class VariantAPIImpl implements VariantAPI {
                 .orElseThrow(() -> new DoesNotExistException(
                         String.format("Variant `%s` does not exists", variant.name())));
 
+        DotPreconditions.checkArgument(!variantFromDatabase.archived(), "An archived Variant can not be promoted");
+
         APILocator.getVersionableAPI().findAllByVariant(variantFromDatabase).stream()
                 .forEach(contentletVersionInfo -> promoteToDefault(user, contentletVersionInfo));
 
