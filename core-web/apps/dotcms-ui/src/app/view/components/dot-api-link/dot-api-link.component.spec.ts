@@ -2,9 +2,10 @@ import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { DotApiLinkComponent } from './dot-api-link.component';
 import { DotLinkModule } from '@components/dot-link/dot-link.module';
 import { MockDotMessageService } from '@dotcms/utils-testing';
+
+import { DotApiLinkComponent } from './dot-api-link.component';
 
 @Component({
     template: `<dot-api-link [href]="href"></dot-api-link>`
@@ -43,7 +44,6 @@ fdescribe('DotApiLinkComponent', () => {
     });
 
     it('should show label', () => {
-        console.log(link.componentInstance);
         expect(link.nativeElement.label).toBe('API');
     });
 

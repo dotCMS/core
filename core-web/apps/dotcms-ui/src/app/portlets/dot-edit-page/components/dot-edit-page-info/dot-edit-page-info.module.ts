@@ -4,8 +4,8 @@ import { NgModule } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
 
 import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
-import { DotLinkModule } from '@components/dot-link/dot-link.module';
 import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
+import { DotLinkModule } from '@components/dot-link/dot-link.module';
 import { LOCATION_TOKEN } from '@dotcms/app/providers';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
