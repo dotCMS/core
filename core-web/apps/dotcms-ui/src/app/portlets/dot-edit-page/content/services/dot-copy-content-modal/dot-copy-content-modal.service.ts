@@ -58,7 +58,7 @@ export class DotCopyContentModalService {
 
         return ref.onClose.pipe(
             take(1),
-            // if the user close the modal without select an option, we return false
+            // If the user close the modal without select an option, we return false
             // This will complete the observable
             filter((value) => !!value),
             map((value) => {

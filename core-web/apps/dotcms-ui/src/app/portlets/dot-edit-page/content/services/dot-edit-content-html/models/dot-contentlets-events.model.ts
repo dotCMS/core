@@ -43,9 +43,13 @@ export interface DotInlineEditContent {
     element: HTMLElement;
     isNotDirty: boolean;
     eventType: string;
+}
+
+export interface DotShowCopyModal {
     container: HTMLElement;
     contentlet: HTMLElement;
-    initEditor: (element: HTMLElement) => void;
+    selector?: string;
+    initEdit: (element: HTMLElement) => void;
 }
 
 export interface DotContentletContainer {

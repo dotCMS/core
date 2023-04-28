@@ -12,7 +12,6 @@ import { DotGlobalMessageService } from '@components/_common/dot-global-message/
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
 import {
@@ -41,7 +40,6 @@ import {
 } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService, generateDotFavoritePageUrl } from '@dotcms/utils';
 
-import { DotCopyContentModalService } from './services/dot-copy-content-modal/dot-copy-content-modal.service';
 import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
 import {
     PageModelChangeEvent,
@@ -107,13 +105,11 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         public dotLoadingIndicatorService: DotLoadingIndicatorService,
         public sanitizer: DomSanitizer,
         public iframeOverlayService: IframeOverlayService,
-        private httpErrorManagerService: DotHttpErrorManagerService,
         private dotConfigurationService: DotPropertiesService,
         private dotLicenseService: DotLicenseService,
         private dotEventsService: DotEventsService,
         private dotESContentService: DotESContentService,
-        private dotSessionStorageService: DotSessionStorageService,
-        private readonly dotCopyContentModalService: DotCopyContentModalService
+        private dotSessionStorageService: DotSessionStorageService
     ) {
         if (!this.customEventsHandler) {
             this.customEventsHandler = {

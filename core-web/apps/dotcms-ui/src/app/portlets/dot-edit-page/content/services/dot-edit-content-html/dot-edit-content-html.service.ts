@@ -39,6 +39,7 @@ import {
     DotContentletEventSave,
     DotContentletEventSelect,
     DotInlineEditContent,
+    DotShowCopyModal,
     DotRelocatePayload
 } from './models/dot-contentlets-events.model';
 
@@ -71,13 +72,13 @@ export class DotEditContentHtmlService {
         | DotContentletEventReorder
         | DotContentletEventSelect
         | DotContentletEventSave
-        | DotContentletEvent<DotInlineEditContent>
+        | DotContentletEvent<DotInlineEditContent | DotShowCopyModal>
     > = new Subject();
     currentContainer: DotPageContainer;
     currentContentlet: DotPageContent;
     iframe: ElementRef;
     iframeActions$: Subject<
-        DotIframeEditEvent<Record<string, unknown> | DotAddContentTypePayload | DotTreeNode>
+        DotIframeEditEvent<Record<string, unknown> | DotAddContentTypePayload>
     > = new Subject();
     pageModel$: Subject<PageModelChangeEvent> = new Subject();
     mutationConfig = { attributes: false, childList: true, characterData: false };
@@ -118,7 +119,7 @@ export class DotEditContentHtmlService {
         private dotLicenseService: DotLicenseService,
         private dotCopyContentModalService: DotCopyContentModalService,
         private dotCopyContentService: DotCopyContentService,
-        public dotLoadingIndicatorService: DotLoadingIndicatorService
+        private dotLoadingIndicatorService: DotLoadingIndicatorService
     ) {
         this.contentletEvents$.subscribe(
             (
@@ -295,9 +296,9 @@ export class DotEditContentHtmlService {
             this.showContentAlreadyAddedError();
             this.removeContentletPlaceholder();
         } else {
-            let contentletPlaceholder = doc.querySelector(
-                CONTENTLET_PLACEHOLDER_SELECTOR
-            ) as HTMLElement;
+            let contentletPlaceholder = <HTMLElement>(
+                doc.querySelector(CONTENTLET_PLACEHOLDER_SELECTOR)
+            );
             if (!contentletPlaceholder) {
                 contentletPlaceholder = this.getContentletPlaceholder();
                 containerEl.appendChild(contentletPlaceholder);
@@ -810,27 +811,24 @@ export class DotEditContentHtmlService {
                     }, 1800);
                 }
             },
-            inlineEdit: (inlineEditData: DotInlineEditContent) => {
-                const { eventType: type, contentlet, initEditor, container } = inlineEditData;
-                const isInMultiplePages = this.isContentInMultiplePages(contentlet);
-
-                if (type === 'focus' && isInMultiplePages && this.askToCopy) {
-                    this.showCopyModal(contentlet, container).subscribe((contentlet) => {
-                        // Remove this
-                        this.askToCopy = false;
-                        const tinyMCE = contentlet.querySelector('[data-mode]');
-                        initEditor(tinyMCE as HTMLElement);
-                    });
-
-                    return;
-                }
+            showCopyModal: (data: DotShowCopyModal) => {
+                const { contentlet, container, initEdit, selector } = data;
+                this.showCopyModal(contentlet, container).subscribe((contentlet) => {
+                    const element = (
+                        selector ? contentlet.querySelector(selector) : contentlet
+                    ) as HTMLElement;
+                    initEdit(element);
+                });
+            },
+            inlineEdit: (data: DotInlineEditContent) => {
+                const { eventType: type } = data;
 
                 if (type === 'focus') {
-                    this.handleTinyMCEOnFocusEvent(inlineEditData);
+                    this.handleTinyMCEOnFocusEvent(data);
                 }
 
                 if (type === 'blur') {
-                    this.handleTinyMCEOnBlurEvent(inlineEditData);
+                    this.handleTinyMCEOnBlurEvent(data);
                 }
             },
             // When a user select a content from the search jsp
@@ -987,15 +985,32 @@ export class DotEditContentHtmlService {
         return <HTMLElement>div.children[0];
     }
 
-    private getDotPageContainer({ dataset }: HTMLElement): DotPageContainer {
-        const { dotIdentifier, dotUuid } = dataset;
+    /**
+     *
+     *
+     * @private
+     * @param {HTMLElement} container
+     * @return {*}  {DotPageContainer}
+     * @memberof DotEditContentHtmlService
+     */
+    private getDotPageContainer(container: HTMLElement): DotPageContainer {
+        const { dotIdentifier, dotUuid } = container.dataset;
 
         return {
             identifier: dotIdentifier,
             uuid: dotUuid
-        } as DotPageContainer;
+        };
     }
 
+    /**
+     * Replace the contentlet with the new contentlet html
+     *
+     * @private
+     * @param {string} html
+     * @param {HTMLElement} contentlet
+     * @return {*}  {HTMLElement}
+     * @memberof DotEditContentHtmlService
+     */
     private replaceHTMLContentlet(html: string, contentlet: HTMLElement): HTMLElement {
         const contentletEl: HTMLElement = this.generateNewContentlet(html);
         contentlet.replaceWith(contentletEl);
