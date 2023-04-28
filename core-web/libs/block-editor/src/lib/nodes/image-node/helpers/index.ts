@@ -14,7 +14,7 @@ export const imageElement = (attrs, newAttrs) => {
     return ['div', { style: newAttrs.style }, ['img', mergeAttributes(attrs, newAttrs)]];
 };
 
-export const addImageLenguageId = (src: string, languageId: number) =>
+export const addImageLanguageId = (src: string, languageId: number) =>
     src.includes(LANGUAGE_ID) ? src : `${src}?${LANGUAGE_ID}=${languageId}`;
 
 export const getImageAttr = (attrs: DotCMSContentlet | string) => {
@@ -26,7 +26,7 @@ export const getImageAttr = (attrs: DotCMSContentlet | string) => {
 
     return {
         data: attrs,
-        src: addImageLenguageId(fileAsset || asset, languageId),
+        src: addImageLanguageId(fileAsset || asset, languageId),
         title: title,
         alt: title
     };
