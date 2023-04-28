@@ -34,6 +34,7 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.configure.goals.no.seleted.goal.message': 'empty message'
 });
 const EXPERIMENT_MOCK = getExperimentMock(0);
+const EXPERIMENT_MOCK_WITH_GOAL = getExperimentMock(2);
 describe('DotExperimentsConfigurationGoalsComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationGoalsComponent>;
     let store: DotExperimentsConfigurationStore;
@@ -177,6 +178,30 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
         confirmPopupComponent.accept();
 
         expect(store.deleteGoal).toHaveBeenCalled();
+    });
+
+    it('should disable delete button and show tooltip when experiment is nos on draft', () => {
+        const vmMock$: {
+            experimentId: string;
+            goals: Goals;
+            status: StepStatus;
+            isExperimentADraft: boolean;
+        } = {
+            experimentId: EXPERIMENT_MOCK_WITH_GOAL.id,
+            goals: EXPERIMENT_MOCK_WITH_GOAL.goals,
+            status: {
+                status: ComponentStatus.IDLE,
+                isOpen: false,
+                experimentStep: null
+            },
+            isExperimentADraft: false
+        };
+
+        spectator.component.vm$ = of(vmMock$);
+        spectator.detectComponentChanges();
+
+        expect(spectator.query(byTestId('goal-delete-button'))).toHaveAttribute('disabled');
+        expect(spectator.query(Tooltip).disabled).toEqual(false);
     });
 
     it('should disable tooltip if is on draft', () => {

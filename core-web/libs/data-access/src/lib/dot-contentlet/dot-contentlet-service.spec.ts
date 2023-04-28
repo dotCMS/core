@@ -15,12 +15,6 @@ const mockContentletVersionsResponse = {
     }
 };
 
-const mockContentletPermissionsResponse = {
-    entity: {
-        READ: ['a1', 'b1']
-    }
-};
-
 describe('DotContentletService', () => {
     let service: DotContentletService;
     let httpMock: HttpTestingController;
@@ -45,15 +39,5 @@ describe('DotContentletService', () => {
         const req = httpMock.expectOne('/api/v1/content/versions?identifier=123&groupByLang=1');
         expect(req.request.method).toBe('GET');
         req.flush(mockContentletVersionsResponse);
-    });
-
-    it('should get permissions from contentlet', () => {
-        service.getContentletPermissions('123').subscribe((res) => {
-            expect(res).toEqual(mockContentletPermissionsResponse.entity);
-        });
-
-        const req = httpMock.expectOne('v1/permissions/_bycontent/_groupbytype?contentletId=123');
-        expect(req.request.method).toBe('GET');
-        req.flush(mockContentletPermissionsResponse);
     });
 });

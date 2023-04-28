@@ -2,14 +2,19 @@ package com.dotmarketing.portlets.htmlpages.business.render;
 
 import static com.dotcms.rendering.velocity.directive.ParseContainer.getDotParserContainerUUID;
 import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotcms.util.CollectionsUtils.map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
@@ -29,6 +34,7 @@ import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.experiments.business.ConfigExperimentUtil;
 import com.dotcms.experiments.model.Experiment;
 
+import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.VariantAPI;
 import com.dotcms.variant.model.Variant;
@@ -1668,7 +1674,14 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
     }
 
     private static String getExpectedExperimentJsCode(Experiment experiment) {
-        return "function setJitsuExperimentData (experimentData) {\n"
+        return "<script src=\"/s/lib.js\" data-key=\"\"\n"
+                + "        data-init-only=\"false\"\n"
+                + "        defer>\n"
+                + "</script>\n"
+                + "\n"
+                + "<script>window.jitsu = window.jitsu || (function(){(window.jitsuQ = window.jitsuQ || []).push(arguments);})</script>\n"
+                + "<SCRIPT>\n"
+                + "function setJitsuExperimentData (experimentData) {\n"
                 + "    let experimentsShortData = {\n"
                 + "        experiments: experimentData.experiments.map((experiment) => ({\n"
                 + "                experiment: experiment.id,\n"
@@ -1681,44 +1694,65 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                 + "    jitsu('set', experimentsShortData);\n"
                 + "}\n"
                 + "\n"
-                + "window.addEventListener(\"experiment_loaded\", function (event) {\n"
-                + "    let experimentData = event.detail;\n"
-                + "    setJitsuExperimentData(experimentData);\n"
+                + "function stopRender(){\n"
+                + "    window.stop();\n"
+                + "}\n"
+                + "\n"
+                + "function getParams (experimentData) {\n"
+                + "    return (location.href.includes(\"?\") ? \"&\" : \"?\") + `variantName=${experimentData.variant.name}&redirect=true`;\n"
+                + "}\n"
+                + "\n"
+                + "function redirectIfNeedIt(experimentsData,\n"
+                + "    additionalValidation = (experimentData) => true){\n"
                 + "\n"
                 + "    if (!location.href.includes(\"redirect=true\")) {\n"
-                + "        for (let i = 0; i < experimentData.experiments.length; i++) {\n"
-                + "            const pageUrl = experimentData.experiments[i].pageUrl;\n"
                 + "\n"
-                + "            const alternativePageUrl = experimentData.experiments[i].pageUrl.endsWith(\n"
-                + "                \"/index\") ?\n"
-                + "                experimentData.experiments[i].pageUrl.replace(\"index\", \"\")\n"
-                + "                : experimentData.experiments[i].pageUrl;\n"
+                + "        for (let i = 0; i < experimentsData.experiments.length; i++) {\n"
+                + "            const pattern = new RegExp(experimentsData.experiments[i].redirectPattern);\n"
                 + "\n"
-                + "            if (location.href.includes(pageUrl)\n"
-                + "                || location.href.endsWith(alternativePageUrl)) {\n"
+                + "            if (additionalValidation(experimentsData.experiments[i]) &&\n"
+                + "                pattern.test(location.href)) {\n"
                 + "\n"
-                + "                let url = experimentData.experiments[i].variant.url\n"
-                + "                const param = (url.includes(\"?\") ? \"&\" : \"?\")\n"
-                + "                    + \"redirect=true\";\n"
+                + "                const param = experimentsData.experiments[i].variant.name === 'DEFAULT' ?\n"
+                + "                    '' : getParams(experimentsData.experiments[i]);\n"
                 + "\n"
-                + "                location.href = url + param;\n"
-                + "                break;\n"
+                + "                location.href = location.href + param;\n"
+                + "\n"
+                + "                return true;\n"
                 + "            }\n"
                 + "        }\n"
+                + "    }\n"
+                + "\n"
+                + "    return false;\n"
+                + "}\n"
+                + "\n"
+                + "window.addEventListener(\"experiment_loaded\", function (event) {\n"
+                + "    let experimentsData = event.detail;\n"
+                + "    setJitsuExperimentData(experimentsData);\n"
+                + "    redirectIfNeedIt(experimentsData, (experimentData) => experimentData.variant.name !== 'DEFAULT');\n"
+                + "});\n"
+                + "\n"
+                + "window.addEventListener(\"experiment_loaded_from_endpoint\", function (event) {\n"
+                + "    let experimentsData = event.detail;\n"
+                + "    setJitsuExperimentData(experimentsData);\n"
+                + "    const wasRedirect = redirectIfNeedIt(experimentsData);\n"
+                + "\n"
+                + "    if (!wasRedirect) {\n"
+                + "        location.reload();\n"
                 + "    }\n"
                 + "});\n"
                 + "\n"
                 + "let experimentAlreadyCheck = sessionStorage.getItem(\"experimentAlreadyCheck\");\n"
                 + "\n"
-                + "if (!experimentAlreadyCheck) {"
+                + "if (!experimentAlreadyCheck) {\n"
                 + "    let currentRunningExperimentsId = ['" + experiment.id().get() + "'];\n"
                 + "\n"
                 + "    function shouldHitEndPoint() {\n"
                 + "        let experimentData = localStorage.getItem('experiment_data');\n"
                 + "\n"
                 + "        if (experimentData) {\n"
-                + "            let includedExperimentIds = JSON.parse(\n"
-                + "                experimentData).includedExperimentIds;\n"
+                + "            let includedExperimentIds = JSON.parse(experimentData)\n"
+                + "                .includedExperimentIds;\n"
                 + "\n"
                 + "            return !currentRunningExperimentsId.every(\n"
                 + "                element => includedExperimentIds.includes(element));\n"
@@ -1751,8 +1785,10 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                 + "        }\n"
                 + "    }\n"
                 + "\n"
-                + "    if (shouldHitEndPoint()) {\n"
+                + "    cleanExperimentDataUp();\n"
                 + "\n"
+                + "    if (shouldHitEndPoint()) {\n"
+                + "        stopRender();\n"
                 + "        let experimentData = localStorage.getItem('experiment_data');\n"
                 + "        let body = experimentData ?\n"
                 + "            {\n"
@@ -1803,14 +1839,13 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                 + "                localStorage.setItem('experiment_data',\n"
                 + "                    JSON.stringify(dataToStorage));\n"
                 + "\n"
-                + "                const event = new CustomEvent('experiment_data_loaded',\n"
+                + "                const event = new CustomEvent('experiment_loaded_from_endpoint',\n"
                 + "                    {detail: dataToStorage});\n"
                 + "                window.dispatchEvent(event);\n"
                 + "            }\n"
                 + "        });\n"
                 + "    }\n"
                 + "\n"
-                + "    cleanExperimentDataUp();\n"
                 + "    let experimentDataAsString = localStorage.getItem('experiment_data');\n"
                 + "\n"
                 + "    if (experimentDataAsString) {\n"
@@ -1828,7 +1863,8 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                 + "    const event = new CustomEvent('experiment_loaded',\n"
                 + "        {detail: experimentData});\n"
                 + "    window.dispatchEvent(event);\n"
-                + "}";
+                + "}\n"
+                + "</SCRIPT>";
 
     }
 
@@ -2168,6 +2204,380 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
 
             ExperimentDataGen.end(experiment);
         }
+    }
+
+    /**
+     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
+     * When:
+     * - You create a Widget with the code: <code>Testing URLMap: $URLMapContent.title</code>
+     * - You create a Page with the Widget and publish both.
+     * - You create a {@link ContentType} and set as detailPage the newly created page and as URL Map Pattern: <code>/testing-urlmap/$title</code>
+     * - You create a Contentlet with  title equals to 'test'
+     * - Try to render the page using the URL: <code>/testing-urlmap/test</code>
+     * Should: render: <code>Testing URLMap: test</code>
+     */
+    @Test
+    public void renderUrlMap()
+            throws DotDataException, DotSecurityException, WebAssetException {
+
+        final Language language = new LanguageDataGen().nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final ContentType widgetContentType = new ContentTypeDataGen()
+                .createWidgetContentType("Testing URLMap: $URLMapContent.title")
+                .nextPersisted();
+        final Contentlet widget = new ContentletDataGen(widgetContentType)
+                .host(host)
+                .languageId(language.getId())
+                .setProperty("widgetTitle", "Testing URLMap")
+                .nextPersistedAndPublish();
+
+        final Container container = new ContainerDataGen()
+                .site(host)
+                .nextPersisted();
+
+       ContainerDataGen.publish(container);
+
+        final Template template = new TemplateDataGen().withContainer(container.getIdentifier())
+                .nextPersisted();
+
+        TemplateDataGen.publish(template);
+
+        final HTMLPageAsset page = (HTMLPageAsset) new HTMLPageDataGen(host, template)
+                .languageId(language.getId())
+                .nextPersistedAndPublish();
+
+        new MultiTreeDataGen()
+                .setContainer(container)
+                .setPage(page)
+                .setContentlet(widget)
+                .nextPersisted();
+
+        final Field titleField = new FieldDataGen()
+                .name("title")
+                .velocityVarName("title")
+                .type(TextField.class)
+                .next();
+
+        final String urlMapPatterPrefix =
+                "/testing-urlmap" + System.currentTimeMillis();
+
+        final String urlMapPatter = urlMapPatterPrefix + "/{title}";
+
+        final ContentType urlMapContentType = new ContentTypeDataGen()
+                .detailPage(page.getIdentifier())
+                .urlMapPattern(urlMapPatter)
+                .field(titleField)
+                .nextPersisted();
+
+        final Contentlet contentlet = new ContentletDataGen(urlMapContentType.id())
+                .languageId(language.getId())
+                .host(host)
+                .setProperty("title", "test")
+                .nextPersistedAndPublish();
+
+        final HttpServletRequest mockRequest = new MockAttributeRequest(
+                createHttpServletRequest(language, host, VariantAPI.DEFAULT_VARIANT, page));
+
+        final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+        final HttpSession session = createHttpSession(mockRequest);
+        when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
+
+        String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(APILocator.systemUser())
+                        .setPageUri(urlMapPatterPrefix + "/test")
+                        .setPageMode(PageMode.LIVE)
+                        .build(),
+                mockRequest, mockResponse);
+
+        Assert.assertEquals("<div>Testing URLMap: test</div>", html);
+    }
+
+    /**
+     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
+     * When:
+     * - Create a Variant named variant_1.
+     * - You create a Widget called widgetWithLabel with:
+     *      - A Field called label.
+     *      - widgetCode value equals to: <code>$label: $URLMapContent.title</code>
+     * - Create a new version of the widget for the DEFAULT Variant with label equals to: Testing Default URLMap.
+     * - Create a new version of the widget for the variant_1 Variant with label equals to: Testing Variant URLMap.
+     * - You create a Page and add the Widget in both Variant.
+     * - Create another widget called simpleWidget with the widgetCode equals to 'This is a test".
+     * - Create a new version of the widget for the variant_1 Variant and add it into the Page for the variant_1.
+     * - You create a {@link ContentType} and set as detailPage the newly created page and as URL Map Pattern:
+     * <code>/testing-urlmap<current_time_millis></>/$title</code>
+     * - You create a Contentlet with  title equals to 'test' in the DEFAULT Variant
+     * - Try to render the page using the URL: <code>/testing-urlmap/test</code>into variant_1
+     * Should: render: <code>Testing URLMap: test</code>
+     */
+    @Test
+    public void renderUrlMapWithSpecificPageVariantVersion()
+            throws DotDataException, DotSecurityException, WebAssetException {
+
+        final Variant variant_1 = new VariantDataGen().nextPersisted();
+        final Language language = new LanguageDataGen().nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final Field labelField = new FieldDataGen()
+                .name("label")
+                .velocityVarName("label")
+                .type(TextField.class)
+                .next();
+
+        final ContentType widgetWithLabelContentType = new ContentTypeDataGen()
+                .createWidgetContentType("$label: $URLMapContent.title")
+                .field(labelField)
+                .nextPersisted();
+
+        final Contentlet widgetWithLabelDefault = new ContentletDataGen(widgetWithLabelContentType)
+                .host(host)
+                .languageId(language.getId())
+                .setProperty("widgetTitle", "Testing URLMap")
+                .setProperty("label", "Testing Default URLMap")
+                .nextPersistedAndPublish();
+
+        final Contentlet widgetWithLabeVariant = ContentletDataGen.createNewVersion(widgetWithLabelDefault, variant_1, language,
+                map("label", "Testing Variant URLMap"));
+
+        ContentletDataGen.publish(widgetWithLabeVariant);
+
+        final ContentType simpleWidgetContentType = new ContentTypeDataGen()
+                .createWidgetContentType(" (This is a test)")
+                .field(labelField)
+                .nextPersisted();
+
+        final Contentlet simpleWidgetVariant = new ContentletDataGen(simpleWidgetContentType)
+                .host(host)
+                .languageId(language.getId())
+                .variant(variant_1)
+                .setProperty("widgetTitle", "Testing URLMap")
+                .nextPersistedAndPublish();
+
+        final Container container = new ContainerDataGen()
+                .site(host)
+                .nextPersisted();
+
+        ContainerDataGen.publish(container);
+
+        final Template template = new TemplateDataGen().withContainer(container.getIdentifier())
+                .nextPersisted();
+
+        TemplateDataGen.publish(template);
+
+        final HTMLPageAsset page = (HTMLPageAsset) new HTMLPageDataGen(host, template)
+                .languageId(language.getId())
+                .nextPersistedAndPublish();
+
+        final Contentlet  pageVariant = ContentletDataGen.createNewVersion(page, variant_1, map());
+        ContentletDataGen.publish(pageVariant);
+
+        new MultiTreeDataGen()
+                .setContainer(container)
+                .setPage(page)
+                .setContentlet(widgetWithLabelDefault)
+                .setVariant(VariantAPI.DEFAULT_VARIANT)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setContainer(container)
+                .setPage(page)
+                .setContentlet(widgetWithLabeVariant)
+                .setVariant(variant_1)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setContainer(container)
+                .setPage(page)
+                .setContentlet(simpleWidgetVariant)
+                .setVariant(variant_1)
+                .nextPersisted();
+
+        final Field titleField = new FieldDataGen()
+                .name("title")
+                .velocityVarName("title")
+                .type(TextField.class)
+                .next();
+
+        final String urlMapPatterPrefix =
+                "/testing-urlmap" + System.currentTimeMillis();
+
+        final String urlMapPatter = urlMapPatterPrefix + "/{title}";
+
+        final ContentType urlMapContentType = new ContentTypeDataGen()
+                .detailPage(page.getIdentifier())
+                .urlMapPattern(urlMapPatter)
+                .field(titleField)
+                .nextPersisted();
+
+        final Contentlet contentlet = new ContentletDataGen(urlMapContentType.id())
+                .languageId(language.getId())
+                .host(host)
+                .setProperty("title", "test")
+                .nextPersistedAndPublish();
+
+        final HttpServletRequest mockRequest = new MockAttributeRequest(
+                createHttpServletRequest(language, host, variant_1, page));
+
+        final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+        final HttpSession session = createHttpSession(mockRequest);
+        when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
+
+        String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(APILocator.systemUser())
+                        .setPageUri(urlMapPatterPrefix + "/test")
+                        .setPageMode(PageMode.LIVE)
+                        .build(),
+                mockRequest, mockResponse);
+
+        Assert.assertEquals("<div>Testing Variant URLMap: test (This is a test)</div>", html);
+    }
+
+    /**
+     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
+     * When:
+     * - Create a Variant named variant_1.
+     * - You create a Widget called widgetWithLabel with:
+     *      - A Field called label.
+     *      - widgetCode value equals to: <code>$label: $URLMapContent.title</code>
+     * - Create a new version of the widget for the DEFAULT Variant with label equals to: Testing Default URLMap.
+     * - Create a new version of the widget for the variant_1 Variant with label equals to: Testing Variant URLMap.
+     * - You create a Page and add the Widget in both Variant.
+     * - Create another widget called simpleWidget with the widgetCode equals to 'This is a test".
+     * - Create a new version of the widget for the variant_1 Variant and add it into the Page for the variant_1.
+     * - You create a {@link ContentType} and set as detailPage the newly created page and as URL Map Pattern:
+     * <code>/testing-urlmap<current_time_millis></>/$title</code>
+     * - You create a Contentlet with  title equals to 'test'
+     * - Try to render the page using the URL: <code>/testing-urlmap/test</code>into variant_1
+     * Should: render: <code>Testing URLMap: test</code>
+     */
+    @Test
+    public void renderUrlMapWithSpecificContentletVariantVersion()
+            throws DotDataException, DotSecurityException, WebAssetException {
+
+        final Variant variant_1 = new VariantDataGen().nextPersisted();
+        final Language language = new LanguageDataGen().nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final Field labelField = new FieldDataGen()
+                .name("label")
+                .velocityVarName("label")
+                .type(TextField.class)
+                .next();
+
+        final ContentType widgetWithLabelContentType = new ContentTypeDataGen()
+                .createWidgetContentType("$label: $URLMapContent.title")
+                .field(labelField)
+                .nextPersisted();
+
+        final Contentlet widgetWithLabelDefault = new ContentletDataGen(widgetWithLabelContentType)
+                .host(host)
+                .languageId(language.getId())
+                .setProperty("widgetTitle", "Testing URLMap")
+                .setProperty("label", "Testing Default URLMap")
+                .nextPersistedAndPublish();
+
+        final Contentlet widgetWithLabeVariant = ContentletDataGen.createNewVersion(widgetWithLabelDefault, variant_1, language,
+                map("label", "Testing Variant URLMap"));
+
+        ContentletDataGen.publish(widgetWithLabeVariant);
+
+        final ContentType simpleWidgetContentType = new ContentTypeDataGen()
+                .createWidgetContentType(" (This is a test)")
+                .field(labelField)
+                .nextPersisted();
+
+        final Contentlet simpleWidgetVariant = new ContentletDataGen(simpleWidgetContentType)
+                .host(host)
+                .languageId(language.getId())
+                .variant(variant_1)
+                .setProperty("widgetTitle", "Testing URLMap")
+                .nextPersistedAndPublish();
+
+        final Container container = new ContainerDataGen()
+                .site(host)
+                .nextPersisted();
+
+        ContainerDataGen.publish(container);
+
+        final Template template = new TemplateDataGen().withContainer(container.getIdentifier())
+                .nextPersisted();
+
+        TemplateDataGen.publish(template);
+
+        final HTMLPageAsset page = (HTMLPageAsset) new HTMLPageDataGen(host, template)
+                .languageId(language.getId())
+                .nextPersistedAndPublish();
+
+        final Contentlet  pageVariant = ContentletDataGen.createNewVersion(page, variant_1, map());
+        ContentletDataGen.publish(pageVariant);
+
+        new MultiTreeDataGen()
+                .setContainer(container)
+                .setPage(page)
+                .setContentlet(widgetWithLabelDefault)
+                .setVariant(VariantAPI.DEFAULT_VARIANT)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setContainer(container)
+                .setPage(page)
+                .setContentlet(widgetWithLabeVariant)
+                .setVariant(variant_1)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setContainer(container)
+                .setPage(page)
+                .setContentlet(simpleWidgetVariant)
+                .setVariant(variant_1)
+                .nextPersisted();
+
+        final Field titleField = new FieldDataGen()
+                .name("title")
+                .velocityVarName("title")
+                .type(TextField.class)
+                .next();
+
+        final String urlMapPatterPrefix =
+                "/testing-urlmap" + System.currentTimeMillis();
+
+        final String urlMapPatter = urlMapPatterPrefix + "/{title}";
+
+        final ContentType urlMapContentType = new ContentTypeDataGen()
+                .detailPage(page.getIdentifier())
+                .urlMapPattern(urlMapPatter)
+                .field(titleField)
+                .nextPersisted();
+
+        final Contentlet contentlet = new ContentletDataGen(urlMapContentType.id())
+                .languageId(language.getId())
+                .host(host)
+                .setProperty("title", "test")
+                .nextPersistedAndPublish();
+
+        final Contentlet newVersion = ContentletDataGen.createNewVersion(contentlet, variant_1, language,
+                map("title", "Test into Variant"));
+        ContentletDataGen.publish(newVersion);
+
+        final HttpServletRequest mockRequest = new MockAttributeRequest(
+                createHttpServletRequest(language, host, variant_1, page));
+
+        final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+        final HttpSession session = createHttpSession(mockRequest);
+        when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
+
+        String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(APILocator.systemUser())
+                        .setPageUri(urlMapPatterPrefix + "/test")
+                        .setPageMode(PageMode.LIVE)
+                        .build(),
+                mockRequest, mockResponse);
+
+        Assert.assertEquals("<div>Testing Variant URLMap: Test into Variant (This is a test)</div>", html);
     }
 
     /**

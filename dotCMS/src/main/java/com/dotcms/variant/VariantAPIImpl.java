@@ -146,7 +146,7 @@ public class VariantAPIImpl implements VariantAPI {
                 "DEFAULT variant can not be promoted");
 
         final Variant variantFromDatabase = APILocator.getVariantAPI().get(variant.name())
-                .orElseThrow(() -> new IllegalArgumentException(
+                .orElseThrow(() -> new DoesNotExistException(
                         String.format("Variant `%s` does not exists", variant.name())));
 
         DotPreconditions.checkArgument(!variantFromDatabase.archived(), "An archived Variant can not be promoted");
@@ -155,7 +155,6 @@ public class VariantAPIImpl implements VariantAPI {
                 .forEach(contentletVersionInfo -> promoteToDefault(user, contentletVersionInfo));
 
         Logger.debug(this, () -> "Promoting Variant: " + variantFromDatabase);
-        archive(variantFromDatabase.name());
     }
 
     private static void promoteToDefault(final User user, final ContentletVersionInfo contentletVersionInfo) {

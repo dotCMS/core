@@ -124,6 +124,9 @@ public class SessionMonitor implements ServletRequestListener,
                 if (!isLogout) {
                     this.systemEventsAPI.push(new SystemEvent
                             (SystemEventType.SESSION_DESTROYED, UserSessionPayloadBuilder.build(userId, sessionId)));
+                } else {
+                    this.systemEventsAPI.push(new SystemEvent
+                            (SystemEventType.SESSION_LOGOUT, UserSessionPayloadBuilder.build(userId, sessionId)));
                 }
             } catch (DotDataException e) {
 
