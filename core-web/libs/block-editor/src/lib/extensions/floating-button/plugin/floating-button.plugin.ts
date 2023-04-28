@@ -83,8 +83,9 @@ export class DotFloatingButtonPluginView {
         const from = Math.min(...ranges.map((range) => range.$from.pos));
         const type = doc.nodeAt(from)?.type.name;
         const props = this.editor.getAttributes(ImageNode.name);
+        const isImage = type === ImageNode.name;
 
-        if (empty || type != ImageNode.name || props?.data) {
+        if (empty || !isImage || props?.data) {
             this.hide();
 
             return;
@@ -145,10 +146,12 @@ export class DotFloatingButtonPluginView {
     }
 
     private updateImageNode(data: DotCMSContentlet): void {
+        const { fileAssetVersion, assetVersion } = data;
         this.setPreventHide();
         const attr = this.editor.getAttributes(ImageNode.name);
         this.editor.commands.updateAttributes(ImageNode.name, {
             ...attr,
+            src: fileAssetVersion || assetVersion,
             data
         });
     }
