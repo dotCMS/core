@@ -114,7 +114,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                 final long languageId = ConversionUtils.toLong(dataMap.get(LANGUAGE_ID_KEY), ()-> APILocator.getLanguageAPI().getDefaultLanguage().getId());
                 if (UtilMethods.isSet(identifier) && UtilMethods.isSet(inode)) {
 
-                    if (!parentContentletIdentifier.equals(identifier)) { // if somebody adds a story block to itself, we don't want to refresh it
+                    if (!identifier.equals(parentContentletIdentifier)) { // if somebody adds a story block to itself, we don't want to refresh it
                         final Optional<ContentletVersionInfo> versionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, languageId);
                         if (versionInfo.isPresent() && UtilMethods.isSet(versionInfo.get().getLiveInode()) &&
                                 !inode.equals(versionInfo.get().getLiveInode())) {
