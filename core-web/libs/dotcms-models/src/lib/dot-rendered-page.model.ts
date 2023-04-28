@@ -1,9 +1,9 @@
-import { DotPage } from './dot-page.model';
+import { DotContainer, DotContainerStructure } from './dot-container.model';
 import { DotEditPageViewAs } from './dot-edit-page-view-as.model';
 import { DotLayout } from './dot-layout.model';
-import { DotContainer, DotContainerStructure } from './dot-container.model';
-import { DotTemplate } from './dot-template.model';
+import { DotPage } from './dot-page.model';
 import { DotSite } from './dot-site.model';
+import { DotTemplate } from './dot-template.model';
 
 export interface DotPageRenderParameters {
     layout?: DotLayout;
@@ -19,6 +19,7 @@ export interface DotPageRenderParameters {
     canCreateTemplate: boolean;
     viewAs: DotEditPageViewAs;
     numberContents: number;
+    urlContentMap?: { title: string };
 }
 
 export class DotPageRender {
