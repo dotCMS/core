@@ -45,6 +45,7 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit, OnDestro
     fieldAttributesArray: string[];
     fieldAttributesString: string;
     icon: string;
+    open = false;
 
     private resizeObserver: ResizeObserver;
 
@@ -92,6 +93,7 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit, OnDestro
                 this.cd.detectChanges();
             }
         });
+
         this.resizeObserver.observe(this.el.nativeElement);
     }
 
@@ -109,6 +111,7 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit, OnDestro
         $event.stopPropagation();
         this.edit.emit(this.field);
         this.overlayPanel.hide();
+        this.open = false;
     }
 
     /**
@@ -118,6 +121,7 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit, OnDestro
     @HostListener('mousedown')
     onMouseDown() {
         this.overlayPanel.hide();
+        this.open = false;
     }
 
     /**
@@ -129,6 +133,7 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit, OnDestro
     onWindowClick($event: MouseEvent) {
         $event.stopPropagation();
         this.overlayPanel.hide();
+        this.open = false;
     }
 
     /**
@@ -139,9 +144,11 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit, OnDestro
     openAttr($event: MouseEvent) {
         $event.stopPropagation();
         this.overlayPanel.show($event, $event.target);
+        this.open = true;
 
         setTimeout(() => {
             this.overlayPanel.hide();
+            this.open = false;
         }, 2000);
     }
 

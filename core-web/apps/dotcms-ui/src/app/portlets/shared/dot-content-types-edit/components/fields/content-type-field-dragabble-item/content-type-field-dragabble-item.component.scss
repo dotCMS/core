@@ -76,6 +76,12 @@
             }
         }
 
+        p-button.open {
+            ::ng-deep .p-button {
+                background-color: $color-palette-primary-200;
+            }
+        }
+
         .attributes-container {
             display: flex;
             gap: $spacing-3;
