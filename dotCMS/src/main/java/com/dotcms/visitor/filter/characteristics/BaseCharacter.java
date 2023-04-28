@@ -10,11 +10,13 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.filters.CMSFilter;
 import com.dotmarketing.filters.CMSFilter.IAm;
 import com.dotmarketing.filters.CMSUrlUtil;
 import com.dotmarketing.filters.Constants;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.WebKeys;
+import io.vavr.Tuple2;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -107,15 +109,14 @@ public class BaseCharacter extends AbstractCharacter {
                 return IAm.FILE;
             }
         }
-        
-        
-        
-        
-        
-        if (CMSUrlUtil.getInstance().isFileAsset(uri, site, languageId)) {
-            return IAm.FILE;
-        } else if (CMSUrlUtil.getInstance().isPageAsset(uri, site, languageId)) {
+
+
+        Tuple2<Boolean, CMSFilter.IAmSubType> isPage = CMSUrlUtil.getInstance().isPageAsset(uri, site, languageId);
+
+        if (isPage._1()) {
             return IAm.PAGE;
+        } else if (CMSUrlUtil.getInstance().isFileAsset(uri, site, languageId)) {
+            return IAm.FILE;
         } else if (CMSUrlUtil.getInstance().isFolder(uri, site)) {
             return IAm.FOLDER;
         } else {

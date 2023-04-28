@@ -29,6 +29,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.auth.PrincipalThreadLocal;
 import com.liferay.portal.model.User;
 import com.liferay.portal.servlet.PortletSessionPool;
+import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import org.apache.commons.lang.StringUtils;
 
@@ -591,7 +592,10 @@ public class SamlWebInterceptor implements WebInterceptor {
 
     private boolean isFile(final String uri, final Host host, final long languageId) {
 
-        if (CMSFilter.IAm.FILE != this.cmsUrlUtil.resolveResourceType(null, uri, host, languageId)) {
+        Tuple2<CMSFilter.IAm, CMSFilter.IAmSubType> resourceType =
+                this.cmsUrlUtil.resolveResourceType(null, uri, host, languageId);
+
+        if (CMSFilter.IAm.FILE != resourceType._1()) {
 
             final String uriWithoutQueryString = this.cmsUrlUtil.getUriWithoutQueryString(uri.toLowerCase());
             return  uriWithoutQueryString.endsWith(".jpg")  ||

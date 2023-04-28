@@ -70,6 +70,7 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.filters.CMSFilter;
 import com.dotmarketing.filters.CMSUrlUtil;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -87,6 +88,7 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.vavr.Tuple2;
 
 import java.net.MalformedURLException;
 import java.util.ArrayList;
@@ -279,11 +281,14 @@ public class LinkCheckerAPIImpl implements LinkCheckerAPI {
 
         final CMSUrlUtil cmsUrlUtils = CMSUrlUtil.getInstance();
         final long languageId        = contentlet.getLanguageId();
+
+        final Tuple2<Boolean, CMSFilter.IAmSubType> isPageAsset = cmsUrlUtils.isPageAsset(testurl, host, languageId);
+
         // tests
         if(isUrlMap                    (testurl)                   ||
                 cmsUrlUtils.isFileAsset(testurl, host, languageId) ||
                 cmsUrlUtils.isFolder   (testurl, host)             ||
-                cmsUrlUtils.isPageAsset(testurl, host, languageId) ||
+                isPageAsset._1() ||
                 cmsUrlUtils.isVanityUrl(testurl, host, languageId)) {
             return;
         }
