@@ -40,7 +40,6 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit, OnDestro
 
     @ViewChild('op') overlayPanel: OverlayPanel;
 
-    shouldResize = false;
     small = false;
     fieldTypeLabel: string;
     fieldAttributesArray: string[];
@@ -80,31 +79,24 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit, OnDestro
 
         this.icon = this.fieldService.getIcon(this.field.clazz);
 
-        this.shouldResize = this.field.fieldTypeLabel
-            ? this.fieldAttributesArray.length + 1 > 1
-            : this.fieldAttributesArray.length > 1;
+        this.resizeObserver = new ResizeObserver((entries) => {
+            const [host] = entries;
 
-        if (this.shouldResize) {
-            this.resizeObserver = new ResizeObserver((entries) => {
-                const [host] = entries;
+            if (host.contentRect.width < 300 && !this.small) {
+                this.small = true;
 
-                if (host.contentRect.width < 300 && !this.small) {
-                    this.small = true;
+                this.cd.detectChanges();
+            } else if (host.contentRect.width > 300 && this.small) {
+                this.small = false;
 
-                    this.cd.detectChanges();
-                } else if (host.contentRect.width > 300 && this.small) {
-                    this.small = false;
-
-                    this.cd.detectChanges();
-                }
-            });
-
-            this.resizeObserver.observe(this.el.nativeElement);
-        }
+                this.cd.detectChanges();
+            }
+        });
+        this.resizeObserver.observe(this.el.nativeElement);
     }
 
     ngOnDestroy(): void {
-        if (this.shouldResize) this.resizeObserver.disconnect();
+        this.resizeObserver.disconnect();
     }
 
     /**
