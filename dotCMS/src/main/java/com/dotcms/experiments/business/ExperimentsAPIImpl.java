@@ -479,7 +479,9 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 .build(), user);
 
         if(!runningExperimentsOnPage.isEmpty()) {
-            if(persistedExperiment.scheduling().isEmpty()) {
+            final boolean meantToRunNow = persistedExperiment.scheduling().isEmpty();
+
+            if(meantToRunNow) {
                 throw new DotStateException("There is a running Experiment on the same page. "
                         + runningExperimentsOnPage.get(0).id());
             }
