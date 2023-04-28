@@ -7,13 +7,37 @@ import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
-import { DotCopyContentModalService, OPTIONS } from './dot-copy-content-modal.service';
+import { DotCopyContentModalService } from './dot-copy-content-modal.service';
 
 const messageServiceMock = new MockDotMessageService({
     'Edit-Content': 'Edit Content'
 });
 
-describe('DotCopyContentModalService', () => {
+const CONTENT_EDIT_OPTIONS_MOCK = {
+    option1: {
+        value: 'Copy',
+        message: 'editpage.content.edit.content.in.this.page.message',
+        icon: 'article',
+        label: 'editpage.content.edit.content.in.this.page',
+        buttonLabel: 'editpage.content.edit.content.in.this.page.button.label'
+    },
+    option2: {
+        value: 'NotCopy',
+        message: 'editpage.content.edit.content.in.all.pages.message',
+        icon: 'dynamic_feed',
+        label: 'editpage.content.edit.content.in.all.pages',
+        buttonLabel: 'editpage.content.edit.content.in.all.pages.button.label'
+    }
+};
+
+const DYNAMIC_DIALOG_CONFIG = {
+    header: 'Edit Content',
+    width: '37rem',
+    data: { options: CONTENT_EDIT_OPTIONS_MOCK },
+    contentStyle: { padding: '0px' }
+};
+
+fdescribe('DotCopyContentModalService', () => {
     let service: DotCopyContentModalService;
     let dialogService: DialogService;
 
@@ -37,6 +61,10 @@ describe('DotCopyContentModalService', () => {
     });
 
     it('should not return anything if the user close the modal without select an option', (done) => {
+        spyOn(dialogService, 'open').and.returnValue({
+            onClose: of('')
+        } as DynamicDialogRef);
+
         service.open().subscribe(
             (res) => fail('This should not be called. Response: ' + res),
             (err) => fail('This should not be called. Error: ' + err),
@@ -45,26 +73,28 @@ describe('DotCopyContentModalService', () => {
                 done();
             }
         );
-
-        service.dialogRef.close();
     });
 
     it('should return true if the user select the first option', (done) => {
+        spyOn(dialogService, 'open').and.returnValue({
+            onClose: of(CONTENT_EDIT_OPTIONS_MOCK.option1.value)
+        } as DynamicDialogRef);
+
         service.open().subscribe((res) => {
             expect(res.shouldCopy).toBe(true);
             done();
         });
-
-        service.dialogRef.close(OPTIONS.option1.value);
     });
 
     it('should return false if the user select the second option', (done) => {
+        spyOn(dialogService, 'open').and.returnValue({
+            onClose: of(CONTENT_EDIT_OPTIONS_MOCK.option2.value)
+        } as DynamicDialogRef);
+
         service.open().subscribe((res) => {
             expect(res.shouldCopy).toBe(false);
             done();
         });
-
-        service.dialogRef.close(OPTIONS.option2.value);
     });
 
     it('shoud have be called one time with the correct data', () => {
@@ -74,11 +104,9 @@ describe('DotCopyContentModalService', () => {
         service.open().subscribe();
         expect(dialogService.open).toHaveBeenCalledTimes(1);
 
-        expect(dialogService.open).toHaveBeenCalledWith(jasmine.any(Function), {
-            header: 'Edit Content',
-            width: '37rem',
-            data: { options: OPTIONS },
-            contentStyle: { padding: '0px' }
-        });
+        expect(dialogService.open).toHaveBeenCalledWith(
+            jasmine.any(Function),
+            DYNAMIC_DIALOG_CONFIG
+        );
     });
 });
