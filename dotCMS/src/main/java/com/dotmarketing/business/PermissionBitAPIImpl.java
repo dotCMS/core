@@ -6,6 +6,8 @@ import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
@@ -350,6 +352,22 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 						//if logged in site user has permission
 					}
                 }
+				
+				// If the permissionable is a ContentType on the SYSTEM_HOST without a host/folder field
+				// then we allow CMS_OWNER to access it if so permissioned
+                if (PERMISSION_WRITE >= expecterPermissionType 
+                                && permissionable instanceof ContentType 
+                                && p.getRoleId().equals(cmsOwnerRole.getId())) {
+                    ContentType type = (ContentType)permissionable;
+                    if(type.fields(HostFolderField.class).isEmpty() && Host.SYSTEM_HOST.equals(type.host())){
+                        return true;
+                    }
+                }
+
+				
+				
+				
+				
 				// if owner and owner has required permission return true
 				try {
 					if (p.getRoleId().equals(cmsOwnerRole.getId())
