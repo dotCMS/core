@@ -14,6 +14,8 @@ export enum TrafficProportionTypes {
     CUSTOM_PERCENTAGES = 'CUSTOM_PERCENTAGES'
 }
 
+export const MAX_INPUT_LENGTH = 50;
+
 // Keep the order of this enum is important to respect the order of the experiment listing.
 export enum DotExperimentStatusList {
     RUNNING = 'RUNNING',
