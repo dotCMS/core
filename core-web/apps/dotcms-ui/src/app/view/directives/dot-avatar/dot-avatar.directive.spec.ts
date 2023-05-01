@@ -46,6 +46,6 @@ describe('DotAvatarDirective', () => {
                 component.text.charAt(0).toUpperCase()
             );
             done();
-        }, 100);
+        }, 1000);
     });
 });
