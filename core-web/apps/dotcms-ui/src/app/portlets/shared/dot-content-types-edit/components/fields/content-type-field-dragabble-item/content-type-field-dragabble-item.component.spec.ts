@@ -20,25 +20,10 @@ import { ContentTypesFieldDragabbleItemComponent } from './content-type-field-dr
 
 import { FieldService } from '../service';
 
-/**
- * @description This function resizes the iframe that karma uses for testing
- * @param context This targets the iframe that karma uses to run tests, this can change depending on the test runner config
- * @param width
- * @param height
- */
-function resize(context: HTMLIFrameElement, width: string, height: string = '100%') {
-    context.style.width = width;
-    context.style.height = height;
-
-    // This propagates the styles to all the document in the iframe
-    context.contentDocument.body.getBoundingClientRect();
-}
-
 describe('ContentTypesFieldDragabbleItemComponent', () => {
     let comp: ContentTypesFieldDragabbleItemComponent;
     let fixture: ComponentFixture<ContentTypesFieldDragabbleItemComponent>;
     let de: DebugElement;
-    let context: HTMLIFrameElement;
 
     const messageServiceMock = new MockDotMessageService({
         'contenttypes.action.edit': 'Edit',
@@ -75,18 +60,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
 
         comp = fixture.componentInstance;
         de = fixture.debugElement;
-
-        // This targets the iframe that karma uses to run tests
-        context = window.parent.document.querySelector('iframe');
-
-        // Be sure that the window gets resized to 100% before running the tests
-        resize(context, '100%');
     }));
-
-    afterAll(() => {
-        // This resets the size of the iframe to the original size
-        resize(context, '100%', '100%');
-    });
 
     it('should have a name & variable', () => {
         const field = {
@@ -249,7 +223,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
         expect(de.query(By.css('[data-testid="field-info-button"]'))).toBeFalsy();
     });
 
-    it('should set small to true on resizing', (done) => {
+    it('should set small to true when row has more than one column ', () => {
         const mockField = {
             ...dotcmsContentTypeFieldBasicMock,
             fieldType: 'fieldType',
@@ -261,20 +235,13 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
         };
 
         comp.field = mockField;
+        comp.columnsCount = 2;
 
         fixture.detectChanges();
-
-        resize(context, '250px');
-
-        fixture.detectChanges();
-
-        setTimeout(() => {
-            expect(comp.small).toBe(true);
-            done();
-        }, 1000);
+        expect(comp.small).toBe(true);
     });
 
-    it('should have info button when small', (done) => {
+    it('should have info button when row has more than one column', () => {
         const mockField = {
             ...dotcmsContentTypeFieldBasicMock,
             fieldType: 'fieldType',
@@ -286,16 +253,9 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
         };
 
         comp.field = mockField;
+        comp.columnsCount = 2;
 
         fixture.detectChanges();
-
-        resize(context, '250px');
-
-        fixture.detectChanges();
-
-        setTimeout(() => {
-            expect(de.query(By.css('[data-testid="field-info-button"]'))).toBeTruthy();
-            done();
-        }, 1000);
+        expect(de.query(By.css('[data-testid="field-info-button"]'))).toBeTruthy();
     });
 });

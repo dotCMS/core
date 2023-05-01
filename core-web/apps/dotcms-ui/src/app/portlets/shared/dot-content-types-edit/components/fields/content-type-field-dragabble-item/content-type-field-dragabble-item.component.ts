@@ -1,12 +1,9 @@
 import {
     ChangeDetectionStrategy,
-    ChangeDetectorRef,
     Component,
-    ElementRef,
     EventEmitter,
     HostListener,
     Input,
-    OnDestroy,
     OnInit,
     Output,
     ViewChild
@@ -30,7 +27,9 @@ import { FieldService } from '../service';
     templateUrl: './content-type-field-dragabble-item.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class ContentTypesFieldDragabbleItemComponent implements OnInit, OnDestroy {
+export class ContentTypesFieldDragabbleItemComponent implements OnInit {
+    @Input()
+    columnsCount = 1;
     @Input()
     field: DotCMSContentTypeField;
     @Output()
@@ -41,21 +40,15 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit, OnDestro
     @ViewChild('op') overlayPanel: OverlayPanel;
 
     small = false;
-    fieldTypeLabel: string;
-    fieldAttributesArray: string[];
-    fieldAttributesString: string;
-    icon: string;
     open = false;
 
-    private resizeObserver: ResizeObserver;
-    private readonly breakpoint = 370;
+    fieldAttributesArray: string[];
 
-    constructor(
-        private dotMessageService: DotMessageService,
-        public fieldService: FieldService,
-        private el: ElementRef,
-        private cd: ChangeDetectorRef
-    ) {}
+    fieldTypeLabel: string;
+    fieldAttributesString: string;
+    icon: string;
+
+    constructor(private dotMessageService: DotMessageService, public fieldService: FieldService) {}
 
     ngOnInit(): void {
         this.fieldTypeLabel = this.field.fieldTypeLabel ? this.field.fieldTypeLabel : null;
@@ -81,25 +74,7 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit, OnDestro
 
         this.icon = this.fieldService.getIcon(this.field.clazz);
 
-        this.resizeObserver = new ResizeObserver((entries) => {
-            const [host] = entries;
-
-            if (host.contentRect.width < this.breakpoint && !this.small) {
-                this.small = true;
-
-                this.cd.detectChanges();
-            } else if (host.contentRect.width > this.breakpoint && this.small) {
-                this.small = false;
-
-                this.cd.detectChanges();
-            }
-        });
-
-        this.resizeObserver.observe(this.el.nativeElement);
-    }
-
-    ngOnDestroy(): void {
-        this.resizeObserver.disconnect();
+        this.small = this.columnsCount > 1;
     }
 
     /**
@@ -131,7 +106,6 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit, OnDestro
     @HostListener('mousedown')
     onMouseDown() {
         this.overlayPanel.hide();
-        this.open = false;
     }
 
     /**

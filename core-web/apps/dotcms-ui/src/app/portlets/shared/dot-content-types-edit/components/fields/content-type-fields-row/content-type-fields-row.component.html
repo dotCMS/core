@@ -3,26 +3,27 @@
 </div>
 <div class="row-columns">
     <div
-        *ngFor="let column of fieldRow.columns; let i = index"
-        [class.empty]="!column.fields.length"
-        [(dragulaModel)]="column.fields"
         class="row-columns__item"
+        *ngFor="let column of fieldRow.columns; let i = index"
+        [(dragulaModel)]="column.fields"
+        [class.empty]="!column.fields.length"
         data-drag-type="target"
         dragula="fields-bag"
     >
         <dot-icon-button-tooltip
-            tiny
-            *ngIf="!column.fields.length"
             class="row-header__remove"
-            icon="delete"
+            *ngIf="!column.fields.length"
             [tooltipText]="'contenttypes.action.delete' | dm"
             (click)="remove(i)"
+            tiny
+            icon="delete"
         >
         </dot-icon-button-tooltip>
 
         <dot-content-type-field-dragabble-item
             *ngFor="let field of column.fields"
             [field]="field"
+            [columnsCount]="fieldRow.columns.length"
             (remove)="onRemoveField($event)"
             (edit)="this.editField.emit(field)"
         >
