@@ -259,20 +259,6 @@ describe('DotFavoritePageComponent', () => {
 
                     expect(message).toBeDefined();
                 });
-
-                it('should setup permissions', () => {
-                    const field = de.query(By.css('[data-testId="shareWithField"]'));
-                    const label = field.query(By.css('label'));
-                    const selector = field.query(By.css('p-multiSelect'));
-
-                    expect(field.classes['field']).toBe(true);
-
-                    expect(label.attributes.for).toBe('permissions');
-                    expect(label.nativeElement.textContent).toBe('Share With');
-
-                    expect(selector.attributes.formControlName).toBe('permissions');
-                    expect(selector.attributes.id).toBe('permissions');
-                });
             });
         });
 
@@ -283,13 +269,11 @@ describe('DotFavoritePageComponent', () => {
 
             it('should get value from config and set initial data on store', () => {
                 expect(component.form.getRawValue()).toEqual({
-                    currentUserRoleId: '1',
                     inode: '',
                     thumbnail: '',
                     title: 'A title',
                     url: '/an/url/test?&language_id=1&device_inode=',
-                    order: 1,
-                    permissions: []
+                    order: 1
                 });
 
                 expect(store.setInitialStateData).toHaveBeenCalled();
@@ -328,13 +312,11 @@ describe('DotFavoritePageComponent', () => {
                 component.form.get('thumbnail').setValue('test');
                 expect(component.form.valid).toBe(true);
                 expect(component.form.getRawValue()).toEqual({
-                    currentUserRoleId: '1',
                     thumbnail: 'test',
                     inode: '',
                     title: 'A title',
                     url: '/an/url/test?&language_id=1&device_inode=',
-                    order: 1,
-                    permissions: []
+                    order: 1
                 });
             });
         });
@@ -419,7 +401,7 @@ describe('DotFavoritePageComponent', () => {
                 setLoaded: jasmine.createSpy(),
                 setInitialStateData: jasmine.createSpy(),
                 vm$: of({
-                    pageRenderedHtml: '',
+                    pageRenderedHtml: 'test',
                     roleOptions: [],
                     currentUserRoleId: '',
                     formState: { ...formStateMock, inode: 'abc123', thumbnail: '123' },
@@ -539,13 +521,11 @@ describe('DotFavoritePageComponent', () => {
 
         it('should set empty value for thumbnail on formState', () => {
             expect(component.form.getRawValue()).toEqual({
-                currentUserRoleId: '1',
                 inode: '',
                 thumbnail: '',
                 title: 'A title',
                 url: '/an/url/test?&language_id=1&device_inode=',
-                order: 1,
-                permissions: []
+                order: 1
             });
         });
     });

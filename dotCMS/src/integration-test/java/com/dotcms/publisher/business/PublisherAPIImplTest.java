@@ -15,7 +15,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageDataGen;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import java.util.Collections;
 import java.util.Date;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -55,7 +54,7 @@ public class PublisherAPIImplTest {
                 .nextPersisted();
 
         final Bundle bundle = new BundleDataGen()
-                .setSavePublishQueueElements(true).addAssets(Collections.singletonList(contentlet))
+                .setSavePublishQueueElements(true).addAssets(List.of(contentlet))
                 .nextPersisted();
 
         insertPublishAuditStatus(Status.FAILED_TO_BUNDLE,bundle.getId());

@@ -1147,7 +1147,7 @@ public class FolderAPITest extends IntegrationTestBase {//24 contentlets
 		container.setPreLoop("preloop code");
 		container.setPostLoop("postloop code");
 
-		List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
+		List<ContainerStructure> csList = new ArrayList<>();
 		ContainerStructure cs = new ContainerStructure();
 		cs.setStructureId(widgetContentType.inode());
 		cs.setCode("<div><h3>content $!{title}</h3><p>$!{body}</p></div>");

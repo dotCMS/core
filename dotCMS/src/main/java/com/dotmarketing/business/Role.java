@@ -202,7 +202,7 @@ public class Role implements Serializable,Comparable<Role> {
 	}
 
 	public Map<String, Object> toMap() {
-		Map<String, Object> roleMap = new HashMap<String, Object>();
+		Map<String, Object> roleMap = new HashMap<>();
 		roleMap.put("DBFQN", this.DBFQN);
 		roleMap.put("description", this.description);
 		roleMap.put("editLayouts", this.editLayouts);

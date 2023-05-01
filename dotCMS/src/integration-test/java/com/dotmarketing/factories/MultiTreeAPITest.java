@@ -75,7 +75,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
     }
     
     public static void testUpgradeTask() throws Exception {
-        Task04315UpdateMultiTreePK task = Task04315UpdateMultiTreePK.class.newInstance();
+        Task04315UpdateMultiTreePK task = Task04315UpdateMultiTreePK.class.getDeclaredConstructor().newInstance();
         task.executeUpgrade();
     }
 

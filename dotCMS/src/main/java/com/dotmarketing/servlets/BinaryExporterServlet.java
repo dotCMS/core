@@ -419,7 +419,7 @@ public class BinaryExporterServlet extends HttpServlet {
       if(req.getParameter(WebKeys.IMAGE_TOOL_CLIPBOARD) != null && user!=null && !user.equals(APILocator.getUserAPI().getAnonymousUser())) {
         List<String> list = (List<String>) req.getSession().getAttribute(WebKeys.IMAGE_TOOL_CLIPBOARD);
         if (list == null) {
-          list = new ArrayList<String>();
+          list = new ArrayList<>();
         }
         // we only show nine images in clipboard
         if (list.size() > 8) {

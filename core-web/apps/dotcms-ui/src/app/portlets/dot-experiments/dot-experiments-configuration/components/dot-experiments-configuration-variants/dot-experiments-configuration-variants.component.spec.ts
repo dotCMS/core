@@ -349,10 +349,10 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
                 .queryAll(Tooltip)
                 .filter((tooltip) => tooltip.disabled == false);
 
-            // One: variant weight
+            // Two: variant weight
             // One: Delete variant
             // One: Add New Variant.
-            expect(enableTooltips.length).toEqual(3);
+            expect(enableTooltips.length).toEqual(4);
         });
 
         it('should view button on all variants when experiment is not on draft', () => {

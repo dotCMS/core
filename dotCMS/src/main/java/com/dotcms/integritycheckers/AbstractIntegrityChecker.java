@@ -246,7 +246,7 @@ public abstract class AbstractIntegrityChecker implements IntegrityChecker {
 				dc.addParam(contentIdentifier);
                 dc.addParam((contentParentPath + contentName).toLowerCase());
 				dc.addParam(contentHostIdentifier);
-				dc.addParam(new Long(contentLanguage));
+				dc.addParam(Long.valueOf(contentLanguage));
 				dc.loadResult();
 			} catch (final DotDataException e) {
 				contentFile.close();

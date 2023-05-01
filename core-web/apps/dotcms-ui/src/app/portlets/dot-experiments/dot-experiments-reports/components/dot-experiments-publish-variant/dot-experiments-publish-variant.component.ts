@@ -64,7 +64,7 @@ export class DotExperimentsPublishVariantComponent implements OnInit {
                 action: () => {
                     this.publish.emit(this.selectedVariant);
                 },
-                label: this.dotMessageService.get('experiments.report.promote.assign.variant'),
+                label: this.dotMessageService.get('experiments.report.promote.variant'),
                 disabled: true
             },
             cancel: {

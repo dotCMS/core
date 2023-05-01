@@ -267,14 +267,14 @@ public class CollectionsUtilsTest extends UnitTestBase {
         assertTrue(4.4d == list6.get(3));
         assertTrue(5.5d == list6.get(4));
 
-        final List<java.lang.Object> list7 = list("1",  new Double(2.2d), new Float(3.3f), new Integer(4), new Long(5l));
+        final List<java.lang.Object> list7 = list("1",  Double.valueOf(2.2d), Float.valueOf(3.3f), Integer.valueOf(4), Long.valueOf(5l));
         assertNotNull(list7);
         assertTrue(5 == list7.size());
         assertTrue("1".equals(list7.get(0)));
-        assertTrue(new Double(2.2d).equals(list7.get(1)));
-        assertTrue(new Float(3.3f).equals(list7.get(2)));
-        assertTrue(new Integer(4).equals(list7.get(3)));
-        assertTrue(new Long(5l).equals(list7.get(4)));
+        assertTrue(Double.valueOf(2.2d).equals(list7.get(1)));
+        assertTrue(Float.valueOf(3.3f).equals(list7.get(2)));
+        assertTrue(Integer.valueOf(4).equals(list7.get(3)));
+        assertTrue(Long.valueOf(5l).equals(list7.get(4)));
 
         final Set<String> set1 = set();
 
@@ -315,37 +315,37 @@ public class CollectionsUtilsTest extends UnitTestBase {
         final Map<String, Integer> map2 = map("one", 1);
         assertNotNull(map2);
         assertTrue(1 == map2.size());
-        assertEquals(new Integer(1), map2.get("one"));
+        assertEquals(Integer.valueOf(1), map2.get("one"));
 
         final Map<String, Integer> map3 = map("one", 1, "two", 2);
         assertNotNull(map3);
         assertTrue(2 == map3.size());
-        assertEquals(new Integer(1), map3.get("one"));
-        assertEquals(new Integer(2), map3.get("two"));
+        assertEquals(Integer.valueOf(1), map3.get("one"));
+        assertEquals(Integer.valueOf(2), map3.get("two"));
 
         final Map<String, Integer> map4 = map("one", 1, "two", 2, "three", 3);
         assertNotNull(map4);
         assertTrue(3 == map4.size());
-        assertEquals(new Integer(1), map4.get("one"));
-        assertEquals(new Integer(2), map4.get("two"));
-        assertEquals(new Integer(3), map4.get("three"));
+        assertEquals(Integer.valueOf(1), map4.get("one"));
+        assertEquals(Integer.valueOf(2), map4.get("two"));
+        assertEquals(Integer.valueOf(3), map4.get("three"));
 
         final Map<String, Integer> map5 = map("one", 1, "two", 2, "three", 3, "four", 4);
         assertNotNull(map5);
         assertTrue(4 == map5.size());
-        assertEquals(new Integer(1), map5.get("one"));
-        assertEquals(new Integer(2), map5.get("two"));
-        assertEquals(new Integer(3), map5.get("three"));
-        assertEquals(new Integer(4), map5.get("four"));
+        assertEquals(Integer.valueOf(1), map5.get("one"));
+        assertEquals(Integer.valueOf(2), map5.get("two"));
+        assertEquals(Integer.valueOf(3), map5.get("three"));
+        assertEquals(Integer.valueOf(4), map5.get("four"));
 
         final Map<String, Integer> map6 = map("one", 1, "two", 2, "three", 3, "four", 4, "five", 5);
         assertNotNull(map6);
         assertTrue(5 == map6.size());
-        assertEquals(new Integer(1), map6.get("one"));
-        assertEquals(new Integer(2), map6.get("two"));
-        assertEquals(new Integer(3), map6.get("three"));
-        assertEquals(new Integer(4), map6.get("four"));
-        assertEquals(new Integer(5), map6.get("five"));
+        assertEquals(Integer.valueOf(1), map6.get("one"));
+        assertEquals(Integer.valueOf(2), map6.get("two"));
+        assertEquals(Integer.valueOf(3), map6.get("three"));
+        assertEquals(Integer.valueOf(4), map6.get("four"));
+        assertEquals(Integer.valueOf(5), map6.get("five"));
 
     }
 

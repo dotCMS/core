@@ -68,6 +68,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import graphql.VisibleForTesting;
 import org.apache.commons.lang3.StringUtils;
 
 
@@ -76,9 +78,10 @@ public class PublishDateUpdater {
     private final static String PUBLISH_LUCENE_QUERY = "+contentType:(%4$s) +live:false +deleted:false +%1$s:[1969-12-31t18:00:00-0000 TO %3$s] +%2$s:[%3$s TO 3000-12-31t18:00:00-0000]";
     private final static String UNPUBLISH_LUCENE_QUERY = "+live:true +deleted:false +%s:[1969-12-31t18:00:00-0000 TO %s]";
 
-    private final static String GET_CONTENT_TYPE_WITH_PUBLISH_FIELD = "SELECT velocity_var_name from structure where publish_date_var is not null";
+    private final static String GET_CONTENT_TYPE_WITH_PUBLISH_FIELD = "SELECT velocity_var_name from structure where publish_date_var is not null AND publish_date_var != ''";
 
-    private static List<String> getContentTypeVariableWithPublishField() throws DotDataException {
+    @VisibleForTesting
+    public static List<String> getContentTypeVariableWithPublishField() throws DotDataException {
         return new DotConnect()
                 .setSQL(GET_CONTENT_TYPE_WITH_PUBLISH_FIELD)
                 .loadObjectResults()

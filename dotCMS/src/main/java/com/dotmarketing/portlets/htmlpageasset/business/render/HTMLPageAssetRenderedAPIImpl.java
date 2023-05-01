@@ -329,11 +329,11 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
 
         Optional<HTMLPageUrl> htmlPageUrlOptional = findPageByContext(host, context);
 
-        if (!htmlPageUrlOptional.isPresent()) {
+        if (htmlPageUrlOptional.isEmpty()) {
             htmlPageUrlOptional = findByURLMap(context, host, request);
         }
 
-        if(!htmlPageUrlOptional.isPresent()){
+        if(htmlPageUrlOptional.isEmpty()){
             throw new HTMLPageAssetNotFoundException(context.getPageUri());
         }
 

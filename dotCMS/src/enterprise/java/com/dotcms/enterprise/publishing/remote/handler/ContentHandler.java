@@ -403,7 +403,7 @@ public class ContentHandler implements IHandler {
 								.getContentletVersionInfo(existingIdentifier,
 										remoteLocalLanguages.getRight());
 
-						if(!infoOptional.isPresent()) {
+						if(infoOptional.isEmpty()) {
 							throw new DotDataException("Can't find Local ContentletVersionInfo. Identifier: "
 									+ existingIdentifier + ". Lang: " + remoteLocalLanguages.getRight());
 						}

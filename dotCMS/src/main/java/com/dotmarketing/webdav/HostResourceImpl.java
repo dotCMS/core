@@ -83,7 +83,7 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
 	}
 
 	public Long getContentLength() {
-		return new Long(0);
+		return Long.valueOf(0);
 	}
 
 	public String getContentType(String accepts) {
@@ -145,7 +145,7 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
 	public List<? extends Resource> getChildren() {
 	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		List<Folder> folders = listFolders();
-		List<Resource> frs = new ArrayList<Resource>();
+		List<Resource> frs = new ArrayList<>();
 		try {
 			dotDavHelper.stripMapping(path);
 		} catch (IOException e1) {
@@ -232,7 +232,7 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
 	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		PermissionAPI perAPI = APILocator.getPermissionAPI();
 		FolderAPI folderAPI = APILocator.getFolderAPI();
-		List<Folder> folders = new ArrayList<Folder>();
+		List<Folder> folders = new ArrayList<>();
 		try {
 			folders = folderAPI.findSubFolders(host,user,false);
 		} catch (Exception e) {

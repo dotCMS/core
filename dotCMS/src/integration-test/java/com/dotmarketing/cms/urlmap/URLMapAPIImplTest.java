@@ -170,7 +170,7 @@ public class URLMapAPIImplTest {
                         urlPattern.replace("{urlTitle}", newsOnSystemHost.getStringProperty("urlTitle")));
 
         urlMapInfoOptional = urlMapAPI.processURLMap(context);
-        assert(!urlMapInfoOptional.isPresent());
+        assert(urlMapInfoOptional.isEmpty());
 
         
         
@@ -192,7 +192,7 @@ public class URLMapAPIImplTest {
 
         urlMapInfoOptional = urlMapAPI.processURLMap(context);
 
-        assert(!urlMapInfoOptional.isPresent());
+        assert(urlMapInfoOptional.isEmpty());
         
         
         

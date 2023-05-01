@@ -45,7 +45,7 @@ public abstract class ImageFilter implements ImageFilterIf {
 
 			StringBuilder sb = new StringBuilder();
 			Iterator<Entry<String, String[]>> it = parameters.entrySet().iterator();
-			List<String> acceptFilter = new ArrayList<String>();
+			List<String> acceptFilter = new ArrayList<>();
 			String thisFilter="";
 			if(parameters.get("filter")!=null && parameters.get("filter").length>0){
 				String[] filters = parameters.get("filter");
@@ -79,7 +79,7 @@ public abstract class ImageFilter implements ImageFilterIf {
 			
             if (CROP.equals(thisFilter)) {
                 Optional<FocalPoint> optPoint = new FocalPointAPIImpl().parseFocalPointFromParams(parameters);
-                if(!optPoint.isPresent()) {
+                if(optPoint.isEmpty()) {
                     String fieldVar = parameters.get("fieldVarName")[0];
                     optPoint =new FocalPointAPIImpl().readFocalPoint(inode, fieldVar);
                 }

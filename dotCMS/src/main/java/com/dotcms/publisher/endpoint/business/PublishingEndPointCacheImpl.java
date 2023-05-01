@@ -63,7 +63,7 @@ public class PublishingEndPointCacheImpl implements PublishingEndPointCache, Cac
 			Map<String, PublishingEndPoint> endPointsMap = (Map<String, PublishingEndPoint>) cache
 					.get(MAP_KEY, cacheGroup);
 			if (endPointsMap != null) {
-				endPoints = new ArrayList<PublishingEndPoint>();
+				endPoints = new ArrayList<>();
 				Set<String> keySet = endPointsMap.keySet();
 				if (keySet != null && keySet.size() > 0) {
 					for (String key : keySet) {

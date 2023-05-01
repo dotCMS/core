@@ -1271,7 +1271,6 @@ public class SiteResource implements Serializable {
                 .withInode(host.getInode())
                 .withAliases(host.getAliases())
                 .withSiteName(host.getHostname())
-                .withFolder(host.getFolder())
                 .withTagStorage(host.getTagStorage())
                 .withSiteThumbnail(null != host.getHostThumbnail() ? host.getHostThumbnail().getName(): StringPool.BLANK)
                 .withRunDashboard(host.getBoolProperty(RUN_DASHBOARD))

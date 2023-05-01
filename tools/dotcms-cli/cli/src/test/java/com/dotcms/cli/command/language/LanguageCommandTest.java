@@ -13,6 +13,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import javax.inject.Inject;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
@@ -52,7 +54,7 @@ public class LanguageCommandTest extends CommandTest {
      * @throws JsonProcessingException
      */
     @Test
-    void Test_Command_Language_Pull_By_Id() throws JsonProcessingException {
+    void Test_Command_Language_Pull_By_Id() throws IOException {
         final CommandLine commandLine = getFactory().create();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
@@ -63,6 +65,8 @@ public class LanguageCommandTest extends CommandTest {
             final ObjectMapper mapper = new ClientObjectMapper().getContext(null);
             Language result = mapper.readValue(output, Language.class);
             Assertions.assertEquals(1, result.id().get());
+        } finally {
+            Files.deleteIfExists(Path.of(".", String.format("%s.%s", "English", InputOutputFormat.defaultFormat().getExtension())));
         }
     }
 
@@ -73,7 +77,7 @@ public class LanguageCommandTest extends CommandTest {
      * @throws JsonProcessingException
      */
     @Test
-    void Test_Command_Language_Pull_By_Tag() throws JsonProcessingException {
+    void Test_Command_Language_Pull_By_Tag() throws IOException {
         final CommandLine commandLine = getFactory().create();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
@@ -84,6 +88,8 @@ public class LanguageCommandTest extends CommandTest {
             final ObjectMapper mapper = new ClientObjectMapper().getContext(null);
             Language result = mapper.readValue(output, Language.class);
             Assertions.assertEquals(1, result.id().get());
+        } finally {
+            Files.deleteIfExists(Path.of(".", String.format("%s.%s", "English", InputOutputFormat.defaultFormat().getExtension())));
         }
     }
 
@@ -204,7 +210,7 @@ public class LanguageCommandTest extends CommandTest {
      * <b>Expected Result:</b> The language with tag "es-VE" should be removed
      */
     @Test
-    void Test_Command_Language_Remove_byId() throws JsonProcessingException {
+    void Test_Command_Language_Remove_byId() throws IOException {
         final CommandLine commandLine = getFactory().create();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
@@ -226,6 +232,8 @@ public class LanguageCommandTest extends CommandTest {
             //We check that the language with tag "es-VE" is not present
             status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "es-VE");
             Assertions.assertEquals(ExitCode.SOFTWARE, status);
+        } finally {
+            Files.deleteIfExists(Path.of(".", String.format("%s.%s", "Spanish", InputOutputFormat.defaultFormat().getExtension())));
         }
     }
 }

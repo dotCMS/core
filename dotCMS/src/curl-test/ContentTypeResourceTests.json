@@ -1,9 +1,10 @@
 {
 	"info": {
-		"_postman_id": "a0d1a281-8565-4a49-bee6-46b74d8e3320",
+		"_postman_id": "de4c1a47-b07d-4b24-8b2b-d7d6c987b946",
 		"name": "ContentType Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "10041132"
+		"_exporter_id": "5403727",
+		"_collection_link": "https://cloudy-robot-285072.postman.co/workspace/JCastro-Workspace~5bfa586e-54db-429b-b7d5-c4ff997e3a0d/collection/5403727-de4c1a47-b07d-4b24-8b2b-d7d6c987b946?action=share&creator=5403727&source=collection_link"
 	},
 	"item": [
 		{
@@ -2485,6 +2486,187 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "Field Data",
+			"item": [
+				{
+					"name": "Get All Field Types",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status must be successful\", function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const expectedFieldTypes = pm.collectionVariables.get(\"fieldTypesArr\");",
+									"",
+									"pm.test(\"Checking the total number of Field Types\", function () {",
+									"    const fieldTypes = pm.response.json().entity;",
+									"    pm.expect(expectedFieldTypes.length).to.eql(fieldTypes.length, \"There must be exactly \" + expectedFieldTypes.length + \" Field Types in dotCMS\");",
+									"});",
+									"",
+									"pm.test(\"Checking the classes in all Field Types\", function () {",
+									"    const fieldTypes = pm.response.json().entity;",
+									"    fieldTypes.forEach(type => {",
+									"",
+									"        pm.expect(expectedFieldTypes.includes(type.clazz)).to.equal(true, \"Type '\" + type.clazz + \"' doesn't exist in the official Field Type list\");",
+									"",
+									"    })",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const fieldTypesArr = [ ",
+									"    \"com.dotcms.contenttype.model.field.ImmutableBinaryField\",",
+									"    \"com.dotcms.contenttype.model.field.ImmutableStoryBlockField\",",
+									"    \"com.dotcms.contenttype.model.field.ImmutableCategoryField\",",
+									"    \"com.dotcms.contenttype.model.field.ImmutableCheckboxField\",",
+									"    \"com.dotcms.contenttype.model.field.ImmutableConstantField\",",
+									"    \"com.dotcms.contenttype.model.field.ImmutableCustomField\",",
+									"    \"com.dotcms.contenttype.model.field.ImmutableDateField\",",
+									"    \"com.dotcms.contenttype.model.field.ImmutableDateTimeField\",",
+									"    \"com.dotcms.contenttype.model.field.ImmutableFileField\",",
+									"    \"com.dotcms.contenttype.model.field.ImmutableHiddenField\",",
+									"    \"com.dotcms.contenttype.model.field.ImmutableImageField\",",
+									"    \"com.dotcms.contenttype.model.field.ImmutableJSONField\",",
+									"    \"com.dotcms.contenttype.model.field.ImmutableKeyValueField\",",
+									"    \"com.dotcms.contenttype.model.field.ImmutableLineDividerField\",",
+									"    \"com.dotcms.contenttype.model.field.ImmutableMultiSelectField\",",
+									"    \"com.dotcms.contenttype.model.field.ImmutablePermissionTabField\",",
+									"    \"com.dotcms.contenttype.model.field.ImmutableRadioField\",",
+									"    \"com.dotcms.contenttype.model.field.ImmutableRelationshipField\",",
+									"    \"com.dotcms.contenttype.model.field.ImmutableRelationshipsTabField\",",
+									"    \"com.dotcms.contenttype.model.field.ImmutableSelectField\",",
+									"    \"com.dotcms.contenttype.model.field.ImmutableHostFolderField\",",
+									"    \"com.dotcms.contenttype.model.field.ImmutableTabDividerField\",",
+									"    \"com.dotcms.contenttype.model.field.ImmutableTagField\",",
+									"    \"com.dotcms.contenttype.model.field.ImmutableTextField\",",
+									"    \"com.dotcms.contenttype.model.field.ImmutableTextAreaField\",",
+									"    \"com.dotcms.contenttype.model.field.ImmutableTimeField\",",
+									"    \"com.dotcms.contenttype.model.field.ImmutableWysiwygField\"",
+									"];",
+									"pm.collectionVariables.set(\"fieldTypesArr\", fieldTypesArr);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/fieldTypes",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"fieldTypes"
+							]
+						},
+						"description": "Verifies that there's a specific number of Field Types in dotCMS, and that they all match one of the expected Field Types."
+					},
+					"response": []
+				},
+				{
+					"name": "Site or Folder Field with No Searchable Option",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status must be successful\", function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Checking that 'Searchable' option in 'Site or Folder' field is NOT present anymore\", function () {",
+									"    const fieldTypes = pm.response.json().entity;",
+									"    var isPropertyPresent = false;",
+									"    fieldTypes.forEach(type => {",
+									"",
+									"        if (\"com.dotcms.contenttype.model.field.ImmutableHostFolderField\" === type.clazz && type.properties.includes(\"searchable\")) {",
+									"            isPropertyPresent = true;",
+									"        }",
+									"",
+									"    });",
+									"    if (isPropertyPresent) {",
+									"        pm.expect(false).to.equal(isPropertyPresent, \"The 'searchable' property must not be present for 'Site or Folder' fields\");",
+									"    }",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/fieldTypes",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"fieldTypes"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Verifies that operations related to retrieving data from fields in Content Types are aworking as expected."
 		}
 	],
 	"variable": [
@@ -2554,6 +2736,10 @@
 		},
 		{
 			"key": "folder.hostId",
+			"value": ""
+		},
+		{
+			"key": "fieldTypesArr",
 			"value": ""
 		}
 	]
