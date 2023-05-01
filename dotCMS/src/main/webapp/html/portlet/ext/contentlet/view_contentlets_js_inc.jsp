@@ -204,9 +204,9 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 
         function printData(data, headers) {
             const list = getListEl();
-            
+
             if (state.view === 'list') {
-                fillResultsTable(headers, data);   
+                fillResultsTable(headers, data);
                 const card = getViewCardEl();
                 card ? card.style.display = 'none' : false;
                 list.style.display = ''
@@ -233,7 +233,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                 data[i - 3] = data[i];
             }
             data.length = data.length - 3;
-                
+
             if (cardEl) {
                 cardEl.items = [];
             }
@@ -696,7 +696,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                   const folderHostSelectorField = dijit.byId('FolderHostSelector');
                   const folderHostSelectorCurrentValue = folderHostSelectorField ? folderHostSelectorField.value : null;
                   const oldTree = dijit.byId('FolderHostSelector-tree');
-                  
+
                   if(dojo.byId('FolderHostSelector-hostFoldersTreeWrapper')){
                           dojo.byId('FolderHostSelector-hostFoldersTreeWrapper').remove();
                   }
@@ -725,7 +725,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 
                  hasHostFolderField = true;
 
-                 // Set the previous selected value of the tree or the conHostValue after the tree is loaded. 
+                 // Set the previous selected value of the tree or the conHostValue after the tree is loaded.
                  setTimeout(()=> {
                         const newTree = dijit.byId('FolderHostSelector-tree');
                         newTree.set('path', oldTree?.path ||  "<%= conHostValue %>");
@@ -1269,26 +1269,20 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
             currentStructureFields = data;
             let htmlstr = "";
             let siteFolderFieldHtml = "";
-            let hasSiteFolderField = false;
             for (const element of data) {
-                const { fieldFieldType } = element;
-                if (fieldFieldType === 'category' || fieldFieldType === 'hidden') {
-                        continue;
-                }
-                if (fieldFieldType == '<%= com.dotmarketing.portlets.structure.model.Field.FieldType.HOST_OR_FOLDER.toString() %>') {
-                   hasSiteFolderField = true;
-                }
-                htmlstr += `<dl class='vertical'>
-                        <dt>
-                         <label>${fieldName(element)}</label>
-                        </dt>
-                        <dd style='min-height:0px'>${renderSearchField(element)}</dd>
-                        </dl>
+                    const { fieldFieldType } = element;
+                    if (fieldFieldType === 'category' || fieldFieldType === 'hidden' || fieldFieldType == '<%= com.dotmarketing.portlets.structure.model.Field.FieldType.HOST_OR_FOLDER.toString() %>') {
+                            continue;
+                        }
+                        htmlstr += `<dl class='vertical'>
+                                <dt>
+                                        <label>${fieldName(element)}</label>
+                                        </dt>
+                                        <dd style='min-height:0px'>${renderSearchField(element)}</dd>
+                                        </dl>
                         <div class='clear'></div>`;
-            }  
-            if (!hasSiteFolderField) {
-                siteFolderFieldHtml = getSiteFolderFieldDefaultHTML();
-            }  
+            }
+            siteFolderFieldHtml = getSiteFolderFieldDefaultHTML();
 
             $('search_fields_table').update(htmlstr);
             $('site_folder_field').update(siteFolderFieldHtml);
@@ -1384,7 +1378,6 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
               obj = dojo.byId("step_id");
            return obj.value;
         }
-
         function getSiteFolderFieldDefaultHTML() {
 
                 const defaultSiteFolderField = {
