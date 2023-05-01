@@ -27,6 +27,13 @@ export interface DotExperimentResults {
     bayesianResult: DotResultBayesian;
     goals: Record<GoalsLevels, DotResultGoal>;
     sessions: DotResultSessions;
+    bayesianResult: DotBayesianResult;
+}
+
+export interface DotBayesianResult {
+    probabilities: { value: number; variant: string };
+    suggestedWinner: string;
+    value: number;
 }
 
 interface DotResultBayesian {
@@ -46,6 +53,7 @@ export interface DotResultVariant {
     uniqueBySession: DotResultUniqueBySession;
     variantName: string;
     variantDescription: string;
+    totalPageViews: number;
 }
 
 export interface DotResultSimpleVariant {
@@ -75,6 +83,18 @@ export interface DotResultSessions {
 export interface TrafficProportion {
     type: TrafficProportionTypes;
     variants: Array<Variant>;
+}
+
+export interface DotExperimentSummary {
+    id: string;
+    name: string;
+    trafficSplit: string;
+    pageViews: number;
+    sessions: number;
+    clicks: number;
+    bestVariant: number;
+    improvement: number;
+    isWinner: boolean;
 }
 
 export interface Variant {

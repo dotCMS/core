@@ -30,6 +30,8 @@ export class DotExperimentsReportsChartComponent implements OnChanges {
     @ViewChild('chart') chart: UIChart;
 
     options;
+
+    @Input()
     isEmpty = true;
 
     @Input()
@@ -50,12 +52,6 @@ export class DotExperimentsReportsChartComponent implements OnChanges {
                 xAxisLabel: config.currentValue.xAxisLabel,
                 yAxisLabel: config.currentValue.yAxisLabel
             });
-
-            this.isEmpty = this.isEmptyDatasets(data.currentValue);
         }
-    }
-
-    private isEmptyDatasets(data: ChartData<'line'>): boolean {
-        return data.datasets.find((dataset) => dataset.data.length > 0) === undefined;
     }
 }

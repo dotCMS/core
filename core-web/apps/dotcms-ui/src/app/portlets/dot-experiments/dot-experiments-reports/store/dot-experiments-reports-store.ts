@@ -19,6 +19,7 @@ import {
     DotExperiment,
     DotExperimentResults,
     DotExperimentStatusList,
+    DotExperimentSummary,
     DotResultDate,
     DotResultGoal,
     DotResultSimpleVariant,
@@ -51,12 +52,14 @@ const initialState: DotExperimentsReportsState = {
 // ViewModel Interfaces
 export interface VmReportExperiment {
     isLoading: boolean;
+    isEmpty: boolean;
     experiment: DotExperiment;
     status: ComponentStatus;
     showSummary: boolean;
     results: DotExperimentResults;
     chartData: ChartData<'line'> | null;
     showDialog: boolean;
+    summaryData: DotExperimentSummary[] | null;
 }
 
 export interface VmPromoteVariant {
@@ -64,6 +67,7 @@ export interface VmPromoteVariant {
     showDialog: boolean;
     isSaving: boolean;
     variants: DotResultSimpleVariant[] | null;
+
 }
 
 @Injectable()
@@ -95,6 +99,10 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
                     )?.value
                 })
             )
+    );
+
+    readonly isEmpty$: Observable<boolean> = this.select(
+        ({ results }) => results?.sessions.total === 0
     );
 
     readonly setComponentStatus = this.updater(
@@ -149,6 +157,10 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
                   datasets: this.getChartDatasets(results.goals.primary.variants)
               }
             : null
+    );
+
+    readonly getSummaryData$: Observable<DotExperimentSummary[]> = this.select(({ results }) =>
+        results ? this.getSummaryData(results) : null
     );
 
     readonly loadExperimentAndResults = this.effect((experimentId$: Observable<string>) =>
@@ -210,17 +222,21 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
     readonly vm$: Observable<VmReportExperiment> = this.select(
         this.state$,
         this.isLoading$,
+        this.isEmpty$,
         this.showExperimentSummary$,
         this.getChartData$,
         this.isShowPromotedDialog$,
-        ({ experiment, status, results }, isLoading, showSummary, chartData, showDialog) => ({
+      this.getSummaryData$,
+        ({ experiment, status, results }, isLoading, isEmpty, showSummary, chartData, showDialog,summaryData) => ({
             experiment,
             status,
             isLoading,
+            isEmpty,
             showSummary,
             results,
             chartData,
-            showDialog
+            showDialog,
+            summaryData
         })
     );
 
@@ -299,5 +315,35 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
         arrayToOrder.unshift(DEFAULT_VARIANT_ID);
 
         return arrayToOrder;
+    }
+
+    //Todo: Remove this when the endpoint sends the name set by the user
+    private getLabelName(trafficProportion: TrafficProportion, variantId: string) {
+        return trafficProportion.variants.find((variant) => variant.id == variantId).name;
+    }
+
+    private getSummaryData(results: DotExperimentResults): DotExperimentSummary[] {
+        const summary: DotExperimentSummary[] = [];
+
+        Object.values(results.goals.primary.variants).map((variant) => {
+            //TODO: Add the traffic split when the endpoint sends the data
+
+            summary.push({
+                id: variant.variantName,
+                name: variant.variantDescription,
+                trafficSplit: 'TBD',
+                pageViews: variant.totalPageViews,
+                sessions: results.sessions.variants[variant.variantName],
+                clicks: variant.uniqueBySession.count,
+                bestVariant: variant.uniqueBySession.totalPercentage / 100,
+                improvement:
+                    (variant.uniqueBySession.totalPercentage -
+                        results.goals.primary.variants.DEFAULT.uniqueBySession.totalPercentage) /
+                    100,
+                isWinner: results.bayesianResult.suggestedWinner === variant.variantName
+            });
+        });
+
+        return summary;
     }
 }

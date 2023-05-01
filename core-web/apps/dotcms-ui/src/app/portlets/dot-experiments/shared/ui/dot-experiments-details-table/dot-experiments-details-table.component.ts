@@ -9,6 +9,7 @@ import {
 
 import { SkeletonModule } from 'primeng/skeleton';
 
+import { DotExperimentSummary } from '@dotcms/dotcms-models';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotStringTemplateOutletDirective } from '@portlets/shared/directives/dot-string-template-outlet.directive';
 
@@ -37,13 +38,13 @@ export class DotExperimentsDetailsTableComponent {
 
     //** List of data to display, without templates, use the index of the objet as a header */
     @Input()
-    data!: Array<unknown>;
+    data!: DotExperimentSummary[];
 
     @Input()
     loading = false;
 
     @Input()
-    empty = true;
+    empty = false;
 
     //** Template to display the headers */
     @ContentChild('headers', { static: true }) headers!: TemplateRef<unknown>;

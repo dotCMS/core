@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { AsyncPipe, LowerCasePipe, NgClass, NgIf, PercentPipe } from '@angular/common';
+import { AsyncPipe, JsonPipe, LowerCasePipe, NgClass, NgIf, PercentPipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -18,7 +18,10 @@ import { TagModule } from 'primeng/tag';
 import { tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
+import {
+    DEFAULT_VARIANT_ID,
+    DEFAULT_VARIANT_NAME
+} from '@dotcms/dotcms-models';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotExperimentsConfigurationSkeletonComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-skeleton/dot-experiments-configuration-skeleton.component';
 import { DotExperimentsPublishVariantComponent } from '@portlets/dot-experiments/dot-experiments-reports/components/dot-experiments-publish-variant/dot-experiments-publish-variant.component';
@@ -55,7 +58,8 @@ import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.dir
         //PrimeNg
         TagModule,
         ButtonModule,
-        RippleModule
+        RippleModule,
+        JsonPipe
     ],
     templateUrl: './dot-experiments-reports.component.html',
     styleUrls: ['./dot-experiments-reports.component.scss'],
@@ -112,7 +116,7 @@ export class DotExperimentsReportsComponent implements OnInit {
         }
     ];
     @ViewChild(DotDynamicDirective, { static: true }) dialogHost!: DotDynamicDirective;
-    protected readonly defaultVariantId = DEFAULT_VARIANT_ID;
+    protected readonly defaultVariantName = DEFAULT_VARIANT_NAME;
     private componentRef: ComponentRef<DotExperimentsPublishVariantComponent>;
 
     constructor(

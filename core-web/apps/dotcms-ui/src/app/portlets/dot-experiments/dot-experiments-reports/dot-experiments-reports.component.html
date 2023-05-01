@@ -30,10 +30,11 @@
                         [config]="chartConfig"
                         [data]="vm.chartData"
                         [loading]="vm.isLoading"
+                        [isEmpty]="vm.isEmpty"
                     />
-
                     <dot-experiments-details-table
-                        [data]="detailData"
+                        [data]="vm.summaryData"
+                        [empty]="vm.isEmpty"
                         [title]="'experiments.reports.resume' | dm"
                     >
                         <ng-template #headers>
@@ -69,24 +70,24 @@
                                     <i
                                         class="pi"
                                         [ngClass]="{
-                                            'pi-arrow-circle-up': row.is_winner,
-                                            'pi-arrow-circle-down': !row.is_winner
+                                            'pi-arrow-circle-up': row.isWinner,
+                                            'pi-arrow-circle-down': !row.isWinner
                                         }"
                                     ></i>
-                                    <span>{{ row.variant_name }}</span>
+                                    <span>{{ row.name }}</span>
                                 </div>
                             </div>
                             <div
                                 class="flex col flex-wrap align-content-center justify-content-end"
                                 [ngClass]="{ 'prospect-winner': row.is_winner }"
                             >
-                                {{ row.traffic_split | percent }}
+                                {{ row.trafficSplit }}
                             </div>
                             <div
                                 class="flex col flex-wrap align-content-center justify-content-end"
                                 [ngClass]="{ 'prospect-winner': row.is_winner }"
                             >
-                                {{ row.pageviews }}
+                                {{ row.pageViews }}
                             </div>
                             <div
                                 class="flex col flex-wrap align-content-center justify-content-end"
@@ -104,13 +105,15 @@
                                 class="flex col flex-wrap align-content-center justify-content-end"
                                 [ngClass]="{ 'prospect-winner': row.is_winner }"
                             >
-                                {{ row.best_variant | percent }}
+                                {{ row.bestVariant | percent : '1.0-2' }}
                             </div>
                             <div
                                 class="flex col flex-wrap align-content-center justify-content-end"
                                 [ngClass]="{ 'prospect-winner': row.is_winner }"
                             >
-                                <ng-container *ngIf="row.id != defaultVariantId; else baselineTpl">
+                                <ng-container
+                                    *ngIf="row.name != defaultVariantName; else baselineTpl"
+                                >
                                     <div
                                         class="flex flex-row align-items-center gap-2 justify-content-end"
                                     >
