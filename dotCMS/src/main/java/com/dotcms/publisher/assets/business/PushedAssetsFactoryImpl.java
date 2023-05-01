@@ -81,7 +81,7 @@ public class PushedAssetsFactoryImpl extends PushedAssetsFactory {
 	@Override
 	public List<PushedAsset> getPushedAssets(String bundleId, String environmentId)
 			throws DotDataException {
-		List<PushedAsset> assets = new ArrayList<PushedAsset>();
+		List<PushedAsset> assets = new ArrayList<>();
 
 		if(!UtilMethods.isSet(bundleId) || !UtilMethods.isSet(environmentId)) {
 			return assets;
@@ -116,7 +116,7 @@ public class PushedAssetsFactoryImpl extends PushedAssetsFactory {
 	@Override
 	public List<PushedAsset> getPushedAssets(String assetId)
 			throws DotDataException {
-		List<PushedAsset> assets = new ArrayList<PushedAsset>();
+		List<PushedAsset> assets = new ArrayList<>();
 
 		if(!UtilMethods.isSet(assetId)) {
 			return assets;
@@ -139,7 +139,7 @@ public class PushedAssetsFactoryImpl extends PushedAssetsFactory {
 	@Override
 	public List<PushedAsset> getPushedAssetsByEnvironment(String environmentId)
 			throws DotDataException {
-		List<PushedAsset> assets = new ArrayList<PushedAsset>();
+		List<PushedAsset> assets = new ArrayList<>();
 
 		if(!UtilMethods.isSet(environmentId)) {
 			return assets;

@@ -756,7 +756,7 @@ public class FiltersTest {
         PrintWriter writer = new PrintWriter(stringWriter);
         int status = 200;
         String location = null;
-        Map<String, String> headers = new HashMap<String, String>();
+        Map<String, String> headers = new HashMap<>();
 
         @Override
         public PrintWriter getWriter() throws IOException {

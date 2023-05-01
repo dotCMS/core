@@ -55,7 +55,7 @@ public class NotifyUsersActionlet extends WorkFlowActionlet {
 	
 		if(params.get("isHtml") != null ){
 			try{
-				isHtml = new Boolean(params.get("isHtml").getValue());
+				isHtml = Boolean.valueOf(params.get("isHtml").getValue());
 			}
 			catch(Exception e){
 				
@@ -63,7 +63,7 @@ public class NotifyUsersActionlet extends WorkFlowActionlet {
 		}
 		
 		String emails = (params.get("emails")== null) ? "" : params.get("emails").getValue();
-		List<String> recipients = new ArrayList<String>();
+		List<String> recipients = new ArrayList<>();
 		StringTokenizer st = new StringTokenizer(emails, ", ");
 		while(st.hasMoreTokens()) {
 
@@ -126,7 +126,7 @@ public class NotifyUsersActionlet extends WorkFlowActionlet {
 		if(paramList ==null){
 			synchronized (this.getClass()) {
 				if(paramList ==null){
-					paramList = new ArrayList<WorkflowActionletParameter>();
+					paramList = new ArrayList<>();
 					paramList.add(new WorkflowActionletParameter("emails", "Users, Emails and Roles", null, true));
 					paramList.add(new WorkflowActionletParameter("emailSubject", "Email Subject", null, false));
 					paramList.add(new WorkflowActionletParameter("emailBody", "Email Message", null, false));

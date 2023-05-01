@@ -212,7 +212,7 @@ public class BrowserAPIImpl implements BrowserAPI {
 
     private List<Map<String, Object>> filterReturnList(final BrowserQuery browserQuery, final List<Map<String, Object>> returnList) {
 
-        final List<Map<String, Object>> filteredList = new ArrayList<Map<String, Object>>();
+        final List<Map<String, Object>> filteredList = new ArrayList<>();
         for (final Map<String, Object> asset : returnList) {
 
             String name = (String) asset.get("name");

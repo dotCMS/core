@@ -38,7 +38,7 @@ public class MailAPIImplTest {
     @Test
     public void test_loadMailSessionFromContext() {
 
-        assert(!mailAPI.loadMailSessionFromContext().isPresent());
+        assert(mailAPI.loadMailSessionFromContext().isEmpty());
         final Session session = mailAPI.getMailSession();
         
         // JNDI context not working

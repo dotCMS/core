@@ -291,7 +291,7 @@ public class VelocityServletIntegrationTest {
         final Template template = new TemplateDataGen().site(host)
                 .withContainer(container.getIdentifier()).nextPersisted();
 
-        final List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
+        final List<ContainerStructure> csList = new ArrayList<>();
         final ContainerStructure containerStructure = new ContainerStructure();
         containerStructure.setStructureId(contentGenericType.id());
         containerStructure.setCode("$!{body}");

@@ -179,7 +179,7 @@ public class GenericBundleActivatorTest {
         activator.overrideClass(myPluginClass);
 
         final Class myInjectedClass = Class.forName("com.dotmarketing.osgi.MyDummyClass", true, activator.getWebAppClassloader());
-        Object newInstance = myInjectedClass.newInstance();
+        Object newInstance = myInjectedClass.getDeclaredConstructor().newInstance();
 
         Method method = myInjectedClass.getMethod("classLoaded");
         String result = (String) method.invoke(newInstance);

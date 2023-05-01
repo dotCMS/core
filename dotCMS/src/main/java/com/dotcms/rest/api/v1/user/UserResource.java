@@ -602,7 +602,7 @@ public class UserResource implements Serializable {
 		final User user = initData.getUser();
 		try {
 			checkUserLoginAsRole(initData.getUser());
-			final List<Role> roles = Collections.singletonList(roleAPI.loadBackEndUserRole());
+			final List<Role> roles = List.of(roleAPI.loadBackEndUserRole());
 			final Map<String, Object> extraParams = Map.of(
 					UserPaginator.ROLES_PARAM, roles,
 					UserAPI.FilteringParams.INCLUDE_ANONYMOUS_PARAM, false,

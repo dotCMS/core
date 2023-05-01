@@ -65,7 +65,7 @@ public class UnassignedWorkflowContentletCheckinListener implements EventSubscri
             final Contentlet contentlet = event.getContentlet();
             if (Config.getBooleanProperty(AUTO_ASSIGN_WORKFLOW, true) &&
                     this.validContentType(contentlet) &&
-                    !APILocator.getWorkflowAPI().findCurrentStep(contentlet).isPresent()) {
+                    APILocator.getWorkflowAPI().findCurrentStep(contentlet).isEmpty()) {
 
                 final AutoAssignWorkflowDelegate delegate =
                         null != this.customAutoAssignWorkflowDelegate ?

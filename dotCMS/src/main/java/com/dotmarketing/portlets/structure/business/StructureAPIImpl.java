@@ -76,7 +76,7 @@ public class StructureAPIImpl implements StructureAPI {
 
      // checking if there is containers using this structure
      		List<Container> containers=APILocator.getContainerAPI().findContainersForStructure(st.getInode());
-     		Map<String, String> containersInUse = new HashMap<String, String>();
+     		Map<String, String> containersInUse = new HashMap<>();
      		StringBuilder names=new StringBuilder();
      		for(Container c : containers) {
      			try {
