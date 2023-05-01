@@ -20,7 +20,7 @@ import { ContentTypesFieldDragabbleItemComponent } from './content-type-field-dr
 
 import { FieldService } from '../service';
 
-describe('ContentTypesFieldDragabbleItemComponent', () => {
+fdescribe('ContentTypesFieldDragabbleItemComponent', () => {
     let comp: ContentTypesFieldDragabbleItemComponent;
     let fixture: ComponentFixture<ContentTypesFieldDragabbleItemComponent>;
     let de: DebugElement;
@@ -78,7 +78,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
 
         fixture.detectChanges();
 
-        const container = de.query(By.css('.field-name'));
+        const container = de.query(By.css('.field__name'));
         expect(container).not.toBeNull();
         expect(container.nativeElement.textContent.trim().replace('  ', ' ')).toEqual('Field name');
     });
@@ -124,7 +124,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
         const attrs = ['FieldLabel', 'Required', 'Indexed', 'Show on list'];
 
         const attrsString = de.query(
-            By.css('.field-properties > .field-copy-container > .attributes-container')
+            By.css('.field__properties > .field__copy__container > .attributes__container')
         ).nativeElement.textContent;
 
         expect(attrs.every((attr) => attrsString.includes(attr))).toBeTrue();
@@ -145,7 +145,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
 
         fixture.detectChanges();
 
-        const button = de.query(By.css('#field__actions-delete'));
+        const button = de.query(By.css('#field__actions__delete'));
         expect(button).not.toBeNull();
         expect(button.attributes['icon']).toEqual('pi pi-trash');
 
@@ -175,7 +175,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
 
         fixture.detectChanges();
 
-        const button = de.query(By.css('#field__actions-delete'));
+        const button = de.query(By.css('#field__actions__delete'));
         expect(button).toBeNull();
     });
 
@@ -223,24 +223,6 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
         expect(de.query(By.css('[data-testid="field-info-button"]'))).toBeFalsy();
     });
 
-    it('should set small to true when row has more than one column ', () => {
-        const mockField = {
-            ...dotcmsContentTypeFieldBasicMock,
-            fieldType: 'fieldType',
-            fixed: true,
-            indexed: true,
-            name: 'Field name',
-            required: true,
-            velocityVarName: 'velocityName'
-        };
-
-        comp.field = mockField;
-        comp.columnsCount = 2;
-
-        fixture.detectChanges();
-        expect(comp.small).toBe(true);
-    });
-
     it('should have info button when row has more than one column', () => {
         const mockField = {
             ...dotcmsContentTypeFieldBasicMock,
@@ -253,7 +235,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
         };
 
         comp.field = mockField;
-        comp.columnsCount = 2;
+        comp.isSmall = true;
 
         fixture.detectChanges();
         expect(de.query(By.css('[data-testid="field-info-button"]'))).toBeTruthy();

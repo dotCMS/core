@@ -29,7 +29,7 @@ import { FieldService } from '../service';
 })
 export class ContentTypesFieldDragabbleItemComponent implements OnInit {
     @Input()
-    columnsCount = 1;
+    isSmall = false;
     @Input()
     field: DotCMSContentTypeField;
     @Output()
@@ -39,7 +39,6 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit {
 
     @ViewChild('op') overlayPanel: OverlayPanel;
 
-    small = false;
     open = false;
 
     fieldAttributesArray: string[];
@@ -73,8 +72,6 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit {
         this.fieldAttributesString = this.fieldAttributesArray.join(', ');
 
         this.icon = this.fieldService.getIcon(this.field.clazz);
-
-        this.small = this.columnsCount > 1;
     }
 
     /**

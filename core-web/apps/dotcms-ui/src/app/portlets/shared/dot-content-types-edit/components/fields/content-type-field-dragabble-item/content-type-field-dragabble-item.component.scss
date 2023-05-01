@@ -43,7 +43,7 @@
     }
 }
 
-.field-properties {
+.field__properties {
     display: flex;
     flex-direction: column;
     overflow-x: clip;
@@ -51,23 +51,23 @@
     padding-right: $spacing-1;
     flex-grow: 1;
 
-    .field-name-container,
-    .field-copy-container {
+    .field__name__container,
+    .field__copy__container {
         height: $spacing-4;
         display: flex;
         align-items: center;
         justify-content: space-between;
     }
 
-    .field-name-container {
-        .field-name {
+    .field__name__container {
+        .field__name {
             @include truncate-text;
             color: #000;
             font-size: $font-size-md;
         }
     }
 
-    .field-copy-container {
+    .field__copy__container {
         dot-copy-link {
             ::ng-deep {
                 .p-button {
@@ -82,12 +82,12 @@
             }
         }
 
-        .attributes-container {
+        .attributes__container {
             display: flex;
             gap: $spacing-3;
             font-size: $font-size-sm;
 
-            .field-name {
+            .field__name {
                 color: $color-palette-gray-900;
             }
             .attribute {
@@ -106,7 +106,7 @@
 
     .p-overlaypanel-content {
         padding: $spacing-1 $spacing-3;
-        .overlay-attributes-container {
+        .overlay__attributes__container {
             display: flex;
             flex-direction: column;
             color: $black;
@@ -115,12 +115,12 @@
                 margin: 0;
             }
 
-            .field-name {
+            .field__name {
                 font-weight: 700;
                 line-height: 1.125rem;
             }
 
-            .attributes-text {
+            .attributes__text {
                 margin-top: $spacing-1;
             }
         }

@@ -1,11 +1,11 @@
 <dot-icon class="drag" name="drag_indicator"></dot-icon>
 
-<dot-icon class="field-icon" name="{{ icon }}"></dot-icon>
-<div class="field-properties">
-    <div class="field-name-container">
-        <span class="field-name"> {{ field.name }}</span>
+<dot-icon class="field__icon" name="{{ icon }}"></dot-icon>
+<div class="field__properties">
+    <div class="field__name__container">
+        <span class="field__name"> {{ field.name }}</span>
         <p-button
-            id="field__actions-delete"
+            id="field__actions__delete"
             *ngIf="!field.fixed"
             (click)="removeItem($event)"
             styleClass="p-button-text p-button-sm p-button-danger p-button-rounded"
@@ -13,14 +13,14 @@
         >
         </p-button>
     </div>
-    <div class="field-copy-container">
+    <div class="field__copy__container">
         <dot-copy-link
             *ngIf="field.variable"
             [label]="field.variable"
             [copy]="field.variable"
         ></dot-copy-link>
 
-        <div *ngIf="small; else attributes">
+        <div *ngIf="isSmall; else attributes">
             <p-button
                 *ngIf="true"
                 [class.open]="open"
@@ -41,17 +41,17 @@
     appendTo="body"
     styleClass="contentType__overlayPanel"
 >
-    <div class="overlay-attributes-container">
-        <p class="field-name">{{ fieldTypeLabel }}</p>
-        <p class="attributes-text" *ngIf="fieldAttributesString.length">
+    <div class="overlay__attributes__container">
+        <p class="field__name">{{ fieldTypeLabel }}</p>
+        <p class="attributes__text" *ngIf="fieldAttributesString.length">
             {{ fieldAttributesString }}
         </p>
     </div>
 </p-overlayPanel>
 
 <ng-template #attributes>
-    <div class="attributes-container">
-        <p class="field-name">{{ fieldTypeLabel }}</p>
+    <div class="attributes__container">
+        <p class="field__name">{{ fieldTypeLabel }}</p>
         <p class="attribute" *ngFor="let field of fieldAttributesArray; let index = index">
             {{ field }}
         </p>
