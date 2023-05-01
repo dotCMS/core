@@ -1,6 +1,15 @@
+<%@page import="io.vavr.control.Try"%>
 <%@page import="com.dotcms.contenttype.transform.contenttype.StructureTransformer"%>
 <%@page import="com.dotcms.contenttype.model.type.ContentType"%>
 <%@ include file="/html/portlet/ext/common/edit_permissions_tab_js_inc.jsp" %>
+
+
+<%
+User  ownerUser = Try.of(()->APILocator.getUserAPI().loadUserById(asset.getOwner())).getOrElse(APILocator.systemUser());
+%>
+
+
+
 
 <!-- START Loading Image Div -->
 	<%@page import="com.dotmarketing.portlets.categories.model.Category"%>
@@ -12,25 +21,31 @@
 <!-- END Message -->
 
 <div id="assetPermissionsWrapper" style="display:none">
-<div style="padding-left:20px;padding-bottom:10px;font-size:88%;" class="permissionType">
-	<%if(asset instanceof Folder){%>
-		 <%= LanguageUtil.get(pageContext, "Folder") %>:  <b><%= APILocator.getIdentifierAPI().find(((Folder) asset).getIdentifier()).getPath() %></b>
-	<%}else if(asset instanceof Host){%>
-		 <%= LanguageUtil.get(pageContext, "Host") %>:  <b><%= ((Host) asset).getHostname() %></b>
-	<%}else if(asset instanceof Contentlet){%>
-		<%if( ((Contentlet) asset).getStructureInode().equals(APILocator.getHostAPI().findSystemHost().getStructureInode())){ %>
-			 <%= LanguageUtil.get(pageContext, "Host") %>:  <b><%= ((Contentlet) asset).getTitle() %></b>
-		<%}else if(!((Contentlet) asset).getPermissionId().isEmpty()) { %>
-			 <%= LanguageUtil.get(pageContext, "Content") %>:  <b><%= ((Contentlet) asset).getTitle() %></b>		
-		<%} %>
-	<%}else if(asset instanceof Structure){%>
-		 <%= LanguageUtil.get(pageContext, "Structure") %>:  <b><%= ((Structure) asset).getName() %></b>
-	<%}else if(asset instanceof ContentType){%>
-         <%= LanguageUtil.get(pageContext, "Structure") %>:  <b><%= new StructureTransformer(ContentType.class.cast(asset)).asStructure().getName() %></b>
-	<%}else if(asset instanceof Category){%>
-		 <%= LanguageUtil.get(pageContext, "Category") %>:  <b><%= ((Category) asset).getCategoryName() %></b>
-	<%}%>
-</div>
+   <div style="padding: 0px 20px 10px 20px;display:grid;grid-template-columns:50% 50%" >
+       <div>
+         	<%if(asset instanceof Folder){%>
+         		 <%= LanguageUtil.get(pageContext, "Folder") %>:  <b><%= APILocator.getIdentifierAPI().find(((Folder) asset).getIdentifier()).getPath() %></b>
+         	<%}else if(asset instanceof Host){%>
+         		 <%= LanguageUtil.get(pageContext, "Host") %>:  <b><%= ((Host) asset).getHostname() %></b>
+         	<%}else if(asset instanceof Contentlet){%>
+         		<%if( ((Contentlet) asset).getStructureInode().equals(APILocator.getHostAPI().findSystemHost().getStructureInode())){ %>
+         			 <%= LanguageUtil.get(pageContext, "Host") %>:  <b><%= ((Contentlet) asset).getTitle() %></b>
+         		<%}else if(!((Contentlet) asset).getPermissionId().isEmpty()) { %>
+         			 <%= LanguageUtil.get(pageContext, "Content") %>:  <b><%= ((Contentlet) asset).getTitle() %></b>		
+         		<%} %>
+         	<%}else if(asset instanceof Structure){%>
+         		 <%= LanguageUtil.get(pageContext, "Structure") %>:  <b><%= ((Structure) asset).getName() %></b>
+         	<%}else if(asset instanceof ContentType){%>
+                  <%= LanguageUtil.get(pageContext, "Structure") %>:  <b><%= new StructureTransformer(ContentType.class.cast(asset)).asStructure().getName() %></b>
+         	<%}else if(asset instanceof Category){%>
+         		 <%= LanguageUtil.get(pageContext, "Category") %>:  <b><%= ((Category) asset).getCategoryName() %></b>
+         	<%}%>
+      </div>
+      <div style="text-align: right;">
+         Owner: <b><%=ownerUser.getFullName() %></b>
+      </div>
+      
+   </div>
 <!-- START Button Row -->
 	<div id="inheritingFrom" class="permissions__bar-user-role" style="display: none;">
 		<div class="permissions__bar-user-role-main">
