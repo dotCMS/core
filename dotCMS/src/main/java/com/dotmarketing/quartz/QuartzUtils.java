@@ -35,7 +35,7 @@ public class QuartzUtils {
 	
 
 	
-	private static final Map<String, TaskRuntimeValues> runtimeTaskValues = new HashMap<String, TaskRuntimeValues>();
+	private static final Map<String, TaskRuntimeValues> runtimeTaskValues = new HashMap<>();
 	
 
 
@@ -93,7 +93,7 @@ public class QuartzUtils {
 	@SuppressWarnings("unchecked")
 	private static List<ScheduledTask> getScheduledTasks(final Scheduler scheduler, final boolean sequential, final String group) throws SchedulerException {
 		
-		final List<ScheduledTask> result = new ArrayList<ScheduledTask>(100);
+		final List<ScheduledTask> result = new ArrayList<>(100);
 
 		final String[] groupNames = scheduler.getJobGroupNames();
 		String[] jobNames;
@@ -185,7 +185,7 @@ public class QuartzUtils {
 	 */
 	@SuppressWarnings("unchecked")
 	private static List<ScheduledTask> getScheduledTask(final String jobName, final String jobGroup, final Scheduler scheduler, final boolean sequential) throws SchedulerException {
-		List<ScheduledTask> result = new ArrayList<ScheduledTask>(1);
+		List<ScheduledTask> result = new ArrayList<>(1);
 
 		final JobDetail jobDetail = scheduler.getJobDetail(jobName, jobGroup);
 
@@ -730,9 +730,7 @@ public class QuartzUtils {
 
 	/**
 	 * A more cluster aware method to find out if a job is running since {@link #isJobRunning(String, String) evaluates
-	 * for the current scheduler.
-	 *
-	 * @param scheduler scheduler to use
+	 * for the current scheduler. @param scheduler scheduler to use
 	 * @param jobName job name
 	 * @param jobGroup job group
 	 * @param triggerName trigger name

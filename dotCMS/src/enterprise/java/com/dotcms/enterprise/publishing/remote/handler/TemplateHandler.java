@@ -97,7 +97,7 @@ import java.util.List;
 public class TemplateHandler implements IHandler {
 	private UserAPI uAPI = APILocator.getUserAPI();
 	private TemplateAPI tAPI = APILocator.getTemplateAPI();
-	private List<String> infoToRemove = new ArrayList<String>();
+	private List<String> infoToRemove = new ArrayList<>();
 	private PublisherConfig config;
 
 	public TemplateHandler(PublisherConfig config) {

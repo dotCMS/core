@@ -194,7 +194,7 @@ public class Permission implements Serializable {
 
 	@JsonIgnore
 	public Map<String, Object> getMap() {
-		HashMap<String, Object> theMap = new HashMap<String, Object>();
+		HashMap<String, Object> theMap = new HashMap<>();
 		theMap.put("id", this.id);
 		theMap.put("inode", this.inode);
 		theMap.put("isBitPermission", this.isBitPermission);

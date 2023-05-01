@@ -53,12 +53,12 @@ public class EmailUtils {
 
 	public static  void  SendContentSubmitEmail (Map <String, String> map, Structure structure,
 			List<String> emails) {
-		Map<String, String> parameters = new HashMap<String, String>();
+		Map<String, String> parameters = new HashMap<>();
 		parameters.putAll(map);
 
 		List<Field> fields = structure.getFields();
 		List paramlist = new ArrayList(map.keySet());
-		HashMap<String, String> paramtomail = new HashMap<String, String>();
+		HashMap<String, String> paramtomail = new HashMap<>();
 		StringBuffer Body = new StringBuffer();
 		// checks if the parameters belongs to the structure
 		int numFields= fields.size();
@@ -161,7 +161,7 @@ public class EmailUtils {
 	// DOTCMS-6298
 	public static List<Map<String,Object>> getEmails(String host,int port,boolean isSSL,String username,String password) throws MessagingException, IOException{
 	    
-		List<Map<String,Object>> emails = new ArrayList<Map<String,Object>>();
+		List<Map<String,Object>> emails = new ArrayList<>();
 		
         String SSL_FACTORY = "javax.net.ssl.SSLSocketFactory";
         
@@ -201,7 +201,7 @@ public class EmailUtils {
 
         for (int i = 0; i < msgs.length; i++) {
         	Message msg = msgs[i];
-        	Map<String, Object> email = new HashMap<String, Object>();
+        	Map<String, Object> email = new HashMap<>();
             getEmailContents(msg,email);
 
             // FROM

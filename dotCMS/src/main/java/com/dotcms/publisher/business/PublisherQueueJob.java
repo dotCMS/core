@@ -608,7 +608,7 @@ public class PublisherQueueJob implements StatefulJob {
 
 			//Fill protocolPublisherMap with protocol -> publisher.
 			for (final Class publisherClass : publishers) {
-				final Publisher publisher = (Publisher) publisherClass.newInstance();
+				final Publisher publisher = (Publisher) publisherClass.getDeclaredConstructor().newInstance();
 				for (String protocol : publisher.getProtocols()) {
 					protocolPublisherMap.put(protocol, publisherClass);
 				}

@@ -49,7 +49,7 @@ public class LogMapperRow implements Serializable {
 
     public Map<String, Object> getMap () {
 
-        Map<String, Object> oMap = new HashMap<String, Object>();
+        Map<String, Object> oMap = new HashMap<>();
         oMap.put( "description", this.getDescription() );
         oMap.put( "log_name", this.getLog_name() );
         oMap.put( "enabled", this.getEnabled() );

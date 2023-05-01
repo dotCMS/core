@@ -60,7 +60,7 @@ import com.dotmarketing.util.UtilMethods;
 import java.util.stream.Collectors;
 
 public class SiteSearchResult {
-	Map<String, Object> map = new HashMap<String, Object>();
+	Map<String, Object> map = new HashMap<>();
 	public Map<String, Object>  getMap(){
 		return map;
 	}
@@ -191,7 +191,7 @@ public class SiteSearchResult {
 			return 0;
 		}
 		if(map.get("contentLength") instanceof Integer){
-			return new Long((Integer) map.get("contentLength"));
+			return Long.valueOf((Integer)map.get("contentLength"));
 		}
 		
 		return (Long) map.get("contentLength");
@@ -240,7 +240,7 @@ public class SiteSearchResult {
 	}
 	
 	public SiteSearchResult(){
-		this.map = new HashMap<String, Object>();
+		this.map = new HashMap<>();
 		
 	}
 	@Override
