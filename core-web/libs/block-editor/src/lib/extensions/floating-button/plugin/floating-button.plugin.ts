@@ -146,12 +146,12 @@ export class DotFloatingButtonPluginView {
     }
 
     private updateImageNode(data: DotCMSContentlet): void {
-        const { fileAssetVersion, assetVersion } = data;
+        const { fileAsset, asset } = data;
         this.setPreventHide();
         const attr = this.editor.getAttributes(ImageNode.name);
         this.editor.commands.updateAttributes(ImageNode.name, {
             ...attr,
-            src: fileAssetVersion || assetVersion,
+            src: fileAsset || asset,
             data
         });
     }
