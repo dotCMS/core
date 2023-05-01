@@ -474,7 +474,8 @@
 
 	function saveRoleCallback (savedRole) {
 		dijit.byId('addRoleDialog').hide();
-		setRoleName(currentRole);
+		// 	setRoleName(currentRole);
+		setRoleName(savedRole);
 
 		var tree = dijit.byId('rolesTree');
 		if (isNewRole) {
@@ -672,6 +673,7 @@
 			dojo.byId("displayRoleName1").innerHTML= roleName;
 			dojo.byId("displayRoleName2").innerHTML= roleName;
 			dojo.byId("displayRoleName3").innerHTML = roleName;
+			dojo.byId(`treeNode-${role.id}_label`).innerHTML = roleName
 		}
 	}
 
