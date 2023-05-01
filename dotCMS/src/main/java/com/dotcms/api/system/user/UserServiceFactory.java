@@ -222,7 +222,7 @@ public class UserServiceFactory implements Serializable {
 			 */
 			public Map<String, Object> perform() {
 				ArrayList<Map<String, String>> list = null;
-				Map<String, Object> results = new HashMap<String, Object>(2);
+				Map<String, Object> results = new HashMap<>(2);
 				int totalItemCount = 0;
 				List<User> users = null;
 				int realUserCount = 0;
@@ -239,7 +239,7 @@ public class UserServiceFactory implements Serializable {
 					// appropriate container to the view
 					if (users != null) {
 						int pageSize = realUserCount;
-						list = new ArrayList<Map<String, String>>(pageSize);
+						list = new ArrayList<>(pageSize);
 						for (User aUser : users) {
 							final Map<String, String> aRecord = map(
 									"id", aUser.getUserId(), 
@@ -253,7 +253,7 @@ public class UserServiceFactory implements Serializable {
 					}
 				} catch (Exception ex) {
 					Logger.warn(UserAjax.class, "::processUsersList -> Could not process list of users.");
-					list = new ArrayList<Map<String, String>>(0);
+					list = new ArrayList<>(0);
 				}
 				results.put("data", list);
 				results.put("total", totalItemCount);
@@ -463,7 +463,7 @@ public class UserServiceFactory implements Serializable {
 								this.includeDefault,roleId);
 					} catch (DotDataException e) {
 						Logger.error(this, e.getMessage(), e);
-						return new ArrayList<User>();
+						return new ArrayList<>();
 					}
 				}
 

@@ -95,7 +95,7 @@ public class ServerActionAPIImplProxy extends ParentProxy implements
 		if(allowExecution()){
 			return getServerActionAPIInstance().getAllServerActions();
 		}else{
-			return new ArrayList<ServerAction>();
+			return new ArrayList<>();
 		}
 	}
 
@@ -153,7 +153,7 @@ public class ServerActionAPIImplProxy extends ParentProxy implements
 		if(allowExecution()){
 			return getServerActionAPIInstance().getNewServerActionBeans();
 		}else{
-			return new ArrayList<ServerActionBean>();
+			return new ArrayList<>();
 		}
 	}
 
@@ -167,7 +167,7 @@ public class ServerActionAPIImplProxy extends ParentProxy implements
 		if(allowExecution()){
 			return getServerActionAPIInstance().getNewServerActionBeans(serverID);
 		}else{
-			return new ArrayList<ServerActionBean>();
+			return new ArrayList<>();
 		}
 	}
 

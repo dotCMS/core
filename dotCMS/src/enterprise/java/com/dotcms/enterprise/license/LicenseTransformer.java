@@ -125,7 +125,7 @@ public class LicenseTransformer{
      * @throws IOException An error occurred when verifying the license file.
      */
     protected Map<String, Object> getLicenseData(byte[] bytes) throws IOException {
-        Map<String, Object> data = new HashMap<String, Object>();
+        Map<String, Object> data = new HashMap<>();
 
         RSADigestSigner verifier = new RSADigestSigner(new SHA1Digest());
         verifier.init(false, loadPublicKey());
@@ -182,7 +182,7 @@ public class LicenseTransformer{
      */
     private List<byte[]> splitBody(byte[] array) {
         int pos = 0;
-        List<byte[]> ret = new ArrayList<byte[]>();
+        List<byte[]> ret = new ArrayList<>();
         while (pos < array.length) {
             int size = byteToInt(split(array, pos, 4));
             pos += 4;

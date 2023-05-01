@@ -80,11 +80,11 @@ public class ImportAuditUtil {
 			Logger.error(ImportAuditUtil.class,e.getMessage(),e);
 
 		};
-		HashMap<String, List<String>> resultsList = new HashMap<String, List<String>>();
+		HashMap<String, List<String>> resultsList = new HashMap<>();
 		if(dbResults.size()>0){
 	       String [] variables={"warnings","errors","messages", "results", "lastInode"}; 
 	       for(String variable :variables){
-	    	   resultsList.put(variable, new ArrayList<String>());   
+	    	   resultsList.put(variable, new ArrayList<>());   
 	       }
 	       for(String variable :variables){
 	    	   String dbValues=(String)((HashMap<String, Object>)dbResults.get(0)).get(variable);
@@ -256,7 +256,7 @@ public class ImportAuditUtil {
 	}
 	
 	public static class ImportAuditResults{
-		private List<Map<String, Object>> userRecords = new ArrayList<Map<String,Object>>();
+		private List<Map<String, Object>> userRecords = new ArrayList<>();
 		private long otherUsersJobs = 0;
 		
 		public ImportAuditResults() {

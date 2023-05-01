@@ -52,11 +52,11 @@ public class WebsiteWebAPI implements ViewTool {
 		} catch (Exception e) {
 			Logger.error(this, "Website getSubFolders Method : Unable to parse to String " ,e);
 		}
-		return new ArrayList<Folder>();
+		return new ArrayList<>();
     }
     
     public List<Folder> getSubFolders (String parentFolder, String hostId) {
-        List<Folder> subFolders = new ArrayList<Folder>();
+        List<Folder> subFolders = new ArrayList<>();
 		try {
 			Folder folder = APILocator.getFolderAPI().findFolderByPath(parentFolder, hostId,APILocator.getUserAPI().getSystemUser(),false);
 			subFolders = APILocator.getFolderAPI().findSubFoldersTitleSort(folder, APILocator.getUserAPI().getSystemUser(),false);
@@ -67,7 +67,7 @@ public class WebsiteWebAPI implements ViewTool {
     }
 
     public List<Folder> getSubFolders (Folder parentFolder) {
-        List<Folder> subFolders = new ArrayList<Folder>();
+        List<Folder> subFolders = new ArrayList<>();
 		try {
 			subFolders = APILocator.getFolderAPI().findSubFoldersTitleSort(parentFolder,APILocator.getUserAPI().getSystemUser(),false);
 		} catch (Exception e) {

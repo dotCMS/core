@@ -427,7 +427,7 @@ public class CacheProviderAPIImpl implements CacheProviderAPI, CacheOSGIService 
                 break;
             }else{
             	if(providersAlreadyChecked==null){
-            		providersAlreadyChecked = new ArrayList<CacheProvider>(providersToUse.size());
+            		providersAlreadyChecked = new ArrayList<>(providersToUse.size());
             	}
             	providersAlreadyChecked.add(provider);
             }
@@ -523,7 +523,7 @@ public class CacheProviderAPIImpl implements CacheProviderAPI, CacheOSGIService 
 
         //Getting the list of all the cache providers
         List<CacheProvider> providers = getAllProviders();
-        List<CacheProviderStats> ret = new ArrayList<CacheProviderStats>();
+        List<CacheProviderStats> ret = new ArrayList<>();
         for ( CacheProvider provider : providers ) {
 
             try {

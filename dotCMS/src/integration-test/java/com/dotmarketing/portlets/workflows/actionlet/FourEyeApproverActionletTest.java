@@ -36,7 +36,6 @@ import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -104,7 +103,7 @@ public class FourEyeApproverActionletTest extends BaseWorkflowIntegrationTest {
                         CheckinContentActionlet.class);
         // Set the role ID of the people who can use the action
         addWhoCanUseToAction(schemeStepActionResult.getAction(),
-                Collections.singletonList(publisherRole.getId()));
+                List.of(publisherRole.getId()));
         // Add the remaining two sub-actions for this test
         addActionletToAction(schemeStepActionResult.getAction().getId(),
                 FourEyeApproverActionlet.class, 1);
@@ -123,7 +122,7 @@ public class FourEyeApproverActionletTest extends BaseWorkflowIntegrationTest {
 
         // Associate the scheme to the content type
         workflowAPI.saveSchemesForStruct(new StructureTransformer(type).asStructure(),
-                Collections.singletonList(schemeStepActionResult.getScheme()));
+                List.of(schemeStepActionResult.getScheme()));
     }
 
     /**

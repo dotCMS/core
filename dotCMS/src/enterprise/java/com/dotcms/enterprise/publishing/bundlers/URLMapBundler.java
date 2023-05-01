@@ -319,7 +319,7 @@ public class URLMapBundler implements IBundler {
             final Optional<ContentletVersionInfo> info = APILocator.getVersionableAPI()
                     .getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId());
 
-            if (!info.isPresent()) {
+            if (info.isEmpty()) {
                 throw new DotDataException("Can't find ContentletVersionInfo for Identifier: "
                         + contentlet.getIdentifier() + ". Lang: " + contentlet.getLanguageId());
             }
@@ -333,7 +333,7 @@ public class URLMapBundler implements IBundler {
                 contentlet.getLanguageId() == this.langAPI.getDefaultLanguage().getId() &&
                 !this.config.getLanguages().isEmpty()) {
                 for (final String languageId : this.config.getLanguages()) {
-                    writeFileToDisk(bundleOutput, contentlet, new Long(languageId), wrap, site, url);
+                    writeFileToDisk(bundleOutput, contentlet, Long.valueOf(languageId), wrap, site, url);
                 }
             } else {
                 writeFileToDisk(bundleOutput, contentlet, contentlet.getLanguageId(), wrap, site, url);

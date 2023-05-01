@@ -67,7 +67,6 @@ import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -453,7 +452,7 @@ public class WorkflowResourceLicenseIntegrationTest {
                         actionCommentable(false).
                         requiresCheckout(false).
                         actionNextAssign(adminRoleId).
-                        whoCanUse(Collections.singletonList("")).
+                        whoCanUse(List.of("")).
                         actionCondition("").
                         build();
 
@@ -489,7 +488,7 @@ public class WorkflowResourceLicenseIntegrationTest {
                     actionCommentable(false).
                     requiresCheckout(false).
                     actionNextAssign(adminRoleId).
-                    whoCanUse(Collections.singletonList("")).
+                    whoCanUse(List.of("")).
                     actionCondition("").
                     build();
 

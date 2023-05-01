@@ -173,7 +173,7 @@ public class LDAPImpl extends BaseAuthenticator {
 	 */
 	@Override
 	public ArrayList<String> loadGroups(String username, String password) {
-		ArrayList<String> groups = new ArrayList<String>();
+		ArrayList<String> groups = new ArrayList<>();
 		LDAPConnection lc = getBindedConnection();
 		LDAPEntry ldapEntry;
 		try{

@@ -24,7 +24,7 @@ public class DeviceAPIImpl implements DeviceAPI {
                 currentDevice = Optional.ofNullable(APILocator.getContentletAPI().find(currentDeviceId, user,
                         false));
 
-                if (!currentDevice.isPresent()) {
+                if (currentDevice.isEmpty()) {
                     request.getSession().removeAttribute(WebKeys.CURRENT_DEVICE);
                 }
             }

@@ -71,7 +71,7 @@ public class StringUtils {
             return   Collections.emptyList();
          }
         
-        List<String> tokensList = new ArrayList<String>();
+        List<String> tokensList = new ArrayList<>();
         boolean inQuotes = false;
         StringBuilder b = new StringBuilder();
         for (char c : importPackage.toCharArray()) {
