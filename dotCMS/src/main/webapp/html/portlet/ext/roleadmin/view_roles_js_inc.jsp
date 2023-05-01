@@ -1,4 +1,4 @@
-<%@page import="com.dotmarketing.business.APILocator"%>
+ <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.dotmarketing.business.RoleAPI"%>
@@ -222,7 +222,6 @@
 		var menu = dijit.byId("roleTreeMenu");
         // when we right-click anywhere on the tree, make sure we open the menu
         menu.bindDomNode(dojo.byId('rolesTree'));
-
 		dojo.connect(tree, "onMouseDown", this, (function(e) {
 			if (e.button == "2") {
 				var selectedNode = dijit.byId("rolesTree").selectedNode;
@@ -241,8 +240,8 @@
 			var item = tn.item && tn.item.id ? tn.item :
 					tree.lastFocused && tree.lastFocused.item ?
 							tree.lastFocused.item : null;
+			var role = item && item.id ? (item.id.includes("treeNode") ? findRole(item.id.replace("treeNode-", "")) : findRole(item.id)) : null;
 
-			var role = item && item.id ? findRole(item.id.replace("treeNode-","")) : null;
 			if (!role && item && item.id) {
 				console.info("No role found for item: " + item.id);
 				return;
