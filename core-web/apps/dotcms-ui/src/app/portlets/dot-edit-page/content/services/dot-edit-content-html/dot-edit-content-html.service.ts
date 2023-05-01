@@ -969,6 +969,7 @@ export class DotEditContentHtmlService {
                 relocateInfo.contentlet,
                 this.currentPage
             )
+            .pipe(take(1))
             .subscribe((contentletHtml: string) =>
                 this.replaceHTMLContentlet(contentletHtml, contenletEl)
             );
@@ -986,7 +987,7 @@ export class DotEditContentHtmlService {
     }
 
     /**
-     *
+     * Get DotPageContainer from the container element
      *
      * @private
      * @param {HTMLElement} container

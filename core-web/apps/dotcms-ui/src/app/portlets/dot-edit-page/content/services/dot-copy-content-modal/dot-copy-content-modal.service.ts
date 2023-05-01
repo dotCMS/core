@@ -41,10 +41,11 @@ export class DotCopyContentModalService {
     ) {}
 
     /**
+     * Open a modal with two options to copy or not the content
      *
-     * @private
      * @param {DotCopyContent} copyContent
      * @memberof DotEditContentComponent
+     * @returns {Observable<ModelCopyContentResponse>}
      */
     open(): Observable<ModelCopyContentResponse> {
         const ref = this.dialogService.open(DotBinaryOptionSelectorComponent, {

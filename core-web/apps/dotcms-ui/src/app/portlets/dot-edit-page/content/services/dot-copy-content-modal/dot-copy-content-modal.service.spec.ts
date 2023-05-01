@@ -56,10 +56,6 @@ describe('DotCopyContentModalService', () => {
         dialogService = TestBed.inject(DialogService);
     });
 
-    it('should be created', () => {
-        expect(service).toBeTruthy();
-    });
-
     it('should not return anything if the user close the modal without select an option', (done) => {
         spyOn(dialogService, 'open').and.returnValue({
             onClose: of('')
