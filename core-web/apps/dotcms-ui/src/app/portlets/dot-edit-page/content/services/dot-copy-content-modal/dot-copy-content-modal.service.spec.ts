@@ -37,7 +37,7 @@ const DYNAMIC_DIALOG_CONFIG = {
     contentStyle: { padding: '0px' }
 };
 
-fdescribe('DotCopyContentModalService', () => {
+describe('DotCopyContentModalService', () => {
     let service: DotCopyContentModalService;
     let dialogService: DialogService;
 
