@@ -1805,7 +1805,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
     /**
      * Method to Test: {@link MultiTreeAPI#copyMultiTree(String, List, String)}}
      * When:
-     * - Have a Page with several MultiTree into the DEFAULT Variant and different Peraonalization.
+     * - Have a Page with several MultiTree into the DEFAULT Variant and different Perzonalization.
      * - And copy the MUltiTree to a new {@link Variant}
      *
      * Should: Copy all the MultiTree to the new Variant and must keep the same Peraonalization
@@ -1909,15 +1909,15 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         assertEquals(3, contentletsDefaultVariant.size());
 
         for (final Map<String, String> multiTreeMap : contentletsDefaultVariant) {
-            if (multiTreeMap.get("child").contains(contentlet_1.getIdentifier())) {
-                assertTrue(extraVariantMap.get(0).get("variant_id").contains(VariantAPI.DEFAULT_VARIANT.name()));
-                assertTrue(extraVariantMap.get(0).get("personalization").contains(DOT_PERSONALIZATION_DEFAULT));
-            } else if (multiTreeMap.get("child").contains(contentlet_2.getIdentifier())) {
-                assertTrue(extraVariantMap.get(0).get("variant_id").contains(VariantAPI.DEFAULT_VARIANT.name()));
-                assertTrue(extraVariantMap.get(0).get("personalization").contains("another_persona"));
-            } else if (multiTreeMap.get("child").contains(contentlet_3.getIdentifier())) {
-                assertTrue(extraVariantMap.get(0).get("variant_id").contains(VariantAPI.DEFAULT_VARIANT.name()));
-                assertTrue(extraVariantMap.get(0).get("personalization").contains(DOT_PERSONALIZATION_DEFAULT));
+            if (multiTreeMap.get("child").equals(contentlet_1.getIdentifier())) {
+                assertTrue(multiTreeMap.get("variant_id").equals(VariantAPI.DEFAULT_VARIANT.name()));
+                assertTrue(multiTreeMap.get("personalization").equals(DOT_PERSONALIZATION_DEFAULT));
+            } else if (multiTreeMap.get("child").equals(contentlet_2.getIdentifier())) {
+                assertTrue(multiTreeMap.get("variant_id").equals(VariantAPI.DEFAULT_VARIANT.name()));
+                assertTrue(multiTreeMap.get("personalization").equals("another_persona"));
+            } else if (multiTreeMap.get("child").equals(contentlet_3.getIdentifier())) {
+                assertTrue(multiTreeMap.get("variant_id").equals(VariantAPI.DEFAULT_VARIANT.name()));
+                assertTrue(multiTreeMap.get("personalization").equals(DOT_PERSONALIZATION_DEFAULT));
             } else {
                 fail("Contentlet not found");
             }
