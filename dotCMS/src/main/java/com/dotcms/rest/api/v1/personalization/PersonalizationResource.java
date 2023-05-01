@@ -93,7 +93,7 @@ public class PersonalizationResource {
 
         Logger.debug(this, ()-> "Personalizing all containers on the page personas per page: " + personalizationPersonaPageForm.getPageId());
 
-        if (!this.personaAPI.findPersonaByTag(personalizationPersonaPageForm.getPersonaTag(), user, true).isPresent()) {
+        if (this.personaAPI.findPersonaByTag(personalizationPersonaPageForm.getPersonaTag(), user, true).isEmpty()) {
 
             throw new BadRequestException("Does not exists a Persona with the tag: " + personalizationPersonaPageForm.getPersonaTag());
         }
@@ -149,7 +149,7 @@ public class PersonalizationResource {
         }
 
         if (MultiTree.DOT_PERSONALIZATION_DEFAULT.equalsIgnoreCase(personalization) ||
-                !this.personaAPI.findPersonaByTag(personalization, user, true).isPresent()) {
+                this.personaAPI.findPersonaByTag(personalization, user, true).isEmpty()) {
 
             throw new BadRequestException("Persona tag: " + personalization + " does not exist or the user does not have permissions to it");
         }

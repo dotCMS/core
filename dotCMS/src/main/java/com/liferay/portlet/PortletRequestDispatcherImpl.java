@@ -200,7 +200,7 @@ public class PortletRequestDispatcherImpl implements PortletRequestDispatcher {
 			if (ServerDetector.isJetty()) {
 				portletServletReq.setAttribute(
 					"org.mortbay.jetty.servlet.Dispatcher.shared_session",
-					new Boolean(true));
+                        Boolean.valueOf(true));
 			}
 
 			_rd.include(portletServletReq, portletServletRes);

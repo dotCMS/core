@@ -8,7 +8,6 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -54,7 +53,7 @@ public class TranslationUtilTest extends UnitTestBase {
         fieldsToFilter.add(checkBoxField);
 
         List<Field> result = TranslationUtil.getUtil()
-            .filterFields(fieldsToFilter, Collections.singletonList(FieldType.DATE.toString()), null);
+            .filterFields(fieldsToFilter, List.of(FieldType.DATE.toString()), null);
 
         assertEquals(checkBoxField, result.get(0));
     }
@@ -75,10 +74,10 @@ public class TranslationUtilTest extends UnitTestBase {
         fieldsToFilter.add(checkBoxField);
 
         List<Field> result = TranslationUtil.getUtil()
-            .filterFields(fieldsToFilter, Collections.singletonList(FieldType.DATE.toString()),
-                Collections.singletonList("velVar"));
+            .filterFields(fieldsToFilter, List.of(FieldType.DATE.toString()),
+                List.of("velVar"));
 
-        assertEquals(result, Collections.singletonList(dateField));
+        assertEquals(result, List.of(dateField));
     }
 
     @Test
@@ -97,12 +96,12 @@ public class TranslationUtilTest extends UnitTestBase {
         fieldsToFilter.add(checkBoxField);
 
         List<Field> result = TranslationUtil.getUtil()
-            .filterFields(fieldsToFilter, Collections.singletonList(FieldType.DATE.toString()),
-                Collections.singletonList("thisIsNotaVelVarName"));
+            .filterFields(fieldsToFilter, List.of(FieldType.DATE.toString()),
+                List.of("thisIsNotaVelVarName"));
 
 
 
-        assertEquals(result, Collections.singletonList(dateField));
+        assertEquals(result, List.of(dateField));
     }
 
     @Test

@@ -59,7 +59,7 @@ public class FormAJAXProxy extends ParentProxy{
 		if(allowExecution()){
 			return FormAJAX.searchFormWidget(formStructureInode);
 		}else{
-			return new HashMap<String, Object>();
+			return new HashMap<>();
 		}
 	}
 	

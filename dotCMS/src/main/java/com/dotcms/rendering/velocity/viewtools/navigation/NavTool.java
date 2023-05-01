@@ -124,8 +124,8 @@ public class NavTool implements ViewTool {
         result.setOrder(folder.getSortOrder());
         result.setType("folder");
         result.setPermissionId(folder.getPermissionId());
-        List<NavResult> children = new ArrayList<NavResult>();
-        List<String> folderIds = new ArrayList<String>();
+        List<NavResult> children = new ArrayList<>();
+        List<String> folderIds = new ArrayList<>();
         result.setChildren(children);
         result.setChildrenFolderIds(folderIds);
         result.setShowOnMenu(folder.isShowOnMenu());

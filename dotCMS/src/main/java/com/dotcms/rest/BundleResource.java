@@ -95,7 +95,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLDecoder;
-import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -433,7 +432,7 @@ public class BundleResource {
         this.systemMessageEventUtil.pushMessage(new SystemMessageBuilder()
                 .setMessage(message)
                 .setLife(DateUtil.TEN_SECOND_MILLIS)
-                .setSeverity(MessageSeverity.ERROR).create(), Collections.singletonList(initData.getUser().getUserId()));
+                .setSeverity(MessageSeverity.ERROR).create(), List.of(initData.getUser().getUserId()));
     }
 
     private void sendWarningDeleteBundleMessage(final int bundleDeletesSize,
@@ -452,7 +451,7 @@ public class BundleResource {
         this.systemMessageEventUtil.pushMessage(new SystemMessageBuilder()
                 .setMessage(message)
                 .setLife(DateUtil.SEVEN_SECOND_MILLIS)
-                .setSeverity(MessageSeverity.WARNING).create(), Collections.singletonList(userId));
+                .setSeverity(MessageSeverity.WARNING).create(), List.of(userId));
 
         APILocator.getSystemEventsAPI().push(SystemEventType.DELETE_BUNDLE,
                 new Payload(
@@ -475,7 +474,7 @@ public class BundleResource {
         this.systemMessageEventUtil.pushMessage(new SystemMessageBuilder()
                 .setMessage(message)
                 .setLife(DateUtil.SEVEN_SECOND_MILLIS)
-                .setSeverity(MessageSeverity.INFO).create(), Collections.singletonList(userId));
+                .setSeverity(MessageSeverity.INFO).create(), List.of(userId));
 
         APILocator.getSystemEventsAPI().push(SystemEventType.DELETE_BUNDLE,
                 new Payload(
@@ -1015,7 +1014,7 @@ public class BundleResource {
 
         final Optional<Reader> manifestInputStreamOptional = ManifestUtil.getManifestInputStream(bundleTarGzipFile);
 
-        if (!manifestInputStreamOptional.isPresent()) {
+        if (manifestInputStreamOptional.isEmpty()) {
                 throw new DoesNotExistException("Manifest not exists in bundle: " + bundleId);
         }
 

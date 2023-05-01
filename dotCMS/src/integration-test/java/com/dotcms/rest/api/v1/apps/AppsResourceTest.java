@@ -56,7 +56,6 @@ import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -155,14 +154,14 @@ public class AppsResourceTest extends IntegrationTestBase {
         final ContentDisposition contentDisposition1 = mock(ContentDisposition.class);
         when(contentDisposition1.getFileName()).thenReturn(fileName);
         when(filePart1.getContentDisposition()).thenReturn(contentDisposition1);
-        when(formDataMultiPart.getFields("file")).thenReturn(Collections.singletonList(filePart1));
+        when(formDataMultiPart.getFields("file")).thenReturn(List.of(filePart1));
         if(null != json) {
             final FormDataBodyPart filePart2 = mock(FormDataBodyPart.class);
             when(filePart2.getEntityAs(any(Class.class))).thenReturn(IOUtils.toInputStream(json));
             final ContentDisposition contentDisposition2 = mock(ContentDisposition.class);
             when(contentDisposition2.getParameters()).thenReturn(ImmutableMap.of("name", "json"));
             when(filePart2.getContentDisposition()).thenReturn(contentDisposition2);
-            when(formDataMultiPart.getBodyParts()).thenReturn(Collections.singletonList(filePart2));
+            when(formDataMultiPart.getBodyParts()).thenReturn(List.of(filePart2));
         }
         return formDataMultiPart;
     }

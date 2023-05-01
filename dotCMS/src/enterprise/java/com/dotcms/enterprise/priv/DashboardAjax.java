@@ -113,7 +113,7 @@ public class DashboardAjax extends ParentProxy{
 
 	public Map<String, Object> getHostStatistics(String hostId, String viewType, boolean showIgnored) throws DotRuntimeException, PortalException, SystemException {
 
-		Map<String, Object> results = new HashMap<String, Object>();
+		Map<String, Object> results = new HashMap<>();
 
 		WebContext ctx = WebContextFactory.get();
 		User user = userWebAPI.getLoggedInUser(ctx.getHttpServletRequest());
@@ -176,12 +176,12 @@ public class DashboardAjax extends ParentProxy{
 			}
 
 
-			List<Map<String, String>> contentMapList = new ArrayList<Map<String, String>>();
+			List<Map<String, String>> contentMapList = new ArrayList<>();
 			if(allowExecution()){	
 				List<DashboardSummaryContent> contents = dashboardAPI.getTopContent(hostId, fromDate, toDate, 5, 0, " sum(summaryContent.hits) desc ");
-				Map<String,String> contentMap = new HashMap<String,String>();
+				Map<String,String> contentMap = new HashMap<>();
 				for(DashboardSummaryContent content : contents){
-					contentMap = new HashMap<String,String>();
+					contentMap = new HashMap<>();
 					contentMap.put("inode", content.getInode());
 					contentMap.put("title", content.getTitle());
 					String url = "";
@@ -200,12 +200,12 @@ public class DashboardAjax extends ParentProxy{
 			results.put("topContent", contentMapList);
 
 
-			List<Map<String, String>> pageMapList = new ArrayList<Map<String, String>>();
+			List<Map<String, String>> pageMapList = new ArrayList<>();
 			if(allowExecution()){	
 				List<DashboardSummaryPage> pages = dashboardAPI.getTopPages(hostId, fromDate, toDate, 5, 0, " sum(summaryPage.hits) desc ");
-				Map<String,String> pageMap = new HashMap<String,String>();
+				Map<String,String> pageMap = new HashMap<>();
 				for(DashboardSummaryPage page : pages){
-					pageMap = new HashMap<String,String>();
+					pageMap = new HashMap<>();
 					pageMap.put("inode", page.getInode());
 					pageMap.put("uri", page.getUri());
 					pageMap.put("hits", numberFormat.format(page.getHits()));
@@ -215,12 +215,12 @@ public class DashboardAjax extends ParentProxy{
 			results.put("topPages", pageMapList);
 
 
-			List<Map<String, String>> refererMapList = new ArrayList<Map<String, String>>();
+			List<Map<String, String>> refererMapList = new ArrayList<>();
 			if(allowExecution()){	
 				List<DashboardSummaryReferer> referers = dashboardAPI.getTopReferers(hostId, fromDate, toDate, 11, 0, " sum(summaryRef.hits) desc ");
-				Map<String,String> refererMap = new HashMap<String,String>();
+				Map<String,String> refererMap = new HashMap<>();
 				for(DashboardSummaryReferer referer : referers){
-					refererMap = new HashMap<String,String>();
+					refererMap = new HashMap<>();
 					refererMap.put("uri", referer.getUri());
 					refererMap.put("hits", numberFormat.format(referer.getHits()));
 					refererMapList.add(refererMap);
@@ -229,12 +229,12 @@ public class DashboardAjax extends ParentProxy{
 			results.put("topReferers", refererMapList);
 
 
-			List<Map<String, String>> summary404MapList = new ArrayList<Map<String, String>>();
+			List<Map<String, String>> summary404MapList = new ArrayList<>();
 			if(allowExecution()){	
 				List<DashboardSummary404> summary404s = dashboardAPI.get404s(user.getUserId(), hostId, showIgnored, fromDate, toDate, 5, 0, " summary404.uri desc,summary404.refererUri asc  ");
-				Map<String,String> summary404Map = new HashMap<String,String>();
+				Map<String,String> summary404Map = new HashMap<>();
 				for(DashboardSummary404 summary404 : summary404s){
-					summary404Map = new HashMap<String,String>();
+					summary404Map = new HashMap<>();
 					summary404Map.put("referer", summary404.getRefererUri()==null?"":summary404.getRefererUri());
 					summary404Map.put("uri", summary404.getUri());
 					summary404Map.put("ignored", String.valueOf(summary404.isIgnored()));
@@ -251,7 +251,7 @@ public class DashboardAjax extends ParentProxy{
 				c1.add(Calendar.DATE,-2);
 				fromDate = c1.getTime();
 			}
-			List<DashboardSummaryVisits> summaryVisits = new ArrayList<DashboardSummaryVisits>();
+			List<DashboardSummaryVisits> summaryVisits = new ArrayList<>();
 			if(allowExecution()){	
 				summaryVisits = dashboardAPI.getDashboardSummaryVisits(hostId, vt, fromDate, toDate);
 				for(DashboardSummaryVisits visit : summaryVisits){
@@ -310,16 +310,16 @@ public class DashboardAjax extends ParentProxy{
 		toDate = c2.getTime();
 
 
-		Map<String, Object> results = new HashMap<String, Object>();
+		Map<String, Object> results = new HashMap<>();
 
 		WebContext ctx = WebContextFactory.get();
 		User user = userWebAPI.getLoggedInUser(ctx.getHttpServletRequest());
-		List<Map<String, String>> summary404MapList = new ArrayList<Map<String, String>>();
+		List<Map<String, String>> summary404MapList = new ArrayList<>();
 		if(allowExecution()){
 			List<DashboardSummary404> summary404s = dashboardAPI.get404s(user.getUserId(), hostId, showIgnored, fromDate, toDate, limit, offset, orderBy);
-			Map<String,String> summary404Map = new HashMap<String,String>();
+			Map<String,String> summary404Map = new HashMap<>();
 			for(DashboardSummary404 summary404 : summary404s){
-				summary404Map = new HashMap<String,String>();
+				summary404Map = new HashMap<>();
 				summary404Map.put("referer", summary404.getRefererUri()==null?"":summary404.getRefererUri());
 				summary404Map.put("uri", summary404.getUri());
 				summary404Map.put("ignored", String.valueOf(summary404.isIgnored()));
@@ -376,13 +376,13 @@ public class DashboardAjax extends ParentProxy{
 		toDate = c2.getTime();
 
 
-		Map<String, Object> results = new HashMap<String, Object>();
-		List<Map<String, String>> pageMapList = new ArrayList<Map<String, String>>();
+		Map<String, Object> results = new HashMap<>();
+		List<Map<String, String>> pageMapList = new ArrayList<>();
 		if(allowExecution()){
 			List<DashboardSummaryPage> pages = dashboardAPI.getTopPages(hostId, fromDate, toDate, limit, offset, orderBy);
-			Map<String,String> pageMap = new HashMap<String,String>();
+			Map<String,String> pageMap = new HashMap<>();
 			for(DashboardSummaryPage page : pages){
-				pageMap = new HashMap<String,String>();
+				pageMap = new HashMap<>();
 				pageMap.put("inode", page.getInode());
 				pageMap.put("uri", page.getUri());
 				pageMap.put("hits", numberFormat.format(page.getHits()));
@@ -438,13 +438,13 @@ public class DashboardAjax extends ParentProxy{
 		c2.set(c2.get(Calendar.YEAR), c2.get(Calendar.MONTH), c2.get(Calendar.DAY_OF_MONTH), 0, 0);
 		toDate = c2.getTime();
 
-		Map<String, Object> results = new HashMap<String, Object>();
-		List<Map<String, String>> contentMapList = new ArrayList<Map<String, String>>();
+		Map<String, Object> results = new HashMap<>();
+		List<Map<String, String>> contentMapList = new ArrayList<>();
 		if(allowExecution()){
 			List<DashboardSummaryContent> contents = dashboardAPI.getTopContent(hostId, fromDate, toDate, limit, offset, orderBy);
-			Map<String,String> contentMap = new HashMap<String,String>();
+			Map<String,String> contentMap = new HashMap<>();
 			for(DashboardSummaryContent content : contents){
-				contentMap = new HashMap<String,String>();
+				contentMap = new HashMap<>();
 				contentMap.put("inode", content.getInode());
 				contentMap.put("title", content.getTitle());
 				String url = "";
@@ -509,13 +509,13 @@ public class DashboardAjax extends ParentProxy{
 		c2.set(c2.get(Calendar.YEAR), c2.get(Calendar.MONTH), c2.get(Calendar.DAY_OF_MONTH), 0, 0);
 		toDate = c2.getTime();
 
-		Map<String, Object> results = new HashMap<String, Object>();
-		List<Map<String, String>> refererMapList = new ArrayList<Map<String, String>>();
+		Map<String, Object> results = new HashMap<>();
+		List<Map<String, String>> refererMapList = new ArrayList<>();
 		if(allowExecution()){
 			List<DashboardSummaryReferer> referers = dashboardAPI.getTopReferers(hostId, fromDate, toDate, limit, offset, orderBy);
-			Map<String,String> refererMap = new HashMap<String,String>();
+			Map<String,String> refererMap = new HashMap<>();
 			for(DashboardSummaryReferer referer : referers){
-				refererMap = new HashMap<String,String>();
+				refererMap = new HashMap<>();
 				refererMap.put("uri", referer.getUri());
 				refererMap.put("hits", numberFormat.format(referer.getHits()));
 				refererMapList.add(refererMap);
@@ -547,7 +547,7 @@ public class DashboardAjax extends ParentProxy{
 
 
 	public Map<String, Object> getWorkStreams(String hostId, String userId, String fromDateStr, String toDateStr, int limit, int offset, String orderBy) throws DotRuntimeException, PortalException, SystemException, DotHibernateException, DotDataException{
-		Map<String, Object> results = new HashMap<String, Object>();
+		Map<String, Object> results = new HashMap<>();
 		WebContext ctx = WebContextFactory.get();
 		User user = userWebAPI.getLoggedInUser(ctx.getHttpServletRequest());
 		int pageNumber = offset;
@@ -572,15 +572,15 @@ public class DashboardAjax extends ParentProxy{
 		}catch(ParseException pe){
 
 		}
-		List<Map<String, String>> workStreamMapList = new ArrayList<Map<String, String>>();
+		List<Map<String, String>> workStreamMapList = new ArrayList<>();
 		if(allowExecution()){
 			List<DashboardWorkStream> workStreams = dashboardAPI.getWorkStreamList(user, hostId, userId, fromDate, toDate, limit, offset, orderBy);
-			Map<String,String> workStreamMap = new HashMap<String,String>();
+			Map<String,String> workStreamMap = new HashMap<>();
 			Contentlet con = null;
 			Structure structure = null;
 			String structureInode = "";
 			for(DashboardWorkStream ws : workStreams){
-				workStreamMap = new HashMap<String,String>();
+				workStreamMap = new HashMap<>();
 				workStreamMap.put("title", UtilMethods.isSet(ws.getName())?ws.getName():"");
 				workStreamMap.put("hostname", UtilMethods.isSet(ws.getHost().getHostname())?ws.getHost().getHostname():"");
 				workStreamMap.put("username", UtilMethods.isSet(ws.getModUser())?ws.getModUser().getFirstName() + " " + ws.getModUser().getLastName():"");
@@ -617,11 +617,11 @@ public class DashboardAjax extends ParentProxy{
 
 		int pageNumber = offset;
 		offset = (offset - 1) * perPageHosts;
-		Map<String,Object> contentletFormData = new HashMap<String,Object>();	
-		Map<String, Object> params = new HashMap<String, Object>();
+		Map<String,Object> contentletFormData = new HashMap<>();	
+		Map<String, Object> params = new HashMap<>();
 		String categories = "";
 		String hostId = "";
-		Map<String, Object> results = new HashMap<String, Object>();
+		Map<String, Object> results = new HashMap<>();
 
 		// Storing form data into map.
 		for (Iterator iterator = formData.iterator(); iterator.hasNext();) {
@@ -740,14 +740,14 @@ public class DashboardAjax extends ParentProxy{
 
 		WebContext ctx = WebContextFactory.get();
 		User user = userWebAPI.getLoggedInUser(ctx.getHttpServletRequest());
-		List<Map<String, Object>> hostMapList = new ArrayList<Map<String, Object>>();
-		List<Object> hostMapFieldsList = new ArrayList<Object>();
-		Map<String,Object> hostMap = new HashMap<String,Object>();
+		List<Map<String, Object>> hostMapList = new ArrayList<>();
+		List<Object> hostMapFieldsList = new ArrayList<>();
+		Map<String,Object> hostMap = new HashMap<>();
 		if(allowExecution()){
 			List<Host> hosts =  dashboardAPI.getHostList(user, false, params, limit, offset, orderBy);
 			for(Host host : hosts){
-				hostMap = new HashMap<String,Object>();
-				hostMapFieldsList = new ArrayList<Object>();
+				hostMap = new HashMap<>();
+				hostMapFieldsList = new ArrayList<>();
 				HostWrapper hostWrapper = (HostWrapper)host;
 				String pageViews = numberFormat.format(hostWrapper.getPageViews()) + " (" + ((Long.valueOf(hostWrapper.getPageViewsDiff()).intValue()>0)?("+" + hostWrapper.getPageViewsDiff()):hostWrapper.getPageViewsDiff()) +"%)"; 
 				String inode = host.getInode();
@@ -791,7 +791,7 @@ public class DashboardAjax extends ParentProxy{
 
 
 	public Map<String, Object> generateDashboardData(int monthFrom, int monthTo, int yearFrom, int yearTo){
-		Map<String,Object> generatorMap = new HashMap<String,Object>();   
+		Map<String,Object> generatorMap = new HashMap<>();   
 		boolean isError = false;
 		if(allowExecution()){
 			WebContext ctx = WebContextFactory.get();
@@ -851,7 +851,7 @@ public class DashboardAjax extends ParentProxy{
 
 	public Map<String, Object> getDataGeneratorProgress(){
 
-		Map<String,Object> generatorMap = new HashMap<String,Object>();
+		Map<String,Object> generatorMap = new HashMap<>();
 		if(allowExecution()){
 			WebContext ctx = WebContextFactory.get();
 			HttpSession session = ctx.getSession();

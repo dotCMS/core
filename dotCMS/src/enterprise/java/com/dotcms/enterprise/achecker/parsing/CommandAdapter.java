@@ -105,7 +105,7 @@ public class CommandAdapter extends PostfixMathCommand {
 			else {
 				if ( numberOfParameters == -1 ) {
 					int realSize = inStack.size();
-					List<Object> list = new ArrayList<Object>(realSize);
+					List<Object> list = new ArrayList<>(realSize);
 					for ( int i = 0; i < realSize; i ++ )
 						list.add(inStack.pop());
 					Object ret = method.invoke(delegate, list);

@@ -60,7 +60,7 @@ public class InodeFactory {
 		}
 
 		try {
-			final String tableName = c.newInstance().getType();
+			final String tableName = c.getDeclaredConstructor().newInstance().getType();
 			final HibernateUtil dh = new HibernateUtil(c);
 
 			String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName + ", tree tree, inode "
@@ -215,7 +215,7 @@ public class InodeFactory {
 		}
 		try {
 
-			String tableName = ((Inode) c.newInstance()).getType();
+			String tableName = ((Inode) c.getDeclaredConstructor().newInstance()).getType();
 			DotConnect db = new DotConnect();
 			db
 			.setSQL("select count(*) as test from inode, tree where inode.inode = tree.child and tree.parent = ?  and inode.type = '"
@@ -235,7 +235,7 @@ public class InodeFactory {
 			throw new DotStateException("Identifiers are no longer Inodes!");
 		}
 		try {
-			Map<String,Integer> statistics = new HashMap<String,Integer>();
+			Map<String,Integer> statistics = new HashMap<>();
 
 			if( inodeClasses != null && inodeClasses.length > 0 ) {
 
@@ -245,7 +245,7 @@ public class InodeFactory {
 				int n = 0;
 
 				for(Class<? extends Inode> anInodeClass: inodeClasses) {
-					types[n++] = anInodeClass.newInstance().getType();
+					types[n++] = anInodeClass.getDeclaredConstructor().newInstance().getType();
 					arrayParams.append("?,");
 				}
 				
@@ -289,7 +289,7 @@ public class InodeFactory {
 		String InodeQuery = "Select count(*) as count from inode where inode = ?";
 		dc.setSQL(InodeQuery);
 		dc.addParam(inode);
-		ArrayList<Map<String, String>> results = new ArrayList<Map<String, String>>();
+		ArrayList<Map<String, String>> results = new ArrayList<>();
 		try {
 			results = dc.getResults();
 		} catch (DotDataException e) {

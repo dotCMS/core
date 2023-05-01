@@ -166,7 +166,7 @@ public class StringUtilities
 			return new String[0];
 		}
 
-		final List<String> result = new ArrayList<String>();
+		final List<String> result = new ArrayList<>();
 		String elem = null;
 		int i = 0, j = 0;
 		while (j != -1 && j < len)
@@ -205,7 +205,7 @@ public class StringUtilities
     }
     
     public static String[] segment(String source, int maxSegmentSize) {
-        ArrayList<String> tmp = new ArrayList<String>();
+        ArrayList<String> tmp = new ArrayList<>();
         if (source.length() <= maxSegmentSize) {
             return new String[] { source };
         }
