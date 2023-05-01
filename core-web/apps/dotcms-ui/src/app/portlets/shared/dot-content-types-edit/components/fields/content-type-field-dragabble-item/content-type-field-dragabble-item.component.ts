@@ -102,6 +102,16 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit, OnDestro
     }
 
     /**
+     *To reassign the open variable
+     *
+     * @param {boolean} state
+     * @memberof ContentTypesFieldDragabbleItemComponent
+     */
+    setOpen(state: boolean) {
+        this.open = state;
+    }
+
+    /**
      * This method opens the edit modal when the user clicks on the field
      * @param {MouseEvent} $event
      * @memberof ContentTypesFieldDragabbleItemComponent
@@ -111,7 +121,6 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit, OnDestro
         $event.stopPropagation();
         this.edit.emit(this.field);
         this.overlayPanel.hide();
-        this.open = false;
     }
 
     /**
@@ -133,7 +142,6 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit, OnDestro
     onWindowClick($event: MouseEvent) {
         $event.stopPropagation();
         this.overlayPanel.hide();
-        this.open = false;
     }
 
     /**
@@ -144,11 +152,9 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit, OnDestro
     openAttr($event: MouseEvent) {
         $event.stopPropagation();
         this.overlayPanel.show($event, $event.target);
-        this.open = true;
 
         setTimeout(() => {
             this.overlayPanel.hide();
-            this.open = false;
         }, 2000);
     }
 

@@ -34,7 +34,13 @@
     </div>
 </div>
 
-<p-overlayPanel #op appendTo="body" styleClass="contentType__overlayPanel">
+<p-overlayPanel
+    #op
+    (onShow)="setOpen(true)"
+    (onHide)="setOpen(false)"
+    appendTo="body"
+    styleClass="contentType__overlayPanel"
+>
     <div class="overlay-attributes-container">
         <p class="field-name">{{ fieldTypeLabel }}</p>
         <p class="attributes-text" *ngIf="fieldAttributesString.length">
