@@ -1,4 +1,4 @@
-import { BehaviorSubject, Observable, of, Subject } from 'rxjs';
+import { BehaviorSubject, forkJoin, Observable, of, Subject } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
@@ -16,7 +16,7 @@ import {
     DotMessageService,
     DotPageRenderService
 } from '@dotcms/data-access';
-import { HttpCode, LoginService, User } from '@dotcms/dotcms-js';
+import { CurrentUser, HttpCode, LoginService, User } from '@dotcms/dotcms-js';
 import {
     DotCMSContentlet,
     DotDevice,
@@ -216,10 +216,13 @@ export class DotPageStateService {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { url, ...extraParams } = this.dotRouterService.queryParams;
 
-        return this.dotPageRenderService.get(options, extraParams).pipe(
-            catchError((err) => this.handleSetPageStateFailed(err)),
+        return forkJoin([
+            this.dotPageRenderService.get(options, extraParams),
+            this.loginService.getCurrentUser()
+        ]).pipe(
+            catchError(([err]: [err: HttpErrorResponse]) => this.handleSetPageStateFailed(err)),
             take(1),
-            switchMap((page: DotPageRenderParameters) => {
+            switchMap(([page, user]: [page: DotPageRenderParameters, user: CurrentUser]) => {
                 if (page) {
                     const urlParam = generateDotFavoritePageUrl(page);
 
@@ -227,7 +230,7 @@ export class DotPageStateService {
                         .get({
                             itemsPerPage: 10,
                             offset: '0',
-                            query: `+contentType:DotFavoritePage +deleted:false +working:true +owner:dotcms.org.2795 +DotFavoritePage.url_dotraw:${urlParam}`
+                            query: `+contentType:DotFavoritePage +deleted:false +working:true +owner:${user.userId} +DotFavoritePage.url_dotraw:${urlParam}`
                         })
                         .pipe(
                             take(1),

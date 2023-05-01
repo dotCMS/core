@@ -74,7 +74,7 @@ export interface DotPagesState {
     portletStatus: ComponentStatus;
 }
 
-const FAVORITE_PAGES_ES_QUERY = `+contentType:dotFavoritePage +deleted:false +working:true +owner:dotcms.org.2795`;
+const FAVORITE_PAGES_ES_QUERY = `+contentType:dotFavoritePage +deleted:false +working:true`;
 
 @Injectable()
 export class DotPageStore extends ComponentStore<DotPagesState> {
@@ -581,13 +581,17 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
     private getFavoritePagesData = (limit: number, identifier?: string) => {
         const identifierQuery = identifier ? `+identifier:${identifier}` : '';
 
-        return this.dotESContentService.get({
-            itemsPerPage: limit,
-            offset: '0',
-            query: `${FAVORITE_PAGES_ES_QUERY} ${identifierQuery}`,
-            sortField: 'dotFavoritePage.order',
-            sortOrder: ESOrderDirection.ASC
-        });
+        return this.dotCurrentUser.getCurrentUser().pipe(
+            switchMap(({ userId }) => {
+                return this.dotESContentService.get({
+                    itemsPerPage: limit,
+                    offset: '0',
+                    query: `${FAVORITE_PAGES_ES_QUERY} +owner:${userId} ${identifierQuery}`,
+                    sortField: 'dotFavoritePage.order',
+                    sortOrder: ESOrderDirection.ASC
+                });
+            })
+        );
     };
 
     private getSelectActions(actions: DotCMSWorkflowAction[], item: DotCMSContentlet): MenuItem[] {
