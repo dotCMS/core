@@ -5060,73 +5060,6 @@
 						}
 					},
 					"response": []
-				},
-				{
-					"name": "endExperiment_shouldSucceed",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var jsonData = pm.response.json();",
-									"",
-									"",
-									"pm.test(\"Ended Experiment with expected values\", function () {",
-									"    pm.response.to.have.status(200);",
-									"    pm.expect(jsonData.entity.status).equal(\"ENDED\");",
-									"    pm.expect(jsonData.entity.scheduling.startDate).to.be.not.null;",
-									"    pm.expect(jsonData.entity.scheduling.endDate).to.be.not.null;",
-									"});",
-									"",
-									"",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/experiments/{{experimentToAddVariant}}/_end",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"experiments",
-								"{{experimentToAddVariant}}",
-								"_end"
-							]
-						}
-					},
-					"response": []
 				}
 			]
 		},
@@ -5199,7 +5132,12 @@
 						}
 					},
 					"response": []
-				},
+				}
+			]
+		},
+		{
+			"name": "Targeting Conditions",
+			"item": [
 				{
 					"name": "pre_createExperiment",
 					"event": [
@@ -5265,12 +5203,7 @@
 						}
 					},
 					"response": []
-				}
-			]
-		},
-		{
-			"name": "Targeting Conditions",
-			"item": [
+				},
 				{
 					"name": "addTargetingConditions_shouldSucceed",
 					"event": [
