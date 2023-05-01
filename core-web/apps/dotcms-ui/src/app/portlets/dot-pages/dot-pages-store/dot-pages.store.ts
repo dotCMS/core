@@ -670,7 +670,6 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
 
     constructor(
         private dotCurrentUser: DotCurrentUserService,
-        private dotCurrentUserService: DotCurrentUserService,
         private dotRouterService: DotRouterService,
         private httpErrorManagerService: DotHttpErrorManagerService,
         private dotESContentService: DotESContentService,
@@ -709,7 +708,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             .pipe(
                 take(1),
                 mergeMap(([favoritePages, currentUser, languages, isEnterprise, environments]) => {
-                    return this.dotCurrentUserService
+                    return this.dotCurrentUser
                         .getUserPermissions(
                             currentUser.userId,
                             [UserPermissions.READ, UserPermissions.WRITE],
