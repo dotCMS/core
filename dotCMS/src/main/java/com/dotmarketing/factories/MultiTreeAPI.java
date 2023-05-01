@@ -1,5 +1,6 @@
 package com.dotmarketing.factories;
 
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.exception.DotDataException;
@@ -470,8 +471,16 @@ public interface MultiTreeAPI {
                                              final String variantId
                                         ) throws DotDataException;
 
+    /**
+     * Copy a collection of {@link MultiTree} but to a different {@link Variant}.
+     *
+     * @param pageId {@link String} Page's identifier
+     * @param multiTrees {@link List} of {@link MultiTree} to copy
+     * @param variantName {@link String} name of the variant to copy to
+     * @throws DotDataException
+     */
     void copyMultiTree(final String pageId, final List<MultiTree> multiTrees,
-            String currentVariantId)
+            String variantName)
             throws DotDataException;
 
     /**

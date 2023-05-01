@@ -7,6 +7,7 @@ import com.dotcms.enterprise.achecker.utility.Utility;
 import com.dotcms.rendering.velocity.directive.ParseContainer;
 import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
+import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotcms.variant.VariantAPI;
 import com.dotcms.variant.model.Variant;
@@ -692,8 +693,12 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
      * @throws DotDataException
      */
     @Override
+    @WrapInTransaction
     public void copyMultiTree(final String pageId, final List<MultiTree> multiTrees,
             final String variantName) throws DotDataException {
+
+        DotPreconditions.notNull(multiTrees, () -> "multiTrees can't be null");
+
         final DotConnect db = new DotConnect();
         final List<Params> insertParams = Lists.newArrayList();
 

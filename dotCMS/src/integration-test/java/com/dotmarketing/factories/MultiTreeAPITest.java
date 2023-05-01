@@ -1851,7 +1851,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                 .setPage(page)
                 .setContainer(container)
                 .setContentlet(contentlet_2)
-                .setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setPersonalization("another_persona")
                 .setTreeOrder(2)
                 .nextPersisted();
 
@@ -1893,23 +1893,36 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         assertTrue(contentletsTargetVariant.contains(contentlet_2.getIdentifier()));
         assertTrue(contentletsTargetVariant.contains(contentlet_3.getIdentifier()));
 
-        final Set<String> contentletsExtraVariant = multiTrees.stream()
+        final List<Map<String, String>> extraVariantMap = multiTrees.stream()
                 .filter(multiTreeMap -> extraVariant.name().equals(multiTreeMap.get("variant_id")))
-                .map(multiTreeMap -> multiTreeMap.get("child"))
-                .collect(Collectors.toSet());
+                .collect(Collectors.toList());
 
-        assertEquals(1, contentletsExtraVariant.size());
-        assertTrue(contentletsExtraVariant.contains(contentlet_4.getIdentifier()));
+        assertEquals(1, extraVariantMap.size());
+        assertTrue(extraVariantMap.get(0).get("child").contains(contentlet_4.getIdentifier()));
+        assertTrue(extraVariantMap.get(0).get("variant_id").contains(extraVariant.name()));
+        assertTrue(extraVariantMap.get(0).get("personalization").contains("personalization"));
 
-        final Set<String> contentletsDefaultVariant = multiTrees.stream()
+        final Collection<Map<String, String>> contentletsDefaultVariant = multiTrees.stream()
                 .filter(multiTreeMap -> VariantAPI.DEFAULT_VARIANT.name().equals(multiTreeMap.get("variant_id")))
-                .map(multiTreeMap -> multiTreeMap.get("child"))
                 .collect(Collectors.toSet());
 
         assertEquals(3, contentletsDefaultVariant.size());
-        assertTrue(contentletsDefaultVariant.contains(contentlet_1.getIdentifier()));
-        assertTrue(contentletsDefaultVariant.contains(contentlet_2.getIdentifier()));
-        assertTrue(contentletsDefaultVariant.contains(contentlet_3.getIdentifier()));
+
+        for (final Map<String, String> multiTreeMap : contentletsDefaultVariant) {
+            if (multiTreeMap.get("child").contains(contentlet_1.getIdentifier())) {
+                assertTrue(extraVariantMap.get(0).get("variant_id").contains(VariantAPI.DEFAULT_VARIANT.name()));
+                assertTrue(extraVariantMap.get(0).get("personalization").contains(DOT_PERSONALIZATION_DEFAULT));
+            } else if (multiTreeMap.get("child").contains(contentlet_2.getIdentifier())) {
+                assertTrue(extraVariantMap.get(0).get("variant_id").contains(VariantAPI.DEFAULT_VARIANT.name()));
+                assertTrue(extraVariantMap.get(0).get("personalization").contains("another_persona"));
+            } else if (multiTreeMap.get("child").contains(contentlet_3.getIdentifier())) {
+                assertTrue(extraVariantMap.get(0).get("variant_id").contains(VariantAPI.DEFAULT_VARIANT.name()));
+                assertTrue(extraVariantMap.get(0).get("personalization").contains(DOT_PERSONALIZATION_DEFAULT));
+            } else {
+                fail("Contentlet not found");
+            }
+        }
+
     }
 
 }
