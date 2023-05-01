@@ -48,6 +48,7 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit, OnDestro
     open = false;
 
     private resizeObserver: ResizeObserver;
+    private readonly breakpoint = 370;
 
     constructor(
         private dotMessageService: DotMessageService,
@@ -83,11 +84,11 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit, OnDestro
         this.resizeObserver = new ResizeObserver((entries) => {
             const [host] = entries;
 
-            if (host.contentRect.width < 300 && !this.small) {
+            if (host.contentRect.width < this.breakpoint && !this.small) {
                 this.small = true;
 
                 this.cd.detectChanges();
-            } else if (host.contentRect.width > 300 && this.small) {
+            } else if (host.contentRect.width > this.breakpoint && this.small) {
                 this.small = false;
 
                 this.cd.detectChanges();
