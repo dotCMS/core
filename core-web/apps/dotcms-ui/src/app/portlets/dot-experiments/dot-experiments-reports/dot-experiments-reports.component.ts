@@ -1,6 +1,14 @@
 import { Observable } from 'rxjs';
 
-import { AsyncPipe, JsonPipe, LowerCasePipe, NgClass, NgIf, PercentPipe } from '@angular/common';
+import {
+    AsyncPipe,
+    JsonPipe,
+    LowerCasePipe,
+    NgClass,
+    NgIf,
+    PercentPipe,
+    TitleCasePipe
+} from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -59,7 +67,8 @@ import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.dir
         TagModule,
         ButtonModule,
         RippleModule,
-        JsonPipe
+        JsonPipe,
+        TitleCasePipe
     ],
     templateUrl: './dot-experiments-reports.component.html',
     styleUrls: ['./dot-experiments-reports.component.scss'],

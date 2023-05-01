@@ -46,6 +46,10 @@ $max-container-width: 1100px;
     font-weight: $font-weight-bold;
 }
 
+.fist-column {
+    flex-basis: 12rem;
+}
+
 @media only screen and (max-width: $screen-lg-max) {
     .content {
         width: calc(100% - 2rem);

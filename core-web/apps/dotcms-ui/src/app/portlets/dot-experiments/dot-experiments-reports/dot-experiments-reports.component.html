@@ -38,8 +38,11 @@
                         [title]="'experiments.reports.resume' | dm"
                     >
                         <ng-template #headers>
-                            <div class="flex col flex-wrap align-items-center">
+                            <div class="flex col flex-wrap fist-column align-items-center">
                                 {{ 'experiments.reports.variants' | dm }}
+                            </div>
+                            <div class="flex col flex-wrap align-items-center justify-content-end">
+                                {{ 'experiments.reports.best-variant' | dm }}
                             </div>
                             <div class="flex col flex-wrap align-items-center justify-content-end">
                                 {{ 'experiments.configure.traffic.split.name' | dm }}
@@ -54,17 +57,14 @@
                                 {{ 'experiments.reports.clicks' | dm }}
                             </div>
                             <div class="flex col flex-wrap align-items-center justify-content-end">
-                                {{ 'experiments.reports.best-variant' | dm }}
-                            </div>
-                            <div class="flex col flex-wrap align-items-center justify-content-end">
                                 {{ 'experiments.reports.improvement' | dm }}
                             </div>
                         </ng-template>
 
                         <ng-template #rows let-row>
                             <div
-                                class="flex col flex-wrap align-content-center"
-                                [ngClass]="{ 'prospect-winner': row.is_winner }"
+                                class="flex col flex-wrap align-content-center fist-column"
+                                [ngClass]="{ 'prospect-winner': row.isWinner }"
                             >
                                 <div class="flex flex-row align-items-center gap-2">
                                     <i
@@ -75,41 +75,47 @@
                                         }"
                                     ></i>
                                     <span>{{ row.name }}</span>
+                                    <p-tag
+                                        class="sm p-tag-success"
+                                        *ngIf="row.isWinner"
+                                        [value]="'winner' | dm | titlecase"
+                                        icon="pi pi-check"
+                                    />
                                 </div>
                             </div>
                             <div
                                 class="flex col flex-wrap align-content-center justify-content-end"
-                                [ngClass]="{ 'prospect-winner': row.is_winner }"
-                            >
-                                {{ row.trafficSplit }}
-                            </div>
-                            <div
-                                class="flex col flex-wrap align-content-center justify-content-end"
-                                [ngClass]="{ 'prospect-winner': row.is_winner }"
-                            >
-                                {{ row.pageViews }}
-                            </div>
-                            <div
-                                class="flex col flex-wrap align-content-center justify-content-end"
-                                [ngClass]="{ 'prospect-winner': row.is_winner }"
-                            >
-                                {{ row.sessions }}
-                            </div>
-                            <div
-                                class="flex col flex-wrap align-content-center justify-content-end"
-                                [ngClass]="{ 'prospect-winner': row.is_winner }"
-                            >
-                                {{ row.clicks }}
-                            </div>
-                            <div
-                                class="flex col flex-wrap align-content-center justify-content-end"
-                                [ngClass]="{ 'prospect-winner': row.is_winner }"
+                                [ngClass]="{ 'prospect-winner': row.isWinner }"
                             >
                                 {{ row.bestVariant | percent : '1.0-2' }}
                             </div>
                             <div
                                 class="flex col flex-wrap align-content-center justify-content-end"
-                                [ngClass]="{ 'prospect-winner': row.is_winner }"
+                                [ngClass]="{ 'prospect-winner': row.isWinner }"
+                            >
+                                {{ row.trafficSplit }}
+                            </div>
+                            <div
+                                class="flex col flex-wrap align-content-center justify-content-end"
+                                [ngClass]="{ 'prospect-winner': row.isWinner }"
+                            >
+                                {{ row.pageViews }}
+                            </div>
+                            <div
+                                class="flex col flex-wrap align-content-center justify-content-end"
+                                [ngClass]="{ 'prospect-winner': row.isWinner }"
+                            >
+                                {{ row.sessions }}
+                            </div>
+                            <div
+                                class="flex col flex-wrap align-content-center justify-content-end"
+                                [ngClass]="{ 'prospect-winner': row.isWinner }"
+                            >
+                                {{ row.clicks }}
+                            </div>
+                            <div
+                                class="flex col flex-wrap align-content-center justify-content-end"
+                                [ngClass]="{ 'prospect-winner': row.isWinner }"
                             >
                                 <ng-container
                                     *ngIf="row.name != defaultVariantName; else baselineTpl"
