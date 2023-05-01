@@ -47,34 +47,3 @@
 .p-overlaypanel.p-overlaypanel-flipped:before {
     border-top-color: $white;
 }
-
-.contentType__overlayPanel {
-    height: fit-content;
-    width: fit-content;
-    max-height: 3.875rem;
-    max-width: 11.875rem;
-    border-radius: $border-radius-md;
-    box-shadow: $md-shadow-3;
-
-    .p-overlaypanel-content {
-        padding: $spacing-1 $spacing-3;
-        .overlay-attributes-container {
-            display: flex;
-            flex-direction: column;
-            color: $black;
-
-            p {
-                margin: 0;
-            }
-
-            .field-name {
-                font-weight: 700;
-                line-height: 1.125rem;
-            }
-
-            .attributes-text {
-                margin-top: $spacing-1;
-            }
-        }
-    }
-}
