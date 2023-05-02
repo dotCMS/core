@@ -183,12 +183,12 @@ public class WfStepAjax extends WfBaseAction {
 	private String stepsToJson(List<WorkflowStep> steps) throws IOException{
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        Map<String,Object> m = new LinkedHashMap<String, Object>();
+        Map<String,Object> m = new LinkedHashMap<>();
         
-        List<Map<String,Object>> list = new ArrayList<Map<String,Object>>();
+        List<Map<String,Object>> list = new ArrayList<>();
         for(WorkflowStep step : steps){
 
-        	Map<String,Object> map = new HashMap<String,Object>();
+        	Map<String,Object> map = new HashMap<>();
         	map.put("name", step.getName()   );
         	map.put("id", step.getId());
     		list.add(map);

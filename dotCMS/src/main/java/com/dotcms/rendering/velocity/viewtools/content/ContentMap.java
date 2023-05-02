@@ -250,14 +250,14 @@ public class ContentMap {
 				}
 				Identifier i = APILocator.getIdentifierAPI().find(fid);
 				Optional<ContentletVersionInfo> cvi =  APILocator.getVersionableAPI().getContentletVersionInfo(i.getId(), content.getLanguageId());
-				if(!cvi.isPresent()) {
+				if(cvi.isEmpty()) {
 				    final long defaultLanguageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
 				    if(content.getLanguageId() != defaultLanguageId && Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE",true)){
 				        cvi =  APILocator.getVersionableAPI().getContentletVersionInfo(i.getId(), defaultLanguageId);
 				    }
 				}
 
-				if(!cvi.isPresent()) {
+				if(cvi.isEmpty()) {
 					return null;
 				}
 
@@ -577,7 +577,7 @@ public class ContentMap {
     private Object retriveFieldValue(Field field) {
         if (fieldValueMap == null) {
             // Lazy init
-            fieldValueMap = new HashMap<String, Object>();
+            fieldValueMap = new HashMap<>();
         }
         return fieldValueMap.get(field.getVelocityVarName());
     }
@@ -590,7 +590,7 @@ public class ContentMap {
     private void addFieldValue(Field field, Object value) {
         if (fieldValueMap == null) {
             // Lazy init
-            fieldValueMap = new HashMap<String, Object>();
+            fieldValueMap = new HashMap<>();
         }
         fieldValueMap.put(field.getVelocityVarName(), value);
     }

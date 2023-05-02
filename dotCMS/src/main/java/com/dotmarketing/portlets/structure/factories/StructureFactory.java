@@ -138,7 +138,7 @@ public class StructureFactory {
 		int limit = -1;
 		List<Structure> temp = getStructures(orderBy,limit);
 
-		List<String> results = new ArrayList<String>();
+		List<String> results = new ArrayList<>();
 		for(Structure st : temp){
 			results.add(st.getName());
 		}
@@ -152,7 +152,7 @@ public class StructureFactory {
 		int limit = -1;
 		List<Structure> temp = getStructures(orderBy,limit);
 
-		List<String> results = new ArrayList<String>();
+		List<String> results = new ArrayList<>();
 		for(Structure st : temp){
 			results.add(st.getVelocityVarName());
 		}
@@ -570,7 +570,7 @@ public class StructureFactory {
 	 * @return a list of fields of a structure which type it is TAG
 	 */
 	public static ArrayList<Field> getTagsFields(String structureInode) {
-		ArrayList<Field> tagFields = new ArrayList<Field>();
+		ArrayList<Field> tagFields = new ArrayList<>();
 		List<Field> listFields = FieldsCache.getFieldsByStructureInode(structureInode);
 
 		for (Field f : listFields) {
@@ -626,7 +626,7 @@ public class StructureFactory {
 	 * @return List<Field>
 	 */
 	public static List<Field> getImagesFieldsList(Structure structure, List<String> parametersName, List<String[]> values){
-		List<Field> imageList = new ArrayList<Field>();
+		List<Field> imageList = new ArrayList<>();
 		for(int i=0; i < parametersName.size(); i++){
 			String fieldname = parametersName.get(i);
 			String[] fieldValue = values.get(i);
@@ -648,7 +648,7 @@ public class StructureFactory {
 	 * @return List<Field>
 	 */
 	public static List<Field> getFilesFieldsList(Structure structure, List<String> parametersName, List<String[]> values){
-		List<Field> fileList = new ArrayList<Field>();
+		List<Field> fileList = new ArrayList<>();
 		for(int i=0; i < parametersName.size(); i++){
 			String fieldname = parametersName.get(i);
 			String[] fieldValue = values.get(i);
@@ -664,7 +664,7 @@ public class StructureFactory {
 
 	public static List<Map<String, Serializable>> DBSearch(Query query, User user,boolean respectFrontendRoles) throws ValidationException,DotDataException {
 
-		Map<String, String> dbColToObjectAttribute = new HashMap<String, String>();
+		Map<String, String> dbColToObjectAttribute = new HashMap<>();
 
 		if(UtilMethods.isSet(query.getSelectAttributes())){
 
@@ -672,7 +672,7 @@ public class StructureFactory {
 				query.getSelectAttributes().add("name");
 			}
 		}else{
-			List<String> atts = new ArrayList<String>();
+			List<String> atts = new ArrayList<>();
 			atts.add("*");
 			atts.add("name");
 			query.setSelectAttributes(atts);

@@ -149,7 +149,7 @@ public class WorkflowBundler implements IBundler {
 		final List<Map<String, String>> actionStepsListMap = new ArrayList<>();
 		final List<WorkflowStep> steps     = collectWorkflowSteps(workflow, actionStepsListMap);
 
-		final Map<WorkflowAction, List<Role>> actionRoles    = new HashMap<WorkflowAction, List<Role>>();
+		final Map<WorkflowAction, List<Role>> actionRoles    = new HashMap<>();
 		final List<WorkflowActionClass> actionClasses        = new ArrayList<>();
 		final Map<String, String> actionNextAssignRolekeyMap = new HashMap<>();
 		final List<WorkflowAction> actions = collectWorkflowActions(workflow, actionRoles, actionClasses, actionNextAssignRolekeyMap);
@@ -207,7 +207,7 @@ public class WorkflowBundler implements IBundler {
 		for (final WorkflowAction action : actions) {
 
 			final Set<Role> roles = APILocator.getPermissionAPI().getRolesWithPermission(action, PermissionAPI.PERMISSION_USE);
-			actionRoles.put(action, new ArrayList<Role>(roles));
+			actionRoles.put(action, new ArrayList<>(roles));
 			actionClasses.addAll(APILocator.getWorkflowAPI().findActionClasses(action));
 
 			Role role = APILocator.getRoleAPI().loadRoleById(action.getNextAssign());

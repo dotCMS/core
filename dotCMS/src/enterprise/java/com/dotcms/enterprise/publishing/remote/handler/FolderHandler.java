@@ -119,7 +119,7 @@ public class FolderHandler implements IHandler {
             throw new RuntimeException("need an enterprise pro license to run this");
         }
 		//For each content take the wrapper and save it on DB
-        List<File> folders = new ArrayList<File>();
+        List<File> folders = new ArrayList<>();
         if(new File(bundleFolder + File.separator + "ROOT").exists()){
         	folders = FileUtil.listFilesRecursively(new File(bundleFolder + File.separator + "ROOT"), new FolderBundler().getFileFilter());
         	Collections.sort(folders, new Comparator<File>() {

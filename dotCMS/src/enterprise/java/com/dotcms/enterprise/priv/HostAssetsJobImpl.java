@@ -229,7 +229,7 @@ public class HostAssetsJobImpl extends ParentProxy{
 
 		List<Container> sourceContainers = templateAPI.getContainersInTemplate(sourceTemplate, user,
 				respectFrontendRoles);
-		List<HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple> containerMappings = new LinkedList<HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple>();
+		List<HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple> containerMappings = new LinkedList<>();
 		for (Container sourceContainer : sourceContainers) {
 			HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple containerMapping = new HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple(
 					sourceContainer, sourceContainer);

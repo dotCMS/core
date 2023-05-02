@@ -13,7 +13,7 @@ import java.util.*;
  */
 public class CombinedLoader extends ClassLoader {
 
-    private Set<ClassLoader> loaders = new HashSet<ClassLoader>();
+    private Set<ClassLoader> loaders = new HashSet<>();
 
     public CombinedLoader ( ClassLoader parent ) {
         super( parent );
@@ -115,7 +115,7 @@ public class CombinedLoader extends ClassLoader {
             Enumeration<URL> urls = loader.getResources( name );
             if ( urls != null && urls.hasMoreElements() ) {
 
-                ArrayList<URL> finalURLs = new ArrayList<URL>();
+                ArrayList<URL> finalURLs = new ArrayList<>();
                 //Now we need to check what kind of resource we got
                 while ( urls.hasMoreElements() ) {
                     URL url = urls.nextElement();

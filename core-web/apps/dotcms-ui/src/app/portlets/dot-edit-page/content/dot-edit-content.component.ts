@@ -6,7 +6,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { filter, map, pluck, skip, take, takeUntil, tap } from 'rxjs/operators';
+import { filter, map, pluck, skip, switchMap, take, takeUntil, tap } from 'rxjs/operators';
 
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
@@ -16,6 +16,7 @@ import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
 import {
     DotAlertConfirmService,
+    DotCurrentUserService,
     DotESContentService,
     DotEventsService,
     DotLicenseService,
@@ -109,7 +110,8 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         private dotLicenseService: DotLicenseService,
         private dotEventsService: DotEventsService,
         private dotESContentService: DotESContentService,
-        private dotSessionStorageService: DotSessionStorageService
+        private dotSessionStorageService: DotSessionStorageService,
+        private dotCurrentUser: DotCurrentUserService
     ) {
         if (!this.customEventsHandler) {
             this.customEventsHandler = {
@@ -325,13 +327,19 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     }
 
     private updateFavoritePageIconStatus(pageUrl: string) {
-        this.dotESContentService
-            .get({
-                itemsPerPage: 10,
-                offset: '0',
-                query: `+contentType:DotFavoritePage +deleted:false +working:true +owner:dotcms.org.2795 +DotFavoritePage.url_dotraw:${pageUrl}`
-            })
-            .pipe(take(1))
+        this.dotCurrentUser
+            .getCurrentUser()
+            .pipe(
+                switchMap(({ userId }) =>
+                    this.dotESContentService
+                        .get({
+                            itemsPerPage: 10,
+                            offset: '0',
+                            query: `+contentType:DotFavoritePage +deleted:false +working:true +owner:${userId} +DotFavoritePage.url_dotraw:${pageUrl}`
+                        })
+                        .pipe(take(1))
+                )
+            )
             .subscribe((response: ESContent) => {
                 const favoritePage = response.jsonObjectView?.contentlets[0];
                 this.dotPageStateService.setFavoritePageHighlight(favoritePage);

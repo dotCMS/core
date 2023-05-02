@@ -147,18 +147,18 @@ public class ContentletAjaxTest {
 		/*
 		 * Get english version
 		 */
-		List<String> fieldsValues = new ArrayList<String>();
+		List<String> fieldsValues = new ArrayList<>();
 		fieldsValues.add("conHost");
 		fieldsValues.add(host.getIdentifier());
 		fieldsValues.add("webPageContent.title");
 		fieldsValues.add(title);
 		fieldsValues.add("languageId");
 		fieldsValues.add(String.valueOf(defaultLang.getId()));
-		List<String> categories = new ArrayList<String>();
+		List<String> categories = new ArrayList<>();
 		
 		List<Object> results=new ContentletAjax().searchContentletsByUser(structure.getInode(), fieldsValues, categories, false, false, false, false,1, "modDate Desc", 10,systemUser, null, null, null);
 		Map<String,Object> result = (Map<String,Object>)results.get(0);
-		Assert.assertEquals((Long)result.get("total"), new Long(1));
+		Assert.assertEquals((Long)result.get("total"), Long.valueOf(1));
 		result = (Map<String,Object>)results.get(3);
 		assertTrue(Long.parseLong(String.valueOf(result.get("languageId")))==defaultLang.getId());
 		contentlet = contentletAPI.find(String.valueOf(result.get("inode")),systemUser,false);
@@ -168,7 +168,7 @@ public class ContentletAjaxTest {
 		/*
 		 * Get italian version
 		 */
-		fieldsValues = new ArrayList<String>();
+		fieldsValues = new ArrayList<>();
 		fieldsValues.add("conHost");
 		fieldsValues.add(host.getIdentifier());
 		fieldsValues.add("webPageContent.title");
@@ -178,7 +178,7 @@ public class ContentletAjaxTest {
 
 		results=new ContentletAjax().searchContentletsByUser(structure.getInode(), fieldsValues, categories, false, false, false, false,1, "modDate Desc", 10,systemUser, null, null, null);
 		result = (Map<String,Object>)results.get(0);
-		Assert.assertEquals(new Long(1L), (Long)result.get("total"));
+		Assert.assertEquals(Long.valueOf(1L), (Long)result.get("total"));
 		result = (Map<String,Object>)results.get(3);
 		assertTrue(Long.parseLong(String.valueOf(result.get("languageId")))==language.getId());
 		contentlet = contentletAPI.find(String.valueOf(result.get("inode")),systemUser,false);
