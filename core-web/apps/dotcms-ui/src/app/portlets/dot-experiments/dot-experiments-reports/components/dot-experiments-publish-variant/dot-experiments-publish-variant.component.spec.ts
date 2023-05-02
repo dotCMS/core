@@ -133,11 +133,13 @@ describe('DotExperimentsPublishVariantComponent', () => {
         });
 
         describe('save action', () => {
-            it('should allow save button when you select one option', () => {
+            it('should allow save button when you select one option', async () => {
                 store.showPromoteDialog();
                 spectator.detectComponentChanges();
 
                 const dialog = spectator.query(DotDialogComponent);
+
+                await spectator.fixture.whenStable();
 
                 spectator.click(spectator.query(byTestId('variant-radio-button')));
                 spectator.detectComponentChanges();

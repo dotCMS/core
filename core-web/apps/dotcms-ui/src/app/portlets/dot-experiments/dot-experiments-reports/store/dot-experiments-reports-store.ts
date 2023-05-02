@@ -180,28 +180,28 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
             return variant$.pipe(
                 tap(() => this.setDialogStatus(ComponentStatus.SAVING)),
                 switchMap((variantToPromote) => {
-                    return this.dotExperimentsService
-                        .promoteVariant(variantToPromote.experimentId, variantToPromote.variant?.id)
-                        .pipe(
-                            tapResponse(
-                                (experiment) => {
-                                    this.messageService.add({
-                                        severity: 'info',
-                                        summary: this.dotMessageService.get(
-                                            'experiments.action.promote.variant.confirm-title'
-                                        ),
-                                        detail: this.dotMessageService.get(
-                                            'experiments.action.promote.variant.confirm-message',
-                                            variantToPromote.variant.name
-                                        )
-                                    });
-                                    this.setTrafficProportion(experiment.trafficProportion);
-                                },
-                                (error: HttpErrorResponse) =>
-                                    this.dotHttpErrorManagerService.handle(error),
-                                () => this.setDialogStatus(ComponentStatus.IDLE)
-                            )
-                        );
+                    const { experimentId, variant } = variantToPromote;
+
+                    return this.dotExperimentsService.promoteVariant(experimentId, variant.id).pipe(
+                        tapResponse(
+                            (experiment) => {
+                                this.messageService.add({
+                                    severity: 'info',
+                                    summary: this.dotMessageService.get(
+                                        'experiments.action.promote.variant.confirm-title'
+                                    ),
+                                    detail: this.dotMessageService.get(
+                                        'experiments.action.promote.variant.confirm-message',
+                                        variantToPromote.variant.name
+                                    )
+                                });
+                                this.setTrafficProportion(experiment.trafficProportion);
+                            },
+                            (error: HttpErrorResponse) =>
+                                this.dotHttpErrorManagerService.handle(error),
+                            () => this.setDialogStatus(ComponentStatus.IDLE)
+                        )
+                    );
                 })
             );
         }

@@ -70,10 +70,12 @@ export class DotExperimentsPublishVariantComponent {
         this.dialogActions = {
             accept: {
                 action: () => {
-                    this.store.promoteVariant({
-                        experimentId,
-                        variant: this.selectedVariant
-                    });
+                    if (this.selectedVariant) {
+                        this.store.promoteVariant({
+                            experimentId,
+                            variant: this.selectedVariant
+                        });
+                    }
                 },
                 label: this.dotMessageService.get('experiments.report.promote.variant'),
                 disabled: true

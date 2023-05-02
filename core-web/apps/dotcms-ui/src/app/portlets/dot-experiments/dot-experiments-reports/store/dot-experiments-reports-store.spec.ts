@@ -152,14 +152,16 @@ describe('DotExperimentsReportsStore', () => {
         });
 
         it('should promote variant', () => {
+            const variantToPromote = {
+                experimentId: EXPERIMENT_MOCK.id,
+                variant: EXPERIMENT_MOCK.trafficProportion.variants[1]
+            };
+
             dotExperimentsService.promoteVariant.and
                 .callThrough()
                 .and.returnValue(of(EXPERIMENT_MOCK));
 
-            store.promoteVariant({
-                experimentId: EXPERIMENT_MOCK.id,
-                variant: EXPERIMENT_MOCK.trafficProportion.variants[1]
-            });
+            store.promoteVariant(variantToPromote);
 
             expect(dotExperimentsService.promoteVariant).toHaveBeenCalledWith(
                 EXPERIMENT_MOCK.id,
