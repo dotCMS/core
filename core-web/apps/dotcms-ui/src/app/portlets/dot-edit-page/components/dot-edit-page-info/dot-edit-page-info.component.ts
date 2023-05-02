@@ -16,13 +16,17 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 export class DotEditPageInfoComponent {
     @Input() title: string;
     @Input() url: string;
-    @Input() apiLink: string;
+    innerApiLink: string;
+    previewUrl: string;
 
-    previewURl() {
-        const frontEndUrl = `${this.apiLink.replace('api/v1/page/render', '')}`;
+    @Input()
+    set apiLink(value: string) {
+        const frontEndUrl = `${value.replace('api/v1/page/render', '')}`;
 
-        return `${frontEndUrl}${
+        this.previewUrl = `${frontEndUrl}${
             frontEndUrl.indexOf('?') != -1 ? '&' : '?'
         }disabledNavigateMode=true`;
+
+        this.innerApiLink = value;
     }
 }

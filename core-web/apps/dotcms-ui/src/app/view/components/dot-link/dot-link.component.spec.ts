@@ -20,7 +20,7 @@ class TestHostComponent {
     }
 }
 
-fdescribe('DotLinkComponent', () => {
+describe('DotLinkComponent', () => {
     let hostFixture: ComponentFixture<TestHostComponent>;
     let hostDe: DebugElement;
     let hostComp: TestHostComponent;
@@ -59,7 +59,7 @@ fdescribe('DotLinkComponent', () => {
         expect(link.properties.title).toEqual('/api/v1/123');
     });
 
-    xit('should update link when href is change', () => {
+    it('should update link when href is change', () => {
         expect(link.properties.href).toEqual('/api/v1/123');
         expect(link.properties.title).toEqual('/api/v1/123');
 
@@ -70,7 +70,7 @@ fdescribe('DotLinkComponent', () => {
         expect(link.properties.title).toEqual('/api/new/1000');
     });
 
-    xit('should set the link relative always', () => {
+    it('should set the link relative always', () => {
         hostComp.updateLink('api/no/start/slash');
         hostFixture.detectChanges();
 
