@@ -21,11 +21,15 @@ export class DotEditPageInfoComponent {
 
     @Input()
     set apiLink(value: string) {
-        const frontEndUrl = `${value.replace('api/v1/page/render', '')}`;
+        if (value) {
+            const frontEndUrl = `${value.replace('api/v1/page/render', '')}`;
 
-        this.previewUrl = `${frontEndUrl}${
-            frontEndUrl.indexOf('?') != -1 ? '&' : '?'
-        }disabledNavigateMode=true`;
+            this.previewUrl = `${frontEndUrl}${
+                frontEndUrl.indexOf('?') != -1 ? '&' : '?'
+            }disabledNavigateMode=true`;
+        } else {
+            this.previewUrl = value;
+        }
 
         this.innerApiLink = value;
     }
