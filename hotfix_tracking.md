@@ -36,3 +36,5 @@ This maintenance release includes the following code fixes:
 27. https://github.com/dotCMS/core/issues/23449 : Filter does not work on the image selector for image fields #23449
 28. https://github.com/dotCMS/core/issues/23396 : Double quotes in content title - error trying to show data in relate table. #23396
 29. https://github.com/dotCMS/core/issues/24565 : Unable to save content converted from WYSIWYG to Block Editor #24565
+
+**Release-23.01.3**
