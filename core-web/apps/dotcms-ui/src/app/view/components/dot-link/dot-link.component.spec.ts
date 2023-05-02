@@ -2,10 +2,11 @@ import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { DotLinkComponent } from '././dot-link.component';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
+
+import { DotLinkComponent } from '././dot-link.component';
 
 @Component({
     template: `<dot-link [href]="href" [icon]="icon" [label]="label"></dot-link>`
@@ -44,7 +45,6 @@ fdescribe('DotLinkComponent', () => {
         hostComp = hostDe.componentInstance;
 
         de = hostDe.query(By.css('dot-link'));
-        console.log('de', de);
         hostFixture.detectChanges();
         link = de.query(By.css('a'));
     });

@@ -3,7 +3,6 @@ import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
 import { DotLinkModule } from '@components/dot-link/dot-link.module';
-import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotApiLinkComponent } from './dot-api-link.component';
 
