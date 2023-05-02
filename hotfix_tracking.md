@@ -38,3 +38,5 @@ This maintenance release includes the following code fixes:
 29. https://github.com/dotCMS/core/issues/24565 : Unable to save content converted from WYSIWYG to Block Editor #24565
 
 **Release-23.01.3**
+
+30. https://github.com/dotCMS/core/issues/24299 : Can't push publish content with a block editor field #24299
