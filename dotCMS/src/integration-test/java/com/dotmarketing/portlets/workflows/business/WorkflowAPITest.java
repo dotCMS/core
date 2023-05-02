@@ -27,6 +27,7 @@ import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.TestWorkflowUtils;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
@@ -585,6 +586,31 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
     }
 
+    @Test()
+    public void send_permission_with_limited_user_Test()
+            throws DotDataException, DotSecurityException, AlreadyExistException {
+
+        // 1 create a limited user
+        final long time = System.currentTimeMillis();
+        final Role backendRole = APILocator.getRoleAPI().loadBackEndUserRole();
+        final Role cmsOwnerRole = APILocator.getRoleAPI().loadCMSOwnerRole();
+        final User wflimitedUser = new UserDataGen().active(true).emailAddress("wflimiteduser" + time + "@dotcms.com").roles(backendRole).nextPersisted();
+        // create a content type with cms owner full permissions
+        final ContentType testContentType = new ContentTypeDataGen().velocityVarName("testcontenttype" + time).name("testcontenttype" + time).nextPersisted();
+        final int permissionType = PermissionAPI.PERMISSION_USE | PermissionAPI.PERMISSION_EDIT |
+                PermissionAPI.PERMISSION_PUBLISH | PermissionAPI.PERMISSION_EDIT_PERMISSIONS;
+        final Permission permission = new Permission(testContentType.getPermissionId(), backendRole.getId(), permissionType);
+        APILocator.getPermissionAPI().save(permission, testContentType, APILocator.systemUser(), false);
+        // create a contentlet of the type given permissions to the someone else
+        final Contentlet contentlet = new ContentletDataGen(testContentType).user(wflimitedUser).next();
+        final List<Permission> permissions = new ArrayList<>();
+        permissions.add(new Permission(null, cmsOwnerRole.getId(), PermissionAPI.Type.USE.getType()));
+        APILocator.getContentletAPI().checkin(contentlet, permissions, wflimitedUser, false);
+        // check if the contentlet has the right permissions
+        final List<Permission> contentletPermissions = APILocator.getPermissionAPI().getPermissions(contentlet);
+        Assert.assertNotNull(contentletPermissions);
+        Assert.assertTrue(contentletPermissions.stream().anyMatch(p -> p.getRoleId().equals(cmsOwnerRole.getId())));
+    }
     @Test()
     public void delete_action_and_dependencies_Test()
             throws DotDataException, DotSecurityException, AlreadyExistException {
