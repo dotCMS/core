@@ -3,26 +3,21 @@ import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
 import { DotLinkModule } from '@components/dot-link/dot-link.module';
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotApiLinkComponent } from './dot-api-link.component';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotMessageService } from '@dotcms/data-access';
 
 @Component({
     template: `<dot-api-link [href]="href"></dot-api-link>`
 })
 class TestHostComponent {
     href = 'api/v1/123';
-
-    updateLink(href: string): void {
-        this.href = href;
-    }
 }
 
 describe('DotApiLinkComponent', () => {
     let hostFixture: ComponentFixture<TestHostComponent>;
     let hostDe: DebugElement;
-    let hostComp: TestHostComponent;
     let de: DebugElement;
     let link: DebugElement;
 
@@ -39,7 +34,6 @@ describe('DotApiLinkComponent', () => {
     beforeEach(() => {
         hostFixture = TestBed.createComponent(TestHostComponent);
         hostDe = hostFixture.debugElement;
-        hostComp = hostDe.componentInstance;
 
         de = hostDe.query(By.css('dot-api-link'));
 
