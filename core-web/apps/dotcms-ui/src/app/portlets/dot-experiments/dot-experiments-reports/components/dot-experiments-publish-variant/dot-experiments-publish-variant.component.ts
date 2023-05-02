@@ -1,24 +1,26 @@
-import { NgIf, TitleCasePipe } from '@angular/common';
-import {
-    ChangeDetectionStrategy,
-    Component,
-    EventEmitter,
-    OnInit,
-    Output,
-    ViewChild
-} from '@angular/core';
+import { Observable } from 'rxjs';
+
+import { AsyncPipe, NgIf, PercentPipe, TitleCasePipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
+import { TooltipModule } from 'primeng/tooltip';
 
-import { DotDialogActions, DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
+import { tap } from 'rxjs/operators';
+
+import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotMessageService } from '@dotcms/data-access';
-import { DEFAULT_VARIANT_ID, DotResultSimpleVariant } from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_ID, Variant } from '@dotcms/dotcms-models';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import {
+    DotExperimentsReportsStore,
+    VmPromoteVariant
+} from '@portlets/dot-experiments/dot-experiments-reports/store/dot-experiments-reports-store';
 
 @Component({
     selector: 'dot-experiments-publish-variant',
@@ -34,42 +36,51 @@ import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module
         DotDialogModule,
         FormsModule,
         NgIf,
-        TitleCasePipe
+        TitleCasePipe,
+        AsyncPipe,
+        PercentPipe,
+        TooltipModule
     ],
     standalone: true
 })
-export class DotExperimentsPublishVariantComponent implements OnInit {
-    data: DotResultSimpleVariant[];
-    selectedVariant;
-    dialogActions: DotDialogActions;
-    DEFAULT_VARIANT_ID = DEFAULT_VARIANT_ID;
+export class DotExperimentsPublishVariantComponent {
+    readonly dotMessageService: DotMessageService = inject(DotMessageService);
+    readonly store: DotExperimentsReportsStore = inject(DotExperimentsReportsStore);
 
-    @ViewChild('dialog', { static: true }) dialog: DotDialogComponent;
+    readonly vm$: Observable<VmPromoteVariant> = this.store.promotedDialogVm$.pipe(
+        tap(({ experimentId }) => {
+            this.configDialogActions(experimentId);
+        })
+    );
 
-    @Output() hide = new EventEmitter();
-    @Output() publish = new EventEmitter<string>();
-    constructor(private dotMessageService: DotMessageService) {}
+    selectedVariant: Variant;
 
-    ngOnInit(): void {
-        this.setDialogActions();
-    }
+    dialogActions: DotDialogActions = {};
+    protected readonly DEFAULT_VARIANT_ID = DEFAULT_VARIANT_ID;
 
     enableButton() {
         this.dialogActions.accept.disabled = this.selectedVariant === null;
     }
 
-    private setDialogActions(): void {
+    closeDialog() {
+        this.store.hidePromoteDialog();
+    }
+
+    private configDialogActions(experimentId: string): void {
         this.dialogActions = {
             accept: {
                 action: () => {
-                    this.publish.emit(this.selectedVariant);
+                    this.store.promoteVariant({
+                        experimentId,
+                        variant: this.selectedVariant
+                    });
                 },
                 label: this.dotMessageService.get('experiments.report.promote.variant'),
                 disabled: true
             },
             cancel: {
                 action: () => {
-                    this.hide.emit();
+                    this.store.hidePromoteDialog();
                 },
                 label: this.dotMessageService.get('cancel')
             }

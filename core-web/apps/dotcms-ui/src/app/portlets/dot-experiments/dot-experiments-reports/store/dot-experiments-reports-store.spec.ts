@@ -4,19 +4,17 @@ import { of } from 'rxjs';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 
+import { MessageService } from 'primeng/api';
+
 import { DotMessageService } from '@dotcms/data-access';
-import { ComponentStatus, DotExperimentStatusList } from '@dotcms/dotcms-models';
+import { ComponentStatus, DialogStatus, DotExperimentStatusList } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import {
     DotExperimentsReportsState,
     DotExperimentsReportsStore
 } from '@portlets/dot-experiments/dot-experiments-reports/store/dot-experiments-reports-store';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
-import {
-    getExperimentMock,
-    getExperimentResultsMock,
-    VARIANT_RESULT_MOCK_1
-} from '@portlets/dot-experiments/test/mocks';
+import { getExperimentMock, getExperimentResultsMock } from '@portlets/dot-experiments/test/mocks';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 const EXPERIMENT_MOCK = getExperimentMock(1);
@@ -58,6 +56,7 @@ describe('DotExperimentsReportsStore', () => {
                 provide: DotMessageService,
                 useValue: messageServiceMock
             },
+            mockProvider(MessageService),
             mockProvider(DotExperimentsService),
             mockProvider(DotHttpErrorManagerService)
         ]
@@ -81,7 +80,10 @@ describe('DotExperimentsReportsStore', () => {
             experiment: EXPERIMENT_MOCK,
             status: ComponentStatus.IDLE,
             results: EXPERIMENT_MOCK_RESULTS,
-            variantResults: VARIANT_RESULT_MOCK_1
+            promoteDialog: {
+                status: ComponentStatus.IDLE,
+                visibility: DialogStatus.HIDE
+            }
         };
 
         expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_MOCK.id);
@@ -123,6 +125,10 @@ describe('DotExperimentsReportsStore', () => {
                 status: DotExperimentStatusList.RUNNING
             })
         );
+        dotExperimentsService.getResults.and
+            .callThrough()
+            .and.returnValue(of(EXPERIMENT_MOCK_RESULTS));
+
         spectator.service.loadExperimentAndResults(EXPERIMENT_MOCK.id);
 
         store.showExperimentSummary$.subscribe((value) => {
@@ -136,6 +142,7 @@ describe('DotExperimentsReportsStore', () => {
             dotExperimentsService.getById.and.callThrough().and.returnValue(of(EXPERIMENT_MOCK));
 
             store.loadExperimentAndResults(EXPERIMENT_MOCK.id);
+
             expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_MOCK.id);
 
             store.state$.subscribe(({ experiment }) => {
@@ -143,14 +150,21 @@ describe('DotExperimentsReportsStore', () => {
                 done();
             });
         });
+
         it('should promote variant', () => {
             dotExperimentsService.promoteVariant.and
                 .callThrough()
                 .and.returnValue(of(EXPERIMENT_MOCK));
 
-            store.promoteVariant('variantName');
+            store.promoteVariant({
+                experimentId: EXPERIMENT_MOCK.id,
+                variant: EXPERIMENT_MOCK.trafficProportion.variants[1]
+            });
 
-            expect(dotExperimentsService.promoteVariant).toHaveBeenCalledWith('variantName');
+            expect(dotExperimentsService.promoteVariant).toHaveBeenCalledWith(
+                EXPERIMENT_MOCK.id,
+                EXPERIMENT_MOCK.trafficProportion.variants[1].id
+            );
         });
     });
 
@@ -206,8 +220,8 @@ describe('DotExperimentsReportsStore', () => {
                 [15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
             ];
             const expectedLabel = [
-                EXPERIMENT_MOCK.trafficProportion.variants[0].name,
-                EXPERIMENT_MOCK.trafficProportion.variants[1].name
+                EXPERIMENT_MOCK_RESULTS.goals.primary.variants.DEFAULT.variantDescription,
+                EXPERIMENT_MOCK_RESULTS.goals.primary.variants['111'].variantDescription
             ];
 
             store.getChartData$.subscribe(({ datasets }) => {
