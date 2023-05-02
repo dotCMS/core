@@ -56,7 +56,7 @@ public class SiteSearchResults {
 	int offset=0;
 	String query;
 	long totalResults=0;
-	List<SiteSearchResult> results = new ArrayList<SiteSearchResult>();
+	List<SiteSearchResult> results = new ArrayList<>();
 	String index = "0";
 	String error=null;
 	String took = "0ms";

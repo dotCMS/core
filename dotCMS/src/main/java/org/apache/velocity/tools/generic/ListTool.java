@@ -189,14 +189,14 @@ public class ListTool
         if (isArray(list))
         {
             // Thanks to Eric Fixler for this refactor.
-            return new Integer(Array.getLength(list));
+            return Integer.valueOf(Array.getLength(list));
         }
         if (!isList(list))
         {
             return null;
         }
 
-        return new Integer(((List) list).size());
+        return Integer.valueOf(((List)list).size());
     }
 
     /**
@@ -236,7 +236,7 @@ public class ListTool
             return null;
         }
 
-        return new Boolean(size.intValue() == 0);
+        return Boolean.valueOf(size.intValue() == 0);
     }
 
     /**
@@ -256,7 +256,7 @@ public class ListTool
             return null;
         }
 
-        return new Boolean(((List) list).contains(element));
+        return Boolean.valueOf(((List)list).contains(element));
     }
 
     /**

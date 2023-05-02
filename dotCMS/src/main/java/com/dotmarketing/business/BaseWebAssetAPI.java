@@ -199,7 +199,7 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 			Identifier identifier = APILocator.getIdentifierAPI().find(currWebAsset);
 
 			//### Get and delete the webAsset ###
-			List<Versionable> webAssetList = new ArrayList<Versionable>();
+			List<Versionable> webAssetList = new ArrayList<>();
 			webAssetList.addAll(APILocator.getVersionableAPI().findAllVersions(identifier, APILocator.getUserAPI().getSystemUser(), false));
 			if(currWebAsset instanceof Container)
 			{
@@ -230,7 +230,7 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 			//### END Get and delete the webAsset and the identifier ###
 
 			//### Get and delete the tree entries ###
-			List<Tree> treeList = new ArrayList<Tree>();
+			List<Tree> treeList = new ArrayList<>();
 			treeList.addAll(TreeFactory.getTreesByChild(identifier.getInode()));
 			treeList.addAll(TreeFactory.getTreesByParent(identifier.getInode()));
 			for(Tree tree : treeList)
@@ -240,7 +240,7 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 			//### END Get and delete the tree entries ###
 
 			//### Get and delete the multitree entries ###
-			List<MultiTree> multiTrees = new ArrayList<MultiTree>();
+			List<MultiTree> multiTrees = new ArrayList<>();
 			if (currWebAsset instanceof Container)
 			{
 				multiTrees = APILocator.getMultiTreeAPI().getMultiTrees(identifier);

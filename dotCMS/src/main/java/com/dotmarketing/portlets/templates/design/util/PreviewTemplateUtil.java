@@ -38,7 +38,7 @@ public class PreviewTemplateUtil {
 	public static List<Versionable> getTemplateImportedFiles(String _body) throws DotDataException, DotSecurityException{
 		// get all files inodes
 		List<PreviewFileAsset> inodes = DesignTemplateUtil.getFilesInodes(_body);
-		List<Versionable> result = new ArrayList<Versionable>();
+		List<Versionable> result = new ArrayList<>();
 
 		for(PreviewFileAsset pfa: inodes){
 			// check if it's a contentlet
@@ -103,7 +103,7 @@ public class PreviewTemplateUtil {
 	 * May 7, 2012 - 4:17:26 PM
 	 */
 	public static List<Container> getContainers(StringBuffer templateBody) throws DotDataException, DotSecurityException {
-		List<Container> result = new ArrayList<Container>();
+		List<Container> result = new ArrayList<>();
 		int i=0;
 		String _templateBody = templateBody.toString();
 		while(_templateBody.length()>i){

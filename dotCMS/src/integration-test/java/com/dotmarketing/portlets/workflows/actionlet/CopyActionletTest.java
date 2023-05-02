@@ -69,7 +69,7 @@ public class CopyActionletTest extends BaseWorkflowIntegrationTest {
 
         // associated the scheme to the type
         workflowAPI.saveSchemesForStruct(new StructureTransformer(customContentType).asStructure(),
-                Collections.singletonList(schemeStepActionResult.getScheme()));
+                List.of(schemeStepActionResult.getScheme()));
 
         setDebugMode(false);
     }

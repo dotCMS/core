@@ -299,7 +299,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 	}
 
 	public List<IFileAsset> fromContentletsI(final List<Contentlet> contentlets) {
-		final List<IFileAsset> fileAssets = new ArrayList<IFileAsset>();
+		final List<IFileAsset> fileAssets = new ArrayList<>();
 		for (Contentlet con : contentlets) {
 			fileAssets.add(fromContentlet(con));
 		}

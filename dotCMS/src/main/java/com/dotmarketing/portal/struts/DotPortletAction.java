@@ -443,7 +443,7 @@ public class DotPortletAction extends PortletAction {
 		}
 		else {
 			// it is a new one
-			webAsset = (WebAsset) myClass.newInstance(); 
+			webAsset = (WebAsset) myClass.getDeclaredConstructor().newInstance(); 
 		}
 		
 		req.setAttribute(webkey, webAsset);
@@ -629,7 +629,7 @@ public class DotPortletAction extends PortletAction {
 		String query = req.getParameter("query");
 		String resetQuery = req.getParameter("resetQuery");
 
-		PaginatedArrayList<PermissionAsset>  results = new PaginatedArrayList<PermissionAsset>();
+		PaginatedArrayList<PermissionAsset>  results = new PaginatedArrayList<>();
 
 		try {
 

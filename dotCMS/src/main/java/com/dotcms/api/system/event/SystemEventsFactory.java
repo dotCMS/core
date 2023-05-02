@@ -418,7 +418,7 @@ public class SystemEventsFactory implements Serializable {
 			Long created = 0L;
 			if (DbConnectionFactory.isOracle()) {
 				BigDecimal result = (BigDecimal) record.get("created");
-				created = new Long(result.toPlainString());
+				created = Long.valueOf(result.toPlainString());
 			} else {
 				created = (Long) record.get("created");
 			}

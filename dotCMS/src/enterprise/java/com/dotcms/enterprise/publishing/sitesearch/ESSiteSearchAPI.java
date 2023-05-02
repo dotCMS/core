@@ -134,7 +134,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
         if(LicenseUtil.getLevel() < LicenseLevel.STANDARD.level)
             return Collections.EMPTY_LIST;
 
-        final List<String> indices = new ArrayList<String>();
+        final List<String> indices = new ArrayList<>();
 
         indices.addAll(
             indexApi.listIndices().stream()
@@ -150,7 +150,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
     @Override
     public  List<String> listClosedIndices() {
 
-        List<String> indices=new ArrayList<String>();
+        List<String> indices=new ArrayList<>();
 
         if(LicenseUtil.getLevel() < LicenseLevel.STANDARD.level)
             return indices;
@@ -285,7 +285,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 
 	                    for(String key : hl.keySet()){
 
-	                    	List<String> highlights = new ArrayList<String>();
+	                    	List<String> highlights = new ArrayList<>();
 	                    	if(hl.get(key)!=null && hl.get(key).fragments() != null){
 		                    	for(Text t : hl.get(key).fragments()){
 		                    		highlights.add(t.toString());
