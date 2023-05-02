@@ -17,6 +17,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
@@ -420,6 +421,20 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 		}
 		return exist;
     }
+
+	public Optional<FileAsset> findByName(final String parentPath, final String fileName, final User user) throws DotDataException, DotSecurityException {
+
+		String fullPathLowerCased;
+		if(!parentPath.endsWith("/")) {
+			fullPathLowerCased = parentPath.toLowerCase() + "/" + fileName.toLowerCase();
+		} else {
+			fullPathLowerCased = parentPath.toLowerCase() +  fileName.toLowerCase();
+		}
+
+		//this.identifierAPI.
+
+		return Optional.empty();
+	}
 
 	public String getRelativeAssetPath(FileAsset fa) {
 		String _inode = fa.getInode();

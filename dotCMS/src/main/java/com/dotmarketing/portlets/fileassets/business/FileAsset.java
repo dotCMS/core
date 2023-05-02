@@ -102,6 +102,10 @@ public class FileAsset extends Contentlet implements IFileAsset {
 		return 	Try.of(() -> getMetadata().getSize()).getOrElse(0);
 	}
 
+	public String getSha256() {
+		return Try.of(() -> getMetadata().getSha256()).getOrNull();
+	}
+
 	public int getHeight() {
         return  Try.of(()-> getMetadata().getHeight()).getOrElse(0);
 	}
