@@ -40,6 +40,7 @@ describe('DotExperimentsReportsChartComponent', () => {
     it('should has title, legends container and PrimeNG Chart Component', () => {
         spectator.setInput({
             loading: false,
+            isEmpty: false,
             data: CHARTJS_DATA_MOCK_WITH_DATA,
             config: {
                 xAxisLabel: 'experiments.chart.xAxisLabel',

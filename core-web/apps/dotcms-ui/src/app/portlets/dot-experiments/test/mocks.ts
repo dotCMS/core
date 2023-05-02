@@ -310,7 +310,8 @@ export const ExperimentResultsMocks: Array<DotExperimentResults> = [
                         multiBySession: 0,
                         uniqueBySession: { count: 0, totalPercentage: 0.0, variantPercentage: 0.0 },
                         variantName: '111',
-                        variantDescription: 'Variant 111 Name'
+                        variantDescription: 'Variant 111 Name',
+                        totalPageViews: 10
                     }
                 }
             }

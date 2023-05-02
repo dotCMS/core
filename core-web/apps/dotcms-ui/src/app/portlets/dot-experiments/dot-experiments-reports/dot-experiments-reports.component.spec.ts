@@ -42,7 +42,9 @@ const defaultVmMock: VmReportExperiment = {
     experiment: getExperimentMock(3),
     results: getExperimentResultsMock(1),
     chartData: null,
+    summaryData: null,
     isLoading: false,
+    isEmpty: false,
     showSummary: false,
     showDialog: false,
     status: ComponentStatus.INIT

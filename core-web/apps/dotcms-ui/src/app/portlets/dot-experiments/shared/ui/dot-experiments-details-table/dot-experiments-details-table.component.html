@@ -68,11 +68,13 @@
 <ng-template #emptyStateTpl>
     <div
         class="empty flex justify-content-center align-items-center flex-column"
-        data-testId="loading-skeleton"
+        data-testId="empty-template"
     >
         <i class="empty_icon pi pi-table mb-2"></i>
-        <p class="empty_message m-0">{{ 'experiments.reports.summary.empty.title' | dm }}</p>
-        <p class="empty_description m-0">
+        <p class="empty_message m-0" data-testId="empty-title">
+            {{ 'experiments.reports.summary.empty.title' | dm }}
+        </p>
+        <p class="empty_description m-0" data-testId="empty-description">
             {{ 'experiments.reports.summary.empty.description' | dm }}
         </p>
     </div>

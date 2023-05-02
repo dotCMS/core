@@ -6,7 +6,7 @@
             </h1>
             <div id="legend-container" data-testId="chart-legends"></div>
         </div>
-        <ng-container *ngIf="!isEmpty; else emptyStateTpl">
+        <ng-container *ngIf="!isEmpty && data; else emptyStateTpl">
             <p-chart
                 #chart
                 [data]="data"
