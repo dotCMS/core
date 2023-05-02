@@ -1,4 +1,4 @@
-export interface DotCopyContent {
+export interface DotTreeNode {
     containerId: string;
     contentId: string;
     pageId: string;

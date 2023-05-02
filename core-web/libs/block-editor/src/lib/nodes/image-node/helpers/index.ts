@@ -7,7 +7,6 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
 const LANGUAGE_ID = 'language_id';
 
 export const imageLinkElement = (attrs, newAttrs): DOMOutputSpec => {
-
     const { href = null } = newAttrs;
 
     return ['a', { href }, imageElement(attrs, newAttrs)];
