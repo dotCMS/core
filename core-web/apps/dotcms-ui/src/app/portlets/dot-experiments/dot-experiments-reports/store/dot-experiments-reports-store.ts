@@ -338,29 +338,4 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
 
         return arrayToOrder;
     }
-
-    private getSummaryData(results: DotExperimentResults): DotExperimentSummary[] {
-        const summary: DotExperimentSummary[] = [];
-
-        Object.values(results.goals.primary.variants).map((variant) => {
-            //TODO: Add the traffic split when the endpoint sends the data
-
-            summary.push({
-                id: variant.variantName,
-                name: variant.variantDescription,
-                trafficSplit: 'TBD',
-                pageViews: variant.totalPageViews,
-                sessions: results.sessions.variants[variant.variantName],
-                clicks: variant.uniqueBySession.count,
-                bestVariant: variant.uniqueBySession.totalPercentage / 100,
-                improvement:
-                    (variant.uniqueBySession.totalPercentage -
-                        results.goals.primary.variants.DEFAULT.uniqueBySession.totalPercentage) /
-                    100,
-                isWinner: results.bayesianResult.suggestedWinner === variant.variantName
-            });
-        });
-
-        return summary;
-    }
 }

@@ -163,7 +163,7 @@ describe('DotExperimentsReportsComponent', () => {
     });
 
     it('should load the publish variant dialog', () => {
-        spectator.detectChanges();
+        spectator.detectComponentChanges();
 
         spectator.click(spectator.query(byTestId('publish-variant-button')));
         spectator.detectComponentChanges();

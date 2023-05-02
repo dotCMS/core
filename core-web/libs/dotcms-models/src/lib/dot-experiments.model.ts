@@ -24,6 +24,7 @@ export interface DotExperiment {
 }
 
 export interface DotExperimentResults {
+    bayesianResult: DotResultBayesian;
     goals: Record<GoalsLevels, DotResultGoal>;
     sessions: DotResultSessions;
     bayesianResult: DotBayesianResult;
@@ -33,6 +34,12 @@ export interface DotBayesianResult {
     probabilities: Array<{ variant: string; value: number }>;
     suggestedWinner: string;
     value: number;
+}
+
+interface DotResultBayesian {
+    value: number;
+    suggestedWinner: string;
+    probabilities: Array<{ variant: string; value: number }>;
 }
 
 export interface DotResultGoal {
