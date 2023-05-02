@@ -404,7 +404,7 @@ public class TemplateAPITest extends IntegrationTestBase {
         container.setPostLoop("postloop code");
         Structure st=CacheLocator.getContentTypeCache().getStructureByVelocityVarName("host");
 
-        List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
+        List<ContainerStructure> csList = new ArrayList<>();
         ContainerStructure cs = new ContainerStructure();
         cs.setStructureId(st.getInode());
         cs.setCode("this is the code");

@@ -301,7 +301,7 @@ public class Task00785DataModelChanges implements StartupTask  {
 			}
 	}
 	private List<String> newTriggersForPostgres(){
-		List<String> triggers = new ArrayList<String>();
+		List<String> triggers = new ArrayList<>();
 		String fileVersionsCheckTrigger = "CREATE OR REPLACE FUNCTION file_versions_check() RETURNS trigger AS '\n" +
 		  								  "DECLARE\n" +
 		  								      "versionsCount integer;\n" +
@@ -477,7 +477,7 @@ public class Task00785DataModelChanges implements StartupTask  {
 			return triggers;
 	}
 	private List<String> newTriggersForOracle(){
-		List<String> triggers = new ArrayList<String>();
+		List<String> triggers = new ArrayList<>();
 
 		String fileVersionsCheckTrigger = "CREATE OR REPLACE PACKAGE file_pkg as\n" +
 		  								     "type array is table of file_asset%rowtype index by binary_integer;\n" +
@@ -759,7 +759,7 @@ public class Task00785DataModelChanges implements StartupTask  {
 		return triggers;
 	}
 	private List<String> newTriggersForMSSQL(){
-		List<String> triggers = new ArrayList<String>();
+		List<String> triggers = new ArrayList<>();
 		String fileVersionsCheckTrigger = "CREATE Trigger check_file_versions\n" +
 										  "ON file_asset\n" +
 										  "FOR DELETE AS\n" +
@@ -959,7 +959,7 @@ public class Task00785DataModelChanges implements StartupTask  {
 		return triggers;
 	}
 	private List<String> newTriggersForMySql(){
-		List<String> triggers = new ArrayList<String>();
+		List<String> triggers = new ArrayList<>();
 		String parentPathCheckWhenUpdate =  "DROP TRIGGER IF EXISTS check_parent_path_when_update;\n"+
                             		        "CREATE TRIGGER check_parent_path_when_update  BEFORE UPDATE\n"+
                             		        "on identifier\n"+
@@ -1137,7 +1137,7 @@ public class Task00785DataModelChanges implements StartupTask  {
 	}
 	private void addNewTriggers(){
 		DotConnect dc = new DotConnect();
-		List<String> newTriggers = new ArrayList<String>();
+		List<String> newTriggers = new ArrayList<>();
 		if(DbConnectionFactory.isPostgres()){
 			newTriggers = newTriggersForPostgres();
 		}else if(DbConnectionFactory.isMsSql()){

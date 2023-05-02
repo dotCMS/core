@@ -25,13 +25,13 @@ import java.util.Map;
 
 public class FixTask00011RenameHostInFieldVariableName implements FixTask {
 
-	private List <Map<String, String>> modifiedData = new ArrayList<Map<String,String>>();
+	private List <Map<String, String>> modifiedData = new ArrayList<>();
 	private final static String selectInodesSQL = "select inode from field where lower(rtrim(ltrim(velocity_var_name))) = 'host'";
 	private final static String updateQuery = "update field set velocity_var_name = 'contentHost' where inode = ?";
 	
 	@SuppressWarnings({ "unchecked", "deprecation" })
 	public List<Map<String, Object>> executeFix() throws DotDataException, DotRuntimeException {
-		List<Map<String, Object>> returnValue = new ArrayList<Map<String, Object>>();
+		List<Map<String, Object>> returnValue = new ArrayList<>();
 		Logger.info(FixTask00011RenameHostInFieldVariableName.class,"Beginning RenameHostInFieldVariableName");
 		if (!FixAssetsProcessStatus.getRunning()) {
 			FixAssetsProcessStatus.startProgress();
@@ -46,7 +46,7 @@ public class FixTask00011RenameHostInFieldVariableName implements FixTask {
 				
 				HashMap <String,String> data;
 				for (HashMap<String, String> result: results) {
-					data = new HashMap<String, String>();
+					data = new HashMap<>();
 					data.put("" + (counter + 1), "inode=" + result.get("inode"));
 					modifiedData.add(data);
 					

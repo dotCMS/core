@@ -160,7 +160,7 @@ public class AWSS3Publisher extends Publisher {
         return this.config;
     } // init.
 
-    private Map<String, Boolean> shouldForcePushCache = new HashMap<String, Boolean>();
+    private Map<String, Boolean> shouldForcePushCache = new HashMap<>();
 
     @Override
     public boolean shouldForcePush(String hostId, long languageId) {

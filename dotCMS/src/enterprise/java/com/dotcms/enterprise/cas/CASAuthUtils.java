@@ -196,7 +196,7 @@ public class CASAuthUtils {
 	
 	public static ArrayList<String> loadUserGroups (User user){
 		
-		ArrayList<String> groups = new ArrayList<String>();
+		ArrayList<String> groups = new ArrayList<>();
 		LDAPConnection lc = getBindedConnection();
 		LDAPEntry ldapEntry;
 		try{

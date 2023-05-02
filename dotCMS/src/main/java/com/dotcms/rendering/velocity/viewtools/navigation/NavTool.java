@@ -1,16 +1,14 @@
 package com.dotcms.rendering.velocity.viewtools.navigation;
 
 
-import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.rest.api.v1.browsertree.BrowserTreeHelper;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.Versionable;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.browser.ajax.BrowserAjax;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
@@ -27,14 +25,15 @@ import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
+import org.apache.commons.beanutils.BeanUtils;
+import org.apache.velocity.tools.view.context.ViewContext;
+import org.apache.velocity.tools.view.tools.ViewTool;
+
+import javax.servlet.http.HttpServletRequest;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
-import org.apache.commons.beanutils.BeanUtils;
-import org.apache.velocity.tools.view.context.ViewContext;
-import org.apache.velocity.tools.view.tools.ViewTool;
 
 public class NavTool implements ViewTool {
 
@@ -124,8 +123,8 @@ public class NavTool implements ViewTool {
         result.setOrder(folder.getSortOrder());
         result.setType("folder");
         result.setPermissionId(folder.getPermissionId());
-        List<NavResult> children = new ArrayList<NavResult>();
-        List<String> folderIds = new ArrayList<String>();
+        List<NavResult> children = new ArrayList<>();
+        List<String> folderIds = new ArrayList<>();
         result.setChildren(children);
         result.setChildrenFolderIds(folderIds);
         result.setShowOnMenu(folder.isShowOnMenu());
@@ -334,18 +333,19 @@ public class NavTool implements ViewTool {
     }
 
     public NavResult getNav(String path) throws DotDataException, DotSecurityException {
-        if(path.contains("/api/v1/containers")){
-            final String folderInode = ((BrowserAjax)this.request.getSession().getAttribute("BrowserAjax")).getActiveFolderInode();
+        if (path.contains("/api/v1/containers")) {
+            String folderInode = (String) this.request.getSession().getAttribute(BrowserTreeHelper.OPEN_FOLDER_IDS);
+            if (null == folderInode) {
+                folderInode = StringPool.BLANK;
+            }
             final String folderIdentifier = APILocator.getFolderAPI().find(folderInode,systemUser,false).getIdentifier();
             path = APILocator.getIdentifierAPI().find(folderIdentifier).getPath();
         }
-
-        Host host = getHostFromPath(path);
-
-        if (host == null)
-            host = currenthost;
-
-        return getNav(host, path);
+        Host site = this.getHostFromPath(path);
+        if (site == null) {
+            site = this.currenthost;
+        }
+        return this.getNav(site, path);
     }
 
     public NavResult getNav(String path, long languageId) throws DotDataException, DotSecurityException {

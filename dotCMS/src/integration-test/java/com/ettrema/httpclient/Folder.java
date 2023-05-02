@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory;
 public class Folder extends Resource {
 
     private static final Logger log = LoggerFactory.getLogger(Folder.class);
-    final List<FolderListener> folderListeners = new ArrayList<FolderListener>();
+    final List<FolderListener> folderListeners = new ArrayList<>();
     protected final Cache<Folder, List<Resource>> cache;
 
     /**
@@ -105,7 +105,7 @@ public class Folder extends Resource {
     public List<? extends Resource> children() throws IOException, HttpException , NotAuthorizedException, BadRequestException {
         List<Resource> children = cache.get(this);
         if (children == null) {
-            children = new ArrayList<Resource>();
+            children = new ArrayList<>();
             String thisHref = href();
             if (log.isTraceEnabled()) {
                 log.trace("load children for: " + thisHref);
@@ -284,7 +284,7 @@ public class Folder extends Resource {
     }
 
     void notifyOnChildAdded(Resource child) {
-        List<FolderListener> l2 = new ArrayList<FolderListener>(folderListeners); // defensive copy in case the folderListeners is changed by the listeners
+        List<FolderListener> l2 = new ArrayList<>(folderListeners); // defensive copy in case the folderListeners is changed by the listeners
         for (FolderListener l : l2) {
             l.onChildAdded(this, child);
         }
@@ -293,7 +293,7 @@ public class Folder extends Resource {
     }
 
     void notifyOnChildRemoved(Resource child) {
-        List<FolderListener> l2 = new ArrayList<FolderListener>(folderListeners);// defensive copy in case the folderListeners is changed by the listeners
+        List<FolderListener> l2 = new ArrayList<>(folderListeners);// defensive copy in case the folderListeners is changed by the listeners
         for (FolderListener l : l2) {
             l.onChildRemoved(this, child);
         }

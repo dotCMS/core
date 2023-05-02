@@ -10,6 +10,7 @@ import java.net.InetAddress;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.List;
 import javax.management.InstanceAlreadyExistsException;
@@ -399,7 +400,7 @@ public class InitServlet extends HttpServlet {
                 if(UtilMethods.isSet(LicenseUtil.getValidUntil())){
                     data.append(URLEncoder.encode("licenseValid", "UTF-8"));
                     data.append("=");
-                    data.append(URLEncoder.encode(UtilMethods.dateToJDBC(LicenseUtil.getValidUntil())));
+                    data.append(URLEncoder.encode(UtilMethods.dateToJDBC(LicenseUtil.getValidUntil()), StandardCharsets.UTF_8));
                     data.append("&");
                 }
                 data.append(URLEncoder.encode("perpetual", "UTF-8"));

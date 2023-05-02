@@ -211,7 +211,7 @@ public class StructureHandler implements IHandler {
                     List<Field> fields = structureWrapper.getFields();
                     List<Field> localFields = FieldsCache.getFieldsByStructureInode( localSt.getInode() );
                     //Create a copy in order to avoid a possible concurrent modification error
-                    List<String> localFieldsVarNames = new ArrayList<String>();
+                    List<String> localFieldsVarNames = new ArrayList<>();
 
                     for (Field localField : localFields) {
                     	localFieldsVarNames.add(localField.getVelocityVarName());

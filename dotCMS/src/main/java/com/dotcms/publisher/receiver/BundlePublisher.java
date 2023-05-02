@@ -101,14 +101,14 @@ public class BundlePublisher extends Publisher {
 
     boolean bundleSuccess = true;
 
-    private List<IHandler> handlers = new ArrayList<IHandler>();
+    private List<IHandler> handlers = new ArrayList<>();
 
     @Override
     public PublisherConfig init(PublisherConfig config) throws DotPublishingException {
         if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
             throw new RuntimeException("need an enterprise license to run this");
         }
-        handlers = new ArrayList<IHandler>();
+        handlers = new ArrayList<>();
         handlers.add(new BundleXMLascHandler(config));
         //The order is really important
         handlers.add(new UserHandler(config));
@@ -295,7 +295,7 @@ public class BundlePublisher extends Publisher {
     @SuppressWarnings("rawtypes")
     @Override
     public List<Class> getBundlers() {
-        List<Class> list = new ArrayList<Class>();
+        List<Class> list = new ArrayList<>();
 
         return list;
     }

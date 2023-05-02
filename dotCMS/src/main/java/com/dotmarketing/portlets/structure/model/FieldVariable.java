@@ -71,7 +71,7 @@ public class FieldVariable  implements IFieldVar, Serializable  {
 		return id;
 	}
 	public Map<String, Object> getMap() {
-		Map<String, Object> returnMap = new HashMap<String, Object>();
+		Map<String, Object> returnMap = new HashMap<>();
 		returnMap.put("id", id);
 		returnMap.put("fieldId", fieldId);
 		returnMap.put("name", name);

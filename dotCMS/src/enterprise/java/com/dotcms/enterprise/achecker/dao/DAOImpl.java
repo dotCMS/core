@@ -104,11 +104,11 @@ public class DAOImpl implements DAO {
 
 	private List<Map<String, Object>> getObjects( ResultSet result  ) throws SQLException{
 
-		List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+		List<Map<String, Object>> list = new ArrayList<>();
 
 		while (result.next()) {
 
-			Map<String, Object> item = new HashMap<String, Object>();
+			Map<String, Object> item = new HashMap<>();
 
 			for ( int i = 1; i <= result.getMetaData().getColumnCount(); i ++ ) {
 

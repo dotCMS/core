@@ -78,7 +78,7 @@ public class BaseDAO {
 	public <T> List<T> execute(Class<T> clazz, String sql) throws SQLException{
 		try{
 		List<Map<String, Object>> list = dao.execute(sql);
-		List<T> result = new ArrayList<T>();
+		List<T> result = new ArrayList<>();
 		for ( Map<String, Object> map : list) {
 			Constructor<T> method = clazz.getConstructor(Map.class);
 			result.add(method.newInstance(map));

@@ -142,7 +142,7 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 
 					//The web asset edit threw an exception because it's
 					// locked so it should redirect back with message
-					java.util.Map<String,String[]> params = new java.util.HashMap<String,String[]>();
+					java.util.Map<String,String[]> params = new java.util.HashMap<>();
 					params.put("struts_action",new String[] { "/ext/director/direct" });
 					params.put("cmd", new String[] { "editLink" });
 					params.put("link", new String[] { req.getParameter("inode") });

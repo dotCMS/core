@@ -224,7 +224,7 @@ public class Event extends Contentlet {
 			String recurrenceDatesToIgnore = getStringProperty("recurrenceDatesToIgnore");
 			if(UtilMethods.isSet(recurrenceDatesToIgnore)){
 				String[] toIgnoreArr = recurrenceDatesToIgnore.split(" ");
-				ArrayList<String> toIgnoreList = new ArrayList<String>(Arrays.asList(toIgnoreArr));
+				ArrayList<String> toIgnoreList = new ArrayList<>(Arrays.asList(toIgnoreArr));
 				if(!toIgnoreList.contains(dateStr)){
 				   recurrenceDatesToIgnore+=" "+dateStr;
 				}

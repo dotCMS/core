@@ -156,7 +156,7 @@ public class EventAPIImpl implements EventAPI {
 	@CloseDBIfOpened
 	public List<Category> getCategories(Event ev, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
 
-		List<Category> cats = new ArrayList<Category>();
+		List<Category> cats = new ArrayList<>();
 
 		Contentlet cont = new Contentlet();
 		cont = contentletAPI.find(ev.getInode(), user, respectFrontendRoles);
@@ -178,7 +178,7 @@ public class EventAPIImpl implements EventAPI {
 	@WrapInTransaction
 	public void setCategories(Event ev, List<Category> cats, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
-		List<Category> oldcats = new ArrayList<Category>();
+		List<Category> oldcats = new ArrayList<>();
 
 		oldcats = getCategories(ev, user, respectFrontendRoles);
 

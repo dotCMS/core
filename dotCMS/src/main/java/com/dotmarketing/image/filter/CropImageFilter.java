@@ -118,7 +118,7 @@ public class CropImageFilter extends ImageFilter {
         final Dimension current = new Dimension(src.getWidth(), src.getHeight());
 		Optional<FocalPoint> optPoint = new FocalPointAPIImpl().parseFocalPointFromParams(parameters);
         
-        if (!optPoint.isPresent()) {
+        if (optPoint.isEmpty()) {
             final String inode = parameters.get("assetInodeOrIdentifier")[0];
             final String fieldVar = parameters.get("fieldVarName")[0];
             optPoint = new FocalPointAPIImpl().readFocalPoint(inode, fieldVar);

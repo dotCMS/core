@@ -172,7 +172,7 @@ public class MathTool
             return null;
         }
         int value = n1.intValue() / n2.intValue();
-        return new Integer(value);
+        return Integer.valueOf(value);
     }
 
 
@@ -197,7 +197,7 @@ public class MathTool
             return null;
         }
         int value = n1.intValue() % n2.intValue();
-        return new Integer(value);
+        return Integer.valueOf(value);
     }
 
 
@@ -271,7 +271,7 @@ public class MathTool
         {
             return null;
         }
-        return new Integer((int)Math.ceil(n.doubleValue()));
+        return Integer.valueOf((int)Math.ceil(n.doubleValue()));
     }
 
 
@@ -286,7 +286,7 @@ public class MathTool
         {
             return null;
         }
-        return new Integer((int)Math.floor(n.doubleValue()));
+        return Integer.valueOf((int)Math.floor(n.doubleValue()));
     }
 
 
@@ -305,7 +305,7 @@ public class MathTool
         {
             return null;
         }
-        return new Integer((int)Math.rint(n.doubleValue()));
+        return Integer.valueOf((int)Math.rint(n.doubleValue()));
     }
 
 
@@ -344,7 +344,7 @@ public class MathTool
             value = (int)(value + .5);
             value = value / shift;
         }
-        return new Double(value);
+        return Double.valueOf(value);
     }
 
 
@@ -355,7 +355,7 @@ public class MathTool
      */
     public Double getRandom()
     {
-        return new Double(Math.random());
+        return Double.valueOf(Math.random());
     }
 
 
@@ -399,7 +399,7 @@ public class MathTool
         }
         // one of the args was a floating point,
         // so don't floor the result
-        return new Double(random);
+        return Double.valueOf(random);
     }
 
 
@@ -421,7 +421,7 @@ public class MathTool
         {
             return null;
         }
-        return new Integer(n.intValue());
+        return Integer.valueOf(n.intValue());
     }
 
 
@@ -441,7 +441,7 @@ public class MathTool
         {
             return null;
         }
-        return new Double(n.doubleValue());
+        return Double.valueOf(n.doubleValue());
     }
 
 
@@ -524,15 +524,15 @@ public class MathTool
 
         if (!isWhole)
         {
-            return new Double(out);
+            return Double.valueOf(out);
         }
         else if (out > Integer.MAX_VALUE || out < Integer.MIN_VALUE)
         {
-            return new Long((long)out);
+            return Long.valueOf((long)out);
         }
         else
         {
-            return new Integer((int)out);
+            return Integer.valueOf((int)out);
         }
     }
 
@@ -552,19 +552,19 @@ public class MathTool
         if (value.indexOf('.') < 0)
         {
             // check for large numbers
-            long i = new Long(value).longValue();
+            long i = Long.valueOf(value).longValue();
             if (i > Integer.MAX_VALUE || i < Integer.MIN_VALUE)
             {
-                return new Long(i);
+                return Long.valueOf(i);
             }
             else
             {
-                return new Integer((int)i);
+                return Integer.valueOf((int)i);
             }
         }
         else
         {
-            return new Double(value);
+            return Double.valueOf(value);
         }
     }
 
@@ -745,7 +745,7 @@ public class MathTool
         {
             result += values[i];
         }
-        return new Double(result);
+        return Double.valueOf(result);
     }
 
     /**
@@ -761,7 +761,7 @@ public class MathTool
         {
             return null;
         }
-        return new Double(total.doubleValue() / values.length);
+        return Double.valueOf(total.doubleValue() / values.length);
     }
 
     /**
@@ -782,7 +782,7 @@ public class MathTool
         {
             result += values[i];
         }
-        return new Long(result);
+        return Long.valueOf(result);
     }
 
     /**

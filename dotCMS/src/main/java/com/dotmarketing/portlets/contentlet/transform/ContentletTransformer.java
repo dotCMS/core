@@ -231,7 +231,7 @@ public class ContentletTransformer implements DBTransformer<Contentlet> {
     private static void populateWysiwyg(final Map<String, Object> map, Contentlet contentlet) {
         final String wysiwyg = (String) map.get(DISABLED_WYSIWYG);
         if( UtilMethods.isSet(wysiwyg) ) {
-            final List<String> wysiwygFields = new ArrayList<String>();
+            final List<String> wysiwygFields = new ArrayList<>();
             final StringTokenizer st = new StringTokenizer(wysiwyg,StringPool.COMMA);
             while( st.hasMoreTokens() ) wysiwygFields.add(st.nextToken().trim());
             contentlet.setDisabledWysiwyg(wysiwygFields);

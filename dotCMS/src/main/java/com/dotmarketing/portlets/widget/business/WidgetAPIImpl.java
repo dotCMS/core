@@ -45,7 +45,7 @@ public class WidgetAPIImpl implements WidgetAPI {
 	@CloseDBIfOpened
 	public List<Structure> findAll(User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
 		List<Structure> sts = StructureFactory.getAllStructuresByType(Structure.STRUCTURE_TYPE_WIDGET);
-		List<Structure> wids = new ArrayList<Structure>();
+		List<Structure> wids = new ArrayList<>();
 		for (Structure structure : sts) {
             if (!structure.isSystem() && perAPI.doesUserHavePermission(structure, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
                 wids.add(structure);
