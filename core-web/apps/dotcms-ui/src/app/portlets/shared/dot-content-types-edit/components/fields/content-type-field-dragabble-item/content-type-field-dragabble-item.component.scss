@@ -23,11 +23,11 @@
         opacity: 0.4;
     }
 
-    .drag {
+    .field-drag {
         color: $color-palette-gray-400;
     }
 
-    .field__icon {
+    .field-icon {
         height: $spacing-7;
         min-width: $spacing-7;
         background-color: $color-palette-secondary-200;
@@ -43,7 +43,7 @@
     }
 }
 
-.field__properties {
+.field-properties {
     display: flex;
     flex-direction: column;
     overflow-x: clip;
@@ -51,23 +51,23 @@
     padding-right: $spacing-1;
     flex-grow: 1;
 
-    .field__name__container,
-    .field__copy__container {
+    .field-properties__info-container,
+    .field-properties__actions-container {
         height: $spacing-4;
         display: flex;
         align-items: center;
         justify-content: space-between;
     }
 
-    .field__name__container {
-        .field__name {
+    .field-properties__info-container {
+        .info-container__name {
             @include truncate-text;
             color: #000;
             font-size: $font-size-md;
         }
     }
 
-    .field__copy__container {
+    .field-properties__actions-container {
         dot-copy-link {
             ::ng-deep {
                 .p-button {
@@ -82,15 +82,15 @@
             }
         }
 
-        .attributes__container {
+        .field-properties__attributes-container {
             display: flex;
             gap: $spacing-3;
             font-size: $font-size-sm;
 
-            .field__name {
+            .attributes-container__field-name {
                 color: $color-palette-gray-900;
             }
-            .attribute {
+            .attributes-container__attribute {
                 color: $color-palette-gray-700;
             }
         }
@@ -106,7 +106,8 @@
 
     .p-overlaypanel-content {
         padding: $spacing-1 $spacing-3;
-        .overlay__attributes__container {
+
+        .field-properties__overlay-attributes-container {
             display: flex;
             flex-direction: column;
             color: $black;
@@ -115,12 +116,12 @@
                 margin: 0;
             }
 
-            .field__name {
+            .overlay-attributes-container__field-name {
                 font-weight: 700;
                 line-height: 1.125rem;
             }
 
-            .attributes__text {
+            .overlay-attributes-container__attributes-text {
                 margin-top: $spacing-1;
             }
         }

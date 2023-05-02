@@ -20,7 +20,7 @@ import { ContentTypesFieldDragabbleItemComponent } from './content-type-field-dr
 
 import { FieldService } from '../service';
 
-fdescribe('ContentTypesFieldDragabbleItemComponent', () => {
+describe('ContentTypesFieldDragabbleItemComponent', () => {
     let comp: ContentTypesFieldDragabbleItemComponent;
     let fixture: ComponentFixture<ContentTypesFieldDragabbleItemComponent>;
     let de: DebugElement;
@@ -78,7 +78,7 @@ fdescribe('ContentTypesFieldDragabbleItemComponent', () => {
 
         fixture.detectChanges();
 
-        const container = de.query(By.css('.field__name'));
+        const container = de.query(By.css('.info-container__name'));
         expect(container).not.toBeNull();
         expect(container.nativeElement.textContent.trim().replace('  ', ' ')).toEqual('Field name');
     });
@@ -124,10 +124,31 @@ fdescribe('ContentTypesFieldDragabbleItemComponent', () => {
         const attrs = ['FieldLabel', 'Required', 'Indexed', 'Show on list'];
 
         const attrsString = de.query(
-            By.css('.field__properties > .field__copy__container > .attributes__container')
+            By.css(
+                '.field-properties > .field-properties__actions-container > .field-properties__attributes-container'
+            )
         ).nativeElement.textContent;
 
         expect(attrs.every((attr) => attrsString.includes(attr))).toBeTrue();
+    });
+
+    it('should has a drag button', () => {
+        const field = {
+            ...dotcmsContentTypeFieldBasicMock,
+            fieldType: 'fieldType',
+            fixed: false,
+            indexed: true,
+            name: 'Field name',
+            required: true,
+            velocityVarName: 'velocityName'
+        };
+
+        comp.field = field;
+
+        fixture.detectChanges();
+
+        const button = de.query(By.css('.field-drag'));
+        expect(button).not.toBeNull();
     });
 
     it('should has a remove button', () => {
@@ -145,7 +166,7 @@ fdescribe('ContentTypesFieldDragabbleItemComponent', () => {
 
         fixture.detectChanges();
 
-        const button = de.query(By.css('#field__actions__delete'));
+        const button = de.query(By.css('#info-container__delete'));
         expect(button).not.toBeNull();
         expect(button.attributes['icon']).toEqual('pi pi-trash');
 
@@ -175,7 +196,7 @@ fdescribe('ContentTypesFieldDragabbleItemComponent', () => {
 
         fixture.detectChanges();
 
-        const button = de.query(By.css('#field__actions__delete'));
+        const button = de.query(By.css('#info-container__delete'));
         expect(button).toBeNull();
     });
 
