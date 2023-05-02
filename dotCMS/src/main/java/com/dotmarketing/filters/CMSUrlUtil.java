@@ -168,7 +168,7 @@ public class CMSUrlUtil {
 				//First try with the given language
 				Optional<ContentletVersionInfo> cinfo = APILocator.getVersionableAPI()
 						.getContentletVersionInfo(id.getId(), languageId);
-				if (!cinfo.isPresent() || cinfo.get().getWorkingInode().equals(NOT_FOUND)) {
+				if (cinfo.isEmpty() || cinfo.get().getWorkingInode().equals(NOT_FOUND)) {
 
 					for (Language language : languages) {
                         /*
@@ -187,7 +187,7 @@ public class CMSUrlUtil {
 					}
 
 				}
-				if (!cinfo.isPresent() || cinfo.get().getWorkingInode().equals(NOT_FOUND)) {
+				if (cinfo.isEmpty() || cinfo.get().getWorkingInode().equals(NOT_FOUND)) {
 					return false;//At this point we know is not a page
 				} 
 				Contentlet c = APILocator.getContentletAPI().find(cinfo.get().getWorkingInode(), APILocator.systemUser(),false);
@@ -245,7 +245,7 @@ public class CMSUrlUtil {
 				Optional<ContentletVersionInfo> cinfo = APILocator.getVersionableAPI()
 						.getContentletVersionInfo(id.getId(), languageId);
 
-				if ((!cinfo.isPresent() || cinfo.get().getWorkingInode().equals(NOT_FOUND)) && Config
+				if ((cinfo.isEmpty() || cinfo.get().getWorkingInode().equals(NOT_FOUND)) && Config
 						.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", false)) {
 					//Get the Default Language
 					Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
@@ -254,7 +254,7 @@ public class CMSUrlUtil {
 							.getContentletVersionInfo(id.getId(), defaultLang.getId());
 				}
 
-				if (!cinfo.isPresent() || cinfo.get().getWorkingInode().equals(NOT_FOUND)) {
+				if (cinfo.isEmpty() || cinfo.get().getWorkingInode().equals(NOT_FOUND)) {
 					return false;//At this point we know is not a File Asset
 				} else {
 					Contentlet c = APILocator.getContentletAPI()
@@ -362,14 +362,14 @@ public class CMSUrlUtil {
 
 				// If we did not find a version with for given
 				// language lets try with the default language
-				if (!cinfo.isPresent() && languageId != APILocator.getLanguageAPI().getDefaultLanguage()
+				if (cinfo.isEmpty() && languageId != APILocator.getLanguageAPI().getDefaultLanguage()
 						.getId()) {
 					languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
 					cinfo = APILocator.getVersionableAPI()
 							.getContentletVersionInfo(ident.getId(), languageId);
 				}
 
-				if(!cinfo.isPresent()) {
+				if(cinfo.isEmpty()) {
 					throw new DotDataException("Unable to find file asset contentlet with identifier: "+ ident.getId() + ". Lang:" + languageId);
 				}
 

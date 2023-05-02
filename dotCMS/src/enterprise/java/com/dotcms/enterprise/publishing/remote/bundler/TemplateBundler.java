@@ -111,7 +111,7 @@ public class TemplateBundler implements IBundler {
 		Set<String> templateIds = config.getTemplates();
 
 		try {
-			Set<Template> templates = new HashSet<Template>();
+			Set<Template> templates = new HashSet<>();
 
 			for(String templateId : templateIds) {
 			    Template working = APILocator.getTemplateAPI()

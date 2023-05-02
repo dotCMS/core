@@ -26,7 +26,7 @@ public class UpdateUtil {
         Properties props = loadUpdateProperties();
         String fileUrl = props.getProperty( Constants.PROPERTY_UPDATE_FILE_UPDATE_URL, "" );
 
-        Map<String, String> pars = new HashMap<String, String>();
+        Map<String, String> pars = new HashMap<>();
         pars.put( "version", ReleaseInfo.getVersion() );
         //pars.put("minor", ReleaseInfo.getBuildNumber() + "");
         pars.put( "check_version", "true" );

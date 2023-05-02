@@ -137,8 +137,8 @@ public class FolderBundler implements IBundler {
 		//Get Folder tree
 		Folder folder = fAPI.find(idFolder, systemUser, false);
 		String folderName = folder.getName();
-		List<String> path = new ArrayList<String>();
-		List<FolderWrapper> folderWrappers = new ArrayList<FolderWrapper>();
+		List<String> path = new ArrayList<>();
+		List<FolderWrapper> folderWrappers = new ArrayList<>();
 		while(folder != null && !folder.isSystemFolder()) {
 			path.add(folder.getName());
 

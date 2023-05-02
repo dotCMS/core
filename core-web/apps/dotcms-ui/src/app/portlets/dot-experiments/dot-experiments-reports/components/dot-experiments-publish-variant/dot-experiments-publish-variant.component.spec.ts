@@ -20,7 +20,6 @@ import { DotExperimentsPublishVariantComponent } from './dot-experiments-publish
 const messageServiceMock = new MockDotMessageService({
     'experiments.report.promote.variant': 'Promote Variant',
     'experiments.report.promote.variant.text': 'Text copy',
-    'experiments.report.promote.assign.variant': 'Assign Variant',
     cancel: 'Cancel'
 });
 
@@ -59,7 +58,7 @@ describe('DotExperimentsPublishVariantComponent', () => {
         expect(dialog.header).toEqual('Promote Variant');
         expect(spectator.query(byTestId('variant-legend'))).toHaveText('Text copy');
         expect(dialog.actions.accept.disabled).toEqual(true);
-        expect(dialog.actions.accept.label).toEqual('Assign Variant');
+        expect(dialog.actions.accept.label).toEqual('Promote Variant');
         expect(dialog.actions.cancel.label).toEqual('Cancel');
     });
 

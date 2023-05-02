@@ -245,7 +245,7 @@ public class ContentFromEmailJob implements Job {
 
 						contRel = retrieveRelationshipsData(contentlet,systemUser,email);
 
-						cats = new ArrayList<Category>();
+						cats = new ArrayList<>();
 						contentlet.setIndexPolicy(IndexPolicyProvider.getInstance().forSingleContent()); // double check if this one is ok
 						Contentlet con = conAPI.checkin(contentlet, contRel,
 								cats, perAPI.getPermissions(contentlet, false, true), systemUser, false);
@@ -285,7 +285,7 @@ public class ContentFromEmailJob implements Job {
 			return new ContentletRelationships(contentlet);
 
 		ContentletRelationships relationshipsData = new ContentletRelationships(contentlet);
-		List<ContentletRelationshipRecords> relationshipsRecords = new ArrayList<ContentletRelationshipRecords> ();
+		List<ContentletRelationshipRecords> relationshipsRecords = new ArrayList<> ();
 		relationshipsData.setRelationshipsRecords(relationshipsRecords);
 
 		Structure parentStr = relationship.getParentStructure();
@@ -302,7 +302,7 @@ public class ContentFromEmailJob implements Job {
 			if(!UtilMethods.isSet(messageIdFieldVarNm))
 				return new ContentletRelationships(contentlet);
 
-			List<Contentlet> searchResults = new ArrayList<Contentlet>();
+			List<Contentlet> searchResults = new ArrayList<>();
 			String luceneQuery = "";			
 			String ref = (String)email.get("References");
 			String[] references = parseReferences(ref);
@@ -360,7 +360,7 @@ public class ContentFromEmailJob implements Job {
 		if(!UtilMethods.isSet(ref))
 			return new String[]{};
 		
-		List<String> refList = new LinkedList<String>();
+		List<String> refList = new LinkedList<>();
 		char chr;
 		StringBuffer strBfr = new StringBuffer();
 		for (int i = 0; i < ref.length(); i++) {

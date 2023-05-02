@@ -2179,7 +2179,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 
     @Override
 	public List<String> getPreHooks() {
-		List<String> result = new ArrayList<String>();
+		List<String> result = new ArrayList<>();
 		for (ContentletAPIPreHook hook : preHooks) {
 			result.add(hook.getClass().getName());
 		}
@@ -2188,7 +2188,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 
 	@Override
 	public List<String> getPostHooks() {
-		List<String> result = new ArrayList<String>();
+		List<String> result = new ArrayList<>();
 		for (ContentletAPIPostHook hook : postHooks) {
 			result.add(hook.getClass().getName());
 		}

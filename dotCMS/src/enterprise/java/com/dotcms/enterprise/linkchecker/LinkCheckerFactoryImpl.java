@@ -81,7 +81,7 @@ public class LinkCheckerFactoryImpl extends LinkCheckerFactory {
     @Override
     public List<InvalidLink> findByInode(String inode) throws DotDataException {
         if(LicenseUtil.getLevel()<LicenseLevel.STANDARD.level)
-            return new ArrayList<InvalidLink>();
+            return new ArrayList<>();
 
         DotConnect dc=new DotConnect();
         dc.setSQL("select * from broken_link where inode=?");
@@ -90,7 +90,7 @@ public class LinkCheckerFactoryImpl extends LinkCheckerFactory {
     }
 
     private List<InvalidLink> readObjectResult(List<Map<String,Object>> results) {
-        List<InvalidLink> beans=new ArrayList<InvalidLink>();
+        List<InvalidLink> beans=new ArrayList<>();
         for(Map<String,Object> rr : results) {
             InvalidLink bean=new InvalidLink();
             bean.setId((String)rr.get("id"));
@@ -118,7 +118,7 @@ public class LinkCheckerFactoryImpl extends LinkCheckerFactory {
     @Override
     public List<InvalidLink> findAll(int offset, int pageSize) throws DotDataException {
         if(LicenseUtil.getLevel()<LicenseLevel.STANDARD.level)
-            return new ArrayList<InvalidLink>();
+            return new ArrayList<>();
 
         // we join with contentlet_version to ensure those broken links belongs to active contentlets
         String sql="select * from broken_link join contentlet_version_info vinfo " +
@@ -157,7 +157,7 @@ public class LinkCheckerFactoryImpl extends LinkCheckerFactory {
 
     public List<InvalidLink> findAllByStructure(String structureInode, int offset, int pageSize) throws DotDataException {
     if(LicenseUtil.getLevel()<LicenseLevel.STANDARD.level)
-        return new ArrayList<InvalidLink>();
+        return new ArrayList<>();
 
     // we join with contentlet_version to ensure those broken links belongs to active contentlets
     String sql="select broken_link.* from broken_link " +

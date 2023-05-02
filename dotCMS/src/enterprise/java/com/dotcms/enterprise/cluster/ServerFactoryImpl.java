@@ -176,7 +176,7 @@ public class ServerFactoryImpl extends ServerFactory {
 
     @CloseDBIfOpened
     public List<Server> getAllServers() throws DotDataException {
-        List<Server> servers = new ArrayList<Server>();
+        List<Server> servers = new ArrayList<>();
         DotConnect dc = new DotConnect();
 
         dc.setSQL(SELECT_SERVER_SQL +  " where server_id is not null order by startup_time, server_id");
@@ -229,7 +229,7 @@ public class ServerFactoryImpl extends ServerFactory {
     public List<Server> getAliveServers() throws DotDataException {
 
 
-        List<Server> servers = new ArrayList<Server>();
+        List<Server> servers = new ArrayList<>();
         DotConnect dc = new DotConnect();
 
         dc.setSQL(SELECT_SERVER_SQL +  "  where sitelic.id is not null and lastping > ? order by startup_time, server_id");
@@ -319,7 +319,7 @@ public class ServerFactoryImpl extends ServerFactory {
 	@Override
 	public List<Server> getInactiveServers() throws DotDataException {
 
-        List<Server> servers = new ArrayList<Server>();
+        List<Server> servers = new ArrayList<>();
         DotConnect dc = new DotConnect();
 
         dc.setSQL(SELECT_SERVER_SQL +  "  where lastping is null or lastping < ? ");

@@ -20,7 +20,7 @@ public class WebPImageFilter extends ImageFilter {
 
 	    final int qualityParam = parameters.get(getPrefix() +"q") != null?Integer.parseInt(parameters.get(getPrefix() +"q")[0]):85;
 
-	    Float quality = new Float(qualityParam);
+	    Float quality = Float.valueOf(qualityParam);
 	    quality = quality/100;
 
 	    final File resultFile = getResultsFile(file, parameters);

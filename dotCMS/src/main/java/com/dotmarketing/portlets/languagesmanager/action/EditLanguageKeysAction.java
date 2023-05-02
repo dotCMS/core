@@ -108,9 +108,9 @@ public class EditLanguageKeysAction extends DotPortletAction {
 		Pattern p = Pattern.compile("[A-Za-z0-9-_\\.]+");
     	Language lang = (Language) req.getAttribute(WebKeys.LANGUAGE_MANAGER_LANGUAGE);
     	int numberOfKeys = Integer.parseInt(req.getParameter("keys"));
-    	Map<String, String> generalKeys = new HashMap<String, String>();
-    	Map<String, String> specificKeys = new HashMap<String, String>();
-    	Set<String> toDeleteKeys = new HashSet<String>();
+    	Map<String, String> generalKeys = new HashMap<>();
+    	Map<String, String> specificKeys = new HashMap<>();
+    	Set<String> toDeleteKeys = new HashSet<>();
     	for(int i = 0; i < numberOfKeys; i++) {
     		String remove = req.getParameter(lang.getLanguageCode() + "-" + i + "-remove");
     		String key = req.getParameter(lang.getLanguageCode() + "-" + i + "-key");

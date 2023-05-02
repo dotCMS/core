@@ -509,7 +509,9 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
 
     private getESQuery(identifier?: string) {
         const { keyword, languageId, archived } = this.get().pages;
-        const hostId = this.siteService.currentSite.identifier;
+        const hostIdQuery = this.siteService.currentSite
+            ? `+conhost:${this.siteService.currentSite?.identifier}`
+            : '';
         const langQuery = languageId ? `+languageId:${languageId}` : '';
         const archivedQuery = archived ? `+deleted:true` : '+deleted:false';
         const identifierQuery = identifier ? `+identifier:${identifier}` : '';
@@ -517,7 +519,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             ? `+(title:${keyword}* OR path:*${keyword}* OR urlmap:*${keyword}*)`
             : '';
 
-        return `+conhost:${hostId} +working:true  +(urlmap:* OR basetype:5) ${langQuery} ${archivedQuery} ${keywordQuery} ${identifierQuery}`;
+        return `${hostIdQuery} +working:true  +(urlmap:* OR basetype:5) ${langQuery} ${archivedQuery} ${keywordQuery} ${identifierQuery}`;
     }
 
     private getWorflowActionsFn = (item: DotCMSContentlet): Observable<DotCMSPageWorkflowState> => {
@@ -579,13 +581,17 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
     private getFavoritePagesData = (limit: number, identifier?: string) => {
         const identifierQuery = identifier ? `+identifier:${identifier}` : '';
 
-        return this.dotESContentService.get({
-            itemsPerPage: limit,
-            offset: '0',
-            query: `${FAVORITE_PAGES_ES_QUERY} ${identifierQuery}`,
-            sortField: 'dotFavoritePage.order',
-            sortOrder: ESOrderDirection.ASC
-        });
+        return this.dotCurrentUser.getCurrentUser().pipe(
+            switchMap(({ userId }) => {
+                return this.dotESContentService.get({
+                    itemsPerPage: limit,
+                    offset: '0',
+                    query: `${FAVORITE_PAGES_ES_QUERY} +owner:${userId} ${identifierQuery}`,
+                    sortField: 'dotFavoritePage.order',
+                    sortOrder: ESOrderDirection.ASC
+                });
+            })
+        );
     };
 
     private getSelectActions(actions: DotCMSWorkflowAction[], item: DotCMSContentlet): MenuItem[] {
@@ -664,7 +670,6 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
 
     constructor(
         private dotCurrentUser: DotCurrentUserService,
-        private dotCurrentUserService: DotCurrentUserService,
         private dotRouterService: DotRouterService,
         private httpErrorManagerService: DotHttpErrorManagerService,
         private dotESContentService: DotESContentService,
@@ -703,7 +708,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             .pipe(
                 take(1),
                 mergeMap(([favoritePages, currentUser, languages, isEnterprise, environments]) => {
-                    return this.dotCurrentUserService
+                    return this.dotCurrentUser
                         .getUserPermissions(
                             currentUser.userId,
                             [UserPermissions.READ, UserPermissions.WRITE],

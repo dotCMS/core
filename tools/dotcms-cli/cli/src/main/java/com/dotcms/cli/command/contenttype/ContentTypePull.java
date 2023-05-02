@@ -1,40 +1,51 @@
 package com.dotcms.cli.command.contenttype;
 
+import static com.dotcms.cli.common.Utils.nextFileName;
+
 import com.dotcms.api.ContentTypeAPI;
-import com.dotcms.api.client.RestClientFactory;
-import com.dotcms.cli.common.OutputOptionMixin;
+import com.dotcms.cli.common.FormatOptionMixin;
+import com.dotcms.cli.common.ShortOutputOptionMixin;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.model.ResponseEntityView;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import picocli.CommandLine;
-import picocli.CommandLine.Parameters;
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
-import javax.ws.rs.NotFoundException;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.Callable;
-
-import static com.dotcms.cli.common.Utils.nextFileName;
+import javax.enterprise.context.control.ActivateRequestContext;
+import javax.ws.rs.NotFoundException;
+import picocli.CommandLine;
+import picocli.CommandLine.Parameters;
 
 @ActivateRequestContext
 @CommandLine.Command(
         name = ContentTypePull.NAME,
-        description = "@|bold,green Get a Content-type from a given  idOrVar |@ Use @|bold,cyan --idOrVar|@ to pass the CT identifier or var name."
+        header = "@|bold,blue Retrieves a Content-type descriptor from a given name or Id.|@",
+        description = {
+                " This gets you a Content-type from a given Id or Name.",
+                " The content-type descriptor will be retried and saved to a file.",
+                " The file name will be the content-type's variable name.",
+                " if a file is pulled more than once",
+                " the file gets override.",
+                " By default files are saved to the current directory. in json format.",
+                " The format can be changed using the @|yellow --format|@ option.",
+                " format can be either @|yellow JSON|@ or @|yellow YAML|@.",
+                " File location can be changed using the @|yellow --saveTo|@ option.",
+                " Use @|yellow --idOrName|@ to pass the CT identifier or name.",
+                "" // empty line left here on purpose to make room at the end
+        }
 )
 public class ContentTypePull extends AbstractContentTypeCommand implements Callable<Integer> {
 
     static final String NAME = "pull";
+    @CommandLine.Mixin(name = "format")
+    FormatOptionMixin formatOption;
 
-    @CommandLine.Mixin(name = "output")
-    OutputOptionMixin output;
+    @CommandLine.Mixin(name = "shorten")
+    ShortOutputOptionMixin shortOutputOption;
 
-    @Inject
-    RestClientFactory clientFactory;
-
-    @Parameters(index = "0", arity = "1", description = "CT Identifier or varName.")
+    @Parameters( paramLabel = "idOrName", index = "0", arity = "1", description = "Identifier or Name.")
     String idOrVar;
 
     @CommandLine.Option(names = {"-to", "--saveTo"}, order = 5, description = "Save Pulled CT to a file.")
@@ -47,9 +58,9 @@ public class ContentTypePull extends AbstractContentTypeCommand implements Calla
             try {
                 final ResponseEntityView<ContentType> responseEntityView = contentTypeAPI.getContentType(idOrVar, null, null);
                 final ContentType contentType = responseEntityView.entity();
-                final ObjectMapper objectMapper = output.objectMapper();
+                final ObjectMapper objectMapper = formatOption.objectMapper();
 
-                if(output.isShortenOutput()) {
+                if(shortOutputOption.isShortOutput()) {
                     final String asString = shortFormat(contentType);
                     output.info(asString);
                 } else {
@@ -62,8 +73,8 @@ public class ContentTypePull extends AbstractContentTypeCommand implements Calla
                        path = saveAs.toPath();
                     } else {
                         //But this behavior can be modified if we explicitly add a file name
-                        final String fileName = String.format("%s.%s",contentType.variable(),output.getInputOutputFormat().getExtension());
-                        final Path next = Path.of(".", fileName);
+                        final String fileName = String.format("%s.%s",contentType.variable(), formatOption.getInputOutputFormat().getExtension());
+                        final Path next = Path.of(fileName);
                         path = nextFileName(next);
                     }
                     Files.writeString(path, asString);

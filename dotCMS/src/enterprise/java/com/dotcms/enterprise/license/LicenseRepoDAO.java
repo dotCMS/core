@@ -418,7 +418,7 @@ final class LicenseRepoDAO {
             }
         }
 
-        if (!repoEntry.isPresent()) {
+        if (repoEntry.isEmpty()) {
             Logger.warn(LicenseRepoDAO.class, String.format("License could not be assigned to server %s", serverId));
         }
 

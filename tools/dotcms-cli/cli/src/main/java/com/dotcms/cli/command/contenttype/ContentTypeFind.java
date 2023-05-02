@@ -1,32 +1,30 @@
 package com.dotcms.cli.command.contenttype;
 
 import com.dotcms.api.ContentTypeAPI;
-import com.dotcms.api.client.RestClientFactory;
-import com.dotcms.cli.common.OutputOptionMixin;
+import com.dotcms.cli.common.InteractiveOptionMixin;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.model.ResponseEntityView;
+import java.util.List;
+import java.util.concurrent.Callable;
+import javax.enterprise.context.control.ActivateRequestContext;
 import org.apache.commons.lang3.BooleanUtils;
 import picocli.CommandLine;
 
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
-import java.util.List;
-import java.util.concurrent.Callable;
-
 @ActivateRequestContext
 @CommandLine.Command(
-        name = ContentTypeFind.NAME,
-        description = "@|bold,green Search or Get a List with all available Content-types  |@  Use @|bold,cyan --all|@ to get a complete list. @|bold,cyan --name|@ To specify a search criteria."
+        sortOptions = false,
+        name = ContentTypeFind.NAME,header = "@|bold,blue Use this command to find Content-types.|@",
+        description = {
+                "Search or Get a List with all available Content-types.",
+                "Use @|yellow --name|@ in conjunction with @|bold,blue Filter/Search|@ Options."
+        }
 )
 public class ContentTypeFind extends AbstractContentTypeCommand implements Callable<Integer> {
 
     static final String NAME = "find";
 
-    @CommandLine.Mixin(name = "output")
-    OutputOptionMixin output;
-
-    @Inject
-    RestClientFactory clientFactory;
+    @CommandLine.Mixin
+    InteractiveOptionMixin interactiveOption;
 
     /**
      * Here we encapsulate Filter endpoint options
@@ -35,27 +33,22 @@ public class ContentTypeFind extends AbstractContentTypeCommand implements Calla
     static class FilterOptions {
 
         @CommandLine.Option(names = {"-n","--name"},
-                order = 30,
-                description = "Specify (comma separated) var-name to search by. ")
+                description = "Specify (comma separated) name to search by. ")
         String typeName;
 
-        @CommandLine.Option(names = {"-h", "--host"},
-                order = 40,
-                description = "Filter by host")
-        String host;
+        @CommandLine.Option(names = {"-s", "--site"},
+                description = "Filter by site")
+        String site;
 
         @CommandLine.Option(names = {"-o", "--order"},
-                order=50,
                 description = "Set an order by param. (variable is default) ", defaultValue = "variable")
         String orderBy;
 
         @CommandLine.Option(names = {"-p", "--page"},
-                order = 60,
                 description = "Page Number.", defaultValue = "1")
         Integer page;
 
         @CommandLine.Option(names = {"-ps", "--pageSize"},
-                order = 70,
                 description = "Items per page.", defaultValue = "25")
         Integer pageSize;
 
@@ -65,7 +58,7 @@ public class ContentTypeFind extends AbstractContentTypeCommand implements Calla
      * Here we tell PicoCli that we want each individual Option to act as a separate functionality
      */
 
-   @CommandLine.ArgGroup(exclusive = false, order = 10, heading = "\nFilter/Search available Content-Types\n")
+   @CommandLine.ArgGroup(exclusive = false,  heading = "\n@|bold,blue Filter/Search Options. |@\n")
    FilterOptions filter;
 
     @Override
@@ -93,7 +86,7 @@ public class ContentTypeFind extends AbstractContentTypeCommand implements Calla
             }
             page++;
 
-            if(output.isInteractive() && !BooleanUtils.toBoolean(System.console().readLine("Load next page? y/n:"))){
+            if(interactiveOption.isInteractive() && !BooleanUtils.toBoolean(System.console().readLine("Load next page? y/n:"))){
                 break;
             }
 
@@ -106,7 +99,7 @@ public class ContentTypeFind extends AbstractContentTypeCommand implements Calla
         final ContentTypeAPI contentTypeAPI = clientFactory.getClient(ContentTypeAPI.class);
         final ResponseEntityView<List<ContentType>> responseEntityView = contentTypeAPI.getContentTypes(
                 filter.typeName, filter.page, filter.pageSize,
-                filter.orderBy, null, null, filter.host);
+                filter.orderBy, null, null, filter.site);
 
         final List<ContentType> types = responseEntityView.entity();
         if (types.isEmpty()) {

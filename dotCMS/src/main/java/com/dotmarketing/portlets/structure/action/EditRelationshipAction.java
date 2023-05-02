@@ -44,7 +44,7 @@ public class EditRelationshipAction extends DotPortletAction {
 		String cmd = req.getParameter(Constants.CMD);
 		String referer = req.getParameter("referer");
 		if (!UtilMethods.isSet(referer)) {
-			Map<String, String[]> params = new HashMap<String, String[]> ();
+			Map<String, String[]> params = new HashMap<> ();
 			params.put("struts_action", new String[] {"/ext/structure/view_relationships"});
 			referer = PortletURLUtil.getActionURL(req, WindowState.MAXIMIZED.toString(), params);
 		}

@@ -63,7 +63,7 @@ public class WfRoleStoreAjax extends WfBaseAction {
                 addSystemUser = true;
             }
 
-            List<Role> roleList = new ArrayList<Role>();
+            List<Role> roleList = new ArrayList<>();
             if ( UtilMethods.isSet( roleId ) ) {
                 try {
                     Role r = rapi.loadRoleById( roleId );
@@ -138,8 +138,8 @@ public class WfRoleStoreAjax extends WfBaseAction {
             String actionId = request.getParameter( "actionId" );
             WorkflowAction action = APILocator.getWorkflowAPI().findAction( actionId, getUser() );
             Role role = APILocator.getRoleAPI().loadRoleById( action.getNextAssign() );
-            List<Role> roleList = new ArrayList<Role>();
-            List<User> userList = new ArrayList<User>();
+            List<Role> roleList = new ArrayList<>();
+            List<User> userList = new ArrayList<>();
             if ( !role.isUser() ) {
                 if ( action.isRoleHierarchyForAssign() ) {
                     userList = APILocator.getRoleAPI().findUsersForRole( role, true );
@@ -162,7 +162,7 @@ public class WfRoleStoreAjax extends WfBaseAction {
 
                 name = name.toLowerCase().replaceAll( "\\*", "" );
                 if ( UtilMethods.isSet( name ) ) {
-                    List<Role> newRoleList = new ArrayList<Role>();
+                    List<Role> newRoleList = new ArrayList<>();
                     for ( Role r : roleList ) {
                         if ( r.getName().toLowerCase().startsWith( name ) ) {
                             newRoleList.add( r );
@@ -186,9 +186,9 @@ public class WfRoleStoreAjax extends WfBaseAction {
 
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure( DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false );
-        Map<String, Object> m = new LinkedHashMap<String, Object>();
+        Map<String, Object> m = new LinkedHashMap<>();
 
-        List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+        List<Map<String, Object>> list = new ArrayList<>();
 
         Map<String, Object> map = null;
 
@@ -214,7 +214,7 @@ public class WfRoleStoreAjax extends WfBaseAction {
 
         for ( Role role : roles ) {
 
-            map = new HashMap<String, Object>();
+            map = new HashMap<>();
 
             //Exclude default user
             if ( defaultUserRole != null && role.getId().equals( defaultUserRole.getId() ) ) {

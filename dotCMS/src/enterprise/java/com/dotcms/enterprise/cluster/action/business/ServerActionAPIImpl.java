@@ -97,7 +97,7 @@ public class ServerActionAPIImpl implements ServerActionAPI {
 	@Override
 	public List<ServerAction> getAllServerActions() {
 		
-		List<ServerAction> serverActions = new ArrayList<ServerAction>();
+		List<ServerAction> serverActions = new ArrayList<>();
 		
 		serverActions.add(new NodeStatusServerAction());
 		serverActions.add(new ResetLicenseServerAction());
@@ -161,7 +161,7 @@ public class ServerActionAPIImpl implements ServerActionAPI {
 	public List<ServerActionBean> getNewServerActionBeans() throws DotDataException {
 		
 		List<ServerActionBean> list = serverActionFactory.getAllServerActions();
-		List<ServerActionBean> returnedlist = new ArrayList<ServerActionBean>();
+		List<ServerActionBean> returnedlist = new ArrayList<>();
 		
 		for (ServerActionBean serverActionBean : list) {
 			if(!serverActionBean.isCompleted()){
@@ -181,7 +181,7 @@ public class ServerActionAPIImpl implements ServerActionAPI {
 			throws DotDataException {
 
 		final List<ServerActionBean> list = serverActionFactory.getAllServerActions();
-		final List<ServerActionBean> returnedlist = new ArrayList<ServerActionBean>();
+		final List<ServerActionBean> returnedlist = new ArrayList<>();
 
 		if(UtilMethods.isSet(serverID)){
 			for (ServerActionBean serverActionBean : list) {

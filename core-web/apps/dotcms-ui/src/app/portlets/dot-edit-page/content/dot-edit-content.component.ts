@@ -14,6 +14,7 @@ import {
     map,
     pluck,
     skip,
+    switchMap,
     take,
     takeUntil,
     tap
@@ -29,6 +30,7 @@ import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-u
 import {
     DotAlertConfirmService,
     DotCopyContentService,
+    DotCurrentUserService,
     DotESContentService,
     DotEventsService,
     DotLicenseService,
@@ -146,7 +148,8 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         private dotEventsService: DotEventsService,
         private dotESContentService: DotESContentService,
         private dotSessionStorageService: DotSessionStorageService,
-        private readonly dotCopyContentService: DotCopyContentService
+        private readonly dotCopyContentService: DotCopyContentService,
+        private dotCurrentUser: DotCurrentUserService
     ) {
         if (!this.customEventsHandler) {
             this.customEventsHandler = {
@@ -362,13 +365,19 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     }
 
     private updateFavoritePageIconStatus(pageUrl: string) {
-        this.dotESContentService
-            .get({
-                itemsPerPage: 10,
-                offset: '0',
-                query: `+contentType:DotFavoritePage +deleted:false +working:true +DotFavoritePage.url_dotraw:${pageUrl}`
-            })
-            .pipe(take(1))
+        this.dotCurrentUser
+            .getCurrentUser()
+            .pipe(
+                switchMap(({ userId }) =>
+                    this.dotESContentService
+                        .get({
+                            itemsPerPage: 10,
+                            offset: '0',
+                            query: `+contentType:DotFavoritePage +deleted:false +working:true +owner:${userId} +DotFavoritePage.url_dotraw:${pageUrl}`
+                        })
+                        .pipe(take(1))
+                )
+            )
             .subscribe((response: ESContent) => {
                 const favoritePage = response.jsonObjectView?.contentlets[0];
                 this.dotPageStateService.setFavoritePageHighlight(favoritePage);

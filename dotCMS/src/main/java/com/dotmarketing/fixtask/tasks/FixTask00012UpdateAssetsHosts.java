@@ -58,11 +58,11 @@ public class FixTask00012UpdateAssetsHosts implements FixTask {
 	
 	private final static String updateIdentifierHost = "update identifier set host_inode=? where id =?";
 	
-	private List<Map<String, String>> modifiedData = new ArrayList<Map<String, String>>();
+	private List<Map<String, String>> modifiedData = new ArrayList<>();
 	
 	@SuppressWarnings({ "deprecation", "unchecked" })
 	public List<Map<String, Object>> executeFix() throws DotDataException, DotRuntimeException {
-		List<Map<String, Object>> returnValue = new ArrayList<Map<String, Object>>();
+		List<Map<String, Object>> returnValue = new ArrayList<>();
 		Logger.info(FixTask00012UpdateAssetsHosts.class,"Beginning UpdateAssetsHosts");
 		
 		if (!FixAssetsProcessStatus.getRunning()) {
@@ -161,7 +161,7 @@ public class FixTask00012UpdateAssetsHosts implements FixTask {
 						dc.getResult();
 					}
 					
-					data = new HashMap<String, String>();
+					data = new HashMap<>();
 					data.put("" + (++counter), "identifier with inode=" + identifier.get("inode"));
 					modifiedData.add(data);
 				}
