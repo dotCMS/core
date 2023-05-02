@@ -8,6 +8,7 @@ import { pluck } from 'rxjs/operators';
 import { DotCMSResponse } from '@dotcms/dotcms-js';
 import {
     DotExperiment,
+    DotExperimentResults,
     Goals,
     GoalsLevels,
     RangeOfDateAndTime,
@@ -55,6 +56,18 @@ export class DotExperimentsService {
     getById(experimentId: string): Observable<DotExperiment> {
         return this.http
             .get<DotCMSResponse<DotExperiment>>(`${API_ENDPOINT}/${experimentId}`)
+            .pipe(pluck('entity'));
+    }
+
+    /**
+     * Get results of an experiment
+     * @param {string} experimentId
+     * @returns Observable<DotExperiment>
+     * @memberof DotExperimentsService
+     */
+    getResults(experimentId: string): Observable<DotExperimentResults> {
+        return this.http
+            .get<DotCMSResponse<DotExperimentResults>>(`${API_ENDPOINT}/${experimentId}/results`)
             .pipe(pluck('entity'));
     }
 
@@ -158,7 +171,20 @@ export class DotExperimentsService {
     }
 
     /**
+     * Promote variant of experiment
+     * @param  {string} variantName
+     * @returns Observable<DotExperiment>
+     * @memberof DotExperimentsService
+     */
+    promoteVariant(variantName: string): Observable<DotExperiment> {
+        return this.http
+            .put<DotCMSResponse<DotExperiment>>(`/api/v1/variants/${variantName}/_promote`, {})
+            .pipe(pluck('entity'));
+    }
+
+    /**
      * Set a selectedGoal to an experiment
+     * @param {string} experimentId
      * @param {Goal} selectedGoal
      * @returns Observable<DotExperiment>
      * @memberof DotExperimentsService

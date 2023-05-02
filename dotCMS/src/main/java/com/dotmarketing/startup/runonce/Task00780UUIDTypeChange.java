@@ -976,7 +976,7 @@ public class Task00780UUIDTypeChange extends AbstractJDBCStartupTask{
 
 	@Override
 	protected List<String> getTablesToDropConstraints() {
-		List<String> tablesList = new ArrayList<String>();
+		List<String> tablesList = new ArrayList<>();
 		if(DbConnectionFactory.isOracle()
 				||DbConnectionFactory.isMsSql()){
 			dropIndexes();

@@ -26,7 +26,7 @@ public class PublisherFilterImplTest {
     @Test
     public void Test_doesExcludeDependencyClassesContainsType(){
         // Using diff case because user can use diff case
-        final ArrayList<String> listOfTypes = new ArrayList<String>(Arrays.asList("Containers", "TEMPLATE","host","ContentType"));
+        final ArrayList<String> listOfTypes = new ArrayList<>(Arrays.asList("Containers", "TEMPLATE","host","ContentType"));
 
         final PublisherFilterImpl publisherFilter = new PublisherFilterImpl(true,true);
 
@@ -57,7 +57,7 @@ public class PublisherFilterImplTest {
     @Test
     public void Test_doesExcludeClassesContainsType(){
         // Using diff case because user can use diff case
-        final ArrayList<String> listOfTypes = new ArrayList<String>(Arrays.asList("Containers", "TEMPLATE","host"));
+        final ArrayList<String> listOfTypes = new ArrayList<>(Arrays.asList("Containers", "TEMPLATE","host"));
 
         final PublisherFilterImpl publisherFilter = new PublisherFilterImpl(true,true);
 
@@ -89,7 +89,7 @@ public class PublisherFilterImplTest {
         final String id1 = UUIDGenerator.generateUuid();
         final String id2 = UUIDGenerator.generateUuid();
         final String id3 = UUIDGenerator.generateUuid();
-        final ArrayList<String> listOfIds = new ArrayList<String>(Arrays.asList(id1,id2,id3));
+        final ArrayList<String> listOfIds = new ArrayList<>(Arrays.asList(id1,id2,id3));
 
         final PublisherFilterImpl publisherFilter = new PublisherFilterImpl(true,true);
 
@@ -121,7 +121,7 @@ public class PublisherFilterImplTest {
         final String id1 = UUIDGenerator.generateUuid();
         final String id2 = UUIDGenerator.generateUuid();
         final String id3 = UUIDGenerator.generateUuid();
-        final ArrayList<String> listOfIds = new ArrayList<String>(Arrays.asList(id1,id2,id3));
+        final ArrayList<String> listOfIds = new ArrayList<>(Arrays.asList(id1,id2,id3));
 
         final PublisherFilterImpl publisherFilter = new PublisherFilterImpl(true,true);
 

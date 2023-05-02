@@ -205,7 +205,7 @@ public class CollectionsUtils implements Serializable {
      * @return List
      */
     public static <T> List<T> list() {
-        return new ArrayList<T>();
+        return new ArrayList<>();
     } // list
 
 
@@ -247,7 +247,7 @@ public class CollectionsUtils implements Serializable {
      * @return List
      */
     public static <T> List<T> list(final Collection<T> tCollection) {
-        return new ArrayList<T>(tCollection);
+        return new ArrayList<>(tCollection);
     } // list
 
     /**
@@ -256,7 +256,7 @@ public class CollectionsUtils implements Serializable {
      * @return Set
      */
     public static <T> Set<T> set () {
-        return new HashSet<T>();
+        return new HashSet<>();
     } // set
 
     /**
@@ -278,7 +278,7 @@ public class CollectionsUtils implements Serializable {
      */
     @SuppressWarnings("unchecked")
     public static <T> Set<T> linkSet (final T... elements) {
-        return new LinkedHashSet<T>(Arrays.asList(elements));
+        return new LinkedHashSet<>(Arrays.asList(elements));
     } // set
 
     /**
@@ -288,7 +288,7 @@ public class CollectionsUtils implements Serializable {
      * @return Set
      */
     public static <T> Set<T> set (final Collection<T> tCollection) {
-        return new HashSet<T>(tCollection);
+        return new HashSet<>(tCollection);
     } // set
 
     /**
@@ -298,7 +298,7 @@ public class CollectionsUtils implements Serializable {
      * @return Map
      */
     public static <K,V> Map<K,V> map() {
-        return new HashMap<K, V>();
+        return new HashMap<>();
     } // map.
 
     /**
@@ -892,7 +892,7 @@ public class CollectionsUtils implements Serializable {
      * @return Map.Entry
      */
     public static <K,V> Map.Entry<K, V> entry(final K key, final V value) {
-        return new AbstractMap.SimpleEntry<K, V>(key, value);
+        return new AbstractMap.SimpleEntry<>(key, value);
     } // entry
 
     /**
@@ -1009,7 +1009,7 @@ public class CollectionsUtils implements Serializable {
     } // ImmutableListCollector.
 
     public static <T> List<T> asList (final Iterator<T> iterator) {
-	    final List<T> result = new ArrayList<T>();
+	    final List<T> result = new ArrayList<>();
 
         while(iterator.hasNext()){
             final T next = iterator.next();

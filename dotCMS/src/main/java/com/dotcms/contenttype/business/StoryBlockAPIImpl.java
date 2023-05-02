@@ -38,7 +38,8 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
     @Override
     public StoryBlockReferenceResult refreshReferences(final Contentlet contentlet) {
         final MutableBoolean refreshed = new MutableBoolean(false);
-        if (null != contentlet && contentlet.getContentType().hasStoryBlockFields()) {
+        if (null != contentlet && null != contentlet.getContentType() &&
+                contentlet.getContentType().hasStoryBlockFields()) {
             contentlet.getContentType().fields(StoryBlockField.class)
                     .forEach(field -> {
 

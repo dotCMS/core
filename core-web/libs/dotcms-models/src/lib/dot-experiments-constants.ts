@@ -1,7 +1,7 @@
 import { GOAL_OPERATORS, GOAL_PARAMETERS, GOAL_TYPES, Goals } from './dot-experiments.model';
 import { DotDropdownSelectOption } from './shared-models';
 
-export const MAX_VARIANTS_ALLOWED = 2;
+export const MAX_VARIANTS_ALLOWED = 3;
 
 export const DEFAULT_VARIANT_ID = 'DEFAULT';
 
@@ -14,11 +14,14 @@ export enum TrafficProportionTypes {
     CUSTOM_PERCENTAGES = 'CUSTOM_PERCENTAGES'
 }
 
+export const MAX_INPUT_LENGTH = 50;
+
+// Keep the order of this enum is important to respect the order of the experiment listing.
 export enum DotExperimentStatusList {
     RUNNING = 'RUNNING',
     SCHEDULED = 'SCHEDULED',
-    ENDED = 'ENDED',
     DRAFT = 'DRAFT',
+    ENDED = 'ENDED',
     ARCHIVED = 'ARCHIVED'
 }
 

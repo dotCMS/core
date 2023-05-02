@@ -81,7 +81,7 @@ public class PushPublisherConfig extends PublisherConfig {
                         Try.of(() -> publisherAPI.getQueueElementsByBundleId(bundle.getId()))
                                         .onFailure(e -> Logger.warnAndDebug(PushPublisherConfig.class, e))
                                         .getOrElse(ImmutableList.of());
-        final List<PublishQueueElement> assetsToPublish = new ArrayList<PublishQueueElement>();
+        final List<PublishQueueElement> assetsToPublish = new ArrayList<>();
         assetsToPublish.addAll(tempBundleContents);
 
 
@@ -180,7 +180,7 @@ public class PushPublisherConfig extends PublisherConfig {
 	@SuppressWarnings("unchecked")
 	public Set<String> getHTMLPages() {
 		if(get(AssetTypes.HTMLPAGES.name()) == null){
-			Set<String> htmlPagesToBuild =   new HashSet<String>();
+			Set<String> htmlPagesToBuild =   new HashSet<>();
 			put(AssetTypes.HTMLPAGES.name(), htmlPagesToBuild);
 		}
 		return (Set<String>) get(AssetTypes.HTMLPAGES.name());

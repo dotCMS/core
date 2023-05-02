@@ -1,3 +1,4 @@
+import { ChartData } from 'chart.js';
 import { of } from 'rxjs';
 
 import {
@@ -5,7 +6,10 @@ import {
     DEFAULT_VARIANT_ID,
     DEFAULT_VARIANT_NAME,
     DotExperiment,
+    DotExperimentResults,
     DotExperimentStatusList,
+    DotResultSimpleVariant,
+    ExperimentLineChartDatasetDefaultProperties,
     GOAL_OPERATORS,
     GOAL_PARAMETERS,
     GOAL_TYPES,
@@ -33,6 +37,10 @@ export const getExperimentMock = (index: number): DotExperiment => {
 
 export const getExperimentAllMocks = (): Array<DotExperiment> => {
     return [{ ...getExperimentMock(0) }, { ...getExperimentMock(1) }, { ...getExperimentMock(2) }];
+};
+
+export const getExperimentResultsMock = (index: number): DotExperimentResults => {
+    return { ...ExperimentResultsMocks[index] };
 };
 
 const ExperimentMocks: Array<DotExperiment> = [
@@ -98,6 +106,149 @@ const ExperimentMocks: Array<DotExperiment> = [
         creationDate: new Date('2022-08-21 14:50:03'),
         modDate: new Date('2022-08-21 18:50:03'),
         goals: { ...GoalsMock }
+    },
+    {
+        id: '444',
+        identifier: '3333-3333-3333-3333',
+        pageId: '456',
+        status: DotExperimentStatusList.DRAFT,
+        archived: false,
+        readyToStart: false,
+        description: 'Praesent at molestie mauris, quis vulputate augue.',
+        name: 'Praesent at molestie mauris',
+        trafficAllocation: 100,
+        scheduling: { startDate: null, endDate: null },
+        trafficProportion: {
+            type: TrafficProportionTypes.SPLIT_EVENLY,
+            variants: [
+                { id: DEFAULT_VARIANT_ID, name: DEFAULT_VARIANT_NAME, weight: 50 },
+                { id: '222', name: 'Variant A', weight: 50 }
+            ]
+        },
+        creationDate: new Date('2022-08-21 14:50:03'),
+        modDate: new Date('2022-08-21 18:50:03'),
+        goals: { ...GoalsMock }
+    }
+];
+
+const ExperimentResultsMocks: Array<DotExperimentResults> = [
+    {
+        goals: {
+            primary: {
+                goal: {
+                    conditions: [
+                        {
+                            operator: GOAL_OPERATORS.CONTAINS,
+                            parameter: GOAL_PARAMETERS.URL,
+                            value: '/destinations'
+                        },
+                        {
+                            operator: GOAL_OPERATORS.CONTAINS,
+                            parameter: GOAL_PARAMETERS.REFERER,
+                            value: '/blog/'
+                        }
+                    ],
+                    name: 'Primary Goal',
+                    type: GOAL_TYPES.REACH_PAGE
+                },
+                variants: {
+                    [DEFAULT_VARIANT_ID]: {
+                        details: {
+                            '04/01/2023': { multiBySession: 1, uniqueBySession: 0 },
+                            '04/02/2023': { multiBySession: 2, uniqueBySession: 0 },
+                            '04/03/2023': { multiBySession: 3, uniqueBySession: 0 },
+                            '04/04/2023': { multiBySession: 4, uniqueBySession: 0 },
+                            '04/05/2023': { multiBySession: 5, uniqueBySession: 0 },
+                            '04/06/2023': { multiBySession: 6, uniqueBySession: 0 },
+                            '04/07/2023': { multiBySession: 7, uniqueBySession: 0 },
+                            '04/08/2023': { multiBySession: 8, uniqueBySession: 0 },
+                            '04/09/2023': { multiBySession: 9, uniqueBySession: 0 },
+                            '04/10/2023': { multiBySession: 10, uniqueBySession: 0 },
+                            '04/11/2023': { multiBySession: 11, uniqueBySession: 0 },
+                            '04/12/2023': { multiBySession: 12, uniqueBySession: 0 },
+                            '04/13/2023': { multiBySession: 13, uniqueBySession: 0 },
+                            '04/14/2023': { multiBySession: 14, uniqueBySession: 0 },
+                            '04/15/2023': { multiBySession: 15, uniqueBySession: 0 }
+                        },
+                        multiBySession: 2,
+                        uniqueBySession: {
+                            count: 2,
+                            totalPercentage: 100.0,
+                            variantPercentage: 100.0
+                        },
+                        variantName: 'DEFAULT'
+                    },
+                    '111': {
+                        details: {
+                            '04/01/2023': { multiBySession: 15, uniqueBySession: 0 },
+                            '04/02/2023': { multiBySession: 14, uniqueBySession: 0 },
+                            '04/03/2023': { multiBySession: 13, uniqueBySession: 0 },
+                            '04/04/2023': { multiBySession: 12, uniqueBySession: 0 },
+                            '04/05/2023': { multiBySession: 11, uniqueBySession: 0 },
+                            '04/06/2023': { multiBySession: 10, uniqueBySession: 0 },
+                            '04/07/2023': { multiBySession: 9, uniqueBySession: 0 },
+                            '04/08/2023': { multiBySession: 8, uniqueBySession: 0 },
+                            '04/09/2023': { multiBySession: 7, uniqueBySession: 0 },
+                            '04/10/2023': { multiBySession: 6, uniqueBySession: 0 },
+                            '04/11/2023': { multiBySession: 5, uniqueBySession: 0 },
+                            '04/12/2023': { multiBySession: 4, uniqueBySession: 0 },
+                            '04/13/2023': { multiBySession: 3, uniqueBySession: 0 },
+                            '04/14/2023': { multiBySession: 2, uniqueBySession: 0 },
+                            '04/15/2023': { multiBySession: 1, uniqueBySession: 0 }
+                        },
+                        multiBySession: 0,
+                        uniqueBySession: { count: 0, totalPercentage: 0.0, variantPercentage: 0.0 },
+                        variantName: '111'
+                    }
+                }
+            }
+        },
+        sessions: { total: 2, variants: { DEFAULT: 2, '111': 0 } }
+    }
+];
+
+export const CHARTJS_DATA_MOCK_WITH_DATA: ChartData<'line'> = {
+    labels: [
+        ['Thursday', '04/01/2023'],
+        ['Friday', '04/02/2023'],
+        ['Saturday', '04/03/2023'],
+        ['Sunday', '04/04/2023']
+    ],
+    datasets: [
+        {
+            label: DEFAULT_VARIANT_NAME,
+            data: [1, 2, 3, 4],
+            ...ExperimentLineChartDatasetDefaultProperties
+        }
+    ]
+};
+
+export const CHARTJS_DATA_MOCK_EMPTY: ChartData<'line'> = {
+    labels: [
+        ['Thursday', '04/01/2023'],
+        ['Friday', '04/02/2023'],
+        ['Saturday', '04/03/2023'],
+        ['Sunday', '04/04/2023']
+    ],
+    datasets: [
+        {
+            label: DEFAULT_VARIANT_NAME,
+            data: [],
+            ...ExperimentLineChartDatasetDefaultProperties
+        }
+    ]
+};
+
+export const VARIANT_RESULT_MOCK_1: DotResultSimpleVariant[] = [
+    {
+        id: '111',
+        name: 'variant a',
+        uniqueBySession: { count: 0, totalPercentage: 0, variantPercentage: 0 }
+    },
+    {
+        id: DEFAULT_VARIANT_ID,
+        name: DEFAULT_VARIANT_NAME,
+        uniqueBySession: { count: 2, totalPercentage: 100, variantPercentage: 100 }
     }
 ];
 
@@ -169,7 +320,8 @@ export const DotExperimentsConfigurationStoreMock = {
 };
 
 export const DotExperimentsReportsStoreMock = {
-    loadExperiment: () => of([])
+    loadExperimentAndResults: () => of([]),
+    promoteVariant: () => of([])
 };
 
 export const DotExperimentsServiceMock = {

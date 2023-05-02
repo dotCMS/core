@@ -9,15 +9,19 @@ import picocli.CommandLine.Command;
 
 @TopCommand
 @Command(
-        name = "dotCMS", mixinStandardHelpOptions = true, showAtFileInUsageHelp = true,
+        name = "dotCMS",
+        mixinStandardHelpOptions = true,
         version = {"dotCMS-cli 1.0", "picocli " + CommandLine.VERSION},
-        description = {},
+        description = {
+                "@|bold,underline,blue dotCMS|@ cli is a command line interface to interact with your @|bold,underline,blue dotCMS|@ instance.",
+        },
         header = "dotCMS cli",
         subcommands = {
           //-- Miscellaneous stuff
-           LoginCommand.class,
            StatusCommand.class,
            InstanceCommand.class,
+           LoginCommand.class,
+
           //---- ContentType Related stuff
            ContentTypeCommand.class,
           //--- Site related stuff

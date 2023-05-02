@@ -71,7 +71,7 @@ public class ViewFormHandlerAction extends DotPortletAction {
 		}
 		boolean resetQuery = req.getParameter("resetQuery")!=null;
 		
-		List<Structure> structures = new java.util.ArrayList<Structure>();
+		List<Structure> structures = new java.util.ArrayList<>();
 
 		try {
 			String orderby = req.getParameter("orderBy");
@@ -128,7 +128,7 @@ public class ViewFormHandlerAction extends DotPortletAction {
             structures = APILocator.getStructureAPI().find(user, false, false, queryCondition, orderby, limit, offset, direction);
 
 			count = APILocator.getContentTypeAPI(user).count(queryCondition);
-			req.setAttribute(countWebKey, new Integer(count));
+			req.setAttribute(countWebKey, Integer.valueOf(count));
 			req.setAttribute(viewWebKey, structures);
 		} catch (Exception e) {
 			req.setAttribute(viewWebKey, structures);

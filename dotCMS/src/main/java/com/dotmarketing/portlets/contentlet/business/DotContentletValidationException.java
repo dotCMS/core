@@ -31,8 +31,8 @@ public class DotContentletValidationException extends DotContentletStateExceptio
 	public final static String VALIDATION_FAILED_BAD_CARDINALITY = "badCar";
 
 	private static final long serialVersionUID = 1L;
-	private Map<String, List<Field>> notValidFields = new HashMap<String, List<Field>>();
-	private Map<String, Map<Relationship, List<Contentlet>>> notValidRelationships = new HashMap<String, Map<Relationship, List<Contentlet>>>();
+	private Map<String, List<Field>> notValidFields = new HashMap<>();
+	private Map<String, Map<Relationship, List<Contentlet>>> notValidRelationships = new HashMap<>();
 
 	/**
 	 * Used for throwing contentlet validation problems
@@ -65,7 +65,7 @@ public class DotContentletValidationException extends DotContentletStateExceptio
 	 * @param contentlets
 	 */
 	public void addRequiredRelationship(Relationship relationship, List<Contentlet> contentlets){
-		Map<Relationship, List<Contentlet>> m = new HashMap<Relationship, List<Contentlet>>();
+		Map<Relationship, List<Contentlet>> m = new HashMap<>();
 		m.put(relationship, contentlets);
 		notValidRelationships.put(VALIDATION_FAILED_REQUIRED_REL, m);
 	}
@@ -76,7 +76,7 @@ public class DotContentletValidationException extends DotContentletStateExceptio
 	 * @param contentlets
 	 */
 	public void addInvalidContentRelationship(Relationship relationship, List<Contentlet> contentlets){
-		Map<Relationship, List<Contentlet>> m = new HashMap<Relationship, List<Contentlet>>();
+		Map<Relationship, List<Contentlet>> m = new HashMap<>();
 		m.put(relationship, contentlets);
 		notValidRelationships.put(VALIDATION_FAILED_INVALID_REL_CONTENT, m);
 	}
@@ -87,7 +87,7 @@ public class DotContentletValidationException extends DotContentletStateExceptio
 	 * @param contentlets
 	 */
 	public void addBadRelationship(Relationship relationship, List<Contentlet> contentlets){
-		Map<Relationship, List<Contentlet>> m = new HashMap<Relationship, List<Contentlet>>();
+		Map<Relationship, List<Contentlet>> m = new HashMap<>();
 		m.put(relationship, contentlets);
 		notValidRelationships.put(VALIDATION_FAILED_BAD_REL, m);
 	}
@@ -98,7 +98,7 @@ public class DotContentletValidationException extends DotContentletStateExceptio
 	 * @param contentlets
 	 */
 	public void addBadCardinalityRelationship(Relationship relationship, List<Contentlet> contentlets){
-		Map<Relationship, List<Contentlet>> m = new HashMap<Relationship, List<Contentlet>>();
+		Map<Relationship, List<Contentlet>> m = new HashMap<>();
 		m.put(relationship, contentlets);
 		notValidRelationships.put(VALIDATION_FAILED_BAD_CARDINALITY, m);
 	}
@@ -110,7 +110,7 @@ public class DotContentletValidationException extends DotContentletStateExceptio
 	public void addRequiredField(Field field){
 		List<Field> fields = notValidFields.get(VALIDATION_FAILED_REQUIRED);
 		if(fields == null)
-			fields = new ArrayList<Field>();
+			fields = new ArrayList<>();
 		fields.add(field);
 		notValidFields.put(VALIDATION_FAILED_REQUIRED, fields);
 	}
@@ -122,7 +122,7 @@ public class DotContentletValidationException extends DotContentletStateExceptio
 	public void addPatternField(Field field){
 		List<Field> fields = notValidFields.get(VALIDATION_FAILED_PATTERN);
 		if(fields == null)
-			fields = new ArrayList<Field>();
+			fields = new ArrayList<>();
 		fields.add(field);
 		notValidFields.put(VALIDATION_FAILED_PATTERN, fields);
 	}
@@ -134,7 +134,7 @@ public class DotContentletValidationException extends DotContentletStateExceptio
 	public void addMaxLengthField(Field field){
 		List<Field> fields = notValidFields.get(VALIDATION_FAILED_MAXLENGTH);
 		if(fields == null)
-			fields = new ArrayList<Field>();
+			fields = new ArrayList<>();
 		fields.add(field);
 		notValidFields.put(VALIDATION_FAILED_MAXLENGTH, fields);
 	}
@@ -146,7 +146,7 @@ public class DotContentletValidationException extends DotContentletStateExceptio
 	public void addBadTypeField(Field field){
 		List<Field> fields = notValidFields.get(VALIDATION_FAILED_BADTYPE);
 		if(fields == null)
-			fields = new ArrayList<Field>();
+			fields = new ArrayList<>();
 		fields.add(field);
 		notValidFields.put(VALIDATION_FAILED_BADTYPE, fields);
 	}
@@ -158,7 +158,7 @@ public class DotContentletValidationException extends DotContentletStateExceptio
 	public void addUniqueField(Field field){
 		List<Field> fields = notValidFields.get(VALIDATION_FAILED_UNIQUE);
 		if(fields == null)
-			fields = new ArrayList<Field>();
+			fields = new ArrayList<>();
 		fields.add(field);
 		notValidFields.put(VALIDATION_FAILED_UNIQUE, fields);
 	}

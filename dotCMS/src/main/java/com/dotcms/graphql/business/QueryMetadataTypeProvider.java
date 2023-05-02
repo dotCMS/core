@@ -9,7 +9,7 @@ import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLType;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -29,6 +29,6 @@ public enum QueryMetadataTypeProvider implements GraphQLTypesProvider {
 
     @Override
     public Collection<? extends GraphQLType> getTypes() {
-        return Collections.singletonList(countType);
+        return List.of(countType);
     }
 }

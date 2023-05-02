@@ -77,7 +77,7 @@ public class CalendarWebAPI implements ViewTool {
 			user = (User)request.getSession().getAttribute(WebKeys.CMS_USER);
 		}
 		
-		List<Event> eventsList = new ArrayList<Event>();
+		List<Event> eventsList = new ArrayList<>();
 		Event parentEv = eventAPI.find(parentEvent, true, user, respectCMSAnon);
 		List<Event> events = eventAPI.findRelatedEvents(parentEv, fromDate, toDate, true, user, respectCMSAnon);
 		for(Event ev : events) {
@@ -122,7 +122,7 @@ public class CalendarWebAPI implements ViewTool {
 			respectCMSAnon = true;
 			user = (User)request.getSession().getAttribute(WebKeys.CMS_USER);
 		}
-		List<Category> categories = new ArrayList<Category>();
+		List<Category> categories = new ArrayList<>();
 		if(UtilMethods.isSet(categoryInode)) {
 				Category cat = categoryAPI.find(categoryInode, user, respectCMSAnon);
 				if(cat != null)

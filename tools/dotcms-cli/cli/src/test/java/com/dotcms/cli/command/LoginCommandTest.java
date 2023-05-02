@@ -49,7 +49,7 @@ public class LoginCommandTest extends CommandTest {
             Assertions.assertEquals(ExitCode.USAGE, status);
             final String output = writer.toString();
             Assertions.assertTrue(output.contains("Missing required options:"));
-            Assertions.assertTrue(output.contains("Once a profile is selected. Use this command to open a session Expects a user"));
+            Assertions.assertTrue(output.contains("Once an instance is selected. Use this command to open a session"));
         }
     }
 

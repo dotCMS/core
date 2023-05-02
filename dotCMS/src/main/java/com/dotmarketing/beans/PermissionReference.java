@@ -103,7 +103,7 @@ public class PermissionReference implements Serializable {
 
 	
 	public Map<String, Object> getMap() {
-		HashMap<String, Object> theMap = new HashMap<String, Object>();
+		HashMap<String, Object> theMap = new HashMap<>();
 		theMap.put("id", this.getId());
 		theMap.put("assetId", this.getAssetId());
 		theMap.put("referenceId", this.getReferenceId());

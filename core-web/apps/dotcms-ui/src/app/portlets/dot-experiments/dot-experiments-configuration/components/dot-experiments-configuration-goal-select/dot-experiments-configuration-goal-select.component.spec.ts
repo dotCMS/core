@@ -29,7 +29,9 @@ import { DotExperimentsConfigurationGoalSelectComponent } from './dot-experiment
 const messageServiceMock = new MockDotMessageService({
     'experiments.configure.goals.sidebar.header': 'Select a goal',
     'experiments.configure.goals.sidebar.header.button': 'Apply',
-    'experiments.configure.goals.name.default': 'Primary goal'
+    'experiments.configure.goals.name.default': 'Primary goal',
+    'experiments.goal.conditions.maximize.reach.page': 'Maximize Reaching a Page',
+    'experiments.goal.conditions.minimize.bounce.rate': 'Minimize Bounce Rate'
 });
 
 const EXPERIMENT_MOCK = getExperimentMock(0);
@@ -81,9 +83,43 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
 
     it('should have a form & autofocus', () => {
         expect(spectator.query(byTestId('select-goal-form'))).toExist();
-        expect(spectator.query(byTestId('goal-name-input'))).toHaveAttribute('dotAutofocus');
         expect((spectator.query(byTestId('goal-name-input')) as HTMLInputElement).value).toEqual(
-            'Primary goal'
+            ''
+        );
+    });
+
+    it('should set the default name when type change', () => {
+        expect((spectator.query(byTestId('goal-name-input')) as HTMLInputElement).value).toEqual(
+            ''
+        );
+
+        const optionsRendered = spectator.queryAll(byTestId('dot-options-item-header'));
+
+        spectator.click(optionsRendered[0]);
+
+        expect((spectator.query(byTestId('goal-name-input')) as HTMLInputElement).value).toEqual(
+            'Minimize Bounce Rate'
+        );
+
+        spectator.click(optionsRendered[1]);
+
+        expect((spectator.query(byTestId('goal-name-input')) as HTMLInputElement).value).toEqual(
+            'Maximize Reaching a Page'
+        );
+    });
+
+    it('should not change the name if the user set one', () => {
+        const customName = 'Test Goal';
+
+        spectator.typeInElement(customName, spectator.query(byTestId('goal-name-input')));
+
+        const optionsRendered = spectator.queryAll(byTestId('dot-options-item-header'));
+
+        spectator.click(optionsRendered[0]);
+        spectator.click(optionsRendered[1]);
+
+        expect((spectator.query(byTestId('goal-name-input')) as HTMLInputElement).value).toEqual(
+            customName
         );
     });
 
@@ -173,6 +209,26 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
         expect(spectator.component.form.valid).toBeTrue();
         expect(applyBtn.disabled).toBeFalse();
         expect(store.setSelectedGoal).toHaveBeenCalledWith(expectedGoal);
+    });
+
+    it('should disable submit button if the input name of the goal has more than MAX_INPUT_LENGTH constant', () => {
+        const invalidFormValues = {
+            primary: {
+                ...DefaultGoalConfiguration.primary,
+                name: 'Really really really really really long name for a goal',
+                type: GOAL_TYPES.BOUNCE_RATE
+            }
+        };
+
+        spectator.component.form.setValue(invalidFormValues);
+        spectator.component.form.updateValueAndValidity();
+        spectator.detectComponentChanges();
+
+        expect(
+            (spectator.query(byTestId('add-goal-button')) as HTMLButtonElement).disabled
+        ).toBeTrue();
+        expect(spectator.component.goalNameControl.hasError('maxlength')).toEqual(true);
+        expect(spectator.component.form.valid).toEqual(false);
     });
 
     it('should add the class expand to an option clicked that contains content', () => {

@@ -1,0 +1,127 @@
+/* 
+* Licensed to dotCMS LLC under the dotCMS Enterprise License (the
+* “Enterprise License”) found below 
+* 
+* Copyright (c) 2023 dotCMS Inc.
+* 
+* With regard to the dotCMS Software and this code:
+* 
+* This software, source code and associated documentation files (the
+* "Software")  may only be modified and used if you (and any entity that
+* you represent) have:
+* 
+* 1. Agreed to and are in compliance with, the dotCMS Subscription Terms
+* of Service, available at https://www.dotcms.com/terms (the “Enterprise
+* Terms”) or have another agreement governing the licensing and use of the
+* Software between you and dotCMS. 2. Each dotCMS instance that uses
+* enterprise features enabled by the code in this directory is licensed
+* under these agreements and has a separate and valid dotCMS Enterprise
+* server key issued by dotCMS.
+* 
+* Subject to these terms, you are free to modify this Software and publish
+* patches to the Software if you agree that dotCMS and/or its licensors
+* (as applicable) retain all right, title and interest in and to all such
+* modifications and/or patches, and all such modifications and/or patches
+* may only be used, copied, modified, displayed, distributed, or otherwise
+* exploited with a valid dotCMS Enterprise license for the correct number
+* of dotCMS instances.  You agree that dotCMS and/or its licensors (as
+* applicable) retain all right, title and interest in and to all such
+* modifications.  You are not granted any other rights beyond what is
+* expressly stated herein.  Subject to the foregoing, it is forbidden to
+* copy, merge, publish, distribute, sublicense, and/or sell the Software.
+* 
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+* OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+* 
+* For all third party components incorporated into the dotCMS Software,
+* those components are licensed under the original license provided by the
+* owner of the applicable component.
+*/
+
+package com.dotcms.enterprise.license.bouncycastle.asn1.isismtt.x509;
+
+import com.dotcms.enterprise.license.bouncycastle.asn1.ASN1Encodable;
+import com.dotcms.enterprise.license.bouncycastle.asn1.DERObject;
+import com.dotcms.enterprise.license.bouncycastle.asn1.DERString;
+import com.dotcms.enterprise.license.bouncycastle.asn1.x500.DirectoryString;
+
+/**
+ * Some other restriction regarding the usage of this certificate.
+ * <p/>
+ * <pre>
+ *  RestrictionSyntax ::= DirectoryString (SIZE(1..1024))
+ * </pre>
+ */
+public class Restriction extends ASN1Encodable
+{
+    private DirectoryString restriction;
+
+    public static Restriction getInstance(Object obj)
+    {
+        if (obj == null || obj instanceof Restriction)
+        {
+            return (Restriction)obj;
+        }
+
+        if (obj instanceof DERString)
+        {
+            return new Restriction(DirectoryString.getInstance(obj));
+        }
+
+        throw new IllegalArgumentException("illegal object in getInstance: "
+            + obj.getClass().getName());
+    }
+
+    /**
+     * Constructor from DERString.
+     * <p/>
+     * The DERString is of type RestrictionSyntax:
+     * <p/>
+     * <pre>
+     *      RestrictionSyntax ::= DirectoryString (SIZE(1..1024))
+     * </pre>
+     *
+     * @param restriction A DERString.
+     */
+    private Restriction(DirectoryString restriction)
+    {
+        this.restriction = restriction;
+    }
+
+    /**
+     * Constructor from a given details.
+     *
+     * @param restriction The describtion of the restriction.
+     */
+    public Restriction(String restriction)
+    {
+        this.restriction = new DirectoryString(restriction);
+    }
+
+    public DirectoryString getRestriction()
+    {
+        return restriction;
+    }
+
+    /**
+     * Produce an object suitable for an ASN1OutputStream.
+     * <p/>
+     * Returns:
+     * <p/>
+     * <pre>
+     *      RestrictionSyntax ::= DirectoryString (SIZE(1..1024))
+     * <p/>
+     * </pre>
+     *
+     * @return a DERObject
+     */
+    public DERObject toASN1Object()
+    {
+        return restriction.toASN1Object();
+    }
+}

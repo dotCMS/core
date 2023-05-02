@@ -310,7 +310,7 @@ public class StaticPushPublishBundleGeneratorTest extends IntegrationTestBase {
         final Publisher publisher = new StaticPublisher();
         publisher.init(publisherConfig);
 
-        final IBundler instance = bundleGenerator.newInstance();
+        final IBundler instance = bundleGenerator.getDeclaredConstructor().newInstance();
 
         instance.setConfig(publisherConfig);
         instance.setPublisher(publisher);

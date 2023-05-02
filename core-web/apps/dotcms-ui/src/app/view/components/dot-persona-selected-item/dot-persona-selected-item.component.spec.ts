@@ -1,11 +1,13 @@
-import { DebugElement } from '@angular/core';
+import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
+import { AvatarModule } from 'primeng/avatar';
+import { BadgeModule } from 'primeng/badge';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotAvatarModule } from '@components/_common/dot-avatar/dot-avatar.module';
+import { DotAvatarDirective } from '@directives/dot-avatar/dot-avatar.directive';
 import { DotMessageService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotIconModule } from '@dotcms/ui';
@@ -21,14 +23,21 @@ const messageServiceMock = new MockDotMessageService({
     'editpage.personalization.content.add.message': 'Add content...'
 });
 
+@Component({
+    template: `<dot-persona-selected-item [persona]="persona"></dot-persona-selected-item>`
+})
+class TestHostComponent {
+    persona = mockDotPersona;
+}
+
 describe('DotPersonaSelectedItemComponent', () => {
     let component: DotPersonaSelectedItemComponent;
-    let fixture: ComponentFixture<DotPersonaSelectedItemComponent>;
+    let fixture: ComponentFixture<TestHostComponent>;
     let de: DebugElement;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [DotPersonaSelectedItemComponent],
+            declarations: [DotPersonaSelectedItemComponent, TestHostComponent],
             providers: [
                 {
                     provide: LoginService,
@@ -42,24 +51,30 @@ describe('DotPersonaSelectedItemComponent', () => {
             imports: [
                 BrowserAnimationsModule,
                 DotIconModule,
-                DotAvatarModule,
+                DotAvatarDirective,
+                AvatarModule,
+                BadgeModule,
                 TooltipModule,
                 DotPipesModule
             ]
         }).compileComponents();
 
-        fixture = TestBed.createComponent(DotPersonaSelectedItemComponent);
-        component = fixture.componentInstance;
+        fixture = TestBed.createComponent(TestHostComponent);
+        component = fixture.debugElement.query(
+            By.css('dot-persona-selected-item')
+        ).componentInstance;
         de = fixture.debugElement;
-        component.persona = mockDotPersona;
         fixture.detectChanges();
     });
 
-    it('should have dot-avatar with right properties', () => {
-        const avatar: DebugElement = de.query(By.css('dot-avatar'));
-        expect(avatar.componentInstance.showDot).toBe(mockDotPersona.personalized);
-        expect(avatar.componentInstance.url).toBe(mockDotPersona.photo);
-        expect(avatar.componentInstance.size).toBe(24);
+    it('should have p-avatar with right properties', () => {
+        const avatar = fixture.debugElement.query(By.css('p-avatar'));
+
+        const { image } = avatar.componentInstance;
+
+        expect(image).toBe(mockDotPersona.photo);
+        expect(avatar.query(By.css('.p-badge'))).toBeTruthy();
+        expect(avatar.attributes['ng-reflect-text']).toBe(mockDotPersona.name);
     });
 
     it('should render persona name and label', () => {

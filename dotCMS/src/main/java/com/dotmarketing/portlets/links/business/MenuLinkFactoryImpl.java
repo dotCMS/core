@@ -97,8 +97,8 @@ public class MenuLinkFactoryImpl implements MenuLinkFactory {
 			int offset, int limit, String orderBy) throws DotSecurityException,
 			DotDataException {
 
-		PaginatedArrayList<Link> assets = new PaginatedArrayList<Link>();
-		List<Permissionable> toReturn = new ArrayList<Permissionable>();
+		PaginatedArrayList<Link> assets = new PaginatedArrayList<>();
+		List<Permissionable> toReturn = new ArrayList<>();
 		int internalLimit = 500;
 		int internalOffset = 0;
 		boolean done = false;

@@ -147,7 +147,7 @@ public class HTMLPageAPITest extends IntegrationTestBase {
 		final ContentType fileAssetContentType = APILocator
 				.getContentTypeAPI(APILocator.systemUser()).find("FileAsset");
 
-        List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
+        List<ContainerStructure> csList = new ArrayList<>();
         ContainerStructure cs = new ContainerStructure();
 		cs.setStructureId(fileAssetContentType.id());
         cs.setCode("this is the code");
@@ -230,7 +230,7 @@ public class HTMLPageAPITest extends IntegrationTestBase {
     		Structure st=CacheLocator.getContentTypeCache().getStructureByVelocityVarName("FileAsset");
     		// commented by issue-2093
 
-    		List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
+    		List<ContainerStructure> csList = new ArrayList<>();
             ContainerStructure cs = new ContainerStructure();
             cs.setStructureId(st.getInode());
             cs.setCode("this is the code");
@@ -269,7 +269,7 @@ public class HTMLPageAPITest extends IntegrationTestBase {
     		role.setDescription("testDesc1");
     		role = roleAPI.save(role);
 
-    		List<Permission> newSetOfPermissions = new ArrayList<Permission>();
+    		List<Permission> newSetOfPermissions = new ArrayList<>();
     		newSetOfPermissions.add(new Permission(IHTMLPage.class.getCanonicalName(), folderWithPerms.getPermissionId(), role.getId(),
     				PermissionAPI.PERMISSION_READ, true));
 

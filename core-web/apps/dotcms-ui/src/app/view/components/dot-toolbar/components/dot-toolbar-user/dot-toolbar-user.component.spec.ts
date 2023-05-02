@@ -10,8 +10,10 @@ import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
+import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
+import { MenuModule } from 'primeng/menu';
 import { PasswordModule } from 'primeng/password';
 
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
@@ -19,7 +21,9 @@ import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
+import { DotGravatarDirective } from '@directives/dot-gravatar/dot-gravatar.directive';
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
+import { DotGravatarService } from '@dotcms/app/api/services/dot-gravatar-service';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
@@ -38,34 +42,30 @@ import {
     UserModel
 } from '@dotcms/dotcms-js';
 import { DotIconModule } from '@dotcms/ui';
-import { CoreWebServiceMock, LoginServiceMock, mockAuth, mockUser } from '@dotcms/utils-testing';
+import { CoreWebServiceMock, LoginServiceMock } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotToolbarUserComponent } from './dot-toolbar-user.component';
+import { DotToolbarUserStore } from './store/dot-toolbar-user.store';
 
-import { DotDropdownComponent } from '../../../_common/dot-dropdown-component/dot-dropdown.component';
-import { IframeOverlayService } from '../../../_common/iframe/service/iframe-overlay.service';
-import { DotGravatarModule } from '../dot-gravatar/dot-gravatar.module';
-import { DotLoginAsComponent } from '../dot-login-as/dot-login-as.component';
-import { DotMyAccountComponent } from '../dot-my-account/dot-my-account.component';
+import { DotLoginAsModule } from '../dot-login-as/dot-login-as.module';
+import { DotMyAccountModule } from '../dot-my-account/dot-my-account.module';
+
+class DotGravatarServiceMock {
+    getPhoto() {
+        return of('/some_avatar_url');
+    }
+}
 
 describe('DotToolbarUserComponent', () => {
-    let comp: DotToolbarUserComponent;
     let fixture: ComponentFixture<DotToolbarUserComponent>;
     let de: DebugElement;
-    let dotDropdownComponent: DotDropdownComponent;
     let loginService: LoginService;
     let locationService: Location;
     let dotNavigationService: DotNavigationService;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [
-                DotDropdownComponent,
-                DotLoginAsComponent,
-                DotMyAccountComponent,
-                DotToolbarUserComponent
-            ],
             providers: [
                 {
                     provide: LOCATION_TOKEN,
@@ -75,7 +75,6 @@ describe('DotToolbarUserComponent', () => {
                 },
                 { provide: LoginService, useClass: LoginServiceMock },
                 DotRouterService,
-                IframeOverlayService,
                 DotcmsEventsService,
                 DotNavigationService,
                 DotMenuService,
@@ -86,16 +85,16 @@ describe('DotToolbarUserComponent', () => {
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotUiColorsService, useClass: MockDotUiColorsService },
                 UserModel,
-                DotcmsEventsService,
                 DotEventsSocket,
                 { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                 DotcmsConfigService,
-                DotFormatDateService
+                DotFormatDateService,
+                { provide: DotGravatarService, useClass: DotGravatarServiceMock },
+                DotToolbarUserStore
             ],
             imports: [
                 BrowserAnimationsModule,
                 DotDialogModule,
-                DotGravatarModule,
                 UiDotIconButtonModule,
                 DotIconModule,
                 SearchableDropDownModule,
@@ -106,7 +105,13 @@ describe('DotToolbarUserComponent', () => {
                 ReactiveFormsModule,
                 PasswordModule,
                 CheckboxModule,
-                HttpClientTestingModule
+                HttpClientTestingModule,
+                MenuModule,
+                DotLoginAsModule,
+                DotMyAccountModule,
+                DotToolbarUserComponent,
+                DotGravatarDirective,
+                AvatarModule
             ]
         });
 
@@ -115,7 +120,7 @@ describe('DotToolbarUserComponent', () => {
         jasmine.clock().mockDate(mockDate);
 
         fixture = TestBed.createComponent(DotToolbarUserComponent);
-        comp = fixture.componentInstance;
+
         de = fixture.debugElement;
 
         loginService = de.injector.get(LoginService);
@@ -128,14 +133,10 @@ describe('DotToolbarUserComponent', () => {
     });
 
     it('should have correct href in logout link', () => {
-        comp.auth = {
-            user: mockUser(),
-            loginAsUser: null
-        };
         fixture.detectChanges();
 
-        dotDropdownComponent = de.query(By.css('dot-dropdown-component')).componentInstance;
-        dotDropdownComponent.onToggle();
+        const avatarComponent = de.query(By.css('p-avatar')).nativeElement;
+        avatarComponent.click();
         fixture.detectChanges();
 
         const logoutLink = de.query(By.css('#dot-toolbar-user-link-logout'));
@@ -143,7 +144,6 @@ describe('DotToolbarUserComponent', () => {
     });
 
     it('should call "logoutAs" in "LoginService" on logout click', async () => {
-        comp.auth = mockAuth;
         spyOn(dotNavigationService, 'goToFirstPortlet').and.returnValue(
             new Promise((resolve) => {
                 resolve(true);
@@ -154,8 +154,8 @@ describe('DotToolbarUserComponent', () => {
 
         fixture.detectChanges();
 
-        dotDropdownComponent = de.query(By.css('dot-dropdown-component')).componentInstance;
-        dotDropdownComponent.onToggle();
+        const avatarComponent = de.query(By.css('p-avatar')).nativeElement;
+        avatarComponent.click();
         fixture.detectChanges();
 
         const logoutAsLink = de.query(By.css('#dot-toolbar-user-link-logout-as'));
@@ -172,7 +172,6 @@ describe('DotToolbarUserComponent', () => {
     });
 
     it('should hide login as link', () => {
-        comp.auth = mockAuth;
         spyOn(loginService, 'getCurrentUser').and.returnValue(
             of({
                 email: 'admin@dotcms.com',

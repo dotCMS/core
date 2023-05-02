@@ -1,0 +1,129 @@
+/* 
+* Licensed to dotCMS LLC under the dotCMS Enterprise License (the
+* “Enterprise License”) found below 
+* 
+* Copyright (c) 2023 dotCMS Inc.
+* 
+* With regard to the dotCMS Software and this code:
+* 
+* This software, source code and associated documentation files (the
+* "Software")  may only be modified and used if you (and any entity that
+* you represent) have:
+* 
+* 1. Agreed to and are in compliance with, the dotCMS Subscription Terms
+* of Service, available at https://www.dotcms.com/terms (the “Enterprise
+* Terms”) or have another agreement governing the licensing and use of the
+* Software between you and dotCMS. 2. Each dotCMS instance that uses
+* enterprise features enabled by the code in this directory is licensed
+* under these agreements and has a separate and valid dotCMS Enterprise
+* server key issued by dotCMS.
+* 
+* Subject to these terms, you are free to modify this Software and publish
+* patches to the Software if you agree that dotCMS and/or its licensors
+* (as applicable) retain all right, title and interest in and to all such
+* modifications and/or patches, and all such modifications and/or patches
+* may only be used, copied, modified, displayed, distributed, or otherwise
+* exploited with a valid dotCMS Enterprise license for the correct number
+* of dotCMS instances.  You agree that dotCMS and/or its licensors (as
+* applicable) retain all right, title and interest in and to all such
+* modifications.  You are not granted any other rights beyond what is
+* expressly stated herein.  Subject to the foregoing, it is forbidden to
+* copy, merge, publish, distribute, sublicense, and/or sell the Software.
+* 
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+* OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+* 
+* For all third party components incorporated into the dotCMS Software,
+* those components are licensed under the original license provided by the
+* owner of the applicable component.
+*/
+
+package com.dotcms.enterprise.license.bouncycastle.crypto.engines;
+
+import com.dotcms.enterprise.license.bouncycastle.crypto.BlockCipher;
+import com.dotcms.enterprise.license.bouncycastle.crypto.CipherParameters;
+import com.dotcms.enterprise.license.bouncycastle.crypto.DataLengthException;
+
+/**
+ * The no-op engine that just copies bytes through, irrespective of whether encrypting and decrypting.
+ * Provided for the sake of completeness.
+ */
+public class NullEngine implements BlockCipher
+{
+    private boolean initialised;
+    protected static final int BLOCK_SIZE = 1;
+    
+    /**
+     * Standard constructor.
+     */
+    public NullEngine()
+    {
+        super();
+    }
+
+    /* (non-Javadoc)
+     * @see org.bouncycastle.crypto.BlockCipher#init(boolean, org.bouncycastle.crypto.CipherParameters)
+     */
+    public void init(boolean forEncryption, CipherParameters params) throws IllegalArgumentException
+    {
+        // we don't mind any parameters that may come in
+        this.initialised = true;
+    }
+
+    /* (non-Javadoc)
+     * @see org.bouncycastle.crypto.BlockCipher#getAlgorithmName()
+     */
+    public String getAlgorithmName()
+    {
+        return "Null";
+    }
+
+    /* (non-Javadoc)
+     * @see org.bouncycastle.crypto.BlockCipher#getBlockSize()
+     */
+    public int getBlockSize()
+    {
+        return BLOCK_SIZE;
+    }
+
+    /* (non-Javadoc)
+     * @see org.bouncycastle.crypto.BlockCipher#processBlock(byte[], int, byte[], int)
+     */
+    public int processBlock(byte[] in, int inOff, byte[] out, int outOff)
+        throws DataLengthException, IllegalStateException
+    {
+        if (!initialised)
+        {
+            throw new IllegalStateException("Null engine not initialised");
+        }
+            if ((inOff + BLOCK_SIZE) > in.length)
+            {
+                throw new DataLengthException("input buffer too short");
+            }
+
+            if ((outOff + BLOCK_SIZE) > out.length)
+            {
+                throw new DataLengthException("output buffer too short");
+            }
+            
+            for (int i = 0; i < BLOCK_SIZE; ++i)
+            {
+                out[outOff + i] = in[inOff + i];
+            }
+            
+            return BLOCK_SIZE;
+    }
+
+    /* (non-Javadoc)
+     * @see org.bouncycastle.crypto.BlockCipher#reset()
+     */
+    public void reset()
+    {
+        // nothing needs to be done
+    }
+}

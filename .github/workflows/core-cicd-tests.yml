@@ -98,13 +98,6 @@ jobs:
         with:
           build_env: ${{ env.BUILD_ENV }}
           tests: ${{ needs.build-core-job.outputs.commit_message }}
-      - id: unit-tests-comment
-        name: Unit Test Comment
-        uses: EnricoMi/publish-unit-test-result-action@v1
-        with:
-          files: ${{ steps.run-unit-tests.outputs.tests_results_location }}/*.xml
-          check_name: 'Unit Tests Report'
-        if: (success() || failure()) && steps.run-unit-tests.outputs.tests_results_skip_report != 'true'
       - id: github-publish-unit-tests
         name: Github publish unit tests
         uses: ./.github/actions/publish-test-results
@@ -118,19 +111,6 @@ jobs:
           tests_results_location: ${{ steps.run-unit-tests.outputs.tests_results_location }}
           cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
         if: (success() || failure()) && steps.run-unit-tests.outputs.tests_results_skip_report != 'true'
-#      - id: publish-unit-tests
-#        name: Publish unit tests to Testmo
-#        uses: ./.github/actions/testmo-wrapper
-#        with:
-#          operation: submit
-#          github_sha: ${{ env.BUILD_HASH }}
-#          build_id: ${{ env.BUILD_ID }}
-#          testmo_token: ${{ secrets.TESTMO_TOKEN }}
-#          testmo_project_id: 1
-#          test_type: unit
-#          tests_results_location: ${{ steps.run-unit-tests.outputs.tests_results_location }}/*.xml
-#          debug: true
-#        if: (success() || failure()) && ${{ env.TESTMO_ENABLED }} == 'true' && steps.run-unit-tests.outputs.tests_results_skip_report != 'true'
       - id: github-status
         name: Send Github Status
         uses: ./.github/actions/github-status
@@ -166,18 +146,6 @@ jobs:
           partial: init
           pull_request: ${{ github.event.number }}
           cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
-#      - id: thread-setup
-#        name: Initial thread (matrix) setup
-#        uses: ./.github/actions/testmo-wrapper
-#        with:
-#          operation: thread-resources
-#          github_sha: ${{ env.BUILD_HASH }}
-#          build_id: ${{ env.BUILD_ID }}
-#          testmo_token: ${{ secrets.TESTMO_TOKEN }}
-#          testmo_project_id: 1
-#          test_type: integration
-#          debug: true
-#        if: success() && ${{ env.TESTMO_ENABLED }} == 'true'
   run-integration-tests-job:
     name: Run Integration Tests
     runs-on: ubuntu-latest
@@ -231,13 +199,6 @@ jobs:
           license_key: ${{ secrets.DOTCMS_LICENSE }}
           tests: ${{ needs.build-core-job.outputs.commit_message }}
         if: success()
-      - id: integration-tests-comment
-        name: Integration Test Comment
-        uses: EnricoMi/publish-unit-test-result-action@v1
-        with:
-          files: ${{ steps.run-integration-tests.outputs.tests_results_location }}/*.xml
-          check_name: 'Integration Tests [${{ matrix.db_type }}] Report'
-        if: (success() || failure()) && steps.run-integration-tests.outputs.tests_results_skip_report != 'true'
       - id: github-publish-integration-tests
         name: Github publish integration tests
         uses: ./.github/actions/publish-test-results
@@ -252,23 +213,6 @@ jobs:
           tests_results_location: ${{ steps.run-integration-tests.outputs.tests_results_location }}
           cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
         if: (success() || failure()) && steps.run-integration-tests.outputs.tests_results_skip_report != 'true'
-#      - id: publish-integration-tests
-#        name: Publish integration tests to Testmo
-#        uses: ./.github/actions/testmo-wrapper
-#        with:
-#          operation: submit-thread
-#          github_sha: ${{ env.BUILD_HASH }}
-#          build_id: ${{ env.BUILD_ID }}
-#          testmo_token: ${{ secrets.TESTMO_TOKEN }}
-#          testmo_project_id: 1
-#          testmo_run_id: ${{ needs.integration-tests-setup-job.outputs.testmo_run_id }}
-#          test_type: integration
-#          tests_results_location: ${{ steps.run-integration-tests.outputs.tests_results_location }}/*.xml
-#          ci_index: ${{ steps.run-integration-tests.outputs.ci_index }}
-#          ci_total: 2
-#          ci_label: ${{ matrix.db_type }}
-#          debug: true
-#        if: (success() || failure()) && ${{ env.TESTMO_ENABLED }} == 'true' && steps.run-integration-tests.outputs.tests_results_skip_report != 'true'
       - id: github-status
         name: Send Github Status
         uses: ./.github/actions/github-status
@@ -295,18 +239,6 @@ jobs:
         name: Read CICD local library
         run: source ${GITHUB_WORKSPACE}/cicd/local-env.sh
         if: ${{ env.TESTMO_ENABLED }} == 'true'
-#      - id: complete
-#        name: Post submit complete
-#        if: ${{ env.TESTMO_ENABLED }} == 'true'
-#        uses: ./.github/actions/testmo-wrapper
-#        with:
-#          operation: complete
-#          github_sha: ${{ env.BUILD_HASH }}
-#          testmo_token: ${{ secrets.TESTMO_TOKEN }}
-#          testmo_project_id: 1
-#          testmo_run_id: ${{ needs.integration-tests-setup-job.outputs.testmo_run_id }}
-#          test_type: integration
-#          debug: true
 
   postman-tests-setup-job:
     name: Postman tests matrix setup
@@ -345,18 +277,6 @@ jobs:
           partial: init
           pull_request: ${{ github.event.number }}
           cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
-#      - id: thread-setup
-#        name: Initial thread (matrix) setup
-#        uses: ./.github/actions/testmo-wrapper
-#        with:
-#          operation: thread-resources
-#          github_sha: ${{ env.BUILD_HASH }}
-#          build_id: ${{ env.BUILD_ID }}
-#          testmo_token: ${{ secrets.TESTMO_TOKEN }}
-#          testmo_project_id: 1
-#          test_type: postman
-#          debug: true
-#        if: success() && ${{ env.TESTMO_ENABLED }} == 'true'
   run-postman-tests-job:
     name: Run Postman Tests
     runs-on: ubuntu-latest
@@ -419,19 +339,6 @@ jobs:
           mode: ${{ env.PUBLISH_MODE }}
           run_identifier: ${{ steps.run-postman-tests.outputs.normalized_parallel_collection }}
         if: (success() || failure()) && steps.run-postman-tests.outputs.tests_results_skip_report != 'true'
-#      - id: publish-postman-tests
-#        name: Publish postman tests to Testmo
-#        uses: ./.github/actions/testmo-wrapper
-#        with:
-#          operation: submit
-#          github_sha: ${{ env.BUILD_HASH }}
-#          build_id: ${{ env.BUILD_ID }}
-#          testmo_token: ${{ secrets.TESTMO_TOKEN }}
-#          testmo_project_id: 1
-#          test_type: postman
-#          tests_results_location: ${{ steps.run-postman-tests.outputs.tests_results_location }}/*.xml
-#          debug: true
-#        if: (success() || failure()) && ${{ env.TESTMO_ENABLED }} == 'true' && steps.run-postman-tests.outputs.tests_results_skip_report != 'true'
   postman-tests-complete-job:
     name: Postman tests complete
     runs-on: ubuntu-latest
@@ -461,13 +368,6 @@ jobs:
           pull_request: ${{ github.event.number }}
           tests_results_location: ${{ github.workspace }}/dotCMS/build/test-results/postmanTest
           cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
-      - id: postman-tests-comment
-        name: Postman Test Comment
-        uses: EnricoMi/publish-unit-test-result-action@v1
-        with:
-          files: ${{ steps.github-close-test-results.outputs.tests_results_location }}/*.xml
-          check_name: 'Postman Tests Report'
-        if: (success() || failure()) && steps.github-close-test-results.outputs.tests_report_url != ''
       - id: github-status
         name: Send Github Status
         uses: ./.github/actions/github-status
@@ -479,18 +379,6 @@ jobs:
           cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
           tests_report_url: ${{ steps.github-close-test-results.outputs.tests_report_url }}
         if: (success() || failure()) && steps.github-close-test-results.outputs.tests_report_url != ''
-#      - id: complete
-#        name: Post submit complete
-#        if: ${{ env.TESTMO_ENABLED }} == 'true'
-#        uses: ./.github/actions/testmo-wrapper
-#        with:
-#          operation: complete
-#          github_sha: ${{ env.BUILD_HASH }}
-#          testmo_token: ${{ secrets.TESTMO_TOKEN }}
-#          testmo_project_id: 1
-#          testmo_run_id: ${{ needs.postman-tests-setup-job.outputs.testmo_run_id }}
-#          test_type: integration
-#          debug: true
 
   test-results-handler-job:
     name: Tests results handler

@@ -433,7 +433,7 @@ public class LinkFactory {
 
     }
 	public static List<Map<String, Serializable>> DBSearch(Query query, User user,boolean respectFrontendRoles) throws ValidationException,DotDataException {
-		Map<String, String> dbColToObjectAttribute = new HashMap<String, String>();
+		Map<String, String> dbColToObjectAttribute = new HashMap<>();
 		String fromClause=query.getFromClause();
 		fromClause=fromClause.replaceAll("menulink", "links");
 		query.setFromClause(fromClause);
@@ -444,7 +444,7 @@ public class LinkFactory {
 				query.getSelectAttributes().add("title");
 			}
 		}else{
-			List<String> atts = new ArrayList<String>();
+			List<String> atts = new ArrayList<>();
 			atts.add("*");
 			atts.add("title");
 			query.setSelectAttributes(atts);

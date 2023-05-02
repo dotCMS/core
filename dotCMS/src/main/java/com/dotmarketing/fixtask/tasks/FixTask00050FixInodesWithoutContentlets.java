@@ -32,7 +32,7 @@ import java.util.Map;
 
 public class FixTask00050FixInodesWithoutContentlets implements FixTask {
 
-	private List <Map<String, String>> modifiedData= new  ArrayList <Map<String, String>>();
+	private List <Map<String, String>> modifiedData= new  ArrayList <>();
 	/* Queries */
 	private static final String selectInodeContentletWithoutContent = "select inode from inode i where type = 'contentlet' and not exists (select 1 from contentlet where i.inode = inode)";
 	private static final String selectIdentifierContentletWithoutContent = "select id from identifier i where asset_type = 'contentlet' and not exists (select 1 from contentlet where i.id = identifier)";
@@ -46,7 +46,7 @@ public class FixTask00050FixInodesWithoutContentlets implements FixTask {
 	@SuppressWarnings({ "unchecked", "deprecation" })
 	public List<Map<String, Object>> executeFix() throws DotDataException,
 	DotRuntimeException {
-		List<Map<String, Object>> returnValue = new ArrayList<Map<String, Object>>();
+		List<Map<String, Object>> returnValue = new ArrayList<>();
 		Logger.info(FixTask00050FixInodesWithoutContentlets.class,"Beginning FixInodesWithoutContentlets");
 
 		if (!FixAssetsProcessStatus.getRunning()) {

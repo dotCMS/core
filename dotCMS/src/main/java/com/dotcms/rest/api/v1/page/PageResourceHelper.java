@@ -165,8 +165,14 @@ public class PageResourceHelper implements Serializable {
                         @Override
                         public void run() {
                             try {
-                                final Contentlet contentlet =
+                                Contentlet contentlet =
                                         contentletAPI.findContentletByIdentifierAnyLanguage(contentletId, variantName);
+
+                                if (contentlet == null && !VariantAPI.DEFAULT_VARIANT.equals(variantName)) {
+                                    contentlet = contentletAPI.findContentletByIdentifierAnyLanguage(contentletId,
+                                            VariantAPI.DEFAULT_VARIANT.name());
+                                }
+
                                 new ContentletLoader().invalidate(contentlet, PageMode.EDIT_MODE);
                             } catch (final DotDataException e) {
                                 Logger.warn(this, String.format("Contentlet with ID '%s' could not be invalidated " +

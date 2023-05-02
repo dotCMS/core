@@ -47,7 +47,7 @@ public class StructureTransformer implements ContentTypeTransformer  {
 
 
 	private static List<Structure> transformToStruct(final List<ContentType> types) throws DotStateException {
-		List<Structure> newList = new ArrayList<Structure>();
+		List<Structure> newList = new ArrayList<>();
 		for (ContentType type : types) {
 			newList.add(transformToStruct(type));
 		}

@@ -155,7 +155,7 @@ public abstract class AbstractHazelcastCacheProvider extends CacheProvider {
 
     @Override
     public Set<String> getKeys(String group) {
-        Set<String> keys = new HashSet<String>();
+        Set<String> keys = new HashSet<>();
         if(isRecovering()){
             return keys;
         }

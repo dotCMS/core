@@ -19,30 +19,6 @@
                 novalidate
             >
                 <div formGroupName="primary">
-                    <div class="field flex-auto flex flex-column">
-                        <label class="p-label-input-required">{{
-                            'experiments.goal.reach_page.form.name.label' | dm
-                        }}</label>
-                        <div>
-                            <input
-                                id="name"
-                                data-testId="goal-name-input"
-                                dotAutofocus
-                                formControlName="name"
-                                name="name"
-                                pInputText
-                                placeholder="{{
-                                    'experiments.goal.reach_page.form.name.placeholder' | dm
-                                }}"
-                                required
-                                type="text"
-                            />
-
-                            <dot-field-validation-message
-                                [field]="goalNameControl"
-                            ></dot-field-validation-message>
-                        </div>
-                    </div>
                     <div class="field">
                         <dot-experiment-options formControlName="type">
                             <dot-experiment-options-item
@@ -60,6 +36,30 @@
                                 </ng-template>
                             </dot-experiment-options-item>
                         </dot-experiment-options>
+                    </div>
+                    <div class="field flex-auto flex flex-column">
+                        <label class="p-label-input-required">{{
+                            'experiments.goal.reach_page.form.name.label' | dm
+                        }}</label>
+                        <div>
+                            <input
+                                id="name"
+                                [maxlength]="this.maxNameLength + 1"
+                                data-testId="goal-name-input"
+                                formControlName="name"
+                                name="name"
+                                pInputText
+                                placeholder="{{
+                                    'experiments.goal.reach_page.form.name.placeholder' | dm
+                                }}"
+                                required
+                                type="text"
+                            />
+
+                            <dot-field-validation-message
+                                [field]="goalNameControl"
+                            ></dot-field-validation-message>
+                        </div>
                     </div>
                 </div>
             </form>

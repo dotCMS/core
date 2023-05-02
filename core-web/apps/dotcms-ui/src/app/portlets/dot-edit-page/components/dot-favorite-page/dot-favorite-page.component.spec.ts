@@ -12,6 +12,7 @@ import { of } from 'rxjs/internal/observable/of';
 
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotPagesFavoritePageEmptySkeletonComponent } from '@dotcms/app/portlets/dot-pages/dot-pages-favorite-page-empty-skeleton/dot-pages-favorite-page-empty-skeleton.component';
 import { DotMessageService } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock, LoginService } from '@dotcms/dotcms-js';
 import { DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
@@ -103,6 +104,7 @@ const storeMock = {
         imgHeight: 768.192048012003,
         loading: false,
         renderThumbnail: true,
+        showFavoriteEmptySkeleton: false,
         closeDialog: false,
         actionState: null
     })
@@ -131,6 +133,7 @@ describe('DotFavoritePageComponent', () => {
                 MultiSelectModule,
                 ReactiveFormsModule,
                 DotFieldValidationMessageModule,
+                DotPagesFavoritePageEmptySkeletonComponent,
                 HttpClientTestingModule
             ],
             providers: [
@@ -256,20 +259,6 @@ describe('DotFavoritePageComponent', () => {
 
                     expect(message).toBeDefined();
                 });
-
-                it('should setup permissions', () => {
-                    const field = de.query(By.css('[data-testId="shareWithField"]'));
-                    const label = field.query(By.css('label'));
-                    const selector = field.query(By.css('p-multiSelect'));
-
-                    expect(field.classes['field']).toBe(true);
-
-                    expect(label.attributes.for).toBe('permissions');
-                    expect(label.nativeElement.textContent).toBe('Share With');
-
-                    expect(selector.attributes.formControlName).toBe('permissions');
-                    expect(selector.attributes.id).toBe('permissions');
-                });
             });
         });
 
@@ -280,20 +269,18 @@ describe('DotFavoritePageComponent', () => {
 
             it('should get value from config and set initial data on store', () => {
                 expect(component.form.getRawValue()).toEqual({
-                    currentUserRoleId: '1',
                     inode: '',
                     thumbnail: '',
                     title: 'A title',
                     url: '/an/url/test?&language_id=1&device_inode=',
-                    order: 1,
-                    permissions: []
+                    order: 1
                 });
 
                 expect(store.setInitialStateData).toHaveBeenCalled();
             });
 
-            it('should be invalid by default', () => {
-                expect(component.form.valid).toBe(false);
+            it('should be valid by default', () => {
+                expect(component.form.valid).toBe(true);
             });
 
             // TODO: Find a way to send the event on time
@@ -325,13 +312,11 @@ describe('DotFavoritePageComponent', () => {
                 component.form.get('thumbnail').setValue('test');
                 expect(component.form.valid).toBe(true);
                 expect(component.form.getRawValue()).toEqual({
-                    currentUserRoleId: '1',
                     thumbnail: 'test',
                     inode: '',
                     title: 'A title',
                     url: '/an/url/test?&language_id=1&device_inode=',
-                    order: 1,
-                    permissions: []
+                    order: 1
                 });
             });
         });
@@ -416,7 +401,7 @@ describe('DotFavoritePageComponent', () => {
                 setLoaded: jasmine.createSpy(),
                 setInitialStateData: jasmine.createSpy(),
                 vm$: of({
-                    pageRenderedHtml: '',
+                    pageRenderedHtml: 'test',
                     roleOptions: [],
                     currentUserRoleId: '',
                     formState: { ...formStateMock, inode: 'abc123', thumbnail: '123' },
@@ -426,6 +411,7 @@ describe('DotFavoritePageComponent', () => {
                     imgHeight: 768.192048012003,
                     loading: false,
                     closeDialog: false,
+                    showFavoriteEmptySkeleton: false,
                     actionState: null
                 })
             };
@@ -472,6 +458,75 @@ describe('DotFavoritePageComponent', () => {
 
             element.triggerEventHandler('click', {});
             expect(store.setRenderThumbnail).toHaveBeenCalledWith(true);
+        });
+    });
+
+    describe('Favorite Page withouth thumbnail', () => {
+        beforeEach(() => {
+            const storeMock = {
+                get currentUserRoleId$() {
+                    return of('1');
+                },
+                get formState$() {
+                    return of({ ...formStateMock, inode: '', thumbnail: '' });
+                },
+                get renderThumbnail$() {
+                    return of(false);
+                },
+                setRenderThumbnail: jasmine.createSpy(),
+                saveFavoritePage: jasmine.createSpy(),
+                deleteFavoritePage: jasmine.createSpy(),
+                get closeDialog$() {
+                    return of(false);
+                },
+                get actionState$() {
+                    return of(null);
+                },
+                setLoading: jasmine.createSpy(),
+                setLoaded: jasmine.createSpy(),
+                setInitialStateData: jasmine.createSpy(),
+                vm$: of({
+                    pageRenderedHtml: '',
+                    roleOptions: [],
+                    currentUserRoleId: '',
+                    formState: { ...formStateMock, inode: '', thumbnail: '' },
+                    renderThumbnail: true,
+                    isAdmin: true,
+                    imgWidth: 1024,
+                    imgHeight: 768.192048012003,
+                    loading: false,
+                    closeDialog: false,
+                    showFavoriteEmptySkeleton: true,
+                    actionState: null
+                })
+            };
+
+            TestBed.overrideProvider(DotFavoritePageStore, { useValue: storeMock });
+            store = TestBed.inject(DotFavoritePageStore);
+
+            fixture = TestBed.createComponent(DotFavoritePageComponent);
+            de = fixture.debugElement;
+            component = fixture.componentInstance;
+            injector = getTestBed();
+
+            dialogRef = injector.inject(DynamicDialogRef);
+            dialogConfig = TestBed.inject(DynamicDialogConfig);
+            fixture.detectChanges();
+        });
+
+        it('should display empty skeleton component and hide render thumbnail component', () => {
+            expect(de.query(By.css('[data-testId="thumbnailField"]'))).toBeNull();
+            expect(de.query(By.css('.dot-pages-favorite-page-empty-skeleton'))).toBeDefined();
+        });
+
+        it('should set empty value for thumbnail on formState', () => {
+            expect(component.form.getRawValue()).toEqual({
+                inode: '',
+                thumbnail: '',
+                title: 'A title',
+                url: '/an/url/test?&language_id=1&device_inode=',
+                order: 1
+            });
         });
     });
 });

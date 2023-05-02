@@ -1,131 +1,150 @@
-<p-table
-    *ngIf="vm$ | async as vm"
-    [value]="vm.pages.items"
-    [loading]="vm.isPagesLoading"
-    [scrollable]="true"
-    [virtualScroll]="true"
-    [virtualScrollItemSize]="47"
-    [lazy]="true"
-    (onLazyLoad)="loadPagesLazy($event)"
-    (onRowSelect)="onRowSelect($event)"
-    selectionMode="single"
-    scrollHeight="flex"
->
-    <ng-template pTemplate="caption">
-        <div class="flex justify-content-between dot-pages-listing-header">
-            <div class="dot-pages-listing-header__inputs">
-                <input
-                    class="dot-pages-listing-header__filter-input"
-                    [placeholder]="'Type-To-Search' | dm"
-                    (input)="filterData($event.target.value)"
-                    data-testid="dot-pages-listing-header__keyword-input"
-                    type="text"
-                    pInputText
-                    dotAutofocus
-                />
-                <p-dropdown
-                    class="dot-pages-listing-header__language-input"
-                    [options]="vm.languageOptions"
-                    (onChange)="setPagesLanguage($event.value)"
-                ></p-dropdown>
-                <p-checkbox
-                    [binary]="true"
-                    [label]="'Show-Archived' | dm"
-                    (onChange)="setPagesArchived($event.checked)"
-                ></p-checkbox>
-            </div>
-            <button
-                class="p-button-primary"
-                [label]="'create.page' | dm"
-                (click)="store.getPageTypes()"
-                data-testid="createPageButton"
-                pButton
-            ></button>
-        </div>
-    </ng-template>
-    <ng-template pTemplate="header">
-        <tr *ngIf="vm.pages.items.length !== 0">
-            <th pSortableColumn="title" style="width: 25%">
-                {{ 'title' | dm }}<p-sortIcon field="title"></p-sortIcon>
-            </th>
-            <th pSortableColumn="urlMap" style="width: 20%">
-                {{ 'url' | dm }}<p-sortIcon field="urlMap"></p-sortIcon>
-            </th>
-            <th pSortableColumn="contentType" style="width: 12%">
-                {{ 'type' | dm }}<p-sortIcon field="contentType"></p-sortIcon>
-            </th>
-            <th pSortableColumn="languageId" style="width: 12%">
-                {{ 'status' | dm }}<p-sortIcon field="languageId"></p-sortIcon>
-            </th>
-            <th style="width: 13%">
-                {{ 'Last-Editor' | dm }}
-            </th>
-            <th pSortableColumn="modDate" style="width: 13%">
-                {{ 'Last-Edited' | dm }}<p-sortIcon field="modDate"></p-sortIcon>
-            </th>
-            <th style="width: 5%"></th>
-        </tr>
-    </ng-template>
-    <ng-template pTemplate="body" let-rowData let-rowIndex="rowIndex">
-        <tr class="dot-pages-listing-content__row" [pSelectableRow]="rowData">
-            <td>{{ rowData['title'] }}</td>
-            <td [pTooltip]="rowData['urlMap'] || rowData['url']" tooltipPosition="bottom">
-                {{ rowData['urlMap'] || rowData['url'] }}
-            </td>
-            <td>
-                {{ rowData['contentType'] }}
-            </td>
-            <td>
-                <div class="dot-pages-table__status-field">
-                    <dot-state-icon
-                        [labels]="dotStateLabels"
-                        [state]="rowData"
-                        size="14px"
-                    ></dot-state-icon>
-                    <dot-badge bordered="{true}">{{
-                        vm.languageLabels[rowData['languageId']]
-                    }}</dot-badge>
-                    <dot-contentlet-lock-icon
-                        locked="{{ rowData['locked'] }}"
-                    ></dot-contentlet-lock-icon>
+<ng-container *ngIf="vm$ | async as vm">
+    <p-contextMenu
+        #cm
+        [model]="vm.pages.menuActions"
+        (onHide)="closedActionsContextMenu()"
+    ></p-contextMenu>
+    <p-table
+        [contextMenu]="cm"
+        [value]="vm.pages.items"
+        [loading]="vm.isPagesLoading"
+        [scrollable]="true"
+        [virtualScroll]="true"
+        [virtualScrollItemSize]="47"
+        [lazy]="true"
+        (onLazyLoad)="loadPagesLazy($event)"
+        (onRowSelect)="onRowSelect($event)"
+        selectionMode="single"
+        scrollHeight="flex"
+    >
+        <ng-template pTemplate="caption">
+            <div class="flex justify-content-between dot-pages-listing-header">
+                <div class="dot-pages-listing-header__inputs">
+                    <input
+                        class="dot-pages-listing-header__filter-input"
+                        [placeholder]="'Type-To-Search' | dm"
+                        (input)="filterData($event.target.value)"
+                        data-testid="dot-pages-listing-header__keyword-input"
+                        type="text"
+                        pInputText
+                        dotAutofocus
+                    />
+                    <p-dropdown
+                        class="dot-pages-listing-header__language-input"
+                        [options]="vm.languageOptions"
+                        (onChange)="setPagesLanguage($event.value)"
+                    ></p-dropdown>
+                    <p-checkbox
+                        [binary]="true"
+                        [label]="'Show-Archived' | dm"
+                        (onChange)="setPagesArchived($event.checked)"
+                    ></p-checkbox>
                 </div>
-            </td>
-            <td>
-                {{ rowData['modUserName'] }}
-            </td>
-            <td>{{ rowData['modDate'] | dotRelativeDate }}</td>
-            <td>
-                <dot-icon-button
-                    id="pageActionButton-{{ rowIndex }}"
-                    (click)="
-                        showActionsMenu.emit({
-                            event: $event,
-                            actionMenuDomId: 'pageActionButton-' + rowIndex,
-                            item: rowData
-                        })
-                    "
-                    icon="more_vert"
-                    size="32"
-                ></dot-icon-button>
-            </td>
-        </tr>
-    </ng-template>
-    <ng-template pTemplate="loadingbody">
-        <tr>
-            <td><p-skeleton [ngStyle]="{ width: '25%' }"></p-skeleton></td>
-            <td><p-skeleton [ngStyle]="{ width: '20%' }"></p-skeleton></td>
-            <td><p-skeleton [ngStyle]="{ width: '12%' }"></p-skeleton></td>
-            <td><p-skeleton [ngStyle]="{ width: '12%' }"></p-skeleton></td>
-            <td><p-skeleton [ngStyle]="{ width: '13%' }"></p-skeleton></td>
-            <td><p-skeleton [ngStyle]="{ width: '13%' }"></p-skeleton></td>
-            <td><p-skeleton [ngStyle]="{ width: '5%' }"></p-skeleton></td>
-        </tr>
-    </ng-template>
-    <ng-template pTemplate="emptymessage">
-        <tr>
-            <td class="dot-pages-listing__empty-content" [attr.colspan]="7">
-                {{ 'favoritePage.listing.empty.table' | dm }}
-            </td>
-        </tr>
-    </ng-template>
-</p-table>
+                <button
+                    class="p-button-primary"
+                    [label]="'create.page' | dm"
+                    (click)="store.getPageTypes()"
+                    data-testid="createPageButton"
+                    pButton
+                ></button>
+            </div>
+        </ng-template>
+        <ng-template pTemplate="header">
+            <tr *ngIf="vm.pages.items.length !== 0">
+                <th pSortableColumn="title" style="width: 25%">
+                    {{ 'title' | dm }}<p-sortIcon field="title"></p-sortIcon>
+                </th>
+                <th pSortableColumn="urlMap" style="width: 20%">
+                    {{ 'url' | dm }}<p-sortIcon field="urlMap"></p-sortIcon>
+                </th>
+                <th pSortableColumn="contentType" style="width: 12%">
+                    {{ 'type' | dm }}<p-sortIcon field="contentType"></p-sortIcon>
+                </th>
+                <th pSortableColumn="languageId" style="width: 12%">
+                    {{ 'status' | dm }}<p-sortIcon field="languageId"></p-sortIcon>
+                </th>
+                <th style="width: 12%">
+                    {{ 'Last-Editor' | dm }}
+                </th>
+                <th pSortableColumn="modDate" style="width: 14%">
+                    {{ 'Last-Edited' | dm }}<p-sortIcon field="modDate"></p-sortIcon>
+                </th>
+                <th style="width: 5%"></th>
+            </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-rowData let-rowIndex="rowIndex">
+            <tr
+                class="dot-pages-listing-content__row"
+                id="tableRow-{{ rowIndex }}"
+                [pSelectableRow]="rowData"
+                (contextmenu)="
+                    showActionsContextMenu({
+                        event: $event,
+                        actionMenuDomId: 'tableRow-' + rowIndex,
+                        item: rowData
+                    })
+                "
+                pContextMenuRow
+            >
+                <td>{{ rowData['title'] }}</td>
+                <td [pTooltip]="rowData['urlMap'] || rowData['url']" tooltipPosition="bottom">
+                    {{ rowData['urlMap'] || rowData['url'] }}
+                </td>
+                <td>
+                    {{ rowData['contentType'] }}
+                </td>
+                <td>
+                    <div class="dot-pages-table__status-field">
+                        <dot-state-icon
+                            [labels]="dotStateLabels"
+                            [state]="rowData"
+                            size="14px"
+                        ></dot-state-icon>
+                        <dot-badge bordered="{true}">{{
+                            vm.languageLabels[rowData['languageId']]
+                        }}</dot-badge>
+                        <dot-contentlet-lock-icon
+                            locked="{{ rowData['locked'] }}"
+                        ></dot-contentlet-lock-icon>
+                    </div>
+                </td>
+                <td>
+                    {{ rowData['modUserName'] }}
+                </td>
+                <td>{{ rowData['modDate'] | dotRelativeDate }}</td>
+                <td>
+                    <dot-icon-button
+                        id="pageActionButton-{{ rowIndex }}"
+                        (click)="
+                            showActionsMenu.emit({
+                                event: $event,
+                                actionMenuDomId: 'pageActionButton-' + rowIndex,
+                                item: rowData
+                            })
+                        "
+                        icon="more_vert"
+                        size="32"
+                    ></dot-icon-button>
+                </td>
+            </tr>
+        </ng-template>
+        <ng-template pTemplate="loadingbody">
+            <tr>
+                <td><p-skeleton [ngStyle]="{ width: '25%' }"></p-skeleton></td>
+                <td><p-skeleton [ngStyle]="{ width: '20%' }"></p-skeleton></td>
+                <td><p-skeleton [ngStyle]="{ width: '12%' }"></p-skeleton></td>
+                <td><p-skeleton [ngStyle]="{ width: '12%' }"></p-skeleton></td>
+                <td><p-skeleton [ngStyle]="{ width: '12%' }"></p-skeleton></td>
+                <td><p-skeleton [ngStyle]="{ width: '14%' }"></p-skeleton></td>
+                <td><p-skeleton [ngStyle]="{ width: '5%' }"></p-skeleton></td>
+            </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+            <tr>
+                <td class="dot-pages-listing__empty-content" [attr.colspan]="7">
+                    {{ 'favoritePage.listing.empty.table' | dm }}
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+</ng-container>
