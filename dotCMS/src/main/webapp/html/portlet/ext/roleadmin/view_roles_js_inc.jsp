@@ -629,7 +629,7 @@
 					eval(norm(currentRole.system)) || eval(norm(currentRole.locked)) || currentRole.children.length > 0);
 
 		}
-		lockOrUnlockRoleInTree(lockedRoleId, true);
+		lockOrUnlockRoleInTree(lockedRoleId);
 		showDotCMSSystemMessage(roleLockedMsg);
 
 	}
@@ -648,18 +648,21 @@
 			dijit.byId('deleteRoleButtonWrapper').setAttribute("disabled",
 					eval(norm(currentRole.system)) || eval(norm(currentRole.locked)) || currentRole.children.length > 0);
 		}
-		lockOrUnlockRoleInTree(unlockedRoleId, false);
+		lockOrUnlockRoleInTree(unlockedRoleId);
 		showDotCMSSystemMessage(roleUnlockedMsg);
 	}
 
-	function lockOrUnlockRoleInTree (itemId, locked) {
+	// this function receive an id and based in the id we lock or unlock the role
+	function lockOrUnlockRoleInTree (itemId) {
 		var tree = dijit.byId('rolesTree');
-		var nodeList = tree.getNodesByItem(itemId);
-		if (nodeList && nodeList.length > 0 && nodeList[0]) {
-			var node = nodeList[0];
-			node.item.locked = locked;
-			tree.getIconClass(node.item, node.isExpanded);
-			tree.getIconStyle(node.item, node.isExpanded);
+
+		//we are using this function, because in some cases, the node list is empty
+		const itemProps = findRole(itemId);
+
+		//itemProps contains the required data to determine if the role is locked
+		if (itemProps) {
+			tree.getIconClass(itemProps, false);
+			tree.getIconStyle(itemProps, false);
 		}
 	}
 
@@ -673,7 +676,12 @@
 			dojo.byId("displayRoleName1").innerHTML= roleName;
 			dojo.byId("displayRoleName2").innerHTML= roleName;
 			dojo.byId("displayRoleName3").innerHTML = roleName;
-			dojo.byId(`treeNode-${role.id}_label`).innerHTML = roleName
+
+			// only when update
+			const updHtml = dojo.byId(`treeNode-${role.id}_label`)
+			if (updHtml !== null){
+				updHtml.innerHTML = roleName
+			}
 		}
 	}
 
@@ -1164,7 +1172,7 @@
 		registerPortletItemButton(portletId, portletTitle);
 
 	}
-	
+
     function doPortletDelete(portletId){
         if(portletId.indexOf("c_")!=0 || !confirm("<%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "custom.content.portlet.delete.confirm")) %>")){
             return;
@@ -1187,13 +1195,13 @@
       };
       dojo.xhrDelete(xhrArgs);
     }
-    
+
 	function getPortletItemHTML (portletId, portletTitle) {
 
 		portletId = norm(portletId);
 
 		const portletDelete = (portletId.indexOf("c_")==0) ? `<div style='float:left;line-height:34px;padding:0px 20px;margin-right:10px;' class='dijitButtonText dijitButton' onclick='doPortletDelete("` + portletId + `")'><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "delete")) %></div>` : "";
-		
+
 		var html = dojo.string.substitute(portletListItemTemplate, { portletTitle: portletTitle, portletId: portletId, portletDelete: portletDelete })
 		return html;
 	}
@@ -1312,7 +1320,7 @@
 	}
 
 	function showCustomContentPortletDia(){
-	    
+
 	    dijit.byId("customPortletId").setValue("");
 	    dijit.byId("customPortletName").setValue("");
 	    dijit.byId("customPortletBaseTypes").setValue("");
@@ -1327,20 +1335,20 @@
 	        str = (str.substr(0, str.indexOf('--')) + str.substr(str.indexOf('--')+1, str.length));
 	    }
 	    if(str.substr(-1) === '-') {
-	        str = str.substr(0, str.length - 1);   
+	        str = str.substr(0, str.length - 1);
 	    }
 	    dijit.byId("customPortletId").setValue(str);
 	}
 
 	function setPortletIdValue(val){
 	    val=val.replace(/[^0-9a-z-]/gi, '-')
-	    dijit.byId("customPortletId").setValue(val);    
+	    dijit.byId("customPortletId").setValue(val);
 	}
-	
+
 	function createCustomContentType(){
 
 	    var data={};
-	    
+
 	    data.portletId =dijit.byId("customPortletId").attr('value');
 	    data.portletName =dijit.byId("customPortletName").attr('value');
 	    data.baseTypes =dijit.byId("customPortletBaseTypes").attr('value');
@@ -1365,7 +1373,7 @@
 
 	          }
 	      };
-	  
+
 	      dojo.xhrPost(xhrArgs);
 
 	}
@@ -1621,7 +1629,7 @@
 // 		},3000);
 
 	}
-	
+
 	function updateIcon(iconName){
 		var icon = document.getElementById('tabIcon');
 		icon.innerHTML = iconName;
