@@ -23,6 +23,7 @@
             "
             (click)="
                 toggleFavoritePagesData(
+                    $event,
                     vm.favoritePages.total === vm.favoritePages.items.length,
                     vm.favoritePages.total
                 )

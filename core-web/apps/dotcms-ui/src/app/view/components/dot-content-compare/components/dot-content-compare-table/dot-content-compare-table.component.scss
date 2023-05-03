@@ -33,12 +33,19 @@
         }
 
         td {
+            vertical-align: top;
             border-bottom: 1px solid $color-palette-gray-300;
             border-right: 1px solid $color-palette-gray-300;
 
             img {
                 max-width: 100%;
                 height: auto;
+            }
+
+            video {
+                aspect-ratio: 16/9;
+                max-width: 100%;
+                height: 300px;
             }
         }
 
@@ -54,6 +61,12 @@
 
             &:not(:first-of-type) {
                 width: 45%;
+            }
+        }
+
+        .p-datatable-tbody tr > td {
+            &:last-child {
+                padding-right: $spacing-2;
             }
         }
     }

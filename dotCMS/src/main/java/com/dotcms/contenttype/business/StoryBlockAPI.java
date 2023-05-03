@@ -50,10 +50,11 @@ public interface StoryBlockAPI {
      * any Contentlet references in it, if applicable.
      *
      * @param storyBlockValue The actual value of the Story Block field.
+     * @param parentContentletIdentifier String identifier of the parent contentlet
      *
      * @return An instance of {@link StoryBlockReferenceResult} containing the result of the refresh process.
      */
-    StoryBlockReferenceResult refreshStoryBlockValueReferences(final Object storyBlockValue);
+    StoryBlockReferenceResult refreshStoryBlockValueReferences(final Object storyBlockValue, final String parentContentletIdentifier);
 
     /**
      * Traverses every {@link com.dotcms.contenttype.model.field.StoryBlockField} in the specified Contentlet, and
