@@ -155,7 +155,6 @@ public class VariantAPIImpl implements VariantAPI {
                 .forEach(contentletVersionInfo -> promoteToDefault(user, contentletVersionInfo));
 
         Logger.debug(this, () -> "Promoting Variant: " + variantFromDatabase);
-        archive(variantFromDatabase.name());
     }
 
     private static void promoteToDefault(final User user, final ContentletVersionInfo contentletVersionInfo) {

@@ -389,7 +389,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             Logger.error(ESContentFactoryImpl.class,e.getMessage(),e);
             throw new DotDataException(e.getMessage(), e);
         }
-        List<Map<String, Serializable>> res = new ArrayList<Map<String,Serializable>>();
+        List<Map<String, Serializable>> res = new ArrayList<>();
         Criteria c = query.getCriteria();
         StringBuilder bob = new StringBuilder();
         List<Object> params = null;
@@ -421,7 +421,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
         bob.append(" FROM contentlet WHERE structure_inode = '" + structureInode + "'");
         if(c != null){
-            params = new ArrayList<Object>();
+            params = new ArrayList<>();
             if(c instanceof SimpleCriteria){
                 bob.append(" AND ");
                 String att = velVarfieldsMap.get(((SimpleCriteria) c).getAttribute()) != null ? velVarfieldsMap.get(((SimpleCriteria) c).getAttribute()).getFieldContentlet() : ((SimpleCriteria) c).getAttribute();
@@ -472,15 +472,15 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
         List<Map<String, String>> dbrows = dc.loadResults();
         for (Map<String, String> row : dbrows) {
-            Map<String, Serializable> m = new HashMap<String, Serializable>();
+            Map<String, Serializable> m = new HashMap<>();
             for (String colkey : row.keySet()) {
                 if(colkey.startsWith("bool")){
                     if(fieldsMap.get(colkey) != null){
-                        m.put(fieldsMap.get(colkey).getVelocityVarName(), new Boolean(row.get(colkey)));
+                        m.put(fieldsMap.get(colkey).getVelocityVarName(), Boolean.valueOf(row.get(colkey)));
                     }
                 }else if(colkey.startsWith("float")){
                     if(fieldsMap.get(colkey) != null){
-                        m.put(fieldsMap.get(colkey).getVelocityVarName(), new Float(row.get(colkey)));
+                        m.put(fieldsMap.get(colkey).getVelocityVarName(), Float.valueOf(row.get(colkey)));
                     }
                 }else if(colkey.startsWith("date")){
                     if(fieldsMap.get(colkey) != null){
@@ -488,7 +488,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                     }
                 }else if(colkey.startsWith("integer")){
                     if(fieldsMap.get(colkey) != null){
-                        m.put(fieldsMap.get(colkey).getVelocityVarName(), new Integer(row.get(colkey)));
+                        m.put(fieldsMap.get(colkey).getVelocityVarName(), Integer.valueOf(row.get(colkey)));
                     }
                 }else if(colkey.startsWith("text")){
                     if(fieldsMap.get(colkey) != null){
@@ -496,11 +496,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
                     }
                 }else if(colkey.equals("working")){
                     if(fieldsMap.get(colkey) != null){
-                        m.put(fieldsMap.get(colkey).getVelocityVarName(), new Boolean(row.get(colkey)));
+                        m.put(fieldsMap.get(colkey).getVelocityVarName(), Boolean.valueOf(row.get(colkey)));
                     }
                 }else if(colkey.startsWith("deleted")){
                     if(fieldsMap.get(colkey) != null){
-                        m.put(fieldsMap.get(colkey).getVelocityVarName(), new Boolean(row.get(colkey)));
+                        m.put(fieldsMap.get(colkey).getVelocityVarName(), Boolean.valueOf(row.get(colkey)));
                     }
                 }else{
                     m.put(colkey, row.get(colkey));
@@ -583,7 +583,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             //Another group of 500 contentles ids is ready...
             if ( inodes.size() >= maxRecords ) {
                 deleteTreesForInodes( inodes );
-                inodes = new ArrayList<String>();
+                inodes = new ArrayList<>();
             }
         }
 
@@ -1061,7 +1061,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             dc.setMaxRows(maxResults);
         }
         List<Map<String,Object>> list=dc.loadObjectResults();
-        ArrayList<String> inodes=new ArrayList<String>(list.size());
+        ArrayList<String> inodes=new ArrayList<>(list.size());
         for(Map<String,Object> r : list)
             inodes.add(r.get("inode").toString());
         return findContentlets(inodes);
@@ -1127,8 +1127,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         if(includeAllVersion){
             dotConnect.setSQL(" select count(c.inode) as x \n" +
                     " from contentlet c \n" +
-                    " join structure s on c.structure_inode  = s.inode  \n" +
-                    " where s.velocity_var_name =  ? ");
+                    " where c.structure_inode =  ? ");
         } else {
            dotConnect.setSQL(" select count(c.inode) as x\n" +
                    " from contentlet c \n" +
@@ -1138,9 +1137,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
                    " on cvi.identifier = c.identifier and cvi.working_inode = c.inode  \n" +
                    " join inode i  \n" +
                    " on c.inode = i.inode \n" +
-                   " where s.velocity_var_name = ? \n ");
+                   " where s.inode = ? \n ");
         }
-        dotConnect.addParam(contentType.variable());
+        dotConnect.addParam(contentType.inode());
         return dotConnect.getInt("x");
     }
 
@@ -2210,7 +2209,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             inode = UUIDGenerator.generateUuid();
         }
 
-        if (!findInDb(inode).isPresent()) {
+        if (findInDb(inode).isEmpty()) {
             final UpsertCommand upsertInodeCommand = UpsertCommandFactory.getUpsertCommand();
             final SimpleMapAppContext replacements = new SimpleMapAppContext();
 
@@ -2251,7 +2250,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         upsertValues.add(name);
         upsertValues.add(new Timestamp(contentlet.getModDate().getTime()));
         upsertValues.add(contentlet.getModUser());
-        upsertValues.add(new Long(contentlet.getSortOrder()).intValue());
+        upsertValues.add(Long.valueOf(contentlet.getSortOrder()).intValue());
 
         //insert friendly name
         upsertValues.add(name);
@@ -2407,7 +2406,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	@Override
 	protected List<Contentlet> search(String query, int limit, int offset, String sortBy) throws DotDataException, DotStateException, DotSecurityException {
 	    SearchHits hits = indexSearch(query, limit, offset, sortBy);
-	    List<String> inodes=new ArrayList<String>();
+	    List<String> inodes=new ArrayList<>();
 	    for(SearchHit h : hits)
 	        inodes.add(h.field("inode").getValue().toString());
 	    return findContentlets(inodes);
@@ -2694,7 +2693,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
          */
 		public List<Map<String, String>> getMostViewedContent(String structureInode, Date startDate, Date endDate, User user) throws DotDataException {
 
-			List<Map<String, String>> result = new ArrayList<Map<String, String>>();
+			List<Map<String, String>> result = new ArrayList<>();
 
 			String sql = " select content_ident, sum(num_views) " +
 					" from " +
@@ -2736,7 +2735,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	        for(Map<String, String> ident:contentIdentifiers){
 	        	Identifier identifier = identAPI.find(ident.get("content_ident"));
 	        	if(perAPI.doesUserHavePermission(identifier, PermissionAPI.PERMISSION_READ, user)){
-	        		Map<String, String> h = new HashMap<String, String>();
+	        		Map<String, String> h = new HashMap<>();
 	        		h.put("identifier", ident.get("content_ident"));
 	        		h.put("numberOfViews", ident.get("numberOfViews"));
 	        		result.add(h);

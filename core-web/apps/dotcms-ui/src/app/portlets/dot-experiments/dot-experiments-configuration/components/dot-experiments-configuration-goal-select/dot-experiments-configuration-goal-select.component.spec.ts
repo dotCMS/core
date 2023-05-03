@@ -211,6 +211,26 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
         expect(store.setSelectedGoal).toHaveBeenCalledWith(expectedGoal);
     });
 
+    it('should disable submit button if the input name of the goal has more than MAX_INPUT_LENGTH constant', () => {
+        const invalidFormValues = {
+            primary: {
+                ...DefaultGoalConfiguration.primary,
+                name: 'Really really really really really long name for a goal',
+                type: GOAL_TYPES.BOUNCE_RATE
+            }
+        };
+
+        spectator.component.form.setValue(invalidFormValues);
+        spectator.component.form.updateValueAndValidity();
+        spectator.detectComponentChanges();
+
+        expect(
+            (spectator.query(byTestId('add-goal-button')) as HTMLButtonElement).disabled
+        ).toBeTrue();
+        expect(spectator.component.goalNameControl.hasError('maxlength')).toEqual(true);
+        expect(spectator.component.form.valid).toEqual(false);
+    });
+
     it('should add the class expand to an option clicked that contains content', () => {
         const reachPageOption = spectator.queryLast(byTestId('dot-options-item-header'));
 

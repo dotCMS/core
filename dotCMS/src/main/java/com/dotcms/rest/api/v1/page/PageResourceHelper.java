@@ -55,6 +55,9 @@ import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
+import io.vavr.control.Try;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.jetbrains.annotations.NotNull;
 
@@ -464,16 +467,26 @@ public class PageResourceHelper implements Serializable {
                                       final PageMode pageMode, final Language language)
             throws DotDataException, DotSecurityException {
 
-        final Contentlet copiedContentlet = this.copyContent(copyContentletForm, user, pageMode, language.getId());
+        final Tuple2<Contentlet, Contentlet> tuple2 = this.copyContent(copyContentletForm, user, pageMode, language.getId());
 
+        final Contentlet copiedContentlet   = tuple2._1();
+        final Contentlet originalContentlet = tuple2._2();
         final String htmlPage   = copyContentletForm.getPageId();
-        final String container  = copyContentletForm.getContainerId();
+        String container        = copyContentletForm.getContainerId();
         final String contentId  = copyContentletForm.getContentId();
         final String instanceId = copyContentletForm.getRelationType();
         final String variant    = copyContentletForm.getVariantId();
         final int treeOrder     = copyContentletForm.getTreeOrder();
         final String personalization = copyContentletForm.getPersonalization();
 
+        if (FileAssetContainerUtil.getInstance().isFolderAssetContainerId(container)) {
+
+            final Container containerObject = APILocator.getContainerAPI().getLiveContainerByFolderPath(container, user, pageMode.respectAnonPerms,
+                    ()-> Try.of(()->APILocator.getHostAPI().findDefaultHost(user, pageMode.respectAnonPerms)).getOrNull());
+            if (null != containerObject) {
+                container =containerObject.getIdentifier();
+            }
+        }
 
         Logger.debug(this, ()-> "Deleting current contentlet multi tree: " + copyContentletForm);
         final MultiTree currentMultitree = APILocator.getMultiTreeAPI().getMultiTree(htmlPage, container, contentId, instanceId,
@@ -492,6 +505,12 @@ public class PageResourceHelper implements Serializable {
                 null == variant? VariantAPI.DEFAULT_VARIANT.name(): variant);
         Logger.debug(this, ()-> "Saving current contentlet multi tree: " + currentMultitree);
         APILocator.getMultiTreeAPI().saveMultiTree(newMultitree);
+
+        if (null != originalContentlet) {
+            HibernateUtil.addCommitListener(()->
+                    new ContentletLoader().invalidate(originalContentlet, PageMode.EDIT_MODE));
+        }
+
 
         return copiedContentlet;
     }
@@ -517,9 +536,10 @@ public class PageResourceHelper implements Serializable {
      * @throws DotDataException     An error occurred when interacting with the data source.
      * @throws DotSecurityException The specified User does not have the required permissions to execute this action.
      */
-    private Contentlet copyContent(final CopyContentletForm copyContentletForm, final User user,
+    private Tuple2<Contentlet, Contentlet> copyContent(final CopyContentletForm copyContentletForm, final User user,
                                    final PageMode pageMode, final long languageId) throws DotDataException, DotSecurityException {
         Logger.debug(this, ()-> "Copying existing contentlet: " + copyContentletForm.getContentId());
+
         Contentlet currentContentlet = this.contentletAPI.findContentletByIdentifier(
                 copyContentletForm.getContentId(), pageMode.showLive, languageId, user, pageMode.respectAnonPerms);
         if (null == currentContentlet || UtilMethods.isNotSet(currentContentlet.getIdentifier())) {
@@ -535,7 +555,7 @@ public class PageResourceHelper implements Serializable {
         final Contentlet copiedContentlet  = this.contentletAPI.copyContentlet(currentContentlet, user, pageMode.respectAnonPerms);
         Logger.debug(this, ()-> "Contentlet: " + copiedContentlet.getIdentifier() + " has been copied");
 
-        return copiedContentlet;
+        return Tuple.of(copiedContentlet, currentContentlet);
     }
 
 }

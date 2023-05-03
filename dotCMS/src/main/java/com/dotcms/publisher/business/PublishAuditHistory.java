@@ -24,8 +24,8 @@ public class PublishAuditHistory implements Serializable {
 	private Map<String, String> assets;
 	
 	public PublishAuditHistory() {
-		assets = new HashMap<String, String>();
-		endpointsMap = new HashMap<String, Map<String,EndpointDetail>>();
+		assets = new HashMap<>();
+		endpointsMap = new HashMap<>();
 	}
 	
 	

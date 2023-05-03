@@ -12,8 +12,6 @@ public class SiteView {
 
     private final String siteName;
 
-    private final String folder;
-
     private final String tagStorage;
 
     private final String siteThumbnail;
@@ -57,7 +55,6 @@ public class SiteView {
         inode = builder.inode;
         aliases = builder.aliases;
         siteName = builder.siteName;
-        folder = builder.folder;
         tagStorage = builder.tagStorage;
         siteThumbnail = builder.siteThumbnail;
         runDashboard = builder.runDashboard;
@@ -93,10 +90,6 @@ public class SiteView {
 
     public String getSiteName() {
         return siteName;
-    }
-
-    public String getFolder() {
-        return folder;
     }
 
     public String getTagStorage() {
@@ -181,7 +174,6 @@ public class SiteView {
         private String inode;
         private String aliases;
         private String siteName;
-        private String folder;
         private String tagStorage;
         private String siteThumbnail;
         private boolean runDashboard;
@@ -226,11 +218,6 @@ public class SiteView {
 
         public Builder withSiteName(String val) {
             siteName = val;
-            return this;
-        }
-
-        public Builder withFolder(String val) {
-            folder = val;
             return this;
         }
 

@@ -123,7 +123,7 @@ public class MysqlQueryTokenizer extends QueryTokenizer implements IQueryTokeniz
      *   create proc...
      */
     private void breakApartNewLines() {
-        ArrayList<String> tmp = new ArrayList<String>();
+        ArrayList<String> tmp = new ArrayList<>();
         String procSep = _prefs.getProcedureSeparator();
         for (Iterator<String> iter = _queries.iterator(); iter.hasNext();) {
             String next = iter.next();
@@ -167,7 +167,7 @@ public class MysqlQueryTokenizer extends QueryTokenizer implements IQueryTokeniz
         
         boolean inMultiSQLStatement = false;
         StringBuilder collector = null;
-        ArrayList<String> tmp = new ArrayList<String>();
+        ArrayList<String> tmp = new ArrayList<>();
         String procSep = _prefs.getProcedureSeparator();
         String stmtSep = _prefs.getStatementSeparator();
         for (Iterator<String> iter = _queries.iterator(); iter.hasNext();) {

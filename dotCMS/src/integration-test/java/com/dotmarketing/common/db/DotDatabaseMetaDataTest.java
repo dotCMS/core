@@ -11,16 +11,13 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
+import static junit.framework.TestCase.assertNotNull;
 public class DotDatabaseMetaDataTest extends BaseWorkflowIntegrationTest {
 
     @BeforeClass
@@ -118,5 +115,21 @@ public class DotDatabaseMetaDataTest extends BaseWorkflowIntegrationTest {
         assertTrue(primaryKeysFields.contains("lang"));
         assertTrue(primaryKeysFields.contains("identifier"));
         assertTrue(primaryKeysFields.contains("variant_id"));
+    }
+
+    // the result should not be null
+    @Test
+    public void getModifiedColumnLength() throws SQLException, DotDataException {
+        final String colName = "locked_by";
+        final String tblName = "contentlet_version_info";
+
+        if (DbConnectionFactory.isPostgres()){
+            final String query = "alter table "+tblName+" alter column locked_by type varchar (100);";
+            final DotConnect dotConnect = new DotConnect();
+            dotConnect.executeStatement(query);
+        }
+
+        final Map<String, String> result = new DotDatabaseMetaData().getModifiedColumnLength(tblName, colName);
+        assertNotNull(result);
     }
 }

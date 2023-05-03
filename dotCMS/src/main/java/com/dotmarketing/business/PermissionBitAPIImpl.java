@@ -107,7 +107,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	 * @return List of type Role for a particular permission.  ie.. All roles with read permission from the collection of permissions passed in
 	 */
 	private List<Role> loadRolesForPermission(List<Permission> permissions, int permissionTypeToLoadFor) throws NoSuchRoleException {
-		ArrayList<Role> roles = new ArrayList<Role>();
+		ArrayList<Role> roles = new ArrayList<>();
 		for (Permission permission : permissions) {
 			if(permission.matchesPermission(permissionTypeToLoadFor))	{
 				try {
@@ -134,7 +134,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	 * @return List of type Role for a particular permission.  ie.. All roles with read permission from the collection of permissions passed in
 	 */
 	private List<Role> loadRolesForPermission(List<Permission> permissions, int permissionTypeToLoadFor, String roleNameFilter) throws NoSuchRoleException {
-		SortedSet<Role> roles = new TreeSet<Role>();
+		SortedSet<Role> roles = new TreeSet<>();
 
 		boolean isRoleNameFilterValid = UtilMethods.isSet(roleNameFilter);
 		for (Permission permission : permissions) {
@@ -152,7 +152,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 				}
 			}
 		}
-		return new ArrayList<Role>(roles);
+		return new ArrayList<>(roles);
 	}
 
 
@@ -692,8 +692,8 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 
 		List<Permission> currentPermissions = permissionFactory.getPermissions(permissionable, true);
-		List<String> rolesIncluded = new ArrayList<String>();
-		List<Permission> includingLockedRolePermissions = new ArrayList<Permission>();
+		List<String> rolesIncluded = new ArrayList<>();
+		List<Permission> includingLockedRolePermissions = new ArrayList<>();
 
 		for(Permission current : currentPermissions) {
 			Role role = roleAPI.loadRoleById(current.getRoleId());
@@ -739,7 +739,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	@Override
 	public Set<User> getReadUsers(Permissionable permissionable) throws DotDataException {
 		Set<Role> roles = getReadRoles(permissionable);
-		Set<User> users = new HashSet<User>();
+		Set<User> users = new HashSet<>();
 		for (Role role : roles) {
 			try {
 				users.addAll(APILocator.getRoleAPI().findUsersForRole(role));
@@ -756,9 +756,9 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 	@Override
 	public Set<Role> getReadRoles(Permissionable permissionable) throws DotDataException {
-		Set<Role> readPermissions = new HashSet<Role>();
+		Set<Role> readPermissions = new HashSet<>();
 		List<Permission> permissions = getPermissions(permissionable);
-		List<Role> roles = new ArrayList<Role>();
+		List<Role> roles = new ArrayList<>();
 		try{
 			roles = loadRolesForPermission(permissions, PermissionAPI.PERMISSION_READ);
 		}catch (NoSuchRoleException nsre) {
@@ -770,9 +770,9 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 	@Override
 	public Set<Role> getPublishRoles(Permissionable permissionable) throws DotDataException {
-		Set<Role> publishPermissions = new HashSet<Role>();
+		Set<Role> publishPermissions = new HashSet<>();
 		List<Permission> permissions = getPermissions(permissionable);
-		List<Role> roles = new ArrayList<Role>();
+		List<Role> roles = new ArrayList<>();
 		try{
 			roles = loadRolesForPermission(permissions, PermissionAPI.PERMISSION_PUBLISH);
 		}catch (NoSuchRoleException nsre) {
@@ -785,7 +785,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	@Override
 	public Set<User> getWriteUsers(Permissionable permissionable) throws DotDataException {
 		Set<Role> roles = getWriteRoles(permissionable);
-		Set<User> users = new HashSet<User>();
+		Set<User> users = new HashSet<>();
 		for (Role role : roles) {
 			try {
 				List<User> roleUsers = APILocator.getRoleAPI().findUsersForRole(role);
@@ -804,9 +804,9 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 	@Override
 	public Set<Role> getWriteRoles(Permissionable permissionable) throws DotDataException {
-		Set<Role> writePermissions = new HashSet<Role>();
+		Set<Role> writePermissions = new HashSet<>();
 		List<Permission> permissions = getPermissions(permissionable);
-		List<Role> roles = new ArrayList<Role>();
+		List<Role> roles = new ArrayList<>();
 		try{
 			roles = loadRolesForPermission(permissions, PermissionAPI.PERMISSION_WRITE);
 		}catch (NoSuchRoleException nsre) {
@@ -820,7 +820,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	@Override
 	public Set<Role> getRolesWithPermission(Permissionable permissionable, int permission) throws DotDataException {
 
-		Set<Role> roles = new HashSet<Role>();
+		Set<Role> roles = new HashSet<>();
 		List<Permission> permissions = getPermissions(permissionable);
 		try{
 			roles.addAll(loadRolesForPermission(permissions, permission));
@@ -834,7 +834,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	@Override
 	public Set<User> getUsersWithPermission(Permissionable permissionable, int permission) throws DotDataException {
 		Set<Role> roles = getRolesWithPermission(permissionable, permission);
-		Set<User> users = new HashSet<User>();
+		Set<User> users = new HashSet<>();
 		for (Role role : roles) {
 			try {
 				users.addAll(APILocator.getRoleAPI().findUsersForRole(role));
@@ -877,7 +877,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	@Override
 	public List<Integer> getPermissionIdsFromRoles(final Permissionable permissionable, final Role[] roles,
 												   final User user) throws DotDataException {
-		Set<Integer> permissions = new TreeSet<Integer>();
+		Set<Integer> permissions = new TreeSet<>();
 		List<Permission> assetsPermissions;
 
 		for (int i = 0; i < roles.length; i++) {
@@ -890,7 +890,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 					for(int permissionType : list) {
 						permissions.add(permissionType);
 					}
-					return new ArrayList<Integer>(permissions);
+					return new ArrayList<>(permissions);
 				}
 			} catch (Exception e) {
 
@@ -914,7 +914,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		}
 
 		if(user == null){
-			return new ArrayList<Integer>(permissions);
+			return new ArrayList<>(permissions);
 		}
 
 		//add owners permission
@@ -943,7 +943,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		}
 
 
-		return new ArrayList<Integer>(permissions);
+		return new ArrayList<>(permissions);
 	}
 
 	@Override
@@ -988,7 +988,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		}
 		finally {
 			if( roleList == null ) {
-				roleList = new ArrayList<Role>(0);
+				roleList = new ArrayList<>(0);
 			}
 		}
 
@@ -999,7 +999,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	public List<Role> getRoles(String inode, int permissionType,
 			String filter, int start, int limit, boolean hideSystemRoles) {
 		List<Role> roleList = getRoles(inode, permissionType, filter, start, limit);
-		List<Role> roleListTemp = new ArrayList<Role>(roleList);
+		List<Role> roleListTemp = new ArrayList<>(roleList);
 		if(hideSystemRoles)
 			for(Role r : roleListTemp) {
 				if(PortalUtil.isSystemRole(r))
@@ -1054,7 +1054,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			}
 			roleList = loadRolesForPermission(permissionList, permissionType, filter);
 
-			List<Role> roleListTemp = new ArrayList<Role>(roleList);
+			List<Role> roleListTemp = new ArrayList<>(roleList);
 			for(Role r : roleListTemp) {
 				if(PortalUtil.isSystemRole(r))
 					roleList.remove(r);
@@ -1090,7 +1090,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		}
 		finally {
 			if( userList == null ) {
-				userList = new ArrayList<User>(0);
+				userList = new ArrayList<>(0);
 			}
 		}
 
@@ -1228,7 +1228,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		if ((user != null) && roleAPI.doesUserHaveRole(user, roleAPI.loadCMSAdminRole()))
 			return inputList;
 
-		List<P> permissionables = new ArrayList<P>(inputList);
+		List<P> permissionables = new ArrayList<>(inputList);
 		if(permissionables.isEmpty()){
 			return permissionables;
 		}
@@ -1383,7 +1383,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			Logger.error(this, e1.getMessage(), e1);
 			throw new DotRuntimeException(e1.getMessage(), e1);
 		}
-		List<String> userRoleIds= new ArrayList<String>();
+		List<String> userRoleIds= new ArrayList<>();
 		for (Role role : roles) {
 			try{
 				String roleID = role.getId();
@@ -1426,7 +1426,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 
 
-		List<String> permissionIdsStr = new ArrayList<String>();
+		List<String> permissionIdsStr = new ArrayList<>();
 		String[] permissionIdArr = requiredPermissions.split(",");
 		if(permissionIdArr.length>0){
 			for(String perId : permissionIdArr){
@@ -1770,7 +1770,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		Permissionable parentPermissionable=permissionable.getParentPermissionable();
 		if(parentPermissionable!=null) {
 			final List<Permission> assetPermissions = getPermissions(permissionable, true);
-			final Map<String, Inode> inodeCache = new HashMap<String, Inode>();
+			final Map<String, Inode> inodeCache = new HashMap<>();
     		for(Permission p : assetPermissions) {
     			if(!p.getInode().equals(permissionable.getPermissionId())) {
     				final String assetInode = p.getInode();

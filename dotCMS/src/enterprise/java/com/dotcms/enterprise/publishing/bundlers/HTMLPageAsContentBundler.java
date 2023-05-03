@@ -276,7 +276,7 @@ public class HTMLPageAsContentBundler implements IBundler {
 								.getContentletVersionInfo(htmlPage.getIdentifier(),
 										((Contentlet) htmlPage).getLanguageId());
 
-						if (!info.isPresent()) {
+						if (info.isEmpty()) {
 							throw new DotDataException("Can't find ContentletVersionInfo for Identifier: "
 									+ htmlPage.getIdentifier() + ". Lang: " + htmlPage.getLanguageId());
 						}

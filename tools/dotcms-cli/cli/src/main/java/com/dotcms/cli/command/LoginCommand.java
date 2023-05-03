@@ -2,6 +2,7 @@ package com.dotcms.cli.command;
 
 
 import com.dotcms.api.AuthenticationContext;
+import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import java.util.concurrent.Callable;
 import javax.enterprise.context.control.ActivateRequestContext;
@@ -12,7 +13,15 @@ import picocli.CommandLine.ExitCode;
 @ActivateRequestContext
 @CommandLine.Command(
         name = LoginCommand.NAME,
-        description = "@|bold,green Once a profile is selected. Use this command to open a session|@ Expects a user in @|bold,cyan --user -u|@ and a password @|bold,cyan --password -p|@ @|bold Both are mandatory params.|@"
+        header = "@|bold,blue Use this command to login to a dotCMS instance.|@",
+        description = {
+                " Once an instance is selected. Use this command to open a session",
+                " Expects a user in @|yellow --user -u|@ and a password @|yellow --password -p|@",
+                " @|bold Both parameters are mandatory.|@",
+                " If the password is not provided, the command will prompt for it.",
+                " if you're not sure which instance is active, use the @|yellow status|@ command.",
+                "" // empty line left here on purpose to make room at the end
+        }
 )
 public class LoginCommand implements Callable<Integer> {
 
@@ -20,6 +29,9 @@ public class LoginCommand implements Callable<Integer> {
 
     @CommandLine.Mixin(name = "output")
     protected OutputOptionMixin output;
+
+    @CommandLine.Mixin
+    HelpOptionMixin helpOption;
 
     @CommandLine.Option(names = {"-u", "--user"}, arity = "1", description = "User name", required = true )
     String user;

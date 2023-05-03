@@ -342,7 +342,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 					contentIdentifier.getId(),
 					contentlet.getLanguageId(),
 					contentlet.getVariantId());
-            if (!versionInfo.isPresent()) {
+            if (versionInfo.isEmpty()) {
                 final String errorMsg = String.format("Version Info for Identifier '%s' and Language '%s' was not" +
                         " found via API.", contentIdentifier.getId(), contentlet.getLanguageId());
                 throw new DotDataException(errorMsg);

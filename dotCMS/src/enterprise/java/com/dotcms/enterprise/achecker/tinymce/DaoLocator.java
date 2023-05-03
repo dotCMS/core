@@ -65,7 +65,7 @@ public class DaoLocator<T>  {
 
 	private DaoLocator() {
 		super();
-		cache = new HashMap<T, Object>();
+		cache = new HashMap<>();
 	}
 
 	public synchronized static void init(){

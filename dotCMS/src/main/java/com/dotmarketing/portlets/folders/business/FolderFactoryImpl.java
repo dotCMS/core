@@ -323,7 +323,7 @@ public class FolderFactoryImpl extends FolderFactory {
 	}
 
 	protected List<Folder> getFoldersByParent(Folder folder, User user, boolean respectFrontendRoles) throws DotDataException {
-		List<Folder> entries = new ArrayList<Folder>();
+		List<Folder> entries = new ArrayList<>();
 		List<Folder> elements = getSubFoldersTitleSort(folder);
 		for (Folder childFolder : elements) {
 			if (APILocator.getPermissionAPI().doesUserHavePermission(childFolder, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
@@ -345,7 +345,7 @@ public class FolderFactoryImpl extends FolderFactory {
 
 	@SuppressWarnings("unchecked")
 	protected java.util.List getMenuItems(Folder folder, int orderDirection) throws  DotDataException{
-		List<Folder> folders = new ArrayList<Folder>();
+		List<Folder> folders = new ArrayList<>();
 		folders.add(folder);
 		return getMenuItems(folders, orderDirection);
 	}
@@ -484,7 +484,7 @@ public class FolderFactoryImpl extends FolderFactory {
 		}
 		
 		//Content Pages
-		Set<IHTMLPage> pageAssetList=new HashSet<IHTMLPage>();
+		Set<IHTMLPage> pageAssetList=new HashSet<>();
 		pageAssetList.addAll(APILocator.getHTMLPageAssetAPI().getWorkingHTMLPages(source, APILocator.getUserAPI().getSystemUser(), false));
 		for(IHTMLPage page : pageAssetList) {
 			if(!pagesCopied.containsKey(page.getIdentifier())) {

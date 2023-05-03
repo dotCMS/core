@@ -553,7 +553,7 @@ public class HostAPITest extends IntegrationTestBase  {
                     e.getMessage()));
         }
 
-        if (!hostDeleteResult.isPresent()) {
+        if (hostDeleteResult.isEmpty()) {
             Thread.sleep(6000); // wait a bit for the index
         } else {
             hostDeleteResult.get().get();

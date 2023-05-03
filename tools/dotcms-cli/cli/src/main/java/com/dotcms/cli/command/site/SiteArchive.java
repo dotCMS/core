@@ -2,6 +2,7 @@ package com.dotcms.cli.command.site;
 
 import com.dotcms.api.SiteAPI;
 import com.dotcms.api.client.RestClientFactory;
+import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.site.SiteView;
@@ -14,19 +15,20 @@ import java.util.concurrent.Callable;
 
 @ActivateRequestContext
 @CommandLine.Command(name = SiteArchive.NAME,
-     description = "@|bold,green Archive Site |@ Option params @|bold,cyan --idOrName|@ site name or site id."
+        header = "@|bold,blue Use this command to archive a site.|@",
+        description = {
+                " Before a site can be delete it must be archived first.",
+                " Archiving a site means it is no longer available for use. ",
+                " It is not visible in the UI and it is not available via API.",
+                " but this process can be undone. See @|bold,cyan site:unarchive|@ command. ",
+                "" // empty line left here on purpose to make room at the end
+        }
 )
 public class SiteArchive extends AbstractSiteCommand implements Callable<Integer> {
 
     static final String NAME = "archive";
 
-    @CommandLine.Mixin(name = "output")
-    protected OutputOptionMixin output;
-
-    @Inject
-    RestClientFactory clientFactory;
-
-    @CommandLine.Parameters(index = "0", arity = "1", description = "Site name Or Id.")
+    @CommandLine.Parameters(index = "0", arity = "1", paramLabel = "idOrName", description = "Site name Or Id.")
     String siteNameOrId;
 
     @Override

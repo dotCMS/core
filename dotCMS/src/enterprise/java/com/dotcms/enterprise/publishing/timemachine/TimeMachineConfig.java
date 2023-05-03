@@ -58,7 +58,7 @@ public class TimeMachineConfig extends PublisherConfig {
 	
 	@Override
 	public List<Class> getPublishers() {
-		List<Class> clazz = new ArrayList<Class>();
+		List<Class> clazz = new ArrayList<>();
 		clazz.add(TimeMachinePublisher.class);
 		return clazz;
 	}

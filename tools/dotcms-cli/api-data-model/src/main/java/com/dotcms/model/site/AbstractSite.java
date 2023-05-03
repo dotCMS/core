@@ -23,8 +23,8 @@ public interface AbstractSite {
     @JsonProperty("hostname")
     String hostName();
 
-    String folder();
-
+    @Nullable
+    @JsonProperty("systemHost")
     Boolean systemHost();
 
     @JsonProperty("default")

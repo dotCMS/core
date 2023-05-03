@@ -253,6 +253,7 @@ describe('DotPagesComponent', () => {
         elem.triggerEventHandler('goToUrl', '/page/1?lang=1');
 
         expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(error404);
+        expect(store.setPortletStatus).toHaveBeenCalledWith(ComponentStatus.LOADED);
     });
 
     it('should call showActionsMenu method from DotPagesFavoritePanel', () => {
@@ -314,9 +315,11 @@ describe('DotPagesComponent', () => {
 
     it('should call closedActionsMenu method from p-menu', () => {
         const elem = de.query(By.css('p-menu'));
+
+        component.closedActionsMenu = jasmine.createSpy('closedActionsMenu');
         elem.triggerEventHandler('onHide', {});
 
-        expect(store.clearMenuActions).toHaveBeenCalledTimes(1);
+        expect(component.closedActionsMenu).toHaveBeenCalledTimes(1);
     });
 
     it('should call push method in dotMessageDisplayService once a save-page is received for a non favorite page', () => {
