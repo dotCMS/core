@@ -5,6 +5,7 @@
         (onHide)="closedActionsContextMenu()"
     ></p-contextMenu>
     <p-table
+        #table
         [contextMenu]="cm"
         [value]="vm.pages.items"
         [loading]="vm.isPagesLoading"
