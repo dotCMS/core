@@ -164,7 +164,7 @@
             String displayCountBar = "";
             String charLimit = "";
             String customBlocks = "";
-            String identifier = contentlet.getIdentifier();
+            String contentletIdentifier = contentlet.getIdentifier();
             Boolean showVideoThumbnail = Config.getBooleanProperty("SHOW_VIDEO_THUMBNAIL", true);
 
             // By default this is an empty JSON `{}`.
@@ -210,7 +210,7 @@
                 char-limit="<%=charLimit%>"
                 lang="<%=contentLanguage%>"
                 custom-blocks='<%=customBlocks%>'
-                identifier='<%=identifier%>'
+                contentlet-identifier='<%=contentletIdentifier%>'
             >
                 
             </dotcms-block-editor>

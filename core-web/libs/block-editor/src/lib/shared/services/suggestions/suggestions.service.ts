@@ -38,9 +38,9 @@ export class SuggestionsService {
         contentType,
         filter,
         currentLanguage,
-        identifier
+        contentletIdentifier
     }: ContentletFilters): Observable<DotCMSContentlet[]> {
-        const identifierQuery = identifier ? `-identifier:${identifier}` : '';
+        const identifierQuery = contentletIdentifier ? `-identifier:${contentletIdentifier}` : '';
 
         return this.http
             .post('/api/content/_search', {

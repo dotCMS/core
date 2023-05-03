@@ -72,7 +72,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     @Input() charLimit: number;
     @Input() customBlocks = '';
     @Input() content: Content = '';
-    @Input() identifier: string;
+    @Input() contentletIdentifier: string;
     @Input() set showVideoThumbnail(value) {
         this.dotMarketingConfigService.setProperty(
             EDITOR_MARKETING_KEYS.SHOW_VIDEO_THUMBNAIL,
@@ -359,7 +359,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
                 lang: this.lang,
                 allowedContentTypes: this.allowedContentTypes,
                 allowedBlocks: this._allowedBlocks,
-                identifier: this.identifier
+                contentletIdentifier: this.contentletIdentifier
             }),
             DotComands,
             DotPlaceholder.configure({ placeholder: 'Type "/" for commands' }),

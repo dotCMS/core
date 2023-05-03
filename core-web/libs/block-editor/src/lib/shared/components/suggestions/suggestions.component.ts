@@ -50,7 +50,7 @@ export class SuggestionsComponent implements OnInit {
     @Input() noResultsMessage = 'No Results';
     @Input() currentLanguage = DEFAULT_LANG_ID;
     @Input() allowedContentTypes = '';
-    @Input() identifier = '';
+    @Input() contentletIdentifier = '';
 
     private itemsLoaded: ItemsType;
     private selectedContentType: DotCMSContentType;
@@ -201,7 +201,7 @@ export class SuggestionsComponent implements OnInit {
                 contentType: contentType.variable,
                 filter,
                 currentLanguage: this.currentLanguage,
-                identifier: this.identifier
+                contentletIdentifier: this.contentletIdentifier
             })
             .pipe(take(1))
             .subscribe((contentlets) => {
