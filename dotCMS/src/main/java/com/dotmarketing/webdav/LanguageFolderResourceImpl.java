@@ -121,7 +121,7 @@ public class LanguageFolderResourceImpl implements FolderResource, LockingCollec
 	 */
 	public List<? extends Resource> getChildren() {
 		File[] children = folder.listFiles();
-		List<Resource> result = new ArrayList<Resource>();
+		List<Resource> result = new ArrayList<>();
 		for (File file : children) {
 			if(file.getName().endsWith(".properties") || file.getName().endsWith(".native") || file.getName().equals("archived") || folder.getName().equals("archived")){
 				if(file.isDirectory()){
@@ -297,7 +297,7 @@ public class LanguageFolderResourceImpl implements FolderResource, LockingCollec
 	 * @see com.bradmcevoy.http.GetableResource#getMaxAgeSeconds()
 	 */
 	public Long getMaxAgeSeconds() {
-		return new Long(60);
+		return Long.valueOf(60);
 	}
 
 	/* (non-Javadoc)

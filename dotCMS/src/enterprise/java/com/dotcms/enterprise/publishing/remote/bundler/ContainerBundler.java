@@ -113,7 +113,7 @@ public class ContainerBundler implements IBundler {
 		Set<String> containerIds = config.getContainers();
 
 		try {
-			Set<Container> containers = new HashSet<Container>();
+			Set<Container> containers = new HashSet<>();
 
 			for (String containerId : containerIds) {
 				Container working = APILocator.getContainerAPI().

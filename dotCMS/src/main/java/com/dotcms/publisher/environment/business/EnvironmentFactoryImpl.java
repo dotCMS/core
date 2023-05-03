@@ -21,7 +21,7 @@ public class EnvironmentFactoryImpl extends EnvironmentFactory {
 
 	@Override
 	public List<Environment> getEnvironments() throws DotDataException {
-		List<Environment> environments = new ArrayList<Environment>();
+		List<Environment> environments = new ArrayList<>();
 		DotConnect dc = new DotConnect();
 		dc.setSQL(SELECT_ALL_ENVIRONMENTS);
 		List<Map<String, Object>> res = dc.loadObjectResults();
@@ -36,7 +36,7 @@ public class EnvironmentFactoryImpl extends EnvironmentFactory {
 
 	@Override
 	public List<Environment> getEnvironmentsWithServers() throws DotDataException {
-		List<Environment> environments = new ArrayList<Environment>();
+		List<Environment> environments = new ArrayList<>();
 		DotConnect dc = new DotConnect();
 		dc.setSQL(SELECT_ENVIRONMENTS_WITH_SERVERS);
 		List<Map<String, Object>> res = dc.loadObjectResults();
@@ -117,7 +117,7 @@ public class EnvironmentFactoryImpl extends EnvironmentFactory {
 
 	@Override
 	public Set<Environment> getEnvironmentsByRole(String roleId) throws DotDataException, NoSuchUserException, DotSecurityException {
-		Set<Environment> environments = new HashSet<Environment>();
+		Set<Environment> environments = new HashSet<>();
 		DotConnect dc = new DotConnect();
 		dc.setSQL(SELECT_ENVIRONMENTS_BY_ROLE_ID);
 		dc.addParam(roleId);
@@ -132,7 +132,7 @@ public class EnvironmentFactoryImpl extends EnvironmentFactory {
 	@Override
 	public List<Environment> getEnvironmentsByBundleId(String bundleId)
 			throws DotDataException {
-		List<Environment> environments = new ArrayList<Environment>();
+		List<Environment> environments = new ArrayList<>();
 		DotConnect dc = new DotConnect();
 		dc.setSQL(SELECT_ENVIRONMENTS_BY_BUNDLE_ID);
 		dc.addParam(bundleId);

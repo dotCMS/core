@@ -30,7 +30,7 @@ public class JpegImageFilter extends ImageFilter {
 
 
 		
-		Double q = new Double(quality);
+		Double q = Double.valueOf(quality);
 		q = q/100;
 		
 		File resultFile = getResultsFile(file, parameters, "jpg");

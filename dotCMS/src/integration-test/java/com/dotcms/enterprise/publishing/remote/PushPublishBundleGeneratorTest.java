@@ -162,7 +162,7 @@ public class PushPublishBundleGeneratorTest extends IntegrationTestBase {
 
         final List<PublishQueueElement> tempBundleContents = pubAPI
                 .getQueueElementsByBundleId(bundleId);
-        final List<PublishQueueElement> assetsToPublish = new ArrayList<PublishQueueElement>();
+        final List<PublishQueueElement> assetsToPublish = new ArrayList<>();
 
         for (final PublishQueueElement queueElement : tempBundleContents) {
             assetsToPublish.add(queueElement);
@@ -180,7 +180,7 @@ public class PushPublishBundleGeneratorTest extends IntegrationTestBase {
         //BUNDLERS
 
         final List<Class<IBundler>> bundlers = new ArrayList<>();
-        final List<IBundler> confBundlers = new ArrayList<IBundler>();
+        final List<IBundler> confBundlers = new ArrayList<>();
 
         final Publisher publisher = new PushPublisher();
         publisher.init(pconf);

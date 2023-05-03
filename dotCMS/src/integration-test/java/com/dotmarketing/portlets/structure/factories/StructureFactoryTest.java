@@ -619,10 +619,10 @@ public class StructureFactoryTest extends ContentletBaseTest {
         Long identifier = uniqueIdentifier.get(structure.getName());
 
         //Preparing the parameters for the search
-        List<String> varNames = new ArrayList<String>();
+        List<String> varNames = new ArrayList<>();
         varNames.add( UtilMethods.toCamelCase( "JUnit Test Image-" + identifier) );
 
-        List<String[]> fieldValues = new ArrayList<String[]>();//Not sure about this parameter, not sure what is for, the method getImagesFieldsList just ask if it is a null value.....
+        List<String[]> fieldValues = new ArrayList<>();//Not sure about this parameter, not sure what is for, the method getImagesFieldsList just ask if it is a null value.....
         fieldValues.add( new String[]{ "JUnit Test Image-" + identifier } );
 
         //Getting the fields list
@@ -645,10 +645,10 @@ public class StructureFactoryTest extends ContentletBaseTest {
         Long identifier = uniqueIdentifier.get(structure.getName());
 
         //Preparing the parameters for the search
-        List<String> varNames = new ArrayList<String>();
+        List<String> varNames = new ArrayList<>();
         varNames.add( UtilMethods.toCamelCase( "JUnit Test File-" + identifier) );
 
-        List<String[]> fieldValues = new ArrayList<String[]>();//Not sure about this parameter, not sure what is for, the method getImagesFieldsList just ask if it is a null value.....
+        List<String[]> fieldValues = new ArrayList<>();//Not sure about this parameter, not sure what is for, the method getImagesFieldsList just ask if it is a null value.....
         fieldValues.add( new String[]{ "JUnit Test File-" + identifier } );
 
         //Getting the fields list

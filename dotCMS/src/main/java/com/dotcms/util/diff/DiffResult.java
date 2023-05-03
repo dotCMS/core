@@ -78,7 +78,7 @@ public class DiffResult <K, T> {
         }
 
         public DiffResult<K, T> build () {
-            return new DiffResult<K, T> (this);
+            return new DiffResult<> (this);
         }
     }
 }

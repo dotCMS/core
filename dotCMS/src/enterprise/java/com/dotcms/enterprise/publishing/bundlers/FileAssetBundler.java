@@ -333,7 +333,7 @@ public class FileAssetBundler implements IBundler {
 			final Optional<ContentletVersionInfo> info = APILocator.getVersionableAPI()
 					.getContentletVersionInfo(fileAsset.getIdentifier(), fileAsset.getLanguageId());
 
-			if (!info.isPresent()) {
+			if (info.isEmpty()) {
 				throw new DotDataException("Can't find ContentletVersionInfo for Identifier: "
 						+ fileAsset.getIdentifier() + ". Lang: " + fileAsset.getLanguageId());
 			}

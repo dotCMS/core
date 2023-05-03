@@ -250,7 +250,7 @@ public class WorkflowEmailUtil {
 			}
 
 			// add the next assign if a user
-			Set<String> recipients = new HashSet<String>();
+			Set<String> recipients = new HashSet<>();
 			try {
 				recipients.add(APILocator.getUserAPI()
 						.loadUserById(assignedTo.getRoleKey(), APILocator.getUserAPI().getSystemUser(), false).getEmailAddress());

@@ -510,8 +510,8 @@ public class VelocityUtil {
 	 */
 	public static List<DisplayedLanguage> getAvailableContentPageLanguages(
 			Contentlet contentlet) {
-		List<DisplayedLanguage> languages = new ArrayList<DisplayedLanguage>();
-		List<DisplayedLanguage> allDisplayLanguages = new ArrayList<DisplayedLanguage>();
+		List<DisplayedLanguage> languages = new ArrayList<>();
+		List<DisplayedLanguage> allDisplayLanguages = new ArrayList<>();
 
 		boolean doesContentHaveDefaultLang = false;
 

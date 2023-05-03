@@ -101,7 +101,7 @@ public class RoleAjax {
 
 	public List<Map<String, Object>> getRolesTree (boolean onlyUserAssignableRoles, String excludeRoles, boolean excludeUserRoles) throws DotDataException {
 
-		List<Map<String, Object>> toReturn = new ArrayList<Map<String,Object>>();
+		List<Map<String, Object>> toReturn = new ArrayList<>();
 
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 		List<Role> rootRoles = roleAPI.findRootRoles();
@@ -142,13 +142,13 @@ public class RoleAjax {
 	private Map<String, Object> constructRoleMap(Role role, List<String> excludeRoles, boolean onlyUserAssignableRoles) throws DotDataException {
 
 		RoleAPI roleAPI = APILocator.getRoleAPI();
-		Map<String, Object> roleMap = new HashMap<String, Object>();
+		Map<String, Object> roleMap = new HashMap<>();
         if(role!=null){
         	 roleMap = role.toMap();
         }
 
 
-		List<Map<String, Object>> children = new ArrayList<Map<String,Object>>();
+		List<Map<String, Object>> children = new ArrayList<>();
 
 		if(role!=null && role.getRoleChildren() != null) {
 			for(String id : role.getRoleChildren()) {
@@ -318,7 +318,7 @@ public class RoleAjax {
 		ActivityLogger.logInfo(getClass(), "Role " + role.getName() + " Added to User: "  + user.getUserId(), "Date: " + date + "; "+ "User:" + user.getUserId() + "; RoleID: " + role.getId() );
 		AdminLogger.log(getClass(), "Role " + role.getName() + " Added to User: "  + user.getUserId(), "Date: " + date + "; "+ "User:" + user.getUserId() + "; RoleID: " + role.getId() );
 
-		Map<String, Object> result = new HashMap<String, Object>();
+		Map<String, Object> result = new HashMap<>();
 		result.put("error", error);
 		result.put("user", getUserMap(user));
 		return result;
@@ -516,7 +516,7 @@ public class RoleAjax {
 
 	public List<Map<String, Object>> getAllLayouts() throws DotDataException, LanguageException, DotRuntimeException, PortalException, SystemException {
 
-		List<Map<String, Object>> list = new ArrayList<Map<String,Object>>();
+		List<Map<String, Object>> list = new ArrayList<>();
 
 		LayoutAPI layoutAPI = APILocator.getLayoutAPI();
 
@@ -531,7 +531,7 @@ public class RoleAjax {
 	}
 
 	public List<Map<String, Object>> loadRoleLayouts(String roleId) throws DotDataException {
-		List<Map<String, Object>> list = new ArrayList<Map<String,Object>>();
+		List<Map<String, Object>> list = new ArrayList<>();
 
 		LayoutAPI layoutAPI = APILocator.getLayoutAPI();
 		RoleAPI roleAPI = APILocator.getRoleAPI();
@@ -606,12 +606,12 @@ public class RoleAjax {
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
 
-		List<Map<String, Object>> listOfPortletsInfo = new ArrayList<Map<String,Object>>();
+		List<Map<String, Object>> listOfPortletsInfo = new ArrayList<>();
 
 		final Collection<Portlet> portlets = portletAPI.findAllPortlets();
 		for(final Portlet portlet: portlets) {
 			if(portletAPI.canAddPortletToLayout(portlet)) {
-				Map<String, Object> portletMap = new HashMap<String, Object>();
+				Map<String, Object> portletMap = new HashMap<>();
 				String portletTitle = LanguageUtil.get(uWebAPI.getLoggedInUser(request),"com.dotcms.repackage.javax.portlet.title." + portlet.getPortletId());
 				portletMap.put("title", portletTitle);
 				portletMap.put("id", portlet.getPortletId());
@@ -707,8 +707,8 @@ public class RoleAjax {
 		User systemUser = userAPI.getSystemUser();
 		boolean respectFrontendRoles = !userWebAPI.isLoggedToBackend(request);
 
-		Set<Object> permAssets = new HashSet<Object>();
-		HashMap<String, List<Permission>> permByInode = new HashMap<String, List<Permission>>();
+		Set<Object> permAssets = new HashSet<>();
+		HashMap<String, List<Permission>> permByInode = new HashMap<>();
 
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 		PermissionAPI permAPI = APILocator.getPermissionAPI();
@@ -721,7 +721,7 @@ public class RoleAjax {
 		for(Permission p : perms) {
 			List<Permission> permList = permByInode.get(p.getInode());
 			if(permList == null) {
-				permList = new ArrayList<Permission>();
+				permList = new ArrayList<>();
 				permByInode.put(p.getInode(), permList);
 			}
 			permList.add(p);
@@ -737,15 +737,15 @@ public class RoleAjax {
 			}
 		}
 
-		List<Map<String, Object>> hostMaps = new ArrayList<Map<String,Object>>();
-		List<Map<String, Object>> folderMaps = new ArrayList<Map<String,Object>>();
+		List<Map<String, Object>> hostMaps = new ArrayList<>();
+		List<Map<String, Object>> folderMaps = new ArrayList<>();
 		boolean systemHostInList = false;
 		for(Object i : permAssets) {
 			if(i instanceof Host && ((Host)i).isSystemHost())
 				systemHostInList = true;
 			Map<String, Object> assetMap = i instanceof Host?((Host)i).getMap():((Folder)i).getMap();
 			String assetId = i instanceof Host?((Host)i).getIdentifier():((Folder)i).getInode();
-			List<Map<String, Object>> permissionsList = new ArrayList<Map<String,Object>>();
+			List<Map<String, Object>> permissionsList = new ArrayList<>();
 			for(Permission p: permByInode.get(assetId)) {
 				permissionsList.add(p.getMap());
 			}
@@ -773,7 +773,7 @@ public class RoleAjax {
 			systemHostMap.put("permissions", new ArrayList<Map<String, Object>>());
 			hostMaps.add(systemHostMap);
 		}
-		List<Map<String, Object>> toReturn = new ArrayList<Map<String,Object>>();
+		List<Map<String, Object>> toReturn = new ArrayList<>();
 		toReturn.addAll(hostMaps);
 		toReturn.addAll(folderMaps);
 		return toReturn;
@@ -799,7 +799,7 @@ public class RoleAjax {
 				folder = APILocator.getFolderAPI().find(folderHostId, APILocator.getUserAPI().getSystemUser(), false);
 			}
 			Permissionable permissionable = host == null ? folder : host;
-			List<Permission> permissionsToSave = new ArrayList<Permission>();
+			List<Permission> permissionsToSave = new ArrayList<>();
 
 			if ( APILocator.getPermissionAPI().isInheritingPermissions(permissionable) ) {
 				Permissionable parentPermissionable = permissionAPI.findParentPermissionable(permissionable);
@@ -887,9 +887,9 @@ public class RoleAjax {
 		FolderAPI folderAPI = APILocator.getFolderAPI();
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 		List<ScheduledTask> tasks = CascadePermissionsJob.getCurrentScheduledJobs();
-		List<Map<String, Object>> scheduled = new ArrayList<Map<String, Object>>();
+		List<Map<String, Object>> scheduled = new ArrayList<>();
 		for (ScheduledTask task : tasks) {
-			Map<String, Object> taskMap = new HashMap<String, Object>();
+			Map<String, Object> taskMap = new HashMap<>();
 			Map<String, Object> props = task.getProperties();
 			String permissionableId = (String) props.get("permissionableId");
 			String roleId = (String) props.get("roleId");
@@ -924,7 +924,7 @@ public class RoleAjax {
 
 	public Map<String, Object> getUserRole(String userId) throws DotDataException, DotSecurityException, PortalException, SystemException {
 
-		Map<String, Object> toReturn = new HashMap<String, Object>();
+		Map<String, Object> toReturn = new HashMap<>();
 
 		if(UtilMethods.isSet(userId)){
 			UserAPI userAPI = APILocator.getUserAPI();
@@ -943,7 +943,7 @@ public class RoleAjax {
 		HttpServletRequest request = ctx.getHttpServletRequest();
 
 		List<String> portletIds = l.getPortletIds();
-		List<String> portletTitles = new ArrayList<String>();
+		List<String> portletTitles = new ArrayList<>();
 		if(portletIds != null) {
 			for(String id: portletIds) {
 				String portletTitle = LanguageUtil.get(uWebAPI.getLoggedInUser(request),"com.dotcms.repackage.javax.portlet.title." + id);
@@ -961,7 +961,7 @@ public class RoleAjax {
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
 
-		Map<String, Object> ret =  new HashMap<String, Object>();
+		Map<String, Object> ret =  new HashMap<>();
 		ret.put("isInheriting", false);
 
 

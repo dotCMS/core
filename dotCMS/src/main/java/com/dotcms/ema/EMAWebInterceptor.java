@@ -74,7 +74,7 @@ public class EMAWebInterceptor implements WebInterceptor {
         final Optional<String> proxyUrl = proxyUrl(currentHost, request);
         final PageMode mode             = PageMode.get(request);
 
-        if (!proxyUrl.isPresent() || mode == PageMode.LIVE) {
+        if (proxyUrl.isEmpty() || mode == PageMode.LIVE) {
             return Result.NEXT;
         }
 

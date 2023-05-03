@@ -126,7 +126,7 @@ public class ViewStructureAction extends DotPortletAction {
         String query = req.getParameter("query");
         String resetQuery = req.getParameter("resetQuery");
         String showSystem = req.getParameter("system");
-        List<Structure> contentTypes = new java.util.ArrayList<Structure>();
+        List<Structure> contentTypes = new java.util.ArrayList<>();
         APILocator.getPersonaAPI().createDefaultPersonaStructure();
 
         try {
@@ -196,7 +196,7 @@ public class ViewStructureAction extends DotPortletAction {
             	count = APILocator.getContentTypeAPI(user).count(queryCondition);
             }
 
-            req.setAttribute(countWebKey, new Integer(count));
+            req.setAttribute(countWebKey, Integer.valueOf(count));
             req.setAttribute(viewWebKey, contentTypes);
 
             Map<String, Long> entriesByContentTypes = APILocator.getContentTypeAPI(user, true).getEntriesByContentTypes();

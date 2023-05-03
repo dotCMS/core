@@ -288,7 +288,7 @@ public class Link extends WebAsset implements Serializable, Comparable, Manifest
      */
 	@Override
 	public List<PermissionSummary> acceptedPermissions() {
-		List<PermissionSummary> accepted = new ArrayList<PermissionSummary>();
+		List<PermissionSummary> accepted = new ArrayList<>();
 		accepted.add(new PermissionSummary("view",
 				"view-permission-description", PermissionAPI.PERMISSION_READ));
 		accepted.add(new PermissionSummary("edit",

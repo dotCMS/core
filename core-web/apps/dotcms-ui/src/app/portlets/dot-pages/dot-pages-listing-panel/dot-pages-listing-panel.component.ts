@@ -1,8 +1,19 @@
-import { Observable } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 
-import { Component, EventEmitter, Output } from '@angular/core';
+import {
+    Component,
+    EventEmitter,
+    HostListener,
+    OnDestroy,
+    OnInit,
+    Output,
+    ViewChild
+} from '@angular/core';
 
 import { LazyLoadEvent } from 'primeng/api';
+import { ContextMenu } from 'primeng/contextmenu';
+
+import { filter, takeUntil } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 
@@ -14,10 +25,13 @@ import { DotActionsMenuEventParams } from '../dot-pages.component';
     templateUrl: './dot-pages-listing-panel.component.html',
     styleUrls: ['./dot-pages-listing-panel.component.scss']
 })
-export class DotPagesListingPanelComponent {
+export class DotPagesListingPanelComponent implements OnInit, OnDestroy {
+    @ViewChild('cm') cm: ContextMenu;
     @Output() goToUrl = new EventEmitter<string>();
     @Output() showActionsMenu = new EventEmitter<DotActionsMenuEventParams>();
 
+    private domIdMenuAttached = '';
+    private destroy$ = new Subject<boolean>();
     vm$: Observable<DotPagesState> = this.store.vm$;
 
     dotStateLabels = {
@@ -28,6 +42,39 @@ export class DotPagesListingPanelComponent {
     };
 
     constructor(private store: DotPageStore, private dotMessageService: DotMessageService) {}
+
+    ngOnInit() {
+        this.store.actionMenuDomId$
+            .pipe(
+                takeUntil(this.destroy$),
+                filter((actionMenuDomId) => !!actionMenuDomId)
+            )
+            .subscribe((actionMenuDomId: string) => {
+                if (actionMenuDomId.includes('tableRow')) {
+                    this.cm.show();
+                    this.domIdMenuAttached = actionMenuDomId;
+                    // To hide when the menu is opened
+                } else this.cm.hide();
+            });
+    }
+
+    ngOnDestroy(): void {
+        this.destroy$.next(true);
+        this.destroy$.complete();
+    }
+
+    /**
+     * Closes the context menu when the user clicks outside of it
+     *
+     * @memberof DotPagesListingPanelComponent
+     */
+    @HostListener('window:click')
+    closeContextMenu(): void {
+        if (this.domIdMenuAttached.includes('tableRow')) {
+            this.cm.hide();
+            this.store.clearMenuActions();
+        }
+    }
 
     /**
      * Event lazy loads pages data
@@ -41,6 +88,29 @@ export class DotPagesListingPanelComponent {
             sortField: event.sortField || '',
             sortOrder: event.sortOrder || null
         });
+    }
+
+    /**
+     * Event to show/hide actions menu when each contentlet is clicked
+     *
+     * @param {DotActionsMenuEventParams} params
+     * @memberof DotPagesComponent
+     */
+    showActionsContextMenu({ event, actionMenuDomId, item }: DotActionsMenuEventParams): void {
+        event.stopPropagation();
+        this.store.clearMenuActions();
+        this.cm.hide();
+
+        this.store.showActionsMenu({ item, actionMenuDomId });
+    }
+
+    /**
+     * Event to reset status of menu actions when closed
+     *
+     * @memberof DotPagesComponent
+     */
+    closedActionsContextMenu() {
+        this.domIdMenuAttached = '';
     }
 
     /**
