@@ -2,7 +2,7 @@ import { DOMOutputSpec, ParseRule } from 'prosemirror-model';
 
 import { Injector } from '@angular/core';
 
-import { mergeAttributes, Node, NodeViewRenderer } from '@tiptap/core';
+import { Node, NodeViewRenderer } from '@tiptap/core';
 
 import { ContentletBlockComponent } from './contentlet-block.component';
 
@@ -39,7 +39,18 @@ export const ContentletBlock = (injector: Injector): Node<ContentletBlockOptions
         },
 
         renderHTML({ HTMLAttributes }): DOMOutputSpec {
-            return ['dotcms-contentlet-block', mergeAttributes(HTMLAttributes)];
+            let img = [];
+            if (HTMLAttributes.data.hasTitleImage) {
+                img = ['img', { src: HTMLAttributes.data.image }];
+            }
+
+            return [
+                'div',
+                ['h3', { class: HTMLAttributes.data.title }, HTMLAttributes.data.title],
+                ['div', HTMLAttributes.data.identifier],
+                img,
+                ['div', {}, HTMLAttributes.data.language]
+            ];
         },
 
         addNodeView(): NodeViewRenderer {

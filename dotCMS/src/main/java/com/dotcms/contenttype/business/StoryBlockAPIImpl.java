@@ -38,7 +38,8 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
     @Override
     public StoryBlockReferenceResult refreshReferences(final Contentlet contentlet) {
         final MutableBoolean refreshed = new MutableBoolean(false);
-        if (null != contentlet && contentlet.getContentType().hasStoryBlockFields()) {
+        if (null != contentlet && null != contentlet.getContentType() &&
+                contentlet.getContentType().hasStoryBlockFields()) {
             contentlet.getContentType().fields(StoryBlockField.class)
                     .forEach(field -> {
 
@@ -63,8 +64,11 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         boolean refreshed = false;
         try {
             final LinkedHashMap<String, Object> blockEditorMap = this.toMap(storyBlockValue);
-            final List<Map<String, Object>> contentsMap = (List) blockEditorMap.get(CONTENT_KEY);
-            for (final Map<String, Object> contentMap : contentsMap) {
+            final Object contentsMap = blockEditorMap.get(CONTENT_KEY);
+            if(!UtilMethods.isSet(contentsMap) || !(contentsMap instanceof List)) {
+                return new StoryBlockReferenceResult(true, storyBlockValue);
+            }
+            for (final Map<String, Object> contentMap : (List<Map<String, Object>>) contentsMap) {
                 if (UtilMethods.isSet(contentMap)) {
                     final String type = contentMap.get(TYPE_KEY).toString();
                     if (allowedTypes.contains(type)) {
@@ -78,8 +82,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         } catch (final Exception e) {
             final String errorMsg = String.format("An error occurred when refreshing Story Block Contentlet " +
                                                           "references: %s", e.getMessage());
-            Logger.error(StoryBlockAPIImpl.class, errorMsg);
-            Logger.debug(StoryBlockAPIImpl.class, errorMsg, e);
+            Logger.warnAndDebug(StoryBlockAPIImpl.class, errorMsg,e);
             throw new DotRuntimeException(errorMsg, e);
         }
         // Return the original value in case no data was refreshed
@@ -144,11 +147,15 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
 
             if (null != storyBlockValue && JsonUtil.isValidJSON(storyBlockValue.toString())) {
                 final Map<String, Object> blockEditorMap = this.toMap(storyBlockValue);
-                final List<Map<String, Object>> contentsMap = (List) blockEditorMap.get(CONTENT_KEY);
-                for (final Map<String, Object> contentMapObject : contentsMap) {
+                Object contentsMap = blockEditorMap.getOrDefault(CONTENT_KEY, List.of());
+                if(!(contentsMap instanceof List)) {
+                    return List.of();
+                }
+                
+                for (final Map<String, Object> contentMapObject : (List<Map<String, Object>>) contentsMap) {
                     if (UtilMethods.isSet(contentMapObject)) {
-                        final String type = contentMapObject.get(TYPE_KEY).toString();
-                        if (allowedTypes.contains(type)) {
+                        final String type = (String) contentMapObject.get(TYPE_KEY);
+                        if (type !=null && allowedTypes.contains(type)) {
                             addDependencies(contentletIdList, contentMapObject);
                         }
                     }
@@ -157,9 +164,8 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         } catch (final Exception e) {
             final String errorMsg = String.format("An error occurred when retrieving Contentlet references from Story" +
                                                           " Block field: %s", e.getMessage());
-            Logger.error(StoryBlockAPIImpl.class, errorMsg);
-            Logger.debug(StoryBlockAPIImpl.class, errorMsg, e);
-            throw new DotRuntimeException(errorMsg, e);
+            Logger.warnAndDebug(StoryBlockAPIImpl.class, errorMsg,e);
+            
         }
         return contentletIdList.build();
     }
@@ -173,10 +179,10 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         } catch (final JsonProcessingException e) {
             final String errorMsg = String.format("An error occurred when adding Contentlet '%s' to the Story Block " +
                                                           "field: %s", contentlet.getIdentifier(), e.getMessage());
-            Logger.error(StoryBlockAPIImpl.class, errorMsg);
-            Logger.debug(StoryBlockAPIImpl.class, errorMsg, e);
-            throw new DotRuntimeException(errorMsg, e);
+            Logger.warnAndDebug(StoryBlockAPIImpl.class, errorMsg, e);
+            return storyBlockValue;
         }
+        
     }
 
     /**

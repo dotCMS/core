@@ -37,9 +37,7 @@ h3 {
         padding: $spacing-0;
     }
 
-    button {
-        .p-button-icon {
-            color: $color-palette-primary-500;
-        }
+    button.p-button-rounded.p-button-icon-only {
+        color: $color-palette-primary-500;
     }
 }

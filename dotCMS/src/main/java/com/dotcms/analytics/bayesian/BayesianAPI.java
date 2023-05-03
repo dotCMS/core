@@ -6,6 +6,7 @@ import com.dotcms.analytics.bayesian.model.BayesianPriors;
 import com.dotcms.analytics.bayesian.model.BayesianResult;
 import com.dotcms.variant.VariantAPI;
 
+import java.util.List;
 import java.util.function.Predicate;
 
 /**
@@ -15,14 +16,16 @@ import java.util.function.Predicate;
  */
 public interface BayesianAPI {
 
-    String VARIANT_A = "A";
-    String VARIANT_B = "B";
-    String VARIANT_C = "C";
-    String TIE = "_TIE_";
-    String UNKNOWN = "_UNKNOWN_";
+    String TIE = "TIE";
+    String NONE = "NONE";
     BayesianPriors NULL_PRIORS = BayesianPriors.builder().alpha(null).beta(null).build();
     Predicate<String> DEFAULT_VARIANT_FILTER = variant -> variant.equals(VariantAPI.DEFAULT_VARIANT.name());
     Predicate<String> OTHER_THAN_DEFAULT_VARIANT_FILTER = variant -> DEFAULT_VARIANT_FILTER.negate().test(variant);
+    BayesianResult NOOP_RESULT = BayesianResult.builder()
+        .value(0.0)
+        .probabilities(List.of())
+        .suggestedWinner(NONE)
+        .build();
 
     /**
      * Calculates probability that B (Test) beats A (Control) based on this pseudo (Julia) code:
@@ -49,5 +52,29 @@ public interface BayesianAPI {
      * @param input {@link BayesianInput} instance
      */
     BayesianResult calcProbBOverA(BayesianInput input);
+
+    /**
+     * Calculates probability that C (Test) beats A (Control) and B (Test) based on this pseudo (Julia) code:
+     *
+     * <pre>
+     *    function probability_C_beats_A_and_B(α_A, β_A, α_B, β_B, α_C, β_C)
+     *        total = 0.0
+     *        for i = 0:(α_A-1)
+     *            for j = 0:(α_B-1)
+     *                total += exp(logbeta(α_C+i+j, β_A+β_B+β_C) - log(β_A+i) - log(β_B+j)
+     *                    - logbeta(1+i, β_A) - logbeta(1+j, β_B) - logbeta(α_C, β_C))
+     *            end
+     *        end
+     *        return (1 - probability_B_beats_A(α_C, β_C, α_A, β_A)
+     *            - probability_B_beats_A(α_C, β_C, α_B, β_B) + total)
+     *    end
+     * </pre>
+     *
+     * Instead of using the provided logBeta function from Apache Commons Math we will use our own implementation:
+     * {@link com.dotcms.analytics.bayesian.BetaDistribution} which provides en density function {@see DotBetaDistribution.pdf()}.
+     *
+     * @param input {@link com.dotcms.analytics.bayesian.model.BayesianInput} instance
+     */
+    BayesianResult calcProbABC(BayesianInput input);
 
 }

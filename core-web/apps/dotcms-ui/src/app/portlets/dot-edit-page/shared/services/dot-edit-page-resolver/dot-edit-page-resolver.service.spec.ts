@@ -9,9 +9,12 @@ import { ActivatedRouteSnapshot } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
 
+import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { MockDotHttpErrorManagerService } from '@dotcms/app/test/dot-http-error-manager.service.mock';
 import {
     DotAlertConfirmService,
     DotContentletLockerService,
@@ -19,7 +22,7 @@ import {
     DotPageRenderService
 } from '@dotcms/data-access';
 import { CoreWebService, HttpCode, LoginService } from '@dotcms/dotcms-js';
-import { DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
+import { DotPageMode, DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
 import {
     CoreWebServiceMock,
     LoginServiceMock,
@@ -53,7 +56,10 @@ describe('DotEditPageResolver', () => {
             imports: [HttpClientTestingModule],
             providers: [
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
-                DotHttpErrorManagerService,
+                {
+                    provide: DotHttpErrorManagerService,
+                    useClass: MockDotHttpErrorManagerService
+                },
                 DotPageStateService,
                 DotEditPageResolver,
                 DotPageRenderService,
@@ -63,6 +69,7 @@ describe('DotEditPageResolver', () => {
                 DotFormatDateService,
                 DotESContentService,
                 { provide: DotRouterService, useClass: MockDotRouterService },
+                { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
                 {
                     provide: ActivatedRouteSnapshot,
                     useValue: route
@@ -80,12 +87,13 @@ describe('DotEditPageResolver', () => {
         dotPageStateServiceRequestPageSpy = spyOn(dotPageStateService, 'requestPage');
         dotRouterService = injector.get(DotRouterService);
 
-        spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
+        spyOn(dotHttpErrorManagerService, 'handle').and.returnValue(of());
     });
 
     beforeEach(() => {
         route.queryParams.url = 'edit-page/content';
         route.queryParams.language_id = '2';
+        route.queryParams.mode = DotPageMode.EDIT;
         route.children = [
             {
                 url: [
@@ -107,6 +115,7 @@ describe('DotEditPageResolver', () => {
 
         expect<any>(dotPageStateService.requestPage).toHaveBeenCalledWith({
             url: 'edit-page/content',
+            mode: DotPageMode.EDIT,
             viewAs: {
                 language: '2'
             }

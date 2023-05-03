@@ -152,8 +152,11 @@ describe('DotPagesFavoritePanelComponent', () => {
 
         it('should load empty pages cards container', () => {
             expect(
-                de.query(By.css('.dot-pages-empty__container dot-icon')).componentInstance.name
-            ).toBe('star_outline');
+                de
+                    .query(By.css('.dot-pages-empty__container i'))
+                    .nativeElement.classList.contains('pi-star')
+            ).toBeTrue();
+
             expect(de.query(By.css('.dot-pages-empty__header')).nativeElement.outerText).toBe(
                 'favoritePage.listing.empty.header'
             );
@@ -309,17 +312,16 @@ describe('DotPagesFavoritePanelComponent', () => {
                 );
             });
 
-            it('should throw error dialog when call edit method to open favorite page dialog and url does not match with existing page', () => {
+            it('should allow to open Favorite Page dialog when URL checked throws a 404 Error', () => {
                 const error404 = mockResponseView(404);
                 spyOn(dotPageRenderService, 'checkPermission').and.returnValue(
                     throwError(error404)
                 );
-                spyOn(dotHttpErrorManagerService, 'handle');
                 fixture.detectChanges();
                 const elem = de.query(By.css('dot-pages-card'));
                 elem.triggerEventHandler('edit', { ...favoritePagesInitialTestData[0] });
 
-                expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(error404);
+                expect(dialogService.open).toHaveBeenCalledTimes(1);
             });
 
             it('should call showActionMenu method to send actions to parent component', () => {

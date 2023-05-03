@@ -47,14 +47,19 @@ public class SelectedExperiment implements Serializable {
     @JsonProperty("lookBackWindow")
     private final LookBackWindow lookBackWindow;
 
+    @JsonProperty("redirectPattern")
+    private final String redirectPattern;
 
     private SelectedExperiment(final String id, final String name, final String pageUrl,
-            final SelectedVariant variant, final LookBackWindow lookBackWindow) {
+            final SelectedVariant variant, final LookBackWindow lookBackWindow,
+            final String redirectPattern) {
+
         this.id = id;
         this.name = name;
         this.pageUrl = pageUrl;
         this.variant = variant;
         this.lookBackWindow = lookBackWindow;
+        this.redirectPattern = redirectPattern;
     }
 
     public String id() {
@@ -77,6 +82,10 @@ public class SelectedExperiment implements Serializable {
         return lookBackWindow;
     }
 
+    public String redirectPattern() {
+        return redirectPattern;
+    }
+
     public static class Builder {
         private String name;
         private String id;
@@ -85,6 +94,8 @@ public class SelectedExperiment implements Serializable {
         private String lookBackWindow;
         private long expireTime;
 
+        private String redirectPattern;
+
         public Builder id(final String id) {
             this.id = id;
             return this;
@@ -92,6 +103,11 @@ public class SelectedExperiment implements Serializable {
 
         public Builder name(final String name) {
             this.name = name;
+            return this;
+        }
+
+        public Builder redirectPattern(final String redirectPattern) {
+            this.redirectPattern = redirectPattern;
             return this;
         }
 
@@ -117,7 +133,7 @@ public class SelectedExperiment implements Serializable {
 
         public SelectedExperiment build(){
             return new SelectedExperiment(id, name, pageUrl, variant,
-                    new LookBackWindow(lookBackWindow, expireTime));
+                    new LookBackWindow(lookBackWindow, expireTime), redirectPattern);
         }
     }
 

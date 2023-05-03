@@ -1,0 +1,10 @@
+<div style="max-width: 100%; margin-bottom: 1.5rem; text-align: #if($!item.attrs.textAlign && $!item.attrs.textAlign != "null")$!item.attrs.textAlign#{else}center#end">
+    <video
+        controls
+        style="max-width: 100%; aspect-ratio: 16 / 9;"
+        src="#if($!item.attrs.src && $!item.attrs.src != "null")$!item.attrs.src#{else}$!item.attrs.data.asset#end"
+        width="#if($!item.attrs.width && $!item.attrs.width != "null")$!item.attrs.width#{else}100%#end"
+        height="#if($!item.attrs.height && $!item.attrs.height != "null")$!item.attrs.height#{else}auto#end"
+    />
+</div>
+

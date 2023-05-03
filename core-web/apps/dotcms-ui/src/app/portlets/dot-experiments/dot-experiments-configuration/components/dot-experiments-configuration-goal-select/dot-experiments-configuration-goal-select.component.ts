@@ -27,6 +27,7 @@ import {
     GOAL_TYPES,
     Goals,
     GOALS_METADATA_MAP,
+    MAX_INPUT_LENGTH,
     StepStatus
 } from '@dotcms/dotcms-models';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
@@ -75,12 +76,13 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
     statusList = ComponentStatus;
     vm$: Observable<{ experimentId: string; goals: Goals; status: StepStatus }> =
         this.dotExperimentsConfigurationStore.goalsStepVm$;
+    protected readonly maxNameLength = MAX_INPUT_LENGTH;
     private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    private BOUNCE_RATE_LABEL = this.dotMessageService.get(this.goals.BOUNCE_RATE.label);
-    private REACH_PAGE_LABEL = this.dotMessageService.get(this.goals.REACH_PAGE.label);
-    private DEFAULT_NAME_LABEL = this.dotMessageService.get(
-        'experiments.configure.goals.name.default'
+    private BOUNCE_RATE_LABEL = this.dotMessageService.get(
+        'experiments.goal.conditions.minimize.bounce.rate'
+    );
+    private REACH_PAGE_LABEL = this.dotMessageService.get(
+        'experiments.goal.conditions.maximize.reach.page'
     );
 
     constructor(
@@ -154,9 +156,9 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
     private initForm(): void {
         this.form = new FormGroup({
             primary: new FormGroup({
-                name: new FormControl(this.DEFAULT_NAME_LABEL, {
+                name: new FormControl('', {
                     nonNullable: true,
-                    validators: [Validators.required]
+                    validators: [Validators.required, Validators.maxLength(this.maxNameLength)]
                 }),
                 type: new FormControl('', {
                     nonNullable: true,
@@ -185,7 +187,7 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
     private defineDefaultName(typeValue: string): void {
         const nameControl = this.form.get('primary.name') as FormControl;
         if (
-            nameControl.value === this.DEFAULT_NAME_LABEL ||
+            nameControl.value === '' ||
             nameControl.value === this.BOUNCE_RATE_LABEL ||
             nameControl.value === this.REACH_PAGE_LABEL
         ) {

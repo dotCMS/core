@@ -251,7 +251,7 @@ public class UserFactoryLiferayImpl extends UserFactoryLiferay {
 		final List<Map<String, Object>> results = dotConnect.loadResults();
 
 		// Since limit is a small number, convert each row to appropriate entity
-		final List<User> users = new ArrayList<User>();
+		final List<User> users = new ArrayList<>();
 
 		for (final Map<String, Object> hash : results) {
 			final String userId = (String) hash.get("userid");
@@ -615,7 +615,7 @@ public class UserFactoryLiferayImpl extends UserFactoryLiferay {
         }
         ArrayList<Map<String, Object>> results = dotConnect.loadResults();
 
-        ArrayList<String> ids = new ArrayList<String>();
+        ArrayList<String> ids = new ArrayList<>();
         for ( Map<String, Object> hash : results ) {
             String userId = (String) hash.get( "userid" );
             ids.add( userId );

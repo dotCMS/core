@@ -46,6 +46,13 @@
 
         &.active {
             background-color: $color-palette-primary-200;
+
+            header {
+                h2,
+                p {
+                    color: $black;
+                }
+            }
         }
 
         &:hover {

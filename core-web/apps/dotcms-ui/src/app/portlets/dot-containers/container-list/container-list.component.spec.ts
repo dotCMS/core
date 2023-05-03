@@ -20,6 +20,7 @@ import { DotActionMenuButtonModule } from '@components/_common/dot-action-menu-b
 import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { DotListingDataTableModule } from '@components/dot-listing-data-table';
 import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
+import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotRelativeDatePipe } from '@dotcms/app/view/pipes/dot-relative-date/dot-relative-date.pipe';
 import {
@@ -263,7 +264,7 @@ describe('ContainerListComponent', () => {
                 DotcmsEventsService,
                 DotEventsSocket,
                 DotcmsConfigService,
-                DotMessageDisplayService,
+                { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
                 DialogService,
                 DotSiteBrowserService,
                 DotContainersService,

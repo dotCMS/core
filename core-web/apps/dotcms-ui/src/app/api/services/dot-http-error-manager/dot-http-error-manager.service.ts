@@ -3,6 +3,8 @@ import { Observable, of } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
+import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { HttpCode, LoginService } from '@dotcms/dotcms-js';
 
@@ -22,9 +24,11 @@ export interface DotHttpErrorHandled {
 @Injectable()
 export class DotHttpErrorManagerService {
     private readonly errorHandlers;
+    private _unobtrusive = false;
 
     constructor(
         private dotDialogService: DotAlertConfirmService,
+        private dotMessageDisplayService: DotMessageDisplayService,
         private dotMessageService: DotMessageService,
         private loginService: LoginService,
         private dotRouterService: DotRouterService
@@ -44,10 +48,13 @@ export class DotHttpErrorManagerService {
      * Handle the http error message and return a true if it did a redirect
      *
      * @param ResponseView err
+     * @param boolean unobtrusive
      * @returns Observable<boolean>
      * @memberof DotHttpErrorManagerService
      */
-    handle(err: HttpErrorResponse): Observable<DotHttpErrorHandled> {
+    handle(err: HttpErrorResponse, unobtrusive = false): Observable<DotHttpErrorHandled> {
+        this._unobtrusive = unobtrusive;
+
         const result: DotHttpErrorHandled = {
             redirected: this.callErrorHandler(err),
             status: err.status
@@ -87,61 +94,79 @@ export class DotHttpErrorManagerService {
     }
 
     private handleForbidden(): boolean {
-        this.dotDialogService.alert({
-            message: this.dotMessageService.get('dot.common.http.error.403.message'),
-            header: this.dotMessageService.get('dot.common.http.error.403.header')
-        });
+        const header = this.dotMessageService.get('dot.common.http.error.403.header');
+        const message = this.dotMessageService.get('dot.common.http.error.403.message');
+
+        this.showErrorMessage(message, header);
 
         return false;
     }
 
     private handleLicense(): boolean {
-        this.dotDialogService.alert({
-            message: this.dotMessageService.get('dot.common.http.error.403.license.message'),
-            header: this.dotMessageService.get('dot.common.http.error.403.license.header')
-        });
+        const header = this.dotMessageService.get('dot.common.http.error.403.license.header');
+        const message = this.dotMessageService.get('dot.common.http.error.403.license.message');
+
+        this.showErrorMessage(message, header);
 
         return false;
     }
 
     private handleNotFound(): boolean {
-        this.dotDialogService.alert({
-            message: this.dotMessageService.get('dot.common.http.error.404.message'),
-            header: this.dotMessageService.get('dot.common.http.error.404.header')
-        });
+        const header = this.dotMessageService.get('dot.common.http.error.404.header');
+        const message = this.dotMessageService.get('dot.common.http.error.404.message');
+
+        this.showErrorMessage(message, header);
 
         return false;
     }
 
-    private handleServerError(response: HttpErrorResponse): boolean {
-        this.dotDialogService.alert({
-            message:
-                this.getErrorMessage(response) ||
-                this.dotMessageService.get('dot.common.http.error.500.message'),
-            header: this.dotMessageService.get('dot.common.http.error.500.header')
-        });
+    private handleServerError(response?: HttpErrorResponse): boolean {
+        const header = this.dotMessageService.get('dot.common.http.error.500.header');
+        const message =
+            this.getErrorMessage(response) ||
+            this.dotMessageService.get('dot.common.http.error.500.message');
+
+        this.showErrorMessage(message, header);
 
         return false;
     }
 
-    private handleBadRequestError(response: HttpErrorResponse): boolean {
-        this.dotDialogService.alert({
-            message:
-                this.getErrorMessage(response) ||
-                this.dotMessageService.get('dot.common.http.error.400.message'),
-            header: this.dotMessageService.get('dot.common.http.error.400.header')
-        });
+    private handleBadRequestError(response?: HttpErrorResponse): boolean {
+        const header = this.dotMessageService.get('dot.common.http.error.400.header');
+        const message =
+            this.getErrorMessage(response) ||
+            this.dotMessageService.get('dot.common.http.error.400.message');
+
+        this.showErrorMessage(message, header);
 
         return false;
     }
 
-    private handleNotContentError(): boolean {
-        this.dotDialogService.alert({
-            message: this.dotMessageService.get('dot.common.http.error.204.message'),
-            header: this.dotMessageService.get('dot.common.http.error.204.header')
-        });
+    private handleNotContentError(response?: HttpErrorResponse): boolean {
+        const header = this.dotMessageService.get('dot.common.http.error.204.header');
+        const message =
+            this.getErrorMessage(response) ||
+            this.dotMessageService.get('dot.common.http.error.204.message');
+
+        this.showErrorMessage(message, header);
 
         return false;
+    }
+
+    private showErrorMessage(message: string, header?: string): void {
+        if (this._unobtrusive) {
+            this.dotMessageDisplayService.push({
+                life: 3000,
+                message,
+                severity: DotMessageSeverity.ERROR,
+                type: DotMessageType.SIMPLE_MESSAGE
+            });
+        } else {
+            this.dotDialogService.alert({
+                message,
+                header
+            });
+        }
     }
 
     private handleUnathorized(): boolean {
@@ -161,7 +186,8 @@ export class DotHttpErrorManagerService {
         if (Array.isArray(response['error']) || Array.isArray(response.error?.errors)) {
             msg = response.error[0]?.message || response.error?.errors[0]?.message;
         } else {
-            msg = response['error'] ? response['error']['message'] : null;
+            const error = response['error'];
+            msg = error?.message || error?.error;
         }
 
         return msg;

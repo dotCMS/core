@@ -175,8 +175,10 @@ describe('DotExperimentsListTableComponent', () => {
 
                 spectator.setInput('experimentGroupedByStatus', groupedExperimentByStatus);
 
-                uiDotIconButtonTooltipComponent = spectator.query(UiDotIconButtonTooltipComponent);
-                expect(uiDotIconButtonTooltipComponent.icon).toBe('archive');
+                expect(spectator.queryAll(UiDotIconButtonTooltipComponent)[0].icon).toBe(
+                    'bar_chart'
+                );
+                expect(spectator.queryAll(UiDotIconButtonTooltipComponent)[1].icon).toBe('archive');
             });
 
             it('should the row not has any icon in action column', () => {
@@ -197,6 +199,20 @@ describe('DotExperimentsListTableComponent', () => {
                 const groupedExperimentByStatus: GroupedExperimentByStatus[] = [
                     {
                         status: DotExperimentStatusList.RUNNING,
+                        experiments: [RUNNING_EXPERIMENT_MOCK]
+                    }
+                ];
+
+                spectator.setInput('experimentGroupedByStatus', groupedExperimentByStatus);
+
+                uiDotIconButtonTooltipComponent = spectator.query(UiDotIconButtonTooltipComponent);
+                expect(uiDotIconButtonTooltipComponent.icon).toBe('bar_chart');
+            });
+
+            it('should the row  has REPORTS icon when is RUNNING', () => {
+                const groupedExperimentByStatus: GroupedExperimentByStatus[] = [
+                    {
+                        status: DotExperimentStatusList.ENDED,
                         experiments: [RUNNING_EXPERIMENT_MOCK]
                     }
                 ];

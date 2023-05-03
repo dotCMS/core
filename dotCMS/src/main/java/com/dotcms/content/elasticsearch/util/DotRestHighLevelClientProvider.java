@@ -380,7 +380,7 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
             }
             byte[] encodedKey = base64Decode(matcher.group(1));
 
-            if (!keyPassword.isPresent()) {
+            if (keyPassword.isEmpty()) {
                 return new PKCS8EncodedKeySpec(encodedKey);
             }
 

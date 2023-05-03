@@ -17,32 +17,34 @@ import java.util.regex.Pattern;
 
 public class StartupTasksExecutor {
 
-	
 	private static StartupTasksExecutor executor;
 
+    private final String pgCreate  = "CREATE TABLE db_version (db_version integer NOT NULL, date_update timestamp with time zone NOT NULL, CONSTRAINT db_version_pkey PRIMARY KEY (db_version));";
+    private final String pgCreateDataVersion  = "CREATE TABLE data_version (data_version integer NOT NULL, date_update timestamp with time zone NOT NULL, CONSTRAINT data_version_pkey PRIMARY KEY (data_version));";
+    private final String myCreate  = "CREATE TABLE `db_version` (`db_version` INTEGER UNSIGNED NOT NULL,`date_update` DATETIME NOT NULL, PRIMARY KEY (`db_version`))";
+    private final String myCreateDataVersion  = "CREATE TABLE `data_version` (`data_version` INTEGER UNSIGNED NOT NULL,`date_update` DATETIME NOT NULL, PRIMARY KEY (`data_version`))";
+    private final String oraCreate = "CREATE TABLE \"DB_VERSION\" ( \"DB_VERSION\" INTEGER NOT NULL , \"DATE_UPDATE\" TIMESTAMP NOT NULL, PRIMARY KEY (\"DB_VERSION\") )";
+    private final String oraCreateDataVersion = "CREATE TABLE \"DATA_VERSION\" ( \"DATA_VERSION\" INTEGER NOT NULL , \"DATE_UPDATE\" TIMESTAMP NOT NULL, PRIMARY KEY (\"DATA_VERSION\") )";
+    private final String msCreate  = "CREATE TABLE db_version (	db_version int NOT NULL , date_update datetime NOT NULL, PRIMARY KEY (db_version) )";
+    private final String msCreateDataVersion  = "CREATE TABLE data_version ( data_version int NOT NULL , date_update datetime NOT NULL, PRIMARY KEY (data_version) )";
 
-
-
-	private final String pgCreate  = "CREATE TABLE db_version (db_version integer NOT NULL, date_update timestamp with time zone NOT NULL, CONSTRAINT db_version_pkey PRIMARY KEY (db_version));";
-	private final String myCreate  = "CREATE TABLE `db_version` (`db_version` INTEGER UNSIGNED NOT NULL,`date_update` DATETIME NOT NULL, PRIMARY KEY (`db_version`))";
-	private final String oraCreate = "CREATE TABLE \"DB_VERSION\" ( \"DB_VERSION\" INTEGER NOT NULL , \"DATE_UPDATE\" TIMESTAMP NOT NULL, PRIMARY KEY (\"DB_VERSION\") )";
-	private final String msCreate  = "CREATE TABLE db_version (	db_version int NOT NULL , date_update datetime NOT NULL, PRIMARY KEY (db_version) )";
-
-	private final String SELECT = "SELECT max(db_version) AS test FROM db_version";
-	private final String INSERT = "INSERT INTO db_version (db_version,date_update) VALUES (?,?)";
+    private final String SELECT = "SELECT max(db_version) AS test FROM db_version";
+    private final String SELECT_DATA_VERSION = "SELECT max(data_version) AS test FROM data_version";
+    private final String INSERT = "INSERT INTO db_version (db_version,date_update) VALUES (?,?)";
+    private final String INSERT_DATA_VERSION = "INSERT INTO data_version (data_version,date_update) VALUES (?,?)";
 
 	private static final Pattern TASK_ID_PATTERN = Pattern.compile("[0-9]+");
 
 	final boolean firstTimeStart;
-	
-	
-	private StartupTasksExecutor() {
 
-	    insureDbVersionTable();
-	    Config.DB_VERSION = currentDbVersion();
+    private StartupTasksExecutor() {
+
+        insureDbVersionTable();
+        insureDataVersionTable();
+        Config.DB_VERSION = currentDbVersion();
+        Config.DATA_VERSION = currentDataVersion();
         this.firstTimeStart = (Config.DB_VERSION==0);
-	    
-	}
+    }
 
 	public static synchronized StartupTasksExecutor getInstance() {
 		if (executor == null)
@@ -52,15 +54,29 @@ public class StartupTasksExecutor {
 
 
 	private final String createTableSQL() {
-	    
-	       return (DbConnectionFactory.isPostgres()) 
+
+	       return (DbConnectionFactory.isPostgres())
 	                        ? pgCreate
-	                        : DbConnectionFactory.isMySql() 
-	                            ? myCreate 
+	                        : DbConnectionFactory.isMySql()
+	                            ? myCreate
 	                            : DbConnectionFactory.isOracle()
 	                                ? oraCreate
 	                                : msCreate;
 	}
+
+    /**
+     * Returns the SQL to create the data_version table
+     */
+    private final String createDataVersionTableSQL() {
+
+        return (DbConnectionFactory.isPostgres())
+                ? pgCreateDataVersion
+                : DbConnectionFactory.isMySql()
+                        ? myCreateDataVersion
+                        : DbConnectionFactory.isOracle()
+                                ? oraCreateDataVersion
+                                : msCreateDataVersion;
+    }
 
     /**
      * This will create the db version table if it does not already exist
@@ -77,7 +93,22 @@ public class StartupTasksExecutor {
         }
 
     }
-    
+
+    /**
+     * This will create the data version table if it does not already exist
+     */
+    @VisibleForTesting
+    boolean insureDataVersionTable() {
+
+        try {
+            currentDataVersion();
+            return true;
+        } catch (Exception e) {
+            return createDataVersionTable();
+        }
+
+    }
+
     /**
      * Runs with a separate DB connection
      * @return
@@ -91,7 +122,21 @@ public class StartupTasksExecutor {
             throw new DotRuntimeException(e);
         }
     }
-    
+
+    /**
+     * Returns the current data version. Runs with a separate DB connection
+     */
+    @VisibleForTesting
+    int currentDataVersion() {
+        try (Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
+            DotConnect db = new DotConnect().setSQL(SELECT_DATA_VERSION);
+            return db.loadInt("test");
+
+        } catch (Exception e) {
+            throw new DotRuntimeException(e);
+        }
+    }
+
     /**
      * Runs with a separate DB connection
      * @return
@@ -109,10 +154,25 @@ public class StartupTasksExecutor {
         }
 
     }
-    
-    
+
+    /**
+     * Creates the data version table. Runs with a separate DB connection
+     */
+    private boolean createDataVersionTable() {
+
+        try (Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
+            new DotConnect().setSQL(createDataVersionTableSQL()).loadResult(conn);
+            new DotConnect().setSQL(INSERT_DATA_VERSION).addParam(0).addParam(new Date()).loadResult(conn);
+            return true;
+
+        } catch (Exception e) {
+            Logger.debug(this.getClass(), e.getMessage(),e);
+            throw new DotRuntimeException(e);
+        }
+    }
+
     public void executeStartUpTasks() throws DotDataException {
-        
+
         Logger.debug(this.getClass(), "Running Startup Tasks");
 
 
@@ -126,7 +186,7 @@ public class StartupTasksExecutor {
                 name = c.getCanonicalName();
                 name = name.substring(name.lastIndexOf(".") + 1);
                 if (StartupTask.class.isAssignableFrom(c)) {
-                    StartupTask  task = (StartupTask) c.newInstance();
+                    StartupTask  task = (StartupTask) c.getDeclaredConstructor().newInstance();
                     if (task.forceRun()) {
                         HibernateUtil.startTransaction();
                         Logger.info(this, "Running Startup Tasks : " + name);
@@ -167,9 +227,9 @@ public class StartupTasksExecutor {
         }
         return "-1";
     }
-    
-    
-    public void executeUpgrades() throws DotDataException {
+
+
+    public void executeSchemaUpgrades() throws DotDataException {
 
         Logger.info(this, "---");
         Logger.info(this, "");
@@ -188,7 +248,7 @@ public class StartupTasksExecutor {
                 if (StartupTask.class.isAssignableFrom(c) && taskId > Config.DB_VERSION) {
                     StartupTask task;
                     try {
-                        task = (StartupTask) c.newInstance();
+                        task = (StartupTask) c.getDeclaredConstructor().newInstance();
                     } catch (Exception e) {
                         throw new DotRuntimeException(e.getMessage(), e);
                     }
@@ -227,7 +287,71 @@ public class StartupTasksExecutor {
 
 
     }
-	
+
+    /**
+     * Runs the data upgrade tasks, those that are not related to the database schema upgrade tasks,
+     * data tasks are mostly tasks to solve data issues using our existing APIs.
+     * <p>
+     * The list of data upgrade tasks is obtained from the
+     * {@link TaskLocatorUtil#getStartupRunOnceDataTaskClasses()}
+     *
+     * @throws DotDataException
+     */
+    public void executeDataUpgrades() throws DotDataException {
+
+        Logger.info(this, "---");
+        Logger.info(this, "");
+        Logger.info(this, "Running Data Upgrade Tasks");
+        Logger.info(this, "Database data version: " + Config.DATA_VERSION);
+
+        String name;
+
+        for (Class<?> c : TaskLocatorUtil.getStartupRunOnceDataTaskClasses()) {
+
+            name = c.getCanonicalName();
+            name = name.substring(name.lastIndexOf(".") + 1);
+            String id = getTaskId(name);
+
+            try {
+                int taskId = Integer.parseInt(id);
+                if (StartupTask.class.isAssignableFrom(c) && taskId > Config.DATA_VERSION) {
+                    StartupTask task;
+                    try {
+                        task = (StartupTask) c.newInstance();
+                    } catch (Exception e) {
+                        throw new DotRuntimeException(e.getMessage(), e);
+                    }
+
+                    if (!firstTimeStart && task.forceRun()) {
+                        HibernateUtil.startTransaction();
+                        Logger.info(this, "Running Data Upgrade Tasks: " + name);
+                        task.executeUpgrade();
+                    }
+
+                    new DotConnect()
+                            .setSQL(INSERT_DATA_VERSION)
+                            .addParam(taskId)
+                            .addParam(new Date())
+                            .loadResult();
+                    Logger.info(this, "Data upgraded to version: " + taskId);
+                    HibernateUtil.closeAndCommitTransaction();
+                    Config.DATA_VERSION = taskId;
+                }
+            } catch (Exception e) {
+                HibernateUtil.rollbackTransaction();
+                if (Config.getBooleanProperty("SYSTEM_EXIT_ON_STARTUP_FAILURE", true)) {
+                    Logger.error(this, "FATAL: " + e.getMessage(), e);
+                    System.exit(1);
+                }
+            } finally {
+                HibernateUtil.closeAndCommitTransaction();
+            }
+
+        }
+
+        Logger.info(this, "Finishing data upgrade tasks.");
+    }
+
 	/**
      * This will execute all the UT that were backported to the LTS version.
      * Will be run everytime the server gets restarted just like the Startup Tasks.
@@ -247,9 +371,9 @@ public class StartupTasksExecutor {
                 name = c.getCanonicalName();
                 name = name.substring(name.lastIndexOf(".") + 1);
 		String id = getTaskId(name);
-                int taskId = Integer.parseInt(id); 
+                int taskId = Integer.parseInt(id);
 		if (StartupTask.class.isAssignableFrom(c) && taskId > Config.DB_VERSION) {
-                    StartupTask  task = (StartupTask) c.newInstance();
+                    StartupTask  task = (StartupTask) c.getDeclaredConstructor().newInstance();
                     if (task.forceRun()) {
                         HibernateUtil.startTransaction();
                         Logger.info(this, "Running Backported Tasks : " + name);

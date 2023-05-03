@@ -1,6 +1,8 @@
 package com.dotcms.contenttype.test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.DataTypes;
@@ -24,20 +26,25 @@ import com.dotcms.contenttype.model.type.ImmutableWidgetContentType;
 import com.dotcms.contenttype.model.type.UrlMapable;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.templates.model.Template;
 import java.io.File;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import org.junit.Assert;
@@ -217,7 +224,7 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 				.variable("velocityVarNameTesting" + time)
 				.build();
 		type = contentTypeFactory.save(type);
-		final List<Class> fieldClasses = Collections.singletonList(ImmutableWysiwygField.class);
+		final List<Class> fieldClasses = List.of(ImmutableWysiwygField.class);
 		addFieldsWithVariables(type, fieldClasses);
 		type.fields()
 				.forEach(field -> {
@@ -512,8 +519,8 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 
 		final ContentType contentTypeSearched = contentTypeFactory.find(type.id());
 		Assert.assertNotNull(contentTypeSearched);
-		Assert.assertEquals("testingIcon",contentTypeSearched.icon());
-		Assert.assertEquals(2,contentTypeSearched.sortOrder());
+		assertEquals("testingIcon",contentTypeSearched.icon());
+		assertEquals(2,contentTypeSearched.sortOrder());
 	}
 
 	/***
@@ -531,8 +538,8 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 
 		final ContentType contentTypeSearched = contentTypeFactory.find(type.id());
 		Assert.assertNotNull(contentTypeSearched);
-		Assert.assertEquals("testingIcon",contentTypeSearched.icon());
-		Assert.assertEquals(0,contentTypeSearched.sortOrder());
+		assertEquals("testingIcon",contentTypeSearched.icon());
+		assertEquals(0,contentTypeSearched.sortOrder());
 	}
 
 	/***
@@ -551,8 +558,8 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 		final ContentType contentTypeSearched = contentTypeFactory.find(type.id());
 		Assert.assertNotNull(contentTypeSearched);
 		Assert.assertNotNull(contentTypeSearched.icon());
-		Assert.assertEquals(10,contentTypeSearched.sortOrder());
-		Assert.assertEquals(BaseContentType.iconFallbackMap.get(contentTypeSearched.baseType()),contentTypeSearched.icon());
+		assertEquals(10,contentTypeSearched.sortOrder());
+		assertEquals(BaseContentType.iconFallbackMap.get(contentTypeSearched.baseType()),contentTypeSearched.icon());
 	}
 
 	/***
@@ -570,8 +577,8 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 
 		ContentType contentTypeSearched = contentTypeFactory.find(type.id());
 		Assert.assertNotNull(contentTypeSearched);
-		Assert.assertEquals("testingIcon",contentTypeSearched.icon());
-		Assert.assertEquals(2,contentTypeSearched.sortOrder());
+		assertEquals("testingIcon",contentTypeSearched.icon());
+		assertEquals(2,contentTypeSearched.sortOrder());
 
 		final ContentTypeBuilder builder = ContentTypeBuilder.builder(type);
 		builder.icon("updatedIcon");
@@ -580,8 +587,8 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 
 		contentTypeSearched = contentTypeFactory.find(type.id());
 		Assert.assertNotNull(contentTypeSearched);
-		Assert.assertEquals("updatedIcon",contentTypeSearched.icon());
-		Assert.assertEquals(10,contentTypeSearched.sortOrder());
+		assertEquals("updatedIcon",contentTypeSearched.icon());
+		assertEquals(10,contentTypeSearched.sortOrder());
 	}
 
 	/***
@@ -599,8 +606,8 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 
 		ContentType contentTypeSearched = contentTypeFactory.find(type.id());
 		Assert.assertNotNull(contentTypeSearched);
-		Assert.assertEquals("testingIcon",contentTypeSearched.icon());
-		Assert.assertEquals(0,contentTypeSearched.sortOrder());
+		assertEquals("testingIcon",contentTypeSearched.icon());
+		assertEquals(0,contentTypeSearched.sortOrder());
 
 		final ContentTypeBuilder builder = ContentTypeBuilder.builder(type);
 		builder.icon("updatedIcon");
@@ -608,8 +615,8 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 
 		contentTypeSearched = contentTypeFactory.find(type.id());
 		Assert.assertNotNull(contentTypeSearched);
-		Assert.assertEquals("updatedIcon",contentTypeSearched.icon());
-		Assert.assertEquals(0,contentTypeSearched.sortOrder());
+		assertEquals("updatedIcon",contentTypeSearched.icon());
+		assertEquals(0,contentTypeSearched.sortOrder());
 	}
 
 	/***
@@ -627,7 +634,7 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 
 		ContentType contentTypeSearched = contentTypeFactory.find(type.id());
 		Assert.assertNotNull(contentTypeSearched);
-		Assert.assertEquals(10,contentTypeSearched.sortOrder());
+		assertEquals(10,contentTypeSearched.sortOrder());
 
 		final ContentTypeBuilder builder = ContentTypeBuilder.builder(type);
 		builder.sortOrder(1);
@@ -635,7 +642,58 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 
 		contentTypeSearched = contentTypeFactory.find(type.id());
 		Assert.assertNotNull(contentTypeSearched);
-		Assert.assertEquals(1,contentTypeSearched.sortOrder());
+		assertEquals(1,contentTypeSearched.sortOrder());
+	}
+
+	/**
+	 * Method to test: {@link ContentTypeAPIImpl#findUrlMapped(String)}
+	 * When: Create a {@link ContentType} with a urlMapPattern and detailPage
+	 * and call the method with the page's id
+	 * Should: Return the {@link ContentType}
+	 */
+	@Test
+	public void findUrlMappedByPageId() throws DotDataException {
+		final Host host = new SiteDataGen().nextPersisted();
+		final Template template = new TemplateDataGen().nextPersisted();
+		final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
+
+		final ContentType contentType = new ContentTypeDataGen()
+				.detailPage(htmlPageAsset.getIdentifier())
+				.urlMapPattern("/test")
+				.nextPersisted();
+
+		final List<String> urlMapped = FactoryLocator.getContentTypeFactory()
+				.findUrlMappedPattern(htmlPageAsset.getIdentifier());
+
+		assertEquals(1, urlMapped.size());
+		assertTrue(urlMapped.contains("/test"));
+	}
+
+    /**
+     * Method to test: {@link ContentTypeAPIImpl#findUrlMapped(String)}
+	 * When: Called the method with a Page'id that not have any ContentType link with it
+	 * Should: Return an empty list
+	 */
+     	@Test
+	public void findUrlMappedByPageIdWithoutContentType() throws DotDataException {
+		final Host host = new SiteDataGen().nextPersisted();
+		final Template template = new TemplateDataGen().nextPersisted();
+		final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
+
+		final List<String> urlMapped = FactoryLocator.getContentTypeFactory()
+				.findUrlMappedPattern(htmlPageAsset.getIdentifier());
+
+		assertTrue(urlMapped.isEmpty());
+	}
+
+	/**
+	 * Method to test: {@link ContentTypeAPIImpl#findUrlMapped(String)}
+	 * when: Called the method with Null
+	 * should: Throw a {@link IllegalArgumentException}
+	 */
+	@Test(expected = IllegalArgumentException.class)
+	public void findUrlMappedByPageIdWithNull() throws DotDataException {
+		FactoryLocator.getContentTypeFactory().findUrlMappedPattern(null);
 	}
 
 	/**
