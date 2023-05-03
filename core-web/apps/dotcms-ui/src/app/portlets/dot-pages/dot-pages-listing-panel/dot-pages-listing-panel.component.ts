@@ -64,9 +64,7 @@ export class DotPagesListingPanelComponent implements OnInit, OnDestroy, AfterVi
     }
 
     ngAfterViewInit(): void {
-        this.scrollElement = this.table.el.nativeElement.querySelector(
-            'div.p-scroller'
-        ) as HTMLElement;
+        this.scrollElement = this.table.el.nativeElement.querySelector('div.p-scroller');
 
         this.scrollElement.addEventListener('scroll', () => {
             this.closeContextMenu();
