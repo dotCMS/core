@@ -314,7 +314,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
                   )
                   .subscribe((data) => {
                       requestAnimationFrame(() => {
-                          this.editor.commands.setImage({ ...data });
+                          this.editor.commands.updateAttributes(ImageNode.name, { ...data });
                           this.editor.commands.closeForm();
                       });
                   });
