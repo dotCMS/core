@@ -34,6 +34,7 @@ import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.MultiTreeDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.exception.NotAllowedException;
 import com.dotcms.experiments.business.result.BrowserSession;
 import com.dotcms.experiments.business.result.ExperimentAnalyzerUtil;
@@ -455,6 +456,40 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
                 .operator(Operator.CONTAINS)
                 .build();
     }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
+     * When: get the Experiment's Results
+     * Should: get the Split traffic too
+     */
+    @Test
+    public void getSplitTrafficInsiExperimentResults()
+            throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final Experiment experiment = new ExperimentDataGen().addVariant("V1").nextPersisted();
+        ExperimentDataGen.start(experiment);
+
+        final String noDefaultVariantName = experiment.trafficProportion().variants().stream()
+                .map(experimentVariant -> experimentVariant.id())
+                .filter(id -> !id.equals("DEFAULT"))
+                .findFirst()
+                .orElseThrow();
+
+        System.out.println("Experiment: " + experiment);
+        final ExperimentResults results = APILocator.getExperimentsAPI().getResults(experiment);
+
+        final Map<String, VariantResults> variants = results.getGoals().get("primary").getVariants();
+        assertEquals(2, variants.size());
+
+        final VariantResults variantResults = variants.get(noDefaultVariantName);
+        assertEquals(50f, variantResults.weight());
+
+        final VariantResults controlResults = variants.get("DEFAULT");
+        assertEquals(50f, controlResults.weight());
+    }
+
 
     /**
      * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}

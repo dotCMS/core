@@ -4,6 +4,7 @@ import com.dotcms.analytics.metrics.AbstractCondition.Operator;
 import com.dotcms.analytics.metrics.Condition;
 import com.dotcms.analytics.metrics.Metric;
 import com.dotcms.analytics.metrics.MetricType;
+import com.dotcms.experiments.business.ExperimentsAPI;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Experiment.Builder;
@@ -131,14 +132,15 @@ public class ExperimentDataGen  extends AbstractDataGen<Experiment> {
     @Override
     public Experiment persist(final Experiment experiment) {
         try {
-            Experiment experimentSaved = APILocator.getExperimentsAPI().save(experiment, APILocator.systemUser());
+            final ExperimentsAPI experimentsAPI = APILocator.getExperimentsAPI();
+            Experiment experimentSaved = experimentsAPI.save(experiment, APILocator.systemUser());
 
             if (UtilMethods.isSet(targetingConditions)) {
                 final Experiment experimentWithTargeting = Experiment.builder()
                     .from(experimentSaved)
                     .targetingConditions(targetingConditions)
                     .build();
-                experimentSaved = APILocator.getExperimentsAPI().save(experimentWithTargeting, user);
+                experimentSaved = experimentsAPI.save(experimentWithTargeting, user);
             }
 
             if (!UtilMethods.isSet(variants)) {
@@ -146,10 +148,10 @@ public class ExperimentDataGen  extends AbstractDataGen<Experiment> {
             }
 
             for (Variant variant : variants) {
-                APILocator.getExperimentsAPI().addVariant(experimentSaved.getIdentifier(), variant.name(), user);
+                experimentsAPI.addVariant(experimentSaved.getIdentifier(), variant.name(), user);
             }
 
-            return APILocator.getExperimentsAPI().find(experimentSaved.id().get(), APILocator.systemUser()).get();
+            return experimentsAPI.find(experimentSaved.id().get(), APILocator.systemUser()).get();
         } catch (DotSecurityException | DotDataException e) {
             throw new RuntimeException(e);
         }
