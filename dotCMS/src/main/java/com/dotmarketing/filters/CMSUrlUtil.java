@@ -119,7 +119,7 @@ public class CMSUrlUtil {
             return new Tuple2<>(IAm.FILE, IAmSubType.DEFAULT);
         }
 
-		Tuple2<Boolean, IAmSubType> isPage = isPageAsset(uriWithoutQueryString, site, languageId);
+		Tuple2<Boolean, IAmSubType> isPage = resolvePageAssetSubtype(uriWithoutQueryString, site, languageId);
 
         if (isPage._1()) {
             return new Tuple2<>(IAm.PAGE, isPage._2());
@@ -127,9 +127,7 @@ public class CMSUrlUtil {
 
         if(isFolder(uriWithoutQueryString, site)) {
             // resolves correctly for folders with index pages
-			isPage = isPageAsset(uriWithoutQueryString + CMS_INDEX_PAGE, site, languageId);
-
-            return uriWithoutQueryString.endsWith("/") &&  isPage._1()
+            return uriWithoutQueryString.endsWith("/") && isPageAsset(uriWithoutQueryString + CMS_INDEX_PAGE, site, languageId)
                         ? new Tuple2<>(IAm.PAGE, IAmSubType.PAGE_INDEX)
                         : new Tuple2<>(IAm.FOLDER,IAmSubType.DEFAULT);
             
@@ -139,15 +137,21 @@ public class CMSUrlUtil {
         
 
         } // resolveResourceType.
+
+	public boolean isPageAsset(final String uri, final Host host, final long languageId) {
+		return resolvePageAssetSubtype(uri, host, languageId)._1();
+	}
+
 	/**
 	 * Indicates if the uri belongs to a Page Asset
 	 *
 	 * @param uri The current uri
 	 * @param host The current host
 	 * @param languageId The current language Id
-	 * @return true if the URI is a Page Asset, false if not
+	 * @return a tuple where the boolean will be true if the URI is a Page Asset, false if not
+	 * 		   and the IAmSubType will be the type of page asset when the boolean is true
 	 */
-	public Tuple2<Boolean, IAmSubType> isPageAsset(String uri, Host host, Long languageId) {
+	public Tuple2<Boolean, IAmSubType> resolvePageAssetSubtype(final String uri, final Host host, final Long languageId) {
 		Identifier id;
 		if (!UtilMethods.isSet(uri)) {
 			return new Tuple2<>(false, IAmSubType.DEFAULT);
@@ -404,11 +408,9 @@ public class CMSUrlUtil {
 	 */
 	public boolean amISomething(String uri, Host host, Long languageId) {
 
-		Tuple2<Boolean, IAmSubType> isPage = urlUtil.isPageAsset(uri, host, languageId);
-
 		return (urlUtil.isFileAsset(uri, host, languageId) || urlUtil
 				.isVanityUrl(uri, host, languageId)
-				|| isPage._1() || urlUtil.isFolder(uri, host));
+				|| urlUtil.isPageAsset(uri, host, languageId) || urlUtil.isFolder(uri, host));
 	}
 
 	/**

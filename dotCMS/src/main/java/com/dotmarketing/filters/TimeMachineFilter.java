@@ -190,9 +190,7 @@ public class TimeMachineFilter implements Filter {
         String mimeType = APILocator.getFileAssetAPI().getMimeType(file.getName());
         if (mimeType == null || "unknown".equals(mimeType)) {
 
-			Tuple2<Boolean, CMSFilter.IAmSubType>
-					isPage = CMSUrlUtil.getInstance().isPageAsset(uri, host, Long.parseLong(selectedLangId));
-            mimeType = (isPage._1())
+            mimeType = (CMSUrlUtil.getInstance().isPageAsset(uri, host, Long.parseLong(selectedLangId)))
 					? MediaType.TEXT_HTML
 					: MediaType.APPLICATION_OCTET_STREAM;
         }

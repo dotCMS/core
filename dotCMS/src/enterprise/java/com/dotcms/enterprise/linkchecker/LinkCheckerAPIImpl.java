@@ -282,13 +282,11 @@ public class LinkCheckerAPIImpl implements LinkCheckerAPI {
         final CMSUrlUtil cmsUrlUtils = CMSUrlUtil.getInstance();
         final long languageId        = contentlet.getLanguageId();
 
-        final Tuple2<Boolean, CMSFilter.IAmSubType> isPageAsset = cmsUrlUtils.isPageAsset(testurl, host, languageId);
-
         // tests
         if(isUrlMap                    (testurl)                   ||
                 cmsUrlUtils.isFileAsset(testurl, host, languageId) ||
                 cmsUrlUtils.isFolder   (testurl, host)             ||
-                isPageAsset._1() ||
+                cmsUrlUtils.isPageAsset(testurl, host, languageId) ||
                 cmsUrlUtils.isVanityUrl(testurl, host, languageId)) {
             return;
         }

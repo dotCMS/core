@@ -111,12 +111,10 @@ public class BaseCharacter extends AbstractCharacter {
         }
 
 
-        Tuple2<Boolean, CMSFilter.IAmSubType> isPage = CMSUrlUtil.getInstance().isPageAsset(uri, site, languageId);
-
-        if (isPage._1()) {
-            return IAm.PAGE;
-        } else if (CMSUrlUtil.getInstance().isFileAsset(uri, site, languageId)) {
+        if (CMSUrlUtil.getInstance().isFileAsset(uri, site, languageId)) {
             return IAm.FILE;
+        } else if (CMSUrlUtil.getInstance().isPageAsset(uri, site, languageId)) {
+            return IAm.PAGE;
         } else if (CMSUrlUtil.getInstance().isFolder(uri, site)) {
             return IAm.FOLDER;
         } else {
