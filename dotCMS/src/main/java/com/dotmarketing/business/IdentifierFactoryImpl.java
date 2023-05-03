@@ -6,6 +6,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.WebAsset;
+import com.dotmarketing.beans.transform.IdentifierTransformer;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -24,7 +25,6 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import java.io.IOException;
@@ -35,6 +35,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Implementation class for the {@link IdentifierFactory}.
@@ -66,6 +67,18 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		return TransformerLocator.createIdentifierTransformer(dc.loadObjectResults()).asList();
 
 
+	}
+
+	@Override
+	protected Optional<Identifier> findByFullPathAndAssetSubType(final String assetSubType, final String fullPath, final Host host) throws DotDataException {
+		final DotConnect dotConnect = new DotConnect();
+		dotConnect.setSQL("select i.* from identifier i where i.full_path_lc = ? and host_inode = ? and asset_subtype = ?");
+		dotConnect.addParam(fullPath.toLowerCase());
+		dotConnect.addParam(host.getIdentifier());
+		dotConnect.addParam(assetSubType);
+		final IdentifierTransformer identifierTransformer = TransformerLocator.createIdentifierTransformer(dotConnect.loadObjectResults());
+		final List<Identifier> identifiers = identifierTransformer.asList();
+		return identifiers.stream().findFirst();
 	}
 
 	@Override

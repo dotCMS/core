@@ -8,6 +8,7 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portlets.folders.model.Folder;
+import java.util.Optional;
 
 public interface IdentifierAPI {
     
@@ -23,6 +24,9 @@ public interface IdentifierAPI {
 	 * @throws DotDataException
 	 */
 	public List<Identifier> findByURIPattern(String assetType,String uri, boolean include, Host host) throws DotDataException;
+
+	public Optional<Identifier> findByFullPathAndAssetSubType(final String assetSubType, final String fullPath,
+			final Host host) throws DotDataException;
 
 	/**
 	 * Will take a String from an inode id and return its identifier from cache or db. If cache miss

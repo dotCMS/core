@@ -6,6 +6,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Provides data source level access to information related to Identifiers in
@@ -34,6 +35,17 @@ public abstract class IdentifierFactory {
 	 */
 	abstract protected List<Identifier> findByURIPattern(final String assetType, String uri,
 			boolean include, Host site) throws DotDataException;
+
+
+	/**
+	 * @param assetSubType
+	 * @param fullPath
+	 * @param host
+	 * @return
+	 * @throws DotDataException
+	 */
+	abstract protected Optional<Identifier> findByFullPathAndAssetSubType(final String assetSubType, final String fullPath,
+			final Host host) throws DotDataException;
 
 	/**
 	 * 

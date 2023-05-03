@@ -38,7 +38,7 @@ public class AssetPathResolverImplTest {
     @Test
     public void Test_Parse_Host_Followed_By_Root() throws DotDataException {
         final String url = String.format("http://%s/", host.getHostname());
-        final ResolvedAssetAndPath parse = AssetPathResolver.getInstance()
+        final ResolvedAssetAndPath parse = AssetPathResolver.newInstance()
                 .resolve(url, APILocator.systemUser());
         assertEquals(host.getHostname(), parse.host());
         assertEquals("/", parse.path());
@@ -49,7 +49,7 @@ public class AssetPathResolverImplTest {
     public void Test_Parse_Path() throws DotDataException {
 
         final String url = String.format("http://%s/foo/bar/1234", host.getHostname());
-        final ResolvedAssetAndPath parse = AssetPathResolver.getInstance().resolve(
+        final ResolvedAssetAndPath parse = AssetPathResolver.newInstance().resolve(
                 url, APILocator.systemUser());
         assertEquals(host.getHostname(), parse.host());
         assertEquals("/foo/bar/1234", parse.path());
@@ -59,7 +59,7 @@ public class AssetPathResolverImplTest {
     @Test
     public void Test_Parse_Path_With_Resource_And_Extension() throws DotDataException {
         final String url = String.format("http://%s/foo/bar/1234.webp", host.getHostname());
-        final ResolvedAssetAndPath parse = AssetPathResolver.getInstance().resolve(
+        final ResolvedAssetAndPath parse = AssetPathResolver.newInstance().resolve(
                 url, APILocator.systemUser());
         assertEquals(host.getHostname(), parse.host());
         assertEquals("/foo/bar/1234.webp", parse.path());
@@ -69,7 +69,7 @@ public class AssetPathResolverImplTest {
     @Test
     public void Test_Parse_Path_Shorten_No_Protocol_Host_Name() throws DotDataException {
         final String url = String.format("//%s/foo/bar/1234", host.getHostname());
-        final ResolvedAssetAndPath parse = AssetPathResolver.getInstance().resolve(
+        final ResolvedAssetAndPath parse = AssetPathResolver.newInstance().resolve(
                 url, APILocator.systemUser());
         assertEquals(host.getHostname(), parse.host());
         assertEquals("/foo/bar/1234", parse.path());
@@ -79,7 +79,7 @@ public class AssetPathResolverImplTest {
     @Test
     public void Test_Parse_Path_Ending_In_Slash() throws DotDataException {
         final String url = String.format("//%s/foo/bar/1234/", host.getHostname());
-        final ResolvedAssetAndPath parse = AssetPathResolver.getInstance().resolve(
+        final ResolvedAssetAndPath parse = AssetPathResolver.newInstance().resolve(
                 url, APILocator.systemUser());
         assertEquals(host.getHostname(), parse.host());
         assertEquals("/foo/bar/1234/", parse.path());
@@ -88,7 +88,7 @@ public class AssetPathResolverImplTest {
 
     @Test
     public void Test_Parse_Path_Simple_Root() throws DotDataException {
-        final ResolvedAssetAndPath parse = AssetPathResolver.getInstance()
+        final ResolvedAssetAndPath parse = AssetPathResolver.newInstance()
                 .resolve("//", APILocator.systemUser());
         assertEquals(Host.SYSTEM_HOST, parse.host());
         assertNull(parse.path());

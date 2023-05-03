@@ -3,10 +3,8 @@ package com.dotmarketing.portlets.fileassets.business;
 import com.dotcms.api.tree.Parentable;
 import com.dotcms.browser.BrowserQuery;
 import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
-import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.model.EventSubscriber;
-import com.dotmarketing.portlets.folders.business.FolderAPIImpl;
 import com.dotmarketing.portlets.structure.model.Field.DataType;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -15,8 +13,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -422,21 +422,47 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 		return exist;
     }
 
-	public Optional<FileAsset> findByName(final String parentPath, final String fileName, final User user) throws DotDataException, DotSecurityException {
-
-		String fullPathLowerCased;
-		if(!parentPath.endsWith("/")) {
-			fullPathLowerCased = parentPath.toLowerCase() + "/" + fileName.toLowerCase();
-		} else {
-			fullPathLowerCased = parentPath.toLowerCase() +  fileName.toLowerCase();
-		}
-
-		//this.identifierAPI.
-
-		return Optional.empty();
+	@CloseDBIfOpened
+	public List<FileAsset> findVersionsByName(final Host host, final Folder folder, final String fileName, final User user) throws DotDataException, DotSecurityException {
+		final String fullPath = (folder.getPath() + fileName).toLowerCase();
+		final Optional<Identifier> fileAsset = identifierAPI.findByFullPathAndAssetSubType(
+				"FileAsset", fullPath, host);
+         if(fileAsset.isPresent()){
+			 final List<Contentlet> versions = contAPI.findAllVersions(fileAsset.get(), false, user,
+					 false);
+            return versions.stream().map(this::fromContentlet).collect(Collectors.toList());
+		 }
+		return List.of();
 	}
 
-	public String getRelativeAssetPath(FileAsset fa) {
+	@CloseDBIfOpened
+	public Map<Identifier, List<FileAsset>> findVersionsUnderFolder(final Host host,
+			final Folder folder,
+			final User user) throws DotDataException {
+		String path = folder.getPath();
+
+		// Remove the trailing slash if it exists
+		path = path.endsWith(StringPool.FORWARD_SLASH) ?  path.substring(0, path.length() - 1) : path;
+
+		final List<Identifier> byParentPath = identifierAPI.findByParentPath(host.getIdentifier(),
+						path)
+				.stream()
+				.filter(id -> "FileAsset".equals(id.getAssetSubType()))
+				.collect(Collectors.toList());
+
+		Map<Identifier, List<FileAsset>> versionsByIdentifier = new HashMap<>();
+		byParentPath.forEach(id -> {
+			final List<FileAsset> assets = Try.of(
+							() -> contAPI.findAllVersions(id, false, user, false))
+					.getOrElse(List.of())
+					.stream().map(this::fromContentlet)
+					.collect(Collectors.toList());
+               versionsByIdentifier.put(id, assets);
+		});
+		return versionsByIdentifier;
+	}
+
+		public String getRelativeAssetPath(FileAsset fa) {
 		String _inode = fa.getInode();
 		return getRelativeAssetPath(_inode, fa.getUnderlyingFileName());
 	}

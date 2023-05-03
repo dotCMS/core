@@ -16,6 +16,7 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import java.util.List;
+import java.util.Optional;
 
 public class IdentifierAPIImpl implements IdentifierAPI {
 
@@ -33,6 +34,13 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 											 final boolean include,  final Host host) throws DotDataException {
 
 		return this.identifierFactory.findByURIPattern(assetType, uri, include, host);
+	}
+
+	@CloseDBIfOpened
+	@Override
+	public Optional<Identifier> findByFullPathAndAssetSubType(final String assetSubType, final String fullPath,
+			final Host host) throws DotDataException {
+		return this.identifierFactory.findByFullPathAndAssetSubType(assetSubType, fullPath, host);
 	}
 
 	@CloseDBIfOpened
