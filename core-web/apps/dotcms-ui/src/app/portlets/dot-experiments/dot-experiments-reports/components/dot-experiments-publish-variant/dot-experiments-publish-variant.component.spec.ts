@@ -149,7 +149,7 @@ describe('DotExperimentsPublishVariantComponent', () => {
         });
     });
     describe('with winner and promoted', () => {
-        beforeEach(async () => {
+        beforeEach(() => {
             const EXPERIMENT_MOCK = getExperimentMock(4);
             const EXPERIMENT_RESULTS_MOCK = getExperimentResultsMock(1);
 
