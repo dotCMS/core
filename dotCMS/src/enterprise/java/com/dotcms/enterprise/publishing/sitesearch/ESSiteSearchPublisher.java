@@ -160,7 +160,7 @@ public class ESSiteSearchPublisher extends Publisher {
         try {
             final File bundleRoot = BundlerUtil.getBundleRoot(config);
             for (final Class<? extends IBundler> clazz : getBundlers()) {
-                final IBundler bundler = clazz.newInstance();
+                final IBundler bundler = clazz.getDeclaredConstructor().newInstance();
                 final List<File> files = FileUtil
                         .listFilesRecursively(bundleRoot, bundler.getFileFilter());
 

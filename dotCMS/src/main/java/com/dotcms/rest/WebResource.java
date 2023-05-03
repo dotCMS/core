@@ -483,11 +483,11 @@ public  class WebResource {
 
         Optional<UsernamePassword> userPass = getAuthCredentialsFromMap(params);
 
-        if(!userPass.isPresent()) {
+        if(userPass.isEmpty()) {
             userPass = getAuthCredentialsFromHeaderAuth(request);
         }
 
-        if(!userPass.isPresent()) {
+        if(userPass.isEmpty()) {
             userPass = getAuthCredentialsFromBasicAuth(request);
         }
 

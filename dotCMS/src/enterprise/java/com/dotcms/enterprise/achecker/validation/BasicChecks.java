@@ -98,7 +98,7 @@ public class BasicChecks {
 			return lista ;
 		}catch (Exception e) {
 			e.printStackTrace();
-			return new ArrayList<LanguageCodeBean>();
+			return new ArrayList<>();
 		}
 	}
 

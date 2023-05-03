@@ -21,7 +21,6 @@ import io.vavr.Lazy;
 import io.vavr.control.Try;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -149,7 +148,7 @@ public class ESIndexAPITest {
         indices.put("store", sizeMap);
         nodes.put("indices", indices);
         nodes.put("roles", new ArrayList<String>());
-        jsonMap.put("nodes", Collections.singletonMap("node1", nodes));
+        jsonMap.put("nodes", Map.of("node1", nodes));
         jsonMap.put("cluster_name", "dummyCluster");
 
         final ESIndexAPI indexAPI = spy(ESIndexAPI.class);
@@ -180,7 +179,7 @@ public class ESIndexAPITest {
         indices.put("store", sizeMap);
         nodes.put("indices", indices);
         nodes.put("roles", new ArrayList<String>());
-        jsonMap.put("nodes", Collections.singletonMap("node1", nodes));
+        jsonMap.put("nodes", Map.of("node1", nodes));
         jsonMap.put("cluster_name", "dummyCluster");
 
 

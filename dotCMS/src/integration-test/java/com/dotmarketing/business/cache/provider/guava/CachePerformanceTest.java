@@ -42,7 +42,7 @@ public class CachePerformanceTest {
   @Test
   public void testInit() throws Exception {
 
-    CacheProvider cache =(CacheProvider) provider.newInstance();
+    CacheProvider cache =(CacheProvider) provider.getDeclaredConstructor().newInstance();
     cache.init();
 
 

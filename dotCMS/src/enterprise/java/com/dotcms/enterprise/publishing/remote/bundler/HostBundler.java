@@ -159,7 +159,7 @@ public class HostBundler implements IBundler {
 			}
             
 			if(UtilMethods.isSet(contents) && !contents.isEmpty()) { // this content set is a dependency of other assets, like htmlpages
-				List<Contentlet> contentList = new ArrayList<Contentlet>();
+				List<Contentlet> contentList = new ArrayList<>();
 				for (String contentIdentifier : contents) {
 					try{
 						Contentlet workingContentlet;
@@ -248,7 +248,7 @@ public class HostBundler implements IBundler {
 	private Set<Contentlet> getRelatedFilesAndContent(List<Contentlet> cs) throws DotDataException,
 			DotSecurityException {
 
-		Set<Contentlet> contentsToProcess = new HashSet<Contentlet>();
+		Set<Contentlet> contentsToProcess = new HashSet<>();
 
 		//Getting all related content
 		for (Contentlet con : cs) {
@@ -262,7 +262,7 @@ public class HostBundler implements IBundler {
 			contentsToProcess.add(con);
 		}
 
-		Set<Contentlet> contentsToProcessWithFiles = new HashSet<Contentlet>();
+		Set<Contentlet> contentsToProcessWithFiles = new HashSet<>();
 		//Getting all linked files
 		for(Contentlet con: contentsToProcess) {
 			List<Field> fields=FieldsCache.getFieldsByStructureInode(con.getStructureInode());
@@ -320,7 +320,7 @@ public class HostBundler implements IBundler {
             return;
         }
 
-        if(!info.isPresent()) {
+        if(info.isEmpty()) {
 			Logger.warn(this, "Can't find ContentletVersionInfo. Identifier: "
 					+ hostContentlet.getIdentifier() + ". Lang: " + hostContentlet.getLanguageId());
 			return;

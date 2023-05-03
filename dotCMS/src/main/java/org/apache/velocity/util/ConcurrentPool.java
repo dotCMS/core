@@ -138,7 +138,7 @@ public class ConcurrentPool<Parser> {
 	}
 
 	private void initialize(final int minIdle) {
-		pool = new ConcurrentLinkedQueue<Parser>();
+		pool = new ConcurrentLinkedQueue<>();
 
 		for (int i = 0; i < minIdle; i++) {
 			pool.add(createObject());

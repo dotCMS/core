@@ -6,7 +6,6 @@ package com.dotmarketing.business;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -130,7 +129,7 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 
         localServer = Server.builder(localServer).withCachePort(Integer.parseInt(bindPort)).build();
 
-        List<Server> aliveServers = serverAPI.getAliveServers(Collections.singletonList(localServer.getServerId()));
+        List<Server> aliveServers = serverAPI.getAliveServers(List.of(localServer.getServerId()));
         aliveServers.add(localServer);
 
         List<String> initialHosts = new ArrayList<>();

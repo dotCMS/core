@@ -28,7 +28,7 @@ export const setCoords = ({ viewCoords, nodeCoords }): DOMRect => {
     return {
         ...nodeCoords.toJSON(),
         top: pos,
-        left: left - 10
+        left
     };
 };
 
@@ -49,6 +49,8 @@ export class DotFloatingButtonPluginView {
     private $destroy = new Subject<boolean>();
     private dotUploadFileService: DotUploadFileService;
     private imageUrl: string;
+    private initialLabel = 'Import to dotCMS';
+    private offset = 10;
 
     /* @Overrrider */
     constructor({ dotUploadFileService, editor, component, element, view }) {
@@ -83,21 +85,25 @@ export class DotFloatingButtonPluginView {
         const from = Math.min(...ranges.map((range) => range.$from.pos));
         const type = doc.nodeAt(from)?.type.name;
         const props = this.editor.getAttributes(ImageNode.name);
+        const isImage = type === ImageNode.name;
 
-        if (empty || type != ImageNode.name || props?.data) {
+        if (empty || !isImage || props?.data) {
             this.hide();
 
             return;
         }
 
+        const node = view.nodeDOM(from) as HTMLElement;
+        const image = node.querySelector('img');
+
         this.imageUrl = props?.src;
-        this.updateButtonLabel('Import to dotCMS');
+        this.updateButtonLabel(this.initialLabel);
 
         this.createTooltip();
 
         this.tippy?.setProps({
+            maxWidth: image?.width - this.offset || 250,
             getReferenceClientRect: () => {
-                const node = view.nodeDOM(from) as HTMLElement;
                 const viewCoords = view.dom.parentElement.getBoundingClientRect();
                 const nodeCoords = getNodeCoords(node, type);
 
@@ -124,6 +130,7 @@ export class DotFloatingButtonPluginView {
             interactive: true,
             trigger: 'manual',
             placement: 'bottom-end',
+            offset: [-this.offset, 0],
             hideOnClick: 'toggle'
         });
     }
@@ -145,10 +152,12 @@ export class DotFloatingButtonPluginView {
     }
 
     private updateImageNode(data: DotCMSContentlet): void {
+        const { fileAsset, asset } = data;
         this.setPreventHide();
         const attr = this.editor.getAttributes(ImageNode.name);
         this.editor.commands.updateAttributes(ImageNode.name, {
             ...attr,
+            src: fileAsset || asset,
             data
         });
     }
@@ -175,6 +184,7 @@ export class DotFloatingButtonPluginView {
                     this.updateImageNode(contentlet[Object.keys(contentlet)[0]]);
                 },
                 () => {
+                    this.updateButtonLoading(false);
                     this.updateButtonLabel(FileStatus.ERROR);
                     this.setPreventHide();
                 }
