@@ -37,11 +37,14 @@ export class SuggestionsService {
     getContentlets({
         contentType,
         filter,
-        currentLanguage
+        currentLanguage,
+        identifier
     }: ContentletFilters): Observable<DotCMSContentlet[]> {
+        const identifierQuery = identifier ? `-identifier:${identifier}` : '';
+
         return this.http
             .post('/api/content/_search', {
-                query: `+contentType:${contentType} +languageId:${currentLanguage} +deleted:false +working:true +catchall:*${filter}* `,
+                query: `+contentType:${contentType}  ${identifierQuery}  +languageId:${currentLanguage} +deleted:false +working:true +catchall:*${filter}* `,
                 sort: 'modDate desc',
                 offset: 0,
                 limit: 40
