@@ -1,8 +1,14 @@
+import { NgIf } from '@angular/common';
 import { Component, Input } from '@angular/core';
+
+import { ButtonModule } from 'primeng/button';
+
+import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 
 @Component({
     selector: 'dot-link',
     standalone: true,
+    imports: [ButtonModule, NgIf, DotMessagePipeModule],
     templateUrl: './dot-link.component.html',
     styleUrls: ['./dot-link.component.scss']
 })

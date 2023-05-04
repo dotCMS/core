@@ -1,11 +1,9 @@
 import { Component, Input } from '@angular/core';
 
-import { DotLinkComponent } from '@components/dot-link/dot-link.component';
 @Component({
     selector: 'dot-api-link',
     templateUrl: './dot-api-link.component.html',
-    styleUrls: ['./dot-api-link.component.scss'],
-    imports: [DotLinkComponent]
+    styleUrls: ['./dot-api-link.component.scss']
 })
 export class DotApiLinkComponent {
     @Input()
