@@ -2,8 +2,9 @@
 
 import { of } from 'rxjs';
 
+import { HttpClient } from '@angular/common/http';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { TestBed, getTestBed } from '@angular/core/testing';
+import { getTestBed, TestBed } from '@angular/core/testing';
 
 import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
 
@@ -13,7 +14,7 @@ import { DotLocalstorageService } from '../dot-localstorage/dot-localstorage.ser
 
 describe('DotMessageService', () => {
     let dotMessageService: DotMessageService;
-    let coreWebService: CoreWebService;
+    let http: HttpClient;
     let dotLocalstorageService: DotLocalstorageService;
     const MESSAGES_LOCALSTORAGE_KEY = 'dotMessagesKeys';
     let injector: TestBed;
@@ -47,10 +48,10 @@ describe('DotMessageService', () => {
         });
         injector = getTestBed();
         dotMessageService = injector.inject(DotMessageService);
-        coreWebService = injector.get(CoreWebService);
-        dotLocalstorageService = injector.get(DotLocalstorageService);
+        http = injector.inject(HttpClient);
+        dotLocalstorageService = injector.inject(DotLocalstorageService);
 
-        jest.spyOn<any, any>(coreWebService, 'requestView').mockImplementation(() => {
+        jest.spyOn<any, any>(http, 'get').mockImplementation(() => {
             return of({
                 entity: messages
             });
@@ -62,9 +63,7 @@ describe('DotMessageService', () => {
             jest.spyOn(dotLocalstorageService, 'setItem');
             jest.spyOn(dotLocalstorageService, 'getItem').mockReturnValue(null);
             dotMessageService.init();
-            expect(coreWebService.requestView).toHaveBeenCalledWith({
-                url: '/api/v2/languages/default/keys'
-            });
+            expect(http.get).toHaveBeenCalledWith('/api/v2/languages/default/keys');
             expect(dotLocalstorageService.setItem).toHaveBeenCalledWith(
                 'dotMessagesKeys',
                 messages
@@ -77,16 +76,12 @@ describe('DotMessageService', () => {
             jest.spyOn(dotLocalstorageService, 'getItem');
             dotMessageService.init();
             expect(dotLocalstorageService.getItem).toHaveBeenCalledWith('dotMessagesKeys');
-            expect(coreWebService.requestView).toHaveBeenCalledWith({
-                url: '/api/v2/languages/default/keys'
-            });
+            expect(http.get).toHaveBeenCalledWith('/api/v2/languages/default/keys');
         });
 
         it('should call languages endpoint with passed language', () => {
             dotMessageService.init({ language: 'en_US' });
-            expect(coreWebService.requestView).toHaveBeenCalledWith({
-                url: '/api/v2/languages/en_US/keys'
-            });
+            expect(http.get).toHaveBeenCalledWith('/api/v2/languages/en_US/keys');
         });
 
         it('should read messages from local storage', () => {
@@ -94,7 +89,7 @@ describe('DotMessageService', () => {
             dotLocalstorageService.setItem(MESSAGES_LOCALSTORAGE_KEY, messages);
             dotMessageService.init();
             expect(dotLocalstorageService.getItem).toHaveBeenCalledWith('dotMessagesKeys');
-            expect(coreWebService.requestView).not.toHaveBeenCalled();
+            expect(http.get).not.toHaveBeenCalled();
         });
     });
 

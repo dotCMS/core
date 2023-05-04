@@ -19,6 +19,8 @@
                         [readonlyInput]="true"
                         [showIcon]="true"
                         [showClear]="true"
+                        (onSelect)="setMinEndDate()"
+                        (onClear)="setMinEndDate()"
                         formControlName="startDate"
                         data-testId="scheduling-startDate"
                     ></p-calendar>
@@ -30,8 +32,8 @@
                     <p-calendar
                         id="endTime"
                         [showTime]="true"
-                        [defaultDate]="form.get('startDate').value || initialDate"
-                        [minDate]="form.get('startDate').value"
+                        [defaultDate]="minEndDate || initialDate"
+                        [minDate]="minEndDate || initialDate"
                         [stepMinute]="30"
                         [readonlyInput]="true"
                         [showIcon]="true"

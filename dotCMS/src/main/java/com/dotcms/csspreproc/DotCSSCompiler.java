@@ -124,8 +124,8 @@ abstract class DotCSSCompiler {
 
   protected List<String> filterImportedUris(String baseUri, List<String> uris) throws DotSecurityException {
 
-    List<String> filtered = new ArrayList<String>(uris.size());
-    List<String> baseParts = new ArrayList<String>(Arrays.<String>asList(baseUri.split("/")));
+    List<String> filtered = new ArrayList<>(uris.size());
+    List<String> baseParts = new ArrayList<>(Arrays.<String>asList(baseUri.split("/")));
     baseParts.remove(baseParts.size() - 1);
     while (uris.remove(null));
     for (String uri : uris) {
@@ -133,7 +133,7 @@ abstract class DotCSSCompiler {
         filtered.add(uri);
       } else {
         // relative path processing
-        LinkedList<String> xparts = new LinkedList<String>(baseParts);
+        LinkedList<String> xparts = new LinkedList<>(baseParts);
         for (String part : uri.split("/")) {
           if (part.equals("..")) {
             if (!baseParts.isEmpty()) {
@@ -169,7 +169,7 @@ abstract class DotCSSCompiler {
     File compDir = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + File.separator + "css_compile_space" + File.separator
         + UUIDGenerator.generateUuid());
     compDir.mkdirs();
-    LinkedList<String> uriq = new LinkedList<String>();
+    LinkedList<String> uriq = new LinkedList<>();
     uriq.add(uri);
     while (!uriq.isEmpty()) {
       String fileuri = addExtensionIfNeeded(uriq.removeFirst());

@@ -1,9 +1,5 @@
 package com.dotmarketing.portlets.browser.ajax;
 
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 import com.dotcms.browser.BrowserAPI;
 import com.dotcms.browser.BrowserQuery;
 import com.dotcms.business.CloseDBIfOpened;
@@ -13,6 +9,7 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
+import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -22,9 +19,9 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.VersionableAPI;
+import com.dotmarketing.business.ajax.DwrUtil;
 import com.dotmarketing.business.util.HostNameComparator;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.UserWebAPI;
@@ -69,21 +66,28 @@ import com.liferay.portal.struts.ActionException;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
+
+import static com.dotcms.rest.api.v1.browsertree.BrowserTreeHelper.ACTIVE_FOLDER_ID;
+import static com.dotcms.rest.api.v1.browsertree.BrowserTreeHelper.OPEN_FOLDER_IDS;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
 /**
  * This class interacts with the DWR Framework in order to provide the {@code Site Browser} portlet with the expected
@@ -95,20 +99,20 @@ import javax.servlet.http.HttpSession;
 public class BrowserAjax {
 
 	private static PermissionAPI permissionAPI = APILocator.getPermissionAPI();
-	private UserWebAPI userAPI = WebAPILocator.getUserWebAPI();
-	private HostAPI hostAPI = APILocator.getHostAPI();
-	private HostWebAPI hostWebAPI = WebAPILocator.getHostWebAPI();
-	private FolderAPI folderAPI = APILocator.getFolderAPI();
-	private ContentletAPI contentletAPI = APILocator.getContentletAPI();
-	private LanguageAPI languageAPI = APILocator.getLanguageAPI();
-	private BrowserAPI browserAPI = APILocator.getBrowserAPI();
-	private VersionableAPI versionAPI = APILocator.getVersionableAPI();
-	private IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
+	private final UserWebAPI userAPI = WebAPILocator.getUserWebAPI();
+	private final HostAPI hostAPI = APILocator.getHostAPI();
+	private final HostWebAPI hostWebAPI = WebAPILocator.getHostWebAPI();
+	private final FolderAPI folderAPI = APILocator.getFolderAPI();
+	private final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+	private final LanguageAPI languageAPI = APILocator.getLanguageAPI();
+	private final BrowserAPI browserAPI = APILocator.getBrowserAPI();
+	private final VersionableAPI versionAPI = APILocator.getVersionableAPI();
+	private final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
 
 	String activeHostId = "";
-    volatile String activeFolderInode = "";
-    private static String SELECTED_BROWSER_PATH_OBJECT = "SELECTED_BROWSER_PATH_OBJECT";
-	Set<String> openFolders = new LinkedHashSet<>();
+	private static final String ALL_SITES_ID = "allHosts";
+
+    private static final String SELECTED_BROWSER_PATH_OBJECT = "SELECTED_BROWSER_PATH_OBJECT";
 
     String lastSortBy = "name";
     boolean lastSortDirectionDesc = false;
@@ -139,72 +143,50 @@ public class BrowserAjax {
 	    
 	}
 
-	
-    /**
-     * This methods is used to load the entire tree by first time.
-     * @return The whole folders tree structure.
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
-    public List<Map> getTree(String hostId) throws DotDataException, DotSecurityException {
+	/**
+	 * Loads the entire folder tree associated to the specified Site ID. Additionally, if one or more folders were
+	 * expanded in the current session and/or a specific folder was selected, the returned tree will keep track of
+	 * those events and will reflect them in the result.
+	 *
+	 * @param siteId The ID of the Site whose folder tree will be loaded. If such an ID is invalid or doesn't exist,
+	 *               the currently selected Site in the UI will be used instead. And if that's not valid either, then
+	 *               all Sites are looked up and returned instead.
+	 *
+	 * @return The entire Site's folder tree.
+	 *
+	 * @throws DotDataException     An error occurred when interacting with the data source.
+	 * @throws DotSecurityException The currently logged-in user does not have the required permissions to perform
+	 *                              this action.
+	 * @throws SystemException      An error occurred when retrieving the currently logged-in User.
+	 * @throws PortalException      An error occurred when retrieving the currently logged-in User.
+	 */
+    public List<Map> getTree(String siteId) throws DotDataException, DotSecurityException, SystemException, PortalException {
+		final User user = DwrUtil.getLoggedInUser();
+        siteId = UtilMethods.isSet(siteId) ? siteId : this.getCurrentHost();
+        final Role[] roles = DwrUtil.getUserRoles(user);
+		final List<Host> siteList = !UtilMethods.isSet(siteId) || siteId.equals(ALL_SITES_ID)
+										 ? this.hostAPI.findAllFromCache(user, false)
+										 : List.of(this.hostAPI.find(siteId, user, false));
 
-		final WebContext ctx         = WebContextFactory.get();
-		final HttpSession session    = ctx.getSession();
-
-		if (null != session && null != session.getAttribute("siteBrowserActiveFolderInode")) {
-			activeFolderInode = (String)session.getAttribute("siteBrowserActiveFolderInode");
-		}
-
-        hostId = UtilMethods.isSet(hostId) ? hostId : getCurrentHost();
-        User usr = getUser(ctx.getHttpServletRequest());
-        User systemUser = userAPI.getSystemUser();
-        Role[] roles = new Role[]{};
-		try {
-			roles = com.dotmarketing.business.APILocator.getRoleAPI().loadRolesForUser(usr.getUserId()).toArray(new Role[0]);
-		} catch (DotDataException e1) {
-			Logger.error(BrowserAjax.class,e1.getMessage(),e1);
-		}
-
-		List<Host> hosts=new ArrayList<Host>();
-		if(!UtilMethods.isSet(hostId) || hostId.equals("allHosts")){
-			hostId = "allHosts";
-			hosts.addAll(hostAPI.findAll(usr, false));
-		}
-		else{
-			hosts.add(hostAPI.find(hostId, usr, false));
-        }
-        List<Map> retList = new ArrayList<Map>();
-         for (Host host : hosts) {
-
-        	//Ignore system host
-        	if(host.isSystemHost()||host.isArchived())
-        	continue;
-
-        	//Obtain maps from hosts to be returned by ajax
-            Map<String,Object> hostMap = (Map<String,Object>)host.getMap();
-            if (activeHostId.equalsIgnoreCase(host.getIdentifier())|| hosts.size()==1 )  {
-                hostMap.put("open", true);
-                List<Map> children = getFoldersTree (host, roles);
-                hostMap.put("childrenFolders", children);
-                hostMap.put("childrenFoldersCount", children.size());
-            } else {
-                hostMap.put("open", false);
-//                hostMap.put("childrenFoldersCount", getSubFoldersCount(host));
-            }
-
-            java.util.List permissions = new ArrayList();
-			try {
-				permissions = permissionAPI.getPermissionIdsFromRoles(host, roles, usr);
-			} catch (DotDataException e) {
-				Logger.error(this, "Could not load permissions : ",e);
+        final List<Map> folderTree = new ArrayList<>();
+        for (final Host site : siteList) {
+        	// Exclude System Host ad archived Sites from the final result
+			if (site.isSystemHost() || site.isArchived()) {
+				continue;
 			}
-
-            hostMap.put("permissions", permissions);
-            retList.add(hostMap);
-
+            final Map<String,Object> siteDataMap = site.getMap();
+			siteDataMap.put("open", false);
+            if (this.activeHostId.equalsIgnoreCase(site.getIdentifier()) || siteList.size() == 1) {
+                siteDataMap.put("open", true);
+                final List<Map> children = this.getFoldersTree(site, roles);
+                siteDataMap.put("childrenFolders", children);
+                siteDataMap.put("childrenFoldersCount", children.size());
+            }
+            final Optional<List<Integer>> permissionsOpt = DwrUtil.getPermissions(site, roles, user);
+            siteDataMap.put("permissions", permissionsOpt.isPresent() ? permissionsOpt.get() : List.of());
+            folderTree.add(siteDataMap);
         }
-
-        return retList;
+        return folderTree;
     }
 
     /**
@@ -246,71 +228,38 @@ public class BrowserAjax {
         return getFoldersTree (host, roles);
     }
 
-    /**
-     * Action called every time a user opens a folder using the + (left hand side)
-     * @param parentId Parent folder to be opened
-     * @return The subtree structure of folders
-     * @throws DotDataException
-     * @throws DotSecurityException
-     * @throws DotHibernateException
-     */
-    public List<Map> openFolderTree (String parentId) throws DotHibernateException, DotSecurityException, DotDataException {
-        WebContext ctx = WebContextFactory.get();
-        User usr = getUser(ctx.getHttpServletRequest());
-        Role[] roles = new Role[]{};
-        if(usr != null){
-			try {
-				roles = com.dotmarketing.business.APILocator.getRoleAPI().loadRolesForUser(usr.getUserId()).toArray(new Role[0]);
-			}catch (NullPointerException e) {
-				Logger.debug(this, "array was null");
-			} catch (DotDataException e) {
-				Logger.error(BrowserAjax.class,e.getMessage(),e);
-			}
-        }
-
-
-        final Folder folder = APILocator.getFolderAPI().find(parentId, usr, false);
-        openFolders.add(parentId);
-        return getFoldersTree (folder, roles);
+	/**
+	 * Returns the contents of the Folder that has been selected by the User in the Site Browser.
+	 *
+	 * @param parentId The ID of the Folder whose contents will be returned.
+	 *
+	 * @return The contents of the Folder that has been selected by the User.
+	 *
+	 * @throws DotSecurityException The currently logged-in user does not have the required permissions to perform
+	 * this action.
+	 * @throws DotDataException     An error occurred when interacting with the data source.
+	 */
+    public List<Map> openFolderTree(final String parentId) throws DotSecurityException, DotDataException {
+        final WebContext ctx = WebContextFactory.get();
+        final User user = this.getUser(ctx.getHttpServletRequest());
+        final Role[] roles = DwrUtil.getUserRoles(user);
+        final Folder folder = APILocator.getFolderAPI().find(parentId, user, false);
+		this.getOpenFolderIds().add(parentId);
+        return this.getFoldersTree(folder, roles);
     }
 
 	/**
-	 * Set the logic to select next time the site browser is open to select a folder
-	 * @param parentId {@link String}
-	 * @param hostId {@link String}
-	 * @param usr {@link User}
-	 * @throws DotDataException
-	 * @throws DotSecurityException
+	 * Removes the ID of a given open Folder from the list of open Folders in the Site Browser. Every time a User
+	 * collapses a parent Folder, it will be removed from the master list in the current session.
+	 *
+	 * @param parentInode The ID of the Folder to be removed from the list of open Folders.
 	 */
-    public void setCurrentOpenFolder(final String parentId, final String hostId, final User usr) throws DotDataException, DotSecurityException {
-
-    	openFolders.clear();
-		final Folder leafFolder = APILocator.getFolderAPI().find(parentId, usr, false);
-
-		if (null != leafFolder) {
-
-			activeHostId = hostId;
-			openFolders.clear();
-			openFolders.add(parentId);
-			Permissionable parent = leafFolder.getParentPermissionable();
-			while (parent != null) {
-
-				if (parent instanceof Folder) {
-					openFolders.add(Folder.class.cast(parent).getIdentifier());
-				}
-				parent = parent.getParentPermissionable();
-			}
+    public void closeFolderTree(final String parentInode) {
+		final Set<String> openFolderIds = (Set<String>) DwrUtil.getSession().getAttribute(OPEN_FOLDER_IDS);
+		if (null != openFolderIds) {
+			openFolderIds.remove(parentInode);
 		}
 	}
-
-    /**
-     * Action called everytime a user closes a folder using the - (left hand side)
-     * @param parentInode Parent folder to be opened
-     * @return The subtree structure of folders
-     */
-    public void closeFolderTree (String parentInode) {
-        openFolders.remove(parentInode);
-    }
 
 	/**
 	 * Retrieves the contents living under a specific Folder so that they can be displayed in the UI.
@@ -329,19 +278,9 @@ public class BrowserAjax {
 	public List<Map<String, Object>> openFolderContent(final String parentId, final String sortBy,
 													   final boolean showArchived, final long languageId) throws
 			DotSecurityException, DotDataException {
-
-		final WebContext ctx         = WebContextFactory.get();
-		final HttpSession session    = ctx.getSession();
-		String siteBrowserActiveFolderInode = null;
-
-		if (null != session && null != session.getAttribute("siteBrowserActiveFolderInode")) {
-			siteBrowserActiveFolderInode = (String)session.getAttribute("siteBrowserActiveFolderInode");
-			session.removeAttribute("siteBrowserActiveFolderInode");
-		}
-
-		activeFolderInode = null != siteBrowserActiveFolderInode ? siteBrowserActiveFolderInode : parentId;
+		DwrUtil.getSession().setAttribute(ACTIVE_FOLDER_ID, parentId);
 		this.lastSortBy = sortBy;
-		if (sortBy != null && UtilMethods.isSet(sortBy)) {
+		if (UtilMethods.isSet(sortBy)) {
 			if (sortBy.equals(lastSortBy)) {
 				this.lastSortDirectionDesc = !this.lastSortDirectionDesc;
 			}
@@ -417,9 +356,9 @@ public class BrowserAjax {
 	}
 
 	/**
-	 * Returns the contents of a given folder based on the specified filtering criteria.
+	 * Returns the contents of a given Site or Folder based on the specified filtering criteria.
 	 *
-	 * @param folderId     The ID of the {@link Folder} whose contents will be listed.
+	 * @param folderId     The ID of the {@link Host} or {@link Folder} whose contents will be listed.
 	 * @param offset       The offset value for the result set, for pagination purposes.
 	 * @param maxResults   The maximum number of results that will be returned, for pagination purposes.
 	 * @param filter       An optional filtering criterion for narrowing results.
@@ -432,7 +371,7 @@ public class BrowserAjax {
 	 * @param sortByDesc   If the sorting must be performed in descending order, set to {@code true}.
 	 * @param languageId   The ID of the language for the contents being returned.
 	 *
-	 * @return The filtered list of contents in the specified folder.
+	 * @return The filtered list of contents under the specified Site or Folder.
 	 *
 	 * @throws DotSecurityException The {@link User} calling this operation does not have the required permissions to do
 	 *                              so.
@@ -494,6 +433,9 @@ public class BrowserAjax {
 	        final WebContext webContext  = WebContextFactory.get();
 	        final HttpServletRequest req = webContext.getHttpServletRequest();
 	        final User user              = getUser(req);
+		    final long language   = req.getSession().getAttribute(WebKeys.CONTENT_SELECTED_LANGUAGE) != null ?
+				   Long.parseLong(req.getSession().getAttribute(WebKeys.CONTENT_SELECTED_LANGUAGE).toString()) :
+				   APILocator.getLanguageAPI().getDefaultLanguage().getId();
 
 		   final Map<String, Object> results = browserAPI.getFolderContent(
 				   BrowserQuery.builder()
@@ -513,7 +455,7 @@ public class BrowserAjax {
 						   .sortBy(sortBy)
 						   .sortByDesc(sortByDesc)
 						   .showLinks(!excludeLinks)
-						   .withLanguageId((Long) req.getSession().getAttribute(WebKeys.CONTENT_SELECTED_LANGUAGE))
+						   .withLanguageId(language)
 						   .showDotAssets(dotAssets)
 						   .build());
 
@@ -841,16 +783,31 @@ public class BrowserAjax {
 		return null;
 	}
 
+	/**
+	 * Returns the list of all sub-folders under the specified Site.
+	 *
+	 * @param site  The Site to get the sub-folders from.
+	 * @param roles The list of Roles to filter the sub-folders by.
+	 *
+	 * @return The list of all sub-folders under the specified Site.
+	 *
+	 * @throws DotStateException    The Site object is null.
+	 * @throws DotDataException     An error occurred when retrieving the sub-folders.
+	 * @throws DotSecurityException An internal User permission error has occurred.
+	 */
     @SuppressWarnings("unchecked")
-	private List<Map> getFoldersTree (Host host, Role[] roles) throws DotStateException, DotDataException, DotSecurityException {
-        FolderAPI folderAPI = APILocator.getFolderAPI();
-        List<Folder> children = new ArrayList<Folder>();
-		try {
-			children = folderAPI.findSubFolders(host,userAPI.getSystemUser(),false);
-		} catch (Exception e) {
-			Logger.error(this, "Could not load folders : ",e);
+	private List<Map> getFoldersTree(final Host site, final Role[] roles) throws DotStateException, DotDataException, DotSecurityException {
+		if (null == site || UtilMethods.isNotSet(site.getIdentifier())) {
+			throw new DotStateException("Site object cannot be null");
 		}
-        return getFoldersTree(host.getIdentifier(), children, roles);
+		List<Folder> subFolders = new ArrayList<>();
+		try {
+			subFolders = this.folderAPI.findSubFolders(site, this.userAPI.getSystemUser(), false);
+		} catch (final Exception e) {
+			Logger.error(this, String.format("Failed to get sub-folders for Site '%s' [%s]: %s", site,
+					site.getIdentifier(), e.getMessage()), e);
+		}
+		return this.getFoldersTree(site.getIdentifier(), subFolders, roles);
     }
 
     @SuppressWarnings("unchecked")
@@ -865,41 +822,46 @@ public class BrowserAjax {
         return getFoldersTree(parent.getIdentifier(), children, roles);
     }
 
-	private List<Map> getFoldersTree (String parentId, List<Folder> children, Role[] roles) throws DotStateException, DotDataException, DotSecurityException {
-
-        WebContext ctx = WebContextFactory.get();
-        User usr = getUser(ctx.getHttpServletRequest());
-        ArrayList<Map> folders = new ArrayList<Map> ();
-
-        for (Folder folder : children) {
-        	Map<String, Object> folderMap = folder.getMap();
-        	if (openFolders.contains(folder.getIdentifier())) {
-        		List<Map> childrenMaps = getFoldersTree (folder, roles);
-        		folderMap.put("open", true);
-        		folderMap.put("childrenFolders", childrenMaps);
-        	} else {
-        		folderMap.put("open", false);
+	/**
+	 * Returns the list of all sub-folders under the specified parent permissionable, which can be either a Site or a
+	 * Folder. In case one or more of the sub-folders is marked as open from the UI, this method will be called
+	 * recursively in order to display them accordingly.
+	 *
+	 * @param parentId The Identifier/Inode of the parent permissionable.
+	 * @param childFolders The list of sub-folders associated to the specified parent ID.
+	 * @param roles    The list of Roles associated to the User that is calling this method.
+	 *
+	 * @return The list of all sub-folders under the specified parent permissionable, with the appropriate open/closed
+	 * status.
+	 *
+	 * @throws DotDataException     An error occurred when retrieving Folder data.
+	 * @throws DotSecurityException An internal User permission problem has occurred.
+	 */
+	private List<Map> getFoldersTree(final String parentId, final List<Folder> childFolders, final Role[] roles) throws DotDataException, DotSecurityException {
+        final WebContext ctx = WebContextFactory.get();
+        final User user = this.getUser(ctx.getHttpServletRequest());
+        final List<Map> folders = new ArrayList<>();
+		final Set<String> openFolderIds = this.getOpenFolderIds();
+        for (final Folder folder : childFolders) {
+        	final Map<String, Object> folderDataMap = folder.getMap();
+			folderDataMap.put("open", false);
+			// For backwards compatibility, we need to check the folder-selected status using both folder Inode and
+			// Identifier
+			if (openFolderIds.contains(folder.getIdentifier()) || openFolderIds.contains(folder.getInode())) {
+        		final List<Map> childrenMaps = this.getFoldersTree(folder, roles);
+        		folderDataMap.put("open", true);
+        		folderDataMap.put("childrenFolders", childrenMaps);
         	}
-        	if(folder.getIdentifier().equalsIgnoreCase(activeFolderInode))
-        		folderMap.put("selected", true);
-        	else
-        		folderMap.put("selected", false);
-        	folderMap.put("parent", parentId);
-
-        	List permissions = new ArrayList();
-        	try {
-        		permissions = permissionAPI.getPermissionIdsFromRoles(folder, roles, usr);
-        	} catch (DotDataException e) {
-        		Logger.error(this, "Could not load permissions for folder with ID: " + folder.getIdentifier(),e);
-        	}
-
-        	folderMap.put("permissions", permissions);
-
-        	folders.add(folderMap);
-
+			// For backwards compatibility, we need to check the folder-selected status using both folder Inode and
+			// Identifier
+			folderDataMap.put("selected",
+					folder.getIdentifier().equalsIgnoreCase(this.getActiveFolderId()) || folder.getInode().equalsIgnoreCase(this.getActiveFolderId()));
+        	folderDataMap.put("parent", parentId);
+			final Optional<List<Integer>> permissionsOpt = DwrUtil.getPermissions(folder, roles, user);
+			folderDataMap.put("permissions", permissionsOpt.isPresent() ? permissionsOpt.get() : List.of());
+        	folders.add(folderDataMap);
         }
-
-        	return folders.stream().sorted(nameComparator).collect(Collectors.toList());
+		return folders.stream().sorted(nameComparator).collect(Collectors.toList());
     }
 
     public Map<String, Object> renameFolder (String inode, String newName) throws DotDataException, DotSecurityException {
@@ -2081,21 +2043,35 @@ public class BrowserAjax {
         return hostMap;
 	}
 
-	private Map<String, Object> folderMap(Folder folder) throws DotDataException, DotSecurityException {
-    	UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
-		HostAPI hostAPI = APILocator.getHostAPI();
-		Map<String, Object> folderMap = new HashMap<String, Object>();
-		folderMap.put("type", "folder");
-		folderMap.put("name", folder.getName());
-		folderMap.put("id", folder.getIdentifier());
-		folderMap.put("inode", folder.getInode());
-		folderMap.put("defaultFileType", folder.getDefaultFileType());
-		String currentPath = hostAPI.findParentHost(folder, userWebAPI.getSystemUser(), false).getHostname();
-		String fullPath = currentPath + ":/" + folder.getName();
-		String absolutePath = "/" + folder.getName();
-		folderMap.put("fullPath", fullPath);
-		folderMap.put("absolutePath", absolutePath);
-        return folderMap;
+	/**
+	 * Generates a data map with specific properties from the specified Folder.
+	 *
+	 * @param folder The {@link Folder} being retrieved.
+	 *
+	 * @return The data map with the folder's properties.
+	 *
+	 * @throws DotDataException     An error occurred when retrieving information from the data source.
+	 * @throws DotSecurityException The logged-in User does not have the required permissions to access the
+	 * 								sub-folders.
+	 */
+	private Map<String, Object> folderMap(final Folder folder) throws DotDataException, DotSecurityException {
+		if (null == folder) {
+			return null;
+		}
+		final String currentPath = this.hostAPI.findParentHost(folder, WebAPILocator.getUserWebAPI().getSystemUser(),
+				false).getHostname();
+		final String fullPath = currentPath + ":/" + folder.getName();
+		final String absolutePath = "/" + folder.getName();
+		final Map<String, Object> folderMap = CollectionsUtils.map(
+				"type", "folder",
+				"name", folder.getName(),
+				"id", folder.getIdentifier(),
+				"inode", folder.getInode(),
+				"defaultFileType", folder.getDefaultFileType(),
+				"fullPath", fullPath,
+				"absolutePath", absolutePath,
+				"folderPath", folder.getPath());
+		return folderMap;
 	}
 
 	public List<Map<String, Object>> getHosts() throws PortalException, SystemException, DotDataException, DotSecurityException {
@@ -2214,7 +2190,7 @@ public class BrowserAjax {
 		if(permissions.contains(PERMISSION_READ)){
 			Host allHosts = new Host();
 			allHosts.setHostname("All Hosts");
-			allHosts.setIdentifier("allHosts");
+			allHosts.setIdentifier(ALL_SITES_ID);
 			hostsToReturn.add(hostMap(allHosts));
 		}
 
@@ -2223,7 +2199,7 @@ public class BrowserAjax {
 
 
 	public List<Map<String, Object>> getHostSubfolders(String hostId) throws PortalException, SystemException, DotDataException, DotSecurityException {
-		if(hostId.equals("allHosts")){
+		if(hostId.equals(ALL_SITES_ID)){
 			return  new ArrayList<Map<String,Object>>();
 		}
     	UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
@@ -2275,34 +2251,39 @@ public class BrowserAjax {
 		return foldersToReturn;
 	}
 
-	public List<Map<String, Object>> getFolderSubfolders(String parentFolderId) throws PortalException, SystemException, DotDataException, DotSecurityException {
-		UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
-		WebContext ctx = WebContextFactory.get();
-        User user = userWebAPI.getLoggedInUser(ctx.getHttpServletRequest());
-        Role[] roles = new Role[]{};
-		try {
-			roles = com.dotmarketing.business.APILocator.getRoleAPI().loadRolesForUser(user.getUserId()).toArray(new Role[0]);
-		} catch (DotDataException e1) {
-			Logger.error(BrowserAjax.class,e1.getMessage(),e1);
-		}
-		FolderAPI folderAPI = APILocator.getFolderAPI();
-		Folder parentFolder = folderAPI.find(parentFolderId,user,false);
-		List<Folder> folders = folderAPI.findSubFolders(parentFolder,user,false);
-		List<Map<String, Object>> foldersToReturn = new ArrayList<Map<String,Object>>(folders.size());
-		for (Folder f: folders) {
-			List permissions = new ArrayList();
+	/**
+	 * Returns a list with the sub-folders associated to the specified parent Folder.
+	 *
+	 * @param parentFolderId The ID of the Folder whose sub-folders must be returned.
+	 *
+	 * @return A list with the data map of all the sub-folders under the specified parent Folder.
+	 *
+	 * @throws DotDataException     An error occurred when retrieving information from the data source.
+	 * @throws DotSecurityException The logged-in User does not have the required permissions to access the
+	 * 								sub-folders.
+	 */
+	@CloseDBIfOpened
+	public List<Map<String, Object>> getFolderSubfolders(final String parentFolderId) throws DotDataException, DotSecurityException {
+		final User user = this.getLoggedInUser();
+		final Role[] roles = DwrUtil.getUserRoles(user);
+		final Folder parentFolder = this.folderAPI.find(parentFolderId, user, false);
+		final List<Folder> subFolders = this.folderAPI.findSubFolders(parentFolder, user, false);
+		final List<Map<String, Object>> foldersToReturn = new ArrayList<>(subFolders.size());
+		subFolders.forEach(folder -> {
+
 			try {
-				permissions = permissionAPI.getPermissionIdsFromRoles(f, roles, user);
-			} catch (DotDataException e) {
-				Logger.error(this, "Could not load permissions : ",e);
+				final List<Integer> permissions = permissionAPI.getPermissionIdsFromRoles(folder, roles, user);
+				if (permissions.contains(PERMISSION_READ)) {
+					foldersToReturn.add(this.folderMap(folder));
+				}
+			} catch (final DotDataException | DotSecurityException e) {
+				Logger.error(this, String.format("Could not get permissions from folder '%s': %s", folder.getPath(),
+						e.getMessage()), e);
 			}
-			if(permissions.contains(PERMISSION_READ)){
-			   foldersToReturn.add(folderMap(f));
-			}
-		}
+
+		});
 		return foldersToReturn;
 	}
-
 
 	public List<Map<String, Object>> getFolderSubfoldersByPermissions(String parentFolderId, String requiredPermissions) throws PortalException, SystemException, DotDataException, DotSecurityException {
 		UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
@@ -2322,33 +2303,37 @@ public class BrowserAjax {
 		return foldersToReturn;
 	}
 
-	public Map<String, Object> findHostFolder(String hostFolderId) throws PortalException, SystemException, DotDataException, DotSecurityException {
-		try {
-			if (InodeUtils.isSet(hostFolderId)) {
-				UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
-				WebContext ctx = WebContextFactory.get();
-				User user = userWebAPI.getLoggedInUser(ctx.getHttpServletRequest());
-				boolean respectFrontendRoles = userWebAPI.isLoggedToFrontend(ctx.getHttpServletRequest());
-				HostAPI hostAPI = APILocator.getHostAPI();
-				Host host = hostAPI.find(hostFolderId, user, respectFrontendRoles);
-				if(host != null) {
-					return hostMap(host);
-				}
-
-				host = hostAPI.findByName(hostFolderId, user, respectFrontendRoles);
-				if(host != null) {
-					return hostMap(host);
-				}
-
-				FolderAPI folderAPI = APILocator.getFolderAPI();
-				Folder folder = folderAPI.find(hostFolderId,user,false);
-				if(folder != null) {
-					return folderMap(folder);
-				}
-			}
-		} catch (Exception e) {
+	/**
+	 * Returns a Map with the information associated to the specified ID. Such an ID may belong to either a Site or a
+	 * Folder.
+	 *
+	 * @param hostFolderId The ID of a Site or a Folder.
+	 *
+	 * @return A Map with the properties belonging to the specified Site or Folder.
+	 */
+	@CloseDBIfOpened
+	public Map<String, Object> findHostFolder(final String hostFolderId) {
+		if (!InodeUtils.isSet(hostFolderId)) {
+			return null;
 		}
-
+		try {
+			final User user = this.getLoggedInUser();
+			boolean respectFrontendRoles = this.isFrontEndLogin();
+			Host site = this.hostAPI.find(hostFolderId, user, respectFrontendRoles);
+			if (site != null) {
+				return this.hostMap(site);
+			}
+			site = this.hostAPI.findByName(hostFolderId, user, respectFrontendRoles);
+			if (site != null) {
+				return this.hostMap(site);
+			}
+			final Folder folder = this.folderAPI.find(hostFolderId, user, false);
+			if (folder != null) {
+				return this.folderMap(folder);
+			}
+		} catch (final Exception e) {
+			Logger.warn(this, String.format("Could not retrieve Site/Folder '%s': %s", hostFolderId, e.getMessage()));
+		}
 		return null;
 	}
 
@@ -2389,7 +2374,7 @@ public class BrowserAjax {
 	}
 
 	public List<Map<String, Object>> getHostThemes(String hostId) throws PortalException, SystemException, DotDataException, DotSecurityException {
-		if(hostId.equals("allHosts")){
+		if(hostId.equals(ALL_SITES_ID)){
 			return  new ArrayList<Map<String,Object>>();
 		}
     	UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
@@ -2469,8 +2454,44 @@ public class BrowserAjax {
     	}
 	}
 
-	public String getActiveFolderInode(){
-		return activeFolderInode;
+	/**
+	 * Returns the ID of the currently active folder.
+	 *
+	 * @return The ID of the active folder.
+	 */
+	public String getActiveFolderId() {
+		return (String) DwrUtil.getSession().getAttribute(ACTIVE_FOLDER_ID);
+	}
+
+	/**
+	 * Returns the set of IDs of Folders that are currently open in the Site Browser.
+	 *
+	 * @return The set of open folder IDs.
+	 */
+	private Set<String> getOpenFolderIds() {
+		final Set<String> openFolderIds = (Set<String>) DwrUtil.getSession().getAttribute(OPEN_FOLDER_IDS);
+		return null != openFolderIds ? openFolderIds : new HashSet<>();
+	}
+
+	/**
+	 * Utility method that returns the currently logged-in User.
+	 *
+	 * @return The logged-in {@link User}.
+	 */
+	private User getLoggedInUser() {
+		return this.userAPI.getLoggedInUser(WebContextFactory.get().getHttpServletRequest());
+	}
+
+	/**
+	 * Verifies whether the currently logged-in User is logged into the front-end or not.
+	 *
+	 * @return If the {@link User} is logged into the front-end, returns {@code true}.
+	 *
+	 * @throws SystemException An error occurred when performing this check.
+	 * @throws PortalException An error occurred when performing this check.
+	 */
+	private boolean isFrontEndLogin() throws SystemException, PortalException {
+		return this.userAPI.isLoggedToFrontend(WebContextFactory.get().getHttpServletRequest());
 	}
 
 }

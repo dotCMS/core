@@ -48,6 +48,7 @@ export interface ConfigurationViewModel {
     stepStatusSidebar: StepStatus;
     isLoading: boolean;
     isExperimentADraft: boolean;
+    runExperimentBtnLabel: string;
     disabledStartExperiment: boolean;
     showExperimentSummary: boolean;
     experimentStatus: DotExperimentStatusList;
@@ -76,6 +77,14 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         ({ experiment }) => experiment?.status
     );
 
+    readonly getRunExperimentBtnLabel$: Observable<string> = this.select(({ experiment }) => {
+        const { scheduling } = experiment ? experiment : { scheduling: null };
+
+        return scheduling === null || Object.values(experiment.scheduling).includes(null)
+            ? this.dotMessageService.get('experiments.action.start-experiment')
+            : this.dotMessageService.get('experiments.action.schedule-experiment');
+    });
+
     readonly showExperimentSummary$: Observable<boolean> = this.select(({ experiment }) =>
         Object.values([
             DotExperimentStatusList.ENDED,
@@ -84,7 +93,6 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         ]).includes(experiment?.status)
     );
 
-    // Variants Step //
     readonly variantsStatus$ = this.select(this.state$, ({ stepStatusSidebar }) =>
         stepStatusSidebar.experimentStep === ExperimentSteps.VARIANTS ? stepStatusSidebar : null
     );
@@ -121,8 +129,14 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         experiment.trafficAllocation ? experiment.trafficAllocation : null
     );
 
-    readonly trafficStatus$ = this.select(this.state$, ({ stepStatusSidebar }) =>
-        stepStatusSidebar.experimentStep === ExperimentSteps.TRAFFIC ? stepStatusSidebar : null
+    readonly trafficLoadStatus$ = this.select(this.state$, ({ stepStatusSidebar }) =>
+        stepStatusSidebar.experimentStep === ExperimentSteps.TRAFFIC_LOAD ? stepStatusSidebar : null
+    );
+
+    readonly trafficSplitStatus$ = this.select(this.state$, ({ stepStatusSidebar }) =>
+        stepStatusSidebar.experimentStep === ExperimentSteps.TRAFFICS_SPLIT
+            ? stepStatusSidebar
+            : null
     );
 
     // Updaters
@@ -495,7 +509,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                 tap(() => {
                     this.setSidebarStatus({
                         status: ComponentStatus.SAVING,
-                        experimentStep: ExperimentSteps.TRAFFIC
+                        experimentStep: ExperimentSteps.TRAFFIC_LOAD
                     });
                 }),
                 switchMap((data) => {
@@ -516,7 +530,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                                     });
                                     this.setSidebarStatus({
                                         status: ComponentStatus.IDLE,
-                                        experimentStep: ExperimentSteps.TRAFFIC,
+                                        experimentStep: ExperimentSteps.TRAFFIC_LOAD,
                                         isOpen: false
                                     });
                                 },
@@ -524,7 +538,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                                     this.dotHttpErrorManagerService.handle(response);
                                     this.setSidebarStatus({
                                         status: ComponentStatus.IDLE,
-                                        experimentStep: ExperimentSteps.TRAFFIC
+                                        experimentStep: ExperimentSteps.TRAFFIC_LOAD
                                     });
                                 }
                             )
@@ -545,7 +559,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                 tap(() => {
                     this.setSidebarStatus({
                         status: ComponentStatus.SAVING,
-                        experimentStep: ExperimentSteps.TRAFFIC
+                        experimentStep: ExperimentSteps.TRAFFICS_SPLIT
                     });
                 }),
                 switchMap((data) => {
@@ -566,7 +580,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                                     });
                                     this.setSidebarStatus({
                                         status: ComponentStatus.IDLE,
-                                        experimentStep: ExperimentSteps.TRAFFIC,
+                                        experimentStep: ExperimentSteps.TRAFFICS_SPLIT,
                                         isOpen: false
                                     });
                                 },
@@ -574,7 +588,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                                     this.dotHttpErrorManagerService.handle(response);
                                     this.setSidebarStatus({
                                         status: ComponentStatus.IDLE,
-                                        experimentStep: ExperimentSteps.TRAFFIC
+                                        experimentStep: ExperimentSteps.TRAFFICS_SPLIT
                                     });
                                 }
                             )
@@ -587,6 +601,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     readonly vm$: Observable<ConfigurationViewModel> = this.select(
         this.state$,
         this.isExperimentADraft$,
+        this.getRunExperimentBtnLabel$,
         this.isLoading$,
         this.disabledStartExperiment$,
         this.showExperimentSummary$,
@@ -595,6 +610,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         (
             { experiment, stepStatusSidebar },
             isExperimentADraft,
+            runExperimentBtnLabel,
             isLoading,
             disabledStartExperiment,
             showExperimentSummary,
@@ -604,6 +620,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
             experiment,
             stepStatusSidebar,
             isExperimentADraft,
+            runExperimentBtnLabel,
             isLoading,
             disabledStartExperiment,
             showExperimentSummary,
@@ -613,12 +630,18 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     );
 
     readonly variantsStepVm$: Observable<{
+        experimentId: string;
+        trafficProportion: TrafficProportion;
         status: StepStatus;
         isExperimentADraft: boolean;
     }> = this.select(
+        this.getExperimentId$,
+        this.trafficProportion$,
         this.variantsStatus$,
         this.isExperimentADraft$,
-        (status, isExperimentADraft) => ({
+        (experimentId, trafficProportion, status, isExperimentADraft) => ({
+            experimentId,
+            trafficProportion,
             status,
             isExperimentADraft
         })
@@ -666,7 +689,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         isExperimentADraft: boolean;
     }> = this.select(
         this.getExperimentId$,
-        this.trafficStatus$,
+        this.trafficLoadStatus$,
         this.isExperimentADraft$,
         (experimentId, status, isExperimentADraft) => ({
             experimentId,
@@ -685,13 +708,21 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         this.getExperimentId$,
         this.trafficProportion$,
         this.trafficAllocation$,
-        this.trafficStatus$,
+        this.trafficLoadStatus$,
+        this.trafficSplitStatus$,
         this.isExperimentADraft$,
-        (experimentId, trafficProportion, trafficAllocation, status, isExperimentADraft) => ({
+        (
             experimentId,
             trafficProportion,
             trafficAllocation,
-            status,
+            statusLoad,
+            statusSplit,
+            isExperimentADraft
+        ) => ({
+            experimentId,
+            trafficProportion,
+            trafficAllocation,
+            status: statusSplit ? statusSplit : statusLoad,
             isExperimentADraft
         })
     );

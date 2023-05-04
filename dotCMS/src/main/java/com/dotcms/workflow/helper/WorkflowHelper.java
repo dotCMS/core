@@ -88,12 +88,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Future;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang.time.StopWatch;
 import org.apache.velocity.context.Context;
@@ -377,7 +376,6 @@ public class WorkflowHelper {
             final WorkflowStep workflowStep = workflowStepOpt.get();
             foundAction = this.findActionsOn(actionName, workflowAPI.findActions(workflowStep, user));
             if (foundAction.isPresent()) {
-
                 return foundAction.get().getId();
             }
 
@@ -386,22 +384,19 @@ public class WorkflowHelper {
             schemeOpt   = Optional.ofNullable(workflowScheme);
             foundAction = this.findActionsOn(actionName, workflowAPI.findActions(workflowScheme, user));
             if (foundAction.isPresent()) {
-
                 return foundAction.get().getId();
             }
         }
 
         // 3) look for the actions on all schemes.
-        final List<WorkflowScheme>  workflowSchemes = workflowAPI.findSchemesForContentType(contentlet.getContentType());
+        final List<WorkflowScheme> workflowSchemes = workflowAPI.findSchemesForContentType(contentlet.getContentType());
         for (final WorkflowScheme scheme : workflowSchemes) {
-
             if (schemeOpt.isPresent() && schemeOpt.get().getId().equals(scheme.getId()))  {
-                continue; // we already analized this scheme
+                continue; // we already analyzed this scheme
             }
 
-            foundAction = this.findActionsOn(actionName, workflowAPI.findActions(scheme, user));
+            foundAction = this.findActionsOn(actionName, workflowAPI.findActions(scheme, user, contentlet));
             if (foundAction.isPresent()) {
-
                 return foundAction.get().getId();
             }
         }
@@ -498,7 +493,7 @@ public class WorkflowHelper {
         final Optional<SystemActionWorkflowActionMapping> mapping = this.workflowAPI.findSystemActionByIdentifier(identifier, user);
 
         if (mapping.isPresent()) {
-            if (!this.workflowAPI.deleteSystemAction(mapping.get()).isPresent()) {
+            if (this.workflowAPI.deleteSystemAction(mapping.get()).isEmpty()) {
 
                 throw new InternalServerException("Could not delete the system action: " + identifier +
                         ", it may not exists");
@@ -1605,7 +1600,7 @@ public class WorkflowHelper {
                     workflowActionClass.setActionId(newAction.getId());
                     workflowActionClass.setClazz(NotifyAssigneeActionlet.class.getName());
                     try {
-                        workflowActionClass.setName(NotifyAssigneeActionlet.class.newInstance().getName());
+                        workflowActionClass.setName(NotifyAssigneeActionlet.class.getDeclaredConstructor().newInstance().getName());
                         workflowActionClass.setOrder(0);
                         this.workflowAPI.saveActionClass(workflowActionClass, user);
                     } catch (Exception e) {

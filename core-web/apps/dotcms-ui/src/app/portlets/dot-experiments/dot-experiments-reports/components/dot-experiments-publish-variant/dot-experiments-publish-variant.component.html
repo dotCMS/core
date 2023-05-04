@@ -1,0 +1,36 @@
+<dot-dialog
+    #dialog
+    [header]="'experiments.report.promote.variant' | dm"
+    [visible]="!!data"
+    [actions]="dialogActions"
+    (hide)="hide.emit('')"
+    width="35rem"
+>
+    <p class="m-0" data-testId="variant-legend">
+        {{ 'experiments.report.promote.variant.text' | dm }}
+    </p>
+
+    <p-table [(selection)]="selectedVariant" [value]="data" dataKey="variantName">
+        <ng-template pTemplate="body" let-variant>
+            <tr>
+                <td>
+                    <p-tableRadioButton
+                        *ngIf="variant.id !== DEFAULT_VARIANT_ID"
+                        [value]="variant.id"
+                        (click)="enableButton()"
+                    ></p-tableRadioButton>
+                </td>
+                <td>{{ variant.name }}</td>
+                <td style="min-width: 50px">{{ variant.uniqueBySession.variantPercentage }}</td>
+                <td style="min-width: 150px">
+                    <p-tag
+                        class="sm p-tag-success"
+                        *ngIf="variant.winner"
+                        [value]="'winner' | dm | titlecase"
+                        icon="pi pi-arrow-circle-up"
+                    />
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+</dot-dialog>

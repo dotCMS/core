@@ -29,13 +29,13 @@ import java.util.Map;
 public class FixTask00007CheckTemplatesInconsistencies  implements FixTask {
 
 	
-	private List <Map<String, String>> modifiedData= new  ArrayList <Map<String,String>>();
+	private List <Map<String, String>> modifiedData= new  ArrayList <>();
 
 	public List <Map <String,Object>> executeFix() throws DotDataException, DotRuntimeException {
 
 		Logger.info(CMSMaintenanceFactory.class,
 				"Beginning fixAssetsInconsistencies");
-	    List <Map <String,Object>> returnValue = new ArrayList <Map <String,Object>>();
+	    List <Map <String,Object>> returnValue = new ArrayList <>();
 		int counter = 0;
 
 		final String fix2TemplatesQuery = "select c.* from template c, inode i where i.inode = c.inode and c.identifier = ? order by mod_date desc";

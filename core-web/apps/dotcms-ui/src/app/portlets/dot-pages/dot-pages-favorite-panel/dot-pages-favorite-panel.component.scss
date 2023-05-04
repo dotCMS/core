@@ -2,22 +2,24 @@
 
 ::ng-deep {
     .p-panel-toggleable {
-        border: 1px solid $gray-lighter;
+        border: 1px solid $color-palette-gray-300;
+        cursor: pointer;
 
         &.p-panel-expanded {
             border-color: $white;
+            cursor: default;
         }
     }
 
     .p-panel-header {
-        font-size: $font-size-x-large;
+        font-size: $font-size-xl;
         margin: $spacing-1 0;
         padding: $spacing-3 0;
         position: relative;
 
         .p-panel-icons span {
-            color: $brand-primary;
-            font-size: $font-size-x-large;
+            color: $color-palette-primary;
+            font-size: $font-size-xl;
             margin-left: $spacing-1;
             margin-right: $spacing-2;
         }
@@ -30,7 +32,7 @@
         top: $spacing-1;
 
         span.p-button-label {
-            font-size: $font-size-medium;
+            font-size: $font-size-md;
         }
     }
 
@@ -50,17 +52,11 @@
     }
 
     .dot-pages-panel__expanded .p-toggleable-content .p-panel-content {
-        overflow: unset;
-        height: unset;
+        overflow: auto;
     }
 
     .dot-pages-panel__empty-state .p-toggleable-content .p-panel-content {
         height: 250px;
-    }
-
-    .dot-pages-panel__empty-state .p-toggleable-content .p-panel-content {
-        max-width: 1280px;
-        overflow: hidden;
     }
 
     dot-pages-card,
@@ -84,8 +80,9 @@
         top: 45px;
         width: max-content;
 
-        dot-icon {
-            color: $brand-primary;
+        i.pi {
+            color: $color-palette-primary;
+            font-size: $font-size-xxl;
             margin-bottom: $spacing-3;
         }
     }
@@ -93,6 +90,11 @@
 
 .dot-pages-empty__header {
     font-size: large;
+}
+
+.dot-pages-empty__content {
+    color: $color-palette-gray-700;
+    text-align: center;
 }
 
 p-panel {

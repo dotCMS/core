@@ -1,9 +1,9 @@
 <div class="dot-experiment-list-table">
-    <ng-container *ngIf="groupedExperimentsCount; else noExperimentsTpl">
-        <ng-container *ngFor="let group of experimentGroupedByStatus | keyvalue">
-            <p-table [value]="group.value" styleClass="experiment-list">
+    <ng-container *ngIf="experimentsCount; else noExperimentsTpl">
+        <ng-container *ngFor="let group of experimentGroupedByStatus">
+            <p-table [value]="group.experiments" styleClass="experiment-list">
                 <ng-template pTemplate="caption">
-                    {{ group.key }}
+                    {{ group.status | lowercase | dm | uppercase }}
                 </ng-template>
                 <ng-template pTemplate="header">
                     <tr>
@@ -27,10 +27,10 @@
                             {{ experiment.name }}
                         </td>
                         <td data-testId="experiment-row__createdDate">
-                            {{ experiment.creationDate | date: 'longDate' }}
+                            {{ experiment.creationDate | dotRelativeDate : true }}
                         </td>
                         <td data-testId="experiment-row__modDate">
-                            {{ experiment.modDate | date: 'longDate' }}
+                            {{ experiment.modDate | dotRelativeDate : true }}
                         </td>
                         <td data-testId="experiment-row__actions">
                             <ng-container
@@ -49,14 +49,6 @@
 
 <ng-template #actionButtonTpl let-experiment>
     <dot-icon-button-tooltip
-        *ngIf="experiment.status === experimentStatus.ENDED"
-        [icon]="'archive'"
-        (click)="archive($event, experiment)"
-        data-testId="experiment-row-archive-button"
-        tooltipText="{{ 'experiments.action.archive' | dm }}"
-    ></dot-icon-button-tooltip>
-
-    <dot-icon-button-tooltip
         *ngIf="
             experiment.status === experimentStatus.DRAFT ||
             experiment.status === experimentStatus.SCHEDULED
@@ -65,6 +57,25 @@
         (click)="delete($event, experiment)"
         data-testId="experiment-row-delete-button"
         tooltipText="{{ 'experiments.action.delete' | dm }}"
+    ></dot-icon-button-tooltip>
+
+    <dot-icon-button-tooltip
+        *ngIf="
+            experiment.status === experimentStatus.RUNNING ||
+            experiment.status === experimentStatus.ENDED
+        "
+        [icon]="'bar_chart'"
+        (click)="viewReports(experiment)"
+        data-testId="experiment-row-report-button"
+        tooltipText="{{ 'experiments.action.reports' | dm }}"
+    ></dot-icon-button-tooltip>
+
+    <dot-icon-button-tooltip
+        *ngIf="experiment.status === experimentStatus.ENDED"
+        [icon]="'archive'"
+        (click)="archive($event, experiment)"
+        data-testId="experiment-row-archive-button"
+        tooltipText="{{ 'experiments.action.archive' | dm }}"
     ></dot-icon-button-tooltip>
 </ng-template>
 

@@ -455,6 +455,11 @@ public class WorkflowResource {
 
     private WorkflowActionView toWorkflowActionView(final WorkflowAction workflowAction) {
 
+        return convertToWorkflowActionView(workflowAction);
+    }
+
+    public static WorkflowActionView convertToWorkflowActionView(final WorkflowAction workflowAction) {
+
         final WorkflowActionView workflowActionView = new WorkflowActionView();
 
         workflowActionView.setId(workflowAction.getId());
@@ -479,12 +484,12 @@ public class WorkflowResource {
         workflowActionView.setDeleteActionlet(workflowAction.hasDeleteActionlet());
         workflowActionView.setDestroyActionlet(workflowAction.hasDestroyActionlet());
         workflowActionView.setShowOn(workflowAction.getShowOn());
-        workflowActionView.setActionInputs(this.createActionInputViews(workflowAction));
+        workflowActionView.setActionInputs(createActionInputViews(workflowAction));
 
         return workflowActionView;
     }
 
-    private List<ActionInputView> createActionInputViews (final WorkflowAction workflowAction) {
+    private static List<ActionInputView> createActionInputViews (final WorkflowAction workflowAction) {
 
         final List<ActionInputView> actionInputViews = new ArrayList<>();
 
@@ -1529,7 +1534,6 @@ public class WorkflowResource {
 
             return fireAction(request, fireActionForm, initDataObject.getUser(), contentlet, actionId, Optional.empty());
         } catch (Exception e) {
-
             Logger.error(this.getClass(),
                     "Exception on firing, workflow action: " + actionId +
                             ", inode: " + inode, e);

@@ -1,6 +1,6 @@
 import { DotCMSContentType } from './dot-content-types.model';
 import { DotExperimentStatusList } from './dot-experiments-constants';
-import { EditPageTabs } from './dot-experiments.model';
+import { DotPageMode } from './dot-page-mode.enum';
 
 // TODO: we need to see why the endpoints are returning different "Pages" objects.
 export interface DotPage {
@@ -86,5 +86,5 @@ export interface DotVariantData {
     experimentId: string;
     experimentStatus: DotExperimentStatusList;
     experimentName: string;
-    mode: EditPageTabs;
+    mode: DotPageMode;
 }

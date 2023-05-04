@@ -73,7 +73,7 @@ public class FileAsset extends Contentlet implements IFileAsset {
 	}
 
 	public int getMenuOrder() {
-		return new Integer(String.valueOf(getLongProperty(FileAssetAPI.SORT_ORDER)));
+		return Integer.valueOf(String.valueOf(getLongProperty(FileAssetAPI.SORT_ORDER)));
 	}
 
 	private static final long serialVersionUID = 1L;

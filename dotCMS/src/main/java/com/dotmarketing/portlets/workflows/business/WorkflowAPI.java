@@ -549,6 +549,20 @@ public interface WorkflowAPI {
 			DotSecurityException;
 
 	/**
+	 * Find the {@link WorkflowAction} associated to the {@link WorkflowScheme} and the permissions associated with
+	 * provided contentlet's content type.
+	 *
+	 * @param scheme {@link WorkflowScheme}
+	 * @param user   {@link User}
+	 * @param contentlet {@link Contentlet}
+	 * @return List of WorkflowAction
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	List<WorkflowAction> findActions(WorkflowScheme scheme, User user, Contentlet contentlet)
+		throws DotDataException, DotSecurityException;
+
+	/**
 	 * Find the list of Workflow Actions available for the current user ont the list of steps
 	 * @param steps List of workflow steps
 	 * @param user The current User

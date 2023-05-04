@@ -101,11 +101,11 @@ public class DataInfo implements ToolInfo
         {
             if (value.indexOf('.') >= 0)
             {
-                this.data = new Double(value);
+                this.data = Double.valueOf(value);
             }
             else
             {
-                this.data = new Integer(value);
+                this.data = Integer.valueOf(value);
             }
         }
         else /* type is "string" */

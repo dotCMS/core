@@ -22,13 +22,11 @@ export interface DotFavoritePageProps {
 }
 
 export interface DotFavoritePageFormData {
-    currentUserRoleId: string;
     inode?: string;
     thumbnail?: string;
     title: string;
     url: string;
     order: number;
-    permissions?: string[];
 }
 
 @Component({
@@ -63,34 +61,34 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
         this.timeStamp = new Date().getTime().toString();
 
         this.store.formState$
-            .pipe(takeUntil(this.destroy$))
+            .pipe(
+                takeUntil(this.destroy$),
+                filter((formStateData) => !!formStateData)
+            )
             .subscribe((formStateData: DotFavoritePageFormData) => {
-                if (formStateData) {
-                    this.form = this.fb.group({
-                        currentUserRoleId: [formStateData?.currentUserRoleId, Validators.required],
-                        inode: [formStateData?.inode],
-                        thumbnail: [formStateData?.thumbnail, Validators.required],
-                        title: [formStateData?.title, Validators.required],
-                        url: [{ value: formStateData?.url, disabled: true }, Validators.required],
-                        order: [formStateData?.order, Validators.required],
-                        permissions: [formStateData?.permissions]
-                    });
-                    this.isFormValid$ = this.form.valueChanges.pipe(
-                        takeUntil(this.destroy$),
-                        map(() => {
-                            return this.form.valid;
-                        }),
-                        startWith(false)
-                    );
+                this.form = this.fb.group({
+                    inode: [formStateData?.inode],
+                    thumbnail: [formStateData?.thumbnail],
+                    title: [formStateData?.title, Validators.required],
+                    url: [formStateData?.url, Validators.required],
+                    order: [formStateData?.order, Validators.required]
+                });
 
-                    requestAnimationFrame(() => {
-                        if (formStateData?.inode) {
-                            this.form.get('thumbnail').setValue(formStateData?.thumbnail);
-                        } else {
-                            this.setPreviewThumbnailListener();
-                        }
-                    });
-                }
+                this.isFormValid$ = this.form.valueChanges.pipe(
+                    takeUntil(this.destroy$),
+                    map(() => {
+                        return this.form.valid;
+                    }),
+                    startWith(false)
+                );
+
+                requestAnimationFrame(() => {
+                    if (formStateData?.inode) {
+                        this.form.get('thumbnail').setValue(formStateData?.thumbnail);
+                    } else {
+                        this.setPreviewThumbnailListener();
+                    }
+                });
             });
 
         this.store.renderThumbnail$
@@ -160,8 +158,15 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
 
     private setPreviewThumbnailListener() {
         const dotHtmlToImageElement = document.querySelector('dot-html-to-image');
-        dotHtmlToImageElement.addEventListener('pageThumbnail', (event: CustomEvent) => {
-            this.form.get('thumbnail').setValue(event.detail.file);
-        });
+        if (dotHtmlToImageElement) {
+            dotHtmlToImageElement.addEventListener('pageThumbnail', (event: CustomEvent) => {
+                if (event.detail.file) {
+                    this.form.get('thumbnail').setValue(event.detail.file);
+                } else {
+                    this.form.get('thumbnail').setValue('');
+                    this.store.setShowFavoriteEmptySkeleton(true);
+                }
+            });
+        }
     }
 }

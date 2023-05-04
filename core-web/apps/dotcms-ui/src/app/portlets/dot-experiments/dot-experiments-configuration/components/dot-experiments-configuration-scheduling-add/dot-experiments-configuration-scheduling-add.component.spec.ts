@@ -87,6 +87,7 @@ describe('DotExperimentsConfigurationSchedulingAddComponent', () => {
         expect(startDateCalendar.readonlyInput).toEqual(true);
         expect(startDateCalendar.showIcon).toEqual(true);
         expect(startDateCalendar.showClear).toEqual(true);
+
         expect(endDateCalendar.stepMinute).toEqual(30);
         expect(endDateCalendar.readonlyInput).toEqual(true);
         expect(endDateCalendar.showIcon).toEqual(true);
@@ -110,6 +111,46 @@ describe('DotExperimentsConfigurationSchedulingAddComponent', () => {
         });
     });
 
+    it('should set min dates correctly', function () {
+        const startDateCalendar: Calendar = spectator.query(Calendar);
+        const endDateCalendar: Calendar = spectator.queryLast(Calendar);
+
+        const component = spectator.component;
+        const mockDate = new Date(1682099633467);
+        const mockMinEndDate = 1682099633467 + 1000 * 60 * 30; // 30 minutes
+        jasmine.clock().install();
+        jasmine.clock().mockDate(mockDate);
+
+        component.form.get('startDate').setValue(new Date());
+        startDateCalendar.onSelect.emit();
+
+        spectator.detectChanges();
+
+        expect(endDateCalendar.minDate.getTime()).toEqual(mockMinEndDate);
+        expect(endDateCalendar.defaultDate.getTime()).toEqual(mockMinEndDate);
+
+        jasmine.clock().uninstall();
+    });
+
+    it('should clear end date if start date is equal or more', function () {
+        const startDateCalendar: Calendar = spectator.query(Calendar);
+
+        const component = spectator.component;
+        const mockDate = new Date(16820996334200);
+        jasmine.clock().install();
+        jasmine.clock().mockDate(mockDate);
+
+        component.form.get('startDate').setValue(new Date());
+        component.form.get('endDate').setValue(new Date());
+        startDateCalendar.onSelect.emit();
+
+        spectator.detectChanges();
+
+        expect(component.form.get('endDate').value).toEqual(null);
+
+        jasmine.clock().uninstall();
+    });
+
     it('should close sidebar', () => {
         spyOn(store, 'closeSidebar');
         sidebar = spectator.query(Sidebar);
@@ -117,8 +158,4 @@ describe('DotExperimentsConfigurationSchedulingAddComponent', () => {
 
         expect(store.closeSidebar).toHaveBeenCalledTimes(1);
     });
-
-    //TODO: Will be tested once defined the rules of edit.
-    // eslint-disable-next-line
-    xit('should not submit the form when invalid', () => {});
 });

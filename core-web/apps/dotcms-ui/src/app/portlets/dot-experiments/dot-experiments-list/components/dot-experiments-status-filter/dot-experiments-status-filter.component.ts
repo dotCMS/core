@@ -1,12 +1,6 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 
-import { DotExperimentStatusList } from '@dotcms/dotcms-models';
-
-interface optionItem {
-    label: string;
-    value: string;
-    inactive?: boolean;
-}
+import { DotDropdownSelectOption, DotExperimentStatusList } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-experiments-status-filter',
@@ -17,7 +11,7 @@ export class DotExperimentsStatusFilterComponent {
     @Input()
     selectedItems: Array<string>;
     @Input()
-    options: optionItem[];
+    options: Array<DotDropdownSelectOption<string>>;
 
     @Output()
     switch = new EventEmitter<DotExperimentStatusList[]>();

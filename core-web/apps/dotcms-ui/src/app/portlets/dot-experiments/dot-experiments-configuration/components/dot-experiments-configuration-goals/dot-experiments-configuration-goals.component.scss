@@ -6,7 +6,7 @@ h3 {
 }
 
 h2 {
-    font-size: $font-size-large;
+    font-size: $font-size-lg;
     font-weight: $font-weight-bold;
     text-transform: uppercase;
     margin-bottom: $spacing-3;
@@ -14,15 +14,22 @@ h2 {
 
 h3 {
     font-weight: $font-weight-regular-bold;
-    font-size: $font-size-medium;
+    font-size: $font-size-md;
+}
+
+.detail__title {
+    color: $black;
+    font-size: $font-size-md;
+    font-weight: $font-weight-bold;
+    margin: $spacing-0;
 }
 
 :host ::ng-deep {
     dot-icon {
-        color: $gray-light;
+        color: $color-palette-gray-500;
 
         &.isDone {
-            color: $success;
+            color: $color-accessible-text-green;
         }
     }
 
@@ -30,9 +37,7 @@ h3 {
         padding: $spacing-0;
     }
 
-    button {
-        .p-button-icon {
-            color: $color-primary-500;
-        }
+    button.p-button-rounded.p-button-icon-only {
+        color: $color-palette-primary-500;
     }
 }

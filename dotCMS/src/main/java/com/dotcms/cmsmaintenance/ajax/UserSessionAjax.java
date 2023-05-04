@@ -85,14 +85,14 @@ public class UserSessionAjax {
 
     public List<Map<String,String>> getSessionList() throws NoSuchUserException, DotDataException, DotSecurityException {
         validateUser();
-        List<Map<String,String>> sessionList=new ArrayList<Map<String,String>>();
+        List<Map<String,String>> sessionList=new ArrayList<>();
         SessionMonitor sm = (SessionMonitor)
                 WebContextFactory.get().getServletContext().getAttribute(WebKeys.USER_SESSIONS);
 
         SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
 
         for(String id : sm.getSysUsers().keySet()) {
-            Map<String,String> ss=new HashMap<String,String>();
+            Map<String,String> ss=new HashMap<>();
             ss.put("sessionId",id);
             User user=APILocator.getUserAPI().loadUserById(sm.getSysUsers().get(id), APILocator.getUserAPI().getSystemUser(), false);
             ss.put("userId",user.getUserId());

@@ -80,6 +80,9 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.time.LocalDate;
+import java.time.Month;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -339,7 +342,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 					contentIdentifier.getId(),
 					contentlet.getLanguageId(),
 					contentlet.getVariantId());
-            if (!versionInfo.isPresent()) {
+            if (versionInfo.isEmpty()) {
                 final String errorMsg = String.format("Version Info for Identifier '%s' and Language '%s' was not" +
                         " found via API.", contentIdentifier.getId(), contentlet.getLanguageId());
                 throw new DotDataException(errorMsg);
@@ -404,24 +407,28 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 			final String publishDateVar = contentType.publishDateVar();
 			if(UtilMethods.isSet(publishDateVar) && UtilMethods.isSet(contentlet.getDateProperty(publishDateVar))) {
-						contentletMap.put(ESMappingConstants.PUBLISH_DATE, publishExpireESDateTimeFormat.get().format(contentlet.getDateProperty(publishDateVar)));
+				contentletMap.put(ESMappingConstants.PUBLISH_DATE,
+						publishExpireESDateTimeFormat.get().format(contentlet.getDateProperty(publishDateVar)));
 				contentletMap.put(ESMappingConstants.PUBLISH_DATE + TEXT,
 						datetimeFormat.format(contentlet.getDateProperty(publishDateVar)));
 			}else {
 				contentletMap.put(ESMappingConstants.PUBLISH_DATE,
-						publishExpireESDateTimeFormat.get().format(versionInfo.get().getVersionTs()));
+						publishExpireESDateTimeFormat.get().format(dateOufOfRange));
 				contentletMap.put(ESMappingConstants.PUBLISH_DATE + TEXT,
-						datetimeFormat.format(versionInfo.get().getVersionTs()));
+						datetimeFormat.format(dateOufOfRange));
 			}
 
 			final String expireDateVar = contentType.expireDateVar();
 			if(UtilMethods.isSet(expireDateVar) &&  UtilMethods.isSet(contentlet.getDateProperty(expireDateVar))) {
-				contentletMap.put(ESMappingConstants.EXPIRE_DATE, publishExpireESDateTimeFormat.get().format(contentlet.getDateProperty(expireDateVar)));
+				contentletMap.put(ESMappingConstants.EXPIRE_DATE,
+						publishExpireESDateTimeFormat.get().format(contentlet.getDateProperty(expireDateVar)));
 				contentletMap.put(ESMappingConstants.EXPIRE_DATE + TEXT,
 						datetimeFormat.format(contentlet.getDateProperty(expireDateVar)));
 			}else {
-				contentletMap.put(ESMappingConstants.EXPIRE_DATE, publishExpireESDateTimeFormat.get().format(29990101000000L));
-				contentletMap.put(ESMappingConstants.EXPIRE_DATE + TEXT, "29990101000000");
+				contentletMap.put(ESMappingConstants.EXPIRE_DATE,
+						publishExpireESDateTimeFormat.get().format(dateOufOfRange));
+				contentletMap.put(ESMappingConstants.EXPIRE_DATE + TEXT,
+						datetimeFormat.format(dateOufOfRange));
 			}
 
 			contentletMap.put(ESMappingConstants.VERSION_TS, elasticSearchDateTimeFormat.format(versionInfo.get().getVersionTs()));
@@ -763,6 +770,9 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 	public static final FastDateFormat timeFormat = FastDateFormat.getInstance("HH:mm:ss");
 
+	public static final Date dateOufOfRange = Date.from(
+			LocalDate.of(2999, Month.JANUARY, 1)
+					.atStartOfDay(ZoneId.systemDefault()).toInstant());
 
 	protected void loadFields(final Contentlet contentlet, final Map<String, Object> contentletMap) throws DotDataException {
 

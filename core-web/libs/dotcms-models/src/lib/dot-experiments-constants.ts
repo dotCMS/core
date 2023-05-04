@@ -14,15 +14,18 @@ export enum TrafficProportionTypes {
     CUSTOM_PERCENTAGES = 'CUSTOM_PERCENTAGES'
 }
 
+export const MAX_INPUT_LENGTH = 50;
+
+// Keep the order of this enum is important to respect the order of the experiment listing.
 export enum DotExperimentStatusList {
     RUNNING = 'RUNNING',
     SCHEDULED = 'SCHEDULED',
-    ENDED = 'ENDED',
     DRAFT = 'DRAFT',
+    ENDED = 'ENDED',
     ARCHIVED = 'ARCHIVED'
 }
 
-export const ExperimentsStatusList = [
+export const ExperimentsStatusList: Array<DotDropdownSelectOption<string>> = [
     {
         label: 'draft',
         value: DotExperimentStatusList.DRAFT
@@ -66,7 +69,7 @@ export const GoalsConditionsOperatorsList: Array<DotDropdownSelectOption<GOAL_OP
     }
 ];
 
-export enum SidebarStatus {
+export enum SIDEBAR_STATUS {
     OPEN = 'OPEN',
     CLOSE = 'CLOSED'
 }
@@ -99,3 +102,13 @@ export const GOALS_METADATA_MAP: Record<GOAL_TYPES, { label: string; description
         description: 'experiments.goal.click_on_element.description'
     }
 };
+
+export const daysOfTheWeek = [
+    'Sunday',
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday'
+];

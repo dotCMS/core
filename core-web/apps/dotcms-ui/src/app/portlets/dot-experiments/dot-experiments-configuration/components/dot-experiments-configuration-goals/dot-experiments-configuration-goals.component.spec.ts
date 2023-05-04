@@ -21,6 +21,7 @@ import { DotExperimentsConfigurationGoalSelectComponent } from '@portlets/dot-ex
 import { DotExperimentsConfigurationGoalsComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-goals/dot-experiments-configuration-goals.component';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
+import { DotExperimentsDetailsTableComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-details-table/dot-experiments-details-table.component';
 import { getExperimentMock, GoalsMock } from '@portlets/dot-experiments/test/mocks';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
@@ -33,6 +34,7 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.configure.goals.no.seleted.goal.message': 'empty message'
 });
 const EXPERIMENT_MOCK = getExperimentMock(0);
+const EXPERIMENT_MOCK_WITH_GOAL = getExperimentMock(2);
 describe('DotExperimentsConfigurationGoalsComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationGoalsComponent>;
     let store: DotExperimentsConfigurationStore;
@@ -46,7 +48,8 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
             DotExperimentsConfigurationGoalSelectComponent,
             DotDynamicDirective,
             ConfirmPopupModule,
-            TooltipModule
+            TooltipModule,
+            DotExperimentsDetailsTableComponent
         ],
         component: DotExperimentsConfigurationGoalsComponent,
         componentProviders: [],
@@ -116,6 +119,7 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
 
         const addButton = spectator.query(byTestId('goals-add-button')) as HTMLButtonElement;
         expect(addButton.disabled).toBe(true);
+        expect(spectator.query(DotExperimentsDetailsTableComponent)).toExist();
     });
 
     it('should call openSelectGoalSidebar if you click the add goal button', () => {
@@ -174,6 +178,30 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
         confirmPopupComponent.accept();
 
         expect(store.deleteGoal).toHaveBeenCalled();
+    });
+
+    it('should disable delete button and show tooltip when experiment is nos on draft', () => {
+        const vmMock$: {
+            experimentId: string;
+            goals: Goals;
+            status: StepStatus;
+            isExperimentADraft: boolean;
+        } = {
+            experimentId: EXPERIMENT_MOCK_WITH_GOAL.id,
+            goals: EXPERIMENT_MOCK_WITH_GOAL.goals,
+            status: {
+                status: ComponentStatus.IDLE,
+                isOpen: false,
+                experimentStep: null
+            },
+            isExperimentADraft: false
+        };
+
+        spectator.component.vm$ = of(vmMock$);
+        spectator.detectComponentChanges();
+
+        expect(spectator.query(byTestId('goal-delete-button'))).toHaveAttribute('disabled');
+        expect(spectator.query(Tooltip).disabled).toEqual(false);
     });
 
     it('should disable tooltip if is on draft', () => {

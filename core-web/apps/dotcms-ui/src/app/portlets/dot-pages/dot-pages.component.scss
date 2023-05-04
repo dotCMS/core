@@ -9,7 +9,24 @@
 .dot-pages__container {
     background-color: $white;
     box-shadow: $md-shadow-4;
-    overflow-y: auto;
     padding: $spacing-4 $spacing-5 0;
     width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.dot-pages__spinner-container {
+    height: 100%;
+    position: relative;
+}
+
+.dot-pages__spinner-overlay {
+    align-content: center;
+    background-color: $white;
+    display: flex;
+    flex-wrap: wrap;
+    height: calc(100% - $spacing-7);
+    justify-content: center;
+    position: absolute;
+    width: calc(100% - $spacing-8);
 }

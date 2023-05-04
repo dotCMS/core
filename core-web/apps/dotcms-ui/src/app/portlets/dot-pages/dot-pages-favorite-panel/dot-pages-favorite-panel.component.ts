@@ -1,10 +1,13 @@
 import { Observable } from 'rxjs';
 
+import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import { Component, EventEmitter, Output } from '@angular/core';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotMessageService, DotPageRenderService } from '@dotcms/data-access';
+import { HttpCode } from '@dotcms/dotcms-js';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { DotFavoritePageComponent } from '../../dot-edit-page/components/dot-favorite-page/dot-favorite-page.component';
@@ -29,7 +32,9 @@ export class DotPagesFavoritePanelComponent {
     constructor(
         private store: DotPageStore,
         private dotMessageService: DotMessageService,
-        private dialogService: DialogService
+        private dialogService: DialogService,
+        private dotPageRenderService: DotPageRenderService,
+        private dotHttpErrorManagerService: DotHttpErrorManagerService
     ) {}
 
     /**
@@ -40,9 +45,12 @@ export class DotPagesFavoritePanelComponent {
      * @memberof DotPagesComponent
      */
     toggleFavoritePagesData(
+        $event: Event,
         areAllFavoritePagesLoaded: boolean,
         favoritePagesToLoad?: number
     ): void {
+        $event.stopPropagation();
+
         if (areAllFavoritePagesLoaded) {
             this.store.limitFavoritePages(FAVORITE_PAGE_LIMIT);
         } else {
@@ -59,6 +67,40 @@ export class DotPagesFavoritePanelComponent {
      * @memberof DotPagesComponent
      */
     editFavoritePage(favoritePage: DotCMSContentlet) {
+        const url = `${favoritePage.urlMap || favoritePage.url}?host_id=${
+            favoritePage.host
+        }&language_id=${favoritePage.languageId}`;
+
+        const urlParams = { url: url.split('?')[0] };
+        const searchParams = new URLSearchParams(url.split('?')[1]);
+
+        for (const entry of searchParams) {
+            urlParams[entry[0]] = entry[1];
+        }
+
+        this.dotPageRenderService.checkPermission(urlParams).subscribe(
+            (hasPermission: boolean) => {
+                if (hasPermission) {
+                    this.displayFavoritePageDialog(favoritePage);
+                } else {
+                    const error = new HttpErrorResponse(
+                        new HttpResponse({
+                            body: null,
+                            status: HttpCode.FORBIDDEN,
+                            headers: null,
+                            url: ''
+                        })
+                    );
+                    this.dotHttpErrorManagerService.handle(error);
+                }
+            },
+            () => {
+                this.displayFavoritePageDialog(favoritePage);
+            }
+        );
+    }
+
+    private displayFavoritePageDialog(favoritePage: DotCMSContentlet) {
         this.dialogService.open(DotFavoritePageComponent, {
             header: this.dotMessageService.get('favoritePage.dialog.header.add.page'),
             width: '80rem',

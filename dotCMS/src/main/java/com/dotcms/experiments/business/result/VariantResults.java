@@ -16,18 +16,27 @@ import java.util.Map;
  *
  */
 public class VariantResults {
-
+    ;
     private String variantName;
+    private String variantDescription;
     private long multiBySession;
     private UniqueBySessionResume uniqueBySession;
     private Map<String, ResultResumeItem> details;
+    private long totalPageViews;
 
-    public VariantResults(final String variantName, final long multiBySession,
-            final UniqueBySessionResume uniqueBySession, final Map<String, ResultResumeItem> details) {
+    public VariantResults(final String variantName, final String description, final long multiBySession,
+            final UniqueBySessionResume uniqueBySession, final Map<String, ResultResumeItem> details,
+            final long totalPageViews) {
         this.variantName = variantName;
         this.multiBySession = multiBySession;
         this.uniqueBySession = uniqueBySession;
         this.details = details;
+        this.variantDescription = description;
+        this.totalPageViews = totalPageViews;
+    }
+
+    public String getVariantDescription() {
+        return variantDescription;
     }
 
     public String getVariantName() {
@@ -44,6 +53,10 @@ public class VariantResults {
 
     public Map<String, ResultResumeItem> getDetails() {
         return details;
+    }
+
+    public long getTotalPageViews() {
+        return totalPageViews;
     }
 
     public static class UniqueBySessionResume {

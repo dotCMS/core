@@ -13,6 +13,7 @@ import com.dotcms.content.elasticsearch.business.ESIndexAPITest;
 import com.dotcms.content.elasticsearch.business.ElasticsearchUtilTest;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
 import com.dotcms.content.model.hydration.MetadataDelegateTest;
+import com.dotcms.contenttype.business.ContentTypeDestroyAPIImplTest;
 import com.dotcms.contenttype.business.ContentTypeInitializerTest;
 import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
 import com.dotcms.contenttype.business.SiteAndFolderResolverImplTest;
@@ -102,6 +103,7 @@ import com.dotcms.storage.FileMetadataAPITest;
 import com.dotcms.storage.StoragePersistenceAPITest;
 import com.dotcms.storage.repository.HashedLocalFileRepositoryManagerTest;
 import com.dotcms.translate.GoogleTranslationServiceIntegrationTest;
+import com.dotcms.util.content.json.PopulateContentletAsJSONUtilTest;
 import com.dotcms.uuid.shorty.LegacyShortyIdApiTest;
 import com.dotcms.variant.VariantAPITest;
 import com.dotcms.variant.VariantFactoryTest;
@@ -119,6 +121,7 @@ import com.dotmarketing.image.filter.ImageFilterAPIImplTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.osgi.GenericBundleActivatorTest;
 import com.dotmarketing.portlets.browser.BrowserUtilTest;
+import com.dotmarketing.portlets.browser.ajax.BrowserAjaxTest;
 import com.dotmarketing.portlets.categories.business.CategoryFactoryTest;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactoryTest;
 import com.dotmarketing.portlets.containers.business.ContainerFactoryImplTest;
@@ -131,24 +134,6 @@ import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImplIntegration
 import com.dotmarketing.portlets.fileassets.business.FileAssetFactoryIntegrationTest;
 import com.dotmarketing.portlets.folders.business.FolderFactoryImplTest;
 import com.dotmarketing.portlets.folders.model.FolderTest;
-import com.dotmarketing.portlets.rules.actionlet.PersonaActionletTest;
-import com.dotmarketing.portlets.rules.actionlet.SendRedirectActionletTest;
-import com.dotmarketing.portlets.rules.actionlet.SetRequestAttributeActionletTest;
-import com.dotmarketing.portlets.rules.actionlet.StopProcessingActionletTest;
-import com.dotmarketing.portlets.rules.conditionlet.DateTimeConditionletTest;
-import com.dotmarketing.portlets.rules.conditionlet.HttpMethodConditionletTest;
-import com.dotmarketing.portlets.rules.conditionlet.PagesViewedConditionletTest;
-import com.dotmarketing.portlets.rules.conditionlet.PersonaConditionletTest;
-import com.dotmarketing.portlets.rules.conditionlet.ReferrerURLConditionletTest;
-import com.dotmarketing.portlets.rules.conditionlet.RequestAttributeConditionletTest;
-import com.dotmarketing.portlets.rules.conditionlet.RequestHeaderConditionletTest;
-import com.dotmarketing.portlets.rules.conditionlet.RequestParameterConditionletTest;
-import com.dotmarketing.portlets.rules.conditionlet.SessionAttributeConditionletTest;
-import com.dotmarketing.portlets.rules.conditionlet.UsersBrowserConditionletTest;
-import com.dotmarketing.portlets.rules.conditionlet.UsersCountryConditionletTest;
-import com.dotmarketing.portlets.rules.conditionlet.UsersPlatformConditionletTest;
-import com.dotmarketing.portlets.rules.conditionlet.VisitorsCurrentURLConditionletTest;
-import com.dotmarketing.portlets.rules.conditionlet.VisitorsGeolocationConditionletTest;
 import com.dotmarketing.portlets.templates.business.FileAssetTemplateUtilTest;
 import com.dotmarketing.portlets.templates.business.TemplateFactoryImplTest;
 import com.dotmarketing.portlets.workflows.actionlet.MoveContentActionletTest;
@@ -160,7 +145,9 @@ import com.dotmarketing.portlets.workflows.util.WorkflowEmailUtilTest;
 import com.dotmarketing.quartz.DotStatefulJobTest;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
 import com.dotmarketing.quartz.job.IntegrityDataGenerationJobTest;
+import com.dotmarketing.quartz.job.PopulateContentletAsJSONJobTest;
 import com.dotmarketing.quartz.job.StartEndScheduledExperimentsJobTest;
+import com.dotmarketing.startup.StartupTasksExecutorDataTest;
 import com.dotmarketing.startup.StartupTasksExecutorTest;
 import com.dotmarketing.startup.runalways.Task00050LoadAppsSecretsTest;
 import com.dotmarketing.startup.runonce.Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflowTest;
@@ -210,6 +197,8 @@ import com.dotmarketing.startup.runonce.Task220912UpdateCorrectShowOnMenuPropert
 import com.dotmarketing.startup.runonce.Task220928AddLookbackWindowColumnToExperimentTest;
 import com.dotmarketing.startup.runonce.Task221007AddVariantIntoPrimaryKeyTest;
 import com.dotmarketing.startup.runonce.Task230110MakeSomeSystemFieldsRemovableByBaseTypeTest;
+import com.dotmarketing.startup.runonce.Task230328AddMarkedForDeletionColumnTest;
+import com.dotmarketing.startup.runonce.Task230426AlterVarcharLengthOfLockedByColTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
@@ -219,6 +208,7 @@ import com.dotmarketing.util.UtilMethodsITest;
 import com.dotmarketing.util.ZipUtilTest;
 import com.dotmarketing.util.contentlet.pagination.PaginatedContentletsIntegrationTest;
 import com.liferay.portal.language.LanguageUtilTest;
+import org.apache.felix.framework.OSGIUtilTest;
 import org.apache.velocity.tools.view.tools.CookieToolTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite.SuiteClasses;
@@ -226,17 +216,16 @@ import org.junit.runners.Suite.SuiteClasses;
 /* grep -l -r "@Test" dotCMS/src/integration-test */
 /* ./gradlew integrationTest -Dtest.single=com.dotcms.MainSuite */
 
+
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
         StartEndScheduledExperimentsJobTest.class,
         RulesAPIImplIntegrationTest.class,
         Task220825CreateVariantFieldTest.class,
-//        AnalyticsAPIImplTest.class,
         Task221007AddVariantIntoPrimaryKeyTest.class,
         ESContentletAPIImplTest.class,
         ExperimentAPIImpIT.class,
         ExperimentWebAPIImplIT.class,
-//        AccessTokenRenewJobTest.class,
         ContentletWebAPIImplIntegrationTest.class, // moved to top because of failures on GHA
         DependencyBundlerTest.class, // moved to top because of failures on GHA
         SiteAndFolderResolverImplTest.class, //Moved up to avoid conflicts with CT deletion
@@ -439,7 +428,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.quartz.job.BinaryCleanupJobTest.class,
         FocalPointAPITest.class,
         com.dotmarketing.tag.business.TagAPITest.class,
-        com.dotcms.osgi.OSGIUtilTest.class,
+        OSGIUtilTest.class,
         com.dotmarketing.fixTasks.FixTask00085FixEmptyParentPathOnIdentifierTest.class,
         com.dotmarketing.startup.runonce.Task05170DefineFrontEndAndBackEndRolesTest.class,
         com.dotmarketing.startup.runonce.Task04375UpdateCategoryKeyTest.class,
@@ -635,28 +624,19 @@ import org.junit.runners.Suite.SuiteClasses;
         StoryBlockAPITest.class,
         UtilMethodsITest.class,
         Task220912UpdateCorrectShowOnMenuPropertyTest.class,
-        PersonaActionletTest.class,
-        SendRedirectActionletTest.class,
-        SetRequestAttributeActionletTest.class,
-        StopProcessingActionletTest.class,
-        DateTimeConditionletTest.class,
-        HttpMethodConditionletTest.class,
-        PagesViewedConditionletTest.class,
-        PersonaConditionletTest.class,
-        ReferrerURLConditionletTest.class,
-        RequestAttributeConditionletTest.class,
-        RequestHeaderConditionletTest.class,
-        RequestParameterConditionletTest.class,
-        SessionAttributeConditionletTest.class,
-        UsersBrowserConditionletTest.class,
-        UsersCountryConditionletTest.class,
-        UsersPlatformConditionletTest.class,
-        VisitorsCurrentURLConditionletTest.class,
-        VisitorsGeolocationConditionletTest.class,
         HashedLocalFileRepositoryManagerTest.class,
         ManifestUtilTest.class,
         ZipUtilTest.class,
-        Task230110MakeSomeSystemFieldsRemovableByBaseTypeTest.class
+        Task230110MakeSomeSystemFieldsRemovableByBaseTypeTest.class,
+        BrowserAjaxTest.class,
+        PopulateContentletAsJSONUtilTest.class,
+        PopulateContentletAsJSONJobTest.class,
+        ContentTypeDestroyAPIImplTest.class,
+        Task230328AddMarkedForDeletionColumnTest.class,
+        StartupTasksExecutorDataTest.class,
+        Task230426AlterVarcharLengthOfLockedByColTest.class
+//        AnalyticsAPIImplTest.class,
+//        AccessTokenRenewJobTest.class,
 })
 
 public class MainSuite {

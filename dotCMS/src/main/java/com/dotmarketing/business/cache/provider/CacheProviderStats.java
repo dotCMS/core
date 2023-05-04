@@ -7,8 +7,8 @@ import java.util.*;
  */
 public class CacheProviderStats {
 
-    private LinkedHashSet<String> statColumns = new LinkedHashSet<String>();
-    private List<CacheStats> stats = new ArrayList<CacheStats>();
+    private LinkedHashSet<String> statColumns = new LinkedHashSet<>();
+    private List<CacheStats> stats = new ArrayList<>();
 
     private CacheStats providerStats;
     private String providerName;

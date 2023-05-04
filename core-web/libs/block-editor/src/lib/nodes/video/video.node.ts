@@ -5,13 +5,13 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
         videoBlock: {
-            setVideo: (attrs: DotCMSContentlet | string) => ReturnType;
+            insertVideo: (attrs: DotCMSContentlet | string, position?: number) => ReturnType;
         };
     }
 }
 
 export const VideoNode = Node.create({
-    name: 'video',
+    name: 'dotVideo',
 
     addAttributes() {
         return {
@@ -20,10 +20,10 @@ export const VideoNode = Node.create({
                 parseHTML: (element) => element.getAttribute('src'),
                 renderHTML: (attributes) => ({ src: attributes.src })
             },
-            mineType: {
+            mimeType: {
                 default: null,
-                parseHTML: (element) => element.getAttribute('mineType'),
-                renderHTML: (attributes) => ({ mineType: attributes.mineType })
+                parseHTML: (element) => element.getAttribute('mimeType'),
+                renderHTML: (attributes) => ({ mimeType: attributes.mimeType })
             },
             width: {
                 default: null,
@@ -45,7 +45,7 @@ export const VideoNode = Node.create({
             data: {
                 default: null,
                 parseHTML: (element) => element.getAttribute('data'),
-                renderHTML: (attributes) => ({ data: attributes.data })
+                renderHTML: (attributes) => ({ data: JSON.stringify(attributes.data) })
             }
         };
     },
@@ -79,10 +79,13 @@ export const VideoNode = Node.create({
     addCommands() {
         return {
             ...this.parent?.(),
-            setVideo:
-                (attrs) =>
-                ({ commands }) => {
-                    return commands.insertContent({
+            insertVideo:
+                (attrs, position) =>
+                ({ commands, state }) => {
+                    const { selection } = state;
+                    const { head } = selection;
+
+                    return commands.insertContentAt(position ?? head, {
                         type: this.name,
                         attrs: getVideoAttrs(attrs)
                     });
@@ -91,16 +94,13 @@ export const VideoNode = Node.create({
     },
 
     renderHTML({ HTMLAttributes }) {
-        const { orientation = 'horizontal' } = HTMLAttributes;
-
         return [
             'div',
-            { class: 'node-container' },
+            { class: 'video-container' },
             [
                 'video',
                 mergeAttributes(HTMLAttributes, {
-                    controls: true,
-                    class: `${orientation}-video`
+                    controls: true
                 })
             ]
         ];
@@ -112,18 +112,18 @@ const getVideoAttrs = (attrs: DotCMSContentlet | string) => {
         return { src: attrs };
     }
 
-    const { assetMetaData, asset, assetVersion, mineType } = attrs;
+    const { assetMetaData, asset, mimeType, fileAsset } = attrs;
     const { width = 'auto', height = 'auto', contentType } = assetMetaData || {};
     const orientation = height > width ? 'vertical' : 'horizontal';
 
     return {
-        src: assetVersion || asset,
+        src: fileAsset || asset,
         data: {
             ...attrs
         },
         width,
         height,
-        mineType: mineType || contentType,
+        mimeType: mimeType || contentType,
         orientation
     };
 };

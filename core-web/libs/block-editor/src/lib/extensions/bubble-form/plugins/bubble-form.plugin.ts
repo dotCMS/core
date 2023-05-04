@@ -177,8 +177,6 @@ export class BubbleFormView extends BubbleMenuView {
             return true;
         }
 
-        this.editor.commands.closeForm();
-
         // we use `setTimeout` to make sure `selection` is already updated
         setTimeout(() => this.update(this.editor.view));
     }

@@ -89,7 +89,7 @@ public class CategoriesWebAPI implements ViewTool {
 		} catch (Exception e) {
 			Logger.error(this, "An unknown error happening while trying to retrieve categories : ", e);
 		}
-		return new ArrayList<Category>();
+		return new ArrayList<>();
 
 	}
 
@@ -185,7 +185,7 @@ public class CategoriesWebAPI implements ViewTool {
 	 */
 	public List<Category> getChildrenCategories(String inode, boolean includeGrandChildren, int maxDepth) {		
 		try {
-			List<Category> categories = new ArrayList<Category>();
+			List<Category> categories = new ArrayList<>();
 			Category cat = categoryAPI.find(inode, user, true);
 			List<Category> cats = categoryAPI.getChildren(cat, user, true);
 
@@ -206,7 +206,7 @@ public class CategoriesWebAPI implements ViewTool {
 	
 	private List<Category> getChildrenCategories(Category parentCategory, int level, int maxDepth) throws DotDataException, DotSecurityException{
 		
-		List<Category> result = new ArrayList<Category>();
+		List<Category> result = new ArrayList<>();
 		
 		if(level <= maxDepth)
 		{
@@ -345,7 +345,7 @@ public class CategoriesWebAPI implements ViewTool {
 
 	public List<Category> getActiveChildrenCategoriesByParent(ArrayList<String> o) {
 		try {
-			List<Category> children = new ArrayList<Category>();
+			List<Category> children = new ArrayList<>();
 			for (String key : o) {
 				if (UtilMethods.isSet(key)) {
 					Category cat = getCategoryByKey(key);
@@ -370,9 +370,9 @@ public class CategoriesWebAPI implements ViewTool {
 
 	private List<Map<String, Object>> getAllActiveChildrenCategories(List<Category> children, int currentLevel)
 			throws DotDataException, DotSecurityException {
-		List<Map<String, Object>> retList = new ArrayList<Map<String, Object>>();
+		List<Map<String, Object>> retList = new ArrayList<>();
 		for (Category ccat : children) {
-			Map<String, Object> valMap = new HashMap<String, Object>();
+			Map<String, Object> valMap = new HashMap<>();
 			valMap.put("level", currentLevel);
 			valMap.put("category", ccat);
 			retList.add(valMap);
@@ -400,12 +400,12 @@ public class CategoriesWebAPI implements ViewTool {
 
 	public List<Map<String, Object>> getAllActiveChildrenCategoriesByKey(String key) {
 		if (key == null) {
-			return new ArrayList<Map<String, Object>>();
+			return new ArrayList<>();
 		}
 		try {
 			Category cat = categoryAPI.findByKey(key, user, true);
 			if (!InodeUtils.isSet(cat.getInode())) {
-				return new ArrayList<Map<String, Object>>();
+				return new ArrayList<>();
 			}
 			List<Category> children = categoryAPI.getChildren(cat, true, user, true);
 			return getAllActiveChildrenCategories(children, 1);
@@ -573,7 +573,7 @@ public class CategoriesWebAPI implements ViewTool {
 
 
 	public List<Category> filterCategoriesByUserPermissions(List<Object> catInodes) {
-		List<Category> result = new ArrayList<Category>(30);
+		List<Category> result = new ArrayList<>(30);
 		try {
 			// Needed to make the List Generic when we refactored to UUID to
 			// handle backwards compat of categores being passed.
@@ -596,19 +596,19 @@ public class CategoriesWebAPI implements ViewTool {
 	}
 	
 	public List<String> fetchCategoriesInodes(List<Category> cats) {
-	    List<String> inodes=new ArrayList<String>(cats.size());
+	    List<String> inodes=new ArrayList<>(cats.size());
 	    for(Category cc : cats)
 	        inodes.add(cc.getInode());
 	    return inodes;
 	}
 	public List<String> fetchCategoriesNames(List<Category> cats) {
-        List<String> inodes=new ArrayList<String>(cats.size());
+        List<String> inodes=new ArrayList<>(cats.size());
         for(Category cc : cats)
             inodes.add(cc.getCategoryName());
         return inodes;
     }
 	public List<String> fetchCategoriesKeys(List<Category> cats) {
-        List<String> inodes=new ArrayList<String>(cats.size());
+        List<String> inodes=new ArrayList<>(cats.size());
         for(Category cc : cats)
             if(UtilMethods.isSet(cc.getKey()))
                 inodes.add(cc.getKey());

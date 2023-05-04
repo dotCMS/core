@@ -5,22 +5,14 @@
     display: block;
     position: relative;
 
-    dot-gravatar {
-        display: block;
-    }
-
     .dropdown-content {
         @include box_shadow(2);
-        border-radius: $border-radius;
+        border-radius: $border-radius-xs;
         background-color: $white;
         color: $black;
         overflow: hidden;
         position: absolute;
         top: 25px;
         z-index: 100;
-    }
-
-    .dropdown-component__gravatar {
-        cursor: pointer;
     }
 }

@@ -22,6 +22,6 @@ export const enum FeaturedFlags {
 export type DotDropdownSelectOption<T> = {
     label: string;
     value: T;
-    inactive: boolean;
+    inactive?: boolean;
     description?: string;
 };

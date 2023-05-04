@@ -9,12 +9,12 @@
             <p>{{ 'experiments.configure.traffic.allocation.add.description' | dm }}</p>
             <form class="p-fluid" [formGroup]="form" novalidate>
                 <div class="field">
-                    <p-slider [min]="0" [max]="100" formControlName="trafficAllocation"></p-slider>
+                    <p-slider [min]="1" [max]="100" formControlName="trafficAllocation"></p-slider>
                     <div class="flex justify-content-end align-items-baseline gap-2">
                         <input
                             id="trafficAllocation"
                             [value]="form.value.trafficAllocation"
-                            [min]="0"
+                            [min]="1"
                             [max]="100"
                             (keyup)="checkAllocationRange()"
                             formControlName="trafficAllocation"

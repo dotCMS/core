@@ -15,43 +15,16 @@
         width: 100%;
         overflow-y: scroll;
         height: 100%;
-        background-color: $color-gray-100;
+        background-color: $color-palette-gray-100;
 
         p {
-            font-size: $font-size-medium;
+            font-size: $font-size-md;
             line-height: $line-height;
         }
     }
 }
 
 ::ng-deep {
-    p-tag .p-tag {
-        &.running {
-            color: $color-accessible-text-green;
-            background-color: $color-accessible-text-green-bg;
-        }
-
-        &.draft {
-            color: $color-accessible-text-yellow;
-            background-color: $color-accessible-text-yellow-bg;
-        }
-
-        &.scheduled {
-            color: $color-accessible-text-purple;
-            background-color: $color-accessible-text-purple-bg;
-        }
-
-        &.ended {
-            color: $color-accessible-text-blue;
-            background-color: $color-accessible-text-blue-bg;
-        }
-
-        &.archived {
-            color: $color-accessible-text-gray;
-            background-color: $color-accessible-text-gray-bg;
-        }
-    }
-
     .p-button {
         &:disabled {
             background-color: transparent;
@@ -60,8 +33,8 @@
         &.p-button-outlined {
             padding-left: $spacing-3;
             padding-right: $spacing-3;
-            border-color: $color-secondary-500;
-            color: $color-secondary-500;
+            border-color: $color-palette-secondary-500;
+            color: $color-palette-secondary-500;
             min-width: 60px;
         }
     }

@@ -72,7 +72,7 @@ public class TagUtil {
         Optional<Visitor> opt = APILocator.getVisitorAPI().getVisitor(request);
 
         //Validate the visitor exist
-        if ( !opt.isPresent() ) {
+        if ( opt.isEmpty() ) {
             return;
         }
 

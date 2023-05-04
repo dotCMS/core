@@ -1,0 +1,44 @@
+@import "dot-admin";
+@import "top-navigation";
+@import "crumbtrail";
+@import "icons";
+@import "forms/base";
+@import "portlets/common";
+@import "components/common";
+
+@import "image-tools"; // TODO: need to remove image_tools.css from html.
+
+#addFileAssetDialog {
+    .dijitComboBox {
+        margin-right: $spacing-1;
+    }
+}
+
+#search_form,
+#borderContainer {
+    height: 100%;
+}
+
+.dijitMenuItemSeparator {
+    border-bottom: solid 1px $color-palette-gray-300;
+    margin: 0 -#{$spacing-1};
+    padding: 0 #{$spacing-1};
+}
+
+.api-link {
+    align-items: center;
+    border-radius: 2px;
+    border: solid 1px var(--color-sec);
+    color: var(--color-sec);
+    display: inline-flex;
+    line-height: 1em;
+    padding: 2px 6px 2px 4px;
+    text-decoration: none;
+    text-transform: uppercase;
+    transition: background-color 150ms ease, color 150ms ease;
+
+    &:hover {
+        background-color: var(--color-sec);
+        color: #fff;
+    }
+}

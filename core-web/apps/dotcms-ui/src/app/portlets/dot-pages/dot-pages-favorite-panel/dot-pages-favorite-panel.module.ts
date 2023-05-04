@@ -5,22 +5,12 @@ import { ButtonModule } from 'primeng/button';
 import { PanelModule } from 'primeng/panel';
 
 import { DotMessagePipeModule } from '@dotcms/app/view/pipes/dot-message/dot-message-pipe.module';
-import { DotIconModule } from '@dotcms/ui';
 
 import { DotPagesCardModule } from './dot-pages-card/dot-pages-card.module';
-import { DotPagesCardEmptyModule } from './dot-pages-card-empty/dot-pages-card-empty.module';
 import { DotPagesFavoritePanelComponent } from './dot-pages-favorite-panel.component';
 
 @NgModule({
-    imports: [
-        CommonModule,
-        DotIconModule,
-        DotMessagePipeModule,
-        DotPagesCardModule,
-        DotPagesCardEmptyModule,
-        PanelModule,
-        ButtonModule
-    ],
+    imports: [CommonModule, DotMessagePipeModule, DotPagesCardModule, PanelModule, ButtonModule],
     declarations: [DotPagesFavoritePanelComponent],
     exports: [DotPagesFavoritePanelComponent]
 })

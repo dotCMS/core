@@ -343,7 +343,7 @@ public class Field extends Inode implements  FieldIf
 	}
 
     public Map<String, Object> getMap () {
-        Map<String, Object> oMap = new HashMap<String, Object> ();
+        Map<String, Object> oMap = new HashMap<> ();
         oMap.put("defaultValue", this.getDefaultValue());
         oMap.put("fieldContentlet", this.getFieldContentlet());
         oMap.put("fieldName", this.getFieldName());

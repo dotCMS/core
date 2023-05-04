@@ -131,7 +131,7 @@ public class ExperimentsFactoryImpl implements
         dc.addParam(experiment.id().get());
         dc.addParam(experiment.pageId());
         dc.addParam(experiment.name());
-        dc.addParam(experiment.description());
+        dc.addParam(experiment.description().orElse(""));
         dc.addParam(experiment.status().name());
         dc.addJSONParam(experiment.trafficProportion());
         dc.addParam(experiment.trafficAllocation());
@@ -141,7 +141,7 @@ public class ExperimentsFactoryImpl implements
         dc.addParam(experiment.createdBy());
         dc.addParam(experiment.lastModifiedBy());
         dc.addJSONParam(experiment.goals().isPresent()?experiment.goals().get():null);
-        dc.addParam(experiment.lookbackWindow());
+        dc.addParam(experiment.lookBackWindowExpireTime());
         dc.loadResult();
     }
 
@@ -152,7 +152,7 @@ public class ExperimentsFactoryImpl implements
         DotConnect dc = new DotConnect();
         dc.setSQL(UPDATE_EXPERIMENT);
         dc.addParam(experiment.name());
-        dc.addParam(experiment.description());
+        dc.addParam(experiment.description().orElse(""));
         dc.addParam(experiment.status().name());
         dc.addJSONParam(experiment.trafficProportion());
         dc.addParam(experiment.trafficAllocation());
@@ -162,7 +162,7 @@ public class ExperimentsFactoryImpl implements
         dc.addParam(experiment.createdBy());
         dc.addParam(experiment.lastModifiedBy());
         dc.addJSONParam(experiment.goals().isPresent()?experiment.goals().get():null);
-        dc.addParam(experiment.lookbackWindow());
+        dc.addParam(experiment.lookBackWindowExpireTime());
         dc.addParam(experiment.id().get());
         dc.loadResult();
     }

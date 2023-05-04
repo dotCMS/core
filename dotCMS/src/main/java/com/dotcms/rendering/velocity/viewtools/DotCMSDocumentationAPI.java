@@ -35,7 +35,7 @@ public class DotCMSDocumentationAPI implements ViewTool {
 
 	public List<String> getTOC(){
 	    
-	    return new ArrayList<String>();
+	    return new ArrayList<>();
 	}
 	
 	

@@ -1060,7 +1060,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
 	@JsonIgnore
 	public List<PermissionSummary> acceptedPermissions() {
-		List<PermissionSummary> accepted = new ArrayList<PermissionSummary>();
+		List<PermissionSummary> accepted = new ArrayList<>();
 		accepted.add(new PermissionSummary("view", "view-permission-description", PermissionAPI.PERMISSION_READ));
 		accepted.add(new PermissionSummary("edit", "edit-permission-description", PermissionAPI.PERMISSION_WRITE));
 		accepted.add(new PermissionSummary("publish", "publish-permission-description", PermissionAPI.PERMISSION_PUBLISH));
@@ -1703,7 +1703,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 			if (!ExceptionUtil.causedBy(e, NotFoundInDbException.class)) {
 				throw new DotStateException(e);
 			} else {
-				Logger.warn(this,
+				Logger.debug(this,
 						() -> String.format(
 								"Unable to find Content Type for Contentlet [%s], Content Type deleted? - [%s]",
 								this.getIdentifier(),

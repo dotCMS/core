@@ -3,7 +3,7 @@
 h5 {
     font-weight: $font-weight-bold;
     margin: 0;
-    font-size: $font-size-large;
+    font-size: $font-size-lg;
 }
 
 .experiment-traffic-allocation-add__form-wrapper {
@@ -11,7 +11,7 @@ h5 {
 
     label {
         font-weight: $font-weight-bold;
-        font-size: $font-size-large;
+        font-size: $font-size-lg;
     }
 
     p {
@@ -21,7 +21,7 @@ h5 {
 
 form input[type="number"] {
     -moz-appearance: textfield;
-    width: 50px;
+    width: 55px;
     margin-top: $spacing-3;
     text-align: center;
 

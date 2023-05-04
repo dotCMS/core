@@ -50,7 +50,7 @@ public class FileTool implements ViewTool {
 		Optional<ContentletVersionInfo> cvi = APILocator.getVersionableAPI().getContentletVersionInfo(id.getId(),
 				languageId);
 
-		if(!cvi.isPresent()) {
+		if(cvi.isEmpty()) {
 			throw new DotDataException("Can't find Content-version-info. Identifier: " + id.getId() + ". Lang:" + languageId);
 		}
 		String conInode = !live ? cvi.get().getWorkingInode() : cvi.get().getLiveInode();
