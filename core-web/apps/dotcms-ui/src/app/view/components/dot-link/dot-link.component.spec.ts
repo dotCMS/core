@@ -33,8 +33,8 @@ describe('DotLinkComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [TestHostComponent, DotLinkComponent],
-            imports: [DotPipesModule],
+            declarations: [TestHostComponent],
+            imports: [DotPipesModule, DotLinkComponent],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
         }).compileComponents();
     }));

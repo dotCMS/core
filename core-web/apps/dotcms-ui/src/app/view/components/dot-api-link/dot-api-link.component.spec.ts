@@ -6,6 +6,7 @@ import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotApiLinkComponent } from './dot-api-link.component';
+import { DotLinkComponent } from '@components/dot-link/dot-link.component';
 
 @Component({
     template: `<dot-api-link [href]="href"></dot-api-link>`
@@ -25,7 +26,8 @@ describe('DotApiLinkComponent', () => {
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             declarations: [TestHostComponent, DotApiLinkComponent],
-            providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
+            providers: [{ provide: DotMessageService, useValue: messageServiceMock }],
+            imports: [DotLinkComponent]
         }).compileComponents();
     }));
 
