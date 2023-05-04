@@ -5,7 +5,6 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
  *
  * @export
  * @class DotEditPageInfoComponent
- * @implements {OnInit}
  */
 @Component({
     selector: 'dot-edit-page-info',
@@ -16,13 +15,21 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 export class DotEditPageInfoComponent {
     @Input() title: string;
     @Input() url: string;
-    @Input() apiLink: string;
+    innerApiLink: string;
+    previewUrl: string;
 
-    previewURl() {
-        const frontEndUrl = `${this.apiLink.replace('api/v1/page/render', '')}`;
+    @Input()
+    set apiLink(value: string) {
+        if (value) {
+            const frontEndUrl = `${value.replace('api/v1/page/render', '')}`;
 
-        return `${frontEndUrl}${
-            frontEndUrl.indexOf('?') != -1 ? '&' : '?'
-        }disabledNavigateMode=true`;
+            this.previewUrl = `${frontEndUrl}${
+                frontEndUrl.indexOf('?') != -1 ? '&' : '?'
+            }disabledNavigateMode=true`;
+        } else {
+            this.previewUrl = value;
+        }
+
+        this.innerApiLink = value;
     }
 }
