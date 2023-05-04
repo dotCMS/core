@@ -26,10 +26,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
@@ -109,6 +111,47 @@ public class MaintenanceResource implements Serializable {
         return Response.ok(new ResponseEntityView("Shutdown")).build();
     }
 
+    /**
+     * This method is meant to shut down the current DotCMS instance.
+     * It will pass the control to catalina.sh (Tomcat) script to deal with any exit code.
+     * 
+     * @param request http request
+     * @param response http response
+     * @return string response
+     */
+    @DELETE
+    @Path("/_shutdownCluster")
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response shutdownCluster(@Context final HttpServletRequest request,
+                                   @Context final HttpServletResponse response,
+                                   @DefaultValue("60") @QueryParam("rollingDelay") int rollingDelay) {
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredRoles(Role.CMS_ADMINISTRATOR_ROLE)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .requiredPortlet("maintenance")
+                .init();
+
+
+        Logger.info(this.getClass(), "User:" + initData.getUser() + " is shutting down dotCMS Cluster with a rolling delay of " + rollingDelay); 
+        SecurityLogger.logInfo(
+                this.getClass(),
+                "User:" + initData.getUser() + " is shutting down dotCMS Cluster with a rolling delay of " + rollingDelay);
+
+        if (!Config.getBooleanProperty("ALLOW_DOTCMS_SHUTDOWN_FROM_CONSOLE", true)) {
+            return Response.status(Status.FORBIDDEN).build();
+        }
+
+        ClusterManagementTopic.getInstance().restartCluster(rollingDelay);
+
+        return Response.ok(new ResponseEntityView("Shutdown")).build();
+    }
+    
+    
+    
     /**
      * This method attempts to send resolved log file using an octet stream http response.
      *
