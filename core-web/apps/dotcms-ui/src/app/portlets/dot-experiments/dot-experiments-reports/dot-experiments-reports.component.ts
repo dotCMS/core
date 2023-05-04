@@ -1,17 +1,24 @@
-import { merge, Observable } from 'rxjs';
+import { Observable } from 'rxjs';
 
 import { AsyncPipe, LowerCasePipe, NgClass, NgIf, PercentPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, OnInit, ViewChild } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    ComponentRef,
+    inject,
+    OnInit,
+    ViewChild
+} from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
 import { RippleModule } from 'primeng/ripple';
 import { TagModule } from 'primeng/tag';
 
-import { take } from 'rxjs/operators';
+import { tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DEFAULT_VARIANT_ID, DotResultSimpleVariant } from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotExperimentsConfigurationSkeletonComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-skeleton/dot-experiments-configuration-skeleton.component';
 import { DotExperimentsPublishVariantComponent } from '@portlets/dot-experiments/dot-experiments-reports/components/dot-experiments-publish-variant/dot-experiments-publish-variant.component';
@@ -56,15 +63,15 @@ import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.dir
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsReportsComponent implements OnInit {
-    vm$: Observable<VmReportExperiment> = this.store.vm$;
+    vm$: Observable<VmReportExperiment> = this.store.vm$.pipe(
+        tap(({ showDialog }) => this.handlePromoteDialog(showDialog))
+    );
     dotMessageService = inject(DotMessageService);
-
     readonly chartConfig: { xAxisLabel: string; yAxisLabel: string; title: string } = {
         xAxisLabel: this.dotMessageService.get('experiments.chart.xAxisLabel'),
         yAxisLabel: this.dotMessageService.get('experiments.chart.yAxisLabel'),
         title: this.dotMessageService.get('experiments.reports.chart.title')
     };
-
     //Todo: Remove this mock data
     detailData = [
         {
@@ -104,10 +111,9 @@ export class DotExperimentsReportsComponent implements OnInit {
             better_than_baseline: false
         }
     ];
-
-    @ViewChild(DotDynamicDirective, { static: true }) host!: DotDynamicDirective;
-
+    @ViewChild(DotDynamicDirective, { static: true }) dialogHost!: DotDynamicDirective;
     protected readonly defaultVariantId = DEFAULT_VARIANT_ID;
+    private componentRef: ComponentRef<DotExperimentsPublishVariantComponent>;
 
     constructor(
         private readonly store: DotExperimentsReportsStore,
@@ -137,30 +143,35 @@ export class DotExperimentsReportsComponent implements OnInit {
     }
 
     /**
-     * Load modal to publish the selected variant
-     * @param {DotResultSimpleVariant[]} variants
+     * Open publish variant dialog
+     *
      * @returns void
      * @memberof DotExperimentsReportsComponent
      *
      */
-    loadPublishVariant(variants: DotResultSimpleVariant[]): void {
-        const viewContainerRef = this.host.viewContainerRef;
-        viewContainerRef.clear();
-        const componentRef =
-            viewContainerRef.createComponent<DotExperimentsPublishVariantComponent>(
+    openPublishVariantDialog() {
+        this.store.showPromoteDialog();
+    }
+
+    private handlePromoteDialog(showDialog: boolean) {
+        if (showDialog) {
+            this.loadPromoteVariantComponent();
+        } else {
+            this.removeSidebarComponent();
+        }
+    }
+
+    private removeSidebarComponent() {
+        if (this.componentRef) {
+            this.dialogHost.viewContainerRef.clear();
+        }
+    }
+
+    private loadPromoteVariantComponent(): void {
+        this.dialogHost.viewContainerRef.clear();
+        this.componentRef =
+            this.dialogHost.viewContainerRef.createComponent<DotExperimentsPublishVariantComponent>(
                 DotExperimentsPublishVariantComponent
             );
-
-        componentRef.instance.data = variants;
-
-        merge(componentRef.instance.hide, componentRef.instance.publish)
-            .pipe(take(1))
-            .subscribe((variant: string) => {
-                if (variant) {
-                    this.store.promoteVariant(variant);
-                }
-
-                viewContainerRef.clear();
-            });
     }
 }
