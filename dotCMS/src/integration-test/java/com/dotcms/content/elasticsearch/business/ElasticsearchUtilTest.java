@@ -21,7 +21,7 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.time.Duration;
 
-import static org.jgroups.util.Util.assertEquals;
+import static org.junit.Assert.*;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 

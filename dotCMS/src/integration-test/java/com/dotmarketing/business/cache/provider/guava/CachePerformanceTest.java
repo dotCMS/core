@@ -5,10 +5,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import com.dotmarketing.business.cache.provider.CacheProvider;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.provider.CacheStats;
-import com.dotmarketing.business.cache.provider.hazelcast.HazelcastCacheProviderEmbedded;
+import com.dotmarketing.business.cache.provider.caffine.CaffineCache;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.hazelcast.nio.serialization.HazelcastSerializationException;
+
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,7 +35,7 @@ public class CachePerformanceTest {
 
   private final long startTime = System.currentTimeMillis();
 //  Class provider = GuavaCache.class;
-  Class provider = HazelcastCacheProviderEmbedded.class;
+  Class provider = CaffineCache.class;
   //Class provider = HazelcastCacheProviderClient.class;
 
   @Ignore
@@ -173,10 +173,6 @@ public class CachePerformanceTest {
 
   }
 
-  void breakCache(HazelcastCacheProviderEmbedded cache) throws SQLException {
-
-  }
-
 
   class TestRunner implements Runnable {
 
@@ -220,7 +216,7 @@ public class CachePerformanceTest {
     boolean works = false;
     try {
       cache.put(LONG_GROUPNAME, CANT_CACHE_KEYNAME, new CantCacheMeObject());
-    } catch (HazelcastSerializationException hse) {
+    } catch (Exception hse) {
       works = true;
     }
     assertThat("Only serializable objects should work", works);

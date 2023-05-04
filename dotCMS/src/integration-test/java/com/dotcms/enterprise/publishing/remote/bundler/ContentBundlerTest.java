@@ -1,10 +1,13 @@
 package com.dotcms.enterprise.publishing.remote.bundler;
 
 import static com.dotcms.util.CollectionsUtils.list;
-import static org.jgroups.util.Util.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
-
+import java.io.File;
+import java.util.List;
+import java.util.stream.Collectors;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -26,12 +29,6 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
-import org.junit.BeforeClass;
-import org.junit.Test;
 
 public class ContentBundlerTest {
 

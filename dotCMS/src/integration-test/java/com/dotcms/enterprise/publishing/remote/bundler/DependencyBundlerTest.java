@@ -103,8 +103,7 @@ import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotcms.util.CollectionsUtils.set;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
-import static org.jgroups.util.Util.assertEquals;
-import static org.jgroups.util.Util.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -2277,16 +2276,14 @@ public class DependencyBundlerTest {
         for (Class clazz : BundleDataGen.howAddInBundle.keySet()) {
             final boolean justExactlyClass = Host.class == clazz || Folder.class == clazz;
 
-            final Integer expectedCount = counts.get(clazz, 0, justExactlyClass);
+            final int expectedCount = counts.get(clazz, 0, justExactlyClass);
 
             final BundleDataGen.MetaData metaData = BundleDataGen.howAddInBundle.get(clazz, null, justExactlyClass);
             final int count = metaData.collection.apply(config).size();
 
-            assertEquals(String.format("Expected %d not %d to %s: ", expectedCount, count, clazz.getSimpleName(),
-                    metaData.collection.apply(config).stream()
-                            .map(object -> object.toString())
-                            .collect(joining(","))),
-                    expectedCount, count);
+            assertEquals( expectedCount, count);
+            
+
         }
     }
 

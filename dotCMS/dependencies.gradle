@@ -68,10 +68,6 @@ dependencies {
     implementation group: 'com.dotcms.lib', name: 'dot.gif89', version:'ukv_2'
     implementation group: 'com.dotcms.lib', name: 'dot.google', version:'ukv_2'
     implementation group: 'com.dotcms.lib', name: 'dot.guava', version:'11.0.1_2'
-    implementation group: 'com.hazelcast', name: 'hazelcast-all', version: '3.9.2'
-    implementation (group: 'com.hazelcast', name: 'hazelcast-kubernetes', version: '1.2.2'){
-        exclude(group: 'com.hazelcast')
-    }
 
     implementation group: 'com.dotcms.lib', name: 'dot.hibernate', version:'2.1.7_3'
     implementation group: 'com.dotcms.lib', name: 'dot.httpbridge', version:'ukv_2'
@@ -165,16 +161,10 @@ dependencies {
     implementation group: 'com.dotcms.lib', name: 'dot.mail-ejb', version:'ukv_2'
 
     implementation group: 'org.jvnet', name: 'mimepull', version: '1.6'
-
+    implementation group: 'org.xbill', name: 'dns', version: '2.0.8'
     implementation group: 'com.dotcms.lib', name: 'dot.msnm', version:'ukv_2'
     implementation group: 'com.dotcms.lib', name: 'dot.myspell', version:'ukv_2'
     implementation group: 'com.dotcms.lib', name: 'dot.odmg', version:'ukv_3'
-    implementation group: 'com.dotcms.lib', name: 'dot.org.eclipse.mylyn.wikitext.confluence.core', version:'1.8.0.I20120918-1109_2'
-    implementation group: 'com.dotcms.lib', name: 'dot.org.eclipse.mylyn.wikitext.core', version:'1.8.0.I20120918-1109_2'
-    implementation group: 'com.dotcms.lib', name: 'dot.org.eclipse.mylyn.wikitext.mediawiki.core', version:'1.8.0.I20120918-1109_2'
-    implementation group: 'com.dotcms.lib', name: 'dot.org.eclipse.mylyn.wikitext.textile.core', version:'1.8.0.I20120918-1109_2'
-    implementation group: 'com.dotcms.lib', name: 'dot.org.eclipse.mylyn.wikitext.tracwiki.core', version:'1.8.0.I20120918-1109_2'
-    implementation group: 'com.dotcms.lib', name: 'dot.org.eclipse.mylyn.wikitext.twiki.core', version:'1.8.0.I20120918-1109_2'
     implementation group: 'com.dotcms.lib', name: 'dot.platform', version:'ukv_2'
     implementation group: 'com.dotcms.lib', name: 'dot.portlet', version:'1.0_2'
     implementation group: 'com.dotcms.lib', name: 'dot.quartz-all', version:'1.8.6_2'
@@ -263,9 +253,7 @@ dependencies {
     implementation (group: 'werken-xpath', name: 'werken-xpath', version: '0.9.4'){
         transitive = false
     }
-    implementation (group: 'org.jgroups', name: 'jgroups', version: '3.6.1.Final'){
-        transitive = false
-    }
+
     implementation (group: 'org.tuckey', name: 'urlrewritefilter', version: '4.0.4'){
         transitive = false
     }
@@ -363,28 +351,28 @@ dependencies {
     implementation group: 'eu.bitwalker', name: 'UserAgentUtils', version:'1.19'
 
 
-    implementation group: 'com.twelvemonkeys.imageio', name: 'imageio-core', version:'3.7.0'
-    implementation group: 'com.twelvemonkeys.imageio', name: 'imageio-metadata', version:'3.7.0'
-    implementation group: 'com.twelvemonkeys.imageio', name: 'imageio-bmp', version:'3.7.0'
-    implementation group: 'com.twelvemonkeys.imageio', name: 'imageio-jpeg', version:'3.7.0'
-    implementation group: 'com.twelvemonkeys.imageio', name: 'imageio-tiff', version:'3.7.0'
-    implementation group: 'com.twelvemonkeys.imageio', name: 'imageio-pnm', version:'3.7.0'
-    implementation group: 'com.twelvemonkeys.imageio', name: 'imageio-psd', version:'3.7.0'
-    implementation group: 'com.twelvemonkeys.imageio', name: 'imageio-iff', version:'3.7.0'
-    implementation group: 'com.twelvemonkeys.imageio', name: 'imageio-pcx', version:'3.7.0'
-    implementation group: 'com.twelvemonkeys.imageio', name: 'imageio-pdf', version:'3.7.0'
-    implementation group: 'com.twelvemonkeys.imageio', name: 'imageio-hdr', version:'3.7.0'
-    implementation group: 'com.twelvemonkeys.imageio', name: 'imageio-pict', version:'3.7.0'
-    implementation group: 'com.twelvemonkeys.imageio', name: 'imageio-tiff', version:'3.7.0'
-    implementation group: 'com.twelvemonkeys.imageio', name: 'imageio-sgi', version:'3.7.0'
-    implementation group: 'com.twelvemonkeys.imageio', name: 'imageio-tga', version:'3.7.0'
-    implementation group: 'com.twelvemonkeys.imageio', name: 'imageio-icns', version:'3.7.0'
-    implementation group: 'com.twelvemonkeys.imageio', name: 'imageio-pcx', version:'3.7.0'
-    implementation group: 'com.twelvemonkeys.imageio', name: 'imageio-webp', version:'3.7.0'
-    implementation group: 'com.twelvemonkeys.imageio', name: 'imageio-thumbsdb', version:'3.7.0'
-    implementation group: 'com.twelvemonkeys.imageio', name: 'imageio-batik', version:'3.7.0'
-    implementation group: 'com.twelvemonkeys.imageio', name: 'imageio-clippath', version:'3.7.0'
-    implementation group: 'com.twelvemonkeys.servlet', name: 'servlet', version:'3.7.0'
+    implementation group: 'com.twelvemonkeys.imageio', name: 'imageio-core', version:'3.9.4'
+    implementation group: 'com.twelvemonkeys.imageio', name: 'imageio-metadata', version:'3.9.4'
+    implementation group: 'com.twelvemonkeys.imageio', name: 'imageio-bmp', version:'3.9.4'
+    implementation group: 'com.twelvemonkeys.imageio', name: 'imageio-jpeg', version:'3.9.4'
+    implementation group: 'com.twelvemonkeys.imageio', name: 'imageio-tiff', version:'3.9.4'
+    implementation group: 'com.twelvemonkeys.imageio', name: 'imageio-pnm', version:'3.9.4'
+    implementation group: 'com.twelvemonkeys.imageio', name: 'imageio-psd', version:'3.9.4'
+    implementation group: 'com.twelvemonkeys.imageio', name: 'imageio-iff', version:'3.9.4'
+    implementation group: 'com.twelvemonkeys.imageio', name: 'imageio-pcx', version:'3.9.4'
+    implementation group: 'com.twelvemonkeys.imageio', name: 'imageio-pdf', version:'3.9.4'
+    implementation group: 'com.twelvemonkeys.imageio', name: 'imageio-hdr', version:'3.9.4'
+    implementation group: 'com.twelvemonkeys.imageio', name: 'imageio-pict', version:'3.9.4'
+    implementation group: 'com.twelvemonkeys.imageio', name: 'imageio-tiff', version:'3.9.4'
+    implementation group: 'com.twelvemonkeys.imageio', name: 'imageio-sgi', version:'3.9.4'
+    implementation group: 'com.twelvemonkeys.imageio', name: 'imageio-tga', version:'3.9.4'
+    implementation group: 'com.twelvemonkeys.imageio', name: 'imageio-icns', version:'3.9.4'
+    implementation group: 'com.twelvemonkeys.imageio', name: 'imageio-pcx', version:'3.9.4'
+    implementation group: 'com.twelvemonkeys.imageio', name: 'imageio-webp', version:'3.9.4'
+    implementation group: 'com.twelvemonkeys.imageio', name: 'imageio-thumbsdb', version:'3.9.4'
+    implementation group: 'com.twelvemonkeys.imageio', name: 'imageio-batik', version:'3.9.4'
+    implementation group: 'com.twelvemonkeys.imageio', name: 'imageio-clippath', version:'3.9.4'
+    implementation group: 'com.twelvemonkeys.servlet', name: 'servlet', version:'3.9.4'
 
 
     implementation 'com.github.ben-manes.caffeine:caffeine:2.9.2'
@@ -596,5 +584,7 @@ dependencies {
 
     compileOnly fileTree("../libs/buildlibs").include('**/*.jar')
     compileOnly fileTree("../libs/buildlibs").include('mail.jar')
+
+
 
 }
