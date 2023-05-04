@@ -122,3 +122,4 @@ This maintenance release includes the following code fixes:
 102. https://github.com/dotCMS/core/issues/23449 : Filter does not work on the image selector for image fields #23449
 103. https://github.com/dotCMS/core/issues/23807 : Make Image Permits less restrictive #23807
 104. https://github.com/dotCMS/core/issues/23396 : Double quotes in content title - error trying to show data in relate table. #23396
+105. https://github.com/dotCMS/core/issues/23915 : Increase Password Hash Iterations #23915

@@ -38,10 +38,10 @@ import com.liferay.util.Validator;
 @Deprecated
 public class LoginFactory {
 
-	public static String PRE_AUTHENTICATOR = PropsUtil.get("auth.pipeline.pre");
+	public static final String PRE_AUTHENTICATOR = PropsUtil.get("auth.pipeline.pre");
 
 	/*Custom Code*/
-	public static boolean useCASLoginFilter = new Boolean (Config.getBooleanProperty("FRONTEND_CAS_FILTER_ON",false));
+	public static final boolean USE_CAS_LOGIN_FILTER = Config.getBooleanProperty("FRONTEND_CAS_FILTER_ON", false);
 	/*End of Custom Code*/
 
     private static final String LOCK_PREFIX = "UserIdLogin:";
@@ -137,7 +137,7 @@ public class LoginFactory {
         	if ((PRE_AUTHENTICATOR != null) &&
         		(0 < PRE_AUTHENTICATOR.length()) &&
         		PRE_AUTHENTICATOR.equals(Config.getStringProperty("LDAP_FRONTEND_AUTH_IMPLEMENTATION")) &&
-        		!useCASLoginFilter) {
+        		!USE_CAS_LOGIN_FILTER) {
 
 				int auth = 0;
 
@@ -199,7 +199,7 @@ public class LoginFactory {
 
 	            } else {
 	            	/*Custom code*/
-					if(useCASLoginFilter){
+					if(USE_CAS_LOGIN_FILTER){
 	            		
 	            		String userIdFromCAS = (String)request.getSession(false).getAttribute("edu.yale.its.tp.cas.client.filter.user");
 	            		
@@ -397,13 +397,6 @@ public class LoginFactory {
 
     public static void doLogout(HttpServletRequest request, HttpServletResponse response) {
 
-        //request.getSession().invalidate();
-        /*
-         * request.getSession().removeAttribute(WebKeys.SESSION_USER);
-         * request.getSession().removeAttribute(com.liferay.portal.util.WebKeys.USER_ID);
-         * request.getSession().removeAttribute(com.liferay.portal.util.WebKeys.USER);
-         */
-
         request.getSession().removeAttribute("PENDING_ALERT_SEEN");
         request.getSession().removeAttribute("createAccountForm");
         request.getSession().removeAttribute("checkoutForm");
@@ -428,14 +421,14 @@ public class LoginFactory {
      *            going to save this object if rehash process required
      * @return
      */
-    public static boolean passwordMatch(final String password, User user) {
+    public static boolean passwordMatch(final String password, final User user) {
         boolean needsToRehashPassword = false;
 
         try {
             if (PasswordFactoryProxy.isUnsecurePasswordHash(user.getPassword())) {
-                // This is the legacy functionality that we will removed with
+                // This is the legacy functionality that we will replace with
                 // the new hash library
-                boolean match = user.getPassword().equals(password)
+                final boolean match = user.getPassword().equals(password)
                         || user.getPassword().equals(PublicEncryptionFactory.digestString(password));
 
                 // Bad credentials
@@ -446,7 +439,7 @@ public class LoginFactory {
                 // Force password rehash
                 needsToRehashPassword = true;
             } else {
-                PasswordFactoryProxy.AuthenticationStatus authStatus = PasswordFactoryProxy.authPassword(password,
+                final PasswordFactoryProxy.AuthenticationStatus authStatus = PasswordFactoryProxy.authPassword(password,
                         user.getPassword());
 
                 // Bad credentials
@@ -460,16 +453,15 @@ public class LoginFactory {
                 }
             }
 
-            // Apply new hash to the password and update user
             if (needsToRehashPassword) {
-                // We need to rehash password and save the new ones
+                // Apply new hash to the password and update user
                 user.setPassword(PasswordFactoryProxy.generateHash(password));
                 user.setLastLoginDate(new java.util.Date());
                 APILocator.getUserAPI().save(user, APILocator.getUserAPI().getSystemUser(), false);
 
-                SecurityLogger.logInfo(LoginFactory.class, "User password was rehash with id: " + user.getUserId());
-            }
-        } catch (PasswordException | DuplicateUserException | DotDataException | DotSecurityException e) {
+				SecurityLogger.logInfo(LoginFactory.class, String.format("User (%s) password was re-hashed 600000 times", user.getUserId()));
+			}
+		} catch (final PasswordException | DuplicateUserException | DotDataException | DotSecurityException e) {
             Logger.error(LoginFactory.class, "Error validating password from userId: " + user.getUserId(), e);
             return false;
         }
