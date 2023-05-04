@@ -204,3 +204,7 @@ This maintenance release includes the following code fixes:
 **Release-21.06.14**
 
 125. https://github.com/dotCMS/core/issues/22840 : Add relationship is broken in many to one relationship #22840
+
+**Release-21.06.15**
+
+125. https://github.com/dotCMS/core/issues/24781 : Performance Optimization - don't force field invalidations for non-velocity fields #24781

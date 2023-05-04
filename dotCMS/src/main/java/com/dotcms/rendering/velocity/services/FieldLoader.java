@@ -17,6 +17,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
+import io.vavr.control.Try;
 
 /**
  * @author Jason Tesser
@@ -75,16 +76,34 @@ public class FieldLoader implements DotLoader {
     }
 
     public void invalidate(Field field) {
-      Optional<Contentlet> con = Optional.empty();
-      this.invalidate(field, con);
+		this.invalidate(field, Optional.empty());
     }
 
+	boolean isVelocityField(Field field, Optional<Contentlet> conOpt) {
 
-    public void invalidate(Object obj, Optional<Contentlet> con, PageMode mode) {
-      VelocityResourceKey key = new VelocityResourceKey((Field) obj, con, mode);
-      CacheLocator.getVeloctyResourceCache().remove(key );
-    }
+		if (field != null && (field instanceof ConstantField || field instanceof HiddenField)) {
+			return true;
+		}
+		if (!conOpt.isPresent()) {
+			return false;
+		}
+		Optional<String> fieldValue = Try.of(() -> APILocator.getContentletAPI().getFieldValue(conOpt.get(), field).toString())
+				.toJavaOptional();
 
+		return fieldValue.isPresent() && (fieldValue.get().contains("#") || fieldValue.get().contains("$"));
+
+
+
+	}
+
+
+	public void invalidate(Object obj, Optional<Contentlet> con, PageMode mode) {
+		if (!isVelocityField((Field) obj, con)) {
+			return;
+		}
+		VelocityResourceKey key = new VelocityResourceKey((Field) obj, con, mode);
+		CacheLocator.getVeloctyResourceCache().remove(key);
+	}
     @Override
     public void invalidate(Object obj, PageMode mode) {
       this.invalidate(obj,Optional.empty(), mode);
