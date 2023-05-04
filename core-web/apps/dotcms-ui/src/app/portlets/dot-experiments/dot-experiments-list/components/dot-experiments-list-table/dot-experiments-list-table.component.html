@@ -49,14 +49,6 @@
 
 <ng-template #actionButtonTpl let-experiment>
     <dot-icon-button-tooltip
-        *ngIf="experiment.status === experimentStatus.ENDED"
-        [icon]="'archive'"
-        (click)="archive($event, experiment)"
-        data-testId="experiment-row-archive-button"
-        tooltipText="{{ 'experiments.action.archive' | dm }}"
-    ></dot-icon-button-tooltip>
-
-    <dot-icon-button-tooltip
         *ngIf="
             experiment.status === experimentStatus.DRAFT ||
             experiment.status === experimentStatus.SCHEDULED
@@ -68,11 +60,22 @@
     ></dot-icon-button-tooltip>
 
     <dot-icon-button-tooltip
-        *ngIf="experiment.status === experimentStatus.RUNNING"
+        *ngIf="
+            experiment.status === experimentStatus.RUNNING ||
+            experiment.status === experimentStatus.ENDED
+        "
         [icon]="'bar_chart'"
         (click)="viewReports(experiment)"
         data-testId="experiment-row-report-button"
         tooltipText="{{ 'experiments.action.reports' | dm }}"
+    ></dot-icon-button-tooltip>
+
+    <dot-icon-button-tooltip
+        *ngIf="experiment.status === experimentStatus.ENDED"
+        [icon]="'archive'"
+        (click)="archive($event, experiment)"
+        data-testId="experiment-row-archive-button"
+        tooltipText="{{ 'experiments.action.archive' | dm }}"
     ></dot-icon-button-tooltip>
 </ng-template>
 

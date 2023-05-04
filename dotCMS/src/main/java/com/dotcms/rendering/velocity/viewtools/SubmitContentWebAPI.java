@@ -56,7 +56,7 @@ public class SubmitContentWebAPI implements ViewTool{
 		} catch (DotSecurityException e) {
 			Logger.error(StructuresWebAPI.class,e.getMessage(),e);
 		}
-		return new ArrayList<FieldVariable>();
+		return new ArrayList<>();
 	}
 	
 	/**

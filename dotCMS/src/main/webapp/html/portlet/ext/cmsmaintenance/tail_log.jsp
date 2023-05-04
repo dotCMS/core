@@ -830,6 +830,13 @@
             logViewManager.updateView(data);
         });
 
+        sseSource.addEventListener('keepAlive', function(e) {
+
+            // Assuming we receive JSON-encoded data payloads:
+            const data = JSON.parse(e.data);
+            console.log("keepAlive :: " + data.keepAlive);
+        });
+
         sseSource.addEventListener('failure', function(e) {
             // process error
             console.error(e);

@@ -18,7 +18,7 @@ import com.dotmarketing.startup.StartupTask;
  */
 public class Task03740UpdateLayoutIcons implements StartupTask {
 
-	private Map<String, String> layoutIcons = new HashMap<String,String>();
+	private Map<String, String> layoutIcons = new HashMap<>();
 	
 	@Override
 	public boolean forceRun() {

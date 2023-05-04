@@ -276,7 +276,7 @@ public class CubeJSQuery {
             return this;
         }
 
-        public Builder filter(final String member, Operator operator, final String... values) {
+        public Builder filter(final String member, Operator operator, final Object... values) {
             filters.add(new SimpleFilter(member, operator, values));
             return this;
         }

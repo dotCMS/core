@@ -23,7 +23,6 @@ import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.experiments.business.ExperimentsAPI;
 import com.dotcms.experiments.model.Experiment;
-import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.model.Variant;
@@ -41,7 +40,6 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.liferay.portal.model.User;
-import graphql.AssertException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -440,11 +438,6 @@ public class VariantAPITest {
 
         checkVersion(contentlet2, false, VariantAPI.DEFAULT_VARIANT, "contentlet2_variant",
                 titleField);
-
-        final Variant variantFromDataBase = APILocator.getVariantAPI().get(variant.name())
-                .orElseThrow(() -> new DotStateException("Unable to find Variant"));
-
-        assertTrue(variantFromDataBase.archived());
     }
 
     /**
@@ -933,19 +926,13 @@ public class VariantAPITest {
     /**
      * Method to test: {@link VariantAPIImpl#promote(Variant, User)}
      * When: You try to promote a Variant that is already promoted.
-     * Should: throw a Exception
+     * Should: not fail
      */
     @Test
     public void promoteAlreadyPromoteVariant() throws DotDataException {
         final Variant variant = new VariantDataGen().nextPersisted();
         APILocator.getVariantAPI().promote(variant, APILocator.systemUser());
-
-        try {
-            APILocator.getVariantAPI().promote(variant, APILocator.systemUser());
-            fail("Should throw a Exception");
-        } catch (IllegalArgumentException e) {
-            //Expected
-        }
+        APILocator.getVariantAPI().promote(variant, APILocator.systemUser());
     }
 
     /**

@@ -217,7 +217,7 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
 
         final Optional<Rule> rule = APILocator.getExperimentsAPI().getRule(experiment);
 
-        if (!rule.isPresent()) {
+        if (rule.isEmpty()) {
             return true;
         }
 

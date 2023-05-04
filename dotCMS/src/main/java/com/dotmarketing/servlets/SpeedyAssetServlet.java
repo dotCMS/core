@@ -120,11 +120,11 @@ public class SpeedyAssetServlet extends HttpServlet {
 		try{
   		  Optional<ContentletVersionInfo> cvi = APILocator.getVersionableAPI().getContentletVersionInfo(id.getId(), lang);
 
-  		  if(!cvi.isPresent() && Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", false)){
+  		  if(cvi.isEmpty() && Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", false)){
   		      cvi = APILocator.getVersionableAPI().getContentletVersionInfo(id.getId(), APILocator.getLanguageAPI().getDefaultLanguage().getId());
   		  }
 
-  		  if(!cvi.isPresent()) {
+  		  if(cvi.isEmpty()) {
   		      throw new DotDataException("Can't find Contentlet-Version-Info. Identifier: "
                       + id.getId(), ". Lang: " + APILocator.getLanguageAPI().getDefaultLanguage().getId());
           }

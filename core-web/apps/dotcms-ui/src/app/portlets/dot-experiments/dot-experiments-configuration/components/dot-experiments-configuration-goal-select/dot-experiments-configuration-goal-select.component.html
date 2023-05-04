@@ -44,6 +44,7 @@
                         <div>
                             <input
                                 id="name"
+                                [maxlength]="this.maxNameLength + 1"
                                 data-testId="goal-name-input"
                                 formControlName="name"
                                 name="name"

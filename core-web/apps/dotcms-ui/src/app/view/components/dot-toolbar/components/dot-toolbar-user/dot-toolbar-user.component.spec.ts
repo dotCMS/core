@@ -142,6 +142,16 @@ describe('DotToolbarUserComponent', () => {
         const logoutLink = de.query(By.css('#dot-toolbar-user-link-logout'));
         expect(logoutLink.attributes.href).toBe('/dotAdmin/logout?r=1466424490000');
     });
+    it('should have correct target in logout link', () => {
+        fixture.detectChanges();
+
+        const avatarComponent = de.query(By.css('p-avatar')).nativeElement;
+        avatarComponent.click();
+        fixture.detectChanges();
+
+        const logoutLink = de.query(By.css('#dot-toolbar-user-link-logout'));
+        expect(logoutLink.attributes.target).toBe('_self');
+    });
 
     it('should call "logoutAs" in "LoginService" on logout click', async () => {
         spyOn(dotNavigationService, 'goToFirstPortlet').and.returnValue(

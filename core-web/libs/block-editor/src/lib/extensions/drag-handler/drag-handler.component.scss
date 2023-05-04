@@ -5,8 +5,10 @@
     opacity: 0;
     color: var(--color-background);
     transition: opacity 250ms, top 150ms;
+    pointer-events: none;
 
     &.visible {
         opacity: 1;
+        pointer-events: auto;
     }
 }

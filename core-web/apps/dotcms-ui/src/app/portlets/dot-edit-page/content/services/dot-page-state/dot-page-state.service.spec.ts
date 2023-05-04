@@ -141,7 +141,7 @@ describe('DotPageStateService', () => {
             expect(dotESContentService.get).toHaveBeenCalledWith({
                 itemsPerPage: 10,
                 offset: '0',
-                query: `+contentType:DotFavoritePage +deleted:false +working:true +DotFavoritePage.url_dotraw:/an/url/test?&language_id=1&device_inode=`
+                query: `+contentType:DotFavoritePage +deleted:false +working:true +owner:dotcms.org.1 +DotFavoritePage.url_dotraw:/an/url/test?&language_id=1&device_inode=`
             });
         });
 

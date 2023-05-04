@@ -2,7 +2,10 @@ package com.dotcms.cli.command.language;
 
 import static com.dotcms.cli.common.Utils.nextFileName;
 
+import com.dotcms.cli.common.FormatOptionMixin;
+import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
+import com.dotcms.cli.common.ShortOutputOptionMixin;
 import com.dotcms.model.language.Language;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
@@ -19,7 +22,16 @@ import picocli.CommandLine.Parameters;
 @ActivateRequestContext
 @CommandLine.Command(
         name = LanguagePull.NAME,
-        description = "@|bold,green Get a language given its id or tag (e.g.: en-us)|@"
+        header = "@|bold,blue dotCMS Language Pull|@",
+        description = {
+                " This command pulls a language given its id or tag (e.g.: en-us).",
+                " A language descriptor file will be created in the current directory.",
+                " If the language already exists, it will be overwritten.",
+                " The file name will be the language's tag (e.g.: en-us.json).",
+                " if a lang is pulled with the same name as an existing one,",
+                " the existing one will be overwritten.",
+                "" // empty string here so we can have a new line
+        }
 )
 /**
  * Command to pull a language given its id or tag (e.g.: en-us)
@@ -28,13 +40,16 @@ import picocli.CommandLine.Parameters;
 public class LanguagePull extends AbstractLanguageCommand implements Callable<Integer> {
     static final String NAME = "pull";
 
-    @CommandLine.Mixin(name = "output")
-    OutputOptionMixin output;
+    @CommandLine.Mixin(name = "format")
+    FormatOptionMixin formatOption;
 
-    @Parameters(index = "0", arity = "1", description = "Language Id or Tag.")
+    @CommandLine.Mixin(name = "shorten")
+    ShortOutputOptionMixin shortOutputOption;
+
+    @Parameters(index = "0", arity = "1", paramLabel = "idOrTag", description = "Language Id or Tag.")
     String languageIdOrTag;
 
-    @CommandLine.Option(names = {"-to", "--saveTo"}, order = 5, description = "Save the returned language to a file.")
+    @CommandLine.Option(names = {"-to", "--saveTo"}, paramLabel = "saveTo", description = "Save the returned language to a file.")
     File saveAs;
 
     @Override
@@ -48,9 +63,9 @@ public class LanguagePull extends AbstractLanguageCommand implements Callable<In
                 return CommandLine.ExitCode.SOFTWARE;
             }
             final Language language = result.get();
-            final ObjectMapper objectMapper = output.objectMapper();
+            final ObjectMapper objectMapper = formatOption.objectMapper();
 
-            if(output.isShortenOutput()) {
+            if(shortOutputOption.isShortOutput()) {
                 final String asString = shortFormat(language);
                 output.info(asString);
             } else {
@@ -63,8 +78,8 @@ public class LanguagePull extends AbstractLanguageCommand implements Callable<In
                     path = saveAs.toPath();
                 } else {
                     //But this behavior can be modified if we explicitly add a file name
-                    final String fileName = String.format("%s.%s",language.language(),output.getInputOutputFormat().getExtension());
-                    final Path next = Path.of(".", fileName);
+                    final String fileName = String.format("%s.%s", language.language(), formatOption.getInputOutputFormat().getExtension());
+                    final Path next = Path.of(fileName);
                     path = nextFileName(next);
                 }
                 Files.writeString(path, asString);

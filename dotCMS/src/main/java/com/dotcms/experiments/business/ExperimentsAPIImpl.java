@@ -68,6 +68,7 @@ import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.factories.MultiTreeAPI;
@@ -108,6 +109,7 @@ import org.jetbrains.annotations.NotNull;
 public class ExperimentsAPIImpl implements ExperimentsAPI {
 
     private static final int VARIANTS_NUMBER_MAX = 3;
+    private static final List<Status> RESULTS_QUERY_VALID_STATUSES = List.of(RUNNING, ENDED);
 
     final ExperimentsFactory factory = FactoryLocator.getExperimentsFactory();
     final ExperimentsCache experimentsCache = CacheLocator.getExperimentsCache();
@@ -471,21 +473,71 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         DotPreconditions.checkState(persistedExperiment.goals().isPresent(), "The Experiment needs to "
                 + "have the Goal set.");
 
+        final List<Experiment> runningExperimentsOnPage = list(ExperimentFilter.builder()
+                .pageId(persistedExperiment.pageId())
+                .statuses(Set.of(RUNNING))
+                .build(), user);
+
+        if(!runningExperimentsOnPage.isEmpty()) {
+            final boolean meantToRunNow = persistedExperiment.scheduling().isEmpty();
+
+            if(meantToRunNow) {
+                throw new DotStateException("There is a running Experiment on the same page. "
+                        + runningExperimentsOnPage.get(0).id());
+            }
+
+            final Experiment runningExperiment = runningExperimentsOnPage.get(0);
+            DotPreconditions.isTrue(runningExperiment.scheduling().orElseThrow().endDate()
+                    .orElseThrow().isBefore(persistedExperiment.scheduling().orElseThrow().startDate().orElseThrow()),
+                    ()-> "Start date of the Experiment is before the end date of the running Experiment. "
+                            + runningExperiment.id(),
+                    DotStateException.class);
+        }
+
         Experiment toReturn;
 
-        if(persistedExperiment.scheduling().isEmpty() ||
-                (persistedExperiment.scheduling().get().startDate()).isEmpty()
-                        && persistedExperiment.scheduling().get().endDate().isEmpty()) {
+        if(emptyScheduling(persistedExperiment)) {
             final Scheduling scheduling = startNowScheduling(persistedExperiment);
-            toReturn = save(persistedExperiment.withScheduling(scheduling).withStatus(RUNNING), user);
+            final Experiment experimentToSave = persistedExperiment.withScheduling(scheduling).withStatus(RUNNING);
+            validateNoConflictsWithScheduledExperiments(experimentToSave, user);
+            toReturn = save(experimentToSave, user);
             publishContentOnExperimentVariants(user, toReturn);
             cacheRunningExperiments();
         } else {
             Scheduling scheduling = persistedExperiment.scheduling().get();
-            toReturn = save(persistedExperiment.withScheduling(scheduling).withStatus(SCHEDULED), user);
+            final Experiment experimentToSave = persistedExperiment.withScheduling(scheduling).withStatus(SCHEDULED);
+            validateNoConflictsWithScheduledExperiments(experimentToSave, user);
+            toReturn = save(experimentToSave.withScheduling(scheduling).withStatus(SCHEDULED), user);
         }
 
         return toReturn;
+    }
+
+    private static boolean emptyScheduling(Experiment persistedExperiment) {
+        return persistedExperiment.scheduling().isEmpty() ||
+                (persistedExperiment.scheduling().get().startDate()).isEmpty()
+                        && persistedExperiment.scheduling().get().endDate().isEmpty();
+    }
+
+    private void validateNoConflictsWithScheduledExperiments(final Experiment experimentToCheck,
+            final User user) throws DotDataException {
+
+        final List<Experiment> scheduledExperimentsOnPage = list(ExperimentFilter.builder()
+                .pageId(experimentToCheck.pageId())
+                .statuses(Set.of(SCHEDULED))
+                .build(), user);
+
+        final boolean noConflicts = scheduledExperimentsOnPage.isEmpty() ||
+                scheduledExperimentsOnPage.stream().allMatch(scheduledExperiment -> {
+            final Scheduling scheduling = scheduledExperiment.scheduling().orElseThrow();
+            final Scheduling schedulingToCheck = experimentToCheck.scheduling().orElseThrow();
+            return schedulingToCheck.startDate().orElseThrow().isAfter(scheduling.endDate().orElseThrow()) ||
+                    schedulingToCheck.endDate().orElseThrow().isBefore(scheduling.startDate().orElseThrow());
+        });
+
+        DotPreconditions.isTrue(noConflicts, ()-> "There is a scheduling conflict between the Experiment and the scheduled Experiment. "
+                + scheduledExperimentsOnPage.get(0).id(),
+                DotStateException.class);
     }
 
     @Override
@@ -507,6 +559,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 DotStateException.class);
 
         Experiment running = save(persistedExperiment.withStatus(RUNNING), user);
+        cacheRunningExperiments();
         publishContentOnExperimentVariants(user, running);
 
         return running;
@@ -833,13 +886,16 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final Experiment experimentFromDataBase = find(experimentId, APILocator.systemUser())
                 .orElseThrow(() -> new NotFoundException("Experiment not found: " + experimentId));
 
-        DotPreconditions.isTrue(experimentFromDataBase.status() == RUNNING, "The Experiment must be RUNNING");
+        DotPreconditions.isTrue(
+            RESULTS_QUERY_VALID_STATUSES.contains(experimentFromDataBase.status()),
+            "The Experiment must be RUNNING or ENDED to get results");
 
         final List<BrowserSession> events = getEvents(experiment);
         final ExperimentResults experimentResults = ExperimentAnalyzerUtil.INSTANCE.getExperimentResult(
-            experiment,
-            events);
+            experiment, events);
+
         experimentResults.setBayesianResult(calcBayesian(experimentResults, null));
+
         return experimentResults;
     }
 
@@ -935,6 +991,38 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         finalizedExperiments.forEach((experiment ->
                 Try.of(()->end(experiment.id().orElseThrow(), user)).getOrElseThrow((e)->
                         new DotStateException("Unable to end Experiment. Cause:" + e))));
+    }
+
+    @Override
+    public Experiment promoteVariant(String experimentId, String variantName, User user)
+            throws DotDataException, DotSecurityException {
+
+        final Experiment persistedExperiment = find(experimentId, user)
+                .orElseThrow(()->new DoesNotExistException("Experiment with provided id not found"));
+
+        DotPreconditions.isTrue(variantName!= null &&
+                        variantName.contains(shortyIdAPI.shortify(experimentId)), ()->"Invalid Variant provided",
+                IllegalArgumentException.class);
+
+        final Variant variantToPromote = variantAPI.get(variantName)
+                .orElseThrow(()->new DoesNotExistException("Provided Variant not found"));
+
+        final TreeSet<ExperimentVariant> variantsAfterPromotion =
+                persistedExperiment.trafficProportion()
+                        .variants().stream().map((variant) -> {
+                            if (variant.id().equals(variantName)) {
+                                Try.run(()->variantAPI.promote(variantToPromote, user))
+                                        .getOrElseThrow(()-> new DotRuntimeException("Unable to promote variant. Variant name: " + variantName));
+                                return variant.withPromoted(true);
+                            } else {
+                                return variant.withPromoted(false);
+                            }
+                        }).collect(Collectors.toCollection(TreeSet::new));
+
+        final TrafficProportion trafficProportion = persistedExperiment.trafficProportion()
+                .withVariants(variantsAfterPromotion);
+        final Experiment withUpdatedTraffic = persistedExperiment.withTrafficProportion(trafficProportion);
+        return save(withUpdatedTraffic, user);
     }
 
     @Override

@@ -1,5 +1,10 @@
 @use "variables" as *;
 
+:host {
+    flex-grow: 1;
+    margin-bottom: $spacing-4;
+}
+
 ::ng-deep {
     .p-datatable .p-datatable-tbody tr td {
         white-space: nowrap;
@@ -24,7 +29,7 @@
     }
 
     .dot-pages-listing-header__language-input .p-dropdown-label.p-inputtext {
-        min-width: 100px;
+        min-width: 115px;
     }
 
     .p-datatable .p-datatable-tbody tr td.dot-pages-listing__empty-content {

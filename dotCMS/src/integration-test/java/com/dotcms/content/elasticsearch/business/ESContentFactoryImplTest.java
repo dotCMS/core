@@ -134,7 +134,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
     public void findContentlets() throws Exception {
         DotConnect dc=new DotConnect();
         dc.setSQL("select inode from contentlet");
-        List<String> inodes=new ArrayList<String>();
+        List<String> inodes=new ArrayList<>();
         for(Map<String,Object> r : dc.loadObjectResults()) {
             inodes.add((String)r.get("inode"));
         }
@@ -143,7 +143,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
         
         Assert.assertEquals(inodes.size(), contentlets.size());
         
-        Set<String> inodesSet=new HashSet<String>(inodes);
+        Set<String> inodesSet=new HashSet<>(inodes);
         for(Contentlet cc : contentlets) {
             Assert.assertTrue(inodesSet.remove(cc.getInode()));
         }
@@ -169,7 +169,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
         dc.setSQL("select inode from contentlet order by mod_date desc");
         dc.setMaxRows(10);
         
-        List<String> inodesToOrderBy=new ArrayList<String>();
+        List<String> inodesToOrderBy=new ArrayList<>();
         for(Map<String,Object> r : dc.loadObjectResults()) {
           inodesToOrderBy.add((String)r.get("inode"));
         }

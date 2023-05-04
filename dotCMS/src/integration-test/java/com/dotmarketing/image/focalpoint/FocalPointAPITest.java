@@ -113,7 +113,7 @@ public class FocalPointAPITest {
 
         fp1 = ".dasdas,.asdas";
         test = focalPointAPI.parseFocalPoint(fp1);
-        assertTrue("we have no  focal point", !test.isPresent());
+        assertTrue("we have no  focal point", test.isEmpty());
 
     }
     
@@ -136,7 +136,7 @@ public class FocalPointAPITest {
         fp1 = ".dasdas,.asdas";
         params = ImmutableMap.of("fp", new String[] {fp1});
         test= focalPointAPI.parseFocalPointFromParams(params);
-        assertTrue("we have no  focal point", !test.isPresent());
+        assertTrue("we have no  focal point", test.isEmpty());
 
     }
 

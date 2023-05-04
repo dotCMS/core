@@ -119,8 +119,8 @@ public class TagAjax {
 	public static Map<String,Object> updateTag(String tagId, String tagName, String hostId){
 
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-    	List<String> saveTagErrors = new ArrayList<String>();
-    	Map<String,Object> callbackData = new HashMap<String,Object>();
+    	List<String> saveTagErrors = new ArrayList<>();
+    	Map<String,Object> callbackData = new HashMap<>();
 
     	hostId=hostId.trim();
 
@@ -168,7 +168,7 @@ public class TagAjax {
 	public Map<String, List<Tag>> getTagsByUser ( String userId ) throws DotSecurityException, DotDataException {
 		try {
 			List<Tag> tags = APILocator.getTagAPI().getTagsForUserByUserId(userId);
-			Map<String, List<Tag>> map = new HashMap<String, List<Tag>>();
+			Map<String, List<Tag>> map = new HashMap<>();
 			map.put("tags", tags);
 			return map;
 		} catch (Exception e) {
@@ -326,7 +326,7 @@ public class TagAjax {
 
 	public static Map<String,Object> importTags(byte[] uploadFile) {
 
-		Map<String,Object> callbackData = new HashMap<String,Object>();
+		Map<String,Object> callbackData = new HashMap<>();
 		int counterFailedTags = 0;
 		try {
 			UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();

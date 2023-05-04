@@ -46,7 +46,7 @@ public class LanguageAjax {
 	}
 
 	private List<LanguageKey> filterList(List<LanguageKey> list, String filter) {
-	    List<LanguageKey> filtered=new ArrayList<LanguageKey>();
+	    List<LanguageKey> filtered=new ArrayList<>();
 	    for(LanguageKey lk : list) {
 	        if(lk.getKey().contains(filter) || lk.getValue().contains(filter)) {
 	            filtered.add(lk);
@@ -59,8 +59,8 @@ public class LanguageAjax {
 
 		int keysPerPage = 50;
 		int keyIndex = 1;
-		List<Map<String,Object>> result = new ArrayList<Map<String,Object>>();
-		List<Map<String,Object>> keysToShow = new ArrayList<Map<String,Object>>();
+		List<Map<String,Object>> result = new ArrayList<>();
+		List<Map<String,Object>> keysToShow = new ArrayList<>();
 
 	    //Normalizing lists for display
 	    List<LanguageKey> lkeys = langAPI.getLanguageKeys(languageCode);
@@ -74,7 +74,7 @@ public class LanguageAjax {
 	    	filteredSKeys=filterList(skeys, filter);
 	    }
 
-	    TreeSet<String> allKeys=new TreeSet<String>();
+	    TreeSet<String> allKeys=new TreeSet<>();
 	    for (LanguageKey lk : filteredLKeys) {
             allKeys.add(lk.getKey());
         }
@@ -98,7 +98,7 @@ public class LanguageAjax {
 	        if(lpos>=0) gValue=lkeys.get(lpos).getValue();
 	        if(spos>=0) sValue=skeys.get(spos).getValue();
 
-	        Map<String,Object> keyMap = new HashMap<String, Object>();
+	        Map<String,Object> keyMap = new HashMap<>();
             keyMap.put("key", key);
             keyMap.put("generalValue", UtilMethods.webifyString(UtilMethods.escapeHTMLSpecialChars(gValue)));
             keyMap.put("specificValue", UtilMethods.webifyString(UtilMethods.escapeHTMLSpecialChars(sValue)));
@@ -107,7 +107,7 @@ public class LanguageAjax {
 	    }
 
 		//Adding the result counters as the first row of the results
-		Map<String, Object> counters = new HashMap<String, Object>();
+		Map<String, Object> counters = new HashMap<>();
 		result.add(counters);
 
 		long total = allKeys.size();
@@ -134,9 +134,9 @@ public class LanguageAjax {
 
 	public String saveKeys(String languageCode,String countryCode,List<String> keysToAdd,List<String> keysToUpdate,List<String> keysToDelete){
 
-		Map<String, String> generalKeysToAdd = new HashMap<String, String>();
-		Map<String, String> specificKeysToAdd  = new HashMap<String, String>();
-		Set<String> deleteKeys = new HashSet<String>();
+		Map<String, String> generalKeysToAdd = new HashMap<>();
+		Map<String, String> specificKeysToAdd  = new HashMap<>();
+		Set<String> deleteKeys = new HashSet<>();
 		Language lang = langAPI.getLanguage(languageCode, countryCode);
 		String delim = WebKeys.CONTENTLET_FORM_NAME_VALUE_SEPARATOR;
 
@@ -196,7 +196,7 @@ public class LanguageAjax {
 
 	private List<Map<String, String>> getLanguages(boolean withAllOption) throws LanguageException, DotRuntimeException, PortalException, SystemException {
 		List<Language> languages =  APILocator.getLanguageAPI().getLanguages();
-		ArrayList<Map<String, String>> langList = new ArrayList<Map<String, String>> ();
+		ArrayList<Map<String, String>> langList = new ArrayList<> ();
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 		HttpServletRequest request = WebContextFactory.get().getHttpServletRequest();
 
@@ -204,7 +204,7 @@ public class LanguageAjax {
 
 		// Include ALL option
 		if(withAllOption) {
-		    Map<String, String> map = new HashMap<String, String>();
+		    Map<String, String> map = new HashMap<>();
 		    map.put("title", sLanguage);
             map.put("languageCode", StringPool.BLANK);
             map.put("language", LanguageUtil.get(uWebAPI.getLoggedInUser(request), "all"));
@@ -215,7 +215,7 @@ public class LanguageAjax {
 		}
 		
 		for (Language language : languages) {
-			Map<String, String> map = new HashMap<String, String>();
+			Map<String, String> map = new HashMap<>();
 			map.put("title", sLanguage);
 			map.put("languageCode", language.getLanguageCode());
 			map.put("language", language.getLanguage());

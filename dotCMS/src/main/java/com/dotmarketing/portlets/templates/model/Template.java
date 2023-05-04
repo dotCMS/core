@@ -68,7 +68,7 @@ public class Template extends WebAsset implements Serializable, Comparable, Mani
 	public static final String THEME_HEADER = "header.vtl";
 	public static final String THEME_FOOTER = "footer.vtl";
 	public static final String THEME_TEMPLATE = "template.vtl";
-	public static final List<String> THEME_FILES = new ArrayList<String>();
+	public static final List<String> THEME_FILES = new ArrayList<>();
 	public static final String THEMES_PATH = "/application/themes/";
 
 	static {
@@ -295,7 +295,7 @@ public class Template extends WebAsset implements Serializable, Comparable, Mani
      */
 	@Override
 	public List<PermissionSummary> acceptedPermissions() {
-		List<PermissionSummary> accepted = new ArrayList<PermissionSummary>();
+		List<PermissionSummary> accepted = new ArrayList<>();
 		accepted.add(new PermissionSummary("view",
 				"view-permission-description", PermissionAPI.PERMISSION_READ));
 		accepted.add(new PermissionSummary("edit",
