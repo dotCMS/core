@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 
+import { DotLinkComponent } from '@components/dot-link/dot-link.component';
+
 /**
  * Basic page information for edit mode
  *
@@ -11,7 +13,8 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
     selector: 'dot-edit-page-info',
     templateUrl: './dot-edit-page-info.component.html',
     styleUrls: ['./dot-edit-page-info.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [DotLinkComponent]
 })
 export class DotEditPageInfoComponent {
     @Input() title: string;

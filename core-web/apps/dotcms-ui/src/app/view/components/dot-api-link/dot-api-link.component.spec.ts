@@ -2,7 +2,6 @@ import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { DotLinkModule } from '@components/dot-link/dot-link.module';
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -26,7 +25,6 @@ describe('DotApiLinkComponent', () => {
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             declarations: [TestHostComponent, DotApiLinkComponent],
-            imports: [DotLinkModule],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
         }).compileComponents();
     }));

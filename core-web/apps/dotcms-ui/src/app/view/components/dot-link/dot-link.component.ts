@@ -2,6 +2,7 @@ import { Component, Input } from '@angular/core';
 
 @Component({
     selector: 'dot-link',
+    standalone: true,
     templateUrl: './dot-link.component.html',
     styleUrls: ['./dot-link.component.scss']
 })
