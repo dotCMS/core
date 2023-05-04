@@ -29,6 +29,7 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.Xss;
+import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -120,24 +121,24 @@ public class CMSUrlUtil {
 
 		final String uriWithoutQueryString = this.getUriWithoutQueryString (uri);
 		if (isFileAsset(uriWithoutQueryString, site, languageId)) {
-			return new Tuple2<>(IAm.FILE, IAmSubType.NONE);
+			return Tuple.of(IAm.FILE, IAmSubType.NONE);
 		}
 
 		Tuple2<Boolean, IAmSubType> isPage = resolvePageAssetSubtype(uriWithoutQueryString, site, languageId);
 
 		if (isPage._1()) {
-			return new Tuple2<>(IAm.PAGE, isPage._2());
+			return Tuple.of(IAm.PAGE, isPage._2());
 		}
 
 		if(isFolder(uriWithoutQueryString, site)) {
 			// resolves correctly for folders with index pages
 			return uriWithoutQueryString.endsWith("/") && isPageAsset(uriWithoutQueryString + CMS_INDEX_PAGE, site, languageId)
-					? new Tuple2<>(IAm.PAGE, IAmSubType.PAGE_INDEX)
-					: new Tuple2<>(IAm.FOLDER,IAmSubType.NONE);
+					? Tuple.of(IAm.PAGE, IAmSubType.PAGE_INDEX)
+					: Tuple.of(IAm.FOLDER,IAmSubType.NONE);
 
 		}
 
-		return new Tuple2<>(IAm.NOTHING_IN_THE_CMS, IAmSubType.NONE);
+		return Tuple.of(IAm.NOTHING_IN_THE_CMS, IAmSubType.NONE);
 
 	} // resolveResourceType.
 
@@ -157,19 +158,19 @@ public class CMSUrlUtil {
 	public Tuple2<Boolean, IAmSubType> resolvePageAssetSubtype(final String uri, final Host host, final Long languageId) {
 		Identifier id;
 		if (!UtilMethods.isSet(uri)) {
-			return new Tuple2<>(false, IAmSubType.NONE);
+			return Tuple.of(false, IAmSubType.NONE);
 		}
 		try {
 			id = APILocator.getIdentifierAPI().find(host, uri);
 		} catch (Exception e) {
 			Logger.error(this.getClass(), UNABLE_TO_FIND + uri);
-			return new Tuple2<>(false, IAmSubType.NONE);
+			return Tuple.of(false, IAmSubType.NONE);
 		}
 		if (id == null || id.getId() == null) {
-			return new Tuple2<>(false, IAmSubType.NONE);
+			return Tuple.of(false, IAmSubType.NONE);
 		}
 		if (HTMLPAGE.equals(id.getAssetType())) {
-			return new Tuple2<>(true, IAmSubType.NONE);
+			return Tuple.of(true, IAmSubType.NONE);
 		}
 		if (CONTENTLET.equals(id.getAssetType())) {
 			try {
@@ -180,7 +181,7 @@ public class CMSUrlUtil {
 				//First try with the given language
 				Optional<ContentletVersionInfo> cinfo = APILocator.getVersionableAPI()
 						.getContentletVersionInfo(id.getId(), languageId);
-				if (!cinfo.isPresent() || cinfo.get().getWorkingInode().equals(NOT_FOUND)) {
+				if (cinfo.isEmpty() || cinfo.get().getWorkingInode().equals(NOT_FOUND)) {
 
 					for (Language language : languages) {
                         /*
@@ -199,15 +200,15 @@ public class CMSUrlUtil {
 					}
 
 				}
-				if (!cinfo.isPresent() || cinfo.get().getWorkingInode().equals(NOT_FOUND)) {
-					return new Tuple2<>(false, IAmSubType.NONE);//At this point we know is not a page
+				if (cinfo.isEmpty() || cinfo.get().getWorkingInode().equals(NOT_FOUND)) {
+					return Tuple.of(false, IAmSubType.NONE);//At this point we know is not a page
 				}
 				Contentlet c = APILocator.getContentletAPI().find(cinfo.get().getWorkingInode(), APILocator.systemUser(),false);
-				return new Tuple2<>(c.isHTMLPage(), IAmSubType.NONE);
+				return Tuple.of(c.isHTMLPage(), IAmSubType.NONE);
 
 			} catch (Exception e) {
 				Logger.error(this.getClass(), UNABLE_TO_FIND + uri);
-				return new Tuple2<>(false, IAmSubType.NONE);
+				return Tuple.of(false, IAmSubType.NONE);
 			}
 		}
 
@@ -219,10 +220,10 @@ public class CMSUrlUtil {
 					host,
 					APILocator.getUserAPI().getSystemUser());
 
-			return new Tuple2<>(APILocator.getURLMapAPI().isUrlPattern(urlMapContext), IAmSubType.PAGE_URL_MAP);
+			return Tuple.of(APILocator.getURLMapAPI().isUrlPattern(urlMapContext), IAmSubType.PAGE_URL_MAP);
 		} catch (final DotDataException | DotSecurityException e){
 			Logger.error(this.getClass(), e.getMessage());
-			return new Tuple2<>(false, IAmSubType.NONE);
+			return Tuple.of(false, IAmSubType.NONE);
 		}
 	}
 
