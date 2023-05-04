@@ -1,6 +1,8 @@
 package com.dotcms.api.traversal;
 
-import com.dotcms.model.folder.Folder;
+import com.dotcms.api.AssetAPI;
+import com.dotcms.model.asset.AssetsFolder;
+import com.dotcms.model.asset.SearchByPathRequest;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.RecursiveTask;
@@ -12,8 +14,9 @@ import java.util.concurrent.RecursiveTask;
  */
 public class FolderTraversalTask extends RecursiveTask<TreeNode> {
 
+    private final AssetAPI assetAPI;
     private final String siteName;
-    private final Folder folder;
+    private final AssetsFolder folder;
     private final boolean root;
     private final int depth;
 
@@ -26,8 +29,13 @@ public class FolderTraversalTask extends RecursiveTask<TreeNode> {
      * @param root     Whether this task is for the root folder.
      * @param depth    The maximum depth to traverse the directory tree.
      */
-    FolderTraversalTask(final String siteName, final Folder folder, final Boolean root,
+    FolderTraversalTask(final AssetAPI assetAPI,
+            final String siteName,
+            final AssetsFolder folder,
+            final Boolean root,
             final int depth) {
+
+        this.assetAPI = assetAPI;
         this.siteName = siteName;
         this.folder = folder;
         this.root = root;
@@ -52,15 +60,15 @@ public class FolderTraversalTask extends RecursiveTask<TreeNode> {
         if (root && this.folder.subFolders().isEmpty()) {
 
             // Make a REST call to fetch the root folder
-            Folder fetchedFolder = makeRestCall(
+            var fetchedFolder = makeRestCall(
                     this.siteName,
-                    folder.parent(),
+                    folder.path(),
                     folder.name(),
                     folder.level()
             );
 
             // Process the fetched sub-folders
-            for (Folder subFolder : fetchedFolder.subFolders()) {
+            for (AssetsFolder subFolder : fetchedFolder.subFolders()) {
                 if (this.depth == 0) {
                     currentNode.addChild(new TreeNode(subFolder));
                 } else {
@@ -78,19 +86,19 @@ public class FolderTraversalTask extends RecursiveTask<TreeNode> {
             }
 
             // Add the fetched files to the root folder
-            currentNode.files(fetchedFolder.files());
+            currentNode.assets(fetchedFolder.assets());
 
         } else {
 
             // Traverse all sub-folders of the current folder
-            for (Folder subFolder : this.folder.subFolders()) {
+            for (AssetsFolder subFolder : this.folder.subFolders()) {
 
                 if (this.depth == -1 || subFolder.level() <= this.depth) {
 
                     // Create a new task to traverse the sub-folder and add it to the list of sub-tasks
                     var task = searchForFolder(
                             this.siteName,
-                            folder.parent(),
+                            folder.path(),
                             subFolder.name(),
                             subFolder.level()
                     );
@@ -125,13 +133,33 @@ public class FolderTraversalTask extends RecursiveTask<TreeNode> {
      */
     private FolderTraversalTask searchForFolder(final String siteName,
             final String parentFolderName, final String folderName, final int level) {
+
         final var folder = makeRestCall(siteName, parentFolderName, folderName, level);
-        return new FolderTraversalTask(siteName, folder, false, this.depth);
+        return new FolderTraversalTask(this.assetAPI, siteName, folder, false, this.depth);
     }
 
-    private Folder makeRestCall(final String siteName, final String parentFolderName,
+    /**
+     * Retrieves the contents of a folder
+     *
+     * @param siteName         the name of the site containing the folder
+     * @param parentFolderName the name of the parent folder containing the folder
+     * @param folderName       the name of the folder to retrieve metadata for
+     * @param level            the hierarchical level of the folder
+     * @return an {@code AssetsFolder} object containing the metadata for the requested folder
+     */
+    private AssetsFolder makeRestCall(final String siteName, final String parentFolderName,
             final String folderName, final int level) {
 
-        return null;
+        // Building the folder path
+        final var folderPath = String.format("//%s/%s/%s", siteName, parentFolderName, folderName);
+
+        // Executing the REST call to get the folder contents
+        var response = assetAPI.byPath(SearchByPathRequest.builder().assetPath(folderPath).build());
+
+        var foundFolder = response.entity();
+        foundFolder = foundFolder.withLevel(level + 1);
+
+        return foundFolder;
     }
+
 }

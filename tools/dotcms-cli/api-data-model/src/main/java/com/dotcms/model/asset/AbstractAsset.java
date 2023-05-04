@@ -1,25 +1,21 @@
-package com.dotcms.model.folder;
+package com.dotcms.model.asset;
 
 import com.dotcms.model.annotation.ValueType;
-import com.dotcms.model.file.File;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import java.util.List;
 import org.immutables.value.Value;
 
 @ValueType
 @Value.Immutable
-@JsonDeserialize(as = Folder.class)
+@JsonDeserialize(as = Asset.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public interface AbstractFolder {
+public interface AbstractAsset extends SimpleWebAsset {
 
-    String parent();
+    String sha256();
 
-    String name();
+    Long size();
 
-    int level();
+    boolean live();
 
-    List<Folder> subFolders();
-
-    List<File> files();
+    String lang();
 }

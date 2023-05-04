@@ -7,7 +7,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
-import javax.ws.rs.NotFoundException;
 import picocli.CommandLine;
 import picocli.CommandLine.Parameters;
 
@@ -31,7 +30,7 @@ public class FilesTree extends AbstractFilesCommand implements Callable<Integer>
 
     @Parameters(index = "0", arity = "1", paramLabel = "path",
             description = "dotCMS path to the directory to list the contents of "
-                    + "- Format: {domain}/{folder}")
+                    + "- Format: //{site}/{folder}")
     String folderPath;
 
     @CommandLine.Option(names = {"-d", "--depth"},
@@ -51,14 +50,8 @@ public class FilesTree extends AbstractFilesCommand implements Callable<Integer>
 
             CompletableFuture<TreeNode> folderTraversalFuture = CompletableFuture.supplyAsync(
                     () -> {
-                        try {
-                            // Service to handle the traversal of the folder
-                            return folderTraversalService.traverse(folderPath, depth);
-                        } catch (Exception e) {
-                            throw new RuntimeException(
-                                    String.format("Folder traversal task failed for folder [%s]",
-                                            folderPath), e);
-                        }
+                        // Service to handle the traversal of the folder
+                        return folderTraversalService.traverse(folderPath, depth);
                     });
 
             // ConsoleLoadingAnimation instance to handle the waiting "animation"
@@ -86,15 +79,12 @@ public class FilesTree extends AbstractFilesCommand implements Callable<Integer>
 
             // Display the result
             StringBuilder sb = new StringBuilder();
-            shortFormat(sb, "", result, true);
+            TreePrinter.getInstance().filteredFormat(result, sb);
 
             output.info(sb.toString());
 
-        } catch (NotFoundException e) {
-            output.error(String.format(
-                    "Error occurred while pulling folder tree: [%s] with message: [%s].",
-                    folderPath, e.getMessage()));
-            return CommandLine.ExitCode.SOFTWARE;
+        } catch (Exception e) {
+            return handleFolderTraversalExceptions(folderPath, e);
         }
 
         return CommandLine.ExitCode.OK;
