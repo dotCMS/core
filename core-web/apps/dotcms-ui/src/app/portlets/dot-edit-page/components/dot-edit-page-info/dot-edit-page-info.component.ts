@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, Inject, Input } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
+import { ChangeDetectionStrategy, Component, Inject, Input } from '@angular/core';
 
 /**
  * Basic page information for edit mode
