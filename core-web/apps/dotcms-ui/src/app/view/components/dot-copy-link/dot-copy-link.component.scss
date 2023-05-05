@@ -1,11 +1,1 @@
-button {
-    all: unset;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-dot-icon {
-    margin-left: 0.15rem;
-}
+@use "variables" as *;

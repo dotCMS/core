@@ -8,7 +8,7 @@
         <button
             class="p-button-outlined"
             [label]="'experiments.report.promote.variant' | dm"
-            (click)="loadPublishVariant(vm.variantResults)"
+            (click)="openPublishVariantDialog()"
             data-testId="publish-variant-button"
             pButton
             pRipple
@@ -26,33 +26,37 @@
 
             <div class="flex justify-content-center w-full container">
                 <div class="flex flex-column gap-2 content">
-                    <dot-experiments-reports-chart />
+                    <dot-experiments-reports-chart
+                        [config]="chartConfig"
+                        [data]="vm.chartData"
+                        [loading]="vm.isLoading"
+                    />
 
                     <dot-experiments-details-table
                         [data]="detailData"
-                        [title]="'dot.experimental.reports.resume' | dm"
+                        [title]="'experiments.reports.resume' | dm"
                     >
                         <ng-template #headers>
                             <div class="flex col flex-wrap align-items-center">
-                                {{ 'dot.experimental.reports.variants' | dm }}
+                                {{ 'experiments.reports.variants' | dm }}
                             </div>
                             <div class="flex col flex-wrap align-items-center justify-content-end">
                                 {{ 'experiments.configure.traffic.split.name' | dm }}
                             </div>
                             <div class="flex col flex-wrap align-items-center justify-content-end">
-                                {{ 'dot.experimental.reports.pageview' | dm }}
+                                {{ 'experiments.reports.pageview' | dm }}
                             </div>
                             <div class="flex col flex-wrap align-items-center justify-content-end">
-                                {{ 'dot.experimental.reports.sessions' | dm }}
+                                {{ 'experiments.reports.sessions' | dm }}
                             </div>
                             <div class="flex col flex-wrap align-items-center justify-content-end">
-                                {{ 'dot.experimental.reports.clicks' | dm }}
+                                {{ 'experiments.reports.clicks' | dm }}
                             </div>
                             <div class="flex col flex-wrap align-items-center justify-content-end">
-                                {{ 'dot.experimental.reports.best-variant' | dm }}
+                                {{ 'experiments.reports.best-variant' | dm }}
                             </div>
                             <div class="flex col flex-wrap align-items-center justify-content-end">
-                                {{ 'dot.experimental.reports.improvement' | dm }}
+                                {{ 'experiments.reports.improvement' | dm }}
                             </div>
                         </ng-template>
 
@@ -121,7 +125,7 @@
                                     </div>
                                 </ng-container>
                                 <ng-template #baselineTpl>
-                                    <span>{{ 'dot.experimental.reports.baseline' | dm }}</span>
+                                    <span>{{ 'experiments.reports.baseline' | dm }}</span>
                                 </ng-template>
                             </div>
                         </ng-template>

@@ -12,7 +12,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.liferay.util.StringPool;
-import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -29,6 +28,146 @@ import java.util.Optional;
  */
 public class StoryBlockAPITest extends IntegrationTestBase {
 
+    private static final String JSON_SELF_REFERENCE =
+            "{\n" +
+                    "   \"type\":\"doc\",\n" +
+                    "   \"attrs\":{\n" +
+                    "      \"chartCount\":2,\n" +
+                    "      \"wordCount\":1,\n" +
+                    "      \"readingTime\":1\n" +
+                    "   },\n" +
+                    "   \"content\":[\n" +
+                    "      {\n" +
+                    "         \"type\":\"dotContent\",\n" +
+                    "         \"attrs\":{\n" +
+                    "            \"data\":{\n" +
+                    "               \"hostName\":\"demo.dotcms.com\",\n" +
+                    "               \"modDate\":\"2020-09-02 16:45:51.583\",\n" +
+                    "               \"publishDate\":\"2020-09-02 16:45:51.583\",\n" +
+                    "               \"title\":\"Let Us Help Pack Your Bags!\",\n" +
+                    "               \"body\":\"<h2>Let Us Help Pack Your Bags!</h2>\\n<h3>Save 30% of your entire Purchase.</h3>\",\n" +
+                    "               \"baseType\":\"CONTENT\",\n" +
+                    "               \"inode\":\"177d31ac-3068-414e-ae32-72aa173c2a7b\",\n" +
+                    "               \"archived\":false,\n" +
+                    "               \"host\":\"48190c8c-42c4-46af-8d1a-0cd5db894797\",\n" +
+                    "               \"working\":true,\n" +
+                    "               \"variantId\":\"DEFAULT\",\n" +
+                    "               \"locked\":false,\n" +
+                    "               \"stInode\":\"2a3e91e4-fbbf-4876-8c5b-2233c1739b05\",\n" +
+                    "               \"contentType\":\"webPageContent\",\n" +
+                    "               \"live\":true,\n" +
+                    "               \"owner\":\"036fd43a-6d98-46e0-b22e-bae02cb86f0c\",\n" +
+                    "               \"identifier\":\"3d3a99c4-9b94-4840-8390-704fb6d1d998\",\n" +
+                    "               \"languageId\":1,\n" +
+                    "               \"url\":\"/content.18f8e5d1-30fd-4282-9123-2e7704ff1567\",\n" +
+                    "               \"titleImage\":\"TITLE_IMAGE_NOT_FOUND\",\n" +
+                    "               \"modUserName\":\"Admin User\",\n" +
+                    "               \"hasLiveVersion\":true,\n" +
+                    "               \"folder\":\"SYSTEM_FOLDER\",\n" +
+                    "               \"hasTitleImage\":false,\n" +
+                    "               \"sortOrder\":0,\n" +
+                    "               \"modUser\":\"dotcms.org.1\",\n" +
+                    "               \"__icon__\":\"contentIcon\",\n" +
+                    "               \"contentTypeIcon\":\"wysiwyg\",\n" +
+                    "               \"language\":\"en-US\"\n" +
+                    "            }\n" +
+                    "         }\n" +
+                    "      },\n" +
+                    "      {\n" +
+                    "         \"type\":\"dotContent\",\n" +
+                    "         \"attrs\":{\n" +
+                    "            \"data\":{\n" +
+                    "               \"hostName\":\"demo.dotcms.com\",\n" +
+                    "               \"modDate\":\"2023-04-28 18:58:46.164\",\n" +
+                    "               \"publishDate\":\"2023-04-28 18:58:46.164\",\n" +
+                    "               \"title\":\"test3\",\n" +
+                    "               \"body\":{\n" +
+                    "                  \"type\":\"doc\",\n" +
+                    "                  \"attrs\":{\n" +
+                    "                     \"chartCount\":1,\n" +
+                    "                     \"wordCount\":1,\n" +
+                    "                     \"readingTime\":1\n" +
+                    "                  },\n" +
+                    "                  \"content\":[\n" +
+                    "                     {\n" +
+                    "                        \"type\":\"dotContent\",\n" +
+                    "                        \"attrs\":{\n" +
+                    "                           \"data\":{\n" +
+                    "                              \"hostName\":\"demo.dotcms.com\",\n" +
+                    "                              \"modDate\":\"2020-09-02 16:45:51.583\",\n" +
+                    "                              \"publishDate\":\"2020-09-02 16:45:51.583\",\n" +
+                    "                              \"title\":\"Let Us Help Pack Your Bags!\",\n" +
+                    "                              \"body\":\"<h2>Let Us Help Pack Your Bags!</h2>\\n<h3>Save 30% of your entire Purchase.</h3>\",\n" +
+                    "                              \"baseType\":\"CONTENT\",\n" +
+                    "                              \"inode\":\"177d31ac-3068-414e-ae32-72aa173c2a7b\",\n" +
+                    "                              \"archived\":false,\n" +
+                    "                              \"host\":\"48190c8c-42c4-46af-8d1a-0cd5db894797\",\n" +
+                    "                              \"working\":true,\n" +
+                    "                              \"variantId\":\"DEFAULT\",\n" +
+                    "                              \"locked\":false,\n" +
+                    "                              \"stInode\":\"2a3e91e4-fbbf-4876-8c5b-2233c1739b05\",\n" +
+                    "                              \"contentType\":\"webPageContent\",\n" +
+                    "                              \"live\":true,\n" +
+                    "                              \"owner\":\"036fd43a-6d98-46e0-b22e-bae02cb86f0c\",\n" +
+                    "                              \"identifier\":\"3d3a99c4-9b94-4840-8390-704fb6d1d998\",\n" +
+                    "                              \"languageId\":1,\n" +
+                    "                              \"url\":\"/content.18f8e5d1-30fd-4282-9123-2e7704ff1567\",\n" +
+                    "                              \"titleImage\":\"TITLE_IMAGE_NOT_FOUND\",\n" +
+                    "                              \"modUserName\":\"Admin User\",\n" +
+                    "                              \"hasLiveVersion\":true,\n" +
+                    "                              \"folder\":\"SYSTEM_FOLDER\",\n" +
+                    "                              \"hasTitleImage\":false,\n" +
+                    "                              \"sortOrder\":0,\n" +
+                    "                              \"modUser\":\"dotcms.org.1\",\n" +
+                    "                              \"__icon__\":\"contentIcon\",\n" +
+                    "                              \"contentTypeIcon\":\"wysiwyg\",\n" +
+                    "                              \"language\":\"en-US\"\n" +
+                    "                           }\n" +
+                    "                        }\n" +
+                    "                     },\n" +
+                    "                     {\n" +
+                    "                        \"type\":\"paragraph\",\n" +
+                    "                        \"attrs\":{\n" +
+                    "                           \"textAlign\":\"left\"\n" +
+                    "                        }\n" +
+                    "                     }\n" +
+                    "                  ]\n" +
+                    "               },\n" +
+                    "               \"baseType\":\"CONTENT\",\n" +
+                    "               \"inode\":\"dcb46b55-13b6-4a49-b694-4c53e2e0e58b\",\n" +
+                    "               \"archived\":false,\n" +
+                    "               \"host\":\"48190c8c-42c4-46af-8d1a-0cd5db894797\",\n" +
+                    "               \"working\":true,\n" +
+                    "               \"variantId\":\"DEFAULT\",\n" +
+                    "               \"locked\":false,\n" +
+                    "               \"stInode\":\"a7278304de440313a1d0fcda65f237a0\",\n" +
+                    "               \"contentType\":\"TestBlockEditor\",\n" +
+                    "               \"live\":false,\n" +
+                    "               \"owner\":\"dotcms.org.1\",\n" +
+                    "               \"identifier\":\"53275900853ae0115707c97d4617efb5\",\n" +
+                    "               \"languageId\":1,\n" +
+                    "               \"url\":\"/content.dcb46b55-13b6-4a49-b694-4c53e2e0e58b\",\n" +
+                    "               \"titleImage\":\"TITLE_IMAGE_NOT_FOUND\",\n" +
+                    "               \"modUserName\":\"Admin User\",\n" +
+                    "               \"hasLiveVersion\":false,\n" +
+                    "               \"folder\":\"SYSTEM_FOLDER\",\n" +
+                    "               \"hasTitleImage\":false,\n" +
+                    "               \"sortOrder\":0,\n" +
+                    "               \"modUser\":\"dotcms.org.1\",\n" +
+                    "               \"__icon__\":\"contentIcon\",\n" +
+                    "               \"contentTypeIcon\":\"event_note\",\n" +
+                    "               \"language\":\"en-US\"\n" +
+                    "            }\n" +
+                    "         }\n" +
+                    "      },\n" +
+                    "      {\n" +
+                    "         \"type\":\"paragraph\",\n" +
+                    "         \"attrs\":{\n" +
+                    "            \"textAlign\":\"left\"\n" +
+                    "         }\n" +
+                    "      }\n" +
+                    "   ]\n" +
+                    "}";
     private static final String JSON =
 
                     "{\n" +
@@ -92,7 +231,24 @@ public class StoryBlockAPITest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link StoryBlockAPI#refreshStoryBlockValueReferences(Object)}
+     * Method to test: {@link StoryBlockAPI#refreshStoryBlockValueReferences(Object,String)}
+     * Given Scenario: This will pass a self reference json, should not throw any exception.
+     * The method should not fail on self reference with a exception.
+     *
+     */
+    @Test
+    public void test_refresh_references_on_self_reference() throws DotDataException, DotSecurityException, JsonProcessingException {
+
+        try {
+            final StoryBlockReferenceResult refreshResult = APILocator.getStoryBlockAPI()
+                    .refreshStoryBlockValueReferences(JSON_SELF_REFERENCE, "3d3a99c4-9b94-4840-8390-704fb6d1d998");
+        } catch (Throwable e) {
+            Assert.fail("Should not throw any exception");
+        }
+    }
+
+    /**
+     * Method to test: {@link StoryBlockAPI#refreshStoryBlockValueReferences(Object,String)}
      * Given Scenario: This will create a story block contentlet, adds a rich content and retrieve the json.
      * Then, will update the rich content previously added, the story block contentlet should reflect the new rich text changed.
      * ExpectedResult: The new json will reflect the rich text changes
@@ -132,7 +288,7 @@ public class StoryBlockAPITest extends IntegrationTestBase {
                 APILocator.getContentletAPI().checkin(newRichTextContentlet, APILocator.systemUser(), false), APILocator.systemUser(), false);
 
         // 5) ask for refreshing references, the new changes of the rich text contentlet should be reflected on the json
-        final StoryBlockReferenceResult refreshResult = APILocator.getStoryBlockAPI().refreshStoryBlockValueReferences(newStoryBlockJson);
+        final StoryBlockReferenceResult refreshResult = APILocator.getStoryBlockAPI().refreshStoryBlockValueReferences(newStoryBlockJson, "1234");
 
         // 6) check if the results are ok.
         Assert.assertTrue(refreshResult.isRefreshed());
@@ -200,4 +356,53 @@ public class StoryBlockAPITest extends IntegrationTestBase {
         Assert.assertNotNull(contentletIdList);
         Assert.assertTrue(contentletIdList.isEmpty());
     }
+    
+    /**
+     * Method to test: {@link StoryBlockAPI#getDependencies(Object)}
+     * Given Scenario: Test a story block value that is a json (html in this case) see (https://github.com/dotCMS/core/issues/24299)
+     * ExpectedResult: Do not throw exception and must return zero dependencies
+     */
+    @Test
+    public void test_get_dependencies_with_empty_json_value()  {
+
+        final Object newStoryBlockJson1        = "{\"test\":\"test\"}";
+
+        final List<String> contentletIdList = APILocator.getStoryBlockAPI().getDependencies(newStoryBlockJson1);
+        Assert.assertNotNull(contentletIdList);
+        Assert.assertTrue(contentletIdList.isEmpty());
+    }
+    
+    /**
+     * Method to test: {@link StoryBlockAPI#getDependencies(Object)}
+     * Given Scenario: Test a story block value that is a json (html in this case) see (https://github.com/dotCMS/core/issues/24299)
+     * ExpectedResult: Do not throw exception and must return zero dependencies
+     */
+    @Test
+    public void test_get_dependencies_with_bad_content_value()  {
+
+        final Object newStoryBlockJson1        = "{\"content\":\"test\"}";
+
+        final List<String> contentletIdList = APILocator.getStoryBlockAPI().getDependencies(newStoryBlockJson1);
+        Assert.assertNotNull(contentletIdList);
+        Assert.assertTrue(contentletIdList.isEmpty());
+    }
+    
+    @Test
+    public void test_get_refreshStoryBlockValueReferences_with_bad_content_value()  {
+    
+        final Object newStoryBlockJson1        = "{\"test\":\"test\"}";
+        
+        StoryBlockReferenceResult result = APILocator.getStoryBlockAPI().refreshStoryBlockValueReferences(newStoryBlockJson1, "xxx");
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result.isRefreshed());
+        
+        final Object newStoryBlockJson2        = "{\"content\":\"test\"}";
+        result = APILocator.getStoryBlockAPI().refreshStoryBlockValueReferences(newStoryBlockJson2, "xxx");
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result.isRefreshed());
+    
+        
+    }
+    
+    
 }

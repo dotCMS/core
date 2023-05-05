@@ -29,22 +29,25 @@ import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.PersonalizedContentlet;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
-import graphql.AssertException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -439,11 +442,6 @@ public class VariantAPITest {
 
         checkVersion(contentlet2, false, VariantAPI.DEFAULT_VARIANT, "contentlet2_variant",
                 titleField);
-
-        final Variant variantFromDataBase = APILocator.getVariantAPI().get(variant.name())
-                .orElseThrow(() -> new DotStateException("Unable to find Variant"));
-
-        assertTrue(variantFromDataBase.archived());
     }
 
     /**
@@ -902,13 +900,14 @@ public class VariantAPITest {
      * When: You try to promote a Variant that does not exist
      * Should: throw a Exception
      */
+    @Test
     public void promoteNonExistingVariant() throws DotDataException {
 
         final Variant doesNotExistsVariant = new VariantDataGen().next();
         try {
             APILocator.getVariantAPI().promote(doesNotExistsVariant, APILocator.systemUser());
             fail("Should throw a Exception");
-        } catch (IllegalArgumentException e) {
+        } catch (DoesNotExistException e) {
             //Expected
         }
     }
@@ -918,6 +917,7 @@ public class VariantAPITest {
      * When: You try to promote the DEFAULT Variant.
      * Should: throw a Exception
      */
+    @Test
     public void promoteDefaultVariant() throws DotDataException {
         try {
             APILocator.getVariantAPI().promote(VariantAPI.DEFAULT_VARIANT, APILocator.systemUser());
@@ -925,6 +925,18 @@ public class VariantAPITest {
         } catch (IllegalArgumentException e) {
             //Expected
         }
+    }
+
+    /**
+     * Method to test: {@link VariantAPIImpl#promote(Variant, User)}
+     * When: You try to promote a Variant that is already promoted.
+     * Should: not fail
+     */
+    @Test
+    public void promoteAlreadyPromoteVariant() throws DotDataException {
+        final Variant variant = new VariantDataGen().nextPersisted();
+        APILocator.getVariantAPI().promote(variant, APILocator.systemUser());
+        APILocator.getVariantAPI().promote(variant, APILocator.systemUser());
     }
 
     /**
@@ -1037,14 +1049,141 @@ public class VariantAPITest {
      * Method to test: {@link VariantAPIImpl#promote(Variant, User)}
      * When:
      * - Create a {@link Variant}.
+     * - Create a {@link ContentType} with a {@link TextField} called title.
      * - Create two {@link Contentlet} and create version for DEFAULT and the newly created Variant.
-     * - Publish them.
+     * - Publish them and later Create a new Working Version for each of them.
      * - Create a Page and Create a version of the page for the newly created Variant.
-     * - Add the two {@link Contentlet} to the page.
+     * - Add the {@link Contentlet} 1 to the page into the DEFAULT Variant.
+     * - Add the {@link Contentlet} 2 to the page into the newly created Variant.
      * - Promote the newly created {@link Variant}
-     * Should: Copy the two Contetlet and the page to the DEFAULT Variant, Also should copy the {@link com.dotmarketing.beans.MultiTree}.
+     * Should: Copy the two Contetlet and the page to the DEFAULT Variant, Also should override the {@link com.dotmarketing.beans.MultiTree}
+     * from the Variant to Default.
      */
+    @Test
     public void promotePage() throws DotDataException, DotSecurityException {
+        final Variant variant = new VariantDataGen().nextPersisted();
+
+        final Field titleField = new FieldDataGen()
+                .type(TextField.class)
+                .name("title")
+                .velocityVarName("title")
+                .next();
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .field(titleField)
+                .nextPersisted();
+
+        final Contentlet contentlet1 = new ContentletDataGen(contentType)
+                .setProperty(titleField.variable(), "LIVE contentlet1")
+                .nextPersisted();
+
+        final Contentlet contentlet2 = new ContentletDataGen(contentType)
+                .setProperty(titleField.variable(), "LIVE contentlet2")
+                .nextPersisted();
+
+        final Contentlet contentlet1Variant = ContentletDataGen.createNewVersion(contentlet1,
+                variant, map(
+                        titleField.variable(), "LIVE contentlet1_variant"
+                ));
+        final Contentlet contentlet2Variant = ContentletDataGen.createNewVersion(contentlet2,
+                variant, map(
+                        titleField.variable(), "LIVE contentlet2_variant"
+                ));
+
+        APILocator.getContentletAPI().publish(contentlet1, APILocator.systemUser(), false);
+        APILocator.getContentletAPI().publish(contentlet2, APILocator.systemUser(), false);
+
+        APILocator.getContentletAPI().publish(contentlet1Variant, APILocator.systemUser(), false);
+        APILocator.getContentletAPI().publish(contentlet2Variant, APILocator.systemUser(), false);
+
+        ContentletDataGen.update(contentlet1, map("title", "WORKING contentlet1"));
+        ContentletDataGen.update(contentlet2, map("title", "WORKING contentlet2"));
+        ContentletDataGen.update(contentlet1Variant, map("title", "WORKING contentlet1_variant"));
+        ContentletDataGen.update(contentlet2Variant, map("title", "WORKING contentlet2_variant"));
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().withContainer(container.getIdentifier()).nextPersisted();
+
+        final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
+        ContentletDataGen.createNewVersion(htmlPageAsset, variant, map());
+
+        new MultiTreeDataGen()
+                .setContainer(container)
+                .setPage(htmlPageAsset)
+                .setContentlet(contentlet1)
+                .setVariant(VariantAPI.DEFAULT_VARIANT)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setContainer(container)
+                .setPage(htmlPageAsset)
+                .setContentlet(contentlet2)
+                .setVariant(variant)
+                .nextPersisted();
+
+        APILocator.getVariantAPI().promote(variant, APILocator.systemUser());
+
+        checkVersion(contentlet1, false, VariantAPI.DEFAULT_VARIANT, "WORKING contentlet1_variant",
+                titleField);
+
+        checkVersion(contentlet1, false, variant, "WORKING contentlet1_variant",
+                titleField);
+
+        checkVersion(contentlet1, true, VariantAPI.DEFAULT_VARIANT, "LIVE contentlet1_variant",
+                titleField);
+
+        checkVersion(contentlet1, true, variant, "LIVE contentlet1_variant",
+                titleField);
+
+        checkVersion(contentlet2, false, VariantAPI.DEFAULT_VARIANT, "WORKING contentlet2_variant",
+                titleField);
+
+        checkVersion(contentlet2, false, variant, "WORKING contentlet2_variant",
+                titleField);
+
+        checkVersion(contentlet2, true, VariantAPI.DEFAULT_VARIANT, "LIVE contentlet2_variant",
+                titleField);
+
+        checkVersion(contentlet2, true, variant, "LIVE contentlet2_variant",
+                titleField);
+
+        final List<MultiTree> multiTreesByDefault = APILocator.getMultiTreeAPI()
+                .getMultiTreesByVariant(htmlPageAsset.getIdentifier(), VariantAPI.DEFAULT_VARIANT.name());
+
+        assertEquals(1, multiTreesByDefault.size());
+        multiTreesByDefault.stream().map(multiTree -> multiTree.getContentlet())
+                .forEach(contentletIdentifier ->
+                    assertTrue(contentletIdentifier.equals(contentlet2.getIdentifier()))
+                );
+
+        final List<MultiTree> multiTreesByVariant = APILocator.getMultiTreeAPI()
+                .getMultiTreesByVariant(htmlPageAsset.getIdentifier(), variant.name());
+
+        assertEquals(1, multiTreesByVariant.size());
+        multiTreesByVariant.stream().map(multiTree -> multiTree.getContentlet())
+                .forEach(contentletIdentifier ->
+                        assertTrue(contentletIdentifier.equals(contentlet2Variant.getIdentifier()))
+                );
+
+    }
+
+    /**
+     * Method to test: {@link VariantAPIImpl#promote(Variant, User)}
+     * When:
+     * - Create a {@link Variant}.
+     * - Create a {@link ContentType} with a {@link TextField} called title.
+     * - Create two {@link Contentlet} and create version for DEFAULT and the newly created Variant.
+     * - Publish them and later Create a new Working Version for each of them.
+     * - Create a Page but NOT Create a version of the page for the newly created Variant.
+     * - Add the {@link Contentlet} 1 to the page into the DEFAULT Variant.
+     * - Add the {@link Contentlet} 2 to the page into the newly created Variant.
+     * - Promote the newly created {@link Variant}
+     * Should: Copy the two Contetlet Also should override the {@link com.dotmarketing.beans.MultiTree}
+     * from the Variant to Default.
+     */
+    @Test
+    public void pageWithNoVersion() throws DotDataException, DotSecurityException {
         final Variant variant = new VariantDataGen().nextPersisted();
 
         final Field titleField = new FieldDataGen()
@@ -1095,68 +1234,64 @@ public class VariantAPITest {
                 .setContainer(container)
                 .setPage(htmlPageAsset)
                 .setContentlet(contentlet1)
+                .setVariant(VariantAPI.DEFAULT_VARIANT)
                 .nextPersisted();
 
         new MultiTreeDataGen()
                 .setContainer(container)
                 .setPage(htmlPageAsset)
                 .setContentlet(contentlet2)
+                .setVariant(variant)
                 .nextPersisted();
 
         APILocator.getVariantAPI().promote(variant, APILocator.systemUser());
 
-        checkVersion(contentlet1, false, VariantAPI.DEFAULT_VARIANT, "WORKING contentlet1_variant Language_1",
+        checkVersion(contentlet1, false, VariantAPI.DEFAULT_VARIANT, "WORKING contentlet1_variant",
                 titleField);
 
-        checkVersion(contentlet1, false, variant, "WORKING contentlet1_variant Language_1",
+        checkVersion(contentlet1, false, variant, "WORKING contentlet1_variant",
                 titleField);
 
-        checkVersion(contentlet1, true, VariantAPI.DEFAULT_VARIANT, "LIVE contentlet1_variant Language_1",
+        checkVersion(contentlet1, true, VariantAPI.DEFAULT_VARIANT, "LIVE contentlet1_variant",
                 titleField);
 
-        checkVersion(contentlet1, true, variant, "LIVE contentlet1_variant Language_1",
+        checkVersion(contentlet1, true, variant, "LIVE contentlet1_variant",
                 titleField);
 
-        checkVersion(contentlet2, false, VariantAPI.DEFAULT_VARIANT, "WORKING contentlet2_variant Language_1",
+        checkVersion(contentlet2, false, VariantAPI.DEFAULT_VARIANT, "WORKING contentlet2_variant",
                 titleField);
 
-        checkVersion(contentlet2, false, variant, "WORKING contentlet2_variant Language_1",
+        checkVersion(contentlet2, false, variant, "WORKING contentlet2_variant",
                 titleField);
 
-        checkVersion(contentlet2, true, VariantAPI.DEFAULT_VARIANT, "LIVE contentlet2_variant Language_1",
+        checkVersion(contentlet2, true, VariantAPI.DEFAULT_VARIANT, "LIVE contentlet2_variant",
                 titleField);
 
-        checkVersion(contentlet2, true, variant, "LIVE contentlet2_variant Language_1",
+        checkVersion(contentlet2, true, variant, "LIVE contentlet2_variant",
                 titleField);
 
-        checkNull(htmlPageAsset, false, variant);
+        final List<MultiTree> multiTreesByDefault = APILocator.getMultiTreeAPI()
+                .getMultiTreesByVariant(htmlPageAsset.getIdentifier(), VariantAPI.DEFAULT_VARIANT.name());
 
-        final List<MultiTree> multiTrees = APILocator.getMultiTreeAPI()
-                .getMultiTrees(htmlPageAsset.getIdentifier());
-
-        assertEquals(4, multiTrees.size());
-
-        final List<MultiTree> defaultMultiTrees = multiTrees.stream()
-                .filter(multiTree -> multiTree.getVariantId().equals(VariantAPI.DEFAULT_VARIANT))
-                .collect(Collectors.toList());
-
-        assertEquals(2, defaultMultiTrees.size());
-        defaultMultiTrees.stream().map(multiTree -> multiTree.getContentlet())
+        assertEquals(1, multiTreesByDefault.size());
+        multiTreesByDefault.stream().map(multiTree -> multiTree.getContentlet())
                 .forEach(contentletIdentifier ->
-                    assertTrue(contentletIdentifier.equals(contentlet1.getIdentifier()) ||
-                            contentletIdentifier.equals(contentlet2.getIdentifier()))
+                        assertTrue(contentletIdentifier.equals(contentlet2.getIdentifier()))
                 );
 
-        final List<MultiTree> variantMultiTrees = multiTrees.stream()
-                .filter(multiTree -> multiTree.getVariantId().equals(variant.name()))
-                .collect(Collectors.toList());
+        final List<MultiTree> multiTreesByVariant = APILocator.getMultiTreeAPI()
+                .getMultiTreesByVariant(htmlPageAsset.getIdentifier(), variant.name());
 
-        assertEquals(2, variantMultiTrees.size());
-        variantMultiTrees.stream().map(multiTree -> multiTree.getContentlet())
+        assertEquals(1, multiTreesByVariant.size());
+        multiTreesByVariant.stream().map(multiTree -> multiTree.getContentlet())
                 .forEach(contentletIdentifier ->
-                    assertTrue(contentletIdentifier.equals(contentlet1.getIdentifier()) ||
-                            contentletIdentifier.equals(contentlet2.getIdentifier()))
+                        assertTrue(contentletIdentifier.equals(contentlet2Variant.getIdentifier()))
                 );
+
+        final Optional<Table<String, String, Set<PersonalizedContentlet>>> pageMultiTrees = CacheLocator.getMultiTreeCache()
+                .getPageMultiTrees(htmlPageAsset.getIdentifier(), variant.name(), false);
+
+        assertTrue(pageMultiTrees.isEmpty());
     }
 }
 

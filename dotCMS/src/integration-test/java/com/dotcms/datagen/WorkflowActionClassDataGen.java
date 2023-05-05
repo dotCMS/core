@@ -40,7 +40,7 @@ public class WorkflowActionClassDataGen extends AbstractDataGen<WorkflowActionCl
             workflowActionClass.setActionId(actionId);
             workflowActionClass.setClazz(actionClass.getName());
             workflowActionClass
-                    .setName(WorkFlowActionlet.class.cast(actionClass.newInstance()).getName());
+                    .setName(WorkFlowActionlet.class.cast(actionClass.getDeclaredConstructor().newInstance()).getName());
             workflowActionClass.setOrder(order);
         } catch (Exception e) {
             throw new RuntimeException("Unable to create WorkflowActionClass instance.", e);

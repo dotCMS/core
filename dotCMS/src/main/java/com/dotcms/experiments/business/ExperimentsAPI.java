@@ -23,6 +23,7 @@ import java.util.Optional;
 
 public interface ExperimentsAPI {
 
+    String PRIMARY_GOAL = "primary";
     Lazy<Integer> EXPERIMENTS_MAX_DURATION = Lazy.of(()->Config.getIntProperty("EXPERIMENTS_MAX_DURATION", 35));
     Lazy<Integer> EXPERIMENT_LOOKBACK_WINDOW = Lazy.of(()->Config.getIntProperty("EXPERIMENTS_LOOKBACK_WINDOW", 10));
 
@@ -198,4 +199,9 @@ public interface ExperimentsAPI {
      */
     void endFinalizedExperiments(final User user) throws DotDataException;
 
+    /**
+     * Promotes a Variant to the default one for the given Experiment
+     */
+    Experiment promoteVariant(String experimentId, String variantName, User user)
+            throws DotDataException, DotSecurityException;
 }

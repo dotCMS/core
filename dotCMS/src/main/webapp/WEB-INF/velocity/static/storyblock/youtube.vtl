@@ -1,0 +1,17 @@
+#set($src =  $!item.attrs.src)
+#set($path =  $!src.split('/'))
+#set($index = $!path.size() - 1)
+#set($videoId = $!path.get($index))
+
+<div style="max-width: 100%;text-align: center; margin-bottom: 1.5rem;">
+    <iframe
+        width="100%"
+        height="auto"
+        style="aspect-ratio: 16 / 9;"
+        src="https://www.youtube.com/embed/$videoId"
+        frameborder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        allowfullscreen
+    ></iframe>
+</div>
+

@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "50e22041-5236-42d7-8d37-b9a39f0457e3",
+		"_postman_id": "64a156b5-40b4-46ce-8bab-6083e910e48a",
 		"name": "Content Resource",
 		"description": "Content Resource test",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -1763,15 +1763,6 @@
 								"type": "text"
 							}
 						],
-						"body": {
-							"mode": "raw",
-							"raw": "{}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/UNPUBLISH?inode={{fileInode}}&identifier={{fileId}}",
 							"host": [
@@ -1844,15 +1835,6 @@
 								"type": "text"
 							}
 						],
-						"body": {
-							"mode": "raw",
-							"raw": "{}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/ARCHIVE?inode={{fileInode}}&identifier={{fileId}}",
 							"host": [
@@ -1925,15 +1907,6 @@
 								"type": "text"
 							}
 						],
-						"body": {
-							"mode": "raw",
-							"raw": "{}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/DELETE?inode={{fileInode}}&identifier={{fileId}}",
 							"host": [

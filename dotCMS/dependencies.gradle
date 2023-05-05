@@ -5,6 +5,8 @@ def eeType = dotcmsReleaseVersion == "master" ? '-SNAPSHOT' : ''
 
 dependencies {
 
+    rewrite("org.openrewrite.recipe:rewrite-migrate-java:1.18.0")
+
     def immutablesVersion = "2.9.1"
     def byteBuddyVersion = "1.12.6"
     annotationProcessor "org.immutables:value:$immutablesVersion" // <--- this is important
@@ -13,10 +15,6 @@ dependencies {
         because 'undated for security'
     }
 
-    if (!(project.gradle.startParameter.taskNames.contains('deployWarTomcatDev') || project.gradle.startParameter.taskNames.contains('testDev'))) {
-
-        implementation group: 'com.dotcms.enterprise', name: 'ee', version: dotcmsReleaseVersion + eeType, changing: true
-    }
 
     implementation group: 'com.sun.mail', name: 'jakarta.mail', version: '1.6.7'
 

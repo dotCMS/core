@@ -306,7 +306,7 @@ public abstract class AbstractPagerTool implements ViewTool
         int next = index + itemsPerPage;
         if (next < getItems().size())
         {
-            return new Integer(next);
+            return Integer.valueOf(next);
         }
         return null;
     }
@@ -325,7 +325,7 @@ public abstract class AbstractPagerTool implements ViewTool
         int prev = Math.min(index, getItems().size()) - itemsPerPage;
         if (index > 0)
         {
-            return new Integer(Math.max(0, prev));
+            return Integer.valueOf(Math.max(0, prev));
         }
         return null;
     }
@@ -372,7 +372,7 @@ public abstract class AbstractPagerTool implements ViewTool
         {
             return null;
         }
-        return new Integer(1 + i / itemsPerPage);
+        return Integer.valueOf(1 + i / itemsPerPage);
     }
 
 
@@ -468,7 +468,7 @@ public abstract class AbstractPagerTool implements ViewTool
         List slip = new ArrayList(slipEnd - slipStart);
         for (int i=slipStart; i < slipEnd; i++)
         {
-            slip.add(new Integer(i * itemsPerPage));
+            slip.add(Integer.valueOf(i * itemsPerPage));
         }
         return slip;
     }

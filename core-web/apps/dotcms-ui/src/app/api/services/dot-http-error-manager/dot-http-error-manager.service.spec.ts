@@ -5,6 +5,8 @@ import { getTestBed, TestBed } from '@angular/core/testing';
 
 import { ConfirmationService } from 'primeng/api';
 
+import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import {
@@ -59,6 +61,7 @@ describe('DotHttpErrorManagerService', () => {
                     provide: DotMessageService,
                     useValue: messageServiceMock
                 },
+                { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 ConfirmationService,
                 DotAlertConfirmService,
@@ -214,6 +217,27 @@ describe('DotHttpErrorManagerService', () => {
 
         const responseView: HttpErrorResponse = mockResponseView(400, null, null, {
             errors: [{ message: 'Server Error' }]
+        });
+
+        service.handle(responseView).subscribe((res) => {
+            result = res;
+        });
+
+        expect(result).toEqual({
+            redirected: false,
+            status: 400
+        });
+        expect(dotDialogService.alert).toHaveBeenCalledWith({
+            message: 'Server Error',
+            header: '400 Header'
+        });
+    });
+
+    it('should handle 400 error on error.error', () => {
+        spyOn(dotDialogService, 'alert');
+
+        const responseView: HttpErrorResponse = mockResponseView(400, null, null, {
+            error: 'Server Error'
         });
 
         service.handle(responseView).subscribe((res) => {

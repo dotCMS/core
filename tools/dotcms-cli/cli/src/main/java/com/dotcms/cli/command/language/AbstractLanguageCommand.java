@@ -2,11 +2,14 @@ package com.dotcms.cli.command.language;
 
 import com.dotcms.api.LanguageAPI;
 import com.dotcms.api.client.RestClientFactory;
+import com.dotcms.cli.common.HelpOptionMixin;
+import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.language.Language;
 import java.util.Optional;
 import javax.inject.Inject;
 import javax.ws.rs.NotFoundException;
 import org.apache.commons.lang3.StringUtils;
+import picocli.CommandLine;
 
 /**
  *
@@ -14,8 +17,14 @@ import org.apache.commons.lang3.StringUtils;
  */
 public abstract class AbstractLanguageCommand {
 
+    @CommandLine.Mixin(name = "output")
+    protected OutputOptionMixin output;
+
+    @CommandLine.Mixin
+    protected HelpOptionMixin helpOptionMixin;
+
     @Inject
-    RestClientFactory clientFactory;
+    protected RestClientFactory clientFactory;
 
     String shortFormat(final Language language) {
         return String.format(
@@ -45,7 +54,7 @@ public abstract class AbstractLanguageCommand {
                 }
                 return Optional.of(language);
             } catch (NotFoundException nfe){
-            // empty
+                output.error("Language not found: " + languageTagOrId);
             }
         }
         return Optional.empty();

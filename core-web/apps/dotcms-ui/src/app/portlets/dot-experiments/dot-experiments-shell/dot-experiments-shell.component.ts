@@ -17,7 +17,7 @@ export class DotExperimentsShellComponent implements OnInit {
     private removeVariantQueryParams() {
         this.router.navigate([], {
             queryParams: {
-                editPageTab: null,
+                mode: null,
                 variantName: null,
                 experimentId: null
             },

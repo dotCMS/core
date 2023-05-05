@@ -1,0 +1,33 @@
+@use "variables" as *;
+
+.placeholder-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: fit-content;
+    padding: 0;
+}
+
+.preview-container__video {
+    aspect-ratio: 16/9;
+    height: 300px;
+
+    video {
+        width: 100%;
+        height: 100%;
+    }
+}
+
+.preview-container__loading {
+    display: flex;
+    justify-content: space-between;
+    padding: 1rem 0;
+}
+
+.default-message {
+    background-color: $color-palette-gray-200;
+    display: block;
+    padding: $dot-editor-size;
+    font-size: $font-size-lg;
+    width: 100%;
+}

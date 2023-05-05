@@ -30,8 +30,8 @@
     List<ContentType> contentTypes = (List<ContentType>)request.getAttribute ("contentSearchContentTypes");
 
     List<Structure> structures = new StructureTransformer(contentTypes).asStructureList();
-    
-    
+
+
     List<Language> languages = (List<Language>)request.getAttribute (com.dotmarketing.util.WebKeys.LANGUAGES);
 
     java.util.Map params = new java.util.HashMap();
@@ -203,7 +203,7 @@
 
     Map<String, String> initParams = (Map<String, String>) request.getAttribute("initParams");
     final String dataViewMode = initParams.getOrDefault("dataViewMode", "");
-    
+
 %>
 
 <jsp:include page="/html/portlet/ext/folders/context_menus_js.jsp" />
@@ -265,17 +265,17 @@
     var dojoStore = new dojo.data.ItemFileReadStore({
         data: dataItems
     });
-    
-    
+
+
     var  dojoRelationshipsStore = new dojo.data.ItemFileReadStore({
         data:  {
             identifier  : "id",
-            label: "label", 
+            label: "label",
             items: []
         }
     });
-    
-    
+
+
     function reloadRelationshipBox(box, relatedType){
     	var search = box.attr("displayedValue");
 
@@ -285,14 +285,14 @@
         if (relatedType.indexOf(".") != -1){
             relatedType = relatedType.split('.')[0];
         }
-        
+
     	var tmpl = `
-    		{ "query" : 
-	    	    { 
-	    	        "query_string" : 
+    		{ "query" :
+	    	    {
+	    	        "query_string" :
 	    	        {
 	    	            "query" : "+contentType:${relatedType}  +(inode:${boxValue} title:${boxValue} identifier:${boxValue})"
-	    	        } 
+	    	        }
 	    	    },
 	    	    "sort" : {"moddate":"desc"},
 	    	    "size":${limit},
@@ -310,10 +310,10 @@
               },
              handleAs : "json",
              load: function(data) {
-     
+
                  let dataItems = {
                      identifier  : "id",
-                     label: "label", 
+                     label: "label",
                      items: []
                  };
 
@@ -321,11 +321,11 @@
                      let entity = data.contentlets[i];
                      dataItems.items[i] = { label: entity.title, id: (entity.identifier + " " + entity.inode), searchMe : entity.title + " " + entity.identifier + " " + entity.inode };
                  }
-                 
+
                  dojoRelationshipsStore = new dojo.data.ItemFileReadStore({
                      data: dataItems
                  });
-                 
+
                  box.store=dojoRelationshipsStore;
                  box.set( 'store',dojoRelationshipsStore);
                  box.startup();
@@ -334,7 +334,7 @@
          dojo.xhrPost(xhrArgs);
      }
 
-    
+
 
     // Workflow Schemes
     var dojoSchemeStore = null;
@@ -636,12 +636,9 @@
                        <%} %>
                     </dl>
 
-                    <!-- site_folder_field fields  --->
-                    <div id="site_folder_field"></div>
-               
                     <div id="advancedSearchOptions" style="height:0px;overflow: hidden">
-                        
-                       
+
+
                         <dl class="vertical">
                             <dt><label><%= LanguageUtil.get(pageContext, "Workflow-Schemes") %>:</label></dt>
                             <dd><span id="schemeSelectBox"></span></dd>
@@ -655,41 +652,43 @@
                         </dl>
 
                         <%if (languages.size() > 1) { %>
-                        <dl class="vertical">
-                            <!-- Language search fields  --->
-                            <dt><label><%= LanguageUtil.get(pageContext, "Language") %>:</label></dt>
-                            <dd>
-                                <div id="combo_zone2">
-                                    <input id="language_id"/>
-                                </div>
+                            <dl class="vertical">
+                                <!-- Language search fields  --->
+                                <dt><label><%= LanguageUtil.get(pageContext, "Language") %>:</label></dt>
+                                <dd>
+                                    <div id="combo_zone2">
+                                        <input id="language_id"/>
+                                    </div>
 
-                                <%@include file="languages_select_inc.jsp" %>
-                            </dd>
-                        </dl>
-                        <%} else { %>
-                        <% long langId = languages.get(0).getId(); %>
-                        <input type="hidden" name="language_id" id="language_id" value="<%= langId %>">
-                        <% } %>
+                                    <%@include file="languages_select_inc.jsp" %>
+                                </dd>
+                            </dl>
+                            <%} else { %>
+                                <% long langId = languages.get(0).getId(); %>
+                                <input type="hidden" name="language_id" id="language_id" value="<%= langId %>">
+                                <% } %>
+                                <!-- site_folder_field fields  --->
+                                <div id="site_folder_field"></div>
 
 
-                        <div class="clear"></div>
-                         <!-- Ajax built search fields  --->
-                         <div id="search_fields_table"></div>
+                                <div class="clear"></div>
+                                <!-- Ajax built search fields  --->
+                                <div id="search_fields_table"></div>
 
-                        <!-- Ajax built Categories   --->
-                        <dl class="vertical" id="search_categories_list"></dl>
-                        <div class="clear"></div>
-                        <!-- /Ajax built Categories   --->
+                                <!-- Ajax built Categories   --->
+                                <dl class="vertical" id="search_categories_list"></dl>
+                                <div class="clear"></div>
+                                <!-- /Ajax built Categories   --->
 
-                        <dl class="vertical">
-                            <dt><label><%= LanguageUtil.get(pageContext, "Show") %>:</label></dt>
-                            <dd>
-                                <select name="showingSelect" onchange='doSearch(1);togglePublish()'  id="showingSelect" dojoType="dijit.form.FilteringSelect">
-                                    <option value="all" <% if (!showDeleted && !filterLocked && !filterUnpublish) { %> selected <% } %>><%= LanguageUtil.get(pageContext, "All") %></option>
-                                    <option value="locked" <% if (filterLocked) { %> selected <% } %>><%= LanguageUtil.get(pageContext, "Locked") %></option>
-                                    <option value="unpublished" <% if (filterUnpublish) { %> selected <% } %>><%= LanguageUtil.get(pageContext, "Unpublished") %></option>
-                                    <option value="archived" <% if (showDeleted) { %> selected <% } %>><%= LanguageUtil.get(pageContext, "Archived") %></option>
-                                </select>
+                                <dl class="vertical">
+                                    <dt><label><%= LanguageUtil.get(pageContext, "Show") %>:</label></dt>
+                                    <dd>
+                                        <select name="showingSelect" onchange='doSearch(1);togglePublish()'  id="showingSelect" dojoType="dijit.form.FilteringSelect">
+                                            <option value="all" <% if (!showDeleted && !filterLocked && !filterUnpublish) { %> selected <% } %>><%= LanguageUtil.get(pageContext, "All") %></option>
+                                            <option value="locked" <% if (filterLocked) { %> selected <% } %>><%= LanguageUtil.get(pageContext, "Locked") %></option>
+                                            <option value="unpublished" <% if (filterUnpublish) { %> selected <% } %>><%= LanguageUtil.get(pageContext, "Unpublished") %></option>
+                                            <option value="archived" <% if (showDeleted) { %> selected <% } %>><%= LanguageUtil.get(pageContext, "Archived") %></option>
+                                        </select>
                             </dd>
                         </dl>
 
@@ -753,11 +752,11 @@
                     <input type="hidden" name="referer" value="<%=referer%>">
                     <input type="hidden" name="cmd" value="prepublish">
                     <div class="portlet-toolbar" style="height: 48px; margin-top: 16px;">
-                        <div class="portlet-toolbar__actions-secondary">
+                        <div class="portlet-toolbar__actions-secondary" style="display: flex; align-items: center; padding-left: 0.5rem;">
+                            <div class="portlet-toolbar__actions-search" style="width: 270px;">
+                                <input type="text" dojoType="dijit.form.TextBox" tabindex="1" placeholder="<%= LanguageUtil.get(pageContext, "Type-To-Search").replace("\"", "'") %>" onKeyUp='doSearch()' name="allFieldTB" id="allFieldTB" value="<%=_allValue %>">
+                            </div>
                             <div id="matchingResultsDiv" style="display: none" class="portlet-toolbar__info"></div>
-                        </div>
-                        <div class="portlet-toolbar__actions-search" style="width: 270px;">
-                            <input type="text" dojoType="dijit.form.TextBox" tabindex="1" placeholder="<%= LanguageUtil.get(pageContext, "Type-To-Search").replace("\"", "'") %>" onKeyUp='doSearch()' name="allFieldTB" id="allFieldTB" value="<%=_allValue %>">
                         </div>
                         <div class="portlet-toolbar__actions-primary">
                             <button id="bulkAvailableActions" dojoType="dijit.form.Button" data-dojo-props="onClick: doShowAvailableActions" iconClass="actionIcon" >

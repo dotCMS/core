@@ -62,8 +62,8 @@ public class LinkCheckerAjaxAction extends AjaxAction {
         int pageSize=Integer.parseInt(pmap.get("pageSize"));
         String structureInode = pmap.get("structInode");
         
-        Map<String,Object> result=new HashMap<String,Object>();
-        List<Map> list=new ArrayList<Map>();
+        Map<String,Object> result=new HashMap<>();
+        List<Map> list=new ArrayList<>();
         SimpleDateFormat df=new SimpleDateFormat("MM/dd/yyyy hh:mm a");
         try {
             for(InvalidLink link : APILocator.getLinkCheckerAPI().findAllByStructure(structureInode, offset, pageSize)) {
@@ -72,7 +72,7 @@ public class LinkCheckerAjaxAction extends AjaxAction {
                 Field field=FieldsCache.getField(link.getField()); 
                 Structure st=CacheLocator.getContentTypeCache().getStructureByInode(field.getStructureInode());
                 
-                Map<String,String> mm=new HashMap<String,String>();
+                Map<String,String> mm=new HashMap<>();
                 mm.put("inode", link.getInode());
                 mm.put("con_title", con.getTitle());
                 if(con.isArchived()) {

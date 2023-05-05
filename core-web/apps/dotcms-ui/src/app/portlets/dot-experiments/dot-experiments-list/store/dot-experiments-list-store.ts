@@ -283,10 +283,10 @@ export class DotExperimentsListStore
                             this.messageService.add({
                                 severity: 'info',
                                 summary: this.dotMessageService.get(
-                                    'experiments.action.archived.confirm-title'
+                                    'experiments.action.archive.confirm-title'
                                 ),
                                 detail: this.dotMessageService.get(
-                                    'experiments.action.archived.confirm-message',
+                                    'experiments.action.archive.confirm-message',
                                     experiment.name
                                 )
                             });

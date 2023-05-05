@@ -5,6 +5,7 @@ import { RouterModule, Routes } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { DialogModule } from 'primeng/dialog';
+import { DialogService } from 'primeng/dynamicdialog';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotOverlayMaskModule } from '@components/_common/dot-overlay-mask/dot-overlay-mask.module';
@@ -33,6 +34,7 @@ import { DotFormSelectorModule } from './components/dot-form-selector/dot-form-s
 import { DotWhatsChangedModule } from './components/dot-whats-changed/dot-whats-changed.module';
 import { DotEditContentComponent } from './dot-edit-content.component';
 import { DotContainerContentletService } from './services/dot-container-contentlet.service';
+import { DotCopyContentModalService } from './services/dot-copy-content-modal/dot-copy-content-modal.service';
 import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
 import { DotDOMHtmlUtilService } from './services/html/dot-dom-html-util.service';
 import { DotDragDropAPIHtmlService } from './services/html/dot-drag-drop-api-html.service';
@@ -83,7 +85,9 @@ const routes: Routes = [
         IframeOverlayService,
         DotCustomEventHandlerService,
         DotWorkflowActionsFireService,
-        DotLicenseService
+        DotLicenseService,
+        DialogService,
+        DotCopyContentModalService
     ]
 })
 export class DotEditContentModule {}

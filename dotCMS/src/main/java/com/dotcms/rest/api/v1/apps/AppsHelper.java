@@ -145,7 +145,7 @@ class AppsHelper {
             throws DotSecurityException, DotDataException {
         final Optional<AppDescriptor> appDescriptorOptional = appsAPI
                 .getAppDescriptor(key, user);
-        if (!appDescriptorOptional.isPresent()) {
+        if (appDescriptorOptional.isEmpty()) {
             //Throw exception and allow the mapper do its thing.
             throw new DoesNotExistException(
                     String.format("No App was found for key `%s`. ", key)
@@ -265,7 +265,7 @@ class AppsHelper {
             throws DotSecurityException, DotDataException {
         final Optional<AppDescriptor> appDescriptorOptional = appsAPI
                 .getAppDescriptor(key, user);
-        if (!appDescriptorOptional.isPresent()) {
+        if (appDescriptorOptional.isEmpty()) {
             throw new DoesNotExistException(
                     String.format(" Couldn't find a descriptor under key `%s` for host `%s` ",
                             key, siteId));
@@ -301,7 +301,7 @@ class AppsHelper {
         }
         final Optional<AppDescriptor> optionalAppDescriptor = appsAPI
                 .getAppDescriptor(key, user);
-        if (!optionalAppDescriptor.isPresent()) {
+        if (optionalAppDescriptor.isEmpty()) {
             throw new DoesNotExistException(  String.format("Unable to find an app descriptor bound to the  Key `%s`. You must upload a yml descriptor.",key));
         }
 
@@ -402,12 +402,12 @@ class AppsHelper {
             throw new DoesNotExistException(String.format(" Couldn't find any host with identifier `%s` ",siteId));
         }
         final Optional<AppDescriptor> optionalAppDescriptor = appsAPI.getAppDescriptor(key, user);
-        if (!optionalAppDescriptor.isPresent()) {
+        if (optionalAppDescriptor.isEmpty()) {
             throw new DoesNotExistException(  String.format("Unable to find an app descriptor bound to the  Key `%s`. You must upload a yml descriptor.",key));
         }
         final AppDescriptor appDescriptor = optionalAppDescriptor.get();
         final Optional<AppSecrets> appSecretsOptional = appsAPI.getSecrets(key, host, user);
-        if (!appSecretsOptional.isPresent()) {
+        if (appSecretsOptional.isEmpty()) {
             saveSecretForm(key, host, appDescriptor, form, user);
         } else {
             try {
@@ -462,7 +462,7 @@ class AppsHelper {
         }
         final Optional<AppDescriptor> optionalAppDescriptor = appsAPI
                 .getAppDescriptor(key, user);
-        if (!optionalAppDescriptor.isPresent()) {
+        if (optionalAppDescriptor.isEmpty()) {
             throw new DoesNotExistException(String.format("Unable to find an app descriptor bound to the Key `%s`. You must upload a yml descriptor.",key));
         }
         final Set<String> params = form.getParams();
@@ -474,7 +474,7 @@ class AppsHelper {
 
         final Optional<AppSecrets> appSecretsOptional = appsAPI
                 .getSecrets(key, host, user);
-        if (!appSecretsOptional.isPresent()) {
+        if (appSecretsOptional.isEmpty()) {
             throw new DoesNotExistException(String.format("Unable to find a secret for app with Key `%s`.",key));
         } else {
             appsAPI.deleteSecret(key, params, host, user);

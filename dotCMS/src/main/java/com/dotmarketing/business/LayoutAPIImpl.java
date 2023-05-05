@@ -47,7 +47,7 @@ public class LayoutAPIImpl implements LayoutAPI {
 	@Override
 	@WrapInTransaction
 	public void setPortletsToLayout(final Layout layout, final List<Portlet> portlets) throws DotDataException {
-		List<String> portletIds = new ArrayList<String>();
+		List<String> portletIds = new ArrayList<>();
 		for(Portlet p : portlets) {
 			portletIds.add(p.getPortletId());
 		}
@@ -155,17 +155,17 @@ public class LayoutAPIImpl implements LayoutAPI {
 	public List<Layout> loadLayoutsForUser(final User user) throws DotDataException {
 		
 		final List<Role> urs = APILocator.getRoleAPI().loadRolesForUser(user.getUserId(), false);
-		final Set<String> lids = new HashSet<String>();
+		final Set<String> lids = new HashSet<>();
 		for (Role role : urs) {
 			 lids.addAll(APILocator.getRoleAPI().loadLayoutIdsForRole(role));	
 		}
-		List<Layout> layouts = new ArrayList<Layout>();
+		List<Layout> layouts = new ArrayList<>();
 		for (String lid : lids) {
 			layouts.add(loadLayout(lid));
 		}
 		Collections.sort(layouts, new Comparator<Layout>() {
 			public int compare(Layout l1, Layout l2) {
-				return new Integer(l1.getTabOrder()).compareTo(new Integer(l2.getTabOrder()));
+				return Integer.valueOf(l1.getTabOrder()).compareTo(Integer.valueOf(l2.getTabOrder()));
 			}
 		});
 		return layouts;
@@ -190,15 +190,15 @@ public class LayoutAPIImpl implements LayoutAPI {
 
 	@Override
 	public List<Layout> loadLayoutsForRole(Role role) throws DotDataException {
-		Set<String> lids = new HashSet<String>();
+		Set<String> lids = new HashSet<>();
 		lids.addAll(APILocator.getRoleAPI().loadLayoutIdsForRole(role));	
-		List<Layout> layouts = new ArrayList<Layout>();
+		List<Layout> layouts = new ArrayList<>();
 		for (String lid : lids) {
 			layouts.add(loadLayout(lid));
 		}
 		Collections.sort(layouts, new Comparator<Layout>() {
 			public int compare(Layout l1, Layout l2) {
-				return new Integer(l1.getTabOrder()).compareTo(new Integer(l2.getTabOrder()));
+				return Integer.valueOf(l1.getTabOrder()).compareTo(Integer.valueOf(l2.getTabOrder()));
 			}
 		});
 		return layouts;	
@@ -222,11 +222,11 @@ public class LayoutAPIImpl implements LayoutAPI {
         gettingStarted.setId(LayoutAPI.GETTING_STARTED_LAYOUT_ID);
         gettingStarted.setName(LayoutAPI.GETTING_STARTED_LAYOUT_NAME);
         gettingStarted.setDescription("whatshot");
-        gettingStarted.setPortletIds(Collections.singletonList("starter"));
+        gettingStarted.setPortletIds(List.of("starter"));
         gettingStarted.setTabOrder(-320000);
         Try.run(() -> {
             layoutFactory.saveLayout(gettingStarted);
-            layoutFactory.setPortletsToLayout(gettingStarted, Collections.singletonList("starter"));
+            layoutFactory.setPortletsToLayout(gettingStarted, List.of("starter"));
         }).onFailure(LayoutAPIImpl::accept);
 
         return gettingStarted;

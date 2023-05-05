@@ -1,5 +1,6 @@
 @use "sass:math";
 @use "variables" as *;
+@import "mixins";
 .p-button {
     background: $color-palette-primary;
     border-radius: $border-radius-md;
@@ -22,16 +23,50 @@
 }
 
 .p-button.p-button-text {
+    border-color: transparent;
     background-color: transparent;
-    color: $color-palette-primary;
-    border-color: transparent;
-}
+    color: $color-palette-gray-900;
+    overflow: hidden;
+    max-width: 100%;
+    border-radius: $border-radius-md;
 
-.p-button.p-button-text:enabled:hover,
-.p-button.p-button-text:enabled:focus {
-    background: $color-palette-primary-200;
-    color: $color-palette-primary;
-    border-color: transparent;
+    .pi {
+        color: $color-palette-primary;
+    }
+
+    &:disabled {
+        color: $color-palette-gray-500;
+
+        .pi {
+            color: $color-palette-gray-500;
+        }
+    }
+
+    &:enabled:hover,
+    &:enabled:active,
+    &:enabled:focus {
+        color: $color-palette-gray-900;
+        box-shadow: none;
+    }
+
+    &:enabled:hover {
+        background: $color-palette-primary-100;
+    }
+
+    &:enabled:focus {
+        background: white;
+        box-shadow: $md-shadow-1;
+    }
+
+    &:enabled:active {
+        background: $color-palette-primary-200;
+    }
+
+    .p-button-label {
+        @include truncate-text;
+        text-transform: none;
+        font-weight: $font-weight-regular-bold;
+    }
 }
 
 .p-button.p-button-text.p-button-plain {
@@ -127,6 +162,28 @@
     padding-right: $spacing-2;
 }
 
+.p-button.p-button-icon-only.p-button-sm {
+    height: $spacing-4;
+    border: 0 none;
+    color: $color-palette-primary;
+    opacity: 0.5;
+
+    &:enabled {
+        &:hover {
+            opacity: 1;
+        }
+
+        &:active,
+        &:focus {
+            opacity: 1;
+        }
+    }
+
+    &:disabled {
+        color: $color-palette-gray-500;
+    }
+}
+
 .p-button.p-button-icon-only .p-button-icon-left,
 .p-button.p-button-icon-only .p-button-icon-right {
     margin: 0;
@@ -140,7 +197,8 @@
 
 .p-button.p-button-sm {
     font-size: $font-size-sm;
-    padding: $spacing-1 $spacing-2;
+    padding: 0.25rem $spacing-1;
+    gap: 0.25rem;
 }
 
 .p-button.p-button-sm.p-button-outlined {

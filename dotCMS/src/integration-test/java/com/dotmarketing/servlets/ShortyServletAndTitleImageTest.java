@@ -78,7 +78,7 @@ public class ShortyServletAndTitleImageTest {
         fileAsset = APILocator.getContentletAPI().checkin(fileAsset, user, false);
         
 
-        assertTrue("we DO NOT HAVE a title image as a text file cannot have an image", !fileAsset.getTitleImage().isPresent());
+        assertTrue("we DO NOT HAVE a title image as a text file cannot have an image", fileAsset.getTitleImage().isEmpty());
         
         
         fileContents = Files.readAllBytes(fileAsset.getBinary(FileAssetAPI.BINARY_FIELD).toPath());
@@ -137,7 +137,7 @@ public class ShortyServletAndTitleImageTest {
         contentlet.setContentTypeId(contentType.id());
         contentlet = APILocator.getContentletAPI().checkin(contentlet, user, false);
         
-        assertTrue("we DO NOT a title image  ",! contentlet.getTitleImage().isPresent());
+        assertTrue("we DO NOT a title image  ",contentlet.getTitleImage().isEmpty());
         
         String path = servlet.inodePath(contentlet, null, false);
         assertTrue("shorty points to the inode", path.contains("/" + contentlet.getInode()));

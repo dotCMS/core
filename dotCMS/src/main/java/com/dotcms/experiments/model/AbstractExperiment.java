@@ -40,7 +40,7 @@ public interface AbstractExperiment extends Serializable, ManifestItem, Ruleable
     String name();
 
     @JsonProperty("description")
-    String description();
+    Optional<String> description();
 
     @JsonProperty("id")
     Optional<String> id();

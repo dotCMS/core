@@ -1,7 +1,7 @@
 import {
     ApplicationRef,
-    ComponentFactoryResolver,
     ComponentRef,
+    createComponent,
     ElementRef,
     Injector,
     Type
@@ -11,18 +11,16 @@ export class AngularRenderer<C, P> {
     private applicationRef: ApplicationRef;
     private componentRef: ComponentRef<C>;
 
-    constructor(component: Type<C>, injector: Injector, props: Partial<P>) {
+    constructor(ViewComponent: Type<C>, injector: Injector, props: Partial<P>) {
         this.applicationRef = injector.get(ApplicationRef);
 
-        const componentFactoryResolver = injector.get(ComponentFactoryResolver);
-        const factory = componentFactoryResolver.resolveComponentFactory(component);
-
-        this.componentRef = factory.create(injector, []);
+        this.componentRef = createComponent(ViewComponent, {
+            environmentInjector: this.applicationRef.injector
+        });
 
         // set input props to the component
         this.updateProps(props);
 
-        // Attach to the view so that the change detector knows to run
         this.applicationRef.attachView(this.componentRef.hostView);
     }
 

@@ -26,6 +26,7 @@ import {
     TrafficProportionTypes,
     Variant
 } from '@dotcms/dotcms-models';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import {
     DotExperimentsConfigurationState,
     DotExperimentsConfigurationStore
@@ -37,6 +38,7 @@ import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot
 const EXPERIMENT_MOCK = getExperimentMock(0);
 const EXPERIMENT_MOCK_1 = getExperimentMock(1);
 const EXPERIMENT_MOCK_2 = getExperimentMock(2);
+const EXPERIMENT_MOCK_3 = getExperimentMock(3);
 
 const ActivatedRouteMock = {
     snapshot: {
@@ -46,6 +48,11 @@ const ActivatedRouteMock = {
         }
     }
 };
+
+const messageServiceMock = new MockDotMessageService({
+    'experiments.action.schedule-experiment': 'schedule-experiment',
+    'experiments.action.start-experiment': 'run-experiment'
+});
 
 describe('DotExperimentsConfigurationStore', () => {
     let spectator: SpectatorService<DotExperimentsConfigurationStore>;
@@ -57,13 +64,16 @@ describe('DotExperimentsConfigurationStore', () => {
         service: DotExperimentsConfigurationStore,
         providers: [
             mockProvider(DotExperimentsService),
-            mockProvider(DotMessageService),
             mockProvider(MessageService),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(Title),
             {
                 provide: ActivatedRoute,
                 useValue: ActivatedRouteMock
+            },
+            {
+                provide: DotMessageService,
+                useValue: messageServiceMock
             },
             mockProvider(DotHttpErrorManagerService)
         ]
@@ -141,6 +151,41 @@ describe('DotExperimentsConfigurationStore', () => {
         });
     });
 
+    it('should return `Schedule Experiment` when the experiment has schedule set', (done) => {
+        spectator.service.loadExperiment(EXPERIMENT_MOCK.id);
+
+        expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_MOCK.id);
+
+        store.vm$.subscribe(({ runExperimentBtnLabel }) => {
+            expect(runExperimentBtnLabel).toEqual('schedule-experiment');
+            done();
+        });
+    });
+
+    it('should return `Run Experiment` when the experiment has schedule `null` ', (done) => {
+        dotExperimentsService.getById.and.callThrough().and.returnValue(of(EXPERIMENT_MOCK_1));
+        spectator.service.loadExperiment(EXPERIMENT_MOCK_1.id);
+
+        expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_MOCK_1.id);
+
+        store.vm$.subscribe(({ runExperimentBtnLabel }) => {
+            expect(runExperimentBtnLabel).toEqual('run-experiment');
+            done();
+        });
+    });
+
+    it('should return `Run Experiment` when the experiment has schedule startDate/endDate `null`', (done) => {
+        dotExperimentsService.getById.and.callThrough().and.returnValue(of(EXPERIMENT_MOCK_3));
+        spectator.service.loadExperiment(EXPERIMENT_MOCK_3.id);
+
+        expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_MOCK_3.id);
+
+        store.vm$.subscribe(({ runExperimentBtnLabel }) => {
+            expect(runExperimentBtnLabel).toEqual('run-experiment');
+            done();
+        });
+    });
+
     describe('Effects', () => {
         it('should load experiment to store', (done) => {
             dotExperimentsService.getById.and.callThrough().and.returnValue(of(EXPERIMENT_MOCK_1));
@@ -169,7 +214,8 @@ describe('DotExperimentsConfigurationStore', () => {
                         {
                             name: newVariant.name,
                             id: '222',
-                            weight: 100
+                            weight: 100,
+                            promoted: false
                         }
                     ]
                 }
@@ -191,12 +237,12 @@ describe('DotExperimentsConfigurationStore', () => {
 
         it('should edit a variant name of an experiment', (done) => {
             const variants: Variant[] = [
-                { id: '111', name: DEFAULT_VARIANT_NAME, weight: 50, url: 'url' },
-                { id: '222', name: 'name to edit', weight: 50, url: 'url' }
+                { id: '111', name: DEFAULT_VARIANT_NAME, weight: 50, url: 'url', promoted: false },
+                { id: '222', name: 'name to edit', weight: 50, url: 'url', promoted: false }
             ];
             const variantEdited: Variant[] = [
-                { id: '111', name: DEFAULT_VARIANT_NAME, weight: 50, url: 'url' },
-                { id: '222', name: 'new name', weight: 50, url: 'url' }
+                { id: '111', name: DEFAULT_VARIANT_NAME, weight: 50, url: 'url', promoted: false },
+                { id: '222', name: 'new name', weight: 50, url: 'url', promoted: false }
             ];
 
             dotExperimentsService.getById.and.callThrough().and.returnValue(
@@ -235,11 +281,12 @@ describe('DotExperimentsConfigurationStore', () => {
 
         it('should delete a variant from an experiment', (done) => {
             const variants: Variant[] = [
-                { id: 'DEFAULT', name: 'DEFAULT', weight: 50 },
+                { id: 'DEFAULT', name: 'DEFAULT', weight: 50, promoted: false },
                 {
                     id: '111',
                     name: '1111',
-                    weight: 50
+                    weight: 50,
+                    promoted: false
                 }
             ];
 
@@ -254,7 +301,7 @@ describe('DotExperimentsConfigurationStore', () => {
                 ...EXPERIMENT_MOCK_1,
                 trafficProportion: {
                     ...EXPERIMENT_MOCK_1.trafficProportion,
-                    variants: [{ id: 'DEFAULT', name: 'DEFAULT', weight: 50 }]
+                    variants: [{ id: 'DEFAULT', name: 'DEFAULT', weight: 50, promoted: false }]
                 }
             };
 
@@ -479,8 +526,8 @@ describe('DotExperimentsConfigurationStore', () => {
             const expectedTrafficProportion: TrafficProportion = {
                 type: TrafficProportionTypes.SPLIT_EVENLY,
                 variants: [
-                    { id: '111', name: 'DEFAULT', weight: 50 },
-                    { id: '111', name: 'A', weight: 50 }
+                    { id: '111', name: 'DEFAULT', weight: 50, promoted: false },
+                    { id: '111', name: 'A', weight: 50, promoted: false }
                 ]
             };
 

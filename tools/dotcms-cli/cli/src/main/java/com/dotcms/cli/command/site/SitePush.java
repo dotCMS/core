@@ -1,35 +1,44 @@
 package com.dotcms.cli.command.site;
 
 import com.dotcms.api.SiteAPI;
-import com.dotcms.api.client.RestClientFactory;
-import com.dotcms.cli.common.OutputOptionMixin;
+import com.dotcms.cli.common.FormatOptionMixin;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.site.CreateUpdateSiteRequest;
 import com.dotcms.model.site.GetSiteByNameRequest;
 import com.dotcms.model.site.SiteView;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import picocli.CommandLine;
-
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
-import javax.ws.rs.NotFoundException;
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.Callable;
+import javax.enterprise.context.control.ActivateRequestContext;
+import javax.ws.rs.NotFoundException;
+import picocli.CommandLine;
 
 @ActivateRequestContext
 @CommandLine.Command(name = SitePush.NAME,
-     description = "@|bold,green Retrieves Sites info.|@ Option params @|bold,cyan -n|@"
+     header = "@|bold,blue Push a Site from a given file |@",
+     description = {
+             " This command will push a site to the current active",
+             " remote instance of dotCMS from a given file.",
+             " When pulling a site from a remote dotCMS instance",
+             " the site is saved to a file.",
+             " The file name will be the site's name.",
+             " To make changes to the a Site",
+             " modify the file and push it back to the remote instance.",
+             " The file can also be used as a base to create a brand new Site.",
+             " The format can be changed using the @|yellow --format|@ option.",
+             "" // empty line left here on purpose to make room at the end
+     }
 )
 public class SitePush extends AbstractSiteCommand implements Callable<Integer>{
 
     static final String NAME = "push";
 
-    @CommandLine.Mixin(name = "output")
-    OutputOptionMixin output;
+    @CommandLine.Mixin(name = "format")
+    FormatOptionMixin formatOption;
 
-    @Inject
-    RestClientFactory clientFactory;
+    @CommandLine.Option(names = { "-f", "--force" }, paramLabel = "force execution" ,description = "Force must me set to true to update a site name.")
+    public boolean forceExecution;
 
     @CommandLine.Parameters(index = "0", arity = "1", description = " The json/yaml formatted Site descriptor file to be pushed. ")
     File siteFile;
@@ -52,9 +61,10 @@ public class SitePush extends AbstractSiteCommand implements Callable<Integer>{
             }
 
             try {
-                final ObjectMapper objectMapper = output.objectMapper();
-                final CreateUpdateSiteRequest createUpdateSiteRequest = objectMapper.readValue(siteFile, CreateUpdateSiteRequest.class);
-                final String returnedSiteName = createUpdateSiteRequest.siteName();
+                final ObjectMapper objectMapper = formatOption.objectMapper();
+                final SiteView in = objectMapper.readValue(siteFile, SiteView.class);
+                final String returnedSiteName = in.siteName();
+                final CreateUpdateSiteRequest createUpdateSiteRequest = toRequest(in);
                 if(update(siteAPI, createUpdateSiteRequest, returnedSiteName)){
                     return CommandLine.ExitCode.OK;
                 }
@@ -75,6 +85,25 @@ public class SitePush extends AbstractSiteCommand implements Callable<Integer>{
         return CommandLine.ExitCode.USAGE;
     }
 
+    CreateUpdateSiteRequest toRequest(final SiteView siteView) {
+        return CreateUpdateSiteRequest.builder()
+                .siteName(siteView.siteName())
+                .keywords(siteView.keywords())
+                .googleMap(siteView.googleMap())
+                .addThis(siteView.addThis())
+                .aliases(siteView.aliases())
+                .identifier(siteView.identifier())
+                .inode(siteView.inode())
+                .proxyUrlForEditMode(siteView.proxyUrlForEditMode())
+                .googleAnalytics(siteView.googleAnalytics())
+                .description(siteView.description())
+                .tagStorage(siteView.tagStorage())
+                .siteThumbnail(siteView.siteThumbnail())
+                .embeddedDashboard(siteView.embeddedDashboard())
+                .forceExecution(forceExecution)
+                .build();
+    }
+
     private boolean update(SiteAPI siteAPI, CreateUpdateSiteRequest createUpdateSiteRequest, String siteName) {
         try {
             output.info(String.format(" Looking up site by name [%s]", siteName));
@@ -86,6 +115,7 @@ public class SitePush extends AbstractSiteCommand implements Callable<Integer>{
             return true;
         } catch (NotFoundException e) {
             //Not relevant
+            output.error(String.format(" No site named [%s] was found. ", siteName));
         }
         return false;
     }

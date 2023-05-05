@@ -51,13 +51,13 @@ public class CacheSizingUtil {
 
 
         for (int i = 0; i < numberToSample; i++) {
-            List<String> keysAsArray = new ArrayList<String>(cacheMap.keySet());
+            List<String> keysAsArray = new ArrayList<>(cacheMap.keySet());
             Random r = new Random();
             Object object = cacheMap.get(keysAsArray.get(r.nextInt(keysAsArray.size())));
             if (object instanceof Optional && ((Optional) object).isPresent()) {
                 object = ((Optional) object).get();
             }
-            if (object instanceof Optional && !((Optional) object).isPresent()) {
+            if (object instanceof Optional && ((Optional)object).isEmpty()) {
                 return 0;
             }
             totalSize += sizeOf(object);
@@ -218,7 +218,7 @@ public class CacheSizingUtil {
             throw new NullPointerException();
         }
 
-        List<Field> fieldList = new ArrayList<Field>();
+        List<Field> fieldList = new ArrayList<>();
         while (cls != Object.class) {
             for (Field f : cls.getDeclaredFields()) {
                 if (!Modifier.isStatic(f.getModifiers())) {

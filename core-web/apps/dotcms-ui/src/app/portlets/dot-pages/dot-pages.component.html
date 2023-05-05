@@ -1,26 +1,37 @@
 <div class="dot-pages__container" *ngIf="vm$ | async as vm">
-    <dot-pages-favorite-panel
-        (goToUrl)="goToUrl($event)"
-        (showActionsMenu)="showActionsMenu($event)"
-    ></dot-pages-favorite-panel>
+    <ng-template [ngIf]="!vm.isPortletLoading" [ngIfElse]="loading">
+        <dot-pages-favorite-panel
+            (goToUrl)="goToUrl($event)"
+            (showActionsMenu)="showActionsMenu($event)"
+        ></dot-pages-favorite-panel>
 
-    <p-menu
-        #menu
-        [popup]="true"
-        [model]="vm.pages.menuActions"
-        (onHide)="closedActionsMenu($event)"
-    ></p-menu>
+        <p-menu
+            #menu
+            [popup]="true"
+            [model]="vm.pages.menuActions"
+            (onHide)="closedActionsMenu($event)"
+        ></p-menu>
 
-    <dot-pages-listing-panel
-        (goToUrl)="goToUrl($event)"
-        (showActionsMenu)="showActionsMenu($event)"
-    ></dot-pages-listing-panel>
+        <dot-pages-listing-panel
+            (goToUrl)="goToUrl($event)"
+            (showActionsMenu)="showActionsMenu($event)"
+            (tableScroll)="closeMenu()"
+        ></dot-pages-listing-panel>
 
-    <dot-add-to-bundle
-        *ngIf="vm.pages.addToBundleCTId"
-        [assetIdentifier]="vm.pages.addToBundleCTId"
-        (cancel)="vm.pages.addToBundleCTId = null"
-    ></dot-add-to-bundle>
+        <dot-add-to-bundle
+            *ngIf="vm.pages.addToBundleCTId"
+            [assetIdentifier]="vm.pages.addToBundleCTId"
+            (cancel)="vm.pages.addToBundleCTId = null"
+        ></dot-add-to-bundle>
+    </ng-template>
+
+    <ng-template #loading>
+        <div class="dot-pages__spinner-container">
+            <div class="dot-pages__spinner-container dot-pages__spinner-overlay">
+                <p-progressSpinner styleClass="p-progress-spinner-custom"></p-progressSpinner>
+            </div>
+        </div>
+    </ng-template>
 </div>
 
 <router-outlet></router-outlet>

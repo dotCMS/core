@@ -94,6 +94,13 @@ describe('DotExperimentsConfigurationTrafficAllocationAddComponent', () => {
         });
     });
 
+    it('should set inputs limits', () => {
+        const slider: Slider = spectator.query(Slider);
+
+        expect(slider.min).toEqual(1);
+        expect(slider.max).toEqual(100);
+    });
+
     it('should close sidebar ', () => {
         spyOn(store, 'closeSidebar');
         sidebar = spectator.query(Sidebar);

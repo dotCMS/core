@@ -6,6 +6,7 @@ import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.site.*;
 
 import java.util.List;
+import java.util.Map;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -81,7 +82,7 @@ public interface SiteAPI {
     @Operation(
             summary = " Returns the Site that is currently selected"
     )
-    ResponseEntityView<Boolean>switchSite(@PathParam("id") String id);
+    ResponseEntityView<Map<String,String>>switchSite(@PathParam("id") String id);
 
     @POST
     @Operation(
