@@ -31,14 +31,15 @@ public class FilesLs extends AbstractFilesCommand implements Callable<Integer> {
                     + "- Format: //{site}/{folder}")
     String folderPath;
 
-    @CommandLine.Option(names = {"-hef", "--hideEmptyFolders"},
-            description = "When this option is enabled, the tree display will hide folders that do "
-                    + "not contain any assets, as well as folders that have no children with assets. "
-                    + "This can be useful for users who want to focus on the folder structure that "
-                    + "contains assets, making the output more concise and easier to navigate. By "
-                    + "default, this option is disabled, and all folders, including empty ones, "
-                    + "will be displayed in the tree.")
-    boolean hideEmptyFolders;
+    @CommandLine.Option(names = {"-ee", "--excludeEmptyFolders"}, defaultValue = "false",
+            description =
+                    "When this option is enabled, the tree display will exclude folders that do "
+                            + "not contain any assets, as well as folders that have no children with assets. "
+                            + "This can be useful for users who want to focus on the folder structure that "
+                            + "contains assets, making the output more concise and easier to navigate. By "
+                            + "default, this option is disabled, and all folders, including empty ones, "
+                            + "will be displayed in the tree.")
+    boolean excludeEmptyFolders;
 
     @Inject
     FolderTraversalService folderTraversalService;
@@ -78,7 +79,7 @@ public class FilesLs extends AbstractFilesCommand implements Callable<Integer> {
 
             // Display the result
             StringBuilder sb = new StringBuilder();
-            TreePrinter.getInstance().filteredFormat(sb, result, !hideEmptyFolders);
+            TreePrinter.getInstance().filteredFormat(sb, result, !excludeEmptyFolders);
 
             output.info(sb.toString());
 

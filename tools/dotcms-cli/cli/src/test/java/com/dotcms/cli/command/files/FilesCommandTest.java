@@ -40,32 +40,6 @@ public class FilesCommandTest extends CommandTest {
     }
 
     @Test
-    void Test_Command_Files_Tree_Options() {
-
-        final CommandLine commandLine = getFactory().create();
-        final StringWriter writer = new StringWriter();
-        try (PrintWriter out = new PrintWriter(writer)) {
-            commandLine.setOut(out);
-//            final String path = String.format("//%s/%s", "demo.dotcms.com", "images");
-            final String path = String.format("//%s/%s", "demo.dotcms.com", "images/2023");
-//            final String path = String.format("//%s/%s", "demo.dotcms.com", "images/2023/04");
-            final int status = commandLine.execute(FilesCommand.NAME, FilesTree.NAME, path);
-            Assertions.assertEquals(ExitCode.OK, status);
-            final String output = writer.toString();
-            System.out.println(output);
-//            final ObjectMapper objectMapper = new ClientObjectMapper().getContext(null);
-//            final ContentType contentType = objectMapper.readValue(output, ContentType.class);
-//            Assertions.assertNotNull(contentType.variable());
-//
-//            try {
-//                Files.delete(Path.of(fileName));
-//            } catch (IOException e) {
-//                // Quite
-//            }
-        }
-    }
-
-    @Test
     void Test_Command_Files_Tree_Option() {
 
         final CommandLine commandLine = getFactory().create();
@@ -75,8 +49,6 @@ public class FilesCommandTest extends CommandTest {
             final String path = String.format("//%s/%s", "demo.dotcms.com", "images");
             final int status = commandLine.execute(FilesCommand.NAME, FilesTree.NAME, path);
             Assertions.assertEquals(ExitCode.OK, status);
-            final String output = writer.toString();
-            System.out.println(output);
         }
     }
 
@@ -90,6 +62,33 @@ public class FilesCommandTest extends CommandTest {
             final String path = String.format("%s/%s", "demo.dotcms.com", "images");
             final int status = commandLine.execute(FilesCommand.NAME, FilesTree.NAME, path);
             Assertions.assertEquals(ExitCode.USAGE, status);
+        }
+    }
+
+    @Test
+    void Test_Command_Files_Tree_Option_Valid_Protocol() {
+
+        final CommandLine commandLine = getFactory().create();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final String path = String.format("%s/%s", "//demo.dotcms.com", "images");
+            final int status = commandLine.execute(FilesCommand.NAME, FilesTree.NAME, path);
+            Assertions.assertEquals(ExitCode.OK, status);
+        }
+    }
+
+    @Test
+    void Test_Command_Files_Tree_Option_Exclude_Empty() {
+
+        final CommandLine commandLine = getFactory().create();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final String path = String.format("%s/%s", "//demo.dotcms.com", "images");
+            final int status = commandLine.execute(FilesCommand.NAME,
+                    FilesTree.NAME, path, "-ee");
+            Assertions.assertEquals(ExitCode.OK, status);
         }
     }
 
