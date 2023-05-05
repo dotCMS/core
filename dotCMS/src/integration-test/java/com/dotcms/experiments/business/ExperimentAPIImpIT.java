@@ -469,25 +469,31 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
         final Template template = new TemplateDataGen().host(host).nextPersisted();
 
         final Experiment experiment = new ExperimentDataGen().addVariant("V1").nextPersisted();
-        ExperimentDataGen.start(experiment);
 
-        final String noDefaultVariantName = experiment.trafficProportion().variants().stream()
-                .map(experimentVariant -> experimentVariant.id())
-                .filter(id -> !id.equals("DEFAULT"))
-                .findFirst()
-                .orElseThrow();
+        try {
+            ExperimentDataGen.start(experiment);
 
-        System.out.println("Experiment: " + experiment);
-        final ExperimentResults results = APILocator.getExperimentsAPI().getResults(experiment);
+            final String noDefaultVariantName = experiment.trafficProportion().variants().stream()
+                    .map(experimentVariant -> experimentVariant.id())
+                    .filter(id -> !id.equals("DEFAULT"))
+                    .findFirst()
+                    .orElseThrow();
 
-        final Map<String, VariantResults> variants = results.getGoals().get("primary").getVariants();
-        assertEquals(2, variants.size());
+            System.out.println("Experiment: " + experiment);
+            final ExperimentResults results = APILocator.getExperimentsAPI().getResults(experiment);
 
-        final VariantResults variantResults = variants.get(noDefaultVariantName);
-        assertEquals(50f, variantResults.weight());
+            final Map<String, VariantResults> variants = results.getGoals().get("primary")
+                    .getVariants();
+            assertEquals(2, variants.size());
 
-        final VariantResults controlResults = variants.get("DEFAULT");
-        assertEquals(50f, controlResults.weight());
+            final VariantResults variantResults = variants.get(noDefaultVariantName);
+            assertEquals(50f, variantResults.weight());
+
+            final VariantResults controlResults = variants.get("DEFAULT");
+            assertEquals(50f, controlResults.weight());
+        } finally {
+            ExperimentDataGen.end(experiment);
+        }
     }
 
 
