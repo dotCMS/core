@@ -92,15 +92,23 @@ public class TreeNode {
     }
 
     /**
-     * Clones the current {@code TreeNode}, filtering assets based on the given status and language.
-     * The cloned node contains only assets with a status that matches the given status parameter
-     * and with a language that matches the given language parameter.
+     * Clones the current TreeNode and filters its assets based on the provided status and language.
+     * It can also optionally filter out empty folders based on the showEmptyFolders parameter.
      *
-     * @param status   the status to filter assets with
-     * @param language the language to filter assets with
-     * @return the cloned and filtered {@code TreeNode}
+     * @param status           A boolean indicating whether the assets should be live (true) or
+     *                         working (false).
+     * @param language         A string representing the language of the assets to be included in
+     *                         the cloned node.
+     * @param showEmptyFolders A boolean indicating whether to include empty folders in the cloned
+     *                         node. If set to true, all folders will be included. If set to false,
+     *                         only folders containing assets or having children with assets will be
+     *                         included.
+     * @return A new TreeNode that is a clone of the current node, with its assets filtered based on
+     * the provided status and language, and its folders filtered based on the showEmptyFolders
+     * parameter.
      */
-    public TreeNode cloneAndFilterAssets(boolean status, String language) {
+    public TreeNode cloneAndFilterAssets(boolean status, String language,
+            boolean showEmptyFolders) {
 
         TreeNode newNode = new TreeNode(this.folder, true);
 
@@ -112,10 +120,36 @@ public class TreeNode {
 
         // Clone children without assets
         for (TreeNode child : this.children) {
-            newNode.children.add(child.cloneAndFilterAssets(status, language));
+            TreeNode clonedChild = child.cloneAndFilterAssets(status, language, showEmptyFolders);
+            if (showEmptyFolders || !clonedChild.assets.isEmpty()
+                    || hasAssetsInSubtree(clonedChild)) {
+                newNode.children.add(clonedChild);
+            }
         }
 
         return newNode;
+    }
+
+    /**
+     * Recursively checks if the given node or any of its children contains assets.
+     *
+     * @param node The TreeNode to check for assets.
+     * @return A boolean value, true if the node or any of its children contains assets, false
+     * otherwise.
+     */
+    private boolean hasAssetsInSubtree(TreeNode node) {
+
+        if (!node.assets().isEmpty()) {
+            return true;
+        }
+
+        for (TreeNode child : node.children()) {
+            if (hasAssetsInSubtree(child)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
 }

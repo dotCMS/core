@@ -99,10 +99,15 @@ public class TreePrinter {
      * {@link StringBuilder}. The tree structure is filtered by language and asset status (live or
      * working).
      *
-     * @param rootNode the root node of the tree structure.
-     * @param sb       the {@link StringBuilder} to append the tree structure to.
+     * @param sb               the {@link StringBuilder} to append the tree structure to.
+     * @param rootNode         the root node of the tree structure.
+     * @param showEmptyFolders A boolean indicating whether to include empty folders in the tree. If
+     *                         set to true, all folders will be included. If set to false, only
+     *                         folders containing assets or having children with assets will be
+     *                         included.
      */
-    public void filteredFormat(TreeNode rootNode, StringBuilder sb) {
+    public void filteredFormat(StringBuilder sb, TreeNode rootNode,
+            final boolean showEmptyFolders) {
 
         // Collect the list of unique statuses and languages
         Set<String> uniqueLiveLanguages = new HashSet<>();
@@ -118,9 +123,9 @@ public class TreePrinter {
         Collections.sort(sortedWorkingLanguages);
 
         // Live tree
-        formatByStatus(sb, true, sortedLiveLanguages, rootNode);
+        formatByStatus(sb, true, sortedLiveLanguages, rootNode, showEmptyFolders);
         // Working tree
-        formatByStatus(sb, false, sortedWorkingLanguages, rootNode);
+        formatByStatus(sb, false, sortedWorkingLanguages, rootNode, showEmptyFolders);
     }
 
     /**
@@ -135,7 +140,7 @@ public class TreePrinter {
      * @param rootNode        The root TreeNode to start the formatting from.
      */
     private void formatByStatus(StringBuilder sb, boolean isLive, List<String> sortedLanguages,
-            TreeNode rootNode) {
+            TreeNode rootNode, final boolean showEmptyFolders) {
 
         if (sortedLanguages.isEmpty()) {
             return;
@@ -148,7 +153,7 @@ public class TreePrinter {
         while (langIterator.hasNext()) {
 
             String lang = langIterator.next();
-            TreeNode filteredRoot = rootNode.cloneAndFilterAssets(isLive, lang);
+            TreeNode filteredRoot = rootNode.cloneAndFilterAssets(isLive, lang, showEmptyFolders);
 
             // Print the filtered tree using the format method starting from the filtered root itself
             boolean isLastLang = !langIterator.hasNext();
@@ -220,14 +225,10 @@ public class TreePrinter {
     private void format(StringBuilder sb, String prefix, final TreeNode node,
             final String indent, boolean isLastSibling, boolean includeAssets) {
 
-        var folderNameStr = String.format("@|bold \uD83D\uDCC2 %s|@", node.folder().name());
-
-        boolean shouldPrintFolder = !node.assets().isEmpty() || hasAssetsInSubtree(node);
-
-        if (shouldPrintFolder) {
-            sb.append(prefix).append(isLastSibling ? "└── " : "├── ").append(folderNameStr)
-                    .append('\n');
-        }
+        sb.append(prefix).
+                append(isLastSibling ? "└── " : "├── ").
+                append(String.format("@|bold \uD83D\uDCC2 %s|@", node.folder().name())).
+                append('\n');
 
         String filePrefix = indent + (isLastSibling ? "    " : "│   ");
         String nextIndent = indent + (isLastSibling ? "    " : "│   ");
@@ -258,22 +259,5 @@ public class TreePrinter {
             format(sb, filePrefix, child, nextIndent, lastSibling, includeAssets);
         }
     }
-
-    private boolean hasAssetsInSubtree(TreeNode node) {
-
-        return true;
-        /*if (!node.assets().isEmpty()) {
-            return true;
-        }
-
-        for (TreeNode child : node.children()) {
-            if (hasAssetsInSubtree(child)) {
-                return true;
-            }
-        }
-
-        return false;*/
-    }
-
 
 }

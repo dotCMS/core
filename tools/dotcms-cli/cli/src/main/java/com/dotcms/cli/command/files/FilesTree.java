@@ -40,6 +40,15 @@ public class FilesTree extends AbstractFilesCommand implements Callable<Integer>
                     + "there is no limit on the depth of the directory tree.")
     Integer depth;
 
+    @CommandLine.Option(names = {"-hef", "--hideEmptyFolders"},
+            description = "When this option is enabled, the tree display will hide folders that do "
+                    + "not contain any assets, as well as folders that have no children with assets. "
+                    + "This can be useful for users who want to focus on the folder structure that "
+                    + "contains assets, making the output more concise and easier to navigate. By "
+                    + "default, this option is disabled, and all folders, including empty ones, "
+                    + "will be displayed in the tree.")
+    boolean hideEmptyFolders;
+
     @Inject
     FolderTraversalService folderTraversalService;
 
@@ -79,7 +88,7 @@ public class FilesTree extends AbstractFilesCommand implements Callable<Integer>
 
             // Display the result
             StringBuilder sb = new StringBuilder();
-            TreePrinter.getInstance().filteredFormat(result, sb);
+            TreePrinter.getInstance().filteredFormat(sb, result, !hideEmptyFolders);
 
             output.info(sb.toString());
 
