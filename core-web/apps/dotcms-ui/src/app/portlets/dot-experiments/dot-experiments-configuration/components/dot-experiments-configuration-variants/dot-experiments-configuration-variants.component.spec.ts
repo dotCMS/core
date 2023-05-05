@@ -194,9 +194,10 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
                 id: DEFAULT_VARIANT_ID,
                 name: DEFAULT_VARIANT_NAME,
                 weight: 33.33,
-                url: 'link1'
+                url: 'link1',
+                promoted: false
             },
-            { id: '1111111', name: 'test', weight: 33.33, url: 'link2' }
+            { id: '1111111', name: 'test', weight: 33.33, url: 'link2', promoted: false }
         ];
         beforeEach(() => {
             loadExperiment(EXPERIMENT_MOCK, variants);

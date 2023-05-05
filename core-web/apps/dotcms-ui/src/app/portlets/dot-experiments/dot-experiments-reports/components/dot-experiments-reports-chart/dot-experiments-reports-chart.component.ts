@@ -45,7 +45,7 @@ export class DotExperimentsReportsChartComponent implements OnChanges {
 
     ngOnChanges(changes: SimpleChanges): void {
         const { config, data } = changes;
-        if (config.currentValue && data.currentValue) {
+        if (config?.currentValue && data.currentValue) {
             this.options = getDotExperimentLineChartJsOptions({
                 xAxisLabel: config.currentValue.xAxisLabel,
                 yAxisLabel: config.currentValue.yAxisLabel
