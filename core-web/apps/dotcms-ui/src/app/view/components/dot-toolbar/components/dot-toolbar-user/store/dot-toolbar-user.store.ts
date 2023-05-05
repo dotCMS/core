@@ -138,7 +138,8 @@ export class DotToolbarUserStore extends ComponentStore<DotToolbarUserState> {
                 label: this.dotMessageService.get('Logout'),
                 icon: 'pi pi-sign-out',
                 visible: !auth.isLoginAs,
-                url: this.FINAL_LOGOUT_URL
+                url: this.FINAL_LOGOUT_URL,
+                target: '_self'
             },
             {
                 id: 'dot-toolbar-user-link-logout-as',

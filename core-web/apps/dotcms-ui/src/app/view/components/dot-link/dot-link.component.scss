@@ -1,0 +1,24 @@
+@use "variables" as *;
+
+a,
+a:focus,
+a:active {
+    text-decoration: none;
+}
+
+// This styles are the same as .p-button.p-button-text in _buttons.scss,
+// the problem is the :enabled pseudoclass, hyperlink tag doesn't have that pseudoclass
+
+.p-button {
+    &:hover {
+        background: $color-palette-primary-100;
+    }
+
+    &:focus {
+        background: $white;
+    }
+
+    &:active {
+        background: $color-palette-primary-200;
+    }
+}
