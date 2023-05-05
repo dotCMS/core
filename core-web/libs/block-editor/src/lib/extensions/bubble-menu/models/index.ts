@@ -16,6 +16,7 @@ export interface ContentletFilters {
     contentType: string;
     filter: string;
     currentLanguage: number;
+    contentletIdentifier: string;
 }
 
 export enum NodeTypes {
