@@ -1021,8 +1021,13 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
         final TrafficProportion trafficProportion = persistedExperiment.trafficProportion()
                 .withVariants(variantsAfterPromotion);
-        final Experiment withUpdatedTraffic = persistedExperiment.withTrafficProportion(trafficProportion);
-        return save(withUpdatedTraffic, user);
+        Experiment withUpdatedVariants = persistedExperiment.withTrafficProportion(trafficProportion);
+
+        if(withUpdatedVariants.status()==RUNNING) {
+            withUpdatedVariants = end(withUpdatedVariants.id().orElseThrow(), user);
+        }
+
+        return save(withUpdatedVariants, user);
     }
 
     @Override
