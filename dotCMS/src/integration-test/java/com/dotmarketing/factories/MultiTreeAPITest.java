@@ -1728,11 +1728,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
     /**
      * Method to Test: {@link MultiTreeAPI#copyMultiTree(String, List, String)}}
      * When:
-<<<<<<< HEAD
-     * - Have a Page with several MultiTree into the DEFAULT Variant and different Peraonalization.
-=======
      * - Have a Page with several MultiTree into the DEFAULT Variant and different Perzonalization.
->>>>>>> origin/master
      * - And copy the MUltiTree to a new {@link Variant}
      *
      * Should: Copy all the MultiTree to the new Variant and must keep the same Peraonalization
