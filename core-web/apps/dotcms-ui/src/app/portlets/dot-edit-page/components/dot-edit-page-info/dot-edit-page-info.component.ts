@@ -17,6 +17,7 @@ export class DotEditPageInfoComponent {
     @Input() url: string;
     innerApiLink: string;
     previewUrl: string;
+    baseUrl: string = window.location.href.includes('edit-page') ? window.location.origin : '';
 
     @Input()
     set apiLink(value: string) {
