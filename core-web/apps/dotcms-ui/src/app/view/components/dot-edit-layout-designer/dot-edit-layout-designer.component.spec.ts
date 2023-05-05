@@ -97,7 +97,7 @@ let dotThemesService: DotThemesService;
 let dotEditLayoutService: DotEditLayoutService;
 let dotPropertiesService: DotPropertiesService;
 
-fdescribe('DotEditLayoutDesignerComponent', () => {
+describe('DotEditLayoutDesignerComponent', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
             declarations: [
