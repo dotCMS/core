@@ -471,6 +471,10 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
         final Experiment experiment = new ExperimentDataGen().addVariant("V1").nextPersisted();
 
         try {
+
+            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+
             ExperimentDataGen.start(experiment);
 
             final String noDefaultVariantName = experiment.trafficProportion().variants().stream()
@@ -478,8 +482,7 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
                     .filter(id -> !id.equals("DEFAULT"))
                     .findFirst()
                     .orElseThrow();
-
-            System.out.println("Experiment: " + experiment);
+            
             final ExperimentResults results = APILocator.getExperimentsAPI().getResults(experiment);
 
             final Map<String, VariantResults> variants = results.getGoals().get("primary")
