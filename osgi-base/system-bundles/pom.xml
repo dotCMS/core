@@ -14,6 +14,7 @@
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
+        <tika.version>1.28.5</tika.version>
     </properties>
 
     <dependencies>
@@ -58,14 +59,14 @@
         <dependency>
             <groupId>org.apache.tika</groupId>
             <artifactId>tika-core</artifactId>
-            <version>1.19.1</version>
+            <version>${tika.version}</version>
             <scope>runtime</scope>
         </dependency>
 
         <dependency>
             <groupId>org.apache.tika</groupId>
             <artifactId>tika-bundle</artifactId>
-            <version>1.19.1</version>
+            <version>${tika.version}</version>
             <scope>runtime</scope>
         </dependency>
 
