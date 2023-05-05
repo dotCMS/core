@@ -18,7 +18,7 @@ import {
 } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 
-import { map, take, takeUntil, tap } from 'rxjs/operators';
+import { take, takeUntil, tap } from 'rxjs/operators';
 
 import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
 import {
@@ -26,7 +26,7 @@ import {
     DotHttpErrorManagerService
 } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotEventsService, DotPropertiesService, DotThemesService } from '@dotcms/data-access';
+import { DotEventsService, DotThemesService } from '@dotcms/data-access';
 import {
     DotLayout,
     DotLayoutBody,
@@ -37,8 +37,6 @@ import {
     DotTemplate,
     DotTheme
 } from '@dotcms/dotcms-models';
-
-export const FEATURE_FLAG_TEMPLATE_BUILDER = 'FEATURE_FLAG_TEMPLATE_BUILDER_2';
 
 @Component({
     selector: 'dot-edit-layout-designer',
@@ -85,7 +83,6 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy, OnChan
 
     saveAsTemplate: boolean;
     showTemplateLayoutSelectionDialog = false;
-    enableNewBuilder$: Observable<boolean>;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
@@ -96,15 +93,10 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy, OnChan
         private dotRouterService: DotRouterService,
         private dotThemesService: DotThemesService,
         private fb: UntypedFormBuilder,
-        private cd: ChangeDetectorRef,
-        private readonly dotPropertiesService: DotPropertiesService
+        private cd: ChangeDetectorRef
     ) {}
 
     ngOnInit(): void {
-        this.enableNewBuilder$ = this.dotPropertiesService
-            .getKey(FEATURE_FLAG_TEMPLATE_BUILDER)
-            .pipe(map((result) => result && result === 'true'));
-
         this.setupLayout();
         this.saveChangesBeforeLeave();
     }

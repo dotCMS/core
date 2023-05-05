@@ -1,10 +1,17 @@
 <!--Advance template support was removed on commit https://github.com/dotCMS/core-web/pull/589-->
-<dot-edit-layout-designer
-    (save)="onSave($event)"
-    (updateTemplate)="nextUpdateTemplate($event)"
-    [layout]="pageState.layout"
-    [title]="pageState.page.title"
-    [theme]="pageState.template.theme"
-    [apiLink]="apiLink"
-    [url]="pageState.page.pageURI"
-></dot-edit-layout-designer>
+<ng-container *ngIf="enableNewBuilder$ | async as context">
+    <h1 *ngIf="context.enableNewBuilder" data-testId="new-template-builder">
+        New Template Builder
+    </h1>
+    <dot-edit-layout-designer
+        *ngIf="!context.enableNewBuilder"
+        [layout]="pageState.layout"
+        [title]="pageState.page.title"
+        [theme]="pageState.template.theme"
+        [apiLink]="apiLink"
+        [url]="pageState.page.pageURI"
+        (save)="onSave($event)"
+        (updateTemplate)="nextUpdateTemplate($event)"
+    >
+    </dot-edit-layout-designer>
+</ng-container>

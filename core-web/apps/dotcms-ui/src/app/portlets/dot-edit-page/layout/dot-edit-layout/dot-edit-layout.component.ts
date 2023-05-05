@@ -1,10 +1,19 @@
-import { Subject } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, HostBinding, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { debounceTime, filter, finalize, pluck, switchMap, take, takeUntil } from 'rxjs/operators';
+import {
+    debounceTime,
+    filter,
+    finalize,
+    map,
+    pluck,
+    switchMap,
+    take,
+    takeUntil
+} from 'rxjs/operators';
 
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
@@ -14,6 +23,7 @@ import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-
 import {
     DotMessageService,
     DotPageLayoutService,
+    DotPropertiesService,
     DotSessionStorageService
 } from '@dotcms/data-access';
 import { ResponseView } from '@dotcms/dotcms-js';
@@ -22,7 +32,8 @@ import {
     DotContainerMap,
     DotLayout,
     DotPageRender,
-    DotPageRenderState
+    DotPageRenderState,
+    FeaturedFlags
 } from '@dotcms/dotcms-models';
 
 @Component({
@@ -36,6 +47,7 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
 
     updateTemplate = new Subject<DotLayout>();
     destroy$: Subject<boolean> = new Subject<boolean>();
+    enableNewBuilder$: Observable<{ enableNewBuilder: boolean }>;
 
     @HostBinding('style.minWidth') width = '100%';
 
@@ -49,10 +61,15 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
         private dotMessageService: DotMessageService,
         private templateContainersCacheService: DotTemplateContainersCacheService,
         private dotSessionStorageService: DotSessionStorageService,
-        private router: Router
+        private router: Router,
+        private readonly dotPropertiesService: DotPropertiesService
     ) {}
 
     ngOnInit() {
+        this.enableNewBuilder$ = this.dotPropertiesService
+            .getKey(FeaturedFlags.FEATURE_FLAG_TEMPLATE_BUILDER)
+            .pipe(map((result) => ({ enableNewBuilder: result && result === 'true' })));
+
         this.route.parent.parent.data
             .pipe(
                 pluck('content'),
