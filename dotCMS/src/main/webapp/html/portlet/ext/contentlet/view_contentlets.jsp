@@ -752,11 +752,11 @@
                     <input type="hidden" name="referer" value="<%=referer%>">
                     <input type="hidden" name="cmd" value="prepublish">
                     <div class="portlet-toolbar" style="height: 48px; margin-top: 16px;">
-                        <div class="portlet-toolbar__actions-secondary">
+                        <div class="portlet-toolbar__actions-secondary" style="display: flex; align-items: center;">
+                            <div class="portlet-toolbar__actions-search" style="width: 270px;">
+                                <input type="text" dojoType="dijit.form.TextBox" tabindex="1" placeholder="<%= LanguageUtil.get(pageContext, "Type-To-Search").replace("\"", "'") %>" onKeyUp='doSearch()' name="allFieldTB" id="allFieldTB" value="<%=_allValue %>">
+                            </div>
                             <div id="matchingResultsDiv" style="display: none" class="portlet-toolbar__info"></div>
-                        </div>
-                        <div class="portlet-toolbar__actions-search" style="width: 270px;">
-                            <input type="text" dojoType="dijit.form.TextBox" tabindex="1" placeholder="<%= LanguageUtil.get(pageContext, "Type-To-Search").replace("\"", "'") %>" onKeyUp='doSearch()' name="allFieldTB" id="allFieldTB" value="<%=_allValue %>">
                         </div>
                         <div class="portlet-toolbar__actions-primary">
                             <button id="bulkAvailableActions" dojoType="dijit.form.Button" data-dojo-props="onClick: doShowAvailableActions" iconClass="actionIcon" >
