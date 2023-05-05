@@ -25,7 +25,12 @@ import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/d
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
-import { DotEventsService, DotMessageService, DotThemesService } from '@dotcms/data-access';
+import {
+    DotEventsService,
+    DotMessageService,
+    DotPropertiesService,
+    DotThemesService
+} from '@dotcms/data-access';
 import { DotTheme } from '@dotcms/dotcms-models';
 import {
     cleanUpDialog,
@@ -90,8 +95,9 @@ let component: DotEditLayoutDesignerComponent;
 let fixture: ComponentFixture<DotEditLayoutDesignerComponent>;
 let dotThemesService: DotThemesService;
 let dotEditLayoutService: DotEditLayoutService;
+let dotPropertiesService: DotPropertiesService;
 
-describe('DotEditLayoutDesignerComponent', () => {
+fdescribe('DotEditLayoutDesignerComponent', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
             declarations: [
@@ -152,6 +158,12 @@ describe('DotEditLayoutDesignerComponent', () => {
                         loading: jasmine.createSpy(),
                         customDisplay: jasmine.createSpy()
                     }
+                },
+                {
+                    provide: DotPropertiesService,
+                    useValue: {
+                        getKey: () => of('false')
+                    }
                 }
             ]
         });
@@ -160,6 +172,7 @@ describe('DotEditLayoutDesignerComponent', () => {
         component = fixture.componentInstance;
         dotThemesService = TestBed.inject(DotThemesService);
         dotEditLayoutService = TestBed.inject(DotEditLayoutService);
+        dotPropertiesService = TestBed.inject(DotPropertiesService);
     });
 
     describe('edit layout', () => {
@@ -397,6 +410,23 @@ describe('DotEditLayoutDesignerComponent', () => {
                     width: ''
                 }
             });
+        });
+    });
+
+    describe('New Template Builder', () => {
+        beforeEach(() => {
+            component.layout = mockDotLayout();
+            spyOn(dotPropertiesService, 'getKey').and.returnValue(of('true'));
+            fixture.detectChanges();
+        });
+
+        it('should show new template builder component', () => {
+            fixture.detectChanges();
+            const component: DebugElement = fixture.debugElement.query(
+                By.css('[data-testId="new-template-builder"]')
+            );
+
+            expect(component).toBeTruthy();
         });
     });
 
