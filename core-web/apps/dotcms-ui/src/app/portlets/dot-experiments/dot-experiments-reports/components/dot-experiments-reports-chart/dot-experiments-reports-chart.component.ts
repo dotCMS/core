@@ -1,6 +1,6 @@
 import { ChartData } from 'chart.js';
 
-import { JsonPipe, NgIf } from '@angular/common';
+import { NgIf } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -12,7 +12,6 @@ import {
 
 import { ChartModule, UIChart } from 'primeng/chart';
 import { SkeletonModule } from 'primeng/skeleton';
-import { SpinnerModule } from 'primeng/spinner';
 
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { getDotExperimentLineChartJsOptions } from '@portlets/dot-experiments/dot-experiments-reports/components/dot-experiments-reports-chart/chartjs/options/dotExperiments-chartjs.options';
@@ -21,25 +20,20 @@ import { htmlLegendPlugin } from '@portlets/dot-experiments/dot-experiments-repo
 @Component({
     standalone: true,
     selector: 'dot-experiments-reports-chart',
-    imports: [ChartModule, SpinnerModule, NgIf, SkeletonModule, DotMessagePipeModule, JsonPipe],
+    imports: [ChartModule, NgIf, SkeletonModule, DotMessagePipeModule],
     templateUrl: './dot-experiments-reports-chart.component.html',
     styleUrls: ['./dot-experiments-reports-chart.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsReportsChartComponent implements OnChanges {
     @ViewChild('chart') chart: UIChart;
-
     options;
-
     @Input()
     isEmpty = true;
-
     @Input()
-    loading = true;
-
+    isLoading = true;
     @Input()
     config: { xAxisLabel: string; yAxisLabel: string; title: string };
-
     @Input()
     data: ChartData<'line'>;
 

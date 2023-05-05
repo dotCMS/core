@@ -128,7 +128,7 @@ describe('DotExperimentsDetailsTableComponent', () => {
 
     it('should render loading state', () => {
         spectator = createHost(
-            `<dot-experiments-details-table [data]="data" [loading]="loading" />`,
+            `<dot-experiments-details-table [data]="data" [isLoading]="loading" />`,
             {
                 hostProps: {
                     data: MOCK_DATA,
@@ -141,7 +141,7 @@ describe('DotExperimentsDetailsTableComponent', () => {
 
     it('should render empty state', () => {
         spectator = createHost(
-            `<dot-experiments-details-table [empty]="empty" [data]="data" [loading]="loading" />`,
+            `<dot-experiments-details-table [isEmpty]="empty" [data]="data" [isLoading]="loading" />`,
             {
                 hostProps: {
                     data: MOCK_DATA,

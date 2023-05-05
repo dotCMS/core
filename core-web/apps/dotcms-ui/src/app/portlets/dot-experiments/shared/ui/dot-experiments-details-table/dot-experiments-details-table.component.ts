@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { KeyValuePipe, NgClass, NgForOf, NgIf, NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -9,7 +9,7 @@ import {
 
 import { SkeletonModule } from 'primeng/skeleton';
 
-import { DotExperimentSummary } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotExperimentSummary } from '@dotcms/dotcms-models';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotStringTemplateOutletDirective } from '@portlets/shared/directives/dot-string-template-outlet.directive';
 
@@ -26,13 +26,21 @@ import { DotStringTemplateOutletDirective } from '@portlets/shared/directives/do
 @Component({
     selector: 'dot-experiments-details-table',
     standalone: true,
-    imports: [CommonModule, DotStringTemplateOutletDirective, SkeletonModule, DotMessagePipeModule],
+    imports: [
+        NgIf,
+        NgTemplateOutlet,
+        NgForOf,
+        NgClass,
+        KeyValuePipe,
+        SkeletonModule,
+        DotStringTemplateOutletDirective,
+        DotMessagePipeModule
+    ],
     templateUrl: './dot-experiments-details-table.component.html',
     styleUrls: ['./dot-experiments-details-table.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsDetailsTableComponent {
-    //** Title of the table */
     @Input()
     title!: string | TemplateRef<unknown>;
 
@@ -41,14 +49,14 @@ export class DotExperimentsDetailsTableComponent {
     data!: DotExperimentSummary[];
 
     @Input()
-    loading = false;
+    isLoading = false;
 
     @Input()
-    empty = false;
+    isEmpty = false;
 
     //** Template to display the headers */
     @ContentChild('headers', { static: true }) headers!: TemplateRef<unknown>;
-
     //** Template to display the rows */
     @ContentChild('rows', { static: true }) rows!: TemplateRef<unknown>;
+    protected readonly states = ComponentStatus;
 }

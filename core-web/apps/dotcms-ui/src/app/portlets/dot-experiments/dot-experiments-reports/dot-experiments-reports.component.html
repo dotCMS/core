@@ -29,113 +29,130 @@
                     <dot-experiments-reports-chart
                         [config]="chartConfig"
                         [data]="vm.chartData"
-                        [loading]="vm.isLoading"
-                        [isEmpty]="vm.isEmpty"
+                        [isEmpty]="vm.hasEnoughSessions"
+                        [isLoading]="vm.isLoading"
                     />
                     <dot-experiments-details-table
                         [data]="vm.summaryData"
-                        [empty]="vm.isEmpty"
+                        [isEmpty]="vm.hasEnoughSessions"
                         [title]="'experiments.reports.resume' | dm"
                     >
                         <ng-template #headers>
-                            <div class="flex col flex-wrap fist-column align-items-center">
-                                {{ 'experiments.reports.variants' | dm }}
-                            </div>
-                            <div class="flex col flex-wrap align-items-center justify-content-end">
-                                {{ 'experiments.reports.best-variant' | dm }}
-                            </div>
-                            <div class="flex col flex-wrap align-items-center justify-content-end">
-                                {{ 'experiments.configure.traffic.split.name' | dm }}
-                            </div>
-                            <div class="flex col flex-wrap align-items-center justify-content-end">
-                                {{ 'experiments.reports.pageview' | dm }}
-                            </div>
-                            <div class="flex col flex-wrap align-items-center justify-content-end">
-                                {{ 'experiments.reports.sessions' | dm }}
-                            </div>
-                            <div class="flex col flex-wrap align-items-center justify-content-end">
-                                {{ 'experiments.reports.clicks' | dm }}
-                            </div>
-                            <div class="flex col flex-wrap align-items-center justify-content-end">
-                                {{ 'experiments.reports.improvement' | dm }}
+                            <div class="flex col row-container">
+                                <div class="flex col flex-wrap align-items-center">
+                                    {{ 'experiments.reports.variants' | dm }}
+                                </div>
+                                <div
+                                    class="flex col flex-wrap align-items-center justify-content-end"
+                                >
+                                    {{ 'experiments.reports.best-variant' | dm }}
+                                </div>
+                                <div
+                                    class="flex col flex-wrap align-items-center justify-content-end"
+                                >
+                                    {{ 'experiments.configure.traffic.split.name' | dm }}
+                                </div>
+                                <div
+                                    class="flex col flex-wrap align-items-center justify-content-end"
+                                >
+                                    {{ 'experiments.reports.pageview' | dm }}
+                                </div>
+                                <div
+                                    class="flex col flex-wrap align-items-center justify-content-end"
+                                >
+                                    {{ 'experiments.reports.sessions' | dm }}
+                                </div>
+                                <div
+                                    class="flex col flex-wrap align-items-center justify-content-end"
+                                >
+                                    {{ 'experiments.reports.clicks' | dm }}
+                                </div>
+                                <div
+                                    class="flex col flex-wrap align-items-center justify-content-end"
+                                >
+                                    {{ 'experiments.reports.improvement' | dm }}
+                                </div>
                             </div>
                         </ng-template>
 
                         <ng-template #rows let-row>
-                            <div
-                                class="flex col flex-wrap align-content-center fist-column"
-                                [ngClass]="{ 'prospect-winner': row.isWinner }"
-                            >
-                                <div class="flex flex-row align-items-center gap-2">
-                                    <i
-                                        class="pi"
-                                        [ngClass]="{
-                                            'pi-arrow-circle-up': row.isWinner,
-                                            'pi-arrow-circle-down': !row.isWinner
-                                        }"
-                                    ></i>
-                                    <span>{{ row.name }}</span>
-                                    <p-tag
-                                        class="sm p-tag-success"
-                                        *ngIf="row.isWinner"
-                                        [value]="'winner' | dm | titlecase"
-                                        icon="pi pi-check"
-                                    />
-                                </div>
-                            </div>
-                            <div
-                                class="flex col flex-wrap align-content-center justify-content-end"
-                                [ngClass]="{ 'prospect-winner': row.isWinner }"
-                            >
-                                {{ row.bestVariant | percent : '1.0-2' }}
-                            </div>
-                            <div
-                                class="flex col flex-wrap align-content-center justify-content-end"
-                                [ngClass]="{ 'prospect-winner': row.isWinner }"
-                            >
-                                {{ row.trafficSplit }}
-                            </div>
-                            <div
-                                class="flex col flex-wrap align-content-center justify-content-end"
-                                [ngClass]="{ 'prospect-winner': row.isWinner }"
-                            >
-                                {{ row.pageViews }}
-                            </div>
-                            <div
-                                class="flex col flex-wrap align-content-center justify-content-end"
-                                [ngClass]="{ 'prospect-winner': row.isWinner }"
-                            >
-                                {{ row.sessions }}
-                            </div>
-                            <div
-                                class="flex col flex-wrap align-content-center justify-content-end"
-                                [ngClass]="{ 'prospect-winner': row.isWinner }"
-                            >
-                                {{ row.clicks }}
-                            </div>
-                            <div
-                                class="flex col flex-wrap align-content-center justify-content-end"
-                                [ngClass]="{ 'prospect-winner': row.isWinner }"
-                            >
-                                <ng-container
-                                    *ngIf="row.name != defaultVariantName; else baselineTpl"
+                            <div class="flex col row-container">
+                                <div
+                                    class="flex col flex-wrap align-content-center first-column"
+                                    [ngClass]="{ 'prospect-winner': row.isWinner }"
                                 >
-                                    <div
-                                        class="flex flex-row align-items-center gap-2 justify-content-end"
-                                    >
+                                    <div class="flex flex-row align-items-center gap-2">
                                         <i
                                             class="pi"
                                             [ngClass]="{
-                                                'pi-arrow-circle-up': row.better_than_baseline,
-                                                'pi-arrow-circle-down': !row.better_than_baseline
+                                                'pi-arrow-circle-up': row.isWinner,
+                                                'pi-arrow-circle-down': !row.isWinner
                                             }"
                                         ></i>
-                                        <span>{{ row.improvement | percent }}</span>
+                                        <span>{{ row.name }}</span>
+                                        <p-tag
+                                            class="sm p-tag-success"
+                                            *ngIf="row.isWinner"
+                                            [value]="'winner' | dm | titlecase"
+                                            icon="pi pi-check"
+                                        />
                                     </div>
-                                </ng-container>
-                                <ng-template #baselineTpl>
-                                    <span>{{ 'experiments.reports.baseline' | dm }}</span>
-                                </ng-template>
+                                </div>
+                                <div
+                                    class="flex col flex-wrap align-content-center justify-content-end"
+                                    [ngClass]="{ 'prospect-winner': row.isWinner }"
+                                >
+                                    {{ row.bestVariant | percent : '1.0-2' }}
+                                </div>
+                                <div
+                                    class="flex col flex-wrap align-content-center justify-content-end"
+                                    [ngClass]="{ 'prospect-winner': row.isWinner }"
+                                >
+                                    {{ row.trafficSplit }}
+                                </div>
+                                <div
+                                    class="flex col flex-wrap align-content-center justify-content-end"
+                                    [ngClass]="{ 'prospect-winner': row.isWinner }"
+                                >
+                                    {{ row.pageViews }}
+                                </div>
+                                <div
+                                    class="flex col flex-wrap align-content-center justify-content-end"
+                                    [ngClass]="{ 'prospect-winner': row.isWinner }"
+                                >
+                                    {{ row.sessions }}
+                                </div>
+                                <div
+                                    class="flex col flex-wrap align-content-center justify-content-end"
+                                    [ngClass]="{ 'prospect-winner': row.isWinner }"
+                                >
+                                    {{ row.clicks }}
+                                </div>
+                                <div
+                                    class="flex col flex-wrap align-content-center justify-content-end"
+                                    [ngClass]="{ 'prospect-winner': row.isWinner }"
+                                >
+                                    <ng-container
+                                        *ngIf="row.name != defaultVariantName; else baselineTpl"
+                                    >
+                                        <div
+                                            class="flex flex-row align-items-center gap-2 justify-content-end"
+                                        >
+                                            <i
+                                                class="pi"
+                                                [ngClass]="{
+                                                    'pi-arrow-circle-up': row.better_than_baseline,
+                                                    'pi-arrow-circle-down':
+                                                        !row.better_than_baseline
+                                                }"
+                                            ></i>
+                                            <span>{{ row.improvement | percent }}</span>
+                                        </div>
+                                    </ng-container>
+                                    <ng-template #baselineTpl>
+                                        <span>{{ 'experiments.reports.baseline' | dm }}</span>
+                                    </ng-template>
+                                </div>
                             </div>
                         </ng-template>
                     </dot-experiments-details-table>

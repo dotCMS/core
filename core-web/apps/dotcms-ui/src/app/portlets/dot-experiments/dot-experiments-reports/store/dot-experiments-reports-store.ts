@@ -52,14 +52,14 @@ const initialState: DotExperimentsReportsState = {
 // ViewModel Interfaces
 export interface VmReportExperiment {
     isLoading: boolean;
-    isEmpty: boolean;
+    hasEnoughSessions: boolean;
     experiment: DotExperiment;
     status: ComponentStatus;
     showSummary: boolean;
     results: DotExperimentResults;
     chartData: ChartData<'line'> | null;
     showDialog: boolean;
-    summaryData: DotExperimentSummary[] | null;
+    summaryData: DotExperimentSummary[];
 }
 
 export interface VmPromoteVariant {
@@ -67,7 +67,6 @@ export interface VmPromoteVariant {
     showDialog: boolean;
     isSaving: boolean;
     variants: DotResultSimpleVariant[] | null;
-
 }
 
 @Injectable()
@@ -101,8 +100,8 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
             )
     );
 
-    readonly isEmpty$: Observable<boolean> = this.select(
-        ({ results }) => results?.sessions.total === 0
+    readonly hasEnoughSessions$: Observable<boolean> = this.select(
+        ({ results }) => results && results?.sessions.total === 0
     );
 
     readonly setComponentStatus = this.updater(
@@ -160,7 +159,22 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
     );
 
     readonly getSummaryData$: Observable<DotExperimentSummary[]> = this.select(({ results }) =>
-        results ? this.getSummaryData(results) : null
+        results
+            ? Object.values(results.goals.primary.variants).map((variant) => ({
+                  id: variant.variantName,
+                  name: variant.variantDescription,
+                  trafficSplit: 'TBD',
+                  pageViews: variant.totalPageViews,
+                  sessions: results.sessions.variants[variant.variantName],
+                  clicks: variant.uniqueBySession.count,
+                  bestVariant: variant.uniqueBySession.totalPercentage / 100,
+                  improvement:
+                      (variant.uniqueBySession.totalPercentage -
+                          results.goals.primary.variants.DEFAULT.uniqueBySession.totalPercentage) /
+                      100,
+                  isWinner: results.bayesianResult.suggestedWinner === variant.variantName
+              }))
+            : []
     );
 
     readonly loadExperimentAndResults = this.effect((experimentId$: Observable<string>) =>
@@ -222,16 +236,24 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
     readonly vm$: Observable<VmReportExperiment> = this.select(
         this.state$,
         this.isLoading$,
-        this.isEmpty$,
+        this.hasEnoughSessions$,
         this.showExperimentSummary$,
         this.getChartData$,
         this.isShowPromotedDialog$,
-      this.getSummaryData$,
-        ({ experiment, status, results }, isLoading, isEmpty, showSummary, chartData, showDialog,summaryData) => ({
+        this.getSummaryData$,
+        (
+            { experiment, status, results },
+            isLoading,
+            hasEnoughSessions,
+            showSummary,
+            chartData,
+            showDialog,
+            summaryData
+        ) => ({
             experiment,
             status,
             isLoading,
-            isEmpty,
+            hasEnoughSessions,
             showSummary,
             results,
             chartData,
@@ -315,11 +337,6 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
         arrayToOrder.unshift(DEFAULT_VARIANT_ID);
 
         return arrayToOrder;
-    }
-
-    //Todo: Remove this when the endpoint sends the name set by the user
-    private getLabelName(trafficProportion: TrafficProportion, variantId: string) {
-        return trafficProportion.variants.find((variant) => variant.id == variantId).name;
     }
 
     private getSummaryData(results: DotExperimentResults): DotExperimentSummary[] {

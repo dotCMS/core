@@ -27,7 +27,6 @@ import { tap } from 'rxjs/operators';
 import { DotMessageService } from '@dotcms/data-access';
 import { DEFAULT_VARIANT_NAME } from '@dotcms/dotcms-models';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { DotExperimentsConfigurationSkeletonComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-skeleton/dot-experiments-configuration-skeleton.component';
 import { DotExperimentsPublishVariantComponent } from '@portlets/dot-experiments/dot-experiments-reports/components/dot-experiments-publish-variant/dot-experiments-publish-variant.component';
 import { DotExperimentsReportsChartComponent } from '@portlets/dot-experiments/dot-experiments-reports/components/dot-experiments-reports-chart/dot-experiments-reports-chart.component';
 import { DotExperimentsReportsSkeletonComponent } from '@portlets/dot-experiments/dot-experiments-reports/components/dot-experiments-reports-skeleton/dot-experiments-reports-skeleton.component';
@@ -52,7 +51,6 @@ import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.dir
         //dotCMS
         DotExperimentsUiHeaderComponent,
         DotPipesModule,
-        DotExperimentsConfigurationSkeletonComponent,
         DotExperimentsExperimentSummaryComponent,
         DotExperimentsReportsSkeletonComponent,
         DotExperimentsReportsChartComponent,

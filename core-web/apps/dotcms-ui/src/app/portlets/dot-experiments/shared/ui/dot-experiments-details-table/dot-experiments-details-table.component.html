@@ -1,5 +1,5 @@
-<ng-container *ngIf="!loading; else loadingStateTpl">
-    <div class="flex flex-column gap-2" *ngIf="!empty; else emptyStateTpl">
+<ng-container *ngIf="!isLoading; else loadingStateTpl">
+    <div class="flex flex-column gap-2" *ngIf="!isEmpty; else emptyStateTpl">
         <div
             class="header-title flex flex-row flex-wrap align-items-center"
             *ngIf="title"
@@ -70,11 +70,11 @@
         class="empty flex justify-content-center align-items-center flex-column"
         data-testId="empty-template"
     >
-        <i class="empty_icon pi pi-table mb-2"></i>
-        <p class="empty_message m-0" data-testId="empty-title">
+        <i class="empty__icon pi pi-table mb-2"></i>
+        <p class="empty__message m-0" data-testId="empty-title">
             {{ 'experiments.reports.summary.empty.title' | dm }}
         </p>
-        <p class="empty_description m-0" data-testId="empty-description">
+        <p class="empty__description m-0" data-testId="empty-description">
             {{ 'experiments.reports.summary.empty.description' | dm }}
         </p>
     </div>

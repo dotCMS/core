@@ -39,7 +39,7 @@ describe('DotExperimentsReportsChartComponent', () => {
 
     it('should has title, legends container and PrimeNG Chart Component', () => {
         spectator.setInput({
-            loading: false,
+            isLoading: false,
             isEmpty: false,
             data: CHARTJS_DATA_MOCK_WITH_DATA,
             config: {
@@ -56,13 +56,13 @@ describe('DotExperimentsReportsChartComponent', () => {
 
     it('should show the loading state', () => {
         spectator.setInput({
-            loading: true
+            isLoading: true
         });
         expect(spectator.query(byTestId('loading-skeleton'))).toExist();
     });
     it('should show the empty state', () => {
         spectator.setInput({
-            loading: false,
+            isLoading: false,
             data: CHARTJS_DATA_MOCK_EMPTY,
             config: {
                 xAxisLabel: 'experiments.chart.xAxisLabel',

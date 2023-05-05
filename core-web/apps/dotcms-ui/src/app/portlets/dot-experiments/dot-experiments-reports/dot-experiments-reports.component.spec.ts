@@ -22,9 +22,14 @@ import {
     VmReportExperiment
 } from '@portlets/dot-experiments/dot-experiments-reports/store/dot-experiments-reports-store';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
+import { DotExperimentsDetailsTableComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-details-table/dot-experiments-details-table.component';
 import { DotExperimentsExperimentSummaryComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-experiment-summary/dot-experiments-experiment-summary.component';
 import { DotExperimentsUiHeaderComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
-import { getExperimentMock, getExperimentResultsMock } from '@portlets/dot-experiments/test/mocks';
+import {
+    CHARTJS_DATA_MOCK_WITH_DATA,
+    getExperimentMock,
+    getExperimentResultsMock
+} from '@portlets/dot-experiments/test/mocks';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
@@ -41,10 +46,10 @@ const ActivatedRouteMock = {
 const defaultVmMock: VmReportExperiment = {
     experiment: getExperimentMock(3),
     results: getExperimentResultsMock(1),
-    chartData: null,
-    summaryData: null,
+    chartData: CHARTJS_DATA_MOCK_WITH_DATA,
+    summaryData: [],
     isLoading: false,
-    isEmpty: false,
+    hasEnoughSessions: false,
     showSummary: false,
     showDialog: false,
     status: ComponentStatus.INIT
@@ -66,8 +71,10 @@ describe('DotExperimentsReportsComponent', () => {
     const createComponent = createComponentFactory({
         imports: [
             DotExperimentsUiHeaderComponent,
+            DotExperimentsReportsChartComponent,
             DotExperimentsReportsSkeletonComponent,
             DotExperimentsExperimentSummaryComponent,
+            DotExperimentsDetailsTableComponent,
             DotExperimentsPublishVariantComponent,
             DotDynamicDirective
         ],
@@ -111,8 +118,8 @@ describe('DotExperimentsReportsComponent', () => {
     });
 
     it("shouldn't show the skeleton component when is not loading", () => {
-        spectator.component.vm$ = of({ ...defaultVmMock, isLoading: false });
-        spectator.detectChanges();
+        spectator.component.vm$ = of({ ...defaultVmMock });
+        spectator.detectComponentChanges();
 
         expect(spectator.query(DotExperimentsUiHeaderComponent)).toExist();
         expect(spectator.query(DotExperimentsReportsSkeletonComponent)).not.toExist();
@@ -140,7 +147,7 @@ describe('DotExperimentsReportsComponent', () => {
     });
 
     it('should back to Experiment List', () => {
-        spectator.detectComponentChanges();
+        spectator.detectChanges();
         spectator.component.goToExperimentList(EXPERIMENT_MOCK.pageId);
         expect(router.navigate).toHaveBeenCalledWith(
             ['/edit-page/experiments/', EXPERIMENT_MOCK.pageId],
@@ -156,7 +163,7 @@ describe('DotExperimentsReportsComponent', () => {
     });
 
     it('should load the publish variant dialog', () => {
-        spectator.detectComponentChanges();
+        spectator.detectChanges();
 
         spectator.click(spectator.query(byTestId('publish-variant-button')));
         spectator.detectComponentChanges();
@@ -165,7 +172,7 @@ describe('DotExperimentsReportsComponent', () => {
     });
 
     it('should load the publish variant dialog and close', () => {
-        spectator.detectComponentChanges();
+        spectator.detectChanges();
 
         spectator.click(spectator.query(byTestId('publish-variant-button')));
         spectator.detectComponentChanges();
