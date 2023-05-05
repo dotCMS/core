@@ -95,7 +95,6 @@ import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet
 import com.dotmarketing.portlets.workflows.actionlet.SendFormEmailActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.SetValueActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.TranslationActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.TwitterActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.VelocityScriptActionlet;
@@ -152,6 +151,7 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -239,7 +239,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public WorkflowAPIImpl() {
 
-		actionletClasses = new ArrayList<>();
+		actionletClasses = new CopyOnWriteArrayList<>();
 
 		// Add default actionlet classes
 		actionletClasses.addAll(Arrays.asList(
@@ -257,7 +257,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				ResetTaskActionlet.class,
 				MultipleApproverActionlet.class,
 				FourEyeApproverActionlet.class,
-				TwitterActionlet.class,
 				PushPublishActionlet.class,
 				CheckURLAccessibilityActionlet.class,
                 EmailActionlet.class,
