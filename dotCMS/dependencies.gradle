@@ -299,10 +299,6 @@ dependencies {
 
     implementation group: 'net.jodah', name: 'failsafe', version:'1.0.4'
 
-    implementation ( group: 'redis.clients', name: 'jedis', version:'2.7.3'){
-        exclude(module: 'commons-pool2')
-    }
-
     implementation ( group: 'io.lettuce', name: 'lettuce-core', version:'6.1.1.RELEASE'){
         exclude(module: 'commons-pool2')
         exclude(module: 'spring-beans')
