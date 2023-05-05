@@ -96,5 +96,15 @@ public interface VanityUrlAPI {
     boolean handleVanityURLRedirects(VanityUrlRequestWrapper request, HttpServletResponse response,
                 VanityUrlResult vanityUrlResult);
 
+    /**
+     * Executes a SQL query that will return all the Vanity URLs that belong to a specific Site. This
+     * method moved from using the ES index to using a SQL query in order to avoid situations where the
+     * index was not fully updated when reading new data.
+     *
+     * @param host The Site whose Vanity URLs will be retrieved.
+     *
+     * @return The list of Vanity URLs.
+     */
+    List<CachedVanityUrl> findInDb(Host host);
 
 }
