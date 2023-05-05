@@ -2,7 +2,6 @@ package com.dotcms.http.server.mock;
 
 import com.dotcms.http.server.mock.MockHttpServerContext.Condition;
 import com.dotcms.http.server.mock.MockHttpServerContext.RequestContext;
-import com.dotcms.repackage.twitter4j.internal.http.HttpResponseCode;
 import com.dotmarketing.util.UtilMethods;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
@@ -95,7 +94,7 @@ public class MockHttpServer {
 
     private static void sendFailResponse(HttpExchange exchange) {
         try {
-            exchange.sendResponseHeaders(HttpResponseCode.INTERNAL_SERVER_ERROR, 0);
+            exchange.sendResponseHeaders(500, 0);
             exchange.close();
         } catch (IOException e) {
             throw new RuntimeException(e);
