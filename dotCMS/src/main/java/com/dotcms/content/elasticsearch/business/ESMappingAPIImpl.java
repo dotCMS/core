@@ -81,6 +81,9 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.time.LocalDate;
+import java.time.Month;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -308,6 +311,11 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		}
 	}
 
+	public static final Date dateOufOfRange = Date.from(
+			LocalDate.of(2999, Month.JANUARY, 1)
+					.atStartOfDay(ZoneId.systemDefault()).toInstant());
+
+
 	/**
 	 * This method is the same of the toJson except that it returns directly the mlowered map.
 	 *
@@ -403,9 +411,9 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 						datetimeFormat.format(contentIdentifier.getSysPublishDate()));
 			}else {
 				contentletMap.put(ESMappingConstants.PUBLISH_DATE,
-						elasticSearchDateTimeFormat.format(versionInfo.get().getVersionTs()));
+						elasticSearchDateTimeFormat.format(dateOufOfRange));
 				contentletMap.put(ESMappingConstants.PUBLISH_DATE + TEXT,
-						datetimeFormat.format(versionInfo.get().getVersionTs()));
+						datetimeFormat.format(dateOufOfRange));
 			}
 
 			if(UtilMethods.isSet(contentIdentifier.getSysExpireDate())) {
@@ -413,8 +421,8 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				contentletMap.put(ESMappingConstants.EXPIRE_DATE + TEXT,
 						datetimeFormat.format(contentIdentifier.getSysExpireDate()));
 			}else {
-				contentletMap.put(ESMappingConstants.EXPIRE_DATE, elasticSearchDateTimeFormat.format(29990101000000L));
-				contentletMap.put(ESMappingConstants.EXPIRE_DATE + TEXT, "29990101000000");
+				contentletMap.put(ESMappingConstants.EXPIRE_DATE, elasticSearchDateTimeFormat.format(dateOufOfRange));
+				contentletMap.put(ESMappingConstants.EXPIRE_DATE + TEXT, datetimeFormat.format(dateOufOfRange));
 			}
 
 			contentletMap.put(ESMappingConstants.VERSION_TS, elasticSearchDateTimeFormat.format(versionInfo.get().getVersionTs()));
