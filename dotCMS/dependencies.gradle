@@ -163,10 +163,12 @@ dependencies {
     implementation group: 'org.jvnet', name: 'mimepull', version: '1.6'
     implementation group: 'org.xbill', name: 'dns', version: '2.0.8'
     implementation group: 'com.dotcms.lib', name: 'dot.msnm', version:'ukv_2'
+    implementation group: 'com.dotcms.lib', name: 'dot.myspell', version:'ukv_2'
     implementation group: 'com.dotcms.lib', name: 'dot.odmg', version:'ukv_3'
     implementation group: 'com.dotcms.lib', name: 'dot.platform', version:'ukv_2'
     implementation group: 'com.dotcms.lib', name: 'dot.portlet', version:'1.0_2'
     implementation group: 'com.dotcms.lib', name: 'dot.quartz-all', version:'1.8.6_2'
+    implementation group: 'com.dotcms.lib', name: 'dot.rhino', version:'1.7R4_2'
     implementation group: 'com.dotcms.lib', name: 'dot.secure-filter', version:'ukv_2'
     implementation group: 'com.dotcms.lib', name: 'dot.snappy-java', version:'1.0.4.1_2'
     implementation group: 'com.dotcms.lib', name: 'dot.stax2-api', version:'3.1.1_2'
@@ -297,6 +299,10 @@ dependencies {
 
     implementation group: 'net.jodah', name: 'failsafe', version:'1.0.4'
 
+    implementation ( group: 'redis.clients', name: 'jedis', version:'2.7.3'){
+        exclude(module: 'commons-pool2')
+    }
+
     implementation ( group: 'io.lettuce', name: 'lettuce-core', version:'6.1.1.RELEASE'){
         exclude(module: 'commons-pool2')
         exclude(module: 'spring-beans')
@@ -341,7 +347,7 @@ dependencies {
     implementation group: 'com.amazonaws', name: 'aws-java-sdk-s3', version:'1.12.352'
     implementation group: 'com.amazonaws', name: 'jmespath-java', version:'1.12.352'
 
-    implementation group: 'com.h2database', name: 'h2', version:'1.3.176'
+    implementation group: 'com.h2database', name: 'h2', version: '1.4.200'
     implementation group: 'eu.bitwalker', name: 'UserAgentUtils', version:'1.19'
 
 
