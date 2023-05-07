@@ -586,6 +586,12 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
     }
 
+    /**
+     * Method to test: APILocator.getPermissionAPI().doesUserHavePermission(user, permissionType, content)
+     * Given Scenario: Creates a limited user with BE role and a content type.
+     * Then saves a permission with full grants, the permission should be allowed from the content type.
+     * ExpectedResult: The permission should be allowed to the contentlet by using owner role.
+     */
     @Test()
     public void send_permission_with_limited_user_Test()
             throws DotDataException, DotSecurityException, AlreadyExistException {
