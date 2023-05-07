@@ -186,7 +186,9 @@ public class ClusterManagementTopic implements DotPubSubTopic,DotInitializer {
  
         List<Server> servers = Try.of(()-> APILocator.getServerAPI().getAllServers()).getOrElseThrow(DotRuntimeException::new);
         for (Server server : servers) {
-            serverMap.putIfAbsent(server.getServerId(), serverOrder++);
+            if(!serverId.equals(server.getServerId())) {
+                serverMap.put(server.getServerId(), serverOrder++);
+            }
         }
 
         return serverMap;
