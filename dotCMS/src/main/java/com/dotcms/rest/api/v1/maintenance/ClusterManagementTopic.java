@@ -66,7 +66,7 @@ public class ClusterManagementTopic implements DotPubSubTopic,DotInitializer {
 
     @VisibleForTesting
     public ClusterManagementTopic(final String serverId, final DotPubSubProvider provider) {
-        this.serverId = StringUtils.shortify(serverId, 10);
+        this.serverId = serverId;
         this.provider = provider;
         provider.subscribe(this);
     }
