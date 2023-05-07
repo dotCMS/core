@@ -36,6 +36,7 @@ import com.google.common.collect.Sets;
 import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
 import graphql.AssertException;
+import io.vavr.API;
 import java.util.ArrayList;
 
 import java.util.Collection;
@@ -1341,84 +1342,6 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         assertFalse(multiTreeContentlets.contains(variantAContentlet.getIdentifier()));
     }
 
-    /**
-     * Method to Test: {@link MultiTreeAPI#copyVariantForPage(String, String, String)}
-     * When: A Page with {@link MultiTree} in different a Variant A try to copy the {@link MultiTree} to Variant B
-     * Should: Should copy all the {@link MultiTree}
-     */
-    @Test
-    public void copyVariant() throws Exception {
-        final Variant variantA = new VariantDataGen().nextPersisted();
-        final Variant variantB = new VariantDataGen().nextPersisted();
-
-        final Persona persona = new PersonaDataGen().keyTag(UUIDGenerator.shorty()).nextPersisted();
-
-        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
-        final Contentlet contentlet_1 = new ContentletDataGen(contentType.id()).nextPersisted();
-        final Contentlet contentlet_2 = new ContentletDataGen(contentType.id()).nextPersisted();
-        final Contentlet contentlet_3 = new ContentletDataGen(contentType.id()).nextPersisted();
-
-        final Template template = new TemplateDataGen().body("body").nextPersisted();
-        final Folder folder = new FolderDataGen().nextPersisted();
-        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
-        final Structure structure = new StructureDataGen().nextPersisted();
-        final Container container = new ContainerDataGen().maxContentlets(1).withStructure(structure, "").nextPersisted();
-
-        final String uniqueId = UUIDGenerator.shorty();
-
-        for (Variant variant : list(variantA, VariantAPI.DEFAULT_VARIANT)) {
-            new MultiTreeDataGen()
-                    .setPage(page)
-                    .setContainer(container)
-                    .setContentlet(contentlet_1)
-                    .setInstanceID(uniqueId)
-                    .setPersonalization(DOT_PERSONALIZATION_DEFAULT)
-                    .setTreeOrder(1)
-                    .setVariant(variant)
-                    .nextPersisted();
-
-            new MultiTreeDataGen()
-                    .setPage(page)
-                    .setContainer(container)
-                    .setContentlet(contentlet_2)
-                    .setInstanceID(uniqueId)
-                    .setPersonalization(DOT_PERSONALIZATION_DEFAULT)
-                    .setTreeOrder(1)
-                    .setVariant(variant)
-                    .nextPersisted();
-
-            new MultiTreeDataGen()
-                    .setPage(page)
-                    .setContainer(container)
-                    .setContentlet(contentlet_1)
-                    .setInstanceID(uniqueId)
-                    .setPersonalization(persona.getKeyTag())
-                    .setTreeOrder(1)
-                    .setVariant(variant)
-                    .nextPersisted();
-
-            new MultiTreeDataGen()
-                    .setPage(page)
-                    .setContainer(container)
-                    .setContentlet(contentlet_3)
-                    .setInstanceID(uniqueId)
-                    .setPersonalization(persona.getKeyTag())
-                    .setTreeOrder(1)
-                    .setVariant(variant)
-                    .nextPersisted();
-        }
-
-        APILocator.getMultiTreeAPI().copyVariantForPage(page.getIdentifier(), variantA.name(), variantB.name());
-
-        final List<MultiTree> multiTrees = getMultiTrees(page.getIdentifier());
-
-        assertEquals(12, multiTrees.size());
-
-        final List<MultiTree> multiTreesByVariant = APILocator.getMultiTreeAPI()
-                .getMultiTreesByVariant(page.getIdentifier(), variantB.name());
-
-        assertEquals(4, multiTreesByVariant.size());
-    }
 
     /**
      * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional)} )}
@@ -1801,5 +1724,417 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         assertTrue(multiTreeContentlets.contains(contentlet1.getIdentifier()));
         assertTrue(multiTreeContentlets.contains(contentlet2.getIdentifier()));
     }
-    ///
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#copyMultiTree(String, List, String)}}
+     * When:
+     * - Have a Page with several MultiTree into the DEFAULT Variant and different Perzonalization.
+     * - And copy the MUltiTree to a new {@link Variant}
+     *
+     * Should: Copy all the MultiTree to the new Variant and must keep the same Peraonalization
+     */
+    @Test
+    public void copyMultiTreeToNewVariant() throws DotDataException {
+        final Variant targetVariant = new VariantDataGen().nextPersisted();
+        final Variant extraVariant = new VariantDataGen().nextPersisted();
+        final Language language = new LanguageDataGen().nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet_1 = new ContentletDataGen(contentType.id())
+                .languageId(language.getId())
+                .nextPersisted();
+
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType.id())
+                .languageId(language.getId())
+                .nextPersisted();
+
+        final Contentlet contentlet_3 = new ContentletDataGen(contentType.id())
+                .languageId(language.getId())
+                .nextPersisted();
+
+        final Contentlet contentlet_4 = new ContentletDataGen(contentType.id())
+                .languageId(language.getId())
+                .nextPersisted();
+
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+
+        final Container container = new ContainerDataGen().maxContentlets(1).nextPersisted();
+
+        final MultiTree multiTree_1 = new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setContentlet(contentlet_1)
+                .setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(1)
+                .nextPersisted();
+
+        final MultiTree multiTree_2 = new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setContentlet(contentlet_2)
+                .setPersonalization("another_persona")
+                .setTreeOrder(2)
+                .nextPersisted();
+
+        final MultiTree multiTree_3 = new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setContentlet(contentlet_3)
+                .setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(3)
+                .nextPersisted();
+
+        final MultiTree multiTree_4 = new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setContentlet(contentlet_4)
+                .setInstanceID(UUIDGenerator.shorty())
+                .setPersonalization("personalization")
+                .setTreeOrder(1)
+                .setVariant(extraVariant)
+                .nextPersisted();
+
+        APILocator.getMultiTreeAPI().copyMultiTree(page.getIdentifier(),
+                list(multiTree_1, multiTree_2, multiTree_3), targetVariant.name());
+
+        final List<Map<String, String>> multiTrees = new DotConnect().setSQL(
+                        "SELECT * FROM multi_tree WHERE parent1 = ?")
+                .addParam(page.getIdentifier())
+                .loadResults();
+
+        assertEquals(7, multiTrees.size());
+
+        final Set<String> contentletsTargetVariant = multiTrees.stream()
+                .filter(multiTreeMap -> targetVariant.name().equals(multiTreeMap.get("variant_id")))
+                .map(multiTreeMap -> multiTreeMap.get("child"))
+                .collect(Collectors.toSet());
+
+        assertEquals(3, contentletsTargetVariant.size());
+        assertTrue(contentletsTargetVariant.contains(contentlet_1.getIdentifier()));
+        assertTrue(contentletsTargetVariant.contains(contentlet_2.getIdentifier()));
+        assertTrue(contentletsTargetVariant.contains(contentlet_3.getIdentifier()));
+
+        final List<Map<String, String>> extraVariantMap = multiTrees.stream()
+                .filter(multiTreeMap -> extraVariant.name().equals(multiTreeMap.get("variant_id")))
+                .collect(Collectors.toList());
+
+        assertEquals(1, extraVariantMap.size());
+        assertTrue(extraVariantMap.get(0).get("child").contains(contentlet_4.getIdentifier()));
+        assertTrue(extraVariantMap.get(0).get("variant_id").contains(extraVariant.name()));
+        assertTrue(extraVariantMap.get(0).get("personalization").contains("personalization"));
+
+        final Collection<Map<String, String>> contentletsDefaultVariant = multiTrees.stream()
+                .filter(multiTreeMap -> VariantAPI.DEFAULT_VARIANT.name().equals(multiTreeMap.get("variant_id")))
+                .collect(Collectors.toSet());
+
+        assertEquals(3, contentletsDefaultVariant.size());
+
+        for (final Map<String, String> multiTreeMap : contentletsDefaultVariant) {
+            if (multiTreeMap.get("child").equals(contentlet_1.getIdentifier())) {
+                assertTrue(multiTreeMap.get("variant_id").equals(VariantAPI.DEFAULT_VARIANT.name()));
+                assertTrue(multiTreeMap.get("personalization").equals(DOT_PERSONALIZATION_DEFAULT));
+            } else if (multiTreeMap.get("child").equals(contentlet_2.getIdentifier())) {
+                assertTrue(multiTreeMap.get("variant_id").equals(VariantAPI.DEFAULT_VARIANT.name()));
+                assertTrue(multiTreeMap.get("personalization").equals("another_persona"));
+            } else if (multiTreeMap.get("child").equals(contentlet_3.getIdentifier())) {
+                assertTrue(multiTreeMap.get("variant_id").equals(VariantAPI.DEFAULT_VARIANT.name()));
+                assertTrue(multiTreeMap.get("personalization").equals(DOT_PERSONALIZATION_DEFAULT));
+            } else {
+                fail("Contentlet not found");
+            }
+        }
+
+    }
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#getMultiTrees(Variant)}
+     * When: You have MultiTree inside a Variant for different pages
+     * Should: return all the {@link MultiTree} for the Variant
+     */
+    @Test
+    public void multiTreesByVariant() throws DotDataException {
+        final Variant variant_1 = new VariantDataGen().nextPersisted();
+        final Variant variant_2 = new VariantDataGen().nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().withContainer(container, "1").nextPersisted();
+
+        final HTMLPageAsset htmlPageAsset_1 = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset htmlPageAsset_2 = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset htmlPageAsset_3 = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+
+        final Contentlet contentlet_1_default = new ContentletDataGen(contentType.id())
+                .nextPersisted();
+        final Contentlet contentlet_2_default = new ContentletDataGen(contentType.id()).nextPersisted();
+        final Contentlet contentlet_3_default = new ContentletDataGen(contentType.id()).nextPersisted();
+
+        final Contentlet contentlet_1_variant_1 = new ContentletDataGen(contentType.id())
+                .nextPersisted();
+
+        final Contentlet contentlet_2_variant_1 = new ContentletDataGen(contentType.id()).nextPersisted();
+        final Contentlet contentlet_3_variant_1 = new ContentletDataGen(contentType.id()).nextPersisted();
+
+        final Contentlet contentlet_1_variant_2 = new ContentletDataGen(contentType.id())
+                .nextPersisted();
+        final Contentlet contentlet_2_variant_2 = new ContentletDataGen(contentType.id()).nextPersisted();
+        final Contentlet contentlet_3_variant_2 = new ContentletDataGen(contentType.id()).nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(htmlPageAsset_1)
+                .setContainer(container)
+                .setContentlet(contentlet_1_default)
+                .setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(1)
+                .setVariant(VariantAPI.DEFAULT_VARIANT)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(htmlPageAsset_2)
+                .setContainer(container)
+                .setContentlet(contentlet_2_default)
+                .setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(2)
+                .setVariant(VariantAPI.DEFAULT_VARIANT)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(htmlPageAsset_3)
+                .setContainer(container)
+                .setContentlet(contentlet_3_default)
+                .setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(3)
+                .setVariant(VariantAPI.DEFAULT_VARIANT)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(htmlPageAsset_1)
+                .setContainer(container)
+                .setContentlet(contentlet_1_variant_1)
+                .setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(1)
+                .setVariant(variant_1)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(htmlPageAsset_2)
+                .setContainer(container)
+                .setContentlet(contentlet_2_variant_1)
+                .setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(2)
+                .setVariant(variant_1)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(htmlPageAsset_3)
+                .setContainer(container)
+                .setContentlet(contentlet_3_variant_1)
+                .setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(3)
+                .setVariant(variant_1)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(htmlPageAsset_1)
+                .setContainer(container)
+                .setContentlet(contentlet_1_variant_2)
+                .setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(1)
+                .setVariant(variant_2)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(htmlPageAsset_2)
+                .setContainer(container)
+                .setContentlet(contentlet_2_variant_2)
+                .setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(2)
+                .setVariant(variant_2)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(htmlPageAsset_3)
+                .setContainer(container)
+                .setContentlet(contentlet_3_variant_2)
+                .setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(3)
+                .setVariant(variant_2)
+                .nextPersisted();
+
+        final List<MultiTree> multiTreeList = APILocator.getMultiTreeAPI().getMultiTrees(variant_1);
+
+        assertEquals(3, multiTreeList.size());
+        multiTreeList.stream().map(MultiTree::getContentlet).forEach(contentletId ->
+            assertTrue(contentlet_1_variant_1.getIdentifier().equals(contentletId)
+                    || contentlet_2_variant_1.getIdentifier().equals(contentletId)
+                    || contentlet_3_variant_1.getIdentifier().equals(contentletId))
+        );
+
+        final List<MultiTree> multiTreeList_2 = APILocator.getMultiTreeAPI().getMultiTrees(variant_2);
+
+        assertEquals(3, multiTreeList_2.size());
+        multiTreeList_2.stream().map(MultiTree::getContentlet).forEach(contentletId ->
+            assertTrue(contentlet_1_variant_2.getIdentifier().equals(contentletId)
+                    || contentlet_2_variant_2.getIdentifier().equals(contentletId)
+                    || contentlet_3_variant_2.getIdentifier().equals(contentletId))
+        );
+
+    }
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#deleteMultiTree(String, String)}
+     * When: You have MultiTree inside a Variant for different pages and you try to delete
+     * them just for a Page and {@link Variant}
+     * Should:delete the MultiTrees for the Page and {@link Variant} but not for the other pages
+     */
+    @Test
+    public void deleteMultiTreeByPageAndVariant() throws DotDataException, DotSecurityException {
+        final Variant variant_1 = new VariantDataGen().nextPersisted();
+        final Variant variant_2 = new VariantDataGen().nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().withContainer(container, "1").nextPersisted();
+
+        final HTMLPageAsset htmlPageAsset_1 = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset htmlPageAsset_2 = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset htmlPageAsset_3 = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+
+        final Contentlet contentlet_1_default = new ContentletDataGen(contentType.id())
+                .nextPersisted();
+        final Contentlet contentlet_2_default = new ContentletDataGen(contentType.id()).nextPersisted();
+        final Contentlet contentlet_3_default = new ContentletDataGen(contentType.id()).nextPersisted();
+
+        final Contentlet contentlet_1_variant_1 = new ContentletDataGen(contentType.id())
+                .nextPersisted();
+
+        final Contentlet contentlet_2_variant_1 = new ContentletDataGen(contentType.id()).nextPersisted();
+        final Contentlet contentlet_3_variant_1 = new ContentletDataGen(contentType.id()).nextPersisted();
+
+        final Contentlet contentlet_1_variant_2 = new ContentletDataGen(contentType.id())
+                .nextPersisted();
+        final Contentlet contentlet_2_variant_2 = new ContentletDataGen(contentType.id()).nextPersisted();
+        final Contentlet contentlet_3_variant_2 = new ContentletDataGen(contentType.id()).nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(htmlPageAsset_1)
+                .setContainer(container)
+                .setContentlet(contentlet_1_default)
+                .setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(1)
+                .setVariant(VariantAPI.DEFAULT_VARIANT)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(htmlPageAsset_2)
+                .setContainer(container)
+                .setContentlet(contentlet_2_default)
+                .setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(2)
+                .setVariant(VariantAPI.DEFAULT_VARIANT)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(htmlPageAsset_3)
+                .setContainer(container)
+                .setContentlet(contentlet_3_default)
+                .setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(3)
+                .setVariant(VariantAPI.DEFAULT_VARIANT)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(htmlPageAsset_1)
+                .setContainer(container)
+                .setContentlet(contentlet_1_variant_1)
+                .setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(1)
+                .setVariant(variant_1)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(htmlPageAsset_2)
+                .setContainer(container)
+                .setContentlet(contentlet_2_variant_1)
+                .setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(2)
+                .setVariant(variant_1)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(htmlPageAsset_3)
+                .setContainer(container)
+                .setContentlet(contentlet_3_variant_1)
+                .setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(3)
+                .setVariant(variant_1)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(htmlPageAsset_1)
+                .setContainer(container)
+                .setContentlet(contentlet_1_variant_2)
+                .setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(1)
+                .setVariant(variant_2)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(htmlPageAsset_2)
+                .setContainer(container)
+                .setContentlet(contentlet_2_variant_2)
+                .setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(2)
+                .setVariant(variant_2)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(htmlPageAsset_3)
+                .setContainer(container)
+                .setContentlet(contentlet_3_variant_2)
+                .setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(3)
+                .setVariant(variant_2)
+                .nextPersisted();
+
+        APILocator.getMultiTreeAPI().getPageMultiTrees(htmlPageAsset_1, variant_1.name(), false);
+
+        assertEquals(1, countMultiTree(variant_1, htmlPageAsset_1));
+        APILocator.getMultiTreeAPI().deleteMultiTree(htmlPageAsset_1.getIdentifier(), variant_1.name());
+        assertEquals(0, countMultiTree(variant_1, htmlPageAsset_1));
+
+        assertEquals(1, countMultiTree(variant_2, htmlPageAsset_1));
+
+        APILocator.getMultiTreeAPI().deleteMultiTree(htmlPageAsset_1.getIdentifier(), variant_2.name());
+        assertEquals(0, countMultiTree(variant_2, htmlPageAsset_1));
+
+        assertEquals(1, countMultiTree(variant_2, htmlPageAsset_2));
+        assertEquals(1, countMultiTree(variant_1, htmlPageAsset_2));
+
+        assertEquals(1, countMultiTree(variant_2, htmlPageAsset_3));
+        assertEquals(1, countMultiTree(variant_1, htmlPageAsset_3));
+
+        final Optional<Table<String, String, Set<PersonalizedContentlet>>> pageMultiTrees = CacheLocator.getMultiTreeCache()
+                .getPageMultiTrees(htmlPageAsset_1.getIdentifier(), variant_1.name(), false);
+
+        assertTrue(pageMultiTrees.isEmpty());
+    }
+
+    private static int countMultiTree(Variant variant_1, HTMLPageAsset htmlPageAsset_1)
+            throws DotDataException {
+        final List<Map<String, String>> results = new DotConnect().setSQL(
+                        "SELECT COUNT(*) FROM multi_tree WHERE parent1 = ? AND variant_id = ?")
+                .addParam(htmlPageAsset_1.getIdentifier())
+                .addParam(variant_1.name())
+                .loadResults();
+
+        return results.isEmpty() ? 0 : Integer.parseInt(results.get(0).get("count"));
+    }
+
 }

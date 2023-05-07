@@ -730,7 +730,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     constructor(
         private readonly dotExperimentsService: DotExperimentsService,
         private readonly dotMessageService: DotMessageService,
-        private dotHttpErrorManagerService: DotHttpErrorManagerService,
+        private readonly dotHttpErrorManagerService: DotHttpErrorManagerService,
         private readonly messageService: MessageService,
         private readonly title: Title
     ) {

@@ -1,20 +1,15 @@
 <h2>{{ title }}</h2>
 <dot-copy-button
     *ngIf="url"
-    [copy]="url"
+    [copy]="baseUrl + url"
     [tooltipText]="'dot.common.message.pageurl.copy.clipboard' | dm"
     [label]="'editpage.header.copy' | dm"
 ></dot-copy-button>
-<dot-api-link *ngIf="apiLink" [href]="apiLink"></dot-api-link>
+<dot-api-link *ngIf="innerApiLink" [href]="innerApiLink"></dot-api-link>
 
-<a
-    class="p-button-sm p-button-outlined"
-    *ngIf="apiLink"
-    [href]="previewURl()"
-    title="Preview"
-    pButton
-    target="_blank"
->
-    <i class="material-icons">preview</i>
-    {{ 'editpage.preview' | dm }}
-</a>
+<dot-link
+    *ngIf="innerApiLink"
+    [href]="previewUrl"
+    label="editpage.preview"
+    icon="pi-eye"
+></dot-link>
