@@ -43,7 +43,7 @@ export const CMS_OWNER_ROLE_ID = '6b1fa42f-8729-4625-80d1-17e4ef691ce7';
 
 const IMG_RATIO_43 = 1.333;
 
-const CMS_OWNER_ROLE_LIST = ['CMS OWNER'];
+export const CMS_OWNER_ROLE_LIST = ['CMS OWNER'];
 
 @Injectable()
 export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
