@@ -8,7 +8,7 @@
         <button
             class="p-button-outlined"
             [label]="'experiments.report.promote.variant' | dm"
-            (click)="openPublishVariantDialog()"
+            (click)="loadPublishVariant(vm.variantResults)"
             data-testId="publish-variant-button"
             pButton
             pRipple

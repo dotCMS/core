@@ -24,15 +24,8 @@ export interface DotExperiment {
 }
 
 export interface DotExperimentResults {
-    bayesianResult: DotResultBayesian;
     goals: Record<GoalsLevels, DotResultGoal>;
     sessions: DotResultSessions;
-}
-
-interface DotResultBayesian {
-    value: number;
-    suggestedWinner: string;
-    probabilities: Array<{ variant: string; value: number }>;
 }
 
 export interface DotResultGoal {
@@ -45,15 +38,12 @@ export interface DotResultVariant {
     multiBySession: number;
     uniqueBySession: DotResultUniqueBySession;
     variantName: string;
-    variantDescription: string;
 }
 
 export interface DotResultSimpleVariant {
     id: string;
     name: string;
-    isPromoted: boolean;
-    variantPercentage: number;
-    isWinner: boolean;
+    uniqueBySession: DotResultUniqueBySession;
 }
 
 export interface DotResultUniqueBySession {
@@ -82,7 +72,6 @@ export interface Variant {
     name: string;
     weight: number;
     url?: string;
-    promoted?: boolean;
 }
 
 export type GoalsLevels = 'primary';

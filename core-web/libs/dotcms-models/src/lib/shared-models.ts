@@ -25,8 +25,3 @@ export type DotDropdownSelectOption<T> = {
     inactive?: boolean;
     description?: string;
 };
-
-export enum DialogStatus {
-    HIDE = 'HIDE',
-    SHOW = 'SHOW'
-}
