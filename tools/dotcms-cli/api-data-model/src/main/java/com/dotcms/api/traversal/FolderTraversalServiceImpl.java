@@ -1,7 +1,5 @@
 package com.dotcms.api.traversal;
 
-import com.dotcms.api.AssetAPI;
-import com.dotcms.api.client.RestClientFactory;
 import com.dotcms.model.asset.FolderView;
 import io.quarkus.arc.DefaultBean;
 import java.net.URI;
@@ -24,7 +22,7 @@ import javax.inject.Inject;
 public class FolderTraversalServiceImpl implements FolderTraversalService {
 
     @Inject
-    protected RestClientFactory clientFactory;
+    protected Executor executor;
 
     /**
      * Traverses the file system directory at the specified path and builds a hierarchical tree
@@ -87,11 +85,10 @@ public class FolderTraversalServiceImpl implements FolderTraversalService {
         // to the bottom of the tree
         int depthToUse = depth == null ? -1 : depth;
 
-        final AssetAPI assetAPI = clientFactory.getClient(AssetAPI.class);
+        var forkJoinPool = ForkJoinPool.commonPool();
 
-        var forkJoinPool = new ForkJoinPool();
         var task = new FolderTraversalTask(
-                assetAPI,
+                executor,
                 site,
                 FolderView.builder()
                         .site(site)

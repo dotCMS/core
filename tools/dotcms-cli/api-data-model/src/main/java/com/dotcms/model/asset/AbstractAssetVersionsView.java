@@ -8,13 +8,9 @@ import org.immutables.value.Value;
 
 @ValueType
 @Value.Immutable
-@JsonDeserialize(as = AssetsFolder.class)
+@JsonDeserialize(as = AssetVersionsView.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public interface AbstractAssetsFolder extends SimpleWebAsset {
+public interface AbstractAssetVersionsView {
 
-    int level();
-
-    List<Asset> assets();
-
-    List<AssetsFolder> subFolders();
+    List<AssetView> versions();
 }

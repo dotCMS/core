@@ -3,7 +3,7 @@ package com.dotcms.api;
 import com.dotcms.api.provider.DefaultResponseExceptionMapper;
 import com.dotcms.api.provider.DotCMSClientHeaders;
 import com.dotcms.model.ResponseEntityView;
-import com.dotcms.model.asset.AssetsFolder;
+import com.dotcms.model.asset.FolderView;
 import com.dotcms.model.asset.SearchByPathRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
@@ -34,6 +34,6 @@ public interface AssetAPI {
     @Operation(
             summary = "Lists the files and directories in the specified path"
     )
-    ResponseEntityView<AssetsFolder> byPath(final SearchByPathRequest request);
+    ResponseEntityView<FolderView> byPath(final SearchByPathRequest request);
 
 }

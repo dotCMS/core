@@ -1,7 +1,7 @@
 package com.dotcms.api.traversal;
 
-import com.dotcms.model.asset.Asset;
-import com.dotcms.model.asset.AssetsFolder;
+import com.dotcms.model.asset.AssetView;
+import com.dotcms.model.asset.FolderView;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,19 +17,21 @@ import java.util.stream.Collectors;
 @JsonSerialize(using = TreeNodeSerializer.class)
 public class TreeNode {
 
-    private final AssetsFolder folder;
+    private final FolderView folder;
     private List<TreeNode> children;
-    private List<Asset> assets;
+    private List<AssetView> assets;
 
     /**
      * Constructs a new TreeNode instance with the specified folder as its root node.
      *
      * @param folder The folder to use as the root node for the tree.
      */
-    public TreeNode(AssetsFolder folder) {
+    public TreeNode(FolderView folder) {
         this.folder = folder;
         this.children = new ArrayList<>();
-        this.assets = folder.assets();
+        if (folder.assets() != null) {
+            this.assets = folder.assets().versions();
+        }
     }
 
     /**
@@ -40,11 +42,13 @@ public class TreeNode {
      * @param ignoreAssets whether to exclude the assets from the cloned node ({@code true}) or not
      *                     ({@code false})
      */
-    public TreeNode(AssetsFolder folder, Boolean ignoreAssets) {
+    public TreeNode(FolderView folder, Boolean ignoreAssets) {
         this.folder = folder;
         this.children = new ArrayList<>();
         if (!ignoreAssets) {
-            this.assets = folder.assets();
+            if (folder.assets() != null) {
+                this.assets = folder.assets().versions();
+            }
         } else {
             this.assets = new ArrayList<>();
         }
@@ -53,7 +57,7 @@ public class TreeNode {
     /**
      * Returns the folder represented by this TreeNode.
      */
-    public AssetsFolder folder() {
+    public FolderView folder() {
         return this.folder;
     }
 
@@ -69,7 +73,7 @@ public class TreeNode {
      *
      * @return the list of assets
      */
-    public List<Asset> assets() {
+    public List<AssetView> assets() {
         return this.assets;
     }
 
@@ -87,7 +91,7 @@ public class TreeNode {
      *
      * @param assets the list of files to set
      */
-    public void assets(List<Asset> assets) {
+    public void assets(List<AssetView> assets) {
         this.assets = assets;
     }
 
@@ -113,7 +117,7 @@ public class TreeNode {
         TreeNode newNode = new TreeNode(this.folder, true);
 
         // Clone and filter assets based on the status and language
-        List<Asset> filteredAssets = this.assets.stream()
+        List<AssetView> filteredAssets = this.assets.stream()
                 .filter(asset -> asset.live() == status && asset.lang().equals(language))
                 .collect(Collectors.toList());
         newNode.assets(filteredAssets);

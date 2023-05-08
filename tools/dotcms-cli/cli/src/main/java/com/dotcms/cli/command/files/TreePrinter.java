@@ -1,8 +1,8 @@
 package com.dotcms.cli.command.files;
 
 import com.dotcms.api.traversal.TreeNode;
-import com.dotcms.model.asset.Asset;
-import com.dotcms.model.asset.AssetsFolder;
+import com.dotcms.model.asset.AssetView;
+import com.dotcms.model.asset.FolderView;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -11,9 +11,9 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * The {@code TreePrinter} class provides a utility for printing a tree structure of {@link Asset}s
- * and {@link AssetsFolder}s. The tree can be filtered by language and asset status (live or
- * working).
+ * The {@code TreePrinter} class provides a utility for printing a tree structure of
+ * {@link AssetView}s and {@link FolderView}s. The tree can be filtered by language and asset status
+ * (live or working).
  *
  * <p>This class uses the singleton pattern, and can be accessed by calling {@link #getInstance()}.
  */
@@ -76,7 +76,7 @@ public class TreePrinter {
         // Adds the names of the node's files to the string representation.
         int assetCount = node.assets().size();
         for (int i = 0; i < assetCount; i++) {
-            Asset asset = node.assets().get(i);
+            AssetView asset = node.assets().get(i);
             final var fileStr = String.format("%s [%s] (%s)",
                     asset.name(),
                     asset.lang(),
@@ -195,7 +195,7 @@ public class TreePrinter {
     private void collectUniqueStatusesAndLanguages(
             TreeNode node, Set<String> uniqueLiveLanguages, Set<String> uniqueWorkingLanguages) {
 
-        for (Asset asset : node.assets()) {
+        for (AssetView asset : node.assets()) {
             if (asset.live()) {
                 uniqueLiveLanguages.add(asset.lang());
             } else {
@@ -238,7 +238,7 @@ public class TreePrinter {
             int assetCount = node.assets().size();
             for (int i = 0; i < assetCount; i++) {
 
-                Asset asset = node.assets().get(i);
+                AssetView asset = node.assets().get(i);
                 /*final var fileStr = String.format("%s [%s] (%s)", asset.name(), asset.lang(),
                         asset.live());*/
                 final var fileStr = String.format("%s", asset.name());

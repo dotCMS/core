@@ -1,6 +1,6 @@
 package com.dotcms.api.traversal;
 
-import com.dotcms.model.asset.Asset;
+import com.dotcms.model.asset.AssetView;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
@@ -40,7 +40,7 @@ public class TreeNodeSerializer extends StdSerializer<TreeNode> {
 
         if (!node.assets().isEmpty()) {
             gen.writeArrayFieldStart("files");
-            for (Asset asset : node.assets()) {
+            for (AssetView asset : node.assets()) {
 
                 //gen.writeObject(file);
 
