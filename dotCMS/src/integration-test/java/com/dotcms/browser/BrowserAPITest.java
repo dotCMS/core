@@ -118,6 +118,58 @@ public class BrowserAPITest extends IntegrationTestBase {
         testlink = new LinkDataGen().hostId(testHost.getIdentifier()).title("testLink").parent(testFolder).target("https://google.com").linkType("EXTERNAL").nextPersisted();
     }
 
+    @Test()
+    public void Test_GetFolderContent_Multiple_Langs() throws DotDataException, DotSecurityException, IOException {
+
+        // create a folder
+        // create a 10 files
+        final SiteDataGen   siteDataGen   = new SiteDataGen();
+        final FolderDataGen folderDataGen = new FolderDataGen();
+        final Host          host          = siteDataGen.nextPersisted();
+        final Folder        folder        = folderDataGen.site(host).nextPersisted();
+
+        final Folder        subFolder        = folderDataGen.parent(folder).nextPersisted();
+
+
+        List<Language> languages = new ArrayList<>();
+
+        languages.add(new LanguageDataGen().nextPersisted());
+        languages.add(new LanguageDataGen().nextPersisted());
+        languages.add(new LanguageDataGen().nextPersisted());
+
+        for (Language lang:languages) {
+            new FileAssetDataGen(FileUtil.createTemporaryFile("test", ".txt", "this is a test"))
+                    .languageId(lang.getId())
+                    .host(host)
+                    .folder(folder)
+                    .setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+        }
+
+        new FileAssetDataGen(FileUtil.createTemporaryFile("test", ".txt", "this is a test"))
+                .languageId(1)
+                .folder(subFolder)
+                .setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+
+        Map<String, Object> resultMap = browserAPI.getFolderContent(BrowserQuery.builder()
+                .showDotAssets(false)
+                .showLinks(false)
+                .withHostOrFolderId(folder.getIdentifier())
+                .offset(0)
+                .showFiles(true)
+                .showFolders(true)
+                .showWorking(true)
+                .build());
+
+        assertNotNull(resultMap);
+        assertEquals(3, resultMap.get("total"));
+
+        List<Map<String, Object>> results = (List<Map<String, Object>>)resultMap.get("list");
+        assertNotNull(results);
+        assertEquals(results.size(), 3);
+
+    }
+
+
     /**
      * Method to test: testing the pagination of the BrowserAPI, the test creates a site and a folder, them add 10 files and iterate over them with the browser api
      * Given Scenario: 1)  request items from 0 to 2

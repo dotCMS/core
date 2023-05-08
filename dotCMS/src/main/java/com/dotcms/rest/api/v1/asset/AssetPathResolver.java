@@ -1,9 +1,11 @@
 package com.dotcms.rest.api.v1.asset;
 
+import static com.liferay.util.StringPool.BLANK;
+import static com.liferay.util.StringPool.DOUBLE_SLASH;
+import static com.liferay.util.StringPool.FORWARD_SLASH;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
@@ -12,9 +14,6 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import static com.liferay.util.StringPool.FORWARD_SLASH;
-import static com.liferay.util.StringPool.DOUBLE_SLASH;
-import static com.liferay.util.StringPool.BLANK;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Optional;
@@ -23,17 +22,14 @@ public class AssetPathResolver {
 
     FolderAPI folderAPI;
     HostAPI hostAPI;
-    IdentifierAPI identifierAPI;
 
     AssetPathResolver() {
-        this(APILocator.getFolderAPI(), APILocator.getHostAPI(), APILocator.getIdentifierAPI());
+        this(APILocator.getFolderAPI(), APILocator.getHostAPI());
     }
 
-    AssetPathResolver(final FolderAPI folderAPI, final HostAPI hostAPI,
-            final IdentifierAPI identifierAPI) {
+    AssetPathResolver(final FolderAPI folderAPI, final HostAPI hostAPI) {
         this.folderAPI = folderAPI;
         this.hostAPI = hostAPI;
-        this.identifierAPI = identifierAPI;
     }
 
     public ResolvedAssetAndPath resolve(final String url, final User user)
