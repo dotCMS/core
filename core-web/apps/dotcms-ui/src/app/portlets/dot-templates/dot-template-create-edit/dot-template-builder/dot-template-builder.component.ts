@@ -1,5 +1,3 @@
-import { Observable } from 'rxjs';
-
 import {
     Component,
     EventEmitter,
@@ -10,10 +8,7 @@ import {
     ViewChild
 } from '@angular/core';
 
-import { map } from 'rxjs/operators';
-
 import { IframeComponent } from '@components/_common/iframe/iframe-component';
-import { DotPropertiesService } from '@dotcms/data-access';
 import { FeaturedFlags } from '@dotcms/dotcms-models';
 
 import { DotTemplateItem } from '../store/dot-template.store';
@@ -34,15 +29,9 @@ export class DotTemplateBuilderComponent implements OnInit, OnChanges {
     @ViewChild('historyIframe') historyIframe: IframeComponent;
     permissionsUrl = '';
     historyUrl = '';
+    featureFlag = FeaturedFlags.FEATURE_FLAG_TEMPLATE_BUILDER;
 
-    enableNewBuilder$: Observable<{ enableNewBuilder: boolean }>;
-
-    constructor(private readonly dotPropertiesService: DotPropertiesService) {}
     ngOnInit() {
-        this.enableNewBuilder$ = this.dotPropertiesService
-            .getKey(FeaturedFlags.FEATURE_FLAG_TEMPLATE_BUILDER)
-            .pipe(map((result) => ({ enableNewBuilder: result && result === 'true' })));
-
         this.permissionsUrl = `/html/templates/permissions.jsp?templateId=${this.item.identifier}&popup=true`;
         this.historyUrl = `/html/templates/push_history.jsp?templateId=${this.item.identifier}&popup=true`;
     }

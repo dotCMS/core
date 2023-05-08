@@ -12,6 +12,7 @@ import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/d
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
+import { DotShowHideFeatureDirective } from '@dotcms/app/shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
 import {
     DotMessageService,
     DotPageLayoutService,
@@ -73,7 +74,11 @@ describe('DotEditLayoutComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [MockDotEditLayoutDesignerComponent, DotEditLayoutComponent],
+            declarations: [
+                MockDotEditLayoutDesignerComponent,
+                DotEditLayoutComponent,
+                DotShowHideFeatureDirective
+            ],
             providers: [
                 RouterTestingModule,
                 DotSessionStorageService,
@@ -287,6 +292,7 @@ describe('DotEditLayoutComponent', () => {
     describe('New Template Builder', () => {
         beforeEach(() => {
             spyOn(dotPropertiesService, 'getKey').and.returnValue(of('true'));
+            fixture.detectChanges();
         });
 
         it('should show new template builder component', () => {

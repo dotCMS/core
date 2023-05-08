@@ -17,6 +17,7 @@ import { By } from '@angular/platform-browser';
 
 import { IframeComponent } from '@components/_common/iframe/iframe-component';
 import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
+import { DotShowHideFeatureDirective } from '@dotcms/app/shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
 import { DotMessageService, DotPropertiesService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
@@ -128,7 +129,8 @@ describe('DotTemplateBuilderComponent', () => {
                 IframeMockComponent,
                 TabViewMockComponent,
                 TabPanelMockComponent,
-                DotTestHostComponent
+                DotTestHostComponent,
+                DotShowHideFeatureDirective
             ],
             imports: [DotMessagePipeModule, DotPortletBoxModule],
             providers: [
