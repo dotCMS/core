@@ -19,6 +19,7 @@ import {
     DotExperiment,
     DotExperimentResults,
     DotExperimentStatusList,
+    DotExperimentSummary,
     DotResultDate,
     DotResultGoal,
     DotResultSimpleVariant,
@@ -51,12 +52,14 @@ const initialState: DotExperimentsReportsState = {
 // ViewModel Interfaces
 export interface VmReportExperiment {
     isLoading: boolean;
+    hasEnoughSessions: boolean;
     experiment: DotExperiment;
     status: ComponentStatus;
     showSummary: boolean;
     results: DotExperimentResults;
     chartData: ChartData<'line'> | null;
     showDialog: boolean;
+    summaryData: DotExperimentSummary[];
 }
 
 export interface VmPromoteVariant {
@@ -95,6 +98,10 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
                     )?.value
                 })
             )
+    );
+
+    readonly hasEnoughSessions$: Observable<boolean> = this.select(
+        ({ results }) => results && results?.sessions.total === 0
     );
 
     readonly setComponentStatus = this.updater(
@@ -149,6 +156,25 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
                   datasets: this.getChartDatasets(results.goals.primary.variants)
               }
             : null
+    );
+
+    readonly getSummaryData$: Observable<DotExperimentSummary[]> = this.select(({ results }) =>
+        results
+            ? Object.values(results.goals.primary.variants).map((variant) => ({
+                  id: variant.variantName,
+                  name: variant.variantDescription,
+                  trafficSplit: 'TBD',
+                  pageViews: variant.totalPageViews,
+                  sessions: results.sessions.variants[variant.variantName],
+                  clicks: variant.uniqueBySession.count,
+                  bestVariant: variant.uniqueBySession.totalPercentage / 100,
+                  improvement:
+                      (variant.uniqueBySession.totalPercentage -
+                          results.goals.primary.variants.DEFAULT.uniqueBySession.totalPercentage) /
+                      100,
+                  isWinner: results.bayesianResult.suggestedWinner === variant.variantName
+              }))
+            : []
     );
 
     readonly loadExperimentAndResults = this.effect((experimentId$: Observable<string>) =>
@@ -210,17 +236,29 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
     readonly vm$: Observable<VmReportExperiment> = this.select(
         this.state$,
         this.isLoading$,
+        this.hasEnoughSessions$,
         this.showExperimentSummary$,
         this.getChartData$,
         this.isShowPromotedDialog$,
-        ({ experiment, status, results }, isLoading, showSummary, chartData, showDialog) => ({
+        this.getSummaryData$,
+        (
+            { experiment, status, results },
+            isLoading,
+            hasEnoughSessions,
+            showSummary,
+            chartData,
+            showDialog,
+            summaryData
+        ) => ({
             experiment,
             status,
             isLoading,
+            hasEnoughSessions,
             showSummary,
             results,
             chartData,
-            showDialog
+            showDialog,
+            summaryData
         })
     );
 
@@ -299,5 +337,30 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
         arrayToOrder.unshift(DEFAULT_VARIANT_ID);
 
         return arrayToOrder;
+    }
+
+    private getSummaryData(results: DotExperimentResults): DotExperimentSummary[] {
+        const summary: DotExperimentSummary[] = [];
+
+        Object.values(results.goals.primary.variants).map((variant) => {
+            //TODO: Add the traffic split when the endpoint sends the data
+
+            summary.push({
+                id: variant.variantName,
+                name: variant.variantDescription,
+                trafficSplit: 'TBD',
+                pageViews: variant.totalPageViews,
+                sessions: results.sessions.variants[variant.variantName],
+                clicks: variant.uniqueBySession.count,
+                bestVariant: variant.uniqueBySession.totalPercentage / 100,
+                improvement:
+                    (variant.uniqueBySession.totalPercentage -
+                        results.goals.primary.variants.DEFAULT.uniqueBySession.totalPercentage) /
+                    100,
+                isWinner: results.bayesianResult.suggestedWinner === variant.variantName
+            });
+        });
+
+        return summary;
     }
 }
