@@ -99,7 +99,7 @@ export class DotPagesFavoritePanelComponent {
 
     private displayFavoritePageDialog(favoritePage: DotCMSContentlet) {
         this.dialogService.open(DotFavoritePageComponent, {
-            header: this.dotMessageService.get('favoritePage.dialog.header.add.page'),
+            header: this.dotMessageService.get('favoritePage.dialog.header'),
             width: '80rem',
             data: {
                 page: {

@@ -43,8 +43,11 @@ import {
     PermissionsType,
     UserPermissions
 } from '@dotcms/dotcms-models';
+import { generateDotFavoritePageUrl } from '@dotcms/utils';
 
+import { DotFavoritePageComponent } from '../../dot-edit-page/components/dot-favorite-page/dot-favorite-page.component';
 import { DotPagesCreatePageDialogComponent } from '../dot-pages-create-page-dialog/dot-pages-create-page-dialog.component';
+import { FAVORITE_PAGE_LIMIT } from '../dot-pages.component';
 
 export interface DotPagesState {
     favoritePages: {
@@ -72,6 +75,7 @@ export interface DotPagesState {
     };
     pageTypes?: DotCMSContentType[];
     portletStatus: ComponentStatus;
+    reloadFavorite?: boolean;
 }
 
 const FAVORITE_PAGES_ES_QUERY = `+contentType:dotFavoritePage +deleted:false +working:true +owner:dotcms.org.2795`;
@@ -94,6 +98,10 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
 
     readonly actionMenuDomId$: Observable<string> = this.select(
         ({ pages }) => pages.actionMenuDomId
+    ).pipe(filter((i) => i !== null));
+
+    readonly reloadFavorite$: Observable<boolean> = this.select(
+        (state) => state.reloadFavorite
     ).pipe(filter((i) => i !== null));
 
     readonly languageOptions$: Observable<SelectItem[]> = this.select(
@@ -195,6 +203,15 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             return {
                 ...state,
                 portletStatus
+            };
+        }
+    );
+
+    readonly setReloadFavoriteStatus = this.updater<boolean>(
+        (state: DotPagesState, reloadFavorite: boolean) => {
+            return {
+                ...state,
+                reloadFavorite
             };
         }
     );
@@ -433,27 +450,41 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         (params$: Observable<{ item: DotCMSContentlet; actionMenuDomId: string }>) => {
             return params$.pipe(
                 switchMap(({ item, actionMenuDomId }) => {
-                    return this.getWorflowActionsFn(item).pipe(
+                    // console.log('====showActionsMenu', item, actionMenuDomId);
+
+                    return forkJoin({
+                        workflowsData: this.getWorflowActionsFn(item),
+                        dotFavorite: this.getFavoritePagesData(
+                            1,
+                            '',
+                            item?.contentType === 'dotFavoritePage'
+                                ? item.url
+                                : generateDotFavoritePageUrl({
+                                      pageURI: item.urlMap || item.url.split('?')[0],
+                                      languageId: item.languageId,
+                                      siteId: item.host
+                                  })
+                        )
+                    }).pipe(
                         take(1),
-                        map((data: DotCMSPageWorkflowState) => {
-                            return {
-                                actions: this.getSelectActions(data.actions, data.page),
-                                actionMenuDomId
-                            };
-                        })
+                        tapResponse(
+                            ({ workflowsData, dotFavorite }) => {
+                                // console.log('====showActionsMenu', workflowsData);
+                                // console.log('====dotFavorite', dotFavorite);
+
+                                this.setMenuActions({
+                                    actions: this.getSelectActions(
+                                        workflowsData.actions,
+                                        workflowsData.page,
+                                        dotFavorite.jsonObjectView.contentlets[0]
+                                    ),
+                                    actionMenuDomId
+                                });
+                            },
+                            (error: HttpErrorResponse) => this.httpErrorManagerService.handle(error)
+                        )
                     );
-                }),
-                tap(
-                    ({
-                        actions,
-                        actionMenuDomId
-                    }: {
-                        actions: MenuItem[];
-                        actionMenuDomId: string;
-                    }) => {
-                        this.setMenuActions({ actions, actionMenuDomId });
-                    }
-                )
+                })
             );
         }
     );
@@ -578,20 +609,86 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         });
     };
 
-    private getFavoritePagesData = (limit: number, identifier?: string) => {
-        const identifierQuery = identifier ? `+identifier:${identifier}` : '';
+    private getFavoritePagesData = (limit: number, identifier?: string, url?: string) => {
+        let extraQueryParams = '';
+        if (identifier) {
+            extraQueryParams = `+identifier:${identifier}`;
+        } else if (url) {
+            extraQueryParams = `+DotFavoritePage.url_dotraw:${url}`;
+        }
 
         return this.dotESContentService.get({
             itemsPerPage: limit,
             offset: '0',
-            query: `${FAVORITE_PAGES_ES_QUERY} ${identifierQuery}`,
+            query: `${FAVORITE_PAGES_ES_QUERY} ${extraQueryParams}`,
             sortField: 'dotFavoritePage.order',
             sortOrder: ESOrderDirection.ASC
         });
     };
 
-    private getSelectActions(actions: DotCMSWorkflowAction[], item: DotCMSContentlet): MenuItem[] {
+    private getSelectActions(
+        actions: DotCMSWorkflowAction[],
+        item: DotCMSContentlet,
+        favoritePage?: DotCMSContentlet
+    ): MenuItem[] {
         const selectItems: MenuItem[] = [];
+
+        // Adding DotFavorite actions
+        selectItems.push({
+            label: favoritePage
+                ? this.dotMessageService.get('favoritePage.contextMenu.action.edit')
+                : this.dotMessageService.get('favoritePage.contextMenu.action.add'),
+            command: () => {
+                // console.log('**favoritePage', favoritePage);
+                this.dialogService.open(DotFavoritePageComponent, {
+                    header: this.dotMessageService.get('favoritePage.dialog.header'),
+                    width: '80rem',
+                    data: {
+                        page: {
+                            favoritePageUrl: generateDotFavoritePageUrl({
+                                pageURI: item.urlMap || item.url,
+                                languageId: item.languageId,
+                                siteId: item.host
+                            }),
+                            favoritePage
+                        },
+                        onSave: (favoritePageUrl: string) => {
+                            console.log('====onSave', favoritePageUrl);
+
+                            // this.getFavoritePagesData(FAVORITE_PAGE_LIMIT).pipe(
+                            //     tapResponse(
+                            //         (items) => {
+                            //             console.log('===llego');
+                            //             this.patchState({
+                            //                 favoritePages: {
+                            //                     items: [...items.jsonObjectView.contentlets],
+                            //                     showLoadMoreButton:
+                            //                         items.jsonObjectView.contentlets.length <=
+                            //                         items.resultsSize,
+                            //                     total: items.resultsSize
+                            //                 }
+                            //             });
+                            //         },
+                            //         (error: HttpErrorResponse) => {
+                            //             return this.httpErrorManagerService.handle(error);
+                            //         }
+                            //     )
+                            // )
+                            this.patchState({ reloadFavorite: true });
+                            // this.getFavoritePages(FAVORITE_PAGE_LIMIT);
+                            // this.updateFavoritePageIconStatus(favoritePageUrl);
+                        },
+                        onDelete: (favoritePageUrl: string) => {
+                            console.log('====onDelete', favoritePageUrl);
+                            this.patchState({ reloadFavorite: true });
+
+                            // this.getFavoritePages(FAVORITE_PAGE_LIMIT);
+                            // this.updateFavoritePageIconStatus(favoritePageUrl);
+                        }
+                    }
+                });
+            }
+        });
 
         // Adding Edit & View actions
         const { loggedUser, isEnterprise, environments } = this.get();

@@ -135,6 +135,17 @@ export class DotPagesComponent implements OnInit, OnDestroy {
                 }
             });
 
+        this.store.reloadFavorite$
+            .pipe(
+                takeUntil(this.destroy$),
+                filter((reloadFavorite) => !!reloadFavorite)
+            )
+            .subscribe((reloadFavorite: boolean) => {
+                console.log('++++++reloadFavorite', reloadFavorite);
+                this.store.getFavoritePages(FAVORITE_PAGE_LIMIT);
+                this.store.setReloadFavoriteStatus(false);
+            });
+
         this.dotEventsService
             .listen('save-page')
             .pipe(takeUntil(this.destroy$))

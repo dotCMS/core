@@ -221,7 +221,12 @@ export class DotPageStateService {
             take(1),
             switchMap((page: DotPageRenderParameters) => {
                 if (page) {
-                    const urlParam = generateDotFavoritePageUrl(page);
+                    const urlParam = generateDotFavoritePageUrl({
+                        deviceInode: page.viewAs.device.inode,
+                        languageId: page.viewAs.language.id,
+                        pageURI: page.page.pageURI,
+                        siteId: page.site.identifier
+                    });
 
                     return this.dotESContentService
                         .get({

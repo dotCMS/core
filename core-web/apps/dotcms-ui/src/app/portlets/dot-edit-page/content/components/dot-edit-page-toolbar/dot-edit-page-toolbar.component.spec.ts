@@ -158,7 +158,7 @@ describe('DotEditPageToolbarComponent', () => {
                     useValue: new MockDotMessageService({
                         'dot.common.whats.changed': 'Whats',
                         'dot.common.cancel': 'Cancel',
-                        'favoritePage.dialog.header.add.page': 'Add Favorite Page'
+                        'favoritePage.dialog.header': 'Add Favorite Page'
                     })
                 },
                 {
