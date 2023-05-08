@@ -463,7 +463,7 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
      * Should: get the Split traffic too
      */
     @Test
-    public void getSplitTrafficInsiExperimentResults()
+    public void getSplitTrafficInsideExperimentResults()
             throws DotDataException, DotSecurityException {
         final Host host = new SiteDataGen().nextPersisted();
         final Template template = new TemplateDataGen().host(host).nextPersisted();
