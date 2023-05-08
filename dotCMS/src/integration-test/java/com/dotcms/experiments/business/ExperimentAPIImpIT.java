@@ -482,8 +482,10 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
                     .filter(id -> !id.equals("DEFAULT"))
                     .findFirst()
                     .orElseThrow();
+
+            final ExperimentsAPIImpl experimentsAPI = new ExperimentsAPIImpl(mockAnalyticsHelper);
             
-            final ExperimentResults results = APILocator.getExperimentsAPI().getResults(experiment);
+            final ExperimentResults results = experimentsAPI.getResults(experiment);
 
             final Map<String, VariantResults> variants = results.getGoals().get("primary")
                     .getVariants();
