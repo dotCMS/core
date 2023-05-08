@@ -16,9 +16,11 @@ import { DotEventsService, DotPageRenderService } from '@dotcms/data-access';
 import { HttpCode, SiteService } from '@dotcms/dotcms-js';
 import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
 
-import { DotPagesState, DotPageStore } from './dot-pages-store/dot-pages.store';
-
-export const FAVORITE_PAGE_LIMIT = 5;
+import {
+    DotPagesState,
+    DotPageStore,
+    FAVORITE_PAGE_LIMIT
+} from './dot-pages-store/dot-pages.store';
 
 export interface DotActionsMenuEventParams {
     event: MouseEvent;
@@ -146,17 +148,6 @@ export class DotPagesComponent implements OnInit, OnDestroy {
 
                     // To hide when the contextMenu is opened
                 } else this.menu.hide();
-            });
-
-        this.store.reloadFavorite$
-            .pipe(
-                takeUntil(this.destroy$),
-                filter((reloadFavorite) => !!reloadFavorite)
-            )
-            .subscribe((reloadFavorite: boolean) => {
-                console.log('++++++reloadFavorite', reloadFavorite);
-                this.store.getFavoritePages(FAVORITE_PAGE_LIMIT);
-                this.store.setReloadFavoriteStatus(false);
             });
 
         this.dotEventsService

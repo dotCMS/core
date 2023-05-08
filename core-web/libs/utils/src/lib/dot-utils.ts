@@ -1,5 +1,3 @@
-import { DotPageRenderParameters } from '@dotcms/dotcms-models';
-
 /**
  * Generate an anchor element with a Blob file to eventually be click to force a download
  * This approach is needed because FF do not hear WS events while waiting for a request.
