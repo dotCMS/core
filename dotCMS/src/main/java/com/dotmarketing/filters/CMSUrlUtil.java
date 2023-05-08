@@ -220,7 +220,9 @@ public class CMSUrlUtil {
 					host,
 					APILocator.getUserAPI().getSystemUser());
 
-			return Tuple.of(APILocator.getURLMapAPI().isUrlPattern(urlMapContext), IAmSubType.PAGE_URL_MAP);
+			boolean isUrlMap = APILocator.getURLMapAPI().isUrlPattern(urlMapContext);
+
+			return Tuple.of(isUrlMap, isUrlMap ? IAmSubType.PAGE_URL_MAP : IAmSubType.NONE);
 		} catch (final DotDataException | DotSecurityException e){
 			Logger.error(this.getClass(), e.getMessage());
 			return Tuple.of(false, IAmSubType.NONE);
