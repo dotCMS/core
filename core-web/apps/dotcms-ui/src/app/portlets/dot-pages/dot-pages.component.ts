@@ -103,7 +103,10 @@ export class DotPagesComponent implements OnInit, OnDestroy {
      */
     @HostListener('window:click')
     closeMenu(): void {
-        if (this.domIdMenuAttached.includes('pageActionButton')) {
+        if (
+            this.domIdMenuAttached.includes('pageActionButton') ||
+            this.domIdMenuAttached.includes('favoritePageActionButton')
+        ) {
             this.menu.hide();
             this.store.clearMenuActions();
         }
@@ -140,7 +143,11 @@ export class DotPagesComponent implements OnInit, OnDestroy {
             )
             .subscribe((actionMenuDomId: string) => {
                 const target = this.element.nativeElement.querySelector(`#${actionMenuDomId}`);
-                if (target && actionMenuDomId.includes('pageActionButton')) {
+                if (
+                    target &&
+                    (actionMenuDomId.includes('pageActionButton') ||
+                        actionMenuDomId.includes('favoritePageActionButton'))
+                ) {
                     this.menu.show({ currentTarget: target });
                     this.domIdMenuAttached = actionMenuDomId;
 
