@@ -198,7 +198,8 @@ export const ExperimentResultsMocks: Array<DotExperimentResults> = [
                             variantPercentage: 100.0
                         },
                         variantName: 'DEFAULT',
-                        variantDescription: 'DEFAULT Name'
+                        variantDescription: 'DEFAULT Name',
+                        totalPageViews: 10
                     },
                     '111': {
                         details: {
@@ -221,7 +222,8 @@ export const ExperimentResultsMocks: Array<DotExperimentResults> = [
                         multiBySession: 0,
                         uniqueBySession: { count: 0, totalPercentage: 0.0, variantPercentage: 0.0 },
                         variantName: '111',
-                        variantDescription: 'Variant 111 Name'
+                        variantDescription: 'Variant 111 Name',
+                        totalPageViews: 10
                     }
                 }
             }
@@ -287,7 +289,8 @@ export const ExperimentResultsMocks: Array<DotExperimentResults> = [
                             variantPercentage: 100.0
                         },
                         variantName: 'DEFAULT',
-                        variantDescription: 'DEFAULT Name'
+                        variantDescription: 'DEFAULT Name',
+                        totalPageViews: 10
                     },
                     '111': {
                         details: {
@@ -310,7 +313,8 @@ export const ExperimentResultsMocks: Array<DotExperimentResults> = [
                         multiBySession: 0,
                         uniqueBySession: { count: 0, totalPercentage: 0.0, variantPercentage: 0.0 },
                         variantName: '111',
-                        variantDescription: 'Variant 111 Name'
+                        variantDescription: 'Variant 111 Name',
+                        totalPageViews: 10
                     }
                 }
             }

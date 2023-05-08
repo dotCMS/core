@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "6d361561-936b-403d-9179-cc1af1dd8d88",
+		"_postman_id": "91ca6074-9762-4cea-99d8-ae8c851dae99",
 		"name": "Workflow Resource Tests [/api/v1/workflows]",
 		"description": "Test the necesary validations to every end point of the worlflow resource ",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -15469,6 +15469,276 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "404Test",
+			"item": [
+				{
+					"name": "FirePublish404BodyId",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 404 \", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\":{\n        \"identifier\":\"no-exist\",\n        \"contentType\":\"webPageContent\",\n        \"title\":\"Test3-11\",\n        \"contentHost\":\"default\",\n        \"body\":\"Test body\"\n    },\n    \"individualPermissions\": {\n        \"READ\":[\"7f58520c-aad6-4bec-8b50-2b3bc38ac0eb\"],\n        \"WRITE\":[\"7f58520c-aad6-4bec-8b50-2b3bc38ac0eb\"],\n        \"PUBLISH\":[\"7f58520c-aad6-4bec-8b50-2b3bc38ac0eb\"]\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "FirePublish404BodyInode",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 404 \", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\":{\n        \"inode\":\"no-exist\",\n        \"contentType\":\"webPageContent\",\n        \"title\":\"Test3-11\",\n        \"contentHost\":\"default\",\n        \"body\":\"Test body\"\n    },\n    \"individualPermissions\": {\n        \"READ\":[\"7f58520c-aad6-4bec-8b50-2b3bc38ac0eb\"],\n        \"WRITE\":[\"7f58520c-aad6-4bec-8b50-2b3bc38ac0eb\"],\n        \"PUBLISH\":[\"7f58520c-aad6-4bec-8b50-2b3bc38ac0eb\"]\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "FirePublish404QueryId",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 404 \", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\":{\n        \"contentType\":\"webPageContent\",\n        \"title\":\"Test3-11\",\n        \"contentHost\":\"default\",\n        \"body\":\"Test body\"\n    },\n    \"individualPermissions\": {\n        \"READ\":[\"7f58520c-aad6-4bec-8b50-2b3bc38ac0eb\"],\n        \"WRITE\":[\"7f58520c-aad6-4bec-8b50-2b3bc38ac0eb\"],\n        \"PUBLISH\":[\"7f58520c-aad6-4bec-8b50-2b3bc38ac0eb\"]\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?identifier=no-exit",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "identifier",
+									"value": "no-exit"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "FirePublish404QueryInode",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 404 \", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\":{\n        \"contentType\":\"webPageContent\",\n        \"title\":\"Test3-11\",\n        \"contentHost\":\"default\",\n        \"body\":\"Test body\"\n    },\n    \"individualPermissions\": {\n        \"READ\":[\"7f58520c-aad6-4bec-8b50-2b3bc38ac0eb\"],\n        \"WRITE\":[\"7f58520c-aad6-4bec-8b50-2b3bc38ac0eb\"],\n        \"PUBLISH\":[\"7f58520c-aad6-4bec-8b50-2b3bc38ac0eb\"]\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?inode=no-exist",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "inode",
+									"value": "no-exist"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Test to 404 scenarios for wf"
 		}
 	],
 	"event": [
