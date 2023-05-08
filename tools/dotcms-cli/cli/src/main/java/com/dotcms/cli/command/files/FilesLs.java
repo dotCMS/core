@@ -46,6 +46,7 @@ public class FilesLs extends AbstractFilesCommand implements Callable<Integer> {
 
     @Override
     public Integer call() throws Exception {
+
         try {
 
             CompletableFuture<TreeNode> folderTraversalFuture = CompletableFuture.supplyAsync(
