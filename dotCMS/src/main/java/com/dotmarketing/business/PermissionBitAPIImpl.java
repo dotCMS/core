@@ -631,8 +631,12 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	 */
 	@WrapInTransaction
 	private void save(Permission permission, Permissionable permissionable, User user, boolean respectFrontendRoles, boolean createEvent) throws DotDataException, DotSecurityException {
-		if(!doesUserHavePermission(permissionable, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user))
-			throw new DotSecurityException("User id: " + user.getUserId() + " does not have permission to alter permissions on asset " + permissionable.getPermissionId());
+		if(!doesUserHavePermission(permissionable, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user)) {
+
+			if(!checkIfContentletTypeHasEditPermissions(permissionable, user)) {
+				throw new DotSecurityException("User id: " + user.getUserId() + " does not have permission to alter permissions on asset " + permissionable.getPermissionId());
+			}
+		}
 
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 
@@ -670,6 +674,21 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			}
 		}
 
+	}
+
+	/**
+	 * In case the permissionable is a contentlet, we try to check if the content type has edit permissions
+	 * This is applies when the doesUserHavePermission(permissionable, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user)) was called previously and has fail.
+	 *
+	 * @param permissionable
+	 * @param user
+	 * @return boolean
+	 * @throws DotDataException
+	 */
+	private boolean checkIfContentletTypeHasEditPermissions(final Permissionable permissionable, final User user) throws DotDataException {
+
+		return permissionable instanceof Contentlet? // we can check if the content type has edit permissions
+				doesUserHavePermission(Contentlet.class.cast(permissionable).getContentType(), PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user):false;
 	}
 
 	/* (non-Javadoc)
