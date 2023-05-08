@@ -28,6 +28,6 @@
   <!--
   <Manager pathname="" />
   -->
-  ${REDIS_SESSION_VALVE}
+  ${TOMCAT_REDIS_SESSION_CONFIG}
 
 </Context>
