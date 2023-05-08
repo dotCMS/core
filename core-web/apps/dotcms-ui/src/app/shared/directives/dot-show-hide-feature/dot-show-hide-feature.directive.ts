@@ -3,7 +3,8 @@ import { Component, Directive, Input, OnInit, TemplateRef, ViewContainerRef } fr
 import { DotPropertiesService } from '@dotcms/data-access';
 
 @Directive({
-    selector: '[dotShowHideFeature]'
+    selector: '[dotShowHideFeature]',
+    standalone: true
 })
 export class DotShowHideFeatureDirective implements OnInit {
     private _featureFlag: string;

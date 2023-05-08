@@ -129,10 +129,9 @@ describe('DotTemplateBuilderComponent', () => {
                 IframeMockComponent,
                 TabViewMockComponent,
                 TabPanelMockComponent,
-                DotTestHostComponent,
-                DotShowHideFeatureDirective
+                DotTestHostComponent
             ],
-            imports: [DotMessagePipeModule, DotPortletBoxModule],
+            imports: [DotMessagePipeModule, DotPortletBoxModule, DotShowHideFeatureDirective],
             providers: [
                 {
                     provide: DotMessageService,

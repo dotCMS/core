@@ -74,11 +74,8 @@ describe('DotEditLayoutComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [
-                MockDotEditLayoutDesignerComponent,
-                DotEditLayoutComponent,
-                DotShowHideFeatureDirective
-            ],
+            declarations: [MockDotEditLayoutDesignerComponent, DotEditLayoutComponent],
+            imports: [DotShowHideFeatureDirective],
             providers: [
                 RouterTestingModule,
                 DotSessionStorageService,
