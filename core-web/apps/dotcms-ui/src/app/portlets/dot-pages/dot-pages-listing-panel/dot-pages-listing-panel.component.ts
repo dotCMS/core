@@ -1,6 +1,7 @@
 import { Observable, Subject } from 'rxjs';
 
 import {
+    AfterViewInit,
     Component,
     EventEmitter,
     HostListener,
@@ -12,6 +13,7 @@ import {
 
 import { LazyLoadEvent } from 'primeng/api';
 import { ContextMenu } from 'primeng/contextmenu';
+import { Table } from 'primeng/table';
 
 import { filter, takeUntil } from 'rxjs/operators';
 
@@ -25,13 +27,16 @@ import { DotActionsMenuEventParams } from '../dot-pages.component';
     templateUrl: './dot-pages-listing-panel.component.html',
     styleUrls: ['./dot-pages-listing-panel.component.scss']
 })
-export class DotPagesListingPanelComponent implements OnInit, OnDestroy {
+export class DotPagesListingPanelComponent implements OnInit, OnDestroy, AfterViewInit {
     @ViewChild('cm') cm: ContextMenu;
+    @ViewChild('table') table: Table;
     @Output() goToUrl = new EventEmitter<string>();
     @Output() showActionsMenu = new EventEmitter<DotActionsMenuEventParams>();
+    @Output() tableScroll = new EventEmitter();
 
     private domIdMenuAttached = '';
     private destroy$ = new Subject<boolean>();
+    private scrollElement: HTMLElement;
     vm$: Observable<DotPagesState> = this.store.vm$;
 
     dotStateLabels = {
@@ -58,9 +63,19 @@ export class DotPagesListingPanelComponent implements OnInit, OnDestroy {
             });
     }
 
+    ngAfterViewInit(): void {
+        this.scrollElement = this.table.el.nativeElement.querySelector('div.p-scroller');
+
+        this.scrollElement.addEventListener('scroll', () => {
+            this.closeContextMenu();
+            this.tableScroll.emit();
+        });
+    }
+
     ngOnDestroy(): void {
         this.destroy$.next(true);
         this.destroy$.complete();
+        this.scrollElement.removeAllListeners('scroll');
     }
 
     /**
@@ -69,7 +84,7 @@ export class DotPagesListingPanelComponent implements OnInit, OnDestroy {
      * @memberof DotPagesListingPanelComponent
      */
     @HostListener('window:click')
-    closeContextMenu(): void {
+    private closeContextMenu(): void {
         if (this.domIdMenuAttached.includes('tableRow')) {
             this.cm.hide();
             this.store.clearMenuActions();
