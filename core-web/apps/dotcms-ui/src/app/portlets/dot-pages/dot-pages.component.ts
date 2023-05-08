@@ -1,7 +1,7 @@
 import { Subject } from 'rxjs';
 
 import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
-import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild } from '@angular/core';
 
 import { Menu } from 'primeng/menu';
 
@@ -97,6 +97,19 @@ export class DotPagesComponent implements OnInit, OnDestroy {
     }
 
     /**
+     * Closes the menu when the user clicks outside of it
+     *
+     * @memberof DotPagesComponent
+     */
+    @HostListener('window:click')
+    closeMenu(): void {
+        if (this.domIdMenuAttached.includes('pageActionButton')) {
+            this.menu.hide();
+            this.store.clearMenuActions();
+        }
+    }
+
+    /**
      * Event to show/hide actions menu when each contentlet is clicked
      *
      * @param {DotActionsMenuEventParams} params
@@ -104,11 +117,10 @@ export class DotPagesComponent implements OnInit, OnDestroy {
      */
     showActionsMenu({ event, actionMenuDomId, item }: DotActionsMenuEventParams): void {
         event.stopPropagation();
+        this.store.clearMenuActions();
         this.menu.hide();
 
-        if (event?.currentTarget['id'] !== this.domIdMenuAttached) {
-            this.store.showActionsMenu({ item, actionMenuDomId });
-        }
+        this.store.showActionsMenu({ item, actionMenuDomId });
     }
 
     /**
@@ -117,7 +129,6 @@ export class DotPagesComponent implements OnInit, OnDestroy {
      * @memberof DotPagesComponent
      */
     closedActionsMenu() {
-        this.store.clearMenuActions();
         this.domIdMenuAttached = '';
     }
 
@@ -129,10 +140,12 @@ export class DotPagesComponent implements OnInit, OnDestroy {
             )
             .subscribe((actionMenuDomId: string) => {
                 const target = this.element.nativeElement.querySelector(`#${actionMenuDomId}`);
-                if (target) {
+                if (target && actionMenuDomId.includes('pageActionButton')) {
                     this.menu.show({ currentTarget: target });
                     this.domIdMenuAttached = actionMenuDomId;
-                }
+
+                    // To hide when the contextMenu is opened
+                } else this.menu.hide();
             });
 
         this.store.reloadFavorite$

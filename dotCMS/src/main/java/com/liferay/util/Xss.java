@@ -125,7 +125,7 @@ public class Xss {
 
     private static void buildExcludeList () {
         if ( excludeList != null ) return;
-        excludeList = new HashSet<String>();
+        excludeList = new HashSet<>();
         excludeList.add( "&or" );
         excludeList.add( "&Or" );
     }

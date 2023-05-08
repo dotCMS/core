@@ -37,13 +37,13 @@ public class StructureResource {
                                                    @PathParam ("callback") String callback)
 											throws DotDataException, JSONException {
 
-        Map<String, String> paramsMap = new HashMap<String, String>();
+        Map<String, String> paramsMap = new HashMap<>();
         paramsMap.put( "type", type );
         paramsMap.put( "callback", callback );
         //Creating an utility response object
         ResourceResponse responseResource = new ResourceResponse( paramsMap );
 
-		List<Structure> structures=new ArrayList<Structure>();
+		List<Structure> structures=new ArrayList<>();
 		
 		String inodeFilter = "";
 		if(path!= null && path.length() > 1) {

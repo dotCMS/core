@@ -1,34 +1,22 @@
 import { fromEvent, merge, Observable, Subject } from 'rxjs';
 
-import { HttpErrorResponse } from '@angular/common/http';
 import { Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
-import {
-    catchError,
-    filter,
-    finalize,
-    map,
-    pluck,
-    skip,
-    take,
-    takeUntil,
-    tap
-} from 'rxjs/operators';
+import { filter, map, pluck, skip, switchMap, take, takeUntil, tap } from 'rxjs/operators';
 
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
 import {
     DotAlertConfirmService,
-    DotCopyContentService,
+    DotCurrentUserService,
     DotESContentService,
     DotEventsService,
     DotLicenseService,
@@ -42,7 +30,6 @@ import {
     DotCMSContentlet,
     DotCMSContentType,
     DotContainerStructure,
-    DotCopyContent,
     DotExperiment,
     DotIframeEditEvent,
     DotPageContainer,
@@ -53,10 +40,6 @@ import {
     ESContent
 } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService, generateDotFavoritePageUrl } from '@dotcms/utils';
-import {
-    DotBinaryOptionSelectorComponent,
-    BINARY_OPTION
-} from '@portlets/shared/dot-binary-option-selector/dot-binary-option-selector.component';
 
 import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
 import {
@@ -105,23 +88,6 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private pageStateInternal: DotPageRenderState;
 
-    private readonly CONTENT_EDIT_OPTIONS: BINARY_OPTION = {
-        option1: {
-            value: 'current',
-            message: 'editpage.content.edit.content.in.this.page.message',
-            icon: 'article',
-            label: 'editpage.content.edit.content.in.this.page',
-            buttonLabel: 'editpage.content.edit.content.in.this.page.button.label'
-        },
-        option2: {
-            value: 'all',
-            message: 'editpage.content.edit.content.in.all.pages.message',
-            icon: 'dynamic_feed',
-            label: 'editpage.content.edit.content.in.all.pages',
-            buttonLabel: 'editpage.content.edit.content.in.all.pages.button.label'
-        }
-    };
-
     constructor(
         private dialogService: DialogService,
         private dotContentletEditorService: DotContentletEditorService,
@@ -140,13 +106,12 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         public dotLoadingIndicatorService: DotLoadingIndicatorService,
         public sanitizer: DomSanitizer,
         public iframeOverlayService: IframeOverlayService,
-        private httpErrorManagerService: DotHttpErrorManagerService,
         private dotConfigurationService: DotPropertiesService,
         private dotLicenseService: DotLicenseService,
         private dotEventsService: DotEventsService,
         private dotESContentService: DotESContentService,
         private dotSessionStorageService: DotSessionStorageService,
-        private readonly dotCopyContentService: DotCopyContentService
+        private dotCurrentUser: DotCurrentUserService
     ) {
         if (!this.customEventsHandler) {
             this.customEventsHandler = {
@@ -367,13 +332,19 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     }
 
     private updateFavoritePageIconStatus(pageUrl: string) {
-        this.dotESContentService
-            .get({
-                itemsPerPage: 10,
-                offset: '0',
-                query: `+contentType:DotFavoritePage +deleted:false +working:true +owner:dotcms.org.2795 +DotFavoritePage.url_dotraw:${pageUrl}`
-            })
-            .pipe(take(1))
+        this.dotCurrentUser
+            .getCurrentUser()
+            .pipe(
+                switchMap(({ userId }) =>
+                    this.dotESContentService
+                        .get({
+                            itemsPerPage: 10,
+                            offset: '0',
+                            query: `+contentType:DotFavoritePage +deleted:false +working:true +owner:${userId} +DotFavoritePage.url_dotraw:${pageUrl}`
+                        })
+                        .pipe(take(1))
+                )
+            )
             .subscribe((response: ESContent) => {
                 const favoritePage = response.jsonObjectView?.contentlets[0];
                 this.dotPageStateService.setFavoritePageHighlight(favoritePage);
@@ -486,12 +457,8 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     }
 
     private editHandlder($event: DotIframeEditEvent): void {
-        const { dataset, copyContent } = $event;
-        const { dotInode: inode, onNumberOfPages } = dataset;
-
-        Number(onNumberOfPages) > 1
-            ? this.openCopyContentModal({ copyContent, inode })
-            : this.editContentlet(inode);
+        const { dotInode: inode } = $event.dataset;
+        this.editContentlet(inode);
     }
 
     private subscribeToNgEvents(): void {
@@ -667,63 +634,5 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                 } as DotVariantData;
             })
         );
-    }
-
-    /**
-     * Open the Dot EditContentletModeSelector component and subscribe to the onClose event
-     *
-     * @param boolean openDialog
-     * @memberof openCopyContentModal
-     */
-    private openCopyContentModal({
-        copyContent,
-        inode
-    }: {
-        copyContent: DotCopyContent;
-        inode: string;
-    }): void {
-        const ref = this.dialogService.open(DotBinaryOptionSelectorComponent, {
-            header: this.dotMessageService.get('Edit-Content'),
-            width: '37rem',
-            data: { options: this.CONTENT_EDIT_OPTIONS },
-            contentStyle: { padding: '0px' }
-        });
-
-        ref.onClose.pipe(take(1)).subscribe((value) => {
-            if (!value) {
-                return;
-            }
-
-            this.CONTENT_EDIT_OPTIONS.option1.value === value
-                ? this.copyContentAndEdit(copyContent)
-                : this.editContentlet(inode);
-        });
-    }
-
-    /**
-     *
-     *
-     * @private
-     * @param {DotCopyContent} copyContent
-     * @memberof DotEditContentComponent
-     */
-    private copyContentAndEdit(copyContent: DotCopyContent): void {
-        this.dotCopyContentService
-            .copyContentInPage({
-                ...copyContent,
-                personalization: this.dotPageStateService.pagePersonalization
-            })
-            .pipe(
-                take(1),
-                tap(() => this.dotLoadingIndicatorService.show()),
-                catchError((error: HttpErrorResponse) =>
-                    this.httpErrorManagerService.handle(error)
-                ),
-                finalize(() => this.dotLoadingIndicatorService.hide())
-            )
-            .subscribe(({ inode }: DotCMSContentlet) => {
-                this.reload(null);
-                this.editContentlet(inode);
-            });
     }
 }

@@ -62,7 +62,7 @@ public class Activator implements BundleActivator {
 
 			tm = new ACheckerImpl();
 
-			Hashtable<String, String> props = new Hashtable<String, String>();
+			Hashtable<String, String> props = new Hashtable<>();
 			context.registerService(AChecker.class.getName(), tm, props);
 
 			// System.out.println("Added ACheckerImpl service");

@@ -55,7 +55,7 @@ public class ContainerLoader implements DotLoader {
                     .replaceAll(HOST_NAME_SEPARATOR_IN_VELOCITY_KEY, PERIOD);
             final Optional<Container> optionalContainer = APILocator.getContainerAPI().findContainer(containerIdOrPath, APILocator.systemUser(), key.mode.showLive, key.mode.respectAnonPerms);
 
-            if (!optionalContainer.isPresent()) {
+            if (optionalContainer.isEmpty()) {
 
                 final DotStateException dotStateException = new DotStateException("Cannot find container for : " + key);
                 new ContainerExceptionNotifier(dotStateException, UtilMethods.isSet(key.id1) ? key.id1 : key.path).notifyUser();

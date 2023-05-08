@@ -87,7 +87,7 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
 
         // Generate counter to know how many version are for each identifier
         // with conflicts
-        Map<String, Integer> versionCount = new HashMap<String, Integer>();
+        Map<String, Integer> versionCount = new HashMap<>();
         for (Map<String, Object> result : results) {
             final String oldIdentifier = (String) result.get("local_identifier");
 
@@ -189,7 +189,7 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
         Long languageId;
         if (DbConnectionFactory.isOracle()) {
             BigDecimal lang = (BigDecimal) contentletData.get("language_id");
-            languageId = new Long(lang.toPlainString());
+            languageId = Long.valueOf(lang.toPlainString());
         } else {
             languageId = (Long) contentletData.get("language_id");
         }

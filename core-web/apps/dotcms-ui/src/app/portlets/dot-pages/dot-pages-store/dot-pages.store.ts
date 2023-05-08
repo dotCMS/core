@@ -78,7 +78,7 @@ export interface DotPagesState {
     reloadFavorite?: boolean;
 }
 
-const FAVORITE_PAGES_ES_QUERY = `+contentType:dotFavoritePage +deleted:false +working:true +owner:dotcms.org.2795`;
+const FAVORITE_PAGES_ES_QUERY = `+contentType:dotFavoritePage +deleted:false +working:true`;
 
 @Injectable()
 export class DotPageStore extends ComponentStore<DotPagesState> {
@@ -617,13 +617,17 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             extraQueryParams = `+DotFavoritePage.url_dotraw:${url}`;
         }
 
-        return this.dotESContentService.get({
-            itemsPerPage: limit,
-            offset: '0',
-            query: `${FAVORITE_PAGES_ES_QUERY} ${extraQueryParams}`,
-            sortField: 'dotFavoritePage.order',
-            sortOrder: ESOrderDirection.ASC
-        });
+        return this.dotCurrentUser.getCurrentUser().pipe(
+            switchMap(({ userId }) => {
+                return this.dotESContentService.get({
+                    itemsPerPage: limit,
+                    offset: '0',
+                    query: `${FAVORITE_PAGES_ES_QUERY} +owner:${userId} ${extraQueryParams}`,
+                    sortField: 'dotFavoritePage.order',
+                    sortOrder: ESOrderDirection.ASC
+                });
+            })
+        );
     };
 
     private getSelectActions(
@@ -763,7 +767,6 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
 
     constructor(
         private dotCurrentUser: DotCurrentUserService,
-        private dotCurrentUserService: DotCurrentUserService,
         private dotRouterService: DotRouterService,
         private httpErrorManagerService: DotHttpErrorManagerService,
         private dotESContentService: DotESContentService,
@@ -802,7 +805,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             .pipe(
                 take(1),
                 mergeMap(([favoritePages, currentUser, languages, isEnterprise, environments]) => {
-                    return this.dotCurrentUserService
+                    return this.dotCurrentUser
                         .getUserPermissions(
                             currentUser.userId,
                             [UserPermissions.READ, UserPermissions.WRITE],

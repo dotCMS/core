@@ -7,7 +7,7 @@ import java.util.Map;
 public abstract class CommonRowMapper<T> implements RowMapper<T> {
 	
 	public List<T> mapRows(List<Map<String, Object>> listMap) {
-		List<T> listToReturn  = new ArrayList<T>();
+		List<T> listToReturn  = new ArrayList<>();
 		for (Map<String, Object> row : listMap) {
 			listToReturn.add(mapObject(row));
 		}		

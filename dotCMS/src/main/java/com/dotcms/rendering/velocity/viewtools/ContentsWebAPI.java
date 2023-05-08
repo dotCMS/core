@@ -547,7 +547,7 @@ public class ContentsWebAPI implements ViewTool {
 	 * @return A list of identifier to the contents
 	 */
 	public List<String> getContentIdentifiersFromLuceneHits(LuceneHits assets) {
-		ArrayList<String> identifiers = new ArrayList<String>();
+		ArrayList<String> identifiers = new ArrayList<>();
 		for (int i = 0; i < assets.length(); i++) {
 			Logger.debug(this, "getContentIdentifiersFromLuceneHits: Adding asset identifier: "
 					+ assets.doc(i).get("identifier"));
@@ -705,9 +705,9 @@ public class ContentsWebAPI implements ViewTool {
 			u = user;
 		}
 		int limit = 0;
-		List<Map> l = new ArrayList<Map>();
+		List<Map> l = new ArrayList<>();
 		//LuceneHits hits = new LuceneHits();
-		List <ContentletSearch> hits = new ArrayList<ContentletSearch>();
+		List <ContentletSearch> hits = new ArrayList<>();
 
 
 		int offset = 0;
@@ -745,7 +745,7 @@ public class ContentsWebAPI implements ViewTool {
 
 
 
-				Map<String, Object> hm = new HashMap<String, Object>();
+				Map<String, Object> hm = new HashMap<>();
 				hm.put("inode", conwrap.getInode());
 				hm.put("identifier", conwrap.getIdentifier());
 				l.add(hm);
@@ -766,7 +766,7 @@ public class ContentsWebAPI implements ViewTool {
 		ContentletAPI conAPI = APILocator.getContentletAPI();
 		@SuppressWarnings("unchecked")
 		List<HashMap> contents = pullContent(query, lim, sortBy);
-		List<HashMap> returnList = new ArrayList<HashMap>();
+		List<HashMap> returnList = new ArrayList<>();
 
 		for(HashMap content: contents) {
 			String inode = (String) content.get("inode");
@@ -869,9 +869,9 @@ public class ContentsWebAPI implements ViewTool {
 
 		int limit = 0;
 
-		List<Map> l = new ArrayList<Map>();
+		List<Map> l = new ArrayList<>();
 		SearchHits hits = null;
-		List<Contentlet> c = new ArrayList<Contentlet>();
+		List<Contentlet> c = new ArrayList<>();
 
 		try {
 		    c = APILocator.getContentletAPI().search(query, limit, -1, sortBy, user, true);
@@ -886,7 +886,7 @@ public class ContentsWebAPI implements ViewTool {
 			}
 			try{
 
-				Map<String, Object> hm = new HashMap<String, Object>();
+				Map<String, Object> hm = new HashMap<>();
 				hm.put("inode", c.get(i).getInode());
 				hm.put("identifier", c.get(i).getIdentifier());
 				l.add(hm);
@@ -980,7 +980,7 @@ public class ContentsWebAPI implements ViewTool {
 
 		}
 
-		ArrayList<String> al = new ArrayList<String>();
+		ArrayList<String> al = new ArrayList<>();
 		String url = request.getRequestURI();
 		StringBuffer sb = new StringBuffer();
 		StringTokenizer st = new StringTokenizer(url, "/");
@@ -1151,7 +1151,7 @@ public class ContentsWebAPI implements ViewTool {
 	 * @return List<String> list of possible values
 	 */
 	public List<String> findFieldValues(String structureName, String fieldName, User user) throws DotDataException {
-		List<String> result = new ArrayList<String>();
+		List<String> result = new ArrayList<>();
 
 		Logger.warn(this.getClass(), "findFieldValues search by fieldName name not used and no longer supported");
 		return result;

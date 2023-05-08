@@ -255,7 +255,7 @@ public class IndexAjaxAction extends AjaxAction {
 	public void getNotActiveIndexNames(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		ContentletIndexAPI idxApi = APILocator.getContentletIndexAPI();
 		List<String> indices = idxApi.listDotCMSIndices();
-		List<String> inactives = new ArrayList<String>();
+		List<String> inactives = new ArrayList<>();
 
 		for (String index : indices) {
 			try {

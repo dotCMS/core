@@ -8,6 +8,7 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { DropdownModule } from 'primeng/dropdown';
 import { DialogService } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
+import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
 import { TooltipModule } from 'primeng/tooltip';
@@ -19,7 +20,11 @@ import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.modu
 import { DotMessagePipeModule } from '@dotcms/app/view/pipes/dot-message/dot-message-pipe.module';
 import { DotMessageService } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
-import { dotcmsContentletMock, MockDotMessageService } from '@dotcms/utils-testing';
+import {
+    dotcmsContentletMock,
+    dotcmsContentTypeBasicMock,
+    MockDotMessageService
+} from '@dotcms/utils-testing';
 
 import { DotPagesListingPanelComponent } from './dot-pages-listing-panel.component';
 
@@ -114,6 +119,12 @@ describe('DotPagesListingPanelComponent', () => {
         setArchived(): void {
             /* */
         }
+        get actionMenuDomId$() {
+            return of('');
+        }
+        get pageTypes$() {
+            return of([{ ...dotcmsContentTypeBasicMock }]);
+        }
     }
 
     describe('Empty state', () => {
@@ -131,7 +142,8 @@ describe('DotPagesListingPanelComponent', () => {
                     SkeletonModule,
                     TableModule,
                     TooltipModule,
-                    UiDotIconButtonModule
+                    UiDotIconButtonModule,
+                    OverlayPanelModule
                 ],
                 providers: [
                     DialogService,

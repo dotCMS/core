@@ -34,7 +34,7 @@ public class WorkflowSchemeImportExportObject implements Serializable {
 			return actionSteps;
 		}
 
-		return new ArrayList<Map<String,String>>();
+		return new ArrayList<>();
 	}
 
 	public void setActionSteps(List<Map<String, String>> actionSteps) {
@@ -46,7 +46,7 @@ public class WorkflowSchemeImportExportObject implements Serializable {
 			return workflowStructures;
 		}
 		else{
-			return new ArrayList<Map<String,String>>();
+			return new ArrayList<>();
 		}
 	}
 

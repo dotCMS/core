@@ -45,9 +45,12 @@ export class DotPagesFavoritePanelComponent {
      * @memberof DotPagesComponent
      */
     toggleFavoritePagesData(
+        $event: Event,
         areAllFavoritePagesLoaded: boolean,
         favoritePagesToLoad?: number
     ): void {
+        $event.stopPropagation();
+
         if (areAllFavoritePagesLoaded) {
             this.store.limitFavoritePages(FAVORITE_PAGE_LIMIT);
         } else {

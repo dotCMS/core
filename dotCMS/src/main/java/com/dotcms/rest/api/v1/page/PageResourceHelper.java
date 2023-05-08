@@ -319,11 +319,16 @@ public class PageResourceHelper implements Serializable {
 
     private IHTMLPage createNewVersion(final User user, final String pageInode,
             final String currentVariantId) throws DotDataException, DotSecurityException {
+
         final Contentlet checkout = APILocator.getContentletAPI()
                 .checkout(pageInode, user, false);
         checkout.setVariantId(currentVariantId);
         final Contentlet checkin = APILocator.getContentletAPI()
                 .checkin(checkout, user, false);
+
+        final List<MultiTree> multiTrees = multiTreeAPI.getMultiTrees(checkout.getIdentifier());
+        multiTreeAPI.copyMultiTree(checkin.getIdentifier(), multiTrees, currentVariantId);
+
         return APILocator.getHTMLPageAssetAPI().fromContentlet(checkin);
     }
 

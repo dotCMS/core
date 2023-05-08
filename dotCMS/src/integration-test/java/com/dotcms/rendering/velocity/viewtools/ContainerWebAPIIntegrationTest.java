@@ -226,7 +226,7 @@ public class ContainerWebAPIIntegrationTest extends IntegrationTestBase {
         container.setPreLoop("preloop code");
         container.setPostLoop("postloop code");
 
-        final List<ContainerStructure> containerStructures = new ArrayList<ContainerStructure>();
+        final List<ContainerStructure> containerStructures = new ArrayList<>();
 
         final ContainerStructure containerStructure = new ContainerStructure();
         containerStructure.setStructureId(contentTypeAPI.find("webPageContent").inode());

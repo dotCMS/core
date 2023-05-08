@@ -76,7 +76,7 @@ public class ReIndexerStatus implements Serializable {
 
     @CloseDBIfOpened
     public Map<String, Object> getProcessIndexationMap() throws DotDataException {
-        Map<String, Object> theMap = new Hashtable<String, Object>();
+        Map<String, Object> theMap = new Hashtable<>();
 
         theMap.put("inFullReindexation", inFullReindexation());
 

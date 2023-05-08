@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.workflows.model;
 
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
@@ -83,7 +84,7 @@ public class WorkflowSearcher {
 			} else {
 				y = obj.toString();
 			}
-			return new Boolean(y);
+			return Boolean.valueOf(y);
 		} catch (Exception e) {
 
 		}
@@ -225,7 +226,7 @@ public class WorkflowSearcher {
 				+ "&stepId=" + UtilMethods.webifyString(stepId) 
 				+ "&open=" + open 
 				+ "&closed=" + closed 
-				+ "&keywords=" + URLEncoder.encode(UtilMethods.webifyString(keywords))
+				+ "&keywords=" + URLEncoder.encode(UtilMethods.webifyString(keywords), StandardCharsets.UTF_8)
 				+ "&orderBy=" + orderBy 
 				+ "&count=" + count
 				+ ((show4all) ? "&show4all=true" : "")
