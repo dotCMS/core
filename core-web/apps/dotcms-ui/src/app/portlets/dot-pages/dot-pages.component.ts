@@ -103,10 +103,7 @@ export class DotPagesComponent implements OnInit, OnDestroy {
      */
     @HostListener('window:click')
     closeMenu(): void {
-        if (
-            this.domIdMenuAttached.includes('pageActionButton') ||
-            this.domIdMenuAttached.includes('favoritePageActionButton')
-        ) {
+        if (this.menuIsLoaded(this.domIdMenuAttached)) {
             this.menu.hide();
             this.store.clearMenuActions();
         }
@@ -143,11 +140,8 @@ export class DotPagesComponent implements OnInit, OnDestroy {
             )
             .subscribe((actionMenuDomId: string) => {
                 const target = this.element.nativeElement.querySelector(`#${actionMenuDomId}`);
-                if (
-                    target &&
-                    (actionMenuDomId.includes('pageActionButton') ||
-                        actionMenuDomId.includes('favoritePageActionButton'))
-                ) {
+
+                if (target && this.menuIsLoaded(actionMenuDomId)) {
                     this.menu.show({ currentTarget: target });
                     this.domIdMenuAttached = actionMenuDomId;
 
@@ -184,5 +178,19 @@ export class DotPagesComponent implements OnInit, OnDestroy {
     ngOnDestroy(): void {
         this.destroy$.next(true);
         this.destroy$.complete();
+    }
+
+    /**
+     * Check if the menu is loaded
+     *
+     * @private
+     * @param {string} menuDOMID
+     * @return {*}  {boolean}
+     * @memberof DotPagesComponent
+     */
+    private menuIsLoaded(menuDOMID: string): boolean {
+        return (
+            menuDOMID.includes('pageActionButton') || menuDOMID.includes('favoritePageActionButton')
+        );
     }
 }
