@@ -93,8 +93,7 @@ class AssetAPITest {
                 siteName);
         Assertions.assertNotNull(makeFoldersResponse.entity());
 
-        // Now, lets try to request the domain root folder using the asset API and test the data
-        // is correct
+        // Request the folder and check the data is correct
         var byPath = SearchByPathRequest.builder().
                 assetPath(String.format("//%s/%s", siteName, path1)).build();
         executeAndTest(byPath, true);
@@ -126,8 +125,7 @@ class AssetAPITest {
                 siteName);
         Assertions.assertNotNull(makeFoldersResponse.entity());
 
-        // Now, lets try to request the domain root folder using the asset API and test the data
-        // is correct
+        // Request the folder and check the data is correct
         var byPath = SearchByPathRequest.builder().
                 assetPath(String.format("//%s/%s", siteName, randomFolderName1)).build();
         executeAndTest(byPath, true, randomFolderName2, randomFolderName3);
@@ -156,8 +154,7 @@ class AssetAPITest {
                 siteName);
         Assertions.assertNotNull(makeFoldersResponse.entity());
 
-        // Now, lets try to request the domain root folder using the asset API and test the data
-        // is correct
+        // Request the folder and check the data is correct
         var byPath = SearchByPathRequest.builder().assetPath("//").build();
         executeAndTest(byPath, false, randomFolderName1, randomFolderName2, randomFolderName3);
     }
@@ -185,8 +182,7 @@ class AssetAPITest {
                 siteName);
         Assertions.assertNotNull(makeFoldersResponse.entity());
 
-        // Now, lets try to request the domain root folder using the asset API and test the data
-        // is correct
+        // Request the folder and check the data is correct
         var byPath = SearchByPathRequest.builder().
                 assetPath(String.format("//%s/", siteName)).build();
         executeAndTest(byPath, false, randomFolderName1, randomFolderName2, randomFolderName3);
@@ -196,7 +192,7 @@ class AssetAPITest {
 
         final AssetAPI assetAPI = clientFactory.getClient(AssetAPI.class);
 
-        // Now, lets try to request the domain folders using the asset API
+        // Now, lets try to request the requested folders using the asset API
         final ResponseEntityView<FolderView> byPathResponse = assetAPI.byPath(request);
         Assertions.assertNotNull(byPathResponse.entity());
 
