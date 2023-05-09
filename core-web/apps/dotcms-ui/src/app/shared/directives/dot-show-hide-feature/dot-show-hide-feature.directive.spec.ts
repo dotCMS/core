@@ -1,6 +1,6 @@
 import { of } from 'rxjs';
 
-import { Component } from '@angular/core';
+import { Component, TemplateRef, ViewContainerRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
@@ -12,16 +12,9 @@ import { DotShowHideFeatureDirective } from './dot-show-hide-feature.directive';
 @Component({
     selector: 'dot-test',
     template: `
-        <ng-template #enabledComponent>
-            <div data-testId="ensabled-component">test</div>
-        </ng-template>
-        <ng-template #disabledComponent>
-            <div data-testId="disabled-component">alternate</div>
-        </ng-template>
-        <ng-container
-            *dotShowHideFeature="featureFlag; alternate: disabledComponent"
-            [ngTemplateOutlet]="enabledComponent"
-        ></ng-container>
+        <ng-container *dotShowHideFeature="featureFlag">
+            <div data-testId="enabled-component">test</div>
+        </ng-container>
     `
 })
 class TestComponent {
@@ -36,7 +29,11 @@ describe('DotShowHideFeatureDirective', () => {
         TestBed.configureTestingModule({
             declarations: [TestComponent],
             imports: [DotShowHideFeatureDirective],
-            providers: [{ provide: DotPropertiesService, useValue: { getKey: () => of('true') } }]
+            providers: [
+                ViewContainerRef,
+                TemplateRef,
+                { provide: DotPropertiesService, useValue: { getKey: () => of('true') } }
+            ]
         });
 
         fixture = TestBed.createComponent(TestComponent);
@@ -48,10 +45,84 @@ describe('DotShowHideFeatureDirective', () => {
 
         it('should render enabled component', () => {
             const componentEl = fixture.debugElement.query(
-                By.css('[data-testId="ensabled-component"]')
+                By.css('[data-testId="enabled-component"]')
             );
 
             expect(componentEl).toBeTruthy();
+        });
+    });
+
+    describe('with feature flag disabled', () => {
+        beforeEach(() => {
+            spyOn(dotPropertiesService, 'getKey').and.returnValue(of('false'));
+            fixture.detectChanges();
+        });
+
+        it('should not render enabled component', () => {
+            const componentEl = fixture.debugElement.query(
+                By.css('[data-testId="enabled-component"]')
+            );
+
+            expect(componentEl).not.toBeTruthy();
+        });
+    });
+});
+
+@Component({
+    selector: 'dot-test',
+    template: `
+        <ng-template #enabledComponent>
+            <div data-testId="enabled-component">test</div>
+        </ng-template>
+        <ng-template #disabledComponent>
+            <div data-testId="disabled-component">alternate</div>
+        </ng-template>
+        <ng-container
+            *dotShowHideFeature="featureFlag; alternate: disabledComponent"
+            [ngTemplateOutlet]="enabledComponent"
+        ></ng-container>
+    `
+})
+class TestWithAlternateTemplateComponent {
+    featureFlag = FeaturedFlags.FEATURE_FLAG_TEMPLATE_BUILDER;
+}
+
+describe('DotShowHideFeatureDirective with alternate template', () => {
+    let fixture: ComponentFixture<TestWithAlternateTemplateComponent>;
+    let dotPropertiesService: DotPropertiesService;
+
+    beforeEach(() => {
+        TestBed.configureTestingModule({
+            declarations: [TestWithAlternateTemplateComponent],
+            imports: [DotShowHideFeatureDirective],
+            providers: [
+                ViewContainerRef,
+                TemplateRef,
+                { provide: DotPropertiesService, useValue: { getKey: () => of('true') } }
+            ]
+        });
+
+        fixture = TestBed.createComponent(TestWithAlternateTemplateComponent);
+        dotPropertiesService = TestBed.inject(DotPropertiesService);
+    });
+
+    describe('with feature flag enabled', () => {
+        beforeEach(() => fixture.detectChanges());
+
+        it('should render enabled component', () => {
+            const componentEl = fixture.debugElement.query(
+                By.css('[data-testId="enabled-component"]')
+            );
+
+            expect(componentEl).toBeTruthy();
+        });
+
+        it('should not render disabled component', () => {
+            const componentEl = fixture.debugElement.query(
+                By.css('[data-testId="disabled-component"]')
+            );
+
+            expect(componentEl).not.toBeTruthy();
         });
     });
 
@@ -68,20 +139,13 @@ describe('DotShowHideFeatureDirective', () => {
 
             expect(componentEl).toBeTruthy();
         });
-    });
 
-    describe('with feature flag enabled', () => {
-        beforeEach(() => {
-            spyOn(dotPropertiesService, 'getKey').and.returnValue(of('false'));
-            fixture.detectChanges();
-        });
-
-        it('should render disabled component', () => {
+        it('should not render enabled component', () => {
             const componentEl = fixture.debugElement.query(
-                By.css('[data-testId="disabled-component"]')
+                By.css('[data-testId="enabled-component"]')
             );
 
-            expect(componentEl).toBeTruthy();
+            expect(componentEl).not.toBeTruthy();
         });
     });
 });

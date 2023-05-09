@@ -2,6 +2,40 @@ import { Component, Directive, Input, OnInit, TemplateRef, ViewContainerRef } fr
 
 import { DotPropertiesService } from '@dotcms/data-access';
 
+/**
+ * Structural directive to give the ability of show or hide a component
+ * based on a feature flag. This directive can receive an alternative template
+ * to show when the feature is disabled.
+ *
+ * @example
+ * with default template
+ *  ```
+ *  </ng-container *dotShowHideFeature="featureFlag">
+ *       <feature-component></feature-component>
+ *   </ng-container>
+ *  ```
+ *
+ * @example
+ * with default template and alternate template
+ * ```
+ * <ng-template #enabledComponent>
+ *       <feature-component></feature-component>
+ * </ng-template>
+ *
+ * <ng-template #disabledComponent>
+ *       <alternate-component></alternate-component>
+ * </ng-template>
+ *
+ * <ng-container
+ *      *dotShowHideFeature="featureFlag; alternate: disabledComponent"
+ *      [ngTemplateOutlet]="enabledComponent"
+ *  ></ng-container>
+ * ```
+ *
+ * @export
+ * @class DotShowHideFeatureDirective
+ * @implements {OnInit}
+ */
 @Directive({
     selector: '[dotShowHideFeature]',
     standalone: true
@@ -17,6 +51,10 @@ export class DotShowHideFeatureDirective implements OnInit {
         this._alternateTemplateRef = alternateTemplateRef;
     }
 
+    get alternateTemplateRef(): TemplateRef<Component> {
+        return this._alternateTemplateRef;
+    }
+
     constructor(
         private templateRef: TemplateRef<Component>,
         private viewContainer: ViewContainerRef,
@@ -27,13 +65,12 @@ export class DotShowHideFeatureDirective implements OnInit {
         this.dotPropertiesService.getKey(this._featureFlag).subscribe((value) => {
             const isEnabled = value && value === 'true';
             this.viewContainer.clear();
-            this.viewContainer?.createEmbeddedView(
-                isEnabled ? this.templateRef : this.alternateTemplateRef
-            );
-        });
-    }
 
-    get alternateTemplateRef(): TemplateRef<Component> {
-        return this._alternateTemplateRef;
+            if (isEnabled) {
+                this.viewContainer.createEmbeddedView(this.templateRef);
+            } else if (this.alternateTemplateRef) {
+                this.viewContainer.createEmbeddedView(this.alternateTemplateRef);
+            }
+        });
     }
 }
