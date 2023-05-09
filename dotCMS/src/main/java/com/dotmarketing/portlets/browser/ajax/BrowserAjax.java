@@ -515,10 +515,11 @@ public class BrowserAjax {
 						   .sortByDesc(sortByDesc)
 						   .showLinks(!excludeLinks)
 						   .withLanguageId(language)
+						   .showDefaultLangItems(true)
 						   .showDotAssets(dotAssets)
 						   .build());
 
-	        listCleanup((List<Map<String, Object>>) results.get("list"), getContentSelectedLanguageId(req));
+	        listCleanup((List<Map<String, Object>>) results.get("list"), language);
 
 	        return results;
 	   }
