@@ -15,18 +15,18 @@ const messageServiceMock = new MockDotMessageService({
 
 const CONTENT_EDIT_OPTIONS_MOCK = {
     option1: {
-        value: 'Copy',
-        message: 'editpage.content.edit.content.in.this.page.message',
-        icon: 'article',
-        label: 'editpage.content.edit.content.in.this.page',
-        buttonLabel: 'editpage.content.edit.content.in.this.page.button.label'
-    },
-    option2: {
         value: 'NotCopy',
         message: 'editpage.content.edit.content.in.all.pages.message',
         icon: 'dynamic_feed',
         label: 'editpage.content.edit.content.in.all.pages',
         buttonLabel: 'editpage.content.edit.content.in.all.pages.button.label'
+    },
+    option2: {
+        value: 'Copy',
+        message: 'editpage.content.edit.content.in.this.page.message',
+        icon: 'article',
+        label: 'editpage.content.edit.content.in.this.page',
+        buttonLabel: 'editpage.content.edit.content.in.this.page.button.label'
     }
 };
 
