@@ -185,7 +185,7 @@ public class DbFieldTransformer implements FieldTransformer {
 
 	@Override
 	public List<Field> asList() throws DotStateException {
-		List<Field> list = new ArrayList<Field>();
+		List<Field> list = new ArrayList<>();
 		for (Map<String, Object> map : results) {
 		    Field f  = fromMap(map);
 			list.add(fromMap(map));

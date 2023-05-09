@@ -75,13 +75,13 @@ public class I18NResource {
 
     @VisibleForTesting
     void checkHasResult(RestResourceLookup lookup, Optional<String> singleResult, Map<String, String> subTreeResult) {
-        if(!singleResult.isPresent() && subTreeResult.isEmpty()) {
+        if(singleResult.isEmpty() && subTreeResult.isEmpty()) {
             throw new NotFoundException("No resource messages found for %s", lookup.ref);
         }
     }
 
     private boolean refIsSubTree(RestResourceLookup lookup, Optional<String> singleResult, Map<String, String> subTreeResult) {
-        boolean isTree = subTreeResult.size() > 1 || (subTreeResult.size() == 1 && !singleResult.isPresent());
+        boolean isTree = subTreeResult.size() > 1 || (subTreeResult.size() == 1 && singleResult.isEmpty());
         if(isTree && singleResult.isPresent()) {
             // the case where both `foo.bar=x` and `foo.bar.baz=y` exist.
             logInvalidPropertyDefinition(singleResult.get(), lookup.key);

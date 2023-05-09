@@ -9,6 +9,7 @@ import { ConfirmationService } from 'primeng/api';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/test/dot-test-bed';
 import {
@@ -85,7 +86,7 @@ describe('DotCustomEventHandlerService', () => {
                 DotcmsConfigService,
                 LoggerService,
                 DotCurrentUserService,
-                DotMessageDisplayService,
+                { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
                 DotWizardService,
                 DotHttpErrorManagerService,
                 DotAlertConfirmService,

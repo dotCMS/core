@@ -22,13 +22,11 @@ export interface DotFavoritePageProps {
 }
 
 export interface DotFavoritePageFormData {
-    currentUserRoleId: string;
     inode?: string;
     thumbnail?: string;
     title: string;
     url: string;
     order: number;
-    permissions?: string[];
 }
 
 @Component({
@@ -69,13 +67,11 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
             )
             .subscribe((formStateData: DotFavoritePageFormData) => {
                 this.form = this.fb.group({
-                    currentUserRoleId: [formStateData?.currentUserRoleId, Validators.required],
                     inode: [formStateData?.inode],
-                    thumbnail: [formStateData?.thumbnail, Validators.required],
+                    thumbnail: [formStateData?.thumbnail],
                     title: [formStateData?.title, Validators.required],
                     url: [formStateData?.url, Validators.required],
-                    order: [formStateData?.order, Validators.required],
-                    permissions: [formStateData?.permissions]
+                    order: [formStateData?.order, Validators.required]
                 });
 
                 this.isFormValid$ = this.form.valueChanges.pipe(
@@ -162,8 +158,15 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
 
     private setPreviewThumbnailListener() {
         const dotHtmlToImageElement = document.querySelector('dot-html-to-image');
-        dotHtmlToImageElement.addEventListener('pageThumbnail', (event: CustomEvent) => {
-            this.form.get('thumbnail').setValue(event.detail.file);
-        });
+        if (dotHtmlToImageElement) {
+            dotHtmlToImageElement.addEventListener('pageThumbnail', (event: CustomEvent) => {
+                if (event.detail.file) {
+                    this.form.get('thumbnail').setValue(event.detail.file);
+                } else {
+                    this.form.get('thumbnail').setValue('');
+                    this.store.setShowFavoriteEmptySkeleton(true);
+                }
+            });
+        }
     }
 }

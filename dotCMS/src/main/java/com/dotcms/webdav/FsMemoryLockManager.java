@@ -44,8 +44,8 @@ public class FsMemoryLockManager implements LockManager {
     Map<String, CurrentLock> locksByToken;
 
     public FsMemoryLockManager() {
-        locksByFile = new HashMap<File, CurrentLock>();
-        locksByToken = new HashMap<String, CurrentLock>();
+        locksByFile = new HashMap<>();
+        locksByToken = new HashMap<>();
     }
 
     @Override

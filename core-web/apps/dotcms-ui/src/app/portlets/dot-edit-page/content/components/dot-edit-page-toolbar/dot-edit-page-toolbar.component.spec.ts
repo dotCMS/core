@@ -109,7 +109,7 @@ class MockDotPageStateService {
 export class ActivatedRouteListStoreMock {
     get queryParams() {
         return of({
-            editPageTab: 'edit',
+            mode: DotPageMode.EDIT,
             variantName: 'Original',
             experimentId: '1232121212'
         });
@@ -255,7 +255,9 @@ describe('DotEditPageToolbarComponent', () => {
             const dotEditPageInfo = de.query(By.css('dot-edit-page-info')).componentInstance;
             expect(dotEditPageInfo.title).toBe('A title');
             expect(dotEditPageInfo.url).toBe('/an/url/test');
-            expect(dotEditPageInfo.apiLink).toBe('api/v1/page/render/an/url/test?language_id=1');
+            expect(dotEditPageInfo.innerApiLink).toBe(
+                'api/v1/page/render/an/url/test?language_id=1'
+            );
         });
     });
 

@@ -93,7 +93,7 @@ public class RoleAPIImpl implements RoleAPI {
 		}
 		
 		List<Role> roles =  findRoleHierarchy(role);
-        List<User> users = new ArrayList<User>();
+        List<User> users = new ArrayList<>();
         for(Role x : roles){
         	List<User> ul = findUsersForRole(x);
         	if(ul!=null){
@@ -107,7 +107,7 @@ public class RoleAPIImpl implements RoleAPI {
 	public List<Role> findRoleHierarchy(Role role) throws DotDataException, NoSuchUserException, DotSecurityException{
 
 		
-        List<Role> roles = new ArrayList<Role>();
+        List<Role> roles = new ArrayList<>();
         roles.add(role);
         int i=0;
         while(!role.getParent().equals(role.getId()) && i< 100){
@@ -390,7 +390,7 @@ public class RoleAPIImpl implements RoleAPI {
 	@Override
 	public List<User> findUsersForRole(final Role role) throws DotDataException, NoSuchUserException, DotSecurityException {
 		List<String> uids = findUserIdsForRole(role);
-		List<User> users = new ArrayList<User>();
+		List<User> users = new ArrayList<>();
 		for (String uid : uids)
 			users.add(APILocator.getUserAPI().loadUserById(uid, APILocator.getUserAPI().getSystemUser(), true));
 		return users;

@@ -47,7 +47,6 @@ import org.mockito.Mockito;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -288,13 +287,13 @@ public class NavToolTest extends IntegrationTestBase{
         fileAssetInSpanish.setLanguageId(spanishLanguage.getId());
 
         final NavToolTestCase case1 = new NavToolTestCase();
-        case1.menuItems = Collections.singletonList(fileAssetInSpanish);
+        case1.menuItems = List.of(fileAssetInSpanish);
         case1.itemFile = fileAssetInSpanish;
         case1.selectedLang = 1L;
         case1.expectedResult = false;
 
         final NavToolTestCase case2 = new NavToolTestCase();
-        case2.menuItems = Collections.singletonList(fileAssetInSpanish);
+        case2.menuItems = List.of(fileAssetInSpanish);
         case2.itemFile = fileAssetInSpanish;
         case2.selectedLang = spanishLanguage.getId();
         case2.expectedResult = false;
@@ -306,13 +305,13 @@ public class NavToolTest extends IntegrationTestBase{
         fileAssetInEnglish.setLanguageId(1);
 
         final NavToolTestCase case3 = new NavToolTestCase();
-        case3.menuItems = Collections.singletonList(fileAssetInEnglish);
+        case3.menuItems = List.of(fileAssetInEnglish);
         case3.itemFile = fileAssetInSpanish;
         case3.selectedLang = 1L;
         case3.expectedResult = false;
 
         final NavToolTestCase case4 = new NavToolTestCase();
-        case4.menuItems = Collections.singletonList(fileAssetInSpanish);
+        case4.menuItems = List.of(fileAssetInSpanish);
         case4.itemFile = fileAssetInEnglish;
         case4.selectedLang = spanishLanguage.getId();
         case4.expectedResult = false;

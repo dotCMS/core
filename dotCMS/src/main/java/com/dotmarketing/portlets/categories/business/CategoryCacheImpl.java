@@ -101,7 +101,7 @@ public class CategoryCacheImpl extends CategoryCache {
 	@Override
 	protected void putParents(Categorizable child, List<Category> parents)throws DotDataException, DotCacheException {
 		
-		List<String> catsIds = new ArrayList<String>();
+		List<String> catsIds = new ArrayList<>();
 		for(Category cat : parents) {
 			catsIds.add(cat.getInode());
 		}
@@ -224,7 +224,7 @@ public class CategoryCacheImpl extends CategoryCache {
 	@SuppressWarnings("unchecked")
 	@Override
 	protected void addParent(Categorizable child, Category parent, List<Category> parents)throws DotDataException, DotCacheException {
-		List<String> parentsInodes = new ArrayList<String>();
+		List<String> parentsInodes = new ArrayList<>();
 		parentsInodes.add(parent.getInode());
 		if(parents != null){
 			for(Category p : parents){

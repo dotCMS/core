@@ -75,7 +75,7 @@ public class ESQueryCacheTest {
         assertEquals(hits, cache.get(request).get());
         
         SearchRequest request2 = getSearchRequest();
-        assertTrue(!cache.get(request2).isPresent());
+        assertTrue(cache.get(request2).isEmpty());
 
     }
     
@@ -117,8 +117,8 @@ public class ESQueryCacheTest {
         
         cache.clearCache();
         
-        assert(!cache.get(req1).isPresent());
-        assert(!cache.get(req2).isPresent());
+        assert(cache.get(req1).isEmpty());
+        assert(cache.get(req2).isEmpty());
 
 
     }

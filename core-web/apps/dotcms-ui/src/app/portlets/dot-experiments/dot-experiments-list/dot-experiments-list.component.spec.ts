@@ -107,7 +107,7 @@ describe('ExperimentsListComponent', () => {
             },
             experiments: [],
             filterStatus: [],
-            experimentsFiltered: {},
+            experimentsFiltered: [],
             isLoading: true,
             sidebar: {
                 status: ComponentStatus.IDLE,
@@ -129,7 +129,7 @@ describe('ExperimentsListComponent', () => {
             },
             experiments: [],
             filterStatus: [],
-            experimentsFiltered: {},
+            experimentsFiltered: [],
             isLoading: false,
             sidebar: {
                 status: ComponentStatus.IDLE,
@@ -153,7 +153,7 @@ describe('ExperimentsListComponent', () => {
             },
             experiments: getExperimentAllMocks(),
             filterStatus: [],
-            experimentsFiltered: {},
+            experimentsFiltered: [],
             isLoading: false,
             sidebar: {
                 status: ComponentStatus.IDLE,
@@ -184,7 +184,7 @@ describe('ExperimentsListComponent', () => {
             ['/edit-page/experiments/reports/', EXPERIMENT_MOCK.id],
             {
                 queryParams: {
-                    editPageTab: null,
+                    mode: null,
                     variantName: null,
                     experimentId: null
                 },

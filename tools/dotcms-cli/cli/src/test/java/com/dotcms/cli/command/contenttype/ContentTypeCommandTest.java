@@ -187,7 +187,7 @@ public class ContentTypeCommandTest extends CommandTest {
             System.out.println(output);
         }
 
-        final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeRemove.NAME, varName );
+        final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeRemove.NAME, varName,  "--cli-test" );
         Assertions.assertEquals(ExitCode.OK, status);
 
         final int status2 = commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME, varName );

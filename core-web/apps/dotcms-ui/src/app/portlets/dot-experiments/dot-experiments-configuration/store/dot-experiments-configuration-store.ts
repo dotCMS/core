@@ -48,6 +48,7 @@ export interface ConfigurationViewModel {
     stepStatusSidebar: StepStatus;
     isLoading: boolean;
     isExperimentADraft: boolean;
+    runExperimentBtnLabel: string;
     disabledStartExperiment: boolean;
     showExperimentSummary: boolean;
     experimentStatus: DotExperimentStatusList;
@@ -75,6 +76,14 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     readonly getExperimentStatus$: Observable<DotExperimentStatusList> = this.select(
         ({ experiment }) => experiment?.status
     );
+
+    readonly getRunExperimentBtnLabel$: Observable<string> = this.select(({ experiment }) => {
+        const { scheduling } = experiment ? experiment : { scheduling: null };
+
+        return scheduling === null || Object.values(experiment.scheduling).includes(null)
+            ? this.dotMessageService.get('experiments.action.start-experiment')
+            : this.dotMessageService.get('experiments.action.schedule-experiment');
+    });
 
     readonly showExperimentSummary$: Observable<boolean> = this.select(({ experiment }) =>
         Object.values([
@@ -592,6 +601,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     readonly vm$: Observable<ConfigurationViewModel> = this.select(
         this.state$,
         this.isExperimentADraft$,
+        this.getRunExperimentBtnLabel$,
         this.isLoading$,
         this.disabledStartExperiment$,
         this.showExperimentSummary$,
@@ -600,6 +610,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         (
             { experiment, stepStatusSidebar },
             isExperimentADraft,
+            runExperimentBtnLabel,
             isLoading,
             disabledStartExperiment,
             showExperimentSummary,
@@ -609,6 +620,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
             experiment,
             stepStatusSidebar,
             isExperimentADraft,
+            runExperimentBtnLabel,
             isLoading,
             disabledStartExperiment,
             showExperimentSummary,

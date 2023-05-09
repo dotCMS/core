@@ -42,9 +42,9 @@ public class SessionMonitor implements ServletRequestListener,
 
     
     // this will hold all logged in users
-    private Map<String, String> sysUsers = new ConcurrentHashMap<String, String>();
-    private Map<String, HttpSession> userSessions = new ConcurrentHashMap<String, HttpSession>();
-    private Map<String, String> sysUsersAddress = new ConcurrentHashMap<String, String>();
+    private Map<String, String> sysUsers = new ConcurrentHashMap<>();
+    private Map<String, HttpSession> userSessions = new ConcurrentHashMap<>();
+    private Map<String, String> sysUsersAddress = new ConcurrentHashMap<>();
     
     public Map<String, String> getSysUsers() {
         return sysUsers;
@@ -124,6 +124,9 @@ public class SessionMonitor implements ServletRequestListener,
                 if (!isLogout) {
                     this.systemEventsAPI.push(new SystemEvent
                             (SystemEventType.SESSION_DESTROYED, UserSessionPayloadBuilder.build(userId, sessionId)));
+                } else {
+                    this.systemEventsAPI.push(new SystemEvent
+                            (SystemEventType.SESSION_LOGOUT, UserSessionPayloadBuilder.build(userId, sessionId)));
                 }
             } catch (DotDataException e) {
 

@@ -48,6 +48,7 @@ export class DotExperimentsConfigurationSchedulingAddComponent implements OnInit
 
     today = new Date();
     initialDate = new Date();
+    minEndDate: Date;
 
     vm$: Observable<{ experimentId: string; scheduling: RangeOfDateAndTime; status: StepStatus }> =
         this.dotExperimentsConfigurationStore.schedulingStepVm$;
@@ -100,6 +101,11 @@ export class DotExperimentsConfigurationSchedulingAddComponent implements OnInit
         });
     }
 
+    /**
+     * Set initial date to the next fixed 30 minutes from now.
+     * @returns void
+     * @memberof DotExperimentsConfigurationSchedulingAddComponent
+     */
     private setInitialDate(): void {
         if (this.initialDate.getMinutes() > 30) {
             this.initialDate.setMinutes(0);
@@ -107,5 +113,28 @@ export class DotExperimentsConfigurationSchedulingAddComponent implements OnInit
         } else {
             this.initialDate.setMinutes(30);
         }
+    }
+
+    /**
+     * Initial end date should be at least 30 minutes after start date.
+     * @returns void
+     * @memberof DotExperimentsConfigurationSchedulingAddComponent
+     */
+    setMinEndDate(): void {
+        if (this.form.value.startDate) {
+            this.minEndDate = new Date(this.form.value.startDate.getTime() + 1000 * 60 * 30);
+        } else {
+            this.minEndDate = null;
+        }
+
+        if (this.isStatDateMoreRecent()) {
+            this.form.patchValue({
+                endDate: null
+            });
+        }
+    }
+
+    private isStatDateMoreRecent(): boolean {
+        return this.form.value.startDate && this.form.value.startDate >= this.form.value.endDate;
     }
 }

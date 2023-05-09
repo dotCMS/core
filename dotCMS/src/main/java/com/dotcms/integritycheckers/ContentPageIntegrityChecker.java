@@ -135,7 +135,7 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
         List<Map<String, Object>> results = dc.loadObjectResults();
 
         // We need to load the map with the affected identifiers, inodes and languages
-        Map<String, AffectedIdentifierInfoBucket> affectedIdentifiers = new HashMap<String, AffectedIdentifierInfoBucket>();
+        Map<String, AffectedIdentifierInfoBucket> affectedIdentifiers = new HashMap<>();
         for (Map<String, Object> result : results) {
             final String oldIdentifier = (String) result.get("local_identifier");
             final Long languageId = (Long) (DbConnectionFactory.isOracle() ? ((BigDecimal) result.get("language_id")).longValue() : (Long) result.get("language_id"));
@@ -221,7 +221,7 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
 				dc.addParam(htmlPageIdentifier);
 				dc.addParam((htmlPageParentPath + htmlPageAssetName).toLowerCase());
 				dc.addParam(htmlPageHostIdentifier);
-				dc.addParam(new Long(htmlPageLanguage));
+				dc.addParam(Long.valueOf(htmlPageLanguage));
 				dc.loadResult();
 			} catch (final DotDataException e) {
 				htmlpages.close();
@@ -370,7 +370,7 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
      *  
      */
     private List<Map<String, Object>> getOrderedConflictingPages(List<Map<String, Object>> conflictingPages, AffectedIdentifierInfoBucket conflictIdentifierInfo) {
-        LinkedList<Map<String, Object>> orderedConflictingPages = new LinkedList<Map<String, Object>>();
+        LinkedList<Map<String, Object>> orderedConflictingPages = new LinkedList<>();
 
         for (Map<String, Object> pageInfo : conflictingPages) {
             final Long languageId = DbConnectionFactory.isOracle() ? ((BigDecimal) pageInfo.get("lang")).longValue() : (Long) pageInfo.get("lang");
@@ -453,7 +453,7 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
 				final String newWorkingInode = UUIDGenerator.generateUuid();
 				final String newLiveInode = (!workingInodeToChange.equalsIgnoreCase(liveInodeToChange)) ? UUIDGenerator.generateUuid() : newWorkingInode;
 
-				Map<String, Object> existingPageData = new HashMap<String, Object>();
+				Map<String, Object> existingPageData = new HashMap<>();
 				existingPageData.put("local_identifier", identifierToChange);
 				existingPageData.put("remote_identifier", newIdentifier);
 				existingPageData.put(getIntegrityType().getFirstDisplayColumnLabel(), existingParentPath + existingAssetName);
@@ -651,7 +651,7 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
         Long languageId;
         if (DbConnectionFactory.isOracle()) {
             BigDecimal lang = (BigDecimal) pageData.get("language_id");
-            languageId = new Long(lang.toPlainString());
+            languageId = Long.valueOf(lang.toPlainString());
         } else {
             languageId = (Long) pageData.get("language_id");
         }
@@ -975,7 +975,7 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
         private final String affectedIdentifier;
         private int counter = 0;
         // key = language id // value = affected working and live inodes
-        private final HashMap<Long, AffectedContentletVersion> affectedContentletVersions = new HashMap<Long, AffectedContentletVersion>();
+        private final HashMap<Long, AffectedContentletVersion> affectedContentletVersions = new HashMap<>();
 
         static AffectedIdentifierInfoBucket build(final String affectedIdentifier) {
             return new AffectedIdentifierInfoBucket(affectedIdentifier);

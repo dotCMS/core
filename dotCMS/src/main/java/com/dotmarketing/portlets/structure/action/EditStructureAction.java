@@ -142,7 +142,7 @@ public class EditStructureAction extends DotPortletAction {
 		_loadForm(form, req, res);
 		if (returnToList) {
 			if (!UtilMethods.isSet(referer)) {
-				java.util.Map<String, String[]> params = new java.util.HashMap<String, String[]>();
+				java.util.Map<String, String[]> params = new java.util.HashMap<>();
 
 				if (((StructureForm) form).getStructureType() == Structure.STRUCTURE_TYPE_FORM) {
 					params.put("struts_action", new String[] { "/ext/formhandler/view_form" });

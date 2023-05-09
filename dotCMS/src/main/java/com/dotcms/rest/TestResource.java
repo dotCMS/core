@@ -73,7 +73,7 @@ public class TestResource {
             //And prepare the response
             if ( UtilMethods.isSet( type ) && type.equalsIgnoreCase( "xml" ) ) {
 
-                Map<String, Object> mapResponse = new HashMap<String, Object>();
+                Map<String, Object> mapResponse = new HashMap<>();
                 mapResponse.put( "success", true );
                 mapResponse.put( "message", "Success message" );
                 mapResponse.put( "param1", param1 );
@@ -164,7 +164,7 @@ public class TestResource {
             //And prepare the response
             if ( UtilMethods.isSet( type ) && type.equalsIgnoreCase( "xml" ) ) {
 
-                Map<String, Object> mapResponse = new HashMap<String, Object>();
+                Map<String, Object> mapResponse = new HashMap<>();
                 mapResponse.put( "success", true );
                 mapResponse.put( "message", "Success message" );
                 mapResponse.put( "param1", param1 );

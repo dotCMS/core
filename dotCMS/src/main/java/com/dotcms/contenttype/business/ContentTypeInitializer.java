@@ -9,12 +9,17 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
 
 import java.util.ArrayList;
@@ -30,6 +35,8 @@ public class ContentTypeInitializer implements DotInitializer {
 
     public static final String LEGACY_FAVORITE_PAGE_VAR_NAME = "favoritePage";
     static final String FAVORITE_PAGE_VAR_NAME = "dotFavoritePage";
+
+    private static final Lazy<Boolean> doDefaultPagePermissions = Lazy.of(()->Config.getBooleanProperty("DO_DEFAULT_PAGE_PERMISSIONS", true));
 
     @Override
     public void init() {
@@ -60,17 +67,25 @@ public class ContentTypeInitializer implements DotInitializer {
                     .variable(FAVORITE_PAGE_VAR_NAME)
                     .host(Host.SYSTEM_HOST)
                     .host(Folder.SYSTEM_FOLDER)
-                    .fixed(true)
-            ;
+                    .fixed(true);
             final SimpleContentType simpleContentType = builder.build();
 
             saveFavoritePageFields(contentTypeAPI, simpleContentType);
         } else {
             // if the content type exists, we need to see if latest changes are there, otherwise we need to redefine the content type.
-            if (contentType.fieldMap().get("url").unique() || !contentType.fieldMap().get("order").indexed() || !contentType.fixed()) {
+            if (contentType.fieldMap().get("url").unique() || !contentType.fieldMap().get("order").indexed()) {
                 Logger.debug(ContentTypeInitializer.class, "dotFavoritePage CT Needs to be regenerated.");
-                this.saveFavoritePageFields(contentTypeAPI, contentType);
+                if (!contentType.fixed()) { // if the content type is not unchangeable
+                    this.saveFavoritePageFields(contentTypeAPI, contentType);
+                }
             }
+        }
+
+        contentType = null == contentType?Try.of(
+                ()->contentTypeAPI.find(FAVORITE_PAGE_VAR_NAME)).getOrNull(): contentType;
+
+        if (null != contentType) {
+            checkDefaultPermissions(contentType);
         }
     }
 
@@ -97,6 +112,29 @@ public class ContentTypeInitializer implements DotInitializer {
         } catch (DotDataException | DotSecurityException e) {
 
             Logger.warnAndDebug(this.getClass(), e);
+        }
+    }
+
+    private void checkDefaultPermissions(final ContentType savedContentType) {
+
+        if (doDefaultPagePermissions.get()) {
+
+            try {
+
+                final int permissionType = PermissionAPI.PERMISSION_USE | PermissionAPI.PERMISSION_EDIT |
+                        PermissionAPI.PERMISSION_PUBLISH | PermissionAPI.PERMISSION_EDIT_PERMISSIONS;
+                final Role backendRole = APILocator.getRoleAPI().loadCMSOwnerRole();
+                if (!APILocator.getPermissionAPI().doesRoleHavePermission(
+                        savedContentType, permissionType, backendRole)) {
+
+                    Logger.info(this, "Adding default permissions to the Favorite Page Content Type...");
+                    final Permission permission = new Permission(savedContentType.getPermissionId(), backendRole.getId(),permissionType);
+                    APILocator.getPermissionAPI().save(permission, savedContentType, APILocator.systemUser(), false);
+                }
+            } catch (DotDataException | DotSecurityException e) {
+
+                Logger.error(this, "Favorite pages: " + e.getMessage(), e);
+            }
         }
     }
 }

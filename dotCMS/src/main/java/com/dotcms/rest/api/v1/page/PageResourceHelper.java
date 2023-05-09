@@ -165,8 +165,14 @@ public class PageResourceHelper implements Serializable {
                         @Override
                         public void run() {
                             try {
-                                final Contentlet contentlet =
+                                Contentlet contentlet =
                                         contentletAPI.findContentletByIdentifierAnyLanguage(contentletId, variantName);
+
+                                if (contentlet == null && !VariantAPI.DEFAULT_VARIANT.equals(variantName)) {
+                                    contentlet = contentletAPI.findContentletByIdentifierAnyLanguage(contentletId,
+                                            VariantAPI.DEFAULT_VARIANT.name());
+                                }
+
                                 new ContentletLoader().invalidate(contentlet, PageMode.EDIT_MODE);
                             } catch (final DotDataException e) {
                                 Logger.warn(this, String.format("Contentlet with ID '%s' could not be invalidated " +
@@ -313,11 +319,16 @@ public class PageResourceHelper implements Serializable {
 
     private IHTMLPage createNewVersion(final User user, final String pageInode,
             final String currentVariantId) throws DotDataException, DotSecurityException {
+
         final Contentlet checkout = APILocator.getContentletAPI()
                 .checkout(pageInode, user, false);
         checkout.setVariantId(currentVariantId);
         final Contentlet checkin = APILocator.getContentletAPI()
                 .checkin(checkout, user, false);
+
+        final List<MultiTree> multiTrees = multiTreeAPI.getMultiTrees(checkout.getIdentifier());
+        multiTreeAPI.copyMultiTree(checkin.getIdentifier(), multiTrees, currentVariantId);
+
         return APILocator.getHTMLPageAssetAPI().fromContentlet(checkin);
     }
 

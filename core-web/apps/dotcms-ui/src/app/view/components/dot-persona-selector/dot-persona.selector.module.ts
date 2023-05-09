@@ -6,7 +6,6 @@ import { SharedModule } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotAvatarModule } from '@components/_common/dot-avatar/dot-avatar.module';
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
 import { DotAddPersonaDialogModule } from '@components/dot-add-persona-dialog/dot-add-persona-dialog.module';
@@ -29,7 +28,6 @@ import { DotPersonaSelectorComponent } from './dot-persona-selector.component';
         DotPersonaSelectorOptionModule,
         DotPipesModule,
         DotIconModule,
-        DotAvatarModule,
         ButtonModule,
         TooltipModule,
         SharedModule,

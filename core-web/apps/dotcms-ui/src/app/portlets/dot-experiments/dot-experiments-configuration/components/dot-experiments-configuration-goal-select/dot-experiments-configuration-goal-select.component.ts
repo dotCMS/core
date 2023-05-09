@@ -27,6 +27,7 @@ import {
     GOAL_TYPES,
     Goals,
     GOALS_METADATA_MAP,
+    MAX_INPUT_LENGTH,
     StepStatus
 } from '@dotcms/dotcms-models';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
@@ -75,7 +76,14 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
     statusList = ComponentStatus;
     vm$: Observable<{ experimentId: string; goals: Goals; status: StepStatus }> =
         this.dotExperimentsConfigurationStore.goalsStepVm$;
+    protected readonly maxNameLength = MAX_INPUT_LENGTH;
     private destroy$: Subject<boolean> = new Subject<boolean>();
+    private BOUNCE_RATE_LABEL = this.dotMessageService.get(
+        'experiments.goal.conditions.minimize.bounce.rate'
+    );
+    private REACH_PAGE_LABEL = this.dotMessageService.get(
+        'experiments.goal.conditions.maximize.reach.page'
+    );
 
     constructor(
         private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore,
@@ -148,14 +156,14 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
     private initForm(): void {
         this.form = new FormGroup({
             primary: new FormGroup({
-                name: new FormControl(
-                    this.dotMessageService.get('experiments.configure.goals.name.default'),
-                    {
-                        nonNullable: true,
-                        validators: [Validators.required]
-                    }
-                ),
-                type: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+                name: new FormControl('', {
+                    nonNullable: true,
+                    validators: [Validators.required, Validators.maxLength(this.maxNameLength)]
+                }),
+                type: new FormControl('', {
+                    nonNullable: true,
+                    validators: [Validators.required]
+                }),
                 conditions: new FormArray([
                     new FormGroup({
                         parameter: new FormControl(''),
@@ -165,6 +173,30 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
                 ])
             })
         });
+
+        this.form.get('primary.type').valueChanges.subscribe((value) => {
+            this.defineDefaultName(value);
+        });
+    }
+
+    /**
+     * If the user don't set a custom name set the default name based on goal selection.
+     * @param {string} typeValue
+     * @memberOf DotExperimentsConfigurationGoalSelectComponent
+     */
+    private defineDefaultName(typeValue: string): void {
+        const nameControl = this.form.get('primary.name') as FormControl;
+        if (
+            nameControl.value === '' ||
+            nameControl.value === this.BOUNCE_RATE_LABEL ||
+            nameControl.value === this.REACH_PAGE_LABEL
+        ) {
+            nameControl.setValue(
+                typeValue === GOAL_TYPES.BOUNCE_RATE
+                    ? this.BOUNCE_RATE_LABEL
+                    : this.REACH_PAGE_LABEL
+            );
+        }
     }
 
     private addConditionsControlValidations(): void {

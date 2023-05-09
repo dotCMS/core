@@ -27,6 +27,7 @@ export class DotHtmlToImage {
     loadScript = `
         html2canvas(document.body, {
             height: IMG_HEIGHT, // The height of the canvas
+            logging: false,
             windowHeight: IMG_HEIGHT, // Window height to use when rendering Element
             width: IMG_WIDTH, // The width of the canvas
             windowWidth: IMG_WIDTH, // Window width to use when rendering Element
@@ -51,31 +52,35 @@ export class DotHtmlToImage {
         const iframe = document.querySelector(`#${this.iframeId}`) as HTMLIFrameElement;
         const doc = iframe.contentDocument || iframe.contentWindow.document;
 
-        doc.open();
-        doc.write(this.value);
-        doc.close();
+        try {
+            doc.open();
+            doc.write(this.value);
+            doc.close();
 
-        const scriptLib = document.createElement('script') as HTMLScriptElement;
-        scriptLib.src = '/html/js/html2canvas/html2canvas.min.js';
-        scriptLib.type = 'text/javascript';
+            const scriptLib = document.createElement('script') as HTMLScriptElement;
+            scriptLib.src = '/html/js/html2canvas/html2canvas.min.js';
+            scriptLib.type = 'text/javascript';
 
-        scriptLib.onload = () => {
-            iframe.addEventListener('load', () => {
-                const script: HTMLScriptElement = document.createElement('script');
-                script.type = 'text/javascript';
-                script.text = this.width
-                    ? this.loadScript
-                          .replace(/IMG_HEIGHT/g, this.height)
-                          .replace(/IMG_WIDTH/g, this.width)
-                    : this.loadScript;
-                doc.body.appendChild(script);
-            });
-        };
+            scriptLib.onload = () => {
+                iframe.addEventListener('load', () => {
+                    const script: HTMLScriptElement = document.createElement('script');
+                    script.type = 'text/javascript';
+                    script.text = this.width
+                        ? this.loadScript
+                              .replace(/IMG_HEIGHT/g, this.height)
+                              .replace(/IMG_WIDTH/g, this.width)
+                        : this.loadScript;
 
-        doc.body.append(scriptLib);
+                    doc.body.appendChild(script);
+                });
+            };
 
-        this.boundOnMessageHandler = this.onMessageHandler.bind(null, iframe, this);
-        window.addEventListener('message', this.boundOnMessageHandler);
+            doc.body.append(scriptLib);
+            this.boundOnMessageHandler = this.onMessageHandler.bind(null, iframe, this);
+            window.addEventListener('message', this.boundOnMessageHandler);
+        } catch (error) {
+            this.pageThumbnail.emit({ file: null, error });
+        }
     }
 
     render() {
@@ -100,6 +105,7 @@ export class DotHtmlToImage {
 
         if (event.data.error) {
             component.pageThumbnail.emit({ file: null, error: event.data.error });
+
             return;
         }
 

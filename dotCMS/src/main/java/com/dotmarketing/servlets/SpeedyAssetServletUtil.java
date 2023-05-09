@@ -38,7 +38,7 @@ public class SpeedyAssetServletUtil {
 	protected static ArrayList<ByteRange> parseRange(String rangeHeader, long length){
         ArrayList<ByteRange> ranges = null;
         if (rangeHeader != null && rangeHeader.startsWith("bytes")){            
-            ranges = new ArrayList<ByteRange>(8);
+            ranges = new ArrayList<>(8);
         for (String part : rangeHeader.substring(6).split(",")) {
             // Assuming a file with length of 100, the following examples returns bytes at:
             // 50-80 (50 to 80), 40- (40 to length=100), -20 (length-20=80 to length=100).

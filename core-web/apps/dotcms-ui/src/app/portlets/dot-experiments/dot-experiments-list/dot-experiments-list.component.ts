@@ -89,7 +89,7 @@ export class DotExperimentsListComponent {
     goToBrowserBack(): void {
         this.router.navigate(['edit-page/content'], {
             queryParams: {
-                editPageTab: null,
+                mode: null,
                 variantName: null,
                 experimentId: null
             },
@@ -107,7 +107,7 @@ export class DotExperimentsListComponent {
     goToViewExperimentReport(experiment: DotExperiment) {
         this.router.navigate(['/edit-page/experiments/reports/', experiment.id], {
             queryParams: {
-                editPageTab: null,
+                mode: null,
                 variantName: null,
                 experimentId: null
             },

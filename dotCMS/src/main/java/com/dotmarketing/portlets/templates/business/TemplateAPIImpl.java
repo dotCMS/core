@@ -799,7 +799,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 
 					final Optional<Container> optionalContainer = APILocator.getContainerAPI().findContainer(containerIdOrPath, user, false, false);
 
-					if (!optionalContainer.isPresent()) {
+					if (optionalContainer.isEmpty()) {
 						continue;
 					}
 

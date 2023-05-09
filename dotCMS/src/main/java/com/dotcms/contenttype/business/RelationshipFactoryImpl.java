@@ -131,7 +131,7 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
 	    final DotConnect dc = new DotConnect();
 	    dc.setSQL(sql.SELECT_ALL_FIELDS + " order by " + orderBy);
 
-        List<Map<String, Object>> results = new ArrayList<Map<String, Object>>();
+        List<Map<String, Object>> results = new ArrayList<>();
         try {
             results = dc.loadObjectResults();
         } catch (DotDataException e) {
@@ -350,7 +350,7 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
     public  List<Contentlet> dbRelatedContent(final Relationship relationship, final Contentlet contentlet,
             final boolean hasParent, final boolean live, final String orderBy, int limit, int offset)
             throws DotDataException {
-        List<Contentlet> matches = new ArrayList<Contentlet>();
+        List<Contentlet> matches = new ArrayList<>();
 
         if(contentlet == null || !InodeUtils.isSet(contentlet.getIdentifier())) {
             return matches;
@@ -604,7 +604,7 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
         }
 
         final List<Map<String, Object>> results = dc.loadObjectResults();
-        final List<Contentlet> contentlets = new ArrayList<Contentlet>();
+        final List<Contentlet> contentlets = new ArrayList<>();
 
         for(final Map<String,Object> map : results){
             try {
@@ -655,7 +655,7 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
         }
 
         final List<Map<String, Object>> results = dc.loadObjectResults();
-        final List<Contentlet> contentlets = new ArrayList<Contentlet>();
+        final List<Contentlet> contentlets = new ArrayList<>();
 
         for(final Map<String,Object> map : results){
             try {

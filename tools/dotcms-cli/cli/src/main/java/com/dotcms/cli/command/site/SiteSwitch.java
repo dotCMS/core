@@ -1,33 +1,28 @@
 package com.dotcms.cli.command.site;
 
 import com.dotcms.api.SiteAPI;
-import com.dotcms.api.client.RestClientFactory;
-import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.site.SiteView;
-import picocli.CommandLine;
-
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import javax.enterprise.context.control.ActivateRequestContext;
+import org.apache.commons.lang3.BooleanUtils;
+import picocli.CommandLine;
 
 @ActivateRequestContext
 @CommandLine.Command(name = SiteSwitch.NAME,
-     description = "@|bold,green Switch Site |@ Option params @|bold,cyan --idOrName|@ site name or site id."
+       header = "@|bold,blue Use this command to move between sites.|@",
+       description = {
+               " As @|bold,underline,blue dotCMS|@ is a multi-tenant application, you can switch between sites. ",
+               "" // This is needed to add a new line after the description.
+       }
 )
 public class SiteSwitch extends AbstractSiteCommand implements Callable<Integer> {
 
     static final String NAME = "switch";
 
-    @CommandLine.Mixin(name = "output")
-    protected OutputOptionMixin output;
-
-    @Inject
-    RestClientFactory clientFactory;
-
-    @CommandLine.Option(names = { "-in", "--idOrName" },
-            order = 2, arity = "1", description = "Site by id or name", required = true)
+    @CommandLine.Parameters(index = "0", arity = "1", paramLabel = "idOrName", description = "Site name Or Id.")
     String siteNameOrId;
 
     @Override
@@ -48,12 +43,13 @@ public class SiteSwitch extends AbstractSiteCommand implements Callable<Integer>
 
         final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
         final SiteView siteView = site.get();
-        ResponseEntityView<Boolean> switchSite = siteAPI.switchSite(siteView.identifier());
-        if(Boolean.TRUE.equals(switchSite.entity())) {
-            output.info(String.format("Successfully switched to site: [%s]. ",siteView.hostName()));
+        ResponseEntityView<Map<String,String>> switchSite = siteAPI.switchSite(siteView.identifier());
+        final Map<String, String> entity = switchSite.entity();
+        if(null != entity &&  BooleanUtils.toBoolean(entity.get("hostSwitched"))) {
+            output.info(String.format("Successfully switching to site: [%s]. ",siteView.hostName()));
             return CommandLine.ExitCode.OK;
         } else {
-            output.info(String.format("switched to site: [%s] failed. ",siteView.hostName()));
+            output.info(String.format("switching to site: [%s] failed. ",siteView.hostName()));
             return CommandLine.ExitCode.SOFTWARE;
         }
 
