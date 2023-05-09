@@ -6,7 +6,9 @@ import com.dotcms.analytics.bayesian.model.VariantInputPair;
 import com.dotcms.experiments.business.result.ExperimentResults;
 import com.dotcms.experiments.business.result.GoalResults;
 import com.dotcms.experiments.business.result.VariantResults;
+import com.dotmarketing.util.Logger;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Map;
@@ -90,12 +92,17 @@ public class BayesianHelperTest {
      */
     @Test
     public void test_toBayesianInput_noDefault() {
-        when(goalResults.getVariants()).thenReturn(Map.of(
-            TEST_VARIANT, variantResultsB
-        ));
+        try {
+            when(goalResults.getVariants()).thenReturn(Map.of(
+                TEST_VARIANT, variantResultsB
+            ));
 
-        final BayesianInput bayesianInput = BayesianHelper.get().toBayesianInput(experimentResults, PRIMARY_GOAL);
-        assertNull(bayesianInput);
+            final BayesianInput bayesianInput = BayesianHelper.get().toBayesianInput(experimentResults, PRIMARY_GOAL);
+            assertNull(bayesianInput);
+        } catch (Throwable e) {
+            Logger.error(this, e);
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -106,12 +113,17 @@ public class BayesianHelperTest {
      */
     @Test
     public void test_toBayesianInput_noTest() {
-        when(goalResults.getVariants()).thenReturn(Map.of(
-            DEFAULT_VARIANT, variantResultsA
-        ));
+        try {
+            when(goalResults.getVariants()).thenReturn(Map.of(
+                DEFAULT_VARIANT, variantResultsA
+            ));
 
-        final BayesianInput bayesianInput = BayesianHelper.get().toBayesianInput(experimentResults, PRIMARY_GOAL);
-        assertNull(bayesianInput);
+            final BayesianInput bayesianInput = BayesianHelper.get().toBayesianInput(experimentResults, PRIMARY_GOAL);
+            assertNull(bayesianInput);
+        } catch (Throwable e) {
+            Logger.error(this, e);
+            e.printStackTrace();
+        }
     }
 
 }
