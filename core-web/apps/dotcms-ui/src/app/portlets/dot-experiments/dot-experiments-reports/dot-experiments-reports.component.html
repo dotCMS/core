@@ -22,6 +22,8 @@
                 *ngIf="vm.showSummary"
                 [goals]="vm.experiment.goals"
                 [scheduling]="vm.experiment.scheduling"
+                [sessionsReached]="vm.results.sessions.total"
+                [suggestedWinner]="vm.winnerLegendSummary"
             />
 
             <div class="flex justify-content-center w-full container">
@@ -33,7 +35,7 @@
                         [isLoading]="vm.isLoading"
                     />
                     <dot-experiments-details-table
-                        [data]="vm.summaryData"
+                        [data]="vm.detailData"
                         [isEmpty]="vm.hasEnoughSessions"
                         [title]="'experiments.reports.resume' | dm"
                     >

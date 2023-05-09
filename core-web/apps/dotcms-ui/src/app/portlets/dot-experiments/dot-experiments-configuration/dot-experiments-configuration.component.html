@@ -35,12 +35,6 @@
 
     <div class="dot-experiment-config-content">
         <ng-container *ngIf="!vm.isLoading; else loadingTpl">
-            <dot-experiments-experiment-summary
-                *ngIf="vm.showExperimentSummary"
-                [goals]="vm.experiment.goals"
-                [scheduling]="vm.experiment.scheduling"
-            />
-
             <p-card *ngIf="!!vm.experiment.description" data-testId="experiment-description">
                 {{ vm.experiment.description }}
             </p-card>

@@ -1,7 +1,11 @@
 <div class="grid grid-nogutter justify-content-between md:gap-4 xl:gap-6 wrapper">
-    <div class="flex align-items-center justify-content-center gap-3">
-        <i class="pi pi-ban"></i>
-        <span class="flex-grow-1">{{ 'experiments.summary.winner.no-winner-yet' | dm }}</span>
+    <div class="flex align-items-center justify-content-center gap-3" *ngIf="suggestedWinner">
+        <i class="pi" [ngClass]="suggestedWinner.icon" data-TestId="suggested-winner-icon"></i>
+        <span
+            class="flex-grow-1"
+            [innerHTML]="suggestedWinner.legend | dm"
+            data-TestId="suggested-winner-legend"
+        ></span>
     </div>
     <div class="flex align-items-center justify-content-center gap-3" *ngIf="goals">
         <i class="pi pi-flag"></i>
@@ -24,9 +28,9 @@
     </div>
     <div class="flex align-items-center justify-content-center gap-3">
         <i class="pi pi-user"></i>
-        <div class="flex-grow-1">
-            <span>{{ 'experiments.summary.winner.users-to-date' | dm }}</span>
-            {{ '0' | number }}
+        <div class="flex-grow-1" data-TestId="summary-sessions-reached">
+            <span class="font-bold">{{ 'experiments.summary.winner.session-to-date' | dm }}</span>
+            {{ sessionsReached | number }}
         </div>
     </div>
 </div>

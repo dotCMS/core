@@ -7,6 +7,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmPopupModule } from 'primeng/confirmpopup';
 import { MenuModule } from 'primeng/menu';
 import { MultiSelectModule } from 'primeng/multiselect';
+import { RippleModule } from 'primeng/ripple';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
 import { ToastModule } from 'primeng/toast';
@@ -60,7 +61,8 @@ import { DotExperimentsListComponent } from './dot-experiments-list.component';
         ConfirmDialogModule,
         ConfirmPopupModule,
         ToastModule,
-        DotRelativeDatePipe
+        DotRelativeDatePipe,
+        RippleModule
     ],
     providers: [DotExperimentsService]
 })

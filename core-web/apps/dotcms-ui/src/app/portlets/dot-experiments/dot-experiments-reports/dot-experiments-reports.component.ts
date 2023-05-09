@@ -70,7 +70,7 @@ import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.dir
 })
 export class DotExperimentsReportsComponent implements OnInit {
     vm$: Observable<VmReportExperiment> = this.store.vm$.pipe(
-        tap(({ showDialog }) => this.handlePromoteDialog(showDialog))
+        tap(({ showPromoteDialog }) => this.handlePromoteDialog(showPromoteDialog))
     );
     dotMessageService = inject(DotMessageService);
     readonly chartConfig: { xAxisLabel: string; yAxisLabel: string; title: string } = {
