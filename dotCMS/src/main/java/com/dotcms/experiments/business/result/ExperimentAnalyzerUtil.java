@@ -12,6 +12,7 @@ import com.dotcms.analytics.metrics.MetricType;
 import com.dotcms.cube.CubeJSClient;
 import com.dotcms.cube.CubeJSQuery;
 import com.dotcms.cube.CubeJSQuery.Builder;
+import com.dotcms.cube.CubeJSResultSet;
 import com.dotcms.cube.CubeJSResultSetImpl;
 import com.dotcms.cube.filters.SimpleFilter.Operator;
 
@@ -82,7 +83,7 @@ public enum ExperimentAnalyzerUtil {
 
         final SortedSet<ExperimentVariant> variants = experiment.trafficProportion().variants();
 
-        final CubeJSResultSetImpl pageViewsByVariants = getPageViewsByVariants(experiment, variants);
+        final CubeJSResultSet pageViewsByVariants = getPageViewsByVariants(experiment, variants);
 
         final  ExperimentResults.Builder builder = new ExperimentResults.Builder(variants);
 

@@ -85,7 +85,7 @@ public class CubeJSClient {
                 .dimensions(null)
                 .build();
 
-        final CubeJSResultSetImpl countResultSet = this.send(countQuery);
+        final CubeJSResultSet countResultSet = this.send(countQuery);
 
         final long totalItems = countResultSet.iterator().next()
                 .get("Events.count")

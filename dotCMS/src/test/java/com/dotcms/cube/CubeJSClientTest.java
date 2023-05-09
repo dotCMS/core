@@ -80,7 +80,7 @@ public class CubeJSClientTest {
             mockhttpServer.start();
 
             final CubeJSClient cubeClient =  new CubeJSClient(String.format("http://%s:%s", cubeServerIp, cubeJsServerPort));
-            final CubeJSResultSetImpl cubeJSResultSet = cubeClient.send(cubeJSQuery);
+            final CubeJSResultSet cubeJSResultSet = cubeClient.send(cubeJSQuery);
 
             mockhttpServer.validate();
             assertEquals(3, cubeJSResultSet.size());
@@ -123,7 +123,7 @@ public class CubeJSClientTest {
 
             final CubeJSClient cubeClient = new CubeJSClient(
                     String.format("http://%s:%s", cubeServerIp, cubeJsServerPort));
-            final CubeJSResultSetImpl cubeJSResultSet = cubeClient.send(cubeJSQuery);
+            final CubeJSResultSet cubeJSResultSet = cubeClient.send(cubeJSQuery);
 
             assertEquals(0, cubeJSResultSet.size());
         } finally {
