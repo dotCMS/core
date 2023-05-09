@@ -52,8 +52,7 @@ public class Executor {
         final AssetAPI assetAPI = this.clientFactory.getClient(AssetAPI.class);
 
         // Execute the REST call to retrieve folder contents
-        var response = assetAPI.byPath(
-                SearchByPathRequest.builder().assetPath(folderPath).build());
+        var response = assetAPI.byPath(SearchByPathRequest.builder().assetPath(folderPath).build());
 
         var foundFolder = response.entity();
         foundFolder = foundFolder.withLevel(level + 1);
