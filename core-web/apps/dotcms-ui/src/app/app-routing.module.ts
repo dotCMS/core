@@ -139,7 +139,7 @@ const PORTLETS_IFRAME = [
     },
     {
         canActivate: [PagesGuardService],
-        path: 'bookmarks',
+        path: 'pages',
         loadChildren: () =>
             import('@portlets/dot-pages/dot-pages.module').then((m) => m.DotPagesModule)
     },
