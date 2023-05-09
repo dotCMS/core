@@ -230,10 +230,10 @@ export class DotPageStateService {
                 ) => {
                     if (page) {
                         const urlParam = generateDotFavoritePageUrl({
-                            deviceInode: page.viewAs.device.inode,
+                            deviceInode: page.viewAs.device?.inode,
                             languageId: page.viewAs.language.id,
                             pageURI: page.page.pageURI,
-                            siteId: page.site.identifier
+                            siteId: page.site?.identifier
                         });
 
                         return this.dotESContentService

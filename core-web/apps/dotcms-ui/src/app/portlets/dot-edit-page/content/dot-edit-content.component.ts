@@ -306,10 +306,10 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     showFavoritePageDialog(openDialog: boolean): void {
         if (openDialog) {
             const favoritePageUrl = generateDotFavoritePageUrl({
-                deviceInode: this.pageStateInternal.viewAs.device.inode,
+                deviceInode: this.pageStateInternal.viewAs.device?.inode,
                 languageId: this.pageStateInternal.viewAs.language.id,
                 pageURI: this.pageStateInternal.page.pageURI,
-                siteId: this.pageStateInternal.site.identifier
+                siteId: this.pageStateInternal.site?.identifier
             });
 
             this.dialogService.open(DotFavoritePageComponent, {
