@@ -71,24 +71,24 @@ describe('DotCopyContentModalService', () => {
         );
     });
 
-    it('should return true if the user select the first option', (done) => {
+    it('should return false if the user select the first option', (done) => {
         spyOn(dialogService, 'open').and.returnValue({
             onClose: of(CONTENT_EDIT_OPTIONS_MOCK.option1.value)
         } as DynamicDialogRef);
 
         service.open().subscribe((res) => {
-            expect(res.shouldCopy).toBe(true);
+            expect(res.shouldCopy).toBe(false);
             done();
         });
     });
 
-    it('should return false if the user select the second option', (done) => {
+    it('should return true if the user select the second option', (done) => {
         spyOn(dialogService, 'open').and.returnValue({
             onClose: of(CONTENT_EDIT_OPTIONS_MOCK.option2.value)
         } as DynamicDialogRef);
 
         service.open().subscribe((res) => {
-            expect(res.shouldCopy).toBe(false);
+            expect(res.shouldCopy).toBe(true);
             done();
         });
     });

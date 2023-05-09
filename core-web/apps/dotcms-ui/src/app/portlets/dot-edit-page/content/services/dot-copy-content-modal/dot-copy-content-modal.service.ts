@@ -61,7 +61,7 @@ export class DotCopyContentModalService {
             // This will complete the observable
             filter((value) => !!value),
             map((value) => {
-                return { shouldCopy: this.CONTENT_EDIT_OPTIONS.option1.value === value };
+                return { shouldCopy: this.CONTENT_EDIT_OPTIONS.option2.value === value };
             })
         );
     }
