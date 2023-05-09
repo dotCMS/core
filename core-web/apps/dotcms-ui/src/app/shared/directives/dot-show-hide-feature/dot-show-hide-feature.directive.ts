@@ -70,6 +70,10 @@ export class DotShowHideFeatureDirective implements OnInit {
                 this.viewContainer.createEmbeddedView(this.templateRef);
             } else if (this.alternateTemplateRef) {
                 this.viewContainer.createEmbeddedView(this.alternateTemplateRef);
+            } else {
+                console.warn(
+                    `Feature flag "${this._featureFlag}" doesn't exist or is disabled and no alternate template was provided`
+                );
             }
         });
     }
