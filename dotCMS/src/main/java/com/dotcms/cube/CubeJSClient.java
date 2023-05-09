@@ -106,7 +106,7 @@ public class CubeJSClient {
      *
      * @see #sendWithPagination(CubeJSQuery)
      */
-    public CubeJSResultSetImpl send(final CubeJSQuery query) {
+    public CubeJSResultSet send(final CubeJSQuery query) {
         final CircuitBreakerUrl cubeJSClient = CircuitBreakerUrl.builder()
                 .setMethod(Method.GET)
                 .setUrl(String.format("%s/cubejs-api/v1/load", url))
