@@ -126,7 +126,7 @@ public enum ExperimentAnalyzerUtil {
         return builder.build();
     }
 
-    private static CubeJSResultSetImpl getPageViewsByVariants(
+    private static CubeJSResultSet getPageViewsByVariants(
             final Experiment experiment, final SortedSet<ExperimentVariant> variants)
             throws DotDataException, DotSecurityException {
 
