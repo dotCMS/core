@@ -41,3 +41,4 @@ This maintenance release includes the following code fixes:
 
 30. https://github.com/dotCMS/core/issues/24299 : Can't push publish content with a block editor field #24299
 31. https://github.com/dotCMS/core/issues/24444 : File Browser Dialog doesn't show files in default lang as fallback if they doesn't exist in requested lang #24444
+32. https://github.com/dotCMS/core/issues/24781 : Performance Optimization - don't force field invalidations for non-velocity fields #24781
