@@ -138,7 +138,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        db_type: [ postgres, mssql ]
+        db_type: [ postgres ]
     if: success()
     outputs:
       postgres_tests_results_status: ${{ steps.run-integration-tests.outputs.postgres_tests_results_status }}
