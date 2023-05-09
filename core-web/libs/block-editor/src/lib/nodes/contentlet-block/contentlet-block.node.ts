@@ -39,7 +39,7 @@ export const ContentletBlock = (injector: Injector): Node<ContentletBlockOptions
         },
 
         renderHTML({ HTMLAttributes }): DOMOutputSpec {
-            let img = null;
+            let img = ['span', {}];
             if (HTMLAttributes.data.hasTitleImage) {
                 img = ['img', { src: HTMLAttributes.data.image }];
             }
