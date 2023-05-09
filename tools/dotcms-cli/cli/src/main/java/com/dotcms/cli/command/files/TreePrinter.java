@@ -168,43 +168,27 @@ public class TreePrinter {
                     append("└── ").
                     append(rootNode.folder().site()).
                     append('\n');
-            sb.append("     ").
-                    append((isLastLang ? "    " : "│   ")).
-                    append("    └── ").
-                    append(rootNode.folder().path()).
-                    append('\n');
 
-            format(sb,
-                    "     " + (isLastLang ? "    " : "│   ") + "        ",
-                    filteredRoot,
-                    "     " + (isLastLang ? "    " : "│   ") + "        ",
-                    true, true);
-        }
-    }
-
-    /**
-     * Traverses the given TreeNode recursively and collects the unique live and working languages
-     * from its assets and its children's assets.
-     *
-     * @param node                   The root TreeNode to start the traversal from.
-     * @param uniqueLiveLanguages    A Set to collect unique live languages found in the assets of
-     *                               the TreeNode and its children.
-     * @param uniqueWorkingLanguages A Set to collect unique working languages found in the assets
-     *                               of the TreeNode and its children.
-     */
-    private void collectUniqueStatusesAndLanguages(
-            TreeNode node, Set<String> uniqueLiveLanguages, Set<String> uniqueWorkingLanguages) {
-
-        for (AssetView asset : node.assets()) {
-            if (asset.live()) {
-                uniqueLiveLanguages.add(asset.lang());
+            if (rootNode.folder().path().equals("/")) {
+                format(sb,
+                        "     " + (isLastLang ? "    " : "│   ") + "    ",
+                        filteredRoot,
+                        "     " + (isLastLang ? "    " : "│   ") + "    ",
+                        true, true);
             } else {
-                uniqueWorkingLanguages.add(asset.lang());
-            }
-        }
 
-        for (TreeNode child : node.children()) {
-            collectUniqueStatusesAndLanguages(child, uniqueLiveLanguages, uniqueWorkingLanguages);
+                sb.append("     ").
+                        append((isLastLang ? "    " : "│   ")).
+                        append("    └── ").
+                        append(rootNode.folder().path()).
+                        append('\n');
+
+                format(sb,
+                        "     " + (isLastLang ? "    " : "│   ") + "        ",
+                        filteredRoot,
+                        "     " + (isLastLang ? "    " : "│   ") + "        ",
+                        true, true);
+            }
         }
     }
 
@@ -225,13 +209,20 @@ public class TreePrinter {
     private void format(StringBuilder sb, String prefix, final TreeNode node,
             final String indent, boolean isLastSibling, boolean includeAssets) {
 
-        sb.append(prefix).
-                append(isLastSibling ? "└── " : "├── ").
-                append(String.format("@|bold \uD83D\uDCC2 %s|@", node.folder().name())).
-                append('\n');
+        String filePrefix;
+        String nextIndent;
+        if (!node.folder().name().equals("/")) {
+            sb.append(prefix).
+                    append(isLastSibling ? "└── " : "├── ").
+                    append(String.format("@|bold \uD83D\uDCC2 %s|@", node.folder().name())).
+                    append('\n');
 
-        String filePrefix = indent + (isLastSibling ? "    " : "│   ");
-        String nextIndent = indent + (isLastSibling ? "    " : "│   ");
+            filePrefix = indent + (isLastSibling ? "    " : "│   ");
+            nextIndent = indent + (isLastSibling ? "    " : "│   ");
+        } else {
+            filePrefix = indent + (isLastSibling ? "" : "│   ");
+            nextIndent = indent + (isLastSibling ? "" : "│   ");
+        }
 
         if (includeAssets) {
             // Adds the names of the node's files to the string representation.
@@ -257,6 +248,34 @@ public class TreePrinter {
             TreeNode child = node.children().get(i);
             boolean lastSibling = i == childCount - 1;
             format(sb, filePrefix, child, nextIndent, lastSibling, includeAssets);
+        }
+    }
+
+    /**
+     * Traverses the given TreeNode recursively and collects the unique live and working languages
+     * from its assets and its children's assets.
+     *
+     * @param node                   The root TreeNode to start the traversal from.
+     * @param uniqueLiveLanguages    A Set to collect unique live languages found in the assets of
+     *                               the TreeNode and its children.
+     * @param uniqueWorkingLanguages A Set to collect unique working languages found in the assets
+     *                               of the TreeNode and its children.
+     */
+    private void collectUniqueStatusesAndLanguages(
+            TreeNode node, Set<String> uniqueLiveLanguages, Set<String> uniqueWorkingLanguages) {
+
+        if (node.assets() != null) {
+            for (AssetView asset : node.assets()) {
+                if (asset.live()) {
+                    uniqueLiveLanguages.add(asset.lang());
+                } else {
+                    uniqueWorkingLanguages.add(asset.lang());
+                }
+            }
+        }
+
+        for (TreeNode child : node.children()) {
+            collectUniqueStatusesAndLanguages(child, uniqueLiveLanguages, uniqueWorkingLanguages);
         }
     }
 

@@ -8,6 +8,9 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
 
+/**
+ * An application-scoped bean that provides a method to retrieve folder contents via REST API.
+ */
 @ApplicationScoped
 public class Executor {
 
@@ -27,18 +30,28 @@ public class Executor {
     public FolderView restCall(final String siteName, final String parentFolderName,
             final String folderName, final int level) {
 
-        // Building the folder path
-        final String folderPath;
-        if (parentFolderName == null
+        // Determine if the parent folder and folder names are empty or null
+        var emptyParent = parentFolderName == null
                 || parentFolderName.isEmpty()
-                || parentFolderName.equals("/")) {
+                || parentFolderName.equals("/");
+
+        var emptyFolder = folderName == null
+                || folderName.isEmpty()
+                || folderName.equals("/");
+
+        // Build the folder path based on the input parameters
+        final String folderPath;
+        if (emptyParent && !emptyFolder) {
             folderPath = String.format("//%s/%s", siteName, folderName);
+        } else if (emptyParent) {
+            folderPath = String.format("//%s/", siteName);
         } else {
             folderPath = String.format("//%s/%s/%s", siteName, parentFolderName, folderName);
         }
 
         final AssetAPI assetAPI = this.clientFactory.getClient(AssetAPI.class);
 
+        // Execute the REST call to retrieve folder contents
         var response = assetAPI.byPath(
                 SearchByPathRequest.builder().assetPath(folderPath).build());
 

@@ -117,10 +117,12 @@ public class TreeNode {
         TreeNode newNode = new TreeNode(this.folder, true);
 
         // Clone and filter assets based on the status and language
-        List<AssetView> filteredAssets = this.assets.stream()
-                .filter(asset -> asset.live() == status && asset.lang().equals(language))
-                .collect(Collectors.toList());
-        newNode.assets(filteredAssets);
+        if (this.assets != null) {
+            List<AssetView> filteredAssets = this.assets.stream()
+                    .filter(asset -> asset.live() == status && asset.lang().equals(language))
+                    .collect(Collectors.toList());
+            newNode.assets(filteredAssets);
+        }
 
         // Clone children without assets
         for (TreeNode child : this.children) {
