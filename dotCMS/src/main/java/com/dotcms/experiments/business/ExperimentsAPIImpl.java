@@ -32,6 +32,7 @@ import com.dotcms.cube.CubeJSClient;
 import com.dotcms.cube.CubeJSQuery;
 import com.dotcms.cube.CubeJSResultSet;
 import com.dotcms.cube.CubeJSResultSet.ResultSetItem;
+import com.dotcms.cube.CubeJSResultSetImpl;
 import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotcms.experiments.business.result.BrowserSession;
 import com.dotcms.experiments.business.result.Event;
@@ -940,7 +941,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             final CubeJSQuery cubeJSQuery = ExperimentResultsQueryFactory.INSTANCE
                     .create(experiment);
 
-            final CubeJSResultSet cubeJSResultSet = cubeClient.send(cubeJSQuery);
+            final CubeJSResultSet cubeJSResultSet = cubeClient.sendWithPagination(cubeJSQuery);
 
             String previousLookBackWindow = null;
             final List<Event> currentEvents = new ArrayList<>();
