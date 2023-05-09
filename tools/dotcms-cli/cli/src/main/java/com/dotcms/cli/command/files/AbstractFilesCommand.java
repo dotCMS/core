@@ -1,8 +1,10 @@
 package com.dotcms.cli.command.files;
 
+import com.dotcms.api.client.RestClientFactory;
 import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import java.util.concurrent.CompletionException;
+import javax.inject.Inject;
 import javax.ws.rs.NotFoundException;
 import picocli.CommandLine;
 
@@ -13,6 +15,9 @@ public abstract class AbstractFilesCommand {
 
     @CommandLine.Mixin
     protected HelpOptionMixin helpOption;
+
+    @Inject
+    protected RestClientFactory clientFactory;
 
     /**
      * Handles exceptions thrown during the execution of the "tree" and "ls" commands.

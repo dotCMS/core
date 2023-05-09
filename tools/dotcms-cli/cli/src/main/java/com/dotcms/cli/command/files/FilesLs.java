@@ -1,8 +1,11 @@
 package com.dotcms.cli.command.files;
 
+import com.dotcms.api.LanguageAPI;
 import com.dotcms.api.traversal.FolderTraversalService;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.common.ConsoleLoadingAnimation;
+import com.dotcms.model.language.Language;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import javax.enterprise.context.control.ActivateRequestContext;
@@ -78,9 +81,13 @@ public class FilesLs extends AbstractFilesCommand implements Callable<Integer> {
                 return CommandLine.ExitCode.SOFTWARE;
             }
 
+            // We need to retrieve the languages
+            final LanguageAPI languageAPI = clientFactory.getClient(LanguageAPI.class);
+            final List<Language> languages = languageAPI.list().entity();
+
             // Display the result
             StringBuilder sb = new StringBuilder();
-            TreePrinter.getInstance().filteredFormat(sb, result, !excludeEmptyFolders);
+            TreePrinter.getInstance().filteredFormat(sb, result, !excludeEmptyFolders, languages);
 
             output.info(sb.toString());
 

@@ -3,6 +3,7 @@ package com.dotcms.cli.command.files;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.model.asset.AssetView;
 import com.dotcms.model.asset.FolderView;
+import com.dotcms.model.language.Language;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -106,14 +107,20 @@ public class TreePrinter {
      *                         folders containing assets or having children with assets will be
      *                         included.
      */
-    public void filteredFormat(StringBuilder sb, TreeNode rootNode,
-            final boolean showEmptyFolders) {
+    public void filteredFormat(StringBuilder sb,
+            TreeNode rootNode,
+            final boolean showEmptyFolders,
+            final List<Language> languages) {
 
         // Collect the list of unique statuses and languages
         Set<String> uniqueLiveLanguages = new HashSet<>();
         Set<String> uniqueWorkingLanguages = new HashSet<>();
 
         collectUniqueStatusesAndLanguages(rootNode, uniqueLiveLanguages, uniqueWorkingLanguages);
+
+        if (uniqueLiveLanguages.isEmpty() && uniqueWorkingLanguages.isEmpty()) {
+            fallbackDefaultLanguage(languages, uniqueLiveLanguages);
+        }
 
         // Sort the sets and convert them into lists
         List<String> sortedLiveLanguages = new ArrayList<>(uniqueLiveLanguages);
@@ -275,8 +282,37 @@ public class TreePrinter {
         }
 
         for (TreeNode child : node.children()) {
-            collectUniqueStatusesAndLanguages(child, uniqueLiveLanguages, uniqueWorkingLanguages);
+            collectUniqueStatusesAndLanguages(child, uniqueLiveLanguages,
+                    uniqueWorkingLanguages);
         }
+    }
+
+    /**
+     * Fallbacks to the default language in case of no languages found scanning the assets.
+     *
+     * @throws RuntimeException if no default language is found in the list of languages
+     */
+    private void fallbackDefaultLanguage(
+            final List<Language> languages, Set<String> uniqueLiveLanguages) {
+
+        // Get the default language from the list of languages
+        var defaultLanguage = languages.stream()
+                .filter(language -> {
+                    if (language.defaultLanguage().isPresent()) {
+                        return language.defaultLanguage().get();
+                    }
+
+                    return false;
+                })
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("No default language found"));
+
+        var languageTag = new StringBuilder(defaultLanguage.languageCode());
+        if (defaultLanguage.countryCode() != null && !defaultLanguage.countryCode().isEmpty()) {
+            languageTag.append("-").append(defaultLanguage.countryCode());
+        }
+
+        uniqueLiveLanguages.add(languageTag.toString());
     }
 
 }

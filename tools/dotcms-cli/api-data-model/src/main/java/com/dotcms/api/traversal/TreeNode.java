@@ -119,7 +119,8 @@ public class TreeNode {
         // Clone and filter assets based on the status and language
         if (this.assets != null) {
             List<AssetView> filteredAssets = this.assets.stream()
-                    .filter(asset -> asset.live() == status && asset.lang().equals(language))
+                    .filter(asset -> asset.live() == status
+                            && asset.lang().equalsIgnoreCase(language))
                     .collect(Collectors.toList());
             newNode.assets(filteredAssets);
         }

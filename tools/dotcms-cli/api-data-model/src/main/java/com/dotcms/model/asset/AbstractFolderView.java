@@ -2,6 +2,7 @@ package com.dotcms.model.asset;
 
 import com.dotcms.model.annotation.ValueType;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.time.Instant;
 import java.util.List;
@@ -36,6 +37,7 @@ public interface AbstractFolderView {
     }
 
     @Nullable
+    @JsonUnwrapped
     AssetVersionsView assets();
 
     @Nullable
