@@ -978,8 +978,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             ? contentlet.getInode() : "Unknown"));
 
             //If the contentlet has CMS Owner Publish permission on it, the user creating the new contentlet is allowed to publish
-            final List<Role> roles = permissionAPI.getRoles(contentlet.getPermissionId(),
+            List<Role> roles = permissionAPI.getRoles(contentlet.getPermissionId(),
                     PermissionAPI.PERMISSION_PUBLISH, "CMS Owner", 0, -1);
+            if (roles.isEmpty()) {
+
+                roles = permissionAPI.getRoles(contentlet.getContentType().getPermissionId(),
+                        PermissionAPI.PERMISSION_PUBLISH, "CMS Owner", 0, -1);
+            }
             final Role cmsOwner = APILocator.getRoleAPI().loadCMSOwnerRole();
 
             if (roles.size() > 0) {
@@ -9751,7 +9756,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 return true;
             } else if (!APILocator.getPermissionAPI().doesUserHavePermission(
-                    contentlet, PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles)) {
+                        contentlet, PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles)
+                    && !APILocator.getPermissionAPI().doesUserHavePermission(
+                        contentlet.getContentType(), PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles)) {
 
                 throw new DotLockException("User: " + (user != null ? user.getUserId() : "Unknown")
                         + " does not have Edit Permissions to lock content: " + (contentlet != null
