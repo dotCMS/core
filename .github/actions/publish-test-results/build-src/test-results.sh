@@ -119,6 +119,7 @@ function closeResults {
     executeCmd "git status"
     executeCmd "git add ."
     executeCmd "git commit -m \"Closing results for branch ${BUILD_ID}\""
+    executeCmd "git pull origin ${BUILD}"
     executeCmd "git push ${test_results_repo_url}"
     if [[ ${cmd_result} != 0 ]]; then
       echo "Error pushing to git for ${INPUT_BUILD_HASH} at ${INPUT_BUILD_ID}, error code: ${cmd_result}"
@@ -202,13 +203,13 @@ function persistResults {
       executeCmd "git pull origin ${BUILD_ID}"
       if [[ ${cmd_result} != 0 ]]; then
         echo "Error pulling from git branch ${BUILD_ID}, error code: ${cmd_result}"
-        echo "Trying by deleting "
       fi
     else
       echo "Not pulling ${BUILD_ID} since it is not remote yet"
     fi
 
     # Finally push the changes
+    executeCmd "git pull origin ${BUILD}"
     executeCmd "git push ${test_results_repo_url}"
     if [[ ${cmd_result} != 0 ]]; then
       echo "Error pushing to git for ${INPUT_BUILD_HASH} at ${INPUT_BUILD_ID}, error code: ${cmd_result}"
