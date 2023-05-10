@@ -300,9 +300,9 @@ describe('DotCrumbtrailService', () => {
                 url: '#/c/site-browser'
             },
             {
-                label: 'Pages',
+                label: 'Browser',
                 target: '_self',
-                url: '#/pages'
+                url: '#/c/site-browser'
             },
             {
                 label: 'About Us',
