@@ -248,7 +248,7 @@ public class DashboardFactoryImpl extends DashboardFactory {
 			int offset, String sortBy) throws DotDataException,
 			DotHibernateException {
 
-		List<DashboardSummary404> results = new ArrayList<DashboardSummary404>();
+		List<DashboardSummary404> results = new ArrayList<>();
 		HibernateUtil dh = new HibernateUtil(DashboardSummary404.class);
 		StringBuffer queryString = new StringBuffer();
 
@@ -390,7 +390,7 @@ public class DashboardFactoryImpl extends DashboardFactory {
 			String hostId, ViewType viewType, Date fromDate, Date toDate) throws DotDataException,
 			DotHibernateException {
 
-		List<DashboardSummaryVisits> visits = new ArrayList<DashboardSummaryVisits>();
+		List<DashboardSummaryVisits> visits = new ArrayList<>();
 		HibernateUtil dh = new HibernateUtil(DashboardSummaryVisits.class);
 		StringBuffer query = new StringBuffer();
 
@@ -429,7 +429,7 @@ public class DashboardFactoryImpl extends DashboardFactory {
 			int limit, int offset, String sortBy) throws DotDataException,
 			DotHibernateException {
 
-		List<Host> hosts = new ArrayList<Host>();
+		List<Host> hosts = new ArrayList<>();
 
 		Date now = new Date();
 		Calendar c1 = Calendar.getInstance();
@@ -462,7 +462,7 @@ public class DashboardFactoryImpl extends DashboardFactory {
 		String selectedCategories = "";
 		if(params!=null && params.size()>0){
 			conditionBuffer.append(" and (");
-			paramValues = new ArrayList<Object>();
+			paramValues = new ArrayList<>();
 			int counter = 0;
 			for (Map.Entry<String, Object> entry : params.entrySet()) {
 				if(entry.getKey().equalsIgnoreCase("categories")){
@@ -589,7 +589,7 @@ public class DashboardFactoryImpl extends DashboardFactory {
 			Date fromDate, Date toDate, int limit, int offset, String sortBy)
 			throws DotDataException, DotHibernateException {
 
-		List<DashboardSummaryContent> contentList = new ArrayList<DashboardSummaryContent>();
+		List<DashboardSummaryContent> contentList = new ArrayList<>();
 		HibernateUtil dh = new HibernateUtil(DashboardSummaryContent.class);
 		if(!UtilMethods.isSet(sortBy)){
 			sortBy = " order by sum(summaryContent.hits) desc ";
@@ -631,7 +631,7 @@ public class DashboardFactoryImpl extends DashboardFactory {
 			Date toDate, int limit, int offset, String sortBy)
 			throws DotDataException, DotHibernateException {
 
-		List<DashboardSummaryPage> pageList = new ArrayList<DashboardSummaryPage>();
+		List<DashboardSummaryPage> pageList = new ArrayList<>();
 		HibernateUtil dh = new HibernateUtil(DashboardSummaryPage.class);
 		if(!UtilMethods.isSet(sortBy)){
 			sortBy = " order by sum(summaryPage.hits) desc ";
@@ -674,7 +674,7 @@ public class DashboardFactoryImpl extends DashboardFactory {
 			Date fromDate, Date toDate, int limit, int offset, String sortBy)
 			throws DotDataException, DotHibernateException {
 
-		List<DashboardSummaryReferer> pageList = new ArrayList<DashboardSummaryReferer>();
+		List<DashboardSummaryReferer> pageList = new ArrayList<>();
 		HibernateUtil dh = new HibernateUtil(DashboardSummaryReferer.class);
 		if(!UtilMethods.isSet(sortBy)){
 			sortBy = " order by sum(summaryRef.hits) desc ";
@@ -684,7 +684,7 @@ public class DashboardFactoryImpl extends DashboardFactory {
 		try {
             String condition = "";
             Host host = APILocator.getHostAPI().find( hostId, APILocator.getUserAPI().getSystemUser(), false );
-            ArrayList<String> aliasesArr = new ArrayList<String>();
+            ArrayList<String> aliasesArr = new ArrayList<>();
             aliasesArr.add( host.getHostname() );
             if ( host.getAliases() != null ) {//In Oracle empty strings are treated as nulls
                 aliasesArr.addAll( new ArrayList<String>( Arrays.asList( host.getAliases().split( "\n" ) ) ) );
@@ -766,7 +766,7 @@ public class DashboardFactoryImpl extends DashboardFactory {
 			orderBy = " order by analytic_summary_workstream.mod_date desc ";
 		}
 
-		List<DashboardWorkStream> workStreamList = new ArrayList<DashboardWorkStream>();
+		List<DashboardWorkStream> workStreamList = new ArrayList<>();
 		HibernateUtil hu = new HibernateUtil(DashboardWorkStream.class);
 		try {
 			hu.setSQLQuery(getWorkstreamListQuery()+ queryStr + orderBy );
@@ -860,7 +860,7 @@ public class DashboardFactoryImpl extends DashboardFactory {
 		String selectedCategories = "";
 		if(params!=null && params.size()>0){
 			conditionBuffer.append(" and (");
-			paramValues = new ArrayList<Object>();
+			paramValues = new ArrayList<>();
 			int counter = 0;
 			for (Map.Entry<String, Object> entry : params.entrySet()) {
 				if(entry.getKey().equalsIgnoreCase("categories")){
@@ -935,7 +935,7 @@ public class DashboardFactoryImpl extends DashboardFactory {
 				} else if (c.equals("")) {
 					hostCount = 0;
 				}else{
-				  hostCount = new Long(c);
+				  hostCount = Long.valueOf(c);
 				}
 			}
 		} catch (Exception e) {
@@ -1005,7 +1005,7 @@ public class DashboardFactoryImpl extends DashboardFactory {
         String condition = "";
         try {
             Host host = APILocator.getHostAPI().find( hostId, APILocator.getUserAPI().getSystemUser(), false );
-            ArrayList<String> aliasesArr = new ArrayList<String>();
+            ArrayList<String> aliasesArr = new ArrayList<>();
             aliasesArr.add( host.getHostname() );
             if ( host.getAliases() != null ) {//In Oracle empty strings are treated as nulls
                 aliasesArr.addAll( new ArrayList<String>( Arrays.asList( host.getAliases().split( "\n" ) ) ) );
@@ -1101,7 +1101,7 @@ public class DashboardFactoryImpl extends DashboardFactory {
 	public List<TopAsset> getTopAssets(User user, String hostId)
 			throws DotDataException {
 
-		List<TopAsset> topAssets = new ArrayList<TopAsset>();
+		List<TopAsset> topAssets = new ArrayList<>();
 		DotConnect dc = new DotConnect();
 		try {
 			dc.setSQL(getTopAssetsQuery());
@@ -1137,7 +1137,7 @@ public class DashboardFactoryImpl extends DashboardFactory {
 
 		DotConnect dc = new DotConnect();
 		//Get available hosts
-		List<String> hostIds = new ArrayList<String>();
+		List<String> hostIds = new ArrayList<>();
 		dc.setSQL(getHostQueryForClickstream(runDashboardFieldContentlet));
 		try{
 			ArrayList<Map<String, Object>> results = dc.loadResults();
@@ -1161,7 +1161,7 @@ public class DashboardFactoryImpl extends DashboardFactory {
 			for(String hostId:hostIds){
 				AdminLogger.log(DashboardFactoryImpl.class, "populateAnalyticSummaryTables", "Starting to populate data for host: " + hostId );
 				long beforeHost = System.nanoTime();
-				List<Calendar> summaryPeriodDates = new ArrayList<Calendar>();
+				List<Calendar> summaryPeriodDates = new ArrayList<>();
 				try {
 					AdminLogger.log(DashboardFactoryImpl.class, "populateAnalyticSummaryTables", "Pulling the dashboard dates");
 					dc.setSQL(DASHBOARD_SUMMARY_DATES);
@@ -1942,7 +1942,7 @@ public class DashboardFactoryImpl extends DashboardFactory {
     						refUri = new URI(URIUtil.encodeQuery(uri,"UTF-8"));
     						String domainName = refUri.getHost();
     						if(UtilMethods.isSet(domainName)){
-    							ArrayList<String> aliasesArr = new ArrayList<String>();
+    							ArrayList<String> aliasesArr = new ArrayList<>();
     							aliasesArr.add(host.getHostname());
                                 if ( host.getAliases() != null ) {//In Oracle empty strings are treated as nulls
                                     aliasesArr.addAll( new ArrayList<String>( Arrays.asList( host.getAliases().split( "\n" ) ) ) );

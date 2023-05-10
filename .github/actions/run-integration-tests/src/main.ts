@@ -3,7 +3,7 @@ import * as fs from 'fs'
 import * as integration from './integration'
 
 const buildEnv = core.getInput('build_env')
-const dbType = core.getInput('db_type')
+const dbType = core.getInput('db_type') || 'postgres'
 
 /**
  * Main entry point for this action.

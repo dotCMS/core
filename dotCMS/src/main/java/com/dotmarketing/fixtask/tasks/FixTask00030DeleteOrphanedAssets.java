@@ -32,7 +32,7 @@ import java.util.Map;
  */
 public class FixTask00030DeleteOrphanedAssets implements FixTask {
 	
-	private List<Map<String, String>> modifiedData = new ArrayList<Map<String,String>>();
+	private List<Map<String, String>> modifiedData = new ArrayList<>();
 	
 	@SuppressWarnings("unchecked")
 	public List<Map<String, Object>> executeFix() throws DotDataException, DotRuntimeException {
@@ -58,7 +58,7 @@ public class FixTask00030DeleteOrphanedAssets implements FixTask {
 
 		String deleteLinks = "DELETE FROM links WHERE identifier = ? ";
 		
-		List<Map<String, Object>> returnValue = new ArrayList<Map<String, Object>>();
+		List<Map<String, Object>> returnValue = new ArrayList<>();
 		Logger.info(FixTask00030DeleteOrphanedAssets.class,"Beginning DeleteOrphanedAssets");
 		
 		if (!FixAssetsProcessStatus.getRunning()) {

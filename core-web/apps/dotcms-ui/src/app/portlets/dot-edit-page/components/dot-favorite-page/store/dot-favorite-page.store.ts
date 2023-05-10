@@ -242,7 +242,10 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
                         loading: false,
                         formState: {
                             ...formInitialState,
-                            title: favoritePage?.title || pageRender.page.title
+                            title:
+                                pageRender.urlContentMap?.title ||
+                                favoritePage?.title ||
+                                pageRender.page.title
                         },
                         imgHeight:
                             parseInt(pageRender.viewAs.device?.cssHeight, 10) ||

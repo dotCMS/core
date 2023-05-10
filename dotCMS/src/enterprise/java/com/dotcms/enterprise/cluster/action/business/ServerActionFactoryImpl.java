@@ -286,11 +286,11 @@ public class ServerActionFactoryImpl implements ServerActionFactory {
 
         if (listBeans == null) {
 
-          List<ServerActionBean> newBeans= new ArrayList<ServerActionBean>();
+          List<ServerActionBean> newBeans= new ArrayList<>();
 
           final String MySQLSelect = "SELECT * FROM cluster_server_action";
 
-          List<Map<String, Object>> results = new ArrayList<Map<String, Object>>();
+          List<Map<String, Object>> results = new ArrayList<>();
 
           final DotConnect dotConnect = new DotConnect();
           dotConnect.setSQL(MySQLSelect);

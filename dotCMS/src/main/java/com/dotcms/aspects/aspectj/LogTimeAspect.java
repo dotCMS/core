@@ -38,6 +38,6 @@ public class LogTimeAspect {
 
         return
                 this.interceptor.invoke
-                        (new AspectJDelegateMethodInvocation<Object>(point));
+                        (new AspectJDelegateMethodInvocation<>(point));
     } // invoke.
-} // E:O:F:LogTimeAspect.
+} // E:O:F:LogTimeAspect. 

@@ -97,12 +97,12 @@ public class DirectoryMirrorBundler implements IBundler {
         String destination = config.getDestinationBundle();
         File destinationBundle = getDestinationFile(destination);
 
-        final List<FileFilter> bundlerFilters = new ArrayList<FileFilter>();
+        final List<FileFilter> bundlerFilters = new ArrayList<>();
         try {
             for (Class clazz : config.getPublishers()) {
-                for (Class bundler : ((IPublisher) clazz.newInstance()).getBundlers()) {
+                for (Class bundler : ((IPublisher) clazz.getDeclaredConstructor().newInstance()).getBundlers()) {
                     if (!bundler.equals(DirectoryMirrorBundler.class)) {
-                        bundlerFilters.add(((IBundler) bundler.newInstance()).getFileFilter());
+                        bundlerFilters.add(((IBundler) bundler.getDeclaredConstructor().newInstance()).getFileFilter());
                     }
                 }
             }

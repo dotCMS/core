@@ -45,7 +45,7 @@ public class LanguageDataGen extends AbstractDataGen<Language> {
 
     }
     
-    return new Tuple2<String,String>(language, country);
+    return new Tuple2<>(language, country);
     
   }
 

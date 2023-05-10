@@ -166,9 +166,9 @@ public class Utility {
 	
 	public static Iterable<Node> nodelist(final NamedNodeMap list) {
 		if ( list == null )
-			return new EmptyIterable<Node>();
+			return new EmptyIterable<>();
 		if ( list.getLength() == 0 )
-			return new EmptyIterable<Node>();
+			return new EmptyIterable<>();
 		return new Iterable<Node>() {
 			public Iterator<Node> iterator() {
 				return new Iterator<Node>() {
@@ -194,9 +194,9 @@ public class Utility {
 
 	public static Iterable<Node> nodelist(final NodeList list) {
 		if ( list == null )
-			return new EmptyIterable<Node>();
+			return new EmptyIterable<>();
 		if ( list.getLength() == 0 )
-			return new EmptyIterable<Node>();
+			return new EmptyIterable<>();
 		return new Iterable<Node>() {
 			public Iterator<Node> iterator() {
 				return new Iterator<Node>() {
@@ -461,9 +461,9 @@ public class Utility {
 	*/
 	public static List<Map<String, Object>> sortArrayByNumInField(List<Map<String, Object>> inArray, String fieldName) {
 		
-		List<Map<String, Object>> ret = new ArrayList<Map<String, Object>>(inArray.size());
+		List<Map<String, Object>> ret = new ArrayList<>(inArray.size());
 		
-		TreeMap<String, Map<String, Object>> outArray = new TreeMap<String, Map<String, Object>>();
+		TreeMap<String, Map<String, Object>> outArray = new TreeMap<>();
 		
 		Pattern p = Pattern.compile("[^\\d]*(\\d*(\\.)*(\\d)*(\\.)*(\\d)*)[^\\d]*");
 		

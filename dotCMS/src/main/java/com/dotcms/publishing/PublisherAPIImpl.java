@@ -81,7 +81,7 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
             // init publishers
             for ( Class<Publisher> c : config.getPublishers() ) {
                 // Process config
-                Publisher publisher = c.newInstance();
+                Publisher publisher = c.getDeclaredConstructor().newInstance();
                 config = publisher.init(config);
 
                 if (config.isIncremental() && config.getEndDate() == null

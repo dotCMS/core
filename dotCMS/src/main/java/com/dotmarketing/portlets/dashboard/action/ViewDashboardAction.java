@@ -162,13 +162,13 @@ public class ViewDashboardAction extends DotPortletAction {
 
 		if(trending.equalsIgnoreCase("content")){
 
-			trendingList = new ArrayList<Map<String, String>>();
+			trendingList = new ArrayList<>();
 			List<DashboardSummaryContent> contents = null;
 			try{
 				contents =  dashboardAPI.getTopContent(hostId, fromDate, toDate, 0, 0, " sum(summaryContent.hits) desc ");
-				Map<String,String> contentMap = new HashMap<String,String>();
+				Map<String,String> contentMap = new HashMap<>();
 				for(DashboardSummaryContent content : contents){
-					contentMap = new HashMap<String,String>();
+					contentMap = new HashMap<>();
 					contentMap.put("inode", UtilMethods.isSet(content.getInode())?content.getInode():"");
 					contentMap.put("title", UtilMethods.isSet(content.getTitle())?content.getTitle():"");
 					Contentlet contentlet = null;
@@ -187,13 +187,13 @@ public class ViewDashboardAction extends DotPortletAction {
 
 		}else if(trending.equalsIgnoreCase("pages")){
 
-			trendingList = new ArrayList<Map<String, String>>();
+			trendingList = new ArrayList<>();
 			List<DashboardSummaryPage> pages = null;
 			try{
 				pages = dashboardAPI.getTopPages(hostId, fromDate, toDate, 0, 0, " sum(summaryPage.hits) desc ");
-				Map<String,String> pageMap = new HashMap<String,String>();
+				Map<String,String> pageMap = new HashMap<>();
 				for(DashboardSummaryPage page : pages){
-					pageMap = new HashMap<String,String>();
+					pageMap = new HashMap<>();
 					pageMap.put("inode", UtilMethods.isSet(page.getInode())?page.getInode():"");
 					pageMap.put("uri", UtilMethods.isSet(page.getUri())?page.getUri():"");
 					pageMap.put("hits",String.valueOf(page.getHits()));
@@ -205,13 +205,13 @@ public class ViewDashboardAction extends DotPortletAction {
 
 		}else if(trending.equalsIgnoreCase("referers")){
 
-			trendingList = new ArrayList<Map<String, String>>();
+			trendingList = new ArrayList<>();
 			List<DashboardSummaryReferer> referers = null;
 			try{
 				referers = dashboardAPI.getTopReferers(hostId, fromDate, toDate, 0, 0, " sum(summaryRef.hits) desc ");
-				Map<String,String> refererMap = new HashMap<String,String>();
+				Map<String,String> refererMap = new HashMap<>();
 				for(DashboardSummaryReferer referer : referers){
-					refererMap = new HashMap<String,String>();
+					refererMap = new HashMap<>();
 					refererMap.put("uri", UtilMethods.isSet(referer.getUri())?referer.getUri():"");
 					refererMap.put("hits",String.valueOf(referer.getHits()));
 					trendingList.add(refererMap);
@@ -222,13 +222,13 @@ public class ViewDashboardAction extends DotPortletAction {
 
 		}else if(trending.equalsIgnoreCase("404")){
 
-			trendingList = new ArrayList<Map<String, String>>();	
+			trendingList = new ArrayList<>();	
 			List<DashboardSummary404> summary404s = null;
 			try{
 				summary404s = dashboardAPI.get404s(user.getUserId(), hostId, true, fromDate, toDate, 0, 0, " summary404.uri desc, summary404.refererUri asc  ");
-				Map<String,String> summary404Map = new HashMap<String,String>();
+				Map<String,String> summary404Map = new HashMap<>();
 				for(DashboardSummary404 summary404 : summary404s){
-					summary404Map = new HashMap<String,String>();
+					summary404Map = new HashMap<>();
 					summary404Map.put("referer", UtilMethods.isSet(summary404.getRefererUri())?summary404.getRefererUri():"");
 					summary404Map.put("uri", UtilMethods.isSet(summary404.getUri())?summary404.getUri():"");
 					summary404Map.put("ignored", String.valueOf(summary404.isIgnored()));

@@ -416,9 +416,9 @@ public class ValueParser
     {
         if (value.indexOf('.') >= 0)
         {
-            return new Double(value);
+            return Double.valueOf(value);
         }
-        return new Long(value);
+        return Long.valueOf(value);
     }
 
     /**

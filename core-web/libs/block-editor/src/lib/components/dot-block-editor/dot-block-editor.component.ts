@@ -55,7 +55,8 @@ import {
     formatHTML,
     removeInvalidNodes,
     SetDocAttrStep,
-    DotMarketingConfigService
+    DotMarketingConfigService,
+    RestoreDefaultDOMAttrs
 } from '../../shared';
 
 @Component({
@@ -69,8 +70,9 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     @Input() customStyles: string;
     @Input() displayCountBar: boolean | string = true;
     @Input() charLimit: number;
-    @Input() customBlocks: string;
+    @Input() customBlocks = '';
     @Input() content: Content = '';
+    @Input() contentletIdentifier: string;
     @Input() set showVideoThumbnail(value) {
         this.dotMarketingConfigService.setProperty(
             EDITOR_MARKETING_KEYS.SHOW_VIDEO_THUMBNAIL,
@@ -171,10 +173,17 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     }
 
     private updateChartCount(): void {
-        const tr = this.editor.state.tr
-            .step(new SetDocAttrStep('chartCount', this.characterCount.characters()))
-            .step(new SetDocAttrStep('wordCount', this.characterCount.words()))
-            .step(new SetDocAttrStep('readingTime', this.readingTime));
+        const tr = this.editor.state.tr.setMeta('addToHistory', false);
+
+        if (this.characterCount.characters() != 0) {
+            tr.step(new SetDocAttrStep('chartCount', this.characterCount.characters()))
+                .step(new SetDocAttrStep('wordCount', this.characterCount.words()))
+                .step(new SetDocAttrStep('readingTime', this.readingTime));
+        } else {
+            // If the content is empty, we need to remove the attributes
+            tr.step(new RestoreDefaultDOMAttrs());
+        }
+
         this.editor.view.dispatch(tr);
     }
 
@@ -349,7 +358,8 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             DotConfigExtension({
                 lang: this.lang,
                 allowedContentTypes: this.allowedContentTypes,
-                allowedBlocks: this._allowedBlocks
+                allowedBlocks: this._allowedBlocks,
+                contentletIdentifier: this.contentletIdentifier
             }),
             DotComands,
             DotPlaceholder.configure({ placeholder: 'Type "/" for commands' }),

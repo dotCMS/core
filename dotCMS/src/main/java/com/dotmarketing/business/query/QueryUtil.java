@@ -73,17 +73,17 @@ public class QueryUtil {
 	 * @throws DotDataException
 	 */
 	public static List<Map<String, Serializable>> DBSearch(Query query, Map<String, String> dbColToObjectAttribute, String conditionToAppend, User user,boolean isPermissionsByIdentifier,boolean respectFrontendRoles) throws ValidationException,DotDataException{
-		Map<String, String> objectAttributeTodbCol = new HashMap<String, String>();
+		Map<String, String> objectAttributeTodbCol = new HashMap<>();
 	    PermissionAPI perAPI = APILocator.getPermissionAPI();
 		for (String key : dbColToObjectAttribute.keySet()) {
 			objectAttributeTodbCol.put(dbColToObjectAttribute.get(key), key);
 		}
-		List<Map<String, Serializable>> res = new ArrayList<Map<String,Serializable>>();
-		List<Map<String, Serializable>> filteredResults = new ArrayList<Map<String,Serializable>>();
+		List<Map<String, Serializable>> res = new ArrayList<>();
+		List<Map<String, Serializable>> filteredResults = new ArrayList<>();
 		Criteria c = query.getCriteria();
 		StringBuilder bob = new StringBuilder();
 		List<Object> params = null;
-		List <PermissionableProxy> permDummys= new  ArrayList <PermissionableProxy> ();
+		List <PermissionableProxy> permDummys= new  ArrayList <> ();
 		bob.append("SELECT ");		
 		if(UtilMethods.isSet(query.getSelectAttributes())){
 			boolean first = true;
@@ -114,7 +114,7 @@ public class QueryUtil {
 			 bob.append(" WHERE " + conditionToAppend);
 		}
 		if(c != null){
-			params = new ArrayList<Object>();
+			params = new ArrayList<>();
 			if(!UtilMethods.isSet(conditionToAppend)){
 				bob.append(" WHERE ");
 			}else{
@@ -174,7 +174,7 @@ public class QueryUtil {
 		String blank= "";
 		List<Map<String, Object>> dbrows = dc.loadObjectResults();
 		for (Map<String, Object> row : dbrows) {
-			Map<String, Serializable> m = new HashMap<String, Serializable>();
+			Map<String, Serializable> m = new HashMap<>();
 			 PermissionableProxy permDummy= new PermissionableProxy();
 			 permDummy.setPermissionByIdentifier(isPermissionsByIdentifier);
 			 permDummy.setInode(row.get("inode").toString());

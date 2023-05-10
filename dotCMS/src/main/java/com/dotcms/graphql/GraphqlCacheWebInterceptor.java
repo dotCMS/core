@@ -80,7 +80,7 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
         final HttpRequestReaderWrapper wrapper = new HttpRequestReaderWrapper(requestIn);
 
         final Optional<String> query = wrapper.getRawRequest();
-        if (!query.isPresent() ) {
+        if (query.isEmpty() ) {
             return Result.NEXT;
         }
 

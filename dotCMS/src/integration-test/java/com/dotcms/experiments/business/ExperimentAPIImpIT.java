@@ -34,6 +34,7 @@ import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.MultiTreeDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.exception.NotAllowedException;
 import com.dotcms.experiments.business.result.BrowserSession;
 import com.dotcms.experiments.business.result.ExperimentAnalyzerUtil;
@@ -455,6 +456,51 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
                 .operator(Operator.CONTAINS)
                 .build();
     }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
+     * When: get the Experiment's Results
+     * Should: get the Split traffic too
+     */
+    @Test
+    public void getSplitTrafficInsideExperimentResults()
+            throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final Experiment experiment = new ExperimentDataGen().addVariant("V1").nextPersisted();
+
+        try {
+
+            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+
+            ExperimentDataGen.start(experiment);
+
+            final String noDefaultVariantName = experiment.trafficProportion().variants().stream()
+                    .map(experimentVariant -> experimentVariant.id())
+                    .filter(id -> !id.equals("DEFAULT"))
+                    .findFirst()
+                    .orElseThrow();
+
+            final ExperimentsAPIImpl experimentsAPI = new ExperimentsAPIImpl(mockAnalyticsHelper);
+            
+            final ExperimentResults results = experimentsAPI.getResults(experiment);
+
+            final Map<String, VariantResults> variants = results.getGoals().get("primary")
+                    .getVariants();
+            assertEquals(2, variants.size());
+
+            final VariantResults variantResults = variants.get(noDefaultVariantName);
+            assertEquals(50f, variantResults.weight());
+
+            final VariantResults controlResults = variants.get("DEFAULT");
+            assertEquals(50f, controlResults.weight());
+        } finally {
+            ExperimentDataGen.end(experiment);
+        }
+    }
+
 
     /**
      * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
@@ -2105,15 +2151,29 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
 
         IPUtils.disabledIpPrivateSubnet(true);
         final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment);
-        final MockHttpServer mockhttpServer = createMockHttpServerAndStart(
-            cubeJSQueryExpected,
-            JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
+
+        addContext(mockhttpServer, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        final String queryTotalPageViews = getTotalPageViewsQuery(experiment.id().get(), "DEFAULT", variantName);
+
+        final List<Map<String, Object>> totalPageViewsResponseExpected = list(
+            map("Events.variant", variantName, "Events.count", "50")
+        );
+
+        addContext(mockhttpServer, queryTotalPageViews,
+            JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
+
+        mockhttpServer.start();
 
         try {
             final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+
             APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
 
-            final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
             final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
             assertEquals(120, experimentResults.getSessions().getTotal());
 

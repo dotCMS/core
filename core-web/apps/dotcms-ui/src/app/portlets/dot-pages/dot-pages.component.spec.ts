@@ -315,9 +315,11 @@ describe('DotPagesComponent', () => {
 
     it('should call closedActionsMenu method from p-menu', () => {
         const elem = de.query(By.css('p-menu'));
+
+        component.closedActionsMenu = jasmine.createSpy('closedActionsMenu');
         elem.triggerEventHandler('onHide', {});
 
-        expect(store.clearMenuActions).toHaveBeenCalledTimes(1);
+        expect(component.closedActionsMenu).toHaveBeenCalledTimes(1);
     });
 
     it('should call push method in dotMessageDisplayService once a save-page is received for a non favorite page', () => {
