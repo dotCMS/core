@@ -28,6 +28,7 @@ import com.dotcms.util.network.IPUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.util.Config;
@@ -37,6 +38,7 @@ import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
+import io.vavr.API;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import net.jodah.failsafe.CircuitBreaker;
@@ -89,15 +91,15 @@ class MonitorHelper {
     
     static Tuple2<Long,MonitorStats> cachedStats=null;
     
-    
-    
     MonitorStats getMonitorStats() throws Throwable{
-
         if(cachedStats!=null && cachedStats._1 > System.currentTimeMillis()) {
             return cachedStats._2;
         }
-        
-        
+        return getMonitorStatsNoCache();
+    }
+    
+    MonitorStats getMonitorStatsNoCache() throws Throwable{
+
         final MonitorStats monitorStats = new MonitorStats();
 
         final IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
@@ -127,7 +129,7 @@ class MonitorHelper {
         return monitorStats;
     }
 
-    private boolean isDBHealthy(final long timeOut) throws Throwable {
+    boolean isDBHealthy(final long timeOut) throws Throwable {
 
         return Failsafe
                 .with(breaker())
@@ -143,6 +145,7 @@ class MonitorHelper {
                         }
                     }
                     catch(Exception e) {
+                        Logger.warn(getClass(), "db connection failing:" + e.getMessage() );
                         return false;
                     }
                     finally{
@@ -152,7 +155,7 @@ class MonitorHelper {
 
     }
 
-    private boolean isIndexHealthy(final String index, final long timeOut) throws Throwable {
+    boolean isIndexHealthy(final String index, final long timeOut) throws Throwable {
 
         return Failsafe
                 .with(breaker())
@@ -174,13 +177,16 @@ class MonitorHelper {
                                 RestHighLevelClientProvider.getInstance().getClient().search(searchRequest,
                                         RequestOptions.DEFAULT));
                         return response.getHits().getTotalHits().value>0;
+                    }catch(Exception e) {
+                        Logger.warn(getClass(), "ES connection failing: " + e.getMessage() );
+                        return false;
                     }finally{
                         DbConnectionFactory.closeSilently();
                     }
                 }));
     }
 
-    private boolean isCacheHealthy(final long timeOut) throws Throwable {
+    boolean isCacheHealthy(final long timeOut) throws Throwable {
 
         return Failsafe
                 .with(breaker())
@@ -193,6 +199,9 @@ class MonitorHelper {
                             id =  APILocator.getIdentifierAPI().loadFromCache(Host.SYSTEM_HOST);
                         }
                         return id!=null && UtilMethods.isSet(id.getId());
+                    }catch(Exception e) {
+                        Logger.warn(getClass(), "Cache is failing: " + e.getMessage() );
+                        return false;
                     }finally{
                         DbConnectionFactory.closeSilently();
                     }
@@ -210,7 +219,6 @@ class MonitorHelper {
 
         @Override
         public Boolean call() throws Exception {
-            // TODO Auto-generated method stub
             final String uuid=UUIDUtil.uuid();
             final String realPath = initialPath
                     + "monitor"
@@ -229,7 +237,7 @@ class MonitorHelper {
 
     }
     
-    private boolean isLocalFileSystemHealthy(final long timeOut) throws Throwable {
+    boolean isLocalFileSystemHealthy(final long timeOut) throws Throwable {
 
         return Failsafe
                 .with(breaker())
@@ -239,7 +247,7 @@ class MonitorHelper {
     }
 
 
-    private boolean isAssetFileSystemHealthy(final long timeOut) throws Throwable {
+    boolean isAssetFileSystemHealthy(final long timeOut) throws Throwable {
 
         return Failsafe
                 .with(breaker())
