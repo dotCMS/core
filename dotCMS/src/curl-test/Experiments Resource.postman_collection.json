@@ -4455,7 +4455,7 @@
 							"response": []
 						},
 						{
-							"name": "startExperiment_shouldSucceed",
+							"name": "startExperiment_shouldFail",
 							"event": [
 								{
 									"listen": "test",
@@ -4466,7 +4466,7 @@
 											"",
 											"pm.test(\"Started Experiment with expected values\", function () {",
 											"    pm.response.to.have.status(400);",
-											"    pm.expect(jsonData.message).contains(\"There is a running Experiment on the same page\");",
+											"    pm.expect(jsonData.message).contains(\"There is a running Experiment on the same page. Name: 20220901\");",
 											"});",
 											"",
 											"",
@@ -7748,7 +7748,7 @@
 											"",
 											"pm.test(\"Experiment should conflict with existing\", function () {",
 											"    pm.response.to.have.status(400);",
-											"    pm.expect(jsonData.message).contains(\"There is a scheduling conflict between the Experiment and the scheduled Experiment\");",
+											"    pm.expect(jsonData.message).contains(\"There is a scheduling conflict between the Experiment and the scheduled Experiment. Name: 20220901\");",
 											"});",
 											"",
 											"",
