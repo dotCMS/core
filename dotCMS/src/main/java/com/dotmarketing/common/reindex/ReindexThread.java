@@ -215,7 +215,7 @@ public class ReindexThread {
 
                 if (!workingRecords.isEmpty() && !ElasticReadOnlyCommand.getInstance()
                         .isIndexOrClusterReadOnly()) {
-                    Logger.info(this,
+                    Logger.debug(this,
                             "Found  " + workingRecords + " index items to process");
 
                     if (bulkProcessor == null || rebuildBulkIndexer.get()) {
