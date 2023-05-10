@@ -136,19 +136,15 @@ export class DotCrumbtrailService {
 
                 // To replace Browser URL with Pages URL
                 if (sections[0] == 'edit-page') {
-                    // Delete Site link
-                    crumbTrail = crumbTrail.filter((crumb) => crumb.label != 'Site');
+                    // Add Pages link
+                    crumbTrail.unshift({
+                        label: 'Pages',
+                        target: '_self',
+                        url: `#/pages`
+                    });
 
-                    // Get Browser link index
-                    const browserIndex = crumbTrail.findIndex((crumb) => crumb.label == 'Browser');
-
-                    if (browserIndex > -1)
-                        // Replace Browser with pages
-                        crumbTrail[browserIndex] = {
-                            label: 'Pages',
-                            target: '_self',
-                            url: `#/pages`
-                        };
+                    // Delete Site and Browser link
+                    crumbTrail = crumbTrail.filter((crumb) => !crumb.url.includes('site-browser'));
                 }
 
                 return crumbTrail;
