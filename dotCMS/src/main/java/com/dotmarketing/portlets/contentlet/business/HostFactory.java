@@ -226,4 +226,7 @@ public interface HostFactory {
      */
     long count() throws DotDataException;
 
+    List<Host> findAll(int limit, int offset, String orderBy, boolean includeSystemHost)
+                    throws DotDataException, DotSecurityException;
+
 }
