@@ -256,7 +256,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
     readonly getFavoritePages = this.effect((itemsPerPage$: Observable<number>) => {
         return itemsPerPage$.pipe(
             switchMap((itemsPerPage: number) =>
-                this.getFavoritePagesData(itemsPerPage).pipe(
+                this.getFavoritePagesData({ limit: itemsPerPage }).pipe(
                     tapResponse(
                         (items) => {
                             this.patchState({
@@ -438,17 +438,17 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                 switchMap(({ item, actionMenuDomId }) => {
                     return forkJoin({
                         workflowsData: this.getWorflowActionsFn(item),
-                        dotFavorite: this.getFavoritePagesData(
-                            1,
-                            '',
-                            item?.contentType === 'dotFavoritePage'
-                                ? item.url
-                                : generateDotFavoritePageUrl({
-                                      pageURI: item.urlMap || item.url.split('?')[0],
-                                      languageId: item.languageId,
-                                      siteId: item.host
-                                  })
-                        )
+                        dotFavorite: this.getFavoritePagesData({
+                            limit: 1,
+                            url:
+                                item?.contentType === 'dotFavoritePage'
+                                    ? item.url
+                                    : generateDotFavoritePageUrl({
+                                          pageURI: item.urlMap || item.url.split('?')[0],
+                                          languageId: item.languageId,
+                                          siteId: item.host
+                                      })
+                        })
                     }).pipe(
                         take(1),
                         tapResponse(
@@ -571,7 +571,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         identifier: string
     ) {
         return isFavoritePage
-            ? this.getFavoritePagesData(1, identifier)
+            ? this.getFavoritePagesData({ limit: 1, identifier })
             : this.getPagesData(0, sortOrderValue, '', identifier);
     }
 
@@ -590,7 +590,13 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         });
     };
 
-    private getFavoritePagesData = (limit: number, identifier?: string, url?: string) => {
+    private getFavoritePagesData = (params: {
+        limit: number;
+        identifier?: string;
+        url?: string;
+    }) => {
+        const { limit, identifier, url } = params;
+
         let extraQueryParams = '';
         if (identifier) {
             extraQueryParams = `+identifier:${identifier}`;
@@ -747,7 +753,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
      */
     setInitialStateData(initialFavoritePagesLimit: number): void {
         forkJoin([
-            this.getFavoritePagesData(initialFavoritePagesLimit),
+            this.getFavoritePagesData({ limit: initialFavoritePagesLimit }),
             this.dotCurrentUser.getCurrentUser(),
             this.dotLanguagesService.get(),
             this.dotLicenseService.isEnterprise(),
