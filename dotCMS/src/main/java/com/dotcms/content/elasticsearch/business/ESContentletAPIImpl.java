@@ -1062,7 +1062,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     private boolean hasOnlyOneVersion(final Contentlet contentlet) throws DotDataException {
 
-        final int versionCount = new DotConnect().setSQL("SELECT COUNT(*) as count FROM contentlet WHERE identifier = ?")
+        final int versionCount = new DotConnect().setSQL("SELECT count(*) as count FROM (SELECT 1 FROM contentlet WHERE identifier =? LIMIT 2) AS t")
                 .addParam(contentlet.getIdentifier())
                 .loadInt("count");
         return versionCount <= 1;

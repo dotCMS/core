@@ -1723,6 +1723,11 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 					Host.class.getCanonicalName()
 			);
 
+            final Set<String> ContentTypeInheritableClasses = Sets.newHashSet(
+                            Contentlet.class.getCanonicalName()
+                    );
+			
+			
 			final Set<String> classesToIgnoreHost = Sets
 					.newHashSet(Category.class.getCanonicalName());
 
@@ -1746,11 +1751,14 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 					for (final Permission permission : permissions) {
 
-						if (finalPermissionableType.equals(Folder.class.getCanonicalName())
-								&& classesToIgnoreFolder.contains(permission.getType())) {
+						if (finalPermissionableType.equals(Structure.class.getCanonicalName())
+								&& !ContentTypeInheritableClasses.contains(permission.getType())) {
 							continue;
 						}
-
+                        if (finalPermissionableType.equals(Folder.class.getCanonicalName())
+                                && classesToIgnoreFolder.contains(permission.getType())) {
+                            continue;
+                        }
 						if (finalPermissionableType.equals(Host.class.getCanonicalName())
 								&& classesToIgnoreHost.contains(permission.getType())) {
 							continue;
