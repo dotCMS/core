@@ -61,7 +61,7 @@ public class ShortyServlet extends HttpServlet {
 
   private static final String  JPEG                        = "jpeg";
   private static final String  JPEGP                       = "jpegp";
-  private static final String  WEBP                       = "webp";
+  private static final String  WEBP                        = "webp";
   private static final String  FILE_ASSET_DEFAULT          = FileAssetAPI.BINARY_FIELD;
   public  static final String  SHORTY_SERVLET_FORWARD_PATH = "shorty.servlet.forward.path";
   private static final Pattern widthPattern                = Pattern.compile("/(\\d+)[w]");
@@ -74,6 +74,11 @@ public class ShortyServlet extends HttpServlet {
   private static final Pattern qualityPattern               = Pattern.compile("/(\\d+)q");
   
   private static final Pattern resampleOptsPattern               = Pattern.compile("/(\\d+)ro");
+  
+  private static final Pattern maxWidthPattern                = Pattern.compile("/(\\d+)mw");
+  private static final Pattern maxHeightPattern               = Pattern.compile("/(\\d+)mh");
+  
+  
   
   
   @CloseDBIfOpened
@@ -192,6 +197,18 @@ public class ShortyServlet extends HttpServlet {
     return height;
   }
   
+  private int getMaxHeight(final String uri) {
+
+      final Matcher matcher = maxHeightPattern.matcher(uri);
+      return matcher.find() ? Integer.parseInt(matcher.group(1)) : 0;
+
+  }
+  
+  private int getMaxWidth(final String uri) {
+      final Matcher matcher = maxWidthPattern.matcher(uri);
+      return matcher.find() ? Integer.parseInt(matcher.group(1)) : 0;
+
+  }
   private int getQuality (final String uri, final int defaultQuality) {
 
     int quality = 0;
@@ -276,6 +293,10 @@ public class ShortyServlet extends HttpServlet {
 
     final int      width   = this.getWidth(lowerUri, 0);
     final int      height  = this.getHeight(lowerUri, 0);
+    final int      maxWidth   = this.getMaxWidth(lowerUri);
+    final int      maxHeight  = this.getMaxHeight(lowerUri);
+    
+    
     final int      quality  = this.getQuality(lowerUri, 0);
     final int      resampleOpt = this.getResampleOpt(lowerUri);
     Optional<FocalPoint> focalPoint = Optional.empty();
@@ -284,7 +305,7 @@ public class ShortyServlet extends HttpServlet {
     final boolean  jpeg    = lowerUri.contains(JPEG);
     final boolean  jpegp   = jpeg && lowerUri.contains(JPEGP);
     final boolean  webp    = lowerUri.contains(WEBP);
-    final boolean  isImage = webp || jpeg || width+height > 0 || quality>0 || cropHeight>0 || cropWidth>0;
+    final boolean  isImage = webp || jpeg || width+height+maxWidth+maxHeight > 0 || quality>0 || cropHeight>0 || cropWidth>0;
     final ShortyId shorty  = shortOpt.get();
     final String   path    = isImage? "/contentAsset/image" : "/contentAsset/raw-data";
     final User systemUser  = APILocator.systemUser();
@@ -329,7 +350,7 @@ public class ShortyServlet extends HttpServlet {
         
 
 
-      this.addImagePath(width, height, quality, jpeg, jpegp,webp, isImage, pathBuilder, focalPoint, cropWidth,cropHeight,resampleOpt,subarray);
+      this.addImagePath(width, height, maxWidth,maxHeight,quality, jpeg, jpegp,webp, isImage, pathBuilder, focalPoint, cropWidth,cropHeight,resampleOpt,subarray);
       this.doForward(request, response, pathBuilder.toString());
     } catch (DotContentletStateException e) {
 
@@ -353,8 +374,11 @@ public class ShortyServlet extends HttpServlet {
       }
   }
 
-  private void addImagePath(final int width,
+  private void addImagePath(
+                            final int width,
                             final int height,
+                            final int maxWidth,
+                            final int maxHeight,
                             final int quality,
                             final boolean jpeg,
                             final boolean jpegp,
@@ -375,6 +399,14 @@ public class ShortyServlet extends HttpServlet {
                 }
                 if(heightPattern.matcher(filter).find()){
                     pathBuilder.append(height > 0 ? "/resize_h/" + height : StringPool.BLANK);
+                    continue;
+                }
+                if(maxWidthPattern.matcher(filter).find()){
+                    pathBuilder.append("/resize_mw/" + maxWidth );
+                    continue;
+                }
+                if(maxHeightPattern.matcher(filter).find()){
+                    pathBuilder.append("/resize_mh/" + maxHeight );
                     continue;
                 }
                 if(cropWidthPattern.matcher(filter).find()){
