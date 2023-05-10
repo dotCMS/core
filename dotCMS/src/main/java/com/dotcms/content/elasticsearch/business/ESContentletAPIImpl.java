@@ -979,11 +979,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             //If the contentlet has CMS Owner Publish permission on it, the user creating the new contentlet is allowed to publish
             List<Role> roles = permissionAPI.getRoles(contentlet.getPermissionId(),
-                    PermissionAPI.PERMISSION_PUBLISH, "CMS Owner", 0, -1);
-            if (roles.isEmpty()) {
+                    PermissionAPI.PERMISSION_PUBLISH, Role.CMS_OWNER_ROLE, 0, -1);
+            if (roles.isEmpty() &&
+                    (contentlet.isNew() || null == contentlet.getIdentifier() || hasOnlyOneVersion(contentlet))) {
 
                 roles = permissionAPI.getRoles(contentlet.getContentType().getPermissionId(),
-                        PermissionAPI.PERMISSION_PUBLISH, "CMS Owner", 0, -1);
+                        PermissionAPI.PERMISSION_PUBLISH, Role.CMS_OWNER_ROLE, 0, -1);
             }
             final Role cmsOwner = APILocator.getRoleAPI().loadCMSOwnerRole();
 
@@ -1055,6 +1056,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
         // by now, the publish event is making a duplicate reload events on the site browser
         // so we decided to comment it out by now, and
         //contentletSystemEventUtil.pushPublishEvent(contentlet);
+    }
+
+    private boolean hasOnlyOneVersion(final Contentlet contentlet) throws DotDataException {
+
+        final int versionCount = new DotConnect().setSQL("SELECT COUNT(*) as count FROM contentlet WHERE identifier = ?")
+                .addParam(contentlet.getIdentifier())
+                .loadInt("count");
+        return versionCount <= 1;
     }
 
     @Override
