@@ -1001,6 +1001,11 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final Experiment persistedExperiment = find(experimentId, user)
                 .orElseThrow(()->new DoesNotExistException("Experiment with provided id not found"));
 
+        DotPreconditions.isTrue(persistedExperiment.status().equals(Status.RUNNING) ||
+                persistedExperiment.status().equals(ENDED),
+                ()->"Experiment must be running or ended to promote a variant",
+                DotStateException.class);
+
         DotPreconditions.isTrue(variantName!= null &&
                         variantName.contains(shortyIdAPI.shortify(experimentId)), ()->"Invalid Variant provided",
                 IllegalArgumentException.class);
@@ -1022,8 +1027,15 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
         final TrafficProportion trafficProportion = persistedExperiment.trafficProportion()
                 .withVariants(variantsAfterPromotion);
-        final Experiment withUpdatedTraffic = persistedExperiment.withTrafficProportion(trafficProportion);
-        return save(withUpdatedTraffic, user);
+        Experiment withUpdatedVariants = persistedExperiment.withTrafficProportion(trafficProportion);
+
+        withUpdatedVariants = save(withUpdatedVariants, user);
+
+        if(withUpdatedVariants.status()==RUNNING) {
+            withUpdatedVariants = end(withUpdatedVariants.id().orElseThrow(), user);
+        }
+
+        return withUpdatedVariants;
     }
 
     @Override
