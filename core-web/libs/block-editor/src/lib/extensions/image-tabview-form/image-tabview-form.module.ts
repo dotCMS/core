@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
+import { DotSpinnerModule } from '@dotcms/ui';
 
 // Modules
 import { PrimengModule } from '../../shared/primeng.module';
@@ -15,16 +16,18 @@ import { DotImageCardListComponent } from './components/dot-image-search/compone
 import { DotInsertExternalImageComponent } from './components/dot-insert-external-image/dot-insert-external-image.component';
 import { ImageTabviewFormComponent } from './image-tabview-form.component';
 import { DotImageSearchComponent } from './components/dot-image-search/dot-image-search.component';
+import { DotUploadAssetComponent } from './components/dot-upload-asset/dot-upload-asset.component';
 
 @NgModule({
-    imports: [CommonModule, FormsModule, ReactiveFormsModule, PrimengModule],
+    imports: [CommonModule, FormsModule, ReactiveFormsModule, DotSpinnerModule, PrimengModule],
     declarations: [
         ImageTabviewFormComponent,
         DotImageCardListComponent,
         DotImageCardComponent,
         DotImageCardSkeletonComponent,
         DotInsertExternalImageComponent,
-        DotImageSearchComponent
+        DotImageSearchComponent,
+        DotUploadAssetComponent
     ],
     providers: [DotImageService],
     exports: [ImageTabviewFormComponent, DotImageSearchComponent]
