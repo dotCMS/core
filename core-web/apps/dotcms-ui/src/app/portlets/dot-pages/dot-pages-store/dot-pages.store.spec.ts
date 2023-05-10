@@ -60,7 +60,7 @@ import {
     mockWorkflowsActions
 } from '@dotcms/utils-testing';
 
-import { DotPageStore } from './dot-pages.store';
+import { DotPageStore, SESSION_STORAGE_FAVORITES_KEY } from './dot-pages.store';
 
 import { contentTypeDataMock } from '../../dot-edit-page/components/dot-palette/dot-palette-content-type/dot-palette-content-type.component.spec';
 import { DotLicenseServiceMock } from '../../dot-edit-page/content/services/html/dot-edit-content-toolbar-html.service.spec';
@@ -146,6 +146,9 @@ describe('DotPageStore', () => {
         spyOn(dotHttpErrorManagerService, 'handle');
 
         dotPageStore.setInitialStateData(5);
+        dotPageStore.setKeyword('test');
+        dotPageStore.setLanguageId('1');
+        dotPageStore.setArchived('true');
     });
 
     it('should load Favorite Pages initial data', () => {
@@ -160,7 +163,7 @@ describe('DotPageStore', () => {
             expect(data.loggedUser.canRead).toEqual({ contentlets: true, htmlPages: true });
             expect(data.loggedUser.canWrite).toEqual({ contentlets: true, htmlPages: true });
             expect(data.pages.items).toEqual([]);
-            expect(data.pages.keyword).toEqual('');
+            expect(data.pages.keyword).toEqual('test');
             expect(data.pages.status).toEqual(ComponentStatus.INIT);
         });
     });
@@ -168,7 +171,10 @@ describe('DotPageStore', () => {
     it('should load null Favorite Pages data when error on initial data fetch', () => {
         const error500 = mockResponseView(500, '/test', null, { message: 'error' });
         spyOn(dotESContentService, 'get').and.returnValue(throwError(error500));
+        spyOn(sessionStorage, 'getItem').and.callThrough();
+
         dotPageStore.setInitialStateData(5);
+        expect(sessionStorage.getItem).toHaveBeenCalledWith(SESSION_STORAGE_FAVORITES_KEY);
 
         dotPageStore.state$.subscribe((data) => {
             expect(data.environments).toEqual(false);
@@ -213,6 +219,34 @@ describe('DotPageStore', () => {
     it('should get pages status', () => {
         dotPageStore.getStatus$.subscribe((data) => {
             expect(data).toEqual(ComponentStatus.INIT);
+        });
+    });
+
+    it('should get keywordValue status', () => {
+        dotPageStore.keywordValue$.subscribe((data) => {
+            expect(data).toEqual('test');
+        });
+    });
+
+    it('should get showArchivedValue status', () => {
+        dotPageStore.showArchivedValue$.subscribe((data) => {
+            expect(data).toEqual(true);
+        });
+    });
+
+    it('should get languageIdValue status', () => {
+        dotPageStore.languageIdValue$.subscribe((data) => {
+            expect(data).toEqual(1);
+        });
+    });
+
+    it('should get pages Filter Params', () => {
+        dotPageStore.getFilterParams$.subscribe((data) => {
+            expect(data).toEqual({
+                languageId: '1',
+                keyword: 'test',
+                archived: true
+            });
         });
     });
 
@@ -262,6 +296,15 @@ describe('DotPageStore', () => {
         dotPageStore.state$.subscribe((data) => {
             expect(data.pages.archived).toEqual(true);
         });
+    });
+
+    it('should update Session Storage Filter Params', () => {
+        spyOn(sessionStorage, 'setItem').and.callThrough();
+        dotPageStore.setSessionStorageFilterParams();
+        expect(sessionStorage.setItem).toHaveBeenCalledWith(
+            SESSION_STORAGE_FAVORITES_KEY,
+            '{"keyword":"test","languageId":"1","archived":true}'
+        );
     });
 
     it('should update Pages Status', () => {
@@ -374,7 +417,7 @@ describe('DotPageStore', () => {
         expect(dotESContentService.get).toHaveBeenCalledWith({
             itemsPerPage: 40,
             offset: '0',
-            query: '+conhost:123-xyz-567-xxl +working:true  +(urlmap:* OR basetype:5)  +deleted:false  ',
+            query: '+conhost:123-xyz-567-xxl +working:true  +(urlmap:* OR basetype:5) +languageId:1 +deleted:true +(title:test* OR path:*test* OR urlmap:*test*) ',
             sortField: 'title',
             sortOrder: ESOrderDirection.ASC
         });
