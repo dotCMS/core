@@ -112,7 +112,7 @@ public class LinkBundler implements IBundler {
 		Set<String> linksIds = config.getLinks();
 
 		try {
-			Set<Link> links = new HashSet<Link>();
+			Set<Link> links = new HashSet<>();
 
 			for(String linkId : linksIds) {
 				links.add(APILocator.getMenuLinkAPI().findWorkingLinkById(linkId, systemUser, false));
@@ -140,7 +140,7 @@ public class LinkBundler implements IBundler {
 			throws IOException, DotBundleException, DotDataException,
 			DotSecurityException, DotPublisherException
 	{
-		List<Link> links = new ArrayList<Link>();
+		List<Link> links = new ArrayList<>();
 		Identifier linkId = APILocator.getIdentifierAPI().find(link.getIdentifier());
 		Host h = APILocator.getHostAPI().find(linkId.getHostId(), systemUser, false);
 		VersionInfo info =APILocator.getVersionableAPI().getVersionInfo(linkId.getId());

@@ -64,6 +64,7 @@ public class Config {
     public static final String DOTCMS_USEWATCHERMODE = "dotcms.usewatchermode";
     public static final String USE_CONFIG_TEST_OVERRIDE_TRACKER = "USE_CONFIG_TEST_OVERRIDE_TRACKER";
     public static int DB_VERSION = 0;
+    public static int DATA_VERSION = 0;
 
     //Object Config properties      n
     public static javax.servlet.ServletContext CONTEXT = null;
@@ -583,7 +584,7 @@ public class Config {
 
     public static Map<String, String> compareOverrides(Map<String, String> before) {
         Map<String, String> after = getOverrides();
-        Map<String, String> diff = new HashMap<String, String>();
+        Map<String, String> diff = new HashMap<>();
         for (String key : after.keySet()) {
             if (!before.containsKey(key) || !before.get(key).equals(after.get(key))) {
                 diff.put(key, after.get(key));

@@ -1,10 +1,7 @@
 package com.dotcms.cli.command.language;
 
 import com.dotcms.api.LanguageAPI;
-import com.dotcms.api.client.RestClientFactory;
-import com.dotcms.cli.common.HelpOption;
-import com.dotcms.cli.common.OutputOptionMixin;
-import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.cli.common.FormatOptionMixin;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.language.Language;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -13,14 +10,19 @@ import java.io.IOException;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
 import picocli.CommandLine;
 
 @ActivateRequestContext
 @CommandLine.Command(
         name = LanguagePush.NAME,
-        description = "@|bold,green Save or update a language given a Language object (in JSON or YML format) or tag (e.g.: en-us)|@"
+        header = "@|bold,blue Push a language|@",
+        description = {
+                " Save or update a language given a Language object (in JSON or YML format) or tag (e.g.: en-us)",
+                " Push a language given a Language object (in JSON or YML format) or tag (e.g.: en-us)",
+                " If no file is specified, a new language will be created using the tag provided.",
+                "" // empty string to add a new line
+        }
 )
 /**
  * Command to push a language given a Language object (in JSON or YML format) or tag (e.g.: en-us)
@@ -29,20 +31,14 @@ import picocli.CommandLine;
 public class LanguagePush extends AbstractLanguageCommand implements Callable<Integer> {
     static final String NAME = "push";
 
-    @CommandLine.Mixin(name = "output")
-    OutputOptionMixin output;
-
-    @CommandLine.Mixin
-    protected HelpOption helpOption;
+    @CommandLine.Mixin(name = "format")
+    FormatOptionMixin formatOption;
 
     @CommandLine.Option(names = {"--byTag"}, description = "Tag to be used to create a new language. Used when no file is specified. For example: en-us")
     String languageTag;
 
     @CommandLine.Option(names = {"-f", "--file"}, description = "The json/yml formatted content-type descriptor file to be pushed. ")
     File file;
-
-    @Inject
-    RestClientFactory clientFactory;
 
     @Override
     public Integer call() throws Exception {
@@ -53,7 +49,7 @@ public class LanguagePush extends AbstractLanguageCommand implements Callable<In
             return CommandLine.ExitCode.SOFTWARE;
         }
 
-        final ObjectMapper objectMapper = output.objectMapper();
+        final ObjectMapper objectMapper = formatOption.objectMapper();
 
         ResponseEntityView<Language> responseEntityView;
         if (null != file) {

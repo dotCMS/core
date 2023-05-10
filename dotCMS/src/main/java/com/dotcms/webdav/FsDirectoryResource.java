@@ -71,7 +71,7 @@ public class FsDirectoryResource extends FsResource implements MakeCollectionabl
 
     @Override
     public List<? extends Resource> getChildren() {
-        ArrayList<FsResource> list = new ArrayList<FsResource>();
+        ArrayList<FsResource> list = new ArrayList<>();
         File[] files = this.file.listFiles();
         if (files != null) {
             for (File fchild : files) {

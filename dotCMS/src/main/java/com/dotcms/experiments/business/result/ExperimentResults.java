@@ -4,6 +4,7 @@ import com.dotcms.analytics.bayesian.model.BayesianResult;
 import com.dotcms.analytics.metrics.Metric;
 
 import com.dotcms.experiments.model.ExperimentVariant;
+import com.dotcms.experiments.model.TrafficProportion;
 import com.dotcms.util.DotPreconditions;
 import java.util.Collection;
 import java.util.HashMap;
@@ -69,6 +70,7 @@ public class ExperimentResults {
         private final TotalSessionBuilder totalSessionsBuilder;
         private final Map<String, GoalResultsBuilder> goals = new HashMap<>();
         private final Collection<ExperimentVariant> variants;
+        private TrafficProportion trafficProportion;
 
         public Builder(final Collection<ExperimentVariant> variants){
             this.variants = variants;
@@ -85,25 +87,26 @@ public class ExperimentResults {
 
             final Map<String, GoalResults> goalResultMap = goals.entrySet().stream()
                     .collect(Collectors.toMap(Entry::getKey,
-                            entry -> entry.getValue().build(totalSessions)));
+                            entry -> entry.getValue().build(totalSessions, trafficProportion)));
 
             return new ExperimentResults(totalSessions, goalResultMap);
         }
 
-        public Builder success(final Metric goal, final String lookBackWindow, final Event event) {
-            final GoalResultsBuilder goalResultsBuilder = this.goals.values().stream()
+        public GoalResultsBuilder goal(final Metric goal) {
+            return this.goals.values().stream()
                     .filter(builder -> builder.goal.name().equals(goal.name()))
                     .limit(1)
                     .findFirst()
                     .orElseThrow(() -> new IllegalArgumentException("Goal does not exists"));
-
-            goalResultsBuilder.success(lookBackWindow, event);
-            return this;
         }
 
         public void addSession(final BrowserSession browserSession) {
             final String variantName = browserSession.getVariant().orElseThrow();
             totalSessionsBuilder.count(variantName);
+        }
+
+        public void trafficProportion(final TrafficProportion trafficProportion) {
+            this.trafficProportion = trafficProportion;
         }
 
         private static class TotalSessionBuilder {

@@ -126,7 +126,7 @@ public abstract class AbstractServletBundler implements IBundler {
 		}
 
 		// Build List of ContentAssets
-		Map<String, BinFileExportStruc> bins = new HashMap<String, AbstractServletBundler.BinFileExportStruc>();
+		Map<String, BinFileExportStruc> bins = new HashMap<>();
 		try {
 			// fire up our binary servlet
 			this.servlet.init();
@@ -291,7 +291,7 @@ public abstract class AbstractServletBundler implements IBundler {
             if(!htmlFile.exists()) return bins;
             Host h = APILocator.getHostAPI().find(wrap.getId().getHostId(), APILocator.getUserAPI().getSystemUser(), true);
 
-            Set<String> binaryUrls = new HashSet<String>();
+            Set<String> binaryUrls = new HashSet<>();
 
             String line = null;
             BufferedReader fs = new BufferedReader(new FileReader(htmlFile));
@@ -381,7 +381,7 @@ public abstract class AbstractServletBundler implements IBundler {
 	}
 
 	private List<String> parseLine(String line){
-		List<String> ret = new ArrayList<String>();
+		List<String> ret = new ArrayList<>();
 
 
 
@@ -451,7 +451,7 @@ public abstract class AbstractServletBundler implements IBundler {
 	}
 
 	private  Map<String, String[]> getUrlParameters(String uri) throws UnsupportedEncodingException {
-		Map<String, String[]> params = new HashMap<String, String[]>();
+		Map<String, String[]> params = new HashMap<>();
 		for (String param : uri.split("&")) {
 			String pair[] = param.split("=");
 			String key = URLDecoder.decode(pair[0], "UTF-8");

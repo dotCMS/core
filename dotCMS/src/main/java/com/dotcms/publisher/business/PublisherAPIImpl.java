@@ -173,8 +173,8 @@ public class PublisherAPIImpl extends PublisherAPI{
 												 final DeliveryStrategy deliveryStrategy) throws DotPublisherException {
 
         //Map to store the results and errors adding Assets to que Queue
-        final Map<String, Object> resultMap = new HashMap<String, Object>();
-        final List<String> errorsList = new ArrayList<String>();
+        final Map<String, Object> resultMap = new HashMap<>();
+        final List<String> errorsList = new ArrayList<>();
 
     	  if ( identifiers != null ) {
     		  String idToProcess = null;
@@ -958,7 +958,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 
 		List<PublishQueueElement> assets = getQueueElementsByBundleId(bundleId);
 
-		List<String> ids = new ArrayList<String>();
+		List<String> ids = new ArrayList<>();
 
 		for (PublishQueueElement asset : assets) {
 			ids.add(asset.getAsset());

@@ -287,7 +287,7 @@ public class ContentBundler implements IBundler {
 		final List<ContentletVersionInfo> contentletVersionInfos = APILocator.getVersionableAPI()
 				.findContentletVersionInfos(contentIdentifier, VariantAPI.DEFAULT_VARIANT.name());
 
-		Map<String, Contentlet> contents = new HashMap<String, Contentlet>();
+		Map<String, Contentlet> contents = new HashMap<>();
 
 		for (ContentletVersionInfo contentletVersionInfo : contentletVersionInfos) {
 				if (UtilMethods.isSet(contentletVersionInfo.getLiveInode())) {
@@ -375,7 +375,7 @@ public class ContentBundler implements IBundler {
 		Optional<ContentletVersionInfo> info = APILocator.getVersionableAPI()
 				.getContentletVersionInfo(con.getIdentifier(), con.getLanguageId());
 
-		if(!info.isPresent()) {
+		if(info.isEmpty()) {
 			throw new DotDataException("Can't find ContentletVersionInfo. Identifier: "
 					+ con.getIdentifier() + ". Lang: " + con.getLanguageId());
 		}
@@ -401,7 +401,7 @@ public class ContentBundler implements IBundler {
         	Integer.parseInt(lhs.get("tree_order").toString()) - Integer.parseInt(rhs.get("tree_order").toString())
         );
 
-        List<String> categories = new ArrayList<String>();
+        List<String> categories = new ArrayList<>();
         for(Map<String, Object> categoryTree : categoryTrees) {
         	Category cat = categoryAPI.find((String) categoryTree.get("parent"), systemUser, true);
 
@@ -420,7 +420,7 @@ public class ContentBundler implements IBundler {
         //Verify if this contentlet is a HTMLPage
         if ( con.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE ) {
 
-            List<Map<String, Object>> multiTreesList = new ArrayList<Map<String, Object>>();
+            List<Map<String, Object>> multiTreesList = new ArrayList<>();
             //Find the MultiTree records for this html page and add them to the wrapper
 			final HTMLPageAsset htmlPageAsset = APILocator.getHTMLPageAssetAPI().fromContentlet(con);
 			final Table<String, String, Set<PersonalizedContentlet>> pageContents =
@@ -432,7 +432,7 @@ public class ContentBundler implements IBundler {
 					final Collection<PersonalizedContentlet> personalizedContentletSet = pageContents.get(containerId, uniqueId);
 
 					for (final PersonalizedContentlet personalizedContentlet : personalizedContentletSet) {
-						Map<String, Object> multiTreeMap = new HashMap<String, Object>();
+						Map<String, Object> multiTreeMap = new HashMap<>();
 						multiTreeMap.put("parent1", con.getIdentifier());
 						multiTreeMap.put("parent2", containerId);
 						multiTreeMap.put("child", personalizedContentlet.getContentletId());

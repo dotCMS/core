@@ -1,10 +1,13 @@
-import { Injectable } from '@angular/core';
-import { CoreWebService } from './core-web.service';
 import { Observable, Subject, of, merge } from 'rxjs';
+
+import { Injectable } from '@angular/core';
+
 import { pluck, map, take } from 'rxjs/operators';
-import { LoginService, Auth } from './login.service';
-import { LoggerService } from './logger.service';
+
+import { CoreWebService } from './core-web.service';
 import { DotcmsEventsService } from './dotcms-events.service';
+import { LoggerService } from './logger.service';
+import { LoginService } from './login.service';
 import { DotEventTypeWrapper } from './models/dot-events/dot-event-type-wrapper';
 
 /**
@@ -52,11 +55,7 @@ export class SiteService {
             .subscribeToEvents<Site>(['SWITCH_SITE'])
             .subscribe(({ data }: DotEventTypeWrapper<Site>) => this.setCurrentSite(data));
 
-        loginService.watchUser((auth: Auth) => {
-            if (!auth.isLoginAs) {
-                this.loadCurrentSite();
-            }
-        });
+        loginService.watchUser(() => this.loadCurrentSite());
     }
 
     /**

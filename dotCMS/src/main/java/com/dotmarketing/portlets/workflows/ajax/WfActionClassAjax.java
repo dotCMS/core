@@ -106,7 +106,7 @@ public class WfActionClassAjax extends WfBaseAction {
 			final WorkFlowActionlet actionlet 							  = this.workflowAPI.findActionlet(workflowActionClass.getClazz());
 			final List<WorkflowActionletParameter> params				  = actionlet.getParameters();
 			final Map<String, WorkflowActionClassParameter> enteredParams = this.workflowAPI.findParamsForActionClass(workflowActionClass);
-			final List<WorkflowActionClassParameter> newParams 			  = new ArrayList<WorkflowActionClassParameter>();
+			final List<WorkflowActionClassParameter> newParams 			  = new ArrayList<>();
 			String userIds = null;
 
 			for (final WorkflowActionletParameter expectedParam : params) {

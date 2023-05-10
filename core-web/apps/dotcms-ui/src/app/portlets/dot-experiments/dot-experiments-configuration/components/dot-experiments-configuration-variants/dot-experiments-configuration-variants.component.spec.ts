@@ -194,9 +194,10 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
                 id: DEFAULT_VARIANT_ID,
                 name: DEFAULT_VARIANT_NAME,
                 weight: 33.33,
-                url: 'link1'
+                url: 'link1',
+                promoted: false
             },
-            { id: '1111111', name: 'test', weight: 33.33, url: 'link2' }
+            { id: '1111111', name: 'test', weight: 33.33, url: 'link2', promoted: false }
         ];
         beforeEach(() => {
             loadExperiment(EXPERIMENT_MOCK, variants);
@@ -349,10 +350,10 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
                 .queryAll(Tooltip)
                 .filter((tooltip) => tooltip.disabled == false);
 
-            // One: variant weight
+            // Two: variant weight
             // One: Delete variant
             // One: Add New Variant.
-            expect(enableTooltips.length).toEqual(3);
+            expect(enableTooltips.length).toEqual(4);
         });
 
         it('should view button on all variants when experiment is not on draft', () => {

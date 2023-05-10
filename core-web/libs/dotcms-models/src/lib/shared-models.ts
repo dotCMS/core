@@ -1,10 +1,11 @@
 /**
  * Standard Components statuses enum
- * INIT = Initial status of the component
+ * INIT = Initial/clean status of the component
  * LOADING = When you are waiting for a response of data necessary to render the  component
- * LOADED = Finished LOADING (Could use IDLE)
+ *      |-> LOADED = Finished LOADING (Could use IDLE)
+ *      |-> IDLE = Finished Loading or Saving
  * SAVING = Status of an action of the component loaded (delete, saving, editing)
- * IDLE = Finished Saving
+ *      |-> IDLE = Finished delete, saving, editing
  **/
 export enum ComponentStatus {
     INIT = 'INIT',
@@ -25,3 +26,8 @@ export type DotDropdownSelectOption<T> = {
     inactive?: boolean;
     description?: string;
 };
+
+export enum DialogStatus {
+    HIDE = 'HIDE',
+    SHOW = 'SHOW'
+}

@@ -134,7 +134,7 @@ public class AddressManagerImpl
 		Map priorities = CollectionFactory.getHashMap();
 
 		for (int i = 0; i < addressIds.length; i++) {
-			priorities.put(addressIds[i], new Integer(i));
+			priorities.put(addressIds[i], Integer.valueOf(i));
 		}
 
 		Iterator itr = AddressUtil.findByC_C_C(

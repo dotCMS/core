@@ -28,7 +28,8 @@ const imageContent: BlockMap = {
 };
 
 const video: BlockMap = {
-    dotVideo: true
+    dotVideo: true,
+    youtube: true
 };
 
 const basicNodes: BlockMap = { paragrah: true, text: true, doc: true };

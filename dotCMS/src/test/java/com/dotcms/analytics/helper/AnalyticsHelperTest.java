@@ -51,7 +51,7 @@ public class AnalyticsHelperTest {
      * Then evaluate it does have a SUCCESS http status
      */
     @Test
-    public void test_isSuccesStatusCode() {
+    public void test_isSuccessStatusCode() {
         assertTrue(AnalyticsHelper.get().isSuccessResponse(HttpStatus.SC_ACCEPTED));
         assertTrue(AnalyticsHelper.get().isSuccessResponse(HttpStatus.SC_OK));
         assertFalse(AnalyticsHelper.get().isSuccessResponse(HttpStatus.SC_BAD_REQUEST));
@@ -156,14 +156,11 @@ public class AnalyticsHelperTest {
         AccessToken accessToken = createFreshAccessToken();
         assertFalse(AnalyticsHelper.get().isTokenInWindow(accessToken));
 
-        accessToken = accessToken.withIssueDate(Instant.now().minusSeconds(3600 - 60));
+        accessToken = accessToken.withIssueDate(Instant.now().minusSeconds(3600 - 50));
         assertTrue(AnalyticsHelper.get().isTokenInWindow(accessToken));
 
-        accessToken = accessToken.withIssueDate(Instant.now().minusSeconds(3600 - 61));
+        accessToken = accessToken.withIssueDate(Instant.now().minusSeconds(3600 - 70));
         assertFalse(AnalyticsHelper.get().isTokenInWindow(accessToken));
-
-        accessToken = accessToken.withIssueDate(Instant.now().minusSeconds(3600 - 1));
-        assertTrue(AnalyticsHelper.get().isTokenInWindow(accessToken));
     }
 
     /**

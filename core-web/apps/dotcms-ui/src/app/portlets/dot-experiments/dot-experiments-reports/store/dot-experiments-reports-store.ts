@@ -6,6 +6,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 
+import { MessageService } from 'primeng/api';
+
 import { switchMap, tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -13,17 +15,19 @@ import {
     ComponentStatus,
     daysOfTheWeek,
     DEFAULT_VARIANT_ID,
+    DialogStatus,
     DotExperiment,
     DotExperimentResults,
     DotExperimentStatusList,
+    DotExperimentSummary,
     DotResultDate,
     DotResultGoal,
     DotResultSimpleVariant,
-    DotResultVariant,
     ExperimentChartDatasetColorsVariants,
     ExperimentLineChartDatasetDefaultProperties,
     LineChartColorsProperties,
-    TrafficProportion
+    TrafficProportion,
+    Variant
 } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
@@ -32,31 +36,72 @@ export interface DotExperimentsReportsState {
     experiment: DotExperiment | null;
     status: ComponentStatus;
     results: DotExperimentResults | null;
-    variantResults: DotResultSimpleVariant[] | null;
+    promoteDialog: {
+        status: ComponentStatus;
+        visibility: DialogStatus;
+    };
 }
 
 const initialState: DotExperimentsReportsState = {
     experiment: null,
     status: ComponentStatus.INIT,
     results: null,
-    variantResults: null
+    promoteDialog: { status: ComponentStatus.IDLE, visibility: DialogStatus.HIDE }
 };
 
 // ViewModel Interfaces
 export interface VmReportExperiment {
     isLoading: boolean;
+    hasEnoughSessions: boolean;
     experiment: DotExperiment;
     status: ComponentStatus;
     showSummary: boolean;
     results: DotExperimentResults;
-    variantResults: DotResultSimpleVariant[] | null;
     chartData: ChartData<'line'> | null;
+    showDialog: boolean;
+    summaryData: DotExperimentSummary[];
+}
+
+export interface VmPromoteVariant {
+    experimentId: string;
+    showDialog: boolean;
+    isSaving: boolean;
+    variants: DotResultSimpleVariant[] | null;
 }
 
 @Injectable()
 export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsReportsState> {
     readonly isLoading$: Observable<boolean> = this.select(
         ({ status }) => status === ComponentStatus.LOADING
+    );
+    readonly isShowPromotedDialog$: Observable<boolean> = this.select(
+        ({ promoteDialog }) => promoteDialog.visibility === DialogStatus.SHOW
+    );
+
+    readonly isSavingPromotedDialog$: Observable<boolean> = this.select(
+        ({ promoteDialog }) => promoteDialog.status === ComponentStatus.SAVING
+    );
+
+    readonly getResultVariant$: Observable<DotResultSimpleVariant[]> = this.select(
+        ({ results, experiment }) =>
+            Object.values(results.goals.primary.variants).map(
+                ({ variantName, variantDescription, uniqueBySession }) => ({
+                    id: variantName,
+                    name: variantDescription,
+                    isPromoted: experiment.trafficProportion.variants.find(
+                        ({ id }) => id === variantName
+                    )?.promoted,
+                    variantPercentage: uniqueBySession.variantPercentage,
+                    isWinner: results.bayesianResult.suggestedWinner === variantName,
+                    probabilityToWin: results.bayesianResult.probabilities.find(
+                        ({ variant }) => variant === variantName
+                    )?.value
+                })
+            )
+    );
+
+    readonly hasEnoughSessions$: Observable<boolean> = this.select(
+        ({ results }) => results && results?.sessions.total === 0
     );
 
     readonly setComponentStatus = this.updater(
@@ -66,6 +111,36 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
         })
     );
 
+    readonly setDialogStatus = this.updater(
+        (state: DotExperimentsReportsState, status: ComponentStatus) => ({
+            ...state,
+            promoteDialog: { ...state.promoteDialog, status }
+        })
+    );
+    readonly setTrafficProportion = this.updater(
+        (state: DotExperimentsReportsState, trafficProportion: TrafficProportion) => ({
+            ...state,
+            experiment: {
+                ...state.experiment,
+                trafficProportion: {
+                    ...state.experiment.trafficProportion,
+                    ...trafficProportion
+                }
+            },
+            promoteDialog: { ...state.promoteDialog, visibility: DialogStatus.HIDE }
+        })
+    );
+
+    readonly showPromoteDialog = this.updater((state: DotExperimentsReportsState) => ({
+        ...state,
+        promoteDialog: { ...state.promoteDialog, visibility: DialogStatus.SHOW }
+    }));
+
+    readonly hidePromoteDialog = this.updater((state: DotExperimentsReportsState) => ({
+        ...state,
+        promoteDialog: { ...state.promoteDialog, visibility: DialogStatus.HIDE }
+    }));
+
     readonly showExperimentSummary$: Observable<boolean> = this.select(({ experiment }) =>
         Object.values([
             DotExperimentStatusList.ENDED,
@@ -74,17 +149,36 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
         ]).includes(experiment?.status)
     );
 
-    readonly getChartData$: Observable<ChartData<'line'>> = this.select(({ experiment, results }) =>
-        experiment && results
+    readonly getChartData$: Observable<ChartData<'line'>> = this.select(({ results }) =>
+        results
             ? {
                   labels: this.getChartLabels(results.goals.primary.variants),
-                  datasets: this.getChartDatasets(results.goals.primary.variants, experiment)
+                  datasets: this.getChartDatasets(results.goals.primary.variants)
               }
             : null
     );
 
-    readonly loadExperimentAndResults = this.effect((experimentId$: Observable<string>) => {
-        return experimentId$.pipe(
+    readonly getSummaryData$: Observable<DotExperimentSummary[]> = this.select(({ results }) =>
+        results
+            ? Object.values(results.goals.primary.variants).map((variant) => ({
+                  id: variant.variantName,
+                  name: variant.variantDescription,
+                  trafficSplit: 'TBD',
+                  pageViews: variant.totalPageViews,
+                  sessions: results.sessions.variants[variant.variantName],
+                  clicks: variant.uniqueBySession.count,
+                  bestVariant: variant.uniqueBySession.totalPercentage / 100,
+                  improvement:
+                      (variant.uniqueBySession.totalPercentage -
+                          results.goals.primary.variants.DEFAULT.uniqueBySession.totalPercentage) /
+                      100,
+                  isWinner: results.bayesianResult.suggestedWinner === variant.variantName
+              }))
+            : []
+    );
+
+    readonly loadExperimentAndResults = this.effect((experimentId$: Observable<string>) =>
+        experimentId$.pipe(
             tap(() => this.setComponentStatus(ComponentStatus.LOADING)),
             switchMap((experimentId) =>
                 forkJoin({
@@ -95,11 +189,7 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
                         ({ experiment, results }) => {
                             this.patchState({
                                 experiment: experiment,
-                                results: results,
-                                variantResults: this.reduceVariantsData(
-                                    results.goals.primary.variants,
-                                    experiment
-                                )
+                                results: results
                             });
                             this.updateTabTitle(experiment);
                         },
@@ -108,40 +198,80 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
                     )
                 )
             )
-        );
-    });
+        )
+    );
 
-    readonly promoteVariant = this.effect((variant$: Observable<string>) => {
-        return variant$.pipe(
-            tap(() => this.setComponentStatus(ComponentStatus.LOADING)),
-            switchMap((variant) =>
-                this.dotExperimentsService.promoteVariant(variant).pipe(
-                    tapResponse(
-                        (_experiment) => {
-                            //TODO: Update the experiment & other props in the store
-                            // currently the enpoint is not returning the experiment
-                        },
-                        (error: HttpErrorResponse) => this.dotHttpErrorManagerService.handle(error),
-                        () => this.setComponentStatus(ComponentStatus.IDLE)
-                    )
-                )
-            )
-        );
-    });
+    readonly promoteVariant = this.effect(
+        (variant$: Observable<{ experimentId: string; variant: Variant }>) => {
+            return variant$.pipe(
+                tap(() => this.setDialogStatus(ComponentStatus.SAVING)),
+                switchMap((variantToPromote) => {
+                    const { experimentId, variant } = variantToPromote;
+
+                    return this.dotExperimentsService.promoteVariant(experimentId, variant.id).pipe(
+                        tapResponse(
+                            (experiment) => {
+                                this.messageService.add({
+                                    severity: 'info',
+                                    summary: this.dotMessageService.get(
+                                        'experiments.action.promote.variant.confirm-title'
+                                    ),
+                                    detail: this.dotMessageService.get(
+                                        'experiments.action.promote.variant.confirm-message',
+                                        variantToPromote.variant.name
+                                    )
+                                });
+                                this.setTrafficProportion(experiment.trafficProportion);
+                            },
+                            (error: HttpErrorResponse) =>
+                                this.dotHttpErrorManagerService.handle(error),
+                            () => this.setDialogStatus(ComponentStatus.IDLE)
+                        )
+                    );
+                })
+            );
+        }
+    );
 
     readonly vm$: Observable<VmReportExperiment> = this.select(
         this.state$,
         this.isLoading$,
+        this.hasEnoughSessions$,
         this.showExperimentSummary$,
         this.getChartData$,
-        ({ experiment, status, results, variantResults }, isLoading, showSummary, chartData) => ({
+        this.isShowPromotedDialog$,
+        this.getSummaryData$,
+        (
+            { experiment, status, results },
+            isLoading,
+            hasEnoughSessions,
+            showSummary,
+            chartData,
+            showDialog,
+            summaryData
+        ) => ({
             experiment,
             status,
             isLoading,
+            hasEnoughSessions,
             showSummary,
             results,
-            variantResults,
-            chartData
+            chartData,
+            showDialog,
+            summaryData
+        })
+    );
+
+    readonly promotedDialogVm$: Observable<VmPromoteVariant> = this.select(
+        this.state$,
+        this.isShowPromotedDialog$,
+        this.getResultVariant$,
+        this.isSavingPromotedDialog$,
+        ({ experiment }, showDialog, variants, isSaving) => ({
+            experimentId: experiment.id,
+            showDialog,
+            variants,
+            isSaving
         })
     );
 
@@ -149,6 +279,7 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
         private readonly dotExperimentsService: DotExperimentsService,
         private readonly dotHttpErrorManagerService: DotHttpErrorManagerService,
         private readonly dotMessageService: DotMessageService,
+        private readonly messageService: MessageService,
         private readonly title: Title
     ) {
         super(initialState);
@@ -158,23 +289,7 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
         this.title.setTitle(`${experiment.name} - ${this.title.getTitle()}`);
     }
 
-    private reduceVariantsData(
-        variants: Record<string, DotResultVariant>,
-        experiment: DotExperiment
-    ): DotResultSimpleVariant[] {
-        return Object.values(variants).map(({ variantName, uniqueBySession }) => ({
-            id: variantName,
-            name: experiment.trafficProportion.variants.find((variant) => variant.id == variantName)
-                .name,
-            uniqueBySession
-        }));
-    }
-
-    private getChartDatasets(
-        result: DotResultGoal['variants'],
-        experiment: DotExperiment
-    ): ChartData<'line'>['datasets'] {
-        const { trafficProportion } = experiment;
+    private getChartDatasets(result: DotResultGoal['variants']): ChartData<'line'>['datasets'] {
         const variantsOrdered = this.orderVariants(Object.keys(result));
 
         let colorIndex = 0;
@@ -183,7 +298,7 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
             const { details } = result[variantName];
 
             return {
-                label: this.getLabelName(trafficProportion, variantName),
+                label: result[variantName].variantDescription,
                 data: this.getParsedChartData(details),
                 ...this.getPropertyColors(colorIndex++),
                 ...ExperimentLineChartDatasetDefaultProperties
@@ -224,8 +339,28 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
         return arrayToOrder;
     }
 
-    //Todo: Remove this when the endpoint sends the name set by the user
-    private getLabelName(trafficProportion: TrafficProportion, variantId: string) {
-        return trafficProportion.variants.find((variant) => variant.id == variantId).name;
+    private getSummaryData(results: DotExperimentResults): DotExperimentSummary[] {
+        const summary: DotExperimentSummary[] = [];
+
+        Object.values(results.goals.primary.variants).map((variant) => {
+            //TODO: Add the traffic split when the endpoint sends the data
+
+            summary.push({
+                id: variant.variantName,
+                name: variant.variantDescription,
+                trafficSplit: 'TBD',
+                pageViews: variant.totalPageViews,
+                sessions: results.sessions.variants[variant.variantName],
+                clicks: variant.uniqueBySession.count,
+                bestVariant: variant.uniqueBySession.totalPercentage / 100,
+                improvement:
+                    (variant.uniqueBySession.totalPercentage -
+                        results.goals.primary.variants.DEFAULT.uniqueBySession.totalPercentage) /
+                    100,
+                isWinner: results.bayesianResult.suggestedWinner === variant.variantName
+            });
+        });
+
+        return summary;
     }
 }
