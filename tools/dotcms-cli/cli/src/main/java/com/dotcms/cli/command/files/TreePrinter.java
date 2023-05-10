@@ -20,6 +20,9 @@ import java.util.Set;
  */
 public class TreePrinter {
 
+    private static final String STATUS_LIVE = "live";
+    private static final String STATUS_WORKING = "working";
+
     /**
      * The {@code TreePrinterHolder} class is used to implement the singleton pattern for the
      * {@link TreePrinter} class.
@@ -81,7 +84,7 @@ public class TreePrinter {
             final var fileStr = String.format("%s [%s] (%s)",
                     asset.name(),
                     asset.lang(),
-                    asset.live() ? "Live" : "Working");
+                    asset.live() ? STATUS_LIVE : STATUS_WORKING);
             boolean lastAsset = i == assetCount - 1 && node.children().isEmpty();
             sb.append(filePrefix).append(lastAsset ? "└── " : "├── ").append(fileStr).append('\n');
         }
@@ -153,7 +156,7 @@ public class TreePrinter {
             return;
         }
 
-        var status = isLive ? "Live" : "Working";
+        var status = isLive ? STATUS_LIVE : STATUS_WORKING;
         sb.append("\r ").append(status).append('\n');
 
         Iterator<String> langIterator = sortedLanguages.iterator();
