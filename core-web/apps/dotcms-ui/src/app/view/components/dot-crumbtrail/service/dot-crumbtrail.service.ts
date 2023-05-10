@@ -1,4 +1,4 @@
-import { BehaviorSubject, Observable, Subject } from 'rxjs';
+import { BehaviorSubject, Observable, Subject, of } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 import { ActivatedRoute, Data, NavigationEnd, Router } from '@angular/router';
@@ -123,6 +123,24 @@ export class DotCrumbtrailService {
         const portletId = replaceSectionsMap[sections[0]] || sections[0];
 
         return this.getMenuLabel(portletId).pipe(
+            switchMap((crumbTrail: DotCrumb[]) =>
+                // If it is edit page
+                sections[0] == 'edit-page'
+                    ? // We get the breadcrumb for pages
+                      this.getMenuLabel('pages').pipe(
+                          map(
+                              (pagesCrumbTrail: DotCrumb[]) =>
+                                  // If the pages portlet exists in the menu
+                                  pagesCrumbTrail.length
+                                      ? pagesCrumbTrail.filter(
+                                            (value) => !value.url.includes('site-browser')
+                                        ) // We remove the Site link and return the breadcrumb
+                                      : crumbTrail // Otherwise we return the original breadcrumb
+                          )
+                      )
+                    : // If it's not edit pages, we return the original breadcrumb
+                      of(crumbTrail)
+            ),
             map((crumbTrail: DotCrumb[]) => {
                 if (this.shouldAddSection(sections, url)) {
                     const sectionLabel = this.getCrumbtrailSection(sections[0]);
@@ -132,19 +150,6 @@ export class DotCrumbtrailService {
                         target: '_self',
                         url: ''
                     });
-                }
-
-                // To replace Browser URL with Pages URL
-                if (sections[0] == 'edit-page') {
-                    // Add Pages link
-                    crumbTrail.unshift({
-                        label: 'Pages',
-                        target: '_self',
-                        url: `#/pages`
-                    });
-
-                    // Delete Site and Browser link
-                    crumbTrail = crumbTrail.filter((crumb) => !crumb.url.includes('site-browser'));
                 }
 
                 return crumbTrail;
