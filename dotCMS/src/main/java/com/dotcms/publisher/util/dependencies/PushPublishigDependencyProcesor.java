@@ -207,14 +207,12 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
     private void tryToAddAllContentletsAndProcessDependencies(final Collection<Contentlet> contentlets,
             final String message) throws DotDataException, DotSecurityException {
 
-        /*final List<Contentlet> defaultVariantContentlet = contentlets.stream()
+        final List<Contentlet> defaultVariantContentlet = contentlets.stream()
                 .filter(contentlet -> VariantAPI.DEFAULT_VARIANT.name()
                         .equals(contentlet.getVariantId()))
                 .collect(Collectors.toList());
 
-        tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET, defaultVariantContentlet, message);*/
-
-        tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET, contentlets, message);
+        tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET, defaultVariantContentlet, message);
     }
 
     /**

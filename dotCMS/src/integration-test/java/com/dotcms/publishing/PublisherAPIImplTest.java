@@ -659,7 +659,7 @@ public class PublisherAPIImplTest {
      * When: Add different assets into a bundle, and send it
      * Should: Create all the files
      */
-    //@Test
+    @Test
     @UseDataProvider("publishers")
     public void sendPushPublishBundle(final TestAsset testAsset)
             throws DotPublishingException, DotSecurityException, IOException, DotDataException, DotPublisherException {
@@ -1117,7 +1117,7 @@ public class PublisherAPIImplTest {
      * When: Add a {@link Category} into a Bundle
      * Should: Add all the {@link Category} into the Bundle
      */
-    //@Test
+    @Test
     public void AddAllCategoryIntoBundle() throws Exception {
         prepare();
         final Class<? extends Publisher> publisher = GenerateBundlePublisher.class;
