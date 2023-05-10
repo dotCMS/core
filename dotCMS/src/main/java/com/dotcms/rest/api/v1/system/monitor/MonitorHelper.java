@@ -31,6 +31,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
@@ -193,12 +194,9 @@ class MonitorHelper {
                 .withFallback(Boolean.FALSE)
                 .get(this.failFastBooleanPolicy(timeOut, () -> {
                     try{
-                        Identifier id =  APILocator.getIdentifierAPI().loadFromCache(Host.SYSTEM_HOST);
-                        if(id==null || !UtilMethods.isSet(id.getId())){
-                            id =  APILocator.getIdentifierAPI().find(Host.SYSTEM_HOST);
-                            id =  APILocator.getIdentifierAPI().loadFromCache(Host.SYSTEM_HOST);
-                        }
-                        return id!=null && UtilMethods.isSet(id.getId());
+                        // load system host contentlet
+                        Contentlet con = APILocator.getContentletAPI().findContentletByIdentifier(Host.SYSTEM_HOST,false,APILocator.getLanguageAPI().getDefaultLanguage().getId(),APILocator.systemUser(),false);
+                        return UtilMethods.isSet(con::getIdentifier);
                     }catch(Exception e) {
                         Logger.warn(getClass(), "Cache is failing: " + e.getMessage() );
                         return false;
