@@ -134,6 +134,23 @@ export class DotCrumbtrailService {
                     });
                 }
 
+                // To replace Browser URL with Pages URL
+                if (sections[0] == 'edit-page') {
+                    // Delete Site link
+                    crumbTrail = crumbTrail.filter((crumb) => crumb.label != 'Site');
+
+                    // Get Browser link index
+                    const browserIndex = crumbTrail.findIndex((crumb) => crumb.label == 'Browser');
+
+                    if (browserIndex > -1)
+                        // Replace Browser with pages
+                        crumbTrail[browserIndex] = {
+                            label: 'Pages',
+                            target: '_self',
+                            url: `#/pages`
+                        };
+                }
+
                 return crumbTrail;
             })
         );
