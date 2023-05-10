@@ -44,6 +44,8 @@ import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.ZipUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.liferay.portal.ejb.ImageLocalManagerUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
@@ -285,7 +287,8 @@ public class ExportStarterUtil {
         HibernateUtil hibernateUtil;
         DotConnect dc;
         List<?> resultList;
-        final ObjectMapper defaultObjectMapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
+        final ObjectMapper defaultObjectMapper = new ObjectMapper().registerModule(new Jdk8Module()).registerModule(new JavaTimeModule());
+               // DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
         try {
             for (final Class<?> clazz : dbTablesAsClasses) {
                 int i;
