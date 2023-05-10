@@ -34,7 +34,6 @@ export const BLOCK_EDITOR_BLOCKS = [
     { label: 'Heading 3', code: 'heading3' },
     { label: 'Horizontal Line', code: 'horizontalRule' },
     { label: 'Image', code: 'image' },
-    { label: '`Paragraph`', code: 'paragraph' },
     { label: 'Ordered List', code: 'orderedList' },
     { label: 'Table', code: 'table' }
 ];

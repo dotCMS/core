@@ -162,4 +162,17 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
             expect(multiselect.options).toEqual(BLOCK_EDITOR_BLOCKS);
         });
     });
+
+    describe('Options', () => {
+        it('should not have a "paragraph" option', () => {
+            const options = component.settingsMap.allowedBlocks.options;
+            const paragraphOption = options.find(
+                ({ label, code }) =>
+                    code.trim().toLowerCase() === 'paragraph' ||
+                    label.trim().toLowerCase() === 'paragraph'
+            );
+
+            expect(paragraphOption).not.toBeDefined();
+        });
+    });
 });
