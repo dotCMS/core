@@ -29,7 +29,6 @@ import { DotExperimentsUiHeaderComponent } from '@portlets/dot-experiments/share
     imports: [
         AsyncPipe,
         NgIf,
-        // dotCMS
         DotMessagePipeModule,
         DotExperimentsUiHeaderComponent,
         DotExperimentsExperimentSummaryComponent,
@@ -38,7 +37,6 @@ import { DotExperimentsUiHeaderComponent } from '@portlets/dot-experiments/share
         DotExperimentsConfigurationTrafficComponent,
         DotExperimentsConfigurationSchedulingComponent,
         DotExperimentsConfigurationSkeletonComponent,
-        // PrimeNG
         CardModule,
         ButtonModule,
         RippleModule

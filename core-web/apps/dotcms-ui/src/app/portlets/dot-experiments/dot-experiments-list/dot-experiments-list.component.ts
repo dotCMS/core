@@ -30,24 +30,18 @@ import {
 import { DotExperimentsUiHeaderComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
 
-const DOT_EXPERIMENT_LIST_COMPONENTS = [
-    DotExperimentsListSkeletonComponent,
-    DotExperimentsEmptyExperimentsComponent,
-    DotExperimentsStatusFilterComponent,
-    DotExperimentsListTableComponent
-];
-
 @Component({
     standalone: true,
     selector: 'dot-experiments-list',
     imports: [
         AsyncPipe,
         NgIf,
-        // DotCMS
-        ...DOT_EXPERIMENT_LIST_COMPONENTS,
+        DotExperimentsListSkeletonComponent,
+        DotExperimentsEmptyExperimentsComponent,
+        DotExperimentsStatusFilterComponent,
+        DotExperimentsListTableComponent,
         DotExperimentsUiHeaderComponent,
         DotDynamicDirective,
-        // PrimeNG
         DotMessagePipeModule,
         ButtonModule,
         RippleModule
