@@ -1,6 +1,12 @@
 <div class="grid grid-nogutter justify-content-between md:gap-4 xl:gap-6 wrapper">
     <div class="flex align-items-center justify-content-center gap-3" *ngIf="suggestedWinner">
-        <i class="pi" [ngClass]="suggestedWinner.icon" data-TestId="suggested-winner-icon"></i>
+        <ng-container *ngIf="suggestedWinner.icon === 'dot-trophy'; else defaultLegendIconTpl">
+            <img
+                alt="winner icon"
+                data-TestId="suggested-winner-icon"
+                src="assets/icon/trophy.svg"
+            />
+        </ng-container>
         <span
             class="flex-grow-1"
             [innerHTML]="suggestedWinner.legend | dm"
@@ -34,3 +40,7 @@
         </div>
     </div>
 </div>
+
+<ng-template #defaultLegendIconTpl>
+    <i class="pi" [ngClass]="suggestedWinner.icon" data-TestId="suggested-winner-icon"></i>
+</ng-template>
