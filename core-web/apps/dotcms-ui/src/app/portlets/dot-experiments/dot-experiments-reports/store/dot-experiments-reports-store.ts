@@ -123,7 +123,7 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
     );
 
     readonly hasEnoughSessions$: Observable<boolean> = this.select(
-        ({ results }) => results && results?.sessions.total === 0
+        ({ results }) => results && results.sessions.total > 0
     );
 
     readonly setComponentStatus = this.updater(
@@ -208,7 +208,8 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
                         ({ experiment, results }) => {
                             this.patchState({
                                 experiment: experiment,
-                                results: results
+                                results: results,
+                                status: ComponentStatus.IDLE
                             });
                             this.updateTabTitle(experiment);
                         },
