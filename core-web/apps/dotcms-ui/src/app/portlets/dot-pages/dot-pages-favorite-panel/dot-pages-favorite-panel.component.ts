@@ -11,8 +11,12 @@ import { HttpCode } from '@dotcms/dotcms-js';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { DotFavoritePageComponent } from '../../dot-edit-page/components/dot-favorite-page/dot-favorite-page.component';
-import { DotPagesState, DotPageStore } from '../dot-pages-store/dot-pages.store';
-import { DotActionsMenuEventParams, FAVORITE_PAGE_LIMIT } from '../dot-pages.component';
+import {
+    DotPagesState,
+    DotPageStore,
+    FAVORITE_PAGE_LIMIT
+} from '../dot-pages-store/dot-pages.store';
+import { DotActionsMenuEventParams } from '../dot-pages.component';
 
 @Component({
     selector: 'dot-pages-favorite-panel',
@@ -102,7 +106,7 @@ export class DotPagesFavoritePanelComponent {
 
     private displayFavoritePageDialog(favoritePage: DotCMSContentlet) {
         this.dialogService.open(DotFavoritePageComponent, {
-            header: this.dotMessageService.get('favoritePage.dialog.header.add.page'),
+            header: this.dotMessageService.get('favoritePage.dialog.header'),
             width: '80rem',
             data: {
                 page: {
