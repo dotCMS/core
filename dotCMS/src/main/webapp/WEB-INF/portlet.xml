@@ -88,8 +88,8 @@
     </portlet>
 
     <portlet>
-        <portlet-name>bookmarks</portlet-name>
-        <display-name>Bookmarks</display-name>
+        <portlet-name>pages</portlet-name>
+        <display-name>Pages</display-name>
         <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
     </portlet>
 
