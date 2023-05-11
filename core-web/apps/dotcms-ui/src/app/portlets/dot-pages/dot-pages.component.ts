@@ -1,7 +1,14 @@
 import { Subject } from 'rxjs';
 
 import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
-import { Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import {
+    AfterViewInit,
+    Component,
+    ElementRef,
+    HostListener,
+    OnDestroy,
+    ViewChild
+} from '@angular/core';
 
 import { Menu } from 'primeng/menu';
 
@@ -34,7 +41,7 @@ export interface DotActionsMenuEventParams {
     styleUrls: ['./dot-pages.component.scss'],
     templateUrl: './dot-pages.component.html'
 })
-export class DotPagesComponent implements OnInit, OnDestroy {
+export class DotPagesComponent implements AfterViewInit, OnDestroy {
     @ViewChild('menu') menu: Menu;
     vm$: Observable<DotPagesState> = this.store.vm$;
 
@@ -105,7 +112,7 @@ export class DotPagesComponent implements OnInit, OnDestroy {
      */
     @HostListener('window:click')
     closeMenu(): void {
-        if (this.domIdMenuAttached.includes('pageActionButton')) {
+        if (this.menuIsLoaded(this.domIdMenuAttached)) {
             this.menu.hide();
             this.store.clearMenuActions();
         }
@@ -134,7 +141,7 @@ export class DotPagesComponent implements OnInit, OnDestroy {
         this.domIdMenuAttached = '';
     }
 
-    ngOnInit(): void {
+    ngAfterViewInit(): void {
         this.store.actionMenuDomId$
             .pipe(
                 takeUntil(this.destroy$),
@@ -142,7 +149,7 @@ export class DotPagesComponent implements OnInit, OnDestroy {
             )
             .subscribe((actionMenuDomId: string) => {
                 const target = this.element.nativeElement.querySelector(`#${actionMenuDomId}`);
-                if (target && actionMenuDomId.includes('pageActionButton')) {
+                if (target && this.menuIsLoaded(actionMenuDomId)) {
                     this.menu.show({ currentTarget: target });
                     this.domIdMenuAttached = actionMenuDomId;
 
@@ -179,5 +186,19 @@ export class DotPagesComponent implements OnInit, OnDestroy {
     ngOnDestroy(): void {
         this.destroy$.next(true);
         this.destroy$.complete();
+    }
+
+    /**
+     * Check if the menu is loaded
+     *
+     * @private
+     * @param {string} menuDOMID
+     * @return {*}  {boolean}
+     * @memberof DotPagesComponent
+     */
+    private menuIsLoaded(menuDOMID: string): boolean {
+        return (
+            menuDOMID.includes('pageActionButton') || menuDOMID.includes('favoritePageActionButton')
+        );
     }
 }
