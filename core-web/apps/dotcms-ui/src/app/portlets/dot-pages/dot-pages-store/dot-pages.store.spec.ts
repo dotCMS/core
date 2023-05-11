@@ -501,23 +501,42 @@ describe('DotPageStore', () => {
     }));
 
     it('should get all Workflow actions and static actions from a contentlet', () => {
+        const expectedInputArray = [{ ...dotcmsContentTypeBasicMock, ...contentTypeDataMock[0] }];
         spyOn(dotWorkflowsActionsService, 'getByInode').and.returnValue(of(mockWorkflowsActions));
+        spyOn(dotESContentService, 'get').and.returnValue(
+            of({
+                contentTook: 0,
+                jsonObjectView: {
+                    contentlets: expectedInputArray as unknown as DotCMSContentlet[]
+                },
+                queryTook: 1,
+                resultsSize: 4
+            })
+        );
         dotPageStore.showActionsMenu({
             item: favoritePagesInitialTestData[0],
             actionMenuDomId: 'test1'
         });
 
         dotPageStore.state$.subscribe((data) => {
-            expect(data.pages.menuActions.length).toEqual(6);
-            expect(data.pages.menuActions[0].label).toEqual('Edit');
-            expect(data.pages.menuActions[1].label).toEqual(mockWorkflowsActions[0].name);
-            expect(data.pages.menuActions[2].label).toEqual(mockWorkflowsActions[1].name);
-            expect(data.pages.menuActions[3].label).toEqual(mockWorkflowsActions[2].name);
-            expect(data.pages.menuActions[4].label).toEqual('contenttypes.content.push_publish');
-            expect(data.pages.menuActions[5].label).toEqual('contenttypes.content.add_to_bundle');
+            expect(data.pages.menuActions.length).toEqual(7);
+            expect(data.pages.menuActions[0].label).toEqual('favoritePage.contextMenu.action.edit');
+            expect(data.pages.menuActions[1].label).toEqual('Edit');
+            expect(data.pages.menuActions[2].label).toEqual(mockWorkflowsActions[0].name);
+            expect(data.pages.menuActions[3].label).toEqual(mockWorkflowsActions[1].name);
+            expect(data.pages.menuActions[4].label).toEqual(mockWorkflowsActions[2].name);
+            expect(data.pages.menuActions[5].label).toEqual('contenttypes.content.push_publish');
+            expect(data.pages.menuActions[6].label).toEqual('contenttypes.content.add_to_bundle');
             expect(data.pages.actionMenuDomId).toEqual('test1');
         });
 
+        expect(dotESContentService.get).toHaveBeenCalledWith({
+            itemsPerPage: 1,
+            offset: '0',
+            query: '+contentType:dotFavoritePage +deleted:false +working:true +owner:testId +DotFavoritePage.url_dotraw:/index1?&language_id=1&device_inode=',
+            sortField: 'dotFavoritePage.order',
+            sortOrder: ESOrderDirection.ASC
+        });
         expect(dotWorkflowsActionsService.getByInode).toHaveBeenCalledWith(
             favoritePagesInitialTestData[0].inode,
             DotRenderMode.LISTING
