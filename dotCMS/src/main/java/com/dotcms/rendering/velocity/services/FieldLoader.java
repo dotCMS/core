@@ -8,6 +8,7 @@ import java.util.Optional;
 import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.HiddenField;
+import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
@@ -81,7 +82,7 @@ public class FieldLoader implements DotLoader {
 
 	boolean isVelocityField(final Field field, final Optional<Contentlet> conOpt) {
 
-		if (field != null && (field instanceof ConstantField || field instanceof HiddenField)) {
+		if (field != null && (field instanceof ConstantField || field instanceof HiddenField || field instanceof RelationshipField)) {
 			return true;
 		}
 		if (conOpt.isEmpty()) {
