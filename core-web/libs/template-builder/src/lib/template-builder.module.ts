@@ -1,10 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 
-import { DotTemplateBuilderComponent } from './components/dot-template-builder/dot-template-builder.component';
+import { TemplateBuilderComponent } from './components/template-builder/template-builder.component';
 
 @NgModule({
     imports: [CommonModule],
-    declarations: [DotTemplateBuilderComponent]
+    declarations: [TemplateBuilderComponent],
+    exports: [TemplateBuilderComponent]
 })
 export class TemplateBuilderModule {}

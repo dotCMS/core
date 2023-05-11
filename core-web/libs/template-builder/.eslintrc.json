@@ -9,7 +9,6 @@
                     "error",
                     {
                         "type": "attribute",
-                        "prefix": "dotcms",
                         "style": "camelCase"
                     }
                 ],
@@ -17,7 +16,6 @@
                     "error",
                     {
                         "type": "element",
-                        "prefix": "dotcms",
                         "style": "kebab-case"
                     }
                 ]
