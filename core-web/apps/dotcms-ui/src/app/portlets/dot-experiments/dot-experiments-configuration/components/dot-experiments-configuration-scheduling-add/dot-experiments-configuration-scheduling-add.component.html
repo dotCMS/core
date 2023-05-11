@@ -13,16 +13,16 @@
                     <p-calendar
                         id="initialDate"
                         [defaultDate]="initialDate"
-                        [showTime]="true"
                         [minDate]="today"
-                        [stepMinute]="30"
                         [readonlyInput]="true"
-                        [showIcon]="true"
                         [showClear]="true"
-                        (onSelect)="setMinEndDate()"
+                        [showIcon]="true"
+                        [showTime]="true"
+                        [stepMinute]="30"
                         (onClear)="setMinEndDate()"
-                        formControlName="startDate"
+                        (onSelect)="setMinEndDate()"
                         data-testId="scheduling-startDate"
+                        formControlName="startDate"
                     ></p-calendar>
                 </div>
                 <div class="field">
@@ -31,15 +31,15 @@
                     </label>
                     <p-calendar
                         id="endTime"
-                        [showTime]="true"
                         [defaultDate]="minEndDate || initialDate"
                         [minDate]="minEndDate || initialDate"
-                        [stepMinute]="30"
                         [readonlyInput]="true"
-                        [showIcon]="true"
                         [showClear]="true"
-                        formControlName="endDate"
+                        [showIcon]="true"
+                        [showTime]="true"
+                        [stepMinute]="30"
                         data-testId="scheduling-endDate"
+                        formControlName="endDate"
                     >
                     </p-calendar>
                 </div>
@@ -55,7 +55,6 @@
             data-testId="add-scheduling-button"
             label="{{ 'Done' | dm }}"
             pButton
-            pRipple
             type="submit"
         ></button>
     </ng-template>

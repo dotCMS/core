@@ -19,7 +19,6 @@ import {
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
-import { RippleModule } from 'primeng/ripple';
 import { TagModule } from 'primeng/tag';
 
 import { tap } from 'rxjs/operators';
@@ -60,7 +59,6 @@ import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.dir
         //PrimeNg
         TagModule,
         ButtonModule,
-        RippleModule,
         TitleCasePipe
     ],
     templateUrl: './dot-experiments-reports.component.html',
