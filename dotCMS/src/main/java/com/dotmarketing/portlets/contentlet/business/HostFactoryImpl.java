@@ -273,18 +273,19 @@ public class HostFactoryImpl implements HostFactory {
     public List<Host> findAll() throws DotDataException, DotSecurityException {
         return findAll(0, 0, null);
     }
+
     @Override
-    public List<Host> findAll(int limit, int offset, String orderBy) throws DotDataException, DotSecurityException {
-        
+    public List<Host> findAll(final int limit, final int offset, final String orderBy) throws DotDataException, DotSecurityException {
         return findAll(limit,offset, orderBy, true);
     }
+
     @Override
-    public List<Host> findAll(int limit, int offset, String orderBy, boolean includeSystemHost) throws DotDataException, DotSecurityException {
+    public List<Host> findAll(final int limit, final int offset, final String orderBy, final boolean includeSystemHost) throws DotDataException, DotSecurityException {
         final DotConnect dc = new DotConnect();
-        final StringBuffer sqlQuery = new StringBuffer().append(SELECT_SITE_INODE)
+        final StringBuilder sqlQuery = new StringBuilder().append(SELECT_SITE_INODE)
                 .append(WHERE)
                 .append(" true ");
-        if(!includeSystemHost) {
+        if (!includeSystemHost) {
             sqlQuery.append(AND);
             sqlQuery.append(EXCLUDE_SYSTEM_HOST);
         }
@@ -303,8 +304,7 @@ public class HostFactoryImpl implements HostFactory {
             dc.setStartRow(offset);
         }
         final List<Map<String, String>> dbResults = dc.loadResults();
-        final List<Host> siteList = convertDbResultsToSites(dbResults);
-        return siteList;
+        return this.convertDbResultsToSites(dbResults);
     }
 
     @Override
