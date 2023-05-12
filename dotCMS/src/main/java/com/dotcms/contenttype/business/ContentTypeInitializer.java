@@ -136,7 +136,9 @@ public class ContentTypeInitializer implements DotInitializer {
 
                     Logger.info(this, "Adding default permissions to the Favorite Page Content Type...");
                     final List<Permission> newSetOfPermissions = new ArrayList<>();
+                    // this is the individual permission
                     newSetOfPermissions.add(new Permission(savedContentType.getPermissionId(), backendRole.getId(), permissionType, true));
+                    // this is the inheritance permission
                     newSetOfPermissions.add(new Permission(Contentlet.class.getCanonicalName(), savedContentType.getPermissionId(),  backendRole.getId(), permissionType, true));
                     APILocator.getPermissionAPI().assignPermissions(newSetOfPermissions, savedContentType, APILocator.systemUser(), false);
                     ResetPermissionsJob.triggerJobImmediately(savedContentType);
