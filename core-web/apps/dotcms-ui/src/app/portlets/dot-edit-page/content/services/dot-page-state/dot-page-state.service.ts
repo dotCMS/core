@@ -122,6 +122,29 @@ export class DotPageStateService {
      * @memberof DotPageStateService
      */
     setInternalNavigationState(state: DotPageRenderState): void {
+        const urlParam = generateDotFavoritePageUrl({
+            deviceInode: state.viewAs.device?.inode,
+            languageId: state.viewAs.language.id,
+            pageURI: state.page.pageURI,
+            siteId: state.site?.identifier
+        });
+
+        this.dotESContentService
+            .get({
+                itemsPerPage: 10,
+                offset: '0',
+                query: `+contentType:DotFavoritePage +deleted:false +working:true +owner:${state.user.userId} +DotFavoritePage.url_dotraw:${urlParam}`
+            })
+            .pipe(take(1))
+            .subscribe((response: ESContent) => {
+                const favoritePage = response.jsonObjectView?.contentlets[0];
+
+                if (favoritePage) {
+                    state.favoritePage = favoritePage;
+                    this.setCurrentState(state);
+                }
+            });
+
         this.setCurrentState(state);
         this.isInternalNavigation = true;
     }

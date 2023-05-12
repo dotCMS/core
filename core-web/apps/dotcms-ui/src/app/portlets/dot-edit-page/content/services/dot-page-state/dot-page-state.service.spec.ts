@@ -390,8 +390,17 @@ describe('DotPageStateService', () => {
             const renderedPage = getDotPageRenderStateMock(dotcmsContentletMock);
             service.setInternalNavigationState(renderedPage);
 
+            service.state$.subscribe((state: DotPageRenderState) => {
+                expect(state).toEqual(renderedPage);
+            });
+
             expect(service.getInternalNavigationState()).toEqual(renderedPage);
             expect(dotPageRenderServiceGetSpy).not.toHaveBeenCalled();
+            expect(dotESContentService.get).toHaveBeenCalledWith({
+                itemsPerPage: 10,
+                offset: '0',
+                query: `+contentType:DotFavoritePage +deleted:false +working:true +owner:123 +DotFavoritePage.url_dotraw:/an/url/test?&language_id=1&device_inode=`
+            });
         });
 
         it('should return null when internal state is not set', () => {
