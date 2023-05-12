@@ -110,8 +110,8 @@ public class PublishAuditUtil {
             nothing found for the default language just return the first one.
              */
             for (Contentlet contentlet : allLanguages) {
-                if (contentlet.getLanguageId() == defaultLanguage.getId() /*&&
-                        contentlet.getVariantId().equals(VariantAPI.DEFAULT_VARIANT.name())*/) {
+                if (contentlet.getLanguageId() == defaultLanguage.getId() &&
+                        contentlet.getVariantId().equals(VariantAPI.DEFAULT_VARIANT.name())) {
                     foundContentlet = contentlet;
                 }
             }
