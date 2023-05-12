@@ -1056,7 +1056,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     private boolean isNewContentlet(final Contentlet contentlet) throws DotDataException {
         return contentlet.isNew() || null == contentlet.getIdentifier()
-                || (boolean)contentlet.getMap().getOrDefault(IS_NEW_CONTENT, false)
+                || ConversionUtils.toBooleanFromDb(contentlet.getMap().getOrDefault(IS_NEW_CONTENT, false))
                 || hasOnlyOneVersion(contentlet);
     }
 
