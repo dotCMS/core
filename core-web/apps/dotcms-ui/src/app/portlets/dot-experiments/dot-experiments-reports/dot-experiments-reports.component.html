@@ -11,7 +11,6 @@
             (click)="openPublishVariantDialog()"
             data-testId="publish-variant-button"
             pButton
-            pRipple
             type="button"
         ></button>
     </dot-experiments-header>
@@ -22,6 +21,8 @@
                 *ngIf="vm.showSummary"
                 [goals]="vm.experiment.goals"
                 [scheduling]="vm.experiment.scheduling"
+                [sessionsReached]="vm.results.sessions.total"
+                [suggestedWinner]="vm.winnerLegendSummary"
             />
 
             <div class="flex justify-content-center w-full container">
@@ -29,12 +30,12 @@
                     <dot-experiments-reports-chart
                         [config]="chartConfig"
                         [data]="vm.chartData"
-                        [isEmpty]="vm.hasEnoughSessions"
+                        [isEmpty]="!vm.hasEnoughSessions"
                         [isLoading]="vm.isLoading"
                     />
                     <dot-experiments-details-table
-                        [data]="vm.summaryData"
-                        [isEmpty]="vm.hasEnoughSessions"
+                        [data]="vm.detailData"
+                        [isEmpty]="!vm.hasEnoughSessions"
                         [title]="'experiments.reports.resume' | dm"
                     >
                         <ng-template #headers>
