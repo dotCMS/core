@@ -134,8 +134,8 @@ export class DotHttpErrorManagerService {
     private handleBadRequestError(response?: HttpErrorResponse): boolean {
         const { error } = response;
 
-        const header = error.header
-            ? error.header
+        const header = error?.header
+            ? this.dotMessageService.get(error.header)
             : this.dotMessageService.get('dot.common.http.error.400.header');
 
         const message =
