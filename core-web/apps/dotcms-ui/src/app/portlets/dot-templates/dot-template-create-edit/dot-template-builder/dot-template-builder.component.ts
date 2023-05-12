@@ -9,6 +9,7 @@ import {
 } from '@angular/core';
 
 import { IframeComponent } from '@components/_common/iframe/iframe-component';
+import { FeaturedFlags } from '@dotcms/dotcms-models';
 
 import { DotTemplateItem } from '../store/dot-template.store';
 
@@ -28,6 +29,7 @@ export class DotTemplateBuilderComponent implements OnInit, OnChanges {
     @ViewChild('historyIframe') historyIframe: IframeComponent;
     permissionsUrl = '';
     historyUrl = '';
+    featureFlag = FeaturedFlags.FEATURE_FLAG_TEMPLATE_BUILDER;
 
     ngOnInit() {
         this.permissionsUrl = `/html/templates/permissions.jsp?templateId=${this.item.identifier}&popup=true`;

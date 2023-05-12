@@ -47,12 +47,14 @@ const defaultVmMock: VmReportExperiment = {
     experiment: getExperimentMock(3),
     results: getExperimentResultsMock(1),
     chartData: CHARTJS_DATA_MOCK_WITH_DATA,
-    summaryData: [],
+    detailData: [],
     isLoading: false,
     hasEnoughSessions: false,
+    status: ComponentStatus.INIT,
     showSummary: false,
-    showDialog: false,
-    status: ComponentStatus.INIT
+    winnerLegendSummary: { icon: 'icon', legend: 'legend' },
+    showPromoteDialog: false,
+    suggestedWinner: null
 };
 
 const EXPERIMENT_MOCK = getExperimentMock(0);

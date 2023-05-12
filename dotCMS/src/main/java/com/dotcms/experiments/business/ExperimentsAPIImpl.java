@@ -482,15 +482,15 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             final boolean meantToRunNow = persistedExperiment.scheduling().isEmpty();
 
             if(meantToRunNow) {
-                throw new DotStateException("There is a running Experiment on the same page. "
-                        + runningExperimentsOnPage.get(0).id());
+                throw new DotStateException("There is a running Experiment on the same page. Name: "
+                        + runningExperimentsOnPage.get(0).name());
             }
 
             final Experiment runningExperiment = runningExperimentsOnPage.get(0);
             DotPreconditions.isTrue(runningExperiment.scheduling().orElseThrow().endDate()
                     .orElseThrow().isBefore(persistedExperiment.scheduling().orElseThrow().startDate().orElseThrow()),
-                    ()-> "Start date of the Experiment is before the end date of the running Experiment. "
-                            + runningExperiment.id(),
+                    ()-> "Start date of the Experiment is before the end date of the running Experiment. Name: "
+                            + runningExperiment.name(),
                     DotStateException.class);
         }
 
@@ -535,8 +535,8 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                     schedulingToCheck.endDate().orElseThrow().isBefore(scheduling.startDate().orElseThrow());
         });
 
-        DotPreconditions.isTrue(noConflicts, ()-> "There is a scheduling conflict between the Experiment and the scheduled Experiment. "
-                + scheduledExperimentsOnPage.get(0).id(),
+        DotPreconditions.isTrue(noConflicts, ()-> "There is a scheduling conflict between the Experiment and the scheduled Experiment. Name: "
+                + scheduledExperimentsOnPage.get(0).name(),
                 DotStateException.class);
     }
 
