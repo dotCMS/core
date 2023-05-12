@@ -8,6 +8,7 @@ import {
     DotPageRenderService,
     DotSessionStorageService
 } from '@dotcms/data-access';
+import { TemplateBuilderModule } from '@dotcms/template-builder';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotExperimentExperimentResolver } from '@portlets/dot-experiments/shared/resolvers/dot-experiment-experiment.resolver';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
@@ -27,7 +28,8 @@ import { DotEditPageResolver } from './shared/services/dot-edit-page-resolver/do
         DotEditPageMainModule,
         DotEditPageRoutingModule,
         DotDirectivesModule,
-        DotPipesModule
+        DotPipesModule,
+        TemplateBuilderModule
     ],
     declarations: [],
     providers: [

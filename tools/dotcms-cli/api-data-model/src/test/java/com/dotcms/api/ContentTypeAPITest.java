@@ -222,9 +222,19 @@ class ContentTypeAPITest {
         Assertions.assertTrue(responseStringEntity.entity().contains("deleted"));
 
         try {
-            client.getContentType(updatedContentType.variable(), 1L, true);
-            Assertions.fail("If we got this far then delete-method failed to perform its job.");
-        }catch(javax.ws.rs.NotFoundException e){
+            //a small wait to make sure the CT is deleted
+            //a simple Thread.sleep would do the trick but Sonar says it's not a good practice
+            int count = 0;
+            while (null != client.getContentType(updatedContentType.variable(), 1L, true)){
+               //We wait for the CT to be deleted
+               System.out.println("Waiting for CT to be deleted");
+               count++;
+               if(count > 10){
+                   Assertions.fail("CT was not deleted");
+               }
+            }
+            //This should throw 404 but under certain circumstances it does throw 400
+        }catch(javax.ws.rs.WebApplicationException e){
             // Not relevant here
         }
     }

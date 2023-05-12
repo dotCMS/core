@@ -17,7 +17,7 @@ import picocli.CommandLine;
 
 @ActivateRequestContext
 @CommandLine.Command(name = SitePull.NAME,
-        header = "@|bold,blue Retrieves a site descriptor from a name or d.|@",
+        header = "@|bold,blue Retrieves a site descriptor from a name or Id.|@",
         description = {
            "  This retrieves Sites info.",
            "  The Site info will be retrieved and saved to a file.",

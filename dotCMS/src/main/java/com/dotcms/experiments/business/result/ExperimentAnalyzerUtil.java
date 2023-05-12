@@ -101,6 +101,8 @@ public enum ExperimentAnalyzerUtil {
             builder.goal(goal).variant(variantId).pageView(pageViews);
         });
 
+        builder.trafficProportion(experiment.trafficProportion());
+
         final String pageId = experiment.pageId();
         final HTMLPageAsset page = getPage(pageId);
 
