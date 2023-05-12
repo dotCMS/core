@@ -74,7 +74,7 @@ public class URLMapAPIImpl implements URLMapAPI {
         final ContentType contentType = contentlet.getContentType();
         final Optional<Identifier> optDetailIdentifier = this.getDetailPageUri(contentType, context.getHost());
 
-        if(!optDetailIdentifier.isPresent()) {
+        if(optDetailIdentifier.isEmpty()) {
             return Optional.empty();
         }
         return Optional.of(new URLMapInfo(contentlet, optDetailIdentifier.get(), context.getUri()));

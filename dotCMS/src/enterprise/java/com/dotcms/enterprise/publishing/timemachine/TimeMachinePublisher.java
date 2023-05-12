@@ -77,7 +77,7 @@ public class TimeMachinePublisher extends Publisher {
 
 	@Override
 	public List<Class> getBundlers() {
-		List<Class> list = new ArrayList<Class>();
+		List<Class> list = new ArrayList<>();
 		list.add(FileAssetBundler.class);
 		list.add(HTMLPageAsContentBundler.class);
 		list.add(URLMapBundler.class);

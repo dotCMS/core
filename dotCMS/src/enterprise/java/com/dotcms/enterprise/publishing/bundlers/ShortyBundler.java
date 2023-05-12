@@ -121,7 +121,7 @@ public class ShortyBundler implements IBundler {
         }
 
         // Build List of ContentAssets
-        Map<String, BinFileExportStruc> bins = new HashMap<String, ShortyBundler.BinFileExportStruc>();
+        Map<String, BinFileExportStruc> bins = new HashMap<>();
         try {
             // fire up our binary servlet
             this.shortyServlet.init();
@@ -193,11 +193,11 @@ public class ShortyBundler implements IBundler {
                                                                final BundleOutput bundleOutput)
             throws DotPublishingException {
 
-        Map<String, BinFileExportStruc> bins = new HashMap<String, ShortyBundler.BinFileExportStruc>();
+        Map<String, BinFileExportStruc> bins = new HashMap<>();
 
 
         String docId = null;
-        Set<String> binaryUrls = new HashSet<String>();
+        Set<String> binaryUrls = new HashSet<>();
         try {
             URLMapWrapper wrap = (URLMapWrapper) BundlerUtil.xmlToObject(file);
             if (wrap == null){
@@ -267,7 +267,7 @@ public class ShortyBundler implements IBundler {
     private  Map<String, BinFileExportStruc>   processHTMLPage(
             final File file, BundleOutput bundleOutput) throws DotPublishingException {
         String docId = null;
-        Map<String, BinFileExportStruc> bins = new HashMap<String, ShortyBundler.BinFileExportStruc>();
+        Map<String, BinFileExportStruc> bins = new HashMap<>();
 
         try {
             HTMLPageAsContentWrapper wrap = (HTMLPageAsContentWrapper) BundlerUtil.xmlToObject(file);
@@ -284,7 +284,7 @@ public class ShortyBundler implements IBundler {
             if(!htmlFile.exists()) return bins;
             Host h = APILocator.getHostAPI().find(wrap.getId().getHostId(), APILocator.getUserAPI().getSystemUser(), true);
 
-            Set<String> binaryUrls = new HashSet<String>();
+            Set<String> binaryUrls = new HashSet<>();
 
             String line = null;
             BufferedReader fs = new BufferedReader(new FileReader(htmlFile));
@@ -402,7 +402,7 @@ public class ShortyBundler implements IBundler {
     }
 
     private List<String> parseLine(String line){
-        List<String> ret = new ArrayList<String>();
+        List<String> ret = new ArrayList<>();
 
 
 
@@ -424,7 +424,7 @@ public class ShortyBundler implements IBundler {
 
 
     private  Map<String, String[]> getUrlParameters(String uri) throws UnsupportedEncodingException {
-        Map<String, String[]> params = new HashMap<String, String[]>();
+        Map<String, String[]> params = new HashMap<>();
         for (String param : uri.split("&")) {
             String pair[] = param.split("=");
             String key = URLDecoder.decode(pair[0], "UTF-8");

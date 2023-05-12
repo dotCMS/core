@@ -18,9 +18,9 @@ public class MultiSelectMap {
 	/**
 	 * All the possible options
 	 */
-	private List<String> options = new ArrayList<String>();
-	private List<String> values = new ArrayList<String>();
-	private List<String> selectedValues = new ArrayList<String>();
+	private List<String> options = new ArrayList<>();
+	private List<String> values = new ArrayList<>();
+	private List<String> selectedValues = new ArrayList<>();
 	
 	public MultiSelectMap(Field field, Contentlet content) {
 		String[] pairs = (field.getValues()!=null?field.getValues():"").split("\r\n");

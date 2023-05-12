@@ -1,7 +1,5 @@
 package com.dotmarketing.startup.runonce;
 
-import static java.util.Collections.singletonList;
-
 import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
@@ -120,7 +118,7 @@ public class Task210816DeInodeRelationship extends AbstractJDBCStartupTask {
     com.dotmarketing.common.db.ForeignKey findRelationshipInodeFK() {
         return dotDatabaseMetaData
                 .findForeignKeys("relationship", "inode",
-                        singletonList("inode"), singletonList("inode"));
+                        List.of("inode"), List.of("inode"));
     }
 
     @VisibleForTesting

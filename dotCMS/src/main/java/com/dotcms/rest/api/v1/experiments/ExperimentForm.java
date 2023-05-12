@@ -42,11 +42,6 @@ public class ExperimentForm extends Validated {
         checkValid();
     }
 
-    public void checkValid() {
-        super.checkValid();
-        validateScheduling(scheduling);
-    }
-
     public String getName() {
         return name;
     }

@@ -28,8 +28,8 @@ public class LegacyFieldTransformer implements FieldTransformer {
 
 	public LegacyFieldTransformer(List<? extends FieldIf> newFields) {
 		
-		List<Field> news = new ArrayList<Field>();
-		List<com.dotmarketing.portlets.structure.model.Field> olds = new ArrayList<com.dotmarketing.portlets.structure.model.Field>();
+		List<Field> news = new ArrayList<>();
+		List<com.dotmarketing.portlets.structure.model.Field> olds = new ArrayList<>();
 		
 		for(FieldIf field : newFields){
 			if(field instanceof Field){

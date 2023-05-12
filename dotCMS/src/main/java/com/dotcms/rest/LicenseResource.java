@@ -272,7 +272,7 @@ public class LicenseResource {
             //If we are removing a remote Server we need to create a ServerAction.
             if (UtilMethods.isSet(remoteServerId) && !remoteServerId.equals("undefined")) {
                 ResetLicenseServerAction resetLicenseServerAction = new ResetLicenseServerAction();
-                Long timeoutSeconds = new Long(1);
+                Long timeoutSeconds = Long.valueOf(1);
 
                 ServerActionBean resetLicenseServerActionBean =
                         resetLicenseServerAction.getNewServerAction(localServerId, remoteServerId,

@@ -103,7 +103,7 @@ public class DbConnectionFactory {
 
     private static final ThreadLocal<HashMap<String, Connection>>
         connectionsHolder =
-        new ThreadLocal<HashMap<String, Connection>>();
+        new ThreadLocal<>();
 
     public static DataSource getDataSource() {
 
@@ -217,7 +217,7 @@ public class DbConnectionFactory {
             Connection connection = null;
             connectionsCalledFor++;
             if (connectionsList == null) {
-                connectionsList = new HashMap<String, Connection>();
+                connectionsList = new HashMap<>();
                 connectionsHolder.set(connectionsList);
             }
 
@@ -300,7 +300,7 @@ public class DbConnectionFactory {
      */
     @SuppressWarnings("unchecked")
     public static ArrayList<String> getAllDataSources() throws NamingException {
-        ArrayList<String> results = new ArrayList<String>();
+        ArrayList<String> results = new ArrayList<>();
         Context ctx;
 
         ctx = (Context) new InitialContext().lookup("java:comp/env");
@@ -354,7 +354,7 @@ public class DbConnectionFactory {
             Connection connection = null;
 
             if (connectionsList == null) {
-                connectionsList = new HashMap<String, Connection>();
+                connectionsList = new HashMap<>();
                 connectionsHolder.set(connectionsList);
             }
 
@@ -391,7 +391,7 @@ public class DbConnectionFactory {
             HashMap<String, Connection> connectionsList = (HashMap<String, Connection>) connectionsHolder.get();
 
             if (connectionsList == null) {
-                connectionsList = new HashMap<String, Connection>();
+                connectionsList = new HashMap<>();
                 connectionsHolder.set(connectionsList);
             }
 
@@ -433,7 +433,7 @@ public class DbConnectionFactory {
             HashMap<String, Connection> connectionsList = (HashMap<String, Connection>) connectionsHolder.get();
 
             if (connectionsList == null) {
-                connectionsList = new HashMap<String, Connection>();
+                connectionsList = new HashMap<>();
                 connectionsHolder.set(connectionsList);
             }
 

@@ -57,7 +57,7 @@ public class LanguageUtility {
 	
 	private static final String DEFAULT_LANGUAGE = "eng";
 	
-	private static Map<String, String> stringCache = new HashMap<String, String>();
+	private static Map<String, String> stringCache = new HashMap<>();
 	
 	private static LanguageTextDAO dao;
 

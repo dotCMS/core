@@ -158,7 +158,7 @@ describe('DotEditPageToolbarComponent', () => {
                     useValue: new MockDotMessageService({
                         'dot.common.whats.changed': 'Whats',
                         'dot.common.cancel': 'Cancel',
-                        'favoritePage.dialog.header.add.page': 'Add Favorite Page'
+                        'favoritePage.dialog.header': 'Add Favorite Page'
                     })
                 },
                 {
@@ -255,7 +255,9 @@ describe('DotEditPageToolbarComponent', () => {
             const dotEditPageInfo = de.query(By.css('dot-edit-page-info')).componentInstance;
             expect(dotEditPageInfo.title).toBe('A title');
             expect(dotEditPageInfo.url).toBe('/an/url/test');
-            expect(dotEditPageInfo.apiLink).toBe('api/v1/page/render/an/url/test?language_id=1');
+            expect(dotEditPageInfo.innerApiLink).toBe(
+                'api/v1/page/render/an/url/test?language_id=1'
+            );
         });
     });
 

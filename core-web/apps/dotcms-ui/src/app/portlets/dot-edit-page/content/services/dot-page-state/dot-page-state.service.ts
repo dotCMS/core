@@ -1,4 +1,4 @@
-import { BehaviorSubject, Observable, of, Subject } from 'rxjs';
+import { BehaviorSubject, forkJoin, Observable, of, Subject } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
@@ -16,7 +16,7 @@ import {
     DotMessageService,
     DotPageRenderService
 } from '@dotcms/data-access';
-import { HttpCode, LoginService, User } from '@dotcms/dotcms-js';
+import { CurrentUser, HttpCode, LoginService, User } from '@dotcms/dotcms-js';
 import {
     DotCMSContentlet,
     DotDevice,
@@ -216,41 +216,55 @@ export class DotPageStateService {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { url, ...extraParams } = this.dotRouterService.queryParams;
 
-        return this.dotPageRenderService.get(options, extraParams).pipe(
-            catchError((err) => this.handleSetPageStateFailed(err)),
+        return forkJoin([
+            this.dotPageRenderService.get(options, extraParams),
+            this.loginService.getCurrentUser()
+        ]).pipe(
+            catchError((err: HttpErrorResponse) => {
+                return this.handleSetPageStateFailed(err);
+            }),
             take(1),
-            switchMap((page: DotPageRenderParameters) => {
-                if (page) {
-                    const urlParam = generateDotFavoritePageUrl(page);
+            switchMap(
+                (
+                    [page, user]: [page: DotPageRenderParameters, user: CurrentUser] = [null, null]
+                ) => {
+                    if (page) {
+                        const urlParam = generateDotFavoritePageUrl({
+                            deviceInode: page.viewAs.device?.inode,
+                            languageId: page.viewAs.language.id,
+                            pageURI: page.page.pageURI,
+                            siteId: page.site?.identifier
+                        });
 
-                    return this.dotESContentService
-                        .get({
-                            itemsPerPage: 10,
-                            offset: '0',
-                            query: `+contentType:DotFavoritePage +deleted:false +working:true +owner:dotcms.org.2795 +DotFavoritePage.url_dotraw:${urlParam}`
-                        })
-                        .pipe(
-                            take(1),
-                            catchError((error: HttpErrorResponse) => {
-                                // Set message to throw a custom Favorite Page error message
-                                error.error.message = this.dotMessageService.get(
-                                    'favoritePage.error.fetching.data'
-                                );
-
-                                this.dotHttpErrorManagerService.handle(error, true);
-
-                                return this.setLocalPageState(page);
-                            }),
-                            switchMap((response: ESContent) => {
-                                const favoritePage = response.jsonObjectView?.contentlets[0];
-
-                                return this.setLocalPageState(page, favoritePage);
+                        return this.dotESContentService
+                            .get({
+                                itemsPerPage: 10,
+                                offset: '0',
+                                query: `+contentType:DotFavoritePage +deleted:false +working:true +owner:${user.userId} +DotFavoritePage.url_dotraw:${urlParam}`
                             })
-                        );
-                }
+                            .pipe(
+                                take(1),
+                                catchError((error: HttpErrorResponse) => {
+                                    // Set message to throw a custom Favorite Page error message
+                                    error.error.message = this.dotMessageService.get(
+                                        'favoritePage.error.fetching.data'
+                                    );
 
-                return of(this.currentState);
-            })
+                                    this.dotHttpErrorManagerService.handle(error, true);
+
+                                    return this.setLocalPageState(page);
+                                }),
+                                switchMap((response: ESContent) => {
+                                    const favoritePage = response.jsonObjectView?.contentlets[0];
+
+                                    return this.setLocalPageState(page, favoritePage);
+                                })
+                            );
+                    }
+
+                    return of(this.currentState);
+                }
+            )
         );
     }
 
@@ -317,7 +331,7 @@ export class DotPageStateService {
                     this.reload();
                 }
             }),
-            map(() => null)
+            map(() => undefined)
         );
     }
 

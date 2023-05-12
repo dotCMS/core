@@ -27,14 +27,14 @@ import com.dotmarketing.util.MaintenanceUtil;
  */
 public class FixTask00015FixAssetTypesInIdentifiers implements FixTask {
 
-	private HashMap<String, Integer> badDataCount = new HashMap<String, Integer>();
+	private HashMap<String, Integer> badDataCount = new HashMap<>();
 	private int total = 0;
 	private String assetNames[] = { "contentlet", "containers", "links", "template" };
 
 	public List<Map<String, Object>> executeFix() throws DotDataException,
 		DotRuntimeException {
 
-		List<Map<String, Object>> returnValue = new ArrayList<Map<String, Object>>();
+		List<Map<String, Object>> returnValue = new ArrayList<>();
 
 		Logger.info(FixTask00015FixAssetTypesInIdentifiers.class, "Beginning FixAssetTypesInIdentifiers");
 
@@ -101,7 +101,7 @@ public class FixTask00015FixAssetTypesInIdentifiers implements FixTask {
 	}
 
 	public List<Map<String, String>> getModifiedData() {
-		return new ArrayList<Map<String,String>>();
+		return new ArrayList<>();
 	}
 
 	public boolean shouldRun() {
