@@ -1,6 +1,8 @@
 package com.dotcms.rest.api.v1.system.role;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.repackage.org.directwebremoting.WebContext;
+import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -8,12 +10,16 @@ import com.dotcms.rest.api.v1.system.permission.ResponseEntityPermissionView;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
+import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.web.UserWebAPI;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.user.ajax.UserAjax;
 import com.dotmarketing.util.Logger;
@@ -21,6 +27,8 @@ import com.dotmarketing.util.SecurityLogger;
 
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.PortalException;
+import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
@@ -485,6 +493,53 @@ public class RoleResource implements Serializable {
         }
 
 		return Response.ok(new ResponseEntitySmallRoleView(rolesToView(roleList))).build();
+	}
+
+
+	/**
+	 * Get all layouts
+	 *
+	 * @return {@link LayoutMapResponseEntityView} List of Layouts
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	@GET
+	@Path("/layouts")
+	@Produces("application/json")
+	public Response getAllLayouts(@Context final HttpServletRequest request,
+								  @Context final HttpServletResponse response)
+			throws DotDataException, LanguageException, DotRuntimeException, PortalException, SystemException {
+
+		final List<Map<String, Object>> layoutsMap = new ArrayList<>();
+		final List<Layout> layouts = APILocator.getLayoutAPI().findAllLayouts();
+
+		for(final Layout layout: layouts) {
+
+			final Map<String, Object> layoutMap = layout.toMap();
+			layoutMap.put("portletTitles", getPorletTitlesFromLayout(layout, request));
+			layoutsMap.add(layoutMap);
+		}
+
+		return Response.ok(new LayoutMapResponseEntityView(layoutsMap)).build();
+	}
+
+	private List<String> getPorletTitlesFromLayout (final Layout layout,
+													final HttpServletRequest request)
+			throws LanguageException, DotRuntimeException, PortalException, SystemException {
+
+		final List<String> portletIds    = layout.getPortletIds();
+		final List<String> portletTitles = new ArrayList<>();
+		if(portletIds != null) {
+			for(final String portletId: portletIds) {
+
+				final String portletTitle = LanguageUtil.get(
+						WebAPILocator.getUserWebAPI().getLoggedInUser(request),
+						"com.dotcms.repackage.javax.portlet.title." + portletId);
+				portletTitles.add(portletTitle);
+			}
+		}
+
+		return portletTitles;
 	}
 
 	private boolean fillRoles(final String searchName, final int count, final int startParam,
