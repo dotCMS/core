@@ -5,7 +5,7 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
- * It represent un {@link CubeJSResultSetImpl} with pagination, it is going to get the result by a limit
+ * It represents a {@link CubeJSResultSet} with pagination, it is going to get the result by a limit
  * of 1000 items for each request.
  */
 public class PaginationCubeJSResultSet implements CubeJSResultSet {
