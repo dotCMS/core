@@ -44,3 +44,4 @@ This maintenance release includes the following code fixes:
 32. https://github.com/dotCMS/core/issues/24781 : Performance Optimization - don't force field invalidations for non-velocity fields #24781
 33. https://github.com/dotCMS/core/issues/23764 : Take the Paragraph option out of the Allowed Blocks field #23764
 34. https://github.com/dotCMS/core/issues/23237 : Bock Editor: Allow user to insert image from local files #23237
+35. https://github.com/dotCMS/core/issues/23920 : BLOCK EDITOR: Can't add image when white list the blocks #23920

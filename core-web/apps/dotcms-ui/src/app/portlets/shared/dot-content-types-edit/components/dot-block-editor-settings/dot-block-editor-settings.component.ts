@@ -28,7 +28,7 @@ export const BLOCK_EDITOR_BLOCKS = [
     { label: 'Block Quote', code: 'blockquote' },
     { label: 'Bullet List', code: 'bulletList' },
     { label: 'Code Block', code: 'codeBlock' },
-    { label: 'Contentlet', code: 'contentlets' },
+    { label: 'Contentlet', code: 'dotContent' },
     { label: 'Heading 1', code: 'heading1' },
     { label: 'Heading 2', code: 'heading2' },
     { label: 'Heading 3', code: 'heading3' },
