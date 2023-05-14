@@ -45,3 +45,4 @@ This maintenance release includes the following code fixes:
 33. https://github.com/dotCMS/core/issues/23764 : Take the Paragraph option out of the Allowed Blocks field #23764
 34. https://github.com/dotCMS/core/issues/23237 : Bock Editor: Allow user to insert image from local files #23237
 35. https://github.com/dotCMS/core/issues/23920 : BLOCK EDITOR: Can't add image when white list the blocks #23920
+36. https://github.com/dotCMS/core/issues/24230 : Block Editor: Markdown content with JavaScript code is breaking the app #24230

@@ -36,6 +36,7 @@
 <%@ page import="com.dotcms.contenttype.model.field.HostFolderField" %>
 <%@ page import="com.dotmarketing.beans.Host" %>
 <%@ page import="com.dotcms.contenttype.model.field.JSONField" %>
+<%@ page import="org.apache.commons.lang.StringEscapeUtils" %>
 
 
 <%
@@ -169,7 +170,7 @@
                 JSONValue = new JSONObject(textValue);
             } catch(Exception e) {
                 // Need it in case the value contains Single quote/backtick.
-                textValue = "`" + textValue.replaceAll("`", "&#96;") + "`";
+                textValue = "`" + StringEscapeUtils.escapeJavaScript(textValue.replaceAll("`", "&#96;").replaceAll("\\$", "&#36;")) + "`";
             }
 
             List<FieldVariable> acceptTypes=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, false);
@@ -194,6 +195,7 @@
             %>
 
             <script src="/html/dotcms-block-editor.js"></script>
+            <script src="/html/showdown.min.js"></script>
             <dotcms-block-editor
                 id="block-editor-<%=field.getVelocityVarName()%>"
                 allowed-content-types="<%=allowedContentTypes%>"
@@ -226,7 +228,9 @@
                         // Otherwise, we try to parse the "textValue".
                         content = JSONValue || JSON.parse(<%=textValue%>);
                     } catch (error) {
-                        content = <%=textValue%>;
+                        const text = (<%=textValue%>).replace(/&#96;/g, '`').replace(/&#36;/g, '$');
+                        const converter = new showdown.Converter({tables: true});
+                        content = converter.makeHtml(text);
                     }
 
                     const blockEditor = document.getElementById("block-editor-<%=field.getVelocityVarName()%>");
@@ -261,6 +265,7 @@
 
                     if (content) {
                         blockEditor.value = content;
+                        field.value = content;
                     }
 
                 })();
