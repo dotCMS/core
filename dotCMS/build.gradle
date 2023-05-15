@@ -459,7 +459,8 @@ tasks.withType(Test) {
         // set options for log level LIFECYCLE
         events TestLogEvent.FAILED,
                 TestLogEvent.PASSED,
-                TestLogEvent.SKIPPED
+                TestLogEvent.SKIPPED,
+                TestLogEvent.STANDARD_ERROR
         exceptionFormat TestExceptionFormat.FULL
 
     }
