@@ -1,7 +1,7 @@
 <ng-container *ngIf="vm$ | async as vm">
     <dot-experiments-header
         [isLoading]="vm.isLoading"
-        [title]="vm.page.pageTitle"
+        [title]="vm.pageTitle"
         (goBack)="goToBrowserBack()"
     />
     <div class="dot-experiment">

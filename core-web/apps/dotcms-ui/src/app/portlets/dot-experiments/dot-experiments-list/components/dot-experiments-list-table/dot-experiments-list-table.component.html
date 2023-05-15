@@ -17,9 +17,10 @@
                     <tr data-testId="experiment-row">
                         <td
                             [routerLink]="[
-                                '/edit-page/experiments/configuration',
+                                '/edit-page/experiments',
                                 experiment.pageId,
-                                experiment.id
+                                experiment.id,
+                                'configuration'
                             ]"
                             data-testId="experiment-row__name"
                             queryParamsHandling="preserve"

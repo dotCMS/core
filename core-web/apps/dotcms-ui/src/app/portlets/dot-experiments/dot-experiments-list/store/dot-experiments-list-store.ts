@@ -17,14 +17,11 @@ import {
     GroupedExperimentByStatus,
     SidebarStatus
 } from '@dotcms/dotcms-models';
+import { DotExperimentsStore } from '@portlets/dot-experiments/dot-experiments-shell/store/dot-experiments.store';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 export interface DotExperimentsState {
-    page: {
-        pageId: string;
-        pageTitle: string;
-    };
     experiments: DotExperiment[];
     filterStatus: Array<string>;
     status: ComponentStatus;
@@ -32,10 +29,6 @@ export interface DotExperimentsState {
 }
 
 const initialState: DotExperimentsState = {
-    page: {
-        pageId: '',
-        pageTitle: ''
-    },
     experiments: [],
     filterStatus: [
         DotExperimentStatusList.RUNNING,
@@ -53,15 +46,13 @@ const initialState: DotExperimentsState = {
 
 // Vm Interfaces
 export interface VmListExperiments {
-    page: {
-        pageId: string;
-        pageTitle: string;
-    };
     isLoading: boolean;
     experiments: DotExperiment[];
     experimentsFiltered: GroupedExperimentByStatus[];
     filterStatus: Array<string>;
     sidebar: SidebarStatus;
+    pageId: string;
+    pageTitle: string;
 }
 
 export interface VmCreateExperiments {
@@ -222,9 +213,10 @@ export class DotExperimentsListStore
 
                                 this.router.navigate(
                                     [
-                                        '/edit-page/experiments/configuration',
+                                        '/edit-page/experiments/',
                                         experiment.pageId,
-                                        experiment.id
+                                        experiment.id,
+                                        'configuration'
                                     ],
                                     {
                                         queryParamsHandling: 'preserve'
@@ -305,27 +297,38 @@ export class DotExperimentsListStore
         this.state$,
         this.isLoading$,
         this.getExperimentsFilteredAndGroupedByStatus$,
-        ({ page, experiments, filterStatus, sidebar }, isLoading, experimentsFiltered) => ({
-            page,
+        this.dotExperimentsStore.getPageId$,
+        this.dotExperimentsStore.getPageTitle$,
+        (
+            { experiments, filterStatus, sidebar },
+            isLoading,
+            experimentsFiltered,
+            pageId,
+            pageTitle
+        ) => ({
             experiments,
             filterStatus,
             sidebar,
             isLoading,
-            experimentsFiltered
+            experimentsFiltered,
+            pageId,
+            pageTitle
         })
     );
 
     readonly createVm$: Observable<VmCreateExperiments> = this.select(
         this.state$,
         this.isSidebarSaving$,
-        ({ sidebar, page }, isSaving) => ({
-            pageId: page.pageId,
+        this.dotExperimentsStore.getPageId$,
+        ({ sidebar }, isSaving, pageId) => ({
+            pageId: pageId,
             sidebar,
             isSaving
         })
     );
 
     constructor(
+        private readonly dotExperimentsStore: DotExperimentsStore,
         private readonly dotExperimentsService: DotExperimentsService,
         private readonly dotMessageService: DotMessageService,
         private readonly messageService: MessageService,
@@ -334,11 +337,7 @@ export class DotExperimentsListStore
         private readonly dotHttpErrorManagerService: DotHttpErrorManagerService
     ) {
         super({
-            ...initialState,
-            page: {
-                pageId: route.snapshot.params.pageId,
-                pageTitle: route.snapshot.parent?.parent?.parent?.data?.content?.page?.title
-            }
+            ...initialState
         });
     }
 

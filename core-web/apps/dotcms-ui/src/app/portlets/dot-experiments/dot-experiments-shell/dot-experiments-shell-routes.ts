@@ -4,19 +4,19 @@ import { DotExperimentsShellComponent } from './dot-experiments-shell.component'
 
 export const DotExperimentsShellRoutes: Routes = [
     {
-        path: '',
+        path: ':pageId',
         component: DotExperimentsShellComponent,
 
         children: [
             {
-                path: ':pageId',
+                path: '',
                 title: 'experiment.container.list.title',
                 loadComponent: async () =>
                     (await import('../dot-experiments-list/dot-experiments-list.component'))
                         .DotExperimentsListComponent
             },
             {
-                path: 'configuration/:pageId/:experimentId',
+                path: ':experimentId/configuration',
                 title: 'experiment.container.configuration.title',
                 loadComponent: async () =>
                     (
@@ -26,11 +26,11 @@ export const DotExperimentsShellRoutes: Routes = [
                     ).DotExperimentsConfigurationComponent
             },
             {
-                path: 'reports',
+                path: ':experimentId/reports',
                 title: 'experiment.container.report.title',
-                loadChildren: async () =>
-                    (await import('../dot-experiments-reports/dot-experiments-reports.routes'))
-                        .DotExperimentsReportsRoutes
+                loadComponent: async () =>
+                    (await import('../dot-experiments-reports/dot-experiments-reports.component'))
+                        .DotExperimentsReportsComponent
             }
         ]
     }

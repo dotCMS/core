@@ -128,14 +128,17 @@ export class DotExperimentsListComponent {
      */
 
     goToViewExperimentReport(experiment: DotExperiment) {
-        this.router.navigate(['/edit-page/experiments/reports/', experiment.id], {
-            queryParams: {
-                mode: null,
-                variantName: null,
-                experimentId: null
-            },
-            queryParamsHandling: 'merge'
-        });
+        this.router.navigate(
+            ['/edit-page/experiments/', experiment.pageId, experiment.id, 'reports'],
+            {
+                queryParams: {
+                    mode: null,
+                    variantName: null,
+                    experimentId: null
+                },
+                queryParamsHandling: 'merge'
+            }
+        );
     }
 
     private handleSidebar(status: SidebarStatus): void {

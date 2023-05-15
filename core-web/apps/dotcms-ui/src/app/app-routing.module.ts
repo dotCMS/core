@@ -205,7 +205,8 @@ const appRoutes: Routes = [
     imports: [
         RouterModule.forRoot(appRoutes, {
             useHash: true,
-            onSameUrlNavigation: 'reload'
+            onSameUrlNavigation: 'reload',
+            enableTracing: true
         })
     ],
     providers: [{ provide: RouteReuseStrategy, useClass: DotCustomReuseStrategyService }]

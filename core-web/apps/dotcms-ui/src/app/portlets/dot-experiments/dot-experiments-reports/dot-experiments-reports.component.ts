@@ -2,6 +2,7 @@ import { Observable } from 'rxjs';
 
 import {
     AsyncPipe,
+    JsonPipe,
     LowerCasePipe,
     NgClass,
     NgIf,
@@ -59,7 +60,8 @@ import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.dir
         //PrimeNg
         TagModule,
         ButtonModule,
-        TitleCasePipe
+        TitleCasePipe,
+        JsonPipe
     ],
     templateUrl: './dot-experiments-reports.component.html',
     styleUrls: ['./dot-experiments-reports.component.scss'],

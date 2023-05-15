@@ -1,4 +1,11 @@
-import { LowerCasePipe, NgForOf, NgIf, NgTemplateOutlet, UpperCasePipe } from '@angular/common';
+import {
+    JsonPipe,
+    LowerCasePipe,
+    NgForOf,
+    NgIf,
+    NgTemplateOutlet,
+    UpperCasePipe
+} from '@angular/common';
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
@@ -35,7 +42,8 @@ import { DotExperimentsEmptyExperimentsComponent } from '@portlets/dot-experimen
         UiDotIconButtonTooltipModule,
         // PrimeNG
         ConfirmPopupModule,
-        TableModule
+        TableModule,
+        JsonPipe
     ],
     templateUrl: './dot-experiments-list-table.component.html',
     styleUrls: ['./dot-experiments-list-table.component.scss'],
