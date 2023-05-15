@@ -1,5 +1,6 @@
 package com.dotcms.analytics.helper;
 
+import com.dotcms.UnitTestBase;
 import com.dotcms.analytics.AnalyticsTestUtils;
 import com.dotcms.analytics.model.AccessToken;
 import com.dotcms.analytics.model.AccessTokenErrorType;
@@ -36,7 +37,7 @@ import static org.mockito.Mockito.when;
  *
  * @author vico
  */
-public class AnalyticsHelperTest {
+public class AnalyticsHelperTest extends UnitTestBase {
 
     private CircuitBreakerUrl.Response response;
 
