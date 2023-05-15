@@ -122,24 +122,13 @@ export class DotCrumbtrailService {
         const sections: string[] = this.splitURL(url);
         const portletId = replaceSectionsMap[sections[0]] || sections[0];
 
+        const isEditPage = sections && sections[0] == 'edit-page';
+
         return this.getMenuLabel(portletId).pipe(
-            switchMap((crumbTrail: DotCrumb[]) =>
-                // If it is edit page
-                sections[0] == 'edit-page'
-                    ? // We get the breadcrumb for pages
-                      this.getMenuLabel('pages').pipe(
-                          map(
-                              (pagesCrumbTrail: DotCrumb[]) =>
-                                  // If the pages portlet exists in the menu
-                                  pagesCrumbTrail.length
-                                      ? pagesCrumbTrail.filter(
-                                            (value) => !value.url.includes('site-browser')
-                                        ) // We remove the Site link and return the breadcrumb
-                                      : crumbTrail // Otherwise we return the original breadcrumb
-                          )
-                      )
-                    : // If it's not edit pages, we return the original breadcrumb
-                      of(crumbTrail)
+            switchMap(
+                (crumbTrail: DotCrumb[]) =>
+                    // If it is edit page
+                    isEditPage ? this.getPagesCrumbTrail(crumbTrail) : of(crumbTrail) // If it's not edit pages, we return the original breadcrumb
             ),
             map((crumbTrail: DotCrumb[]) => {
                 if (this.shouldAddSection(sections, url)) {
@@ -153,6 +142,28 @@ export class DotCrumbtrailService {
                 }
 
                 return crumbTrail;
+            })
+        );
+    }
+
+    /**
+     * Get the pages crumbtrail.
+     * Alternate crumbtrail is used when the page portlet is not enabled.
+     *
+     * @private
+     * @param {DotCrumb[]} alternateCrumbTrail
+     * @return {*}  {Observable<DotCrumb[]>}
+     * @memberof DotCrumbtrailService
+     */
+    private getPagesCrumbTrail(alternateCrumbTrail: DotCrumb[] = []): Observable<DotCrumb[]> {
+        return this.getMenuLabel('pages').pipe(
+            map((pagesCrumbTrail: DotCrumb[]) => {
+                // Remove the site-browser from the pages crumbtrail
+                const crumbTail = pagesCrumbTrail?.filter(
+                    (value) => !value.url.includes('site-browser')
+                );
+
+                return crumbTail.length ? crumbTail : alternateCrumbTrail;
             })
         );
     }
