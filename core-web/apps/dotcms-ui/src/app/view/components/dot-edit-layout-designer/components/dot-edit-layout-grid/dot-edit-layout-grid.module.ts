@@ -11,6 +11,7 @@ import { DotContainerSelectorLayoutModule } from '@components/dot-container-sele
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { NgGridModule } from '@dotcms/dot-layout-grid';
+import { DotFieldRequiredDirective } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotEditLayoutGridComponent } from './dot-edit-layout-grid.component';
@@ -29,7 +30,8 @@ import { DotEditLayoutGridComponent } from './dot-edit-layout-grid.component';
         ReactiveFormsModule,
         UiDotIconButtonTooltipModule,
         DotAutofocusModule,
-        DotPipesModule
+        DotPipesModule,
+        DotFieldRequiredDirective
     ],
     exports: [DotEditLayoutGridComponent],
     providers: []

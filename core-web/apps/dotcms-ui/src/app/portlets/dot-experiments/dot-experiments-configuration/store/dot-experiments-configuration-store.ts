@@ -226,17 +226,36 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                             this.messageService.add({
                                 severity: 'info',
                                 summary: this.dotMessageService.get(
-                                    'experiments.action.start.confirm-title'
+                                    response.status === DotExperimentStatusList.RUNNING
+                                        ? 'experiments.action.start.confirm-title'
+                                        : 'experiments.action.scheduled.confirm-title'
                                 ),
                                 detail: this.dotMessageService.get(
-                                    'experiments.action.start.confirm-message',
+                                    response.status === DotExperimentStatusList.RUNNING
+                                        ? 'experiments.action.start.confirm-message'
+                                        : 'experiments.action.scheduled.confirm-message',
                                     experiment.name
                                 )
                             });
                             this.setExperiment(response);
                         },
-                        (error: HttpErrorResponse) => this.dotHttpErrorManagerService.handle(error),
-                        () => this.setComponentStatus(ComponentStatus.IDLE)
+                        (response: HttpErrorResponse) => {
+                            this.setComponentStatus(ComponentStatus.IDLE);
+                            const { error } = response;
+
+                            return this.dotHttpErrorManagerService.handle({
+                                ...response,
+                                error: {
+                                    ...error,
+                                    header: error.header
+                                        ? error.header
+                                        : this.dotMessageService.get(
+                                              'dot.common.http.error.400.experiment.run-scheduling-error.header'
+                                          ),
+                                    message: error.message.split('.')[0]
+                                }
+                            });
+                        }
                     )
                 )
             )

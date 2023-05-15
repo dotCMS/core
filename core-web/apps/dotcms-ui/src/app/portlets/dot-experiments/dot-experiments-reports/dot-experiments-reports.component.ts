@@ -1,6 +1,13 @@
 import { Observable } from 'rxjs';
 
-import { AsyncPipe, LowerCasePipe, NgClass, NgIf, PercentPipe } from '@angular/common';
+import {
+    AsyncPipe,
+    LowerCasePipe,
+    NgClass,
+    NgIf,
+    PercentPipe,
+    TitleCasePipe
+} from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -12,15 +19,13 @@ import {
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
-import { RippleModule } from 'primeng/ripple';
 import { TagModule } from 'primeng/tag';
 
 import { tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_NAME } from '@dotcms/dotcms-models';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { DotExperimentsConfigurationSkeletonComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-skeleton/dot-experiments-configuration-skeleton.component';
 import { DotExperimentsPublishVariantComponent } from '@portlets/dot-experiments/dot-experiments-reports/components/dot-experiments-publish-variant/dot-experiments-publish-variant.component';
 import { DotExperimentsReportsChartComponent } from '@portlets/dot-experiments/dot-experiments-reports/components/dot-experiments-reports-chart/dot-experiments-reports-chart.component';
 import { DotExperimentsReportsSkeletonComponent } from '@portlets/dot-experiments/dot-experiments-reports/components/dot-experiments-reports-skeleton/dot-experiments-reports-skeleton.component';
@@ -45,7 +50,6 @@ import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.dir
         //dotCMS
         DotExperimentsUiHeaderComponent,
         DotPipesModule,
-        DotExperimentsConfigurationSkeletonComponent,
         DotExperimentsExperimentSummaryComponent,
         DotExperimentsReportsSkeletonComponent,
         DotExperimentsReportsChartComponent,
@@ -55,7 +59,7 @@ import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.dir
         //PrimeNg
         TagModule,
         ButtonModule,
-        RippleModule
+        TitleCasePipe
     ],
     templateUrl: './dot-experiments-reports.component.html',
     styleUrls: ['./dot-experiments-reports.component.scss'],
@@ -64,7 +68,7 @@ import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.dir
 })
 export class DotExperimentsReportsComponent implements OnInit {
     vm$: Observable<VmReportExperiment> = this.store.vm$.pipe(
-        tap(({ showDialog }) => this.handlePromoteDialog(showDialog))
+        tap(({ showPromoteDialog }) => this.handlePromoteDialog(showPromoteDialog))
     );
     dotMessageService = inject(DotMessageService);
     readonly chartConfig: { xAxisLabel: string; yAxisLabel: string; title: string } = {
@@ -72,47 +76,9 @@ export class DotExperimentsReportsComponent implements OnInit {
         yAxisLabel: this.dotMessageService.get('experiments.chart.yAxisLabel'),
         title: this.dotMessageService.get('experiments.reports.chart.title')
     };
-    //Todo: Remove this mock data
-    detailData = [
-        {
-            id: DEFAULT_VARIANT_ID,
-            variant_name: 'Default Variant',
-            traffic_split: 0.33,
-            pageviews: 100,
-            sessions: 100,
-            clicks: 100,
-            best_variant: 0.5,
-            improvement: 'Baseline',
-            is_winner: false,
-            better_than_baseline: false
-        },
-        {
-            id: 'variant-1',
-            variant_name: 'Variant 1',
-            traffic_split: 0.33,
-            pageviews: 100,
-            sessions: 100,
-            clicks: 100,
-            best_variant: 0.5,
-            improvement: 0.5,
-            is_winner: true,
-            better_than_baseline: true
-        },
-        {
-            id: 'variant-2',
-            variant_name: 'Variant 2',
-            traffic_split: 0.33,
-            pageviews: 100,
-            sessions: 100,
-            clicks: 100,
-            best_variant: 0.5,
-            improvement: 0.5,
-            is_winner: false,
-            better_than_baseline: false
-        }
-    ];
+
     @ViewChild(DotDynamicDirective, { static: true }) dialogHost!: DotDynamicDirective;
-    protected readonly defaultVariantId = DEFAULT_VARIANT_ID;
+    protected readonly defaultVariantName = DEFAULT_VARIANT_NAME;
     private componentRef: ComponentRef<DotExperimentsPublishVariantComponent>;
 
     constructor(
