@@ -519,7 +519,6 @@ describe('DotPageStore', () => {
         });
 
         dotPageStore.state$.subscribe((data) => {
-            // Filter the separator
             const menuActions = data.pages.menuActions;
 
             expect(menuActions.length).toEqual(8);
