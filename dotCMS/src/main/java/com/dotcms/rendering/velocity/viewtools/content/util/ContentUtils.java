@@ -1,7 +1,12 @@
 package com.dotcms.rendering.velocity.viewtools.content.util;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.rendering.velocity.viewtools.content.PaginatedContentList;
+import com.dotcms.rest.ContentResource;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.TimeMachineUtil;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -14,17 +19,22 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
+import io.vavr.Lazy;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -37,8 +47,11 @@ import java.util.stream.Collectors;
  * @since 1.9.3
  */
 public class ContentUtils {
-	
-	   private static ContentletAPI conAPI;
+
+	// it is true, even if the pattern is false because the client has to include the depth parameter to activate it
+	private static final Lazy<Boolean> ADD_RELATIONSHIPS_ON_PAGE = Lazy.of(()-> Config.getBooleanProperty("ADD_RELATIONSHIPS_ON_PAGE", true));
+
+	private static ContentletAPI conAPI;
 	   public static final ContentUtils INSTANCE = new ContentUtils();
 
 	    private ContentUtils() {
@@ -748,6 +761,67 @@ public class ContentUtils {
 			q+=" +deleted:false ";
 		}
 		return q;
+	}
+
+
+	/**
+	 * Adds the relationships to the contentlet based on the request parameters depth
+	 * @param contentlet
+	 * @param user
+	 * @param mode
+	 * @param languageId
+	 */
+	public static void addRelationships(final Contentlet contentlet, final User user, final PageMode mode, final long languageId) {
+
+		final HttpServletRequest  request  = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+		final HttpServletResponse response = HttpServletResponseThreadLocal.INSTANCE.getResponse();
+		if (ADD_RELATIONSHIPS_ON_PAGE.get() &&
+				null != response && null != request &&
+				null != user &&
+				null != request.getParameter("depth")) {
+
+			final int depth = ConversionUtils.toInt(request.getParameter("depth"), -1);
+			addRelationships(contentlet, user, mode, languageId, depth, request, response);
+		}
+	}
+
+	/**
+	 * Adds the relationships to the contentlet based on depth argument
+	 * @param contentlet
+	 * @param user
+	 * @param mode
+	 * @param languageId
+	 * @param depth
+	 * @param request
+	 * @param response
+	 */
+	public static void addRelationships(final Contentlet contentlet, final User user, final PageMode mode,
+										final long languageId, final int depth, final HttpServletRequest  request,
+										final HttpServletResponse response) {
+
+		if (depth >= 0 && depth <= 3) {
+
+			try {
+
+				final JSONObject jsonWithRelationShips = ContentResource.addRelationshipsToJSON(request, response,
+						request.getParameter("render"), user, depth, mode.respectAnonPerms, contentlet,
+						new JSONObject(), null, languageId, mode.showLive, false,
+						true);
+
+				final HashMap<String,Object> relationshipsMap = DotObjectMapperProvider.getInstance()
+						.getDefaultObjectMapper().readValue(jsonWithRelationShips.toString(), HashMap.class);
+
+				if (UtilMethods.isSet(relationshipsMap)) {
+					contentlet.getMap().putAll(relationshipsMap);
+				}
+			} catch (Exception e) {
+
+				Logger.error(ContentUtils.class, "Error, contentlet id:" +
+						contentlet.getIdentifier() + ", msg:" + e.getMessage(), e);
+				throw new RuntimeException(e);
+			}
+		}
+
 	}
 		
 }
