@@ -3,6 +3,8 @@ package com.dotcms.rest.api.v1.asset;
 import static com.liferay.util.StringPool.BLANK;
 import static com.liferay.util.StringPool.DOUBLE_SLASH;
 import static com.liferay.util.StringPool.FORWARD_SLASH;
+
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -80,17 +82,24 @@ public class AssetPathResolver {
             }
 
             if (null == folderByPath || UtilMethods.isNotSet(folderByPath.getInode())) {
-                throw new NotFoundException(
+                throw new NotFoundInDbException(
                         String.format("Unable to determine a valid folder from path: [%s].", path));
             }
 
             final String resource =
                     uri.getRawQuery() != null ? uri.getPath() + "?" + uri.getRawQuery()
                             : uri.getPath();
-            final String asset = asset(resource);
+            final Optional<String> asset = asset(folderByPath, resource);
 
-            return builder.resolvedHost(siteByName).host(host).resolvedFolder(folderByPath)
-                    .path(path).asset(asset).build();
+            builder.resolvedHost(siteByName)
+                    .host(host)
+                    .resolvedFolder(folderByPath)
+                    .path(path);
+
+            if (asset.isPresent()) {
+                builder.asset(asset.get());
+            }
+            return builder.build();
         } catch (URISyntaxException | DotSecurityException e) {
             throw new IllegalArgumentException("Error Parsing uri:" + url, e);
         }
@@ -98,18 +107,32 @@ public class AssetPathResolver {
 
     /**
      * Extract the relevant file asset name if any otherwise return null
-     * @param resource
+     * if the extracted name is equal to the folder name we assume there's no asset name
+     * @param resolvedFolder
+     * @param rawResource
      * @return
      */
-    private String asset(String resource) {
+    Optional<String> asset(final Folder resolvedFolder, final String rawResource) {
+        String resource = rawResource;
         final int index = resource.lastIndexOf(FORWARD_SLASH);
-        if (index > 0) {
-            resource = (resource.substring(index)).replace(FORWARD_SLASH, BLANK);
+        if (index == 0) {
+            return Optional.empty();
         } else {
-            //This should force returning null
-            resource = null;
+                //subtract the folder name from the resource, so we get the asset name
+                // if for example we have a URL like:
+                // `//demo.dotcms.com/images/blogs` or `//demo.dotcms.com/images/blogs/`
+                //  and the folder name is `/images/blogs/`  we should return an empty string
+                //  if the url contains a resource like
+                // `//demo.dotcms.com/images/blogs/xyz.jpg` and a path like `/images/blogs/xyz.jpg
+                // we should remove the folder name from the path so the result is `xyz.jpg`
+                String folderPath = resolvedFolder.getPath();
+                if(folderPath.endsWith(FORWARD_SLASH)){
+                    folderPath = folderPath.replaceAll(".$","");
+                }
+                resource = rawResource.replaceFirst(folderPath, BLANK);
+                resource = resource.replace(FORWARD_SLASH, BLANK);
         }
-        return "".equals(resource) ? null : resource;
+        return UtilMethods.isNotSet(resource) ? Optional.empty() :  Optional.of(resource);
     }
 
     Optional<String> parentFolder(final String path) {
