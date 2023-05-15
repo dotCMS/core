@@ -199,6 +199,56 @@ public class ResizeCalcTest {
         
     }
     
+    /**
+     * If both a max width and max height are passed, we will resize the image proportionally in the
+     * most restrictive (smallest) dimension - thus respecting both max parameters.
+     */
+    @Test
+    public void test_bothMinParams() {
+        
+        // portraitSmall = 50x100
+        ResizeCalc calc = new ResizeCalc.Builder(portraitSmall)
+                        .minWidth(100)
+                        .minHeight(200)
+                        .build();
+        
+        assertEquals(100,calc.getDim().width);
+        assertEquals(200,calc.getDim().height);
+        
+        // portraitSmall = 50x100
+        calc = new ResizeCalc.Builder(portraitSmall)
+                        .minWidth(200)
+                        .minHeight(100)
+                        .build();
+        
+        assertEquals(200,calc.getDim().width);
+        assertEquals(400,calc.getDim().height);
+        
+        // landscape small = 100x50
+        calc = new ResizeCalc.Builder(landscapeSmall)
+                        .minWidth(200)
+                        .minHeight(100)
+                        .build();
+
+        assertEquals(200,calc.getDim().width);
+        assertEquals(100,calc.getDim().height);
+        
+        
+        // square
+        calc = new ResizeCalc.Builder(square)
+                        .minWidth(200)
+                        .minHeight(200)
+                        .build();
+        
+        assertEquals(500,calc.getDim().width);
+        assertEquals(500,calc.getDim().height);
+        
+        
+    }
+    
+    
+    
+    
     
     
 }

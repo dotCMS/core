@@ -14,8 +14,10 @@ public class ResizeImageFilter extends ImageFilter {
 				"w (int) specifies width",
 				"h (int) specifies height",
 				"i (int) interpolation",
-				"mw (int) specifies maxWidth",
-				"mh (int) specifies maxHeight"
+				"mxw (int) specifies maxWidth",
+				"mxh (int) specifies maxHeight",
+                "minh (int) specifies maxWidth",
+                "minh (int) specifies maxHeight"
 		};
 	}
 	public File runFilter(final File file,    Map<String, String[]> parameters) {
@@ -23,8 +25,11 @@ public class ResizeImageFilter extends ImageFilter {
         int w = Try.of(()-> Integer.parseInt(parameters.getOrDefault(getPrefix() + "w", new String[]{"0"})[0])).getOrElse(0);
         int h = Try.of(()-> Integer.parseInt(parameters.getOrDefault(getPrefix() + "h", new String[]{"0"})[0])).getOrElse(0);
         int resampleOpts = Try.of(()-> Integer.parseInt(parameters.get(getPrefix() +"ro")[0])).getOrElse(ImageFilterApiImpl.DEFAULT_RESAMPLE_OPT);
-        int mw = Try.of(()-> Integer.parseInt(parameters.getOrDefault(getPrefix() + "mw", new String[]{"0"})[0])).getOrElse(0);
-        int mh = Try.of(()-> Integer.parseInt(parameters.getOrDefault(getPrefix() + "mh", new String[]{"0"})[0])).getOrElse(0);
+        int mxw = Try.of(()-> Integer.parseInt(parameters.getOrDefault(getPrefix() + "maxw", new String[]{"0"})[0])).getOrElse(0);
+        int mxh = Try.of(()-> Integer.parseInt(parameters.getOrDefault(getPrefix() + "maxh", new String[]{"0"})[0])).getOrElse(0);
+        int mnw = Try.of(()-> Integer.parseInt(parameters.getOrDefault(getPrefix() + "minw", new String[]{"0"})[0])).getOrElse(0);
+        int mnh = Try.of(()-> Integer.parseInt(parameters.getOrDefault(getPrefix() + "minh", new String[]{"0"})[0])).getOrElse(0);
+        
         
         
 		if(file.getName().endsWith(".gif")) {
@@ -32,7 +37,7 @@ public class ResizeImageFilter extends ImageFilter {
 		}
 
 		
-        if (w == 0 && h == 0 && mh == 0 && mw == 0) {
+        if (w == 0 && h == 0 && mxh == 0 && mxw == 0&& mnh == 0 && mnw == 0) {
             return file;
         }
 		
@@ -49,8 +54,10 @@ public class ResizeImageFilter extends ImageFilter {
 		final Dimension newSize = new ResizeCalc.Builder(originalSize)
 		                .desiredHeight(h)
 		                .desiredWidth(w)
-		                .maxWidth(mw)
-		                .maxHeight(mh)
+		                .maxWidth(mxw)
+		                .maxHeight(mxh)
+		                .minHeight(mnh)
+		                .minWidth(mnw)
 		                .build()
 		                .getDim();
 		

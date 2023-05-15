@@ -12,7 +12,8 @@ public class ResizeCalc {
     private final int desiredHeight;
     private final int maxWidth;
     private final int maxHeight;
-
+    private final int minWidth;
+    private final int minHeight;
 
     private ResizeCalc(Builder builder) {
         this.originalWidth = builder.originalWidth;
@@ -21,7 +22,8 @@ public class ResizeCalc {
         this.desiredHeight = builder.desiredHeight;
         this.maxWidth = builder.maxWidth;
         this.maxHeight = builder.maxHeight;
-
+        this.minWidth = builder.minWidth;
+        this.minHeight = builder.minHeight;
 
     }
 
@@ -29,22 +31,22 @@ public class ResizeCalc {
     public Dimension getDim() {
 
         
-        if(desiredWidth<=0 && desiredHeight<=0 && maxWidth<=0&&maxHeight<=0) {
-            return doNothing();
-        }
         
-        
-        // if we have a width and/or height, respect it and ignore mw and mh
+        // if we have a width and/or height, respect it and ignore maxw and maxh
         if (desiredWidth > 0 || desiredHeight > 0) {
             return doResize();
         }
-
-        // if the source is smaller than mw && mh, ignore
+        
+        if (maxWidth <= 0 && maxHeight <= 0 && minWidth <= 0 && minHeight <= 0) {
+            return doNothing();
+        }
+        
+        // if the source is smaller than maxw && maxh, ignore
         if (maxWidth >= originalWidth && maxHeight >= originalHeight) {
             return doNothing();
         }
 
-        // if both mw and mh are set, figure out which to respect
+        // if both maxw and maxh are set, figure out which to respect
         if (maxWidth > 0 && maxHeight > 0) {
             return doMaxWidthAndHeight();
         }
@@ -58,6 +60,28 @@ public class ResizeCalc {
         if (maxHeight > 0) {
             return doMaxHeight();
         }
+        
+        // if the source is smaller than minw && minh, ignore
+        if (minWidth <= originalWidth && minHeight <= originalHeight) {
+            return doNothing();
+        }
+        
+        // if both minw and minh are set, figure out which to respect
+        if (minWidth > 0 && minHeight > 0) {
+            return doMinWidthAndHeight();
+        }
+
+        // only max width
+        if (minWidth > 0) {
+            return doMinWidth();
+        }
+        
+        // only max height
+        if (minHeight > 0) {
+            return doMinHeight();
+        }
+        
+        
         return doNothing();
     }
 
@@ -82,6 +106,29 @@ public class ResizeCalc {
         return new Dimension(finalWidth, finalHeight);
     }
 
+    private Dimension doMinWidthAndHeight() {
+
+        int testHeight = (minWidth * originalHeight) / originalWidth;
+        int testWidth = ((minHeight * originalWidth) / originalHeight);
+        int finalWidth = minWidth < testWidth ? testWidth : minWidth;
+        int finalHeight = minHeight < testHeight ? testHeight : minHeight;
+        return new Dimension(finalWidth, finalHeight);
+    }
+    
+    private Dimension doMinWidth() {
+
+        int finalWidth = minWidth > originalWidth ? minWidth : originalWidth;
+        int finalHeight = (finalWidth * originalHeight) / originalWidth;
+        return new Dimension(finalWidth, finalHeight);
+    }
+    
+    private Dimension doMinHeight() {
+
+        int finalHeight = minHeight > originalHeight ? minHeight : originalHeight ;
+        int finalWidth = (finalHeight * originalWidth) / originalHeight;
+        return new Dimension(finalWidth, finalHeight);
+    }
+    
     private Dimension doMaxWidth() {
 
         int finalWidth = maxWidth > originalWidth ? originalWidth : maxWidth;
@@ -103,6 +150,8 @@ public class ResizeCalc {
         private int desiredHeight;
         private int maxWidth;
         private int maxHeight;
+        private int minWidth;
+        private int minHeight;
 
         public Builder(int originalWidth, int originalHeight) {
             this.originalWidth = originalWidth;
@@ -134,7 +183,15 @@ public class ResizeCalc {
             this.maxHeight = maxHeight;
             return this;
         }
+        public Builder minWidth(@Nonnull int minWidth) {
+            this.minWidth = minWidth;
+            return this;
+        }
 
+        public Builder minHeight(@Nonnull int minHeight) {
+            this.minHeight = minHeight;
+            return this;
+        }
         public ResizeCalc build() {
             return new ResizeCalc(this);
         }
