@@ -110,7 +110,7 @@ public class CircuitBreakerUrlTest {
 
     @Test
     public void testBadBreaker() throws IOException {
-
+        final boolean ipPrivateSubnet = IPUtils.isIpPrivateSubnet();
         try {
             final NullOutputStream nos = new NullOutputStream();
 
@@ -120,21 +120,21 @@ public class CircuitBreakerUrlTest {
             CircuitBreaker breaker = CurcuitBreakerPool.getBreaker(key);
             assert (breaker.isClosed());
 
-            //Config.setProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", true);
             IPUtils.disabledIpPrivateSubnet(true);
 
             for (int i = 0; i < 10; i++) {
-                //try {
+                try {
                     new CircuitBreakerUrl(badUrl, timeout, breaker).doOut(nos);
-                //} catch (Exception e) {
-                  //  assert (e instanceof CircuitBreakerOpenException);
-                //}
+                } catch (Exception e) {
+                    assert (e instanceof CircuitBreakerOpenException);
+                }
             }
             breaker = CurcuitBreakerPool.getBreaker(key);
 
             assert (breaker.isOpen());
         }finally {
-            Config.setProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", false);
+            IPUtils.disabledIpPrivateSubnet(ipPrivateSubnet);
+
         }
     }
 
@@ -207,7 +207,9 @@ public class CircuitBreakerUrlTest {
      */
     @Test
     public void testRecovery() throws  InterruptedException, IOException {
-        Config.setProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", true);
+        final boolean ipPrivateSubnet = IPUtils.isIpPrivateSubnet();
+
+        IPUtils.disabledIpPrivateSubnet(true);
 
         try {
             final NullOutputStream nos = new NullOutputStream();
@@ -231,11 +233,11 @@ public class CircuitBreakerUrlTest {
             assert (breaker.isClosed());
 
             for (int i = 0; i < breaker.getFailureThreshold().denominator; i++) {
-                //try {
+                try {
                     new CircuitBreakerUrl(badUrl, timeout, breaker).doOut(nos);
-                //} catch (Exception e) {
-                    //assert (e instanceof CircuitBreakerOpenException);
-                //}
+                } catch (Exception e) {
+                    assert (e instanceof CircuitBreakerOpenException);
+                }
             }
             assert (breaker.isOpen());
             for (int i = 0; i < breaker.getFailureThreshold().denominator; i++) {
@@ -267,7 +269,7 @@ public class CircuitBreakerUrlTest {
 
             assert (breaker.isClosed());
         }finally {
-            Config.setProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", false);
+            IPUtils.disabledIpPrivateSubnet(ipPrivateSubnet);
         }
     }
 
