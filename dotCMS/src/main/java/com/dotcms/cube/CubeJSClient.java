@@ -13,6 +13,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -36,6 +37,8 @@ import java.util.Map;
  * </code>
  */
 public class CubeJSClient {
+
+    private int PAGE_SIZE = 1000;
     private String url;
 
     public CubeJSClient(final String url) {
@@ -66,13 +69,44 @@ public class CubeJSClient {
      * }
      * </code>
      *
+     * This method use Pagination to get the Data from CubeJs Server.
+     *
      * @param query Query to be run in the CubeJS Server
      * @return
      */
-    public CubeJSResultSet send(final CubeJSQuery query) {
+    public CubeJSResultSet sendWithPagination(final CubeJSQuery query) {
 
         DotPreconditions.notNull(query, "Query not must be NULL");
 
+        final CubeJSQuery countQuery = query.builder()
+                .measures("Events.count")
+                .filters(Arrays.asList(query.filters()))
+                .orders(Arrays.asList(query.orders()))
+                .dimensions(null)
+                .build();
+
+        final CubeJSResultSet countResultSet = this.send(countQuery);
+
+        final long totalItems = countResultSet.iterator().next()
+                .get("Events.count")
+                .map(value -> Long.parseLong(value.toString()))
+                .orElseThrow();
+
+        return totalItems > PAGE_SIZE ?
+                new PaginationCubeJSResultSet(this, query, totalItems, PAGE_SIZE) :
+                this.send(query);
+    }
+
+
+    /**
+     * It the same of the {@link #sendWithPagination(CubeJSQuery)} but it doesn't use pagination.
+     *
+     * @param query
+     * @return
+     *
+     * @see #sendWithPagination(CubeJSQuery)
+     */
+    public CubeJSResultSet send(final CubeJSQuery query) {
         final CircuitBreakerUrl cubeJSClient = CircuitBreakerUrl.builder()
                 .setMethod(Method.GET)
                 .setUrl(String.format("%s/cubejs-api/v1/load", url))
@@ -91,7 +125,7 @@ public class CubeJSClient {
                    JsonUtil.getJsonFromString(responseAsString) : new HashMap<>();
             final List<Map<String, Object>> data = (List<Map<String, Object>>) responseAsMap.get("data");
 
-            return new CubeJSResultSet(UtilMethods.isSet(data) ? data : Collections.emptyList());
+            return new CubeJSResultSetImpl(UtilMethods.isSet(data) ? data : Collections.emptyList());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

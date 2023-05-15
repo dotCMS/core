@@ -13,10 +13,8 @@ import com.dotcms.cube.CubeJSClient;
 import com.dotcms.cube.CubeJSQuery;
 import com.dotcms.cube.CubeJSQuery.Builder;
 import com.dotcms.cube.CubeJSResultSet;
+import com.dotcms.cube.CubeJSResultSetImpl;
 import com.dotcms.cube.filters.SimpleFilter.Operator;
-
-import com.dotcms.analytics.metrics.Metric;
-import com.dotcms.analytics.metrics.MetricType;
 
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.ExperimentVariant;
