@@ -13,6 +13,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.calendar.business.RecurrenceUtil;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -24,6 +25,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
@@ -776,11 +778,11 @@ public class ContentUtils {
 		final HttpServletRequest  request  = HttpServletRequestThreadLocal.INSTANCE.getRequest();
 		final HttpServletResponse response = HttpServletResponseThreadLocal.INSTANCE.getResponse();
 		if (ADD_RELATIONSHIPS_ON_PAGE.get() &&
-				null != response && null != request &&
-				null != user &&
-				null != request.getParameter("depth")) {
+				null != response && null != request &&  //NOSONAR
+				null != user &&							//NOSONAR
+				null != request.getParameter(WebKeys.HTMLPAGE_DEPTH)) {  //NOSONAR
 
-			final int depth = ConversionUtils.toInt(request.getParameter("depth"), -1);
+			final int depth = ConversionUtils.toInt(request.getParameter(WebKeys.HTMLPAGE_DEPTH), -1);
 			addRelationships(contentlet, user, mode, languageId, depth, request, response);
 		}
 	}
@@ -818,7 +820,7 @@ public class ContentUtils {
 
 				Logger.error(ContentUtils.class, "Error, contentlet id:" +
 						contentlet.getIdentifier() + ", msg:" + e.getMessage(), e);
-				throw new RuntimeException(e);
+				throw new DotRuntimeException(e);
 			}
 		}
 

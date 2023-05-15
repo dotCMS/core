@@ -2,22 +2,16 @@ package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.KeyValueField;
-import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.mail.MailAPIImpl;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.DotContentletTransformer;
 import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
-import com.dotmarketing.portlets.contentlet.transform.strategy.KeyValueViewStrategy;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonSerializer;
@@ -32,12 +26,9 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.CharArrayReader;
 import java.io.IOException;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
-
-import static java.util.Collections.emptyMap;
 
 /**
  * JsonSerializer of {@link PageView}
