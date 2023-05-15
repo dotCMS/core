@@ -41,8 +41,8 @@
                         <dot-copy-button
                             *ngIf="variant.url"
                             [copy]="variant.url"
-                            [tooltipText]="'dot.common.message.pageurl.copy.clipboard' | dm"
                             [label]="'editpage.header.copy' | dm"
+                            [tooltipText]="'dot.common.message.pageurl.copy.clipboard' | dm"
                         ></dot-copy-button>
                     </div>
 
@@ -51,8 +51,8 @@
                     <div
                         [pTooltip]="'experiment.configure.edit.only.draft.status' | dm"
                         [tooltipDisabled]="vm.isExperimentADraft"
-                        tooltipPosition="bottom"
                         data-testId="tooltip-on-disabled"
+                        tooltipPosition="bottom"
                     >
                         <button
                             class="p-button-sm p-button-link"
@@ -63,7 +63,6 @@
                                 'experiments.configure.variants.weight' | dm
                             }}"
                             pButton
-                            pRipple
                         ></button>
                     </div>
 
@@ -79,7 +78,6 @@
                             data-testId="variant-preview-button"
                             label="{{ 'experiments.configure.variants.view' | dm }}"
                             pButton
-                            pRipple
                             type="button"
                         ></button>
                     </ng-container>
@@ -89,8 +87,8 @@
                         [tooltipDisabled]="
                             vm.isExperimentADraft || variant.name === defaultVariantName
                         "
-                        tooltipPosition="bottom"
                         data-testId="tooltip-on-disabled"
+                        tooltipPosition="bottom"
                     >
                         <button
                             class="p-button-sm p-button-danger p-button-text"
@@ -101,7 +99,6 @@
                             data-testId="variant-delete-button"
                             label="{{ 'experiments.configure.variants.delete' | dm }}"
                             pButton
-                            pRipple
                             type="button"
                         ></button>
                     </div>
@@ -115,7 +112,6 @@
                     data-testId="variant-edit-button"
                     label="{{ 'experiments.action.edit' | dm }}"
                     pButton
-                    pRipple
                     type="button"
                 ></button>
             </ng-template>
@@ -168,8 +164,8 @@
                     vm.isExperimentADraft ||
                     vm.trafficProportion.variants?.length >= maxVariantsAllowed
                 "
-                tooltipPosition="bottom"
                 data-testId="tooltip-on-disabled"
+                tooltipPosition="bottom"
             >
                 <button
                     class="p-button-sm p-button-link"
@@ -181,7 +177,6 @@
                     data-testId="variant-add-button"
                     label="{{ 'experiments.configure.variants.add' | dm }}"
                     pButton
-                    pRipple
                     type="button"
                 ></button>
             </div>

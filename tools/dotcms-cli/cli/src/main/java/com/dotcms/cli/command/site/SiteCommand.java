@@ -28,7 +28,6 @@ import java.util.concurrent.Callable;
                 SiteArchive.class,
                 SiteUnarchive.class,
                 SiteCurrent.class,
-                SiteSwitch.class
         }
 )
 public class SiteCommand implements Callable<Integer> {
