@@ -28,7 +28,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
-import io.vavr.Lazy;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -38,6 +37,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -51,7 +51,7 @@ import java.util.stream.Collectors;
 public class ContentUtils {
 
 	// it is true, even if the pattern is false because the client has to include the depth parameter to activate it
-	private static final Lazy<Boolean> ADD_RELATIONSHIPS_ON_PAGE = Lazy.of(()-> Config.getBooleanProperty("ADD_RELATIONSHIPS_ON_PAGE", true));
+	private static final boolean addRelationshipsOnPage = Config.getBooleanProperty("ADD_RELATIONSHIPS_ON_PAGE", true);
 
 	private static ContentletAPI conAPI;
 	   public static final ContentUtils INSTANCE = new ContentUtils();
@@ -777,10 +777,12 @@ public class ContentUtils {
 
 		final HttpServletRequest  request  = HttpServletRequestThreadLocal.INSTANCE.getRequest();
 		final HttpServletResponse response = HttpServletResponseThreadLocal.INSTANCE.getResponse();
-		if (ADD_RELATIONSHIPS_ON_PAGE.get() &&
-				null != response && null != request &&  //NOSONAR
-				null != user &&							//NOSONAR
-				null != request.getParameter(WebKeys.HTMLPAGE_DEPTH)) {  //NOSONAR
+		if (addRelationshipsOnPage &&
+				Objects.nonNull(response) &&
+				Objects.nonNull(request) &&
+				Objects.nonNull(user) &&
+				Objects.nonNull(request.getParameter(WebKeys.HTMLPAGE_DEPTH))
+			) {
 
 			final int depth = ConversionUtils.toInt(request.getParameter(WebKeys.HTMLPAGE_DEPTH), -1);
 			addRelationships(contentlet, user, mode, languageId, depth, request, response);
