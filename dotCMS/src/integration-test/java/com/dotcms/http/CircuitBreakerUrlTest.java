@@ -108,7 +108,7 @@ public class CircuitBreakerUrlTest {
 
 
     @Test
-    public void testBadBreaker() {
+    public void testBadBreaker() throws IOException {
 
         try {
             final NullOutputStream nos = new NullOutputStream();
@@ -122,11 +122,11 @@ public class CircuitBreakerUrlTest {
             Config.setProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", true);
 
             for (int i = 0; i < 10; i++) {
-                try {
+                //try {
                     new CircuitBreakerUrl(badUrl, timeout, breaker).doOut(nos);
-                } catch (Exception e) {
-                    assert (e instanceof CircuitBreakerOpenException);
-                }
+                //} catch (Exception e) {
+                  //  assert (e instanceof CircuitBreakerOpenException);
+                //}
             }
             breaker = CurcuitBreakerPool.getBreaker(key);
 
@@ -229,11 +229,11 @@ public class CircuitBreakerUrlTest {
             assert (breaker.isClosed());
 
             for (int i = 0; i < breaker.getFailureThreshold().denominator; i++) {
-                try {
+                //try {
                     new CircuitBreakerUrl(badUrl, timeout, breaker).doOut(nos);
-                } catch (Exception e) {
-                    assert (e instanceof CircuitBreakerOpenException);
-                }
+                //} catch (Exception e) {
+                    //assert (e instanceof CircuitBreakerOpenException);
+                //}
             }
             assert (breaker.isOpen());
             for (int i = 0; i < breaker.getFailureThreshold().denominator; i++) {
