@@ -13,6 +13,7 @@ import { DotTextareaContentModule } from '@components/_common/dot-textarea-conte
 import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
 import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-base.module';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
+import { DotFieldRequiredDirective } from '@dotcms/ui';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotContentEditorModule } from '@portlets/dot-containers/dot-container-create/dot-container-code/dot-container-code.module';
 import { DotContainerPropertiesComponent } from '@portlets/dot-containers/dot-container-create/dot-container-properties/dot-container-properties.component';
@@ -37,7 +38,8 @@ import { DotContainersService } from '@services/dot-containers/dot-containers.se
         DotLoopEditorModule,
         DotContentEditorModule,
         DotApiLinkModule,
-        DotAutofocusModule
+        DotAutofocusModule,
+        DotFieldRequiredDirective
     ],
     providers: [DotContainersService]
 })

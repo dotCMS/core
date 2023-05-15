@@ -11,17 +11,16 @@
                 class="inline-block"
                 [pTooltip]="'experiment.configure.edit.only.draft.status' | dm"
                 [tooltipDisabled]="vm.isExperimentADraft"
-                tooltipPosition="bottom"
                 data-testId="tooltip-on-disabled"
+                tooltipPosition="bottom"
             >
                 <button
                     class="p-button-sm p-button-link"
                     [disabled]="!vm.isExperimentADraft"
                     (click)="setupTargeting()"
                     data-testId="targeting-add-button"
-                    pButton
-                    pRipple
                     label="{{ 'experiments.configure.targeting.add' | dm }}"
+                    pButton
                     styleClass="p-button-sm p-button-link"
                 ></button>
             </div>

@@ -7,7 +7,6 @@ import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { ConfirmPopupModule } from 'primeng/confirmpopup';
-import { RippleModule } from 'primeng/ripple';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { tap } from 'rxjs/operators';
@@ -50,8 +49,7 @@ import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.dir
         ButtonModule,
         CardModule,
         ConfirmPopupModule,
-        TooltipModule,
-        RippleModule
+        TooltipModule
     ],
     templateUrl: './dot-experiments-configuration-goals.component.html',
     styleUrls: ['./dot-experiments-configuration-goals.component.scss'],

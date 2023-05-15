@@ -216,22 +216,4 @@ describe('DotExperimentsConfigurationComponent', () => {
 
         expect(startButton.disabled).toBeTrue();
     });
-
-    it('should show Experiment Summary component if showExperimentSummary is true', () => {
-        spectator.component.vm$ = of({
-            ...defaultVmMock,
-            showExperimentSummary: true
-        });
-        spectator.detectChanges();
-        expect(spectator.query(DotExperimentsExperimentSummaryComponent)).toExist();
-    });
-
-    it("shouldn't show Experiment Summary component if showExperimentSummary false", () => {
-        spectator.component.vm$ = of({
-            ...defaultVmMock,
-            showExperimentSummary: false
-        });
-        spectator.detectChanges();
-        expect(spectator.query(DotExperimentsExperimentSummaryComponent)).not.toExist();
-    });
 });

@@ -751,33 +751,35 @@
                     <!-- START Listing Results -->
                     <input type="hidden" name="referer" value="<%=referer%>">
                     <input type="hidden" name="cmd" value="prepublish">
-                    <div class="portlet-toolbar" style="height: 48px; margin-top: 16px;">
-                        <div class="portlet-toolbar__actions-secondary" style="display: flex; align-items: center; padding-left: 0.5rem;">
-                            <div class="portlet-toolbar__actions-search" style="width: 270px;">
-                                <input type="text" dojoType="dijit.form.TextBox" tabindex="1" placeholder="<%= LanguageUtil.get(pageContext, "Type-To-Search").replace("\"", "'") %>" onKeyUp='doSearch()' name="allFieldTB" id="allFieldTB" value="<%=_allValue %>">
-                            </div>
-                            <div id="matchingResultsDiv" style="display: none" class="portlet-toolbar__info"></div>
-                        </div>
-                        <div class="portlet-toolbar__actions-primary">
-                            <button id="bulkAvailableActions" dojoType="dijit.form.Button" data-dojo-props="onClick: doShowAvailableActions" iconClass="actionIcon" >
-                                <%= LanguageUtil.get(pageContext, "Available-actions")%>
-                            </button>
-                            <div data-dojo-type="dijit/form/DropDownButton" data-dojo-props='iconClass:"fa-plus", class:"dijitDropDownActionButton"'>
-                                <span></span>
-                                <script type="text/javascript">
-                                    function importContent() {
-                                        window.location = '/c/portal/layout?p_l_id=<%= layout.getId() %>&dm_rlout=1&p_p_id=<%=PortletID.CONTENT%>&p_p_action=1&p_p_state=maximized&_<%=PortletID.CONTENT%>_struts_action=/ext/contentlet/import_contentlets&selectedStructure=' + document.getElementById('structureInode').value;
-                                    }
-                                </script>
-                                <ul data-dojo-type="dijit/Menu" id="actionPrimaryMenu" style="display: none;">
-                                    <li data-dojo-type="dijit/MenuItem" data-dojo-props="onClick:function() {addNewContentlet()}"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-New-Content" )) %></li>
-                                    <li data-dojo-type="dijit/MenuItem" data-dojo-props="onClick:importContent">
-                                        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Import-Content" )) %>
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
+                    <div class="portlet-toolbar" style="min-height: 48px; margin-top: 16px; flex-direction: column; margin-bottom: 0.5rem;">
+                        <div style="display: flex; align-self: flex-start; justify-content: space-between; width: 100%;">
+                            <div class="portlet-toolbar__actions-secondary" style="display: flex; align-items: center; padding-left: 0.5rem;">
+                                <div class="portlet-toolbar__actions-search" style="width: 270px;">
+                                    <input type="text" dojoType="dijit.form.TextBox" tabindex="1" placeholder="<%= LanguageUtil.get(pageContext, "Type-To-Search").replace("\"", "'") %>" onKeyUp='doSearch()' name="allFieldTB" id="allFieldTB" value="<%=_allValue %>">
+                                </div>
+                                <div id="matchingResultsDiv" style="display: none" class="portlet-toolbar__info"></div>
 
+                            </div>
+                            <div class="portlet-toolbar__actions-primary">
+                                <button id="bulkAvailableActions" dojoType="dijit.form.Button" data-dojo-props="onClick: doShowAvailableActions" iconClass="actionIcon" >
+                                    <%= LanguageUtil.get(pageContext, "Available-actions")%>
+                                </button>
+                                <div data-dojo-type="dijit/form/DropDownButton" data-dojo-props='iconClass:"fa-plus", class:"dijitDropDownActionButton"'>
+                                    <span></span>
+                                    <script type="text/javascript">
+                                        function importContent() {
+                                            window.location = '/c/portal/layout?p_l_id=<%= layout.getId() %>&dm_rlout=1&p_p_id=<%=PortletID.CONTENT%>&p_p_action=1&p_p_state=maximized&_<%=PortletID.CONTENT%>_struts_action=/ext/contentlet/import_contentlets&selectedStructure=' + document.getElementById('structureInode').value;
+                                        }
+                                    </script>
+                                    <ul data-dojo-type="dijit/Menu" id="actionPrimaryMenu" style="display: none;">
+                                        <li data-dojo-type="dijit/MenuItem" data-dojo-props="onClick:function() {addNewContentlet()}"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-New-Content" )) %></li>
+                                        <li data-dojo-type="dijit/MenuItem" data-dojo-props="onClick:importContent">
+                                            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Import-Content" )) %>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
 

@@ -1,6 +1,7 @@
 import { ChartDataset } from 'chart.js';
 
 import {
+    BayesianStatusResponse,
     ComponentStatus,
     DotExperimentStatusList,
     TrafficProportionTypes
@@ -31,7 +32,7 @@ export interface DotExperimentResults {
 
 interface DotResultBayesian {
     value: number;
-    suggestedWinner: string;
+    suggestedWinner: BayesianStatusResponse | string;
     probabilities: Array<{ variant: string; value: number }>;
 }
 
@@ -46,6 +47,7 @@ export interface DotResultVariant {
     uniqueBySession: DotResultUniqueBySession;
     variantName: string;
     variantDescription: string;
+    totalPageViews: number;
 }
 
 export interface DotResultSimpleVariant {
@@ -75,6 +77,18 @@ export interface DotResultSessions {
 export interface TrafficProportion {
     type: TrafficProportionTypes;
     variants: Array<Variant>;
+}
+
+export interface DotExperimentDetail {
+    id: string;
+    name: string;
+    trafficSplit: string;
+    pageViews: number;
+    sessions: number;
+    clicks: number;
+    bestVariant: number;
+    improvement: number;
+    isWinner: boolean;
 }
 
 export interface Variant {
