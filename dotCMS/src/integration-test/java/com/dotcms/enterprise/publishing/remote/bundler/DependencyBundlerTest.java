@@ -24,6 +24,7 @@ import com.dotcms.datagen.PushedAssetDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TemplateLayoutDataGen;
+import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.datagen.WorkflowDataGen;
 import com.dotcms.datagen.WorkflowStepDataGen;
 import com.dotcms.publisher.assets.bean.PushedAsset;
@@ -47,6 +48,7 @@ import com.dotcms.publishing.manifest.ManifestItem;
 import com.dotcms.publishing.output.BundleOutput;
 import com.dotcms.publishing.output.DirectoryBundleOutput;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -842,6 +844,12 @@ public class DependencyBundlerTest {
         final ContentType contentType = new ContentTypeDataGen().host(hostWithContent).nextPersisted();
         final Contentlet contentlet = new ContentletDataGen(contentType.id()).host(hostWithContent).nextPersisted();
         final Language language = APILocator.getLanguageAPI().getLanguage(contentlet.getLanguageId());
+
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final Contentlet contentletInVariant = new ContentletDataGen(contentType.id())
+                .variant(variant)
+                .host(hostWithContent)
+                .nextPersisted();
 
         final Host hostWithRule = new SiteDataGen().nextPersisted();
         final Rule rule = new RuleDataGen().host(hostWithRule).nextPersisted();

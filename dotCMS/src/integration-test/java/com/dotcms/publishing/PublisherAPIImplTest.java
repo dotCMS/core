@@ -29,6 +29,7 @@ import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TemplateLayoutDataGen;
 import com.dotcms.datagen.UserDataGen;
+import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.datagen.WorkflowActionDataGen;
 import com.dotcms.datagen.WorkflowDataGen;
 import com.dotcms.datagen.WorkflowStepDataGen;
@@ -52,6 +53,7 @@ import com.dotcms.publishing.manifest.ManifestItem.ManifestInfoBuilder;
 import com.dotcms.publishing.manifest.ManifestReason;
 import com.dotcms.test.util.FileTestUtil;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -209,6 +211,9 @@ public class PublisherAPIImplTest {
         ContentletDataGen.checkin(workingVersion);
 
         final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+
+        final Variant variant = new VariantDataGen().nextPersisted();
+        ContentletDataGen.createNewVersion(workingVersion, variant, map());
 
         final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI()
                 .findSystemWorkflowScheme();
