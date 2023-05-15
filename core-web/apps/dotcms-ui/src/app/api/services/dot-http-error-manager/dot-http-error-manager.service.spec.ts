@@ -191,6 +191,30 @@ describe('DotHttpErrorManagerService', () => {
         });
     });
 
+    it('should handle 400 error on error with header defined', () => {
+        spyOn(dotDialogService, 'alert');
+        const CUSTOM_HEADER = 'Custom Header';
+        const SERVER_MESSAGE = 'Server Error';
+
+        const responseView: HttpErrorResponse = mockResponseView(400, null, null, {
+            message: SERVER_MESSAGE,
+            header: CUSTOM_HEADER
+        });
+
+        service.handle(responseView).subscribe((res) => {
+            result = res;
+        });
+
+        expect(result).toEqual({
+            redirected: false,
+            status: 400
+        });
+        expect(dotDialogService.alert).toHaveBeenCalledWith({
+            message: SERVER_MESSAGE,
+            header: CUSTOM_HEADER
+        });
+    });
+
     it('should handle 400 error on errors[0]', () => {
         spyOn(dotDialogService, 'alert');
 
