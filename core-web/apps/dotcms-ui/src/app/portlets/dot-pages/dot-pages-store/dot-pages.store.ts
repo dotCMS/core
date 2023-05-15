@@ -622,17 +622,10 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         item: DotCMSContentlet,
         favoritePage?: DotCMSContentlet
     ): MenuItem[] {
-        const favoritePageGroup: MenuItem = {
-            label: this.dotMessageService.get('favoritePage.panel.header'),
-            items: []
-        };
-        const pagesGroup: MenuItem = {
-            label: this.dotMessageService.get('com.dotcms.repackage.javax.portlet.title.pages'),
-            items: []
-        };
+        const actionsMenu: MenuItem[] = [];
 
         // Adding DotFavorite actions
-        favoritePageGroup.items.push({
+        actionsMenu.push({
             label: favoritePage
                 ? this.dotMessageService.get('favoritePage.contextMenu.action.edit')
                 : this.dotMessageService.get('favoritePage.contextMenu.action.add'),
@@ -660,6 +653,8 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             }
         });
 
+        actionsMenu.push({ separator: true });
+
         // Adding Edit & View actions
         const { loggedUser, isEnterprise, environments } = this.get();
 
@@ -669,7 +664,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                 (item.baseType === 'CONTENT' && loggedUser.canRead.contentlets == true)) &&
             !item.deleted
         ) {
-            pagesGroup.items.push({
+            actionsMenu.push({
                 label:
                     (item.baseType === 'HTMLPAGE' && loggedUser.canWrite.htmlPages == true) ||
                     (item.baseType === 'CONTENT' && loggedUser.canWrite.contentlets == true)
@@ -683,7 +678,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
 
         // Adding Workflow actions
         actions.forEach((action: DotCMSWorkflowAction) => {
-            pagesGroup.items.push({
+            actionsMenu.push({
                 label: `${this.dotMessageService.get(action.name)}`,
                 command: () => {
                     if (action.actionInputs?.length > 0) {
@@ -710,7 +705,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
 
         // Adding Push Publish action
         if (isEnterprise && environments) {
-            pagesGroup.items.push({
+            actionsMenu.push({
                 label: this.dotMessageService.get('contenttypes.content.push_publish'),
                 command: (item) =>
                     this.dotPushPublishDialogService.open({
@@ -722,13 +717,13 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
 
         // Adding Add To Bundle action
         if (isEnterprise) {
-            pagesGroup.items.push({
+            actionsMenu.push({
                 label: this.dotMessageService.get('contenttypes.content.add_to_bundle'),
                 command: () => this.showAddToBundle(item.identifier)
             });
         }
 
-        return [favoritePageGroup, pagesGroup];
+        return actionsMenu;
     }
 
     constructor(
