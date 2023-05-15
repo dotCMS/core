@@ -56,10 +56,13 @@ export class DotHtmlToImage {
             doc.open();
             doc.write(this.value);
             doc.close();
-
             const scriptLib = document.createElement('script') as HTMLScriptElement;
             scriptLib.src = '/html/js/html2canvas/html2canvas.min.js';
             scriptLib.type = 'text/javascript';
+
+            doc.addEventListener('DOMContentLoaded', () => {
+                doc.body.appendChild(scriptLib);
+            });
 
             scriptLib.onload = () => {
                 iframe.addEventListener('load', () => {
@@ -74,8 +77,6 @@ export class DotHtmlToImage {
                     doc.body.appendChild(script);
                 });
             };
-
-            doc.body.append(scriptLib);
             this.boundOnMessageHandler = this.onMessageHandler.bind(null, iframe, this);
             window.addEventListener('message', this.boundOnMessageHandler);
         } catch (error) {
