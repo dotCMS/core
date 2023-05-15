@@ -622,10 +622,17 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         item: DotCMSContentlet,
         favoritePage?: DotCMSContentlet
     ): MenuItem[] {
-        const selectItems: MenuItem[] = [];
+        const favoritePageGroup: MenuItem = {
+            label: this.dotMessageService.get('favoritePage.panel.header'),
+            items: []
+        };
+        const pagesGroup: MenuItem = {
+            label: this.dotMessageService.get('com.dotcms.repackage.javax.portlet.title.pages'),
+            items: []
+        };
 
         // Adding DotFavorite actions
-        selectItems.push({
+        favoritePageGroup.items.push({
             label: favoritePage
                 ? this.dotMessageService.get('favoritePage.contextMenu.action.edit')
                 : this.dotMessageService.get('favoritePage.contextMenu.action.add'),
@@ -662,7 +669,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                 (item.baseType === 'CONTENT' && loggedUser.canRead.contentlets == true)) &&
             !item.deleted
         ) {
-            selectItems.push({
+            pagesGroup.items.push({
                 label:
                     (item.baseType === 'HTMLPAGE' && loggedUser.canWrite.htmlPages == true) ||
                     (item.baseType === 'CONTENT' && loggedUser.canWrite.contentlets == true)
@@ -676,7 +683,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
 
         // Adding Workflow actions
         actions.forEach((action: DotCMSWorkflowAction) => {
-            selectItems.push({
+            pagesGroup.items.push({
                 label: `${this.dotMessageService.get(action.name)}`,
                 command: () => {
                     if (action.actionInputs?.length > 0) {
@@ -703,7 +710,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
 
         // Adding Push Publish action
         if (isEnterprise && environments) {
-            selectItems.push({
+            pagesGroup.items.push({
                 label: this.dotMessageService.get('contenttypes.content.push_publish'),
                 command: (item) =>
                     this.dotPushPublishDialogService.open({
@@ -715,13 +722,13 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
 
         // Adding Add To Bundle action
         if (isEnterprise) {
-            selectItems.push({
+            pagesGroup.items.push({
                 label: this.dotMessageService.get('contenttypes.content.add_to_bundle'),
                 command: () => this.showAddToBundle(item.identifier)
             });
         }
 
-        return selectItems;
+        return [favoritePageGroup, pagesGroup];
     }
 
     constructor(

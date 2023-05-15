@@ -519,14 +519,24 @@ describe('DotPageStore', () => {
         });
 
         dotPageStore.state$.subscribe((data) => {
-            expect(data.pages.menuActions.length).toEqual(7);
-            expect(data.pages.menuActions[0].label).toEqual('favoritePage.contextMenu.action.edit');
-            expect(data.pages.menuActions[1].label).toEqual('Edit');
-            expect(data.pages.menuActions[2].label).toEqual(mockWorkflowsActions[0].name);
-            expect(data.pages.menuActions[3].label).toEqual(mockWorkflowsActions[1].name);
-            expect(data.pages.menuActions[4].label).toEqual(mockWorkflowsActions[2].name);
-            expect(data.pages.menuActions[5].label).toEqual('contenttypes.content.push_publish');
-            expect(data.pages.menuActions[6].label).toEqual('contenttypes.content.add_to_bundle');
+            const [favoritePageMenu, pagesMenu] = data.pages.menuActions;
+
+            expect(data.pages.menuActions.length).toEqual(2);
+
+            expect(favoritePageMenu.label).toEqual('favoritePage.panel.header');
+            expect(favoritePageMenu.items.length).toEqual(1);
+            expect(favoritePageMenu.items[0].label).toEqual('favoritePage.contextMenu.action.edit');
+
+            expect(pagesMenu.items.length).toEqual(6);
+            expect(pagesMenu.label).toEqual('com.dotcms.repackage.javax.portlet.title.pages');
+
+            expect(pagesMenu.items[0].label).toEqual('Edit');
+            expect(pagesMenu.items[1].label).toEqual(mockWorkflowsActions[0].name);
+            expect(pagesMenu.items[2].label).toEqual(mockWorkflowsActions[1].name);
+            expect(pagesMenu.items[3].label).toEqual(mockWorkflowsActions[2].name);
+            expect(pagesMenu.items[4].label).toEqual('contenttypes.content.push_publish');
+            expect(pagesMenu.items[5].label).toEqual('contenttypes.content.add_to_bundle');
+
             expect(data.pages.actionMenuDomId).toEqual('test1');
         });
 
