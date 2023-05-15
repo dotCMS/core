@@ -519,14 +519,19 @@ describe('DotPageStore', () => {
         });
 
         dotPageStore.state$.subscribe((data) => {
-            expect(data.pages.menuActions.length).toEqual(7);
-            expect(data.pages.menuActions[0].label).toEqual('favoritePage.contextMenu.action.edit');
-            expect(data.pages.menuActions[1].label).toEqual('Edit');
-            expect(data.pages.menuActions[2].label).toEqual(mockWorkflowsActions[0].name);
-            expect(data.pages.menuActions[3].label).toEqual(mockWorkflowsActions[1].name);
-            expect(data.pages.menuActions[4].label).toEqual(mockWorkflowsActions[2].name);
-            expect(data.pages.menuActions[5].label).toEqual('contenttypes.content.push_publish');
-            expect(data.pages.menuActions[6].label).toEqual('contenttypes.content.add_to_bundle');
+            const menuActions = data.pages.menuActions;
+
+            expect(menuActions.length).toEqual(8);
+
+            expect(menuActions[0].label).toEqual('favoritePage.contextMenu.action.edit');
+            expect(menuActions[1].label).toEqual(undefined);
+            expect(menuActions[2].label).toEqual('Edit');
+            expect(menuActions[3].label).toEqual(mockWorkflowsActions[0].name);
+            expect(menuActions[4].label).toEqual(mockWorkflowsActions[1].name);
+            expect(menuActions[5].label).toEqual(mockWorkflowsActions[2].name);
+            expect(menuActions[6].label).toEqual('contenttypes.content.push_publish');
+            expect(menuActions[7].label).toEqual('contenttypes.content.add_to_bundle');
+
             expect(data.pages.actionMenuDomId).toEqual('test1');
         });
 
