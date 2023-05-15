@@ -201,8 +201,7 @@ public interface PermissionAPI {
 
 	/**
 	 * Return true if the user have over the content type specified
-	 * permission. This method is meant to be used by frontend call because
-	 * assumes that frontend roles should be respected.
+	 * permission.
 	 *
 	 * @param permissionable permissionable
 	 * @param permissionType
