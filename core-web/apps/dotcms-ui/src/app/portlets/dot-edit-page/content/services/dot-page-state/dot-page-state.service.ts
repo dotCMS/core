@@ -229,7 +229,12 @@ export class DotPageStateService {
                     [page, user]: [page: DotPageRenderParameters, user: CurrentUser] = [null, null]
                 ) => {
                     if (page) {
-                        const urlParam = generateDotFavoritePageUrl(page);
+                        const urlParam = generateDotFavoritePageUrl({
+                            deviceInode: page.viewAs.device?.inode,
+                            languageId: page.viewAs.language.id,
+                            pageURI: page.page.pageURI,
+                            siteId: page.site?.identifier
+                        });
 
                         return this.dotESContentService
                             .get({
