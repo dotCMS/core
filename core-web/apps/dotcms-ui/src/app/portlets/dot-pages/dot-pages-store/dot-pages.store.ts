@@ -269,19 +269,10 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                 this.getFavoritePagesData({ limit: itemsPerPage }).pipe(
                     tapResponse(
                         (items) => {
-                            this.patchState({
-                                favoritePages: {
-                                    items: [...items.jsonObjectView.contentlets],
-                                    showLoadMoreButton:
-                                        items.jsonObjectView.contentlets.length <=
-                                        items.resultsSize,
-                                    total: items.resultsSize
-                                }
-                            });
+                            const favoritePages = this.getNewFavoritePages(items);
+                            this.patchState({ favoritePages });
                         },
-                        (error: HttpErrorResponse) => {
-                            return this.httpErrorManagerService.handle(error);
-                        }
+                        (error: HttpErrorResponse) => this.httpErrorManagerService.handle(error)
                     )
                 )
             )
@@ -312,6 +303,29 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             })
         )
     );
+
+    readonly deleteFavoritePage = this.effect((data$: Observable<string>) => {
+        return data$.pipe(
+            switchMap((inode: string) =>
+                this.dotWorkflowActionsFireService.deleteContentlet({
+                    inode
+                })
+            ),
+            switchMap(() => {
+                return this.getFavoritePagesData({ limit: FAVORITE_PAGE_LIMIT }).pipe(
+                    tapResponse(
+                        (items) => {
+                            const favoritePages = this.getNewFavoritePages(items);
+                            this.patchState({ favoritePages });
+                        },
+                        (error: HttpErrorResponse) => this.httpErrorManagerService.handle(error)
+                    )
+                );
+            }),
+            take(1),
+            catchError((error: HttpErrorResponse) => this.httpErrorManagerService.handle(error))
+        );
+    });
 
     readonly updateSinglePageData = this.effect(
         (
@@ -677,6 +691,15 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             }
         });
 
+        if (favoritePage) {
+            actionsMenu.push({
+                label: this.dotMessageService.get('favoritePage.dialog.delete.button'),
+                command: () => {
+                    this.deleteFavoritePage(favoritePage.inode);
+                }
+            });
+        }
+
         if (!actions && !item) {
             return actionsMenu;
         }
@@ -752,6 +775,14 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         }
 
         return actionsMenu;
+    }
+
+    private getNewFavoritePages(items: ESContent) {
+        return {
+            items: [...items.jsonObjectView.contentlets],
+            showLoadMoreButton: items.jsonObjectView.contentlets.length <= items.resultsSize,
+            total: items.resultsSize
+        };
     }
 
     constructor(
