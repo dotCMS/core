@@ -26,11 +26,8 @@ public interface AbstractBayesianResult {
     @JsonProperty("value")
     double value();
 
-    @JsonProperty("suggestedWinner")
-    String suggestedWinner();
-
-    @JsonProperty("probabilities")
-    List<VariantProbability> probabilities();
+    @JsonProperty("results")
+    List<VariantResult> results();
 
     @Nullable
     @JsonProperty("distributionPdfs")
@@ -43,5 +40,8 @@ public interface AbstractBayesianResult {
     @Nullable
     @JsonProperty("quantiles")
     Map<Double, QuantilePair> quantiles();
+
+    @JsonProperty("suggestedWinner")
+    String suggestedWinner();
 
 }

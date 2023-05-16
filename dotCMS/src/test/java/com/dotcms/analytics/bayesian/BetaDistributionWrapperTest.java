@@ -1,5 +1,6 @@
 package com.dotcms.analytics.bayesian;
 
+import com.dotcms.analytics.bayesian.beta.BetaDistributionWrapper;
 import io.vavr.Tuple2;
 import org.junit.Assert;
 import org.junit.Before;
@@ -14,13 +15,13 @@ import java.util.stream.IntStream;
  *
  * @author vico
  */
-public class BetaDistributionTest {
+public class BetaDistributionWrapperTest {
 
-    private BetaDistribution distribution;
+    private BetaDistributionWrapper distribution;
 
     @Before
     public void setup() {
-        distribution = BetaDistribution.create(10, 10);
+        distribution = BetaDistributionWrapper.create(10, 10);
     }
 
     /**
