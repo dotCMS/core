@@ -126,3 +126,6 @@ This maintenance release includes the following code fixes:
 106. https://github.com/dotCMS/core/issues/23982 : Improve startup performance #23982
 107. https://github.com/dotCMS/core/issues/24344 : The content is becoming published automatically after unpublishing it manually without specifying any publish date #24344
 108. https://github.com/dotCMS/core/issues/24395 : Remove issuer check from JWT API keys #24395
+
+**Release-22.03.7**
+
