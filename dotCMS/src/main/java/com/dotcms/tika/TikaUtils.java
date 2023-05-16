@@ -1,5 +1,8 @@
 package com.dotcms.tika;
 
+import static com.dotcms.storage.model.BasicMetadataFields.DC_TITLE_META_KEY;
+import static com.dotcms.storage.model.BasicMetadataFields.TITLE_META_KEY;
+
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -384,6 +387,11 @@ public class TikaUtils {
             //Creating the meta data map to use by our content
             metaMap.putAll(this.buildMetaDataMap());
             metaMap.put(FileAssetAPI.CONTENT_FIELD, content);
+
+            //From Tika 2.x the title is mapped to dcTitle (https://cwiki.apache.org/confluence/display/TIKA/Migrating+to+Tika+2.0.0)
+            if(!metaMap.containsKey(TITLE_META_KEY.key()) && metaMap.containsKey(DC_TITLE_META_KEY.key())){
+                metaMap.put(TITLE_META_KEY.key(), metaMap.get(DC_TITLE_META_KEY.key()));
+            }
         } catch (IOException ioExc) {
             if (this.isZeroByteFileException(ioExc.getCause())) {
                 logWarning(binFile, ioExc.getCause());
