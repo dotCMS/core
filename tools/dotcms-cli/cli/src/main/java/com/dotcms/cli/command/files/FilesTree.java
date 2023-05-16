@@ -53,17 +53,29 @@ public class FilesTree extends AbstractFilesCommand implements Callable<Integer>
                             + "will be displayed in the tree.")
     boolean excludeEmptyFolders;
 
-    @CommandLine.Option(names = {"-ge", "--globExclude"},
+    @CommandLine.Option(names = {"-ef", "--excludeFolder"},
             paramLabel = "patterns",
-            description = "Exclude files/directories matching the given glob patterns. Multiple "
+            description = "Exclude directories matching the given glob patterns. Multiple "
                     + "patterns can be specified, separated by commas.")
-    String excludePatternsOption;
+    String excludeFolderPatternsOption;
 
-    @CommandLine.Option(names = {"-gi", "--globInclude"},
+    @CommandLine.Option(names = {"-ea", "--excludeAsset"},
             paramLabel = "patterns",
-            description = "Include files/directories matching the given glob patterns. Multiple "
+            description = "Exclude assets matching the given glob patterns. Multiple "
                     + "patterns can be specified, separated by commas.")
-    String includePatternsOption;
+    String excludeAssetPatternsOption;
+
+    @CommandLine.Option(names = {"-if", "--includeFolder"},
+            paramLabel = "patterns",
+            description = "Include directories matching the given glob patterns. Multiple "
+                    + "patterns can be specified, separated by commas.")
+    String includeFolderPatternsOption;
+
+    @CommandLine.Option(names = {"-ia", "--includeAsset"},
+            paramLabel = "patterns",
+            description = "Include assets matching the given glob patterns. Multiple "
+                    + "patterns can be specified, separated by commas.")
+    String includeAssetPatternsOption;
 
     @Inject
     FolderTraversalService folderTraversalService;
@@ -73,8 +85,10 @@ public class FilesTree extends AbstractFilesCommand implements Callable<Integer>
 
         try {
 
-            var includePatterns = parsePatternOption(includePatternsOption);
-            var excludePatterns = parsePatternOption(excludePatternsOption);
+            var includeFolderPatterns = parsePatternOption(includeFolderPatternsOption);
+            var includeAssetPatterns = parsePatternOption(includeAssetPatternsOption);
+            var excludeFolderPatterns = parsePatternOption(excludeFolderPatternsOption);
+            var excludeAssetPatterns = parsePatternOption(excludeAssetPatternsOption);
 
             CompletableFuture<TreeNode> folderTraversalFuture = CompletableFuture.supplyAsync(
                     () -> {
@@ -82,8 +96,10 @@ public class FilesTree extends AbstractFilesCommand implements Callable<Integer>
                         return folderTraversalService.traverse(
                                 folderPath,
                                 depth,
-                                includePatterns,
-                                excludePatterns
+                                includeFolderPatterns,
+                                includeAssetPatterns,
+                                excludeFolderPatterns,
+                                excludeAssetPatterns
                         );
                     });
 

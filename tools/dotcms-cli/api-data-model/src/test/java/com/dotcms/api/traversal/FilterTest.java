@@ -34,61 +34,7 @@ public class FilterTest {
 
         var filter = Filter.builder()
                 .rootPath("/images/")
-                .include("*.png")
-                .build();
-
-        var folder = folderViewForPath("images", "/images/");
-
-        var filteredFolderView = filter.apply(folder);
-
-        // Test when the path matches an include pattern
-        Assertions.assertNotNull(filteredFolderView);
-        Assertions.assertEquals(0, filteredFolderView.subFolders().size());
-        Assertions.assertEquals(1, filteredFolderView.assets().versions().size());
-    }
-
-    @Test
-    public void test_simple_includes2() {
-
-        var filter = Filter.builder()
-                .rootPath("/images/")
-                .include("*.txt")
-                .build();
-
-        var folder = folderViewForPath("images", "/images/");
-
-        var filteredFolderView = filter.apply(folder);
-
-        // Test when the path matches an include pattern
-        Assertions.assertNotNull(filteredFolderView);
-        Assertions.assertEquals(0, filteredFolderView.subFolders().size());
-        Assertions.assertEquals(3, filteredFolderView.assets().versions().size());
-    }
-
-    @Test
-    public void test_simple_includes3() {
-
-        var filter = Filter.builder()
-                .rootPath("/images/")
-                .include("file*")
-                .build();
-
-        var folder = folderViewForPath("images", "/images/");
-
-        var filteredFolderView = filter.apply(folder);
-
-        // Test when the path matches an include pattern
-        Assertions.assertNotNull(filteredFolderView);
-        Assertions.assertEquals(0, filteredFolderView.subFolders().size());
-        Assertions.assertEquals(3, filteredFolderView.assets().versions().size());
-    }
-
-    @Test
-    public void test_simple_includes4() {
-
-        var filter = Filter.builder()
-                .rootPath("/images/")
-                .include("dir*")
+                .includeAsset("*.png")
                 .build();
 
         var folder = folderViewForPath("images", "/images/");
@@ -98,16 +44,15 @@ public class FilterTest {
         // Test when the path matches an include pattern
         Assertions.assertNotNull(filteredFolderView);
         Assertions.assertEquals(3, filteredFolderView.subFolders().size());
-        Assertions.assertEquals(0, filteredFolderView.assets().versions().size());
+        Assertions.assertEquals(1, filteredFolderView.assets().versions().size());
     }
 
     @Test
-    public void test_multiple_includes() {
+    public void test_simple_includes2() {
 
         var filter = Filter.builder()
                 .rootPath("/images/")
-                .include("*.txt")
-                .include("*.jpeg")
+                .includeAsset("*.txt")
                 .build();
 
         var folder = folderViewForPath("images", "/images/");
@@ -116,7 +61,62 @@ public class FilterTest {
 
         // Test when the path matches an include pattern
         Assertions.assertNotNull(filteredFolderView);
-        Assertions.assertEquals(0, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(3, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(3, filteredFolderView.assets().versions().size());
+    }
+
+    @Test
+    public void test_simple_includes3() {
+
+        var filter = Filter.builder()
+                .rootPath("/images/")
+                .includeAsset("file*")
+                .build();
+
+        var folder = folderViewForPath("images", "/images/");
+
+        var filteredFolderView = filter.apply(folder);
+
+        // Test when the path matches an include pattern
+        Assertions.assertNotNull(filteredFolderView);
+        Assertions.assertEquals(3, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(3, filteredFolderView.assets().versions().size());
+    }
+
+    @Test
+    public void test_simple_includes4() {
+
+        var filter = Filter.builder()
+                .rootPath("/images/")
+                .includeFolder("dir*")
+                .build();
+
+        var folder = folderViewForPath("images", "/images/");
+
+        var filteredFolderView = filter.apply(folder);
+
+        // Test when the path matches an include pattern
+        Assertions.assertNotNull(filteredFolderView);
+        Assertions.assertEquals(3, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(5, filteredFolderView.assets().versions().size());
+    }
+
+    @Test
+    public void test_multiple_includes() {
+
+        var filter = Filter.builder()
+                .rootPath("/images/")
+                .includeAsset("*.txt")
+                .includeAsset("*.jpeg")
+                .build();
+
+        var folder = folderViewForPath("images", "/images/");
+
+        var filteredFolderView = filter.apply(folder);
+
+        // Test when the path matches an include pattern
+        Assertions.assertNotNull(filteredFolderView);
+        Assertions.assertEquals(3, filteredFolderView.subFolders().size());
         Assertions.assertEquals(4, filteredFolderView.assets().versions().size());
     }
 
@@ -125,8 +125,8 @@ public class FilterTest {
 
         var filter = Filter.builder()
                 .rootPath("/images/")
-                .include("dir")
-                .include("*.jpeg")
+                .includeFolder("dir")
+                .includeAsset("*.jpeg")
                 .build();
 
         var folder = folderViewForPath("images", "/images/");
@@ -144,8 +144,8 @@ public class FilterTest {
 
         var filter = Filter.builder()
                 .rootPath("/images/")
-                .include("dir*")
-                .include("*.jpeg")
+                .includeFolder("dir*")
+                .includeAsset("*.jpeg")
                 .build();
 
         var folder = folderViewForPath("images", "/images/");
@@ -163,8 +163,8 @@ public class FilterTest {
 
         var filter = Filter.builder()
                 .rootPath("/images/")
-                .include("dir?")
-                .include("*.jpeg")
+                .includeFolder("dir?")
+                .includeAsset("*.jpeg")
                 .build();
 
         var folder = folderViewForPath("images", "/images/");
@@ -182,8 +182,8 @@ public class FilterTest {
 
         var filter = Filter.builder()
                 .rootPath("/images/")
-                .include("**/dir?") // ** does not match root folder
-                .include("**/*.jpeg") // ** does not match root folder
+                .includeFolder("**/dir?") // ** does not match root folder
+                .includeAsset("**/*.jpeg") // ** does not match root folder
                 .build();
 
         var folder = folderViewForPath("images", "/images/");
@@ -201,8 +201,8 @@ public class FilterTest {
 
         var filter = Filter.builder()
                 .rootPath("/images/")
-                .include("**/folderNotExists")
-                .include("**/*.fileNotExists")
+                .includeFolder("**/folderNotExists")
+                .includeAsset("**/*.fileNotExists")
                 .build();
 
         var folder = folderViewForPath("images", "/images/");
@@ -220,8 +220,8 @@ public class FilterTest {
 
         var filter = Filter.builder()
                 .rootPath("/images/")
-                .include("**/dir?")
-                .include("**/*.jpeg")
+                .includeFolder("**/dir?")
+                .includeAsset("**/*.jpeg")
                 .build();
 
         var folder = folderViewForPath("images", "/images/blog/");
@@ -239,8 +239,8 @@ public class FilterTest {
 
         var filter = Filter.builder()
                 .rootPath("/images/")
-                .include("**/dir2")
-                .include("**/*.jpeg")
+                .includeFolder("**/dir2")
+                .includeAsset("**/*.jpeg")
                 .build();
 
         var folder = folderViewForPath("images", "/images/blog/");
@@ -258,8 +258,8 @@ public class FilterTest {
 
         var filter = Filter.builder()
                 .rootPath("/images/")
-                .include("**/dir2")
-                .include("**/*.jpeg")
+                .includeFolder("**/dir2")
+                .includeAsset("**/*.jpeg")
                 .build();
 
         var folder = folderViewForPath("images", "/images/blog/another/one/more/");
@@ -277,8 +277,8 @@ public class FilterTest {
 
         var filter = Filter.builder()
                 .rootPath("/images/")
-                .include("dir?")
-                .include("*.jpeg")
+                .includeFolder("dir?")
+                .includeAsset("*.jpeg")
                 .build();
 
         var folder = folderViewForPath("images", "/images/blog/another/one/more/");
@@ -292,11 +292,30 @@ public class FilterTest {
     }
 
     @Test
+    public void test_multiple_includes11() {
+
+        var filter = Filter.builder()
+                .rootPath("/images/")
+                .includeFolder("**/dir1")
+                .includeFolder("**/dir2")
+                .build();
+
+        var folder = folderViewForPath("images", "/images/blog/another/one/more/");
+
+        var filteredFolderView = filter.apply(folder);
+
+        // Test when the path matches an include pattern
+        Assertions.assertNotNull(filteredFolderView);
+        Assertions.assertEquals(2, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(5, filteredFolderView.assets().versions().size());
+    }
+
+    @Test
     public void test_simple_excludes() {
 
         var filter = Filter.builder()
                 .rootPath("/images/")
-                .exclude("*.png")
+                .excludeAsset("*.png")
                 .build();
 
         var folder = folderViewForPath("images", "/images/");
@@ -314,7 +333,7 @@ public class FilterTest {
 
         var filter = Filter.builder()
                 .rootPath("/images/")
-                .exclude("file?.txt")
+                .excludeAsset("file?.txt")
                 .build();
 
         var folder = folderViewForPath("images", "/images/");
@@ -332,7 +351,7 @@ public class FilterTest {
 
         var filter = Filter.builder()
                 .rootPath("/images/")
-                .exclude("dir*")
+                .excludeFolder("dir*")
                 .build();
 
         var folder = folderViewForPath("images", "/images/");
@@ -350,7 +369,7 @@ public class FilterTest {
 
         var filter = Filter.builder()
                 .rootPath("/images/")
-                .exclude("dir?")
+                .excludeFolder("dir?")
                 .build();
 
         var folder = folderViewForPath("images", "/images/");
@@ -368,8 +387,8 @@ public class FilterTest {
 
         var filter = Filter.builder()
                 .rootPath("/images/")
-                .exclude("dir?")
-                .exclude("file?.txt")
+                .excludeFolder("dir?")
+                .excludeAsset("file?.txt")
                 .build();
 
         var folder = folderViewForPath("images", "/images/");
@@ -387,8 +406,8 @@ public class FilterTest {
 
         var filter = Filter.builder()
                 .rootPath("/images/")
-                .exclude("dir?")
-                .exclude("file*")
+                .excludeFolder("dir?")
+                .excludeAsset("file*")
                 .build();
 
         var folder = folderViewForPath("images", "/images/");
@@ -402,12 +421,31 @@ public class FilterTest {
     }
 
     @Test
+    public void test_multiple_excludes3() {
+
+        var filter = Filter.builder()
+                .rootPath("/images/")
+                .excludeFolder("**/dir1")
+                .excludeFolder("**/dir2")
+                .build();
+
+        var folder = folderViewForPath("images", "/images/blog/another/one/more/");
+
+        var filteredFolderView = filter.apply(folder);
+
+        // Test when the path matches an include pattern
+        Assertions.assertNotNull(filteredFolderView);
+        Assertions.assertEquals(1, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(5, filteredFolderView.assets().versions().size());
+    }
+
+    @Test
     public void test_combine() {
 
         var filter = Filter.builder()
                 .rootPath("/images/")
-                .exclude("dir?")
-                .include("file?.txt")
+                .excludeFolder("dir?")
+                .includeAsset("file?.txt")
                 .build();
 
         var folder = folderViewForPath("images", "/images/");
@@ -425,9 +463,9 @@ public class FilterTest {
 
         var filter = Filter.builder()
                 .rootPath("/images/")
-                .include("dir?")
-                .include("*.*")
-                .exclude("file?.txt")
+                .includeFolder("dir?")
+                .includeAsset("*.*")
+                .excludeAsset("file?.txt")
                 .build();
 
         var folder = folderViewForPath("images", "/images/");
@@ -445,9 +483,9 @@ public class FilterTest {
 
         var filter = Filter.builder()
                 .rootPath("/images/")
-                .include("dir?")
-                .include("*.*")
-                .exclude("file?.txt")
+                .includeFolder("dir?")
+                .includeAsset("*.*")
+                .excludeAsset("file?.txt")
                 .build();
 
         var folder = folderViewForPath("images", "/images/blog/another/one/more/");
@@ -465,9 +503,9 @@ public class FilterTest {
 
         var filter = Filter.builder()
                 .rootPath("/images/")
-                .include("**/dir?")
-                .include("*.*")
-                .exclude("file?.txt")
+                .includeFolder("**/dir?")
+                .includeAsset("*.*")
+                .excludeAsset("file?.txt")
                 .build();
 
         var folder = folderViewForPath("images", "/images/blog/another/one/more/");
@@ -485,9 +523,9 @@ public class FilterTest {
 
         var filter = Filter.builder()
                 .rootPath("/images/")
-                .include("**/dir?")
-                .include("**/*.*")
-                .exclude("**/file?.txt")
+                .includeFolder("**/dir?")
+                .includeAsset("**/*.*")
+                .excludeAsset("**/file?.txt")
                 .build();
 
         var folder = folderViewForPath("images", "/images/blog/another/one/more/");

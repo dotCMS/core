@@ -14,13 +14,22 @@ import java.util.Set;
 
 public class Filter {
 
-    private final Set<PathMatcher> includes;
-    private final Set<PathMatcher> excludes;
+    private final Set<PathMatcher> folderIncludes;
+    private final Set<PathMatcher> assetIncludes;
+    private final Set<PathMatcher> folderExcludes;
+    private final Set<PathMatcher> assetExcludes;
     private final String rootPath;
 
-    private Filter(Set<PathMatcher> includes, Set<PathMatcher> excludes, String rootPath) {
-        this.includes = includes;
-        this.excludes = excludes;
+    private Filter(
+            Set<PathMatcher> folderIncludes,
+            Set<PathMatcher> assetIncludes,
+            Set<PathMatcher> folderExcludes,
+            Set<PathMatcher> assetExcludes,
+            String rootPath) {
+        this.folderIncludes = folderIncludes;
+        this.assetIncludes = assetIncludes;
+        this.folderExcludes = folderExcludes;
+        this.assetExcludes = assetExcludes;
         this.rootPath = rootPath;
     }
 
@@ -38,7 +47,7 @@ public class Filter {
                     folderPath = folderPath.replaceFirst("^" + rootPath, "");
                 }
 
-                if (use(folderPath)) {
+                if (use(true, folderPath)) {
                     filteredSubFolders.add(subFolder);
                 }
             });
@@ -54,7 +63,7 @@ public class Filter {
                     assetPath = assetPath.replaceFirst("^" + rootPath, "");
                 }
 
-                if (use(assetPath)) {
+                if (use(false, assetPath)) {
                     filteredAssets.add(assetVersion);
                 }
             });
@@ -65,7 +74,10 @@ public class Filter {
         return folder.withAssets(versions);
     }
 
-    private boolean use(String path) {
+    private boolean use(Boolean isFolder, String path) {
+
+        var includes = isFolder ? folderIncludes : assetIncludes;
+        var excludes = isFolder ? folderExcludes : assetExcludes;
 
         FileSystem fileSystem = FileSystems.getDefault();
 
@@ -97,8 +109,10 @@ public class Filter {
 
     public static class Builder {
 
-        private final Set<PathMatcher> includePatterns = new HashSet<>();
-        private final Set<PathMatcher> excludePatterns = new HashSet<>();
+        private final Set<PathMatcher> includeFolderPatterns = new HashSet<>();
+        private final Set<PathMatcher> includeAssetPatterns = new HashSet<>();
+        private final Set<PathMatcher> excludeFolderPatterns = new HashSet<>();
+        private final Set<PathMatcher> excludeAssetPatterns = new HashSet<>();
 
         private String rootPath = "/";
 
@@ -110,18 +124,36 @@ public class Filter {
             return this;
         }
 
-        public Builder include(String... include) {
+        public Builder includeFolder(String... include) {
             for (String pattern : include) {
-                includePatterns.add(
+                includeFolderPatterns.add(
                         FileSystems.getDefault().getPathMatcher("glob:" + pattern)
                 );
             }
             return this;
         }
 
-        public Builder exclude(String... exclude) {
+        public Builder includeAsset(String... include) {
+            for (String pattern : include) {
+                includeAssetPatterns.add(
+                        FileSystems.getDefault().getPathMatcher("glob:" + pattern)
+                );
+            }
+            return this;
+        }
+
+        public Builder excludeFolder(String... exclude) {
             for (String pattern : exclude) {
-                excludePatterns.add(
+                excludeFolderPatterns.add(
+                        FileSystems.getDefault().getPathMatcher("glob:" + pattern)
+                );
+            }
+            return this;
+        }
+
+        public Builder excludeAsset(String... exclude) {
+            for (String pattern : exclude) {
+                excludeAssetPatterns.add(
                         FileSystems.getDefault().getPathMatcher("glob:" + pattern)
                 );
             }
@@ -129,7 +161,13 @@ public class Filter {
         }
 
         public Filter build() {
-            return new Filter(includePatterns, excludePatterns, rootPath);
+            return new Filter(
+                    includeFolderPatterns,
+                    includeAssetPatterns,
+                    excludeFolderPatterns,
+                    excludeAssetPatterns,
+                    rootPath
+            );
         }
     }
 }

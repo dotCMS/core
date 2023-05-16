@@ -29,11 +29,13 @@ public class FolderTraversalServiceImpl implements FolderTraversalService {
      * Traverses the file system directory at the specified path and builds a hierarchical tree
      * representation of its contents.
      *
-     * @param path            The path to the directory to traverse.
-     * @param depth           The maximum depth to traverse the directory tree. If null, the
-     *                        traversal will go all the way down to the bottom of the tree.
-     * @param includePatterns The glob patterns to include in the traversal.
-     * @param excludePatterns The glob patterns to exclude from the traversal.
+     * @param path                  The path to the directory to traverse.
+     * @param depth                 The maximum depth to traverse the directory tree. If null, the
+     *                              traversal will go all the way down to the bottom of the tree.
+     * @param includeFolderPatterns The glob patterns for folders to include in the traversal.
+     * @param includeAssetPatterns  The glob patterns for assets to include in the traversal.
+     * @param excludeFolderPatterns The glob patterns for folders to exclude from the traversal.
+     * @param excludeAssetPatterns  The glob patterns for assets to exclude from the traversal.
      * @return A TreeNode representing the directory tree rooted at the specified path.
      */
     @ActivateRequestContext
@@ -41,8 +43,11 @@ public class FolderTraversalServiceImpl implements FolderTraversalService {
     public TreeNode traverse(
             final String path,
             final Integer depth,
-            final Set<String> includePatterns,
-            final Set<String> excludePatterns) {
+            final Set<String> includeFolderPatterns,
+            final Set<String> includeAssetPatterns,
+            final Set<String> excludeFolderPatterns,
+            final Set<String> excludeAssetPatterns
+    ) {
 
         if (path == null || path.isEmpty()) {
             throw new IllegalArgumentException("path cannot be null or empty");
@@ -62,10 +67,13 @@ public class FolderTraversalServiceImpl implements FolderTraversalService {
                     path));
         }
 
-        final String folderPath = uri.getPath();
+        String folderPath = uri.getPath();
         if (null == folderPath) {
             throw new IllegalArgumentException(
                     String.format("Unable to determine path: [%s].", path));
+        }
+        if (folderPath.isEmpty()) {
+            folderPath = "/";
         }
 
         Path dotCMSPath;
@@ -98,11 +106,17 @@ public class FolderTraversalServiceImpl implements FolderTraversalService {
             filterRootPath += "/";
         }
         var filterBuilder = Filter.builder().rootPath(filterRootPath);
-        for (var includePattern : includePatterns) {
-            filterBuilder.include(includePattern);
+        for (var includePattern : includeFolderPatterns) {
+            filterBuilder.includeFolder(includePattern);
         }
-        for (var excludePattern : excludePatterns) {
-            filterBuilder.exclude(excludePattern);
+        for (var includePattern : includeAssetPatterns) {
+            filterBuilder.includeAsset(includePattern);
+        }
+        for (var excludePattern : excludeFolderPatterns) {
+            filterBuilder.excludeFolder(excludePattern);
+        }
+        for (var excludePattern : excludeAssetPatterns) {
+            filterBuilder.excludeAsset(excludePattern);
         }
         var filter = filterBuilder.build();
 
