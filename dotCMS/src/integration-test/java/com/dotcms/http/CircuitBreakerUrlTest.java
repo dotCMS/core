@@ -109,8 +109,8 @@ public class CircuitBreakerUrlTest {
 
 
     @Test
-    public void testBadBreaker() throws IOException {
-        final boolean ipPrivateSubnet = IPUtils.isIpPrivateSubnet();
+    public void testBadBreaker() {
+
         try {
             final NullOutputStream nos = new NullOutputStream();
 
@@ -133,7 +133,7 @@ public class CircuitBreakerUrlTest {
 
             assert (breaker.isOpen());
         }finally {
-            IPUtils.disabledIpPrivateSubnet(ipPrivateSubnet);
+            IPUtils.disabledIpPrivateSubnet(false);
 
         }
     }
@@ -207,7 +207,6 @@ public class CircuitBreakerUrlTest {
      */
     @Test
     public void testRecovery() throws  InterruptedException, IOException {
-        final boolean ipPrivateSubnet = IPUtils.isIpPrivateSubnet();
 
         IPUtils.disabledIpPrivateSubnet(true);
 
@@ -269,7 +268,7 @@ public class CircuitBreakerUrlTest {
 
             assert (breaker.isClosed());
         }finally {
-            IPUtils.disabledIpPrivateSubnet(ipPrivateSubnet);
+            IPUtils.disabledIpPrivateSubnet(false);
         }
     }
 
