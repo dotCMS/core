@@ -3,6 +3,8 @@ package com.dotcms.cli.command.files;
 import com.dotcms.api.client.RestClientFactory;
 import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.CompletionException;
 import javax.inject.Inject;
 import javax.ws.rs.NotFoundException;
@@ -26,7 +28,7 @@ public abstract class AbstractFilesCommand {
      * @param throwable  the exception that was thrown
      * @return the exit code to be used for the command line interface
      */
-    public int handleFolderTraversalExceptions(String folderPath, Throwable throwable) {
+    protected int handleFolderTraversalExceptions(String folderPath, Throwable throwable) {
 
         if (throwable instanceof CompletionException) {
 
@@ -62,6 +64,27 @@ public abstract class AbstractFilesCommand {
                     folderPath, throwable.getMessage()));
             return CommandLine.ExitCode.SOFTWARE;
         }
+    }
+
+    /**
+     * Parses the pattern option string into a set of patterns.
+     *
+     * @param patterns the pattern option string containing patterns separated by commas
+     * @return a set of parsed patterns
+     */
+    protected Set<String> parsePatternOption(String patterns) {
+
+        var patternsSet = new HashSet<String>();
+
+        if (patterns == null) {
+            return patternsSet;
+        }
+
+        for (String pattern : patterns.split(",")) {
+            patternsSet.add(pattern.trim());
+        }
+
+        return patternsSet;
     }
 
 }

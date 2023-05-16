@@ -1,0 +1,552 @@
+package com.dotcms.api.traversal;
+
+import com.dotcms.model.asset.AssetVersionsView;
+import com.dotcms.model.asset.AssetView;
+import com.dotcms.model.asset.FolderView;
+import io.quarkus.test.junit.QuarkusTest;
+import java.util.Date;
+import java.util.UUID;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
+@QuarkusTest
+public class FilterTest {
+
+    @Test
+    public void test_no_filters() {
+
+        var filter = Filter.builder()
+                .rootPath("/images/")
+                .build();
+
+        var folder = folderViewForPath("images", "/images/");
+
+        var filteredFolderView = filter.apply(folder);
+
+        // Test when the path matches an include pattern
+        Assertions.assertNotNull(filteredFolderView);
+        Assertions.assertEquals(3, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(5, filteredFolderView.assets().versions().size());
+    }
+
+    @Test
+    public void test_simple_includes() {
+
+        var filter = Filter.builder()
+                .rootPath("/images/")
+                .include("*.png")
+                .build();
+
+        var folder = folderViewForPath("images", "/images/");
+
+        var filteredFolderView = filter.apply(folder);
+
+        // Test when the path matches an include pattern
+        Assertions.assertNotNull(filteredFolderView);
+        Assertions.assertEquals(0, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(1, filteredFolderView.assets().versions().size());
+    }
+
+    @Test
+    public void test_simple_includes2() {
+
+        var filter = Filter.builder()
+                .rootPath("/images/")
+                .include("*.txt")
+                .build();
+
+        var folder = folderViewForPath("images", "/images/");
+
+        var filteredFolderView = filter.apply(folder);
+
+        // Test when the path matches an include pattern
+        Assertions.assertNotNull(filteredFolderView);
+        Assertions.assertEquals(0, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(3, filteredFolderView.assets().versions().size());
+    }
+
+    @Test
+    public void test_simple_includes3() {
+
+        var filter = Filter.builder()
+                .rootPath("/images/")
+                .include("file*")
+                .build();
+
+        var folder = folderViewForPath("images", "/images/");
+
+        var filteredFolderView = filter.apply(folder);
+
+        // Test when the path matches an include pattern
+        Assertions.assertNotNull(filteredFolderView);
+        Assertions.assertEquals(0, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(3, filteredFolderView.assets().versions().size());
+    }
+
+    @Test
+    public void test_simple_includes4() {
+
+        var filter = Filter.builder()
+                .rootPath("/images/")
+                .include("dir*")
+                .build();
+
+        var folder = folderViewForPath("images", "/images/");
+
+        var filteredFolderView = filter.apply(folder);
+
+        // Test when the path matches an include pattern
+        Assertions.assertNotNull(filteredFolderView);
+        Assertions.assertEquals(3, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(0, filteredFolderView.assets().versions().size());
+    }
+
+    @Test
+    public void test_multiple_includes() {
+
+        var filter = Filter.builder()
+                .rootPath("/images/")
+                .include("*.txt")
+                .include("*.jpeg")
+                .build();
+
+        var folder = folderViewForPath("images", "/images/");
+
+        var filteredFolderView = filter.apply(folder);
+
+        // Test when the path matches an include pattern
+        Assertions.assertNotNull(filteredFolderView);
+        Assertions.assertEquals(0, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(4, filteredFolderView.assets().versions().size());
+    }
+
+    @Test
+    public void test_multiple_includes2() {
+
+        var filter = Filter.builder()
+                .rootPath("/images/")
+                .include("dir")
+                .include("*.jpeg")
+                .build();
+
+        var folder = folderViewForPath("images", "/images/");
+
+        var filteredFolderView = filter.apply(folder);
+
+        // Test when the path matches an include pattern
+        Assertions.assertNotNull(filteredFolderView);
+        Assertions.assertEquals(0, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(1, filteredFolderView.assets().versions().size());
+    }
+
+    @Test
+    public void test_multiple_includes3() {
+
+        var filter = Filter.builder()
+                .rootPath("/images/")
+                .include("dir*")
+                .include("*.jpeg")
+                .build();
+
+        var folder = folderViewForPath("images", "/images/");
+
+        var filteredFolderView = filter.apply(folder);
+
+        // Test when the path matches an include pattern
+        Assertions.assertNotNull(filteredFolderView);
+        Assertions.assertEquals(3, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(1, filteredFolderView.assets().versions().size());
+    }
+
+    @Test
+    public void test_multiple_includes4() {
+
+        var filter = Filter.builder()
+                .rootPath("/images/")
+                .include("dir?")
+                .include("*.jpeg")
+                .build();
+
+        var folder = folderViewForPath("images", "/images/");
+
+        var filteredFolderView = filter.apply(folder);
+
+        // Test when the path matches an include pattern
+        Assertions.assertNotNull(filteredFolderView);
+        Assertions.assertEquals(3, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(1, filteredFolderView.assets().versions().size());
+    }
+
+    @Test
+    public void test_multiple_includes5() {
+
+        var filter = Filter.builder()
+                .rootPath("/images/")
+                .include("**/dir?") // ** does not match root folder
+                .include("**/*.jpeg") // ** does not match root folder
+                .build();
+
+        var folder = folderViewForPath("images", "/images/");
+
+        var filteredFolderView = filter.apply(folder);
+
+        // Test when the path matches an include pattern
+        Assertions.assertNotNull(filteredFolderView);
+        Assertions.assertEquals(0, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(0, filteredFolderView.assets().versions().size());
+    }
+
+    @Test
+    public void test_multiple_includes6() {
+
+        var filter = Filter.builder()
+                .rootPath("/images/")
+                .include("**/folderNotExists")
+                .include("**/*.fileNotExists")
+                .build();
+
+        var folder = folderViewForPath("images", "/images/");
+
+        var filteredFolderView = filter.apply(folder);
+
+        // Test when the path matches an include pattern
+        Assertions.assertNotNull(filteredFolderView);
+        Assertions.assertEquals(0, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(0, filteredFolderView.assets().versions().size());
+    }
+
+    @Test
+    public void test_multiple_includes7() {
+
+        var filter = Filter.builder()
+                .rootPath("/images/")
+                .include("**/dir?")
+                .include("**/*.jpeg")
+                .build();
+
+        var folder = folderViewForPath("images", "/images/blog/");
+
+        var filteredFolderView = filter.apply(folder);
+
+        // Test when the path matches an include pattern
+        Assertions.assertNotNull(filteredFolderView);
+        Assertions.assertEquals(3, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(1, filteredFolderView.assets().versions().size());
+    }
+
+    @Test
+    public void test_multiple_includes8() {
+
+        var filter = Filter.builder()
+                .rootPath("/images/")
+                .include("**/dir2")
+                .include("**/*.jpeg")
+                .build();
+
+        var folder = folderViewForPath("images", "/images/blog/");
+
+        var filteredFolderView = filter.apply(folder);
+
+        // Test when the path matches an include pattern
+        Assertions.assertNotNull(filteredFolderView);
+        Assertions.assertEquals(1, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(1, filteredFolderView.assets().versions().size());
+    }
+
+    @Test
+    public void test_multiple_includes9() {
+
+        var filter = Filter.builder()
+                .rootPath("/images/")
+                .include("**/dir2")
+                .include("**/*.jpeg")
+                .build();
+
+        var folder = folderViewForPath("images", "/images/blog/another/one/more/");
+
+        var filteredFolderView = filter.apply(folder);
+
+        // Test when the path matches an include pattern
+        Assertions.assertNotNull(filteredFolderView);
+        Assertions.assertEquals(1, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(1, filteredFolderView.assets().versions().size());
+    }
+
+    @Test
+    public void test_multiple_includes10() {
+
+        var filter = Filter.builder()
+                .rootPath("/images/")
+                .include("dir?")
+                .include("*.jpeg")
+                .build();
+
+        var folder = folderViewForPath("images", "/images/blog/another/one/more/");
+
+        var filteredFolderView = filter.apply(folder);
+
+        // Test when the path matches an include pattern
+        Assertions.assertNotNull(filteredFolderView);
+        Assertions.assertEquals(0, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(0, filteredFolderView.assets().versions().size());
+    }
+
+    @Test
+    public void test_simple_excludes() {
+
+        var filter = Filter.builder()
+                .rootPath("/images/")
+                .exclude("*.png")
+                .build();
+
+        var folder = folderViewForPath("images", "/images/");
+
+        var filteredFolderView = filter.apply(folder);
+
+        // Test when the path matches an include pattern
+        Assertions.assertNotNull(filteredFolderView);
+        Assertions.assertEquals(3, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(4, filteredFolderView.assets().versions().size());
+    }
+
+    @Test
+    public void test_simple_excludes2() {
+
+        var filter = Filter.builder()
+                .rootPath("/images/")
+                .exclude("file?.txt")
+                .build();
+
+        var folder = folderViewForPath("images", "/images/");
+
+        var filteredFolderView = filter.apply(folder);
+
+        // Test when the path matches an include pattern
+        Assertions.assertNotNull(filteredFolderView);
+        Assertions.assertEquals(3, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(3, filteredFolderView.assets().versions().size());
+    }
+
+    @Test
+    public void test_simple_excludes3() {
+
+        var filter = Filter.builder()
+                .rootPath("/images/")
+                .exclude("dir*")
+                .build();
+
+        var folder = folderViewForPath("images", "/images/");
+
+        var filteredFolderView = filter.apply(folder);
+
+        // Test when the path matches an include pattern
+        Assertions.assertNotNull(filteredFolderView);
+        Assertions.assertEquals(0, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(5, filteredFolderView.assets().versions().size());
+    }
+
+    @Test
+    public void test_simple_excludes4() {
+
+        var filter = Filter.builder()
+                .rootPath("/images/")
+                .exclude("dir?")
+                .build();
+
+        var folder = folderViewForPath("images", "/images/");
+
+        var filteredFolderView = filter.apply(folder);
+
+        // Test when the path matches an include pattern
+        Assertions.assertNotNull(filteredFolderView);
+        Assertions.assertEquals(0, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(5, filteredFolderView.assets().versions().size());
+    }
+
+    @Test
+    public void test_multiple_excludes() {
+
+        var filter = Filter.builder()
+                .rootPath("/images/")
+                .exclude("dir?")
+                .exclude("file?.txt")
+                .build();
+
+        var folder = folderViewForPath("images", "/images/");
+
+        var filteredFolderView = filter.apply(folder);
+
+        // Test when the path matches an include pattern
+        Assertions.assertNotNull(filteredFolderView);
+        Assertions.assertEquals(0, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(3, filteredFolderView.assets().versions().size());
+    }
+
+    @Test
+    public void test_multiple_excludes2() {
+
+        var filter = Filter.builder()
+                .rootPath("/images/")
+                .exclude("dir?")
+                .exclude("file*")
+                .build();
+
+        var folder = folderViewForPath("images", "/images/");
+
+        var filteredFolderView = filter.apply(folder);
+
+        // Test when the path matches an include pattern
+        Assertions.assertNotNull(filteredFolderView);
+        Assertions.assertEquals(0, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(2, filteredFolderView.assets().versions().size());
+    }
+
+    @Test
+    public void test_combine() {
+
+        var filter = Filter.builder()
+                .rootPath("/images/")
+                .exclude("dir?")
+                .include("file?.txt")
+                .build();
+
+        var folder = folderViewForPath("images", "/images/");
+
+        var filteredFolderView = filter.apply(folder);
+
+        // Test when the path matches an include pattern
+        Assertions.assertNotNull(filteredFolderView);
+        Assertions.assertEquals(0, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(2, filteredFolderView.assets().versions().size());
+    }
+
+    @Test
+    public void test_combine2() {
+
+        var filter = Filter.builder()
+                .rootPath("/images/")
+                .include("dir?")
+                .include("*.*")
+                .exclude("file?.txt")
+                .build();
+
+        var folder = folderViewForPath("images", "/images/");
+
+        var filteredFolderView = filter.apply(folder);
+
+        // Test when the path matches an include pattern
+        Assertions.assertNotNull(filteredFolderView);
+        Assertions.assertEquals(3, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(3, filteredFolderView.assets().versions().size());
+    }
+
+    @Test
+    public void test_combine3() {
+
+        var filter = Filter.builder()
+                .rootPath("/images/")
+                .include("dir?")
+                .include("*.*")
+                .exclude("file?.txt")
+                .build();
+
+        var folder = folderViewForPath("images", "/images/blog/another/one/more/");
+
+        var filteredFolderView = filter.apply(folder);
+
+        // Test when the path matches an include pattern
+        Assertions.assertNotNull(filteredFolderView);
+        Assertions.assertEquals(0, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(0, filteredFolderView.assets().versions().size());
+    }
+
+    @Test
+    public void test_combine4() {
+
+        var filter = Filter.builder()
+                .rootPath("/images/")
+                .include("**/dir?")
+                .include("*.*")
+                .exclude("file?.txt")
+                .build();
+
+        var folder = folderViewForPath("images", "/images/blog/another/one/more/");
+
+        var filteredFolderView = filter.apply(folder);
+
+        // Test when the path matches an include pattern
+        Assertions.assertNotNull(filteredFolderView);
+        Assertions.assertEquals(3, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(0, filteredFolderView.assets().versions().size());
+    }
+
+    @Test
+    public void test_combine5() {
+
+        var filter = Filter.builder()
+                .rootPath("/images/")
+                .include("**/dir?")
+                .include("**/*.*")
+                .exclude("**/file?.txt")
+                .build();
+
+        var folder = folderViewForPath("images", "/images/blog/another/one/more/");
+
+        var filteredFolderView = filter.apply(folder);
+
+        // Test when the path matches an include pattern
+        Assertions.assertNotNull(filteredFolderView);
+        Assertions.assertEquals(3, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(3, filteredFolderView.assets().versions().size());
+    }
+
+    private FolderView folderViewForPath(String name, String path) {
+
+        var folderBuilder = FolderView.builder();
+        folderBuilder.name(name).path(path).level(0);
+
+        // Sub-folders
+        folderBuilder.addSubFolders(
+                simpleFolderViewForPath("dir1", path + "dir1/", 1),
+                simpleFolderViewForPath("dir2", path + "dir2/", 1),
+                simpleFolderViewForPath("dir3", path + "dir3/", 1)
+        );
+
+        // Assets
+        var assetVersionViewBuilder = AssetVersionsView.builder();
+        assetVersionViewBuilder.addVersions(
+                assetViewForPath("file.txt", path),
+                assetViewForPath("file1.txt", path),
+                assetViewForPath("file2.txt", path),
+                assetViewForPath("sky.png", path),
+                assetViewForPath("sun.jpeg", path)
+        );
+
+        folderBuilder.assets(assetVersionViewBuilder.build());
+
+        return folderBuilder.build();
+    }
+
+    private FolderView simpleFolderViewForPath(String name, String path, int level) {
+        return FolderView.builder().
+                name(name).
+                path(path).
+                level(level).
+                build();
+    }
+
+    private AssetView assetViewForPath(String name, String path) {
+        return AssetView.builder().
+                name(name).
+                path(path).
+                modDate(new Date().toInstant()).
+                identifier(UUID.randomUUID().toString()).
+                inode(UUID.randomUUID().toString()).
+                sha256("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad").
+                size(1000L).
+                live(true).
+                lang("en-US").
+                build();
+    }
+
+}

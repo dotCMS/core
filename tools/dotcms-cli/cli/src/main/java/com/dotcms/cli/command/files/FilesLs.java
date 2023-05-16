@@ -44,18 +44,38 @@ public class FilesLs extends AbstractFilesCommand implements Callable<Integer> {
                             + "will be displayed in the tree.")
     boolean excludeEmptyFolders;
 
+    @CommandLine.Option(names = {"-ge", "--globExclude"},
+            paramLabel = "patterns",
+            description = "Exclude files/directories matching the given glob patterns. Multiple "
+                    + "patterns can be specified, separated by commas.")
+    String excludePatternsOption;
+
+    @CommandLine.Option(names = {"-gi", "--globInclude"},
+            paramLabel = "patterns",
+            description = "Include files/directories matching the given glob patterns. Multiple "
+                    + "patterns can be specified, separated by commas.")
+    String includePatternsOption;
+
     @Inject
     FolderTraversalService folderTraversalService;
 
     @Override
     public Integer call() throws Exception {
 
+        var includePatterns = parsePatternOption(includePatternsOption);
+        var excludePatterns = parsePatternOption(excludePatternsOption);
+
         try {
 
             CompletableFuture<TreeNode> folderTraversalFuture = CompletableFuture.supplyAsync(
                     () -> {
                         // Service to handle the traversal of the folder
-                        return folderTraversalService.traverse(folderPath, 0);
+                        return folderTraversalService.traverse(
+                                folderPath,
+                                0,
+                                includePatterns,
+                                excludePatterns
+                        );
                     });
 
             // ConsoleLoadingAnimation instance to handle the waiting "animation"

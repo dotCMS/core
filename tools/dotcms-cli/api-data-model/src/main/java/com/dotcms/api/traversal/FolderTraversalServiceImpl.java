@@ -7,6 +7,7 @@ import java.net.URISyntaxException;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Set;
 import java.util.concurrent.ForkJoinPool;
 import javax.enterprise.context.Dependent;
 import javax.enterprise.context.control.ActivateRequestContext;
@@ -28,14 +29,20 @@ public class FolderTraversalServiceImpl implements FolderTraversalService {
      * Traverses the file system directory at the specified path and builds a hierarchical tree
      * representation of its contents.
      *
-     * @param path  The path to the directory to traverse.
-     * @param depth The maximum depth to traverse the directory tree. If null, the traversal will go
-     *              all the way down to the bottom of the tree.
+     * @param path            The path to the directory to traverse.
+     * @param depth           The maximum depth to traverse the directory tree. If null, the
+     *                        traversal will go all the way down to the bottom of the tree.
+     * @param includePatterns The glob patterns to include in the traversal.
+     * @param excludePatterns The glob patterns to exclude from the traversal.
      * @return A TreeNode representing the directory tree rooted at the specified path.
      */
     @ActivateRequestContext
     @Override
-    public TreeNode traverse(final String path, final Integer depth) {
+    public TreeNode traverse(
+            final String path,
+            final Integer depth,
+            final Set<String> includePatterns,
+            final Set<String> excludePatterns) {
 
         if (path == null || path.isEmpty()) {
             throw new IllegalArgumentException("path cannot be null or empty");
@@ -85,10 +92,26 @@ public class FolderTraversalServiceImpl implements FolderTraversalService {
         // to the bottom of the tree
         int depthToUse = depth == null ? -1 : depth;
 
+        // Building the glob filter
+        var filterRootPath = dotCMSPath.toString();
+        if (!filterRootPath.endsWith("/")) {
+            filterRootPath += "/";
+        }
+        var filterBuilder = Filter.builder().rootPath(filterRootPath);
+        for (var includePattern : includePatterns) {
+            filterBuilder.include(includePattern);
+        }
+        for (var excludePattern : excludePatterns) {
+            filterBuilder.exclude(excludePattern);
+        }
+        var filter = filterBuilder.build();
+
+        // ---
         var forkJoinPool = ForkJoinPool.commonPool();
 
         var task = new FolderTraversalTask(
                 executor,
+                filter,
                 site,
                 FolderView.builder()
                         .site(site)

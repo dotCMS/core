@@ -13,6 +13,7 @@ import java.util.concurrent.RecursiveTask;
 public class FolderTraversalTask extends RecursiveTask<TreeNode> {
 
     private final Executor executor;
+    private final Filter filter;
     private final String siteName;
     private final FolderView folder;
     private final boolean root;
@@ -22,6 +23,8 @@ public class FolderTraversalTask extends RecursiveTask<TreeNode> {
      * Constructs a new FolderTraversalTask instance with the specified site name, folder, root
      * flag, and depth.
      *
+     * @param executor The executor used for REST calls and other operations.
+     * @param filter   The filter used to include or exclude folders and assets.
      * @param siteName The name of the site containing the folder to traverse.
      * @param folder   The folder to traverse.
      * @param root     Whether this task is for the root folder.
@@ -29,12 +32,14 @@ public class FolderTraversalTask extends RecursiveTask<TreeNode> {
      */
     FolderTraversalTask(
             Executor executor,
+            Filter filter,
             final String siteName,
             final FolderView folder,
             final Boolean root,
             final int depth) {
 
         this.executor = executor;
+        this.filter = filter;
         this.siteName = siteName;
         this.folder = folder;
         this.root = root;
@@ -142,6 +147,7 @@ public class FolderTraversalTask extends RecursiveTask<TreeNode> {
         final var folder = this.restCall(siteName, parentFolderName, folderName, level);
         return new FolderTraversalTask(
                 this.executor,
+                this.filter,
                 siteName,
                 folder,
                 false,
@@ -159,7 +165,8 @@ public class FolderTraversalTask extends RecursiveTask<TreeNode> {
      */
     private FolderView restCall(final String siteName, final String parentFolderName,
             final String folderName, final int level) {
-        return this.executor.restCall(siteName, parentFolderName, folderName, level);
+        var foundFolder = this.executor.restCall(siteName, parentFolderName, folderName, level);
+        return this.filter.apply(foundFolder);
     }
 
 }
