@@ -7,6 +7,49 @@
 	},
 	"item": [
 		{
+			"name": "CreateNewLimitedRole",
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"roleName\":\"limitedRole\",\n    \"roleKey\":\"limitedRole\",\n    \"canEditUsers\":true,\n    \"canEditPermissions\":true,\n    \"canEditLayouts\":true,\n    \"description\":\"Limited Role for Limited Users\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/roles",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"roles"
+					]
+				}
+			},
+			"response": []
+		},
+		{
 			"name": "GetLayouts",
 			"event": [
 				{
@@ -29,6 +72,21 @@
 				}
 			],
 			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
 				"method": "GET",
 				"header": [],
 				"url": {
@@ -266,6 +324,34 @@
 						"api",
 						"v1",
 						"logout"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "ReloginAsAnAdminAtTheEnd",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"userId\":\"admin@dotcms.com\",\n    \"password\":\"admin\",\n    \"backEndLogin\":true\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/authentication",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"authentication"
 					]
 				}
 			},
