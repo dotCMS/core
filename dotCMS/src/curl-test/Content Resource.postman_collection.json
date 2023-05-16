@@ -803,9 +803,9 @@
 									"var jsonData = pm.response.json();",
 									"",
 									"",
-									"pm.test(\"Id check\", function () {",
-									"    pm.expect(jsonData.contentlets[0].__icon__).to.eql('contentIcon');",
-									"    pm.expect(jsonData.contentlets[0].contentTypeIcon).to.eql('360');",
+									"pm.test(\"Verify no variant is present\", function () {",
+									"    pm.expect(jsonData.entity.jsonObjectView.contentlets.length).eq(1);",
+									"    pm.expect(jsonData.entity.jsonObjectView.contentlets[0].variantId).eq(\"DEFAULT\");",
 									"});",
 									""
 								],
@@ -833,7 +833,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"query\": \"+working:true  +(urlmap:* OR basetype:5)  +deleted:false +(title:test_page_and_variants* OR path:*test_page_and_variants* OR urlmap:*test_page_and_variants*)    \",\n    \"sort\": \"modDate DESC\",\n    \"limit\": 40,\n    \"offset\": \"0\"\n}",
+							"raw": "{\n    \"query\": \"+working:true  +(urlmap:* OR basetype:5)  +deleted:false +(title:test_variants_page* OR path:*test_variants_page* OR urlmap:*test_variants_page*)    \",\n    \"sort\": \"modDate DESC\",\n    \"limit\": 40,\n    \"offset\": \"0\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1452,6 +1452,18 @@
 		},
 		{
 			"key": "content2_id",
+			"value": ""
+		},
+		{
+			"key": "page_id",
+			"value": ""
+		},
+		{
+			"key": "experimentId",
+			"value": ""
+		},
+		{
+			"key": "experimentShortId",
 			"value": ""
 		}
 	]
