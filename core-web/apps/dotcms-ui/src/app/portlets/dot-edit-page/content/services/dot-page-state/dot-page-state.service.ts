@@ -13,7 +13,6 @@ import {
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import {
     DotContentletLockerService,
-    DotESContentService,
     DotMessageService,
     DotPageRenderService
 } from '@dotcms/data-access';
@@ -51,7 +50,6 @@ export class DotPageStateService {
 
     constructor(
         private dotContentletLockerService: DotContentletLockerService,
-        private dotESContentService: DotESContentService,
         private dotHttpErrorManagerService: DotHttpErrorManagerService,
         private dotMessageService: DotMessageService,
         private dotPageRenderService: DotPageRenderService,
