@@ -20,6 +20,7 @@
                     <input
                         id="name"
                         [tabindex]="1"
+                        [maxlength]="this.maxNameLength + 1"
                         data-testId="add-experiment-description-input"
                         dotAutofocus
                         formControlName="name"
