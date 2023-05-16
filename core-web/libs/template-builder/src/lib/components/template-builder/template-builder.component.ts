@@ -12,7 +12,6 @@ import { Observable, Subject } from 'rxjs';
 import {
     AfterViewInit,
     ChangeDetectionStrategy,
-    ChangeDetectorRef,
     Component,
     ElementRef,
     OnInit,
@@ -193,7 +192,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit {
 
     grid!: GridStack;
 
-    constructor(private cd: ChangeDetectorRef) {
+    constructor() {
         const starter: GridStackWidget[] = [
             { x: 0, y: 0, w: 12, id: '1' },
             { x: 0, y: 1, w: 12, id: '2' },
