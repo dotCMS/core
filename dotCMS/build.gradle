@@ -283,11 +283,15 @@ dependencies {
         transitive = false
     }
 
-    felix group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.25'
-    felix group: 'org.slf4j', name: 'jcl-over-slf4j', version: '1.7.25'
+    felix group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.35'
+    felix group: 'org.slf4j', name: 'jcl-over-slf4j', version: '1.7.35'
 
     //// Felix system configuration
+    felixsystem group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.35'
+    felixsystem group: 'org.slf4j', name: 'jcl-over-slf4j', version: '1.7.35'
+
     felixsystem group: 'com.dotcms.tika', name: 'com.dotcms.tika', version: '2.7.0'
+    felixsystem group: 'com.dotcms.tika', name: 'com.dotcms.tika.fragment', version: '2.7.0'
     felixsystem group: 'com.dotcms.samlbundle', name: 'com.dotcms.samlbundle', version: '22.03'
 
     //// starter config
