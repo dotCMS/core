@@ -118,6 +118,9 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
     describe('should render', () => {
         it('a DEFAULT variant', () => {
             expect(spectator.queryAll(byTestId('variant-name')).length).toBe(1);
+            expect(spectator.query(byTestId('variants-card-header'))).toHaveClass(
+                'p-label-input-required'
+            );
 
             expect(spectator.query(byTestId('variant-weight'))).toHaveText(
                 EXPERIMENT_MOCK.trafficProportion.variants[0].weight + '.00% weight'

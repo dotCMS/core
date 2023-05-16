@@ -84,6 +84,7 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
     it('should render the card', () => {
         expect(spectator.queryAll(Card).length).toEqual(1);
         expect(spectator.query(byTestId('goals-card-name'))).toContainText('Goals');
+        expect(spectator.query(byTestId('goals-card-name'))).toHaveClass('p-label-input-required');
         expect(spectator.query(byTestId('goals-add-button'))).toExist();
     });
 
