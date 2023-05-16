@@ -563,4 +563,25 @@ describe('DotPageStore', () => {
             url: '/index1'
         });
     });
+
+    it('should get all menu actions from a favorite page when page is archived', () => {
+        const error404 = mockResponseView(404, '/page', null, { message: 'error' });
+        spyOn(dotPageWorkflowsActionsService, 'getByUrl').and.returnValue(throwError(error404));
+
+        dotPageStore.showActionsMenu({
+            item: { ...favoritePagesInitialTestData[0], contentType: 'dotFavoritePage' },
+            actionMenuDomId: 'test1'
+        });
+
+        expect(dotPageWorkflowsActionsService.getByUrl).toHaveBeenCalledWith({
+            host_id: 'A',
+            language_id: '1',
+            url: '/index1'
+        });
+
+        dotPageStore.state$.subscribe((data) => {
+            expect(data.pages.menuActions.length).toEqual(1);
+            expect(data.pages.menuActions[0].label).toEqual('favoritePage.contextMenu.action.edit');
+        });
+    });
 });
