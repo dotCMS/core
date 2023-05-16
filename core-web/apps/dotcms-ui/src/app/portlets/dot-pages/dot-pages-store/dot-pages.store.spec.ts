@@ -11,6 +11,7 @@ import { PushPublishServiceMock } from '@components/_common/dot-push-publish-env
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
+import { DotFavoritePageService } from '@dotcms/app/api/services/dot-favorite-page/dot-favorite-page.service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotWizardService } from '@dotcms/app/api/services/dot-wizard/dot-wizard.service';
@@ -118,6 +119,7 @@ describe('DotPageStore', () => {
                 DotWorkflowEventHandlerService,
                 LoggerService,
                 StringUtils,
+                DotFavoritePageService,
                 { provide: DialogService, useClass: DialogServiceMock },
                 { provide: DotcmsEventsService, useClass: DotcmsEventsServiceMock },
                 { provide: CoreWebService, useClass: CoreWebServiceMock },

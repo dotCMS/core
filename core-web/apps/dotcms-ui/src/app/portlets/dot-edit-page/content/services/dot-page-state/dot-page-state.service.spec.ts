@@ -7,6 +7,7 @@ import { ConfirmationService } from 'primeng/api';
 
 import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
+import { DotFavoritePageService } from '@dotcms/app/api/services/dot-favorite-page/dot-favorite-page.service';
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
@@ -14,7 +15,8 @@ import {
     DotAlertConfirmService,
     DotContentletLockerService,
     DotESContentService,
-    DotPageRenderService
+    DotPageRenderService,
+    ESOrderDirection
 } from '@dotcms/data-access';
 import { CoreWebService, HttpCode, LoginService } from '@dotcms/dotcms-js';
 import {
@@ -68,6 +70,7 @@ describe('DotPageStateService', () => {
                 ConfirmationService,
                 DotFormatDateService,
                 DotESContentService,
+                DotFavoritePageService,
                 { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotRouterService, useClass: MockDotRouterService },
@@ -141,7 +144,9 @@ describe('DotPageStateService', () => {
             expect(dotESContentService.get).toHaveBeenCalledWith({
                 itemsPerPage: 10,
                 offset: '0',
-                query: `+contentType:DotFavoritePage +deleted:false +working:true +owner:dotcms.org.1 +DotFavoritePage.url_dotraw:/an/url/test?&language_id=1&device_inode=`
+                query: `+contentType:dotFavoritePage +deleted:false +working:true +owner:dotcms.org.1 +DotFavoritePage.url_dotraw:/an/url/test?&language_id=1&device_inode=`,
+                sortField: 'dotFavoritePage.order',
+                sortOrder: ESOrderDirection.ASC
             });
         });
 
@@ -399,7 +404,9 @@ describe('DotPageStateService', () => {
             expect(dotESContentService.get).toHaveBeenCalledWith({
                 itemsPerPage: 10,
                 offset: '0',
-                query: `+contentType:DotFavoritePage +deleted:false +working:true +owner:123 +DotFavoritePage.url_dotraw:/an/url/test?&language_id=1&device_inode=`
+                query: `+contentType:dotFavoritePage +deleted:false +working:true +owner:123 +DotFavoritePage.url_dotraw:/an/url/test?&language_id=1&device_inode=`,
+                sortField: 'dotFavoritePage.order',
+                sortOrder: ESOrderDirection.ASC
             });
         });
 

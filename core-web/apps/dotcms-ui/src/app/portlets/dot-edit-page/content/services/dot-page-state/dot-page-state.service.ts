@@ -5,6 +5,7 @@ import { Injectable } from '@angular/core';
 
 import { catchError, map, pluck, switchMap, take, tap } from 'rxjs/operators';
 
+import { DotFavoritePageService } from '@dotcms/app/api/services/dot-favorite-page/dot-favorite-page.service';
 import {
     DotHttpErrorHandled,
     DotHttpErrorManagerService
@@ -55,7 +56,8 @@ export class DotPageStateService {
         private dotMessageService: DotMessageService,
         private dotPageRenderService: DotPageRenderService,
         private dotRouterService: DotRouterService,
-        private loginService: LoginService
+        private loginService: LoginService,
+        private dotFavoritePageService: DotFavoritePageService
     ) {}
 
     /**
@@ -129,21 +131,22 @@ export class DotPageStateService {
             siteId: state.site?.identifier
         });
 
-        this.dotESContentService
-            .get({
-                itemsPerPage: 10,
-                offset: '0',
-                query: `+contentType:DotFavoritePage +deleted:false +working:true +owner:${state.user.userId} +DotFavoritePage.url_dotraw:${urlParam}`
-            })
+        this.dotFavoritePageService
+            .get({ limit: 10, userId: state.user.userId, url: urlParam })
             .pipe(take(1))
-            .subscribe((response: ESContent) => {
-                const favoritePage = response.jsonObjectView?.contentlets[0];
+            .subscribe(
+                (response: ESContent) => {
+                    const favoritePage = response.jsonObjectView?.contentlets[0];
 
-                if (favoritePage) {
-                    state.favoritePage = favoritePage;
-                    this.setCurrentState(state);
+                    if (favoritePage) {
+                        state.favoritePage = favoritePage;
+                        this.setCurrentState(state);
+                    }
+                },
+                (error: HttpErrorResponse) => {
+                    this.dotHttpErrorManagerService.handle(error, true);
                 }
-            });
+            );
 
         this.setCurrentState(state);
         this.isInternalNavigation = true;
@@ -259,12 +262,8 @@ export class DotPageStateService {
                             siteId: page.site?.identifier
                         });
 
-                        return this.dotESContentService
-                            .get({
-                                itemsPerPage: 10,
-                                offset: '0',
-                                query: `+contentType:DotFavoritePage +deleted:false +working:true +owner:${user.userId} +DotFavoritePage.url_dotraw:${urlParam}`
-                            })
+                        return this.dotFavoritePageService
+                            .get({ limit: 10, userId: user.userId, url: urlParam })
                             .pipe(
                                 take(1),
                                 catchError((error: HttpErrorResponse) => {
