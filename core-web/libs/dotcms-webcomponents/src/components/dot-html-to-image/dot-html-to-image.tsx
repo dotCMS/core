@@ -21,6 +21,8 @@ export class DotHtmlToImage {
         error?: string;
     }>;
     @State() previewImg: string;
+    @State() iframe: HTMLIFrameElement;
+    @State() doc: Document;
 
     boundOnMessageHandler = null;
     iframeId = `iframe_${Math.floor(Date.now() / 1000).toString()}`;
@@ -34,6 +36,8 @@ export class DotHtmlToImage {
         }).then((canvas) => {
             canvas.toBlob((blob) => {
                 const fileObj = new File([blob], 'image.png');
+                const iframe = parent.document.querySelector('#${this.iframeId}');
+                iframe.style.display = 'none';
                 window.parent.postMessage({
                     iframeId: '${this.iframeId}',
                     previewImg: canvas.toDataURL(),
@@ -49,42 +53,46 @@ export class DotHtmlToImage {
     ;`;
 
     componentDidLoad() {
-        const iframe = document.querySelector(`#${this.iframeId}`) as HTMLIFrameElement;
-        const doc = iframe.contentDocument || iframe.contentWindow.document;
-
         try {
-            doc.open();
-            doc.write(this.value);
-            doc.close();
+            this.doc.open();
+            this.doc.write(this.value);
+            this.doc.close();
+        } catch (error) {
+            this.pageThumbnail.emit({ file: null, error });
+        }
+    }
+
+    private onLoad() {
+        try {
+            this.iframe = document.querySelector(`#${this.iframeId}`) as HTMLIFrameElement;
+            this.doc = this.iframe.contentDocument || this.iframe.contentWindow.document;
+
             const scriptLib = document.createElement('script') as HTMLScriptElement;
             scriptLib.src = '/html/js/html2canvas/html2canvas.min.js';
             scriptLib.type = 'text/javascript';
-
-            doc.addEventListener('DOMContentLoaded', () => {
-                doc.body.appendChild(scriptLib);
-            });
+            this.doc.body.appendChild(scriptLib);
 
             scriptLib.onload = () => {
-                iframe.addEventListener('load', () => {
-                    const script: HTMLScriptElement = document.createElement('script');
-                    script.type = 'text/javascript';
-                    script.text = this.width
-                        ? this.loadScript
-                              .replace(/IMG_HEIGHT/g, this.height)
-                              .replace(/IMG_WIDTH/g, this.width)
-                        : this.loadScript;
+                const script: HTMLScriptElement = document.createElement('script');
+                script.type = 'text/javascript';
+                script.text = this.width
+                    ? this.loadScript
+                          .replace(/IMG_HEIGHT/g, this.height)
+                          .replace(/IMG_WIDTH/g, this.width)
+                    : this.loadScript;
 
-                    doc.body.appendChild(script);
-                });
+                this.doc.body.appendChild(script);
+
+                this.boundOnMessageHandler = this.onMessageHandler.bind(null, this.iframe, this);
+                window.addEventListener('message', this.boundOnMessageHandler);
             };
-            this.boundOnMessageHandler = this.onMessageHandler.bind(null, iframe, this);
-            window.addEventListener('message', this.boundOnMessageHandler);
         } catch (error) {
             this.pageThumbnail.emit({ file: null, error });
         }
     }
 
     render() {
+        const iframeStyle = { width: `${this.width}px`, height: `${this.height}px`, opacity: '0' };
         return (
             <Host>
                 {!this.previewImg ? (
@@ -92,7 +100,8 @@ export class DotHtmlToImage {
                 ) : (
                     ''
                 )}
-                <iframe id={this.iframeId} />
+
+                <iframe style={iframeStyle} onLoad={() => this.onLoad()} id={this.iframeId} />
             </Host>
         );
     }
