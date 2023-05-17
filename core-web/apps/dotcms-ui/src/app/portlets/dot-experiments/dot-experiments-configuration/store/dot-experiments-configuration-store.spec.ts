@@ -349,7 +349,7 @@ describe('DotExperimentsConfigurationStore', () => {
             });
         });
 
-        it('should get a isDefault true to the default conditions of type REACH_PAGE', (done) => {
+        it('should remove the default conditions of type REACH_PAGE', (done) => {
             const experimentMock = {
                 ...EXPERIMENT_MOCK,
                 goals: {
@@ -379,13 +379,12 @@ describe('DotExperimentsConfigurationStore', () => {
             store.loadExperiment(EXPERIMENT_MOCK.id);
 
             store.goals$.subscribe(({ primary }) => {
-                expect(primary.conditions[0].isDefault).toBeFalse();
-                expect(primary.conditions[1].parameter).toBe(GOAL_PARAMETERS.REFERER);
-                expect(primary.conditions[1].isDefault).toBeTrue();
+                expect(primary.conditions.length).toBe(1);
+                expect(primary.conditions[0].parameter).toBe(GOAL_PARAMETERS.URL);
                 done();
             });
         });
-        it('should get a isDefault true to the default conditions of type BOUNCE_RATE', (done) => {
+        it('should remove the default conditions of type BOUNCE_RATE', (done) => {
             const experimentMock = {
                 ...EXPERIMENT_MOCK,
                 goals: {
@@ -410,8 +409,7 @@ describe('DotExperimentsConfigurationStore', () => {
             store.loadExperiment(EXPERIMENT_MOCK.id);
 
             store.goals$.subscribe(({ primary }) => {
-                expect(primary.conditions[0].parameter).toBe(GOAL_PARAMETERS.URL);
-                expect(primary.conditions[0].isDefault).toBeTrue();
+                expect(primary.conditions.length).toBe(0);
                 done();
             });
         });
