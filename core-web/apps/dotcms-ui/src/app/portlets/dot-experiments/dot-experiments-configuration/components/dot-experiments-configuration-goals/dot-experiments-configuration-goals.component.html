@@ -26,11 +26,11 @@
                     class="col-12"
                     [ngClass]="{
                         'header-title flex flex-row flex-wrap align-items-center ng-star-inserted':
-                            vm.goals.primary.type === 'BOUNCE_RATE'
+                            vm.goals.primary.type === GOAL_TYPES.BOUNCE_RATE
                     }"
                 >
                     <dot-experiments-details-table
-                        *ngIf="vm.goals.primary.type === 'REACH_PAGE'; else titleTpl"
+                        *ngIf="vm.goals.primary.type === GOAL_TYPES.REACH_PAGE; else titleTpl"
                         [data]="vm.goals.primary.conditions"
                         [isEmpty]="false"
                         [title]="titleTpl"
