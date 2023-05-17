@@ -32,7 +32,6 @@ import com.dotcms.cube.CubeJSClient;
 import com.dotcms.cube.CubeJSQuery;
 import com.dotcms.cube.CubeJSResultSet;
 import com.dotcms.cube.CubeJSResultSet.ResultSetItem;
-import com.dotcms.cube.CubeJSResultSetImpl;
 import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotcms.experiments.business.result.BrowserSession;
 import com.dotcms.experiments.business.result.Event;
@@ -41,10 +40,12 @@ import com.dotcms.experiments.business.result.ExperimentResults;
 import com.dotcms.experiments.business.result.ExperimentResultsQueryFactory;
 import com.dotcms.exception.NotAllowedException;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
+import com.dotcms.experiments.model.Goal;
 import com.dotcms.experiments.model.AbstractTrafficProportion.Type;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Experiment.Builder;
 import com.dotcms.experiments.model.ExperimentVariant;
+import com.dotcms.experiments.model.GoalFactory;
 import com.dotcms.experiments.model.Goals;
 import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.experiments.model.TargetingCondition;
@@ -222,9 +223,11 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     private void addConditionIfIsNeed(final Goals goals, final HTMLPageAsset page,
             final Builder builder) {
 
-        if (goals.primary().type() == MetricType.REACH_PAGE && !hasCondition(goals, "referer")) {
+        if (goals.primary().getMetric().type() == MetricType.REACH_PAGE &&
+                !hasCondition(goals, "referer")) {
             addRefererCondition(page, builder, goals);
-        } else if (goals.primary().type() == MetricType.BOUNCE_RATE && !hasCondition(goals, "url")) {
+        } else if (goals.primary().getMetric().type() == MetricType.BOUNCE_RATE &&
+                !hasCondition(goals, "url")) {
             addUrlCondition(page, builder, goals);
         }
     }
@@ -250,13 +253,14 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     @NotNull
     private static Goals createNewGoals(final Goals oldGoals,
             final com.dotcms.analytics.metrics.Condition newConditionToAdd) {
-        final Metric newMetric = Metric.builder().from(oldGoals.primary())
+        final Metric newMetric = Metric.builder().from(oldGoals.primary().getMetric())
                 .addConditions(newConditionToAdd).build();
-        return Goals.builder().from(oldGoals).primary(newMetric).build();
+        final Goal newGoal = GoalFactory.create(newMetric);
+        return Goals.builder().from(oldGoals).primary(newGoal).build();
     }
 
     private boolean hasCondition(final Goals goals, final String conditionName){
-        return goals.primary().conditions()
+        return goals.primary().getMetric().conditions()
                 .stream()
                 .anyMatch(condition ->conditionName .equals(condition.parameter()));
     }

@@ -1,6 +1,5 @@
 package com.dotcms.experiments.model;
 
-import com.dotcms.analytics.metrics.Metric;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -19,5 +18,5 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = Goals.class)
 public interface AbstractGoals extends Serializable {
     @JsonProperty("primary")
-    Metric primary();
+    Goal primary();
 }

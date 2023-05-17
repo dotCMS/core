@@ -22,6 +22,7 @@ import com.dotcms.experiments.business.result.ExperimentResults;
 import com.dotcms.experiments.business.result.VariantResults;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.ExperimentVariant;
+import com.dotcms.experiments.model.GoalFactory;
 import com.dotcms.experiments.model.Goals;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -86,7 +87,7 @@ public class ExperimentAnalyzerUtilIT {
                         getRefererCondition(pageB.getPageUrl()))
                 .build();
 
-        final Goals goal = Goals.builder().primary(metric).build();
+        final Goals goal = Goals.builder().primary(GoalFactory.create(metric)).build();
 
         final Experiment experiment = new ExperimentDataGen()
                 .addVariant("Testing Variant")
@@ -207,7 +208,7 @@ public class ExperimentAnalyzerUtilIT {
                 .addConditions(getUrlCondition(pageB.getPageUrl()))
                 .build();
 
-        final Goals goal = Goals.builder().primary(metric).build();
+        final Goals goal = Goals.builder().primary(GoalFactory.create(metric)).build();
 
         final Experiment experiment = new ExperimentDataGen()
                 .addVariant("Testing Variant")
