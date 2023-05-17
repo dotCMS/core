@@ -7,7 +7,17 @@ import { Injectable } from '@angular/core';
 import { MenuItem, SelectItem } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { delay, filter, map, mergeMap, retryWhen, switchMap, take, tap } from 'rxjs/operators';
+import {
+    catchError,
+    delay,
+    filter,
+    map,
+    mergeMap,
+    retryWhen,
+    switchMap,
+    take,
+    tap
+} from 'rxjs/operators';
 
 import { DotFavoritePageService } from '@dotcms/app/api/services/dot-favorite-page/dot-favorite-page.service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
@@ -283,19 +293,10 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                 this.getFavoritePagesData({ limit: itemsPerPage }).pipe(
                     tapResponse(
                         (items) => {
-                            this.patchState({
-                                favoritePages: {
-                                    items: [...items.jsonObjectView.contentlets],
-                                    showLoadMoreButton:
-                                        items.jsonObjectView.contentlets.length <=
-                                        items.resultsSize,
-                                    total: items.resultsSize
-                                }
-                            });
+                            const favoritePages = this.getNewFavoritePages(items);
+                            this.patchState({ favoritePages });
                         },
-                        (error: HttpErrorResponse) => {
-                            return this.httpErrorManagerService.handle(error);
-                        }
+                        (error: HttpErrorResponse) => this.httpErrorManagerService.handle(error)
                     )
                 )
             )
@@ -326,6 +327,29 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             })
         )
     );
+
+    readonly deleteFavoritePage = this.effect((data$: Observable<string>) => {
+        return data$.pipe(
+            switchMap((inode: string) =>
+                this.dotWorkflowActionsFireService.deleteContentlet({
+                    inode
+                })
+            ),
+            switchMap(() => {
+                return this.getFavoritePagesData({ limit: FAVORITE_PAGE_LIMIT }).pipe(
+                    tapResponse(
+                        (items) => {
+                            const favoritePages = this.getNewFavoritePages(items);
+                            this.patchState({ favoritePages });
+                        },
+                        (error: HttpErrorResponse) => this.httpErrorManagerService.handle(error)
+                    )
+                );
+            }),
+            take(1),
+            catchError((error: HttpErrorResponse) => this.httpErrorManagerService.handle(error))
+        );
+    });
 
     readonly updateSinglePageData = this.effect(
         (
@@ -479,8 +503,8 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                             ({ workflowsData, dotFavorite }) => {
                                 this.setMenuActions({
                                     actions: this.getSelectActions(
-                                        workflowsData.actions,
-                                        workflowsData.page,
+                                        workflowsData?.actions,
+                                        workflowsData?.page,
                                         dotFavorite.jsonObjectView.contentlets[0]
                                     ),
                                     actionMenuDomId
@@ -568,10 +592,12 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
     }
 
     private getWorflowActionsFn = (item: DotCMSContentlet): Observable<DotCMSPageWorkflowState> => {
+        let obs$: Observable<DotCMSPageWorkflowState>;
+
         if (item?.contentType === 'dotFavoritePage') {
-            return this.getFavoritePageWorflowActions(item);
+            obs$ = this.getFavoritePageWorflowActions(item);
         } else {
-            return this.dotWorkflowsActionsService
+            obs$ = this.dotWorkflowsActionsService
                 .getByInode(item.inode, DotRenderMode.LISTING)
                 .pipe(
                     map((workflowActions: DotCMSWorkflowAction[]) => {
@@ -582,6 +608,14 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                     })
                 );
         }
+
+        return obs$.pipe(
+            catchError((error: HttpErrorResponse) => {
+                console.warn(error);
+
+                return of(null);
+            })
+        );
     };
 
     private getFavoritePageWorflowActions(
@@ -650,6 +684,14 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
     ): MenuItem[] {
         const actionsMenu: MenuItem[] = [];
 
+        const favoritePageUrl = favoritePage
+            ? favoritePage.url
+            : generateDotFavoritePageUrl({
+                  pageURI: item.urlMap || item.url,
+                  languageId: item.languageId,
+                  siteId: item.host
+              });
+
         // Adding DotFavorite actions
         actionsMenu.push({
             label: favoritePage
@@ -661,11 +703,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                     width: '80rem',
                     data: {
                         page: {
-                            favoritePageUrl: generateDotFavoritePageUrl({
-                                pageURI: item.urlMap || item.url,
-                                languageId: item.languageId,
-                                siteId: item.host
-                            }),
+                            favoritePageUrl,
                             favoritePage
                         },
                         onSave: () => {
@@ -678,6 +716,19 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                 });
             }
         });
+
+        if (favoritePage) {
+            actionsMenu.push({
+                label: this.dotMessageService.get('favoritePage.dialog.delete.button'),
+                command: () => {
+                    this.deleteFavoritePage(favoritePage.inode);
+                }
+            });
+        }
+
+        if (!actions && !item) {
+            return actionsMenu;
+        }
 
         actionsMenu.push({ separator: true });
 
@@ -750,6 +801,14 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         }
 
         return actionsMenu;
+    }
+
+    private getNewFavoritePages(items: ESContent) {
+        return {
+            items: [...items.jsonObjectView.contentlets],
+            showLoadMoreButton: items.jsonObjectView.contentlets.length <= items.resultsSize,
+            total: items.resultsSize
+        };
     }
 
     constructor(
