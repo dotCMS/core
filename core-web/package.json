@@ -96,6 +96,7 @@
     "document-register-element": "^1.7.2",
     "dom-autoscroller": "^2.3.4",
     "font-awesome": "^4.7.0",
+    "gridstack": "^8.1.1",
     "htmldiff-js": "^1.0.5",
     "lodash": "^4.17.20",
     "lodash.isequal": "^4.5.0",
