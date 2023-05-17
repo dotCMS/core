@@ -148,13 +148,12 @@ public class EMAWebInterceptorTest {
     }
 
     /**
-     * Method to test:
-     * Given Scenario: overrides the edit mode url by using query string
-     * ExpectedResult: Result.response is an instance of {@link MockHttpCaptureResponse}
      * <ul>
      *     <li><b>Method to Test:</b> {@link EMAWebInterceptor#proxyUrl(Host, HttpServletRequest)}</li>
-     *     <li><b>Given Scenario:</b> </li>
-     *     <li><b>Expected Result:</b> </li>
+     *     <li><b>Given Scenario:</b> Overrides the EMA Server URL by setting it via a Request Parameter using the
+     *     {@link EMAWebInterceptor#PROXY_EDIT_MODE_URL_VAR}</li>
+     *     <li><b>Expected Result:</b> The generated {@link Result#getResponse()} is not null and is an instance of
+     *     @link MockHttpCaptureResponse}.</li>
      * </ul>
      */
     @Test
