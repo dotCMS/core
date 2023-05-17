@@ -68,7 +68,8 @@ public class FolderTraversalTask extends RecursiveTask<TreeNode> {
                     this.siteName,
                     folder.path(),
                     folder.name(),
-                    folder.level()
+                    folder.level(),
+                    folder.include()
             );
 
             // Process the fetched sub-folders
@@ -83,7 +84,8 @@ public class FolderTraversalTask extends RecursiveTask<TreeNode> {
                                 this.siteName,
                                 folder.name(),
                                 subFolder.name(),
-                                subFolder.level()
+                                subFolder.level(),
+                                subFolder.include()
                         );
                         forks.add(task);
                         task.fork();
@@ -109,7 +111,8 @@ public class FolderTraversalTask extends RecursiveTask<TreeNode> {
                                 this.siteName,
                                 folder.path(),
                                 subFolder.name(),
-                                subFolder.level()
+                                subFolder.level(),
+                                subFolder.include()
                         );
                         forks.add(task);
                         task.fork();
@@ -139,12 +142,19 @@ public class FolderTraversalTask extends RecursiveTask<TreeNode> {
      * @param parentFolderName The name of the parent folder of the folder to search for.
      * @param folderName       The name of the folder to search for.
      * @param level            The level of the folder to search for.
+     * @param include          Whether the folder to search for is included or excluded according to
+     *                         the filter.
      * @return A new FolderTraversalTask instance to search for the specified folder.
      */
-    private FolderTraversalTask searchForFolder(final String siteName,
-            final String parentFolderName, final String folderName, final int level) {
+    private FolderTraversalTask searchForFolder(
+            final String siteName,
+            final String parentFolderName,
+            final String folderName,
+            final int level,
+            final boolean include
+    ) {
 
-        final var folder = this.restCall(siteName, parentFolderName, folderName, level);
+        final var folder = this.restCall(siteName, parentFolderName, folderName, level, include);
         return new FolderTraversalTask(
                 this.executor,
                 this.filter,
@@ -161,11 +171,20 @@ public class FolderTraversalTask extends RecursiveTask<TreeNode> {
      * @param parentFolderName the name of the parent folder containing the folder
      * @param folderName       the name of the folder to retrieve metadata for
      * @param level            the hierarchical level of the folder
+     * @param include          Whether the folder to search for is included or excluded according to
+     *                         the filter.
      * @return an {@code FolderView} object containing the metadata for the requested folder
      */
     private FolderView restCall(final String siteName, final String parentFolderName,
-            final String folderName, final int level) {
-        var foundFolder = this.executor.restCall(siteName, parentFolderName, folderName, level);
+            final String folderName, final int level, final boolean include) {
+        
+        var foundFolder = this.executor.restCall(
+                siteName,
+                parentFolderName,
+                folderName,
+                level,
+                include
+        );
         return this.filter.apply(foundFolder);
     }
 

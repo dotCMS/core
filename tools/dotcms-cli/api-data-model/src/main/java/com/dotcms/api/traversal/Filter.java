@@ -12,6 +12,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * A filter that determines whether a path should be included or excluded based on the given
+ * includes and excludes patterns. This filter can be applied to folders and assets separately.
+ */
 public class Filter {
 
     private final Set<PathMatcher> folderIncludes;
@@ -20,6 +24,17 @@ public class Filter {
     private final Set<PathMatcher> assetExcludes;
     private final String rootPath;
 
+    /**
+     * Creates a new filter with the specified includes and excludes patterns for folders and
+     * assets, and the root path.
+     *
+     * @param folderIncludes The patterns to include folders.
+     * @param assetIncludes  The patterns to include assets.
+     * @param folderExcludes The patterns to exclude folders.
+     * @param assetExcludes  The patterns to exclude assets.
+     * @param rootPath       The root path to apply the filter. This is used to remove the root path
+     *                       prefix from the folder and asset paths before applying the filter.
+     */
     private Filter(
             Set<PathMatcher> folderIncludes,
             Set<PathMatcher> assetIncludes,
@@ -33,6 +48,13 @@ public class Filter {
         this.rootPath = rootPath;
     }
 
+    /**
+     * Applies the filter to the given folder, filtering its sub-folders and assets based on the
+     * configured includes and excludes patterns.
+     *
+     * @param folder The folder to apply the filter to.
+     * @return The filtered folder view.
+     */
     public FolderView apply(FolderView folder) {
 
         List<FolderView> filteredSubFolders = new ArrayList<>();
@@ -47,9 +69,8 @@ public class Filter {
                     folderPath = folderPath.replaceFirst("^" + rootPath, "");
                 }
 
-                if (use(true, folderPath)) {
-                    filteredSubFolders.add(subFolder);
-                }
+                subFolder = subFolder.withInclude(use(true, folderPath));
+                filteredSubFolders.add(subFolder);
             });
         }
 
@@ -74,6 +95,14 @@ public class Filter {
         return folder.withAssets(versions);
     }
 
+    /**
+     * Determines whether the given path should be included based on the includes and excludes
+     * patterns for folders or assets.
+     *
+     * @param isFolder Specifies whether the path is for a folder or asset.
+     * @param path     The path to check.
+     * @return {@code true} if the path should be included, {@code false} otherwise.
+     */
     private boolean use(Boolean isFolder, String path) {
 
         var includes = isFolder ? folderIncludes : assetIncludes;
@@ -103,10 +132,19 @@ public class Filter {
         return false;
     }
 
+    /**
+     * Creates a new builder for constructing a {@code Filter} instance.
+     *
+     * @return A new builder instance.
+     */
     public static Filter.Builder builder() {
         return new Filter.Builder();
     }
 
+    /**
+     * A builder for constructing a {@code Filter} instance with includes and excludes patterns for
+     * folders and assets.
+     */
     public static class Builder {
 
         private final Set<PathMatcher> includeFolderPatterns = new HashSet<>();
@@ -119,11 +157,24 @@ public class Filter {
         private Builder() {
         }
 
+        /**
+         * Sets the root path for the filter. The root path is used to remove the root path prefix
+         * from the folder and asset paths before applying the filter.
+         *
+         * @param rootPath The root path to set.
+         * @return The builder instance.
+         */
         public Builder rootPath(String rootPath) {
             this.rootPath = rootPath;
             return this;
         }
 
+        /**
+         * Adds include patterns for folders.
+         *
+         * @param include The include patterns for folders.
+         * @return The builder instance.
+         */
         public Builder includeFolder(String... include) {
             for (String pattern : include) {
                 includeFolderPatterns.add(
@@ -133,6 +184,12 @@ public class Filter {
             return this;
         }
 
+        /**
+         * Adds include patterns for assets.
+         *
+         * @param include The include patterns for assets.
+         * @return The builder instance.
+         */
         public Builder includeAsset(String... include) {
             for (String pattern : include) {
                 includeAssetPatterns.add(
@@ -142,6 +199,12 @@ public class Filter {
             return this;
         }
 
+        /**
+         * Adds exclude patterns for folders.
+         *
+         * @param exclude The exclude patterns for folders.
+         * @return The builder instance.
+         */
         public Builder excludeFolder(String... exclude) {
             for (String pattern : exclude) {
                 excludeFolderPatterns.add(
@@ -151,6 +214,12 @@ public class Filter {
             return this;
         }
 
+        /**
+         * Adds exclude patterns for assets.
+         *
+         * @param exclude The exclude patterns for assets.
+         * @return The builder instance.
+         */
         public Builder excludeAsset(String... exclude) {
             for (String pattern : exclude) {
                 excludeAssetPatterns.add(
@@ -160,6 +229,12 @@ public class Filter {
             return this;
         }
 
+        /**
+         * Builds a new {@code Filter} instance with the configured includes and excludes patterns
+         * and the root path.
+         *
+         * @return A new {@code Filter} instance.
+         */
         public Filter build() {
             return new Filter(
                     includeFolderPatterns,

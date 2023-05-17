@@ -127,10 +127,16 @@ public class TreeNode {
 
         // Clone children without assets
         for (TreeNode child : this.children) {
+
             TreeNode clonedChild = child.cloneAndFilterAssets(status, language, showEmptyFolders);
-            if (showEmptyFolders || !clonedChild.assets.isEmpty()
+
+            if (showEmptyFolders
+                    || !clonedChild.assets.isEmpty()
                     || hasAssetsInSubtree(clonedChild)) {
-                newNode.children.add(clonedChild);
+
+                if (clonedChild.folder.include() || hasIncludeInSubtree(clonedChild)) {
+                    newNode.addChild(clonedChild);
+                }
             }
         }
 
@@ -152,6 +158,29 @@ public class TreeNode {
 
         for (TreeNode child : node.children()) {
             if (hasAssetsInSubtree(child)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Recursively checks if the given node or any of its children contains a folder marked as
+     * include.
+     *
+     * @param node The TreeNode to check for folders.
+     * @return A boolean value, true if the node or any of its children have folders marked as
+     * include, false otherwise.
+     */
+    private boolean hasIncludeInSubtree(TreeNode node) {
+
+        if (node.folder().include()) {
+            return true;
+        }
+
+        for (TreeNode child : node.children()) {
+            if (hasIncludeInSubtree(child)) {
                 return true;
             }
         }

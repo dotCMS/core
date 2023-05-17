@@ -36,6 +36,11 @@ public interface AbstractFolderView {
         return 0;
     }
 
+    @Value.Default
+    default boolean include() {
+        return true;
+    }
+
     @Nullable
     @JsonUnwrapped
     AssetVersionsView assets();

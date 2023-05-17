@@ -29,11 +29,13 @@ public class Executor {
      * @param parentFolderName the name of the parent folder containing the folder
      * @param folderName       the name of the folder to retrieve metadata for
      * @param level            the hierarchical level of the folder
+     * @param include          if according to the provided glob patterns the folder should be
+     *                         included
      * @return an {@code FolderView} object containing the metadata for the requested folder
      */
     @ActivateRequestContext
     public FolderView restCall(String siteName, String parentFolderName,
-            String folderName, final int level) {
+            String folderName, final int level, final boolean include) {
 
         // Determine if the parent folder and folder names are empty or null
         var emptyParent = parentFolderName == null
@@ -67,6 +69,7 @@ public class Executor {
 
         var foundFolder = response.entity();
         foundFolder = foundFolder.withLevel(level);
+        foundFolder = foundFolder.withInclude(include);
 
         if (foundFolder.subFolders() != null && !foundFolder.subFolders().isEmpty()) {
 
