@@ -1,0 +1,120 @@
+<ng-container *ngIf="vm$ | async as vm">
+    <form [formGroup]="form">
+        <div class="dot-container-properties__button-container">
+            <button
+                class="p-button-secondary p-button-sm"
+                [label]="'Cancel' | dm"
+                (click)="cancel()"
+                pButton
+                type="button"
+            ></button>
+            <button
+                class="p-button-primary p-button-sm"
+                [disabled]="vm.invalidForm"
+                [label]="'Save' | dm"
+                (click)="save()"
+                data-testId="saveBtn"
+                pButton
+                type="submit"
+            ></button>
+        </div>
+        <div class="dot-container-properties__title-container">
+            <p-inplace #editText [active]="!form?.value?.identifier" data-testId="inplace">
+                <ng-template pTemplate="content">
+                    <span class="p-input-icon-right">
+                        <i class="pi pi-times" (click)="editText.deactivate()"></i>
+                        <input
+                            class="dot-container-properties__title-input w-25rem"
+                            [required]="true"
+                            data-testId="title"
+                            dotAutofocus
+                            type="text"
+                            pInputText
+                            formControlName="title"
+                        />
+                    </span>
+                </ng-template>
+                <ng-template pTemplate="display">
+                    <span
+                        class="dot-container-properties__title-text"
+                        *ngIf="!form?.value?.title"
+                        data-testId="editTitle"
+                        >{{ 'message.containers.create.click_to_edit' | dm }}</span
+                    >
+                    <span class="dot-container-properties__title-text" *ngIf="form?.value?.title">{{
+                        form?.value?.title
+                    }}</span>
+                    <i class="pi pi-pencil"></i>
+                </ng-template>
+            </p-inplace>
+            <dot-api-link *ngIf="form?.value?.identifier" [href]="vm.apiLink"></dot-api-link>
+        </div>
+        <div class="field">
+            <label class="block" for="description">{{
+                'message.containers.create.description' | dm
+            }}</label>
+            <input
+                class="dot-container-properties__description-input w-25rem"
+                id="description"
+                data-testId="description"
+                type="text"
+                formControlName="friendlyName"
+                pInputText
+            />
+        </div>
+        <div class="field">
+            <label class="block" dotFieldRequired for="max-contents">{{
+                'message.containers.create.max_contents' | dm
+            }}</label>
+            <input
+                class="dot-container-properties__max-contents-input"
+                id="max-contents"
+                [required]="true"
+                data-testId="max-contents"
+                type="number"
+                min="0"
+                formControlName="maxContentlets"
+                pInputText
+            />
+            <button
+                class="p-button-info dot-container-properties__button-clear"
+                *ngIf="vm.isContentTypeVisible"
+                [label]="'message.containers.create.clear' | dm"
+                (click)="clearContentConfirmationModal()"
+                data-testId="clearContent"
+                pButton
+                type="button"
+            ></button>
+        </div>
+
+        <div
+            class="dot-container-properties__code-loop-container"
+            *ngIf="vm.isContentTypeVisible"
+            [@contentTypeAnimation]
+        >
+            <dot-loop-editor
+                [isEditorVisible]="vm.showPrePostLoopInput"
+                (buttonClick)="showLoopInput()"
+                label="pre_loop"
+                formControlName="preLoop"
+            ></dot-loop-editor>
+            <dot-container-code [contentTypes]="vm.contentTypes" [fg]="form"></dot-container-code>
+            <dot-loop-editor
+                [isEditorVisible]="vm.showPrePostLoopInput"
+                (buttonClick)="showLoopInput()"
+                formControlName="postLoop"
+                label="post_loop"
+            ></dot-loop-editor>
+        </div>
+        <div class="field" *ngIf="!vm.isContentTypeVisible">
+            <label class="block" dotFieldRequired for="code">Code</label>
+            <dot-textarea-content
+                id="code"
+                [show]="['code']"
+                data-testId="code"
+                formControlName="code"
+                language="html"
+            ></dot-textarea-content>
+        </div>
+    </form>
+</ng-container>

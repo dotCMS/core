@@ -1,0 +1,29 @@
+@use "variables" as *;
+
+:host ::ng-deep {
+    .p-dataview-content {
+        padding: 0;
+    }
+}
+
+.dot-add-variable-list__item {
+    h3 {
+        font-size: $font-size-md;
+        margin: 0;
+    }
+
+    p {
+        margin: 0;
+    }
+
+    small {
+        color: $color-palette-gray-700;
+    }
+}
+
+.dot-add-variable-list__item {
+    display: flex;
+    flex-basis: 100%;
+    padding: $spacing-3 $spacing-6;
+    justify-content: space-between;
+}

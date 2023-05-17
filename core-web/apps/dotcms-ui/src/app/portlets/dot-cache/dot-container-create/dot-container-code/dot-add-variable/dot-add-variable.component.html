@@ -1,0 +1,22 @@
+<p-dataView *ngIf="vm$ | async as vm" [value]="vm.variables" layout="list">
+    <ng-template let-variable pTemplate="listItem">
+        <div class="dot-add-variable-list__item">
+            <div>
+                <h3>{{ variable?.name }}</h3>
+                <p>
+                    <small>
+                        {{ variable?.fieldTypeLabel }}
+                    </small>
+                </p>
+            </div>
+
+            <button
+                class="p-button-outlined p-button-secondary p-button-sm"
+                [attr.data-testId]="variable.variable"
+                [label]="'Add' | dm"
+                (click)="onSave(variable.variable)"
+                pButton
+            ></button>
+        </div>
+    </ng-template>
+</p-dataView>

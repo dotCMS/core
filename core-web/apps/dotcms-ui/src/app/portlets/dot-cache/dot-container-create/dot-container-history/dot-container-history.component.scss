@@ -1,0 +1,8 @@
+@use "variables" as *;
+
+dot-portlet-box {
+    height: 100%;
+    overflow-x: auto;
+    margin: 0;
+    padding: $spacing-4;
+}

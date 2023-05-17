@@ -1,0 +1,102 @@
+<div class="container-listing">
+    <dot-portlet-base *ngIf="vm$ | async as vm">
+        <dot-listing-data-table
+            #listing
+            *ngIf="vm.tableColumns && vm.actionHeaderOptions"
+            [actionHeaderOptions]="vm.actionHeaderOptions"
+            [columns]="vm.tableColumns"
+            [actions]="[]"
+            [checkbox]="true"
+            [mapItems]="getContainersWithDisabledEntities"
+            (selectedItems)="updateSelectedContainers($event)"
+            (rowWasClicked)="handleRowClick($event)"
+            url="v1/containers"
+            dataKey="inode"
+        >
+            <div class="container-listing__header-options">
+                <div class="container-listing__filter-controls">
+                    <button
+                        class="p-button-secondary p-button"
+                        [label]="'Search' | dm"
+                        type="button"
+                        pButton
+                    ></button>
+                    <p-checkbox
+                        [label]="'Show-Archived' | dm"
+                        [binary]="true"
+                        (onChange)="handleArchivedFilter($event.checked)"
+                        data-testid="archiveCheckbox"
+                    ></p-checkbox>
+                </div>
+
+                <div>
+                    <button
+                        class="p-button-secondary p-button"
+                        [label]="'Actions' | dm"
+                        [disabled]="!vm.selectedContainers.length"
+                        (click)="actionsMenu.toggle($event)"
+                        type="button"
+                        pButton
+                        icon="pi pi-ellipsis-v"
+                        attr.data-testid="bulkActions"
+                    ></button>
+
+                    <p-menu
+                        #actionsMenu
+                        [popup]="true"
+                        [model]="vm.containerBulkActions"
+                        appendTo="body"
+                    ></p-menu>
+                </div>
+            </div>
+
+            <ng-template #beforeSearchTemplate>
+                <dot-content-type-selector
+                    (selected)="changeContentTypeSelector($event)"
+                ></dot-content-type-selector>
+            </ng-template>
+
+            <ng-template #rowTemplate *ngIf="vm.tableColumns as tableColumns" let-rowData="rowData">
+                <td [ngStyle]="{ 'text-align': tableColumns[0].textAlign }">
+                    {{ rowData.name }}
+                    <ng-container *ngIf="rowData.path"
+                        >-
+                        <span class="container-listing__path">{{
+                            rowData.path
+                        }}</span></ng-container
+                    >
+                </td>
+                <td [ngStyle]="{ 'text-align': tableColumns[1].textAlign }">
+                    <dot-state-icon
+                        [labels]="vm.stateLabels"
+                        [state]="getContainerState(rowData)"
+                        size="14px"
+                    >
+                    </dot-state-icon>
+                </td>
+                <td [ngStyle]="{ 'text-align': tableColumns[2].textAlign }">
+                    {{ rowData.friendlyName }}
+                </td>
+                <td [ngStyle]="{ 'text-align': tableColumns[3].textAlign }">
+                    {{ rowData.modDate | dotRelativeDate : true }}
+                </td>
+                <td style="width: 5%">
+                    <dot-action-menu-button
+                        class="listing-datatable__action-button"
+                        *ngIf="!rowData.disableInteraction"
+                        [attr.data-testid]="rowData.identifier"
+                        [actions]="setContainerActions(rowData)"
+                        [item]="rowData"
+                    >
+                    </dot-action-menu-button>
+                </td>
+            </ng-template>
+        </dot-listing-data-table>
+
+        <dot-add-to-bundle
+            *ngIf="vm.addToBundleIdentifier"
+            [assetIdentifier]="vm.addToBundleIdentifier"
+            (cancel)="resetBundleIdentifier()"
+        ></dot-add-to-bundle>
+    </dot-portlet-base>
+</div>

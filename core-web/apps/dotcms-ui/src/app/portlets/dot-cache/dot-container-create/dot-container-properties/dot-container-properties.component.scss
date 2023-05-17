@@ -1,0 +1,72 @@
+@use "variables" as *;
+
+.dot-container-properties__button-container {
+    position: absolute;
+    top: 5.1rem;
+    right: $spacing-4;
+
+    button {
+        margin: 0 calc($spacing-1 / 2);
+    }
+}
+
+.dot-container-properties__title-container {
+    display: flex;
+    flex-direction: row;
+    gap: $spacing-2;
+    padding: $spacing-2 0;
+    align-items: center;
+
+    ::ng-deep .p-inplace.p-component {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    ::ng-deep .p-inplace-display {
+        padding: 0.67rem $spacing-3;
+    }
+}
+
+.dot-container-properties__title-text {
+    display: inline-block;
+    padding-right: $spacing-2;
+    font-size: $font-size-lg;
+}
+
+.dot-container-properties__max-contents-input {
+    width: 7rem;
+    margin-right: $spacing-2;
+}
+
+.p-button-info.dot-container-properties__button-clear,
+.p-button-info.dot-container-properties__button-clear:hover {
+    background-color: $color-palette-gray-700;
+    color: $white;
+    padding: 0.82rem $spacing-3;
+}
+
+.dot-container-properties__code-loop-container {
+    background: $white;
+    border: 1px solid $input-border-color;
+}
+
+:host ::ng-deep {
+    .tab-panel-btn {
+        background: $brand-background;
+
+        a.p-tabview-nav-link {
+            padding: 0;
+        }
+
+        i {
+            color: $white;
+            padding: 1.2rem $spacing-6 1.35rem;
+        }
+    }
+
+    .p-tabview-panel {
+        padding: 0;
+        padding-top: $spacing-1;
+    }
+}

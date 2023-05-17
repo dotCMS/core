@@ -1,0 +1,92 @@
+@use "variables" as *;
+
+.dot-container-code__content-tab-container {
+    padding: 0 $spacing-4 0 $spacing-4;
+}
+
+.dot-container-code__variable-btn {
+    margin-bottom: $spacing-2;
+}
+
+.dot-container-code__empty-content {
+    height: 500px;
+}
+
+.dot-container-code__empty-content-title {
+    font-size: $font-size-md;
+}
+
+.dot-container-code__empty-content-subtitle {
+    font-size: $font-size-sm;
+}
+
+.dot-container-code__content-tab-container ::ng-deep {
+    dot-icon {
+        color: $color-palette-primary;
+    }
+
+    .p-tabview {
+        height: 100%;
+    }
+    .p-tabview-panels {
+        height: 100%;
+        flex-grow: 1;
+        flex-basis: 0;
+        overflow: auto;
+    }
+
+    .p-tabview-nav-content {
+        border: 1px solid $input-border-color;
+    }
+    .p-tabview-nav {
+        padding: 0;
+    }
+
+    .p-tabview-panel {
+        height: 100%;
+        padding: 0;
+        padding-top: 0;
+        border: 1px solid $input-border-color;
+        border-top: none;
+    }
+
+    .p-tabview-nav-next {
+        width: $tabView-scroll-btn-width;
+        border: 1px solid $input-border-color;
+        border-left: none;
+        background: $color-palette-gray-200;
+    }
+
+    .p-tabview-nav-prev {
+        width: $tabView-scroll-btn-width;
+        border: 1px solid $input-border-color;
+        border-right: none;
+        background: $color-palette-gray-200;
+    }
+
+    .p-tabview .p-tabview-nav {
+        border: none;
+    }
+
+    .p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link {
+        border-bottom: 2px solid var(--color-sec);
+    }
+
+    .p-tabview .p-tabview-nav li:not(.p-highlight):not(.p-disabled):hover .p-tabview-nav-link {
+        border-bottom: 2px solid var(--color-sec);
+    }
+
+    .p-tabview .p-tabview-nav li .p-tabview-nav-link {
+        padding-left: $spacing-4;
+        padding-right: $spacing-4;
+    }
+
+    .p-tabview .tab-panel-btn a.p-tabview-nav-link {
+        padding: 0;
+    }
+
+    .p-tabview-title {
+        display: inline-block;
+        margin-right: $spacing-2;
+    }
+}
