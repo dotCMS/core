@@ -780,6 +780,7 @@
                                 </div>
                             </div>
                         </div>
+                        <div id="tablemessage" class="contentlet-selection" style="align-self: flex-start; margin: 0.5rem;"></div>
                     </div>
 
 

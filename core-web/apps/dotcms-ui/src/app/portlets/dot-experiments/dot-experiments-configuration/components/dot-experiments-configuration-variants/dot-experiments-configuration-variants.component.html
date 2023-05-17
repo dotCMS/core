@@ -3,7 +3,9 @@
         <ng-template pTemplate="title">
             <div class="flex justify-content-between">
                 <h2 class="flex align-items-center gap-1 uppercase">
-                    {{ 'experiments.configure.variants.name' | dm }}
+                    <span class="p-label-input-required" data-testId="variants-card-header">{{
+                        'experiments.configure.variants.name' | dm
+                    }}</span>
                     <dot-icon
                         [ngClass]="{ isDone: vm.trafficProportion.variants?.length > 1 }"
                         data-testId="variant-title-step-done"
@@ -137,6 +139,7 @@
                                     editVariantName(variantName.value, variant, vm.experimentId)
                                 "
                                 data-testId="inplace-input"
+                                maxlength="maxNameLength"
                                 dotAutofocus
                                 pInputText
                                 type="text"

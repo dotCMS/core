@@ -104,7 +104,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                   ...experiment.goals,
                   primary: {
                       ...experiment.goals.primary,
-                      ...this.setDefaultGoalCondition(experiment.goals.primary)
+                      ...this.removeDefaultGoalCondition(experiment.goals.primary)
                   }
               }
             : null;
@@ -760,17 +760,14 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         this.title.setTitle(`${experiment.name} - ${this.title.getTitle()}`);
     }
 
-    private setDefaultGoalCondition(goal: Goal): Goal {
+    private removeDefaultGoalCondition(goal: Goal): Goal {
         const { type, conditions } = goal;
 
         return {
             ...goal,
             conditions: [
-                ...conditions.map((condition) => {
-                    return {
-                        ...condition,
-                        isDefault: ConditionDefaultByTypeOfGoal[type] === condition.parameter
-                    };
+                ...conditions.filter((condition) => {
+                    return ConditionDefaultByTypeOfGoal[type] !== condition.parameter;
                 })
             ]
         };
