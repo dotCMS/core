@@ -19,6 +19,7 @@ import {
     tap
 } from 'rxjs/operators';
 
+import { DotFavoritePageService } from '@dotcms/app/api/services/dot-favorite-page/dot-favorite-page.service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotWorkflowEventHandlerService } from '@dotcms/app/api/services/dot-workflow-event-handler/dot-workflow-event-handler.service';
@@ -86,12 +87,27 @@ export interface DotPagesState {
     portletStatus: ComponentStatus;
 }
 
-const FAVORITE_PAGES_ES_QUERY = `+contentType:dotFavoritePage +deleted:false +working:true`;
+export interface DotSessionStorageFilter {
+    archived: boolean;
+    keyword: string;
+    languageId: string;
+}
+
 export const FAVORITE_PAGE_LIMIT = 5;
+
+export const SESSION_STORAGE_FAVORITES_KEY = 'FavoritesSearchTerms';
 
 @Injectable()
 export class DotPageStore extends ComponentStore<DotPagesState> {
     readonly getStatus$ = this.select((state) => state.pages.status);
+
+    readonly getFilterParams$: Observable<DotSessionStorageFilter> = this.select((state) => {
+        return {
+            languageId: state.pages.languageId,
+            keyword: state.pages.keyword,
+            archived: state.pages.archived
+        };
+    });
 
     readonly isPagesLoading$: Observable<boolean> = this.select(
         (state) =>
@@ -129,6 +145,14 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             return languageOptions;
         }
     );
+
+    readonly keywordValue$: Observable<string> = this.select(({ pages }) => pages.keyword);
+
+    readonly languageIdValue$: Observable<number> = this.select(({ pages }) =>
+        parseInt(pages.languageId, 10)
+    );
+
+    readonly showArchivedValue$: Observable<boolean> = this.select(({ pages }) => pages.archived);
 
     readonly languageLabels$: Observable<{ [id: string]: string }> = this.select(
         ({ languages }: DotPagesState) => {
@@ -500,6 +524,9 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         this.isPortletLoading$,
         this.languageOptions$,
         this.languageLabels$,
+        this.keywordValue$,
+        this.languageIdValue$,
+        this.showArchivedValue$,
         this.pageTypes$,
         (
             {
@@ -515,6 +542,9 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             isPortletLoading,
             languageOptions,
             languageLabels,
+            keywordValue,
+            languageIdValue,
+            showArchivedValue,
             pageTypes
         ) => ({
             favoritePages,
@@ -528,6 +558,9 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             isPortletLoading,
             languageOptions,
             languageLabels,
+            keywordValue,
+            languageIdValue,
+            showArchivedValue,
             pageTypes
         })
     );
@@ -631,25 +664,18 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
     }) => {
         const { limit, identifier, url } = params;
 
-        let extraQueryParams = '';
-        if (identifier) {
-            extraQueryParams = `+identifier:${identifier}`;
-        } else if (url) {
-            extraQueryParams = `+DotFavoritePage.url_dotraw:${url}`;
-        }
-
         return this.dotCurrentUser.getCurrentUser().pipe(
             switchMap(({ userId }) => {
-                return this.dotESContentService.get({
-                    itemsPerPage: limit,
-                    offset: '0',
-                    query: `${FAVORITE_PAGES_ES_QUERY} +owner:${userId} ${extraQueryParams}`,
-                    sortField: 'dotFavoritePage.order',
-                    sortOrder: ESOrderDirection.ASC
-                });
+                return this.dotFavoritePageService.get({ limit, userId, identifier, url });
             })
         );
     };
+
+    private getSessionStorageFilterParams(): Observable<DotSessionStorageFilter> {
+        const params = JSON.parse(sessionStorage.getItem(SESSION_STORAGE_FAVORITES_KEY));
+
+        return of(params);
+    }
 
     private getSelectActions(
         actions: DotCMSWorkflowAction[],
@@ -802,7 +828,8 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         private dotLicenseService: DotLicenseService,
         private dotEventsService: DotEventsService,
         private pushPublishService: PushPublishService,
-        private siteService: SiteService
+        private siteService: SiteService,
+        private dotFavoritePageService: DotFavoritePageService
     ) {
         super(null);
     }
@@ -820,40 +847,60 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             this.dotLicenseService.isEnterprise(),
             this.pushPublishService
                 .getEnvironments()
-                .pipe(map((environments: DotEnvironment[]) => !!environments.length))
+                .pipe(map((environments: DotEnvironment[]) => !!environments.length)),
+            this.getSessionStorageFilterParams()
         ])
             .pipe(
                 take(1),
-                mergeMap(([favoritePages, currentUser, languages, isEnterprise, environments]) => {
-                    return this.dotCurrentUser
-                        .getUserPermissions(
-                            currentUser.userId,
-                            [UserPermissions.READ, UserPermissions.WRITE],
-                            [PermissionsType.CONTENTLETS, PermissionsType.HTMLPAGES]
-                        )
-                        .pipe(
-                            take(1),
-                            map((permissionsType: DotPermissionsType) => {
-                                return [
-                                    favoritePages,
-                                    currentUser,
-                                    languages,
-                                    isEnterprise,
-                                    environments,
-                                    permissionsType
-                                ];
-                            })
-                        );
-                })
+                mergeMap(
+                    ([
+                        favoritePages,
+                        currentUser,
+                        languages,
+                        isEnterprise,
+                        environments,
+                        filterParams
+                    ]) => {
+                        return this.dotCurrentUser
+                            .getUserPermissions(
+                                currentUser.userId,
+                                [UserPermissions.READ, UserPermissions.WRITE],
+                                [PermissionsType.CONTENTLETS, PermissionsType.HTMLPAGES]
+                            )
+                            .pipe(
+                                take(1),
+                                map((permissionsType: DotPermissionsType) => {
+                                    return [
+                                        favoritePages,
+                                        currentUser,
+                                        languages,
+                                        isEnterprise,
+                                        environments,
+                                        permissionsType,
+                                        filterParams
+                                    ];
+                                })
+                            );
+                    }
+                )
             )
             .subscribe(
-                ([favoritePages, currentUser, languages, isEnterprise, environments, permissions]: [
+                ([
+                    favoritePages,
+                    currentUser,
+                    languages,
+                    isEnterprise,
+                    environments,
+                    permissions,
+                    filterParams
+                ]: [
                     ESContent,
                     DotCurrentUser,
                     DotLanguage[],
                     boolean,
                     boolean,
-                    DotPermissionsType
+                    DotPermissionsType,
+                    DotSessionStorageFilter
                 ]): void => {
                     this.setState({
                         favoritePages: {
@@ -879,7 +926,9 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                         },
                         pages: {
                             items: [],
-                            keyword: '',
+                            keyword: filterParams?.keyword || '',
+                            languageId: filterParams?.languageId?.toString() || '',
+                            archived: filterParams?.archived || false,
                             status: ComponentStatus.INIT
                         },
                         portletStatus: ComponentStatus.LOADED
@@ -925,5 +974,14 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
     limitFavoritePages(limit: number): void {
         const favoritePages = this.get().favoritePages.items;
         this.setFavoritePages(favoritePages.slice(0, limit));
+    }
+
+    setSessionStorageFilterParams(): void {
+        const { keyword, languageId, archived } = this.get().pages;
+
+        sessionStorage.setItem(
+            SESSION_STORAGE_FAVORITES_KEY,
+            JSON.stringify({ keyword, languageId, archived })
+        );
     }
 }
