@@ -24,6 +24,4 @@ public interface AbstractResolvedAssetAndPath {
     @Nullable
     String asset();
 
-    @Nullable
-    FileAsset resolvedFileAsset();
 }

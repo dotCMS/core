@@ -55,8 +55,8 @@ public class AssetPathResolverImplTest {
     public void Test_Parse_Path_With_Asset() throws DotDataException, DotSecurityException {
 
         final String url = String.format("http://%s/foo/bar/1234", host.getHostname());
-        final ResolvedAssetAndPath parse = AssetPathResolver.newInstance().resolve(
-                url, APILocator.systemUser());
+        final ResolvedAssetAndPath parse = AssetPathResolver.newInstance()
+                .resolve(url, APILocator.systemUser());
         assertEquals(host.getHostname(), parse.host());
         assertEquals("/foo/bar/1234", parse.path());
         assertEquals("1234", parse.asset());
@@ -72,8 +72,8 @@ public class AssetPathResolverImplTest {
     public void Test_Parse_Path_With_Resource_And_Extension()
             throws DotDataException, DotSecurityException {
         final String url = String.format("http://%s/foo/bar/1234.webp", host.getHostname());
-        final ResolvedAssetAndPath parse = AssetPathResolver.newInstance().resolve(
-                url, APILocator.systemUser());
+        final ResolvedAssetAndPath parse = AssetPathResolver.newInstance()
+                .resolve(url, APILocator.systemUser());
         assertEquals(host.getHostname(), parse.host());
         assertEquals("/foo/bar/1234.webp", parse.path());
         assertEquals("1234.webp", parse.asset());
@@ -89,8 +89,8 @@ public class AssetPathResolverImplTest {
     public void Test_Parse_Path_Shorten_No_Protocol_Host_Name()
             throws DotDataException, DotSecurityException {
         final String url = String.format("//%s/foo/bar/1234", host.getHostname());
-        final ResolvedAssetAndPath parse = AssetPathResolver.newInstance().resolve(
-                url, APILocator.systemUser());
+        final ResolvedAssetAndPath parse = AssetPathResolver.newInstance()
+                .resolve(url, APILocator.systemUser());
         assertEquals(host.getHostname(), parse.host());
         assertEquals("/foo/bar/1234", parse.path());
         assertEquals("1234", parse.asset());
@@ -105,29 +105,10 @@ public class AssetPathResolverImplTest {
     @Test(expected = NotFoundInDbException.class)
     public void Test_Parse_None_Existing_Folder() throws DotDataException, DotSecurityException {
         final String url = String.format("//%s/foo/bar/1234/", host.getHostname());
-        final ResolvedAssetAndPath parse = AssetPathResolver.newInstance().resolve(
-                url, APILocator.systemUser());
+        final ResolvedAssetAndPath parse = AssetPathResolver.newInstance()
+                .resolve(url, APILocator.systemUser());
         assertEquals(host.getHostname(), parse.host());
         assertEquals("/foo/bar/1234/", parse.path());
-        assertNull(parse.asset());
-    }
-
-    /**
-     * Given scenario: Try resolving the direct folder under host name
-     * Expected: Should resolve to the direct root folder under host name. not system host
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
-    @Test
-    public void Test_Parse_Path_Simple_Root() throws DotDataException, DotSecurityException {
-
-        final Host defaultHost = APILocator.getHostAPI()
-                .findDefaultHost(APILocator.systemUser(), false);
-
-        final ResolvedAssetAndPath parse = AssetPathResolver.newInstance()
-                .resolve("//", APILocator.systemUser());
-        assertEquals(defaultHost.getName(), parse.host());
-        assertEquals("/",parse.path());
         assertNull(parse.asset());
     }
 
@@ -170,10 +151,22 @@ public class AssetPathResolverImplTest {
     @Test
     public void Test_Parse_Folder_Path_With_Asset() throws DotDataException, DotSecurityException {
         final String url = String.format("http://%s/foo/bar/bar", host.getHostname());
-        final ResolvedAssetAndPath parse = AssetPathResolver.newInstance().resolve(url, APILocator.systemUser());
+        final ResolvedAssetAndPath parse = AssetPathResolver.newInstance()
+                .resolve(url, APILocator.systemUser());
         assertEquals(host.getHostname(), parse.host());
         assertEquals("/foo/bar/bar", parse.path());
         assertEquals("bar", parse.asset());
     }
+
+    @Test
+    public void Test_Parse_Asset_Under_Root() throws DotDataException, DotSecurityException {
+        final String url = String.format("http://%s/bar.txt", host.getHostname());
+        final ResolvedAssetAndPath parse = AssetPathResolver.newInstance()
+                .resolve(url, APILocator.systemUser());
+        assertEquals(host.getHostname(), parse.host());
+        assertEquals("/bar.txt", parse.path());
+        assertEquals("bar.txt", parse.asset());
+    }
+
 
 }

@@ -635,7 +635,7 @@ import org.junit.runners.Suite.SuiteClasses;
         ContentTypeDestroyAPIImplTest.class,
         Task230328AddMarkedForDeletionColumnTest.class,
         StartupTasksExecutorDataTest.class,
-        Task230426AlterVarcharLengthOfLockedByColTest.class
+        Task230426AlterVarcharLengthOfLockedByColTest.class,
 //        AnalyticsAPIImplTest.class,
 //        AccessTokenRenewJobTest.class,
         AssetPathResolverImplTest.class

@@ -3,7 +3,6 @@ package com.dotmarketing.portlets.fileassets.business;
 import com.dotcms.api.tree.Parentable;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.rendering.velocity.viewtools.content.FileAssetMap;
-import com.dotmarketing.beans.Identifier;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -15,6 +14,7 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.business.FolderListener;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
@@ -145,27 +145,6 @@ public interface FileAssetAPI {
     @Deprecated
     boolean fileNameExists(Host host, Folder folder, String fileName, String identifier, long languageId) throws  DotDataException;
 
-	/**
-	 * find ALL file assets inode language versions (Only current version) for a given host and folder
-	 * @param host
-	 * @param folder
-	 * @param fileName
-	 * @param user
-	 * @return
-	 * @throws DotDataException
-	 * @throws DotSecurityException
-	 */
-	List<FileAsset> findVersionsByName(final Host host, final Folder folder, final String fileName, final User user) throws DotDataException, DotSecurityException;
-
-	/**
-	 *
-	 * @param host
-	 * @param folder
-	 * @param user
-	 * @return
-	 * @throws DotDataException
-	 */
-	Map<Identifier, List<FileAsset>> findVersionsUnderFolder(final Host host, final Folder folder, final User user) throws DotDataException;
 	/**
 	 *
 	 * @param fa

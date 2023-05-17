@@ -4,6 +4,7 @@ import com.dotcms.api.tree.TreeableAPI;
 import com.dotcms.browser.BrowserAPI;
 import com.dotcms.browser.BrowserQuery;
 import com.dotcms.browser.BrowserQuery.Builder;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.rest.api.v1.asset.view.AssetVersionsView;
 import com.dotcms.rest.api.v1.asset.view.AssetView;
 import com.dotcms.rest.api.v1.asset.view.FolderView;
@@ -11,6 +12,7 @@ import com.dotcms.rest.api.v1.asset.view.WebAssetView;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.Treeable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
@@ -26,36 +28,29 @@ import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class WebAssetHelper {
 
-    FolderAPI folderAPI;
-    HostAPI hostAPI;
-
     LanguageAPI languageAPI;
-
-    TreeableAPI treeableAPI;
 
     FileAssetAPI fileAssetAPI;
 
     BrowserAPI browserAPI;
 
-    public WebAssetHelper(final FolderAPI folderAPI, final HostAPI hostAPI,
-            final LanguageAPI languageAPI, final TreeableAPI treeableAPI,
+    public WebAssetHelper(
+            final LanguageAPI languageAPI,
             final FileAssetAPI fileAssetAPI, final BrowserAPI browserAPI) {
-        this.folderAPI = folderAPI;
-        this.hostAPI = hostAPI;
         this.languageAPI = languageAPI;
-        this.treeableAPI = treeableAPI;
         this.fileAssetAPI = fileAssetAPI;
         this.browserAPI = browserAPI;
     }
 
     public WebAssetHelper() {
-        this(APILocator.getFolderAPI(), APILocator.getHostAPI(),
+        this(
                 APILocator.getLanguageAPI(),
-                APILocator.getTreeableAPI(), APILocator.getFileAssetAPI(),
+                APILocator.getFileAssetAPI(),
                 APILocator.getBrowserAPI());
     }
 
@@ -68,7 +63,7 @@ public class WebAssetHelper {
         final Folder folder = assetAndPath.resolvedFolder();
         final String assetName = assetAndPath.asset();
 
-        final List<FileAsset> assets;
+        final List<Treeable> assets;
 
         final Builder builder = BrowserQuery.builder();
         builder.showDotAssets(false)
@@ -83,42 +78,42 @@ public class WebAssetHelper {
                 .showContent(true);
 
         if (null != assetName) {
-
             //We're requesting an asset specifically therefore we need to find it and  build the response
+            if(folder.isSystemFolder()){
+                builder.withHostOrFolderId(host.getIdentifier());
+            } else {
+                builder.withHostOrFolderId(folder.getInode());
+            }
             builder.withFilter(assetName);
-            final Map<String, Object> folderContent = browserAPI.getFolderContent(builder.build());
-            System.out.println(folderContent);
-
-            assets = fileAssetAPI.findVersionsByName(host, folder, assetName, user);
+            final List<Treeable> folderContent = browserAPI.getFolderContentList(builder.build());
+            assets = folderContent.stream().filter(Contentlet.class::isInstance).collect(Collectors.toList());
+            if (assets.isEmpty()) {
+                throw new NotFoundInDbException(String.format(" Asset [%s] not found", assetName));
+            }
             return AssetVersionsView.builder()
                     .versions(toAssets(assets))
                     .build();
         } else {
-
-           //We're requesting a folder and all of its contents
+            final List<Treeable> folderContent;
+            //We're requesting a folder and all of its contents
             final List<Folder> subFolders;
             //We're not really looking at system but / is mapped as system folder therefore
             //whenever system folder pops up we need to find the folders straight under host
-            if(Folder.SYSTEM_FOLDER.equals(folder.getInode())){
+            if (folder.isSystemFolder()) {
 
                 builder.withHostOrFolderId(host.getIdentifier());
-                final Map<String, Object> folderContent = browserAPI.getFolderContent(builder.build());
-                System.out.println(folderContent);
+                folderContent = browserAPI.getFolderContentList(builder.build());
 
-                subFolders = folderAPI.findSubFolders(host, user, false);
             } else {
 
                 builder.withHostOrFolderId(folder.getInode());
-                final Map<String, Object> folderContent = browserAPI.getFolderContent(builder.build());
-                System.out.println(folderContent);
-
-
-                subFolders = folderAPI.findSubFolders(folder, user, false);
+                folderContent = browserAPI.getFolderContentList(builder.build());
             }
-            final Map<Identifier, List<FileAsset>> versionsUnderFolder = fileAssetAPI.findVersionsUnderFolder(
-                    host, folder, user);
 
-            assets = versionsUnderFolder.values().stream().flatMap(List::stream).collect(Collectors.toList());
+            subFolders = folderContent.stream().filter(Folder.class::isInstance)
+                    .map(f -> (Folder) f).collect(Collectors.toList());
+            assets = folderContent.stream().filter(Contentlet.class::isInstance)
+                    .map(f -> (Contentlet) f).collect(Collectors.toList());
 
             return FolderView.builder()
                     .path(folder.getPath())
@@ -134,20 +129,11 @@ public class WebAssetHelper {
         }
     }
 
-    public void getContentsUnderFolder(BrowserQuery query)
-            throws DotDataException, DotSecurityException {
-        final Map<String, Object> folderContent = browserAPI.getFolderContent(query);
-        @SuppressWarnings("unchecked")
-        final List<Map<String,Object>> list = (List)folderContent.get("list");
-        //TODO: need to get from this list the attribute 'type'
-        //then from there we can determine if it's a folder or a contetlet
-        //For folders we can use FolderTransformer but for the returned map we can not use ContentletTransformer
-        //The results from this browserAPI have never been seen as a Contetlet Per se apparently they have only been used to generate json
-        //for that purpose we need to grab the inodes and load the contentlets from there it's easier
-    }
-
-    Iterable<AssetView> toAssets(final List<FileAsset> assets) {
-        return assets.stream().map(this::toAsset).collect(Collectors.toList());
+    Iterable<AssetView> toAssets(final List<Treeable> assets) {
+        return assets.stream().filter(Contentlet.class::isInstance).map(Contentlet.class::cast)
+                .filter(Contentlet::isFileAsset)
+                .map(contentlet -> fileAssetAPI.fromContentlet(contentlet)).map(this::toAsset)
+                .collect(Collectors.toList());
     }
 
     AssetView toAsset(final FileAsset fileAsset) {
@@ -158,6 +144,7 @@ public class WebAssetHelper {
                             fileAsset.getIdentifier()));
                     return false;
                 });
+
         return AssetView.builder()
                 .name(fileAsset.getFileName())
                 .modDate(fileAsset.getModDate().toInstant())
