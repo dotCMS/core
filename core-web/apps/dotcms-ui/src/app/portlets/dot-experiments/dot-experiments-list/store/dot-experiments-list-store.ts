@@ -1,4 +1,4 @@
-import { ComponentStore, OnStoreInit, tapResponse } from '@ngrx/component-store';
+import { ComponentStore, OnStateInit, tapResponse } from '@ngrx/component-store';
 import { EMPTY, Observable, throwError } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
@@ -69,7 +69,7 @@ export interface VmCreateExperiments {
 })
 export class DotExperimentsListStore
     extends ComponentStore<DotExperimentsState>
-    implements OnStoreInit
+    implements OnStateInit
 {
     // Selectors
     readonly getExperimentsFilteredAndGroupedByStatus$: Observable<GroupedExperimentByStatus[]> =
@@ -341,7 +341,7 @@ export class DotExperimentsListStore
         });
     }
 
-    ngrxOnStoreInit() {
+    ngrxOnStateInit(): void {
         const pageId = this.route.snapshot.params.pageId;
         this.loadExperiments(pageId);
     }
