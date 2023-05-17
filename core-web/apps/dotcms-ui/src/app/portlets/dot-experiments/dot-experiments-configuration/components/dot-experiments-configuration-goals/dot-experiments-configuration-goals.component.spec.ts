@@ -27,7 +27,7 @@ import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.dir
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 const messageServiceMock = new MockDotMessageService({
-    'experiments.configure.goals.name': 'Goals',
+    'experiments.configure.goals.name': 'Goal',
     'experiments.configure.goals.add': 'button add',
     'experiments.goal.reach_page.name': 'reach_page',
     'experiments.goal.reach_page.description': 'description',
@@ -83,7 +83,7 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
 
     it('should render the card', () => {
         expect(spectator.queryAll(Card).length).toEqual(1);
-        expect(spectator.query(byTestId('goals-card-name'))).toContainText('Goals');
+        expect(spectator.query(byTestId('goals-card-name'))).toContainText('Goal');
         expect(spectator.query(byTestId('goals-card-name'))).toHaveClass('p-label-input-required');
         expect(spectator.query(byTestId('goals-add-button'))).toExist();
     });
