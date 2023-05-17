@@ -18,6 +18,7 @@ import { DotMessageService } from '@dotcms/data-access';
 import {
     ComponentStatus,
     ExperimentSteps,
+    GOAL_TYPES,
     Goals,
     GOALS_METADATA_MAP,
     GoalsLevels,
@@ -69,6 +70,7 @@ export class DotExperimentsConfigurationGoalsComponent {
     destroy$: Subject<boolean> = new Subject<boolean>();
     @ViewChild(DotDynamicDirective, { static: true }) sidebarHost!: DotDynamicDirective;
     protected readonly GOALS_METADATA_MAP = GOALS_METADATA_MAP;
+    protected readonly GOAL_TYPES = GOAL_TYPES;
 
     private componentRef: ComponentRef<DotExperimentsConfigurationGoalSelectComponent>;
 
