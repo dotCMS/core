@@ -11,6 +11,7 @@ import { PushPublishServiceMock } from '@components/_common/dot-push-publish-env
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
+import { DotFavoritePageService } from '@dotcms/app/api/services/dot-favorite-page/dot-favorite-page.service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotWizardService } from '@dotcms/app/api/services/dot-wizard/dot-wizard.service';
@@ -101,6 +102,7 @@ describe('DotPageStore', () => {
     let dotWorkflowsActionsService: DotWorkflowsActionsService;
     let dotPageWorkflowsActionsService: DotPageWorkflowsActionsService;
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
+    let dotFavoritePageService: DotFavoritePageService;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -118,6 +120,7 @@ describe('DotPageStore', () => {
                 DotWorkflowEventHandlerService,
                 LoggerService,
                 StringUtils,
+                DotFavoritePageService,
                 { provide: DialogService, useClass: DialogServiceMock },
                 { provide: DotcmsEventsService, useClass: DotcmsEventsServiceMock },
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
@@ -141,6 +144,7 @@ describe('DotPageStore', () => {
         dotHttpErrorManagerService = TestBed.inject(DotHttpErrorManagerService);
         dotWorkflowsActionsService = TestBed.inject(DotWorkflowsActionsService);
         dotPageWorkflowsActionsService = TestBed.inject(DotPageWorkflowsActionsService);
+        dotFavoritePageService = TestBed.inject(DotFavoritePageService);
 
         spyOn(dialogService, 'open').and.callThrough();
         spyOn(dotHttpErrorManagerService, 'handle');
@@ -308,7 +312,7 @@ describe('DotPageStore', () => {
             ...favoritePagesInitialTestData,
             ...favoritePagesInitialTestData
         ];
-        spyOn(dotESContentService, 'get').and.returnValue(
+        spyOn(dotFavoritePageService, 'get').and.returnValue(
             of({
                 contentTook: 0,
                 jsonObjectView: {
@@ -325,7 +329,7 @@ describe('DotPageStore', () => {
             expect(data.favoritePages.showLoadMoreButton).toEqual(true);
             expect(data.favoritePages.total).toEqual(expectedInputArray.length);
         });
-        expect(dotESContentService.get).toHaveBeenCalledTimes(1);
+        expect(dotFavoritePageService.get).toHaveBeenCalledTimes(1);
     });
 
     it('should get all Page Types value in store and show dialog', () => {
@@ -503,7 +507,7 @@ describe('DotPageStore', () => {
     it('should get all Workflow actions and static actions from a contentlet', () => {
         const expectedInputArray = [{ ...dotcmsContentTypeBasicMock, ...contentTypeDataMock[0] }];
         spyOn(dotWorkflowsActionsService, 'getByInode').and.returnValue(of(mockWorkflowsActions));
-        spyOn(dotESContentService, 'get').and.returnValue(
+        spyOn(dotFavoritePageService, 'get').and.returnValue(
             of({
                 contentTook: 0,
                 jsonObjectView: {
@@ -535,12 +539,11 @@ describe('DotPageStore', () => {
             expect(data.pages.actionMenuDomId).toEqual('test1');
         });
 
-        expect(dotESContentService.get).toHaveBeenCalledWith({
-            itemsPerPage: 1,
-            offset: '0',
-            query: '+contentType:dotFavoritePage +deleted:false +working:true +owner:testId +DotFavoritePage.url_dotraw:/index1?&language_id=1&device_inode=',
-            sortField: 'dotFavoritePage.order',
-            sortOrder: ESOrderDirection.ASC
+        expect(dotFavoritePageService.get).toHaveBeenCalledWith({
+            identifier: undefined,
+            limit: 1,
+            userId: 'testId',
+            url: '/index1?&language_id=1&device_inode='
         });
         expect(dotWorkflowsActionsService.getByInode).toHaveBeenCalledWith(
             favoritePagesInitialTestData[0].inode,
