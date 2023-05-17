@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 
+import { DotFavoritePageService } from '@dotcms/app/api/services/dot-favorite-page/dot-favorite-page.service';
 import {
     DotContentletLockerService,
     DotESContentService,
@@ -40,7 +41,8 @@ import { DotEditPageResolver } from './shared/services/dot-edit-page-resolver/do
         DotPageRenderService,
         DotSessionStorageService,
         DotPageLayoutService,
-        DotFeatureFlagResolver
+        DotFeatureFlagResolver,
+        DotFavoritePageService
     ]
 })
 export class DotEditPageModule {}

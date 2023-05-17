@@ -9,6 +9,7 @@ import { DialogService } from 'primeng/dynamicdialog';
 
 import { delay, filter, map, mergeMap, retryWhen, switchMap, take, tap } from 'rxjs/operators';
 
+import { DotFavoritePageService } from '@dotcms/app/api/services/dot-favorite-page/dot-favorite-page.service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotWorkflowEventHandlerService } from '@dotcms/app/api/services/dot-workflow-event-handler/dot-workflow-event-handler.service';
@@ -82,7 +83,6 @@ export interface DotSessionStorageFilter {
     languageId: string;
 }
 
-const FAVORITE_PAGES_ES_QUERY = `+contentType:dotFavoritePage +deleted:false +working:true`;
 export const FAVORITE_PAGE_LIMIT = 5;
 
 export const SESSION_STORAGE_FAVORITES_KEY = 'FavoritesSearchTerms';
@@ -630,22 +630,9 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
     }) => {
         const { limit, identifier, url } = params;
 
-        let extraQueryParams = '';
-        if (identifier) {
-            extraQueryParams = `+identifier:${identifier}`;
-        } else if (url) {
-            extraQueryParams = `+DotFavoritePage.url_dotraw:${url}`;
-        }
-
         return this.dotCurrentUser.getCurrentUser().pipe(
             switchMap(({ userId }) => {
-                return this.dotESContentService.get({
-                    itemsPerPage: limit,
-                    offset: '0',
-                    query: `${FAVORITE_PAGES_ES_QUERY} +owner:${userId} ${extraQueryParams}`,
-                    sortField: 'dotFavoritePage.order',
-                    sortOrder: ESOrderDirection.ASC
-                });
+                return this.dotFavoritePageService.get({ limit, userId, identifier, url });
             })
         );
     };
@@ -782,7 +769,8 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         private dotLicenseService: DotLicenseService,
         private dotEventsService: DotEventsService,
         private pushPublishService: PushPublishService,
-        private siteService: SiteService
+        private siteService: SiteService,
+        private dotFavoritePageService: DotFavoritePageService
     ) {
         super(null);
     }
