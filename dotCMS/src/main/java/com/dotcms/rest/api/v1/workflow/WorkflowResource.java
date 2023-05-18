@@ -119,6 +119,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletionService;
@@ -2714,6 +2715,12 @@ public class WorkflowResource {
         if (null != fireActionForm && null != fireActionForm.getContentletFormData() && null != contentlet) {
 
             contentlet = this.populateContentlet(fireActionForm, contentlet, initDataObject.getUser(),mode);
+
+            // if the inode is being set on the form and it is set as a null, it means the users want to create a new version explicit
+            if (fireActionForm.getContentletFormData().containsKey("inode")
+                    && Objects.isNull(fireActionForm.getContentletFormData().get("inode"))) {
+                contentlet.setInode(null);
+            }
         }
         return contentlet;
     }
