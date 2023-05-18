@@ -3,6 +3,7 @@ package com.dotcms.experiments.business.result;
 import com.dotcms.analytics.metrics.Metric;
 import com.dotcms.experiments.business.result.ExperimentResults.TotalSession;
 import com.dotcms.experiments.model.ExperimentVariant;
+import com.dotcms.experiments.model.TrafficProportion;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
@@ -37,7 +38,10 @@ public class GoalResultsBuilder {
         variantResultsBuilder.success(lookBackWindow, event);
     }
 
-    public GoalResults build(final TotalSession totalSessions) {
+    public GoalResults build(final TotalSession totalSessions, final TrafficProportion trafficProportion) {
+
+        final Map<String, Float> trafficProportionMap = trafficProportion.variants().stream()
+                .collect(Collectors.toMap(ExperimentVariant::id, ExperimentVariant::weight));
 
         final List<Instant> allDates = variants.values().stream()
                 .map(variantResultsBuilder -> variantResultsBuilder.getEventDates())
@@ -52,6 +56,7 @@ public class GoalResultsBuilder {
                     variantResultsBuilder.setTotalSession(totalSessions.getTotal());
                     variantResultsBuilder.setTotalSessionToVariant(
                             totalSessions.getVariants().get(variantId));
+                    variantResultsBuilder.weight(trafficProportionMap.get(variantId));
                     return variantResultsBuilder;
                 })
                 .map(variantResultsBuilder -> variantResultsBuilder.build(allDates))

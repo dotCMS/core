@@ -21,6 +21,7 @@ dependencies {
     implementation group: 'com.dotcms', name: 'ant-tooling', version: '1.3.2'
     implementation ('io.jsonwebtoken:jjwt:0.6.0'){
         transitive = false
+        
     }
     implementation group: 'com.dotcms.lib', name: 'dot.webp-imageio-core', version:'0.1.5'
     implementation group: 'org.scijava', name: 'native-lib-loader', version: '2.3.2'
@@ -99,8 +100,6 @@ dependencies {
     implementation group: 'com.dotcms.lib', name: 'dot.jaxb-api', version:'2.2.7_4'
     implementation group: 'com.dotcms.lib', name: 'dot.jaxb-core', version:'2.2.7_4'
     implementation group: 'com.dotcms.lib', name: 'dot.jaxb-impl', version:'2.2.7_4'
-    implementation group: 'com.dotcms.lib', name: 'dot.jaxws-api', version:'2.2.9_2'
-    implementation group: 'com.dotcms.lib', name: 'dot.jaxws-rt', version:'2.2.8_2'
 
     implementation group: 'com.dotcms.lib', name: 'dot.jazzy-core', version:'ukv_2'
     implementation group: 'com.dotcms.lib', name: 'dot.jempbox', version:'1.6.0_2'
@@ -566,7 +565,7 @@ dependencies {
     implementation 'com.jayway.jsonpath:json-path:2.4.0'
     implementation 'com.sun.activation:javax.activation:1.2.0'
     implementation 'jakarta.xml.bind:jakarta.xml.bind-api:2.3.3'
-    implementation 'com.sun.xml.ws:jaxws-ri:2.3.2'
+
 
     //https://mvnrepository.com/artifact/org.postgresql/postgresql
     compileOnly (group: 'org.postgresql', name: 'postgresql', version: '42.5.1') {

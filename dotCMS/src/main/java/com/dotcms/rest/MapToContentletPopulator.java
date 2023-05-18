@@ -55,6 +55,7 @@ import java.util.Map.Entry;
 import java.util.function.LongSupplier;
 import java.util.stream.Collectors;
 
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.VARIANT_ID;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_ASSIGN_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_COMMENTS_KEY;
 import static com.liferay.util.StringPool.BLANK;
@@ -157,6 +158,8 @@ public class MapToContentletPopulator  {
 
                 // fill fields
                 this.fillFields(contentlet, map, type, fieldMap);
+
+                contentlet.setVariantId(map.get(VARIANT_ID) != null ? map.get(VARIANT_ID).toString() : null);
             }
 
             this.setIndexPolicy (contentlet, map);

@@ -49,7 +49,6 @@ import { DotExperimentsListComponent } from './dot-experiments-list.component';
         DotMessagePipeModule,
         DotExperimentsUiHeaderComponent,
         DotDropdownDirective,
-
         // PrimeNG
         DotDynamicDirective,
         SkeletonModule,
