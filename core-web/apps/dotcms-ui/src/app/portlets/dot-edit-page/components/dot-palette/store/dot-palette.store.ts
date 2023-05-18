@@ -127,7 +127,7 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
         return filterValue$.pipe(
             debounceTime(400),
             map((value: string) => {
-                const query = value.trim();
+                const query = value ? value.trim() : '';
 
                 if (query && query.length < 3) {
                     return;
