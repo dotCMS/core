@@ -45,6 +45,7 @@ public abstract class Goal {
     @JsonIgnore
     public abstract GoalType type();
 
+    @JsonIgnore
     public String name (){
         final String goalTypeName = type().name();
         return goalTypeName.charAt(0) + goalTypeName.substring(1) + StringPool.SPACE +
