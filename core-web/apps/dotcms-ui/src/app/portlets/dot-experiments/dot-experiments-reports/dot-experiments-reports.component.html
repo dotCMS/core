@@ -21,7 +21,7 @@
                 *ngIf="vm.showSummary"
                 [goals]="vm.experiment.goals"
                 [scheduling]="vm.experiment.scheduling"
-                [sessionsReached]="vm.results.sessions.total"
+                [sessionsReached]="vm.results ? vm.results.sessions.total : 0"
                 [suggestedWinner]="vm.winnerLegendSummary"
             />
 
