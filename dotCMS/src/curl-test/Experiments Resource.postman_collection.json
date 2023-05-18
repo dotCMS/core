@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "e09e6be2-cc15-46b6-96df-f5b6e6a2282c",
+		"_postman_id": "0441f95e-4230-48b5-ae39-221a9d987f34",
 		"name": "Experiments Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "4500400"
@@ -7748,7 +7748,7 @@
 											"",
 											"pm.test(\"Experiment should conflict with existing\", function () {",
 											"    pm.response.to.have.status(400);",
-											"    pm.expect(jsonData.message).contains(\"There is a scheduling conflict between the Experiment and the scheduled Experiment. Name: 20220901\");",
+											"    pm.expect(jsonData.message).contains(\"Scheduling conflict: The same page can't be included in different experiments with overlapping schedules. Overlapping with Experiment: 20220901\");",
 											"});",
 											"",
 											"",

@@ -490,7 +490,8 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             final Experiment runningExperiment = runningExperimentsOnPage.get(0);
             DotPreconditions.isTrue(runningExperiment.scheduling().orElseThrow().endDate()
                     .orElseThrow().isBefore(persistedExperiment.scheduling().orElseThrow().startDate().orElseThrow()),
-                    ()-> "Start date of the Experiment is before the end date of the running Experiment. Name: "
+                    ()-> "Scheduling conflict: The same page can't be included in different experiments with overlapping schedules. "
+                            + "Overlapping with Experiment: "
                             + runningExperiment.name(),
                     DotStateException.class);
         }
@@ -536,7 +537,8 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                     schedulingToCheck.endDate().orElseThrow().isBefore(scheduling.startDate().orElseThrow());
         });
 
-        DotPreconditions.isTrue(noConflicts, ()-> "There is a scheduling conflict between the Experiment and the scheduled Experiment. Name: "
+        DotPreconditions.isTrue(noConflicts, ()-> "Scheduling conflict: The same page can't be included in different experiments with overlapping schedules. "
+                        + "Overlapping with Experiment: "
                 + scheduledExperimentsOnPage.get(0).name(),
                 DotStateException.class);
     }
