@@ -64,8 +64,7 @@ export class DotExperimentsConfigurationSchedulingAddComponent implements OnInit
     ngOnInit(): void {
         this.setInitialDate();
         this.initForm();
-        this.setMinEndDate();
-        this.setMaxEndDate();
+        this.setDateBoundaries();
     }
 
     /**
