@@ -1,6 +1,7 @@
 package com.dotcms.experiments.model;
 
 import com.dotcms.analytics.metrics.Metric;
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
 
@@ -12,6 +13,7 @@ import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
  */
 public class ReachPageGoal extends Goal {
 
+    @JsonCreator()
     ReachPageGoal(final @JsonProperty("metric") Metric metric) {
         super(metric);
     }

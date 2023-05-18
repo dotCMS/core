@@ -511,6 +511,8 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
 
             final ExperimentResults results = experimentsAPI.getResults(experiment);
 
+            mockhttpServer.validate();
+
             final Map<String, VariantResults> variants = results.getGoals().get("primary")
                     .getVariants();
             assertEquals(2, variants.size());
