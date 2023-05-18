@@ -14,6 +14,7 @@ import { DotMessagePipe } from '@dotcms/app/view/pipes';
 import {
     ComponentStatus,
     DotExperiment,
+    DotExperimentStatusList,
     ExperimentsStatusList,
     SidebarStatus
 } from '@dotcms/dotcms-models';
@@ -90,18 +91,8 @@ export class DotExperimentsListComponent {
      * @returns void
      * @memberof DotExperimentsListComponent
      */
-    archiveExperiment(experiment: DotExperiment): void {
+    archiveExperimentAction(experiment: DotExperiment): void {
         this.dotExperimentsListStore.archiveExperiment(experiment);
-    }
-
-    /**
-     * Delete experiment
-     * @param {DotExperiment} experiment
-     * @returns void
-     * @memberof DotExperimentsListComponent
-     */
-    deleteExperiment(experiment: DotExperiment): void {
-        this.dotExperimentsListStore.deleteExperiment(experiment);
     }
 
     /**
@@ -121,15 +112,51 @@ export class DotExperimentsListComponent {
     }
 
     /**
-     * Opens the experiment report page for a given experiment
-     * @param {DotExperiment} experiment The experiment whose report page needs to be opened
+     * Go to the experiment report or configuration depending on the experiment status
+     * @param {DotExperiment} experiment - Experiment to navigate to
      * @returns void
      * @memberof DotExperimentsShellComponent
      */
 
-    goToViewExperimentReport(experiment: DotExperiment) {
+    goToContainerAction(experiment: DotExperiment) {
+        const route = ['/edit-page/experiments/', experiment.pageId, experiment.id];
+
+        if (
+            experiment.status === DotExperimentStatusList.RUNNING ||
+            experiment.status === DotExperimentStatusList.ENDED
+        ) {
+            route.push('reports');
+        } else {
+            route.push('configuration');
+        }
+
+        this.router.navigate([...route], {
+            queryParams: {
+                mode: null,
+                variantName: null,
+                experimentId: null
+            },
+            queryParamsHandling: 'merge'
+        });
+    }
+
+    /**
+     * Delete experiment
+     * @param {DotExperiment} experiment
+     * @returns void
+     * @memberof DotExperimentsListComponent
+     */
+    deleteExperimentAction(experiment: DotExperiment): void {
+        this.dotExperimentsListStore.deleteExperiment(experiment);
+    }
+
+    /**
+     * Go to the experiment configuration container
+     * @param experiment
+     */
+    gotToConfigurationAction(experiment: DotExperiment) {
         this.router.navigate(
-            ['/edit-page/experiments/', experiment.pageId, experiment.id, 'reports'],
+            ['/edit-page/experiments/', experiment.pageId, experiment.id, 'configuration'],
             {
                 queryParams: {
                     mode: null,

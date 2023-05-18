@@ -66,6 +66,12 @@ export class DotExperimentsListTableComponent {
     @Output()
     goToReport = new EventEmitter<DotExperiment>();
 
+    @Output()
+    goToContainer = new EventEmitter<DotExperiment>();
+
+    @Output()
+    goToConfiguration = new EventEmitter<DotExperiment>();
+
     constructor(
         private readonly dotMessageService: DotMessageService,
         private readonly confirmationService: ConfirmationService

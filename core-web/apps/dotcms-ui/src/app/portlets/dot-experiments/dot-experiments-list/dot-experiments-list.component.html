@@ -27,9 +27,10 @@
             <dot-experiments-list-table
                 [experimentGroupedByStatus]="vm.experimentsFiltered"
                 [experimentsCount]="vm.experiments.length"
-                (archiveItem)="archiveExperiment($event)"
-                (deleteItem)="deleteExperiment($event)"
-                (goToReport)="goToViewExperimentReport($event)"
+                (archiveItem)="archiveExperimentAction($event)"
+                (deleteItem)="deleteExperimentAction($event)"
+                (goToConfiguration)="gotToConfigurationAction($event)"
+                (goToContainer)="goToContainerAction($event)"
             />
         </ng-container>
     </div>
