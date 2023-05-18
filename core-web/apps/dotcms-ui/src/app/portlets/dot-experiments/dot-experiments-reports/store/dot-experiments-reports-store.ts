@@ -91,6 +91,8 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
             if (experiment != null && results != null) {
                 return this.getSuggestedWinner(experiment, results);
             }
+
+            return { ...ReportSummaryLegendByBayesianStatus.NO_ENOUGH_SESSIONS };
         }
     );
 
@@ -226,7 +228,8 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
                         this.patchState({
                             experiment: experiment,
                             results: results,
-                        status: ComponentStatus.IDLE});
+                            status: ComponentStatus.IDLE
+                        });
                         this.updateTabTitle(experiment);
                         this.setComponentStatus(ComponentStatus.IDLE);
                     }),

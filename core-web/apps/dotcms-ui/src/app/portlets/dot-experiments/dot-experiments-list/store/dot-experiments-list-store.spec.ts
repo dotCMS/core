@@ -13,12 +13,14 @@ import {
     DotExperimentStatusList,
     GroupedExperimentByStatus
 } from '@dotcms/dotcms-models';
-import {
-    DotExperimentsListStore,
-    DotExperimentsState
-} from '@portlets/dot-experiments/dot-experiments-list/store/dot-experiments-list-store';
+import { DotExperimentsListStore } from '@portlets/dot-experiments/dot-experiments-list/store/dot-experiments-list-store';
+import { DotExperimentsStore } from '@portlets/dot-experiments/dot-experiments-shell/store/dot-experiments.store';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
-import { getExperimentAllMocks, getExperimentMock } from '@portlets/dot-experiments/test/mocks';
+import {
+    DotExperimentsStoreMock,
+    getExperimentAllMocks,
+    getExperimentMock
+} from '@portlets/dot-experiments/test/mocks';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 const routerParamsPageId = '1111-1111-111';
@@ -27,7 +29,7 @@ const ActivatedRouteMock = {
         params: {
             pageId: routerParamsPageId
         },
-        parent: { parent: { parent: { parent: { data: { content: { page: { title: '' } } } } } } }
+        parent: { parent: { parent: { data: { content: { page: { title: '' } } } } } }
     }
 };
 
@@ -55,50 +57,25 @@ describe('DotExperimentsListStore', () => {
                 provide: ActivatedRoute,
                 useValue: ActivatedRouteMock
             },
-            mockProvider(Router)
+            mockProvider(Router),
+            mockProvider(DotExperimentsStore, DotExperimentsStoreMock)
         ]
     });
 
     beforeEach(() => {
-        spectator = storeService({});
-        store = spectator.inject(DotExperimentsListStore);
-
+        spectator = storeService();
         dotExperimentsService = spectator.inject(DotExperimentsService);
-        messageService = spectator.inject(MessageService);
-
+        dotExperimentsService.getAll.and.callThrough().and.returnValue(of(EXPERIMENT_MOCK_ALL));
         dotExperimentsService.getById.and.callThrough().and.returnValue(of(EXPERIMENT_MOCK));
-    });
 
-    it('should set initial data', (done) => {
-        const expectedInitialState: DotExperimentsState = {
-            page: {
-                pageId: routerParamsPageId,
-                pageTitle: ''
-            },
-            experiments: [],
-            filterStatus: [
-                DotExperimentStatusList.RUNNING,
-                DotExperimentStatusList.SCHEDULED,
-                DotExperimentStatusList.DRAFT,
-                DotExperimentStatusList.ENDED,
-                DotExperimentStatusList.ARCHIVED
-            ],
-            status: ComponentStatus.INIT,
-            sidebar: {
-                status: ComponentStatus.IDLE,
-                isOpen: false
-            }
-        };
-
-        store.state$.subscribe((state) => {
-            expect(state).toEqual(expectedInitialState);
-            done();
-        });
+        store = spectator.inject(DotExperimentsListStore);
+        messageService = spectator.inject(MessageService);
+        store.ngrxOnStateInit();
     });
 
     it('should have getState$ from the store', () => {
-        store.state$.subscribe(({ status }) => {
-            expect(status).toEqual(ComponentStatus.INIT);
+        store.state$.subscribe((state) => {
+            expect(state.status).toEqual(ComponentStatus.LOADED);
         });
     });
 
