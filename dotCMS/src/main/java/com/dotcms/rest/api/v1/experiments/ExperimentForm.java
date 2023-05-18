@@ -1,15 +1,24 @@
 package com.dotcms.rest.api.v1.experiments;
 
+import static com.dotcms.util.CollectionsUtils.map;
+
+import com.dotcms.experiments.model.AbstractGoals;
+import com.dotcms.experiments.model.Goal;
 import com.dotcms.experiments.model.Goals;
 import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.experiments.model.TargetingCondition;
 import com.dotcms.experiments.model.TrafficProportion;
 import com.dotcms.repackage.javax.validation.constraints.Size;
 import com.dotcms.rest.api.Validated;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.dotcms.util.JsonUtil;
 import com.dotmarketing.business.APILocator;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * From to create/update an {@link com.dotcms.experiments.model.Experiment} from REST
@@ -136,9 +145,22 @@ public class ExperimentForm extends Validated {
             return this;
         }
 
-        public Builder withGoals(Goals goals) {
-            this.goals = goals;
-            return this;
+        public Builder withGoals(final Map<String, Object> goalsMapInput) {
+
+            try {
+                final ObjectMapper defaultObjectMapper = DotObjectMapperProvider.getInstance()
+                        .getDefaultObjectMapper();
+                final Map<String, Object> metric = (Map<String, Object>) goalsMapInput.get("primary");
+                final String type = metric.get("type").toString();
+                final Map<String, Object> goalsMap  = map("metric", metric, "type", type);
+                final String json = defaultObjectMapper.writeValueAsString(goalsMap);
+
+                this.goals = defaultObjectMapper.readValue(json, Goals.class);
+
+                return this;
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
         }
 
         public ExperimentForm build() {

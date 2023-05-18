@@ -16,8 +16,8 @@ import org.immutables.value.Value;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
-        @Type(value = ReachPageGoal.class, name = "ReachPage"),
-        @Type(value = BounceRateGoal.class, name = "BounceRate")
+        @Type(value = ReachPageGoal.class, name = "REACH_PAGE"),
+        @Type(value = BounceRateGoal.class, name = "BOUNCE_RATE")
 })
 public abstract class Goal {
 

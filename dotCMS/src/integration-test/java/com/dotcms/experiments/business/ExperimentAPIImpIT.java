@@ -488,13 +488,14 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
 
         final Experiment experiment = createExperimentWithReachPageGoalAndVariant(pageA, pageB);
 
+        final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
+
         try {
 
             final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
             ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
 
-            final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
-            addCountQueryContext(experiment, 0, mockhttpServer);
+             addCountQueryContext(experiment, 0, mockhttpServer);
 
             ExperimentDataGen.start(experiment);
 
@@ -505,7 +506,9 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
                     .orElseThrow();
 
             final ExperimentsAPIImpl experimentsAPI = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            
+
+            mockhttpServer.start();
+
             final ExperimentResults results = experimentsAPI.getResults(experiment);
 
             final Map<String, VariantResults> variants = results.getGoals().get("primary")
@@ -519,6 +522,7 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
             assertEquals(50f, controlResults.weight());
         } finally {
             ExperimentDataGen.end(experiment);
+            mockhttpServer.stop();
         }
     }
 
