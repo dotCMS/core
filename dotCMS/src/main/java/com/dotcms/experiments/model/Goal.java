@@ -14,6 +14,11 @@ import com.liferay.util.StringPool;
 import org.immutables.value.Value;
 
 
+/**
+ * Represent a Goal inside a {@link Experiment}, a Goal is the target the we are trying to reach
+ * inside a Experiment, for example maybe we want "Maximize the amount of Reach Page for a specific page"
+ * or "Minimize the amount of Bounce Rate for a specific page".
+ */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
         @Type(value = ReachPageGoal.class, name = "REACH_PAGE"),
