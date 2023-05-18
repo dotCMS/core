@@ -24,6 +24,7 @@ import {
     DotEventsService,
     DotLanguagesService,
     DotLicenseService,
+    DotLocalstorageService,
     DotPageTypesService,
     DotPageWorkflowsActionsService,
     DotRenderMode,
@@ -61,7 +62,11 @@ import {
     mockWorkflowsActions
 } from '@dotcms/utils-testing';
 
-import { DotPageStore, SESSION_STORAGE_FAVORITES_KEY } from './dot-pages.store';
+import {
+    DotPageStore,
+    LOCAL_STORAGE_FAVORITES_PANEL_KEY,
+    SESSION_STORAGE_FAVORITES_KEY
+} from './dot-pages.store';
 
 import { contentTypeDataMock } from '../../dot-edit-page/components/dot-palette/dot-palette-content-type/dot-palette-content-type.component.spec';
 import { DotLicenseServiceMock } from '../../dot-edit-page/content/services/html/dot-edit-content-toolbar-html.service.spec';
@@ -103,6 +108,7 @@ describe('DotPageStore', () => {
     let dotPageWorkflowsActionsService: DotPageWorkflowsActionsService;
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
     let dotFavoritePageService: DotFavoritePageService;
+    let dotLocalstorageService: DotLocalstorageService;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -121,6 +127,7 @@ describe('DotPageStore', () => {
                 LoggerService,
                 StringUtils,
                 DotFavoritePageService,
+                DotLocalstorageService,
                 { provide: DialogService, useClass: DialogServiceMock },
                 { provide: DotcmsEventsService, useClass: DotcmsEventsServiceMock },
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
@@ -145,9 +152,11 @@ describe('DotPageStore', () => {
         dotWorkflowsActionsService = TestBed.inject(DotWorkflowsActionsService);
         dotPageWorkflowsActionsService = TestBed.inject(DotPageWorkflowsActionsService);
         dotFavoritePageService = TestBed.inject(DotFavoritePageService);
+        dotLocalstorageService = TestBed.inject(DotLocalstorageService);
 
         spyOn(dialogService, 'open').and.callThrough();
         spyOn(dotHttpErrorManagerService, 'handle');
+        spyOn(dotLocalstorageService, 'getItem').and.returnValue(`true`);
 
         dotPageStore.setInitialStateData(5);
         dotPageStore.setKeyword('test');
@@ -254,6 +263,12 @@ describe('DotPageStore', () => {
         });
     });
 
+    it('should get isFavoritePanelCollaped Params', () => {
+        dotPageStore.isFavoritePanelCollaped$.subscribe((data) => {
+            expect(data).toEqual(true);
+        });
+    });
+
     it('should get pages loading status', () => {
         dotPageStore.isPagesLoading$.subscribe((data) => {
             expect(data).toEqual(true);
@@ -308,6 +323,15 @@ describe('DotPageStore', () => {
         expect(sessionStorage.setItem).toHaveBeenCalledWith(
             SESSION_STORAGE_FAVORITES_KEY,
             '{"keyword":"test","languageId":"1","archived":true}'
+        );
+    });
+
+    it('should update Local Storage Panel Collapsed Params', () => {
+        spyOn(dotLocalstorageService, 'setItem').and.callThrough();
+        dotPageStore.setLocalStorageFavoritePanelCollapsedParams(true);
+        expect(dotLocalstorageService.setItem).toHaveBeenCalledWith(
+            LOCAL_STORAGE_FAVORITES_PANEL_KEY,
+            'true'
         );
     });
 
@@ -371,6 +395,7 @@ describe('DotPageStore', () => {
             expect(data.favoritePages.items).toEqual(expectedInputArray);
             expect(data.favoritePages.showLoadMoreButton).toEqual(true);
             expect(data.favoritePages.total).toEqual(expectedInputArray.length);
+            expect(data.favoritePages.collapsed).toEqual(undefined);
         });
         expect(dotFavoritePageService.get).toHaveBeenCalledTimes(1);
     });
