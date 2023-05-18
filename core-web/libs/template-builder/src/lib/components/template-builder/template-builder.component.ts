@@ -19,9 +19,9 @@ import {
     ViewChildren
 } from '@angular/core';
 
+import { DotGridStackWidget } from './models/models';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
-import { gridOptions, subGridOptions } from './utils/options';
-import { DotGridStackWidget } from './utils/types';
+import { gridOptions, subGridOptions } from './utils/gridstack-options';
 
 let ids = 4;
 

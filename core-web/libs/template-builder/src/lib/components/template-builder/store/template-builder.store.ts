@@ -2,7 +2,7 @@ import { ComponentStore } from '@ngrx/component-store';
 
 import { Injectable } from '@angular/core';
 
-import { DotGridStackWidget, DotTemplateBuilderState } from '../utils/types';
+import { DotGridStackWidget, DotTemplateBuilderState } from '../models/models';
 
 /**
  *
