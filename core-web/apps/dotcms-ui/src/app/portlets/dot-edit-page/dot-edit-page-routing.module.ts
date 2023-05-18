@@ -3,6 +3,7 @@ import { RouterModule, Routes } from '@angular/router';
 
 import { LayoutEditorCanDeactivateGuardService } from '@dotcms/app/api/services/guards/layout-editor-can-deactivate-guard.service';
 import { FeaturedFlags } from '@dotcms/dotcms-models';
+import { DotExperimentExperimentResolver } from '@portlets/dot-experiments/shared/resolvers/dot-experiment-experiment.resolver';
 import { DotFeatureFlagResolver } from '@portlets/shared/resolvers/dot-feature-flag-resolver.service';
 
 import { DotEditPageMainComponent } from './main/dot-edit-page-main/dot-edit-page-main.component';
@@ -14,7 +15,8 @@ const dotEditPage: Routes = [
         path: '',
         resolve: {
             content: DotEditPageResolver,
-            featuredFlag: DotFeatureFlagResolver
+            featuredFlag: DotFeatureFlagResolver,
+            experiment: DotExperimentExperimentResolver
         },
         data: {
             featuredFlagToCheck: FeaturedFlags.LOAD_FRONTEND_EXPERIMENTS
