@@ -6,6 +6,13 @@
 }
 
 ::ng-deep {
+    .p-datatable .p-datatable-tbody > tr > td {
+        text-align: left;
+        border: 1px solid $color-palette-gray-300;
+        border-width: 0 0 1px 0;
+        padding: 0 $spacing-2;
+    }
+
     .p-datatable .p-datatable-tbody tr td {
         white-space: nowrap;
         overflow: hidden;

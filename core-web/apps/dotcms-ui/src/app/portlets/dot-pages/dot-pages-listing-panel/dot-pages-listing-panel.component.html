@@ -88,6 +88,7 @@
                         item: rowData
                     })
                 "
+                style="height: 47px"
                 pContextMenuRow
             >
                 <td>{{ rowData['title'] }}</td>
@@ -127,13 +128,13 @@
                             })
                         "
                         icon="more_vert"
-                        size="32"
+                        size="28"
                     ></dot-icon-button>
                 </td>
             </tr>
         </ng-template>
         <ng-template pTemplate="loadingbody">
-            <tr>
+            <tr style="height: 47px">
                 <td><p-skeleton [ngStyle]="{ width: '25%' }"></p-skeleton></td>
                 <td><p-skeleton [ngStyle]="{ width: '20%' }"></p-skeleton></td>
                 <td><p-skeleton [ngStyle]="{ width: '12%' }"></p-skeleton></td>
