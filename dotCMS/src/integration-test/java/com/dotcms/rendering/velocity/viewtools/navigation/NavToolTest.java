@@ -13,19 +13,29 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.WebAssetFactory;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
+import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPIImpl;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.links.factories.LinkFactory;
+import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -70,6 +80,12 @@ public class NavToolTest extends IntegrationTestBase{
     private static User user;
     private static Host site;
     private static Language spanishLanguage;
+    private static IdentifierAPI identifierAPI;
+    private static VersionableAPI versionableAPI;
+    private static FolderAPI folderAPI;
+
+    private static ContentletAPI contentletAPI;
+
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -79,6 +95,10 @@ public class NavToolTest extends IntegrationTestBase{
         user = APILocator.getUserAPI().getSystemUser();
         site = new SiteDataGen().nextPersisted();
         spanishLanguage = TestDataUtils.getSpanishLanguage();
+        identifierAPI    = APILocator.getIdentifierAPI();
+        versionableAPI   = APILocator.getVersionableAPI();
+        folderAPI     = APILocator.getFolderAPI();
+        contentletAPI = APILocator.getContentletAPI();
     }
 
     @AfterClass
@@ -645,5 +665,100 @@ public class NavToolTest extends IntegrationTestBase{
         assertNotNull(navResult);
         assertEquals(1,navResult.getChildren().size());
         assertEquals("SPA Version", navResult.getChildren().get(0).getTitle());
+    }
+
+    /**
+     * Method to test: NavTool.getNav
+     * Given scenario: get navigation of a folder, where it contains published and unpublished links
+     * Expected result: getting the navigation must return only the published links
+     * @throws Exception exception
+     */
+    @Test
+    public void test_getNav_GivenLinkItems_ShouldOnlyShowLiveLinks() throws Exception {
+        final Host host = new SiteDataGen().nextPersisted();
+        long id = System.currentTimeMillis();
+
+        //Create Folder
+        folder = folderAPI.createFolders("/test"+id, host, user, false);
+        folder.setOwner(user.getUserId());
+        folderAPI.save(folder, user, false);
+
+        // create template
+        final Template template = new TemplateDataGen().nextPersisted();
+
+        // create page
+        final String pageStr="testPage"+id;
+//        IHTMLPage page = htmlPageAssetAPI
+//                .getPageByPath(folder.getPath()+pageStr, host, APILocator.getLanguageAPI().getDefaultLanguage().getId(), true);
+
+        Contentlet contentAsset = new Contentlet();
+        contentAsset
+                .setContentTypeId(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
+        contentAsset.setHost(host.getIdentifier());
+        contentAsset.setProperty(HTMLPageAssetAPIImpl.FRIENDLY_NAME_FIELD, pageStr);
+        contentAsset.setProperty(HTMLPageAssetAPIImpl.URL_FIELD, pageStr);
+        contentAsset.setProperty(HTMLPageAssetAPIImpl.TITLE_FIELD, pageStr);
+        contentAsset.setProperty(HTMLPageAssetAPIImpl.CACHE_TTL_FIELD, "0");
+        contentAsset.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD, template.getIdentifier());
+        contentAsset.setLanguageId(1);
+        contentAsset.setFolder(folder.getInode());
+        contentAsset = contentletAPI.checkin(contentAsset, user, false);
+        contentletAPI.publish(contentAsset, user, false);
+
+
+//        Contentlet pageContentlet = TestDataUtils.getPageContent(true, 1);
+//        IHTMLPage page = APILocator.getHTMLPageAssetAPI().fromContentlet(pageContentlet);
+        Identifier internalLinkIdentifier = identifierAPI.find(contentAsset.getIdentifier());
+
+        StringBuffer myURL = new StringBuffer();
+        if (InodeUtils.isSet(internalLinkIdentifier.getHostId())) {
+            myURL.append(host.getHostname());
+        }
+        myURL.append(internalLinkIdentifier.getURI());
+
+        //Add create two links with different states
+        final String linkStr="link publish";
+
+        Link link = new Link();
+        link.setTitle(linkStr);
+        link.setFriendlyName(linkStr);
+        link.setParent(folder.getInode());
+        link.setTarget("_blank");
+        link.setOwner(user.getUserId());
+        link.setModUser(user.getUserId());
+        link.setLinkType(Link.LinkType.INTERNAL.toString());
+        link.setProtocal("http://");
+        link.setUrl(myURL.toString());
+        link.setInternalLinkIdentifier(internalLinkIdentifier.getId());
+        WebAssetFactory.createAsset(link, user.getUserId(), folder);
+        versionableAPI.setLive(link);
+
+        //Add create two links with different states
+        final String linkStr2= "link unpublish"+id;
+
+        myURL = new StringBuffer();
+        if (InodeUtils.isSet(internalLinkIdentifier.getHostId())) {
+            myURL.append(host.getHostname());
+        }
+        myURL.append(internalLinkIdentifier.getURI());
+
+        Link link2 = new Link();
+        link2.setTitle(linkStr2);
+        link2.setFriendlyName(linkStr2);
+        link2.setParent(folder.getInode());
+        link2.setTarget("_blank");
+        link2.setOwner(user.getUserId());
+        link2.setModUser(user.getUserId());
+        link2.setLinkType(Link.LinkType.INTERNAL.toString());
+        link2.setProtocal("http://");
+        link2.setUrl(myURL.toString());
+        link2.setInternalLinkIdentifier(internalLinkIdentifier.getId());
+        WebAssetFactory.createAsset(link2, user.getUserId(), folder);
+
+        // Get nav result, should get only one link
+        final NavResult navResult = new NavTool().getNav(host,folder.getPath(),1,user);
+        assertNotNull(navResult);
+        assertEquals(1,navResult.getChildren().size());
+
     }
 }
