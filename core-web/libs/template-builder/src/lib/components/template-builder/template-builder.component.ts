@@ -4,170 +4,26 @@ import {
     GridStack,
     GridStackElement,
     GridStackNode,
-    GridStackOptions,
     GridStackWidget
 } from 'gridstack';
-import { Observable, Subject } from 'rxjs';
+import { Observable } from 'rxjs';
 
 import {
     AfterViewInit,
     ChangeDetectionStrategy,
     Component,
     ElementRef,
+    OnDestroy,
     OnInit,
     QueryList,
     ViewChildren
 } from '@angular/core';
 
-import { scan, startWith } from 'rxjs/operators';
-
-type AddAction = (model: GridStackWidget[], payload: ActionPayload) => GridStackWidget[];
-type MoveAction = (model: GridStackWidget[], payload: ActionPayload[]) => GridStackWidget[];
-
-type WidgetType = {
-    col: ActionType;
-    row: ActionType;
-};
-
-type ActionType = {
-    add: AddAction;
-    yMove: MoveAction;
-    change?: MoveAction;
-};
-
-const WidgetActions: WidgetType = {
-    col: {
-        add: function (model: GridStackWidget[], payload: ActionPayload): GridStackWidget[] {
-            return model.map((item) => {
-                if (
-                    payload &&
-                    payload.parentId !== undefined &&
-                    item &&
-                    item.id !== undefined &&
-                    item.id === payload.parentId
-                ) {
-                    return {
-                        ...item,
-                        subGridOpts: {
-                            ...item.subGridOpts,
-                            children: [...(item.subGridOpts?.children || []), payload]
-                        }
-                    };
-                }
-
-                return item;
-            });
-        },
-        yMove: function (model: GridStackWidget[], changes: ActionPayload[]): GridStackWidget[] {
-            const [nodeToDelete, nodeToAdd] = changes;
-
-            return model.map((item) => {
-                if (item.id === nodeToDelete.parentId) {
-                    return {
-                        ...item,
-                        subGridOpts: {
-                            ...item.subGridOpts,
-                            children: item.subGridOpts?.children?.filter(
-                                (child) => child.id !== nodeToDelete.id
-                            ) // Filter the moved node
-                        }
-                    };
-                } else if (item.id === nodeToAdd.parentId) {
-                    return {
-                        ...item,
-                        subGridOpts: {
-                            ...item.subGridOpts,
-                            children: [...(item.subGridOpts?.children || []), nodeToAdd] // Add the node
-                        }
-                    };
-                }
-
-                return item;
-            });
-        },
-        change: function (model: GridStackWidget[], changes: ActionPayload[]): GridStackWidget[] {
-            return model.map((item) => {
-                if (item.id == changes[0].parentId)
-                    return {
-                        ...item,
-                        subGridOpts: {
-                            ...item.subGridOpts,
-                            children: item.subGridOpts?.children?.map((child) => {
-                                const newChild = changes.find((change) => change.id === child.id);
-
-                                if (newChild) {
-                                    return {
-                                        ...child,
-                                        ...newChild
-                                    };
-                                }
-
-                                return child;
-                            })
-                        }
-                    };
-
-                return item;
-            });
-        }
-    },
-    row: {
-        add: function (model: GridStackWidget[], payload: ActionPayload): GridStackWidget[] {
-            // When you add a widget, you add it to the grid and move the other ones
-            return [...model, payload];
-        },
-        yMove: function (model: GridStackWidget[], changes: ActionPayload[]): GridStackWidget[] {
-            changes.forEach(({ y, id }) => {
-                const rowIndex = model.findIndex((item) => item.id === id);
-                // So here I update the positions of the changed ones
-                if (rowIndex > -1) model[rowIndex] = { ...model[rowIndex], y };
-            });
-
-            return model;
-        }
-    }
-};
-
-/**
- * Check if the element is a column widget by checking the data-widget-type attribute
- *
- * @param {Element} el
- * @return {*}  {boolean}
- */
-function isAColumnWidget(el: Element): boolean {
-    return el.getAttribute('data-widget-type') === 'col' || el.classList.contains('sub');
-}
-
-/**
- * Check if the element is a row widget by checking the data-widget-type attribute
- *
- * @param {Element} el
- * @return {*}  {boolean}
- */
-function isARowWidget(el: Element): boolean {
-    return el.getAttribute('data-widget-type') === 'row';
-}
+import { DotTemplateBuilderStore } from './store/template-builder.store';
+import { gridOptions, subGridOptions } from './utils/options';
+import { DotGridStackWidget } from './utils/types';
 
 let ids = 4;
-
-const subOptions: GridStackOptions = {
-    cellHeight: 85,
-    column: 'auto',
-    margin: 10,
-    minRow: 1,
-    maxRow: 1,
-    acceptWidgets: isAColumnWidget
-};
-
-interface ActionPayload extends GridStackWidget {
-    parentId?: string;
-}
-
-type Action = {
-    widgetType: 'row' | 'col';
-    actionType: 'add' | 'yMove' | 'change';
-    payload: ActionPayload | ActionPayload[];
-};
 
 @Component({
     selector: 'template-builder',
@@ -175,9 +31,7 @@ type Action = {
     styleUrls: ['./template-builder.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class TemplateBuilderComponent implements OnInit, AfterViewInit {
-    private mySub$ = new Subject<Action>();
-
+export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestroy {
     public items$: Observable<GridStackWidget[]>;
 
     @ViewChildren('rows', {
@@ -192,8 +46,8 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit {
 
     grid!: GridStack;
 
-    constructor() {
-        const starter: GridStackWidget[] = [
+    constructor(private store: DotTemplateBuilderStore) {
+        const starter: DotGridStackWidget[] = [
             { x: 0, y: 0, w: 12, id: '1' },
             { x: 0, y: 1, w: 12, id: '2' },
             {
@@ -207,132 +61,62 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit {
             }
         ];
 
-        // HERE ARE CHANGES
-        this.items$ = this.mySub$.pipe(
-            scan((acc: GridStackWidget[], { widgetType, actionType, payload }: Action) => {
-                const newAcc = structuredClone(acc);
+        this.store.init(starter);
 
-                let widgetAction: AddAction | MoveAction;
-
-                if (actionType == 'add') {
-                    widgetAction = WidgetActions[widgetType].add;
-
-                    return widgetAction(newAcc, payload as ActionPayload);
-                } else if (actionType == 'yMove') {
-                    widgetAction = WidgetActions[widgetType].yMove;
-
-                    return widgetAction(newAcc, payload as ActionPayload[]);
-                } else if (actionType == 'change') {
-                    widgetAction = WidgetActions[widgetType].change as MoveAction;
-
-                    return widgetAction(newAcc, payload as ActionPayload[]);
-                }
-
-                return newAcc;
-            }, starter),
-            startWith(starter)
-        );
+        this.items$ = this.store.items$;
     }
 
     ngOnInit() {
-        GridStack.setupDragIn('.add', { appendTo: 'body', helper: 'clone' });
+        GridStack.setupDragIn('.add', {
+            appendTo: 'body',
+            helper: 'clone'
+        });
     }
 
     ngAfterViewInit() {
-        this.grid = GridStack.init({
-            disableResize: true,
-            cellHeight: 100,
-            margin: 10,
-            minRow: 1,
-            acceptWidgets: isARowWidget
-        }).on('change', (_: Event, nodes: GridStackNode[]) => {
-            const action: Action = {
-                widgetType: 'row',
-                actionType: 'yMove',
-                payload: nodes.map((node) => ({
+        this.grid = GridStack.init(gridOptions).on('change', (_: Event, nodes: GridStackNode[]) => {
+            this.store.moveRow(
+                nodes.map((node) => ({
                     y: node.y,
                     id: node.id as string,
                     parentId: node.grid?.parentGridItem?.id as string
                 }))
-            };
-            this.mySub$.next(action);
+            );
         });
 
         // Adding subgrids on load
-        // HERE ARE CHANGES
         Array.from(this.grid.el.querySelectorAll('.grid-stack')).forEach((el) => {
-            const subgrid = GridStack.addGrid(el as HTMLElement, subOptions);
+            const subgrid = GridStack.addGrid(el as HTMLElement, subGridOptions);
 
-            subgrid.on('change', (event: Event, nodes: GridStackNode[]) => {
-                const action: Action = {
-                    widgetType: 'col',
-                    actionType: 'change',
-                    payload: nodes.map((node) => ({
+            subgrid.on('change', (_: Event, nodes: GridStackNode[]) => {
+                this.store.updateColumn(
+                    nodes.map((node) => ({
                         x: node.x,
                         id: node.id as string,
                         parentId: node.grid?.parentGridItem?.id as string,
                         w: node.w
                     }))
-                };
-                this.mySub$.next(action);
+                );
             });
-            subgrid.on('dropped', (_: Event, oldNode: GridStackNode, newNode: GridStackNode) => {
-                // If there's an old one and a new one, then that means that a node moved
-                if (oldNode && newNode) {
-                    const action: Action = {
-                        widgetType: 'col',
-                        actionType: 'yMove',
-                        payload: [oldNode, newNode].map((node, i) => ({
-                            parentId: node.grid?.parentGridItem?.id as string,
-                            w: node.w,
-                            h: node.h,
-                            x: node.x,
-                            y: node.y,
-                            id: i ? String(ids++) : node.id
-                        }))
-                    };
-                    this.mySub$.next(action);
-                } else {
-                    const action: Action = {
-                        widgetType: 'col',
-                        actionType: 'add',
-                        payload: {
-                            parentId: newNode.grid?.parentGridItem?.id as string,
-                            w: newNode.w,
-                            h: newNode.h,
-                            x: newNode.x,
-                            y: newNode.y,
-                            id: String(ids++)
-                        }
-                    };
-                    this.mySub$.next(action);
 
-                    newNode.grid?.removeWidget(newNode.el as GridStackElement, true);
-                }
+            subgrid.on('dropped', (_: Event, oldNode: GridStackNode, newNode: GridStackNode) => {
+                this.subGridOnDropped(oldNode, newNode);
             });
         });
+
         this.grid.on('dropped', (_: Event, previousNode: GridStackNode, newNode: GridStackNode) => {
-            // console.log('grid dropped', previousNode);
             if (!newNode.el || previousNode) return;
 
             newNode.grid?.removeWidget(newNode.el, true, false);
 
-            // HERE ARE CHANGES
-            this.mySub$.next({
-                widgetType: 'row',
-                actionType: 'add',
-                payload: {
-                    w: 12,
-                    h: 1,
-                    x: 1,
-                    y: newNode.y,
-                    id: String(ids++),
-                    subGridOpts: {
-                        oneColumnSize: 320,
-                        maxRow: 1,
-                        cellHeight: 78,
-                        children: [{ x: 0, y: 0, w: 4, id: String(ids++) }]
-                    }
+            this.store.addRow({
+                w: 12,
+                h: 1,
+                x: 1,
+                y: newNode.y,
+                id: String(ids++),
+                subGridOpts: {
+                    children: []
                 }
             });
         });
@@ -348,7 +132,6 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit {
         });
 
         this.rows.changes.subscribe(() => {
-            // console.log('rows changed');
             const layout: GridStackWidget[] = [];
 
             this.rows.forEach((ref) => {
@@ -363,44 +146,10 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit {
                         const newGridElement = row.el.querySelector('.grid-stack') as HTMLElement;
 
                         // Adding subgrids on drop row
-                        GridStack.addGrid(newGridElement, subOptions).on(
+                        GridStack.addGrid(newGridElement, subGridOptions).on(
                             'dropped',
                             (_: Event, oldNode: GridStackNode, newNode: GridStackNode) => {
-                                // If there's an old one and a new one, then that means that a node moved
-                                if (oldNode && newNode) {
-                                    const action: Action = {
-                                        widgetType: 'col',
-                                        actionType: 'yMove',
-                                        payload: [oldNode, newNode].map((node, i) => ({
-                                            parentId: node.grid?.parentGridItem?.id as string,
-                                            w: node.w,
-                                            h: node.h,
-                                            x: node.x,
-                                            y: node.y,
-                                            id: i ? String(ids++) : node.id
-                                        }))
-                                    };
-                                    this.mySub$.next(action);
-                                } else {
-                                    const action: Action = {
-                                        widgetType: 'col',
-                                        actionType: 'add',
-                                        payload: {
-                                            parentId: newNode.grid?.parentGridItem?.id as string,
-                                            w: newNode.w,
-                                            h: newNode.h,
-                                            x: newNode.x,
-                                            y: newNode.y,
-                                            id: String(ids++)
-                                        }
-                                    };
-                                    this.mySub$.next(action);
-
-                                    newNode.grid?.removeWidget(
-                                        newNode.el as GridStackElement,
-                                        true
-                                    );
-                                }
+                                this.subGridOnDropped(oldNode, newNode);
                             }
                         );
                     }
@@ -413,7 +162,46 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit {
         });
     }
 
-    identify(index: number, w: GridStackWidget) {
+    ngOnDestroy(): void {
+        this.grid.destroy(true);
+    }
+
+    identify(_: number, w: GridStackWidget) {
         return w.id;
+    }
+
+    /**
+     * @description This is called when a widget is dropped in a subgrid
+     *
+     * @private
+     * @param {GridStackNode} oldNode This is not undefined when you dropped a widget that was on another subGrid
+     * @param {GridStackNode} newNode This is the newNode that was dropped
+     * @memberof TemplateBuilderComponent
+     */
+    private subGridOnDropped(oldNode: GridStackNode, newNode: GridStackNode) {
+        // If the oldNode exists, then the widget was dropped from another subgrid
+        if (oldNode && newNode) {
+            this.store.moveColumnInYAxis(
+                [oldNode, newNode].map((node, i) => ({
+                    parentId: node.grid?.parentGridItem?.id as string,
+                    w: node.w,
+                    h: node.h,
+                    x: node.x,
+                    y: node.y,
+                    id: i ? String(ids++) : node.id
+                }))
+            );
+        } else {
+            this.store.addColumn({
+                parentId: newNode.grid?.parentGridItem?.id as string,
+                w: newNode.w,
+                h: newNode.h,
+                x: newNode.x,
+                y: newNode.y,
+                id: String(ids++)
+            });
+
+            newNode.grid?.removeWidget(newNode.el as GridStackElement, true);
+        }
     }
 }
