@@ -106,6 +106,7 @@ describe('DotPageStore', () => {
     let dotPageTypesService: DotPageTypesService;
     let dotWorkflowsActionsService: DotWorkflowsActionsService;
     let dotPageWorkflowsActionsService: DotPageWorkflowsActionsService;
+    let dotWorkflowActionsFireService: DotWorkflowActionsFireService;
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
     let dotFavoritePageService: DotFavoritePageService;
     let dotLocalstorageService: DotLocalstorageService;
@@ -151,8 +152,10 @@ describe('DotPageStore', () => {
         dotHttpErrorManagerService = TestBed.inject(DotHttpErrorManagerService);
         dotWorkflowsActionsService = TestBed.inject(DotWorkflowsActionsService);
         dotPageWorkflowsActionsService = TestBed.inject(DotPageWorkflowsActionsService);
+        dotWorkflowActionsFireService = TestBed.inject(DotWorkflowActionsFireService);
         dotFavoritePageService = TestBed.inject(DotFavoritePageService);
         dotLocalstorageService = TestBed.inject(DotLocalstorageService);
+
 
         spyOn(dialogService, 'open').and.callThrough();
         spyOn(dotHttpErrorManagerService, 'handle');
@@ -593,16 +596,17 @@ describe('DotPageStore', () => {
         dotPageStore.state$.subscribe((data) => {
             const menuActions = data.pages.menuActions;
 
-            expect(menuActions.length).toEqual(8);
+            expect(menuActions.length).toEqual(9);
 
             expect(menuActions[0].label).toEqual('favoritePage.contextMenu.action.edit');
-            expect(menuActions[1].label).toEqual(undefined);
-            expect(menuActions[2].label).toEqual('Edit');
-            expect(menuActions[3].label).toEqual(mockWorkflowsActions[0].name);
-            expect(menuActions[4].label).toEqual(mockWorkflowsActions[1].name);
-            expect(menuActions[5].label).toEqual(mockWorkflowsActions[2].name);
-            expect(menuActions[6].label).toEqual('contenttypes.content.push_publish');
-            expect(menuActions[7].label).toEqual('contenttypes.content.add_to_bundle');
+            expect(menuActions[1].label).toEqual('favoritePage.dialog.delete.button');
+            expect(menuActions[2].label).toEqual(undefined);
+            expect(menuActions[3].label).toEqual('Edit');
+            expect(menuActions[4].label).toEqual(mockWorkflowsActions[0].name);
+            expect(menuActions[5].label).toEqual(mockWorkflowsActions[1].name);
+            expect(menuActions[6].label).toEqual(mockWorkflowsActions[2].name);
+            expect(menuActions[7].label).toEqual('contenttypes.content.push_publish');
+            expect(menuActions[8].label).toEqual('contenttypes.content.add_to_bundle');
 
             expect(data.pages.actionMenuDomId).toEqual('test1');
         });
@@ -632,6 +636,60 @@ describe('DotPageStore', () => {
             host_id: 'A',
             language_id: '1',
             url: '/index1'
+        });
+    });
+
+    it('should get all menu actions from a favorite page when page is archived', () => {
+        const error404 = mockResponseView(404, '/page', null, { message: 'error' });
+        spyOn(dotPageWorkflowsActionsService, 'getByUrl').and.returnValue(throwError(error404));
+
+        dotPageStore.showActionsMenu({
+            item: { ...favoritePagesInitialTestData[0], contentType: 'dotFavoritePage' },
+            actionMenuDomId: 'test1'
+        });
+
+        expect(dotPageWorkflowsActionsService.getByUrl).toHaveBeenCalledWith({
+            host_id: 'A',
+            language_id: '1',
+            url: '/index1'
+        });
+
+        dotPageStore.state$.subscribe((data) => {
+            expect(data.pages.menuActions.length).toEqual(2);
+            expect(data.pages.menuActions[0].label).toEqual('favoritePage.contextMenu.action.edit');
+            expect(data.pages.menuActions[1].label).toEqual('favoritePage.dialog.delete.button');
+        });
+    });
+
+    it('should delete a Favorite Pages value in store', () => {
+        const expectedInputArray = [
+            ...favoritePagesInitialTestData,
+            ...favoritePagesInitialTestData
+        ];
+        const testInode = '12345';
+
+        spyOn(dotWorkflowActionsFireService, 'deleteContentlet').and.returnValue(of(testInode));
+        spyOn(dotESContentService, 'get').and.returnValue(
+            of({
+                contentTook: 0,
+                jsonObjectView: {
+                    contentlets: expectedInputArray as unknown as DotCMSContentlet[]
+                },
+                queryTook: 1,
+                resultsSize: 4
+            })
+        );
+
+        dotPageStore.deleteFavoritePage(testInode);
+
+        dotPageStore.state$.subscribe((data) => {
+            expect(data.favoritePages.items).toEqual(expectedInputArray);
+            expect(data.favoritePages.showLoadMoreButton).toEqual(true);
+            expect(data.favoritePages.total).toEqual(expectedInputArray.length);
+        });
+        expect(dotESContentService.get).toHaveBeenCalledTimes(1);
+        expect(dotWorkflowActionsFireService.deleteContentlet).toHaveBeenCalledWith({
+            inode: testInode
         });
     });
 });
