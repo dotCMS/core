@@ -1139,6 +1139,11 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                     "Invalid Scheduling. End date must be after the start date");
 
             DotPreconditions.checkState(Duration.between(scheduling.startDate().get(),
+                            scheduling.endDate().get()).toDays() >= EXPERIMENTS_MIN_DURATION.get(),
+                    "Experiment duration must be at least "
+                            + EXPERIMENTS_MIN_DURATION.get() +" days. ");
+
+            DotPreconditions.checkState(Duration.between(scheduling.startDate().get(),
                             scheduling.endDate().get()).toDays() <= EXPERIMENTS_MAX_DURATION.get(),
                     "Experiment duration must be less than "
                             + EXPERIMENTS_MAX_DURATION.get() +" days. ");
