@@ -93,6 +93,16 @@ export class DotExperimentsConfigurationSchedulingAddComponent implements OnInit
         });
     }
 
+    /**
+     * Set min and max date for the End date
+     * @returns void
+     * @memberof DotExperimentsConfigurationSchedulingAddComponent
+     */
+    setDateBoundaries(): void {
+        this.setMinEndDate();
+        this.setMaxEndDate();
+    }
+
     private initForm() {
         this.vm$.pipe(take(1)).subscribe((data) => {
             this.form = new FormGroup({
@@ -118,11 +128,6 @@ export class DotExperimentsConfigurationSchedulingAddComponent implements OnInit
         } else {
             this.initialDate.setMinutes(30);
         }
-    }
-
-    setDateBoundaries(): void {
-        this.setMinEndDate();
-        this.setMaxEndDate();
     }
 
     /**
