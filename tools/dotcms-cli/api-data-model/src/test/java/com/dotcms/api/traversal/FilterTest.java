@@ -25,7 +25,8 @@ public class FilterTest {
 
         // Test when the path matches an include pattern
         Assertions.assertNotNull(filteredFolderView);
-        Assertions.assertEquals(3, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(3, filteredFolderView.subFolders().stream().
+                filter(FolderView::include).count());
         Assertions.assertEquals(5, filteredFolderView.assets().versions().size());
     }
 
@@ -43,7 +44,8 @@ public class FilterTest {
 
         // Test when the path matches an include pattern
         Assertions.assertNotNull(filteredFolderView);
-        Assertions.assertEquals(3, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(3, filteredFolderView.subFolders().stream().
+                filter(FolderView::include).count());
         Assertions.assertEquals(1, filteredFolderView.assets().versions().size());
     }
 
@@ -61,7 +63,8 @@ public class FilterTest {
 
         // Test when the path matches an include pattern
         Assertions.assertNotNull(filteredFolderView);
-        Assertions.assertEquals(3, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(3, filteredFolderView.subFolders().stream().
+                filter(FolderView::include).count());
         Assertions.assertEquals(3, filteredFolderView.assets().versions().size());
     }
 
@@ -79,7 +82,8 @@ public class FilterTest {
 
         // Test when the path matches an include pattern
         Assertions.assertNotNull(filteredFolderView);
-        Assertions.assertEquals(3, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(3, filteredFolderView.subFolders().stream().
+                filter(FolderView::include).count());
         Assertions.assertEquals(3, filteredFolderView.assets().versions().size());
     }
 
@@ -97,7 +101,8 @@ public class FilterTest {
 
         // Test when the path matches an include pattern
         Assertions.assertNotNull(filteredFolderView);
-        Assertions.assertEquals(3, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(3, filteredFolderView.subFolders().stream().
+                filter(FolderView::include).count());
         Assertions.assertEquals(5, filteredFolderView.assets().versions().size());
     }
 
@@ -116,7 +121,8 @@ public class FilterTest {
 
         // Test when the path matches an include pattern
         Assertions.assertNotNull(filteredFolderView);
-        Assertions.assertEquals(3, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(3, filteredFolderView.subFolders().stream().
+                filter(FolderView::include).count());
         Assertions.assertEquals(4, filteredFolderView.assets().versions().size());
     }
 
@@ -135,7 +141,8 @@ public class FilterTest {
 
         // Test when the path matches an include pattern
         Assertions.assertNotNull(filteredFolderView);
-        Assertions.assertEquals(0, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(0, filteredFolderView.subFolders().stream().
+                filter(FolderView::include).count());
         Assertions.assertEquals(1, filteredFolderView.assets().versions().size());
     }
 
@@ -154,7 +161,8 @@ public class FilterTest {
 
         // Test when the path matches an include pattern
         Assertions.assertNotNull(filteredFolderView);
-        Assertions.assertEquals(3, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(3, filteredFolderView.subFolders().stream().
+                filter(FolderView::include).count());
         Assertions.assertEquals(1, filteredFolderView.assets().versions().size());
     }
 
@@ -173,7 +181,8 @@ public class FilterTest {
 
         // Test when the path matches an include pattern
         Assertions.assertNotNull(filteredFolderView);
-        Assertions.assertEquals(3, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(3, filteredFolderView.subFolders().stream().
+                filter(FolderView::include).count());
         Assertions.assertEquals(1, filteredFolderView.assets().versions().size());
     }
 
@@ -192,7 +201,8 @@ public class FilterTest {
 
         // Test when the path matches an include pattern
         Assertions.assertNotNull(filteredFolderView);
-        Assertions.assertEquals(0, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(0, filteredFolderView.subFolders().stream().
+                filter(FolderView::include).count());
         Assertions.assertEquals(0, filteredFolderView.assets().versions().size());
     }
 
@@ -211,7 +221,8 @@ public class FilterTest {
 
         // Test when the path matches an include pattern
         Assertions.assertNotNull(filteredFolderView);
-        Assertions.assertEquals(0, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(0, filteredFolderView.subFolders().stream().
+                filter(FolderView::include).count());
         Assertions.assertEquals(0, filteredFolderView.assets().versions().size());
     }
 
@@ -230,7 +241,8 @@ public class FilterTest {
 
         // Test when the path matches an include pattern
         Assertions.assertNotNull(filteredFolderView);
-        Assertions.assertEquals(3, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(3, filteredFolderView.subFolders().stream().
+                filter(FolderView::include).count());
         Assertions.assertEquals(1, filteredFolderView.assets().versions().size());
     }
 
@@ -249,7 +261,8 @@ public class FilterTest {
 
         // Test when the path matches an include pattern
         Assertions.assertNotNull(filteredFolderView);
-        Assertions.assertEquals(1, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(1, filteredFolderView.subFolders().stream().
+                filter(FolderView::include).count());
         Assertions.assertEquals(1, filteredFolderView.assets().versions().size());
     }
 
@@ -268,7 +281,8 @@ public class FilterTest {
 
         // Test when the path matches an include pattern
         Assertions.assertNotNull(filteredFolderView);
-        Assertions.assertEquals(1, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(1, filteredFolderView.subFolders().stream().
+                filter(FolderView::include).count());
         Assertions.assertEquals(1, filteredFolderView.assets().versions().size());
     }
 
@@ -287,7 +301,8 @@ public class FilterTest {
 
         // Test when the path matches an include pattern
         Assertions.assertNotNull(filteredFolderView);
-        Assertions.assertEquals(0, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(0, filteredFolderView.subFolders().stream().
+                filter(FolderView::include).count());
         Assertions.assertEquals(0, filteredFolderView.assets().versions().size());
     }
 
@@ -306,7 +321,8 @@ public class FilterTest {
 
         // Test when the path matches an include pattern
         Assertions.assertNotNull(filteredFolderView);
-        Assertions.assertEquals(2, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(2, filteredFolderView.subFolders().stream().
+                filter(FolderView::include).count());
         Assertions.assertEquals(5, filteredFolderView.assets().versions().size());
     }
 
@@ -324,7 +340,8 @@ public class FilterTest {
 
         // Test when the path matches an include pattern
         Assertions.assertNotNull(filteredFolderView);
-        Assertions.assertEquals(3, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(3, filteredFolderView.subFolders().stream().
+                filter(FolderView::include).count());
         Assertions.assertEquals(4, filteredFolderView.assets().versions().size());
     }
 
@@ -342,7 +359,8 @@ public class FilterTest {
 
         // Test when the path matches an include pattern
         Assertions.assertNotNull(filteredFolderView);
-        Assertions.assertEquals(3, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(3, filteredFolderView.subFolders().stream().
+                filter(FolderView::include).count());
         Assertions.assertEquals(3, filteredFolderView.assets().versions().size());
     }
 
@@ -360,7 +378,8 @@ public class FilterTest {
 
         // Test when the path matches an include pattern
         Assertions.assertNotNull(filteredFolderView);
-        Assertions.assertEquals(0, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(0, filteredFolderView.subFolders().stream().
+                filter(FolderView::include).count());
         Assertions.assertEquals(5, filteredFolderView.assets().versions().size());
     }
 
@@ -378,7 +397,8 @@ public class FilterTest {
 
         // Test when the path matches an include pattern
         Assertions.assertNotNull(filteredFolderView);
-        Assertions.assertEquals(0, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(0, filteredFolderView.subFolders().stream().
+                filter(FolderView::include).count());
         Assertions.assertEquals(5, filteredFolderView.assets().versions().size());
     }
 
@@ -397,7 +417,8 @@ public class FilterTest {
 
         // Test when the path matches an include pattern
         Assertions.assertNotNull(filteredFolderView);
-        Assertions.assertEquals(0, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(0, filteredFolderView.subFolders().stream().
+                filter(FolderView::include).count());
         Assertions.assertEquals(3, filteredFolderView.assets().versions().size());
     }
 
@@ -416,7 +437,8 @@ public class FilterTest {
 
         // Test when the path matches an include pattern
         Assertions.assertNotNull(filteredFolderView);
-        Assertions.assertEquals(0, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(0, filteredFolderView.subFolders().stream().
+                filter(FolderView::include).count());
         Assertions.assertEquals(2, filteredFolderView.assets().versions().size());
     }
 
@@ -435,7 +457,8 @@ public class FilterTest {
 
         // Test when the path matches an include pattern
         Assertions.assertNotNull(filteredFolderView);
-        Assertions.assertEquals(1, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(1, filteredFolderView.subFolders().stream().
+                filter(FolderView::include).count());
         Assertions.assertEquals(5, filteredFolderView.assets().versions().size());
     }
 
@@ -454,7 +477,8 @@ public class FilterTest {
 
         // Test when the path matches an include pattern
         Assertions.assertNotNull(filteredFolderView);
-        Assertions.assertEquals(0, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(0, filteredFolderView.subFolders().stream().
+                filter(FolderView::include).count());
         Assertions.assertEquals(2, filteredFolderView.assets().versions().size());
     }
 
@@ -474,7 +498,8 @@ public class FilterTest {
 
         // Test when the path matches an include pattern
         Assertions.assertNotNull(filteredFolderView);
-        Assertions.assertEquals(3, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(3, filteredFolderView.subFolders().stream().
+                filter(FolderView::include).count());
         Assertions.assertEquals(3, filteredFolderView.assets().versions().size());
     }
 
@@ -494,7 +519,8 @@ public class FilterTest {
 
         // Test when the path matches an include pattern
         Assertions.assertNotNull(filteredFolderView);
-        Assertions.assertEquals(0, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(0, filteredFolderView.subFolders().stream().
+                filter(FolderView::include).count());
         Assertions.assertEquals(0, filteredFolderView.assets().versions().size());
     }
 
@@ -514,7 +540,8 @@ public class FilterTest {
 
         // Test when the path matches an include pattern
         Assertions.assertNotNull(filteredFolderView);
-        Assertions.assertEquals(3, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(3, filteredFolderView.subFolders().stream().
+                filter(FolderView::include).count());
         Assertions.assertEquals(0, filteredFolderView.assets().versions().size());
     }
 
@@ -534,7 +561,8 @@ public class FilterTest {
 
         // Test when the path matches an include pattern
         Assertions.assertNotNull(filteredFolderView);
-        Assertions.assertEquals(3, filteredFolderView.subFolders().size());
+        Assertions.assertEquals(3, filteredFolderView.subFolders().stream().
+                filter(FolderView::include).count());
         Assertions.assertEquals(3, filteredFolderView.assets().versions().size());
     }
 
