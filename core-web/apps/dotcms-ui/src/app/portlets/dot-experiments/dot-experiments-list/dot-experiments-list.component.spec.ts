@@ -19,7 +19,7 @@ import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-i
 import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { DotMessagePipe } from '@dotcms/app/view/pipes';
 import { DotMessageService } from '@dotcms/data-access';
-import { ComponentStatus } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotExperimentStatusList } from '@dotcms/dotcms-models';
 import { DotIconModule } from '@dotcms/ui';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotExperimentsCreateComponent } from '@portlets/dot-experiments/dot-experiments-list/components/dot-experiments-create/dot-experiments-create.component';
@@ -177,9 +177,100 @@ describe('ExperimentsListComponent', () => {
 
     it('should go to Configuration Container', () => {
         spectator.detectComponentChanges();
-        spectator.component.goToViewExperimentReport(EXPERIMENT_MOCK);
+        spectator.component.gotToConfigurationAction(EXPERIMENT_MOCK);
+        expect(router.navigate).toHaveBeenCalledWith(
+            [
+                '/edit-page/experiments/',
+                EXPERIMENT_MOCK.pageId,
+                EXPERIMENT_MOCK.id,
+                'configuration'
+            ],
+            {
+                queryParams: {
+                    mode: null,
+                    variantName: null,
+                    experimentId: null
+                },
+                queryParamsHandling: 'merge'
+            }
+        );
+    });
+
+    it('should go to report Container if the experiment status is RUNNING', () => {
+        spectator.detectComponentChanges();
+        spectator.component.goToContainerAction({
+            ...EXPERIMENT_MOCK,
+            status: DotExperimentStatusList.RUNNING
+        });
         expect(router.navigate).toHaveBeenCalledWith(
             ['/edit-page/experiments/', EXPERIMENT_MOCK.pageId, EXPERIMENT_MOCK.id, 'reports'],
+            {
+                queryParams: {
+                    mode: null,
+                    variantName: null,
+                    experimentId: null
+                },
+                queryParamsHandling: 'merge'
+            }
+        );
+    });
+
+    it('should go to report Container if the experiment status is ENDED', () => {
+        spectator.detectComponentChanges();
+        spectator.component.goToContainerAction({
+            ...EXPERIMENT_MOCK,
+            status: DotExperimentStatusList.ENDED
+        });
+        expect(router.navigate).toHaveBeenCalledWith(
+            ['/edit-page/experiments/', EXPERIMENT_MOCK.pageId, EXPERIMENT_MOCK.id, 'reports'],
+            {
+                queryParams: {
+                    mode: null,
+                    variantName: null,
+                    experimentId: null
+                },
+                queryParamsHandling: 'merge'
+            }
+        );
+    });
+
+    it('should go to configuration Container if the experiment status is DRAFT', () => {
+        spectator.detectComponentChanges();
+        spectator.component.goToContainerAction({
+            ...EXPERIMENT_MOCK,
+            status: DotExperimentStatusList.DRAFT
+        });
+        expect(router.navigate).toHaveBeenCalledWith(
+            [
+                '/edit-page/experiments/',
+                EXPERIMENT_MOCK.pageId,
+                EXPERIMENT_MOCK.id,
+                'configuration'
+            ],
+            {
+                queryParams: {
+                    mode: null,
+                    variantName: null,
+                    experimentId: null
+                },
+                queryParamsHandling: 'merge'
+            }
+        );
+    });
+
+    it('should go to configuration Container if the experiment status is SCHEDULED', () => {
+        spectator.detectComponentChanges();
+        spectator.component.goToContainerAction({
+            ...EXPERIMENT_MOCK,
+            status: DotExperimentStatusList.SCHEDULED
+        });
+        expect(router.navigate).toHaveBeenCalledWith(
+            [
+                '/edit-page/experiments/',
+                EXPERIMENT_MOCK.pageId,
+                EXPERIMENT_MOCK.id,
+                'configuration'
+            ],
             {
                 queryParams: {
                     mode: null,
