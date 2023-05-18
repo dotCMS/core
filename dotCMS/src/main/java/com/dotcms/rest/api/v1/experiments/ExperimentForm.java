@@ -152,7 +152,7 @@ public class ExperimentForm extends Validated {
                         .getDefaultObjectMapper();
                 final Map<String, Object> metric = (Map<String, Object>) goalsMapInput.get("primary");
                 final String type = metric.get("type").toString();
-                final Map<String, Object> goalsMap  = map("metric", metric, "type", type);
+                final Map<String, Object> goalsMap  = map("primary", map("metric", metric), "type", type);
                 final String json = defaultObjectMapper.writeValueAsString(goalsMap);
 
                 this.goals = defaultObjectMapper.readValue(json, Goals.class);
