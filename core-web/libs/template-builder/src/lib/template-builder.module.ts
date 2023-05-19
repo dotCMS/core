@@ -1,7 +1,13 @@
+import { AsyncPipe, NgFor } from '@angular/common';
 import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
+import { DotTemplateBuilderStore } from './components/template-builder/store/template-builder.store';
+import { TemplateBuilderComponent } from './components/template-builder/template-builder.component';
 
 @NgModule({
-    imports: [CommonModule]
+    imports: [NgFor, AsyncPipe],
+    declarations: [TemplateBuilderComponent],
+    providers: [DotTemplateBuilderStore],
+    exports: [TemplateBuilderComponent]
 })
 export class TemplateBuilderModule {}
