@@ -19,11 +19,15 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.glassfish.jersey.server.JSONP;
 
+/**
+ * Web Assets Resource
+ * <p> This resource is responsible for handling requests for web assets. </p>
+ * <p> An Asset is a File or Folder </p>
+ */
 @Path("/v1/assets")
 public class WebAssetResource {
 
-    WebAssetHelper helper = new WebAssetHelper();
-
+    private final WebAssetHelper helper = WebAssetHelper.newInstance();
 
     @Path("/")
     @POST
@@ -42,7 +46,9 @@ public class WebAssetResource {
                 .rejectWhenNoUser(true).init();
 
         final User user = initDataObject.getUser();
-        Logger.info(this, String.format("User [%s] is requesting assets info for path [%s]", user.getUserId(), form.assetPath()));
+        Logger.info(this,
+                String.format("User [%s] is requesting assets info for path [%s]", user.getUserId(),
+                        form.assetPath()));
         final WebAssetView asset = helper.getAsset(form.assetPath(), user);
         return Response.ok(new WebAssetEntityView(asset)).build();
     }

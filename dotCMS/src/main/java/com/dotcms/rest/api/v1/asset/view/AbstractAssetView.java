@@ -1,7 +1,9 @@
 package com.dotcms.rest.api.v1.asset.view;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import java.io.Serializable;
 import java.time.Instant;
+import java.util.Map;
 import org.immutables.value.Value;
 
 @Value.Style(typeImmutable="*", typeAbstract="Abstract*")
@@ -9,13 +11,13 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = AssetView.Builder.class)
 public interface AbstractAssetView  {
 
-    String path();
     String name();
-    Instant modDate();
     String identifier();
     String inode();
-    String sha256();
-    Long size();
+    Instant modDate();
     boolean live();
     String lang();
+    long sortOrder();
+
+    Map<String, Object> metadata();
 }

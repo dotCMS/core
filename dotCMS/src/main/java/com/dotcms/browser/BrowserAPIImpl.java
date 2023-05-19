@@ -58,10 +58,10 @@ public class BrowserAPIImpl implements BrowserAPI {
     private final ShortyIdAPI shortyIdAPI = APILocator.getShortyAPI();
     private final ContentletAPI contentletAPI = APILocator.getContentletAPI();
     private static final StringBuilder POSTGRES_ASSETNAME_COLUMN = new StringBuilder(ContentletJsonAPI
-            .CONTENTLET_AS_JSON).append("-> 'fields' -> ").append("'asset' -> 'metadata' ->> ").append("'name' ");
+            .CONTENTLET_AS_JSON).append("-> 'fields' -> ").append("'fileName' ->> 'value' ");
 
     private static final StringBuilder MSSQL_ASSETNAME_COLUMN = new StringBuilder("JSON_VALUE(c.").append
-            (ContentletJsonAPI.CONTENTLET_AS_JSON).append(", '$.fields.").append("asset.metadata.").append("name')" +
+            (ContentletJsonAPI.CONTENTLET_AS_JSON).append(", '$.fields.").append("fileName.").append("value')" +
             " ");
 
     private static final StringBuilder ASSET_NAME_LIKE = new StringBuilder().append("LOWER(%s) LIKE ? ");

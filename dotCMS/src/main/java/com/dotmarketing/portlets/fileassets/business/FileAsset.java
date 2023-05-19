@@ -114,6 +114,13 @@ public class FileAsset extends Contentlet implements IFileAsset {
 		return  Try.of(()-> getMetadata().getWidth()).getOrElse(0);
 	}
 
+	public String getFileTitle() {
+		return  Try.of(()-> getMetadata().getTitle()).getOrElse("unknown");
+	}
+
+	public boolean isImage() {
+		return Try.of(()-> getMetadata().isImage()).getOrElse(false);
+	}
 
   /**
    * This gives you access to the physical file on disk.

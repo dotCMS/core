@@ -9,26 +9,39 @@ import java.util.List;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
+/**
+ * Folder View is a json representation of a folder
+ */
 @Value.Style(typeImmutable="*", typeAbstract="Abstract*")
 @Value.Immutable
 @JsonDeserialize(as = FolderView.Builder.class)
 @JsonInclude(Include.NON_EMPTY)
 public interface AbstractFolderView extends WebAssetView {
 
-        String path();
-
         String name();
 
+        @Nullable
+        String title();
+
+        String path();
         Instant modDate();
-
         String identifier();
-
         String inode();
+
+        @Nullable
+        Boolean showOnMenu();
+
+        @Nullable
+        Integer sortOrder();
+        String host();
+        @Nullable
+        String filesMasks();
+        @Nullable
+        String defaultFileType();
 
         @Nullable
         @JsonUnwrapped
         AssetVersionsView assets();
-
         @Nullable
         List<FolderView> subFolders();
 }

@@ -1,6 +1,5 @@
 package com.dotcms.rest.api.v1.asset;
 
-import com.dotcms.api.tree.TreeableAPI;
 import com.dotcms.browser.BrowserAPI;
 import com.dotcms.browser.BrowserQuery;
 import com.dotcms.browser.BrowserQuery.Builder;
@@ -10,27 +9,28 @@ import com.dotcms.rest.api.v1.asset.view.AssetView;
 import com.dotcms.rest.api.v1.asset.view.FolderView;
 import com.dotcms.rest.api.v1.asset.view.WebAssetView;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
-import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
+/**
+ * In typical dotCMS resource fashion this class is responsible for undertaking the heavy lifting
+ * Our Resource classes are responsible for handling the request and response. and call out to helpers
+ */
 public class WebAssetHelper {
 
     LanguageAPI languageAPI;
@@ -39,7 +39,13 @@ public class WebAssetHelper {
 
     BrowserAPI browserAPI;
 
-    public WebAssetHelper(
+    /**
+     * Constructor for testing
+     * @param languageAPI
+     * @param fileAssetAPI
+     * @param browserAPI
+     */
+    WebAssetHelper(
             final LanguageAPI languageAPI,
             final FileAssetAPI fileAssetAPI, final BrowserAPI browserAPI) {
         this.languageAPI = languageAPI;
@@ -47,13 +53,26 @@ public class WebAssetHelper {
         this.browserAPI = browserAPI;
     }
 
-    public WebAssetHelper() {
+    /**
+     * Default constructor
+     */
+    WebAssetHelper() {
         this(
                 APILocator.getLanguageAPI(),
                 APILocator.getFileAssetAPI(),
-                APILocator.getBrowserAPI());
+                APILocator.getBrowserAPI()
+        );
     }
 
+    /**
+     * Entry point here it is determined if the path is a folder or an asset.
+     * If it is a folder it will return a FolderView, if it is an asset it will return an AssetView
+     * @param path
+     * @param user
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     public WebAssetView getAsset(final String path, final User user)
             throws DotDataException, DotSecurityException {
 
@@ -78,6 +97,7 @@ public class WebAssetHelper {
                 .showContent(true);
 
         if (null != assetName) {
+            Logger.debug(this, String.format("Asset name: [%s]" , assetName));
             //We're requesting an asset specifically therefore we need to find it and  build the response
             if(folder.isSystemFolder()){
                 builder.withHostOrFolderId(host.getIdentifier());
@@ -94,6 +114,7 @@ public class WebAssetHelper {
                     .versions(toAssets(assets))
                     .build();
         } else {
+            Logger.debug(this, String.format("Retrieving a folder by name: [%s] " , folder.getName()));
             final List<Treeable> folderContent;
             //We're requesting a folder and all of its contents
             final List<Folder> subFolders;
@@ -116,6 +137,10 @@ public class WebAssetHelper {
                     .map(f -> (Contentlet) f).collect(Collectors.toList());
 
             return FolderView.builder()
+                    .sortOrder(folder.getSortOrder())
+                    .filesMasks(folder.getFilesMasks())
+                    .defaultFileType(folder.getDefaultFileType())
+                    .host(folder.getHostId())
                     .path(folder.getPath())
                     .name(folder.getName())
                     .modDate(folder.getModDate().toInstant())
@@ -129,6 +154,11 @@ public class WebAssetHelper {
         }
     }
 
+    /**
+     * Converts a list of folders to a list of {@link FolderView}
+     * @param assets folders to convert
+     * @return list of {@link FolderView}
+     */
     Iterable<AssetView> toAssets(final List<Treeable> assets) {
         return assets.stream().filter(Contentlet.class::isInstance).map(Contentlet.class::cast)
                 .filter(Contentlet::isFileAsset)
@@ -136,6 +166,11 @@ public class WebAssetHelper {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Converts a file asset to a {@link AssetView}
+     * @param fileAsset file asset to convert
+     * @return {@link AssetView}
+     */
     AssetView toAsset(final FileAsset fileAsset) {
         final Language language = languageAPI.getLanguage(fileAsset.getLanguageId());
         final boolean live = Try.of(fileAsset::isLive)
@@ -145,30 +180,66 @@ public class WebAssetHelper {
                     return false;
                 });
 
+        final Map<String, ? extends Serializable> metadata = Map.of(
+                "name", fileAsset.getUnderlyingFileName(),
+                "title", fileAsset.getFileTitle(),
+                "path", fileAsset.getPath(),
+                "sha256", fileAsset.getSha256(),
+                "contentType", fileAsset.getMimeType(),
+                "size", fileAsset.getFileSize(),
+                "isImage", fileAsset.isImage(),
+                "width", fileAsset.getWidth(),
+                "height", fileAsset.getHeight(),
+                "modDate", fileAsset.getModDate().toInstant()
+        );
+
         return AssetView.builder()
+                .sortOrder(fileAsset.getSortOrder())
                 .name(fileAsset.getFileName())
                 .modDate(fileAsset.getModDate().toInstant())
                 .identifier(fileAsset.getIdentifier())
                 .inode(fileAsset.getInode())
-                .path(fileAsset.getPath())
-                .sha256(fileAsset.getSha256())
-                .size(fileAsset.getFileSize())
                 .live(live)
                 .lang(language.toString())
+                .metadata(metadata)
                 .build();
     }
 
+    /**
+     * Converts a list of folders to a list of {@link FolderView}
+     * @param subFolders The folders to convert
+     * @return list of {@link FolderView}
+     */
     Iterable<FolderView> toAssetFolders(final List<Folder> subFolders) {
         return subFolders.stream().map(this::toAssetsFolder).collect(Collectors.toList());
     }
 
+    /**
+     * Converts a folder to a {@link FolderView}
+     * @param folder The folder to convert
+     * @return {@link FolderView}
+     */
     FolderView toAssetsFolder(final Folder folder) {
         return FolderView.builder()
                 .path(folder.getPath())
                 .name(folder.getName())
+                .title(folder.getTitle())
+                .host(folder.getHostId())
+                .filesMasks(folder.getFilesMasks())
+                .defaultFileType(folder.getDefaultFileType())
+                .showOnMenu(folder.isShowOnMenu())
                 .modDate(folder.getModDate().toInstant())
                 .identifier(folder.getIdentifier())
                 .inode(folder.getInode())
                 .build();
     }
+
+    /**
+     * Creates a new instance of {@link WebAssetHelper}
+     * @return {@link WebAssetHelper}
+     */
+    public static WebAssetHelper newInstance(){
+        return new WebAssetHelper();
+    }
+
 }

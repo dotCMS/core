@@ -22,6 +22,12 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Optional;
 
+/**
+ * This class is responsible for resolving a path to an asset. The path can be a folder or an asset.
+ * Inorder to determine what is getting requested a little bit of parsing is required.
+ * So this class takes the uri and a user then tries to determine the host and folder path
+ * if we're unable to determine a folder then we'll try to determine an asset.
+ */
 public class AssetPathResolver {
 
     FolderAPI folderAPI;
@@ -36,10 +42,19 @@ public class AssetPathResolver {
         this.hostAPI = hostAPI;
     }
 
+    /**
+     * Main entry point for resolving a path to an asset. This method will attempt to resolve the path to a folder or
+     * @param url
+     * @param user
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     public ResolvedAssetAndPath resolve(final String url, final User user)
             throws DotDataException, DotSecurityException {
 
         try {
+            Logger.debug(this, String.format("Resolving url: [%s] " , url));
             final URI uri = new URI(url);
             final Optional<Host> siteByName = resolveHosBytName(uri.getHost(), user);
             if(siteByName.isEmpty()){
@@ -87,6 +102,15 @@ public class AssetPathResolver {
         }
     }
 
+    /**
+     * First thing we need to do is resolve the site portion from the uri.
+     * If we fail then no need to continue.
+     * @param hostName
+     * @param user
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     Optional<Host> resolveHosBytName(final String hostName, final User user) throws DotDataException, DotSecurityException {
             Preconditions.checkNotEmpty(hostName,IllegalArgumentException.class, String.format("can not resolve a valid hostName [%s]", hostName));
             final Host siteByName = hostAPI.findByName(hostName, user, false);
@@ -96,6 +120,15 @@ public class AssetPathResolver {
             return Optional.empty();
     }
 
+    /**
+     *
+     * @param rawPath
+     * @param host
+     * @param user
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     Optional<Folder> resolveFolder(final String rawPath, final Host host, final User user) throws DotDataException, DotSecurityException {
         Preconditions.checkNotEmpty(rawPath,IllegalArgumentException.class, String.format("Failed determining path from [%s].", rawPath));
         String path = BLANK.equals(rawPath) ? FORWARD_SLASH : rawPath;
@@ -108,17 +141,27 @@ public class AssetPathResolver {
         return Optional.empty();
     }
 
+    /**
+     * here we test a specific case we try to resolve anything that matches a pattern like forward slash followed by a string
+     *
+     * @param rawPath
+     * @param host
+     * @param user
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     Optional<FolderAndAsset> resolveAssetAndFolder(final String rawPath, final Host host, final User user)
             throws DotDataException, DotSecurityException {
         final String startsWithForwardSlash = "^\\/[a-zA-Z0-9\\.\\-]+$";
-        // if our path and a path then we're looking at file asset in the root folder
+        // if our path starts with / followed by a string  then we're looking at file asset in the root folder
         if(rawPath.matches(startsWithForwardSlash)){
             final String[] split = rawPath.split(FORWARD_SLASH, 2);
             return  Optional.of(
                     FolderAndAsset.builder().folder(folderAPI.findSystemFolder()).asset(split[1]).build()
            );
         }
-
+        //if we're not looking at the root folder then we need to extract the parent folder and the asset name
         final int index = rawPath.lastIndexOf(FORWARD_SLASH);
         if(index == -1){
             return Optional.empty();

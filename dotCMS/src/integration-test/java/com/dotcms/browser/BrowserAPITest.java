@@ -640,4 +640,46 @@ public class BrowserAPITest extends IntegrationTestBase {
         assertNotNull(result);
     }
 
+
+    /**
+     * Generally speaking in most cases when a file is uploaded title and file name are the same.
+     * But this is not always the case. Since we can upload a file via workflows and the title is not required.
+     * Or it can take any value.
+     * Given scenario: A folder with a file asset with no title.
+     * Expected result: We query using the file name The file asset should be returned by the API.
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws IOException
+     */
+    @Test
+    public void getFolderContent_searchAssetWithNoTitleUsingFilter_Expect_Results()
+            throws DotDataException, DotSecurityException, IOException {
+
+        final File file = FileUtil.createTemporaryFile("lol", ".txt", "lol");
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final Contentlet contentlet = new FileAssetDataGen(folder, file).title("testFileAsset1").languageId(1).nextPersisted();
+        final FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
+        //Title is different from file name to test the filter
+
+        final User user = APILocator.systemUser();
+
+        final BrowserQuery browserQuery = BrowserQuery.builder()
+                .withUser(user)
+                .maxResults(1)
+                .withHostOrFolderId(folder.getIdentifier())
+                .withFilter(fileAsset.getFileName())
+                .showWorking(true)
+                .showArchived(false)
+                .showFolders(false)
+                .showFiles(true)
+                .showContent(true)
+                .withLanguageId(1)
+                .showDotAssets(false)
+                .build();
+
+        final List<Contentlet> contentletList = this.browserAPI.getContentUnderParentFromDB(browserQuery);
+        assertFalse(contentletList.isEmpty());
+
+    }
+
 }
