@@ -11,7 +11,7 @@ import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLNonNull;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.Set;
 
 /**
  * Singleton class that provides all the {@link GraphQLFieldDefinition}s needed for the Page API
@@ -23,7 +23,7 @@ public enum PageAPIGraphQLFieldsProvider implements GraphQLFieldsProvider {
     @Override
     public Collection<GraphQLFieldDefinition> getFields() throws DotDataException {
 
-        return Collections.singleton(newFieldDefinition()
+        return Set.of(newFieldDefinition()
                 .name("page")
                 .argument(GraphQLArgument.newArgument()
                         .name("url")

@@ -29,6 +29,7 @@ enum DateFormat {
 }
 
 export enum FieldWhiteList {
+    'Story-Block' = 'Story-Block',
     Text = 'Text',
     Textarea = 'Textarea',
     Checkbox = 'Checkbox',

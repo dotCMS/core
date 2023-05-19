@@ -30,6 +30,7 @@
             "@dotcms/dotcms-models": ["libs/dotcms-models/src/index.ts"],
             "@dotcms/dotcms-webcomponents": ["libs/dotcms-webcomponents/src/index.ts"],
             "@dotcms/dotcms-webcomponents/loader": ["dist/libs/dotcms-webcomponents/loader"],
+            "@dotcms/template-builder": ["libs/template-builder/src/index.ts"],
             "@dotcms/ui": ["libs/ui/src/index.ts"],
             "@dotcms/utils": ["libs/utils/src"],
             "@dotcms/utils-testing": ["libs/utils-testing/src/index.ts"],

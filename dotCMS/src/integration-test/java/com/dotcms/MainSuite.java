@@ -121,6 +121,7 @@ import com.dotmarketing.image.filter.ImageFilterAPIImplTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.osgi.GenericBundleActivatorTest;
 import com.dotmarketing.portlets.browser.BrowserUtilTest;
+import com.dotmarketing.portlets.browser.ajax.BrowserAjaxTest;
 import com.dotmarketing.portlets.categories.business.CategoryFactoryTest;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactoryTest;
 import com.dotmarketing.portlets.containers.business.ContainerFactoryImplTest;
@@ -133,24 +134,6 @@ import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImplIntegration
 import com.dotmarketing.portlets.fileassets.business.FileAssetFactoryIntegrationTest;
 import com.dotmarketing.portlets.folders.business.FolderFactoryImplTest;
 import com.dotmarketing.portlets.folders.model.FolderTest;
-import com.dotmarketing.portlets.rules.actionlet.PersonaActionletTest;
-import com.dotmarketing.portlets.rules.actionlet.SendRedirectActionletTest;
-import com.dotmarketing.portlets.rules.actionlet.SetRequestAttributeActionletTest;
-import com.dotmarketing.portlets.rules.actionlet.StopProcessingActionletTest;
-import com.dotmarketing.portlets.rules.conditionlet.DateTimeConditionletTest;
-import com.dotmarketing.portlets.rules.conditionlet.HttpMethodConditionletTest;
-import com.dotmarketing.portlets.rules.conditionlet.PagesViewedConditionletTest;
-import com.dotmarketing.portlets.rules.conditionlet.PersonaConditionletTest;
-import com.dotmarketing.portlets.rules.conditionlet.ReferrerURLConditionletTest;
-import com.dotmarketing.portlets.rules.conditionlet.RequestAttributeConditionletTest;
-import com.dotmarketing.portlets.rules.conditionlet.RequestHeaderConditionletTest;
-import com.dotmarketing.portlets.rules.conditionlet.RequestParameterConditionletTest;
-import com.dotmarketing.portlets.rules.conditionlet.SessionAttributeConditionletTest;
-import com.dotmarketing.portlets.rules.conditionlet.UsersBrowserConditionletTest;
-import com.dotmarketing.portlets.rules.conditionlet.UsersCountryConditionletTest;
-import com.dotmarketing.portlets.rules.conditionlet.UsersPlatformConditionletTest;
-import com.dotmarketing.portlets.rules.conditionlet.VisitorsCurrentURLConditionletTest;
-import com.dotmarketing.portlets.rules.conditionlet.VisitorsGeolocationConditionletTest;
 import com.dotmarketing.portlets.templates.business.FileAssetTemplateUtilTest;
 import com.dotmarketing.portlets.templates.business.TemplateFactoryImplTest;
 import com.dotmarketing.portlets.workflows.actionlet.MoveContentActionletTest;
@@ -215,6 +198,7 @@ import com.dotmarketing.startup.runonce.Task220928AddLookbackWindowColumnToExper
 import com.dotmarketing.startup.runonce.Task221007AddVariantIntoPrimaryKeyTest;
 import com.dotmarketing.startup.runonce.Task230110MakeSomeSystemFieldsRemovableByBaseTypeTest;
 import com.dotmarketing.startup.runonce.Task230328AddMarkedForDeletionColumnTest;
+import com.dotmarketing.startup.runonce.Task230426AlterVarcharLengthOfLockedByColTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
@@ -644,11 +628,13 @@ import org.junit.runners.Suite.SuiteClasses;
         ManifestUtilTest.class,
         ZipUtilTest.class,
         Task230110MakeSomeSystemFieldsRemovableByBaseTypeTest.class,
+        BrowserAjaxTest.class,
         PopulateContentletAsJSONUtilTest.class,
         PopulateContentletAsJSONJobTest.class,
         ContentTypeDestroyAPIImplTest.class,
         Task230328AddMarkedForDeletionColumnTest.class,
         StartupTasksExecutorDataTest.class,
+        Task230426AlterVarcharLengthOfLockedByColTest.class
 //        AnalyticsAPIImplTest.class,
 //        AccessTokenRenewJobTest.class,
 })

@@ -90,7 +90,7 @@ public class DashboardDataGeneratorImpl extends DashboardDataGenerator{
 
 	long rowCount = 0;
 
-	private List<String> errors =  new ArrayList<String>();
+	private List<String> errors =  new ArrayList<>();
 
 	public void setFlag(boolean flag){
 		this.flag = flag;
@@ -148,11 +148,11 @@ public class DashboardDataGeneratorImpl extends DashboardDataGenerator{
 
 
 
-	private static Map<String, ArrayList<Map<String, Object>>> results404 = new HashMap<String, ArrayList<Map<String, Object>>>();
+	private static Map<String, ArrayList<Map<String, Object>>> results404 = new HashMap<>();
 
-	private static Map<String, ArrayList<Map<String, Object>>> content = new HashMap<String, ArrayList<Map<String, Object>>>();
+	private static Map<String, ArrayList<Map<String, Object>>> content = new HashMap<>();
 
-	private static Map<String, ArrayList<Map<String, Object>>> pages = new HashMap<String, ArrayList<Map<String, Object>>>();
+	private static Map<String, ArrayList<Map<String, Object>>> pages = new HashMap<>();
 
 
 	public synchronized void start(){
@@ -179,23 +179,23 @@ public class DashboardDataGeneratorImpl extends DashboardDataGenerator{
 
 		List<Host> hosts = APILocator.getHostAPI().findAll(APILocator.getUserAPI().getSystemUser(), false);
 
-		Map<Integer, List<Integer>> yearMonths = new HashMap<Integer, List<Integer>>();
+		Map<Integer, List<Integer>> yearMonths = new HashMap<>();
 		List<Integer> months = null;
 		for(int year=yearFrom;year<=yearTo;year++){
 			if(year==yearFrom){
-				months = new ArrayList<Integer>();
+				months = new ArrayList<>();
 				for(int i = monthFrom-1; i<=11 ;i++ ){
 					months.add(i);
 				}
 				yearMonths.put(year, months);	
 			}else if(year == yearTo){
-				months = new ArrayList<Integer>();
+				months = new ArrayList<>();
 				for(int i = 0; i<=monthTo-1 ;i++ ){
 					months.add(i);
 				}
 				yearMonths.put(year, months);	
 			}else{
-				months = new ArrayList<Integer>();
+				months = new ArrayList<>();
 				for(int i = 0; i<=11 ;i++ ){
 					months.add(i);
 				}
@@ -205,7 +205,7 @@ public class DashboardDataGeneratorImpl extends DashboardDataGenerator{
 
 
 
-		List<Calendar> calendars = new ArrayList<Calendar>();
+		List<Calendar> calendars = new ArrayList<>();
 
 		for(int year=yearFrom;year<=yearTo;year++){
 			for(Integer month : yearMonths.get(year)){
@@ -235,7 +235,7 @@ public class DashboardDataGeneratorImpl extends DashboardDataGenerator{
 
 			HibernateUtil.startTransaction();
 			if(!calendars.isEmpty()){
-				List<DashboardSummaryPeriod> summaryPeriods = new ArrayList<DashboardSummaryPeriod>();
+				List<DashboardSummaryPeriod> summaryPeriods = new ArrayList<>();
 				for(Calendar calendar:calendars){
 					if(flag){
 						DashboardSummaryPeriod summaryPeriod = null;
@@ -397,7 +397,7 @@ public class DashboardDataGeneratorImpl extends DashboardDataGenerator{
 				"http://www.skype.com", "http://www.stackoverflow.com",
 				"http://www.wikipedia.org", "http://www.java.com","http://www.google.com", "http://www.bing.com",
 				"http://www.yahoo.com","http://www.ask.com","http://www.altavista.com"};
-		List<String> refererList = new ArrayList<String>(Arrays.asList(referers));
+		List<String> refererList = new ArrayList<>(Arrays.asList(referers));
 
 		try {
 			ArrayList<Map<String, Object>> results404List = results404.get(host.getIdentifier());
@@ -562,7 +562,7 @@ public class DashboardDataGeneratorImpl extends DashboardDataGenerator{
 				"http://www.skype.com", "http://www.stackoverflow.com",
 				"http://www.wikipedia.org", "http://www.java.com","http://www.google.com", "http://www.bing.com",
 				"http://www.yahoo.com","http://www.ask.com","http://www.altavista.com"};
-		List<String> refererList = new ArrayList<String>(Arrays.asList(referers));
+		List<String> refererList = new ArrayList<>(Arrays.asList(referers));
 		try {
 			int count =0;
 			for(String referer : refererList){

@@ -76,7 +76,7 @@ describe('DotExperimentsListTableComponent', () => {
         ],
         component: DotExperimentsListTableComponent,
         componentMocks: [ConfirmPopup],
-        declarations: [MockDatePipe, DotExperimentsEmptyExperimentsComponent],
+        declarations: [MockDatePipe],
         providers: [
             {
                 provide: DotMessageService,
@@ -175,8 +175,10 @@ describe('DotExperimentsListTableComponent', () => {
 
                 spectator.setInput('experimentGroupedByStatus', groupedExperimentByStatus);
 
-                uiDotIconButtonTooltipComponent = spectator.query(UiDotIconButtonTooltipComponent);
-                expect(uiDotIconButtonTooltipComponent.icon).toBe('archive');
+                expect(spectator.queryAll(UiDotIconButtonTooltipComponent)[0].icon).toBe(
+                    'settings'
+                );
+                expect(spectator.queryAll(UiDotIconButtonTooltipComponent)[1].icon).toBe('archive');
             });
 
             it('should the row not has any icon in action column', () => {
@@ -193,7 +195,7 @@ describe('DotExperimentsListTableComponent', () => {
                 expect(uiDotIconButtonTooltipComponent).not.toExist();
             });
 
-            it('should the row  has REPORTS icon when is RUNNING', () => {
+            it('should the row  has Configuration icon when is RUNNING', () => {
                 const groupedExperimentByStatus: GroupedExperimentByStatus[] = [
                     {
                         status: DotExperimentStatusList.RUNNING,
@@ -204,7 +206,21 @@ describe('DotExperimentsListTableComponent', () => {
                 spectator.setInput('experimentGroupedByStatus', groupedExperimentByStatus);
 
                 uiDotIconButtonTooltipComponent = spectator.query(UiDotIconButtonTooltipComponent);
-                expect(uiDotIconButtonTooltipComponent.icon).toBe('bar_chart');
+                expect(uiDotIconButtonTooltipComponent.icon).toBe('settings');
+            });
+
+            it('should the row  has Configuration icon when is RUNNING', () => {
+                const groupedExperimentByStatus: GroupedExperimentByStatus[] = [
+                    {
+                        status: DotExperimentStatusList.ENDED,
+                        experiments: [RUNNING_EXPERIMENT_MOCK]
+                    }
+                ];
+
+                spectator.setInput('experimentGroupedByStatus', groupedExperimentByStatus);
+
+                uiDotIconButtonTooltipComponent = spectator.query(UiDotIconButtonTooltipComponent);
+                expect(uiDotIconButtonTooltipComponent.icon).toBe('settings');
             });
         });
     });

@@ -1,28 +1,26 @@
 package com.dotcms.cli.command.site;
 
 import com.dotcms.api.SiteAPI;
-import com.dotcms.api.client.RestClientFactory;
-import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.site.Site;
-import picocli.CommandLine;
-
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
 import java.util.concurrent.Callable;
+import javax.enterprise.context.control.ActivateRequestContext;
+import picocli.CommandLine;
 
 @ActivateRequestContext
 @CommandLine.Command(name = SiteCurrent.NAME,
-        description = "@|bold,green Current Site |@ No params are expected. "
+        header = "@|bold,blue Use this command to get the current Site.|@",
+        description = {
+           " As dotCMS is a multi-tenant application, you can have multiple Sites.",
+           " This command will tell you what the current Site is.",
+           " The current Site is the one used as target when you run other commands.",
+           " The current Site can be changed by using the @|bold,cyan site:switch|@ command.",
+           " No additional options are required for this command.",
+           "" // empty line left here on purpose to make room at the end
+        }
 )
 public class SiteCurrent extends AbstractSiteCommand implements Callable<Integer> {
     static final String NAME = "current";
-
-    @CommandLine.Mixin(name = "output")
-    protected OutputOptionMixin output;
-
-    @Inject
-    RestClientFactory clientFactory;
 
     @Override
     public Integer call() {

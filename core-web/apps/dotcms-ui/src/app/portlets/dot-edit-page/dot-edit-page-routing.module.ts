@@ -15,12 +15,10 @@ const dotEditPage: Routes = [
         path: '',
         resolve: {
             content: DotEditPageResolver,
-            experiment: DotExperimentExperimentResolver,
-            // TODO: Change to function with the Flag as parameter with Angular 15 upgrade
-            featuredFlag: DotFeatureFlagResolver
+            featuredFlag: DotFeatureFlagResolver,
+            experiment: DotExperimentExperimentResolver
         },
         data: {
-            // TODO: remove after change to function with the Flag as parameter with Angular 15 upgrade
             featuredFlagToCheck: FeaturedFlags.LOAD_FRONTEND_EXPERIMENTS
         },
 
@@ -58,9 +56,9 @@ const dotEditPage: Routes = [
                 loadChildren: async () =>
                     (
                         await import(
-                            '../dot-experiments/dot-experiments-shell/dot-experiments-shell.module'
+                            '../dot-experiments/dot-experiments-shell/dot-experiments-shell-routes'
                         )
-                    ).DotExperimentsShellModule
+                    ).DotExperimentsShellRoutes
             }
         ]
     },

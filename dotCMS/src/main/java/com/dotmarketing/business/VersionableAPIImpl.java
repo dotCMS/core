@@ -203,7 +203,7 @@ public class VersionableAPIImpl implements VersionableAPI {
 			                                    DotStateException, DotSecurityException {
 
 		List<Versionable> versions = versionableFactory.findAllVersions(id);
-		List<Permissionable> pass  = new ArrayList<Permissionable>();
+		List<Permissionable> pass  = new ArrayList<>();
 
 		for (Versionable v : versions) {
 			if (v instanceof Permissionable) {
@@ -212,7 +212,7 @@ public class VersionableAPIImpl implements VersionableAPI {
 		}
 
 		pass = permissionAPI.filterCollection(pass, PermissionAPI.PERMISSION_READ, respectAnonPermissions, user);
-		versions = new ArrayList<Versionable>();
+		versions = new ArrayList<>();
 
 		for (Permissionable p : pass) {
 			if (p instanceof Versionable) {
@@ -312,7 +312,7 @@ public class VersionableAPIImpl implements VersionableAPI {
                     contentlet.getVariantId());
         }
 
-        if(!info.isPresent())
+        if(info.isEmpty())
             throw new DotStateException("No version info. Call setWorking first "+identifier.getId());
         return info;
     }
@@ -405,7 +405,7 @@ public class VersionableAPIImpl implements VersionableAPI {
         final Optional<ContentletVersionInfo> contentletVersionInfo =
                 this.versionableFactory.getContentletVersionInfo( identifierId, lang );
 
-        if ( !contentletVersionInfo.isPresent() ) {
+        if ( contentletVersionInfo.isEmpty() ) {
             throw new DotStateException( "No version info. Call setLive first" );
         }
 
@@ -581,7 +581,7 @@ public class VersionableAPIImpl implements VersionableAPI {
                     .getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId(),
                             contentlet.getVariantId());
 
-            if(!info.isPresent()) {
+            if(info.isEmpty()) {
                 // Not yet created
                 info = Optional.of(versionableFactory.createContentletVersionInfo(identifier,
                         contentlet.getLanguageId(), versionable.getInode(), contentlet.getVariantId()));
@@ -731,7 +731,7 @@ public class VersionableAPIImpl implements VersionableAPI {
                 .findContentletVersionInfoInDB(contentletVersionInfo.getIdentifier(),
                         contentletVersionInfo.getLang(), contentletVersionInfo.getVariant());
 
-		if(!contentletVersionInfoInDB.isPresent()) {
+		if(contentletVersionInfoInDB.isEmpty()) {
 			versionableFactory.saveContentletVersionInfo(contentletVersionInfo, true);
 		} else {
 		    final ContentletVersionInfo info = contentletVersionInfoInDB.get();

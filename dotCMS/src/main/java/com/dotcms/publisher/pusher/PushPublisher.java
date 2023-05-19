@@ -148,7 +148,7 @@ public class PushPublisher extends Publisher {
 		try {
 			//Compressing bundle
 			File bundleRoot = BundlerUtil.getBundleRoot(this.config.getName(), false);
-			ArrayList<File> list = new ArrayList<File>(1);
+			ArrayList<File> list = new ArrayList<>(1);
 			list.add(bundleRoot);
 			File bundleFile = new File(bundleRoot + ".tar.gz");
 
@@ -174,7 +174,7 @@ public class PushPublisher extends Publisher {
 			int totalEndpoints = 0;
 			for (Environment environment : environments) {
 				List<PublishingEndPoint> allEndpoints = this.publishingEndPointAPI.findSendingEndPointsByEnvironment(environment.getId());
-				List<PublishingEndPoint> endpoints = new ArrayList<PublishingEndPoint>();
+				List<PublishingEndPoint> endpoints = new ArrayList<>();
 				totalEndpoints += (null != allEndpoints) ? allEndpoints.size() : 0;
 
 				Map<String, EndpointDetail> endpointsDetail = endpointsMap.get(environment.getId());

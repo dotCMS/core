@@ -102,7 +102,7 @@ public class VisitorTagsActionlet extends RuleActionlet<VisitorTagsActionlet.Ins
             }
             if(trimmedValue.isEmpty()) { throw new InvalidRuleParameterException("The tags parameter requieres values. Empty values are not allowed."); }
             String[] values = trimmedValue.trim().split(",");
-            Set<String> uniqueValues = new HashSet<String>();
+            Set<String> uniqueValues = new HashSet<>();
             for (String currentValue : values) {
                 if(!uniqueValues.add(currentValue)) {
                     throw new InvalidRuleParameterException("Tag '%s' is duplicated.  Duplicated values are not allowed", currentValue);

@@ -128,7 +128,7 @@ public class TwitterActionlet extends WorkFlowActionlet {
 		if (paramList == null) {
 			synchronized (this.getClass()) {
 				if (paramList == null) {
-					paramList = new ArrayList<WorkflowActionletParameter>();
+					paramList = new ArrayList<>();
 					//paramList.add(new WorkflowActionletParameter("FieldNameVar", "Field Name Var", null, true));
 					paramList.add(new WorkflowActionletParameter("consumerKey", "Consumer Key",  null, true));
 					paramList.add(new WorkflowActionletParameter("consumerSecret", "Consumer Secret",  null, true));

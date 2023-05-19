@@ -23,8 +23,8 @@
                 <div
                     [pTooltip]="'experiment.configure.edit.only.draft.status' | dm"
                     [tooltipDisabled]="vm.isExperimentADraft"
-                    tooltipPosition="bottom"
                     data-testId="tooltip-on-disabled"
+                    tooltipPosition="bottom"
                 >
                     <button
                         class="p-button-sm p-button-link"
@@ -32,7 +32,6 @@
                         (click)="changeTrafficAllocation()"
                         data-testId="traffic-allocation-button"
                         pButton
-                        pRipple
                     >
                         {{ vm.trafficAllocation }}%
                     </button>

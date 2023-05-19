@@ -32,6 +32,7 @@ import com.dotcms.cube.CubeJSClient;
 import com.dotcms.cube.CubeJSQuery;
 import com.dotcms.cube.CubeJSResultSet;
 import com.dotcms.cube.CubeJSResultSet.ResultSetItem;
+import com.dotcms.cube.CubeJSResultSetImpl;
 import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotcms.experiments.business.result.BrowserSession;
 import com.dotcms.experiments.business.result.Event;
@@ -473,21 +474,73 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         DotPreconditions.checkState(persistedExperiment.goals().isPresent(), "The Experiment needs to "
                 + "have the Goal set.");
 
+        final List<Experiment> runningExperimentsOnPage = list(ExperimentFilter.builder()
+                .pageId(persistedExperiment.pageId())
+                .statuses(Set.of(RUNNING))
+                .build(), user);
+
+        if(!runningExperimentsOnPage.isEmpty()) {
+            final boolean meantToRunNow = persistedExperiment.scheduling().isEmpty();
+
+            if(meantToRunNow) {
+                throw new DotStateException("There is a running Experiment on the same page. Name: "
+                        + runningExperimentsOnPage.get(0).name());
+            }
+
+            final Experiment runningExperiment = runningExperimentsOnPage.get(0);
+            DotPreconditions.isTrue(runningExperiment.scheduling().orElseThrow().endDate()
+                    .orElseThrow().isBefore(persistedExperiment.scheduling().orElseThrow().startDate().orElseThrow()),
+                    ()-> "Scheduling conflict: The same page can't be included in different experiments with overlapping schedules. "
+                            + "Overlapping with Experiment: "
+                            + runningExperiment.name(),
+                    DotStateException.class);
+        }
+
         Experiment toReturn;
 
-        if(persistedExperiment.scheduling().isEmpty() ||
-                (persistedExperiment.scheduling().get().startDate()).isEmpty()
-                        && persistedExperiment.scheduling().get().endDate().isEmpty()) {
+        if(emptyScheduling(persistedExperiment)) {
             final Scheduling scheduling = startNowScheduling(persistedExperiment);
-            toReturn = save(persistedExperiment.withScheduling(scheduling).withStatus(RUNNING), user);
+            final Experiment experimentToSave = persistedExperiment.withScheduling(scheduling).withStatus(RUNNING);
+            validateNoConflictsWithScheduledExperiments(experimentToSave, user);
+            toReturn = save(experimentToSave, user);
             publishContentOnExperimentVariants(user, toReturn);
             cacheRunningExperiments();
         } else {
             Scheduling scheduling = persistedExperiment.scheduling().get();
-            toReturn = save(persistedExperiment.withScheduling(scheduling).withStatus(SCHEDULED), user);
+            final Experiment experimentToSave = persistedExperiment.withScheduling(scheduling).withStatus(SCHEDULED);
+            validateNoConflictsWithScheduledExperiments(experimentToSave, user);
+            toReturn = save(experimentToSave.withScheduling(scheduling).withStatus(SCHEDULED), user);
         }
 
         return toReturn;
+    }
+
+    private static boolean emptyScheduling(Experiment persistedExperiment) {
+        return persistedExperiment.scheduling().isEmpty() ||
+                (persistedExperiment.scheduling().get().startDate()).isEmpty()
+                        && persistedExperiment.scheduling().get().endDate().isEmpty();
+    }
+
+    private void validateNoConflictsWithScheduledExperiments(final Experiment experimentToCheck,
+            final User user) throws DotDataException {
+
+        final List<Experiment> scheduledExperimentsOnPage = list(ExperimentFilter.builder()
+                .pageId(experimentToCheck.pageId())
+                .statuses(Set.of(SCHEDULED))
+                .build(), user);
+
+        final boolean noConflicts = scheduledExperimentsOnPage.isEmpty() ||
+                scheduledExperimentsOnPage.stream().allMatch(scheduledExperiment -> {
+            final Scheduling scheduling = scheduledExperiment.scheduling().orElseThrow();
+            final Scheduling schedulingToCheck = experimentToCheck.scheduling().orElseThrow();
+            return schedulingToCheck.startDate().orElseThrow().isAfter(scheduling.endDate().orElseThrow()) ||
+                    schedulingToCheck.endDate().orElseThrow().isBefore(scheduling.startDate().orElseThrow());
+        });
+
+        DotPreconditions.isTrue(noConflicts, ()-> "Scheduling conflict: The same page can't be included in different experiments with overlapping schedules. "
+                        + "Overlapping with Experiment: "
+                + scheduledExperimentsOnPage.get(0).name(),
+                DotStateException.class);
     }
 
     @Override
@@ -509,6 +562,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 DotStateException.class);
 
         Experiment running = save(persistedExperiment.withStatus(RUNNING), user);
+        cacheRunningExperiments();
         publishContentOnExperimentVariants(user, running);
 
         return running;
@@ -889,7 +943,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             final CubeJSQuery cubeJSQuery = ExperimentResultsQueryFactory.INSTANCE
                     .create(experiment);
 
-            final CubeJSResultSet cubeJSResultSet = cubeClient.send(cubeJSQuery);
+            final CubeJSResultSet cubeJSResultSet = cubeClient.sendWithPagination(cubeJSQuery);
 
             String previousLookBackWindow = null;
             final List<Event> currentEvents = new ArrayList<>();
@@ -949,6 +1003,11 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final Experiment persistedExperiment = find(experimentId, user)
                 .orElseThrow(()->new DoesNotExistException("Experiment with provided id not found"));
 
+        DotPreconditions.isTrue(persistedExperiment.status().equals(Status.RUNNING) ||
+                persistedExperiment.status().equals(ENDED),
+                ()->"Experiment must be running or ended to promote a variant",
+                DotStateException.class);
+
         DotPreconditions.isTrue(variantName!= null &&
                         variantName.contains(shortyIdAPI.shortify(experimentId)), ()->"Invalid Variant provided",
                 IllegalArgumentException.class);
@@ -970,8 +1029,15 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
         final TrafficProportion trafficProportion = persistedExperiment.trafficProportion()
                 .withVariants(variantsAfterPromotion);
-        final Experiment withUpdatedTraffic = persistedExperiment.withTrafficProportion(trafficProportion);
-        return save(withUpdatedTraffic, user);
+        Experiment withUpdatedVariants = persistedExperiment.withTrafficProportion(trafficProportion);
+
+        withUpdatedVariants = save(withUpdatedVariants, user);
+
+        if(withUpdatedVariants.status()==RUNNING) {
+            withUpdatedVariants = end(withUpdatedVariants.id().orElseThrow(), user);
+        }
+
+        return withUpdatedVariants;
     }
 
     @Override
@@ -1073,6 +1139,11 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
             DotPreconditions.checkState(scheduling.endDate().get().isAfter(scheduling.startDate().get()),
                     "Invalid Scheduling. End date must be after the start date");
+
+            DotPreconditions.checkState(Duration.between(scheduling.startDate().get(),
+                            scheduling.endDate().get()).toDays() >= EXPERIMENTS_MIN_DURATION.get(),
+                    "Experiment duration must be at least "
+                            + EXPERIMENTS_MIN_DURATION.get() +" days. ");
 
             DotPreconditions.checkState(Duration.between(scheduling.startDate().get(),
                             scheduling.endDate().get()).toDays() <= EXPERIMENTS_MAX_DURATION.get(),

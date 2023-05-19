@@ -1,5 +1,7 @@
 import { byTestId, createHostFactory, SpectatorHost } from '@ngneat/spectator';
 
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotStringTemplateOutletDirective } from '@portlets/shared/directives/dot-string-template-outlet.directive';
 
 import { DotExperimentsDetailsTableComponent } from './dot-experiments-details-table.component';
@@ -19,10 +21,21 @@ const MOCK_DATA_WITH_TEMPLATE = [
     }
 ];
 
+const messageServiceMock = new MockDotMessageService({
+    'experiments.reports.summary.empty.title': 'title',
+    'experiments.reports.summary.empty.description': 'description'
+});
+
 describe('DotExperimentsDetailsTableComponent', () => {
     let spectator: SpectatorHost<DotExperimentsDetailsTableComponent>;
     const createHost = createHostFactory({
         component: DotExperimentsDetailsTableComponent,
+        providers: [
+            {
+                provide: DotMessageService,
+                useValue: messageServiceMock
+            }
+        ],
         imports: [DotStringTemplateOutletDirective]
     });
 
@@ -111,5 +124,35 @@ describe('DotExperimentsDetailsTableComponent', () => {
 
         expect(spectator.query(byTestId('header-title'))).not.toBeNull();
         expect(spectator.query(byTestId('header-title'))).toContainText(expectedString);
+    });
+
+    it('should render loading state', () => {
+        spectator = createHost(
+            `<dot-experiments-details-table [data]="data" [isLoading]="loading" />`,
+            {
+                hostProps: {
+                    data: MOCK_DATA,
+                    loading: true
+                }
+            }
+        );
+        expect(spectator.query(byTestId('loading-skeleton'))).not.toBeNull();
+    });
+
+    it('should render empty state', () => {
+        spectator = createHost(
+            `<dot-experiments-details-table [isEmpty]="empty" [data]="data" [isLoading]="loading" />`,
+            {
+                hostProps: {
+                    data: MOCK_DATA,
+                    loading: false,
+                    empty: true
+                }
+            }
+        );
+
+        expect(spectator.query(byTestId('empty-template'))).not.toBeNull();
+        expect(spectator.query(byTestId('empty-title'))).toContainText('title');
+        expect(spectator.query(byTestId('empty-description'))).toContainText('description');
     });
 });

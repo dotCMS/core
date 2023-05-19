@@ -4,19 +4,23 @@ import { of } from 'rxjs';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 
+import { MessageService } from 'primeng/api';
+
 import { DotMessageService } from '@dotcms/data-access';
-import { ComponentStatus, DotExperimentStatusList } from '@dotcms/dotcms-models';
+import {
+    BayesianStatusResponse,
+    ComponentStatus,
+    DialogStatus,
+    DotExperimentStatusList,
+    ReportSummaryLegendByBayesianStatus
+} from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import {
     DotExperimentsReportsState,
     DotExperimentsReportsStore
 } from '@portlets/dot-experiments/dot-experiments-reports/store/dot-experiments-reports-store';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
-import {
-    getExperimentMock,
-    getExperimentResultsMock,
-    VARIANT_RESULT_MOCK_1
-} from '@portlets/dot-experiments/test/mocks';
+import { getExperimentMock, getExperimentResultsMock } from '@portlets/dot-experiments/test/mocks';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 const EXPERIMENT_MOCK = getExperimentMock(1);
@@ -58,6 +62,7 @@ describe('DotExperimentsReportsStore', () => {
                 provide: DotMessageService,
                 useValue: messageServiceMock
             },
+            mockProvider(MessageService),
             mockProvider(DotExperimentsService),
             mockProvider(DotHttpErrorManagerService)
         ]
@@ -81,7 +86,10 @@ describe('DotExperimentsReportsStore', () => {
             experiment: EXPERIMENT_MOCK,
             status: ComponentStatus.IDLE,
             results: EXPERIMENT_MOCK_RESULTS,
-            variantResults: VARIANT_RESULT_MOCK_1
+            promoteDialog: {
+                status: ComponentStatus.IDLE,
+                visibility: DialogStatus.HIDE
+            }
         };
 
         expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_MOCK.id);
@@ -116,6 +124,7 @@ describe('DotExperimentsReportsStore', () => {
             done();
         });
     });
+
     it('should get TRUE from showExperimentSummary$ if Experiment status is different of Running', (done) => {
         dotExperimentsService.getById.and.callThrough().and.returnValue(
             of({
@@ -123,11 +132,265 @@ describe('DotExperimentsReportsStore', () => {
                 status: DotExperimentStatusList.RUNNING
             })
         );
+        dotExperimentsService.getResults.and
+            .callThrough()
+            .and.returnValue(of(EXPERIMENT_MOCK_RESULTS));
+
         spectator.service.loadExperimentAndResults(EXPERIMENT_MOCK.id);
 
         store.showExperimentSummary$.subscribe((value) => {
             expect(value).toEqual(true);
             done();
+        });
+    });
+    describe('Bayesian response map hasSession = 0', () => {
+        it('should summaryWinnerLegend$ get `NO_WINNER_FOUND` when experiment status `ENDED` and any winnerSuggestion', (done) => {
+            dotExperimentsService.getById.and.callThrough().and.returnValue(
+                of({
+                    ...EXPERIMENT_MOCK,
+                    status: DotExperimentStatusList.ENDED
+                })
+            );
+            dotExperimentsService.getResults.and.callThrough().and.returnValue(
+                of({
+                    ...EXPERIMENT_MOCK_RESULTS,
+                    sessions: { ...EXPERIMENT_MOCK_RESULTS.sessions, total: 0 }
+                })
+            );
+
+            spectator.service.loadExperimentAndResults(EXPERIMENT_MOCK.id);
+
+            store.state$.subscribe(({ experiment }) => {
+                expect(experiment.status).toEqual(DotExperimentStatusList.ENDED);
+            });
+            store.summaryWinnerLegend$.subscribe((summaryWinnerLegend) => {
+                expect(summaryWinnerLegend).toEqual(
+                    ReportSummaryLegendByBayesianStatus.NO_WINNER_FOUND
+                );
+                done();
+            });
+        });
+
+        it('should summaryWinnerLegend$ get `NO_ENOUGH_SESSIONS` when experiment status `RUNNING` and any winnerSuggestion', (done) => {
+            dotExperimentsService.getById.and.callThrough().and.returnValue(
+                of({
+                    ...EXPERIMENT_MOCK,
+                    status: DotExperimentStatusList.RUNNING
+                })
+            );
+            dotExperimentsService.getResults.and.callThrough().and.returnValue(
+                of({
+                    ...EXPERIMENT_MOCK_RESULTS,
+                    sessions: { ...EXPERIMENT_MOCK_RESULTS.sessions, total: 0 }
+                })
+            );
+
+            spectator.service.loadExperimentAndResults(EXPERIMENT_MOCK.id);
+
+            store.state$.subscribe(({ experiment }) => {
+                expect(experiment.status).toEqual(DotExperimentStatusList.RUNNING);
+            });
+            store.summaryWinnerLegend$.subscribe((summaryWinnerLegend) => {
+                expect(summaryWinnerLegend).toEqual(
+                    ReportSummaryLegendByBayesianStatus.NO_ENOUGH_SESSIONS
+                );
+                done();
+            });
+        });
+    });
+    describe('Bayesian response map hasSession > 0', () => {
+        it('should summaryWinnerLegend$ get `NO_WINNER_FOUND` when experiment status `ENDED` and winnerSuggestion=`TIE`', (done) => {
+            dotExperimentsService.getById.and.callThrough().and.returnValue(
+                of({
+                    ...EXPERIMENT_MOCK,
+                    status: DotExperimentStatusList.ENDED
+                })
+            );
+            dotExperimentsService.getResults.and.callThrough().and.returnValue(
+                of({
+                    ...EXPERIMENT_MOCK_RESULTS,
+                    sessions: { ...EXPERIMENT_MOCK_RESULTS.sessions, total: 10 },
+                    bayesianResult: {
+                        ...EXPERIMENT_MOCK_RESULTS.bayesianResult,
+                        suggestedWinner: BayesianStatusResponse.TIE
+                    }
+                })
+            );
+
+            spectator.service.loadExperimentAndResults(EXPERIMENT_MOCK.id);
+
+            store.state$.subscribe(({ experiment, results }) => {
+                expect(experiment.status).toEqual(DotExperimentStatusList.ENDED);
+                expect(results.bayesianResult.suggestedWinner).toEqual(BayesianStatusResponse.TIE);
+            });
+            store.summaryWinnerLegend$.subscribe((summaryWinnerLegend) => {
+                expect(summaryWinnerLegend).toEqual(
+                    ReportSummaryLegendByBayesianStatus.NO_WINNER_FOUND
+                );
+                done();
+            });
+        });
+
+        it('should summaryWinnerLegend$ get `NO_WINNER_FOUND` when experiment status `RUNNING` and winnerSuggestion=`TIE`', (done) => {
+            dotExperimentsService.getById.and.callThrough().and.returnValue(
+                of({
+                    ...EXPERIMENT_MOCK,
+                    status: DotExperimentStatusList.RUNNING
+                })
+            );
+            dotExperimentsService.getResults.and.callThrough().and.returnValue(
+                of({
+                    ...EXPERIMENT_MOCK_RESULTS,
+                    sessions: { ...EXPERIMENT_MOCK_RESULTS.sessions, total: 10 },
+                    bayesianResult: {
+                        ...EXPERIMENT_MOCK_RESULTS.bayesianResult,
+                        suggestedWinner: BayesianStatusResponse.TIE
+                    }
+                })
+            );
+
+            spectator.service.loadExperimentAndResults(EXPERIMENT_MOCK.id);
+
+            store.state$.subscribe(({ experiment, results }) => {
+                expect(experiment.status).toEqual(DotExperimentStatusList.RUNNING);
+                expect(results.bayesianResult.suggestedWinner).toEqual(BayesianStatusResponse.TIE);
+            });
+            store.summaryWinnerLegend$.subscribe((summaryWinnerLegend) => {
+                expect(summaryWinnerLegend).toEqual(
+                    ReportSummaryLegendByBayesianStatus.NO_WINNER_FOUND
+                );
+                done();
+            });
+        });
+
+        it('should summaryWinnerLegend$ get `NO_WINNER_FOUND` when experiment status `ENDED` and winnerSuggestion=`NONE`', (done) => {
+            dotExperimentsService.getById.and.callThrough().and.returnValue(
+                of({
+                    ...EXPERIMENT_MOCK,
+                    status: DotExperimentStatusList.ENDED
+                })
+            );
+            dotExperimentsService.getResults.and.callThrough().and.returnValue(
+                of({
+                    ...EXPERIMENT_MOCK_RESULTS,
+                    sessions: { ...EXPERIMENT_MOCK_RESULTS.sessions, total: 10 },
+                    bayesianResult: {
+                        ...EXPERIMENT_MOCK_RESULTS.bayesianResult,
+                        suggestedWinner: BayesianStatusResponse.NONE
+                    }
+                })
+            );
+
+            spectator.service.loadExperimentAndResults(EXPERIMENT_MOCK.id);
+
+            store.state$.subscribe(({ experiment, results }) => {
+                expect(experiment.status).toEqual(DotExperimentStatusList.ENDED);
+                expect(results.bayesianResult.suggestedWinner).toEqual(BayesianStatusResponse.NONE);
+            });
+            store.summaryWinnerLegend$.subscribe((summaryWinnerLegend) => {
+                expect(summaryWinnerLegend).toEqual(
+                    ReportSummaryLegendByBayesianStatus.NO_WINNER_FOUND
+                );
+                done();
+            });
+        });
+
+        it('should summaryWinnerLegend$ get `NO_ENOUGH_SESSIONS` when experiment status `RUNNING` and winnerSuggestion=`NONE`', (done) => {
+            dotExperimentsService.getById.and.callThrough().and.returnValue(
+                of({
+                    ...EXPERIMENT_MOCK,
+                    status: DotExperimentStatusList.RUNNING
+                })
+            );
+            dotExperimentsService.getResults.and.callThrough().and.returnValue(
+                of({
+                    ...EXPERIMENT_MOCK_RESULTS,
+                    sessions: { ...EXPERIMENT_MOCK_RESULTS.sessions, total: 10 },
+                    bayesianResult: {
+                        ...EXPERIMENT_MOCK_RESULTS.bayesianResult,
+                        suggestedWinner: BayesianStatusResponse.NONE
+                    }
+                })
+            );
+
+            spectator.service.loadExperimentAndResults(EXPERIMENT_MOCK.id);
+
+            store.state$.subscribe(({ experiment, results }) => {
+                expect(experiment.status).toEqual(DotExperimentStatusList.RUNNING);
+                expect(results.bayesianResult.suggestedWinner).toEqual(BayesianStatusResponse.NONE);
+            });
+            store.summaryWinnerLegend$.subscribe((summaryWinnerLegend) => {
+                expect(summaryWinnerLegend).toEqual(
+                    ReportSummaryLegendByBayesianStatus.NO_ENOUGH_SESSIONS
+                );
+                done();
+            });
+        });
+
+        it('should summaryWinnerLegend$ get `WINNER` when experiment status `ENDED` and winnerSuggestion has a variantId`', (done) => {
+            const winnerVariantId = EXPERIMENT_MOCK.trafficProportion.variants[0].id;
+
+            dotExperimentsService.getById.and.callThrough().and.returnValue(
+                of({
+                    ...EXPERIMENT_MOCK,
+                    status: DotExperimentStatusList.ENDED
+                })
+            );
+            dotExperimentsService.getResults.and.callThrough().and.returnValue(
+                of({
+                    ...EXPERIMENT_MOCK_RESULTS,
+                    sessions: { ...EXPERIMENT_MOCK_RESULTS.sessions, total: 10 },
+                    bayesianResult: {
+                        ...EXPERIMENT_MOCK_RESULTS.bayesianResult,
+                        suggestedWinner: winnerVariantId
+                    }
+                })
+            );
+
+            spectator.service.loadExperimentAndResults(EXPERIMENT_MOCK.id);
+
+            store.state$.subscribe(({ experiment, results }) => {
+                expect(experiment.status).toEqual(DotExperimentStatusList.ENDED);
+                expect(results.bayesianResult.suggestedWinner).toEqual(winnerVariantId);
+            });
+            store.summaryWinnerLegend$.subscribe((summaryWinnerLegend) => {
+                expect(summaryWinnerLegend).toEqual(ReportSummaryLegendByBayesianStatus.WINNER);
+                done();
+            });
+        });
+
+        it('should summaryWinnerLegend$ get `PRELIMINARY_WINNER` when experiment status `RUNNING` and winnerSuggestion has a variantId', (done) => {
+            const winnerVariantId = EXPERIMENT_MOCK.trafficProportion.variants[0].id;
+
+            dotExperimentsService.getById.and.callThrough().and.returnValue(
+                of({
+                    ...EXPERIMENT_MOCK,
+                    status: DotExperimentStatusList.RUNNING
+                })
+            );
+            dotExperimentsService.getResults.and.callThrough().and.returnValue(
+                of({
+                    ...EXPERIMENT_MOCK_RESULTS,
+                    sessions: { ...EXPERIMENT_MOCK_RESULTS.sessions, total: 10 },
+                    bayesianResult: {
+                        ...EXPERIMENT_MOCK_RESULTS.bayesianResult,
+                        suggestedWinner: winnerVariantId
+                    }
+                })
+            );
+
+            spectator.service.loadExperimentAndResults(EXPERIMENT_MOCK.id);
+
+            store.state$.subscribe(({ experiment, results }) => {
+                expect(experiment.status).toEqual(DotExperimentStatusList.RUNNING);
+                expect(results.bayesianResult.suggestedWinner).toEqual(winnerVariantId);
+            });
+            store.summaryWinnerLegend$.subscribe((summaryWinnerLegend) => {
+                expect(summaryWinnerLegend).toEqual(
+                    ReportSummaryLegendByBayesianStatus.PRELIMINARY_WINNER
+                );
+                done();
+            });
         });
     });
 
@@ -136,6 +399,7 @@ describe('DotExperimentsReportsStore', () => {
             dotExperimentsService.getById.and.callThrough().and.returnValue(of(EXPERIMENT_MOCK));
 
             store.loadExperimentAndResults(EXPERIMENT_MOCK.id);
+
             expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_MOCK.id);
 
             store.state$.subscribe(({ experiment }) => {
@@ -143,14 +407,23 @@ describe('DotExperimentsReportsStore', () => {
                 done();
             });
         });
+
         it('should promote variant', () => {
+            const variantToPromote = {
+                experimentId: EXPERIMENT_MOCK.id,
+                variant: EXPERIMENT_MOCK.trafficProportion.variants[1]
+            };
+
             dotExperimentsService.promoteVariant.and
                 .callThrough()
                 .and.returnValue(of(EXPERIMENT_MOCK));
 
-            store.promoteVariant('variantName');
+            store.promoteVariant(variantToPromote);
 
-            expect(dotExperimentsService.promoteVariant).toHaveBeenCalledWith('variantName');
+            expect(dotExperimentsService.promoteVariant).toHaveBeenCalledWith(
+                EXPERIMENT_MOCK.id,
+                EXPERIMENT_MOCK.trafficProportion.variants[1].id
+            );
         });
     });
 
@@ -206,8 +479,8 @@ describe('DotExperimentsReportsStore', () => {
                 [15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
             ];
             const expectedLabel = [
-                EXPERIMENT_MOCK.trafficProportion.variants[0].name,
-                EXPERIMENT_MOCK.trafficProportion.variants[1].name
+                EXPERIMENT_MOCK_RESULTS.goals.primary.variants.DEFAULT.variantDescription,
+                EXPERIMENT_MOCK_RESULTS.goals.primary.variants['111'].variantDescription
             ];
 
             store.getChartData$.subscribe(({ datasets }) => {

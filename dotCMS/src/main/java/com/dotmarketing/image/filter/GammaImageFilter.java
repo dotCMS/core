@@ -18,7 +18,7 @@ public class GammaImageFilter extends ImageFilter {
 	public File runFilter(File file,   Map<String, String[]> parameters) {
 		double g = parameters.get(getPrefix() + "g") != null ? Double.parseDouble(parameters.get(getPrefix() + "g")[0])
 				: 0.0;
-		float f = new Double(g).floatValue();
+		float f = Double.valueOf(g).floatValue();
 		
 		
 		File resultFile = getResultsFile(file, parameters);
