@@ -50,7 +50,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Test for {@link SAMLHelper}
+ * Test for helper {@link SAMLHelper}
  * @author jsanca
  */
 public class SAMLHelperTest extends IntegrationTestBase {
