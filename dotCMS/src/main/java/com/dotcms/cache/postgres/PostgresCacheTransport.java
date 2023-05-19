@@ -144,7 +144,7 @@ public final class PostgresCacheTransport implements CacheTransport {
 
 
                 } catch (Throwable e) {
-                    Logger.warnEveryAndDebug(PostgresCacheTransport.class, e.getMessage(), e, 5000);
+                    Logger.warn(PostgresCacheTransport.class, e.getMessage());
                     Try.run(() -> Thread.sleep(SLEEP_BETWEEN_RUNS));
                    
                     if (++failures > KILL_ON_FAILURES) {
