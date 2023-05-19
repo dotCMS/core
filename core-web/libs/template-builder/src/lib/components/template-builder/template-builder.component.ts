@@ -6,6 +6,7 @@ import {
     GridStackWidget
 } from 'gridstack';
 import { Observable } from 'rxjs';
+import { v4 as uuid } from 'uuid';
 
 import {
     AfterViewInit,
@@ -45,15 +46,15 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
 
     constructor(private store: DotTemplateBuilderStore) {
         const starter: DotGridStackWidget[] = [
-            { x: 0, y: 0, w: 12, id: '1' },
-            { x: 0, y: 1, w: 12, id: '2' },
+            { x: 0, y: 0, w: 12, id: uuid() },
+            { x: 0, y: 1, w: 12, id: uuid() },
             {
                 x: 0,
                 y: 2,
                 w: 12,
-                id: '3',
+                id: uuid(),
                 subGridOpts: {
-                    children: [{ x: 0, y: 0, w: 4, id: '4' }]
+                    children: [{ x: 0, y: 0, w: 4, id: uuid() }]
                 }
             }
         ];

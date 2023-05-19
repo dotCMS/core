@@ -1,11 +1,10 @@
 import { ComponentStore } from '@ngrx/component-store';
 import { GridStackElement, GridStackNode } from 'gridstack';
+import { v4 as uuid } from 'uuid';
 
 import { Injectable } from '@angular/core';
 
 import { DotGridStackNode, DotGridStackWidget, DotTemplateBuilderState } from '../models/models';
-
-let ids = 5;
 
 /**
  *
@@ -40,7 +39,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
                     h: 1,
                     w: 12,
                     x: 0,
-                    id: String(ids++),
+                    id: uuid(),
                     subGridOpts: {
                         children: []
                     },
@@ -103,7 +102,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
             h: payload.h,
             x: payload.x,
             y: payload.y,
-            id: String(ids++)
+            id: uuid()
         };
 
         return {
@@ -130,7 +129,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
             h: node.h,
             x: node.x,
             y: node.y,
-            id: i ? String(ids++) : node.id
+            id: i ? uuid() : node.id
         }));
 
         const deleteNodeRowIndex = items.findIndex(
