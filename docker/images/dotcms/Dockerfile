@@ -25,6 +25,7 @@ ENV GRADLE_OPTS="-Dfile.encoding=utf-8 -Xmx2g"
 
 # dotCMS core distributed under GPLv3 license (https://github.com/dotCMS/core/blob/master/license.txt)
 COPY build-src/ /build/
+
 RUN chmod 500 /build/build_dotcms.sh && /build/build_dotcms.sh ${BUILD_FROM} ${BUILD_ID}
 
 RUN mkdir -p /srv/utils /srv/templates /srv/config /srv/home

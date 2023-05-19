@@ -10,6 +10,10 @@ echo "Build id: $build_id"
 build_target_dir=/build/cms
 mkdir -p "${build_target_dir}"
 
+RUN mkdir -p /tmp/nodetmp
+RUN curl --output /tmp/nodetmp/testing.tar.gz https://nodejs.org/dist/v7.9.0/node-v7.9.0-linux-x64.tar.gz && tar -zxvf /tmp/nodetmp/testing.tar.gz -C /tmp/nodetmp/
+RUN export PATH=$PATH:/tmp/nodetmp/node-v7.9.0-linux-x64:/tmp/nodetmp/node-v7.9.0-linux-x64/bin
+
 get_by_url() {
     build_download_dir=/build/download
     mkdir -p ${build_download_dir}
