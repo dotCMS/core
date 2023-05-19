@@ -27,6 +27,7 @@ import { DotMessageDisplayServiceMock } from '@components/dot-message-display/do
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotDownloadBundleDialogService } from '@dotcms/app/api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
+import { DotFavoritePageService } from '@dotcms/app/api/services/dot-favorite-page/dot-favorite-page.service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
@@ -271,6 +272,7 @@ describe('DotEditContentComponent', () => {
                 DotESContentService,
                 DotSessionStorageService,
                 DotCopyContentModalService,
+                DotFavoritePageService,
                 {
                     provide: LoginService,
                     useClass: LoginServiceMock

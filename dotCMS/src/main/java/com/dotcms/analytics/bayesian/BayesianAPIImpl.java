@@ -10,7 +10,6 @@ import com.dotcms.analytics.bayesian.model.SampleData;
 import com.dotcms.analytics.bayesian.model.SampleGroup;
 import com.dotcms.analytics.bayesian.model.VariantInputPair;
 import com.dotcms.analytics.bayesian.model.VariantProbability;
-import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
