@@ -5,6 +5,14 @@ import { v4 as uuid } from 'uuid';
 import { Injectable } from '@angular/core';
 
 import { DotGridStackNode, DotGridStackWidget, DotTemplateBuilderState } from '../models/models';
+import {
+    getIndexRowInItems,
+    createDotGridStackWidgets,
+    getColumnByID,
+    removeColumnByID,
+    createDotGridStackWidgetFromNode,
+    parseMovedNodeToWidget
+} from '../utils/gridstack-utils';
 
 /**
  *
@@ -31,19 +39,19 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      *
      * @memberof DotTemplateBuilderStore
      */
-    readonly addRow = this.updater(({ items }, payload: DotGridStackWidget) => {
+    readonly addRow = this.updater(({ items }, newRow: DotGridStackWidget) => {
         return {
             items: [
                 ...items,
                 {
+                    ...newRow,
                     h: 1,
                     w: 12,
                     x: 0,
                     id: uuid(),
                     subGridOpts: {
                         children: []
-                    },
-                    ...payload
+                    }
                 }
             ]
         };
@@ -54,11 +62,11 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      *
      * @memberof DotTemplateBuilderStore
      */
-    readonly moveRow = this.updater(({ items }, changes: DotGridStackWidget[]) => {
+    readonly moveRow = this.updater(({ items }, affectedRows: DotGridStackWidget[]) => {
         const itemsCopy = structuredClone(items) as DotGridStackWidget[];
 
-        changes.forEach(({ y, id }) => {
-            const rowIndex = itemsCopy.findIndex((item: DotGridStackWidget) => item.id === id);
+        affectedRows.forEach(({ y, id }) => {
+            const rowIndex = getIndexRowInItems(itemsCopy, id as string);
             // So here I update the positions of the changed ones
             if (rowIndex > -1) itemsCopy[rowIndex] = { ...itemsCopy[rowIndex], y };
         });
@@ -71,8 +79,8 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      *
      * @memberof DotTemplateBuilderStore
      */
-    readonly removeRow = this.updater(({ items }, id: string) => {
-        return { items: items.filter((item: DotGridStackWidget) => item.id !== id) };
+    readonly removeRow = this.updater(({ items }, rowID: string) => {
+        return { items: items.filter((item: DotGridStackWidget) => item.id !== rowID) };
     });
 
     /**
@@ -80,10 +88,10 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      *
      * @memberof DotTemplateBuilderStore
      */
-    readonly updateRow = this.updater(({ items }, payload: DotGridStackWidget) => {
+    readonly updateRow = this.updater(({ items }, updatedRow: DotGridStackWidget) => {
         const itemsCopy = structuredClone(items) as DotGridStackWidget[];
-        const rowIndex = itemsCopy.findIndex((item: DotGridStackWidget) => item.id === payload.id);
-        if (rowIndex > -1) itemsCopy[rowIndex] = { ...itemsCopy[rowIndex], ...payload };
+        const rowIndex = getIndexRowInItems(itemsCopy, updatedRow.id as string);
+        if (rowIndex > -1) itemsCopy[rowIndex] = { ...itemsCopy[rowIndex], ...updatedRow };
 
         return { items: itemsCopy };
     });
@@ -95,15 +103,8 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      *
      * @memberof DotTemplateBuilderStore
      */
-    readonly addColumn = this.updater(({ items }, payload: DotGridStackNode) => {
-        const newColumn = {
-            parentId: payload.grid?.parentGridItem?.id as string,
-            w: payload.w,
-            h: payload.h,
-            x: payload.x,
-            y: payload.y,
-            id: uuid()
-        };
+    readonly addColumn = this.updater(({ items }, column: DotGridStackNode) => {
+        const newColumn = createDotGridStackWidgetFromNode(column);
 
         return {
             items: items.map((row) => {
@@ -122,65 +123,54 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      *
      * @memberof DotTemplateBuilderStore
      */
-    readonly moveColumnInYAxis = this.updater(({ items }, payload: DotGridStackNode[]) => {
-        const [nodeToDelete, nodeToAdd] = payload.map((node, i) => ({
-            parentId: node.grid?.parentGridItem?.id as string,
-            w: node.w,
-            h: node.h,
-            x: node.x,
-            y: node.y,
-            id: i ? uuid() : node.id
-        }));
+    readonly moveColumnInYAxis = this.updater(
+        ({ items }, [oldNode, newNode]: DotGridStackNode[]) => {
+            const [columnToDelete, columnToAdd] = parseMovedNodeToWidget(oldNode, newNode);
 
-        const deleteNodeRowIndex = items.findIndex(
-            (item: DotGridStackWidget) => item.id === nodeToDelete.parentId
-        );
-        // To maintain the data of the node, as styleClass and containers
-        let updatedNode = items[deleteNodeRowIndex].subGridOpts?.children.find((child) => {
-            return child.id === nodeToDelete.id;
-        }) as DotGridStackNode;
+            const deleteNodeRowIndex = getIndexRowInItems(items, columnToDelete.parentId as string);
+            // To maintain the data of the node, as styleClass and containers
+            let updatedColumn = getColumnByID(
+                items[deleteNodeRowIndex].subGridOpts?.children || [],
+                columnToDelete.id as string
+            );
 
-        updatedNode = { ...updatedNode, ...nodeToAdd };
+            updatedColumn = updatedColumn ? { ...updatedColumn, ...columnToAdd } : columnToAdd;
 
-        return {
-            items: items.map((row) => {
-                if (row.id === nodeToDelete.parentId) {
-                    if (row.subGridOpts)
-                        row.subGridOpts.children = row.subGridOpts.children.filter(
-                            (child) => child.id !== nodeToDelete.id
-                        );
-                } else if (row.id === nodeToAdd.parentId) {
-                    if (row.subGridOpts) row.subGridOpts.children.push(updatedNode);
-                    else row.subGridOpts = { children: [updatedNode] };
-                }
+            return {
+                items: items.map((row) => {
+                    if (row.id === columnToDelete.parentId) {
+                        if (row.subGridOpts)
+                            row.subGridOpts.children = removeColumnByID(
+                                row,
+                                columnToDelete.id as string
+                            );
+                    } else if (row.id === columnToAdd.parentId) {
+                        if (row.subGridOpts) row.subGridOpts.children.push(updatedColumn);
+                        else row.subGridOpts = { children: [updatedColumn] };
+                    }
 
-                return row;
-            })
-        };
-    });
+                    return row;
+                })
+            };
+        }
+    );
 
     /**
      * @description This method updates the columns when changes are made
      *
      * @memberof DotTemplateBuilderStore
      */
-    readonly updateColumn = this.updater(({ items }, payload: DotGridStackNode[]) => {
-        payload = payload.map((node) => ({
-            x: node.x,
-            id: node.id as string,
-            parentId: node.grid?.parentGridItem?.id as string,
-            w: node.w,
-            styleClass: node.styleClass,
-            containers: node.containers
-        })) as DotGridStackWidget[];
+    readonly updateColumn = this.updater(({ items }, affectedColumns: DotGridStackNode[]) => {
+        affectedColumns = createDotGridStackWidgets(affectedColumns);
 
         return {
             items: items.map((row) => {
-                if (row.id === payload[0].parentId) {
+                if (row.id === affectedColumns[0].parentId) {
                     if (row.subGridOpts) {
                         row.subGridOpts.children = row.subGridOpts.children.map((child) => {
-                            const node = payload.find((node) => node.id === child.id);
-                            if (node) return { ...child, ...node };
+                            const column = getColumnByID(affectedColumns, child.id as string);
+
+                            if (column) return { ...child, ...column };
 
                             return child;
                         });
@@ -197,13 +187,14 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      *
      * @memberof DotTemplateBuilderStore
      */
-    readonly removeColumn = this.updater(({ items }, payload: DotGridStackWidget) => {
+    readonly removeColumn = this.updater(({ items }, columnToDelete: DotGridStackWidget) => {
         return {
             items: items.map((row) => {
-                if (row.id === payload.parentId) {
+                if (row.id === columnToDelete.parentId) {
                     if (row.subGridOpts) {
-                        row.subGridOpts.children = row.subGridOpts.children.filter(
-                            (child) => child.id !== payload.id
+                        row.subGridOpts.children = removeColumnByID(
+                            row,
+                            columnToDelete.id as string
                         );
                     }
                 }
