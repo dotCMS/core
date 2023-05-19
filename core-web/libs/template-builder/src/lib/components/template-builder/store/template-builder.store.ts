@@ -131,8 +131,6 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      * @memberof DotTemplateBuilderStore
      */
     readonly moveColumnInYAxis = this.updater(({ items }, payload: DotGridStackNode[]) => {
-        const itemsCopy = structuredClone(items) as DotGridStackWidget[];
-
         const [nodeToDelete, nodeToAdd] = payload.map((node, i) => ({
             parentId: node.grid?.parentGridItem?.id as string,
             w: node.w,
@@ -142,40 +140,30 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
             id: i ? String(ids++) : node.id
         }));
 
-        const deleteNodeRowIndex = itemsCopy.findIndex(
+        const deleteNodeRowIndex = items.findIndex(
             (item: DotGridStackWidget) => item.id === nodeToDelete.parentId
         );
-
-        const addNodeRowIndex = itemsCopy.findIndex(
-            (item: DotGridStackWidget) => item.id === nodeToAdd.parentId
-        );
-
         // To maintain the data of the node, as styleClass and containers
-        let updatedNode = itemsCopy[deleteNodeRowIndex].subGridOpts?.children.find((child) => {
+        let updatedNode = items[deleteNodeRowIndex].subGridOpts?.children.find((child) => {
             return child.id === nodeToDelete.id;
         }) as DotGridStackNode;
 
         updatedNode = { ...updatedNode, ...nodeToAdd };
 
-        if (deleteNodeRowIndex > -1 && itemsCopy[deleteNodeRowIndex].subGridOpts) {
-            (itemsCopy[deleteNodeRowIndex].subGridOpts as DotGridStackOptions).children =
-                itemsCopy[deleteNodeRowIndex].subGridOpts?.children.filter(
-                    (child: DotGridStackWidget) => child.id !== nodeToDelete.id
-                ) || []; // Filter the moved node
-        }
-
-        if (addNodeRowIndex > -1) {
-            if (itemsCopy[addNodeRowIndex].subGridOpts) {
-                (itemsCopy[addNodeRowIndex].subGridOpts as DotGridStackOptions).children.push(
-                    updatedNode
-                );
-            }
-            // Add the node
-            else itemsCopy[addNodeRowIndex].subGridOpts = { children: [updatedNode] };
-        }
-
         return {
-            items: itemsCopy
+            items: items.map((row) => {
+                if (row.id === nodeToDelete.parentId) {
+                    if (row.subGridOpts)
+                        row.subGridOpts.children = row.subGridOpts.children.filter(
+                            (child) => child.id !== nodeToDelete.id
+                        );
+                } else if (row.id === nodeToAdd.parentId) {
+                    if (row.subGridOpts) row.subGridOpts.children.push(updatedNode);
+                    else row.subGridOpts = { children: [updatedNode] };
+                }
+
+                return row;
+            })
         };
     });
 
