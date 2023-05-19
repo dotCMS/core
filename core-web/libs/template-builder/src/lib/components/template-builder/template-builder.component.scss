@@ -17,6 +17,10 @@
 .tools {
     display: grid;
     grid-template-columns: repeat(2, auto);
+
+    .add {
+        width: 100px;
+    }
 }
 
 .grid-stack-item {
