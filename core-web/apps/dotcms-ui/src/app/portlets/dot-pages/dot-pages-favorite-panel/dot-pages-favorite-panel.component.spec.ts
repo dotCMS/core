@@ -240,7 +240,7 @@ describe('DotPagesFavoritePanelComponent', () => {
             expect(elem.componentInstance['iconPos']).toBe('start');
             expect(elem.componentInstance['expandIcon']).toBe('pi pi-angle-down');
             expect(elem.componentInstance['collapseIcon']).toBe('pi pi-angle-up');
-            expect(elem.componentInstance['header']).toBe('favorites');
+            expect(elem.componentInstance['header']).toBe('favoritePage.panel.header');
             expect(elem.componentInstance['toggleable']).toBe(true);
         });
 

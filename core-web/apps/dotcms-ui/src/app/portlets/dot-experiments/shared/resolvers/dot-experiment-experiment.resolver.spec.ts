@@ -11,6 +11,7 @@ import { ConfirmationService } from 'primeng/api';
 
 import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
+import { DotFavoritePageService } from '@dotcms/app/api/services/dot-favorite-page/dot-favorite-page.service';
 import {
     DotAlertConfirmService,
     DotContentletLockerService,
@@ -62,6 +63,7 @@ describe('DotExperimentExperimentResolver', () => {
                 ConfirmationService,
                 DotFormatDateService,
                 DotESContentService,
+                DotFavoritePageService,
                 { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 {
