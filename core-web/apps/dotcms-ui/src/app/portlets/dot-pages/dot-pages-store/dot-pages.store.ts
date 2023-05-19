@@ -32,6 +32,7 @@ import {
     DotEventsService,
     DotLanguagesService,
     DotLicenseService,
+    DotLocalstorageService,
     DotMessageService,
     DotPageTypesService,
     DotPageWorkflowsActionsService,
@@ -61,6 +62,7 @@ import { DotPagesCreatePageDialogComponent } from '../dot-pages-create-page-dial
 
 export interface DotPagesState {
     favoritePages: {
+        collapsed?: boolean;
         items: DotCMSContentlet[];
         showLoadMoreButton: boolean;
         total: number;
@@ -95,6 +97,8 @@ export interface DotSessionStorageFilter {
 
 export const FAVORITE_PAGE_LIMIT = 5;
 
+export const LOCAL_STORAGE_FAVORITES_PANEL_KEY = 'FavoritesPanelCollapsed';
+
 export const SESSION_STORAGE_FAVORITES_KEY = 'FavoritesSearchTerms';
 
 @Injectable()
@@ -107,6 +111,10 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             keyword: state.pages.keyword,
             archived: state.pages.archived
         };
+    });
+
+    readonly isFavoritePanelCollaped$: Observable<boolean> = this.select((state) => {
+        return state.favoritePages.collapsed;
     });
 
     readonly isPagesLoading$: Observable<boolean> = this.select(
@@ -520,6 +528,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
 
     readonly vm$: Observable<DotPagesState> = this.select(
         this.state$,
+        this.isFavoritePanelCollaped$,
         this.isPagesLoading$,
         this.isPortletLoading$,
         this.languageOptions$,
@@ -538,6 +547,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                 pages,
                 portletStatus
             },
+            isFavoritePanelCollaped,
             isPagesLoading,
             isPortletLoading,
             languageOptions,
@@ -554,6 +564,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             loggedUser,
             pages,
             portletStatus,
+            isFavoritePanelCollaped,
             isPagesLoading,
             isPortletLoading,
             languageOptions,
@@ -675,6 +686,14 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         const params = JSON.parse(sessionStorage.getItem(SESSION_STORAGE_FAVORITES_KEY));
 
         return of(params);
+    }
+
+    private getLocalStorageFavoritePanelParams(): Observable<boolean> {
+        const collapsed = JSON.parse(
+            this.dotLocalstorageService.getItem(LOCAL_STORAGE_FAVORITES_PANEL_KEY)
+        );
+
+        return of(collapsed);
     }
 
     private getSelectActions(
@@ -829,7 +848,8 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         private dotEventsService: DotEventsService,
         private pushPublishService: PushPublishService,
         private siteService: SiteService,
-        private dotFavoritePageService: DotFavoritePageService
+        private dotFavoritePageService: DotFavoritePageService,
+        private dotLocalstorageService: DotLocalstorageService
     ) {
         super(null);
     }
@@ -848,7 +868,8 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             this.pushPublishService
                 .getEnvironments()
                 .pipe(map((environments: DotEnvironment[]) => !!environments.length)),
-            this.getSessionStorageFilterParams()
+            this.getSessionStorageFilterParams(),
+            this.getLocalStorageFavoritePanelParams()
         ])
             .pipe(
                 take(1),
@@ -859,7 +880,16 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                         languages,
                         isEnterprise,
                         environments,
-                        filterParams
+                        filterParams,
+                        collapsedParam
+                    ]: [
+                        ESContent,
+                        DotCurrentUser,
+                        DotLanguage[],
+                        boolean,
+                        boolean,
+                        DotSessionStorageFilter,
+                        boolean
                     ]) => {
                         return this.dotCurrentUser
                             .getUserPermissions(
@@ -877,7 +907,8 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                                         isEnterprise,
                                         environments,
                                         permissionsType,
-                                        filterParams
+                                        filterParams,
+                                        collapsedParam
                                     ];
                                 })
                             );
@@ -892,7 +923,8 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                     isEnterprise,
                     environments,
                     permissions,
-                    filterParams
+                    filterParams,
+                    collapsedParam
                 ]: [
                     ESContent,
                     DotCurrentUser,
@@ -900,10 +932,12 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                     boolean,
                     boolean,
                     DotPermissionsType,
-                    DotSessionStorageFilter
+                    DotSessionStorageFilter,
+                    boolean
                 ]): void => {
                     this.setState({
                         favoritePages: {
+                            collapsed: collapsedParam,
                             items: favoritePages?.jsonObjectView.contentlets,
                             showLoadMoreButton:
                                 favoritePages.jsonObjectView.contentlets.length <
@@ -937,6 +971,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                 () => {
                     this.setState({
                         favoritePages: {
+                            collapsed: true,
                             items: [],
                             showLoadMoreButton: false,
                             total: 0
@@ -976,6 +1011,22 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         this.setFavoritePages(favoritePages.slice(0, limit));
     }
 
+    /**
+     * Sets on LocalStorage Favorite Page panel collapsed state
+     * @param boolean collapsed
+     * @memberof DotFavoritePageStore
+     */
+    setLocalStorageFavoritePanelCollapsedParams(collapsed: boolean): void {
+        this.dotLocalstorageService.setItem(
+            LOCAL_STORAGE_FAVORITES_PANEL_KEY,
+            collapsed.toString()
+        );
+    }
+
+    /**
+     * Sets on Session Storage Page's table filter params
+     * @memberof DotFavoritePageStore
+     */
     setSessionStorageFilterParams(): void {
         const { keyword, languageId, archived } = this.get().pages;
 
