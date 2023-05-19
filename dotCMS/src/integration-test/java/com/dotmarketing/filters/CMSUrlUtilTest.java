@@ -1,5 +1,6 @@
 package com.dotmarketing.filters;
 
+import static com.dotcms.datagen.FileAssetDataGen.createFileAsset;
 import static com.dotcms.datagen.TestDataUtils.getDotAssetLikeContentlet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -81,6 +82,8 @@ public class CMSUrlUtilTest {
         final Folder parent4 = new FolderDataGen().name(parent4Name).title(parent4Name).parent(parent3)
                 .nextPersisted();
 
+        final Contentlet fileAsset = createFileAsset(parent2, "test.txt", "");
+
         final Template template = new TemplateDataGen().nextPersisted();
         detailPage1 = new HTMLPageDataGen(parent2, template)
                 .pageURL("news-detail")
@@ -91,6 +94,7 @@ public class CMSUrlUtilTest {
                 .pageURL("index")
                 .title("index")
                 .nextPersisted();
+
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
         session = mock(HttpSession.class);
@@ -106,8 +110,13 @@ public class CMSUrlUtilTest {
         cmsUrlUtil = CMSUrlUtil.getInstance();
     }
 
+    /**
+     * methodToTest {@link CMSUrlUtil#resolvePageAssetSubtype(String, Host, Long)}
+     * Given Scenario: A Content Type with a URLMap pattern and a detail page exists
+     * ExpectedResult: Should return a {@link Tuple2} object with true and IAmSubType.PAGE_URL_MAP
+     */
     @Test
-    public void whenResolvePageAssetSubtypeWithUrlMap_shouldReturnATupleWithTrueAndPageUrlMap() throws Exception {
+    public void shouldReturnATupleWithTrueAndPageUrlMap() throws Exception {
 
         // Given
         // Create a Content Type with a URLMap pattern and a detail page
@@ -129,9 +138,6 @@ public class CMSUrlUtilTest {
                 .host(site)
                 .nextPersisted();
 
-        final UrlMapContext context = getUrlMapContext(systemUser, site,
-                newsPatternPrefix + newsTestContent.getStringProperty(field.variable()));
-
         //When
         final Tuple2<Boolean, IAmSubType> pageAssetSubtype =
                 cmsUrlUtil.resolvePageAssetSubtype(
@@ -143,8 +149,13 @@ public class CMSUrlUtilTest {
 
     }
 
+    /**
+     * methodToTest {@link CMSUrlUtil#resolvePageAssetSubtype(String, Host, Long)}
+     * Given Scenario: A Content Type without a URLMap pattern
+     * ExpectedResult: Should return a {@link Tuple2} object with false and IAmSubType.NONE
+     */
     @Test
-    public void whenResolvePageAssetSubtypeWithContentletType_shouldReturnATupleWithFalseAndNone() {
+    public void shouldReturnATupleWithFalseAndNone() {
         // Given
         // Create a Content Type as a Contentlet Type
         final String newsPatternPrefix =
@@ -171,8 +182,13 @@ public class CMSUrlUtilTest {
         assertEquals(IAmSubType.NONE, pageAssetSubtype._2());
     }
 
+    /**
+     * methodToTest {@link CMSUrlUtil#resolvePageAssetSubtype(String, Host, Long)}
+     * Given Scenario: A HtmlPage with a detail page and without a URLMap pattern
+     * ExpectedResult: Should return a {@link Tuple2} object with true and IAmSubType.NONE
+     */
     @Test
-    public void whenResolvePageAssetSubtypeWithHtmlPage_shouldReturnATupleWithTrueAndNone() {
+    public void shouldReturnATupleWithTrueAndNone() {
         // Given
         final String newsPatternPrefix = "/news-events/news/news-detail";
         final Contentlet newsTestContent = getDotAssetLikeContentlet();
@@ -187,8 +203,13 @@ public class CMSUrlUtilTest {
         assertEquals(IAmSubType.NONE, pageAssetSubtype._2());
     }
 
+    /**
+     * methodToTest {@link CMSUrlUtil#resolveResourceType(IAm, String, Host, long)}
+     * Given Scenario: A Content Type with a URLMap pattern and a detail page exists
+     * ExpectedResult: Should return a {@link Tuple2} object with IAm.PAGE and IAmSubType.PAGE_URL_MAP
+     */
     @Test
-    public void whenResolveResourceTypeWithUrlMap_shouldReturnATupleWithTrueAndPageUrlMap() {
+    public void whenResolveResourceType_shouldReturnATupleWithPageAndPageUrlMap() {
         // Given
         // Create a Content Type with a URLMap pattern and a detail page
         final String newsPatternPrefix =
@@ -218,8 +239,13 @@ public class CMSUrlUtilTest {
 
     }
 
+    /**
+     * methodToTest {@link CMSUrlUtil#resolveResourceType(IAm, String, Host, long)}
+     * Given Scenario: A HtmlPage with a detail page and without a URLMap pattern associated
+     * ExpectedResult: Should return a {@link Tuple2} object with IAm.PAGE and IAmSubType.NONE
+     */
     @Test
-    public void whenResolveResourceTypeWithHtmlPage_shouldReturnATupleWithPageAndNone() {
+    public void whenResolveResourceType_shouldReturnATupleWithPageAndNone() {
         // Given
         final String newsPatternPrefix = "/news-events/news/news-detail";
         final Contentlet newsTestContent = getDotAssetLikeContentlet();
@@ -233,8 +259,13 @@ public class CMSUrlUtilTest {
         assertEquals(IAmSubType.NONE, type._2());
     }
 
+    /**
+     * methodToTest {@link CMSUrlUtil#resolveResourceType(IAm, String, Host, long)}
+     * Given Scenario: A site with folder structure exists
+     * ExpectedResult: Should return a {@link Tuple2} object with IAm.FOLDER and IAmSubType.NONE
+     */
     @Test
-    public void whenResolveResourceTypeWithFolder_shouldReturnATupleWithFolderAndNone() {
+    public void whenResolveResourceType_shouldReturnATupleWithFolderAndNone() {
         // Given
         final String newsPatternPrefix = "/news-events/news/";
 
@@ -247,8 +278,13 @@ public class CMSUrlUtilTest {
         assertEquals(IAmSubType.NONE, type._2());
     }
 
+    /**
+     * methodToTest {@link CMSUrlUtil#resolveResourceType(IAm, String, Host, long)}
+     * Given Scenario: A site with folder structure exists and an index page is inside the folder
+     * ExpectedResult: Should return a {@link Tuple2} object with IAm.PAGE and IAmSubType.PAGE_INDEX
+     */
     @Test
-    public void whenResolveResourceTypeWithPageIndex_shouldReturnATupleWithPageAndPageIndex() {
+    public void whenResolveResourceType_shouldReturnATupleWithPageAndPageIndex() {
         // Given
         final String newsPatternPrefix = "/news-events2/news2/";
 
