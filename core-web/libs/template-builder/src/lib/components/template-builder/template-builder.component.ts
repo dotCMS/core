@@ -120,12 +120,16 @@ export class TemplateBuilderComponent implements AfterViewInit, OnDestroy {
                         const newGridElement = row.el.querySelector('.grid-stack') as HTMLElement;
 
                         // Adding subgrids on drop row
-                        GridStack.addGrid(newGridElement, subGridOptions).on(
-                            'dropped',
-                            (_: Event, oldNode: GridStackNode, newNode: GridStackNode) => {
-                                this.store.subGridOnDropped(oldNode, newNode);
-                            }
-                        );
+                        GridStack.addGrid(newGridElement, subGridOptions)
+                            .on(
+                                'dropped',
+                                (_: Event, oldNode: GridStackNode, newNode: GridStackNode) => {
+                                    this.store.subGridOnDropped(oldNode, newNode);
+                                }
+                            )
+                            .on('change', (_: Event, nodes: GridStackNode[]) => {
+                                this.store.updateColumn(nodes as DotGridStackWidget[]);
+                            });
                     }
 
                     layout.push(row);
