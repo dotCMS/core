@@ -440,6 +440,11 @@ export const DotExperimentsConfigurationStoreMock = {
     targetStepVm$: of({})
 };
 
+export const DotExperimentsStoreMock = {
+    getPageId$: of('1111111'),
+    getPageTitle$: of('title of page')
+};
+
 export const DotExperimentsReportsStoreMock = {
     loadExperimentAndResults: () => of([]),
     promoteVariant: () => of([])

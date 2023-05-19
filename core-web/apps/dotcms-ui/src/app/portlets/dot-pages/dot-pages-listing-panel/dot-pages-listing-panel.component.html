@@ -24,6 +24,7 @@
                     <input
                         class="dot-pages-listing-header__filter-input"
                         [placeholder]="'Type-To-Search' | dm"
+                        [value]="vm.keywordValue"
                         (input)="filterData($event.target.value)"
                         data-testid="dot-pages-listing-header__keyword-input"
                         type="text"
@@ -32,10 +33,12 @@
                     />
                     <p-dropdown
                         class="dot-pages-listing-header__language-input"
+                        [(ngModel)]="vm.languageIdValue"
                         [options]="vm.languageOptions"
                         (onChange)="setPagesLanguage($event.value)"
                     ></p-dropdown>
                     <p-checkbox
+                        [(ngModel)]="vm.showArchivedValue"
                         [binary]="true"
                         [label]="'Show-Archived' | dm"
                         (onChange)="setPagesArchived($event.checked)"

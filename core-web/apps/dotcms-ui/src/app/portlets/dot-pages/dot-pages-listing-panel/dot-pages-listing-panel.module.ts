@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
@@ -23,6 +24,7 @@ import { DotPagesListingPanelComponent } from './dot-pages-listing-panel.compone
         ButtonModule,
         CheckboxModule,
         CommonModule,
+        FormsModule,
         DotAutofocusModule,
         DotMessagePipeModule,
         DotRelativeDatePipe,
