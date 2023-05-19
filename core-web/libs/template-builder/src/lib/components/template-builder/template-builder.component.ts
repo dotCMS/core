@@ -23,8 +23,6 @@ import { DotGridStackWidget } from './models/models';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { gridOptions, subGridOptions } from './utils/gridstack-options';
 
-let ids = 4;
-
 @Component({
     selector: 'template-builder',
     templateUrl: './template-builder.component.html',
@@ -56,7 +54,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
                 w: 12,
                 id: '3',
                 subGridOpts: {
-                    children: [{ x: 0, y: 0, w: 4, id: String(ids++) }]
+                    children: [{ x: 0, y: 0, w: 4, id: 4 }]
                 }
             }
         ];
@@ -75,13 +73,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
 
     ngAfterViewInit() {
         this.grid = GridStack.init(gridOptions).on('change', (_: Event, nodes: GridStackNode[]) => {
-            this.store.moveRow(
-                nodes.map((node) => ({
-                    y: node.y,
-                    id: node.id as string,
-                    parentId: node.grid?.parentGridItem?.id as string
-                }))
-            );
+            this.store.moveRow(nodes as DotGridStackWidget[]);
         });
 
         // Adding subgrids on load
@@ -89,16 +81,8 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
             const subgrid = GridStack.addGrid(el as HTMLElement, subGridOptions);
 
             subgrid.on('change', (_: Event, nodes: GridStackNode[]) => {
-                this.store.updateColumn(
-                    nodes.map((node) => ({
-                        x: node.x,
-                        id: node.id as string,
-                        parentId: node.grid?.parentGridItem?.id as string,
-                        w: node.w
-                    }))
-                );
+                this.store.updateColumn(nodes as DotGridStackWidget[]);
             });
-
             subgrid.on('dropped', (_: Event, oldNode: GridStackNode, newNode: GridStackNode) => {
                 this.subGridOnDropped(oldNode, newNode);
             });
@@ -110,14 +94,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
             newNode.grid?.removeWidget(newNode.el, true, false);
 
             this.store.addRow({
-                w: 12,
-                h: 1,
-                x: 1,
-                y: newNode.y,
-                id: String(ids++),
-                subGridOpts: {
-                    children: []
-                }
+                y: newNode.y
             });
         });
 
@@ -181,25 +158,9 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     private subGridOnDropped(oldNode: GridStackNode, newNode: GridStackNode) {
         // If the oldNode exists, then the widget was dropped from another subgrid
         if (oldNode && newNode) {
-            this.store.moveColumnInYAxis(
-                [oldNode, newNode].map((node, i) => ({
-                    parentId: node.grid?.parentGridItem?.id as string,
-                    w: node.w,
-                    h: node.h,
-                    x: node.x,
-                    y: node.y,
-                    id: i ? String(ids++) : node.id
-                }))
-            );
+            this.store.moveColumnInYAxis([oldNode, newNode]);
         } else {
-            this.store.addColumn({
-                parentId: newNode.grid?.parentGridItem?.id as string,
-                w: newNode.w,
-                h: newNode.h,
-                x: newNode.x,
-                y: newNode.y,
-                id: String(ids++)
-            });
+            this.store.addColumn(newNode);
 
             newNode.grid?.removeWidget(newNode.el as GridStackElement, true);
         }
