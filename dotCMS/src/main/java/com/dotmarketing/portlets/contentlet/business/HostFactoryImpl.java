@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.content.business.json.ContentletJsonAPI;
@@ -52,7 +53,6 @@ import java.util.StringTokenizer;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
-import org.jetbrains.annotations.NotNull;
 
 import static com.dotmarketing.db.DbConnectionFactory.getDBFalse;
 import static com.dotmarketing.db.DbConnectionFactory.getDBTrue;
@@ -275,11 +275,21 @@ public class HostFactoryImpl implements HostFactory {
     }
 
     @Override
-    public List<Host> findAll(int limit, int offset, String orderBy) throws DotDataException, DotSecurityException {
+    public List<Host> findAll(final int limit, final int offset, final String orderBy) throws DotDataException, DotSecurityException {
+        return findAll(limit,offset, orderBy, true);
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public List<Host> findAll(final int limit, final int offset, final String orderBy, final boolean includeSystemHost) throws DotDataException, DotSecurityException {
         final DotConnect dc = new DotConnect();
-        final StringBuffer sqlQuery = new StringBuffer().append(SELECT_SITE_INODE)
+        final StringBuilder sqlQuery = new StringBuilder().append(SELECT_SITE_INODE)
                 .append(WHERE)
-                .append(EXCLUDE_SYSTEM_HOST);
+                .append(" true ");
+        if (!includeSystemHost) {
+            sqlQuery.append(AND);
+            sqlQuery.append(EXCLUDE_SYSTEM_HOST);
+        }
         final String sanitizedSortBy = SQLUtil.sanitizeSortBy(orderBy);
         if (UtilMethods.isSet(sanitizedSortBy)) {
             sqlQuery.append(ORDER_BY);
@@ -295,8 +305,7 @@ public class HostFactoryImpl implements HostFactory {
             dc.setStartRow(offset);
         }
         final List<Map<String, String>> dbResults = dc.loadResults();
-        final List<Host> siteList = convertDbResultsToSites(dbResults);
-        return siteList;
+        return this.convertDbResultsToSites(dbResults);
     }
 
     @Override

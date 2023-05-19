@@ -1,1 +1,6 @@
 @use "variables" as *;
+
+:host {
+    max-width: 100%;
+    overflow: hidden;
+}
