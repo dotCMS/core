@@ -2480,9 +2480,6 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 
                     let dataViewButton = "<dot-data-view-button " + showDataViewButton +"\" value=\""+ state.view +"\"></dot-data-view-button>";
 
-                        let portletBar = document.querySelector(".portlet-toolbar");
-                        portletBar.insertAdjacentHTML('beforeend', '<div id=\"tablemessage\" class=\"contentlet-selection\" style=\"align-self: flex-start; margin: 0.5rem;\"></div>');
-
                         div = document.getElementById("matchingResultsDiv")
                         var structureInode = dijit.byId('structure_inode').value;
                         var strbuff = dataViewButton + "<div class=\"contentlet-results\"><%= LanguageUtil.get(pageContext, "Showing") %> " + begin + "-" + end + " <%= LanguageUtil.get(pageContext, "of1") %> " + num + "</div>";

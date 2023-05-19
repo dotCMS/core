@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "e09e6be2-cc15-46b6-96df-f5b6e6a2282c",
+		"_postman_id": "0441f95e-4230-48b5-ae39-221a9d987f34",
 		"name": "Experiments Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "4500400"
@@ -2474,7 +2474,7 @@
 											"",
 											"pm.test(\"Status code should be ok 400\", function () {",
 											"    pm.response.to.have.status(400);",
-											"    pm.expect(jsonData.message).to.contain(\"Experiment duration must be less than 35 days\");",
+											"    pm.expect(jsonData.message).to.contain(\"Experiment duration must be less than 90 days\");",
 											"});",
 											"",
 											""
@@ -2609,7 +2609,7 @@
 											"    pm.expect(jsonData.entity.pageId).equal(\"e424abd7e2e7a9031c5a0a3c18182f1b\");",
 											"    pm.expect(jsonData.entity.modDate).is.not.null;",
 											"    pm.expect(jsonData.entity.scheduling.startDate).to.equal(2608661952000);",
-											"    pm.expect(jsonData.entity.scheduling.endDate).to.equal(2611685952000);",
+											"    pm.expect(jsonData.entity.scheduling.endDate).to.equal(2616437952000);",
 											"    pm.expect(jsonData.entity.status).equal(\"DRAFT\");",
 											"    pm.expect(jsonData.entity.trafficAllocation).equal(20.0);",
 											"    pm.expect(jsonData.entity.trafficProportion.type).equal(\"SPLIT_EVENLY\");",
@@ -2683,7 +2683,7 @@
 											"    pm.expect(jsonData.entity.name).equal(\"my patched experiment\");",
 											"    pm.expect(jsonData.entity.pageId).equal(\"e424abd7e2e7a9031c5a0a3c18182f1b\");",
 											"    pm.expect(jsonData.entity.modDate).is.not.null;",
-											"    pm.expect(jsonData.entity.scheduling.startDate).to.equal(2608316352000);",
+											"    pm.expect(jsonData.entity.scheduling.startDate).to.equal(2603564352000);",
 											"    pm.expect(jsonData.entity.scheduling.endDate).to.equal(2611340352000);",
 											"    pm.expect(jsonData.entity.status).equal(\"DRAFT\");",
 											"    pm.expect(jsonData.entity.trafficAllocation).equal(20.0);",
@@ -7448,7 +7448,7 @@
 					]
 				},
 				{
-					"name": "ScheduleExperimentForMiddleOfJanuary_shouldFail",
+					"name": "ScheduleExperimentForMiddleOfMarch_shouldFail",
 					"item": [
 						{
 							"name": "pre_createExperiment",
@@ -7681,8 +7681,8 @@
 											"pm.test(\"Experiment should have the expected values\", function () {",
 											"    pm.expect(jsonData.entity.pageId).equal(\"e424abd7e2e7a9031c5a0a3c18182f1b\");",
 											"    pm.expect(jsonData.entity.modDate).is.not.null;",
-											"    pm.expect(jsonData.entity.scheduling.startDate).to.equal(2625682752000);",
-											"    pm.expect(jsonData.entity.scheduling.endDate).to.equal(2626114752000);",
+											"    pm.expect(jsonData.entity.scheduling.startDate).to.equal(2625423552000);",
+											"    pm.expect(jsonData.entity.scheduling.endDate).to.equal(2627065152000);",
 											"    pm.expect(jsonData.entity.status).equal(\"DRAFT\");",
 											"    pm.expect(jsonData.entity.trafficProportion.type).equal(\"SPLIT_EVENLY\");",
 											"",
@@ -7714,7 +7714,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\"scheduling\": {\n    \"startDate\": \"2053-03-15T20:19:12Z\",\n    \"endDate\": \"2053-03-20T20:19:12Z\"\n}}",
+									"raw": "{\"scheduling\": {\n    \"startDate\": \"2053-03-12T20:19:12Z\",\n    \"endDate\": \"2053-03-31T20:19:12Z\"\n}}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -7748,7 +7748,7 @@
 											"",
 											"pm.test(\"Experiment should conflict with existing\", function () {",
 											"    pm.response.to.have.status(400);",
-											"    pm.expect(jsonData.message).contains(\"There is a scheduling conflict between the Experiment and the scheduled Experiment. Name: 20220901\");",
+											"    pm.expect(jsonData.message).contains(\"Scheduling conflict: The same page can't be included in different experiments with overlapping schedules. Overlapping with Experiment: 20220901\");",
 											"});",
 											"",
 											"",
