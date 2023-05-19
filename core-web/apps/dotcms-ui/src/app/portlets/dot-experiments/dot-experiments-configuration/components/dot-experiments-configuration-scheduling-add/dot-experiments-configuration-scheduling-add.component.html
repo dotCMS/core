@@ -7,37 +7,39 @@
         <div class="experiment-scheduling-add__form-wrapper flex flex-column">
             <form class="p-fluid" [formGroup]="form" data-testId="add-scheduling-form" novalidate>
                 <div class="field">
-                    <label>
+                    <label dotFieldRequired for="initialDate">
                         {{ 'experiments.configure.scheduling.start.time' | dm }}
                     </label>
                     <p-calendar
+                        id="initialDate"
                         [defaultDate]="initialDate"
-                        [showTime]="true"
                         [minDate]="today"
-                        [stepMinute]="30"
                         [readonlyInput]="true"
-                        [showIcon]="true"
                         [showClear]="true"
-                        (onSelect)="setMinEndDate()"
+                        [showIcon]="true"
+                        [showTime]="true"
+                        [stepMinute]="30"
                         (onClear)="setMinEndDate()"
-                        formControlName="startDate"
+                        (onSelect)="setMinEndDate()"
                         data-testId="scheduling-startDate"
+                        formControlName="startDate"
                     ></p-calendar>
                 </div>
                 <div class="field">
-                    <label>
+                    <label dotFieldRequired for="endTime">
                         {{ 'experiments.configure.scheduling.end.time' | dm }}
                     </label>
                     <p-calendar
-                        [showTime]="true"
+                        id="endTime"
                         [defaultDate]="minEndDate || initialDate"
                         [minDate]="minEndDate || initialDate"
-                        [stepMinute]="30"
                         [readonlyInput]="true"
-                        [showIcon]="true"
                         [showClear]="true"
-                        formControlName="endDate"
+                        [showIcon]="true"
+                        [showTime]="true"
+                        [stepMinute]="30"
                         data-testId="scheduling-endDate"
+                        formControlName="endDate"
                     >
                     </p-calendar>
                 </div>
@@ -53,7 +55,6 @@
             data-testId="add-scheduling-button"
             label="{{ 'Done' | dm }}"
             pButton
-            pRipple
             type="submit"
         ></button>
     </ng-template>
