@@ -14,7 +14,6 @@ import {
     Component,
     ElementRef,
     OnDestroy,
-    OnInit,
     QueryList,
     ViewChildren
 } from '@angular/core';
@@ -29,7 +28,7 @@ import { gridOptions, subGridOptions } from './utils/gridstack-options';
     styleUrls: ['./template-builder.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestroy {
+export class TemplateBuilderComponent implements AfterViewInit, OnDestroy {
     public items$: Observable<GridStackWidget[]>;
 
     @ViewChildren('rows', {
@@ -64,16 +63,14 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
         this.items$ = this.store.items$;
     }
 
-    ngOnInit() {
-        GridStack.setupDragIn('.add', {
-            appendTo: 'body',
-            helper: 'clone'
-        });
-    }
-
     ngAfterViewInit() {
         this.grid = GridStack.init(gridOptions).on('change', (_: Event, nodes: GridStackNode[]) => {
             this.store.moveRow(nodes as DotGridStackWidget[]);
+        });
+
+        GridStack.setupDragIn('.add', {
+            appendTo: 'body',
+            helper: 'clone'
         });
 
         // Adding subgrids on load
