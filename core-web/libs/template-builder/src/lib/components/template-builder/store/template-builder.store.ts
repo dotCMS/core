@@ -214,7 +214,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      * @param {GridStackNode} newNode This is the newNode that was dropped
      * @memberof TemplateBuilderComponent
      */
-    subGridOnDropped(oldNode: GridStackNode, newNode: GridStackNode) {
+    subGridOnDropped(oldNode: GridStackNode | undefined, newNode: GridStackNode) {
         // If the oldNode exists, then the widget was dropped from another subgrid
         if (oldNode && newNode) {
             this.moveColumnInYAxis([oldNode, newNode] as DotGridStackNode[]);
