@@ -1,9 +1,13 @@
 import { ComponentStore } from '@ngrx/component-store';
-import { GridStackNode } from 'gridstack';
 
 import { Injectable } from '@angular/core';
 
-import { DotGridStackOptions, DotGridStackWidget, DotTemplateBuilderState } from '../models/models';
+import {
+    DotGridStackNode,
+    DotGridStackOptions,
+    DotGridStackWidget,
+    DotTemplateBuilderState
+} from '../models/models';
 
 let ids = 5;
 
@@ -96,7 +100,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      *
      * @memberof DotTemplateBuilderStore
      */
-    readonly addColumn = this.updater(({ items }, payload: GridStackNode) => {
+    readonly addColumn = this.updater(({ items }, payload: DotGridStackNode) => {
         const itemsCopy = structuredClone(items) as DotGridStackWidget[];
 
         const newColumn = {
@@ -125,7 +129,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      *
      * @memberof DotTemplateBuilderStore
      */
-    readonly moveColumnInYAxis = this.updater(({ items }, payload: GridStackNode[]) => {
+    readonly moveColumnInYAxis = this.updater(({ items }, payload: DotGridStackNode[]) => {
         const itemsCopy = structuredClone(items) as DotGridStackWidget[];
 
         const [nodeToDelete, nodeToAdd] = payload.map((node, i) => ({
@@ -134,21 +138,20 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
             h: node.h,
             x: node.x,
             y: node.y,
-            id: i ? String(ids++) : node.id
+            id: i ? String(ids++) : node.id,
+            styleClass: node.styleClass,
+            containers: node.containers
         }));
 
         const deleteNodeRowIndex = itemsCopy.findIndex(
             (item: DotGridStackWidget) => item.id === nodeToDelete.parentId
         );
+
         const addNodeRowIndex = itemsCopy.findIndex(
             (item: DotGridStackWidget) => item.id === nodeToAdd.parentId
         );
 
-        if (
-            deleteNodeRowIndex > -1 &&
-            itemsCopy[deleteNodeRowIndex].subGridOpts &&
-            itemsCopy[deleteNodeRowIndex].subGridOpts?.children
-        ) {
+        if (deleteNodeRowIndex > -1 && itemsCopy[deleteNodeRowIndex].subGridOpts) {
             (itemsCopy[deleteNodeRowIndex].subGridOpts as DotGridStackOptions).children = itemsCopy[
                 deleteNodeRowIndex
             ].subGridOpts?.children.filter(
@@ -157,10 +160,11 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
         }
 
         if (addNodeRowIndex > -1) {
-            if (itemsCopy[addNodeRowIndex].subGridOpts)
+            if (itemsCopy[addNodeRowIndex].subGridOpts) {
                 (itemsCopy[addNodeRowIndex].subGridOpts as DotGridStackOptions).children.push(
                     nodeToAdd
                 );
+            }
             // Add the node
             else itemsCopy[addNodeRowIndex].subGridOpts = { children: [nodeToAdd] };
         }
@@ -175,12 +179,16 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      *
      * @memberof DotTemplateBuilderStore
      */
-    readonly updateColumn = this.updater(({ items }, payload: DotGridStackWidget[]) => {
+    readonly updateColumn = this.updater(({ items }, payload: DotGridStackNode[]) => {
         const itemsCopy = structuredClone(items) as DotGridStackWidget[];
 
-        payload = (payload as GridStackNode[]).map((node) => ({
-            ...node,
-            parentId: node.grid?.parentGridItem?.id as string // Add parent id
+        payload = payload.map((node) => ({
+            x: node.x,
+            id: node.id as string,
+            parentId: node.grid?.parentGridItem?.id as string,
+            w: node.w,
+            styleClass: node.styleClass,
+            containers: node.containers
         })) as DotGridStackWidget[];
 
         const rowIndex = itemsCopy.findIndex(

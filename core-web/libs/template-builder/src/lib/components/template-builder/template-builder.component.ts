@@ -19,7 +19,7 @@ import {
     ViewChildren
 } from '@angular/core';
 
-import { DotGridStackWidget } from './models/models';
+import { DotGridStackNode, DotGridStackWidget } from './models/models';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { gridOptions, subGridOptions } from './utils/gridstack-options';
 
@@ -54,7 +54,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
                 w: 12,
                 id: '3',
                 subGridOpts: {
-                    children: [{ x: 0, y: 0, w: 4, id: 4 }]
+                    children: [{ x: 0, y: 0, w: 4, id: '4' }]
                 }
             }
         ];
@@ -158,9 +158,9 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     private subGridOnDropped(oldNode: GridStackNode, newNode: GridStackNode) {
         // If the oldNode exists, then the widget was dropped from another subgrid
         if (oldNode && newNode) {
-            this.store.moveColumnInYAxis([oldNode, newNode]);
+            this.store.moveColumnInYAxis([oldNode, newNode] as DotGridStackNode[]);
         } else {
-            this.store.addColumn(newNode);
+            this.store.addColumn(newNode as DotGridStackNode);
 
             newNode.grid?.removeWidget(newNode.el as GridStackElement, true);
         }
