@@ -670,45 +670,59 @@ public class NavToolTest extends IntegrationTestBase{
     @Test
     public void test_getNav_GivenLinkItems_ShouldOnlyShowLiveLinksLiveMode() throws Exception {
         final Host host = new SiteDataGen().nextPersisted();
-        long id = System.currentTimeMillis();
         final NavTool navTool = new NavTool();
+        final User mockedUSer = mock(User.class);
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getParameter(com.dotmarketing.util.WebKeys.PAGE_MODE_PARAMETER)).thenReturn(PageMode.LIVE.toString());
+        when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(APILocator.systemUser());
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
 
+        final ViewContext viewContext = mock(ViewContext.class);
+        when(viewContext.getRequest()).thenReturn(request);
+        navTool.init(viewContext);
         //Create Folder
         folder = new FolderDataGen().site(site).title("test").showOnMenu(true).nextPersisted();
 
         //Add create two links with different states
-        Link publishLink = new LinkDataGen().hostId(host.getIdentifier()).title("testPublish").parent(folder).target("https://google.com").linkType("INTERNAL").showOnMenu(true).nextPersisted();
+        final Link publishLink = new LinkDataGen().hostId(host.getIdentifier()).title("testPublish").parent(folder).target("https://google.com").linkType("INTERNAL").showOnMenu(true).nextPersisted();
         APILocator.getVersionableAPI().setLive(publishLink);
 
-        Link unpublishLink = new LinkDataGen().hostId(host.getIdentifier()).title("testUnpublish").parent(folder).target("https://google.com").linkType("INTERNAL").showOnMenu(true).nextPersisted();
-//        APILocator.getVersionableAPI().setLive(unpublishLink);
+        final Link unpublishLink = new LinkDataGen().hostId(host.getIdentifier()).title("testUnpublish").parent(folder).target("https://google.com").linkType("INTERNAL").showOnMenu(true).nextPersisted();
 
         final NavResult navResult1 = navTool.getNav(site, folder.getPath());
         assertNotNull("There must be a valid NavResult object", navResult1);
         assertEquals("Only only one item should appear in the nav result. ",1,navResult1.getChildren().size());
     }
 
+    /**
+     * Method to test: NavTool.getNav
+     * Given scenario: get navigation of a folder, where it contains published and unpublished links
+     * Expected result: getting the navigation must return published and unpublished links
+     * @throws Exception exception
+     */
     @Test
     public void test_getNav_GivenLinkItems_ShouldOnlyShowLinksEditMode() throws Exception {
 
         final Host host = new SiteDataGen().nextPersisted();
-        long id = System.currentTimeMillis();
         final NavTool navTool = new NavTool();
         final User mockedUSer = mock(User.class);
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        when(request.getParameter(com.dotmarketing.util.WebKeys.PAGE_MODE_PARAMETER)).thenReturn(PageMode.PREVIEW_MODE.toString());
+        when(request.getParameter(com.dotmarketing.util.WebKeys.PAGE_MODE_PARAMETER)).thenReturn(PageMode.EDIT_MODE.toString());
         when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(APILocator.systemUser());
         HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+
+        final ViewContext viewContext = mock(ViewContext.class);
+        when(viewContext.getRequest()).thenReturn(request);
+        navTool.init(viewContext);
 
         //Create Folder
         folder = new FolderDataGen().site(site).title("test").showOnMenu(true).nextPersisted();
 
         //Add create two links with different states
-        Link publishLink = new LinkDataGen().hostId(host.getIdentifier()).title("testPublish").parent(folder).target("https://google.com").linkType("INTERNAL").showOnMenu(true).nextPersisted();
+        final Link publishLink = new LinkDataGen().hostId(host.getIdentifier()).title("testPublish").parent(folder).target("https://google.com").linkType("INTERNAL").showOnMenu(true).nextPersisted();
         APILocator.getVersionableAPI().setLive(publishLink);
 
         Link unpublishLink = new LinkDataGen().hostId(host.getIdentifier()).title("testUnpublish").parent(folder).target("https://google.com").linkType("INTERNAL").showOnMenu(true).nextPersisted();
-//        APILocator.getContentletAPI().unpublish
 
         final NavResult navResult1 = navTool.getNav(site, folder.getPath());
         assertNotNull("There must be a valid NavResult object", navResult1);
