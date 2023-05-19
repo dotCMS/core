@@ -83,21 +83,24 @@ public enum ExperimentAnalyzerUtil {
 
         final  ExperimentResults.Builder builder = new ExperimentResults.Builder(variants);
         builder.addPrimaryGoal(primaryGoal);
-
-        final CubeJSResultSet pageViewsByVariants = getPageViewsByVariants(experiment, variants);
-        pageViewsByVariants.forEach(row -> {
-            final String variantId = row.get("Events.variant").map(variant -> variant.toString())
-                    .orElse(StringPool.BLANK);
-            final long pageViews = row.get("Events.count").map(object -> Long.parseLong(object.toString()))
-                    .orElse(0L);
-
-            builder.goal(primaryGoal).variant(variantId).pageView(pageViews);
-        });
-
         builder.trafficProportion(experiment.trafficProportion());
 
+        if (!browserSessions.isEmpty()) {
+            final CubeJSResultSet pageViewsByVariants = getPageViewsByVariants(experiment,
+                    variants);
+            pageViewsByVariants.forEach(row -> {
+                final String variantId = row.get("Events.variant")
+                        .map(variant -> variant.toString())
+                        .orElse(StringPool.BLANK);
+                final long pageViews = row.get("Events.count")
+                        .map(object -> Long.parseLong(object.toString()))
+                        .orElse(0L);
 
-        analyzeBrowserSessions(browserSessions, primaryGoal, builder, experiment);
+                builder.goal(primaryGoal).variant(variantId).pageView(pageViews);
+            });
+
+            analyzeBrowserSessions(browserSessions, primaryGoal, builder, experiment);
+        }
 
         return builder.build();
     }

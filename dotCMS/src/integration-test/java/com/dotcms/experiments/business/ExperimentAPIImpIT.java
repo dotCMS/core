@@ -508,6 +508,7 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
             final ExperimentsAPIImpl experimentsAPI = new ExperimentsAPIImpl(mockAnalyticsHelper);
 
             mockhttpServer.start();
+            IPUtils.disabledIpPrivateSubnet(true);
 
             final ExperimentResults results = experimentsAPI.getResults(experiment);
 
