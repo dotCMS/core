@@ -9,6 +9,10 @@ export const DEFAULT_VARIANT_NAME = 'Original';
 
 export const SESSION_STORAGE_VARIATION_KEY = 'variantName';
 
+export const TIME_14_DAYS = 12096e5;
+
+export const TIME_90_DAYS = 7776e6;
+
 export enum TrafficProportionTypes {
     SPLIT_EVENLY = 'SPLIT_EVENLY',
     CUSTOM_PERCENTAGES = 'CUSTOM_PERCENTAGES'

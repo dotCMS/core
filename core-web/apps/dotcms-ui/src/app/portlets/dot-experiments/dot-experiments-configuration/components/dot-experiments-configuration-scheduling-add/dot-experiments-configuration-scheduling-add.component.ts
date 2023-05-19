@@ -13,7 +13,13 @@ import { SidebarModule } from 'primeng/sidebar';
 import { take } from 'rxjs/operators';
 
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
-import { ComponentStatus, RangeOfDateAndTime, StepStatus } from '@dotcms/dotcms-models';
+import {
+    ComponentStatus,
+    RangeOfDateAndTime,
+    StepStatus,
+    TIME_14_DAYS,
+    TIME_90_DAYS
+} from '@dotcms/dotcms-models';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 import { DotSidebarDirective } from '@portlets/shared/directives/dot-sidebar.directive';
@@ -50,9 +56,6 @@ export class DotExperimentsConfigurationSchedulingAddComponent implements OnInit
     initialDate = new Date();
     minEndDate: Date;
     maxEndDate: Date;
-
-    private time14days = 12096e5;
-    private time90Days = 7776e6;
 
     vm$: Observable<{ experimentId: string; scheduling: RangeOfDateAndTime; status: StepStatus }> =
         this.dotExperimentsConfigurationStore.schedulingStepVm$;
@@ -135,9 +138,9 @@ export class DotExperimentsConfigurationSchedulingAddComponent implements OnInit
      */
     private setMinEndDate(): void {
         if (this.form.value.startDate) {
-            this.minEndDate = new Date(this.form.value.startDate.getTime() + this.time14days);
+            this.minEndDate = new Date(this.form.value.startDate.getTime() + TIME_14_DAYS);
         } else {
-            this.minEndDate = new Date(Date.now() + this.time14days);
+            this.minEndDate = new Date(Date.now() + TIME_14_DAYS);
         }
 
         if (this.isStatDateMoreRecent()) {
@@ -153,9 +156,9 @@ export class DotExperimentsConfigurationSchedulingAddComponent implements OnInit
      */
     private setMaxEndDate(): void {
         if (this.form.value.startDate) {
-            this.maxEndDate = new Date(this.form.value.startDate.getTime() + this.time90Days);
+            this.maxEndDate = new Date(this.form.value.startDate.getTime() + TIME_90_DAYS);
         } else {
-            this.maxEndDate = new Date(Date.now() + this.time90Days);
+            this.maxEndDate = new Date(Date.now() + TIME_90_DAYS);
         }
 
         if (this.isEndDateOutOfBoundaries()) {
@@ -169,8 +172,7 @@ export class DotExperimentsConfigurationSchedulingAddComponent implements OnInit
         return (
             this.form.value.startDate &&
             this.form.value.endDate &&
-            this.form.value.startDate.getTime() + this.time14days >
-                this.form.value.endDate.getTime()
+            this.form.value.startDate.getTime() + TIME_14_DAYS > this.form.value.endDate.getTime()
         );
     }
 
@@ -178,8 +180,7 @@ export class DotExperimentsConfigurationSchedulingAddComponent implements OnInit
         return (
             this.form.value.startDate &&
             this.form.value.endDate &&
-            this.form.value.startDate.getTime() + this.time90Days <
-                this.form.value.endDate.getTime()
+            this.form.value.startDate.getTime() + TIME_90_DAYS < this.form.value.endDate.getTime()
         );
     }
 }

@@ -111,7 +111,7 @@ describe('DotExperimentsConfigurationSchedulingAddComponent', () => {
         });
     });
 
-    it('should set min dates correctly', function () {
+    it('should set min dates correctly', () => {
         const startDateCalendar: Calendar = spectator.query(Calendar);
         const endDateCalendar: Calendar = spectator.queryLast(Calendar);
 
@@ -133,7 +133,7 @@ describe('DotExperimentsConfigurationSchedulingAddComponent', () => {
         jasmine.clock().uninstall();
     });
 
-    it('should clear end date if start date is equal or more', function () {
+    it('should clear end date if start date is equal or more', () => {
         const startDateCalendar: Calendar = spectator.query(Calendar);
 
         const component = spectator.component;
@@ -152,7 +152,7 @@ describe('DotExperimentsConfigurationSchedulingAddComponent', () => {
         jasmine.clock().uninstall();
     });
 
-    it('max end date date should be 90 days', function () {
+    it('max end date date should be 90 days', () => {
         const startDateCalendar: Calendar = spectator.query(Calendar);
 
         const component = spectator.component;
