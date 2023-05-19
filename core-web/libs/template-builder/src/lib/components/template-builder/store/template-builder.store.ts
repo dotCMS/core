@@ -158,11 +158,10 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
         updatedNode = { ...updatedNode, ...nodeToAdd };
 
         if (deleteNodeRowIndex > -1 && itemsCopy[deleteNodeRowIndex].subGridOpts) {
-            (itemsCopy[deleteNodeRowIndex].subGridOpts as DotGridStackOptions).children = itemsCopy[
-                deleteNodeRowIndex
-            ].subGridOpts?.children.filter(
-                (child: DotGridStackWidget) => child.id !== nodeToDelete.id
-            ) as DotGridStackWidget[]; // Filter the moved node
+            (itemsCopy[deleteNodeRowIndex].subGridOpts as DotGridStackOptions).children =
+                itemsCopy[deleteNodeRowIndex].subGridOpts?.children.filter(
+                    (child: DotGridStackWidget) => child.id !== nodeToDelete.id
+                ) || []; // Filter the moved node
         }
 
         if (addNodeRowIndex > -1) {
@@ -234,11 +233,10 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
             (item: DotGridStackWidget) => item.id === payload.parentId
         );
         if (rowIndex > -1 && itemsCopy[rowIndex].subGridOpts) {
-            (itemsCopy[rowIndex].subGridOpts as DotGridStackOptions).children = itemsCopy[
-                rowIndex
-            ].subGridOpts?.children.filter(
-                (child: DotGridStackWidget) => child.id !== payload.id
-            ) as DotGridStackWidget[]; // Filter the moved node
+            (itemsCopy[rowIndex].subGridOpts as DotGridStackOptions).children =
+                itemsCopy[rowIndex].subGridOpts?.children.filter(
+                    (child: DotGridStackWidget) => child.id !== payload.id
+                ) || []; // Filter the moved node
         }
 
         return { items: itemsCopy };
