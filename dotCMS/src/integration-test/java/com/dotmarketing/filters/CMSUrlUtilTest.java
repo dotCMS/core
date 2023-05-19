@@ -1,6 +1,5 @@
 package com.dotmarketing.filters;
 
-import static com.dotcms.datagen.FileAssetDataGen.createFileAsset;
 import static com.dotcms.datagen.TestDataUtils.getDotAssetLikeContentlet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -23,8 +22,6 @@ import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.cms.urlmap.UrlMapContext;
-import com.dotmarketing.cms.urlmap.UrlMapContextBuilder;
 import com.dotmarketing.filters.CMSFilter.IAm;
 import com.dotmarketing.filters.CMSFilter.IAmSubType;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -32,7 +29,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
 import io.vavr.Tuple2;
 import javax.servlet.http.HttpServletRequest;
@@ -81,8 +77,6 @@ public class CMSUrlUtilTest {
         final String parent4Name = "news2";
         final Folder parent4 = new FolderDataGen().name(parent4Name).title(parent4Name).parent(parent3)
                 .nextPersisted();
-
-        final Contentlet fileAsset = createFileAsset(parent2, "test.txt", "");
 
         final Template template = new TemplateDataGen().nextPersisted();
         detailPage1 = new HTMLPageDataGen(parent2, template)
@@ -296,16 +290,5 @@ public class CMSUrlUtilTest {
         assertEquals(IAm.PAGE, type._1());
         assertEquals(IAmSubType.PAGE_INDEX, type._2());
     }
-
-    private UrlMapContext getUrlMapContext(final User systemUser, final Host host, final String uri) {
-        return UrlMapContextBuilder.builder()
-                .setHost(host)
-                .setLanguageId(1L)
-                .setMode(PageMode.PREVIEW_MODE)
-                .setUri(uri)
-                .setUser(systemUser)
-                .build();
-    }
-
 
 }
