@@ -55,6 +55,11 @@ public class PopulateContentletAsJSONUtil {
             "    AND (c.inode = cv.working_inode OR c.inode = cv.live_inode)" +
             "   WHERE i.asset_type = 'contentlet' AND c.contentlet_as_json IS NULL;";
 
+    // Query to find all the contentlets that have a null contentlet_as_json for all the versions
+    private final String CONTENTS_WITH_NO_JSON_ALL_VERSIONS = "SELECT c.* " +
+            "FROM contentlet c " +
+            "WHERE c.contentlet_as_json IS NULL;";
+
     // Query to find all the contentlets that are NOT of a given asset_subtype and have a null contentlet_as_json
     private final String CONTENTS_WITH_NO_JSON_AND_EXCLUDE = "select c.* " +
             "from contentlet c" +
@@ -99,34 +104,47 @@ public class PopulateContentletAsJSONUtil {
     }
 
     /**
+     * Finds all the contentlets that need to be updated with the contentlet_as_json column.
+     * <p>
+     * <strong>All versions will be processed.</strong>
+     */
+    public void populateEverything() {
+        Logger.info(this, "Populate Contentlet as JSON task started for all versions");
+        populate(null, null, true);
+    }
+
+    /**
      * Finds all the contentlets that need to be updated with the contentlet_as_json column for a
      * given assetSubtype (Content Type).
+     * <p>
+     * <strong>Only working and live versions of the contentlets will be processed.</strong>
      *
      * @param assetSubtype Asset subtype (Content Type) to filter the contentlets to process, if
      *                     null then all the contentlets will be processed.
      * @throws SQLException
      * @throws IOException
      */
-    public void populateForAssetSubType(final String assetSubtype)
-            throws SQLException, IOException {
+    public void populateForAssetSubType(final String assetSubtype) {
         Logger.info(this,
                 String.format("Populate Contentlet as JSON task started for asset subtype [%s]",
                         assetSubtype));
-        populate(assetSubtype, null);
+        populate(assetSubtype, null, false);
     }
 
     /**
      * Finds all the contentlets that need to be updated with the contentlet_as_json column excluding the contentles
      * of a given assetSubtype (Content Type).
+     * <p>
+     * <strong>Only working and live versions of the contentlets will be processed.</strong>
      *
      * @param assetSubtype Asset subtype (Content Type) use to exclude contentlets of that given type from the query.
      * @throws SQLException
      * @throws DotDataException
      * @throws IOException
      */
-    public void populateExcludingAssetSubType(final String assetSubtype) throws SQLException, DotDataException, IOException {
+    public void populateExcludingAssetSubType(final String assetSubtype) {
         Logger.info(this, String.format("Populate Contentlet as JSON task started excluding asset subtype [%s]", assetSubtype));
-        populate(null, assetSubtype);
+        populate(null, assetSubtype, false);
     }
 
     /**
@@ -140,12 +158,14 @@ public class PopulateContentletAsJSONUtil {
      *                              from the query
      */
     @LogTime(loggingLevel = "INFO")
-    private void populate(@Nullable String assetSubtype, @Nullable String excludingAssetSubtype) {
+    private void populate(@Nullable String assetSubtype,
+                          @Nullable String excludingAssetSubtype,
+                          final Boolean allVersions) {
 
         Runnable findAndStore = () -> {
             try {
                 // First we need to find all the contentlets to process and write them into a file
-                findAndStore(assetSubtype, excludingAssetSubtype);
+                findAndStore(assetSubtype, excludingAssetSubtype, allVersions);
             } catch (SQLException | DotDataException e) {
                 throw new DotRuntimeException("Error finding, generating JSON representation of "
                         + "Contentlets and storing them into a temporal table.", e);
@@ -168,21 +188,23 @@ public class PopulateContentletAsJSONUtil {
                 thenRunAsync(processFile).
                 thenAccept((unused) -> {
 
-                            if (!Strings.isNullOrEmpty(assetSubtype)) {
+                    if (allVersions) {
 
-                                Logger.info(this, String.format("Contentlet as JSON migration task " +
-                                        "DONE for assetSubtype: [%s].", assetSubtype));
-                            } else if (!Strings.isNullOrEmpty(excludingAssetSubtype)) {
+                        Logger.info(this, "Contentlet as JSON migration task DONE for all versions");
+                    } else if (!Strings.isNullOrEmpty(assetSubtype)) {
 
-                                Logger.info(this, String.format("Contentlet as JSON migration task " +
-                                        "DONE for excludingAssetSubtype [%s].", excludingAssetSubtype));
-                            } else {
+                        Logger.info(this, String.format("Contentlet as JSON migration task " +
+                                "DONE for assetSubtype: [%s].", assetSubtype));
+                    } else if (!Strings.isNullOrEmpty(excludingAssetSubtype)) {
 
-                                Logger.info(this, "Contentlet as JSON migration task DONE");
-                            }
+                        Logger.info(this, String.format("Contentlet as JSON migration task " +
+                                "DONE for excludingAssetSubtype [%s].", excludingAssetSubtype));
+                    } else {
 
-                        }
-                ).join();// Block the current thread and wait for the CompletableFuture to complete
+                        Logger.info(this, "Contentlet as JSON migration task DONE");
+                    }
+
+                }).join();// Block the current thread and wait for the CompletableFuture to complete
     }
 
     /**
@@ -199,8 +221,9 @@ public class PopulateContentletAsJSONUtil {
      */
     @WrapInTransaction
     private void findAndStore(@Nullable final String assetSubtype,
-                              @Nullable final String excludingAssetSubtype) throws
-            SQLException, DotDataException {
+                              @Nullable final String excludingAssetSubtype,
+                              final Boolean allVersions
+    ) throws SQLException, DotDataException {
 
         Logger.info(this, "Finding records with missing Contentlet as JSON");
 
@@ -214,7 +237,7 @@ public class PopulateContentletAsJSONUtil {
         try (var stmt = conn.createStatement()) {
 
             // Declaring the cursor
-            declareCursor(stmt, assetSubtype, excludingAssetSubtype);
+            declareCursor(stmt, assetSubtype, excludingAssetSubtype, allVersions);
 
             boolean hasRows;
 
@@ -349,20 +372,23 @@ public class PopulateContentletAsJSONUtil {
      * @param excludingAssetSubtype The asset subtype (Content Type) to exclude in the search, if null no Content Type will be excluded.
      * @throws SQLException
      */
-    private void declareCursor(final Statement stmt, @Nullable final String assetSubtype,
-                               @Nullable final String excludingAssetSubtype) throws SQLException {
+    private void declareCursor(final Statement stmt,
+                               @Nullable final String assetSubtype,
+                               @Nullable final String excludingAssetSubtype,
+                               final Boolean allVersions
+    ) throws SQLException {
 
         // Declaring the cursor
-        if (Strings.isNullOrEmpty(assetSubtype)) {
-            if (Strings.isNullOrEmpty(excludingAssetSubtype)) {
-                stmt.execute(String.format(DECLARE_CURSOR, CONTENTS_WITH_NO_JSON));
-            } else {
-                var selectQuery = String.format(CONTENTS_WITH_NO_JSON_AND_EXCLUDE, excludingAssetSubtype);
-                stmt.execute(String.format(DECLARE_CURSOR, selectQuery));
-            }
-        } else {
+        if (allVersions) {
+            stmt.execute(String.format(DECLARE_CURSOR, CONTENTS_WITH_NO_JSON_ALL_VERSIONS));
+        } else if (!Strings.isNullOrEmpty(assetSubtype)) {
             var selectQuery = String.format(SUBTYPE_WITH_NO_JSON, assetSubtype);
             stmt.execute(String.format(DECLARE_CURSOR, selectQuery));
+        } else if (!Strings.isNullOrEmpty(excludingAssetSubtype)) {
+            var selectQuery = String.format(CONTENTS_WITH_NO_JSON_AND_EXCLUDE, excludingAssetSubtype);
+            stmt.execute(String.format(DECLARE_CURSOR, selectQuery));
+        } else {
+            stmt.execute(String.format(DECLARE_CURSOR, CONTENTS_WITH_NO_JSON));
         }
     }
 

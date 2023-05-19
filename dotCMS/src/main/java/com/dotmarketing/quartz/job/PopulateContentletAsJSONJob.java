@@ -1,7 +1,6 @@
 package com.dotmarketing.quartz.job;
 
 import com.dotcms.util.content.json.PopulateContentletAsJSONUtil;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.quartz.DotStatefulJob;
 import com.dotmarketing.quartz.QuartzUtils;
@@ -11,9 +10,6 @@ import com.google.common.annotations.VisibleForTesting;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.quartz.*;
-
-import java.io.IOException;
-import java.sql.SQLException;
 
 /**
  * Job created to populate in the Contentlet table missing contentlet_as_json columns.
@@ -43,9 +39,6 @@ public class PopulateContentletAsJSONJob extends DotStatefulJob {
 
             // Removing the job if everything went well
             removeJob();
-        } catch (SQLException | DotDataException | IOException e) {
-            Logger.error(this, "Error executing Contentlet as JSON population job", e);
-            throw new DotRuntimeException(e);
         } catch (SchedulerException e) {
             Logger.error(this, String.format("Unable to remove [%s] job",
                     PopulateContentletAsJSONJob.class.getName()), e);
