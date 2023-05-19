@@ -214,6 +214,8 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
         };
     });
 
+    // Utils methods
+
     /**
      * @description This is called when a widget is dropped in a subgrid
      *
