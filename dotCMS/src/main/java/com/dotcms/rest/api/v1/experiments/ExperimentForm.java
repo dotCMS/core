@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.experiments;
 import static com.dotcms.util.CollectionsUtils.map;
 
 import com.dotcms.experiments.model.AbstractGoals;
+import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Goal;
 import com.dotcms.experiments.model.Goals;
 import com.dotcms.experiments.model.Scheduling;
@@ -145,22 +146,9 @@ public class ExperimentForm extends Validated {
             return this;
         }
 
-        public Builder withGoals(final Map<String, Object> goalsMapInput) {
-
-            try {
-                final ObjectMapper defaultObjectMapper = DotObjectMapperProvider.getInstance()
-                        .getDefaultObjectMapper();
-                final Map<String, Object> metric = (Map<String, Object>) goalsMapInput.get("primary");
-                final String type = metric.get("type").toString();
-                final Map<String, Object> goalsMap  = map("primary", map("metric", metric, "type", type));
-                final String json = defaultObjectMapper.writeValueAsString(goalsMap);
-
-                this.goals = defaultObjectMapper.readValue(json, Goals.class);
-
-                return this;
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException(e);
-            }
+        public Builder withGoals(final Goals goals) {
+            this.goals = goals;
+            return this;
         }
 
         public ExperimentForm build() {
@@ -171,4 +159,6 @@ public class ExperimentForm extends Validated {
     private void validateScheduling(final Scheduling scheduling) {
         APILocator.getExperimentsAPI().validateScheduling(scheduling);
     }
+
+
 }

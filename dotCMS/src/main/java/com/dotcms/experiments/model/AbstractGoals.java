@@ -1,6 +1,7 @@
 package com.dotcms.experiments.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.io.Serializable;
@@ -14,9 +15,10 @@ import org.immutables.value.Value;
  */
 @Value.Style(typeImmutable="*", typeAbstract="Abstract*")
 @Value.Immutable
-@JsonSerialize(as = Goals.class)
-@JsonDeserialize(as = Goals.class)
+@JsonSerialize(as = Goals.class, using = GoalsSerializer.class)
+@JsonDeserialize(as = Goals.class, using = GoalsDeserializer.class)
 public interface AbstractGoals extends Serializable {
     @JsonProperty("primary")
     Goal primary();
+
 }
