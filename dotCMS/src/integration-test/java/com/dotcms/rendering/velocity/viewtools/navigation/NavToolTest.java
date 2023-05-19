@@ -2,13 +2,7 @@ package com.dotcms.rendering.velocity.viewtools.navigation;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.FileAssetDataGen;
-import com.dotcms.datagen.FolderDataGen;
-import com.dotcms.datagen.HTMLPageDataGen;
-import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.datagen.TemplateDataGen;
-import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.*;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -674,91 +668,50 @@ public class NavToolTest extends IntegrationTestBase{
      * @throws Exception exception
      */
     @Test
-    public void test_getNav_GivenLinkItems_ShouldOnlyShowLiveLinks() throws Exception {
+    public void test_getNav_GivenLinkItems_ShouldOnlyShowLiveLinksLiveMode() throws Exception {
         final Host host = new SiteDataGen().nextPersisted();
         long id = System.currentTimeMillis();
+        final NavTool navTool = new NavTool();
 
         //Create Folder
-        folder = folderAPI.createFolders("/test"+id, host, user, false);
-        folder.setOwner(user.getUserId());
-        folderAPI.save(folder, user, false);
-
-        // create template
-        final Template template = new TemplateDataGen().nextPersisted();
-
-        // create page
-        final String pageStr="testPage"+id;
-//        IHTMLPage page = htmlPageAssetAPI
-//                .getPageByPath(folder.getPath()+pageStr, host, APILocator.getLanguageAPI().getDefaultLanguage().getId(), true);
-
-        Contentlet contentAsset = new Contentlet();
-        contentAsset
-                .setContentTypeId(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
-        contentAsset.setHost(host.getIdentifier());
-        contentAsset.setProperty(HTMLPageAssetAPIImpl.FRIENDLY_NAME_FIELD, pageStr);
-        contentAsset.setProperty(HTMLPageAssetAPIImpl.URL_FIELD, pageStr);
-        contentAsset.setProperty(HTMLPageAssetAPIImpl.TITLE_FIELD, pageStr);
-        contentAsset.setProperty(HTMLPageAssetAPIImpl.CACHE_TTL_FIELD, "0");
-        contentAsset.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD, template.getIdentifier());
-        contentAsset.setLanguageId(1);
-        contentAsset.setFolder(folder.getInode());
-        contentAsset = contentletAPI.checkin(contentAsset, user, false);
-        contentletAPI.publish(contentAsset, user, false);
-
-
-//        Contentlet pageContentlet = TestDataUtils.getPageContent(true, 1);
-//        IHTMLPage page = APILocator.getHTMLPageAssetAPI().fromContentlet(pageContentlet);
-        Identifier internalLinkIdentifier = identifierAPI.find(contentAsset.getIdentifier());
-
-        StringBuffer myURL = new StringBuffer();
-        if (InodeUtils.isSet(internalLinkIdentifier.getHostId())) {
-            myURL.append(host.getHostname());
-        }
-        myURL.append(internalLinkIdentifier.getURI());
+        folder = new FolderDataGen().site(site).title("test").showOnMenu(true).nextPersisted();
 
         //Add create two links with different states
-        final String linkStr="link publish";
+        Link publishLink = new LinkDataGen().hostId(host.getIdentifier()).title("testPublish").parent(folder).target("https://google.com").linkType("INTERNAL").showOnMenu(true).nextPersisted();
+        APILocator.getVersionableAPI().setLive(publishLink);
 
-        Link link = new Link();
-        link.setTitle(linkStr);
-        link.setFriendlyName(linkStr);
-        link.setParent(folder.getInode());
-        link.setTarget("_blank");
-        link.setOwner(user.getUserId());
-        link.setModUser(user.getUserId());
-        link.setLinkType(Link.LinkType.INTERNAL.toString());
-        link.setProtocal("http://");
-        link.setUrl(myURL.toString());
-        link.setInternalLinkIdentifier(internalLinkIdentifier.getId());
-        WebAssetFactory.createAsset(link, user.getUserId(), folder);
-        versionableAPI.setLive(link);
+        Link unpublishLink = new LinkDataGen().hostId(host.getIdentifier()).title("testUnpublish").parent(folder).target("https://google.com").linkType("INTERNAL").showOnMenu(true).nextPersisted();
+//        APILocator.getVersionableAPI().setLive(unpublishLink);
+
+        final NavResult navResult1 = navTool.getNav(site, folder.getPath());
+        assertNotNull("There must be a valid NavResult object", navResult1);
+        assertEquals("Only only one item should appear in the nav result. ",1,navResult1.getChildren().size());
+    }
+
+    @Test
+    public void test_getNav_GivenLinkItems_ShouldOnlyShowLinksEditMode() throws Exception {
+
+        final Host host = new SiteDataGen().nextPersisted();
+        long id = System.currentTimeMillis();
+        final NavTool navTool = new NavTool();
+        final User mockedUSer = mock(User.class);
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getParameter(com.dotmarketing.util.WebKeys.PAGE_MODE_PARAMETER)).thenReturn(PageMode.PREVIEW_MODE.toString());
+        when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(APILocator.systemUser());
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+
+        //Create Folder
+        folder = new FolderDataGen().site(site).title("test").showOnMenu(true).nextPersisted();
 
         //Add create two links with different states
-        final String linkStr2= "link unpublish"+id;
+        Link publishLink = new LinkDataGen().hostId(host.getIdentifier()).title("testPublish").parent(folder).target("https://google.com").linkType("INTERNAL").showOnMenu(true).nextPersisted();
+        APILocator.getVersionableAPI().setLive(publishLink);
 
-        myURL = new StringBuffer();
-        if (InodeUtils.isSet(internalLinkIdentifier.getHostId())) {
-            myURL.append(host.getHostname());
-        }
-        myURL.append(internalLinkIdentifier.getURI());
+        Link unpublishLink = new LinkDataGen().hostId(host.getIdentifier()).title("testUnpublish").parent(folder).target("https://google.com").linkType("INTERNAL").showOnMenu(true).nextPersisted();
+//        APILocator.getContentletAPI().unpublish
 
-        Link link2 = new Link();
-        link2.setTitle(linkStr2);
-        link2.setFriendlyName(linkStr2);
-        link2.setParent(folder.getInode());
-        link2.setTarget("_blank");
-        link2.setOwner(user.getUserId());
-        link2.setModUser(user.getUserId());
-        link2.setLinkType(Link.LinkType.INTERNAL.toString());
-        link2.setProtocal("http://");
-        link2.setUrl(myURL.toString());
-        link2.setInternalLinkIdentifier(internalLinkIdentifier.getId());
-        WebAssetFactory.createAsset(link2, user.getUserId(), folder);
-
-        // Get nav result, should get only one link
-        final NavResult navResult = new NavTool().getNav(host,folder.getPath(),1,user);
-        assertNotNull(navResult);
-        assertEquals(1,navResult.getChildren().size());
-
+        final NavResult navResult1 = navTool.getNav(site, folder.getPath());
+        assertNotNull("There must be a valid NavResult object", navResult1);
+        assertEquals("Both items should appear in the nav result. ",2,navResult1.getChildren().size());
     }
 }
