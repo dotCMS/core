@@ -1,16 +1,6 @@
 package com.dotcms.http.server.mock;
 
 
-import com.dotcms.analytics.metrics.Condition;
-import com.dotcms.analytics.metrics.Condition.Builder;
-import com.dotcms.http.CircuitBreakerUrlBuilder;
-import com.dotcms.repackage.com.sun.xml.ws.client.ResponseContext;
-import com.dotcms.util.JsonUtil;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.util.UtilMethods;
-import com.liferay.util.StringPool;
-import com.sun.net.httpserver.Headers;
-import com.sun.net.httpserver.HttpExchange;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -21,6 +11,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import org.apache.commons.io.IOUtils;
+import com.dotcms.util.JsonUtil;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.util.StringPool;
+import com.sun.net.httpserver.Headers;
+import com.sun.net.httpserver.HttpExchange;
 
 /**
  * Represent a url to mock into a {@link MockHttpServer}, you can set the URL to response and also
