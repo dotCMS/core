@@ -80,7 +80,7 @@ describe('DotExperimentsConfigurationStore', () => {
     });
 
     beforeEach(() => {
-        spectator = createStoreService({});
+        spectator = createStoreService();
 
         store = spectator.inject(DotExperimentsConfigurationStore);
         dotExperimentsService = spectator.inject(DotExperimentsService);
