@@ -2,7 +2,6 @@ import {
     GridHTMLElement,
     GridItemHTMLElement,
     GridStack,
-    GridStackElement,
     GridStackNode,
     GridStackWidget
 } from 'gridstack';
@@ -19,7 +18,7 @@ import {
     ViewChildren
 } from '@angular/core';
 
-import { DotGridStackNode, DotGridStackWidget } from './models/models';
+import { DotGridStackWidget } from './models/models';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { gridOptions, subGridOptions } from './utils/gridstack-options';
 
@@ -84,7 +83,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
                 this.store.updateColumn(nodes as DotGridStackWidget[]);
             });
             subgrid.on('dropped', (_: Event, oldNode: GridStackNode, newNode: GridStackNode) => {
-                this.subGridOnDropped(oldNode, newNode);
+                this.store.subGridOnDropped(oldNode, newNode);
             });
         });
 
@@ -126,7 +125,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
                         GridStack.addGrid(newGridElement, subGridOptions).on(
                             'dropped',
                             (_: Event, oldNode: GridStackNode, newNode: GridStackNode) => {
-                                this.subGridOnDropped(oldNode, newNode);
+                                this.store.subGridOnDropped(oldNode, newNode);
                             }
                         );
                     }
@@ -145,24 +144,5 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
 
     identify(_: number, w: GridStackWidget) {
         return w.id;
-    }
-
-    /**
-     * @description This is called when a widget is dropped in a subgrid
-     *
-     * @private
-     * @param {GridStackNode} oldNode This is not undefined when you dropped a widget that was on another subGrid
-     * @param {GridStackNode} newNode This is the newNode that was dropped
-     * @memberof TemplateBuilderComponent
-     */
-    private subGridOnDropped(oldNode: GridStackNode, newNode: GridStackNode) {
-        // If the oldNode exists, then the widget was dropped from another subgrid
-        if (oldNode && newNode) {
-            this.store.moveColumnInYAxis([oldNode, newNode] as DotGridStackNode[]);
-        } else {
-            this.store.addColumn(newNode as DotGridStackNode);
-
-            newNode.grid?.removeWidget(newNode.el as GridStackElement, true);
-        }
     }
 }

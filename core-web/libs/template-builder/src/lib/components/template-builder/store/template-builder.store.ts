@@ -1,4 +1,5 @@
 import { ComponentStore } from '@ngrx/component-store';
+import { GridStackElement, GridStackNode } from 'gridstack';
 
 import { Injectable } from '@angular/core';
 
@@ -138,9 +139,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
             h: node.h,
             x: node.x,
             y: node.y,
-            id: i ? String(ids++) : node.id,
-            styleClass: node.styleClass,
-            containers: node.containers
+            id: i ? String(ids++) : node.id
         }));
 
         const deleteNodeRowIndex = itemsCopy.findIndex(
@@ -150,6 +149,13 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
         const addNodeRowIndex = itemsCopy.findIndex(
             (item: DotGridStackWidget) => item.id === nodeToAdd.parentId
         );
+
+        // To maintain the data of the node, as styleClass and containers
+        let updatedNode = itemsCopy[deleteNodeRowIndex].subGridOpts?.children.find((child) => {
+            return child.id === nodeToDelete.id;
+        }) as DotGridStackNode;
+
+        updatedNode = { ...updatedNode, ...nodeToAdd };
 
         if (deleteNodeRowIndex > -1 && itemsCopy[deleteNodeRowIndex].subGridOpts) {
             (itemsCopy[deleteNodeRowIndex].subGridOpts as DotGridStackOptions).children = itemsCopy[
@@ -162,11 +168,11 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
         if (addNodeRowIndex > -1) {
             if (itemsCopy[addNodeRowIndex].subGridOpts) {
                 (itemsCopy[addNodeRowIndex].subGridOpts as DotGridStackOptions).children.push(
-                    nodeToAdd
+                    updatedNode
                 );
             }
             // Add the node
-            else itemsCopy[addNodeRowIndex].subGridOpts = { children: [nodeToAdd] };
+            else itemsCopy[addNodeRowIndex].subGridOpts = { children: [updatedNode] };
         }
 
         return {
@@ -237,4 +243,23 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
 
         return { items: itemsCopy };
     });
+
+    /**
+     * @description This is called when a widget is dropped in a subgrid
+     *
+     * @private
+     * @param {GridStackNode} oldNode This is not undefined when you dropped a widget that was on another subGrid
+     * @param {GridStackNode} newNode This is the newNode that was dropped
+     * @memberof TemplateBuilderComponent
+     */
+    subGridOnDropped(oldNode: GridStackNode, newNode: GridStackNode) {
+        // If the oldNode exists, then the widget was dropped from another subgrid
+        if (oldNode && newNode) {
+            this.moveColumnInYAxis([oldNode, newNode] as DotGridStackNode[]);
+        } else {
+            this.addColumn(newNode as DotGridStackNode);
+
+            newNode.grid?.removeWidget(newNode.el as GridStackElement, true);
+        }
+    }
 }
