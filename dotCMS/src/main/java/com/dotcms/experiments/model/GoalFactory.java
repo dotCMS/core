@@ -17,7 +17,8 @@ public class GoalFactory {
 
     private static final Map<MetricType, Function<Metric, Goal>> builder = map(
             MetricType.BOUNCE_RATE,  metric -> new BounceRateGoal(metric),
-            MetricType.REACH_PAGE, metric -> new ReachPageGoal(metric)
+            MetricType.REACH_PAGE, metric -> new ReachPageGoal(metric),
+            MetricType.CLICK_ON_ELEMENT, metric -> new ClickOnElementGoal(metric)
     );
 
     /**
