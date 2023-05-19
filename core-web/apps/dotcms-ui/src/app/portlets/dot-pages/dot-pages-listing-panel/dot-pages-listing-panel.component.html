@@ -78,7 +78,6 @@
         </ng-template>
         <ng-template pTemplate="body" let-rowData let-rowIndex="rowIndex">
             <tr
-                class="dot-pages-listing-content__row"
                 id="tableRow-{{ rowIndex }}"
                 [pSelectableRow]="rowData"
                 (contextmenu)="
@@ -88,6 +87,7 @@
                         item: rowData
                     })
                 "
+                style="height: 47px"
                 pContextMenuRow
             >
                 <td>{{ rowData['title'] }}</td>
@@ -133,7 +133,7 @@
             </tr>
         </ng-template>
         <ng-template pTemplate="loadingbody">
-            <tr>
+            <tr style="height: 47px">
                 <td><p-skeleton [ngStyle]="{ width: '25%' }"></p-skeleton></td>
                 <td><p-skeleton [ngStyle]="{ width: '20%' }"></p-skeleton></td>
                 <td><p-skeleton [ngStyle]="{ width: '12%' }"></p-skeleton></td>
