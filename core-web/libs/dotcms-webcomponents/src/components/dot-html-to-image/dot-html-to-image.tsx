@@ -52,6 +52,11 @@ export class DotHtmlToImage {
         });
     ;`;
 
+    componentDidRender() {
+        this.iframe = document.querySelector(`#${this.iframeId}`) as HTMLIFrameElement;
+        this.doc = this.iframe.contentDocument || this.iframe.contentWindow.document;
+    }
+
     componentDidLoad() {
         try {
             this.doc.open();
@@ -64,9 +69,6 @@ export class DotHtmlToImage {
 
     private onLoad() {
         try {
-            this.iframe = document.querySelector(`#${this.iframeId}`) as HTMLIFrameElement;
-            this.doc = this.iframe.contentDocument || this.iframe.contentWindow.document;
-
             const scriptLib = document.createElement('script') as HTMLScriptElement;
             scriptLib.src = '/html/js/html2canvas/html2canvas.min.js';
             scriptLib.type = 'text/javascript';
