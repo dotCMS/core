@@ -2,7 +2,7 @@ name: build-docker-image-5x
 on:
   push:
     branches:
-      - '*5.2.8.5*'
+      - '*5.1.7*'
 
 jobs:
   docker:
