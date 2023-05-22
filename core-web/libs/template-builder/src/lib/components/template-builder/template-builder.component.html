@@ -25,7 +25,7 @@
         [attr.gs-w]="row.w"
         [attr.gs-h]="row.h"
     >
-        id: {{ row.id }} - y: {{ row.y }}
+        id: {{ row.id }} - y: {{ row.y }} - styleClass: {{ row.styleClass?.join(' ') }}
         <div class="grid-stack-item-content grid-stack">
             <div
                 class="grid-stack-item sub"
@@ -38,7 +38,12 @@
                 [attr.gs-w]="box.w"
                 [attr.gs-h]="box.h"
             >
-                <div class="grid-stack-item-content">Hello World</div>
+                <div class="grid-stack-item-content">
+                    styleClass: {{ box.styleClass?.join(' ') }}
+                    <p *ngFor="let container of box.containers">
+                        identifier: {{ container.identifier }}
+                    </p>
+                </div>
             </div>
         </div>
     </div>

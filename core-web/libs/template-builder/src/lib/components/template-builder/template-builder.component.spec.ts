@@ -15,6 +15,18 @@ describe('TemplateBuilderComponent', () => {
 
         fixture = TestBed.createComponent(TemplateBuilderComponent);
         component = fixture.componentInstance;
+
+        component.templateLayout = {
+            body: {
+                rows: []
+            },
+            footer: false,
+            header: false,
+            sidebar: {},
+            title: '',
+            width: ''
+        };
+
         fixture.detectChanges();
     });
 
