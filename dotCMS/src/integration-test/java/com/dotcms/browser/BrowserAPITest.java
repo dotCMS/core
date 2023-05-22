@@ -33,6 +33,7 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple;
 import io.vavr.Tuple3;
+import io.vavr.control.Try;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -616,6 +617,48 @@ public class BrowserAPITest extends IntegrationTestBase {
 
         assertNotNull(contentletList);
         assertNotNull(result);
+    }
+
+
+    /**
+     * Generally speaking in most cases when a file is uploaded title and file name are the same.
+     * But this is not always the case. Since we can upload a file via workflows and the title is not required.
+     * Or it can take any value.
+     * Given scenario: A folder with a file asset with no title.
+     * Expected result: We query using the file name The file asset should be returned by the API.
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws IOException
+     */
+    @Test
+    public void getFolderContent_searchAssetWithSha256_Expect_Results()
+            throws DotDataException, DotSecurityException, IOException {
+
+        final File file = FileUtil.createTemporaryFile("lol", ".txt", "lol");
+        final Folder folder = new FolderDataGen().nextPersisted();
+        new FileAssetDataGen(folder, file).languageId(1).nextPersisted();
+
+        final String sha256 = Try.of(() -> FileUtil.sha256toUnixHash(file)).getOrElse("unknown");
+
+        final User user = APILocator.systemUser();
+
+        final BrowserQuery browserQuery = BrowserQuery.builder()
+                .withUser(user)
+                .maxResults(1)
+                .withHostOrFolderId(folder.getIdentifier())
+                .withSha256s(List.of(sha256))
+                .showWorking(true)
+                .showArchived(false)
+                .showFolders(false)
+                .showFiles(true)
+                .showContent(true)
+                .withLanguageId(1)
+                .showDotAssets(false)
+                .build();
+
+        final List<Contentlet> contentletList = this.browserAPI.getContentUnderParentFromDB(browserQuery);
+        assertFalse(contentletList.isEmpty());
+
     }
 
 }

@@ -51,7 +51,7 @@ public class BrowserQuery {
     final Folder folder;
     final Parentable directParent;
     final Role[] roles;
-    final List<String> extensions, mimeTypes;
+    final List<String> extensions, mimeTypes, sha256s;
 
     @Override
     public String toString() {
@@ -77,6 +77,7 @@ public class BrowserQuery {
         this.showShorties = builder.showShorties;
         this.mimeTypes     = builder.mimeTypes;
         this.extensions    = builder.extensions;
+        this.sha256s       = builder.sha256s;
         this.sortByDesc = UtilMethods.isEmpty(builder.sortBy) ? true : builder.sortByDesc;
         this.showLinks = builder.showLinks;
         this.showDefaultLangItems = builder.showDefaultLangItems;
@@ -188,6 +189,9 @@ public class BrowserQuery {
         private String hostIdSystemFolder = null;
         private List<String> mimeTypes = new ArrayList<>();
         private List<String> extensions = new ArrayList<>();
+
+        private List<String> sha256s = new ArrayList<>();
+
         private Builder() {
         }
 
@@ -215,6 +219,7 @@ public class BrowserQuery {
             this.showContent = browserQuery.showContent;
             this.showShorties = browserQuery.showShorties;
             this.showDefaultLangItems = browserQuery.showDefaultLangItems;
+            this.sha256s = browserQuery.sha256s;
         }
 
         public Builder withUser(@Nonnull User user) {
@@ -232,6 +237,11 @@ public class BrowserQuery {
                 luceneQuery.append(StringPool.SPACE).append(filter);
                 this.filter = filter;
             }
+            return this;
+        }
+
+        public Builder withSha256s(@Nonnull List<String> sha256s) {
+            this.sha256s = new ArrayList<>(sha256s);
             return this;
         }
 

@@ -60,6 +60,10 @@ public class BrowserAPIImpl implements BrowserAPI {
     private static final StringBuilder POSTGRES_ASSETNAME_COLUMN = new StringBuilder(ContentletJsonAPI
             .CONTENTLET_AS_JSON).append("-> 'fields' -> ").append("'asset' -> 'metadata' ->> ").append("'name' ");
 
+    private static final StringBuilder POSTGRES_ASSET_SHA256_COLUMN = new StringBuilder(ContentletJsonAPI
+            .CONTENTLET_AS_JSON).append("-> 'fields' -> ").append("'fileAsset' -> 'metadata' ->> ").append("'sha256' ");
+
+
     private static final StringBuilder MSSQL_ASSETNAME_COLUMN = new StringBuilder("JSON_VALUE(c.").append
             (ContentletJsonAPI.CONTENTLET_AS_JSON).append(", '$.fields.").append("asset.metadata.").append("name')" +
             " ");
@@ -335,6 +339,22 @@ public class BrowserAPIImpl implements BrowserAPI {
             sqlQuery.append(" ) ");
             parameters.add("%" + filterText + "%");
         }
+
+        if(UtilMethods.isSet(browserQuery.sha256s)){
+            sqlQuery.append(" and (");
+            sqlQuery.append(POSTGRES_ASSET_SHA256_COLUMN).append(" IN ( ");
+
+            final Iterator<String> iterator = browserQuery.sha256s.iterator();
+            while(iterator.hasNext()) {
+                final String sha256 = iterator.next();
+                sqlQuery.append("'").append(sha256).append("'");
+                if(iterator.hasNext()){
+                    sqlQuery.append(" , ");
+                }
+            }
+            sqlQuery.append(") ) ");
+        }
+
         if (browserQuery.showMenuItemsOnly) {
             sqlQuery.append(" and c.show_on_menu = ").append(DbConnectionFactory.getDBTrue());
             luceneQuery.append(" +showOnMenu:true ");
