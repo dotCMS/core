@@ -31,7 +31,7 @@ package com.liferay.util.lang;
  */
 public class ArrayWrapper {
 
-	public ArrayWrapper() {
+	public ArrayWrapper(Object[] array) {
 	}
 
 	public Object[] getArray() {

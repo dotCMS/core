@@ -47,8 +47,8 @@ package com.dotcms.enterprise.achecker;
 
 
 import java.util.List;
-
 import javax.xml.bind.annotation.XmlRootElement;
+
 
 @XmlRootElement
 public class ACheckerResponse {

@@ -10,6 +10,7 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import javax.activation.MimeType;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 /**
  * Mime Type Utils
@@ -40,7 +41,7 @@ public class MimeTypeUtils {
                     mimeType = new TikaUtils().detect(binary);
                 } catch(Throwable e) {
                     Logger.warn(MimeTypeUtils.class, "Unable to parse Mime type for : " + binary);
-                    Logger.warn(MimeTypeUtils.class, e.getMessage() + e.getStackTrace()[0]);
+                    Logger.warn(MimeTypeUtils.class, ExceptionUtils.getStackTrace(e));
                 }
 
                 if(!UtilMethods.isSet(mimeType)) {

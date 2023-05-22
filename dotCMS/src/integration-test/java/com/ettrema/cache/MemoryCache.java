@@ -9,7 +9,7 @@ import java.util.Map;
  */
 public class MemoryCache<K, T> implements Cache<K, T>, Service {
 
-    private final static com.dotcms.repackage.org.slf4j.Logger log = com.dotcms.repackage.org.slf4j.LoggerFactory.getLogger(MemoryCache.class);
+    private final static org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(MemoryCache.class);
     private final String name;
     private final int highWater;
     private final int lowWater;

@@ -116,7 +116,7 @@ yarn-error.log
 testem.log
 /core-web/typings
 karma_html/
-/dotCMS/dotsecure
+dotsecure
 
 # e2e
 /core-web/e2e/*.js

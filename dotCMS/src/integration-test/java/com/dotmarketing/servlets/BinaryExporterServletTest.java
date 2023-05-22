@@ -10,6 +10,7 @@ import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.junit.CustomDataProviderRunner;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockServletPathRequest;
 import com.dotcms.mock.request.MockSessionRequest;
@@ -53,7 +54,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 
-@RunWith(DataProviderRunner.class)
+@RunWith(CustomDataProviderRunner.class)
 public class BinaryExporterServletTest {
 
     // Temporary binary png file

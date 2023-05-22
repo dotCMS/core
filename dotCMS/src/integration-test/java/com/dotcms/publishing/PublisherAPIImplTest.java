@@ -32,6 +32,7 @@ import com.dotcms.datagen.UserDataGen;
 import com.dotcms.datagen.WorkflowActionDataGen;
 import com.dotcms.datagen.WorkflowDataGen;
 import com.dotcms.datagen.WorkflowStepDataGen;
+import com.dotcms.junit.CustomDataProviderRunner;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.publisher.assets.bean.PushedAsset;
 import com.dotcms.publisher.bundle.bean.Bundle;
@@ -117,11 +118,12 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 
-@RunWith(DataProviderRunner.class)
+@RunWith(CustomDataProviderRunner.class)
 public class PublisherAPIImplTest {
 
     public static final String DEPENDENCY_FROM_TEMPLATE = "Dependency from: ID: %s Title: %s";
@@ -1170,6 +1172,7 @@ public class PublisherAPIImplTest {
      *  Finally we test the descriptor can be removed and does not show up on the finders result
      */
     @Test
+    @Ignore("Should not update ASSET_REAL_PATH")
     public void testFilterDescriptors() throws IOException {
 
         final String realAssetsRootPath = Config.getStringProperty("ASSET_REAL_PATH", null);

@@ -317,7 +317,9 @@ import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import java.text.SimpleDateFormat
 
 // Import and apply the dependencies from the dependencies scripts.
-apply from: "$rootDir/dependencies.gradle"
+//apply from: "$rootDir/dependencies.gradle"
+// Import and apply the dependencies from the dependencies scripts.
+apply from: "$rootDir/../shared-dependencies/target/gradle-dependencies.txt"
 
 
 
@@ -370,9 +372,9 @@ ext.prepareFelixExternalFolder = { String felixExternalFolder ->
 
     if (felixExternalFolder.startsWith("/")) {// We need an absolute path here
 
-        copy {
-            from configurations.felix
-            into felixExternalFolder.concat("/bundle")
+        from fileTree("$rootDir/../osgi-base/core-bundles/target/bundle") {
+            into felixFolder.concat("/bundle")
+            include '*.jar'
         }
 
         copy {
@@ -380,18 +382,6 @@ ext.prepareFelixExternalFolder = { String felixExternalFolder ->
             into felixExternalFolder
         }
 
-
-        copy {
-            from sourceSets.main.compileClasspath
-            into felixExternalFolder.concat("/bundle")
-            include '**/org.apache.felix.http.api*.jar'
-        }
-
-        copy {
-            from sourceSets.main.compileClasspath
-            into felixExternalFolder.concat("/bundle")
-            include '**/org.apache.felix.http.bundle*.jar'
-        }
 
     } else {
         // For integration tests we need an absolute path for the felix folder
@@ -581,24 +571,30 @@ class ClonePullTomcatTask extends DefaultTask{
 
 // WAR
 
-task deleteDotCmsUi(type: Delete) {
-    delete "./build/extracted-ui"
+task generateDependenciesFromMavenPre(type: Exec) {
+    workingDir "${project.projectDir}/.."
+    commandLine './mvnw', 'install','-pl',':maven-plugins,:dotcms-bom,:core-web,:osgi-base,:build-parent','--am'
+}
+
+task generateDependenciesFromMaven(type: Exec) {
+    workingDir "${project.projectDir}/.."
+    commandLine './mvnw', 'validate', '-pl', ':dotcms-core'
+    dependsOn generateDependenciesFromMavenPre
 }
 
 
-task compileUI(type: Exec) {
-    workingDir "${project.projectDir}/../core-web"
-        commandLine '../mvnw', 'clean', 'install', '-DskipTests', "-Dnx.build.options=${nxBuildOptions}"
+task mavenClean(type: Exec) {
+    workingDir "${project.projectDir}/.."
+    commandLine '../mvnw', 'clean'
 }
 
-task unpackMavenUI(type: Copy, dependsOn: compileUI) {
+task unpackMavenUI(type: Copy, dependsOn: generateDependenciesFromMaven) {
        from(zipTree("${project.projectDir}/../core-web/target/core-web-${mavenUiVersion}.war")) {
                 include "dotAdmin/**"
                 include "dotcms-webcomponents/**"
                 includeEmptyDirs = true
             }
         into layout.buildDirectory.dir("extracted-ui")
-
 }
 
 
@@ -635,6 +631,9 @@ task copyDotCmsWebComponents(type: Copy, dependsOn:['unpackMavenUI']) {
     dependsOn cleanDotCmsWebComponents
 }
 
+clean {
+    mavenClean
+}
 
 // By default the war task compiles everything under src/main/java into WEB-INF/classes/
 // but, instead, we want to compile everything on a .jar file and put it under WEB-INF/lib.
@@ -702,6 +701,9 @@ processResources {
     }
 }
 
+compileJava {
+    dependsOn generateDependenciesFromMaven
+}
 
 war {
     dependsOn 'copyDotCmsUi'
@@ -727,20 +729,19 @@ war {
     }
     */
 
+    from fileTree("$rootDir/../osgi-base/system-bundles/target/bundle") {
+        into felixSystemFolder.concat("/bundle")
+        include '*.jar'
+    }
+
+
+
+
     // Verify if the felix folder is outside the war
     if (!felixFolder.startsWith("/")) { // Relative to the war
-        from(configurations.felix) {
+        from fileTree("$rootDir/../osgi-base/core-bundles/target/bundle") {
             into felixFolder.concat("/bundle")
-        }
-
-        from(configurations.runtimeClasspath) {
-            into felixFolder.concat("/bundle")
-            include '**/org.apache.felix.http.api*.jar'
-        }
-
-        from(configurations.runtimeClasspath) {
-            into felixFolder.concat("/bundle")
-            include '**/org.apache.felix.http.bundle*.jar'
+            include '*.jar'
         }
     } else { //Outside the war
 

@@ -22,7 +22,9 @@
 
 package com.liferay.portlet.admin.model;
 
+
 import java.io.Serializable;
+import javax.xml.bind.annotation.XmlRootElement;
 
 /**
  * <a href="JournalConfig.java.html"><b><i>View Source</i></b></a>
@@ -31,6 +33,7 @@ import java.io.Serializable;
  * @version $Revision: 1.3 $
  *
  */
+@XmlRootElement
 public class JournalConfig implements Serializable {
 
 	public static final String JOURNAL_CONFIG = "JOURNAL_CONFIG";

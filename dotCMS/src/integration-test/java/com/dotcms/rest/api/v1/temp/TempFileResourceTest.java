@@ -45,6 +45,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -85,7 +86,8 @@ public class TempFileResourceTest {
     }
 
     private static File testFile() throws Exception {
-        File testFile = new File(UUIDGenerator.shorty() + "test.png");
+        File testFile = new File(
+                Paths.get(System.getProperty("java.io.tmpdir") , UUIDGenerator.shorty() + "test.png").normalize().toAbsolutePath().toString());
         RandomAccessFile fileWrite = new RandomAccessFile(testFile, "rw");
         final long fileLength = 1024 * 50;
         fileWrite.setLength(fileLength);

@@ -4,6 +4,9 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.junit.CustomDataProviderRunner;
+import com.dotcms.mock.request.DotCMSMockRequestWithSession;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.unittest.TestUtil;
 import com.dotcms.util.IntegrationTestInitService;
@@ -31,7 +34,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-@RunWith(DataProviderRunner.class)
+@RunWith(CustomDataProviderRunner.class)
 public class VisitorCharacterTest {
 
     public static List<String> whiteListedCookies;
@@ -42,6 +45,12 @@ public class VisitorCharacterTest {
     public static void prepare() throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
+
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        final HttpSession session = mock(HttpSession.class);
+        final DotCMSMockRequestWithSession request = new DotCMSMockRequestWithSession(session, false);
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+
 
         whiteListedCookies = Arrays.asList(
                 Config.getStringProperty("WHITELISTED_COOKIES", "").toLowerCase().split(","));

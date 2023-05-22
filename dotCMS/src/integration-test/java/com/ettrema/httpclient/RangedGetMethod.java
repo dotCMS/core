@@ -3,8 +3,8 @@ package com.ettrema.httpclient;
 import com.bradmcevoy.http.Range;
 import java.util.List;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpMethodBase;
-import com.dotcms.repackage.org.slf4j.Logger;
-import com.dotcms.repackage.org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Implements the HTTP GET method.

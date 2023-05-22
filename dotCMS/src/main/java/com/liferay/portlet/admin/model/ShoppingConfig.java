@@ -26,6 +26,7 @@ import java.io.Serializable;
 
 import com.liferay.util.StringPool;
 import com.liferay.util.Validator;
+import javax.xml.bind.annotation.XmlRootElement;
 
 /**
  * <a href="ShoppingConfig.java.html"><b><i>View Source</i></b></a>
@@ -34,6 +35,7 @@ import com.liferay.util.Validator;
  * @version $Revision: 1.14 $
  *
  */
+@XmlRootElement
 public class ShoppingConfig implements Serializable {
 
 	public static final String SHOPPING_CONFIG = "SHOPPING_CONFIG";

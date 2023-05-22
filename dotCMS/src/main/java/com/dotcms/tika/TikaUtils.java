@@ -719,7 +719,7 @@ public class TikaUtils {
     private void logWarning(final File binFile, Throwable exception) {
         Logger.warn(this.getClass(),
                 String.format("Could not parse file metadata for file [%s] [%s]",
-                        binFile.getAbsolutePath(), exception.getMessage()));
+                        binFile.getAbsolutePath(), exception.getMessage()),exception);
     }
 
     private void logError(final File binFile, Throwable exception) {

@@ -91,7 +91,7 @@ public class MySQLJDBCDelegate extends StdJDBCDelegate{
      * @param tablePrefix
      *          the prefix of all table names
      */
-    public MySQLJDBCDelegate(com.dotcms.repackage.org.slf4j.Logger logger, String tablePrefix, String instanceId) {
+    public MySQLJDBCDelegate(org.slf4j.Logger logger, String tablePrefix, String instanceId) {
         super(logger,tablePrefix,instanceId);
     }
 
@@ -105,7 +105,7 @@ public class MySQLJDBCDelegate extends StdJDBCDelegate{
      * @param tablePrefix
      *          the prefix of all table names
      */
-    public MySQLJDBCDelegate(com.dotcms.repackage.org.slf4j.Logger logger, String tablePrefix, String instanceId,
+    public MySQLJDBCDelegate(org.slf4j.Logger logger, String tablePrefix, String instanceId,
             Boolean useProperties) {
         super(logger,tablePrefix,instanceId,useProperties);
     }

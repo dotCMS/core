@@ -45,6 +45,7 @@
 
 package com.dotcms.enterprise.de.qaware.heimdall.util;
 
+
 import javax.xml.bind.DatatypeConverter;
 
 /**

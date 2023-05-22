@@ -7,8 +7,10 @@ import com.dotmarketing.common.reindex.ReindexQueueAPI;
 import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import java.util.Map;
@@ -66,6 +68,16 @@ public class RuleWatcher extends TestWatcher {
                     TestDataUtils.waitForEmptyQueue();
                     boolean queueEmpty = TestDataUtils.waitForEmptyQueue();
                     Logger.info(MainBaseSuite.class, "Indexer Complete=" + queueEmpty);
+                    if (!queueEmpty)
+                    {
+                        Logger.info(MainBaseSuite.class, "Cleaning up Indexer");
+                        try {
+                            LocalTransaction.wrap(queueAPI::deleteReindexRecords);
+                        } catch (DotSecurityException e) {
+                            Logger.error(MainBaseSuite.class, "Error cleaning up Indexer", e);
+                        }
+                    }
+
                 }
             } catch (DotDataException e) {
                 throw new RuntimeException("Error accessing Index", e);

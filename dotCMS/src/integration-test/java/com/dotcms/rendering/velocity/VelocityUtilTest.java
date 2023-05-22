@@ -61,16 +61,18 @@ public class VelocityUtilTest {
         String originalVelocityPath = Config.getStringProperty("VELOCITY_ROOT", "/WEB-INF/velocity");
         String newVelocityPath = "/WEB-INF/customVelocity";
         Config.setProperty("VELOCITY_ROOT", newVelocityPath);
+        try {
+            String customVelocityPath = VelocityUtil.getVelocityRootPath();
 
-        String customVelocityPath = VelocityUtil.getVelocityRootPath();
-
-        Assert.assertNotNull(customVelocityPath);
-        assertThat("Path ends with /WEB-INF/customVelocity", customVelocityPath.endsWith("/WEB-INF/customVelocity"));
-
-        // restore the default value (used on other tests)
-        Config.setProperty("VELOCITY_ROOT", originalVelocityPath);
-        String velocityRoot = Config.getStringProperty("VELOCITY_ROOT");
-        assertThat("Path velocity root has been successfully restored", originalVelocityPath.equals(velocityRoot));
+            Assert.assertNotNull(customVelocityPath);
+            assertThat("Path ends with /WEB-INF/customVelocity",
+                    customVelocityPath.endsWith("/WEB-INF/customVelocity"));
+        } finally {
+            // restore the default value (used on other tests)
+            Config.setProperty("VELOCITY_ROOT", originalVelocityPath);
+            String velocityRoot = Config.getStringProperty("VELOCITY_ROOT");
+            assertThat("Path velocity root has been successfully restored", originalVelocityPath.equals(velocityRoot));
+        }
     }
 
     @Test

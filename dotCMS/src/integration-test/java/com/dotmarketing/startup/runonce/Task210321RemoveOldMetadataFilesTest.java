@@ -24,6 +24,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.ExecutionException;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class Task210321RemoveOldMetadataFilesTest {
@@ -46,6 +47,7 @@ public class Task210321RemoveOldMetadataFilesTest {
      * @throws DotSecurityException
      */
     @Test
+    @Ignore("Should not update ASSET_REAL_PATH unintended side effects in static")
     public void Test_Upgrade_Task()
             throws DotDataException, IOException, ExecutionException, InterruptedException, DotSecurityException {
         final String assetRealPath = Config.getStringProperty("ASSET_REAL_PATH", null);

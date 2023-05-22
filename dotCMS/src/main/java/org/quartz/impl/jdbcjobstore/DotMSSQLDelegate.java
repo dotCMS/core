@@ -10,7 +10,7 @@ import com.dotmarketing.util.Logger;
 
 public class DotMSSQLDelegate extends MSSQLDelegate{
 
-	public DotMSSQLDelegate(com.dotcms.repackage.org.slf4j.Logger log, String tablePrefix, String instanceId) {
+	public DotMSSQLDelegate(org.slf4j.Logger log, String tablePrefix, String instanceId) {
 		super(log, tablePrefix, instanceId);
 	}
 	protected Object getObjectFromBlob(ResultSet rs, String colName)

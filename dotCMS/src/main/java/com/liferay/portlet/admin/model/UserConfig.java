@@ -25,6 +25,7 @@ package com.liferay.portlet.admin.model;
 import java.io.Serializable;
 
 import com.dotmarketing.business.Role;
+import javax.xml.bind.annotation.XmlRootElement;
 
 /**
  * <a href="UserConfig.java.html"><b><i>View Source</i></b></a>
@@ -33,6 +34,7 @@ import com.dotmarketing.business.Role;
  * @version $Revision: 1.12 $
  *
  */
+@XmlRootElement
 public class UserConfig implements Serializable {
 
 	public static final String USER_CONFIG = "USER_CONFIG";

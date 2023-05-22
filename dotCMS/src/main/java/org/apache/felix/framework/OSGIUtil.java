@@ -180,6 +180,7 @@ public class OSGIUtil {
         felixProps.put("felix.log.level", "3");
         felixProps.put("felix.fileinstall.disableNio2", "true");
         felixProps.put("gosh.args", "--noi");
+        felixProps.put("org.ops4j.pax.logging.log4j2.config.file","/Users/stevebolton/git/core-baseline/dotcms-integration/src/main/resources/felix-log4j.xml");
 
         // Create host activator;
         HostActivator hostActivator = HostActivator.instance();

@@ -25,7 +25,8 @@ package com.liferay.portlet.admin.model;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.SystemException;
 import com.liferay.util.xml.Serializer;
-import org.exolab.castor.xml.CastorException;
+import javax.xml.bind.JAXBException;
+
 
 /**
  * <a href="AdminConfig.java.html"><b><i>View Source</i></b></a>
@@ -70,7 +71,7 @@ public class AdminConfig extends AdminConfigModel {
 
 			super.setConfig(config);
 		}
-		catch (CastorException ce) {
+		catch (JAXBException ce) {
 			Logger.error(this,ce.getMessage(),ce);
 		}
 	}
@@ -85,7 +86,7 @@ public class AdminConfig extends AdminConfigModel {
 		try {
 			super.setConfig(Serializer.writeObject(configObj));
 		}
-		catch (CastorException ce) {
+		catch (JAXBException ce) {
 			Logger.error(this,ce.getMessage(),ce);
 		}
 	}

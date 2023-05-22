@@ -3,135 +3,118 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.dotcms</groupId>
-        <artifactId>dotcms-parent</artifactId>
+        <artifactId>build-parent</artifactId>
         <version>1.0.0-SNAPSHOT</version>
+        <relativePath>../build-parent/pom.xml</relativePath>
     </parent>
-    <artifactId>core</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <artifactId>dotcms-core</artifactId>
     <packaging>war</packaging>
     <properties>
+        <servlet.port>8080</servlet.port>
         <palantirJavaFormat.version>2.29.0</palantirJavaFormat.version>
         <src.dir>${project.basedir}/src/main/java</src.dir>
         <test.src.dir>${project.basedir}/src/test/java</test.src.dir>
         <version.spotless.plugin>2.36.0</version.spotless.plugin>
         <jackson.version>2.13.4</jackson.version>
-        <batik.version>1.15</batik.version>
+        <jersey.version>2.27</jersey.version>
+        <batik.version>1.16</batik.version>
+        <glowroot.version>0.13.1</glowroot.version>
+        <version.cargo.plugin>1.10.6</version.cargo.plugin>
+        <assembly-directory>${basedir}/target/dist</assembly-directory>
+        <skipDockerEnv>false</skipDockerEnv>
+        <skipITs>true</skipITs>
+        <skipOwasp>true</skipOwasp>
+        <starter.filename>starter.zip</starter.filename>
+        <starter.path>${project.build.directory}/starter</starter.path>
+        <starter.full.path>${starter.path}/${starter.filename}</starter.full.path>
+        <starter.version>empty_20230112</starter.version>
+
+        <clean.docker.volumes>false</clean.docker.volumes>
+        <!-- Tomcat -->
+        <tomcat.version>9.0.53</tomcat.version>
+        <enableDebug>true</enableDebug>
+        <debugPort>8000</debugPort>
+        <debugHost>localhost</debugHost>
+        <debugWait>false</debugWait>
+        <buildDocker>true</buildDocker>
+        <buildJib>false</buildJib>
+        <tomcat-dist-folder>dotserver/tomcat-${tomcat.version}</tomcat-dist-folder>
+        <tomcat9-overrides>${project.basedir}/src/main/resources/container/tomcat9</tomcat9-overrides>
+
+        <docker.base.image>tomcat:9.0.74-jdk11</docker.base.image>
+        <docker.output.image.name>dotcms/dotcms-test</docker.output.image.name>
 
     </properties>
     <dependencies>
         <dependency>
             <groupId>com.dotcms</groupId>
             <artifactId>core-web</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
+            <version>${project.version}</version>
             <type>war</type>
             <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>cglib</groupId>
-            <artifactId>cglib-nodep</artifactId>
-            <version>3.2.6</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-core</artifactId>
-            <version>1.12.429</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-kms</artifactId>
-            <version>1.12.429</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-rekognition</artifactId>
-            <version>1.12.429</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-s3</artifactId>
-            <version>1.12.429</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>jmespath-java</artifactId>
-            <version>1.12.429</version>
-            <scope>compile</scope>
-        </dependency>
+
+        <!-- Asynchronous NIO client server framework for the jvm -->
+        <!-- <dependency>
+
+             <groupId>io.netty</groupId>
+             <artifactId>netty-all</artifactId>
+         </dependency>-->
+
+
+        <!--
+          *****************************
+             dotcms repackaged dependencies
+          *****************************
+        -->
+
         <dependency>
             <groupId>com.dotcms</groupId>
             <artifactId>ant-tooling</artifactId>
-            <version>1.3.2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.aopalliance-repackaged</artifactId>
-            <version>2.4.0-b10_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.asm</artifactId>
-            <version>3.1_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.axiom-api</artifactId>
-            <version>1.2.5_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.axiom-impl</artifactId>
-            <version>1.2.5_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.bsf</artifactId>
-            <version>ukv_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.bsh</artifactId>
-            <version>2.0b4_3</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.cactus.integration.ant</artifactId>
-            <version>1.8.0_3</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.cargo-ant</artifactId>
-            <version>0.9_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.cargo-core-uberjar</artifactId>
-            <version>0.9_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.com.dotmarketing.jhlabs.images.filters</artifactId>
-            <version>ukv_2</version>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.commons-dbcp</artifactId>
-            <version>1.3_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
@@ -142,14 +125,10 @@
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.commons-httpclient</artifactId>
-            <version>3.1_3</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.commons-jci-core</artifactId>
-            <version>1.0.406301_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
@@ -160,8 +139,6 @@
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.commons-net</artifactId>
-            <version>3.3_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
@@ -172,44 +149,30 @@
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.compression-filter</artifactId>
-            <version>ukv_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.concurrent</artifactId>
-            <version>1.3.4_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.core-renderer-modified</artifactId>
-            <version>ukv_3</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.cos</artifactId>
-            <version>ukv_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.counter-ejb</artifactId>
-            <version>ukv_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.dwr</artifactId>
-            <version>3rc2modified_3</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.fileupload-ext</artifactId>
-            <version>ukv_3</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
@@ -220,14 +183,10 @@
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.google</artifactId>
-            <version>ukv_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.guava</artifactId>
-            <version>11.0.1_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
@@ -238,14 +197,10 @@
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.hibernate-validator</artifactId>
-            <version>4.3.2.Final_3</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.httpbridge</artifactId>
-            <version>ukv_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
@@ -256,1125 +211,996 @@
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.iText</artifactId>
-            <version>2.1.0_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.jamm</artifactId>
-            <version>0.2.5_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.javacsv</artifactId>
-            <version>ukv_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.javax.annotation-api</artifactId>
-            <version>1.2_2</version>
-            <scope>compile</scope>
         </dependency>
-        <dependency>
-            <groupId>com.dotcms.lib</groupId>
-            <artifactId>dot.jaxb-api</artifactId>
-            <version>2.2.7_4</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.dotcms.lib</groupId>
-            <artifactId>dot.jaxb-core</artifactId>
-            <version>2.2.7_4</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.dotcms.lib</groupId>
-            <artifactId>dot.jaxb-impl</artifactId>
-            <version>2.2.7_4</version>
-            <scope>compile</scope>
-        </dependency>
+
+
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.jazzy-core</artifactId>
-            <version>ukv_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.jboss-logging</artifactId>
-            <version>3.3.0.Final_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.jempbox</artifactId>
-            <version>1.6.0_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.jep</artifactId>
-            <version>2.4.1_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.jsoup</artifactId>
-            <version>1.6.1_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.jstl</artifactId>
-            <version>1.0.5_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.jta</artifactId>
-            <version>1.1_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.jxl</artifactId>
-            <version>2.6_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.ldap</artifactId>
-            <version>ukv_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.lesscss</artifactId>
-            <version>1.5.1-SNAPSHOT_3</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.mail-ejb</artifactId>
-            <version>ukv_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.maxmind-db</artifactId>
-            <version>1.0.0_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.msnm</artifactId>
-            <version>ukv_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.myspell</artifactId>
-            <version>ukv_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.odmg</artifactId>
-            <version>ukv_3</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.org.eclipse.mylyn.wikitext.confluence.core</artifactId>
-            <version>1.8.0.I20120918-1109_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.org.eclipse.mylyn.wikitext.core</artifactId>
-            <version>1.8.0.I20120918-1109_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.org.eclipse.mylyn.wikitext.mediawiki.core</artifactId>
-            <version>1.8.0.I20120918-1109_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.org.eclipse.mylyn.wikitext.textile.core</artifactId>
-            <version>1.8.0.I20120918-1109_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.org.eclipse.mylyn.wikitext.tracwiki.core</artifactId>
-            <version>1.8.0.I20120918-1109_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.org.eclipse.mylyn.wikitext.twiki.core</artifactId>
-            <version>1.8.0.I20120918-1109_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.persistence-api</artifactId>
-            <version>1.0_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.platform</artifactId>
-            <version>ukv_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.portlet</artifactId>
-            <version>1.0_2</version>
-            <scope>compile</scope>
         </dependency>
-        <dependency>
-            <groupId>com.dotcms.lib</groupId>
-            <artifactId>dot.quartz-all</artifactId>
-            <version>1.8.6_2</version>
-            <scope>compile</scope>
-        </dependency>
+
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.rhino</artifactId>
-            <version>1.7R4_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.secure-filter</artifactId>
-            <version>ukv_2</version>
-            <scope>compile</scope>
         </dependency>
-        <dependency>
-            <groupId>com.dotcms.lib</groupId>
-            <artifactId>dot.slf4j-api</artifactId>
-            <version>1.7.12_2</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.dotcms.lib</groupId>
-            <artifactId>dot.slf4j-jcl</artifactId>
-            <version>1.7.12_2</version>
-            <scope>compile</scope>
-        </dependency>
+
+
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.snappy-java</artifactId>
-            <version>1.0.4.1_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.sslext</artifactId>
-            <version>1.2-0_1</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.stax2-api</artifactId>
-            <version>3.1.1_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.struts</artifactId>
-            <version>1.2.10_1</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.stxx</artifactId>
-            <version>1.3_3</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.Tidy</artifactId>
-            <version>ukv_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.trove</artifactId>
-            <version>1.0.2_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.twitter4j-core</artifactId>
-            <version>3.0.3_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.txtmark</artifactId>
-            <version>0.14-SNAPSHOT_1</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.util-taglib</artifactId>
-            <version>ukv_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.validation-api</artifactId>
-            <version>1.1.0.Final_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.wbmp</artifactId>
-            <version>ukv_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.webp-imageio-core</artifactId>
-            <version>0.1.5</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.woodstox-core-lgpl</artifactId>
-            <version>4.2.0_2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.xpp3-min</artifactId>
-            <version>1.1.4c_2</version>
-            <scope>compile</scope>
         </dependency>
+        <!--
+    <dependency>
+       <groupId>com.dotcms.lib</groupId>
+       <artifactId>dot.quartz-all</artifactId>
+       <version>1.8.6_2</version>
+       <scope>compile</scope>
+    </dependency>
+    -->
+
+        <!-- <dependency>
+      <groupId>com.dotcms.lib</groupId>
+      <artifactId>dot.slf4j-api</artifactId>
+      <version>1.7.12_2</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.dotcms.lib</groupId>
+      <artifactId>dot.slf4j-jcl</artifactId>
+      <version>1.7.12_2</version>
+      <scope>compile</scope>
+    </dependency>
+    -->
+
+
+
+        <!--
+           *****************************
+              Job Scheduling
+           *****************************
+        -->
+
+        <dependency>
+            <!-- replaces dot.quartz-all -->
+            <groupId>org.quartz-scheduler</groupId>
+            <artifactId>quartz</artifactId>
+        </dependency>
+
+
+        <!--
+           *****************************
+              WebDav Support
+           *****************************
+        -->
         <dependency>
             <groupId>com.ettrema</groupId>
             <artifactId>milton-api</artifactId>
-            <version>1.8.1.4</version>
-            <scope>compile</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.ettrema</groupId>
             <artifactId>milton-servlet</artifactId>
-            <version>1.8.1.4</version>
-            <scope>compile</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>${jackson.version}</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.datatype</groupId>
-            <artifactId>jackson-datatype-guava</artifactId>
-            <version>${jackson.version}</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.datatype</groupId>
-            <artifactId>jackson-datatype-jdk8</artifactId>
-            <version>${jackson.version}</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.datatype</groupId>
-            <artifactId>jackson-datatype-jsr310</artifactId>
-            <version>${jackson.version}</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.jaxrs</groupId>
-            <artifactId>jackson-jaxrs-base</artifactId>
-            <version>${jackson.version}</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.module</groupId>
-            <artifactId>jackson-module-parameter-names</artifactId>
-            <version>${jackson.version}</version>
-            <scope>compile</scope>
-        </dependency>
+
+
+
         <dependency>
             <groupId>com.github.ben-manes.caffeine</groupId>
             <artifactId>caffeine</artifactId>
-            <version>2.9.2</version>
-            <scope>compile</scope>
         </dependency>
+
+        <!--
+         *****************************
+            Coding Utilities
+         *****************************
+       -->
         <dependency>
-            <groupId>com.github.jonpeterson</groupId>
-            <artifactId>jackson-module-model-versioning</artifactId>
-            <version>1.2.2</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
+            <!-- Google Guava: Google Core Libraries -->
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>27.0.1-android</version>
-            <scope>compile</scope>
         </dependency>
+
         <dependency>
-            <groupId>com.googlecode.juniversalchardet</groupId>
-            <artifactId>juniversalchardet</artifactId>
-            <version>1.0.3</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.graphql-java</groupId>
-            <artifactId>graphql-java</artifactId>
-            <version>13.0</version>
-            <scope>compile</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>com.graphql-java</groupId>
-            <artifactId>graphql-java-extended-scalars</artifactId>
-            <version>1.0.1</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.graphql-java-kickstart</groupId>
-            <artifactId>graphql-java-servlet</artifactId>
-            <version>9.1.0</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
-            <version>2.1.210</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-all</artifactId>
-            <version>3.9.2</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-kubernetes</artifactId>
-            <version>1.2.2</version>
-            <scope>compile</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.hazelcast</groupId>
-                    <artifactId>hazelcast</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>com.impossibl.pgjdbc-ng</groupId>
-            <artifactId>pgjdbc-ng</artifactId>
-            <version>0.8.7</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.jayway.jsonpath</groupId>
-            <artifactId>json-path</artifactId>
-            <version>2.4.0</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.lmax</groupId>
-            <artifactId>disruptor</artifactId>
-            <version>3.3.4</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.maxmind.geoip2</groupId>
-            <artifactId>geoip2</artifactId>
-            <version>2.1.0</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
+            <!-- SneakyThrow: A Java library that allows to throw checked exceptions without declaration -->
             <groupId>com.rainerhahnekamp</groupId>
             <artifactId>sneakythrow</artifactId>
-            <version>1.1.0</version>
-            <scope>compile</scope>
         </dependency>
+
         <dependency>
-            <groupId>com.sun.activation</groupId>
-            <artifactId>javax.activation</artifactId>
-            <version>1.2.0</version>
-            <scope>compile</scope>
+            <!-- Functional programming utilities including Try, Tuple, Option, Either, Collections, etc. -->
+            <groupId>io.vavr</groupId>
+            <artifactId>vavr</artifactId>
         </dependency>
+
         <dependency>
-            <groupId>com.sun.mail</groupId>
-            <artifactId>jakarta.mail</artifactId>
-            <version>1.6.7</version>
-            <scope>compile</scope>
+            <!-- Text processing utilities and regex-->
+            <groupId>oro</groupId>
+            <artifactId>oro</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.thoughtworks.xstream</groupId>
-            <artifactId>xstream</artifactId>
-            <version>1.4.20</version>
-            <scope>compile</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>xpp3</groupId>
-                    <artifactId>xpp3_min</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>com.twelvemonkeys.imageio</groupId>
-            <artifactId>imageio-batik</artifactId>
-            <version>3.7.0</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.twelvemonkeys.imageio</groupId>
-            <artifactId>imageio-bmp</artifactId>
-            <version>3.7.0</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.twelvemonkeys.imageio</groupId>
-            <artifactId>imageio-clippath</artifactId>
-            <version>3.7.0</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.twelvemonkeys.imageio</groupId>
-            <artifactId>imageio-core</artifactId>
-            <version>3.7.0</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.twelvemonkeys.imageio</groupId>
-            <artifactId>imageio-hdr</artifactId>
-            <version>3.7.0</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.twelvemonkeys.imageio</groupId>
-            <artifactId>imageio-icns</artifactId>
-            <version>3.7.0</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.twelvemonkeys.imageio</groupId>
-            <artifactId>imageio-iff</artifactId>
-            <version>3.7.0</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.twelvemonkeys.imageio</groupId>
-            <artifactId>imageio-jpeg</artifactId>
-            <version>3.7.0</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.twelvemonkeys.imageio</groupId>
-            <artifactId>imageio-metadata</artifactId>
-            <version>3.7.0</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.twelvemonkeys.imageio</groupId>
-            <artifactId>imageio-pcx</artifactId>
-            <version>3.7.0</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.twelvemonkeys.imageio</groupId>
-            <artifactId>imageio-pdf</artifactId>
-            <version>3.7.0</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.twelvemonkeys.imageio</groupId>
-            <artifactId>imageio-pict</artifactId>
-            <version>3.7.0</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.twelvemonkeys.imageio</groupId>
-            <artifactId>imageio-pnm</artifactId>
-            <version>3.7.0</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.twelvemonkeys.imageio</groupId>
-            <artifactId>imageio-psd</artifactId>
-            <version>3.7.0</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.twelvemonkeys.imageio</groupId>
-            <artifactId>imageio-sgi</artifactId>
-            <version>3.7.0</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.twelvemonkeys.imageio</groupId>
-            <artifactId>imageio-tga</artifactId>
-            <version>3.7.0</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.twelvemonkeys.imageio</groupId>
-            <artifactId>imageio-thumbsdb</artifactId>
-            <version>3.7.0</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.twelvemonkeys.imageio</groupId>
-            <artifactId>imageio-tiff</artifactId>
-            <version>3.7.0</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.twelvemonkeys.imageio</groupId>
-            <artifactId>imageio-webp</artifactId>
-            <version>3.7.0</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.twelvemonkeys.servlet</groupId>
-            <artifactId>servlet</artifactId>
-            <version>3.7.0</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.zaxxer</groupId>
-            <artifactId>HikariCP</artifactId>
-            <version>3.4.2</version>
-            <scope>compile</scope>
-        </dependency>
+
+        <!--
+         *****************************
+            Apache Commons Utilities
+         *****************************
+       -->
         <dependency>
             <groupId>commons-beanutils</groupId>
             <artifactId>commons-beanutils</artifactId>
-            <version>1.9.4</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>commons-collections</groupId>
             <artifactId>commons-collections</artifactId>
-            <version>3.2.2</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>commons-configuration</groupId>
             <artifactId>commons-configuration</artifactId>
-            <version>1.10</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>commons-digester</groupId>
             <artifactId>commons-digester</artifactId>
-            <version>2.1</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>commons-fileupload</groupId>
             <artifactId>commons-fileupload</artifactId>
-            <version>1.5</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <version>2.11.0</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>commons-lang</groupId>
             <artifactId>commons-lang</artifactId>
-            <version>2.6</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>commons-validator</groupId>
             <artifactId>commons-validator</artifactId>
-            <version>1.6</version>
-            <scope>compile</scope>
         </dependency>
-        <dependency>
-            <groupId>eu.bitwalker</groupId>
-            <artifactId>UserAgentUtils</artifactId>
-            <version>1.19</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>eu.medsea.mimeutil</groupId>
-            <artifactId>mime-util</artifactId>
-            <version>2.1.3</version>
-            <scope>compile</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-log4j12</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>log4j</groupId>
-                    <artifactId>log4j</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>fop</groupId>
-            <artifactId>fop</artifactId>
-            <version>0.20.3</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt</artifactId>
-            <version>0.9.1</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.lettuce</groupId>
-            <artifactId>lettuce-core</artifactId>
-            <version>6.1.1.RELEASE</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.swagger.core.v3</groupId>
-            <artifactId>swagger-jaxrs2</artifactId>
-            <version>2.2.0</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.swagger.core.v3</groupId>
-            <artifactId>swagger-jaxrs2-servlet-initializer</artifactId>
-            <version>2.2.0</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.vavr</groupId>
-            <artifactId>vavr</artifactId>
-            <version>0.10.3</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.xml.bind</groupId>
-            <artifactId>jakarta.xml.bind-api</artifactId>
-            <version>2.3.3</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>javax.annotation</groupId>
-            <artifactId>javax.annotation-api</artifactId>
-            <version>1.2</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>javax.validation</groupId>
-            <artifactId>validation-api</artifactId>
-            <version>1.1.0.Final</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>javax.websocket</groupId>
-            <artifactId>javax.websocket-api</artifactId>
-            <version>1.1</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>javax.ws.rs</groupId>
-            <artifactId>javax.ws.rs-api</artifactId>
-            <version>2.0.1</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>jaxen</groupId>
-            <artifactId>jaxen</artifactId>
-            <version>1.2.0</version>
-            <scope>compile</scope>
-        </dependency>
-        <!-- Compile dependencies -->
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.13.2</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>net.bytebuddy</groupId>
-            <artifactId>byte-buddy</artifactId>
-            <version>1.12.6</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>net.bytebuddy</groupId>
-            <artifactId>byte-buddy-agent</artifactId>
-            <version>1.12.6</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>net.javacrumbs.shedlock</groupId>
-            <artifactId>shedlock-core</artifactId>
-            <version>4.33.0</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>net.javacrumbs.shedlock</groupId>
-            <artifactId>shedlock-provider-jdbc</artifactId>
-            <version>4.33.0</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>net.jodah</groupId>
-            <artifactId>failsafe</artifactId>
-            <version>1.1.1</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.antlr</groupId>
-            <artifactId>antlr</artifactId>
-            <version>3.1.1</version>
-            <scope>compile</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.antlr</groupId>
-                    <artifactId>stringtemplate</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>antlr</groupId>
-                    <artifactId>antlr</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
+
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-compress</artifactId>
-            <version>1.21</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>3.12.0</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-math3</artifactId>
-            <version>3.6.1</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-numbers-gamma</artifactId>
-            <version>1.0</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-pool2</artifactId>
-            <version>2.9.0</version>
-            <scope>compile</scope>
         </dependency>
+
+
+        <!--
+         *****************************
+            File and HTTP Processing
+         *****************************
+       -->
         <dependency>
-            <groupId>org.apache.felix</groupId>
-            <artifactId>org.apache.felix.http.api</artifactId>
-            <version>3.0.0</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.felix</groupId>
-            <artifactId>org.apache.felix.http.base</artifactId>
-            <version>3.0.18</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.felix</groupId>
-            <artifactId>org.apache.felix.http.bridge</artifactId>
-            <version>3.0.18</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.felix</groupId>
-            <artifactId>org.apache.felix.http.proxy</artifactId>
-            <version>3.0.2</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.felix</groupId>
-            <artifactId>org.apache.felix.http.servlet-api</artifactId>
-            <version>1.1.2</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.felix</groupId>
-            <artifactId>org.apache.felix.http.whiteboard</artifactId>
-            <version>3.0.0</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.felix</groupId>
-            <artifactId>org.apache.felix.main</artifactId>
-            <version>5.6.10</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpclient</artifactId>
-            <version>4.5.13</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-1.2-api</artifactId>
-            <version>2.20.0</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-api</artifactId>
-            <version>2.20.0</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
-            <version>2.20.0</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-jcl</artifactId>
-            <version>2.20.0</version>
-            <scope>compile</scope>
+            <!-- mozilla encoding detector -->
+            <groupId>com.googlecode.juniversalchardet</groupId>
+            <artifactId>juniversalchardet</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-slf4j2-impl</artifactId>
-            <version>2.20.0</version>
-            <scope>compile</scope>
+            <!-- UserAgentUtils: Utility for parsing a user agent string -->
+            <groupId>eu.bitwalker</groupId>
+            <artifactId>UserAgentUtils</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-web</artifactId>
-            <version>2.20.0</version>
-            <scope>compile</scope>
+            <groupId>eu.medsea.mimeutil</groupId>
+            <artifactId>mime-util</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jvnet</groupId>
+            <artifactId>mimepull</artifactId>
+        </dependency>
+
+        <dependency>
+            <!-- Geo Location -->
+            <groupId>com.maxmind.geoip2</groupId>
+            <artifactId>geoip2</artifactId>
+        </dependency>
+
+        <!--
+         *****************************
+            GraphQL Support
+         *****************************
+       -->
+
+        <dependency>
+            <groupId>com.graphql-java</groupId>
+            <artifactId>graphql-java</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.pdfbox</groupId>
-            <artifactId>pdfbox</artifactId>
-            <version>2.0.27</version>
-            <scope>compile</scope>
+            <groupId>com.graphql-java</groupId>
+            <artifactId>graphql-java-extended-scalars</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.poi</groupId>
-            <artifactId>poi</artifactId>
-            <version>3.17</version>
-            <scope>compile</scope>
+            <groupId>com.graphql-java-kickstart</groupId>
+            <artifactId>graphql-java-servlet</artifactId>
+        </dependency>
+
+        <!--
+         *****************************
+            Database Support
+         *****************************
+       -->
+        <dependency>
+            <!-- Connection Pool -->
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.xmlgraphics</groupId>
-            <artifactId>batik-anim</artifactId>
-            <version>${batik.version}</version>
-            <scope>compile</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.xmlgraphics</groupId>
-                    <artifactId>batik-shared-resources</artifactId>
-                </exclusion>
-            </exclusions>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+        </dependency>
+
+        <dependency>
+            <!-- MSSQL Driver, MSSQL support is deprecated -->
+            <groupId>com.microsoft.sqlserver</groupId>
+            <artifactId>mssql-jdbc</artifactId>
+        </dependency>
+
+
+        <dependency>
+            <groupId>com.impossibl.pgjdbc-ng</groupId>
+            <artifactId>pgjdbc-ng</artifactId>
+        </dependency>
+
+        <!--
+         *****************************
+           Cluster Support
+         *****************************
+       -->
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-all</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.xmlgraphics</groupId>
-            <artifactId>batik-awt-util</artifactId>
-            <version>${batik.version}</version>
-            <scope>compile</scope>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-kubernetes</artifactId>
+        </dependency>
+
+        <dependency>
+            <!-- Shedlock Distributed Locking -->
+            <groupId>net.javacrumbs.shedlock</groupId>
+            <artifactId>shedlock-core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>net.javacrumbs.shedlock</groupId>
+            <artifactId>shedlock-provider-jdbc</artifactId>
+        </dependency>
+
+
+        <dependency>
+            <!-- JGroups: Reliable Multicast Communication -->
+            <groupId>org.jgroups</groupId>
+            <artifactId>jgroups</artifactId>
+        </dependency>
+
+
+        <!--
+         *****************************
+            API Client Support
+         *****************************
+       -->
+
+
+        <dependency>
+            <!-- general HTTP Client -->
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+        </dependency>
+
+
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.xmlgraphics</groupId>
-            <artifactId>batik-bridge</artifactId>
-            <version>${batik.version}</version>
-            <scope>compile</scope>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-kms</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.xmlgraphics</groupId>
-            <artifactId>batik-codec</artifactId>
-            <version>${batik.version}</version>
-            <scope>compile</scope>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-rekognition</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.xmlgraphics</groupId>
-            <artifactId>batik-constants</artifactId>
-            <version>${batik.version}</version>
-            <scope>compile</scope>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-s3</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.xmlgraphics</groupId>
-            <artifactId>batik-css</artifactId>
-            <version>${batik.version}</version>
-            <scope>compile</scope>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>jmespath-java</artifactId>
+        </dependency>
+
+        <dependency>
+            <!-- Redis Client -->
+            <groupId>io.lettuce</groupId>
+            <artifactId>lettuce-core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>redis.clients</groupId>
+            <artifactId>jedis</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.elasticsearch.client</groupId>
+            <artifactId>elasticsearch-rest-high-level-client</artifactId>
+        </dependency>
+
+
+        <!--
+         *****************************
+            JavaX/Jakarta/J2EE Support
+         *****************************
+       -->
+        <dependency>
+            <groupId>com.sun.activation</groupId>
+            <artifactId>javax.activation</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.xmlgraphics</groupId>
-            <artifactId>batik-dom</artifactId>
-            <version>${batik.version}</version>
-            <scope>compile</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>xalan</groupId>
-                    <artifactId>xalan</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>xml-apis</groupId>
-                    <artifactId>xml-apis</artifactId>
-                </exclusion>
-            </exclusions>
+            <groupId>com.sun.mail</groupId>
+            <artifactId>jakarta.mail</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.xmlgraphics</groupId>
-            <artifactId>batik-ext</artifactId>
-            <version>${batik.version}</version>
-            <scope>compile</scope>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.xmlgraphics</groupId>
-            <artifactId>batik-gvt</artifactId>
-            <version>${batik.version}</version>
-            <scope>compile</scope>
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.xmlgraphics</groupId>
-            <artifactId>batik-i18n</artifactId>
-            <version>${batik.version}</version>
-            <scope>compile</scope>
+            <groupId>javax.validation</groupId>
+            <artifactId>validation-api</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.xmlgraphics</groupId>
-            <artifactId>batik-parser</artifactId>
-            <version>${batik.version}</version>
-            <scope>compile</scope>
+            <groupId>javax.servlet.jsp</groupId>
+            <artifactId>javax.servlet.jsp-api</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>javax.websocket</groupId>
+            <artifactId>javax.websocket-api</artifactId>
+        </dependency>
+
+        <!--
+         *****************************
+            XML Support
+         *****************************
+       -->
+        <dependency>
+            <groupId>com.thoughtworks.xstream</groupId>
+            <artifactId>xstream</artifactId>
+        </dependency>
+
+        <!-- JaxB -->
+
+        <dependency>
+            <groupId>com.sun.xml.bind</groupId>
+            <artifactId>jaxb-impl</artifactId>
+        </dependency>
+
+
+        <!--
+       <dependency>
+           <groupId>org.codehaus.castor</groupId>
+           <artifactId>castor-core</artifactId>
+           <version>1.4.1</version>
+           <scope>compile</scope>
+       </dependency>
+       <dependency>
+           <groupId>org.codehaus.castor</groupId>
+           <artifactId>castor-xml</artifactId>
+           <version>1.4.1</version>
+           <scope>compile</scope>
+           <exclusions>
+               <exclusion>
+                   <groupId>javax.inject</groupId>
+                   <artifactId>javax.inject</artifactId>
+               </exclusion>
+               <exclusion>
+                   <groupId>org.springframework</groupId>
+                   <artifactId>spring-context</artifactId>
+               </exclusion>
+           </exclusions>
+       </dependency>
+       -->
+
+        <!--
+         *****************************
+            XPath Support
+         *****************************
+       -->
+        <dependency>
+            <groupId>jaxen</groupId>
+            <artifactId>jaxen</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>werken-xpath</groupId>
+            <artifactId>werken-xpath</artifactId>
+        </dependency>
+
+        <!--
+          *****************************
+             JSON
+          *****************************
+        -->
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.xmlgraphics</groupId>
-            <artifactId>batik-script</artifactId>
-            <version>${batik.version}</version>
-            <scope>compile</scope>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-guava</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.xmlgraphics</groupId>
-            <artifactId>batik-svg-dom</artifactId>
-            <version>${batik.version}</version>
-            <scope>compile</scope>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jdk8</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.xmlgraphics</groupId>
-            <artifactId>batik-transcoder</artifactId>
-            <version>${batik.version}</version>
-            <scope>compile</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.xmlgraphics</groupId>
-                    <artifactId>batik-svggen</artifactId>
-                </exclusion>
-            </exclusions>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.xmlgraphics</groupId>
-            <artifactId>batik-util</artifactId>
-            <version>${batik.version}</version>
-            <scope>compile</scope>
+            <groupId>com.fasterxml.jackson.jaxrs</groupId>
+            <artifactId>jackson-jaxrs-base</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.xmlgraphics</groupId>
-            <artifactId>batik-xml</artifactId>
-            <version>${batik.version}</version>
-            <scope>compile</scope>
+            <groupId>com.fasterxml.jackson.module</groupId>
+            <artifactId>jackson-module-parameter-names</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.github.jonpeterson</groupId>
+            <artifactId>jackson-module-model-versioning</artifactId>
+        </dependency>
+
+
+        <dependency>
+            <groupId>com.jayway.jsonpath</groupId>
+            <artifactId>json-path</artifactId>
+        </dependency>
+
+
+
+
+        <!-- Image Processing -->
+        <dependency>
+            <groupId>com.twelvemonkeys.imageio</groupId>
+            <artifactId>imageio-batik</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.xmlgraphics</groupId>
-            <artifactId>xmlgraphics-commons</artifactId>
-            <version>2.6</version>
-            <scope>compile</scope>
+            <groupId>com.twelvemonkeys.imageio</groupId>
+            <artifactId>imageio-bmp</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.aspectj</groupId>
-            <artifactId>aspectjrt</artifactId>
-            <version>1.9.2</version>
-            <scope>compile</scope>
+            <groupId>com.twelvemonkeys.imageio</groupId>
+            <artifactId>imageio-clippath</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.twelvemonkeys.imageio</groupId>
+            <artifactId>imageio-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.twelvemonkeys.imageio</groupId>
+            <artifactId>imageio-hdr</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.twelvemonkeys.imageio</groupId>
+            <artifactId>imageio-icns</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.twelvemonkeys.imageio</groupId>
+            <artifactId>imageio-iff</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.twelvemonkeys.imageio</groupId>
+            <artifactId>imageio-jpeg</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.twelvemonkeys.imageio</groupId>
+            <artifactId>imageio-metadata</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.twelvemonkeys.imageio</groupId>
+            <artifactId>imageio-pcx</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.twelvemonkeys.imageio</groupId>
+            <artifactId>imageio-pdf</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.twelvemonkeys.imageio</groupId>
+            <artifactId>imageio-pict</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.twelvemonkeys.imageio</groupId>
+            <artifactId>imageio-pnm</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.twelvemonkeys.imageio</groupId>
+            <artifactId>imageio-psd</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.twelvemonkeys.imageio</groupId>
+            <artifactId>imageio-sgi</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.twelvemonkeys.imageio</groupId>
+            <artifactId>imageio-tga</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.twelvemonkeys.imageio</groupId>
+            <artifactId>imageio-thumbsdb</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.twelvemonkeys.imageio</groupId>
+            <artifactId>imageio-tiff</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.twelvemonkeys.imageio</groupId>
+            <artifactId>imageio-webp</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.twelvemonkeys.servlet</groupId>
+            <artifactId>servlet</artifactId>
+        </dependency>
+
+
+        <!-- FOP XSL based Print Formatter -->
+        <dependency>
+            <groupId>fop</groupId>
+            <artifactId>fop</artifactId>
+        </dependency>
+
+        <!-- Security -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcpkix-jdk15on</artifactId>
-            <version>1.70</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcprov-jdk15on</artifactId>
-            <version>1.70</version>
-            <scope>compile</scope>
+        </dependency>
+
+
+        <!-- JAX-RS Rest API -->
+
+        <dependency>
+            <groupId>javax.ws.rs</groupId>
+            <artifactId>javax.ws.rs-api</artifactId>
+        </dependency>
+
+        <!-- Rest API Documentation -->
+        <dependency>
+            <groupId>io.swagger.core.v3</groupId>
+            <artifactId>swagger-jaxrs2</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.ccil.cowan.tagsoup</groupId>
-            <artifactId>tagsoup</artifactId>
-            <version>1.2.1</version>
-            <scope>compile</scope>
+            <groupId>io.swagger.core.v3</groupId>
+            <artifactId>swagger-jaxrs2-servlet-initializer</artifactId>
+        </dependency>
+
+
+        <!--
+             *****************************
+                Bytecode Processing
+             *****************************
+        -->
+
+        <dependency>
+            <groupId>net.bytebuddy</groupId>
+            <artifactId>byte-buddy</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.codehaus.castor</groupId>
-            <artifactId>castor-core</artifactId>
-            <version>1.4.1</version>
-            <scope>compile</scope>
+            <!-- Bytebuddy is preferred over cglib and other bytecode manipulation-->
+            <groupId>net.bytebuddy</groupId>
+            <artifactId>byte-buddy-agent</artifactId>
         </dependency>
+
         <dependency>
-            <groupId>org.codehaus.castor</groupId>
-            <artifactId>castor-xml</artifactId>
-            <version>1.4.1</version>
-            <scope>compile</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>javax.inject</groupId>
-                    <artifactId>javax.inject</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.springframework</groupId>
-                    <artifactId>spring-context</artifactId>
-                </exclusion>
-            </exclusions>
+            <!-- deprecated replaced with Bytebuddy -->
+            <groupId>cglib</groupId>
+            <artifactId>cglib-nodep</artifactId>
         </dependency>
+
+        <dependency>
+            <!-- deprecated replaced with Bytebuddy -->
+            <groupId>org.aspectj</groupId>
+            <artifactId>aspectjrt</artifactId>
+        </dependency>
+
+        <dependency>
+            <!-- Bytecode manipulation library needed for mocking.  Old try to remove -->
+            <groupId>org.javassist</groupId>
+            <artifactId>javassist</artifactId>
+        </dependency>
+
+
+        <dependency>
+            <!-- Failure handling e.g. Circuit Breaker-->
+            <groupId>net.jodah</groupId>
+            <artifactId>failsafe</artifactId>
+        </dependency>
+
+
+        <dependency>
+            <!-- ANTLR (ANother Tool for Language Recognition)  -->
+            <groupId>org.antlr</groupId>
+            <artifactId>antlr</artifactId>
+        </dependency>
+
+
+        <!-- OSGi Keep Bundles out of here.  This is for core
+        framework and interfaces required in parent classloader-->
+        <dependency>
+            <groupId>org.apache.felix</groupId>
+            <artifactId>org.apache.felix.http.proxy</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.felix</groupId>
+            <artifactId>org.apache.felix.main</artifactId>
+        </dependency>
+
+
+
+        <!-- File Format Processing -->
+
+        <!-- XML Processing -->
         <dependency>
             <groupId>org.dom4j</groupId>
             <artifactId>dom4j</artifactId>
-            <version>2.1.3</version>
-            <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jdom</groupId>
+            <artifactId>jdom</artifactId>
+        </dependency>
+
+        <dependency>
+            <!-- XML Stream Processing like Sax -->
+            <groupId>xmlpull</groupId>
+            <artifactId>xmlpull</artifactId>
+        </dependency>
+
+
+        <!-- HTML Processing -->
+        <dependency>
+            <groupId>org.ccil.cowan.tagsoup</groupId>
+            <artifactId>tagsoup</artifactId>
+        </dependency>
+
+        <dependency>
+            <!-- PDF Processing -->
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>pdfbox</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.elasticsearch.client</groupId>
-            <artifactId>elasticsearch-rest-high-level-client</artifactId>
-            <version>7.10.2</version>
-            <scope>compile</scope>
+            <!-- Microsoft Document Processing -->
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi</artifactId>
         </dependency>
+        <dependency>
+            <!-- Batik SVG Processing -->
+            <groupId>org.apache.xmlgraphics</groupId>
+            <artifactId>batik-anim</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.xmlgraphics</groupId>
+            <artifactId>batik-awt-util</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.xmlgraphics</groupId>
+            <artifactId>batik-bridge</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.xmlgraphics</groupId>
+            <artifactId>batik-codec</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.xmlgraphics</groupId>
+            <artifactId>batik-constants</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.xmlgraphics</groupId>
+            <artifactId>batik-css</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.xmlgraphics</groupId>
+            <artifactId>batik-dom</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.xmlgraphics</groupId>
+            <artifactId>batik-ext</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.xmlgraphics</groupId>
+            <artifactId>batik-gvt</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.xmlgraphics</groupId>
+            <artifactId>batik-i18n</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.xmlgraphics</groupId>
+            <artifactId>batik-parser</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.xmlgraphics</groupId>
+            <artifactId>batik-script</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.xmlgraphics</groupId>
+            <artifactId>batik-svg-dom</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.xmlgraphics</groupId>
+            <artifactId>batik-transcoder</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.xmlgraphics</groupId>
+            <artifactId>batik-util</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.xmlgraphics</groupId>
+            <artifactId>batik-xml</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.xmlgraphics</groupId>
+            <artifactId>xmlgraphics-commons</artifactId>
+        </dependency>
+
+
+        <!-- JAX-RS Rest Implementation Jersey -->
+
+        <dependency>
+            <groupId>org.glassfish.jersey.connectors</groupId>
+            <artifactId>jersey-apache-connector</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.containers</groupId>
+            <artifactId>jersey-container-servlet</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.containers</groupId>
+            <artifactId>jersey-container-servlet-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.core</groupId>
+            <artifactId>jersey-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.core</groupId>
+            <artifactId>jersey-common</artifactId>
+        </dependency>
+
+        <dependency>
+            <!--Newer jersey requires choosing injection framework-->
+            <groupId>org.glassfish.jersey.inject</groupId>
+            <artifactId>jersey-cdi2-se</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.glassfish.jersey.core</groupId>
+            <artifactId>jersey-server</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.ext</groupId>
+            <artifactId>jersey-entity-filtering</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.media</groupId>
+            <artifactId>jersey-media-jaxb</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.media</groupId>
+            <artifactId>jersey-media-json-jackson</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.media</groupId>
+            <artifactId>jersey-media-multipart</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.media</groupId>
+            <artifactId>jersey-media-sse</artifactId>
+        </dependency>
+
+        <!--
         <dependency>
             <groupId>org.glassfish.hk2</groupId>
             <artifactId>hk2-api</artifactId>
@@ -1406,266 +1232,234 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>org.glassfish.jersey.bundles.repackaged</groupId>
-            <artifactId>jersey-guava</artifactId>
-            <version>2.22.1</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
             <groupId>org.glassfish.jersey.connectors</groupId>
             <artifactId>jersey-apache-connector</artifactId>
-            <version>2.22.1</version>
+            <version>${jersey.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.glassfish.jersey.containers</groupId>
             <artifactId>jersey-container-servlet</artifactId>
-            <version>2.22.1</version>
+            <version>${jersey.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.glassfish.jersey.containers</groupId>
             <artifactId>jersey-container-servlet-core</artifactId>
-            <version>2.22.1</version>
+            <version>${jersey.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.glassfish.jersey.core</groupId>
             <artifactId>jersey-client</artifactId>
-            <version>2.22.1</version>
+            <version>${jersey.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.glassfish.jersey.core</groupId>
             <artifactId>jersey-common</artifactId>
-            <version>2.22.1</version>
+            <version>${jersey.version}</version>
             <scope>compile</scope>
         </dependency>
+
+        <dependency>
+            <groupId>org.glassfish.jersey.inject</groupId>
+            <artifactId>jersey-cdi2-se</artifactId>
+            <version>${jersey.version}</version>
+        </dependency>
+
+
         <dependency>
             <groupId>org.glassfish.jersey.core</groupId>
             <artifactId>jersey-server</artifactId>
-            <version>2.22.1</version>
+            <version>${jersey.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.glassfish.jersey.ext</groupId>
             <artifactId>jersey-entity-filtering</artifactId>
-            <version>2.22.1</version>
+            <version>${jersey.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.glassfish.jersey.media</groupId>
             <artifactId>jersey-media-jaxb</artifactId>
-            <version>2.22.1</version>
+            <version>${jersey.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.glassfish.jersey.media</groupId>
             <artifactId>jersey-media-json-jackson</artifactId>
-            <version>2.22.1</version>
+            <version>${jersey.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.glassfish.jersey.media</groupId>
             <artifactId>jersey-media-multipart</artifactId>
-            <version>2.22.1</version>
+            <version>${jersey.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.glassfish.jersey.media</groupId>
             <artifactId>jersey-media-sse</artifactId>
-            <version>2.22.1</version>
+            <version>${jersey.version}</version>
             <scope>compile</scope>
         </dependency>
-        <!-- Test dependencies -->
-        <dependency>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-all</artifactId>
-            <version>1.3</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.immutables</groupId>
-            <artifactId>value</artifactId>
-            <version>2.9.0</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.javassist</groupId>
-            <artifactId>javassist</artifactId>
-            <version>3.29.2-GA</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jdom</groupId>
-            <artifactId>jdom</artifactId>
-            <version>1.1.3</version>
-            <scope>compile</scope>
-        </dependency>
-        <!--
-        <dependency>
-            <groupId>org.jdom</groupId>
-            <artifactId>jdom2</artifactId>
-            <version>2.0.6.1</version>
-        </dependency>
-        -->
+             -->
+
+
+        <!-- IDE Support -->
         <dependency>
             <groupId>org.jetbrains</groupId>
             <artifactId>annotations</artifactId>
-            <version>16.0.1</version>
-            <scope>compile</scope>
         </dependency>
+
         <dependency>
-            <groupId>org.jgroups</groupId>
-            <artifactId>jgroups</artifactId>
-            <version>3.6.10.Final</version>
-            <scope>compile</scope>
+            <!-- Immutables is a Java annotation processor to eliminate the burden of writing immutable types.
+             Is only needed during compilation and no runtime component required -->
+            <groupId>org.immutables</groupId>
+            <artifactId>value</artifactId>
+            <scope>provided</scope>
         </dependency>
+
+        <!--
+
+        Are we using this?
         <dependency>
-            <groupId>org.jvnet</groupId>
-            <artifactId>mimepull</artifactId>
-            <version>1.6</version>
-            <scope>compile</scope>
-        </dependency>
+             <groupId>org.openjdk.jmh</groupId>
+             <artifactId>jmh-core</artifactId>
+             <version>0.1</version>
+             <scope>compile</scope>
+         </dependency>-->
+
+
         <dependency>
-            <groupId>org.openjdk.jmh</groupId>
-            <artifactId>jmh-core</artifactId>
-            <version>0.1</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
+            <!-- Helps to load native libraries from JAR files -->
             <groupId>org.scijava</groupId>
             <artifactId>native-lib-loader</artifactId>
-            <version>2.3.2</version>
-            <scope>compile</scope>
         </dependency>
+
+
+        <!-- Servlet Container support -->
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>2.0.5</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
+            <!-- web filter rewrite of urls -->
             <groupId>org.tuckey</groupId>
             <artifactId>urlrewritefilter</artifactId>
-            <version>4.0.4</version>
-            <scope>compile</scope>
         </dependency>
+
+
+        <!-- Apache Tomcat -->
+
         <dependency>
-            <groupId>oro</groupId>
-            <artifactId>oro</artifactId>
-            <version>2.0.8</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>redis.clients</groupId>
-            <artifactId>jedis</artifactId>
-            <version>2.7.3</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>werken-xpath</groupId>
-            <artifactId>werken-xpath</artifactId>
-            <version>0.9.4</version>
-            <scope>compile</scope>
-        </dependency>
-        <!--
-        <dependency>
-            <groupId>xml-apis</groupId>
-            <artifactId>xml-apis-ext</artifactId>
-            <version>1.3.04</version>
-            <scope>compile</scope>
-        </dependency>
-        -->
-        <dependency>
-            <groupId>xmlpull</groupId>
-            <artifactId>xmlpull</artifactId>
-            <version>1.1.3.1</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.microsoft.sqlserver</groupId>
-            <artifactId>mssql-jdbc</artifactId>
-            <version>7.4.1.jre8</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>javax.servlet-api</artifactId>
-            <version>3.1.0</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>javax.servlet.jsp</groupId>
-            <artifactId>javax.servlet.jsp-api</artifactId>
-            <version>2.2.1</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
+            <!-- Jasper is the Tomcat JSP Engine -->
             <groupId>org.apache.tomcat</groupId>
             <artifactId>tomcat-jasper</artifactId>
-            <version>9.0.73</version>
-            <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
-            <version>42.5.1</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.tngtech.junit.dataprovider</groupId>
-            <artifactId>junit4-dataprovider</artifactId>
-            <version>2.6</version>
-            <scope>test</scope>
-        </dependency>
+
+
         <dependency>
             <groupId>org.apache.tomcat</groupId>
             <artifactId>tomcat-jdbc</artifactId>
-            <version>9.0.73</version>
+        </dependency>
+
+
+        <!--
+                <dependency>
+                    <groupId>org.glowroot</groupId>
+                    <artifactId>glowroot-agent</artifactId>
+                </dependency>
+        -->
+
+
+        <!-- Test Dependencies -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>org.awaitility</groupId>
             <artifactId>awaitility</artifactId>
-            <version>3.0.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.awaitility</groupId>
             <artifactId>awaitility-proxy</artifactId>
-            <version>3.0.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-            <version>2.28.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
+            <!-- Deprecated need to remove replace with core mockito-->
             <groupId>org.powermock</groupId>
             <artifactId>powermock-api-mockito2</artifactId>
-            <version>2.0.9</version>
             <scope>test</scope>
         </dependency>
         <dependency>
+            <!-- Deprecated need to remove replace with core mockito-->
             <groupId>org.powermock</groupId>
             <artifactId>powermock-module-junit4</artifactId>
-            <version>2.0.9</version>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <!-- Hamcrest is a framework for writing matcher objects allowing 'match' rules to be defined declaratively. -->
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+            <!-- often just used for testing we have in production code -->
+            <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.tngtech.junit.dataprovider</groupId>
+            <artifactId>junit4-dataprovider</artifactId>
+        </dependency>
+
+        <!-- explicitly add all the declared logging dependencies -->
+        <!-- Logging framework support Log4j2 as base logger
+            very specific artifacts are required to support other frameworks.
+            Do not include incompatible artifacts e.g. -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+        </dependency>
+        <dependency>
+            <!-- Support log4j1.2.x API in Log4j2 -->
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-1.2-api</artifactId>
+        </dependency>
+        <dependency>
+            <!-- Support Java Commons Logging API in Log4j2 -->
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-jcl</artifactId>
+        </dependency>
+        <dependency>
+            <!-- Support SLF4j2 API in Log4j2 -->
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j2-impl</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <!-- Servlet container initialization of Log4j2 -->
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-web</artifactId>
+        </dependency>
+        <dependency>
+            <!-- Async support for Log4J 2.x -->
+            <groupId>com.lmax</groupId>
+            <artifactId>disruptor</artifactId>
+        </dependency>
+
+
     </dependencies>
     <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-bom</artifactId>
-                <version>4.1.86.Final</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
     </dependencyManagement>
     <build>
         <sourceDirectory>${src.dir}</sourceDirectory>
@@ -1678,13 +1472,18 @@
                     <exclude>GeoLite2-City.mmdb</exclude>
                 </excludes>
             </resource>
+            <resource>
+                <filtering>false</filtering>
+                <directory>src/main/webapp</directory>
+            </resource>
         </resources>
         <plugins>
+
             <plugin>
                 <groupId>org.owasp</groupId>
                 <artifactId>dependency-check-maven</artifactId>
                 <configuration>
-                    <skip>true</skip>
+                    <skip>${skipOwasp}</skip>
                     <suppressionFiles>
                         <suppressionFile>${maven.multiModuleProjectDirectory}/owasp-suppressions.xml</suppressionFile>
                     </suppressionFiles>
@@ -1698,6 +1497,24 @@
                         <goals>
                             <goal>check</goal>
                         </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>com.dotcms</groupId>
+                <artifactId>generate-gradle-dependencies</artifactId>
+                <version>${project.version}</version>
+                <executions>
+                    <execution>
+                        <id>generate-deps</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.basedir}</outputDirectory>
+                            <outputFileName>dependencies.gradle</outputFileName>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -1856,7 +1673,7 @@
                         <recipe>dotcms.java.cleanup.Java11BaseCleanup</recipe>
                     </activeRecipes>
                     <exclusions>
-                <exclude>**/*.json</exclude>
+                        <exclude>**/*.json</exclude>
                         <exclude>**/*.gz</exclude>
                         <exclude>**/*.log</exclude>
                         <exclude>**/*.zip</exclude>
@@ -1888,7 +1705,7 @@
                                 <artifactItem>
                                     <groupId>com.dotcms</groupId>
                                     <artifactId>core-web</artifactId>
-                                    <version>1.0.0-SNAPSHOT</version>
+                                    <version>${project.version}</version>
                                     <type>war</type>
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${project.build.directory}/core-web</outputDirectory>
@@ -1896,7 +1713,7 @@
                                 <artifactItem>
                                     <groupId>com.dotcms</groupId>
                                     <artifactId>core-bundles</artifactId>
-                                    <version>1.0.0-SNAPSHOT</version>
+                                    <version>${project.version}</version>
                                     <type>zip</type>
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${project.build.directory}/felix</outputDirectory>
@@ -1904,12 +1721,11 @@
                                 <artifactItem>
                                     <groupId>com.dotcms</groupId>
                                     <artifactId>system-bundles</artifactId>
-                                    <version>1.0.0-SNAPSHOT</version>
+                                    <version>${project.version}</version>
                                     <type>zip</type>
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${project.build.directory}/felix-system</outputDirectory>
                                 </artifactItem>
-
                             </artifactItems>
                             <overWriteReleases>false</overWriteReleases>
                             <overWriteSnapshots>true</overWriteSnapshots>
@@ -1927,12 +1743,11 @@
                                     <groupId>com.dotcms</groupId>
                                     <artifactId>starter</artifactId>
                                     <!--   <version>empty_20210903</version>-->
-
                                     <version>empty_20220718</version>
                                     <type>zip</type>
                                     <overWrite>true</overWrite>
-                                    <outputDirectory>${project.build.directory}/classes</outputDirectory>
-                                    <destFileName>starter.zip</destFileName>
+                                    <outputDirectory>${starter.path}</outputDirectory>
+                                    <destFileName>${starter.filename}</destFileName>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>
@@ -1949,30 +1764,15 @@
                                     <groupId>com.dotcms</groupId>
                                     <artifactId>starter</artifactId>
                                     <!-- <version>empty_20210903</version>-->
-                                    <version>20220713</version>
+                                    <version>${starter.version}</version>
                                     <type>zip</type>
-                                    <overWrite>false</overWrite>
-                                    <outputDirectory>${project.build.directory}/test-classes</outputDirectory>
-                                    <destFileName>starter.zip</destFileName>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${starter.path}</outputDirectory>
+                                    <destFileName>${starter.filename}</destFileName>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>
                     </execution>
-                    <!--  <execution>
-                          <id>copy-dependencies</id>
-                          <phase>generate-resources</phase>
-                          <goals>
-                              <goal>copy-dependencies</goal>
-                          </goals>
-                          <configuration>
-                              <outputDirectory>${project.build.directory}/alternateLocation
-                              </outputDirectory>
-                              <overWriteReleases>false</overWriteReleases>
-                              <overWriteSnapshots>false</overWriteSnapshots>
-                              <overWriteIfNewer>true</overWriteIfNewer>
-                              <includeScope>runtime</includeScope>
-                          </configuration>
-                      </execution>-->
                 </executions>
             </plugin>
 
@@ -1981,9 +1781,11 @@
                 <artifactId>maven-antrun-plugin</artifactId>
                 <executions>
                     <execution>
+                        <!-- We need to remove this and replace with maven plugins after main build -->
                         <id>plugins</id>
                         <phase>prepare-package</phase>
                         <configuration>
+                            <skip>true</skip>
                             <target>
                                 <property name="compile_classpath" refid="maven.compile.classpath"/>
                                 <property name="runtime_classpath" refid="maven.runtime.classpath"/>
@@ -1999,14 +1801,15 @@
                             <goal>run</goal>
                         </goals>
                     </execution>
+
                     <execution>
-                        <phase>generate-resources</phase>
+                        <phase>generate-test-resources</phase>
 
                         <configuration>
                             <target>
                                 <mkdir dir="${project.build.directory}/testing/assets" />
                                 <copy todir="${project.build.directory}/testing/assets">
-                                    <fileset dir="${user.home}" includes="license.zip" />
+                                    <fileset dir="${user.home}/.dotcms/license" includes="license.zip" />
                                 </copy>
 
                                 <mkdir dir="${project.build.directory}/felix/" />
@@ -2023,12 +1826,23 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-war-plugin</artifactId>
                 <configuration>
-                    <attachClasses>false</attachClasses>
+                    <attachClasses>true</attachClasses>
                     <archiveClasses>false</archiveClasses>
                     <webXml>src/main/webapp/WEB-INF/web.xml</webXml>
-
                     <overlays>
                         <overlay>
                             <groupId>com.dotcms</groupId>
@@ -2059,39 +1873,374 @@
                             </directory>
                             <targetPath>WEB-INF/felix-system</targetPath>
                         </resource>
-                        <!-- <resource>
+                        <resource>
                              <directory>
-                                 ${project.build.directory}/starter
+                                 ${starter.path}
                              </directory>
-                         </resource>-->
+                         </resource>
                     </webResources>
+                </configuration>
+            </plugin>
+
+
+
+            <plugin>
+                <groupId>com.dkanejs.maven.plugins</groupId>
+                <artifactId>docker-compose-maven-plugin</artifactId>
+                <configuration>
+                    <!--  <envFile>${project.basedir}/.env</envFile>-->
+                    <services>
+                        <service>db</service>
+                        <service>elasticsearch</service>
+                    </services>
+                    <removeVolumes>false</removeVolumes>
+                    <projectName>cargo</projectName>
+                    <removeImages>true</removeImages>
+                    <removeImagesType>local</removeImagesType>
+                    <skip>${skipDockerEnv}</skip>
+                    <composeFile>${project.basedir}/../docker-compose.yml</composeFile>
+                    <detachedMode>true</detachedMode>
+                    <removeVolumes>true</removeVolumes>
+                </configuration>
+
+                <executions>
+                    <execution>
+                        <id>up</id>
+                        <phase>pre-integration-test</phase>
+                        <goals>
+                            <goal>down</goal>
+                            <goal>up</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${skipITs}</skip>
+                            <removeVolumes>${clean.docker.volumes}</removeVolumes>
+                            <ignorePullFailures>true</ignorePullFailures>
+                            <detachedMode>true</detachedMode>
+                            <services>
+                                <service>db</service>
+                                <service>elasticsearch</service>
+                            </services>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>down</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>down</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${skipITs}</skip>
+                            <composeFile>${project.basedir}/../docker-compose.yml</composeFile>
+                            <!--We clean docker volumes before but not after as we may need to debug -->
+                            <!--<removeVolumes>${clean.docker.volumes}</removeVolumes>-->
+                            <services>
+                                <service>db</service>
+                                <service>elasticsearch</service>
+                            </services>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.cargo</groupId>
+                <artifactId>cargo-maven3-plugin</artifactId>
+                <configuration>
+                    <container>
+                        <timeout>1800000</timeout>
+                        <systemProperties>
+                            <DOT_DATASOURCE_PROVIDER_STRATEGY_CLASS>com.dotmarketing.db.SystemEnvDataSourceStrategy</DOT_DATASOURCE_PROVIDER_STRATEGY_CLASS>
+                            <DOT_DB_DRIVER>org.postgresql.Driver</DOT_DB_DRIVER>
+                            <DOT_DB_BASE_URL>jdbc:postgresql://localhost/dotcms?autosave=conservative</DOT_DB_BASE_URL>
+                            <DOT_DB_USERNAME>postgres</DOT_DB_USERNAME>
+                            <DOT_DB_PASSWORD>postgres</DOT_DB_PASSWORD>
+                            <DOT_DOTCMS_DEV_MODE>true</DOT_DOTCMS_DEV_MODE>
+                            <DOT_STARTER_DATA_LOAD>${starter.full.path}</DOT_STARTER_DATA_LOAD>
+                            <file.encoding>UTF-8</file.encoding>
+                        </systemProperties>
+
+                        <dependencies>
+                            <dependency>
+                                <groupId>org.postgresql</groupId>
+                                <artifactId>postgresql</artifactId>
+                            </dependency>
+                        </dependencies>
+                    </container>
+                    <configuration>
+                        <properties>
+                            <cargo.servlet.port>${servlet.port}</cargo.servlet.port>
+                            <cargo.tomcat.debug.mode>${enableDebug}</cargo.tomcat.debug.mode>
+                            <cargo.tomcat.debug.address>${debugHost}</cargo.tomcat.debug.address>
+                            <cargo.tomcat.debug.suspend>${debugWait}</cargo.tomcat.debug.suspend>
+                        </properties>
+                    </configuration>
+                    <deployables>
+                        <deployable>
+                            <properties>
+                                <context>ROOT</context>
+                            </properties>
+                            <pingUrlPath>/dotAdmin</pingUrlPath>
+                        </deployable>
+                    </deployables>
+
+                    <packager>
+                        <outputLocation>${assembly-directory}/dotserver/tomcat-${tomcat.version}</outputLocation>
+                    </packager>
+                </configuration>
+                <executions>
+
+                    <execution>
+                        <id>start</id>
+                        <phase>pre-integration-test</phase>
+                        <goals>
+                            <goal>start</goal>
+                        </goals>
+                        <configuration>
+                            <container>
+                                <timeout>3000000</timeout>
+                            </container>
+                            <skip>${skipITs}</skip>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>stop</id>
+                        <phase>post-integration-test</phase>
+                        <goals>
+                            <goal>stop</goal>
+                        </goals>
+                        <configuration>
+                            <container>
+                                <timeout>3000000</timeout>
+                            </container>
+                            <skip>${skipITs}</skip>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>configure</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>configure</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>package</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>package</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <tarLongFileMode>posix</tarLongFileMode>
+                    <appendAssemblyId>false</appendAssemblyId>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>binary</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <overrideUid>0</overrideUid>
+                            <overrideGid>0</overrideGid>
+                            <descriptors>
+                                <descriptor>src/assembly/descriptor.xml</descriptor>
+                            </descriptors>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>com.google.cloud.tools</groupId>
+                <artifactId>jib-maven-plugin</artifactId>
+                <version>3.3.1</version>
+                <configuration>
+                    <skip>true</skip>
+                    <to>
+                        <image>${docker.output.image.name}</image>
+                    </to>
+                    <from>
+                        <image>${docker.base.image}</image>
+                       <!--
+                        <platforms>
+                            <platform>
+                                <architecture>arm</architecture>
+                                <os>linux</os>
+                            </platform>
+                            <platform>
+                                <architecture>arm64</architecture>
+                                <os>linux</os>
+                            </platform>
+                        </platforms>
+                        -->
+                    </from>
+                    <container>
+                    <!--
+                      For demonstration only: this directory in the base image contains a Tomcat default
+                      app (welcome page), so you may first want to delete this directory in the base image.
+                    -->
+                    <appRoot>/usr/local/tomcat/webapps/ROOT</appRoot>
+                    </container>
+                    <extraDirectories>
+                        <paths>
+                            <!--
+                             <path>
+                                <from>src/main/tomcat9</from>
+                                <into>/usr/local/tomcat</into>
+                            </path>
+                            -->
+                            <path>
+                                <from>target/cargo/configurations/tomcat9x/common/lib</from>
+                                <into>/usr/local/tomcat/lib</into>
+                            </path>
+                        </paths>
+                    </extraDirectories>
                 </configuration>
             </plugin>
         </plugins>
     </build>
-    <repositories>
-        <repository>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>dotcms-libs</id>
-            <url>https://repo.dotcms.com/artifactory/libs-release</url>
-        </repository>
-        <repository>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-            <id>dotcms-libs-snapshot</id>
-            <url>https://repo.dotcms.com/artifactory/libs-snapshot-local</url>
-        </repository>
-        <repository>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>jitpack</id>
-            <url>https://jitpack.io</url>
-        </repository>
-    </repositories>
+    <profiles>
+        <profile>
+            <id>tomcat9x</id>
+            <activation>
+
+                <property>
+                    <name>!run-container</name>
+
+                </property>
+
+            </activation>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.codehaus.cargo</groupId>
+                            <artifactId>cargo-maven3-plugin</artifactId>
+                            <version>${version.cargo.plugin}</version>
+                            <configuration>
+                                <configuration>
+                                    <type>standalone</type>
+                                    <configfiles>
+                                        <configfile>
+                                            <file>${tomcat9-overrides}/bin/build.conf</file>
+                                            <todir>bin</todir>
+                                        </configfile>
+                                        <configfile>
+                                            <file>${tomcat9-overrides}/bin/setenv.bat</file>
+                                            <todir>bin</todir>
+                                        </configfile>
+                                        <configfile>
+                                            <file>${tomcat9-overrides}/bin/setenv.sh</file>
+                                            <todir>bin</todir>
+                                        </configfile>
+                                        <!--
+                                        <configfile>
+                                            <file>${tomcat9-overrides}/conf/catalina.properties</file>
+                                            <todir>conf</todir>
+                                        </configfile>
+                                        -->
+                                        <configfile>
+                                            <file>${tomcat9-overrides}/conf/server.xml</file>
+                                            <todir>conf</todir>
+                                        </configfile>
+                                        <configfile>
+                                            <file>${tomcat9-overrides}/conf/context.xml</file>
+                                            <todir>conf</todir>
+                                        </configfile>
+                                        <configfile>
+                                            <file>${tomcat9-overrides}/conf/local.dotcms.site.pem</file>
+                                            <todir>conf</todir>
+                                        </configfile>
+                                    </configfiles>
+                                </configuration>
+                                <container>
+                                    <containerId>tomcat9x</containerId>
+                                    <timeout>1800000</timeout>
+                                    <zipUrlInstaller>
+                                        <url>
+                                            https://repo.maven.apache.org/maven2/org/apache/tomcat/tomcat/${tomcat.version}/tomcat-${tomcat.version}.zip
+                                        </url>
+                                    </zipUrlInstaller>
+
+                                </container>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+        <profile>
+        <id>dev-docker</id>
+        <activation>
+
+            <property>
+                <name>!dev-docker</name>
+
+            </property>
+        </activation>
+        <build>
+            <plugins>
+            <plugin>
+                <groupId>com.google.cloud.tools</groupId>
+                <artifactId>jib-maven-plugin</artifactId>
+                <version>3.3.1</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>dockerBuild</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <to>
+                        <image>${docker.output.image.name}</image>
+                    </to>
+                    <from>
+                        <image>${docker.base.image}</image>
+
+                         <platforms>
+                             <platform>
+                                 <architecture>arm64</architecture>
+                                 <os>linux</os>
+                             </platform>
+                         </platforms>
+
+                    </from>
+                </configuration>
+            </plugin>
+            </plugins>
+        </build>
+        </profile>
+        <profile>
+            <id>integrationTests</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>integration-test</goal>
+                                    <goal>verify</goal>
+                                </goals>
+
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
     <reporting>
         <plugins>
             <plugin>
