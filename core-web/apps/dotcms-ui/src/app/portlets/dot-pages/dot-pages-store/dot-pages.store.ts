@@ -509,14 +509,16 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                         take(1),
                         tapResponse(
                             ({ workflowsData, dotFavorite }) => {
-                                this.setMenuActions({
-                                    actions: this.getSelectActions(
-                                        workflowsData?.actions,
-                                        workflowsData?.page,
-                                        dotFavorite.jsonObjectView.contentlets[0]
-                                    ),
-                                    actionMenuDomId
-                                });
+                                if (workflowsData) {
+                                    this.setMenuActions({
+                                        actions: this.getSelectActions(
+                                            workflowsData?.actions,
+                                            workflowsData?.page,
+                                            dotFavorite.jsonObjectView.contentlets[0]
+                                        ),
+                                        actionMenuDomId
+                                    });
+                                }
                             },
                             (error: HttpErrorResponse) => this.httpErrorManagerService.handle(error)
                         )
@@ -712,29 +714,31 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
               });
 
         // Adding DotFavorite actions
-        actionsMenu.push({
-            label: favoritePage
-                ? this.dotMessageService.get('favoritePage.contextMenu.action.edit')
-                : this.dotMessageService.get('favoritePage.contextMenu.action.add'),
-            command: () => {
-                this.dialogService.open(DotFavoritePageComponent, {
-                    header: this.dotMessageService.get('favoritePage.dialog.header'),
-                    width: '80rem',
-                    data: {
-                        page: {
-                            favoritePageUrl,
-                            favoritePage
-                        },
-                        onSave: () => {
-                            this.getFavoritePages(FAVORITE_PAGE_LIMIT);
-                        },
-                        onDelete: () => {
-                            this.getFavoritePages(FAVORITE_PAGE_LIMIT);
+        if (!item.archived) {
+            actionsMenu.push({
+                label: favoritePage
+                    ? this.dotMessageService.get('favoritePage.contextMenu.action.edit')
+                    : this.dotMessageService.get('favoritePage.contextMenu.action.add'),
+                command: () => {
+                    this.dialogService.open(DotFavoritePageComponent, {
+                        header: this.dotMessageService.get('favoritePage.dialog.header'),
+                        width: '80rem',
+                        data: {
+                            page: {
+                                favoritePageUrl,
+                                favoritePage
+                            },
+                            onSave: () => {
+                                this.getFavoritePages(FAVORITE_PAGE_LIMIT);
+                            },
+                            onDelete: () => {
+                                this.getFavoritePages(FAVORITE_PAGE_LIMIT);
+                            }
                         }
-                    }
-                });
-            }
-        });
+                    });
+                }
+            });
+        }
 
         if (favoritePage) {
             actionsMenu.push({
@@ -749,7 +753,9 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             return actionsMenu;
         }
 
-        actionsMenu.push({ separator: true });
+        if (actionsMenu?.length > 0) {
+            actionsMenu.push({ separator: true });
+        }
 
         // Adding Edit & View actions
         const { loggedUser, isEnterprise, environments } = this.get();
