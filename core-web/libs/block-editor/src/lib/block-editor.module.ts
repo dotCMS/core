@@ -34,7 +34,7 @@ import { BubbleFormComponent } from './extensions/bubble-form/bubble-form.compon
 import { DotBlockEditorComponent } from './components/dot-block-editor/dot-block-editor.component';
 import { DotEditorCountBarComponent } from './components/dot-editor-count-bar/dot-editor-count-bar.component';
 import { FloatingButtonComponent } from './extensions/floating-button/floating-button.component';
-import { ImageTabviewFormModule } from './extensions/image-tabview-form/image-tabview-form.module';
+import { AssetFormModule } from './extensions/asset-form/asset-form.module';
 
 @NgModule({
     imports: [
@@ -43,7 +43,7 @@ import { ImageTabviewFormModule } from './extensions/image-tabview-form/image-ta
         ReactiveFormsModule,
         SharedModule,
         PrimengModule,
-        ImageTabviewFormModule
+        AssetFormModule
     ],
     declarations: [
         EditorDirective,

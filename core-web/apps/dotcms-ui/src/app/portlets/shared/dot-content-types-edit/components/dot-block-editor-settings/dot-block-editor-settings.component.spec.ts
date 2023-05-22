@@ -2,12 +2,10 @@ import { DebugElement, SimpleChange } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import { DotFieldVariablesService } from '../fields/dot-content-type-fields-variables/services/dot-field-variables.service';
-import {
-    DotBlockEditorSettingsComponent,
-    BLOCK_EDITOR_BLOCKS
-} from './dot-block-editor-settings.component';
+import { DotBlockEditorSettingsComponent } from './dot-block-editor-settings.component';
 import { MockDotMessageService } from '@dotcms/app/test/dot-message-service.mock';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { getEditorBlockOptions } from '@dotcms/block-editor';
 import { DotMessageService } from '@dotcms/app/api/services/dot-message/dot-messages.service';
 import { FormBuilder, ReactiveFormsModule, FormsModule } from '@angular/forms';
 
@@ -158,8 +156,8 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
             expect(multiselect.appendTo).toEqual('body');
         });
 
-        it('should have BLOCK_EDITOR_BLOCKS options', () => {
-            expect(multiselect.options).toEqual(BLOCK_EDITOR_BLOCKS);
+        it('should have Editor Block Options options', () => {
+            expect(multiselect.options).toEqual(getEditorBlockOptions());
         });
     });
 

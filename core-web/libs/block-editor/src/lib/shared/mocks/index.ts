@@ -176,11 +176,7 @@ export const CONTENTLETS_MOCK = [
     }
 ];
 
-const EMPTY_IMAGE_CONTENTLET: DotCMSContentlet = {
-    mimeType: 'image/jpeg',
-    type: 'file_asset',
-    fileAssetVersion: '/dA/14dd5ad9-55ae-42a8-a5a7-e259b6d0901a/fileAsset/rain-forest-view.jpg',
-    fileAsset: 'https://cdn.pixabay.com/photo/2015/04/23/22/00/tree-736885__480.jpg',
+const EMPTY_CONTENTLET: DotCMSContentlet = {
     inode: '14dd5ad9-55ae-42a8-a5a7-e259b6d0901a',
     variantId: 'DEFAULT',
     locked: false,
@@ -193,7 +189,7 @@ const EMPTY_IMAGE_CONTENTLET: DotCMSContentlet = {
     hostName: 'demo.dotcms.com',
     extension: 'jpg',
     isContent: true,
-    baseType: 'FILEASSET',
+    baseType: 'FILEASSETS',
     archived: false,
     working: true,
     live: true,
@@ -209,7 +205,38 @@ const EMPTY_IMAGE_CONTENTLET: DotCMSContentlet = {
     modUserName: '',
     owner: '',
     title: '',
-    url: ''
+    url: '',
+    contentTypeIcon: 'assessment',
+    __icon__: 'Icon'
+};
+
+const EMPTY_IMAGE_CONTENTLET: DotCMSContentlet = {
+    mimeType: 'image/jpeg',
+    type: 'file_asset',
+    fileAssetVersion: 'https://cdn.pixabay.com/photo/2015/04/23/22/00/tree-736885__480.jpg',
+    fileAsset: 'https://cdn.pixabay.com/photo/2015/04/23/22/00/tree-736885__480.jpg',
+    ...EMPTY_CONTENTLET
+};
+
+const EMPTY_VIDEO_CONTENTLET: DotCMSContentlet = {
+    ...EMPTY_CONTENTLET,
+    mimeType: 'video/mp4',
+    type: 'file_asset',
+    asset: '',
+    hasTitleImage: false,
+    assetMetaData: {
+        modDate: 1675183379270,
+        sha256: '3bb938fb70049e3e45f533b37ccae995ae96516e04c2f35b0c1142e47b2a39c1',
+        length: 788493,
+        title: 'mov_bbb.mp4',
+        version: 20220201,
+        isImage: false,
+        fileSize: 788493,
+        name: 'mov_bbb.mp4',
+        width: 320,
+        contentType: 'video/mp4',
+        height: 176
+    }
 };
 
 export const IMAGE_CONTENTLETS_MOCK = [
@@ -391,3 +418,51 @@ export const IMAGE_CONTENTLETS_MOCK = [
         title: 'Rain-forest-view.jpg'
     }
 ];
+
+export const VIDEO_CONTENTLETS_MOCK = [
+    {
+        ...EMPTY_VIDEO_CONTENTLET,
+        asset: 'https://www.w3schools.com/tags/movie.mp4',
+        fileName: '1 video',
+        name: 'rain-forest-view.jpg',
+        description: 'rain-forest-view',
+        title: 'Rain-forest-view.jpg'
+    },
+    {
+        ...EMPTY_VIDEO_CONTENTLET,
+        asset: 'https://www.w3schools.com/tags/movie.mp4',
+        fileName: '2 video',
+        name: 'Foto8.jpg',
+        description: 'Foto8',
+        title: 'Foto8.jpg'
+    },
+    {
+        ...EMPTY_VIDEO_CONTENTLET,
+
+        fileName: '3 video',
+        name: 'first-chair.jpg',
+        description: 'Stay at one of our resorts and get early hours with our first chair program.',
+        title: 'First to the Top'
+    },
+    {
+        ...EMPTY_VIDEO_CONTENTLET,
+        asset: 'https://www.w3schools.com/tags/movie.mp4',
+        fileName: '4 video',
+        name: 'adult-antioxidant.jpg',
+        description: 'adult-antioxidant',
+        title: 'Adult-antioxidant.jpg'
+    },
+    {
+        ...EMPTY_VIDEO_CONTENTLET,
+        fileAsset: '',
+        fileName: '5 video',
+        name: 'services-2.jpg',
+        description: 'Backcountry Skiing Services',
+        title: 'services-2.jpg'
+    }
+];
+
+export const ASSET_MOCK = {
+    image: IMAGE_CONTENTLETS_MOCK,
+    video: VIDEO_CONTENTLETS_MOCK
+};

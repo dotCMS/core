@@ -1,0 +1,43 @@
+<p-fileUpload
+    *ngIf="status === 'SELECT'; else preview"
+    [accept]="type + '/*'"
+    [customUpload]="true"
+    (onSelect)="onSelectFile($event.files)"
+    chooseLabel="browse files"
+    mode="basic"
+    maxFileSize="1000000"
+></p-fileUpload>
+
+<ng-template #preview>
+    <div class="preview-container">
+        <dot-asset-preview
+            *ngIf="status === 'PREVIEW'; else loading"
+            [type]="type"
+            [file]="file"
+            [src]="src"
+        ></dot-asset-preview>
+        <ng-template #loading>
+            <dot-spinner></dot-spinner>
+        </ng-template>
+    </div>
+
+    <div class="btn-container">
+        <button
+            class="p-button-outlined"
+            [disabled]="status === 'UPLOAD'"
+            (click)="removeFile()"
+            data-test-id="back-btn"
+            pButton
+        >
+            Back
+        </button>
+        <button
+            [disabled]="status === 'UPLOAD'"
+            (click)="uploadFile()"
+            data-test-id="upload-btn"
+            pButton
+        >
+            Insert
+        </button>
+    </div>
+</ng-template>

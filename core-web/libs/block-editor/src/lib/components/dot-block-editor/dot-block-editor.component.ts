@@ -34,8 +34,9 @@ import {
     DotTableCellExtension,
     DotTableExtension,
     DotTableHeaderExtension,
-    BubbleImageTabviewFormExtension,
-    removeInvalidNodes
+    BubbleAssetFormExtension,
+    removeInvalidNodes,
+    VideoNode
 } from '@dotcms/block-editor';
 
 // Marks Extensions
@@ -89,6 +90,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     private _customNodes: Map<string, AnyExtension> = new Map([
         ['dotContent', ContentletBlock(this.injector)],
         ['image', ImageNode],
+        ['video', VideoNode],
         ['table', DotTableExtension()]
     ]);
     private destroy$: Subject<boolean> = new Subject<boolean>();
@@ -238,7 +240,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             BubbleFormExtension(this.viewContainerRef),
             DotFloatingButton(this.injector, this.viewContainerRef),
             DotTableCellExtension(this.viewContainerRef),
-            BubbleImageTabviewFormExtension(this.viewContainerRef),
+            BubbleAssetFormExtension(this.viewContainerRef),
             DotTableHeaderExtension(),
             TableRow,
             CharacterCount

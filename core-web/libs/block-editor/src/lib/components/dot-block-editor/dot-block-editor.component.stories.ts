@@ -9,7 +9,7 @@ import { MenuModule } from 'primeng/menu';
 
 import { debounceTime, delay, tap } from 'rxjs/operators';
 import { BubbleLinkFormComponent } from '@dotcms/block-editor';
-import { ImageTabviewFormComponent } from '../../extensions/image-tabview-form/image-tabview-form.component';
+import { AssetFormComponent } from '../../extensions/asset-form/asset-form.component';
 import { SearchService } from '../../shared/services/search/search.service';
 
 import {
@@ -23,11 +23,12 @@ import {
     DotImageService,
     DotLanguageService,
     DotBlockEditorComponent,
-    FileStatus
+    FileStatus,
+    ASSET_MOCK
 } from '@dotcms/block-editor';
 
 // MOCKS
-import { CONTENTLETS_MOCK, IMAGE_CONTENTLETS_MOCK } from '@dotcms/block-editor';
+import { CONTENTLETS_MOCK } from '@dotcms/block-editor';
 
 export default {
     title: 'Block Editor'
@@ -157,17 +158,20 @@ export const primary = () => ({
                 useValue: {
                     get(params) {
                         const query = params.query.match(new RegExp(/(?<=:)(.*?)(?=\*)/))[0];
+                        const contenttype = params.query.match(
+                            new RegExp(/(?<=(contenttype:))(.*?)(?=\/)/)
+                        )[0];
+
+                        const mock = ASSET_MOCK[contenttype];
                         const contentlets = query
-                            ? IMAGE_CONTENTLETS_MOCK.filter(({ fileName }) =>
-                                  fileName.includes(query)
-                              )
-                            : IMAGE_CONTENTLETS_MOCK;
+                            ? mock.filter(({ fileName }) => fileName.includes(query))
+                            : mock;
 
                         return of({
                             jsonObjectView: {
                                 contentlets: contentlets.slice(params.offset, params.offset + 20)
                             },
-                            resultsSize: query ? contentlets?.length : IMAGE_CONTENTLETS_MOCK.length
+                            resultsSize: query ? contentlets?.length : mock.length
                         }).pipe(delay(1000));
                     }
                 }
@@ -181,7 +185,7 @@ export const primary = () => ({
             DragHandlerComponent,
             LoaderComponent,
             BubbleLinkFormComponent,
-            ImageTabviewFormComponent
+            AssetFormComponent
         ]
     },
     component: DotBlockEditorComponent

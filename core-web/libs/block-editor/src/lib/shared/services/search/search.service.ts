@@ -8,7 +8,7 @@ export enum ESOrderDirection {
     DESC = 'DESC'
 }
 
-export interface queryEsParams {
+export interface EsQueryParams {
     itemsPerPage?: number;
     filter?: string;
     lang?: string;
@@ -27,11 +27,11 @@ export class SearchService {
 
     /**
      * Returns a list of contentlets from Elastic Search endpoint
-     * @param queryEsParams params
+     * @param EsQueryParams params
      * @returns Observable<ESContent>
      * @memberof DotESContentService
      */
-    public get<T>({ query, limit = 0, offset = 0 }: queryEsParams): Observable<T> {
+    public get<T>({ query, limit = 0, offset = 0 }: EsQueryParams): Observable<T> {
         return this.http
             .post('/api/content/_search', {
                 query,
