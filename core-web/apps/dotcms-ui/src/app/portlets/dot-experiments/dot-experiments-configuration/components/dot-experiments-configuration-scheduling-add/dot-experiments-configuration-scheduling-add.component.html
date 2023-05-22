@@ -19,8 +19,8 @@
                         [showIcon]="true"
                         [showTime]="true"
                         [stepMinute]="30"
-                        (onClear)="setMinEndDate()"
-                        (onSelect)="setMinEndDate()"
+                        (onClear)="setDateBoundaries()"
+                        (onSelect)="setDateBoundaries()"
                         data-testId="scheduling-startDate"
                         formControlName="startDate"
                     ></p-calendar>
@@ -33,6 +33,7 @@
                         id="endTime"
                         [defaultDate]="minEndDate || initialDate"
                         [minDate]="minEndDate || initialDate"
+                        [maxDate]="maxEndDate"
                         [readonlyInput]="true"
                         [showClear]="true"
                         [showIcon]="true"

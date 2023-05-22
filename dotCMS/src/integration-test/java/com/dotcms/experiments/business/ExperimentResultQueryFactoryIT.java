@@ -13,6 +13,7 @@ import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.experiments.business.result.ExperimentResultQueryFactory;
 import com.dotcms.experiments.model.Experiment;
+import com.dotcms.experiments.model.GoalFactory;
 import com.dotcms.experiments.model.Goals;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -80,10 +81,11 @@ public class ExperimentResultQueryFactoryIT {
         final Metric metric = Metric.builder()
                 .name("Testing Metric")
                 .type(MetricType.REACH_PAGE)
-                .addConditions(getUrlCondition(reachPage.getPageUrl()), getRefererCondition(experimentPage.getPageUrl()))
+                .addConditions(getUrlCondition(reachPage.getPageUrl()),
+                        getRefererCondition(experimentPage.getPageUrl()))
                 .build();
 
-        final Goals goal = Goals.builder().primary(metric).build();
+        final Goals goal = Goals.builder().primary(GoalFactory.create(metric)).build();
 
         final Experiment experiment = new ExperimentDataGen()
                 .addVariant("page_reach+testing_1")

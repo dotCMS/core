@@ -14,12 +14,12 @@ import java.util.Set;
 
 public enum MetricType {
     REACH_PAGE(new Builder()
-            .goalName("Maximize Reaching a Page")
+            .label("Reaching a Page")
             .allRequiredParameters (Parameter.builder().name("url").build()) //TODO we can create singletons of these Parameters in order to reuse
             .optionalParameters(Parameter.builder().name("referer").build())
             .availableOperators(Operator.EQUALS, Operator.CONTAINS)),
     CLICK_ON_ELEMENT(new Builder()
-            .goalName("Maximize Clicking on Element")
+            .label("Clicking on Element")
             .allRequiredParameters(Parameter.builder().name("pageUrl").build())
             .anyRequiredParameters(
                     Parameter.builder().name("id").build(),
@@ -28,10 +28,10 @@ public enum MetricType {
             )
             .availableOperators(Operator.EQUALS, Operator.CONTAINS)),
     BOUNCE_RATE(new Builder()
-            .goalName("Minimize Bounce Rate")
+            .label("Bounce Rate")
             .optionalParameters(Parameter.builder().name("url").build()));
 
-    private final String goalName;
+    private final String label;
 
     private final Set<Operator> availableOperators;
 
@@ -42,14 +42,14 @@ public enum MetricType {
     private final Set<Parameter> optionalParameters;
 
     private static class Builder {
-        private String goalName;
+        private String label;
         private final Set<Operator> availableOperators = new HashSet<>();
         private final Set<Parameter> allRequiredParameters = new HashSet<>();
         private final Set<Parameter> anyRequiredParameters= new HashSet<>();
         private final Set<Parameter> optionalParameters= new HashSet<>();
 
-        public Builder goalName(String goalName) {
-            this.goalName = goalName;
+        public Builder label(String label) {
+            this.label = label;
             return this;
         }
 
@@ -75,15 +75,15 @@ public enum MetricType {
     }
 
     MetricType(final Builder builder) {
-        this.goalName = builder.goalName;
+        this.label = builder.label;
         this.allRequiredParameters = builder.allRequiredParameters;
         this.anyRequiredParameters = builder.anyRequiredParameters;
         this.optionalParameters = builder.optionalParameters;
         this.availableOperators = builder.availableOperators;
     }
 
-    public String goalName() {
-        return goalName;
+    public String label() {
+        return label;
     }
 
     @JsonIgnore
