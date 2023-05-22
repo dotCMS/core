@@ -80,7 +80,7 @@ describe('DotExperimentsConfigurationStore', () => {
     });
 
     beforeEach(() => {
-        spectator = createStoreService({});
+        spectator = createStoreService();
 
         store = spectator.inject(DotExperimentsConfigurationStore);
         dotExperimentsService = spectator.inject(DotExperimentsService);
@@ -214,7 +214,8 @@ describe('DotExperimentsConfigurationStore', () => {
                         {
                             name: newVariant.name,
                             id: '222',
-                            weight: 100
+                            weight: 100,
+                            promoted: false
                         }
                     ]
                 }
@@ -236,12 +237,12 @@ describe('DotExperimentsConfigurationStore', () => {
 
         it('should edit a variant name of an experiment', (done) => {
             const variants: Variant[] = [
-                { id: '111', name: DEFAULT_VARIANT_NAME, weight: 50, url: 'url' },
-                { id: '222', name: 'name to edit', weight: 50, url: 'url' }
+                { id: '111', name: DEFAULT_VARIANT_NAME, weight: 50, url: 'url', promoted: false },
+                { id: '222', name: 'name to edit', weight: 50, url: 'url', promoted: false }
             ];
             const variantEdited: Variant[] = [
-                { id: '111', name: DEFAULT_VARIANT_NAME, weight: 50, url: 'url' },
-                { id: '222', name: 'new name', weight: 50, url: 'url' }
+                { id: '111', name: DEFAULT_VARIANT_NAME, weight: 50, url: 'url', promoted: false },
+                { id: '222', name: 'new name', weight: 50, url: 'url', promoted: false }
             ];
 
             dotExperimentsService.getById.and.callThrough().and.returnValue(
@@ -280,11 +281,12 @@ describe('DotExperimentsConfigurationStore', () => {
 
         it('should delete a variant from an experiment', (done) => {
             const variants: Variant[] = [
-                { id: 'DEFAULT', name: 'DEFAULT', weight: 50 },
+                { id: 'DEFAULT', name: 'DEFAULT', weight: 50, promoted: false },
                 {
                     id: '111',
                     name: '1111',
-                    weight: 50
+                    weight: 50,
+                    promoted: false
                 }
             ];
 
@@ -299,7 +301,7 @@ describe('DotExperimentsConfigurationStore', () => {
                 ...EXPERIMENT_MOCK_1,
                 trafficProportion: {
                     ...EXPERIMENT_MOCK_1.trafficProportion,
-                    variants: [{ id: 'DEFAULT', name: 'DEFAULT', weight: 50 }]
+                    variants: [{ id: 'DEFAULT', name: 'DEFAULT', weight: 50, promoted: false }]
                 }
             };
 
@@ -347,7 +349,7 @@ describe('DotExperimentsConfigurationStore', () => {
             });
         });
 
-        it('should get a isDefault true to the default conditions of type REACH_PAGE', (done) => {
+        it('should remove the default conditions of type REACH_PAGE', (done) => {
             const experimentMock = {
                 ...EXPERIMENT_MOCK,
                 goals: {
@@ -377,13 +379,12 @@ describe('DotExperimentsConfigurationStore', () => {
             store.loadExperiment(EXPERIMENT_MOCK.id);
 
             store.goals$.subscribe(({ primary }) => {
-                expect(primary.conditions[0].isDefault).toBeFalse();
-                expect(primary.conditions[1].parameter).toBe(GOAL_PARAMETERS.REFERER);
-                expect(primary.conditions[1].isDefault).toBeTrue();
+                expect(primary.conditions.length).toBe(1);
+                expect(primary.conditions[0].parameter).toBe(GOAL_PARAMETERS.URL);
                 done();
             });
         });
-        it('should get a isDefault true to the default conditions of type BOUNCE_RATE', (done) => {
+        it('should remove the default conditions of type BOUNCE_RATE', (done) => {
             const experimentMock = {
                 ...EXPERIMENT_MOCK,
                 goals: {
@@ -408,8 +409,7 @@ describe('DotExperimentsConfigurationStore', () => {
             store.loadExperiment(EXPERIMENT_MOCK.id);
 
             store.goals$.subscribe(({ primary }) => {
-                expect(primary.conditions[0].parameter).toBe(GOAL_PARAMETERS.URL);
-                expect(primary.conditions[0].isDefault).toBeTrue();
+                expect(primary.conditions.length).toBe(0);
                 done();
             });
         });
@@ -524,8 +524,8 @@ describe('DotExperimentsConfigurationStore', () => {
             const expectedTrafficProportion: TrafficProportion = {
                 type: TrafficProportionTypes.SPLIT_EVENLY,
                 variants: [
-                    { id: '111', name: 'DEFAULT', weight: 50 },
-                    { id: '111', name: 'A', weight: 50 }
+                    { id: '111', name: 'DEFAULT', weight: 50, promoted: false },
+                    { id: '111', name: 'A', weight: 50, promoted: false }
                 ]
             };
 

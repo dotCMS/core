@@ -336,7 +336,7 @@ public class DotTemplateTool implements ViewTool {
       String key = "themeMap" + themeFolder.getIdentifier();
       Map<String, Object> themeMap = cache.getIfPresent(key);
       if(themeMap==null){
-        themeMap = new HashMap<String, Object>();
+        themeMap = new HashMap<>();
         //Get the theme files
         List<FileAsset> themeFiles = APILocator.getFileAssetAPI().findFileAssetsByFolder( themeFolder, APILocator.getUserAPI().getSystemUser(), false );
 

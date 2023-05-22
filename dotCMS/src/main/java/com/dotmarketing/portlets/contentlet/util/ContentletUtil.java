@@ -59,7 +59,7 @@ public class ContentletUtil {
 		String hostName = "";
 		String path = "";
 		String hostFolderPath ="";
-		Map<String, Object> hostOrFolderMap = new HashMap<String, Object>();
+		Map<String, Object> hostOrFolderMap = new HashMap<>();
 		Host systemHost = APILocator.getHostAPI().findSystemHost(APILocator.getUserAPI().getSystemUser(), false);
 				
 		if(!UtilMethods.isSet(hostFolderId) || hostFolderId.equals("allHosts")){

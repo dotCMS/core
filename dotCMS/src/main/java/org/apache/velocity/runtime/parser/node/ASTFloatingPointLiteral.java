@@ -88,7 +88,7 @@ public class ASTFloatingPointLiteral extends SimpleNode
          String str = getFirstTokenImage();
          try
          {
-             value = new Double( str );
+             value = Double.valueOf(str);
 
          } catch ( NumberFormatException E1 )
          {

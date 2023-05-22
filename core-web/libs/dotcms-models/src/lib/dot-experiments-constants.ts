@@ -14,6 +14,8 @@ export enum TrafficProportionTypes {
     CUSTOM_PERCENTAGES = 'CUSTOM_PERCENTAGES'
 }
 
+export const MAX_INPUT_LENGTH = 50;
+
 // Keep the order of this enum is important to respect the order of the experiment listing.
 export enum DotExperimentStatusList {
     RUNNING = 'RUNNING',
@@ -110,3 +112,46 @@ export const daysOfTheWeek = [
     'Friday',
     'Saturday'
 ];
+
+export type SummaryLegend = { icon: string; legend: string };
+
+export const enum BayesianStatusResponse {
+    TIE = 'TIE',
+    NONE = 'NONE'
+}
+
+export const BayesianNoWinnerStatus: Array<string> = [
+    BayesianStatusResponse.NONE,
+    BayesianStatusResponse.TIE
+];
+
+const enum BayesianLegendStatus {
+    WINNER = 'WINNER',
+    NO_WINNER_FOUND = 'NO_WINNER_FOUND',
+    NO_WINNER_FOUND_YET = 'NO_WINNER_FOUND_YET',
+    NO_ENOUGH_SESSIONS = 'NO_ENOUGH_SESSIONS',
+    PRELIMINARY_WINNER = 'PRELIMINARY_WINNER'
+}
+
+export const ReportSummaryLegendByBayesianStatus: Record<BayesianLegendStatus, SummaryLegend> = {
+    [BayesianLegendStatus.WINNER]: {
+        icon: 'dot-trophy',
+        legend: 'experiments.summary.suggested-winner.winner-is'
+    },
+    [BayesianLegendStatus.PRELIMINARY_WINNER]: {
+        icon: 'dot-trophy',
+        legend: 'experiments.summary.suggested-winner.preliminary-winner-is'
+    },
+    [BayesianLegendStatus.NO_WINNER_FOUND]: {
+        icon: 'pi-ban',
+        legend: 'experiments.summary.suggested-winner.no-winner-found'
+    },
+    [BayesianLegendStatus.NO_WINNER_FOUND_YET]: {
+        icon: 'pi-ban',
+        legend: 'experiments.summary.suggested-winner.no-winner-found-yet'
+    },
+    [BayesianLegendStatus.NO_ENOUGH_SESSIONS]: {
+        icon: 'pi-ban',
+        legend: 'experiments.summary.suggested-winner.no-enough-sessions'
+    }
+};

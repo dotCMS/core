@@ -1298,7 +1298,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     }
 
     public synchronized List<String> getCurrentIndex() throws DotDataException {
-        final List<String> newIdx = new ArrayList<String>();
+        final List<String> newIdx = new ArrayList<>();
         final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
         newIdx.add(esIndexApi.removeClusterIdFromName(info.getWorking()));
         newIdx.add(esIndexApi.removeClusterIdFromName(info.getLive()));
@@ -1306,7 +1306,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     }
 
     public synchronized List<String> getNewIndex() throws DotDataException {
-        final List<String> newIdx = new ArrayList<String>();
+        final List<String> newIdx = new ArrayList<>();
         final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
 
         if (info.getReindexWorking() != null) {

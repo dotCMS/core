@@ -201,7 +201,7 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
             childrenFolderIds = lazyMe.getChildrenFolderIds();
         }
         if (children != null) {
-            ArrayList<NavResult> list = new ArrayList<NavResult>();
+            ArrayList<NavResult> list = new ArrayList<>();
             for (NavResult nn : children) {
                 if (nn.isFolder()) {
                     // for folders we avoid returning the same instance

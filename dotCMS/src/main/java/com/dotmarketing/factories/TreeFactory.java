@@ -92,7 +92,7 @@ public class TreeFactory {
             Logger.warn(TreeFactory.class, "getTree failed:" + e, e);
         }
 
-        return new ArrayList<Tree>();
+        return new ArrayList<>();
     }
 
 
@@ -109,7 +109,7 @@ public class TreeFactory {
             Logger.warn(TreeFactory.class, "getTree failed:" + e, e);
         }
 
-        return new ArrayList<Tree>();
+        return new ArrayList<>();
     }
 
 
@@ -133,7 +133,7 @@ public class TreeFactory {
             Logger.warn(TreeFactory.class, "getTree failed:" + e, e);
         }
 
-        return new ArrayList<Tree>();
+        return new ArrayList<>();
     }
 
 
@@ -153,7 +153,7 @@ public class TreeFactory {
             Logger.warn(TreeFactory.class, "getTree failed:" + e, e);
         }
 
-        return new ArrayList<Tree>();
+        return new ArrayList<>();
     }
 
     public static List<Tree> getTreesByChild(Inode inode) {
@@ -172,12 +172,12 @@ public class TreeFactory {
             Logger.warn(TreeFactory.class, "getTree failed:" + e, e);
         }
 
-        return new ArrayList<Tree>();
+        return new ArrayList<>();
     }
 
     public static void swapTrees(final Inode i1, final Inode i2) throws DotDataException {
 
-        List<Tree> newTrees = new ArrayList<Tree>();
+        List<Tree> newTrees = new ArrayList<>();
 
         // Removing actual trees and creating the new ones
         Iterator<Tree> it = getTreesByParent(i1).iterator();

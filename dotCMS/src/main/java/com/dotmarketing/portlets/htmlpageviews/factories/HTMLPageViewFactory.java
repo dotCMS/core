@@ -283,7 +283,7 @@ public class HTMLPageViewFactory {
     
     public static List<StatisticBetweenDates> getTotalHTMLPageViewsBetweenDatesGroupByMonth(String uri, java.util.Date startDate, java.util.Date endDate, String hostId) {
     	
-    	List<StatisticBetweenDates> data = new ArrayList<StatisticBetweenDates>();
+    	List<StatisticBetweenDates> data = new ArrayList<>();
     	
     	Calendar cal = Calendar.getInstance();
     	cal.setTime(startDate);
@@ -318,7 +318,7 @@ public class HTMLPageViewFactory {
 
     public static List<StatisticBetweenDates> getTotalHTMLPageViewsBetweenDatesGroupByDay(String uri, java.util.Date startDate, java.util.Date endDate, String hostId) {
     	
-    	List<StatisticBetweenDates> data = new ArrayList<StatisticBetweenDates>();
+    	List<StatisticBetweenDates> data = new ArrayList<>();
     	
     	Calendar cal = Calendar.getInstance();
     	cal.setTime(startDate);    	
@@ -351,7 +351,7 @@ public class HTMLPageViewFactory {
     
     public static List<StatisticBetweenDates> getTotalHTMLPageViewsBetweenDatesGroupByWeek(String uri, java.util.Date startDate, java.util.Date endDate, String hostId) {
     	
-    	List<StatisticBetweenDates> data = new ArrayList<StatisticBetweenDates>();
+    	List<StatisticBetweenDates> data = new ArrayList<>();
     	
     	Calendar cal = Calendar.getInstance();
     	cal.setTime(startDate);    	
@@ -396,7 +396,7 @@ public class HTMLPageViewFactory {
     
     public static List<StatisticBetweenDates> getUniqueVisitorsBetweenDatesGroupByMonth(String uri, java.util.Date startDate, java.util.Date endDate, String hostId) {
     	
-    	List<StatisticBetweenDates> data = new ArrayList<StatisticBetweenDates>();
+    	List<StatisticBetweenDates> data = new ArrayList<>();
     	
     	Calendar cal = Calendar.getInstance();
     	cal.setTime(startDate);
@@ -431,7 +431,7 @@ public class HTMLPageViewFactory {
     
     public static List<StatisticBetweenDates> getUniqueVisitorsBetweenDatesGroupByWeek(String uri, java.util.Date startDate, java.util.Date endDate, String hostId) {
     	
-    	List<StatisticBetweenDates> data = new ArrayList<StatisticBetweenDates>();
+    	List<StatisticBetweenDates> data = new ArrayList<>();
     	
     	Calendar cal = Calendar.getInstance();
     	cal.setTime(startDate);    	
@@ -465,7 +465,7 @@ public class HTMLPageViewFactory {
     
     public static List<StatisticBetweenDates> getUniqueVisitorsBetweenDatesGroupByDay(String uri, java.util.Date startDate, java.util.Date endDate, String hostId) {
     	
-    	List<StatisticBetweenDates> data = new ArrayList<StatisticBetweenDates>();
+    	List<StatisticBetweenDates> data = new ArrayList<>();
     	
     	Calendar cal = Calendar.getInstance();
     	cal.setTime(startDate);    	
@@ -579,7 +579,7 @@ public class HTMLPageViewFactory {
         db.addParam(endDate);
         db.addParam(hostId);
         List<HashMap<String, String>> result = db.loadResults();
-        List<String> inodes = new ArrayList<String>();
+        List<String> inodes = new ArrayList<>();
         
         java.util.StringTokenizer parameters;
         String parameter;
@@ -627,8 +627,8 @@ public class HTMLPageViewFactory {
         db.addParam(endDate);
         db.addParam(hostId);
         List<HashMap<String, String>> result = db.loadResults();
-        ArrayList<String> inodes = new ArrayList<String>();
-        ArrayList<String> uniqueVisits = new ArrayList<String>();
+        ArrayList<String> inodes = new ArrayList<>();
+        ArrayList<String> uniqueVisits = new ArrayList<>();
         
         java.util.StringTokenizer parameters;
         String parameter;

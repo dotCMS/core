@@ -90,7 +90,7 @@ public class ACheckerImpl implements AChecker {
 		
 		try{
 			// Generate guidelines
-			List<Integer> gids = new LinkedList<Integer>();
+			List<Integer> gids = new LinkedList<>();
 			String[] guides = request.getGuide().split(",");
 			GuidelinesDAO guidelinesDAO = new GuidelinesDAO();
 			for (String abbr : guides) {

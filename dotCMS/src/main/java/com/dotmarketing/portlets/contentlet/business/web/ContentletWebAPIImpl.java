@@ -400,9 +400,9 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		final String subCommand = UtilMethods.isSet(contentletFormData.get("subcmd"))?
 				(String) contentletFormData.get("subcmd"): StringPool.BLANK;
 
-		final ArrayList<Category> categories   = new ArrayList<Category>();
+		final ArrayList<Category> categories   = new ArrayList<>();
 		// Getting categories that come from the entity
-		final ArrayList<String> categoriesList = new ArrayList<String>();
+		final ArrayList<String> categoriesList = new ArrayList<>();
 		Host host =null;
 		Folder folder = null;
 
@@ -1032,13 +1032,13 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			req.setAttribute(com.liferay.portal.util.WebKeys.JAVAX_PORTLET_CONFIG,req.getSession().getAttribute(com.dotmarketing.util.WebKeys.JAVAX_PORTLET_CONFIG));
 
 			User currentUser = com.liferay.portal.util.PortalUtil.getUser(req);
-			Map<String, String[]> params = new HashMap<String, String[]> ();
+			Map<String, String[]> params = new HashMap<> ();
 			params.put("struts_action", new String [] {"/ext/contentlet/edit_contentlet"});
 			params.put("cmd", new String [] {"edit"});
 			params.put("inode", new String [] { String.valueOf(contentlet.getInode()) });
 			String contentURL = PortletURLUtil.getActionURL(req, WindowState.MAXIMIZED.toString(), params);
 			List<Map<String, Object>> references = conAPI.getContentletReferences(contentlet, currentUser, false);
-			List<Map<String, Object>> validReferences = new ArrayList<Map<String, Object>> ();
+			List<Map<String, Object>> validReferences = new ArrayList<> ();
 
 			//Avoinding to send the email to the same users
 			for (Map<String, Object> reference : references){
@@ -1072,7 +1072,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 	 */
 	private ContentletRelationships getCurrentContentletRelationships(Map contentletFormData, User user) {
 
-		List<ContentletRelationships.ContentletRelationshipRecords> relationshipsRecords = new ArrayList<ContentletRelationships.ContentletRelationshipRecords>();
+		List<ContentletRelationships.ContentletRelationshipRecords> relationshipsRecords = new ArrayList<>();
 		Set<String> keys = contentletFormData.keySet();
 		ContentletRelationships.ContentletRelationshipRecords contentletRelationshipRecords;
 		boolean hasParent;
@@ -1091,7 +1091,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 				inodes = inodesSt.split(",");
 				relationship = APILocator.getRelationshipAPI().byInode(inodes[0]);
 				contentletRelationshipRecords = new ContentletRelationships(null).new ContentletRelationshipRecords(relationship, hasParent);
-				records = new ArrayList<Contentlet>();
+				records = new ArrayList<>();
 
 				for (int i = 1; i < inodes.length; i++) {
 					try {

@@ -558,7 +558,7 @@ public class BasicFunctions implements FunctionRepository {
 	 * otherwise, set it to false
 	 */
 	public boolean hasDuplicateAttribute(String attr) {
-		Set<String> id_array = new TreeSet<String>();
+		Set<String> id_array = new TreeSet<>();
 		return basicChecks.has_duplicate_attribute(global_e, attr, id_array);
 	}
 
@@ -874,7 +874,7 @@ public class BasicFunctions implements FunctionRepository {
 		// find definition of <map> with $map_name
 		boolean map_found = false;
 
-		List<Map<String, String>> area_hrefs = new ArrayList<Map<String, String>>();
+		List<Map<String, String>> area_hrefs = new ArrayList<>();
 
 		for (Node nmap : nodelist(global_content_dom
 				.getElementsByTagName("map"))) {
@@ -888,7 +888,7 @@ public class BasicFunctions implements FunctionRepository {
 				for (Node map_child : nodelist(map.getChildNodes())) {
 
 					if (map_child.getNodeName().equals("area")) {
-						Map<String, String> item = new HashMap<String, String>();
+						Map<String, String> item = new HashMap<>();
 						item.put(
 								"href",
 								string(
@@ -1043,7 +1043,7 @@ public class BasicFunctions implements FunctionRepository {
 	 * true (grouped properly) or false (not grouped)
 	 */
 	public boolean isRadioButtonsGrouped() {
-		List<Node> radio_buttons = new ArrayList<Node>();
+		List<Node> radio_buttons = new ArrayList<>();
 
 		for (Node e_input : nodelist(global_e.getElementsByTagName("input"))) {
 
@@ -1082,7 +1082,7 @@ public class BasicFunctions implements FunctionRepository {
 	 * return true if all different, otherwise, return false
 	 */
 	public boolean isSubmitLabelDifferent() {
-		List<String> submit_labels = new ArrayList<String>();
+		List<String> submit_labels = new ArrayList<>();
 
 		for (Node form : nodelist(global_e.getElementsByTagName("form"))) {
 

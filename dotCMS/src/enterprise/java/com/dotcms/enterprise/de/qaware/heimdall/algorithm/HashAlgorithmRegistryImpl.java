@@ -35,7 +35,7 @@ public class HashAlgorithmRegistryImpl implements HashAlgorithmRegistry {
     /**
      * Map from algorithm id to algorithm.
      */
-    private final Map<Integer, HashAlgorithm> algorithms = new HashMap<Integer, HashAlgorithm>();
+    private final Map<Integer, HashAlgorithm> algorithms = new HashMap<>();
 
     /**
      * Constructor.

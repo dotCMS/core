@@ -487,6 +487,36 @@ public class BrowserAPITest extends IntegrationTestBase {
                 ImmutableSet.of(
                         testlink.getName()))
         );
+
+        // When requesting content in the folder for non the default language,
+        //should return the content in the language requested + the content in the
+        //default language
+        testCases.add( Tuple.of(
+                "Request Content No default lang, should return content also in default lang",
+
+                BrowserQuery.builder()
+                        .withHostOrFolderId(testFolder.getInode())
+                        .showWorking(true)
+                        .showArchived(false)
+                        .showFolders(true)
+                        .showPages(true)
+                        .showFiles(true)
+                        .showLinks(true)
+                        .showDefaultLangItems(true)
+                        .showDotAssets(true)
+                        .withLanguageId(testLanguage.getId())
+                        .build()
+                ,
+                ImmutableSet.of(
+                        testFileAsset.getName(),
+                        testFileAsset2.getName(),
+                        testFileAsset2MultiLingual.getName(),
+                        testSubFolder.getName(),
+                        testlink.getName(),
+                        testDotAsset.getTitle(),
+                        testPage.getPageUrl()
+                ))
+        );
         
         return testCases;
     }

@@ -194,12 +194,12 @@ public class HostAjax {
 		List<Host> hosts = hostAPI.findAll(user, respectFrontend);
 		Collections.sort(hosts, new HostNameComparator());
 
-		List<Map<String, Object>> listOfHosts = new ArrayList<Map<String,Object>>(hosts.size());
+		List<Map<String, Object>> listOfHosts = new ArrayList<>(hosts.size());
 
 		for(Host host : hosts) {
 			if(host.isSystemHost())
 				continue;
-			Map<String, Object> thumbInfo = new HashMap<String, Object>();
+			Map<String, Object> thumbInfo = new HashMap<>();
 			thumbInfo.put("hostId", host.getIdentifier());
 			thumbInfo.put("hostInode", host.getInode());
 			thumbInfo.put("hostName", host.getHostname());

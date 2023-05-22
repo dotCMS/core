@@ -381,7 +381,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		final Optional<ContentletVersionInfo> contentletVersionInfo = APILocator.getVersionableAPI().
 				getContentletVersionInfo(identifier.getId(), APILocator.getLanguageAPI().getDefaultLanguage().getId());
 
-		if(!contentletVersionInfo.isPresent()) {
+		if(contentletVersionInfo.isEmpty()) {
 			throw new DotDataException("Can't find ContentletVersionInfo. Identifier:"
 					+ identifier.getId() + ". Lang:"
 					+ APILocator.getLanguageAPI().getDefaultLanguage().getId());
@@ -429,7 +429,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
         final Optional<ContentletVersionInfo> contentletVersionInfo = APILocator.getVersionableAPI().
 				getContentletVersionInfo(identifier.getId(), APILocator.getLanguageAPI().getDefaultLanguage().getId());
 
-        if(!contentletVersionInfo.isPresent()) {
+        if(contentletVersionInfo.isEmpty()) {
         	throw new DotDataException("Can't find ContentletVersionInfo. Identifier:"
 					+ identifier.getId() + ". Lang:"
 					+ APILocator.getLanguageAPI().getDefaultLanguage().getId());

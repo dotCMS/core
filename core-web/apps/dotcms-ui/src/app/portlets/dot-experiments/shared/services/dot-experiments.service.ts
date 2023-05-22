@@ -137,7 +137,8 @@ export class DotExperimentsService {
     /**
      * Modify a variant of an experiment
      * @param  {number} experimentId
-     * @param {Variant} variant
+     * @param {string} variantId
+     * @param { description: string } changes
      * @returns Observable<DotExperiment>
      * @memberof DotExperimentsService
      */
@@ -172,20 +173,24 @@ export class DotExperimentsService {
 
     /**
      * Promote variant of experiment
-     * @param  {string} variantName
+     * @param {string} experimentId
+     * @param {string} variantId
      * @returns Observable<DotExperiment>
      * @memberof DotExperimentsService
      */
-    promoteVariant(variantName: string): Observable<DotExperiment> {
+    promoteVariant(experimentId: string, variantId: string): Observable<DotExperiment> {
         return this.http
-            .put<DotCMSResponse<DotExperiment>>(`/api/v1/variants/${variantName}/_promote`, {})
+            .put<DotCMSResponse<DotExperiment>>(
+                `/api/v1/experiments/${experimentId}/variants/${variantId}/_promote`,
+                {}
+            )
             .pipe(pluck('entity'));
     }
 
     /**
      * Set a selectedGoal to an experiment
      * @param {string} experimentId
-     * @param {Goal} selectedGoal
+     * @param {Goals} goals
      * @returns Observable<DotExperiment>
      * @memberof DotExperimentsService
      */

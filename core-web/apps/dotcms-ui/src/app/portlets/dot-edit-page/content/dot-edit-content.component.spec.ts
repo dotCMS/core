@@ -13,7 +13,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
-import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { DialogService } from 'primeng/dynamicdialog';
 
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotOverlayMaskModule } from '@components/_common/dot-overlay-mask/dot-overlay-mask.module';
@@ -27,6 +27,7 @@ import { DotMessageDisplayServiceMock } from '@components/dot-message-display/do
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotDownloadBundleDialogService } from '@dotcms/app/api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
+import { DotFavoritePageService } from '@dotcms/app/api/services/dot-favorite-page/dot-favorite-page.service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
@@ -92,6 +93,7 @@ import {
     EDIT_BLOCK_EDITOR_CUSTOM_EVENT
 } from './dot-edit-content.component';
 import { DotContainerContentletService } from './services/dot-container-contentlet.service';
+import { DotCopyContentModalService } from './services/dot-copy-content-modal/dot-copy-content-modal.service';
 import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
 import { PageModelChangeEventType } from './services/dot-edit-content-html/models';
 import { DotPageStateService } from './services/dot-page-state/dot-page-state.service';
@@ -103,23 +105,6 @@ import { DotEditPageInfoModule } from '../components/dot-edit-page-info/dot-edit
 import { DotPageContent } from '../shared/models';
 
 const EXPERIMENT_MOCK = getExperimentMock(1);
-
-const CONTENT_EDIT_OPTIONS = {
-    option1: {
-        value: 'current',
-        message: 'editpage.content.edit.content.in.this.page.message',
-        icon: 'article',
-        label: 'editpage.content.edit.content.in.this.page',
-        buttonLabel: 'editpage.content.edit.content.in.this.page.button.label'
-    },
-    option2: {
-        value: 'all',
-        message: 'editpage.content.edit.content.in.all.pages.message',
-        icon: 'dynamic_feed',
-        label: 'editpage.content.edit.content.in.all.pages',
-        buttonLabel: 'editpage.content.edit.content.in.all.pages.button.label'
-    }
-};
 
 @Component({
     selector: 'dot-global-message',
@@ -286,6 +271,8 @@ describe('DotEditContentComponent', () => {
                 DotPropertiesService,
                 DotESContentService,
                 DotSessionStorageService,
+                DotCopyContentModalService,
+                DotFavoritePageService,
                 {
                     provide: LoginService,
                     useClass: LoginServiceMock
@@ -1083,38 +1070,6 @@ describe('DotEditContentComponent', () => {
                                 }
                             }
                         });
-                    });
-
-                    it('should open dialog if onNumberPages is greater than 1 ', () => {
-                        spyOn(dialogService, 'open').and.returnValue({
-                            onClose: of('')
-                        } as DynamicDialogRef);
-
-                        spyOn(dotContentletEditorService, 'edit');
-
-                        fixture.detectChanges();
-
-                        dotEditContentHtmlService.iframeActions$.next({
-                            name: 'edit',
-                            dataset: {
-                                dotInode: 'test_inode',
-                                onNumberOfPages: '2'
-                            },
-                            target: {
-                                contentWindow: {
-                                    ngEditContentletEvents: null
-                                }
-                            }
-                        });
-
-                        expect(dialogService.open).toHaveBeenCalledTimes(1);
-                        expect(dialogService.open).toHaveBeenCalledWith(jasmine.any(Function), {
-                            header: 'Edit Content',
-                            width: '37rem',
-                            data: { options: CONTENT_EDIT_OPTIONS },
-                            contentStyle: { padding: '0px' }
-                        });
-                        expect(dotContentletEditorService.edit).not.toHaveBeenCalled();
                     });
 
                     it('should handle code event', (done) => {

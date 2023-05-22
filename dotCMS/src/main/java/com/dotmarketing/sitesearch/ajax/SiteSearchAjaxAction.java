@@ -276,7 +276,7 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
     public void getNotActiveIndexNames(HttpServletRequest request, HttpServletResponse response) throws IOException {
 	    try {
             String defaultIndex=APILocator.getIndiciesAPI().loadIndicies().getSiteSearch();
-            List<String> ret=new ArrayList<String>();
+            List<String> ret=new ArrayList<>();
             for(String ii : APILocator.getSiteSearchAPI().listIndices())
                 if(defaultIndex==null || !defaultIndex.equals(ii))
                     ret.add(ii);

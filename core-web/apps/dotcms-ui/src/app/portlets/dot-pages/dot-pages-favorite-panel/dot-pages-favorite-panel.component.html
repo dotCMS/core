@@ -6,7 +6,7 @@
         'dot-pages-panel__empty-state': vm.favoritePages?.items?.length === 0
     }"
     [toggleable]="true"
-    [header]="'favorites' | dm"
+    [header]="'favoritePage.panel.header' | dm"
     [collapsed]="vm.favoritePages.total === 0"
     toggler="header"
     iconPos="start"
@@ -23,6 +23,7 @@
             "
             (click)="
                 toggleFavoritePagesData(
+                    $event,
                     vm.favoritePages.total === vm.favoritePages.items.length,
                     vm.favoritePages.total
                 )

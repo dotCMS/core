@@ -1,1 +1,1 @@
-export { DotExperimentsShellModule } from './dot-experiments-shell/dot-experiments-shell.module';
+export { DotExperimentsReportsRoutes } from './dot-experiments-reports/dot-experiments-reports.routes';

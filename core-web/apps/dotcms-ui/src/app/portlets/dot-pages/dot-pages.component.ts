@@ -1,7 +1,14 @@
 import { Subject } from 'rxjs';
 
 import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
-import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import {
+    AfterViewInit,
+    Component,
+    ElementRef,
+    HostListener,
+    OnDestroy,
+    ViewChild
+} from '@angular/core';
 
 import { Menu } from 'primeng/menu';
 
@@ -16,9 +23,11 @@ import { DotEventsService, DotPageRenderService } from '@dotcms/data-access';
 import { HttpCode, SiteService } from '@dotcms/dotcms-js';
 import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
 
-import { DotPagesState, DotPageStore } from './dot-pages-store/dot-pages.store';
-
-export const FAVORITE_PAGE_LIMIT = 5;
+import {
+    DotPagesState,
+    DotPageStore,
+    FAVORITE_PAGE_LIMIT
+} from './dot-pages-store/dot-pages.store';
 
 export interface DotActionsMenuEventParams {
     event: MouseEvent;
@@ -32,7 +41,7 @@ export interface DotActionsMenuEventParams {
     styleUrls: ['./dot-pages.component.scss'],
     templateUrl: './dot-pages.component.html'
 })
-export class DotPagesComponent implements OnInit, OnDestroy {
+export class DotPagesComponent implements AfterViewInit, OnDestroy {
     @ViewChild('menu') menu: Menu;
     vm$: Observable<DotPagesState> = this.store.vm$;
 
@@ -97,6 +106,19 @@ export class DotPagesComponent implements OnInit, OnDestroy {
     }
 
     /**
+     * Closes the menu when the user clicks outside of it
+     *
+     * @memberof DotPagesComponent
+     */
+    @HostListener('window:click')
+    closeMenu(): void {
+        if (this.menuIsLoaded(this.domIdMenuAttached)) {
+            this.menu.hide();
+            this.store.clearMenuActions();
+        }
+    }
+
+    /**
      * Event to show/hide actions menu when each contentlet is clicked
      *
      * @param {DotActionsMenuEventParams} params
@@ -104,11 +126,10 @@ export class DotPagesComponent implements OnInit, OnDestroy {
      */
     showActionsMenu({ event, actionMenuDomId, item }: DotActionsMenuEventParams): void {
         event.stopPropagation();
+        this.store.clearMenuActions();
         this.menu.hide();
 
-        if (event?.currentTarget['id'] !== this.domIdMenuAttached) {
-            this.store.showActionsMenu({ item, actionMenuDomId });
-        }
+        this.store.showActionsMenu({ item, actionMenuDomId });
     }
 
     /**
@@ -117,11 +138,10 @@ export class DotPagesComponent implements OnInit, OnDestroy {
      * @memberof DotPagesComponent
      */
     closedActionsMenu() {
-        this.store.clearMenuActions();
         this.domIdMenuAttached = '';
     }
 
-    ngOnInit(): void {
+    ngAfterViewInit(): void {
         this.store.actionMenuDomId$
             .pipe(
                 takeUntil(this.destroy$),
@@ -129,10 +149,12 @@ export class DotPagesComponent implements OnInit, OnDestroy {
             )
             .subscribe((actionMenuDomId: string) => {
                 const target = this.element.nativeElement.querySelector(`#${actionMenuDomId}`);
-                if (target) {
+                if (target && this.menuIsLoaded(actionMenuDomId)) {
                     this.menu.show({ currentTarget: target });
                     this.domIdMenuAttached = actionMenuDomId;
-                }
+
+                    // To hide when the contextMenu is opened
+                } else this.menu.hide();
             });
 
         this.dotEventsService
@@ -164,5 +186,19 @@ export class DotPagesComponent implements OnInit, OnDestroy {
     ngOnDestroy(): void {
         this.destroy$.next(true);
         this.destroy$.complete();
+    }
+
+    /**
+     * Check if the menu is loaded
+     *
+     * @private
+     * @param {string} menuDOMID
+     * @return {*}  {boolean}
+     * @memberof DotPagesComponent
+     */
+    private menuIsLoaded(menuDOMID: string): boolean {
+        return (
+            menuDOMID.includes('pageActionButton') || menuDOMID.includes('favoritePageActionButton')
+        );
     }
 }

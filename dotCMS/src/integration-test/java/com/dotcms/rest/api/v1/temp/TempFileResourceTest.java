@@ -477,7 +477,7 @@ public class TempFileResourceTest {
         final DotTempFile dotTempFile2 = dotTempFiles.get("tempFiles").get(0);
 
         HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
-        final Map<String, Object> m = new HashMap<String, Object>();
+        final Map<String, Object> m = new HashMap<>();
         m.put("stInode", contentType.id());
         m.put("hostFolder", defaultHost.getIdentifier());
         m.put("languageId", defaultHost.getLanguageId());

@@ -181,7 +181,7 @@ public class Portlet extends PortletModel {
 
     try {
       if (cachedInstance == null) {
-        com.dotcms.repackage.javax.portlet.Portlet realPortlet = (com.dotcms.repackage.javax.portlet.Portlet) Class.forName(getPortletClass()).newInstance();
+        com.dotcms.repackage.javax.portlet.Portlet realPortlet = (com.dotcms.repackage.javax.portlet.Portlet) Class.forName(getPortletClass()).getDeclaredConstructor().newInstance();
         ConcretePortletWrapper newOne = new ConcretePortletWrapper(realPortlet, portletConfig.getPortletContext());
         newOne.init(portletConfig);
         cachedInstance = newOne;
