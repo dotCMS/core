@@ -1,4 +1,4 @@
-import { Observable, of, throwError } from 'rxjs';
+import { Observable, forkJoin, of, throwError } from 'rxjs';
 
 import { HttpErrorResponse, HttpHeaders, HttpResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
@@ -39,14 +39,7 @@ export class DotEditPageResolver implements Resolve<DotPageRenderState> {
         // If we have data, we don't need to request the page again
         const data$ = data ? of(data) : this.getPageRenderState(renderOptions, isLayout);
 
-        return this.setSite(hostId).pipe(
-            switchMap(() => data$),
-            catchError((err: HttpErrorResponse) => {
-                this.dotRouterService.goToSiteBrowser();
-
-                return this.dotHttpErrorManagerService.handle(err).pipe(map(() => null));
-            })
-        );
+        return forkJoin([this.setSite(hostId), data$]).pipe(map(([_, pageRender]) => pageRender));
     }
 
     private checkUserCanGoToLayout(
@@ -99,9 +92,16 @@ export class DotEditPageResolver implements Resolve<DotPageRenderState> {
     private setSite(id: string): Observable<Site> {
         const currentSiteId = this.siteService.currentSite?.identifier;
         const shouldSwitchSite = id && id !== currentSiteId;
+        const switchSite$ = this.siteService.switchSiteById(id).pipe(
+            catchError((err: HttpErrorResponse) => {
+                console.warn(err);
+
+                return of(null);
+            })
+        );
 
         // If we have a site id and is different from the current one, we switch
-        return shouldSwitchSite ? this.siteService.switchSiteById(id) : of(null);
+        return shouldSwitchSite ? switchSite$ : of(null);
     }
 
     private getPageRenderState(
@@ -118,6 +118,11 @@ export class DotEditPageResolver implements Resolve<DotPageRenderState> {
                 return isLayout
                     ? this.checkUserCanGoToLayout(dotRenderedPageState)
                     : of(dotRenderedPageState);
+            }),
+            catchError((err: HttpErrorResponse) => {
+                this.dotRouterService.goToSiteBrowser();
+
+                return this.dotHttpErrorManagerService.handle(err).pipe(map(() => null));
             })
         );
     }
