@@ -5,7 +5,8 @@ import {
     NodeViewProps,
     NodeViewRenderer,
     NodeViewRendererProps,
-    NodeViewRendererOptions
+    NodeViewRendererOptions,
+    DecorationWithType
 } from '@tiptap/core';
 import type { Decoration } from 'prosemirror-view';
 import type { Node as ProseMirrorNode } from 'prosemirror-model';
@@ -100,7 +101,7 @@ class AngularNodeView extends NodeView<
         }
     }
 
-    update(node: ProseMirrorNode, decorations: Decoration[]): boolean {
+    update(node: ProseMirrorNode, decorations: DecorationWithType[]): boolean {
         if (this.options.update) {
             return this.options.update(node, decorations);
         }

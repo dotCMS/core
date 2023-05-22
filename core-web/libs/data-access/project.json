@@ -1,0 +1,22 @@
+{
+    "projectType": "library",
+    "sourceRoot": "libs/data-access/src",
+    "prefix": "dotcms",
+    "targets": {
+        "test": {
+            "executor": "@nrwl/jest:jest",
+            "outputs": ["coverage/libs/data-access"],
+            "options": {
+                "jestConfig": "libs/data-access/jest.config.ts",
+                "passWithNoTests": true
+            }
+        },
+        "lint": {
+            "executor": "@nrwl/linter:eslint",
+            "options": {
+                "lintFilePatterns": ["libs/data-access/**/*.ts", "libs/data-access/**/*.html"]
+            }
+        }
+    },
+    "tags": []
+}

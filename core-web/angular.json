@@ -2,6 +2,7 @@
     "version": 2,
     "projects": {
         "block-editor": "libs/block-editor",
+        "data-access": "libs/data-access",
         "dot-layout-grid": "libs/dot-layout-grid",
         "dot-primeng-theme-styles": "libs/dot-primeng-theme-styles",
         "dot-rules": "libs/dot-rules",
