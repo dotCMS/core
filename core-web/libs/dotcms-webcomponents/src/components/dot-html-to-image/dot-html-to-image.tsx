@@ -94,7 +94,7 @@ export class DotHtmlToImage {
     }
 
     private getIframeDocument(): HtmlIframeDoc {
-        const iframe = document.querySelector(`#${this.iframeId}`) as HTMLIFrameElement;
+        const iframe: HTMLIFrameElement = document.querySelector(`#${this.iframeId}`);
         const doc = iframe.contentDocument || iframe.contentWindow.document;
 
         return { doc, iframe };
