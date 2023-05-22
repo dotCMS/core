@@ -2,7 +2,7 @@ import { Observable, Subject, of, merge } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 
-import { pluck, map, take, switchMap } from 'rxjs/operators';
+import { pluck, map, take, switchMap, tap } from 'rxjs/operators';
 
 import { CoreWebService } from './core-web.service';
 import { DotcmsEventsService } from './dotcms-events.service';
@@ -70,10 +70,11 @@ export class SiteService {
         if (siteIdentifier === this.selectedSite.identifier) {
             name === 'ARCHIVE_SITE'
                 ? this.switchToDefaultSite()
-                      .pipe(take(1))
-                      .subscribe((currentSite: Site) => {
-                          this.switchSite(currentSite).subscribe();
-                      })
+                      .pipe(
+                          take(1),
+                          switchMap((site) => this.switchSite(site))
+                      )
+                      .subscribe()
                 : this.loadCurrentSite();
         }
     }
@@ -152,7 +153,7 @@ export class SiteService {
      * @param Site site
      * @memberof SiteService
      */
-    switchSiteByIde(id: string) {
+    switchSiteById(id: string) {
         this.loggerService.debug('Applying a Site Switch');
 
         return this.getSiteById(id).pipe(
@@ -176,11 +177,8 @@ export class SiteService {
             })
             .pipe(
                 take(1),
-                map(() => {
-                    this.setCurrentSite(site);
-
-                    return site;
-                })
+                tap(() => this.setCurrentSite(site)),
+                map(() => site)
             );
     }
 

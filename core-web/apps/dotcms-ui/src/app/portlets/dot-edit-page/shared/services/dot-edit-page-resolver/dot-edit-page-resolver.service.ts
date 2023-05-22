@@ -4,11 +4,11 @@ import { HttpErrorResponse, HttpHeaders, HttpResponse } from '@angular/common/ht
 import { Injectable } from '@angular/core';
 import { ActivatedRouteSnapshot, Resolve } from '@angular/router';
 
-import { catchError, filter, map, switchMap, tap } from 'rxjs/operators';
+import { catchError, filter, map, switchMap } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotCMSResponse, HttpCode } from '@dotcms/dotcms-js';
+import { DotCMSResponse, HttpCode, Site, SiteService } from '@dotcms/dotcms-js';
 import { DotPageRenderOptions, DotPageRenderState } from '@dotcms/dotcms-models';
 
 import { DotPageStateService } from '../../../content/services/dot-page-state/dot-page-state.service';
@@ -25,39 +25,28 @@ export class DotEditPageResolver implements Resolve<DotPageRenderState> {
     constructor(
         private dotPageStateService: DotPageStateService,
         private dotRouterService: DotRouterService,
-        private dotHttpErrorManagerService: DotHttpErrorManagerService
+        private dotHttpErrorManagerService: DotHttpErrorManagerService,
+        private siteService: SiteService
     ) {}
 
     resolve(route: ActivatedRouteSnapshot): Observable<DotPageRenderState> {
         const data = this.dotPageStateService.getInternalNavigationState();
+        const renderOptions = this.getDotPageRenderOptions(route);
+        const currentSection = route.children[0].url[0].path;
+        const isLayout = currentSection === 'layout';
+        const hostId = route.queryParams?.host_id;
 
-        // console.log(data);
+        // If we have data, we don't need to request the page again
+        const data$ = data ? of(data) : this.getPageRenderState(renderOptions, isLayout);
 
-        if (data) {
-            return of(data);
-        } else {
-            return this.dotPageStateService.requestPage(this.getDotPageRenderOptions(route)).pipe(
-                tap((state: DotPageRenderState) => {
-                    if (!state) {
-                        this.dotRouterService.goToSiteBrowser();
-                    }
-                }),
-                filter((state: DotPageRenderState) => !!state),
-                switchMap((dotRenderedPageState: DotPageRenderState) => {
-                    const currentSection = route.children[0].url[0].path;
-                    const isLayout = currentSection === 'layout';
+        return this.setSite(hostId).pipe(
+            switchMap(() => data$),
+            catchError((err: HttpErrorResponse) => {
+                this.dotRouterService.goToSiteBrowser();
 
-                    return isLayout
-                        ? this.checkUserCanGoToLayout(dotRenderedPageState)
-                        : of(dotRenderedPageState);
-                }),
-                catchError((err: HttpErrorResponse) => {
-                    this.dotRouterService.goToSiteBrowser();
-
-                    return this.dotHttpErrorManagerService.handle(err).pipe(map(() => null));
-                })
-            );
-        }
+                return this.dotHttpErrorManagerService.handle(err).pipe(map(() => null));
+            })
+        );
     }
 
     private checkUserCanGoToLayout(
@@ -105,5 +94,31 @@ export class DotEditPageResolver implements Resolve<DotPageRenderState> {
         }
 
         return renderOptions;
+    }
+
+    private setSite(id: string): Observable<Site> {
+        const currentSiteId = this.siteService.currentSite?.identifier;
+        const shouldSwitchSite = id && id !== currentSiteId;
+
+        // If we have a site id and is different from the current one, we switch
+        return shouldSwitchSite ? this.siteService.switchSiteById(id) : of(null);
+    }
+
+    private getPageRenderState(
+        renderOptions: DotPageRenderOptions,
+        isLayout: boolean
+    ): Observable<DotPageRenderState> {
+        return this.dotPageStateService.requestPage(renderOptions).pipe(
+            filter((state: DotPageRenderState) => {
+                if (!state) this.dotRouterService.goToSiteBrowser();
+
+                return !!state;
+            }),
+            switchMap((dotRenderedPageState: DotPageRenderState) => {
+                return isLayout
+                    ? this.checkUserCanGoToLayout(dotRenderedPageState)
+                    : of(dotRenderedPageState);
+            })
+        );
     }
 }
