@@ -14,6 +14,20 @@ global.structuredClone = jest.fn((val) => {
     return JSON.parse(JSON.stringify(val));
 });
 
+const mockInitialState: DotGridStackWidget[] = [
+    { x: 0, y: 0, w: 12, id: uuid() },
+    { x: 0, y: 1, w: 12, id: uuid() },
+    {
+        x: 0,
+        y: 2,
+        w: 12,
+        id: uuid(),
+        subGridOpts: {
+            children: [{ x: 0, y: 0, w: 4, id: uuid() }]
+        }
+    }
+];
+
 describe('DotTemplateBuilderStore', () => {
     let service: DotTemplateBuilderStore;
     let initialState: DotGridStackWidget[];
@@ -25,7 +39,7 @@ describe('DotTemplateBuilderStore', () => {
         service = TestBed.inject(DotTemplateBuilderStore);
 
         // Reset the state because is manipulated by reference
-        service.init();
+        service.init(mockInitialState);
 
         // Get the initial state
         service.items$.pipe(take(1)).subscribe((items) => {

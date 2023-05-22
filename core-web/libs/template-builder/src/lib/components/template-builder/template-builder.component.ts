@@ -6,6 +6,7 @@ import {
     GridStackWidget
 } from 'gridstack';
 import { Observable } from 'rxjs';
+import { v4 as uuid } from 'uuid';
 
 import {
     AfterViewInit,
@@ -21,6 +22,20 @@ import {
 import { DotGridStackWidget } from './models/models';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { gridOptions, subGridOptions } from './utils/gridstack-options';
+
+const starter: DotGridStackWidget[] = [
+    { x: 0, y: 0, w: 12, id: uuid() },
+    { x: 0, y: 1, w: 12, id: uuid() },
+    {
+        x: 0,
+        y: 2,
+        w: 12,
+        id: uuid(),
+        subGridOpts: {
+            children: [{ x: 0, y: 0, w: 4, id: uuid() }]
+        }
+    }
+];
 
 @Component({
     selector: 'dotcms-template-builder',
@@ -48,7 +63,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     }
 
     ngOnInit(): void {
-        this.store.init();
+        this.store.init(starter);
     }
 
     ngAfterViewInit() {
