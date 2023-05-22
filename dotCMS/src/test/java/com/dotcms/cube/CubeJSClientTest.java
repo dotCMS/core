@@ -163,6 +163,13 @@ public class CubeJSClientTest {
             }  catch (IllegalArgumentException e) {
                 mockhttpServer.mustNeverCalled("/cubejs-api/v1/load");
             }
+
+            try {
+                cubeClient.sendWithPagination(null);
+                throw new AssertionError("NullPointerException Expected");
+            }  catch (IllegalArgumentException e) {
+                mockhttpServer.mustNeverCalled("/cubejs-api/v1/load");
+            }
         } finally {
             IPUtils.disabledIpPrivateSubnet(false);
             mockhttpServer.stop();
