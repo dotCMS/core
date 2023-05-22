@@ -11,12 +11,14 @@ import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
@@ -118,55 +120,62 @@ public class BrowserAPITest extends IntegrationTestBase {
         testlink = new LinkDataGen().hostId(testHost.getIdentifier()).title("testLink").parent(testFolder).target("https://google.com").linkType("EXTERNAL").nextPersisted();
     }
 
+    /**
+     * Given scenario: Create a folder place multiple versions in different languages of the same content
+     * Expected result: We're testing that BrowserAPI can be used to bring multiple versions of the same content in different languages
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws IOException
+     */
     @Test()
     public void Test_GetFolderContent_Multiple_Langs() throws DotDataException, DotSecurityException, IOException {
 
-        // create a folder
-        // create a 10 files
         final SiteDataGen   siteDataGen   = new SiteDataGen();
         final FolderDataGen folderDataGen = new FolderDataGen();
         final Host          host          = siteDataGen.nextPersisted();
         final Folder        folder        = folderDataGen.site(host).nextPersisted();
 
-        final Folder        subFolder        = folderDataGen.parent(folder).nextPersisted();
+        final File file = FileUtil.createTemporaryFile("test", ".txt", "this is a test!");
 
-
-        List<Language> languages = new ArrayList<>();
-
-        languages.add(new LanguageDataGen().nextPersisted());
-        languages.add(new LanguageDataGen().nextPersisted());
-        languages.add(new LanguageDataGen().nextPersisted());
-
-        for (Language lang:languages) {
-            new FileAssetDataGen(FileUtil.createTemporaryFile("test", ".txt", "this is a test"))
-                    .languageId(lang.getId())
-                    .host(host)
-                    .folder(folder)
-                    .setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
-        }
-
-        new FileAssetDataGen(FileUtil.createTemporaryFile("test", ".txt", "this is a test"))
+        final Contentlet persisted = new FileAssetDataGen(file)
                 .languageId(1)
-                .folder(subFolder)
+                .host(host)
+                .folder(folder)
                 .setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
 
-        Map<String, Object> resultMap = browserAPI.getFolderContent(BrowserQuery.builder()
-                .showDotAssets(false)
-                .showLinks(false)
-                .withHostOrFolderId(folder.getIdentifier())
-                .offset(0)
-                .showFiles(true)
-                .showFolders(true)
-                .showWorking(true)
-                .build());
+        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
 
-        assertNotNull(resultMap);
-        assertEquals(3, resultMap.get("total"));
+        List<Long> languages = new ArrayList<>();
+        languages.add(persisted.getLanguageId());
+        languages.add(new LanguageDataGen().nextPersisted().getId());
+        languages.add(new LanguageDataGen().nextPersisted().getId());
 
-        List<Map<String, Object>> results = (List<Map<String, Object>>)resultMap.get("list");
-        assertNotNull(results);
-        assertEquals(results.size(), 3);
+        for (Long lang:languages) {
+            final Contentlet next = new FileAssetDataGen(file)
+                    .languageId(lang)
+                    .host(host)
+                    .folder(folder)
+                    .setPolicy(IndexPolicy.WAIT_FOR).next();
 
+            next.setIdentifier(persisted.getIdentifier());
+            next.setInode(null);
+            contentletAPI.checkin(next, APILocator.systemUser(), false);
+        }
+
+        final List<Treeable> contentList = browserAPI.getFolderContentList(
+                BrowserQuery.builder()
+                        .showDotAssets(false)
+                        .showLinks(false)
+                        .withHostOrFolderId(folder.getIdentifier())
+                        .offset(0)
+                        .showFiles(true)
+                        .showFolders(true)
+                        .showWorking(true)
+                        .build());
+
+        assertEquals(3, contentList.size());
+        assertTrue(contentList.stream().allMatch(c->  persisted.getIdentifier().equals(c.getIdentifier())));
+        assertTrue(contentList.stream().map(c->(Contentlet)c).anyMatch(c-> languages.contains( c.getLanguageId())));
     }
 
 
