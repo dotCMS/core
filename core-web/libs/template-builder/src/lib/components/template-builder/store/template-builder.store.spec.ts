@@ -4,6 +4,8 @@ import { v4 as uuid } from 'uuid';
 
 import { TestBed } from '@angular/core/testing';
 
+import { take } from 'rxjs/operators';
+
 import { DotTemplateBuilderStore } from './template-builder.store';
 
 import { DotGridStackNode, DotGridStackWidget } from '../models/models';
@@ -11,20 +13,6 @@ import { DotGridStackNode, DotGridStackWidget } from '../models/models';
 global.structuredClone = jest.fn((val) => {
     return JSON.parse(JSON.stringify(val));
 });
-
-const mockState = [
-    { x: 0, y: 0, w: 12, id: uuid() },
-    { x: 0, y: 1, w: 12, id: uuid() },
-    {
-        x: 0,
-        y: 2,
-        w: 12,
-        id: uuid(),
-        subGridOpts: {
-            children: [{ x: 0, y: 0, w: 4, id: uuid() }]
-        }
-    }
-];
 
 describe('DotTemplateBuilderStore', () => {
     let service: DotTemplateBuilderStore;
@@ -37,7 +25,12 @@ describe('DotTemplateBuilderStore', () => {
         service = TestBed.inject(DotTemplateBuilderStore);
 
         // Reset the state because is manipulated by reference
-        initialState = structuredClone(mockState);
+        service.init();
+
+        // Get the initial state
+        service.items$.pipe(take(1)).subscribe((items) => {
+            initialState = structuredClone(items); // To lose the reference
+        });
     });
 
     it('should be created', () => {
@@ -45,8 +38,6 @@ describe('DotTemplateBuilderStore', () => {
     });
 
     it('should initialize the state', () => {
-        service.init(initialState);
-
         expect.assertions(1);
         service.items$.subscribe((items) => {
             expect(items).toEqual(initialState);
@@ -60,19 +51,15 @@ describe('DotTemplateBuilderStore', () => {
             y: 1
         };
 
-        service.init(initialState);
-
         service.addRow(mockRow);
 
         expect.assertions(1);
         service.items$.subscribe((items) => {
-            expect(items.length).toBeGreaterThan(mockState.length);
+            expect(items.length).toBeGreaterThan(initialState.length);
         });
     });
 
     it('should move a row', () => {
-        service.init(initialState);
-
         const mockAffectedRows: DotGridStackWidget[] = [
             { x: 0, y: 1, w: 12, id: uuid() },
             { x: 0, y: 2, w: 12, id: uuid() },
@@ -96,11 +83,9 @@ describe('DotTemplateBuilderStore', () => {
     });
 
     it('should remove a row', () => {
-        const rowToDelete = mockState[0];
+        const rowToDelete = initialState[0];
 
         const toDeleteID = rowToDelete.id;
-
-        service.init(initialState);
 
         service.removeRow(toDeleteID as string);
 
@@ -112,7 +97,7 @@ describe('DotTemplateBuilderStore', () => {
 
     it('should update a row', () => {
         const updatedRow: DotGridStackWidget = {
-            ...mockState[0],
+            ...initialState[0],
             styleClass: ['new-class', 'flex-mock'],
             containers: [{ identifier: 'mock-container', uuid: uuid() }]
         };
@@ -125,9 +110,7 @@ describe('DotTemplateBuilderStore', () => {
     });
 
     it('should add a column', () => {
-        const parentId = mockState[0].id as string;
-
-        service.init(initialState);
+        const parentId = initialState[0].id as string;
 
         const newColumn: unknown = {
             grid: {
@@ -152,8 +135,8 @@ describe('DotTemplateBuilderStore', () => {
     });
 
     it('should move a column in the Y-axis', () => {
-        const fromRow = mockState[2];
-        const toRow = mockState[0];
+        const fromRow = initialState[2];
+        const toRow = initialState[0];
 
         const oldParent = fromRow.id as string;
         const newParent = toRow.id as string;
@@ -176,8 +159,6 @@ describe('DotTemplateBuilderStore', () => {
                 }
             }
         };
-
-        service.init(initialState);
 
         service.moveColumnInYAxis([columnToDelete, columnToAdd] as DotGridStackNode[]);
 
@@ -216,7 +197,7 @@ describe('DotTemplateBuilderStore', () => {
             }
         ];
 
-        service.init(mockInitialState);
+        service.setState({ items: mockInitialState });
 
         const affectedColumns: DotGridStackNode[] = [
             {
@@ -246,14 +227,12 @@ describe('DotTemplateBuilderStore', () => {
     });
 
     it('should remove a column', () => {
-        const parentRow = mockState[2];
+        const parentRow = initialState[2];
 
         const columnToDelete: DotGridStackWidget = {
             ...(parentRow.subGridOpts?.children[0] as DotGridStackWidget),
             parentId: parentRow.id as string
         };
-
-        service.init(initialState);
 
         service.removeColumn(columnToDelete);
 

@@ -6,7 +6,6 @@ import {
     GridStackWidget
 } from 'gridstack';
 import { Observable } from 'rxjs';
-import { v4 as uuid } from 'uuid';
 
 import {
     AfterViewInit,
@@ -14,6 +13,7 @@ import {
     Component,
     ElementRef,
     OnDestroy,
+    OnInit,
     QueryList,
     ViewChildren
 } from '@angular/core';
@@ -28,7 +28,7 @@ import { gridOptions, subGridOptions } from './utils/gridstack-options';
     styleUrls: ['./template-builder.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class TemplateBuilderComponent implements AfterViewInit, OnDestroy {
+export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestroy {
     public items$: Observable<GridStackWidget[]>;
 
     @ViewChildren('rows', {
@@ -44,23 +44,11 @@ export class TemplateBuilderComponent implements AfterViewInit, OnDestroy {
     grid!: GridStack;
 
     constructor(private store: DotTemplateBuilderStore) {
-        const starter: DotGridStackWidget[] = [
-            { x: 0, y: 0, w: 12, id: uuid() },
-            { x: 0, y: 1, w: 12, id: uuid() },
-            {
-                x: 0,
-                y: 2,
-                w: 12,
-                id: uuid(),
-                subGridOpts: {
-                    children: [{ x: 0, y: 0, w: 4, id: uuid() }]
-                }
-            }
-        ];
-
-        this.store.init(starter);
-
         this.items$ = this.store.items$;
+    }
+
+    ngOnInit(): void {
+        this.store.init();
     }
 
     ngAfterViewInit() {

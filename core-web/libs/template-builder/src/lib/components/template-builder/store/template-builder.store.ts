@@ -14,6 +14,20 @@ import {
     parseMovedNodeToWidget
 } from '../utils/gridstack-utils';
 
+const starter: DotGridStackWidget[] = [
+    { x: 0, y: 0, w: 12, id: uuid() },
+    { x: 0, y: 1, w: 12, id: uuid() },
+    {
+        x: 0,
+        y: 2,
+        w: 12,
+        id: uuid(),
+        subGridOpts: {
+            children: [{ x: 0, y: 0, w: 4, id: uuid() }]
+        }
+    }
+];
+
 /**
  *
  *
@@ -30,7 +44,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
     }
 
     // Init store
-    readonly init = this.updater((_, payload: DotGridStackWidget[]) => ({ items: payload }));
+    readonly init = this.updater(() => ({ items: starter }));
 
     // Rows Updaters
 
