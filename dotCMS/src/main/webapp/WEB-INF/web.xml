@@ -356,9 +356,6 @@
     <!-- REST -->
     <servlet>
 		<servlet-name>RESTAPI</servlet-name>
-		<servlet-class>
-		  com.dotcms.rest.servlet.ReloadableServletContainer
-		</servlet-class>
 		<init-param>
 			<param-name>jersey.config.server.mediaTypeMappings</param-name>
 			<param-value>txt : text/plain, xml : application/xml, json : application/json, js : application/javascript</param-value>
