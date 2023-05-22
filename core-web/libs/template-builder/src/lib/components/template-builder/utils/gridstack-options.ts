@@ -1,5 +1,12 @@
 import { GridStackOptions } from 'gridstack';
 
+export const widgetTypeAttribute = 'data-widget-type';
+
+export enum widgetType {
+    ROW = 'row',
+    COLUMN = 'col'
+}
+
 /**
  * Check if the element is a column widget by checking the data-widget-type attribute
  *
@@ -7,7 +14,9 @@ import { GridStackOptions } from 'gridstack';
  * @return {*}  {boolean}
  */
 function isAColumnWidget(el: Element): boolean {
-    return el.getAttribute('data-widget-type') === 'col' || el.classList.contains('sub');
+    return (
+        el.getAttribute(widgetTypeAttribute) === widgetType.COLUMN || el.classList.contains('sub')
+    );
 }
 
 /**
@@ -17,7 +26,7 @@ function isAColumnWidget(el: Element): boolean {
  * @return {*}  {boolean}
  */
 function isARowWidget(el: Element): boolean {
-    return el.getAttribute('data-widget-type') === 'row';
+    return el.getAttribute(widgetTypeAttribute) === widgetType.ROW;
 }
 
 export const subGridOptions: GridStackOptions = {
