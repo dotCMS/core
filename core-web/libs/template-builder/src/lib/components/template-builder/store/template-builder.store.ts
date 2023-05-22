@@ -141,14 +141,22 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
         ({ items }, [oldNode, newNode]: DotGridStackNode[]) => {
             const [columnToDelete, columnToAdd] = parseMovedNodeToWidget(oldNode, newNode);
 
-            const deleteNodeRowIndex = getIndexRowInItems(items, columnToDelete.parentId as string);
-            // To maintain the data of the node, as styleClass and containers
-            let updatedColumn = getColumnByID(
-                items[deleteNodeRowIndex].subGridOpts?.children || [],
-                columnToDelete.id as string
-            );
+            const deleteColParentIndex = getIndexRowInItems(items, columnToDelete.parentId || '');
 
-            updatedColumn = updatedColumn ? { ...updatedColumn, ...columnToAdd } : columnToAdd;
+            // In theory, the children should exist because it had one before the removal, but this is a safety check
+            const parentRow = items[deleteColParentIndex] || {};
+            const parentRowChildren = parentRow.subGridOpts
+                ? parentRow.subGridOpts.children
+                : undefined;
+
+            // We set the updated column to the new one
+            let updatedColumn = columnToAdd;
+
+            // To maintain the data of the node, as styleClass and containers
+            if (parentRowChildren) {
+                const oldColumn = getColumnByID(parentRowChildren, columnToDelete.id as string);
+                updatedColumn = oldColumn ? { ...oldColumn, ...columnToAdd } : columnToAdd; // We merge the new GridStack data with the old properties
+            }
 
             return {
                 items: items.map((row) => {

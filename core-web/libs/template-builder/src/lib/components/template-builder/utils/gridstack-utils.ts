@@ -74,8 +74,11 @@ export function createDotGridStackWidgetFromNode(node: DotGridStackNode): DotGri
  * @param {string} columnID
  * @return {*}  {DotGridStackNode}
  */
-export function getColumnByID(columns: DotGridStackNode[], columnID: string): DotGridStackNode {
-    return columns.find((node) => node.id === columnID) as DotGridStackNode;
+export function getColumnByID(
+    columns: DotGridStackNode[],
+    columnID: string
+): DotGridStackNode | undefined {
+    return columns.find((node) => node.id === columnID);
 }
 
 /**
