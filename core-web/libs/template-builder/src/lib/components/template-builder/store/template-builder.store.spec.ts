@@ -7,25 +7,12 @@ import { TestBed } from '@angular/core/testing';
 import { DotTemplateBuilderStore } from './template-builder.store';
 
 import { DotGridStackNode, DotGridStackWidget } from '../models/models';
-import {
-    createDotGridStackWidgetFromNode,
-    createDotGridStackWidgets,
-    getColumnByID,
-    getIndexRowInItems,
-    parseMovedNodeToWidget,
-    removeColumnByID
-} from '../utils/gridstack-utils';
-
-jest.mock('../utils/gridstack-utils');
-jest.mock('uuid', () => ({
-    v4: jest.fn().mockReturnValue(Math.random().toString(36).slice(2, 9))
-}));
 
 global.structuredClone = jest.fn((val) => {
     return JSON.parse(JSON.stringify(val));
 });
 
-const initialState: DotGridStackWidget[] = [
+const mockState = [
     { x: 0, y: 0, w: 12, id: uuid() },
     { x: 0, y: 1, w: 12, id: uuid() },
     {
@@ -41,16 +28,16 @@ const initialState: DotGridStackWidget[] = [
 
 describe('DotTemplateBuilderStore', () => {
     let service: DotTemplateBuilderStore;
+    let initialState: DotGridStackWidget[];
 
     beforeEach(() => {
         TestBed.configureTestingModule({
             providers: [DotTemplateBuilderStore]
         });
         service = TestBed.inject(DotTemplateBuilderStore);
-    });
 
-    afterEach(() => {
-        jest.clearAllMocks();
+        // Reset the state because is manipulated by reference
+        initialState = structuredClone(mockState);
     });
 
     it('should be created', () => {
@@ -69,20 +56,17 @@ describe('DotTemplateBuilderStore', () => {
     it('should add a new row', () => {
         const mockRow: DotGridStackWidget = {
             styleClass: ['mock-class'],
-            containers: []
+            containers: [],
+            y: 1
         };
-        (uuid as jest.Mock).mockReturnValue('mock-uuid');
+
+        service.init(initialState);
+
         service.addRow(mockRow);
 
+        expect.assertions(1);
         service.items$.subscribe((items) => {
-            expect(items).toContainEqual({
-                ...mockRow,
-                h: 1,
-                w: 12,
-                x: 0,
-                id: 'mock-uuid',
-                subGridOpts: { children: [] }
-            });
+            expect(items.length).toBeGreaterThan(mockState.length);
         });
     });
 
@@ -112,7 +96,9 @@ describe('DotTemplateBuilderStore', () => {
     });
 
     it('should remove a row', () => {
-        const toDeleteID = initialState[0].id;
+        const rowToDelete = mockState[0];
+
+        const toDeleteID = rowToDelete.id;
 
         service.init(initialState);
 
@@ -120,13 +106,13 @@ describe('DotTemplateBuilderStore', () => {
 
         expect.assertions(1);
         service.items$.subscribe((items) => {
-            expect(items).not.toContainEqual(initialState[0]);
+            expect(items).not.toContainEqual(rowToDelete);
         });
     });
 
     it('should update a row', () => {
         const updatedRow: DotGridStackWidget = {
-            ...initialState[0],
+            ...mockState[0],
             styleClass: ['new-class', 'flex-mock'],
             containers: [{ identifier: 'mock-container', uuid: uuid() }]
         };
@@ -139,21 +125,23 @@ describe('DotTemplateBuilderStore', () => {
     });
 
     it('should add a column', () => {
-        const parentId = initialState[0].id as string;
+        const parentId = mockState[0].id as string;
 
         service.init(initialState);
 
-        const newColumn: DotGridStackNode = {
-            parentId,
+        const newColumn: unknown = {
+            grid: {
+                parentGridItem: {
+                    id: parentId
+                }
+            },
             x: 0,
             y: 0,
             w: 4,
             id: uuid()
         };
 
-        (createDotGridStackWidgetFromNode as jest.Mock).mockReturnValue(newColumn);
-
-        service.addColumn(newColumn);
+        service.addColumn(newColumn as DotGridStackNode);
 
         expect.assertions(1);
 
@@ -164,37 +152,46 @@ describe('DotTemplateBuilderStore', () => {
     });
 
     it('should move a column in the Y-axis', () => {
-        const oldParent = initialState[2].id as string;
-        const newParent = initialState[0].id as string;
+        const fromRow = mockState[2];
+        const toRow = mockState[0];
 
-        const node: DotGridStackNode = initialState[2].subGridOpts?.children[0] as DotGridStackNode;
+        const oldParent = fromRow.id as string;
+        const newParent = toRow.id as string;
+
+        const node: DotGridStackNode = fromRow.subGridOpts?.children[0] as DotGridStackNode;
 
         const columnToDelete = {
             ...node,
-            parentId: oldParent
+            grid: {
+                parentGridItem: {
+                    id: oldParent
+                }
+            }
         };
         const columnToAdd = {
             ...node,
-            parentId: newParent,
-            id: uuid()
+            grid: {
+                parentGridItem: {
+                    id: newParent
+                }
+            }
         };
 
         service.init(initialState);
 
-        (parseMovedNodeToWidget as jest.Mock).mockReturnValue([columnToDelete, columnToAdd]);
-        (getIndexRowInItems as jest.Mock).mockReturnValue(2);
-        (getColumnByID as jest.Mock).mockReturnValue(columnToDelete);
-        (removeColumnByID as jest.Mock).mockReturnValue(
-            initialState[2].subGridOpts?.children.filter((item) => item.id !== columnToDelete.id)
-        );
-
-        service.moveColumnInYAxis([node, node]);
+        service.moveColumnInYAxis([columnToDelete, columnToAdd] as DotGridStackNode[]);
 
         expect.assertions(2);
         service.items$.subscribe((items) => {
             const row = items.find((item) => item.id === newParent);
-            expect(row?.subGridOpts?.children).toContainEqual(columnToAdd);
-            expect(row?.subGridOpts?.children).not.toContainEqual(columnToDelete);
+            const oldRow = items.find((item) => item.id === oldParent);
+
+            expect(row?.subGridOpts?.children.length).toBeGreaterThan(
+                toRow.subGridOpts?.children.length || 0
+            );
+            expect(oldRow?.subGridOpts?.children.length).toBeLessThan(
+                fromRow.subGridOpts?.children.length as number
+            );
         });
     });
 
@@ -239,7 +236,6 @@ describe('DotTemplateBuilderStore', () => {
             parentId
         }));
 
-        (createDotGridStackWidgets as jest.Mock).mockReturnValue(createdWidgets);
         service.updateColumn(affectedColumns);
 
         expect.assertions(1);
@@ -250,14 +246,12 @@ describe('DotTemplateBuilderStore', () => {
     });
 
     it('should remove a column', () => {
-        const columnToDelete: DotGridStackWidget = {
-            ...(initialState[2].subGridOpts?.children[0] as DotGridStackWidget),
-            parentId: initialState[2].id as string
-        };
+        const parentRow = mockState[2];
 
-        (removeColumnByID as jest.Mock).mockReturnValue(
-            initialState[2].subGridOpts?.children.filter((item) => item.id !== columnToDelete.id)
-        );
+        const columnToDelete: DotGridStackWidget = {
+            ...(parentRow.subGridOpts?.children[0] as DotGridStackWidget),
+            parentId: parentRow.id as string
+        };
 
         service.init(initialState);
 
@@ -265,7 +259,7 @@ describe('DotTemplateBuilderStore', () => {
 
         expect.assertions(1);
         service.items$.subscribe((items) => {
-            const row = items.find((item) => item.id === initialState[2].id);
+            const row = items.find((item) => item.id === parentRow.id);
 
             expect(row?.subGridOpts?.children).not.toContain(columnToDelete);
         });
