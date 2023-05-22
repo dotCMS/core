@@ -13,6 +13,11 @@ export const TIME_14_DAYS = 12096e5;
 
 export const TIME_90_DAYS = 7776e6;
 
+export enum ExperimentsConfigProperties {
+    EXPERIMENTS_MIN_DURATION = 'EXPERIMENTS_MIN_DURATION',
+    EXPERIMENTS_MAX_DURATION = 'EXPERIMENTS_MAX_DURATION'
+}
+
 export enum TrafficProportionTypes {
     SPLIT_EVENLY = 'SPLIT_EVENLY',
     CUSTOM_PERCENTAGES = 'CUSTOM_PERCENTAGES'

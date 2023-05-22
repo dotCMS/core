@@ -24,6 +24,11 @@ export interface DotExperiment {
     goals: Goals | null;
 }
 
+export interface DotExperimentResolver {
+    experiment: DotExperiment;
+    configProps: Record<string, string>;
+}
+
 export interface DotExperimentResults {
     bayesianResult: DotResultBayesian;
     goals: Record<GoalsLevels, DotResultGoal>;
