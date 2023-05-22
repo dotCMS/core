@@ -170,14 +170,31 @@ public class ContentletLoader implements DotLoader {
 
             if (field instanceof StoryBlockField) {
                 contFieldValueObject = conAPI.getFieldValue(content, field);
-                sb.append("#set($").append(field.variable());
                 if (JsonUtil.isValidJSON(contFieldValueObject.toString())) {
-                    sb.append("= $json.generate(").append(contFieldValueObject).append("))");
+                    sb.append("#set($")
+                            .append(field.variable())
+                            .append("= $json.generate(")
+                            .append(contFieldValueObject)
+                            .append("))");
                 } else {
                     Logger.warn(this, String.format("Story Block field '%s' in contentlet with ID '%s' does not " +
                                                             "contain valid JSON data. Please try to re-publish it.",
                             field.variable(), content.getIdentifier()));
-                    sb.append("= \"").append(contFieldValueObject).append("\")");
+                    if (contFieldValueObject.toString().contains("$") || contFieldValueObject.toString().contains("#")) {
+                        String velPath = new VelocityResourceKey(field, Optional.of(content), mode).path ;
+                        sb.append("#set($")
+                                .append(field.variable())
+                                .append("= $velutil.mergeTemplate(\"")
+                                .append(velPath)
+
+                                .append("\"))");
+                    } else {
+                        sb.append("#set($")
+                                .append(field.variable())
+                                .append("= \"")
+                                .append(UtilMethods.espaceForVelocity(contFieldValueObject.toString()).trim())
+                                .append("\")");
+                    }
                 }
                 continue;
             }

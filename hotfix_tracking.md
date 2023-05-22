@@ -46,3 +46,6 @@ This maintenance release includes the following code fixes:
 34. https://github.com/dotCMS/core/issues/23237 : Bock Editor: Allow user to insert image from local files #23237
 35. https://github.com/dotCMS/core/issues/23920 : BLOCK EDITOR: Can't add image when white list the blocks #23920
 36. https://github.com/dotCMS/core/issues/24230 : Block Editor: Markdown content with JavaScript code is breaking the app #24230
+37. https://github.com/dotCMS/core/issues/23863 : Bock Editor: Allow user to insert videos from local files #23863
+38. https://github.com/dotCMS/core/issues/23436 : Block Editor: Create video block node and insert from dotCMS content #23436
+39. https://github.com/dotCMS/core/issues/24422 : Rendering converted wysiwyg field fails #24422
