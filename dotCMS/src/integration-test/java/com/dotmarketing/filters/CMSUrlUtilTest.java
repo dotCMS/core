@@ -38,7 +38,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class CMSUrlUtilTest {
-    public static final String TEST_PATTERN = "/testpattern";
+    private static final String TEST_PATTERN = "/testpattern";
     private static ContentletAPI contentletAPI;
     private static Host site;
     private static User systemUser;
@@ -52,7 +52,6 @@ public class CMSUrlUtilTest {
     public static void prepare() throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
-        LicenseTestUtil.getLicense();
 
         /* APIs initialization */
         contentletAPI = APILocator.getContentletAPI();
@@ -110,7 +109,7 @@ public class CMSUrlUtilTest {
      * ExpectedResult: Should return a {@link Tuple2} object with true and IAmSubType.PAGE_URL_MAP
      */
     @Test
-    public void shouldReturnATupleWithTrueAndPageUrlMap() throws Exception {
+    public void shouldReturnATupleWithTrueAndPageUrlMap() {
 
         // Given
         // Create a Content Type with a URLMap pattern and a detail page

@@ -117,6 +117,7 @@ import com.dotmarketing.business.helper.PermissionHelperTest;
 import com.dotmarketing.cache.FolderCacheImplIntegrationTest;
 import com.dotmarketing.common.db.DBTimeZoneCheckTest;
 import com.dotmarketing.filters.AutoLoginFilterTest;
+import com.dotmarketing.filters.CMSUrlUtilTest;
 import com.dotmarketing.image.filter.ImageFilterAPIImplTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.osgi.GenericBundleActivatorTest;
@@ -634,7 +635,8 @@ import org.junit.runners.Suite.SuiteClasses;
         ContentTypeDestroyAPIImplTest.class,
         Task230328AddMarkedForDeletionColumnTest.class,
         StartupTasksExecutorDataTest.class,
-        Task230426AlterVarcharLengthOfLockedByColTest.class
+        Task230426AlterVarcharLengthOfLockedByColTest.class,
+        CMSUrlUtilTest.class
 //        AnalyticsAPIImplTest.class,
 //        AccessTokenRenewJobTest.class,
 })
