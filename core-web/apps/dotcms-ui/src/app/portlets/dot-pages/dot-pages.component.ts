@@ -1,4 +1,4 @@
-import { Subject } from 'rxjs';
+import { of, Subject } from 'rxjs';
 
 import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import {
@@ -13,7 +13,7 @@ import {
 import { Menu } from 'primeng/menu';
 
 import { Observable } from 'rxjs/internal/Observable';
-import { filter, skip, take, takeUntil } from 'rxjs/operators';
+import { filter, map, skip, switchMap, take, takeUntil } from 'rxjs/operators';
 
 import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
@@ -73,14 +73,26 @@ export class DotPagesComponent implements AfterViewInit, OnDestroy {
         const splittedUrl = url.split('?');
         const urlParams = { url: splittedUrl[0] };
         const searchParams = new URLSearchParams(splittedUrl[1]);
+        const currentSiteId = this.dotSiteService.currentSite.identifier;
 
         for (const entry of searchParams) {
             urlParams[entry[0]] = entry[1];
         }
 
+        const pageSiteId = urlParams['host_id'];
+
         this.dotPageRenderService
             .checkPermission(urlParams)
-            .pipe(take(1))
+            .pipe(
+                take(1),
+                switchMap((hasPermission: boolean) => {
+                    const obs$ = this.dotSiteService
+                        .switchSiteByIde(pageSiteId)
+                        .pipe(map(() => hasPermission));
+
+                    return currentSiteId !== pageSiteId ? obs$ : of(hasPermission);
+                })
+            )
             .subscribe(
                 (hasPermission: boolean) => {
                     if (hasPermission) {

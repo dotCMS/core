@@ -2,7 +2,7 @@ import { Observable, Subject, of, merge } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 
-import { pluck, map, take } from 'rxjs/operators';
+import { pluck, map, take, switchMap } from 'rxjs/operators';
 
 import { CoreWebService } from './core-web.service';
 import { DotcmsEventsService } from './dotcms-events.service';
@@ -72,7 +72,7 @@ export class SiteService {
                 ? this.switchToDefaultSite()
                       .pipe(take(1))
                       .subscribe((currentSite: Site) => {
-                          this.switchSite(currentSite);
+                          this.switchSite(currentSite).subscribe();
                       })
                 : this.loadCurrentSite();
         }
@@ -132,8 +132,8 @@ export class SiteService {
     /**
      * Get a site by the id
      *
-     * @param string id
-     * @returns Observable<Site>
+     * @param {string} id
+     * @return {*}  {Observable<Site>}
      * @memberof SiteService
      */
     getSiteById(id: string): Observable<Site> {
@@ -148,21 +148,40 @@ export class SiteService {
     }
 
     /**
+     * Change the current Site by site identifier
+     * @param Site site
+     * @memberof SiteService
+     */
+    switchSiteByIde(id: string) {
+        this.loggerService.debug('Applying a Site Switch');
+
+        return this.getSiteById(id).pipe(
+            switchMap((site) => this.switchSite(site)),
+            take(1)
+        );
+    }
+
+    /**
      * Change the current site
      * @param Site site
      * @memberof SiteService
      */
-    switchSite(site: Site): void {
+    switchSite(site: Site): Observable<Site> {
         this.loggerService.debug('Applying a Site Switch', site.identifier);
-        this.coreWebService
+
+        return this.coreWebService
             .requestView({
                 method: 'PUT',
                 url: `${this.urls.switchSiteUrl}/${site.identifier}`
             })
-            .pipe(take(1))
-            .subscribe(() => {
-                this.setCurrentSite(site);
-            });
+            .pipe(
+                take(1),
+                map(() => {
+                    this.setCurrentSite(site);
+
+                    return site;
+                })
+            );
     }
 
     /**

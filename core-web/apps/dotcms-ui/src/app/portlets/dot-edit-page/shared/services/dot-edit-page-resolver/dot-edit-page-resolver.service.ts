@@ -31,6 +31,8 @@ export class DotEditPageResolver implements Resolve<DotPageRenderState> {
     resolve(route: ActivatedRouteSnapshot): Observable<DotPageRenderState> {
         const data = this.dotPageStateService.getInternalNavigationState();
 
+        // console.log(data);
+
         if (data) {
             return of(data);
         } else {
