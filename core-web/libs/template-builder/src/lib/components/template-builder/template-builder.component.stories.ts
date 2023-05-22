@@ -1,5 +1,6 @@
 import { moduleMetadata, Story, Meta } from '@storybook/angular';
 
+import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { TemplateBuilderComponent } from './template-builder.component';
 
 export default {
@@ -7,7 +8,8 @@ export default {
     component: TemplateBuilderComponent,
     decorators: [
         moduleMetadata({
-            imports: []
+            imports: [],
+            providers: [DotTemplateBuilderStore]
         })
     ]
 } as Meta<TemplateBuilderComponent>;
