@@ -454,6 +454,36 @@ describe('DotPageStore', () => {
         });
     });
 
+    it('should set Pages to empty when changed from a Site with data to an empty one', () => {
+        const pagesData = [
+            {
+                ...favoritePagesInitialTestData[0]
+            },
+            {
+                ...favoritePagesInitialTestData[1]
+            }
+        ];
+
+        dotPageStore.setPages(pagesData);
+
+        spyOn(dotESContentService, 'get').and.returnValue(
+            of({
+                contentTook: 0,
+                jsonObjectView: {
+                    contentlets: []
+                },
+                queryTook: 1,
+                resultsSize: 0
+            })
+        );
+        dotPageStore.getPages({ offset: 0, sortField: 'title', sortOrder: 1 });
+
+        dotPageStore.state$.subscribe((data) => {
+            expect(data.pages.items).toEqual([]);
+        });
+        expect(dotESContentService.get).toHaveBeenCalledTimes(1);
+    });
+
     it('should handle error when get Pages value fails', () => {
         const error500 = mockResponseView(500, '/test', null, { message: 'error' });
         spyOn(dotESContentService, 'get').and.returnValue(throwError(error500));
