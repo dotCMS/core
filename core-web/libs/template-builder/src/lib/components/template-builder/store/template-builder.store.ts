@@ -141,34 +141,32 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
         ({ items }, [oldNode, newNode]: DotGridStackNode[]) => {
             const [columnToDelete, columnToAdd] = parseMovedNodeToWidget(oldNode, newNode);
 
-            const deleteColParentIndex = getIndexRowInItems(items, columnToDelete.parentId || '');
+            const deleteColParentIndex = getIndexRowInItems(items, columnToDelete.parentId ?? '');
 
             // In theory, the children should exist because it had one before the removal, but this is a safety check
-            const parentRow = items[deleteColParentIndex] || {};
+            const parentRow = items[deleteColParentIndex] ?? {}; // Empty object so it doesn't break the template builder
             const parentRowChildren = parentRow.subGridOpts
                 ? parentRow.subGridOpts.children
                 : undefined;
 
-            // We set the updated column to the new one
-            let updatedColumn = columnToAdd;
-
             // To maintain the data of the node, as styleClass and containers
-            if (parentRowChildren) {
-                const oldColumn = getColumnByID(parentRowChildren, columnToDelete.id as string);
-                updatedColumn = oldColumn ? { ...oldColumn, ...columnToAdd } : columnToAdd; // We merge the new GridStack data with the old properties
-            }
+            const oldColumn = getColumnByID(parentRowChildren ?? [], columnToDelete.id as string);
+
+            // We merge the new GridStack data with the old properties
+            const updatedColumn = { ...oldColumn, ...columnToAdd };
 
             return {
                 items: items.map((row) => {
                     if (row.id === columnToDelete.parentId) {
-                        if (row.subGridOpts)
-                            row.subGridOpts.children = removeColumnByID(
-                                row,
-                                columnToDelete.id as string
-                            );
+                        row.subGridOpts = {
+                            ...row.subGridOpts,
+                            children: removeColumnByID(row, columnToDelete.id as string)
+                        };
                     } else if (row.id === columnToAdd.parentId) {
-                        if (row.subGridOpts) row.subGridOpts.children.push(updatedColumn);
-                        else row.subGridOpts = { children: [updatedColumn] };
+                        row.subGridOpts = {
+                            ...row.subGridOpts,
+                            children: [...(row.subGridOpts?.children ?? []), updatedColumn]
+                        };
                     }
 
                     return row;
