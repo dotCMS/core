@@ -50,7 +50,8 @@
                 "outputDir": "dist/storybook/template-builder",
                 "configDir": "libs/template-builder/.storybook",
                 "browserTarget": "template-builder:build-storybook",
-                "compodoc": false
+                "compodoc": false,
+                "styles": ["node_modules/gridstack/dist/gridstack.min.css"]
             },
             "configurations": {
                 "ci": {
