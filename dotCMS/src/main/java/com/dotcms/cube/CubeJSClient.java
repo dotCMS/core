@@ -13,6 +13,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -91,6 +92,10 @@ public class CubeJSClient {
                 .get("Events.count")
                 .map(value -> Long.parseLong(value.toString()))
                 .orElseThrow();
+
+        if (totalItems == 0) {
+            return new CubeJSResultSetImpl(Collections.emptyList());
+        }
 
         return totalItems > PAGE_SIZE ?
                 new PaginationCubeJSResultSet(this, query, totalItems, PAGE_SIZE) :
