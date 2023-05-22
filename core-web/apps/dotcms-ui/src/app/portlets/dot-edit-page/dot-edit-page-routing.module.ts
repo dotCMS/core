@@ -2,7 +2,7 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
 import { LayoutEditorCanDeactivateGuardService } from '@dotcms/app/api/services/guards/layout-editor-can-deactivate-guard.service';
-import { FeaturedFlags } from '@dotcms/dotcms-models';
+import { ExperimentsConfigProperties, FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotExperimentExperimentResolver } from '@portlets/dot-experiments/shared/resolvers/dot-experiment-experiment.resolver';
 import { DotFeatureFlagResolver } from '@portlets/shared/resolvers/dot-feature-flag-resolver.service';
 
@@ -19,8 +19,14 @@ const dotEditPage: Routes = [
             experiment: DotExperimentExperimentResolver
         },
         data: {
-            featuredFlagToCheck: FeaturedFlags.LOAD_FRONTEND_EXPERIMENTS
+            featuredFlagToCheck: FeaturedFlags.LOAD_FRONTEND_EXPERIMENTS,
+            experimentsConfigProps: [
+                ExperimentsConfigProperties.EXPERIMENTS_MIN_DURATION,
+                ExperimentsConfigProperties.EXPERIMENTS_MAX_DURATION
+            ]
         },
+
+        //FeaturedFlags.LOAD_FRONTEND_EXPERIMENTS
 
         runGuardsAndResolvers: 'always',
         children: [

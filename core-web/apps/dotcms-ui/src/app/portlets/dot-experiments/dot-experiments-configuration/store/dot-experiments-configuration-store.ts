@@ -121,6 +121,8 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         stepStatusSidebar.experimentStep === ExperimentSteps.SCHEDULING ? stepStatusSidebar : null
     );
 
+    // readonly schedulingBundaries$ = this.select(this.state$, ({ experiment }) => {});
+
     //Traffic Step
     readonly trafficProportion$: Observable<TrafficProportion> = this.select(({ experiment }) =>
         experiment.trafficProportion ? experiment.trafficProportion : null

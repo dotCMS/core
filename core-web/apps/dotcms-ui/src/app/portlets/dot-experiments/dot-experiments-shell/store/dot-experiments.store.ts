@@ -22,7 +22,6 @@ export class DotExperimentsStore extends ComponentStore<DotExperimentsState> {
     constructor(private readonly route: ActivatedRoute) {
         const { pageId } = route.snapshot.params;
         const pageTitle = route.snapshot.parent?.parent?.data?.content?.page?.title;
-
         super({ ...initialState, pageId, pageTitle });
     }
 }
