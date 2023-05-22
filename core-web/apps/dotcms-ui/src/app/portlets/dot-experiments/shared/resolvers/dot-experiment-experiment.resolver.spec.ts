@@ -18,7 +18,13 @@ import {
     DotESContentService,
     DotPageRenderService
 } from '@dotcms/data-access';
-import { CoreWebService, HttpCode, LoginService } from '@dotcms/dotcms-js';
+import {
+    CoreWebService,
+    HttpCode,
+    LoginService,
+    SiteService,
+    SiteServiceMock
+} from '@dotcms/dotcms-js';
 import { DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
 import {
     CoreWebServiceMock,
@@ -48,6 +54,7 @@ describe('DotExperimentExperimentResolver', () => {
 
     let injector: TestBed;
     let dotEditPageResolver: DotEditPageResolver;
+    const siteServiceMock = new SiteServiceMock();
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -66,6 +73,7 @@ describe('DotExperimentExperimentResolver', () => {
                 DotFavoritePageService,
                 { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
                 { provide: DotRouterService, useClass: MockDotRouterService },
+                { provide: SiteService, useValue: siteServiceMock },
                 {
                     provide: ActivatedRouteSnapshot,
                     useValue: route

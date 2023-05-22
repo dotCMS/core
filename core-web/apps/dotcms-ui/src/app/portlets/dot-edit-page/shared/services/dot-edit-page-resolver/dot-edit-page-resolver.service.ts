@@ -92,16 +92,17 @@ export class DotEditPageResolver implements Resolve<DotPageRenderState> {
     private setSite(id: string): Observable<Site> {
         const currentSiteId = this.siteService.currentSite?.identifier;
         const shouldSwitchSite = id && id !== currentSiteId;
-        const switchSite$ = this.siteService.switchSiteById(id).pipe(
-            catchError((err: HttpErrorResponse) => {
-                console.warn(err);
-
-                return of(null);
-            })
-        );
 
         // If we have a site id and is different from the current one, we switch
-        return shouldSwitchSite ? switchSite$ : of(null);
+        return shouldSwitchSite
+            ? this.siteService.switchSiteById(id).pipe(
+                  catchError((err: HttpErrorResponse) => {
+                      console.warn(err);
+
+                      return of(null);
+                  })
+              )
+            : of(null);
     }
 
     private getPageRenderState(
