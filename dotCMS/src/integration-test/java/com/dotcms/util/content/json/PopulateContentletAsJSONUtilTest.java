@@ -4,12 +4,15 @@ import com.dotcms.IntegrationTestBase;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import org.apache.felix.framework.OSGIUtil;
@@ -20,6 +23,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import static com.dotcms.util.CollectionsUtils.map;
 import static org.junit.Assert.*;
 
 public class PopulateContentletAsJSONUtilTest extends IntegrationTestBase {
@@ -206,7 +210,7 @@ public class PopulateContentletAsJSONUtilTest extends IntegrationTestBase {
                             "WHERE i.asset_subtype <> 'Host' AND asset_type = 'contentlet'")
                     .loadObjectResults();
 
-            // Make sure we have the right number of hosts again
+            // Make sure we have the right number of contentlets again
             assertTrue(results.size() >= 10);
 
             // This time contentlet_as_json can not be null
@@ -230,17 +234,26 @@ public class PopulateContentletAsJSONUtilTest extends IntegrationTestBase {
      * contentlets.
      */
     @Test
-    public void Test_populate_everything() throws DotDataException {
+    public void Test_populate_everything() throws DotDataException, DotSecurityException {
 
         Collection<Contentlet> contents = new ArrayList<>();
 
         try {
 
-            var defaultLanguageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+            final var defaultLanguageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+            final Variant variant_1 = new VariantDataGen().nextPersisted();
 
             // First we need to create some contentlets
             for (int i = 0; i < 10; i++) {
-                contents.add(TestDataUtils.getGenericContentContent(true, defaultLanguageId));
+
+                var contenlet = TestDataUtils.getGenericContentContent(true, defaultLanguageId);
+                contents.add(contenlet);
+
+                // For this contentlet we need to create multiple versions
+                for (int j = 0; j < 3; j++) {
+                    var newVersion = ContentletDataGen.createNewVersion(contenlet, variant_1, map());
+                    ContentletDataGen.publish(newVersion);
+                }
             }
 
             // We drop the contentlet_as_json column
@@ -266,7 +279,7 @@ public class PopulateContentletAsJSONUtilTest extends IntegrationTestBase {
 
             results = dotConnect.setSQL("select * from contentlet").loadObjectResults();
 
-            // Make sure we have the right number of hosts again
+            // Make sure we have the right number of contents again
             assertTrue(results.size() >= 10);
 
             // This time contentlet_as_json can not be null
