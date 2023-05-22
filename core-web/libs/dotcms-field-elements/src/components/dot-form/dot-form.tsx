@@ -3,13 +3,14 @@ import { Component, Element, Listen, Prop, State, Watch, h, Host } from '@stenci
 import { DotFieldStatus } from '../../models';
 import { fieldCustomProcess, getFieldsFromLayout, getErrorMessage } from './utils';
 import { getClassNames, getOriginalStatus, updateStatus } from '../../utils';
+import { DotUploadService } from '@dotcms/data-access';
+
 import {
     DotCMSContentTypeLayoutRow,
     DotCMSContentTypeField,
     DotCMSTempFile,
     DotCMSContentlet
 } from '@dotcms/dotcms-models';
-import { DotUploadService } from './services/dot-upload.service';
 import { DotHttpErrorResponse } from '../../models/dot-http-error-response.model';
 import { DotBinaryFileComponent } from '../dot-binary-file/dot-binary-file';
 
@@ -234,13 +235,13 @@ export class DotFormComponent {
         const uploadService = new DotUploadService();
         const file = event.detail.value;
         const maxSize = this.getMaxSize(event);
-        const binary: DotBinaryFileComponent = (event.target as unknown) as DotBinaryFileComponent;
+        const binary: DotBinaryFileComponent = event.target as unknown as DotBinaryFileComponent;
 
         if (!maxSize || file.size <= maxSize) {
             this.uploadFileInProgress = true;
             binary.errorMessage = '';
             return uploadService
-                .uploadFile(file, maxSize)
+                .uploadFile({ file, maxSize })
                 .then((tempFile: DotCMSTempFile) => {
                     this.errorMessage = '';
                     binary.previewImageUrl = tempFile.thumbnailUrl;

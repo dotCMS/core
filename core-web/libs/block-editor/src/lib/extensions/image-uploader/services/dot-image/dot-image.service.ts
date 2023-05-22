@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
-import { uploadFile } from '@dotcms/utils';
+
+import { DotUploadService } from '@dotcms/data-access';
 import { from, Observable, throwError } from 'rxjs';
 import { catchError, pluck, switchMap } from 'rxjs/operators';
 import { DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
@@ -13,25 +14,27 @@ export enum FileStatus {
 }
 
 interface PublishContentProps {
-    data: string | File | File[];
+    data: string | File;
     maxSize?: string;
     statusCallback?: (status: FileStatus) => void;
+    signal?: AbortSignal;
 }
 
 @Injectable()
 export class DotImageService {
-    constructor(private http: HttpClient) {}
+    constructor(private http: HttpClient, private dotUploadService: DotUploadService) {}
 
     publishContent({
         data,
         maxSize,
         statusCallback = (_status) => {
             /* */
-        }
+        },
+        signal
     }: PublishContentProps): Observable<DotCMSContentlet[]> {
         statusCallback(FileStatus.DOWNLOAD);
 
-        return this.setTempResource(data, maxSize).pipe(
+        return this.setTempResource({ data, maxSize, signal }).pipe(
             switchMap((response: DotCMSTempFile | DotCMSTempFile[]) => {
                 const files = Array.isArray(response) ? response : [response];
                 const contentlets = [];
@@ -63,17 +66,16 @@ export class DotImageService {
         );
     }
 
-    private setTempResource(
-        file: string | File | File[],
-        maxSize?: string
-    ): Observable<DotCMSTempFile | DotCMSTempFile[]> {
+    private setTempResource({
+        data: file,
+        maxSize,
+        signal
+    }: PublishContentProps): Observable<DotCMSTempFile | DotCMSTempFile[]> {
         return from(
-            uploadFile({
+            this.dotUploadService.uploadFile({
                 file,
-                progressCallBack: () => {
-                    /**/
-                },
-                maxSize
+                maxSize,
+                signal
             })
         );
     }

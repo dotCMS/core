@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { of } from 'rxjs';
 
@@ -43,6 +44,7 @@ export const primary = () => ({
             BlockEditorModule,
             OrderListModule,
             ListboxModule,
+            BrowserModule,
             BrowserAnimationsModule
         ],
         providers: [
@@ -88,7 +90,7 @@ export const primary = () => ({
                                 }
                             }
                         ]).pipe(
-                            delay(1500),
+                            delay(5000000),
                             tap(() => statusCallback(FileStatus.IMPORT))
                         );
                     }
