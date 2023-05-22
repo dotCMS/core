@@ -2,7 +2,7 @@ import { MarkdownModule } from 'ngx-markdown';
 
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
-import { FormGroupDirective, ReactiveFormsModule } from '@angular/forms';
+import { ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
@@ -11,7 +11,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotIconModule, DotFieldRequiredDirective } from '@dotcms/ui';
+import { DotIconModule } from '@dotcms/ui';
 
 import { DotAppsConfigurationDetailFormComponent } from './dot-apps-configuration-detail-form.component';
 
@@ -26,11 +26,10 @@ import { DotAppsConfigurationDetailFormComponent } from './dot-apps-configuratio
         InputTextModule,
         ReactiveFormsModule,
         TooltipModule,
-        MarkdownModule.forChild(),
-        DotFieldRequiredDirective
+        MarkdownModule.forChild()
     ],
     declarations: [DotAppsConfigurationDetailFormComponent],
     exports: [DotAppsConfigurationDetailFormComponent],
-    providers: [FormGroupDirective]
+    providers: []
 })
 export class DotAppsConfigurationDetailFormModule {}

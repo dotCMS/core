@@ -12,7 +12,6 @@ import { DotNavigationService } from '@components/dot-navigation/services/dot-na
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { DotAddToMenuService } from '@dotcms/app/api/services/add-to-menu/add-to-menu.service';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
-import { DotFieldRequiredDirective } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotAddToMenuComponent } from './dot-add-to-menu.component';
@@ -29,8 +28,7 @@ import { DotAddToMenuComponent } from './dot-add-to-menu.component';
         DropdownModule,
         InputTextModule,
         RadioButtonModule,
-        ReactiveFormsModule,
-        DotFieldRequiredDirective
+        ReactiveFormsModule
     ],
     providers: [DotAddToMenuService, DotMenuService, DotNavigationService]
 })

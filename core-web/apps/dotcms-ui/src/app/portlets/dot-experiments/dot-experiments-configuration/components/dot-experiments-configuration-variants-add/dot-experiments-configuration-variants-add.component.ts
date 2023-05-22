@@ -10,12 +10,7 @@ import { SidebarModule } from 'primeng/sidebar';
 
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
-import {
-    ComponentStatus,
-    MAX_INPUT_LENGTH,
-    StepStatus,
-    TrafficProportion
-} from '@dotcms/dotcms-models';
+import { ComponentStatus, StepStatus, TrafficProportion } from '@dotcms/dotcms-models';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 import { DotSidebarDirective } from '@portlets/shared/directives/dot-sidebar.directive';
@@ -44,7 +39,6 @@ import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sideba
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationVariantsAddComponent implements OnInit {
-    protected readonly maxNameLength = MAX_INPUT_LENGTH;
     stepStatus = ComponentStatus;
 
     form: FormGroup;
@@ -91,7 +85,7 @@ export class DotExperimentsConfigurationVariantsAddComponent implements OnInit {
         this.form = new FormGroup({
             name: new FormControl<string>('', {
                 nonNullable: true,
-                validators: [Validators.required, Validators.maxLength(50)]
+                validators: [Validators.required, Validators.maxLength(255)]
             })
         });
     }

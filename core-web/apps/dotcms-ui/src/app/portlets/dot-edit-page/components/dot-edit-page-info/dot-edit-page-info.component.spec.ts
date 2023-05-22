@@ -1,4 +1,4 @@
-import { Component, DebugElement } from '@angular/core';
+import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
@@ -9,28 +9,14 @@ import { DotMessagePipe } from '@pipes/dot-message/dot-message.pipe';
 
 import { DotEditPageInfoComponent } from './dot-edit-page-info.component';
 
-@Component({
-    template: `<dot-edit-page-info
-        [title]="title"
-        [url]="url"
-        [apiLink]="apiLink"
-    ></dot-edit-page-info>`
-})
-class TestHostComponent {
-    title = 'A title';
-    url = 'http://demo.dotcms.com:9876/an/url/test';
-    apiLink = 'api/v1/page/render/an/url/test?language_id=1';
-}
-
 describe('DotEditPageInfoComponent', () => {
-    let hostComp: TestHostComponent;
-    let hostFixture: ComponentFixture<TestHostComponent>;
-    let hostDebug: DebugElement;
+    let component: DotEditPageInfoComponent;
+    let fixture: ComponentFixture<DotEditPageInfoComponent>;
     let de: DebugElement;
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [TestHostComponent, DotEditPageInfoComponent, DotMessagePipe],
+            declarations: [DotEditPageInfoComponent, DotMessagePipe],
             imports: [DotApiLinkModule, DotCopyButtonModule],
             providers: [
                 {
@@ -46,16 +32,17 @@ describe('DotEditPageInfoComponent', () => {
     }));
 
     beforeEach(() => {
-        hostFixture = TestBed.createComponent(TestHostComponent);
-        hostDebug = hostFixture.debugElement;
-        hostComp = hostDebug.componentInstance;
-
-        de = hostDebug.query(By.css('dot-edit-page-info'));
+        fixture = TestBed.createComponent(DotEditPageInfoComponent);
+        component = fixture.componentInstance;
+        de = fixture.debugElement;
     });
 
     describe('default', () => {
         beforeEach(() => {
-            hostFixture.detectChanges();
+            component.apiLink = 'api/v1/page/render/an/url/test?language_id=1';
+            component.title = 'A title';
+            component.url = 'http://demo.dotcms.com:9876/an/url/test';
+            fixture.detectChanges();
         });
 
         it('should set page title', () => {
@@ -63,35 +50,34 @@ describe('DotEditPageInfoComponent', () => {
             expect(pageTitleEl.textContent).toContain('A title');
         });
 
+        it('should have api link', () => {
+            const apiLink: DebugElement = de.query(By.css('dot-api-link'));
+            expect(apiLink.componentInstance.link).toBe(
+                '/api/v1/page/render/an/url/test?language_id=1'
+            );
+        });
+
+        it('should have preview link', () => {
+            const previewLink: HTMLElement = de.query(By.css('a[title="Preview"]')).nativeElement;
+            expect(previewLink.attributes['href'].value).toBe(
+                '/an/url/test?language_id=1&disabledNavigateMode=true'
+            );
+        });
+
         it('should have copy button', () => {
             const button: DebugElement = de.query(By.css('dot-copy-button '));
             expect(button.componentInstance.copy).toBe('http://demo.dotcms.com:9876/an/url/test');
             expect(button.componentInstance.tooltipText).toBe('Copy url page');
         });
-
-        it('should have api link', () => {
-            const apiLink: DebugElement = de.query(By.css('dot-api-link'));
-            expect(apiLink.componentInstance.href).toBe(
-                'api/v1/page/render/an/url/test?language_id=1'
-            );
-        });
-
-        it('should have preview link', () => {
-            const previewLink: DebugElement = de.query(By.css('dot-link[icon="pi-eye"]'));
-
-            expect(previewLink.nativeElement.href).toBe(
-                '/an/url/test?language_id=1&disabledNavigateMode=true'
-            );
-        });
     });
 
     describe('hidden', () => {
         beforeEach(() => {
-            hostComp.title = 'A title';
-            hostComp.apiLink = '';
-            hostComp.url = '';
+            component.title = 'A title';
+            component.apiLink = '';
+            component.url = '';
 
-            hostFixture.detectChanges();
+            fixture.detectChanges();
         });
 
         it('should not have api link', () => {
@@ -105,7 +91,7 @@ describe('DotEditPageInfoComponent', () => {
         });
 
         it('should not have preview button', () => {
-            const previewButton: DebugElement = de.query(By.css('dot-link[icon="pi-eye"]'));
+            const previewButton: DebugElement = de.query(By.css('a[title="Preview"]'));
             expect(previewButton).toBeNull();
         });
     });

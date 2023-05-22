@@ -8,7 +8,6 @@ import { InputTextModule } from 'primeng/inputtext';
 
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
-import { DotFieldRequiredDirective } from '@dotcms/ui';
 
 import { ForgotPasswordComponent } from './forgot-password.component';
 
@@ -28,8 +27,7 @@ const routes: Routes = [
         ReactiveFormsModule,
         DotFieldValidationMessageModule,
         DotAutofocusModule,
-        RouterModule.forChild(routes),
-        DotFieldRequiredDirective
+        RouterModule.forChild(routes)
     ],
     declarations: [ForgotPasswordComponent]
 })

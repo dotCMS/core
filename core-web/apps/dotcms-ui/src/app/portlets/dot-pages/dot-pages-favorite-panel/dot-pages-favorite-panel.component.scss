@@ -52,7 +52,8 @@
     }
 
     .dot-pages-panel__expanded .p-toggleable-content .p-panel-content {
-        overflow: auto;
+        overflow: unset;
+        height: unset;
     }
 
     .dot-pages-panel__empty-state .p-toggleable-content .p-panel-content {

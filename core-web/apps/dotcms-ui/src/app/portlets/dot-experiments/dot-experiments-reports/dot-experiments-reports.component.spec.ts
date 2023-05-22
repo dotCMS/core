@@ -22,11 +22,10 @@ import {
     VmReportExperiment
 } from '@portlets/dot-experiments/dot-experiments-reports/store/dot-experiments-reports-store';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
-import { DotExperimentsDetailsTableComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-details-table/dot-experiments-details-table.component';
 import { DotExperimentsExperimentSummaryComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-experiment-summary/dot-experiments-experiment-summary.component';
 import { DotExperimentsUiHeaderComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
 import {
-    CHARTJS_DATA_MOCK_WITH_DATA,
+    DotExperimentsReportsStoreMock,
     getExperimentMock,
     getExperimentResultsMock
 } from '@portlets/dot-experiments/test/mocks';
@@ -46,19 +45,14 @@ const ActivatedRouteMock = {
 const defaultVmMock: VmReportExperiment = {
     experiment: getExperimentMock(3),
     results: getExperimentResultsMock(1),
-    chartData: CHARTJS_DATA_MOCK_WITH_DATA,
-    detailData: [],
+    variantResults: null,
+    chartData: null,
     isLoading: false,
-    hasEnoughSessions: false,
-    status: ComponentStatus.INIT,
     showSummary: false,
-    winnerLegendSummary: { icon: 'icon', legend: 'legend' },
-    showPromoteDialog: false,
-    suggestedWinner: null
+    status: ComponentStatus.INIT
 };
 
 const EXPERIMENT_MOCK = getExperimentMock(0);
-const EXPERIMENT_RESULTS_MOCK = getExperimentResultsMock(0);
 
 const messageServiceMock = new MockDotMessageService({
     'experiments.configure.scheduling.name': 'xx'
@@ -68,20 +62,19 @@ describe('DotExperimentsReportsComponent', () => {
     let spectator: Spectator<DotExperimentsReportsComponent>;
     let router: SpyObject<Router>;
     let store: DotExperimentsReportsStore;
-    let dotExperimentsService: SpyObject<DotExperimentsService>;
 
     const createComponent = createComponentFactory({
         imports: [
             DotExperimentsUiHeaderComponent,
-            DotExperimentsReportsChartComponent,
             DotExperimentsReportsSkeletonComponent,
             DotExperimentsExperimentSummaryComponent,
-            DotExperimentsDetailsTableComponent,
             DotExperimentsPublishVariantComponent,
             DotDynamicDirective
         ],
         component: DotExperimentsReportsComponent,
-        componentProviders: [DotExperimentsReportsStore],
+        componentProviders: [
+            mockProvider(DotExperimentsReportsStore, DotExperimentsReportsStoreMock)
+        ],
         providers: [
             {
                 provide: ActivatedRoute,
@@ -103,11 +96,6 @@ describe('DotExperimentsReportsComponent', () => {
             detectChanges: false
         });
         store = spectator.inject(DotExperimentsReportsStore, true);
-
-        dotExperimentsService = spectator.inject(DotExperimentsService);
-        dotExperimentsService.getById.and.returnValue(of(EXPERIMENT_MOCK));
-        dotExperimentsService.getResults.and.returnValue(of({ ...EXPERIMENT_RESULTS_MOCK }));
-
         router = spectator.inject(Router);
     });
 
@@ -120,8 +108,8 @@ describe('DotExperimentsReportsComponent', () => {
     });
 
     it("shouldn't show the skeleton component when is not loading", () => {
-        spectator.component.vm$ = of({ ...defaultVmMock });
-        spectator.detectComponentChanges();
+        spectator.component.vm$ = of({ ...defaultVmMock, isLoading: false });
+        spectator.detectChanges();
 
         expect(spectator.query(DotExperimentsUiHeaderComponent)).toExist();
         expect(spectator.query(DotExperimentsReportsSkeletonComponent)).not.toExist();
@@ -149,7 +137,7 @@ describe('DotExperimentsReportsComponent', () => {
     });
 
     it('should back to Experiment List', () => {
-        spectator.detectChanges();
+        spectator.detectComponentChanges();
         spectator.component.goToExperimentList(EXPERIMENT_MOCK.pageId);
         expect(router.navigate).toHaveBeenCalledWith(
             ['/edit-page/experiments/', EXPERIMENT_MOCK.pageId],
@@ -164,26 +152,29 @@ describe('DotExperimentsReportsComponent', () => {
         );
     });
 
-    it('should load the publish variant dialog', () => {
+    it('should load the publish variant dialog and promote the variant.', () => {
+        spyOn(store, 'promoteVariant');
+        spectator.component.vm$ = of({ ...defaultVmMock, isLoading: false });
         spectator.detectChanges();
 
-        spectator.click(spectator.query(byTestId('publish-variant-button')));
-        spectator.detectComponentChanges();
+        spectator.click(byTestId('publish-variant-button'));
 
-        expect(spectator.query(DotExperimentsPublishVariantComponent)).toExist();
+        const dialog = spectator.query(DotExperimentsPublishVariantComponent);
+
+        dialog.publish.emit('1');
+
+        expect(store.promoteVariant).toHaveBeenCalledWith('1');
+        expect(spectator.query(DotExperimentsPublishVariantComponent)).not.toExist();
     });
 
     it('should load the publish variant dialog and close', () => {
+        spectator.component.vm$ = of({ ...defaultVmMock, isLoading: false });
         spectator.detectChanges();
+        spectator.click(byTestId('publish-variant-button'));
 
-        spectator.click(spectator.query(byTestId('publish-variant-button')));
-        spectator.detectComponentChanges();
+        const dialog = spectator.query(DotExperimentsPublishVariantComponent);
 
-        expect(spectator.query(DotExperimentsPublishVariantComponent)).toExist();
-
-        store.hidePromoteDialog();
-        spectator.detectComponentChanges();
-
+        dialog.hide.emit('');
         expect(spectator.query(DotExperimentsPublishVariantComponent)).not.toExist();
     });
 });

@@ -51,12 +51,9 @@
 >
     <form class="p-fluid" *ngIf="addClassDialogShow" [formGroup]="form" novalidate>
         <div class="field">
-            <label dotFieldRequired for="classToAdd">{{
-                'editpage.layout.css.class.names' | dm
-            }}</label>
+            <label>{{ 'editpage.layout.css.class.names' | dm }}</label>
             <input
                 class="box__add-class-text"
-                id="classToAdd"
                 dotAutofocus
                 formControlName="classToAdd"
                 pInputText

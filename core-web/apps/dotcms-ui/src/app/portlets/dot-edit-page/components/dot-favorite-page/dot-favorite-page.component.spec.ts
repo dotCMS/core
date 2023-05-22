@@ -16,7 +16,6 @@ import { DotPagesFavoritePageEmptySkeletonComponent } from '@dotcms/app/portlets
 import { DotMessageService } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock, LoginService } from '@dotcms/dotcms-js';
 import { DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
-import { DotFieldRequiredDirective } from '@dotcms/ui';
 import {
     LoginServiceMock,
     MockDotMessageService,
@@ -134,7 +133,6 @@ describe('DotFavoritePageComponent', () => {
                 MultiSelectModule,
                 ReactiveFormsModule,
                 DotFieldValidationMessageModule,
-                DotFieldRequiredDirective,
                 DotPagesFavoritePageEmptySkeletonComponent,
                 HttpClientTestingModule
             ],

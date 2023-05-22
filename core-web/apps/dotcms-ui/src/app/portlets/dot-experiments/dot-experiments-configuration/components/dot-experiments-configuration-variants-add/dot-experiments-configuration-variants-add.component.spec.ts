@@ -105,7 +105,7 @@ describe('DotExperimentsConfigurationVariantsAddComponent', () => {
 
     it('should disable submit button if the form is invalid', () => {
         const invalidFormValues = {
-            name: 'this is more than 50 characters test - this is more than 50 characters test'
+            name: ''
         };
 
         spectator.component.form.setValue(invalidFormValues);

@@ -194,9 +194,15 @@ export const AssetUploader = (injector: Injector, viewContainerRef: ViewContaine
                 const { length } = files;
                 const file = files[0];
                 const text = clipboardData.getData('Text') || '';
-                const type = isImageURL(text) ? 'image' : (getFileType(file) as EditorAssetTypes);
+                const type = getFileType(file) as EditorAssetTypes;
 
                 const { from } = getCursorPosition(view);
+
+                if (isImageURL(text) && isNodeRegistered('image')) {
+                    editor.commands.insertImage(text, from);
+
+                    return true;
+                }
 
                 if (!isNodeRegistered(type)) {
                     return;
@@ -211,11 +217,7 @@ export const AssetUploader = (injector: Injector, viewContainerRef: ViewContaine
                 event.preventDefault();
                 event.stopPropagation();
 
-                if (isImageURL(text)) {
-                    editor.chain().insertImage(text, from).addNextLine().run();
-                } else {
-                    uploadAsset({ view, file, position: from });
-                }
+                uploadAsset({ view, file, position: from });
             }
 
             /**

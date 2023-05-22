@@ -1,6 +1,8 @@
 <form class="p-fluid" [formGroup]="form">
     <div class="field">
-        <label dotFieldRequired for="content-type-form-host">{{ 'modes.persona.host' | dm }}</label>
+        <label class="form__label" for="content-type-form-host">{{
+            'modes.persona.host' | dm
+        }}</label>
         <dot-site-selector-field
             id="content-type-form-host"
             [system]="true"
@@ -9,7 +11,7 @@
     </div>
 
     <div class="field">
-        <label dotFieldRequired for="persona-name">{{ 'modes.persona.name' | dm }}</label>
+        <label class="form__label" for="persona-name">{{ 'modes.persona.name' | dm }}</label>
         <input
             id="persona-name"
             (keyup)="setKeyTag()"
@@ -27,12 +29,14 @@
     </div>
 
     <div class="field">
-        <label dotFieldRequired for="persona-keyTag">{{ 'modes.persona.key.tag' | dm }}</label>
+        <label class="form__label" for="persona-keyTag">{{ 'modes.persona.key.tag' | dm }}</label>
         <input id="persona-keyTag" type="text" formControlName="keyTag" name="keyTag" pInputText />
     </div>
 
     <div class="field">
-        <label for="persona-image">{{ 'modes.persona.upload.file' | dm }}</label>
+        <label class="form__label" for="persona-image">{{
+            'modes.persona.upload.file' | dm
+        }}</label>
         <p-fileUpload
             id="persona-image"
             *ngIf="!tempUploadedFile"
@@ -57,7 +61,9 @@
         </div>
     </div>
     <div class="field">
-        <label for="persona-other-tags">{{ 'modes.persona.other.tags' | dm }}</label>
+        <label class="form__label" for="persona-other-tags">{{
+            'modes.persona.other.tags' | dm
+        }}</label>
         <dot-autocomplete-tags
             id="persona-other-tags"
             [placeholder]="'modes.persona.select.tags.placeholder' | dm"

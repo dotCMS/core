@@ -8,12 +8,11 @@
     novalidate
 >
     <div class="field">
-        <label dotFieldRequired for="pushActionSelected"
+        <label class="form__label"
             >{{ 'contenttypes.content.push_publish.I_want_To' | dm }}:
         </label>
         <p-selectButton
             class="push-publish-dialog__action-select p-button-tabbed"
-            id="pushActionSelected"
             [options]="pushActions"
             formControlName="pushActionSelected"
         >
@@ -21,9 +20,8 @@
     </div>
 
     <div class="field">
-        <label for="filterKey">{{ 'contenttypes.content.push_publish.filters' | dm }}: </label>
+        <label class="form__label">{{ 'contenttypes.content.push_publish.filters' | dm }}: </label>
         <p-dropdown
-            id="filterKey"
             [autofocus]="true"
             [options]="filterOptions"
             pAutoFocus
@@ -34,13 +32,12 @@
 
     <div class="field form-group__two-cols push-publish-dialog__publish-dates-container">
         <div class="field push-publish-dialog__publish-date">
-            <label dotFieldRequired for="publishDate"
+            <label class="form__label"
                 >{{ 'contenttypes.content.push_publish.publish_date' | dm }}:
             </label>
             <div class="push-publish-dialog__calendar">
                 <p-calendar
                     class="push-publish-dialog__calendar-date"
-                    id="publishDate"
                     [minDate]="dateFieldMinDate"
                     appendTo="body"
                     data-testid="publishDateInputCalendar"
@@ -57,13 +54,12 @@
             ></dot-field-validation-message>
         </div>
         <div class="field push-publish-dialog__expire-date">
-            <label dotFieldRequired for="expireDate"
+            <label class="form__label"
                 >{{ 'contenttypes.content.push_publish.expire_date' | dm }}:
             </label>
             <div class="push-publish-dialog__calendar">
                 <p-calendar
                     class="push-publish-dialog__calendar-date"
-                    id="expireDate"
                     [minDate]="dateFieldMinDate"
                     appendTo="body"
                     formControlName="expireDate"
@@ -84,9 +80,8 @@
         <a (click)="toggleTimezonePicker($event)" href="#"> {{ changeTimezoneActionLabel }}</a>
     </div>
     <div class="field" [hidden]="!showTimezonePicker" data-testid="timeZoneSelectContainer">
-        <label for="timezoneId">{{ 'time-zone' | dm }}: </label>
+        <label class="form__label">{{ 'time-zone' | dm }}: </label>
         <p-dropdown
-            id="timezoneId"
             [options]="timeZoneOptions"
             [filter]="true"
             (onChange)="updateTimezoneLabel($event.value)"
@@ -97,11 +92,8 @@
         ></p-dropdown>
     </div>
     <div class="field">
-        <label dotFieldRequired for="environment"
-            >{{ 'contenttypes.content.push_publish.push_to' | dm }}:
-        </label>
+        <label class="form__label">{{ 'contenttypes.content.push_publish.push_to' | dm }}: </label>
         <dot-push-publish-env-selector
-            id="environment"
             [assetIdentifier]="assetIdentifier"
             formControlName="environment"
         ></dot-push-publish-env-selector>

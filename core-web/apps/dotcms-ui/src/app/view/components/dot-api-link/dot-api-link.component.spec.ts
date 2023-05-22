@@ -2,10 +2,6 @@ import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { DotLinkComponent } from '@components/dot-link/dot-link.component';
-import { DotMessageService } from '@dotcms/data-access';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-
 import { DotApiLinkComponent } from './dot-api-link.component';
 
 @Component({
@@ -13,43 +9,62 @@ import { DotApiLinkComponent } from './dot-api-link.component';
 })
 class TestHostComponent {
     href = 'api/v1/123';
+
+    updateLink(href: string): void {
+        this.href = href;
+    }
 }
 
 describe('DotApiLinkComponent', () => {
     let hostFixture: ComponentFixture<TestHostComponent>;
     let hostDe: DebugElement;
+    let hostComp: TestHostComponent;
     let de: DebugElement;
     let link: DebugElement;
 
-    const messageServiceMock = new MockDotMessageService({});
-
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [TestHostComponent, DotApiLinkComponent],
-            providers: [{ provide: DotMessageService, useValue: messageServiceMock }],
-            imports: [DotLinkComponent]
+            declarations: [TestHostComponent, DotApiLinkComponent]
         }).compileComponents();
     }));
 
     beforeEach(() => {
         hostFixture = TestBed.createComponent(TestHostComponent);
         hostDe = hostFixture.debugElement;
+        hostComp = hostDe.componentInstance;
 
         de = hostDe.query(By.css('dot-api-link'));
 
         hostFixture.detectChanges();
-        link = de.query(By.css('dot-link'));
+        link = de.query(By.css('a'));
     });
 
     it('should show label', () => {
-        expect(link.componentInstance.label).toBe('API');
+        expect(link.nativeElement.textContent).toBe('API');
     });
 
-    it('should has the right href', () => {
-        expect(link.componentInstance.link).toBe('/api/v1/123');
+    it('should set link properties and attr correctly', () => {
+        expect(link.attributes.target).toEqual('_blank');
+        expect(link.properties.href).toEqual('/api/v1/123');
+        expect(link.properties.title).toEqual('/api/v1/123');
     });
 
-    it('should has the right icon', () => {
-        expect(link.componentInstance.classNames).toBe('pi pi-link');
+    it('should update link when href is change', () => {
+        expect(link.properties.href).toEqual('/api/v1/123');
+        expect(link.properties.title).toEqual('/api/v1/123');
+
+        hostComp.updateLink('/api/new/1000');
+        hostFixture.detectChanges();
+
+        expect(link.properties.href).toEqual('/api/new/1000');
+        expect(link.properties.title).toEqual('/api/new/1000');
+    });
+
+    it('should set the link relative always', () => {
+        hostComp.updateLink('api/no/start/slash');
+        hostFixture.detectChanges();
+
+        expect(link.properties.href).toEqual('/api/no/start/slash');
+        expect(link.properties.title).toEqual('/api/no/start/slash');
     });
 });

@@ -24,7 +24,6 @@ import {
     DEFAULT_VARIANT_NAME,
     DotPageMode,
     ExperimentSteps,
-    MAX_INPUT_LENGTH,
     MAX_VARIANTS_ALLOWED,
     SIDEBAR_STATUS,
     StepStatus,
@@ -74,7 +73,6 @@ export class DotExperimentsConfigurationVariantsComponent {
         tap(({ status }) => this.handleSidebar(status))
     );
 
-    protected readonly maxNameLength = MAX_INPUT_LENGTH;
     statusList = ComponentStatus;
     sidebarStatusList = SIDEBAR_STATUS;
     maxVariantsAllowed = MAX_VARIANTS_ALLOWED;

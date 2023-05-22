@@ -1,6 +1,6 @@
 <form class="content-type__form p-fluid" id="content-type-form" [formGroup]="form" novalidate>
     <div class="field form__group--validation">
-        <label dotFieldRequired for="content-type-form-name">{{ nameFieldLabel }}</label>
+        <label for="content-type-form-name">{{ nameFieldLabel }}</label>
         <input
             id="content-type-form-name"
             #name
@@ -39,7 +39,7 @@
         />
     </div>
     <div class="field">
-        <label for="content-type-form-host">{{
+        <label class="form__label" for="content-type-form-host">{{
             'contenttypes.form.field.host_folder.label' | dm
         }}</label>
         <dot-site-selector-field
@@ -50,7 +50,7 @@
         ></dot-site-selector-field>
     </div>
     <div class="field">
-        <label for="content-type-form-workflow">{{
+        <label class="form__label" for="content-type-form-workflow">{{
             'contenttypes.form.label.workflow' | dm
         }}</label>
         <dot-workflows-selector-field
@@ -60,7 +60,7 @@
         ></dot-workflows-selector-field>
     </div>
     <div class="field" formGroupName="systemActionMappings">
-        <label for="content-type-form-workflow">{{
+        <label class="form__label" for="content-type-form-workflow">{{
             'contenttypes.form.label.workflow.actions' | dm
         }}</label>
         <dot-workflows-actions-selector-field
@@ -77,7 +77,7 @@
     >
     <div class="p-formgrid grid">
         <div class="field col">
-            <label for="content-type-form-publish-date-field">{{
+            <label class="form__label" for="content-type-form-publish-date-field">{{
                 'contenttypes.form.label.publish.date.field' | dm
             }}</label>
             <p-dropdown
@@ -92,7 +92,7 @@
             ></p-dropdown>
         </div>
         <div class="field col">
-            <label for="content-type-form-expire-date-field">{{
+            <label class="form__label" for="content-type-form-expire-date-field">{{
                 'contenttypes.form.field.expire.date.field' | dm
             }}</label>
             <p-dropdown
@@ -115,12 +115,10 @@
     </div>
 
     <div class="field" *ngIf="form.get('detailPage')">
-        <label for="content-type-form-detail-page">
-            {{ 'contenttypes.form.field.detail.page' | dm }}
-        </label>
         <dot-page-selector
             id="content-type-form-detail-page"
             [tabindex]="9"
+            [label]="'contenttypes.form.field.detail.page' | dm"
             formControlName="detailPage"
         ></dot-page-selector>
     </div>

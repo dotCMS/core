@@ -12,14 +12,13 @@ import {
     Output
 } from '@angular/core';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
-import { ControlValueAccessor, FormGroupDirective, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
 import { PaginationEvent } from '@components/_common/searchable-dropdown/component';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotContentTypeService, DotMessageService, PaginatorService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { DotFieldRequiredDirective } from '@dotcms/ui';
 import { dotcmsContentTypeBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 import { DotRelationshipCardinality } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/model/dot-relationship-cardinality.model';
 import { DotRelationshipService } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-relationship.service';
@@ -170,13 +169,12 @@ describe('DotNewRelationshipsComponent', () => {
                 MockSearchableDropdownComponent,
                 MockCardinalitySelectorComponent
             ],
-            imports: [DotFieldRequiredDirective],
+            imports: [],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: PaginatorService, useClass: MockPaginatorService },
                 { provide: DotRelationshipService, useClass: MockRelationshipService },
-                { provide: DotContentTypeService, useClass: MockDotContentTypeService },
-                FormGroupDirective
+                { provide: DotContentTypeService, useClass: MockDotContentTypeService }
             ]
         });
 
@@ -270,10 +268,10 @@ describe('DotNewRelationshipsComponent', () => {
         it('should set the correct labels', () => {
             fixtureHostComponent.detectChanges();
             const labels = de.queryAll(By.css('label'));
-            const contentTypeLabel = labels[0].nativeElement;
+            const contentTypeLabel = labels[0].nativeElement.textContent;
             const relationshipsLabel = labels[1].nativeElement.textContent;
-            expect(contentTypeLabel.textContent).toEqual('Content Type');
-            expect(contentTypeLabel.classList.contains('p-label-input-required')).toBeTruthy();
+
+            expect(contentTypeLabel).toEqual('Content Type*');
             expect(relationshipsLabel).toEqual('Relationship');
         });
 

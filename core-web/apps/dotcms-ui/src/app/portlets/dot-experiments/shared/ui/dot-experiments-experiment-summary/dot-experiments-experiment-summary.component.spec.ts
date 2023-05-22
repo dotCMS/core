@@ -1,9 +1,9 @@
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { GOAL_TYPES, Goals, RangeOfDateAndTime, SummaryLegend } from '@dotcms/dotcms-models';
+import { GOAL_TYPES, Goals, RangeOfDateAndTime } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { GoalsMock, suggestedWinnerMock } from '@portlets/dot-experiments/test/mocks';
+import { GoalsMock } from '@portlets/dot-experiments/test/mocks';
 
 import { DotExperimentsExperimentSummaryComponent } from './dot-experiments-experiment-summary.component';
 
@@ -64,29 +64,6 @@ describe('DotExperimentsExperimentSummaryComponent', () => {
         );
         expect(spectator.query(byTestId('schedule-end-date'))).toHaveText(
             longEnUSFormatter.format(date)
-        );
-    });
-
-    it('should rendered suggestedWinner input', () => {
-        const suggestedWinner: SummaryLegend = suggestedWinnerMock;
-        spectator.setInput({
-            suggestedWinner
-        });
-
-        expect(spectator.query(byTestId('suggested-winner-icon'))).toHaveClass(
-            suggestedWinner.icon
-        );
-        expect(spectator.query(byTestId('suggested-winner-legend'))).toHaveText(
-            suggestedWinner.legend
-        );
-    });
-    it('should rendered session reached number', () => {
-        const sessionsReached = 50;
-        spectator.setInput({
-            sessionsReached
-        });
-        expect(spectator.query(byTestId('summary-sessions-reached'))).toHaveText(
-            sessionsReached.toString()
         );
     });
 });

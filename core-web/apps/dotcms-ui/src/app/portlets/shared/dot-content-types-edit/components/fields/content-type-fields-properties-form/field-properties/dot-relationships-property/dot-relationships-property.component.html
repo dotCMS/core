@@ -29,14 +29,8 @@
 
     <ng-template #existing>
         <div class="field">
-            <label [for]="property.name" [checkIsRequiredControl]="property.name" dotFieldRequired
-                >Relationship</label
-            >
-            <dot-edit-relationships
-                class="relationships__existing"
-                [id]="property.name"
-                (switch)="handleChange($event)"
-            >
+            <label class="form__label" for="">Relationship</label>
+            <dot-edit-relationships class="relationships__existing" (switch)="handleChange($event)">
             </dot-edit-relationships>
         </div>
     </ng-template>

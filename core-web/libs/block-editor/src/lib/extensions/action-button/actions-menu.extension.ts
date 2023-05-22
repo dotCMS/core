@@ -250,8 +250,7 @@ export const ActionsMenu = (
     }
 
     function setUpSuggestionComponent(editor: Editor, range: Range) {
-        const { allowedBlocks, allowedContentTypes, lang, contentletIdentifier } =
-            editor.storage.dotConfig;
+        const { allowedBlocks, allowedContentTypes, lang } = editor.storage.dotConfig;
         const editorAllowedBlocks = allowedBlocks.length > 1 ? allowedBlocks : [];
         const items = getItems({ allowedBlocks: editorAllowedBlocks, editor, range });
 
@@ -261,8 +260,6 @@ export const ActionsMenu = (
         suggestionsComponent.instance.items = items;
         suggestionsComponent.instance.currentLanguage = lang;
         suggestionsComponent.instance.allowedContentTypes = allowedContentTypes;
-        suggestionsComponent.instance.contentletIdentifier = contentletIdentifier;
-
         suggestionsComponent.instance.onSelectContentlet = (props) => {
             clearFilter({ type: ItemsType.CONTENT, editor, range, suggestionKey, ItemsType });
             onSelection({ editor, range, props });

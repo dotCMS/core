@@ -226,36 +226,17 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                             this.messageService.add({
                                 severity: 'info',
                                 summary: this.dotMessageService.get(
-                                    response.status === DotExperimentStatusList.RUNNING
-                                        ? 'experiments.action.start.confirm-title'
-                                        : 'experiments.action.scheduled.confirm-title'
+                                    'experiments.action.start.confirm-title'
                                 ),
                                 detail: this.dotMessageService.get(
-                                    response.status === DotExperimentStatusList.RUNNING
-                                        ? 'experiments.action.start.confirm-message'
-                                        : 'experiments.action.scheduled.confirm-message',
+                                    'experiments.action.start.confirm-message',
                                     experiment.name
                                 )
                             });
                             this.setExperiment(response);
                         },
-                        (response: HttpErrorResponse) => {
-                            this.setComponentStatus(ComponentStatus.IDLE);
-                            const { error } = response;
-
-                            return this.dotHttpErrorManagerService.handle({
-                                ...response,
-                                error: {
-                                    ...error,
-                                    header: error.header
-                                        ? error.header
-                                        : this.dotMessageService.get(
-                                              'dot.common.http.error.400.experiment.run-scheduling-error.header'
-                                          ),
-                                    message: error.message.split('.')[0]
-                                }
-                            });
-                        }
+                        (error: HttpErrorResponse) => this.dotHttpErrorManagerService.handle(error),
+                        () => this.setComponentStatus(ComponentStatus.IDLE)
                     )
                 )
             )
@@ -749,7 +730,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     constructor(
         private readonly dotExperimentsService: DotExperimentsService,
         private readonly dotMessageService: DotMessageService,
-        private readonly dotHttpErrorManagerService: DotHttpErrorManagerService,
+        private dotHttpErrorManagerService: DotHttpErrorManagerService,
         private readonly messageService: MessageService,
         private readonly title: Title
     ) {

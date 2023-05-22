@@ -1,6 +1,5 @@
 {
     "name": "dotcms-scss",
-    "$schema": "../../node_modules/nx/schemas/project-schema.json",
     "projectType": "library",
     "sourceRoot": "libs/dotcms-scss",
     "prefix": "dotcms",

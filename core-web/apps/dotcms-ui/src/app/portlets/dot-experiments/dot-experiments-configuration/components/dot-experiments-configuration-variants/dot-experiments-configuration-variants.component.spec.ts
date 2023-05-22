@@ -118,9 +118,6 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
     describe('should render', () => {
         it('a DEFAULT variant', () => {
             expect(spectator.queryAll(byTestId('variant-name')).length).toBe(1);
-            expect(spectator.query(byTestId('variants-card-header'))).toHaveClass(
-                'p-label-input-required'
-            );
 
             expect(spectator.query(byTestId('variant-weight'))).toHaveText(
                 EXPERIMENT_MOCK.trafficProportion.variants[0].weight + '.00% weight'
@@ -197,10 +194,9 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
                 id: DEFAULT_VARIANT_ID,
                 name: DEFAULT_VARIANT_NAME,
                 weight: 33.33,
-                url: 'link1',
-                promoted: false
+                url: 'link1'
             },
-            { id: '1111111', name: 'test', weight: 33.33, url: 'link2', promoted: false }
+            { id: '1111111', name: 'test', weight: 33.33, url: 'link2' }
         ];
         beforeEach(() => {
             loadExperiment(EXPERIMENT_MOCK, variants);

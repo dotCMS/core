@@ -55,8 +55,8 @@
                                     else splitEvenTemplate
                                 "
                                 [maxFractionDigits]="2"
-                                [max]="100"
                                 [min]="0"
+                                [max]="100"
                                 (onInput)="checkControl(i, $event.value)"
                                 formControlName="weight"
                                 mode="decimal"
@@ -92,6 +92,7 @@
             data-testId="add-traffic-split-button"
             label="{{ 'Done' | dm }}"
             pButton
+            pRipple
             type="submit"
         ></button>
     </ng-template>

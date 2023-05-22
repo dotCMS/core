@@ -8,7 +8,7 @@
         >
             <div class="condition flex" [formGroupName]="i">
                 <div class="field flex-none flex flex-column w-15rem">
-                    <label dotFieldRequired for="parameter">{{
+                    <label class="p-label-input-required" for="parameter">{{
                         'experiments.goal.reach_page.form.conditions.parameter.label' | dm
                     }}</label>
                     <p-dropdown
@@ -27,7 +27,7 @@
                 </div>
 
                 <div class="field flex-none flex flex-column w-15rem">
-                    <label dotFieldRequired for="operator">{{
+                    <label class="p-label-input-required" for="operator">{{
                         'experiments.goal.reach_page.form.conditions.operator.label' | dm
                     }}</label>
                     <p-dropdown
@@ -46,7 +46,7 @@
                 </div>
 
                 <div class="field flex-grow-1 flex flex-column">
-                    <label dotFieldRequired for="value">{{
+                    <label class="p-label-input-required" for="value">{{
                         'experiments.goal.reach_page.form.conditions.value.label' | dm
                     }}</label>
                     <input

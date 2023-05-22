@@ -1,11 +1,8 @@
 <div class="field" [formGroup]="group">
-    <label [for]="property.name" dotFieldRequired>
-        {{ 'contenttypes.field.properties.name.label' | dm }}</label
-    >
+    <label class="form__label"> {{ 'contenttypes.field.properties.name.label' | dm }} * </label>
     <input
         class="name__input"
         [formControlName]="property.name"
-        [id]="property.name"
         dotAutofocus
         pInputText
         type="text"

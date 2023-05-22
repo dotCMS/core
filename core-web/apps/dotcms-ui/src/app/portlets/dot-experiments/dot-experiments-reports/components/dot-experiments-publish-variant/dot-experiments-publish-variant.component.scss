@@ -1,20 +1,5 @@
-@use "variables" as *;
-
-.control {
-    margin-left: $spacing-1;
-}
-
 :host ::ng-deep {
     .p-datatable .p-datatable-tbody > tr {
         cursor: default;
-        transition: background-color $basic-speed ease-in-out;
-
-        td {
-            border: none;
-        }
-
-        &:hover {
-            background-color: $color-accessible-text-gray-bg;
-        }
     }
 }

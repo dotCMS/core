@@ -7,9 +7,8 @@
     novalidate
 >
     <div class="field" *ngIf="data['assignable']">
-        <label for="dotRoles">{{ 'assignee.form.assignee' | dm }}</label>
+        <label class="form__label">{{ 'assignee.form.assignee' | dm }}:</label>
         <p-dropdown
-            id="dotRoles"
             [options]="dotRoles"
             [style]="{ width: '100%' }"
             formControlName="assign"
@@ -18,9 +17,8 @@
         </p-dropdown>
     </div>
     <div class="field" *ngIf="data['commentable']">
-        <label for="comment">{{ 'comment.form.comments' | dm }}</label>
+        <label class="form__label">{{ 'comment.form.comments' | dm }}:</label>
         <textarea
-            id="comment"
             [style]="{ width: '100%' }"
             (keydown.enter)="$event.stopPropagation()"
             pInputTextarea
@@ -30,10 +28,9 @@
     </div>
 
     <div class="field" *ngIf="data['moveable']">
-        <label dotFieldRequired for="move">{{ 'Move' | dm }}</label>
         <dot-page-selector
-            id="move"
             [folderSearch]="true"
+            [label]="'Move' | dm"
             formControlName="pathToMove"
         ></dot-page-selector>
     </div>

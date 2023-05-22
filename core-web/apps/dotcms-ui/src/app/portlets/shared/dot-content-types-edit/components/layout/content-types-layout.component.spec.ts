@@ -275,8 +275,8 @@ describe('ContentTypesLayoutComponent', () => {
         });
 
         it('should have api link component', () => {
-            expect(de.query(By.css('dot-api-link')).componentInstance.href).toBe(
-                'api/v1/contenttype/id/1234567890'
+            expect(de.query(By.css('dot-api-link')).componentInstance.link).toBe(
+                '/api/v1/contenttype/id/1234567890'
             );
         });
 

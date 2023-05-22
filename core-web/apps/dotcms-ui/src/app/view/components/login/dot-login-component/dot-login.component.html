@@ -27,7 +27,7 @@
             data-testId="message"
         ></p>
         <div class="field form__group--validation">
-            <label dotFieldRequired data-testId="emailLabel" for="inputtext">{{
+            <label data-testId="emailLabel" for="inputtext">{{
                 loginInfo.i18nMessagesMap['emailAddressLabel']
             }}</label>
 
@@ -54,12 +54,11 @@
             </dot-field-validation-message>
         </div>
         <div class="field form__group--validation">
-            <label dotFieldRequired data-testId="passwordLabel" for="password">{{
+            <label data-testId="passwordLabel" for="inputtext">{{
                 loginInfo.i18nMessagesMap['password']
             }}</label>
 
             <input
-                id="password"
                 pInputText
                 type="password"
                 formControlName="password"

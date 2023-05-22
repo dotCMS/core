@@ -63,7 +63,7 @@
             />
         </div>
         <div class="field">
-            <label class="block" dotFieldRequired for="max-contents">{{
+            <label class="block p-label-input-required" for="max-contents">{{
                 'message.containers.create.max_contents' | dm
             }}</label>
             <input
@@ -107,7 +107,7 @@
             ></dot-loop-editor>
         </div>
         <div class="field" *ngIf="!vm.isContentTypeVisible">
-            <label class="block" dotFieldRequired for="code">Code</label>
+            <label class="block p-label-input-required" for="code">Code</label>
             <dot-textarea-content
                 id="code"
                 [show]="['code']"

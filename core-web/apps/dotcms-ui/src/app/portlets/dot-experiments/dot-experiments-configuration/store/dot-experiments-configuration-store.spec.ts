@@ -214,8 +214,7 @@ describe('DotExperimentsConfigurationStore', () => {
                         {
                             name: newVariant.name,
                             id: '222',
-                            weight: 100,
-                            promoted: false
+                            weight: 100
                         }
                     ]
                 }
@@ -237,12 +236,12 @@ describe('DotExperimentsConfigurationStore', () => {
 
         it('should edit a variant name of an experiment', (done) => {
             const variants: Variant[] = [
-                { id: '111', name: DEFAULT_VARIANT_NAME, weight: 50, url: 'url', promoted: false },
-                { id: '222', name: 'name to edit', weight: 50, url: 'url', promoted: false }
+                { id: '111', name: DEFAULT_VARIANT_NAME, weight: 50, url: 'url' },
+                { id: '222', name: 'name to edit', weight: 50, url: 'url' }
             ];
             const variantEdited: Variant[] = [
-                { id: '111', name: DEFAULT_VARIANT_NAME, weight: 50, url: 'url', promoted: false },
-                { id: '222', name: 'new name', weight: 50, url: 'url', promoted: false }
+                { id: '111', name: DEFAULT_VARIANT_NAME, weight: 50, url: 'url' },
+                { id: '222', name: 'new name', weight: 50, url: 'url' }
             ];
 
             dotExperimentsService.getById.and.callThrough().and.returnValue(
@@ -281,12 +280,11 @@ describe('DotExperimentsConfigurationStore', () => {
 
         it('should delete a variant from an experiment', (done) => {
             const variants: Variant[] = [
-                { id: 'DEFAULT', name: 'DEFAULT', weight: 50, promoted: false },
+                { id: 'DEFAULT', name: 'DEFAULT', weight: 50 },
                 {
                     id: '111',
                     name: '1111',
-                    weight: 50,
-                    promoted: false
+                    weight: 50
                 }
             ];
 
@@ -301,7 +299,7 @@ describe('DotExperimentsConfigurationStore', () => {
                 ...EXPERIMENT_MOCK_1,
                 trafficProportion: {
                     ...EXPERIMENT_MOCK_1.trafficProportion,
-                    variants: [{ id: 'DEFAULT', name: 'DEFAULT', weight: 50, promoted: false }]
+                    variants: [{ id: 'DEFAULT', name: 'DEFAULT', weight: 50 }]
                 }
             };
 
@@ -526,8 +524,8 @@ describe('DotExperimentsConfigurationStore', () => {
             const expectedTrafficProportion: TrafficProportion = {
                 type: TrafficProportionTypes.SPLIT_EVENLY,
                 variants: [
-                    { id: '111', name: 'DEFAULT', weight: 50, promoted: false },
-                    { id: '111', name: 'A', weight: 50, promoted: false }
+                    { id: '111', name: 'DEFAULT', weight: 50 },
+                    { id: '111', name: 'A', weight: 50 }
                 ]
             };
 

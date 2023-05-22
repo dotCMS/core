@@ -12,19 +12,17 @@
         (keyup.enter)="handleSubmit()"
     >
         <div class="field">
-            <label dotFieldRequired for="download-btn">{{ 'download.bundle.i.want' | dm }}</label>
+            <label class="form__label">{{ 'download.bundle.i.want' | dm }}: </label>
             <p-selectButton
                 class="p-button-tabbed"
-                id="download-btn"
                 [options]="downloadOptions"
                 formControlName="downloadOptionSelected"
             >
             </p-selectButton>
         </div>
         <div class="field">
-            <label for="filterKey">{{ 'download.bundle.filter' | dm }}</label>
+            <label class="form__label">{{ 'download.bundle.filter' | dm }}: </label>
             <p-dropdown
-                id="filterKey"
                 [options]="filterOptions"
                 formControlName="filterKey"
                 appendTo="body"

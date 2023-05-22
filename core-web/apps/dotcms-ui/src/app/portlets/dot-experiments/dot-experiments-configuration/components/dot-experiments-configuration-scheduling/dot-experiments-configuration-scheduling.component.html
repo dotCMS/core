@@ -24,8 +24,8 @@
                 <div
                     [pTooltip]="'experiment.configure.edit.only.draft.status' | dm"
                     [tooltipDisabled]="vm.isExperimentADraft"
-                    data-testId="tooltip-on-disabled"
                     tooltipPosition="bottom"
+                    data-testId="tooltip-on-disabled"
                 >
                     <button
                         class="p-button-sm p-button-link"
@@ -33,6 +33,7 @@
                         (click)="setupSchedule()"
                         data-testId="scheduling-setup-button"
                         pButton
+                        pRipple
                     >
                         <ng-container
                             *ngIf="

@@ -89,7 +89,11 @@ class MockDotPageSelectorService {
     selector: 'dot-fake-form',
     template: `
         <form [formGroup]="form">
-            <dot-page-selector [style]="{ width: '100%' }" formControlName="page">
+            <dot-page-selector
+                [style]="{ width: '100%' }"
+                formControlName="page"
+                label="Hello World"
+            >
             </dot-page-selector>
         </form>
     `

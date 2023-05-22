@@ -1,5 +1,3 @@
-import { of } from 'rxjs';
-
 import {
     AfterContentInit,
     Component,
@@ -17,8 +15,7 @@ import { By } from '@angular/platform-browser';
 
 import { IframeComponent } from '@components/_common/iframe/iframe-component';
 import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
-import { DotShowHideFeatureDirective } from '@dotcms/app/shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
-import { DotMessageService, DotPropertiesService } from '@dotcms/data-access';
+import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 
@@ -118,7 +115,6 @@ describe('DotTemplateBuilderComponent', () => {
     let de: DebugElement;
     let dotTestHostComponent: DotTestHostComponent;
     let hostFixture: ComponentFixture<DotTestHostComponent>;
-    let dotPropertiesService: DotPropertiesService;
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
@@ -131,7 +127,7 @@ describe('DotTemplateBuilderComponent', () => {
                 TabPanelMockComponent,
                 DotTestHostComponent
             ],
-            imports: [DotMessagePipeModule, DotPortletBoxModule, DotShowHideFeatureDirective],
+            imports: [DotMessagePipeModule, DotPortletBoxModule],
             providers: [
                 {
                     provide: DotMessageService,
@@ -139,12 +135,6 @@ describe('DotTemplateBuilderComponent', () => {
                         design: 'Design',
                         code: 'Code'
                     })
-                },
-                {
-                    provide: DotPropertiesService,
-                    useValue: {
-                        getKey: () => of('false')
-                    }
                 }
             ]
         }).compileComponents();
@@ -154,7 +144,6 @@ describe('DotTemplateBuilderComponent', () => {
         fixture = TestBed.createComponent(DotTemplateBuilderComponent);
         de = fixture.debugElement;
         component = fixture.componentInstance;
-        dotPropertiesService = TestBed.inject(DotPropertiesService);
         spyOn(component.save, 'emit');
         spyOn(component.updateTemplate, 'emit');
         spyOn(component.cancel, 'emit');
@@ -211,26 +200,6 @@ describe('DotTemplateBuilderComponent', () => {
             const builder = de.query(By.css('dot-edit-layout-designer'));
             builder.triggerEventHandler('saveAndPublish', EMPTY_TEMPLATE_DESIGN);
             expect(component.saveAndPublish.emit).toHaveBeenCalledWith(EMPTY_TEMPLATE_DESIGN);
-        });
-    });
-
-    describe('New design tempalte', () => {
-        beforeEach(() => {
-            component.item = {
-                ...EMPTY_TEMPLATE_DESIGN,
-                theme: '123',
-                live: true
-            };
-            spyOn(dotPropertiesService, 'getKey').and.returnValue(of('true'));
-        });
-
-        it('should show new template builder component', () => {
-            fixture.detectChanges();
-            const component: DebugElement = fixture.debugElement.query(
-                By.css('[data-testId="new-template-builder"]')
-            );
-
-            expect(component).toBeTruthy();
         });
     });
 

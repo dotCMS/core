@@ -49,6 +49,7 @@ enum SearchType {
 })
 export class DotPageSelectorComponent implements ControlValueAccessor {
     @Output() selected = new EventEmitter<DotPageAsset | string>();
+    @Input() label: string;
     @Input() folderSearch = false;
 
     @ViewChild('autoComplete') autoComplete: AutoComplete;

@@ -1,18 +1,24 @@
-<form class="p-fluid" #form="ngForm" [formGroup]="myFormGroup" novalidate>
-    <ng-template #warningIcon let-field="field">
-        <dot-icon
-            *ngIf="field.warnings && field.warnings.length"
-            name="warning"
-            pTooltip="{{ field.warnings.length ? field.warnings.join('. ') : '' }}"
-            size="18"
-        ></dot-icon>
-    </ng-template>
+<ng-template #warningIcon let-field="field">
+    <dot-icon
+        *ngIf="field.warnings && field.warnings.length"
+        name="warning"
+        pTooltip="{{ field.warnings.length ? field.warnings.join('. ') : '' }}"
+        size="18"
+    ></dot-icon>
+</ng-template>
 
-    <ng-template #labelField let-field="field">
-        <label [for]="field.name" [checkIsRequiredControl]="field.name" dotFieldRequired>{{
-            field.label
-        }}</label>
-    </ng-template>
+<ng-template #labelField let-field="field">
+    <label
+        class="form__label"
+        [for]="field.name"
+        [ngClass]="{
+            required: field.required
+        }"
+        >{{ field.label }}</label
+    >
+</ng-template>
+
+<form class="p-fluid" #form="ngForm" [formGroup]="myFormGroup" novalidate>
     <div class="dot-apps-configuration-detail__form" #formContainer>
         <div
             class="field"

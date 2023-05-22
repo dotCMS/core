@@ -14,7 +14,6 @@ import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotMessageService } from '@dotcms/data-access';
-import { DotFieldRequiredDirective } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotMessagePipe } from '@pipes/dot-message/dot-message.pipe';
 
@@ -107,12 +106,7 @@ describe('DotTemplatePropsComponent', () => {
                 DotTemplateThumbnailFieldMockComponent,
                 DotThemeSelectorDropdownMockComponent
             ],
-            imports: [
-                FormsModule,
-                ReactiveFormsModule,
-                DotFieldValidationMessageModule,
-                DotFieldRequiredDirective
-            ],
+            imports: [FormsModule, ReactiveFormsModule, DotFieldValidationMessageModule],
             providers: [
                 {
                     provide: DotMessageService,

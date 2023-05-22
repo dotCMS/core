@@ -136,8 +136,7 @@ export class DotBlockEditorSidebarComponent implements OnInit, OnDestroy {
                     fieldName: dataSet.fieldName,
                     language: parseInt(dataSet.language),
                     inode: dataSet.inode,
-                    content: JSON.parse(dataSet.blockEditorContent),
-                    contentletIdentifier: dataSet.contentletIdentifier
+                    content: JSON.parse(dataSet.blockEditorContent)
                 });
             })
         );

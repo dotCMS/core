@@ -15,7 +15,7 @@
                 novalidate
             >
                 <div class="field">
-                    <label dotFieldRequired for="name">{{
+                    <label class="p-label-input-required" for="name">{{
                         'experiments.create.form.name.label' | dm
                     }}</label>
                     <input
@@ -37,7 +37,7 @@
                 </div>
 
                 <div class="field">
-                    <label dotFieldRequired for="description">{{
+                    <label for="description">{{
                         'experiments.create.form.description.label' | dm
                     }}</label>
                     <textarea
@@ -68,6 +68,7 @@
             form="new-experiment-form"
             label="{{ 'experiments.action.add' | dm }}"
             pButton
+            pRipple
             type="submit"
         ></button>
     </ng-template>

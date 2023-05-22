@@ -13,23 +13,14 @@
             ></dot-template-advanced>
         </ng-container>
         <ng-template #elseBlock>
-            <ng-template #enabledComponent>
-                <template-builder data-testId="new-template-builder"></template-builder>
-            </ng-template>
-            <ng-template #disabledComponent>
-                <dot-edit-layout-designer
-                    [theme]="item.theme"
-                    [disablePublish]="item.live"
-                    [layout]="item.layout"
-                    (saveAndPublish)="saveAndPublish.emit($event)"
-                    (updateTemplate)="updateTemplate.emit($event)"
-                    (save)="save.emit($event)"
-                ></dot-edit-layout-designer>
-            </ng-template>
-            <ng-container
-                *dotShowHideFeature="featureFlag; alternate: disabledComponent"
-                [ngTemplateOutlet]="enabledComponent"
-            ></ng-container>
+            <dot-edit-layout-designer
+                [theme]="item.theme"
+                [disablePublish]="item.live"
+                [layout]="item.layout"
+                (saveAndPublish)="saveAndPublish.emit($event)"
+                (updateTemplate)="updateTemplate.emit($event)"
+                (save)="save.emit($event)"
+            ></dot-edit-layout-designer>
         </ng-template>
     </p-tabPanel>
     <p-tabPanel [header]="'Permissions' | dm">

@@ -1,7 +1,7 @@
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { DotTreeNode } from '@dotcms/dotcms-models';
+import { DotCopyContent } from '@dotcms/dotcms-models';
 
 import { DotCopyContentService, DEFAULT_PERSONALIZATION } from './dot-copy-content.service';
 
@@ -25,9 +25,9 @@ describe('DotCopyContentService', () => {
         expect(service).toBeTruthy();
     });
 
-    describe('copyInPage', () => {
+    describe('copyContentInPage', () => {
         it('should do the request correctly', () => {
-            const contentToCopy: DotTreeNode = {
+            const contentToCopy: DotCopyContent = {
                 containerId: '',
                 contentId: '',
                 pageId: '',
@@ -37,7 +37,7 @@ describe('DotCopyContentService', () => {
                 personalization: DEFAULT_PERSONALIZATION
             };
 
-            service.copyInPage(contentToCopy).subscribe();
+            service.copyContentInPage(contentToCopy).subscribe();
 
             const req = httpMock.expectOne(`/api/v1/page/copyContent`);
             expect(req.request.method).toBe('PUT');
@@ -46,7 +46,7 @@ describe('DotCopyContentService', () => {
         });
 
         it('should set the DEFAULT_PERSONALIZATION and do the request', () => {
-            const contentToCopy: DotTreeNode = {
+            const contentToCopy: DotCopyContent = {
                 containerId: '',
                 contentId: '',
                 pageId: '',
@@ -56,7 +56,7 @@ describe('DotCopyContentService', () => {
                 personalization: ''
             };
 
-            service.copyInPage(contentToCopy).subscribe();
+            service.copyContentInPage(contentToCopy).subscribe();
 
             const req = httpMock.expectOne(`/api/v1/page/copyContent`);
             expect(req.request.method).toBe('PUT');
