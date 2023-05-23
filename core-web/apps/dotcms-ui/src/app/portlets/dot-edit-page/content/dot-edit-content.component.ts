@@ -12,6 +12,7 @@ import { DotGlobalMessageService } from '@components/_common/dot-global-message/
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { DotFavoritePageService } from '@dotcms/app/api/services/dot-favorite-page/dot-favorite-page.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
 import {
@@ -111,7 +112,8 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         private dotEventsService: DotEventsService,
         private dotESContentService: DotESContentService,
         private dotSessionStorageService: DotSessionStorageService,
-        private dotCurrentUser: DotCurrentUserService
+        private dotCurrentUser: DotCurrentUserService,
+        private dotFavoritePageService: DotFavoritePageService
     ) {
         if (!this.customEventsHandler) {
             this.customEventsHandler = {
@@ -306,10 +308,15 @@ browse from the page internal links
      */
     showFavoritePageDialog(openDialog: boolean): void {
         if (openDialog) {
-            const favoritePageUrl = generateDotFavoritePageUrl(this.pageStateInternal);
+            const favoritePageUrl = generateDotFavoritePageUrl({
+                deviceInode: this.pageStateInternal.viewAs.device?.inode,
+                languageId: this.pageStateInternal.viewAs.language.id,
+                pageURI: this.pageStateInternal.page.pageURI,
+                siteId: this.pageStateInternal.site?.identifier
+            });
 
             this.dialogService.open(DotFavoritePageComponent, {
-                header: this.dotMessageService.get('favoritePage.dialog.header.add.page'),
+                header: this.dotMessageService.get('favoritePage.dialog.header'),
                 width: '80rem',
                 data: {
                     page: {
@@ -332,12 +339,8 @@ browse from the page internal links
             .getCurrentUser()
             .pipe(
                 switchMap(({ userId }) =>
-                    this.dotESContentService
-                        .get({
-                            itemsPerPage: 10,
-                            offset: '0',
-                            query: `+contentType:DotFavoritePage +deleted:false +working:true +owner:${userId} +DotFavoritePage.url_dotraw:${pageUrl}`
-                        })
+                    this.dotFavoritePageService
+                        .get({ limit: 10, userId, url: pageUrl })
                         .pipe(take(1))
                 )
             )

@@ -8,6 +8,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
+import { DotFavoritePageService } from '@dotcms/app/api/services/dot-favorite-page/dot-favorite-page.service';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import {
     DotContentletLockerService,
@@ -45,6 +46,7 @@ describe('DotIframePorletLegacyResolver', () => {
                 DotContentletLockerService,
                 DotLicenseService,
                 DotESContentService,
+                DotFavoritePageService,
                 { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
                 {
                     provide: ActivatedRouteSnapshot,
