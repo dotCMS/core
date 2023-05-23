@@ -625,10 +625,10 @@ public class BrowserAPITest extends IntegrationTestBase {
 
         assertNotNull(sql);
         if (DbConnectionFactory.isPostgres()) {
-            assertTrue(sql.contains("-> 'fields' -> 'asset' -> 'metadata' ->> 'name'"));
+            assertTrue(sql.contains("-> 'fields' -> 'fileName' ->> 'value'" ));
         }
         else{
-            assertTrue(sql.contains("$.fields.asset.metadata.name"));
+            assertTrue(sql.contains("$.fields.fileName.value"));
         }
     }
 

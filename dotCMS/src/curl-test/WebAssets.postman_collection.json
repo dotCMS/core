@@ -114,7 +114,7 @@
 						{
 							"key": "file",
 							"type": "file",
-							"src": "../resources/WebAssets/make-my-day.jpeg"
+							"src": "resources/WebAssets/make-my-day.jpeg"
 						},
 						{
 							"key": "",
@@ -189,7 +189,7 @@
 						{
 							"key": "file",
 							"type": "file",
-							"src": "../resources/WebAssets/odisea.pdf"
+							"src": "resources/WebAssets/odisea.pdf"
 						},
 						{
 							"key": "",
