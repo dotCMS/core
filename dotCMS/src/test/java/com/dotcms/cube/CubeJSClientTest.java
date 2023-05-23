@@ -159,14 +159,14 @@ public class CubeJSClientTest {
 
             try {
                 cubeClient.send(null);
-                throw new AssertionError("NullPointerException Expected");
+                throw new AssertionError("IllegalArgumentException Expected");
             }  catch (IllegalArgumentException e) {
                 mockhttpServer.mustNeverCalled("/cubejs-api/v1/load");
             }
 
             try {
                 cubeClient.sendWithPagination(null);
-                throw new AssertionError("NullPointerException Expected");
+                throw new AssertionError("IllegalArgumentException Expected");
             }  catch (IllegalArgumentException e) {
                 mockhttpServer.mustNeverCalled("/cubejs-api/v1/load");
             }
