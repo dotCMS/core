@@ -768,7 +768,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         private readonly title: Title,
         private readonly route: ActivatedRoute
     ) {
-        super({ ...initialState });
+        super(initialState);
     }
 
     private updateTabTitle(experiment: DotExperiment) {

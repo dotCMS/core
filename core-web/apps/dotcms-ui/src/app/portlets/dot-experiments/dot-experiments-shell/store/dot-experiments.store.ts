@@ -7,13 +7,11 @@ import { ActivatedRoute } from '@angular/router';
 export interface DotExperimentsState {
     pageId: string;
     pageTitle: string;
-    configProps: Record<string, string>;
 }
 
 const initialState: DotExperimentsState = {
     pageId: '',
-    pageTitle: '',
-    configProps: {}
+    pageTitle: ''
 };
 
 @Injectable()
