@@ -12,15 +12,19 @@ import {
     ChangeDetectionStrategy,
     Component,
     ElementRef,
+    Input,
     OnDestroy,
     OnInit,
     QueryList,
     ViewChildren
 } from '@angular/core';
 
+import { DotLayout } from '@dotcms/dotcms-models';
+
 import { DotGridStackWidget } from './models/models';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { gridOptions, subGridOptions } from './utils/gridstack-options';
+import { parseFromDotObjectToGridStack } from './utils/gridstack-utils';
 
 @Component({
     selector: 'dotcms-template-builder',
@@ -29,7 +33,10 @@ import { gridOptions, subGridOptions } from './utils/gridstack-options';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestroy {
-    public items$: Observable<GridStackWidget[]>;
+    @Input()
+    templateLayout!: DotLayout;
+
+    public items$: Observable<DotGridStackWidget[]>;
 
     @ViewChildren('rows', {
         emitDistinctChangesOnly: true
@@ -48,7 +55,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     }
 
     ngOnInit(): void {
-        this.store.init();
+        this.store.init(parseFromDotObjectToGridStack(this.templateLayout.body));
     }
 
     ngAfterViewInit() {
