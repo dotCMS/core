@@ -54,7 +54,6 @@ export interface DotRequestOptionsArgs {
 
 /**
  * Request data from dotCMS endpoints
- * @deprecated use Angular HttpClient instead
  * @export
  * @class CoreWebService
  * @deprecated Use Angular HttpClient instead
