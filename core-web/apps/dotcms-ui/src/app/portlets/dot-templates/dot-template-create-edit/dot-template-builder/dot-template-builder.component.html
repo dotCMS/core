@@ -14,7 +14,9 @@
         </ng-container>
         <ng-template #elseBlock>
             <ng-template #enabledComponent>
-                <template-builder data-testId="new-template-builder"></template-builder>
+                <dotcms-template-builder
+                    data-testId="new-template-builder"
+                ></dotcms-template-builder>
             </ng-template>
             <ng-template #disabledComponent>
                 <dot-edit-layout-designer

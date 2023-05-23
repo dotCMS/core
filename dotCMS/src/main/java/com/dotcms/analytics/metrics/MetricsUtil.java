@@ -12,7 +12,7 @@ public enum MetricsUtil {
     INSTANCE;
 
     public void validateGoals(Goals goals) {
-        final Metric primaryGoal = goals.primary();
+        final Metric primaryGoal = goals.primary().getMetric();
 
         final Set<String> availableParams = primaryGoal.type()
                 .availableParameters().stream().map(Parameter::name).collect(Collectors.toSet());
