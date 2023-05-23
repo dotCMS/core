@@ -46,6 +46,8 @@
         <skipApplyFormat>true</skipApplyFormat>
         <skipFormat>true</skipFormat>
         <skipOwasp>true</skipOwasp>
+        <skipRewriteDryRun>false</skipRewriteDryRun>
+        <rewriteRun>false</rewriteRun>
         <sourceReleaseAssemblyDescriptor>source-release</sourceReleaseAssemblyDescriptor>
         <!--  maven-project-info-reports-plugins  -->
         <version.antrun.plugin>1.8</version.antrun.plugin>
@@ -84,6 +86,7 @@
         <version.source.plugin>3.1.0</version.source.plugin>
         <version.surefire.plugin>3.0.0-M7</version.surefire.plugin>
         <version.versions.plugin>2.8.1</version.versions.plugin>
+        <version.maven.plugin.plugin>3.8.1</version.maven.plugin.plugin>
         <version.war.plugin>3.2.3</version.war.plugin>
         <test.temp.dir>${project.build.directory}/test-temp</test.temp.dir>
     </properties>
@@ -547,6 +550,24 @@
                         <generateBackupPoms>false</generateBackupPoms>
                     </configuration>
                 </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-plugin-plugin</artifactId>
+                    <version>${version.maven.plugin.plugin}</version>
+                    <executions>
+                        <execution>
+                            <id>default-descriptor</id>
+                            <phase>process-classes</phase>
+                        </execution>
+                        <!-- if you want to generate help goal -->
+                        <execution>
+                            <id>help-goal</id>
+                            <goals>
+                                <goal>helpmojo</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
@@ -653,6 +674,7 @@
                         </goals>
                         <phase>verify</phase>
                         <configuration>
+                            <rewriteSkip>${skipRewriteDryRun}</rewriteSkip>
                         </configuration>
                     </execution>
                 </executions>
@@ -904,6 +926,24 @@
                         </configuration>
                     </plugin>
                 </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>rewrite-run</id>
+            <activation>
+                <property>
+                    <name>rewriteRun</name>
+                </property>
+            </activation>
+            <properties>
+                <enforcer.skip>true</enforcer.skip>
+                <skipFormat>true</skipFormat>
+                <skipITs>true</skipITs>
+                <skipTests>true</skipTests>
+                <skipRewriteDryRun>false</skipRewriteDryRun>
+            </properties>
+            <build>
+                <defaultGoal>rewrite:run</defaultGoal>
             </build>
         </profile>
     </profiles>

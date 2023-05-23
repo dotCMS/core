@@ -21,24 +21,31 @@
     </properties>
 
     <dependencies>
-
-
-
         <dependency>
             <groupId>com.dotcms.samlbundle</groupId>
             <artifactId>com.dotcms.samlbundle</artifactId>
             <version>22.03</version>
             <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
-
         <dependency>
-            <groupId>org.glassfish.jaxb</groupId>
-            <artifactId>jaxb-runtime</artifactId>
-            <version>2.3.8</version>
+            <!-- Used for support of  older versions of Felix -->
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.compendium</artifactId>
+            <version>5.0.0</version>
             <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
-
-
     </dependencies>
     <build>
         <plugins>
@@ -100,6 +107,12 @@
                     <artifactId>com.dotcms.tika</artifactId>
                     <version>${tika.plugin.bundle.version}</version>
                     <scope>provided</scope>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>*</groupId>
+                            <artifactId>*</artifactId>
+                        </exclusion>
+                    </exclusions>
                 </dependency>
             </dependencies>
             <!-- dependencies -->
@@ -117,11 +130,17 @@
                     <groupId>com.dotcms</groupId>
                     <artifactId>com.dotcms.tika</artifactId>
                     <version>${project.version}</version>
+                    <scope>provided</scope>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>*</groupId>
+                            <artifactId>*</artifactId>
+                        </exclusion>
+                    </exclusions>
                 </dependency>
             </dependencies>
         </profile>
 
-        <!-- other profiles -->
     </profiles>
 
 </project>
