@@ -13,6 +13,8 @@ export const TIME_14_DAYS = 12096e5;
 
 export const TIME_90_DAYS = 7776e6;
 
+export const PROP_NOT_FOUND = 'NOT_FOUND';
+
 export enum ExperimentsConfigProperties {
     EXPERIMENTS_MIN_DURATION = 'EXPERIMENTS_MIN_DURATION',
     EXPERIMENTS_MAX_DURATION = 'EXPERIMENTS_MAX_DURATION'

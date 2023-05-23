@@ -4,6 +4,7 @@ import { Observable, throwError } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Title } from '@angular/platform-browser';
+import { ActivatedRoute } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
 
@@ -19,8 +20,11 @@ import {
     Goal,
     Goals,
     GoalsLevels,
+    PROP_NOT_FOUND,
     RangeOfDateAndTime,
     StepStatus,
+    TIME_14_DAYS,
+    TIME_90_DAYS,
     TrafficProportion,
     Variant
 } from '@dotcms/dotcms-models';
@@ -121,7 +125,12 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         stepStatusSidebar.experimentStep === ExperimentSteps.SCHEDULING ? stepStatusSidebar : null
     );
 
-    // readonly schedulingBundaries$ = this.select(this.state$, ({ experiment }) => {});
+    readonly schedulingBoundaries$: Observable<Record<string, number>> = this.select(
+        this.state$,
+        () => {
+            return this.processConfigProps(this.route.snapshot.data?.config);
+        }
+    );
 
     //Traffic Step
     readonly trafficProportion$: Observable<TrafficProportion> = this.select(({ experiment }) =>
@@ -690,16 +699,19 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         experimentId: string;
         scheduling: RangeOfDateAndTime;
         status: StepStatus;
+        schedulingBoundaries: Record<string, number>;
         isExperimentADraft: boolean;
     }> = this.select(
         this.getExperimentId$,
         this.scheduling$,
         this.schedulingStatus$,
+        this.schedulingBoundaries$,
         this.isExperimentADraft$,
-        (experimentId, scheduling, status, isExperimentADraft) => ({
+        (experimentId, scheduling, status, schedulingBoundaries, isExperimentADraft) => ({
             experimentId,
             scheduling,
             status,
+            schedulingBoundaries,
             isExperimentADraft
         })
     );
@@ -753,9 +765,10 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         private readonly dotMessageService: DotMessageService,
         private readonly dotHttpErrorManagerService: DotHttpErrorManagerService,
         private readonly messageService: MessageService,
-        private readonly title: Title
+        private readonly title: Title,
+        private readonly route: ActivatedRoute
     ) {
-        super(initialState);
+        super({ ...initialState });
     }
 
     private updateTabTitle(experiment: DotExperiment) {
@@ -773,5 +786,31 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                 })
             ]
         };
+    }
+
+    /**
+     * Process the config properties that comes form the BE as days,
+     * return the object with the values in milliseconds
+     * @param configProps
+     *
+     * @private
+     */
+    private processConfigProps(configProps: Record<string, string>): Record<string, number> {
+        const config: Record<string, number> = {};
+
+        config.EXPERIMENTS_MIN_DURATION =
+            configProps.EXPERIMENTS_MIN_DURATION === PROP_NOT_FOUND
+                ? TIME_14_DAYS
+                : this.daysToMilliseconds(+configProps.EXPERIMENTS_MIN_DURATION);
+        config.EXPERIMENTS_MAX_DURATION =
+            configProps.EXPERIMENTS_MAX_DURATION === PROP_NOT_FOUND
+                ? TIME_90_DAYS
+                : this.daysToMilliseconds(+configProps.EXPERIMENTS_MAX_DURATION);
+
+        return config;
+    }
+
+    private daysToMilliseconds(days: number): number {
+        return days * 24 * 60 * 60 * 1000;
     }
 }
