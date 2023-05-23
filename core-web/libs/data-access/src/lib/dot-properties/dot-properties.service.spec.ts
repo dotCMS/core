@@ -53,6 +53,23 @@ describe('DotPropertiesService', () => {
         req.flush(fakeResponse);
     });
 
+    it('should get keys', () => {
+        const keys = ['key1', 'key2'];
+        const apiResponse = {
+            entity: {
+                key1: 'test',
+                key2: 'test2'
+            }
+        };
+
+        service.getKeys(keys).subscribe((response) => {
+            expect(response).toEqual(apiResponse.entity);
+        });
+        const req = httpMock.expectOne(`/api/v1/configuration/config?keys=${keys.join()}`);
+        expect(req.request.method).toBe('GET');
+        req.flush(apiResponse);
+    });
+
     afterEach(() => {
         httpMock.verify();
     });
