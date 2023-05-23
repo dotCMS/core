@@ -127,9 +127,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
 
     readonly schedulingBoundaries$: Observable<Record<string, number>> = this.select(
         this.state$,
-        () => {
-            return this.processConfigProps(this.route.snapshot.data?.config);
-        }
+        () => this.processConfigProps(this.route.snapshot.data?.config)
     );
 
     //Traffic Step
