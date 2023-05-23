@@ -1,6 +1,6 @@
 import { Image } from '@tiptap/extension-image';
 
-import { imageLinkElement, imageElement, getImageAttr } from './helpers';
+import { addImageLanguageId, getImageAttr, imageElement, imageLinkElement } from './helpers';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
@@ -28,7 +28,12 @@ export const ImageNode = Image.extend({
             src: {
                 default: null,
                 parseHTML: (element) => element.getAttribute('src'),
-                renderHTML: (attributes) => ({ src: attributes.src || attributes.data?.asset })
+                renderHTML: (attributes) => ({
+                    src: addImageLanguageId(
+                        attributes.src || attributes.data?.asset,
+                        attributes.data?.languageId
+                    )
+                })
             },
             alt: {
                 default: null,
