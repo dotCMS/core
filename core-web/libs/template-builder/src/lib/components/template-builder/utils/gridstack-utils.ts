@@ -1,5 +1,7 @@
 import { v4 as uuid } from 'uuid';
 
+import { DotLayoutBody } from '@dotcms/dotcms-models';
+
 import { DotGridStackNode, DotGridStackWidget } from '../models/models';
 
 /**
@@ -91,4 +93,40 @@ export function getColumnByID(
  */
 export function removeColumnByID(row: DotGridStackWidget, columnID: string): DotGridStackWidget[] {
     return row.subGridOpts?.children.filter((column) => column.id !== columnID) || [];
+}
+
+/**
+ * @description This method parse a backend object to gridStack
+ * @param body
+ * @param gridOptions
+ * @returns
+ */
+export function parseFromDotObjectToGridStack(
+    body: DotLayoutBody | undefined
+): DotGridStackWidget[] {
+    if (!body) {
+        return [];
+    }
+
+    return body.rows.map((row, i) => ({
+        w: 12,
+        h: 1,
+        x: 0,
+        y: i,
+        subGridOpts: {
+            children: row.columns.map((col) => {
+                return {
+                    w: col.width,
+                    h: 1,
+                    y: 0,
+                    x: col.leftOffset - 1,
+                    id: uuid(),
+                    styleClass: col.styleClass ? col.styleClass.split(' ') : [],
+                    containers: col.containers
+                };
+            })
+        },
+        id: uuid(),
+        styleClass: row.styleClass ? row.styleClass.split(' ') : []
+    })) as DotGridStackWidget[];
 }
