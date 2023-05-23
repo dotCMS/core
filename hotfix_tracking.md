@@ -49,3 +49,4 @@ This maintenance release includes the following code fixes:
 37. https://github.com/dotCMS/core/issues/23863 : Bock Editor: Allow user to insert videos from local files #23863
 38. https://github.com/dotCMS/core/issues/23436 : Block Editor: Create video block node and insert from dotCMS content #23436
 39. https://github.com/dotCMS/core/issues/24422 : Rendering converted wysiwyg field fails #24422
+40. https://github.com/dotCMS/core/issues/24465 : Block editor add video.vtl to render a video by default #24465
