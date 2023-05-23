@@ -1,5 +1,6 @@
 package com.dotcms.analytics.helper;
 
+import com.dotcms.UnitTestBase;
 import com.dotcms.analytics.bayesian.model.ABTestingType;
 import com.dotcms.analytics.bayesian.model.BayesianInput;
 import com.dotcms.analytics.bayesian.model.VariantInputPair;
@@ -23,7 +24,7 @@ import static org.mockito.Mockito.when;
  *
  * @author vico
  */
-public class BayesianHelperTest {
+public class BayesianHelperTest extends UnitTestBase {
 
     private static final String DEFAULT_VARIANT = "DEFAULT";
     private static final String TEST_VARIANT = "test";

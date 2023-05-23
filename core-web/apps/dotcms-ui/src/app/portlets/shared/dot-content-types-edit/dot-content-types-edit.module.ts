@@ -6,7 +6,6 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
-import { ChipModule } from 'primeng/chip';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
 import { DropdownModule } from 'primeng/dropdown';
@@ -43,7 +42,7 @@ import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.modu
 import { DotMaxlengthModule } from '@directives/dot-maxlength/dot-maxlength.module';
 import { DotMdIconSelectorModule } from '@dotcms/app/view/components/_common/dot-md-icon-selector/dot-md-icon-selector.module';
 import { DotContentTypesInfoService, DotWorkflowService } from '@dotcms/data-access';
-import { DotIconModule } from '@dotcms/ui';
+import { DotFieldRequiredDirective, DotIconModule } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import {
     ContentTypeFieldsAddRowModule,
@@ -157,8 +156,10 @@ import { DotAddToMenuModule } from '../dot-content-types-listing/components/dot-
         DotPortletBoxModule,
         DotMdIconSelectorModule,
         DotAddToMenuModule,
+        DotFieldRequiredDirective,
         DotCopyButtonModule,
-        ChipModule
+
+        OverlayPanelModule
     ],
     providers: [
         DotContentTypesInfoService,

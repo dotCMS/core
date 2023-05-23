@@ -1,6 +1,6 @@
 package com.dotcms.experiments.business.result;
 
-import com.dotcms.analytics.metrics.Metric;
+import com.dotcms.experiments.model.Goal;
 import java.util.Map;
 
 /**
@@ -16,14 +16,14 @@ import java.util.Map;
  */
 public class GoalResults {
 
-    private Metric goal;
+    private Goal goal;
     final Map<String, VariantResults> variants;
-    public GoalResults(final Metric metric, final Map<String, VariantResults> variants) {
-        this.goal = metric;
+    public GoalResults(final Goal goal, final Map<String, VariantResults> variants) {
+        this.goal = goal;
         this.variants = variants;
     }
 
-    public Metric getGoal() {
+    public Goal getGoal() {
         return goal;
     }
 

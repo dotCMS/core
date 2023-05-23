@@ -30,7 +30,7 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.configure.scheduling.name': 'Scheduling'
 });
 
-const EXPERIMENT_MOCK = getExperimentMock(0);
+const EXPERIMENT_MOCK = { ...getExperimentMock(0), scheduling: { startDate: 1, endDate: 12196e5 } };
 
 describe('DotExperimentsConfigurationSchedulingAddComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationSchedulingAddComponent>;
@@ -111,13 +111,14 @@ describe('DotExperimentsConfigurationSchedulingAddComponent', () => {
         });
     });
 
-    it('should set min dates correctly', function () {
+    it('should set min dates correctly', () => {
         const startDateCalendar: Calendar = spectator.query(Calendar);
         const endDateCalendar: Calendar = spectator.queryLast(Calendar);
 
         const component = spectator.component;
         const mockDate = new Date(1682099633467);
-        const mockMinEndDate = 1682099633467 + 1000 * 60 * 30; // 30 minutes
+        const time14days = 12096e5;
+        const mockMinEndDate = 1682099633467 + time14days;
         jasmine.clock().install();
         jasmine.clock().mockDate(mockDate);
 
@@ -132,7 +133,7 @@ describe('DotExperimentsConfigurationSchedulingAddComponent', () => {
         jasmine.clock().uninstall();
     });
 
-    it('should clear end date if start date is equal or more', function () {
+    it('should clear end date if start date is equal or more', () => {
         const startDateCalendar: Calendar = spectator.query(Calendar);
 
         const component = spectator.component;
@@ -147,6 +148,24 @@ describe('DotExperimentsConfigurationSchedulingAddComponent', () => {
         spectator.detectChanges();
 
         expect(component.form.get('endDate').value).toEqual(null);
+
+        jasmine.clock().uninstall();
+    });
+
+    it('max end date date should be 90 days', () => {
+        const startDateCalendar: Calendar = spectator.query(Calendar);
+
+        const component = spectator.component;
+        const mockDate = new Date(16820996334200);
+        jasmine.clock().install();
+        jasmine.clock().mockDate(mockDate);
+
+        component.form.get('startDate').setValue(new Date());
+        startDateCalendar.onSelect.emit();
+
+        spectator.detectChanges();
+
+        expect(component.maxEndDate).toEqual(new Date(16820996334200 + 7776e6));
 
         jasmine.clock().uninstall();
     });

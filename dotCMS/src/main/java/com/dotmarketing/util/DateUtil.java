@@ -3,7 +3,6 @@ package com.dotmarketing.util;
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
