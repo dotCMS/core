@@ -587,8 +587,9 @@ describe('DotExperimentsConfigurationStore', () => {
 
             store.startExperiment(experimentWithGoalsAndVariant);
 
-            store.state$.subscribe(({ experiment }) => {
+            store.state$.subscribe(({ experiment, status }) => {
                 expect(experiment.status).toEqual(DotExperimentStatusList.RUNNING);
+                expect(status).toEqual(ComponentStatus.IDLE);
                 done();
             });
         });
