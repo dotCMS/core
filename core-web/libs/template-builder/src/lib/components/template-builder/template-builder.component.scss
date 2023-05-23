@@ -1,3 +1,9 @@
+:host {
+    // Added this temporaly to test the col with 12 width on the grid
+    width: calc(100% - 80px);
+    display: block;
+}
+
 .grid-stack-item {
     border: solid 1px black;
 }
