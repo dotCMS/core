@@ -54,8 +54,6 @@ describe('DotEditPageResolver', () => {
     let dotEditPageResolver: DotEditPageResolver;
     let siteService: SiteService;
 
-    const siteServiceMock = new SiteServiceMock();
-
     beforeEach(() => {
         TestBed.configureTestingModule({
             imports: [HttpClientTestingModule],
@@ -76,7 +74,7 @@ describe('DotEditPageResolver', () => {
                 DotFavoritePageService,
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
-                { provide: SiteService, useValue: siteServiceMock },
+                { provide: SiteService, useClass: SiteServiceMock },
                 {
                     provide: ActivatedRouteSnapshot,
                     useValue: route
@@ -176,7 +174,7 @@ describe('DotEditPageResolver', () => {
         });
 
         it('should not switch site when host_id is equal to current site id', () => {
-            route.queryParams.host_id = siteServiceMock.currentSite.identifier;
+            route.queryParams.host_id = siteService.currentSite.identifier;
             spyOn(siteService, 'switchSiteById').and.returnValue(of(null));
             const mock = new DotPageRenderState(
                 mockUser(),

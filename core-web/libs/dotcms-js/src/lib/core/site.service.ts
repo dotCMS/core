@@ -149,8 +149,11 @@ export class SiteService {
     }
 
     /**
-     * Change the current Site by site identifier
-     * @param Site site
+     * Switch site by the id
+     * This method gets a new site by the id and switch to it
+     *
+     * @param {string} id
+     * @return {*}
      * @memberof SiteService
      */
     switchSiteById(id: string) {

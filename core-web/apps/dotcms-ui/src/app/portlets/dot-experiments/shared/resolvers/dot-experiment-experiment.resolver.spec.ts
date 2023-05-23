@@ -54,7 +54,6 @@ describe('DotExperimentExperimentResolver', () => {
 
     let injector: TestBed;
     let dotEditPageResolver: DotEditPageResolver;
-    const siteServiceMock = new SiteServiceMock();
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -73,7 +72,7 @@ describe('DotExperimentExperimentResolver', () => {
                 DotFavoritePageService,
                 { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
                 { provide: DotRouterService, useClass: MockDotRouterService },
-                { provide: SiteService, useValue: siteServiceMock },
+                { provide: SiteService, useClass: SiteServiceMock },
                 {
                     provide: ActivatedRouteSnapshot,
                     useValue: route
