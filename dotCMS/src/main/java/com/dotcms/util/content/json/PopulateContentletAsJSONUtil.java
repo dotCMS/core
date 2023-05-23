@@ -29,7 +29,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 /**
@@ -157,54 +156,44 @@ public class PopulateContentletAsJSONUtil {
      * @param excludingAssetSubtype Optional asset subtype (Content Type) use to exclude contentlets
      *                              from the query
      */
+    @WrapInTransaction
     @LogTime(loggingLevel = "INFO")
     private void populate(@Nullable String assetSubtype,
                           @Nullable String excludingAssetSubtype,
                           final Boolean allVersions) {
 
-        Runnable findAndStore = () -> {
-            try {
-                // First we need to find all the contentlets to process and write them into a file
-                findAndStore(assetSubtype, excludingAssetSubtype, allVersions);
-            } catch (SQLException | DotDataException e) {
-                throw new DotRuntimeException("Error finding, generating JSON representation of "
-                        + "Contentlets and storing them into a temporal table.", e);
-            }
-        };
+        try {
+            // First we need to find all the contentlets to process and write them into a file
+            findAndStore(assetSubtype, excludingAssetSubtype, allVersions);
+        } catch (SQLException | DotDataException e) {
+            throw new DotRuntimeException("Error finding, generating JSON representation of "
+                    + "Contentlets and storing them into a temporal table.", e);
+        }
 
-        Runnable processFile = () -> {
-            try {
-                // Now we need to process the file and each record on it
-                processRecords();
-            } catch (SQLException | DotDataException e) {
-                throw new DotRuntimeException(
-                        "Error processing records with the JSON representation "
-                                + "of Contentlets to update.", e);
-            }
-        };
+        try {
+            // Now we need to process the file and each record on it
+            processRecords();
+        } catch (SQLException | DotDataException e) {
+            throw new DotRuntimeException(
+                    "Error processing records with the JSON representation "
+                            + "of Contentlets to update.", e);
+        }
 
-        CompletableFuture.
-                runAsync(findAndStore).
-                thenRunAsync(processFile).
-                thenAccept((unused) -> {
+        if (allVersions) {
 
-                    if (allVersions) {
+            Logger.info(this, "Contentlet as JSON migration task DONE for all versions");
+        } else if (!Strings.isNullOrEmpty(assetSubtype)) {
 
-                        Logger.info(this, "Contentlet as JSON migration task DONE for all versions");
-                    } else if (!Strings.isNullOrEmpty(assetSubtype)) {
+            Logger.info(this, String.format("Contentlet as JSON migration task " +
+                    "DONE for assetSubtype: [%s].", assetSubtype));
+        } else if (!Strings.isNullOrEmpty(excludingAssetSubtype)) {
 
-                        Logger.info(this, String.format("Contentlet as JSON migration task " +
-                                "DONE for assetSubtype: [%s].", assetSubtype));
-                    } else if (!Strings.isNullOrEmpty(excludingAssetSubtype)) {
+            Logger.info(this, String.format("Contentlet as JSON migration task " +
+                    "DONE for excludingAssetSubtype [%s].", excludingAssetSubtype));
+        } else {
 
-                        Logger.info(this, String.format("Contentlet as JSON migration task " +
-                                "DONE for excludingAssetSubtype [%s].", excludingAssetSubtype));
-                    } else {
-
-                        Logger.info(this, "Contentlet as JSON migration task DONE");
-                    }
-
-                }).join();// Block the current thread and wait for the CompletableFuture to complete
+            Logger.info(this, "Contentlet as JSON migration task DONE");
+        }
     }
 
     /**
@@ -276,7 +265,7 @@ public class PopulateContentletAsJSONUtil {
                             insertIntoTempTable(internalDotConnect, jsonData);
                         }
 
-                        Logger.debug(this, String.format(
+                        Logger.info(this, String.format(
                                 "Added [%s] records for update to temp table [%s]",
                                 jsonDataArray.size(),
                                 "tmp_contentlet_json"));
