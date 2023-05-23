@@ -459,17 +459,13 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                     return this.getPagesData(offset, sortOrderValue, sortField).pipe(
                         tapResponse(
                             (items) => {
-                                let currentPages = this.get().pages.items;
-
-                                if (currentPages.length === 0) {
-                                    currentPages = Array.from({ length: items.resultsSize });
-                                }
+                                const currentPages = Array.from({ length: items.resultsSize });
 
                                 Array.prototype.splice.apply(currentPages, [
                                     ...[offset, 40],
                                     ...items.jsonObjectView.contentlets
                                 ]);
-                                this.setPages(currentPages);
+                                this.setPages(currentPages as DotCMSContentlet[]);
                             },
                             (error: HttpErrorResponse) => {
                                 this.setPagesStatus(ComponentStatus.LOADED);
