@@ -69,25 +69,23 @@ describe('TemplateBuilderRowComponent', () => {
         expect(fixture.debugElement.query(By.css('p'))).toBeTruthy();
     });
 
-    //Not working
-
-    it.skip('should trigger deleteRow when clicking on delete button', () => {
+    it('should trigger deleteRow when clicking on delete button', () => {
         jest.spyOn(fixture.componentInstance, 'deleteRow');
         const button = fixture.debugElement.query(
             By.css('p-button[data-testid="row-trash-button"]')
         );
 
-        button.nativeElement.click();
+        button.nativeElement.dispatchEvent(new Event('onClick'));
 
         expect(fixture.componentInstance.deleteRow).toHaveBeenCalled();
     });
-    it.skip('should trigger editRowStyleClass when clicking on editStyleClass button', () => {
+    it('should trigger editRowStyleClass when clicking on editStyleClass button', () => {
         jest.spyOn(fixture.componentInstance, 'editRowStyleClass');
         const button = fixture.debugElement.query(
             By.css('p-button[data-testid="row-style-class-button"]')
         );
 
-        button.nativeElement.click();
+        button.nativeElement.dispatchEvent(new Event('onClick'));
 
         expect(fixture.componentInstance.editRowStyleClass).toHaveBeenCalled();
     });
