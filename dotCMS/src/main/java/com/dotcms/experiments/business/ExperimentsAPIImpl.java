@@ -527,6 +527,10 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final HTMLPageAsset htmlPageAsset = APILocator.getHTMLPageAssetAPI().fromContentlet(contentletAPI
                 .findContentletByIdentifierAnyLanguage(experiment.pageId(), false));
 
+        if(htmlPageAsset.isLive()) {
+            return;
+        }
+
         //Get the un-publish content related to this HTMLPage
         List relatedNotPublished = new ArrayList();
                 /*
