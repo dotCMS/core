@@ -97,9 +97,7 @@ export class DotEditPageResolver implements Resolve<DotPageRenderState> {
         return shouldSwitchSite
             ? this.siteService.switchSiteById(id).pipe(
                   catchError((err: HttpErrorResponse) => {
-                      console.warn(err);
-
-                      return of(null);
+                      return this.dotHttpErrorManagerService.handle(err).pipe(map(() => null));
                   })
               )
             : of(null);

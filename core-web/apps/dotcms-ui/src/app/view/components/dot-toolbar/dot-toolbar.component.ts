@@ -39,11 +39,13 @@ export class DotToolbarComponent implements OnInit {
     }
 
     siteChange(site: Site): void {
-        this.siteService.switchSite(site).subscribe();
-
-        if (this.dotRouterService.isEditPage()) {
-            this.dotRouterService.goToSiteBrowser();
-        }
+        this.siteService.switchSite(site).subscribe(() => {
+            // wait for the site to be switched
+            // before redirecting to the site browser
+            if (this.dotRouterService.isEditPage()) {
+                this.dotRouterService.goToSiteBrowser();
+            }
+        });
     }
 
     handleMainButtonClick(): void {

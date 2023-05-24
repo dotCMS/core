@@ -156,11 +156,14 @@ export class SiteService {
      * @return {*}
      * @memberof SiteService
      */
-    switchSiteById(id: string) {
+    switchSiteById(id: string): Observable<Site> {
         this.loggerService.debug('Applying a Site Switch');
 
         return this.getSiteById(id).pipe(
-            switchMap((site) => this.switchSite(site)),
+            switchMap((site) => {
+                // If there is a site we switch to it
+                return site ? this.switchSite(site) : of(null);
+            }),
             take(1)
         );
     }
