@@ -45,6 +45,11 @@ public class FileAssetDataGen extends ContentletDataGen {
         setProperty(FileAssetAPI.BINARY_FIELD, file);
     }
 
+    public FileAssetDataGen title(final String title) {
+        setProperty(FileAssetAPI.TITLE_FIELD, title);
+        return this;
+    }
+
     public static Contentlet createFileAsset(
             final Folder folder,
             final String fileName,

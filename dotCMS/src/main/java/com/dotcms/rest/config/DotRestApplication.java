@@ -18,6 +18,7 @@ import com.dotcms.rest.StructureResource;
 import com.dotcms.rest.TagResource;
 import com.dotcms.rest.WidgetResource;
 import com.dotcms.rest.api.v1.apps.AppsResource;
+import com.dotcms.rest.api.v1.asset.WebAssetResource;
 import com.dotcms.rest.api.v1.authentication.ApiTokenResource;
 import com.dotcms.rest.api.v1.authentication.AuthenticationResource;
 import com.dotcms.rest.api.v1.authentication.CreateJsonWebTokenResource;
@@ -233,6 +234,7 @@ public class DotRestApplication extends javax.ws.rs.core.Application {
 			.add(ExperimentsResource.class)
 			.add(TailLogResource.class)
 			.add(VariantResource.class)
+			.add(WebAssetResource.class)
 			.build();
 
 

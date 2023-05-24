@@ -142,7 +142,8 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     // Updaters
     readonly setExperiment = this.updater((state, experiment: DotExperiment) => ({
         ...state,
-        experiment
+        experiment,
+        status: ComponentStatus.IDLE
     }));
 
     readonly setComponentStatus = this.updater((state, status: ComponentStatus) => ({
