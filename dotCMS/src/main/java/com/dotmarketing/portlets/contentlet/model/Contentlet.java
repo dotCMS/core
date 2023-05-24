@@ -49,6 +49,7 @@ import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.annotations.VisibleForTesting;
@@ -177,6 +178,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
   private transient boolean needsReindex;
 
   private transient boolean loadedTags = false;
+
+	private String variantId = VariantAPI.DEFAULT_VARIANT.name();
 
 	/**
 	 * Returns true if this contentlet needs reindex
@@ -1612,11 +1615,15 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
     public void setVariantId(final String variantId) {
-		map.put(VARIANT_ID, variantId);
+		if (UtilMethods.isSet(variantId)) {
+			this.variantId = variantId;
+		} else {
+			this.variantId = VariantAPI.DEFAULT_VARIANT.name();
+		}
     }
 
 	public String getVariantId() {
-		return map.getOrDefault(VARIANT_ID, VariantAPI.DEFAULT_VARIANT.name()).toString();
+		return this.variantId;
 	}
 
 	@VisibleForTesting

@@ -108,6 +108,7 @@ public class ContentletTransformer implements DBTransformer<Contentlet> {
         contentlet.setOwner((String) map.get("owner"));
         contentlet.setSortOrder(ConversionUtils.toInt(map.get("sort_order"),0));
         contentlet.setLanguageId(ConversionUtils.toLong(map.get("language_id"), 0L));
+        contentlet.setVariantId((String) map.get("variant_id"));
 
         try {
            if(!hasJsonFields) {
