@@ -847,11 +847,11 @@ public class DependencyBundlerTest {
         final Contentlet contentlet = new ContentletDataGen(contentType.id()).host(hostWithContent).nextPersisted();
         final Language language = APILocator.getLanguageAPI().getLanguage(contentlet.getLanguageId());
 
-       /* final Variant variant = new VariantDataGen().nextPersisted();
+        final Variant variant = new VariantDataGen().nextPersisted();
         final Contentlet contentletInVariant = new ContentletDataGen(contentType.id())
                 .variant(variant)
                 .host(hostWithContent)
-                .nextPersisted();*/
+                .nextPersisted();
 
         final Host hostWithRule = new SiteDataGen().nextPersisted();
         final Rule rule = new RuleDataGen().host(hostWithRule).nextPersisted();
