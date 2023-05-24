@@ -1,12 +1,20 @@
-import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Output } from '@angular/core';
+
+import { ButtonModule } from 'primeng/button';
+
+import { DotIconModule } from '@dotcms/ui';
 
 @Component({
     selector: 'dotcms-template-builder-row',
     standalone: true,
-    imports: [CommonModule],
+    imports: [DotIconModule, ButtonModule],
     templateUrl: './template-builder-row.component.html',
     styleUrls: ['./template-builder-row.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class TemplateBuilderRowComponent {}
+export class TemplateBuilderRowComponent {
+    @Output()
+    editStyleClasses: EventEmitter<undefined> = new EventEmitter<undefined>();
+    @Output()
+    deleteRow: EventEmitter<undefined> = new EventEmitter<undefined>();
+}

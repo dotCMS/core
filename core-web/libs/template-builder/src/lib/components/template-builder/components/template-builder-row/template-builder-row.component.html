@@ -1,1 +1,27 @@
-<p>This row works!</p>
+<div class="row__drag-container">
+    <dot-icon
+        class="drag-container__drag-handler"
+        [size]="16"
+        data-testid="row-drag-handler"
+        name="drag_indicator"
+    ></dot-icon>
+</div>
+<div class="row__content-container">
+    <ng-content></ng-content>
+</div>
+<div class="row__actions-container">
+    <p-button
+        (onClick)="editStyleClasses.emit()"
+        data-testid="row-style-class-button"
+        styleClass="p-button-text p-button-sm p-button-rounded"
+        icon="pi pi-palette"
+    >
+    </p-button>
+    <p-button
+        (onClick)="deleteRow.emit()"
+        data-testid="row-trash-button"
+        styleClass="p-button-text p-button-sm p-button-rounded"
+        icon="pi pi-trash"
+    >
+    </p-button>
+</div>

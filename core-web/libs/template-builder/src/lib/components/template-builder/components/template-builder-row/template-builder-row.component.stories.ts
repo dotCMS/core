@@ -1,6 +1,8 @@
 import { moduleMetadata, Story, Meta } from '@storybook/angular';
 
-import { CommonModule } from '@angular/common';
+import { ButtonModule } from 'primeng/button';
+
+import { DotIconModule } from '@dotcms/ui';
 
 import { TemplateBuilderRowComponent } from './template-builder-row.component';
 
@@ -9,7 +11,7 @@ export default {
     component: TemplateBuilderRowComponent,
     decorators: [
         moduleMetadata({
-            imports: [CommonModule],
+            imports: [DotIconModule, ButtonModule],
             providers: []
         })
     ]
