@@ -531,13 +531,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             return;
         }
 
-        //Get the un-publish content related to this HTMLPage
-        List relatedNotPublished = new ArrayList();
-                /*
-                Returns the list of unpublished related content for this HTML page where
-                the user have permissions to publish that related content.
-                 */
-        relatedNotPublished = PublishFactory.getUnpublishedRelatedAssetsForPage(htmlPageAsset, relatedNotPublished,
+        final List relatedNotPublished = PublishFactory.getUnpublishedRelatedAssetsForPage(htmlPageAsset, new ArrayList(),
                 true, user, false);
         relatedNotPublished.stream().filter(asset -> asset instanceof Contentlet).forEach(
                 asset -> Contentlet.class.cast(asset)
