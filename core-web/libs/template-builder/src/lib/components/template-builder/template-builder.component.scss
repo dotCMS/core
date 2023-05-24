@@ -4,10 +4,6 @@
     display: block;
 }
 
-.grid-stack-item {
-    border: solid 1px black;
-}
-
 .grid-stack-item.sub .grid-stack-item-content {
     background: pink;
 }
@@ -26,9 +22,6 @@
 
     .add {
         width: 100px;
+        border: 1px solid black;
     }
-}
-
-.grid-stack-item {
-    border: solid 1px black;
 }
