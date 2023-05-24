@@ -171,10 +171,12 @@ public class PopulateContentletAsJSONUtil {
                           @Nullable String excludingAssetSubtype,
                           final Boolean allVersions) {
 
+        final MutableInt totalRecordsAffected = new MutableInt(0);
+
         while (true) {
 
             CompletableFuture<Boolean> future = CompletableFuture.supplyAsync(() ->
-                    internalPopulate(assetSubtype, excludingAssetSubtype, allVersions));
+                    internalPopulate(assetSubtype, excludingAssetSubtype, allVersions, totalRecordsAffected));
 
             try {
                 Boolean foundRecords = future.get();
@@ -187,6 +189,7 @@ public class PopulateContentletAsJSONUtil {
         }
 
         // Log task completion status
+        Logger.info(this, "---- Records processed: " + totalRecordsAffected.intValue());
         if (allVersions) {
 
             Logger.info(this, "Contentlet as JSON migration task DONE for all versions");
@@ -215,18 +218,20 @@ public class PopulateContentletAsJSONUtil {
      * @param excludingAssetSubtype Optional asset subtype (Content Type) used to exclude contentlets
      *                              from the query.
      * @param allVersions           Boolean indicating whether to process all versions of contentlets.
+     * @param totalRecords          A MutableInt object to keep track of the total number of affected records.
      * @return True if contentlets were found and processed, false otherwise.
      */
     @WrapInTransaction
     private boolean internalPopulate(@Nullable String assetSubtype,
                                      @Nullable String excludingAssetSubtype,
-                                     final Boolean allVersions) {
+                                     final Boolean allVersions,
+                                     final MutableInt totalRecords) {
 
         var foundRecords = false;
 
         try {
             // First we need to find all the contentlets to process and write them into a file
-            foundRecords = findAndStore(assetSubtype, excludingAssetSubtype, allVersions);
+            foundRecords = findAndStore(assetSubtype, excludingAssetSubtype, allVersions, totalRecords);
         } catch (SQLException | DotDataException e) {
             throw new DotRuntimeException("Error finding, generating JSON representation of "
                     + "Contentlets and storing them into a temporal table.", e);
@@ -256,13 +261,14 @@ public class PopulateContentletAsJSONUtil {
      *                              contentlets will be searched.
      * @param excludingAssetSubtype The asset subtype (Content Type) to exclude in the search, if
      *                              null no Content Type will be excluded.
-     * @throws SQLException
-     * @throws DotDataException
+     * @param allVersions           Boolean indicating whether to process all versions of contentlets.
+     * @param totalRecords          A MutableInt object to keep track of the total number of affected records.
      */
     @WrapInTransaction
     private boolean findAndStore(@Nullable final String assetSubtype,
                                  @Nullable final String excludingAssetSubtype,
-                                 final Boolean allVersions
+                                 final Boolean allVersions,
+                                 final MutableInt totalRecords
     ) throws SQLException, DotDataException {
 
         final Collection<Params> paramsInsert = new ArrayList<>();
@@ -332,11 +338,9 @@ public class PopulateContentletAsJSONUtil {
             // Close the cursor
             stmt.execute(CLOSE_CURSOR);
 
-            Logger.info(this, "-- Records found to process: " + totalInsertAffected.intValue());
-        }
-
-        if (foundData) {
-            Logger.info(this, "Inserted records into temporal table preparing data to update missing Contentlet as JSON");
+            if (foundData) {
+                totalRecords.add(totalInsertAffected);
+            }
         }
 
         return foundData;
@@ -404,11 +408,7 @@ public class PopulateContentletAsJSONUtil {
 
             // Close the cursor
             stmt.execute(CLOSE_CURSOR_FOR_TEMPORAL_TABLE);
-
-            Logger.info(this, "-- total updates: " + totalUpdateAffected.intValue());
         }
-
-        Logger.info(this, "Updated records with missing Contentlet as JSON");
     }
 
     /**
@@ -547,7 +547,7 @@ public class PopulateContentletAsJSONUtil {
                             paramsUpdate));
 
             final int rowsAffected = batchResult.stream().reduce(0, Integer::sum);
-            Logger.info(this, "Batch rows to populate contentlet_as_json column, updated: " + rowsAffected + " rows");
+            Logger.info(this, "-- Batch rows to populate contentlet_as_json column, updated: " + rowsAffected + " rows");
             totalUpdateAffected.add(rowsAffected);
         } catch (DotDataException e) {
             Logger.error(this, "Couldn't update these rows: " + paramsUpdate);
@@ -569,7 +569,7 @@ public class PopulateContentletAsJSONUtil {
                             paramsInsert));
 
             final int rowsAffected = batchResult.stream().reduce(0, Integer::sum);
-            Logger.info(this, "Batch rows to populate temporal table, inserted: " + rowsAffected + " rows");
+            Logger.info(this, "-- Batch rows to populate temporal table, inserted: " + rowsAffected + " rows");
             totalInsertAffected.add(rowsAffected);
         } catch (DotDataException e) {
             Logger.error(this, "Couldn't insert these rows: " + paramsInsert);
