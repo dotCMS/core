@@ -700,7 +700,7 @@ public class UserResource implements Serializable {
 					"user", userToUpdated.toMap()))).build(); // 200
 		}
 
-		throw new ForbiddenException("User does not have permissions to create users");
+		throw new ForbiddenException("User " + modUser.getUserId() + " does not have permissions to create users");
 	} // create.
 
 	protected User createNewUser(final User modUser,

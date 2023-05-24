@@ -910,8 +910,6 @@
 			role["publish-permission-style"] = 'display:none';
 		} else if(assetType == 'com.dotmarketing.beans.Host') {
 			role["publish-permission-style"] = 'display:none';
-		} else if(assetType == 'com.dotmarketing.portlets.structure.model.Structure') {
-			//role["add-children-permission-style"] = 'display: none'
 		} else if(assetType == 'com.dotmarketing.portlets.categories.model.Category') {
 			role["publish-permission-style"] = 'display:none';
 			role["add-children-permission-style"] = 'display: none'
