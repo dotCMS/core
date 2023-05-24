@@ -13,7 +13,13 @@ import { SidebarModule } from 'primeng/sidebar';
 import { take } from 'rxjs/operators';
 
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
-import { ComponentStatus, RangeOfDateAndTime, StepStatus } from '@dotcms/dotcms-models';
+import {
+    ComponentStatus,
+    RangeOfDateAndTime,
+    StepStatus,
+    TIME_14_DAYS,
+    TIME_90_DAYS
+} from '@dotcms/dotcms-models';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 import { DotSidebarDirective } from '@portlets/shared/directives/dot-sidebar.directive';
@@ -49,6 +55,7 @@ export class DotExperimentsConfigurationSchedulingAddComponent implements OnInit
     today = new Date();
     initialDate = new Date();
     minEndDate: Date;
+    maxEndDate: Date;
 
     vm$: Observable<{ experimentId: string; scheduling: RangeOfDateAndTime; status: StepStatus }> =
         this.dotExperimentsConfigurationStore.schedulingStepVm$;
@@ -60,6 +67,7 @@ export class DotExperimentsConfigurationSchedulingAddComponent implements OnInit
     ngOnInit(): void {
         this.setInitialDate();
         this.initForm();
+        this.setDateBoundaries();
     }
 
     /**
@@ -86,6 +94,16 @@ export class DotExperimentsConfigurationSchedulingAddComponent implements OnInit
             },
             experimentId
         });
+    }
+
+    /**
+     * Set min and max date for the End date
+     * @returns void
+     * @memberof DotExperimentsConfigurationSchedulingAddComponent
+     */
+    setDateBoundaries(): void {
+        this.setMinEndDate();
+        this.setMaxEndDate();
     }
 
     private initForm() {
@@ -116,15 +134,13 @@ export class DotExperimentsConfigurationSchedulingAddComponent implements OnInit
     }
 
     /**
-     * Initial end date should be at least 30 minutes after start date.
-     * @returns void
-     * @memberof DotExperimentsConfigurationSchedulingAddComponent
+     * Initial end date should be at least 14 days after start date.
      */
-    setMinEndDate(): void {
+    private setMinEndDate(): void {
         if (this.form.value.startDate) {
-            this.minEndDate = new Date(this.form.value.startDate.getTime() + 1000 * 60 * 30);
+            this.minEndDate = new Date(this.form.value.startDate.getTime() + TIME_14_DAYS);
         } else {
-            this.minEndDate = null;
+            this.minEndDate = new Date(Date.now() + TIME_14_DAYS);
         }
 
         if (this.isStatDateMoreRecent()) {
@@ -134,7 +150,37 @@ export class DotExperimentsConfigurationSchedulingAddComponent implements OnInit
         }
     }
 
+    /**
+     * End date should be at most 90 days after start date.
+     * @private
+     */
+    private setMaxEndDate(): void {
+        if (this.form.value.startDate) {
+            this.maxEndDate = new Date(this.form.value.startDate.getTime() + TIME_90_DAYS);
+        } else {
+            this.maxEndDate = new Date(Date.now() + TIME_90_DAYS);
+        }
+
+        if (this.isEndDateOutOfBoundaries()) {
+            this.form.patchValue({
+                endDate: null
+            });
+        }
+    }
+
     private isStatDateMoreRecent(): boolean {
-        return this.form.value.startDate && this.form.value.startDate >= this.form.value.endDate;
+        return (
+            this.form.value.startDate &&
+            this.form.value.endDate &&
+            this.form.value.startDate.getTime() + TIME_14_DAYS > this.form.value.endDate.getTime()
+        );
+    }
+
+    private isEndDateOutOfBoundaries(): boolean {
+        return (
+            this.form.value.startDate &&
+            this.form.value.endDate &&
+            this.form.value.startDate.getTime() + TIME_90_DAYS < this.form.value.endDate.getTime()
+        );
     }
 }
