@@ -18,7 +18,7 @@ import { TagModule } from 'primeng/tag';
 
 import { DotMessagePipe } from '@dotcms/app/view/pipes';
 import { DotMessageService, DotSessionStorageService } from '@dotcms/data-access';
-import { ComponentStatus, DotExperimentStatusList } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotExperimentStatusList, PROP_NOT_FOUND } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotExperimentsConfigurationGoalsComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-goals/dot-experiments-configuration-goals.component';
@@ -46,6 +46,12 @@ const ActivatedRouteMock = {
         params: {
             experimentId: EXPERIMENT_MOCK.id,
             pageId: '222'
+        },
+        data: {
+            config: {
+                EXPERIMENTS_MIN_DURATION: '5',
+                EXPERIMENTS_MAX_DURATION: PROP_NOT_FOUND
+            }
         }
     }
 };

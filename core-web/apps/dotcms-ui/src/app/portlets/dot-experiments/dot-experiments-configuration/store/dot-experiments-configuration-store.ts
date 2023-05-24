@@ -4,6 +4,7 @@ import { Observable, throwError } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Title } from '@angular/platform-browser';
+import { ActivatedRoute } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
 
@@ -24,6 +25,7 @@ import {
     TrafficProportion,
     Variant
 } from '@dotcms/dotcms-models';
+import { processExperimentConfigProps } from '@portlets/dot-experiments/shared/dot-experiment.utils';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
@@ -31,6 +33,7 @@ export interface DotExperimentsConfigurationState {
     experiment: DotExperiment;
     status: ComponentStatus;
     stepStatusSidebar: StepStatus;
+    configProps: Record<string, string>;
 }
 
 const initialState: DotExperimentsConfigurationState = {
@@ -40,7 +43,8 @@ const initialState: DotExperimentsConfigurationState = {
         status: ComponentStatus.IDLE,
         isOpen: false,
         experimentStep: null
-    }
+    },
+    configProps: null
 };
 
 export interface ConfigurationViewModel {
@@ -119,6 +123,10 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     );
     readonly schedulingStatus$ = this.select(this.state$, ({ stepStatusSidebar }) =>
         stepStatusSidebar.experimentStep === ExperimentSteps.SCHEDULING ? stepStatusSidebar : null
+    );
+
+    readonly schedulingBoundaries$: Observable<Record<string, number>> = this.select(
+        ({ configProps }) => processExperimentConfigProps(configProps)
     );
 
     //Traffic Step
@@ -689,16 +697,19 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         experimentId: string;
         scheduling: RangeOfDateAndTime;
         status: StepStatus;
+        schedulingBoundaries: Record<string, number>;
         isExperimentADraft: boolean;
     }> = this.select(
         this.getExperimentId$,
         this.scheduling$,
         this.schedulingStatus$,
+        this.schedulingBoundaries$,
         this.isExperimentADraft$,
-        (experimentId, scheduling, status, isExperimentADraft) => ({
+        (experimentId, scheduling, status, schedulingBoundaries, isExperimentADraft) => ({
             experimentId,
             scheduling,
             status,
+            schedulingBoundaries,
             isExperimentADraft
         })
     );
@@ -752,9 +763,12 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         private readonly dotMessageService: DotMessageService,
         private readonly dotHttpErrorManagerService: DotHttpErrorManagerService,
         private readonly messageService: MessageService,
-        private readonly title: Title
+        private readonly title: Title,
+        private readonly route: ActivatedRoute
     ) {
-        super(initialState);
+        const configProps = route.snapshot.data.config;
+
+        super({ ...initialState, configProps });
     }
 
     private updateTabTitle(experiment: DotExperiment) {
