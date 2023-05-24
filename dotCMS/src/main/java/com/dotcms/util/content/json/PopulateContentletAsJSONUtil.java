@@ -100,11 +100,11 @@ public class PopulateContentletAsJSONUtil {
     private final String CLOSE_CURSOR_FOR_TEMPORAL_TABLE = "CLOSE tmpContentletJSONCursor";
 
     private static final int MAX_BATCH_SIZE = Config.getIntProperty(
-            "task.populateContentletAsJSON.maxupdatebatchsize", 200);
+            "task.populateContentletAsJSON.maxbatchsize", 200);
     private static final int MAX_CURSOR_FETCH_SIZE = Config.getIntProperty(
             "task.populateContentletAsJSON.maxcursorfetchsize", 200);
-    private static final int LIMIT_FOR_SELECTS = Config.getIntProperty(
-            "task.populateContentletAsJSON.maxcursorfetchsize", 5000);
+    private static final int LIMIT_SIZE_FOR_SELECTS = Config.getIntProperty(
+            "task.populateContentletAsJSON.selectslimitsize", 5000);
 
     public PopulateContentletAsJSONUtil() {
         this.contentletJsonAPI = APILocator.getContentletJsonAPI();
@@ -427,16 +427,16 @@ public class PopulateContentletAsJSONUtil {
 
         // Declaring the cursor
         if (allVersions) {
-            var selectQuery = String.format(CONTENTS_WITH_NO_JSON_ALL_VERSIONS, LIMIT_FOR_SELECTS);
+            var selectQuery = String.format(CONTENTS_WITH_NO_JSON_ALL_VERSIONS, LIMIT_SIZE_FOR_SELECTS);
             stmt.execute(String.format(DECLARE_CURSOR, selectQuery));
         } else if (!Strings.isNullOrEmpty(assetSubtype)) {
-            var selectQuery = String.format(SUBTYPE_WITH_NO_JSON, assetSubtype, LIMIT_FOR_SELECTS);
+            var selectQuery = String.format(SUBTYPE_WITH_NO_JSON, assetSubtype, LIMIT_SIZE_FOR_SELECTS);
             stmt.execute(String.format(DECLARE_CURSOR, selectQuery));
         } else if (!Strings.isNullOrEmpty(excludingAssetSubtype)) {
-            var selectQuery = String.format(CONTENTS_WITH_NO_JSON_AND_EXCLUDE, excludingAssetSubtype, LIMIT_FOR_SELECTS);
+            var selectQuery = String.format(CONTENTS_WITH_NO_JSON_AND_EXCLUDE, excludingAssetSubtype, LIMIT_SIZE_FOR_SELECTS);
             stmt.execute(String.format(DECLARE_CURSOR, selectQuery));
         } else {
-            var selectQuery = String.format(CONTENTS_WITH_NO_JSON, LIMIT_FOR_SELECTS);
+            var selectQuery = String.format(CONTENTS_WITH_NO_JSON, LIMIT_SIZE_FOR_SELECTS);
             stmt.execute(String.format(DECLARE_CURSOR, selectQuery));
         }
     }
