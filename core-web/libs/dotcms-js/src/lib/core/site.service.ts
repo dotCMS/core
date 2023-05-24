@@ -170,7 +170,9 @@ export class SiteService {
 
     /**
      * Change the current site
-     * @param Site site
+     *
+     * @param {Site} site
+     * @return {*}  {Observable<Site>}
      * @memberof SiteService
      */
     switchSite(site: Site): Observable<Site> {
