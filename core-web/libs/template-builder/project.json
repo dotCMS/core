@@ -35,7 +35,18 @@
                 "port": 4400,
                 "configDir": "libs/template-builder/.storybook",
                 "browserTarget": "template-builder:build-storybook",
-                "compodoc": false
+                "compodoc": false,
+                "stylePreprocessorOptions": {
+                    "includePaths": ["libs/dotcms-scss/angular"]
+                },
+                "styles": [
+                    "libs/dotcms-scss/angular/styles.scss",
+                    "node_modules/primeicons/primeicons.css",
+                    "node_modules/primeicons/primeicons.css",
+                    "node_modules/primeflex/primeflex.css",
+                    "node_modules/primeng/resources/primeng.min.css",
+                    "node_modules/gridstack/dist/gridstack.min.css"
+                ]
             },
             "configurations": {
                 "ci": {
@@ -51,7 +62,17 @@
                 "configDir": "libs/template-builder/.storybook",
                 "browserTarget": "template-builder:build-storybook",
                 "compodoc": false,
-                "styles": ["node_modules/gridstack/dist/gridstack.min.css"]
+                "stylePreprocessorOptions": {
+                    "includePaths": ["libs/dotcms-scss/angular"]
+                },
+                "styles": [
+                    "libs/dotcms-scss/angular/styles.scss",
+                    "node_modules/primeicons/primeicons.css",
+                    "node_modules/primeicons/primeicons.css",
+                    "node_modules/primeflex/primeflex.css",
+                    "node_modules/primeng/resources/primeng.min.css",
+                    "node_modules/gridstack/dist/gridstack.min.css"
+                ]
             },
             "configurations": {
                 "ci": {
