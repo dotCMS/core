@@ -11,6 +11,7 @@ import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.rendering.velocity.directive.ParseContainer;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
+import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.rest.ContentResource;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
@@ -110,8 +111,6 @@ public class PageRenderUtil implements Serializable {
     final TemplateLayout templateLayout;
 
 
-    // it is true, even if the pattern is false because the client has to include the depth parameter to activate it
-    private static final Lazy<Boolean> ADD_RELATIONSHIPS_ON_PAGE = Lazy.of(()->Config.getBooleanProperty("ADD_RELATIONSHIPS_ON_PAGE", true));
 
     /**
      * Creates an instance of this class for a given HTML Page.
@@ -356,34 +355,7 @@ public class PageRenderUtil implements Serializable {
 
     private void addRelationships(final Contentlet contentlet) {
 
-        final HttpServletRequest  request  = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-        final HttpServletResponse response = HttpServletResponseThreadLocal.INSTANCE.getResponse();
-        if (ADD_RELATIONSHIPS_ON_PAGE.get() && null != response && null != request && null != request.getParameter("depth")) {
-
-            final int depth = ConversionUtils.toInt(request.getParameter("depth"), -1);
-            if (depth >= 0 && depth <= 3) {
-
-                try {
-
-                    final JSONObject jsonWithRelationShips = ContentResource.addRelationshipsToJSON(request, response,
-                            request.getParameter("render"), user, depth, mode.respectAnonPerms, contentlet,
-                            new JSONObject(), null, languageId, mode.showLive, false,
-                            true);
-
-                    final HashMap<String,Object> relationshipsMap = DotObjectMapperProvider.getInstance()
-                            .getDefaultObjectMapper().readValue(jsonWithRelationShips.toString(), HashMap.class);
-
-                    if (UtilMethods.isSet(relationshipsMap)) {
-                        contentlet.getMap().putAll(relationshipsMap);
-                    }
-                } catch (Exception e) {
-
-                    Logger.error(this, "Error, contentlet id:" +
-                            contentlet.getIdentifier() + ", msg:" + e.getMessage(), e);
-                    throw new RuntimeException(e);
-                }
-            }
-        }
+        ContentUtils.addRelationships(contentlet, user, mode, languageId);
     }
 
     private Contentlet getContentletByVariantFallback(final String currentVariantId,
