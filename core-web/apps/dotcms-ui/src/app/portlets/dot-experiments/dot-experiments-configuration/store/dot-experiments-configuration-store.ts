@@ -20,14 +20,12 @@ import {
     Goal,
     Goals,
     GoalsLevels,
-    PROP_NOT_FOUND,
     RangeOfDateAndTime,
     StepStatus,
-    TIME_14_DAYS,
-    TIME_90_DAYS,
     TrafficProportion,
     Variant
 } from '@dotcms/dotcms-models';
+import { processExperimentConfigProps } from '@portlets/dot-experiments/shared/dot-experiment.utils';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
@@ -35,6 +33,7 @@ export interface DotExperimentsConfigurationState {
     experiment: DotExperiment;
     status: ComponentStatus;
     stepStatusSidebar: StepStatus;
+    configProps: Record<string, string>;
 }
 
 const initialState: DotExperimentsConfigurationState = {
@@ -44,7 +43,8 @@ const initialState: DotExperimentsConfigurationState = {
         status: ComponentStatus.IDLE,
         isOpen: false,
         experimentStep: null
-    }
+    },
+    configProps: null
 };
 
 export interface ConfigurationViewModel {
@@ -126,8 +126,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     );
 
     readonly schedulingBoundaries$: Observable<Record<string, number>> = this.select(
-        this.state$,
-        () => this.processConfigProps(this.route.snapshot.data?.config)
+        ({ configProps }) => processExperimentConfigProps(configProps)
     );
 
     //Traffic Step
@@ -767,7 +766,9 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         private readonly title: Title,
         private readonly route: ActivatedRoute
     ) {
-        super(initialState);
+        const configProps = route.snapshot.data.config;
+
+        super({ ...initialState, configProps });
     }
 
     private updateTabTitle(experiment: DotExperiment) {
@@ -785,31 +786,5 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                 })
             ]
         };
-    }
-
-    /**
-     * Process the config properties that comes form the BE as days,
-     * return the object with the values in milliseconds
-     * @param configProps
-     *
-     * @private
-     */
-    private processConfigProps(configProps: Record<string, string>): Record<string, number> {
-        const config: Record<string, number> = {};
-
-        config.EXPERIMENTS_MIN_DURATION =
-            configProps.EXPERIMENTS_MIN_DURATION === PROP_NOT_FOUND
-                ? TIME_14_DAYS
-                : this.daysToMilliseconds(+configProps.EXPERIMENTS_MIN_DURATION);
-        config.EXPERIMENTS_MAX_DURATION =
-            configProps.EXPERIMENTS_MAX_DURATION === PROP_NOT_FOUND
-                ? TIME_90_DAYS
-                : this.daysToMilliseconds(+configProps.EXPERIMENTS_MAX_DURATION);
-
-        return config;
-    }
-
-    private daysToMilliseconds(days: number): number {
-        return days * 24 * 60 * 60 * 1000;
     }
 }
