@@ -29,6 +29,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 /**
@@ -44,7 +46,8 @@ public class PopulateContentletAsJSONUtil {
             "         JOIN identifier i ON i.id = c.identifier" +
             "         JOIN contentlet_version_info cv ON i.id = cv.identifier" +
             "    AND (c.inode = cv.working_inode OR c.inode = cv.live_inode)" +
-            "   WHERE i.asset_subtype = '%s' AND c.contentlet_as_json IS NULL;";
+            "   WHERE i.asset_subtype = '%s' AND c.contentlet_as_json IS NULL " +
+            "   LIMIT %d;";
 
     // Query to find all the contentlets that have a null contentlet_as_json
     private final String CONTENTS_WITH_NO_JSON = "select c.* " +
@@ -52,12 +55,14 @@ public class PopulateContentletAsJSONUtil {
             "         JOIN identifier i ON i.id = c.identifier" +
             "         JOIN contentlet_version_info cv ON i.id = cv.identifier" +
             "    AND (c.inode = cv.working_inode OR c.inode = cv.live_inode)" +
-            "   WHERE i.asset_type = 'contentlet' AND c.contentlet_as_json IS NULL;";
+            "   WHERE i.asset_type = 'contentlet' AND c.contentlet_as_json IS NULL " +
+            "   LIMIT %d;";
 
     // Query to find all the contentlets that have a null contentlet_as_json for all the versions
     private final String CONTENTS_WITH_NO_JSON_ALL_VERSIONS = "SELECT c.* " +
             "FROM contentlet c " +
-            "WHERE c.contentlet_as_json IS NULL;";
+            "WHERE c.contentlet_as_json IS NULL " +
+            "LIMIT %d;";
 
     // Query to find all the contentlets that are NOT of a given asset_subtype and have a null contentlet_as_json
     private final String CONTENTS_WITH_NO_JSON_AND_EXCLUDE = "select c.* " +
@@ -65,7 +70,8 @@ public class PopulateContentletAsJSONUtil {
             "         JOIN identifier i ON i.id = c.identifier" +
             "         JOIN contentlet_version_info cv ON i.id = cv.identifier" +
             "    AND (c.inode = cv.working_inode OR c.inode = cv.live_inode)" +
-            "   WHERE i.asset_subtype <> '%s' AND i.asset_type = 'contentlet' AND c.contentlet_as_json IS NULL;";
+            "   WHERE i.asset_subtype <> '%s' AND i.asset_type = 'contentlet' AND c.contentlet_as_json IS NULL " +
+            "   LIMIT %d;";
 
     // Query to update the contentlet_as_json column of the contentlet table
     private final String UPDATE_CONTENTLET_AS_JSON =
@@ -93,10 +99,12 @@ public class PopulateContentletAsJSONUtil {
     private final String CLOSE_CURSOR = "CLOSE missingContentletAsJSONCursor";
     private final String CLOSE_CURSOR_FOR_TEMPORAL_TABLE = "CLOSE tmpContentletJSONCursor";
 
-    private static final int MAX_UPDATE_BATCH_SIZE = Config.getIntProperty(
-            "task.230320.maxupdatebatchsize", 100);
+    private static final int MAX_BATCH_SIZE = Config.getIntProperty(
+            "task.populateContentletAsJSON.maxupdatebatchsize", 200);
     private static final int MAX_CURSOR_FETCH_SIZE = Config.getIntProperty(
-            "task.230320.maxcursorfetchsize", 100);
+            "task.populateContentletAsJSON.maxcursorfetchsize", 200);
+    private static final int LIMIT_FOR_SELECTS = Config.getIntProperty(
+            "task.populateContentletAsJSON.maxcursorfetchsize", 5000);
 
     public PopulateContentletAsJSONUtil() {
         this.contentletJsonAPI = APILocator.getContentletJsonAPI();
@@ -147,38 +155,38 @@ public class PopulateContentletAsJSONUtil {
     }
 
     /**
-     * Finds all the contentlets that need to be updated with the contentlet_as_json column for the
+     * Finds all the contentlets that need to be updated with the contentlet_as_json for the
      * given assetSubtype and excludingAssetSubtype.
      *
      * @param assetSubtype          Optional asset subtype (Content Type) to filter the contentlets
-     *                              to process, if null then all the contentlets will be processed
+     *                              to process. If null, all the contentlets will be processed
      *                              unless the excludingAssetSubtype is provided.
-     * @param excludingAssetSubtype Optional asset subtype (Content Type) use to exclude contentlets
-     *                              from the query
+     *                              Applies only for working and live versions.
+     * @param excludingAssetSubtype Optional asset subtype (Content Type) used to exclude contentlets
+     *                              from the query.
+     * @param allVersions           Boolean indicating whether to process all versions of contentlets.
      */
-    @WrapInTransaction
     @LogTime(loggingLevel = "INFO")
     private void populate(@Nullable String assetSubtype,
                           @Nullable String excludingAssetSubtype,
                           final Boolean allVersions) {
 
-        try {
-            // First we need to find all the contentlets to process and write them into a file
-            findAndStore(assetSubtype, excludingAssetSubtype, allVersions);
-        } catch (SQLException | DotDataException e) {
-            throw new DotRuntimeException("Error finding, generating JSON representation of "
-                    + "Contentlets and storing them into a temporal table.", e);
+        while (true) {
+
+            CompletableFuture<Boolean> future = CompletableFuture.supplyAsync(() ->
+                    internalPopulate(assetSubtype, excludingAssetSubtype, allVersions));
+
+            try {
+                Boolean foundRecords = future.get();
+                if (!foundRecords) {
+                    break; // We don't need to continue processing
+                }
+            } catch (InterruptedException | ExecutionException e) {
+                throw new DotRuntimeException("Error populating contentlets with missing contentlet as JSON", e);
+            }
         }
 
-        try {
-            // Now we need to process the file and each record on it
-            processRecords();
-        } catch (SQLException | DotDataException e) {
-            throw new DotRuntimeException(
-                    "Error processing records with the JSON representation "
-                            + "of Contentlets to update.", e);
-        }
-
+        // Log task completion status
         if (allVersions) {
 
             Logger.info(this, "Contentlet as JSON migration task DONE for all versions");
@@ -197,6 +205,49 @@ public class PopulateContentletAsJSONUtil {
     }
 
     /**
+     * Internal method for populating the contentlet_as_json in contentlets.
+     * Executes the population process for the given assetSubtype and excludingAssetSubtype.
+     *
+     * @param assetSubtype          Optional asset subtype (Content Type) to filter the contentlets
+     *                              to process. If null, all the contentlets will be processed
+     *                              unless the excludingAssetSubtype is provided.
+     *                              Applies only for working and live versions.
+     * @param excludingAssetSubtype Optional asset subtype (Content Type) used to exclude contentlets
+     *                              from the query.
+     * @param allVersions           Boolean indicating whether to process all versions of contentlets.
+     * @return True if contentlets were found and processed, false otherwise.
+     */
+    @WrapInTransaction
+    private boolean internalPopulate(@Nullable String assetSubtype,
+                                     @Nullable String excludingAssetSubtype,
+                                     final Boolean allVersions) {
+
+        var foundRecords = false;
+
+        try {
+            // First we need to find all the contentlets to process and write them into a file
+            foundRecords = findAndStore(assetSubtype, excludingAssetSubtype, allVersions);
+        } catch (SQLException | DotDataException e) {
+            throw new DotRuntimeException("Error finding, generating JSON representation of "
+                    + "Contentlets and storing them into a temporal table.", e);
+        }
+
+        if (foundRecords) {
+
+            try {
+                // Now we need to process the file and each record on it
+                processRecords();
+            } catch (SQLException | DotDataException e) {
+                throw new DotRuntimeException(
+                        "Error processing records with the JSON representation "
+                                + "of Contentlets to update.", e);
+            }
+        }
+
+        return foundRecords;
+    }
+
+    /**
      * Searches for all the contentlets of a given asset subtype (Content Type) that have a null
      * contentlet_as_json. This method uses a cursor to avoid loading all the contentlets into
      * memory. Each found contentlet is written into a temporal table for a later processing.
@@ -209,13 +260,15 @@ public class PopulateContentletAsJSONUtil {
      * @throws DotDataException
      */
     @WrapInTransaction
-    private void findAndStore(@Nullable final String assetSubtype,
-                              @Nullable final String excludingAssetSubtype,
-                              final Boolean allVersions
+    private boolean findAndStore(@Nullable final String assetSubtype,
+                                 @Nullable final String excludingAssetSubtype,
+                                 final Boolean allVersions
     ) throws SQLException, DotDataException {
 
         final Collection<Params> paramsInsert = new ArrayList<>();
         final MutableInt totalInsertAffected = new MutableInt(0);
+
+        var foundData = false;
 
         Logger.info(this, "Finding records with missing Contentlet as JSON");
 
@@ -247,6 +300,7 @@ public class PopulateContentletAsJSONUtil {
                     if (!loadedResults.isEmpty()) {
 
                         hasRows = true;
+                        foundData = true;
 
                         var jsonDataArray = Optional.ofNullable(loadedResults)
                                 .map(results ->
@@ -281,7 +335,11 @@ public class PopulateContentletAsJSONUtil {
             Logger.info(this, "-- Records found to process: " + totalInsertAffected.intValue());
         }
 
-        Logger.info(this, "Inserted records into temporal table preparing data to update missing Contentlet as JSON");
+        if (foundData) {
+            Logger.info(this, "Inserted records into temporal table preparing data to update missing Contentlet as JSON");
+        }
+
+        return foundData;
     }
 
     /**
@@ -369,15 +427,17 @@ public class PopulateContentletAsJSONUtil {
 
         // Declaring the cursor
         if (allVersions) {
-            stmt.execute(String.format(DECLARE_CURSOR, CONTENTS_WITH_NO_JSON_ALL_VERSIONS));
+            var selectQuery = String.format(CONTENTS_WITH_NO_JSON_ALL_VERSIONS, LIMIT_FOR_SELECTS);
+            stmt.execute(String.format(DECLARE_CURSOR, selectQuery));
         } else if (!Strings.isNullOrEmpty(assetSubtype)) {
-            var selectQuery = String.format(SUBTYPE_WITH_NO_JSON, assetSubtype);
+            var selectQuery = String.format(SUBTYPE_WITH_NO_JSON, assetSubtype, LIMIT_FOR_SELECTS);
             stmt.execute(String.format(DECLARE_CURSOR, selectQuery));
         } else if (!Strings.isNullOrEmpty(excludingAssetSubtype)) {
-            var selectQuery = String.format(CONTENTS_WITH_NO_JSON_AND_EXCLUDE, excludingAssetSubtype);
+            var selectQuery = String.format(CONTENTS_WITH_NO_JSON_AND_EXCLUDE, excludingAssetSubtype, LIMIT_FOR_SELECTS);
             stmt.execute(String.format(DECLARE_CURSOR, selectQuery));
         } else {
-            stmt.execute(String.format(DECLARE_CURSOR, CONTENTS_WITH_NO_JSON));
+            var selectQuery = String.format(CONTENTS_WITH_NO_JSON, LIMIT_FOR_SELECTS);
+            stmt.execute(String.format(DECLARE_CURSOR, selectQuery));
         }
     }
 
@@ -401,7 +461,7 @@ public class PopulateContentletAsJSONUtil {
         paramsInsert.add(new Params(inode, json));
 
         // Execute the batch for the inserts if we have reached the max batch size
-        if (paramsInsert.size() >= MAX_UPDATE_BATCH_SIZE) {
+        if (paramsInsert.size() >= MAX_BATCH_SIZE) {
             this.doInsertBatch(paramsInsert, totalInsertAffected);
         }
     }
@@ -436,7 +496,7 @@ public class PopulateContentletAsJSONUtil {
         paramsUpdate.add(new Params(contentletAsJSON, inode));
 
         // Execute the batch for the updates if we have reached the max batch size
-        if (paramsUpdate.size() >= MAX_UPDATE_BATCH_SIZE) {
+        if (paramsUpdate.size() >= MAX_BATCH_SIZE) {
             this.doUpdateBatch(paramsUpdate, totalUpdateAffected);
         }
     }
