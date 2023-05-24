@@ -156,7 +156,6 @@ describe('DotPageStore', () => {
         dotFavoritePageService = TestBed.inject(DotFavoritePageService);
         dotLocalstorageService = TestBed.inject(DotLocalstorageService);
 
-
         spyOn(dialogService, 'open').and.callThrough();
         spyOn(dotHttpErrorManagerService, 'handle');
         spyOn(dotLocalstorageService, 'getItem').and.returnValue(`true`);
@@ -639,12 +638,45 @@ describe('DotPageStore', () => {
         });
     });
 
-    it('should get all menu actions from a favorite page when page is archived', () => {
-        const error404 = mockResponseView(404, '/page', null, { message: 'error' });
-        spyOn(dotPageWorkflowsActionsService, 'getByUrl').and.returnValue(throwError(error404));
+    it('should not have Add/Edit Bookmark actions in context menu when contentlet is archived', () => {
+        spyOn(dotPageWorkflowsActionsService, 'getByUrl').and.returnValue(
+            of({ actions: mockWorkflowsActions, page: dotcmsContentletMock })
+        );
 
         dotPageStore.showActionsMenu({
-            item: { ...favoritePagesInitialTestData[0], contentType: 'dotFavoritePage' },
+            item: {
+                ...favoritePagesInitialTestData[1],
+                url: '/index2?host_id=A&language_id=1&device_inode=123',
+                contentType: 'dotFavoritePage',
+                archived: true
+            },
+            actionMenuDomId: 'test1'
+        });
+
+        expect(dotPageWorkflowsActionsService.getByUrl).toHaveBeenCalledWith({
+            host_id: 'A',
+            language_id: '1',
+            url: '/index2'
+        });
+
+        dotPageStore.state$.subscribe((data) => {
+            expect(data.pages.menuActions.length).toEqual(8);
+            expect(data.pages.menuActions[0].label).toEqual('favoritePage.contextMenu.action.edit');
+            expect(data.pages.menuActions[1].label).toEqual('favoritePage.dialog.delete.button');
+        });
+    });
+
+    it('should get all menu actions from a favorite page when page is archived', () => {
+        spyOn(dotPageWorkflowsActionsService, 'getByUrl').and.returnValue(
+            of({ actions: mockWorkflowsActions, page: dotcmsContentletMock })
+        );
+
+        dotPageStore.showActionsMenu({
+            item: {
+                ...favoritePagesInitialTestData[0],
+                contentType: 'dotFavoritePage',
+                archived: true
+            },
             actionMenuDomId: 'test1'
         });
 
@@ -655,9 +687,14 @@ describe('DotPageStore', () => {
         });
 
         dotPageStore.state$.subscribe((data) => {
-            expect(data.pages.menuActions.length).toEqual(2);
             expect(data.pages.menuActions[0].label).toEqual('favoritePage.contextMenu.action.edit');
             expect(data.pages.menuActions[1].label).toEqual('favoritePage.dialog.delete.button');
+            expect(data.pages.menuActions[2]).toEqual({ separator: true });
+            expect(data.pages.menuActions[3].label).toEqual('Assign Workflow');
+            expect(data.pages.menuActions[4].label).toEqual('Save');
+            expect(data.pages.menuActions[5].label).toEqual('Save / Publish');
+            expect(data.pages.menuActions[6].label).toEqual('contenttypes.content.push_publish');
+            expect(data.pages.menuActions[7].label).toEqual('contenttypes.content.add_to_bundle');
         });
     });
 
