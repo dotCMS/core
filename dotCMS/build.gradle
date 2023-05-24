@@ -292,9 +292,9 @@ dependencies {
 
     //// starter config
 
-    starter group: 'com.dotcms', name: 'starter', version: 'empty_20230112', ext: 'zip'
+    starter group: 'com.dotcms', name: 'starter', version: 'empty_20230509', ext: 'zip'
     //Uncomment this line if you want to download the starter that comes with data
-    //starter group: 'com.dotcms', name: 'starter', version: '20230112', ext: 'zip'
+    // starter group: 'com.dotcms', name: 'starter', version: '20230518', ext: 'zip'
     testsStarter group: 'com.dotcms', name: 'starter', version: 'empty_20220718', ext: 'zip'
     
     profiler group: 'glowroot-custom', name: 'glowroot-agent', version: '0.13.1'
@@ -459,7 +459,8 @@ tasks.withType(Test) {
         // set options for log level LIFECYCLE
         events TestLogEvent.FAILED,
                 TestLogEvent.PASSED,
-                TestLogEvent.SKIPPED
+                TestLogEvent.SKIPPED,
+                TestLogEvent.STANDARD_ERROR
         exceptionFormat TestExceptionFormat.FULL
 
     }

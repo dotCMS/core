@@ -13,12 +13,12 @@ on:
         description: 'Update also the "latest" tag (relies on update_stable input to be set to true)'
         required: false
         default: 'false'
-      dry_run:
-        description: 'Dry Run (does not publish to docker hub)'
-        required: false
-        default: 'false'
       multi_arch:
         description: 'Multi-arch flag, true: linux/amd64,linux/arm64 or false: linux/amd64'
+        required: false
+        default: 'false'
+      dry_run:
+        description: 'Dry Run (does not publish to docker hub)'
         required: false
         default: 'false'
 jobs:

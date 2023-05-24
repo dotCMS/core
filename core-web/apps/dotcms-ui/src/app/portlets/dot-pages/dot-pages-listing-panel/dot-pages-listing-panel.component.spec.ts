@@ -119,6 +119,9 @@ describe('DotPagesListingPanelComponent', () => {
         setArchived(): void {
             /* */
         }
+        setSessionStorageFilterParams(): void {
+            /* */
+        }
         get actionMenuDomId$() {
             return of('');
         }
@@ -165,6 +168,7 @@ describe('DotPagesListingPanelComponent', () => {
             spyOn(store, 'setKeyword');
             spyOn(store, 'setLanguageId');
             spyOn(store, 'setArchived');
+            spyOn(store, 'setSessionStorageFilterParams');
             spyOn(component.goToUrl, 'emit');
 
             fixture.detectChanges();
@@ -214,6 +218,7 @@ describe('DotPagesListingPanelComponent', () => {
 
             expect(store.setKeyword).toHaveBeenCalledWith('test');
             expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
+            expect(store.setSessionStorageFilterParams).toHaveBeenCalledTimes(1);
         });
 
         it('should send event to filter language', () => {
@@ -222,6 +227,7 @@ describe('DotPagesListingPanelComponent', () => {
 
             expect(store.setLanguageId).toHaveBeenCalledWith('1');
             expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
+            expect(store.setSessionStorageFilterParams).toHaveBeenCalledTimes(1);
         });
 
         it('should send event to filter archived', () => {
@@ -230,6 +236,7 @@ describe('DotPagesListingPanelComponent', () => {
 
             expect(store.setArchived).toHaveBeenCalledWith('1');
             expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
+            expect(store.setSessionStorageFilterParams).toHaveBeenCalledTimes(1);
         });
 
         it('should send event to emit URL value', () => {

@@ -7,7 +7,6 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { InputTextareaModule } from 'primeng/inputtextarea';
-import { RippleModule } from 'primeng/ripple';
 import { SidebarModule } from 'primeng/sidebar';
 
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
@@ -45,8 +44,7 @@ interface CreateForm {
         InputTextareaModule,
         InputTextModule,
         SidebarModule,
-        ButtonModule,
-        RippleModule
+        ButtonModule
     ],
     templateUrl: './dot-experiments-create.component.html',
     styleUrls: ['./dot-experiments-create.component.scss'],

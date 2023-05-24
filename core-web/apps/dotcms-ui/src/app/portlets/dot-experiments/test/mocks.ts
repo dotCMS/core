@@ -2,6 +2,7 @@ import { ChartData } from 'chart.js';
 import { of } from 'rxjs';
 
 import {
+    BayesianStatusResponse,
     ComponentStatus,
     DEFAULT_VARIANT_ID,
     DEFAULT_VARIANT_NAME,
@@ -13,6 +14,7 @@ import {
     GOAL_PARAMETERS,
     GOAL_TYPES,
     Goals,
+    SummaryLegend,
     TrafficProportionTypes
 } from '@dotcms/dotcms-models';
 
@@ -29,6 +31,8 @@ export const GoalsMock: Goals = {
         ]
     }
 };
+
+export const suggestedWinnerMock: SummaryLegend = { icon: 'icon', legend: 'legend' };
 
 export const getExperimentMock = (index: number): DotExperiment => {
     return { ...ExperimentMocks[index] };
@@ -231,7 +235,7 @@ export const ExperimentResultsMocks: Array<DotExperimentResults> = [
         sessions: { total: 2, variants: { DEFAULT: 2, '111': 0 } },
         bayesianResult: {
             value: 0.0,
-            suggestedWinner: null,
+            suggestedWinner: BayesianStatusResponse.NONE,
             probabilities: [
                 {
                     variant: DEFAULT_VARIANT_ID,
@@ -434,6 +438,11 @@ export const DotExperimentsConfigurationStoreMock = {
         isExperimentADraft: true
     }),
     targetStepVm$: of({})
+};
+
+export const DotExperimentsStoreMock = {
+    getPageId$: of('1111111'),
+    getPageTitle$: of('title of page')
 };
 
 export const DotExperimentsReportsStoreMock = {

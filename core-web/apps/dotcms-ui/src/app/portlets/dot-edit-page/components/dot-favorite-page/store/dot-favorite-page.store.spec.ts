@@ -22,7 +22,11 @@ import {
     mockResponseView
 } from '@dotcms/utils-testing';
 
-import { DotFavoritePageActionState, DotFavoritePageStore } from './dot-favorite-page.store';
+import {
+    CMS_OWNER_ROLE_LIST,
+    DotFavoritePageActionState,
+    DotFavoritePageStore
+} from './dot-favorite-page.store';
 
 @Injectable()
 class MockDotTempFileUploadService {
@@ -189,13 +193,21 @@ describe('DotFavoritePageStore', () => {
 
             expect(
                 dotWorkflowActionsFireService.publishContentletAndWaitForIndex
-            ).toHaveBeenCalledWith('dotFavoritePage', {
-                screenshot: 'temp-file_123',
-                inode: null,
-                title: 'A title',
-                url: '/an/url/test?language_id=1',
-                order: 1
-            });
+            ).toHaveBeenCalledWith(
+                'dotFavoritePage',
+                {
+                    screenshot: 'temp-file_123',
+                    inode: null,
+                    title: 'A title',
+                    url: '/an/url/test?language_id=1',
+                    order: 1
+                },
+                {
+                    READ: CMS_OWNER_ROLE_LIST,
+                    WRITE: CMS_OWNER_ROLE_LIST,
+                    PUBLISH: CMS_OWNER_ROLE_LIST
+                }
+            );
 
             dotFavoritePageStore.state$.subscribe((state) => {
                 expect(state.closeDialog).toEqual(true);
@@ -223,13 +235,21 @@ describe('DotFavoritePageStore', () => {
 
             expect(
                 dotWorkflowActionsFireService.publishContentletAndWaitForIndex
-            ).toHaveBeenCalledWith('dotFavoritePage', {
-                screenshot: '',
-                inode: null,
-                title: 'A title',
-                url: '/an/url/test?language_id=1',
-                order: 1
-            });
+            ).toHaveBeenCalledWith(
+                'dotFavoritePage',
+                {
+                    screenshot: '',
+                    inode: null,
+                    title: 'A title',
+                    url: '/an/url/test?language_id=1',
+                    order: 1
+                },
+                {
+                    READ: CMS_OWNER_ROLE_LIST,
+                    WRITE: CMS_OWNER_ROLE_LIST,
+                    PUBLISH: CMS_OWNER_ROLE_LIST
+                }
+            );
 
             dotFavoritePageStore.state$.subscribe((state) => {
                 expect(state.closeDialog).toEqual(true);
@@ -256,14 +276,22 @@ describe('DotFavoritePageStore', () => {
 
             expect(
                 dotWorkflowActionsFireService.publishContentletAndWaitForIndex
-            ).toHaveBeenCalledWith('dotFavoritePage', {
-                screenshot:
-                    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAAAXNSR0IArs4c6QAAAXlJREFUaEPVktuNwjAQRWNaWApBFAGUBBVASUARaAvZbQGQI4EScJx53JvY/vHfeM45Dg3xHH//N3H8YfVzZT0TWIPj3NPt7xzv/Xq5Y71DA2jt3++XdvHFYsuqQAOI9h/NYxv3D024sCpQAHr2X3+HVIEC0LX/2p9VAQ6QtE+sAAdI2WdWgAJk7ZMqQAFy9lkVYAAi+4QKMACJfUYFCIDKPrgCBEBjH13BDWCyD6zgBrDYR1ZwAbjsgyq4ADz2URXMABD7gApmAIR9RAUTANS+s4IJAGnfW0ENQLHvqKAGYNj3VFABUO0bK6gAmPatFcQAk9g3VBADTGHfUkEEMKl9ZQURwJT2tRVGAWaxr6gwCjCHfU2FLMCs9oUVsgBz2pdWGAQowr6gwiBACfYlFZIARdkfqZAEKMn+WIUvgCLtZyp8AZRoP1ehB1C0/YEKPYCS7Q9VeANUYT9R4Q1Qg/1UhRagKvsfFVqAmux/VghV2u9UCDXa71Z4AkPtR8QJFVfWAAAAAElFTkSuQmCC',
-                inode: 'abc123',
-                title: 'A title',
-                url: '/an/url/test?language_id=1',
-                order: 1
-            });
+            ).toHaveBeenCalledWith(
+                'dotFavoritePage',
+                {
+                    screenshot:
+                        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAAAXNSR0IArs4c6QAAAXlJREFUaEPVktuNwjAQRWNaWApBFAGUBBVASUARaAvZbQGQI4EScJx53JvY/vHfeM45Dg3xHH//N3H8YfVzZT0TWIPj3NPt7xzv/Xq5Y71DA2jt3++XdvHFYsuqQAOI9h/NYxv3D024sCpQAHr2X3+HVIEC0LX/2p9VAQ6QtE+sAAdI2WdWgAJk7ZMqQAFy9lkVYAAi+4QKMACJfUYFCIDKPrgCBEBjH13BDWCyD6zgBrDYR1ZwAbjsgyq4ADz2URXMABD7gApmAIR9RAUTANS+s4IJAGnfW0ENQLHvqKAGYNj3VFABUO0bK6gAmPatFcQAk9g3VBADTGHfUkEEMKl9ZQURwJT2tRVGAWaxr6gwCjCHfU2FLMCs9oUVsgBz2pdWGAQowr6gwiBACfYlFZIARdkfqZAEKMn+WIUvgCLtZyp8AZRoP1ehB1C0/YEKPYCS7Q9VeANUYT9R4Q1Qg/1UhRagKvsfFVqAmux/VghV2u9UCDXa71Z4AkPtR8QJFVfWAAAAAElFTkSuQmCC',
+                    inode: 'abc123',
+                    title: 'A title',
+                    url: '/an/url/test?language_id=1',
+                    order: 1
+                },
+                {
+                    READ: CMS_OWNER_ROLE_LIST,
+                    WRITE: CMS_OWNER_ROLE_LIST,
+                    PUBLISH: CMS_OWNER_ROLE_LIST
+                }
+            );
 
             dotFavoritePageStore.state$.subscribe((state) => {
                 expect(state.closeDialog).toEqual(true);
@@ -290,13 +318,21 @@ describe('DotFavoritePageStore', () => {
 
             expect(
                 dotWorkflowActionsFireService.publishContentletAndWaitForIndex
-            ).toHaveBeenCalledWith('dotFavoritePage', {
-                screenshot: 'temp-file_123',
-                inode: null,
-                title: 'A title',
-                url: '/an/url/test?language_id=1',
-                order: 1
-            });
+            ).toHaveBeenCalledWith(
+                'dotFavoritePage',
+                {
+                    screenshot: 'temp-file_123',
+                    inode: null,
+                    title: 'A title',
+                    url: '/an/url/test?language_id=1',
+                    order: 1
+                },
+                {
+                    READ: CMS_OWNER_ROLE_LIST,
+                    WRITE: CMS_OWNER_ROLE_LIST,
+                    PUBLISH: CMS_OWNER_ROLE_LIST
+                }
+            );
 
             dotFavoritePageStore.state$.subscribe((state) => {
                 expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);

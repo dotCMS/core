@@ -104,7 +104,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                   ...experiment.goals,
                   primary: {
                       ...experiment.goals.primary,
-                      ...this.setDefaultGoalCondition(experiment.goals.primary)
+                      ...this.removeDefaultGoalCondition(experiment.goals.primary)
                   }
               }
             : null;
@@ -142,7 +142,8 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     // Updaters
     readonly setExperiment = this.updater((state, experiment: DotExperiment) => ({
         ...state,
-        experiment
+        experiment,
+        status: ComponentStatus.IDLE
     }));
 
     readonly setComponentStatus = this.updater((state, status: ComponentStatus) => ({
@@ -226,17 +227,36 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                             this.messageService.add({
                                 severity: 'info',
                                 summary: this.dotMessageService.get(
-                                    'experiments.action.start.confirm-title'
+                                    response.status === DotExperimentStatusList.RUNNING
+                                        ? 'experiments.action.start.confirm-title'
+                                        : 'experiments.action.scheduled.confirm-title'
                                 ),
                                 detail: this.dotMessageService.get(
-                                    'experiments.action.start.confirm-message',
+                                    response.status === DotExperimentStatusList.RUNNING
+                                        ? 'experiments.action.start.confirm-message'
+                                        : 'experiments.action.scheduled.confirm-message',
                                     experiment.name
                                 )
                             });
                             this.setExperiment(response);
                         },
-                        (error: HttpErrorResponse) => this.dotHttpErrorManagerService.handle(error),
-                        () => this.setComponentStatus(ComponentStatus.IDLE)
+                        (response: HttpErrorResponse) => {
+                            this.setComponentStatus(ComponentStatus.IDLE);
+                            const { error } = response;
+
+                            return this.dotHttpErrorManagerService.handle({
+                                ...response,
+                                error: {
+                                    ...error,
+                                    header: error.header
+                                        ? error.header
+                                        : this.dotMessageService.get(
+                                              'dot.common.http.error.400.experiment.run-scheduling-error.header'
+                                          ),
+                                    message: error.message.split('.')[0]
+                                }
+                            });
+                        }
                     )
                 )
             )
@@ -741,17 +761,14 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         this.title.setTitle(`${experiment.name} - ${this.title.getTitle()}`);
     }
 
-    private setDefaultGoalCondition(goal: Goal): Goal {
+    private removeDefaultGoalCondition(goal: Goal): Goal {
         const { type, conditions } = goal;
 
         return {
             ...goal,
             conditions: [
-                ...conditions.map((condition) => {
-                    return {
-                        ...condition,
-                        isDefault: ConditionDefaultByTypeOfGoal[type] === condition.parameter
-                    };
+                ...conditions.filter((condition) => {
+                    return ConditionDefaultByTypeOfGoal[type] !== condition.parameter;
                 })
             ]
         };

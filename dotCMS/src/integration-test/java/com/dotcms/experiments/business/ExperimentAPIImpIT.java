@@ -45,6 +45,7 @@ import com.dotcms.experiments.business.result.VariantResults.ResultResumeItem;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.ExperimentVariant;
+import com.dotcms.experiments.model.GoalFactory;
 import com.dotcms.experiments.model.Goals;
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.http.CircuitBreakerUrl.Method;
@@ -336,8 +337,7 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
         final String variantName_1 = "experiment_page_reach+testing_1_variant_1";
         final String variantName_2 = "experiment_page_reach+testing_1_variant_2";
 
-        final Experiment experiment = createExperimentWithReachPageGoalAndVariant("experiment_events_testing_1",
-                pageB, pageD);
+        final Experiment experiment = createExperimentWithReachPageGoalAndVariant(pageB, pageD);
 
         final List<Map<String, String>> events_1 = createPageViewEvents(Instant.now(), experiment,
                 variantName_1, pageA, pageB, pageD, pageC);
@@ -372,9 +372,13 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
         IPUtils.disabledIpPrivateSubnet(true);
         final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment);
 
-        final MockHttpServer mockHttpServer = createMockHttpServerAndStart(
+        final MockHttpServer mockHttpServer = createMockHttpServer(
             cubeJSQueryExpected,
             JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        addCountQueryContext(experiment, cubeJsQueryData.size(), mockHttpServer);
+
+        mockHttpServer.start();
 
         IPUtils.disabledIpPrivateSubnet(true);
 
@@ -411,10 +415,23 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
         }
     }
 
-    private static Experiment createExperimentWithReachPageGoalAndVariant(final String experimentName,
-                                                                          final HTMLPageAsset experimentPage,
+    private static Experiment createExperimentWithReachPageGoalAndVariant(final HTMLPageAsset experimentPage,
+            final HTMLPageAsset reachPage) {
+
+        final Metric metric = Metric.builder()
+                .name("Testing Metric")
+                .type(MetricType.REACH_PAGE)
+                .addConditions(
+                        getUrlCondition(reachPage.getPageUrl()),
+                        getRefererCondition(experimentPage.getPageUrl()))
+                .build();
+        return createExperiment(experimentPage, metric, new String[]{RandomString.make(15)});
+    }
+
+    private static Experiment createExperimentWithReachPageGoalAndVariant(final HTMLPageAsset experimentPage,
                                                                           final HTMLPageAsset reachPage,
-                                                                          final String... vatiants) {
+                                                                            final String... variants) {
+
         final Metric metric = Metric.builder()
                 .name("Testing Metric")
                 .type(MetricType.REACH_PAGE)
@@ -422,21 +439,19 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
                     getUrlCondition(reachPage.getPageUrl()),
                     getRefererCondition(experimentPage.getPageUrl()))
                 .build();
-        return createExperiment(experimentName, experimentPage, metric, vatiants);
+        return createExperiment(experimentPage, metric, variants);
     }
 
-    private static Experiment createExperiment(final String experimentName,
-                                               final HTMLPageAsset pageB,
+    private static Experiment createExperiment(final HTMLPageAsset pageB,
                                                final Metric metric,
                                                final String... variants) {
-        final Goals goal = Goals.builder().primary(metric).build();
+
+        final Goals goal = Goals.builder().primary(GoalFactory.create(metric)).build();
         final ExperimentDataGen experimentDataGen = new ExperimentDataGen()
-            .addVariant(experimentName)
             .page(pageB)
             .addGoal(goal);
-        for (final String variant : variants) {
-            experimentDataGen.addVariant(variant);
-        }
+
+        Arrays.stream(variants).forEach(variantName -> experimentDataGen.addVariant(variantName));
 
         return experimentDataGen.nextPersisted();
     }
@@ -468,12 +483,19 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
         final Host host = new SiteDataGen().nextPersisted();
         final Template template = new TemplateDataGen().host(host).nextPersisted();
 
-        final Experiment experiment = new ExperimentDataGen().addVariant("V1").nextPersisted();
+        final HTMLPageAsset pageA = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageB = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = createExperimentWithReachPageGoalAndVariant(pageA, pageB);
+
+        final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
 
         try {
 
             final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
             ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+
+             addCountQueryContext(experiment, 0, mockhttpServer);
 
             ExperimentDataGen.start(experiment);
 
@@ -484,8 +506,13 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
                     .orElseThrow();
 
             final ExperimentsAPIImpl experimentsAPI = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            
+
+            mockhttpServer.start();
+            IPUtils.disabledIpPrivateSubnet(true);
+
             final ExperimentResults results = experimentsAPI.getResults(experiment);
+
+            mockhttpServer.validate();
 
             final Map<String, VariantResults> variants = results.getGoals().get("primary")
                     .getVariants();
@@ -498,6 +525,7 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
             assertEquals(50f, controlResults.weight());
         } finally {
             ExperimentDataGen.end(experiment);
+            mockhttpServer.stop();
         }
     }
 
@@ -521,16 +549,9 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
         final HTMLPageAsset pageC = new HTMLPageDataGen(host, template).nextPersisted();
         final HTMLPageAsset pageD = new HTMLPageDataGen(host, template).nextPersisted();
 
-        final Experiment experiment = createExperimentWithReachPageGoalAndVariant("experiment_page_reach_testing_1",
-                pageB, pageD);
+        final Experiment experiment = createExperimentWithReachPageGoalAndVariant(pageB, pageD);
 
-        final String variantName = experiment.trafficProportion().variants().stream()
-                .filter(experimentVariant -> !experimentVariant.id().equals("DEFAULT"))
-                .map(experimentVariant -> experimentVariant.id())
-                .limit(1)
-                .findFirst()
-                .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
-
+        final String variantName = getNotDefaultVariantName(experiment);
         final Variant variant = APILocator.getVariantAPI().get(variantName).orElseThrow();
 
         final Instant firstEventStartDate = Instant.now();
@@ -543,11 +564,10 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
                 .start(experiment.getIdentifier(), APILocator.systemUser());
 
         IPUtils.disabledIpPrivateSubnet(true);
-        final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment);
 
         final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
 
-
+        final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment);
         addContext(mockhttpServer, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
 
         final String queryTotalPageViews = getTotalPageViewsQuery(experiment.id().get(), "DEFAULT", variantName);
@@ -557,6 +577,8 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
 
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
+
+        addCountQueryContext(experiment, 4, mockhttpServer);
 
         mockhttpServer.start();
 
@@ -606,6 +628,279 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
             IPUtils.disabledIpPrivateSubnet(false);
             mockhttpServer.stop();
         }
+    }
+
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
+     * When:
+     * - You have four pages: A, B, C and D
+     * - You create an {@link Experiment} with one Variant using the B page with a PAGE_REACH Goal: url EQUALS TO PAge D.
+     * - You have 1000 Sessions, 500 for each Variant (Default and Variant), in each session you have the folloe page_view:
+     * A, B, D, C, A, B, D, C and A.
+     * this is 9000 Events in total it means exactly 9 pages
+     * - You are going to get as result the follow:
+     * 1000 Total Sessions
+     * 500 total Sessions foeach Variant
+     * 500 Unique Session success for each Variant
+     * 1000 Multi session success for each Variant (because page D is reach twice in each session)
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void resultWithPagination() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset pageA = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageB = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageC = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageD = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = createExperimentWithReachPageGoalAndVariant(pageB, pageD);
+
+        final String variantName = getNotDefaultVariantName(experiment);
+        final Variant variant = APILocator.getVariantAPI().get(variantName).orElseThrow();
+
+        final Instant firstEventStartDate = Instant.now();
+
+        final List<Map<String, String>> cubeJsQueryAllData = new ArrayList<>();
+
+        for (int i= 0; i < 1000; i++) {
+            final String variantToUse = i % 2 == 0 ? variantName : "DEFAULT";
+            final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(firstEventStartDate,
+                    experiment, variantToUse, pageA, pageB, pageD, pageC, pageA, pageB, pageD, pageC, pageA);
+
+            cubeJsQueryAllData.addAll(cubeJsQueryData);
+        }
+
+        final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
+
+        int offset = 0;
+        for (int i = 0; i < 9; i++) {
+            final List<Map<String, String>> page = new ArrayList<>(
+                    cubeJsQueryAllData.subList(offset, offset + 1000));
+
+            final Map<String, List<Map<String, String>>> pageCubeJsQueryResult =  map("data", page);
+
+            final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment, 1000, offset);
+
+            addContext(mockhttpServer, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(pageCubeJsQueryResult));
+
+            offset += 1000;
+        }
+
+        APILocator.getExperimentsAPI()
+                .start(experiment.getIdentifier(), APILocator.systemUser());
+
+        IPUtils.disabledIpPrivateSubnet(true);
+
+        final String queryTotalPageViews = getTotalPageViewsQuery(experiment.id().get(), "DEFAULT", variantName);
+        final List<Map<String, Object>> totalPageViewsResponseExpected = list(
+                map("Events.variant", variantName, "Events.count", "4500"),
+                map("Events.variant", "DEFAULT", "Events.count", "4500")
+        );
+
+        addContext(mockhttpServer, queryTotalPageViews,
+                JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
+
+        final String countExpectedPageReachQuery = getCountExpectedPageReachQuery(experiment);
+        final List<Map<String, Object>> countResponseExpected = list(
+                map("Events.count", "9000")
+        );
+
+        addContext(mockhttpServer, countExpectedPageReachQuery,
+                JsonUtil.getJsonStringFromObject(map("data", countResponseExpected)));
+
+        mockhttpServer.start();
+
+        try {
+            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+
+            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+
+            final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+
+            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
+
+            mockhttpServer.validate();
+
+            assertEquals(1000, experimentResults.getSessions().getTotal());
+
+            for (VariantResults variantResult : experimentResults.getGoals().get("primary").getVariants().values()) {
+
+                if (variantResult.getVariantName().equals(variantName)) {
+                    assertEquals(variant.description().get(), variantResult.getVariantDescription());
+                } else {
+
+                    assertEquals("DEFAULT", variantResult.getVariantName());
+                    assertEquals("Original", variantResult.getVariantDescription());
+                }
+
+                assertEquals(4500, variantResult.getTotalPageViews());
+
+                Assert.assertEquals(500, variantResult.getUniqueBySession().getCount());
+                Assert.assertEquals(1000, variantResult.getMultiBySession());
+                Assert.assertEquals(500, (long) experimentResults.getSessions().getVariants().get(variantResult.getVariantName()));
+
+                final Map<String, ResultResumeItem> details = variantResult.getDetails();
+                final ResultResumeItem resultResumeItem = details.get(
+                        SIMPLE_FORMATTER.format(firstEventStartDate));
+
+                assertNotNull(resultResumeItem);
+
+                Assert.assertEquals(500, resultResumeItem.getUniqueBySession());
+                Assert.assertEquals(1000, resultResumeItem.getMultiBySession());
+            }
+        } finally {
+            APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
+
+            IPUtils.disabledIpPrivateSubnet(false);
+            mockhttpServer.stop();
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
+     * When:
+     * - You have four pages: A, B, C and D
+     * - You create an {@link Experiment} with one Variant using the B page with a PAGE_REACH Goal: url EQUALS TO PAge D.
+     * - You have 500 Sessions, 250 for each Variant (Default and Variant), in each session you have the follow page_view:
+     * A, B, D, C, A, B, D, C and A.
+     * this is 4500 Events it means 5 pages but the last one jut it going to have 500 events
+     * - You are going to get as result the follow:
+     * 500 Total Sessions
+     * 250 total Sessions for each Variant
+     * 250 Unique Session success for each Variant
+     * 500 Multi session success for each Variant (because page D is reach twice in each session)
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void resultWithPaginationWhenTheLastPageIsNotComplte() throws DotDataException, DotSecurityException {
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset pageA = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageB = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageC = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageD = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = createExperimentWithReachPageGoalAndVariant(pageB, pageD);
+
+        final String variantName = getNotDefaultVariantName(experiment);
+        final Variant variant = APILocator.getVariantAPI().get(variantName).orElseThrow();
+
+        final Instant firstEventStartDate = Instant.now();
+
+        final List<Map<String, String>> cubeJsQueryAllData = new ArrayList<>();
+
+        for (int i= 0; i < 500; i++) {
+            final String variantToUse = i % 2 == 0 ? variantName : "DEFAULT";
+            final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(firstEventStartDate,
+                    experiment, variantToUse, pageA, pageB, pageD, pageC, pageA, pageB, pageD, pageC, pageA);
+
+            cubeJsQueryAllData.addAll(cubeJsQueryData);
+        }
+
+        final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
+
+        int offset = 0;
+        for (int i = 0; i < 5; i++) {
+            final int totalItems = i ==4 ? 500 : 1000;
+            final List<Map<String, String>> page = new ArrayList<>(
+                    cubeJsQueryAllData.subList(offset, offset + totalItems));
+
+            final Map<String, List<Map<String, String>>> pageCubeJsQueryResult =  map("data", page);
+
+            final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment, 1000, offset);
+
+            addContext(mockhttpServer, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(pageCubeJsQueryResult));
+
+            offset += 1000;
+        }
+
+        APILocator.getExperimentsAPI()
+                .start(experiment.getIdentifier(), APILocator.systemUser());
+
+        IPUtils.disabledIpPrivateSubnet(true);
+
+        final String queryTotalPageViews = getTotalPageViewsQuery(experiment.id().get(), "DEFAULT", variantName);
+        final List<Map<String, Object>> totalPageViewsResponseExpected = list(
+                map("Events.variant", variantName, "Events.count", "2250"),
+                map("Events.variant", "DEFAULT", "Events.count", "2250")
+        );
+
+        addContext(mockhttpServer, queryTotalPageViews,
+                JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
+
+        final String countExpectedPageReachQuery = getCountExpectedPageReachQuery(experiment);
+        final List<Map<String, Object>> countResponseExpected = list(
+                map("Events.count", "4500")
+        );
+
+        addContext(mockhttpServer, countExpectedPageReachQuery,
+                JsonUtil.getJsonStringFromObject(map("data", countResponseExpected)));
+
+        mockhttpServer.start();
+
+        try {
+            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+
+            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+
+            final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+
+            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
+
+            mockhttpServer.validate();
+
+            assertEquals(500, experimentResults.getSessions().getTotal());
+
+            for (VariantResults variantResult : experimentResults.getGoals().get("primary").getVariants().values()) {
+
+                if (variantResult.getVariantName().equals(variantName)) {
+                    assertEquals(variant.description().get(), variantResult.getVariantDescription());
+                } else {
+
+                    assertEquals("DEFAULT", variantResult.getVariantName());
+                    assertEquals("Original", variantResult.getVariantDescription());
+                }
+
+                assertEquals(2250, variantResult.getTotalPageViews());
+
+                Assert.assertEquals(250, variantResult.getUniqueBySession().getCount());
+                Assert.assertEquals(500, variantResult.getMultiBySession());
+                Assert.assertEquals(250, (long) experimentResults.getSessions().getVariants().get(variantResult.getVariantName()));
+
+                final Map<String, ResultResumeItem> details = variantResult.getDetails();
+                final ResultResumeItem resultResumeItem = details.get(
+                        SIMPLE_FORMATTER.format(firstEventStartDate));
+
+                assertNotNull(resultResumeItem);
+
+                Assert.assertEquals(250, resultResumeItem.getUniqueBySession());
+                Assert.assertEquals(500, resultResumeItem.getMultiBySession());
+            }
+        } finally {
+            APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
+
+            IPUtils.disabledIpPrivateSubnet(false);
+            mockhttpServer.stop();
+        }
+    }
+
+    private static String getNotDefaultVariantName(Experiment experiment) {
+        final String variantName = experiment.trafficProportion().variants().stream()
+                .filter(experimentVariant -> !experimentVariant.id().equals("DEFAULT"))
+                .map(experimentVariant -> experimentVariant.id())
+                .limit(1)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
+        return variantName;
     }
 
     /**
@@ -675,15 +970,9 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
         final HTMLPageAsset pageC = new HTMLPageDataGen(host, template).nextPersisted();
         final HTMLPageAsset pageD = new HTMLPageDataGen(host, template).nextPersisted();
 
-        final Experiment experiment = createExperimentWithReachPageGoalAndVariant("experiment_page_reach_testing_1",
-                pageB, pageD);
+        final Experiment experiment = createExperimentWithReachPageGoalAndVariant(pageB, pageD);
 
-        final String variantName = experiment.trafficProportion().variants().stream()
-                .filter(experimentVariant -> !experimentVariant.id().equals("DEFAULT"))
-                .map(experimentVariant -> experimentVariant.id())
-                .limit(1)
-                .findFirst()
-                .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
+        final String variantName = getNotDefaultVariantName(experiment);
 
         final Variant variant_1 = APILocator.getVariantAPI().get(variantName).orElseThrow();
 
@@ -731,6 +1020,7 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
 
+        addCountQueryContext(experiment, 20, mockhttpServer);
         mockhttpServer.start();
 
         try {
@@ -833,15 +1123,9 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
         final HTMLPageAsset pageC = new HTMLPageDataGen(host, template).nextPersisted();
         final HTMLPageAsset pageD = new HTMLPageDataGen(host, template).nextPersisted();
 
-        final Experiment experiment = createExperimentWithReachPageGoalAndVariant("experiment_page_reach_testing_1",
-                pageB, pageD);
+        final Experiment experiment = createExperimentWithReachPageGoalAndVariant(pageB, pageD);
 
-        final String variantName = experiment.trafficProportion().variants().stream()
-                .filter(experimentVariant -> !experimentVariant.id().equals("DEFAULT"))
-                .map(experimentVariant -> experimentVariant.id())
-                .limit(1)
-                .findFirst()
-                .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
+        final String variantName = getNotDefaultVariantName(experiment);
 
         final Variant variant = APILocator.getVariantAPI().get(variantName).orElseThrow();
 
@@ -868,6 +1152,8 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
 
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
+
+        addCountQueryContext(experiment, 2, mockhttpServer);
 
         mockhttpServer.start();
 
@@ -927,15 +1213,9 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
         final HTMLPageAsset pageC = new HTMLPageDataGen(host, template).nextPersisted();
         final HTMLPageAsset pageD = new HTMLPageDataGen(host, template).nextPersisted();
 
-        final Experiment experiment = createExperimentWithReachPageGoalAndVariant("experiment_page_reach_testing_1",
-                pageB, pageD);
+        final Experiment experiment = createExperimentWithReachPageGoalAndVariant(pageB, pageD);
 
-        final String variantName = experiment.trafficProportion().variants().stream()
-                .filter(experimentVariant -> !experimentVariant.id().equals("DEFAULT"))
-                .map(experimentVariant -> experimentVariant.id())
-                .limit(1)
-                .findFirst()
-                .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
+        final String variantName = getNotDefaultVariantName(experiment);
 
         final Variant variant = APILocator.getVariantAPI().get(variantName).orElseThrow();
 
@@ -963,6 +1243,8 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
 
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
+
+        addCountQueryContext(experiment, 2, mockhttpServer);
 
         mockhttpServer.start();
 
@@ -1021,15 +1303,9 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
         final HTMLPageAsset pageC = new HTMLPageDataGen(host, template).nextPersisted();
         final HTMLPageAsset pageD = new HTMLPageDataGen(host, template).nextPersisted();
 
-        final Experiment experiment = createExperimentWithReachPageGoalAndVariant("experiment_page_reach_testing_1",
-                pageB, pageD);
+        final Experiment experiment = createExperimentWithReachPageGoalAndVariant(pageB, pageD);
 
-        final String variantName = experiment.trafficProportion().variants().stream()
-                .filter(experimentVariant -> !experimentVariant.id().equals("DEFAULT"))
-                .map(experimentVariant -> experimentVariant.id())
-                .limit(1)
-                .findFirst()
-                .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
+        final String variantName = getNotDefaultVariantName(experiment);
 
         final Variant variant = APILocator.getVariantAPI().get(variantName).orElseThrow();
 
@@ -1057,6 +1333,8 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
 
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
+
+        addCountQueryContext(experiment, 2, mockhttpServer);
 
         mockhttpServer.start();
 
@@ -1116,15 +1394,10 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
         final HTMLPageAsset pageC = new HTMLPageDataGen(host, template).nextPersisted();
         final HTMLPageAsset pageD = new HTMLPageDataGen(host, template).nextPersisted();
 
-        final Experiment experiment = createExperimentWithReachPageGoalAndVariant("experiment_page_reach_testing_1",
+        final Experiment experiment = createExperimentWithReachPageGoalAndVariant(
                 pageB, pageD);
 
-        final String variantName = experiment.trafficProportion().variants().stream()
-                .filter(experimentVariant -> !experimentVariant.id().equals("DEFAULT"))
-                .map(experimentVariant -> experimentVariant.id())
-                .limit(1)
-                .findFirst()
-                .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
+        final String variantName = getNotDefaultVariantName(experiment);
 
         final Variant variant = APILocator.getVariantAPI().get(variantName).orElseThrow();
 
@@ -1152,6 +1425,8 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
 
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
+
+        addCountQueryContext(experiment, 4, mockhttpServer);
 
         mockhttpServer.start();
 
@@ -1199,9 +1474,10 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
      * When:
      * - You have 3 pages: A, B and C
      * - You create an {@link Experiment} using the B page with a BOUNCE_RATE Goal: url EQUALS TO PAge B .
-     * - You have the follow page_view to the pages order by timestamp: A, C and B
+     * - You have the follow page_view to the pages order by timestamp: A, C and B to the Specific Variant
+     * - Also You have the follow page_view to the pages order by timestamp: A, B and C  to the Default Variant
      *
-     * Should:  count 1 Bounce Rate
+     * Should:  count 0 Minimize Bounce Rate success to the specific variant
      */
     @Test
     public void bounceRate() throws DotDataException, DotSecurityException {
@@ -1212,15 +1488,9 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
         final HTMLPageAsset pageB = new HTMLPageDataGen(host, template).nextPersisted();
         final HTMLPageAsset pageC = new HTMLPageDataGen(host, template).nextPersisted();
 
-        final Experiment experiment = createExperimentWithBounceRateGoalAndVariant("experiment_page_reach_testing_1",
-                pageB);
+        final Experiment experiment = createExperimentWithBounceRateGoalAndVariant(pageB);
 
-        final String variantName = experiment.trafficProportion().variants().stream()
-                .filter(experimentVariant -> !experimentVariant.id().equals("DEFAULT"))
-                .map(experimentVariant -> experimentVariant.id())
-                .limit(1)
-                .findFirst()
-                .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
+        final String variantName = getNotDefaultVariantName(experiment);
 
         final Variant variant = APILocator.getVariantAPI().get(variantName).orElseThrow();
 
@@ -1248,6 +1518,8 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
 
+        addCountQueryContext(experiment, 3, mockhttpServer);
+
         mockhttpServer.start();
 
         try {
@@ -1261,8 +1533,7 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
             assertEquals(1, experimentResult.getSessions().getTotal());
 
             for (VariantResults variantResult : experimentResult.getGoals().get("primary").getVariants().values()) {
-                final int sessionExpected =
-                        variantResult.getVariantName().equals(variantName) ? 1 : 0;
+                final int sessionExpected = variantResult.getVariantName().equals(variantName) ? 1 : 0;
 
                 if (variantResult.getVariantName().equals(variantName)) {
                     assertEquals(variant.description().get(), variantResult.getVariantDescription());
@@ -1272,8 +1543,8 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
                     assertEquals(0, variantResult.getTotalPageViews());
                 }
 
-                Assert.assertEquals(sessionExpected, variantResult.getUniqueBySession().getCount());
-                Assert.assertEquals(sessionExpected, variantResult.getMultiBySession());
+                Assert.assertEquals(0, variantResult.getUniqueBySession().getCount());
+                Assert.assertEquals(0, variantResult.getMultiBySession());
                 Assert.assertEquals(sessionExpected,
                         (long) experimentResult.getSessions().getVariants()
                                 .get(variantResult.getVariantName()));
@@ -1281,10 +1552,7 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
                 final ResultResumeItem resultResumeItem = variantResult.getDetails()
                         .get(SIMPLE_FORMATTER.format(firstEventStartDate));
 
-                assertNotNull(resultResumeItem);
-
-                Assert.assertEquals(sessionExpected, resultResumeItem.getUniqueBySession());
-                Assert.assertEquals(sessionExpected, resultResumeItem.getMultiBySession());
+                assertNull(resultResumeItem);
             }
         } finally {
             APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
@@ -1301,7 +1569,7 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
      * - You create an {@link Experiment} using the B page with a BOUNCE_RATE Goal: url EQUALS TO PAge B .
      * - You have the follow page_view to the pages order by timestamp: A, B and  C
      *
-     * Should:  not count any Bounce Rate
+     * Should:  count 1 Minimize Bounce Rate success to the specific variant
      */
     @Test
     public void notBounceRate() throws DotDataException, DotSecurityException {
@@ -1312,15 +1580,9 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
         final HTMLPageAsset pageB = new HTMLPageDataGen(host, template).nextPersisted();
         final HTMLPageAsset pageC = new HTMLPageDataGen(host, template).nextPersisted();
 
-        final Experiment experiment = createExperimentWithBounceRateGoalAndVariant("experiment_page_reach_testing_1",
-                pageB);
+        final Experiment experiment = createExperimentWithBounceRateGoalAndVariant(pageB);
 
-        final String variantName = experiment.trafficProportion().variants().stream()
-                .filter(experimentVariant -> !experimentVariant.id().equals("DEFAULT"))
-                .map(experimentVariant -> experimentVariant.id())
-                .limit(1)
-                .findFirst()
-                .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
+        final String variantName = getNotDefaultVariantName(experiment);
 
         final Variant variant = APILocator.getVariantAPI().get(variantName).orElseThrow();
 
@@ -1348,6 +1610,7 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
 
+        addCountQueryContext(experiment, 3, mockhttpServer);
         mockhttpServer.start();
 
         try {
@@ -1362,6 +1625,8 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
 
             for (VariantResults variantResult : experimentResults.getGoals().get("primary").getVariants().values()) {
 
+                final int sessionExpected = variantResult.getVariantName().equals(variantName) ? 1 : 0;
+
                 if (variantResult.getVariantName().equals(variantName)) {
                     Assert.assertEquals(1, (long) experimentResults.getSessions().getVariants().get(variantResult.getVariantName()));
 
@@ -1374,13 +1639,15 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
                     assertEquals(0, variantResult.getTotalPageViews());
                 }
 
-                Assert.assertEquals(0, variantResult.getUniqueBySession().getCount());
-                Assert.assertEquals(0, variantResult.getMultiBySession());
+                Assert.assertEquals(sessionExpected, variantResult.getUniqueBySession().getCount());
+                Assert.assertEquals(sessionExpected, variantResult.getMultiBySession());
 
                 final ResultResumeItem resultResumeItem = variantResult.getDetails()
                         .get(SIMPLE_FORMATTER.format(firstEventStartDate));
 
-                assertNull(resultResumeItem);
+                assertNotNull(resultResumeItem);
+                Assert.assertEquals(sessionExpected, resultResumeItem.getUniqueBySession());
+                Assert.assertEquals(sessionExpected, resultResumeItem.getMultiBySession());
             }
         } finally {
             APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
@@ -1408,15 +1675,9 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
         final HTMLPageAsset pageB = new HTMLPageDataGen(host, template).nextPersisted();
         final HTMLPageAsset pageC = new HTMLPageDataGen(host, template).nextPersisted();
 
-        final Experiment experiment = createExperimentWithBounceRateGoalAndVariant("experiment_page_reach_testing_1",
-                pageB);
+        final Experiment experiment = createExperimentWithBounceRateGoalAndVariant(pageB);
 
-        final String variantName = experiment.trafficProportion().variants().stream()
-                .filter(experimentVariant -> !experimentVariant.id().equals("DEFAULT"))
-                .map(experimentVariant -> experimentVariant.id())
-                .limit(1)
-                .findFirst()
-                .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
+        final String variantName = getNotDefaultVariantName(experiment);
 
         final Variant variant = APILocator.getVariantAPI().get(variantName).orElseThrow();
 
@@ -1443,6 +1704,8 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
 
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
+
+        addCountQueryContext(experiment, 2, mockhttpServer);
 
         mockhttpServer.start();
 
@@ -1506,15 +1769,9 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
         final HTMLPageAsset pageC = new HTMLPageDataGen(host, template).nextPersisted();
         final HTMLPageAsset pageD = new HTMLPageDataGen(host, template).nextPersisted();
 
-        final Experiment experiment = createExperimentWithReachPageGoalAndVariant("experiment_page_reach_testing_1",
-                pageB, pageD);
+        final Experiment experiment = createExperimentWithReachPageGoalAndVariant(pageB, pageD);
 
-        final String variantName = experiment.trafficProportion().variants().stream()
-                .filter(experimentVariant -> !experimentVariant.id().equals("DEFAULT"))
-                .map(experimentVariant -> experimentVariant.id())
-                .limit(1)
-                .findFirst()
-                .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
+        final String variantName = getNotDefaultVariantName(experiment);
 
         final Variant variant = APILocator.getVariantAPI().get(variantName).orElseThrow();
 
@@ -1549,6 +1806,8 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
 
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
+
+        addCountQueryContext(experiment, 4, mockhttpServer);
 
         mockhttpServer.start();
 
@@ -1598,15 +1857,25 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
         }
     }
 
-    private Experiment createExperimentWithBounceRateGoalAndVariant(
-            final String experimentName, final HTMLPageAsset experimentPage) {
+    private static void addCountQueryContext(final Experiment experiment, final int count,
+            final MockHttpServer mockhttpServer) {
+        final String countExpectedPageReachQuery = getCountExpectedPageReachQuery(experiment);
+        final List<Map<String, Object>> countResponseExpected = list(
+                map("Events.count", String.valueOf(count))
+        );
+
+        addContext(mockhttpServer, countExpectedPageReachQuery,
+                JsonUtil.getJsonStringFromObject(map("data", countResponseExpected)));
+    }
+
+    private Experiment createExperimentWithBounceRateGoalAndVariant(final HTMLPageAsset experimentPage) {
         final Metric metric = Metric.builder()
                 .name("Testing Metric")
                 .type(MetricType.BOUNCE_RATE)
                 .addConditions(getUrlCondition(experimentPage.getPageUrl()))
                 .build();
 
-        return createExperiment(experimentName, experimentPage, metric);
+        return createExperiment(experimentPage, metric);
     }
 
     private List<Map<String, String>> createPageViewEvents(final Instant firstEventTime,
@@ -1705,6 +1974,74 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
         return cubeJSQueryExpected;
     }
 
+
+    private static String getExpectedPageReachQuery(final Experiment experiment, final long limit,
+            final long offset) {
+        final String cubeJSQueryExpected ="{"
+                +   "\"filters\":["
+                +       "{"
+                +           "\"values\":["
+                +               "\"pageview\""
+                +           "],"
+                +           "\"member\":\"Events.eventType\","
+                +           "\"operator\":\"equals\""
+                +       "},"
+                +       "{"
+                +           "\"values\":["
+                +               "\"" + experiment.getIdentifier() + "\""
+                +           "],"
+                +           "\"member\":\"Events.experiment\","
+                +           "\"operator\":\"equals\""
+                +       "}"
+                +   "],"
+                +   "\"dimensions\":["
+                +       "\"Events.referer\","
+                +       "\"Events.experiment\","
+                +       "\"Events.variant\","
+                +       "\"Events.utcTime\","
+                +       "\"Events.url\","
+                +       "\"Events.lookBackWindow\","
+                +       "\"Events.eventType\""
+                +   "],"
+                +   "\"order\":{"
+                +       "\"Events.lookBackWindow\":\"asc\","
+                +       "\"Events.utcTime\":\"asc\""
+                +   "},"
+                +   "\"limit\":" + limit + ","
+                +   "\"offset\":" + offset
+                + "}";
+        return cubeJSQueryExpected;
+    }
+
+    private static String getCountExpectedPageReachQuery(final Experiment experiment) {
+        final String cubeJSQueryExpected ="{"
+                +   "\"filters\":["
+                +       "{"
+                +           "\"values\":["
+                +               "\"pageview\""
+                +           "],"
+                +           "\"member\":\"Events.eventType\","
+                +           "\"operator\":\"equals\""
+                +       "},"
+                +       "{"
+                +           "\"values\":["
+                +               "\"" + experiment.getIdentifier() + "\""
+                +           "],"
+                +           "\"member\":\"Events.experiment\","
+                +           "\"operator\":\"equals\""
+                +       "}"
+                +   "],"
+                +   "\"measures\":["
+                +       "\"Events.count\""
+                +   "],"
+                +   "\"order\":{"
+                +       "\"Events.lookBackWindow\":\"asc\","
+                +       "\"Events.utcTime\":\"asc\""
+                +   "}"
+                + "}";
+        return cubeJSQueryExpected;
+    }
+
     private static String getExpectedBounceRateQuery(Experiment experiment) {
         final String cubeJSQueryExpected ="{"
                 +   "\"filters\":["
@@ -1780,7 +2117,7 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
         }
     }
 
-    private static MockHttpServer createMockHttpServerAndStart(final String expectedQuery, final String responseBody) {
+    private static MockHttpServer createMockHttpServer(final String expectedQuery, final String responseBody) {
         final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
 
         final MockHttpServerContext mockHttpServerContext = new  MockHttpServerContext.Builder()
@@ -1796,7 +2133,6 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
 
 
         mockhttpServer.addContext(mockHttpServerContext);
-        mockhttpServer.start();
 
         return mockhttpServer;
     }
@@ -1823,7 +2159,7 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
                 .addConditions(getUrlCondition(reachPage.getPageUrl()))
                 .build();
 
-        final Goals goal = Goals.builder().primary(metric).build();
+        final Goals goal = Goals.builder().primary(GoalFactory.create(metric)).build();
 
         final Experiment experiment = new ExperimentDataGen()
                 .addVariant("Experiment Variant")
@@ -1837,7 +2173,7 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
                 .orElseThrow();
 
         final Goals goals = experimentFromDataBase.goals().orElseThrow();
-        final ImmutableList<Condition> conditions = goals.primary().conditions();
+        final ImmutableList<Condition> conditions = goals.primary().getMetric().conditions();
 
         assertEquals(2, conditions.size());
 
@@ -1915,7 +2251,7 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
                 .type(MetricType.BOUNCE_RATE)
                 .build();
 
-        final Goals goal = Goals.builder().primary(metric).build();
+        final Goals goal = Goals.builder().primary(GoalFactory.create(metric)).build();
 
         final Experiment experiment = new ExperimentDataGen()
                 .addVariant("Experiment Variant")
@@ -1929,7 +2265,7 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
                 .orElseThrow();
 
         final Goals goals = experimentFromDataBase.goals().orElseThrow();
-        final ImmutableList<Condition> conditions = goals.primary().conditions();
+        final ImmutableList<Condition> conditions = goals.primary().getMetric().conditions();
 
         assertEquals(1,  conditions.size());
 
@@ -1955,7 +2291,7 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
                 .type(MetricType.BOUNCE_RATE)
                 .build();
 
-        final Goals goal = Goals.builder().primary(metric).build();
+        final Goals goal = Goals.builder().primary(GoalFactory.create(metric)).build();
 
         final Experiment experiment = new ExperimentDataGen()
                 .addVariant("Experiment Variant")
@@ -1992,9 +2328,7 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
         final HTMLPageAsset pageA = new HTMLPageDataGen(host, template).nextPersisted();
         final HTMLPageAsset pageB = new HTMLPageDataGen(host, template).nextPersisted();
         final HTMLPageAsset pageC = new HTMLPageDataGen(host, template).nextPersisted();
-        final Experiment experiment = createExperimentWithReachPageGoalAndVariant(
-            "experiment_page_reach_testing_1",
-            pageA, pageC);
+        final Experiment experiment = createExperimentWithReachPageGoalAndVariant(pageA, pageC);
         final String variantName = experiment.trafficProportion().variants().stream()
             .map(ExperimentVariant::id)
             .filter(id -> !id.equals("DEFAULT"))
@@ -2025,6 +2359,7 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
 
+        addCountQueryContext(experiment, 20, mockhttpServer);
         mockhttpServer.start();
 
         try {
@@ -2036,6 +2371,90 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
 
             final BayesianResult bayesianResult = experimentResults.getBayesianResult();
             Assert.assertTrue(bayesianResult.suggestedWinner().startsWith("dotexperiment-"));
+
+            mockhttpServer.validate();
+        } finally {
+            APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
+            IPUtils.disabledIpPrivateSubnet(false);
+            mockhttpServer.stop();
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
+     * When:
+     * - You have three pages: A, B and C
+     * - You create an {@link Experiment} using the A page with a Bounce Rate Goal
+     * - You have the follow page_view Event in Different Sessions:
+     *
+     * Session 1 : A, this is a Bounce Rate.
+     * Session 2: A, B, This is not a Bounce Rate.
+     *
+     * Should: calculate the probability that B beats A is 0.99
+     */
+    @Test
+    public void test_calcBayesian_BOverA_BounceRate() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+        final HTMLPageAsset pageA = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageB = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Metric metric = Metric.builder()
+                .name("Testing Metric")
+                .type(MetricType.BOUNCE_RATE)
+                .addConditions(getUrlCondition(pageA.getPageUrl()))
+                .build();
+
+        final Experiment experiment = createExperiment(pageA, metric, RandomString.make(15));
+        final String variantName = getNotDefaultVariantName(experiment);
+
+        final List<Map<String, String>> pageViewEvents_1 = createPageViewEvents(Instant.now(),
+                experiment, variantName, pageA);
+
+        final List<Map<String, String>> pageViewEvents_2 = createPageViewEvents(Instant.now(),
+                experiment, variantName, pageA, pageB);
+
+        final List<Map<String, String>> pageViewEvents_3 = createPageViewEvents(Instant.now(),
+                experiment, "DEFAULT", pageA, pageB);
+
+        final List<Map<String, String>> data = new ArrayList<>(pageViewEvents_1);
+        data.addAll(pageViewEvents_2);
+        data.addAll(pageViewEvents_3);
+
+        final Map<String, List<Map<String, String>>> cubeJsQueryResult = map("data", data);
+
+        APILocator.getExperimentsAPI().start(experiment.getIdentifier(), APILocator.systemUser());
+
+        IPUtils.disabledIpPrivateSubnet(true);
+
+        final String cubeJSQueryExpected = getExpectedBounceRateQuery(experiment);
+
+        final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
+
+        addContext(mockhttpServer, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        final String queryTotalPageViews = getTotalPageViewsQuery(experiment.id().get(), "DEFAULT", variantName);
+
+        final List<Map<String, Object>> totalPageViewsResponseExpected = list(
+                map("Events.variant", variantName, "Events.count", "3")
+        );
+
+        addContext(mockhttpServer, queryTotalPageViews,
+                JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
+
+        addCountQueryContext(experiment, 3, mockhttpServer);
+
+        mockhttpServer.start();
+
+        try {
+            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
+            assertEquals(3, experimentResults.getSessions().getTotal());
+
+            final BayesianResult bayesianResult = experimentResults.getBayesianResult();
+            Assert.assertEquals(bayesianResult.suggestedWinner(), "DEFAULT");
 
             mockhttpServer.validate();
         } finally {
@@ -2061,9 +2480,7 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
         final HTMLPageAsset pageA = new HTMLPageDataGen(host, template).nextPersisted();
         final HTMLPageAsset pageB = new HTMLPageDataGen(host, template).nextPersisted();
         final HTMLPageAsset pageC = new HTMLPageDataGen(host, template).nextPersisted();
-        final Experiment experiment = createExperimentWithReachPageGoalAndVariant(
-            "experiment_page_reach_testing_1",
-            pageA, pageC);
+        final Experiment experiment = createExperimentWithReachPageGoalAndVariant(pageA, pageC);
         final String variantName = experiment.trafficProportion().variants().stream()
             .map(ExperimentVariant::id)
             .filter(id -> !id.equals("DEFAULT"))
@@ -2093,6 +2510,8 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
 
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
+
+        addCountQueryContext(experiment, 50, mockhttpServer);
 
         mockhttpServer.start();
 
@@ -2132,9 +2551,7 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
         final HTMLPageAsset pageA = new HTMLPageDataGen(host, template).nextPersisted();
         final HTMLPageAsset pageB = new HTMLPageDataGen(host, template).nextPersisted();
         final HTMLPageAsset pageC = new HTMLPageDataGen(host, template).nextPersisted();
-        final Experiment experiment = createExperimentWithReachPageGoalAndVariant(
-            "experiment_page_reach_testing_1",
-            pageA, pageC);
+        final Experiment experiment = createExperimentWithReachPageGoalAndVariant(pageA, pageC);
         final String variantName = experiment.trafficProportion().variants().stream()
             .map(ExperimentVariant::id)
             .filter(id -> !id.equals("DEFAULT"))
@@ -2164,6 +2581,8 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
 
         addContext(mockhttpServer, queryTotalPageViews,
             JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
+
+        addCountQueryContext(experiment, 50, mockhttpServer);
 
         mockhttpServer.start();
 
@@ -2204,11 +2623,7 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
         final HTMLPageAsset pageA = new HTMLPageDataGen(host, template).nextPersisted();
         final HTMLPageAsset pageB = new HTMLPageDataGen(host, template).nextPersisted();
         final HTMLPageAsset pageC = new HTMLPageDataGen(host, template).nextPersisted();
-        final String experimentName = "experiment_page_reach_testing_1";
-        final Experiment experiment = createExperimentWithReachPageGoalAndVariant(
-                experimentName,
-                pageA, pageC,
-                "variantC");
+        final Experiment experiment = createExperimentWithReachPageGoalAndVariant(pageA, pageC, "variantB", "variantC");
         experiment.trafficProportion().variants().stream()
                 .map(ExperimentVariant::id)
                 .filter(id -> !id.equals("DEFAULT"))
@@ -2246,6 +2661,8 @@ public class ExperimentAPIImpIT extends IntegrationTestBase {
 
         addContext(mockhttpServer, queryTotalPageViews,
                 JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
+
+        addCountQueryContext(experiment, 100, mockhttpServer);
 
         mockhttpServer.start();
 
