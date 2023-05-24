@@ -22,7 +22,7 @@ import {
     DotESContentService,
     DotPageRenderService
 } from '@dotcms/data-access';
-import { CoreWebService, HttpCode, LoginService } from '@dotcms/dotcms-js';
+import { CoreWebService, HttpCode, LoginService, SiteService } from '@dotcms/dotcms-js';
 import { DotPageMode, DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
 import {
     CoreWebServiceMock,
@@ -30,7 +30,8 @@ import {
     mockDotRenderedPage,
     MockDotRouterService,
     mockResponseView,
-    mockUser
+    mockUser,
+    SiteServiceMock
 } from '@dotcms/utils-testing';
 
 import { DotEditPageResolver } from './dot-edit-page-resolver.service';
@@ -51,6 +52,7 @@ describe('DotEditPageResolver', () => {
 
     let injector: TestBed;
     let dotEditPageResolver: DotEditPageResolver;
+    let siteService: SiteService;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -72,6 +74,7 @@ describe('DotEditPageResolver', () => {
                 DotFavoritePageService,
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
+                { provide: SiteService, useClass: SiteServiceMock },
                 {
                     provide: ActivatedRouteSnapshot,
                     useValue: route
@@ -88,6 +91,7 @@ describe('DotEditPageResolver', () => {
         dotPageStateService = injector.get(DotPageStateService);
         dotPageStateServiceRequestPageSpy = spyOn(dotPageStateService, 'requestPage');
         dotRouterService = injector.get(DotRouterService);
+        siteService = injector.get(SiteService);
 
         spyOn(dotHttpErrorManagerService, 'handle').and.returnValue(of());
     });
@@ -142,6 +146,44 @@ describe('DotEditPageResolver', () => {
         });
 
         expect(dotPageStateServiceRequestPageSpy).not.toHaveBeenCalled();
+    });
+
+    describe('Switch Site', () => {
+        it('should switch site when host_id is present in queryparams', () => {
+            route.queryParams.host_id = '123';
+            spyOn(siteService, 'switchSiteById').and.returnValue(of(null));
+            const mock = new DotPageRenderState(
+                mockUser(),
+                new DotPageRender(mockDotRenderedPage())
+            );
+            dotPageStateServiceRequestPageSpy.and.returnValue(of(mock));
+            dotEditPageResolver.resolve(route).subscribe();
+            expect(siteService.switchSiteById).toHaveBeenCalledWith('123');
+        });
+
+        it('should not switch site when host_id is not present in queryparams', () => {
+            route.queryParams = {};
+            spyOn(siteService, 'switchSiteById').and.returnValue(of(null));
+            const mock = new DotPageRenderState(
+                mockUser(),
+                new DotPageRender(mockDotRenderedPage())
+            );
+            dotPageStateServiceRequestPageSpy.and.returnValue(of(mock));
+            dotEditPageResolver.resolve(route).subscribe();
+            expect(siteService.switchSiteById).not.toHaveBeenCalled();
+        });
+
+        it('should not switch site when host_id is equal to current site id', () => {
+            route.queryParams.host_id = siteService.currentSite.identifier;
+            spyOn(siteService, 'switchSiteById').and.returnValue(of(null));
+            const mock = new DotPageRenderState(
+                mockUser(),
+                new DotPageRender(mockDotRenderedPage())
+            );
+            dotPageStateServiceRequestPageSpy.and.returnValue(of(mock));
+            dotEditPageResolver.resolve(route).subscribe();
+            expect(siteService.switchSiteById).not.toHaveBeenCalled();
+        });
     });
 
     describe('handle layout', () => {

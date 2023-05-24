@@ -19,7 +19,6 @@ import {
     DotPageTypesService,
     DotPageWorkflowsActionsService
 } from '@dotcms/data-access';
-import { SiteService } from '@dotcms/dotcms-js';
 
 import { DotPagesCreatePageDialogComponent } from './dot-pages-create-page-dialog/dot-pages-create-page-dialog.component';
 import { DotPagesFavoritePanelModule } from './dot-pages-favorite-panel/dot-pages-favorite-panel.module';
@@ -51,7 +50,6 @@ import { DotPagesComponent } from './dot-pages.component';
         DotWorkflowActionsFireService,
         DotWorkflowEventHandlerService,
         DotRouterService,
-        SiteService,
         DotFavoritePageService
     ]
 })

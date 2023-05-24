@@ -1,4 +1,7 @@
 import { of as observableOf, Observable, Subject, merge } from 'rxjs';
+
+import { switchMap } from 'rxjs/operators';
+
 import { Site } from '@dotcms/dotcms-js';
 
 export const mockSites: Site[] = [
@@ -17,7 +20,7 @@ export const mockSites: Site[] = [
 ];
 
 export class SiteServiceMock {
-    _currentSite: Site;
+    _currentSite!: Site;
     private _switchSite$: Subject<Site> = new Subject<Site>();
 
     get currentSite(): Site {
@@ -37,8 +40,12 @@ export class SiteServiceMock {
         this._switchSite$.next(site || mockSites[0]);
     }
 
-    switchSite(_site: Site) {
-        /* */
+    switchSiteById(_id: string): Observable<Site> {
+        return this.getSiteById().pipe(switchMap((site) => this.switchSite(site)));
+    }
+
+    switchSite(site: Site): Observable<Site> {
+        return observableOf(site);
     }
 
     get loadedSites(): Site[] {
