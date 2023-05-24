@@ -176,7 +176,7 @@ public class PopulateContentletAsJSONUtil {
         while (true) {
 
             CompletableFuture<Boolean> future = CompletableFuture.supplyAsync(() ->
-                    internalPopulate(assetSubtype, excludingAssetSubtype, allVersions, totalRecordsAffected));
+                    populateWrapper(assetSubtype, excludingAssetSubtype, allVersions, totalRecordsAffected));
 
             try {
                 Boolean foundRecords = future.get();
@@ -222,10 +222,10 @@ public class PopulateContentletAsJSONUtil {
      * @return True if contentlets were found and processed, false otherwise.
      */
     @WrapInTransaction
-    private boolean internalPopulate(@Nullable String assetSubtype,
-                                     @Nullable String excludingAssetSubtype,
-                                     final Boolean allVersions,
-                                     final MutableInt totalRecords) {
+    private boolean populateWrapper(@Nullable String assetSubtype,
+                                    @Nullable String excludingAssetSubtype,
+                                    final Boolean allVersions,
+                                    final MutableInt totalRecords) {
 
         var foundRecords = false;
 
