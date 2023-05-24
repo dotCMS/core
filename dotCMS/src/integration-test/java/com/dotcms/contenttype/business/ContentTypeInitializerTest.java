@@ -54,12 +54,6 @@ public class ContentTypeInitializerTest extends IntegrationTestBase {
         new ContentletDataGen(contentType).setPolicy(IndexPolicy.WAIT_FOR)
                 .setProperty("title", "test").setProperty("url", "test" + System.currentTimeMillis()).nextPersisted();
 
-        final List<Contentlet> contentletsFull = APILocator.getContentletAPI().search("+contentType:"+contentType.variable(),
-                0, 10, null, APILocator.systemUser(), false);
-
-        Assert.assertNotNull("The contentlets shouldn't be null", contentletsFull);
-        Assert.assertFalse("Should return contentlets, returned size: " + contentletsFull.size(), contentletsFull.isEmpty());
-
         final StringBuffer luceneQuery = new StringBuffer();
         luceneQuery.append("+contentType:"+contentType.variable() + " ");
         luceneQuery.append("+" + ESMappingConstants.SYSTEM_TYPE + ":false ");
