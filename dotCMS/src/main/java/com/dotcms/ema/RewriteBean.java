@@ -10,7 +10,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * @deprecated The ability to map incoming URLs with specific EMA Proxy URLs has been implemented via the new JSON
  * configuration format. This class is not necessary anymore and should be deleted in the future.
  */
-@Deprecated()
+@Deprecated(forRemoval = true)
 public class RewriteBean {
     private final String source;
     private final String destination;

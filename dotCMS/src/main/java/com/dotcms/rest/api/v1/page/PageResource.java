@@ -261,10 +261,8 @@ public class PageResource {
             @QueryParam(WebKeys.CMS_PERSONA_PARAMETER) final String personaId,
             @QueryParam(WebKeys.LANGUAGE_ID_PARAMETER) final String languageId,
             @QueryParam("device_inode") final String deviceInode) throws DotSecurityException, DotDataException, SystemException, PortalException {
-        if (HttpRequestDataUtil.getAttribute(originalRequest, EMAWebInterceptor.EMA_REQUEST_ATTR, Boolean.FALSE)) {
-            if (!this.includeRenderedAttrFromEMA(originalRequest, uri)) {
-                return loadJson(originalRequest, response, uri, modeParam, personaId, languageId, deviceInode);
-            }
+        if (HttpRequestDataUtil.getAttribute(originalRequest, EMAWebInterceptor.EMA_REQUEST_ATTR, Boolean.FALSE) && !this.includeRenderedAttrFromEMA(originalRequest, uri)) {
+            return this.loadJson(originalRequest, response, uri, modeParam, personaId, languageId, deviceInode);
         }
         Logger.debug(this, ()->String.format(
                 "Rendering page: uri -> %s mode-> %s language -> persona -> %s device_inode -> %s live -> %b",

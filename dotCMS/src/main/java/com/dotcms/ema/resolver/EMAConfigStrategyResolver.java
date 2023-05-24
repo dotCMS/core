@@ -31,15 +31,7 @@ import java.util.Optional;
  */
 public class EMAConfigStrategyResolver {
 
-    private final List<EMAConfigStrategy> strategies = this.getDefaultStrategies();
     private EMAConfigStrategy defaultStrategy = null;
-
-    /**
-     * Creates an instance of this class.
-     */
-    public EMAConfigStrategyResolver() {
-
-    }
 
     /**
      * Returns the default Strategy Resolver for EMA configurations.

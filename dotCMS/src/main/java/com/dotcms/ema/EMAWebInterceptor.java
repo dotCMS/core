@@ -41,9 +41,8 @@ import java.util.Optional;
 public class EMAWebInterceptor implements WebInterceptor {
 
     public static final String PROXY_EDIT_MODE_URL_VAR = "proxyEditModeURL";
-    @Deprecated
+    @Deprecated(forRemoval = true)
     public static final String INCLUDE_RENDERED_VAR = "includeRendered";
-    @Deprecated
     public static final String AUTHENTICATION_TOKEN_VAR = "authenticationToken";
     private static final String API_CALL = "/api/v1/page/render";
     public static final String EMA_APP_CONFIG_KEY = "dotema-config";
