@@ -81,7 +81,7 @@ public class PopulateContentletAsJSONUtil {
     private final String DROP_TEMP_TABLE = "DROP TABLE IF EXISTS tmp_contentlet_json;";
 
     private final String INSERT_INTO_TEMP_TABLE = "INSERT INTO tmp_contentlet_json (inode, json) "
-            + "VALUES (?,?);";
+            + "VALUES (?,?)";
 
     // Cursor related queries
     private final String DECLARE_CURSOR = "DECLARE missingContentletAsJSONCursor CURSOR FOR %s";
@@ -214,9 +214,10 @@ public class PopulateContentletAsJSONUtil {
                               final Boolean allVersions
     ) throws SQLException, DotDataException {
 
-        Logger.info(this, "Finding records with missing Contentlet as JSON");
+        final Collection<Params> paramsInsert = new ArrayList<>();
+        final MutableInt totalInsertAffected = new MutableInt(0);
 
-        int recordsProcessed = 0;
+        Logger.info(this, "Finding records with missing Contentlet as JSON");
 
         final Connection conn = DbConnectionFactory.getConnection();
 
@@ -242,7 +243,6 @@ public class PopulateContentletAsJSONUtil {
                     dotConnect.fromResultSet(rs);
 
                     var loadedResults = dotConnect.loadObjectResults();
-                    recordsProcessed += loadedResults.size();
 
                     if (!loadedResults.isEmpty()) {
 
@@ -259,16 +259,14 @@ public class PopulateContentletAsJSONUtil {
                                 )// Transform the contentlets into a list of json strings
                                 .orElse(Collections.emptyList());
 
-                        var internalDotConnect = new DotConnect();
                         for (var jsonData : jsonDataArray) {
                             // Insert the json representation of the contentlet into the temp table
-                            insertIntoTempTable(internalDotConnect, jsonData);
+                            this.processInsertRecord(jsonData._1(), jsonData._2(), paramsInsert, totalInsertAffected);
                         }
 
-                        Logger.info(this, String.format(
-                                "Added [%s] records for update to temp table [%s]",
-                                jsonDataArray.size(),
-                                "tmp_contentlet_json"));
+                        if (!paramsInsert.isEmpty()) {
+                            this.doInsertBatch(paramsInsert, totalInsertAffected);
+                        }
 
                     } else {
                         hasRows = false;
@@ -279,9 +277,11 @@ public class PopulateContentletAsJSONUtil {
 
             // Close the cursor
             stmt.execute(CLOSE_CURSOR);
+
+            Logger.info(this, "-- Records found to process: " + totalInsertAffected.intValue());
         }
 
-        Logger.info(this, "-- Records found to process: " + recordsProcessed);
+        Logger.info(this, "Inserted records into temporal table preparing data to update missing Contentlet as JSON");
     }
 
     /**
@@ -326,7 +326,7 @@ public class PopulateContentletAsJSONUtil {
                         hasRows = true;
 
                         loadedResults.forEach(
-                                record -> this.processRecord(
+                                record -> this.processUpdateRecord(
                                         (String) record.get("inode"),
                                         (String) record.get("json"),
                                         paramsUpdate,
@@ -382,21 +382,46 @@ public class PopulateContentletAsJSONUtil {
     }
 
     /**
+     * Processes a record by preparing the parameters for a batch insert into the temporal tables.
+     *
+     * @param inode               The inode of the contentlet.
+     * @param json                The JSON representation of the contentlet.
+     * @param paramsInsert        A collection of Params objects used for batch inserts. The Params
+     *                            object contains the contentlet inode and JSON.
+     * @param totalInsertAffected A MutableInt object to keep track of the total number of affected
+     *                            rows in batch inserts.
+     */
+    private void processInsertRecord(
+            final String inode,
+            final String json,
+            final Collection<Params> paramsInsert,
+            final MutableInt totalInsertAffected
+    ) {
+
+        paramsInsert.add(new Params(inode, json));
+
+        // Execute the batch for the inserts if we have reached the max batch size
+        if (paramsInsert.size() >= MAX_UPDATE_BATCH_SIZE) {
+            this.doInsertBatch(paramsInsert, totalInsertAffected);
+        }
+    }
+
+    /**
      * Processes a record by preparing the parameters for a batch update.
      *
      * @param inode               The inode of the contentlet.
      * @param json                The JSON representation of the contentlet.
      * @param paramsUpdate        A collection of Params objects used for batch updates. The Params
      *                            object contains the contentlet JSON and inode.
-     * @param totalInsertAffected A MutableInt object to keep track of the total number of affected
+     * @param totalUpdateAffected A MutableInt object to keep track of the total number of affected
      *                            rows in batch updates.
      * @throws JsonProcessingException If there is an error while processing the JSON.
      */
-    private void processRecord(
+    private void processUpdateRecord(
             final String inode,
             final String json,
             final Collection<Params> paramsUpdate,
-            final MutableInt totalInsertAffected
+            final MutableInt totalUpdateAffected
     ) {
 
         final Object contentletAsJSON;
@@ -412,7 +437,7 @@ public class PopulateContentletAsJSONUtil {
 
         // Execute the batch for the updates if we have reached the max batch size
         if (paramsUpdate.size() >= MAX_UPDATE_BATCH_SIZE) {
-            this.doUpdateBatch(paramsUpdate, totalInsertAffected);
+            this.doUpdateBatch(paramsUpdate, totalUpdateAffected);
         }
     }
 
@@ -426,24 +451,6 @@ public class PopulateContentletAsJSONUtil {
 
         new DotConnect().setSQL(DROP_TEMP_TABLE).loadResult(conn);
         new DotConnect().setSQL(CREATE_TEMP_TABLE).loadResult(conn);
-    }
-
-    /**
-     * Inserts data into the temporary table.
-     *
-     * @param dotConnect     The DotConnect object used for database connection and operations.
-     * @param contentletData The contentlet data to be inserted into the temporary table. It should
-     *                       be a Tuple2 object with two String values.
-     * @throws DotDataException If there is an error related to data handling.
-     */
-    private void insertIntoTempTable(final DotConnect dotConnect,
-                                     final Tuple2<String, String> contentletData)
-            throws DotDataException {
-
-        dotConnect.setSQL(INSERT_INTO_TEMP_TABLE).
-                addParam(contentletData._1()).
-                addParam(contentletData._2()).
-                loadResult();
     }
 
     /**
@@ -487,6 +494,28 @@ public class PopulateContentletAsJSONUtil {
             Logger.error(this, e.getMessage(), e);
         } finally {
             paramsUpdate.clear();
+        }
+    }
+
+    /**
+     * Executes the batch of inserts to populate the temporal tmp_contentlet_json table.
+     */
+    private void doInsertBatch(final Collection<Params> paramsInsert, final MutableInt totalInsertAffected) {
+
+        try {
+            final List<Integer> batchResult =
+                    Ints.asList(new DotConnect().executeBatch(
+                            INSERT_INTO_TEMP_TABLE,
+                            paramsInsert));
+
+            final int rowsAffected = batchResult.stream().reduce(0, Integer::sum);
+            Logger.info(this, "Batch rows to populate temporal table, inserted: " + rowsAffected + " rows");
+            totalInsertAffected.add(rowsAffected);
+        } catch (DotDataException e) {
+            Logger.error(this, "Couldn't insert these rows: " + paramsInsert);
+            Logger.error(this, e.getMessage(), e);
+        } finally {
+            paramsInsert.clear();
         }
     }
 
