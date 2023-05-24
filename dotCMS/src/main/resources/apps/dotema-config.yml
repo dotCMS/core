@@ -15,7 +15,7 @@ params:
               \"urlEndpoint\":\"https://myspa.blogs.com:3000\",
               \"includeRendered\":false,
               \"headers\": {
-                \"authenticationToken\": 123\"\",
+                \"authenticationToken\": \"123\",
                 \"X-CONTENT-APP\": \"dotCMS\"
               }
             },
@@ -24,7 +24,7 @@ params:
               \"urlEndpoint\":\"https://myspa.com:3000\",
               \"includeRendered\":false,
               \"headers\": {
-                \"authenticationToken\": 456\"\",
+                \"authenticationToken\": \"456\",
                 \"X-CONTENT-APP\": \"dotCMS\"
               }
             }
