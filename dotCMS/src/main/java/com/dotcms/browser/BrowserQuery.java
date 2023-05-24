@@ -36,7 +36,7 @@ public class BrowserQuery {
     final User user;
     final String  filter, sortBy;
     final int offset, maxResults;
-    final boolean showWorking, showArchived, showFolders, sortByDesc, showLinks,showMenuItemsOnly,showContent;
+    final boolean showWorking, showArchived, showFolders, sortByDesc, showLinks,showMenuItemsOnly,showContent,showDefaultLangItems;
     final long languageId;
     final String luceneQuery;
     final Set<BaseContentType> baseTypes;
@@ -51,7 +51,7 @@ public class BrowserQuery {
     public String toString() {
         return "BrowserQuery {user:" + user + ", host:" + host+ ", folder:" + folder + ", filter:" + filter + ", sortBy:" + sortBy
                 + ", offset:" + offset + ", maxResults:" + maxResults + ", showWorking:" + showWorking + ", showArchived:"
-                + showArchived + ", showFolders:" + showFolders + ", sortByDesc:" + sortByDesc + ", showLinks:"
+                + showArchived + ", showFolders:" + showFolders + ", showDefaultLangItems:" + showDefaultLangItems + ", sortByDesc:" + sortByDesc + ", showLinks:"
                 + showLinks + ", showContent:" + showContent + ", languageId:" + languageId + ", luceneQuery:" + luceneQuery
                 + ", baseTypes:" + baseTypes + "}";
     }
@@ -73,6 +73,7 @@ public class BrowserQuery {
         this.extensions    = builder.extensions;
         this.sortByDesc = UtilMethods.isEmpty(builder.sortBy) ? true : builder.sortByDesc;
         this.showLinks = builder.showLinks;
+        this.showDefaultLangItems = builder.showDefaultLangItems;
 
         this.baseTypes = builder.baseTypes.isEmpty()
                 ? ImmutableSet.of(BaseContentType.ANY)
@@ -154,6 +155,7 @@ public class BrowserQuery {
         private boolean sortByDesc = false;
         private boolean showLinks = false;
         private boolean showMenuItemsOnly = false;
+        private boolean showDefaultLangItems = false;
         private long languageId = 0;
         private final StringBuilder luceneQuery = new StringBuilder();
         private Set<BaseContentType> baseTypes = new HashSet<>();
@@ -187,6 +189,7 @@ public class BrowserQuery {
             this.mimeTypes = browserQuery.mimeTypes;
             this.extensions = browserQuery.extensions;
             this.showContent = browserQuery.showContent;
+            this.showDefaultLangItems = browserQuery.showDefaultLangItems;
         }
 
         public Builder withUser(@Nonnull User user) {
@@ -301,6 +304,10 @@ public class BrowserQuery {
 
         public Builder hostIdSystemFolder(@Nonnull String hostIdSystemFolder) {
             this.hostIdSystemFolder = hostIdSystemFolder;
+            return this;
+        }
+        public Builder showDefaultLangItems(@Nonnull boolean showDefaultLangItems) {
+            this.showDefaultLangItems = showDefaultLangItems;
             return this;
         }
 

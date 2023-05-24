@@ -288,8 +288,14 @@ public class BrowserAPIImpl implements BrowserAPI {
             sqlQuery.append(" and struc.structuretype in (" + String.join(" , ", baseTypes) + ") ");
         }
         if (browserQuery.languageId > 0) {
-            sqlQuery.append(" and cvi.lang = ? ");
-            parameters.add(browserQuery.languageId);
+            sqlQuery.append(" and cvi.lang in (" + browserQuery.languageId);
+
+            final long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+            if(browserQuery.showDefaultLangItems && browserQuery.languageId != defaultLang){
+                sqlQuery.append("," + defaultLang);
+            }
+
+            sqlQuery.append(")");
         }
         if (browserQuery.host != null) {
             sqlQuery.append(" and id.host_inode = ? ");

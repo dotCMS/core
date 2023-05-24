@@ -440,9 +440,10 @@ public class BrowserAjax {
 						   .showLinks(!excludeLinks)
 						   .withLanguageId(language)
 						   .showDotAssets(dotAssets)
+						   .showDefaultLangItems(true)
 						   .build());
 
-	        listCleanup((List<Map<String, Object>>) results.get("list"), getContentSelectedLanguageId(req));
+	        listCleanup((List<Map<String, Object>>) results.get("list"), language);
 
 	        return results;
 	   }
