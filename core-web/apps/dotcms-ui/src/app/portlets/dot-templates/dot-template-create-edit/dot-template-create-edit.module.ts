@@ -23,9 +23,9 @@ import { DotTemplatePropsModule } from './dot-template-props/dot-template-props.
         DotTemplateCreateEditRoutingModule,
         DotTemplatePropsModule,
         DynamicDialogModule,
-        DotTemplateBuilderModule,
         DotMessagePipeModule,
-        DotFieldRequiredDirective
+        DotFieldRequiredDirective,
+        DotTemplateBuilderModule
     ],
     declarations: [DotTemplateCreateEditComponent],
     providers: [DialogService]

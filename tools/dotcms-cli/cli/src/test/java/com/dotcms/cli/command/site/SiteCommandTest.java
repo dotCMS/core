@@ -187,7 +187,7 @@ class SiteCommandTest extends CommandTest {
             final String output = writer.toString();
 
             Assertions.assertTrue(output.contains("archived successfully."));
-            Assertions.assertTrue(output.contains("delete successfully."));
+            Assertions.assertTrue(output.contains("removed successfully."));
             Assertions.assertTrue(output.contains("Failed pulling Site:"));
 
         } finally {
@@ -195,43 +195,30 @@ class SiteCommandTest extends CommandTest {
         }
     }
 
-
-    /**
-     * Given scenario: Create a new site, Find out what the current site is and switch to the new site then restore the original site
-     * Expected Result: We must be able to switch to the new site and then switch back to the original site
-     * @throws IOException
-     */
     @Test
-    void Test_Command_Switch_Create_Then_Switch() throws IOException {
-
+    void Test_Create_From_File_via_Push() throws IOException {
         final String newSiteName = String.format("new.dotcms.site%d", System.currentTimeMillis());
+        String siteDescriptor = String.format("{\n"
+                + "  \"siteName\" : \"%s\",\n"
+                + "  \"languageId\" : 1,\n"
+                + "  \"modDate\" : \"2023-05-05T00:13:25.242+00:00\",\n"
+                + "  \"modUser\" : \"dotcms.org.1\",\n"
+                + "  \"live\" : true,\n"
+                + "  \"working\" : true\n"
+                + "}",newSiteName);
+
+        final Path path = Files.createTempFile("test", "json");
+        Files.write(path, siteDescriptor.getBytes());
         final CommandLine commandLine = getFactory().create();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
-
-            int status = commandLine.execute(SiteCommand.NAME, SiteCreate.NAME, newSiteName);
-            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
-            //We're interested in the output of the current site
             commandLine.setOut(out);
-            status = commandLine.execute(SiteCommand.NAME, SiteCurrent.NAME);
+            commandLine.setErr(out);
+            int status = commandLine.execute(SiteCommand.NAME, SitePush.NAME, path.toFile().getAbsolutePath());
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
 
-            final String output = writer.toString();
-            Assertions.assertTrue(output.contains("Current Site is"));
-            //Since the command prints the current site name in brackets, we need to extract it
-            final Matcher matcher = Pattern.compile("\\[(.*?)\\]").matcher(output);
-            String currentSiteName = null;
-            while(matcher.find()) {
-                currentSiteName = matcher.group(1);
-            }
-            status = commandLine.execute(SiteCommand.NAME, SiteSwitch.NAME, newSiteName);
+            status = commandLine.execute(SiteCommand.NAME, SiteFind.NAME, "--name", siteName);
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
-
-            status = commandLine.execute(SiteCommand.NAME, SiteSwitch.NAME, currentSiteName);
-            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
-
-        } finally {
-            Files.deleteIfExists(Path.of(".", String.format("%s.%s", newSiteName, InputOutputFormat.defaultFormat().getExtension())));
         }
     }
 

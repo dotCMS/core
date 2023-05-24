@@ -22,6 +22,7 @@ import com.dotcms.experiments.business.result.ExperimentResults;
 import com.dotcms.experiments.business.result.VariantResults;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.ExperimentVariant;
+import com.dotcms.experiments.model.GoalFactory;
 import com.dotcms.experiments.model.Goals;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -86,7 +87,7 @@ public class ExperimentAnalyzerUtilIT {
                         getRefererCondition(pageB.getPageUrl()))
                 .build();
 
-        final Goals goal = Goals.builder().primary(metric).build();
+        final Goals goal = Goals.builder().primary(GoalFactory.create(metric)).build();
 
         final Experiment experiment = new ExperimentDataGen()
                 .addVariant("Testing Variant")
@@ -115,26 +116,9 @@ public class ExperimentAnalyzerUtilIT {
         final List<Map<String, Object>> browserSession_5 = createPageViewEvents(experiment,
                 anotherVariant.id(), pageA, pageB, pageD, pageC, pageB, pageD);
 
-        final List<BrowserSession> browserSessions = new ArrayList<>();
-        browserSessions.add(new BrowserSession(
-                browserSession_1.get(0).get("Events.lookBackWindow").toString(),
-                browserSession_1.stream().map(eventMap -> new Event(eventMap, EventType.PAGE_VIEW)).collect(Collectors.toList())));
-
-        browserSessions.add(new BrowserSession(
-                browserSession_2.get(0).get("Events.lookBackWindow").toString(),
-                browserSession_2.stream().map(eventMap -> new Event(eventMap, EventType.PAGE_VIEW)).collect(Collectors.toList())));
-
-        browserSessions.add(new BrowserSession(
-                browserSession_3.get(0).get("Events.lookBackWindow").toString(),
-                browserSession_3.stream().map(eventMap -> new Event(eventMap, EventType.PAGE_VIEW)).collect(Collectors.toList())));
-
-        browserSessions.add(new BrowserSession(
-                browserSession_4.get(0).get("Events.lookBackWindow").toString(),
-                browserSession_4.stream().map(eventMap -> new Event(eventMap, EventType.PAGE_VIEW)).collect(Collectors.toList())));
-
-        browserSessions.add(new BrowserSession(
-                browserSession_5.get(0).get("Events.lookBackWindow").toString(),
-                browserSession_5.stream().map(eventMap -> new Event(eventMap, EventType.PAGE_VIEW)).collect(Collectors.toList())));
+        final List<BrowserSession> browserSessions = createBrowserSessions(
+                browserSession_1, browserSession_2, browserSession_3, browserSession_4,
+                browserSession_5);
 
         final ExperimentResults experimentResults = ExperimentAnalyzerUtil.INSTANCE
                 .getExperimentResult(experiment, browserSessions);
@@ -167,6 +151,33 @@ public class ExperimentAnalyzerUtilIT {
 
     }
 
+    private static List<BrowserSession> createBrowserSessions(
+            List<Map<String, Object>> browserSession_1, List<Map<String, Object>> browserSession_2,
+            List<Map<String, Object>> browserSession_3, List<Map<String, Object>> browserSession_4,
+            List<Map<String, Object>> browserSession_5) {
+        final List<BrowserSession> browserSessions = new ArrayList<>();
+        browserSessions.add(new BrowserSession(
+                browserSession_1.get(0).get("Events.lookBackWindow").toString(),
+                browserSession_1.stream().map(eventMap -> new Event(eventMap, EventType.PAGE_VIEW)).collect(Collectors.toList())));
+
+        browserSessions.add(new BrowserSession(
+                browserSession_2.get(0).get("Events.lookBackWindow").toString(),
+                browserSession_2.stream().map(eventMap -> new Event(eventMap, EventType.PAGE_VIEW)).collect(Collectors.toList())));
+
+        browserSessions.add(new BrowserSession(
+                browserSession_3.get(0).get("Events.lookBackWindow").toString(),
+                browserSession_3.stream().map(eventMap -> new Event(eventMap, EventType.PAGE_VIEW)).collect(Collectors.toList())));
+
+        browserSessions.add(new BrowserSession(
+                browserSession_4.get(0).get("Events.lookBackWindow").toString(),
+                browserSession_4.stream().map(eventMap -> new Event(eventMap, EventType.PAGE_VIEW)).collect(Collectors.toList())));
+
+        browserSessions.add(new BrowserSession(
+                browserSession_5.get(0).get("Events.lookBackWindow").toString(),
+                browserSession_5.stream().map(eventMap -> new Event(eventMap, EventType.PAGE_VIEW)).collect(Collectors.toList())));
+        return browserSessions;
+    }
+
     /**
      * Method to test: {@link ExperimentAnalyzerUtil#getExperimentResult(Experiment, List)}
      * When:
@@ -197,7 +208,7 @@ public class ExperimentAnalyzerUtilIT {
                 .addConditions(getUrlCondition(pageB.getPageUrl()))
                 .build();
 
-        final Goals goal = Goals.builder().primary(metric).build();
+        final Goals goal = Goals.builder().primary(GoalFactory.create(metric)).build();
 
         final Experiment experiment = new ExperimentDataGen()
                 .addVariant("Testing Variant")

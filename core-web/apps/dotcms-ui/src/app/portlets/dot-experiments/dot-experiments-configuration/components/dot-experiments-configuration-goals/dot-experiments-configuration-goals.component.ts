@@ -7,7 +7,6 @@ import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { ConfirmPopupModule } from 'primeng/confirmpopup';
-import { RippleModule } from 'primeng/ripple';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { tap } from 'rxjs/operators';
@@ -19,6 +18,7 @@ import { DotMessageService } from '@dotcms/data-access';
 import {
     ComponentStatus,
     ExperimentSteps,
+    GOAL_TYPES,
     Goals,
     GOALS_METADATA_MAP,
     GoalsLevels,
@@ -50,8 +50,7 @@ import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.dir
         ButtonModule,
         CardModule,
         ConfirmPopupModule,
-        TooltipModule,
-        RippleModule
+        TooltipModule
     ],
     templateUrl: './dot-experiments-configuration-goals.component.html',
     styleUrls: ['./dot-experiments-configuration-goals.component.scss'],
@@ -71,6 +70,7 @@ export class DotExperimentsConfigurationGoalsComponent {
     destroy$: Subject<boolean> = new Subject<boolean>();
     @ViewChild(DotDynamicDirective, { static: true }) sidebarHost!: DotDynamicDirective;
     protected readonly GOALS_METADATA_MAP = GOALS_METADATA_MAP;
+    protected readonly GOAL_TYPES = GOAL_TYPES;
 
     private componentRef: ComponentRef<DotExperimentsConfigurationGoalSelectComponent>;
 

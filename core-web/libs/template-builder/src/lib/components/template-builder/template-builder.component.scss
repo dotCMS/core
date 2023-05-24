@@ -1,0 +1,34 @@
+:host {
+    // Added this temporaly to test the col with 12 width on the grid
+    width: calc(100% - 80px);
+    display: block;
+}
+
+.grid-stack-item {
+    border: solid 1px black;
+}
+
+.grid-stack-item.sub .grid-stack-item-content {
+    background: pink;
+}
+
+.grid-stack-item-content {
+    display: flex;
+}
+
+.grid-stack-nested {
+    flex: 1;
+}
+
+.tools {
+    display: grid;
+    grid-template-columns: repeat(2, auto);
+
+    .add {
+        width: 100px;
+    }
+}
+
+.grid-stack-item {
+    border: solid 1px black;
+}

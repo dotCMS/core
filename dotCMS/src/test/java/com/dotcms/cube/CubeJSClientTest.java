@@ -6,8 +6,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.cube.CubeJSQuery.Builder;
-import com.dotcms.cube.CubeJSResultSet.ResultSetItem;
 
+
+import com.dotcms.cube.CubeJSResultSet.ResultSetItem;
 import com.dotcms.http.server.mock.MockHttpServer;
 import com.dotcms.http.server.mock.MockHttpServerContext;
 
@@ -158,7 +159,14 @@ public class CubeJSClientTest {
 
             try {
                 cubeClient.send(null);
-                throw new AssertionError("NullPointerException Expected");
+                throw new AssertionError("IllegalArgumentException Expected");
+            }  catch (IllegalArgumentException e) {
+                mockhttpServer.mustNeverCalled("/cubejs-api/v1/load");
+            }
+
+            try {
+                cubeClient.sendWithPagination(null);
+                throw new AssertionError("IllegalArgumentException Expected");
             }  catch (IllegalArgumentException e) {
                 mockhttpServer.mustNeverCalled("/cubejs-api/v1/load");
             }
@@ -167,5 +175,6 @@ public class CubeJSClientTest {
             mockhttpServer.stop();
         }
     }
+
 
 }
