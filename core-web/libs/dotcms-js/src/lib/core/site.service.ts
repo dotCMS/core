@@ -153,7 +153,7 @@ export class SiteService {
      * This method gets a new site by the id and switch to it
      *
      * @param {string} id
-     * @return {*}
+     * @return {*}  {Observable<Site>}
      * @memberof SiteService
      */
     switchSiteById(id: string): Observable<Site> {
