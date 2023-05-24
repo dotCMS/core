@@ -73,7 +73,9 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
+import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.factories.MultiTreeAPI;
+import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
@@ -507,6 +509,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             final Experiment experimentToSave = persistedExperiment.withScheduling(scheduling).withStatus(RUNNING);
             validateNoConflictsWithScheduledExperiments(experimentToSave, user);
             toReturn = save(experimentToSave, user);
+            publishExperimentPage(toReturn, user);
             publishContentOnExperimentVariants(user, toReturn);
             cacheRunningExperiments();
         } else {
@@ -517,6 +520,32 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         }
 
         return toReturn;
+    }
+
+    private void publishExperimentPage(final Experiment experiment, final User user)
+            throws DotDataException, DotSecurityException {
+        final HTMLPageAsset htmlPageAsset = APILocator.getHTMLPageAssetAPI().fromContentlet(contentletAPI
+                .findContentletByIdentifierAnyLanguage(experiment.pageId(), false));
+
+        //Get the un-publish content related to this HTMLPage
+        List relatedNotPublished = new ArrayList();
+                /*
+                Returns the list of unpublished related content for this HTML page where
+                the user have permissions to publish that related content.
+                 */
+        relatedNotPublished = PublishFactory.getUnpublishedRelatedAssetsForPage(htmlPageAsset, relatedNotPublished,
+                true, user, false);
+        relatedNotPublished.stream().filter(asset -> asset instanceof Contentlet).forEach(
+                asset -> Contentlet.class.cast(asset)
+                        .setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE));
+        //Publish the page and the related content
+        htmlPageAsset.setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE);
+        try {
+            PublishFactory.publishHTMLPage(htmlPageAsset, relatedNotPublished, user,
+                    false);
+        } catch(WebAssetException e) {
+            throw new DotDataException(e);
+        }
     }
 
     private static boolean emptyScheduling(Experiment persistedExperiment) {
@@ -567,6 +596,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
         Experiment running = save(persistedExperiment.withStatus(RUNNING), user);
         cacheRunningExperiments();
+        publishExperimentPage(running, user);
         publishContentOnExperimentVariants(user, running);
 
         return running;

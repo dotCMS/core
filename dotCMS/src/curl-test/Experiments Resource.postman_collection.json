@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "0441f95e-4230-48b5-ae39-221a9d987f34",
+		"_postman_id": "3e400a2a-25b3-403e-b03c-e23b9a4121ba",
 		"name": "Experiments Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "4500400"
@@ -4581,6 +4581,520 @@
 										"experiments",
 										"{{experimentToStartNow}}",
 										"_end"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "StartExperimentShouldPublishPage",
+					"item": [
+						{
+							"name": "pre_ImportBundleWithPage",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Bundle uploaded sucessfully\", function () {",
+											"    pm.response.to.have.status(200);",
+											"",
+											"    var jsonData = pm.response.json();",
+											"    console.log(jsonData);",
+											"",
+											"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"page_experiment.tar.gz\");",
+											"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"type": "text",
+										"value": "application/octet-stream"
+									},
+									{
+										"key": "Content-Disposition",
+										"type": "text",
+										"value": "attachment"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "file",
+											"type": "file",
+											"src": "resources/Experiments/page_experiment.tar.gz"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/bundle?sync=true",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"bundle"
+									],
+									"query": [
+										{
+											"key": "sync",
+											"value": "true"
+										},
+										{
+											"key": "AUTH_TOKEN",
+											"value": "",
+											"disabled": true
+										}
+									]
+								},
+								"description": "Imports a Bundle that includes:\n* A piece of content with a tag field without any tags selected"
+							},
+							"response": []
+						},
+						{
+							"name": "pre_UnpublishPage",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"No errors\", function () {",
+											"    ",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.errors.length).to.eql(0);",
+											"});",
+											"",
+											"pm.test(\"Information Publish Correctly\", function () {",
+											"    ",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.entity.baseType).to.eql(\"HTMLPAGE\");",
+											"    pm.expect(jsonData.entity.live).to.eql(false);",
+											"});",
+											"",
+											"",
+											"",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"type": "text",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/UNPUBLISH?identifier=e424abd7e2e7a9031c5a0a3c18182f1b",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"default",
+										"fire",
+										"UNPUBLISH"
+									],
+									"query": [
+										{
+											"key": "identifier",
+											"value": "e424abd7e2e7a9031c5a0a3c18182f1b"
+										}
+									]
+								},
+								"description": "Fires an PUBLISH default action"
+							},
+							"response": []
+						},
+						{
+							"name": "pre_createExperiment",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"",
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.collectionVariables.set(\"experimentToStartNow\", jsonData.entity.id);",
+											"",
+											"",
+											"",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"pageId\": \"e424abd7e2e7a9031c5a0a3c18182f1b\",\n    \"name\": \"20220901\",\n    \"description\": \"experiment with goals and variants\", \n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                },\n                {\n                    \"parameter\": \"referer\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"home\"\n                }\n            ]\n        }\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/experiments/",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"experiments",
+										""
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "pre_addVariantToExperiment",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"",
+											"pm.test(\"Variants with correct weight\", function () {",
+											"    pm.response.to.have.status(200);",
+											"    pm.expect(jsonData.entity.trafficProportion.type).equal(\"SPLIT_EVENLY\");",
+											"    pm.expect(jsonData.entity.trafficProportion.variants.length).equal(2);",
+											"    pm.expect(jsonData.entity.trafficProportion.variants[0].name).equal(\"Original\");",
+											"    pm.expect(jsonData.entity.trafficProportion.variants[0].weight).equal(50.0);",
+											"    pm.expect(jsonData.entity.trafficProportion.variants[1].name).equal(\"I wanna be promoted!\");",
+											"    pm.expect(jsonData.entity.trafficProportion.variants[1].weight).equal(50.0);",
+											"    ",
+											"    pm.collectionVariables.set(\"originalVariant\", jsonData.entity.trafficProportion.variants[0].id);",
+											"    pm.collectionVariables.set(\"variantToPromote\", jsonData.entity.trafficProportion.variants[1].id);",
+											"",
+											"});",
+											"",
+											"",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"description\": \"I wanna be promoted!\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/experiments/{{experimentToStartNow}}/variants",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"experiments",
+										"{{experimentToStartNow}}",
+										"variants"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "pre_setExperimentGoal",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"",
+											"pm.test(\"Status code should be ok 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Experiment should have the expected values\", function () {",
+											"    pm.expect(jsonData.entity.goals.primary.type).equal(\"REACH_PAGE\");",
+											"    pm.expect(jsonData.entity.goals.primary.name).equal(\"Reach thank-you page\");",
+											"    pm.expect(jsonData.entity.goals.primary.conditions[0].operator).equal(\"EQUALS\");",
+											"    pm.expect(jsonData.entity.goals.primary.conditions[0].parameter).equal(\"url\");",
+											"    pm.expect(jsonData.entity.goals.primary.conditions[0].value).equal(\"thank-you\");",
+											"    pm.expect(jsonData.entity.goals.primary.conditions[1].operator).equal(\"EQUALS\");",
+											"    pm.expect(jsonData.entity.goals.primary.conditions[1].parameter).equal(\"referer\");",
+											"    pm.expect(jsonData.entity.goals.primary.conditions[1].value).equal(\"home\");",
+											"",
+											"});",
+											"",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"goals\": {\n        \"primary\": {\n            \"name\": \"Reach thank-you page\",\n            \"type\": \"REACH_PAGE\",\n            \"conditions\": [\n                {\n                    \"parameter\": \"url\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"thank-you\"\n                },\n                {\n                    \"parameter\": \"referer\",\n                    \"operator\": \"EQUALS\",\n                    \"value\": \"home\"\n                }\n            ]\n        }\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/experiments/{{experimentToStartNow}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"experiments",
+										"{{experimentToStartNow}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "startExperiment_shouldSucceed",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"",
+											"pm.test(\"Started Experiment with expected values\", function () {",
+											"    pm.response.to.have.status(200);",
+											"    pm.expect(jsonData.entity.status).equal(\"RUNNING\");",
+											"    pm.expect(jsonData.entity.scheduling.startDate).to.be.not.null;",
+											"    pm.expect(jsonData.entity.scheduling.endDate).to.be.not.null;",
+											"});",
+											"",
+											"",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/experiments/{{experimentToStartNow}}/_start",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"experiments",
+										"{{experimentToStartNow}}",
+										"_start"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "pageOfExperiment_shouldBeLive",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code should be 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"",
+											"var identifier = pm.collectionVariables.get(\"contentletIdentifier\");",
+											"pm.test(\"Live check\", function () {",
+											"    pm.expect(jsonData.entity.live).to.true;",
+											"});",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/content/e424abd7e2e7a9031c5a0a3c18182f1b",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"content",
+										"e424abd7e2e7a9031c5a0a3c18182f1b"
 									]
 								}
 							},
