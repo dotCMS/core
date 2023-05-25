@@ -33,3 +33,11 @@
     flex-grow: 1;
     padding: $spacing-3 0;
 }
+
+.row__actions-container {
+    p-button ::ng-deep {
+        .pi-trash {
+            color: $color-palette-primary-400;
+        }
+    }
+}
