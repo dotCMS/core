@@ -261,7 +261,7 @@ public class PageResource {
             @QueryParam(WebKeys.CMS_PERSONA_PARAMETER) final String personaId,
             @QueryParam(WebKeys.LANGUAGE_ID_PARAMETER) final String languageId,
             @QueryParam("device_inode") final String deviceInode) throws DotSecurityException, DotDataException, SystemException, PortalException {
-        if (HttpRequestDataUtil.getAttribute(originalRequest, EMAWebInterceptor.EMA_REQUEST_ATTR, Boolean.FALSE) && !this.includeRenderedAttrFromEMA(originalRequest, uri)) {
+        if (HttpRequestDataUtil.getAttribute(originalRequest, EMAWebInterceptor.EMA_REQUEST_ATTR, false) && !this.includeRenderedAttrFromEMA(originalRequest, uri)) {
             return this.loadJson(originalRequest, response, uri, modeParam, personaId, languageId, deviceInode);
         }
         Logger.debug(this, ()->String.format(
