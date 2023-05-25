@@ -1371,4 +1371,28 @@ public class HostAPITest extends IntegrationTestBase  {
         }
     }
 
+    /**
+     * <ul>
+     *     <li><b>Method to test: </b>{@link HostAPI#findAllFromDB(User, boolean, boolean)}</li>
+     *     <li><b>Given Scenario: </b>Create a test Site and call the {@findAllFromDB} method that allows you to include
+     *     or exclude the System Host.</li>
+     *     <li><b>Expected Result: </b>When calling the method with the {@code includeSystemHost} parameter as
+     *     {@code true}, the System Host must be included. Otherwise, it must be left out.</li>
+     * </ul>
+     */
+    @Test
+    public void findAllFromDB() throws DotDataException, DotSecurityException {
+        // Initialization
+        final HostAPI hostAPI = APILocator.getHostAPI();
+        final User systemUser = APILocator.systemUser();
+
+        // Test data generation
+        final List<Host> siteList = hostAPI.findAllFromDB(systemUser, false, false);
+        final List<Host> siteListWithSystemHost = hostAPI.findAllFromDB(systemUser, true, false);
+
+        // Assertions
+        assertEquals("The size difference between both Site lists MUST be 1", 1,
+                siteListWithSystemHost.size() - siteList.size());
+    }
+
 }
