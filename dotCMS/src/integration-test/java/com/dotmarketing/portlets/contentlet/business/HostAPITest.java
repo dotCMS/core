@@ -46,20 +46,20 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
-import java.util.HashMap;
-import java.util.Map;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
+import org.quartz.Trigger;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import org.quartz.Trigger;
 
 import static com.dotmarketing.portlets.templates.model.Template.ANONYMOUS_PREFIX;
 import static org.junit.Assert.assertEquals;
@@ -505,7 +505,7 @@ public class HostAPITest extends IntegrationTestBase  {
 
         try {
             HibernateUtil.startTransaction();
-            host.setIndexPolicy(IndexPolicy.FORCE);
+            host.setIndexPolicy(IndexPolicy.WAIT_FOR);
             APILocator.getHostAPI().unpublish(host, user, false);
             HibernateUtil.closeAndCommitTransaction();
         } catch (Exception e) {
@@ -520,10 +520,12 @@ public class HostAPITest extends IntegrationTestBase  {
      * Archives a given host
      */
     private void archiveHost(final Host host, final User user) throws DotHibernateException {
-
+        if (null == host || null == user) {
+            return;
+        }
         try {
             HibernateUtil.startTransaction();
-            host.setIndexPolicy(IndexPolicy.FORCE);
+            host.setIndexPolicy(IndexPolicy.WAIT_FOR);
             APILocator.getHostAPI().archive(host, user, false);
             HibernateUtil.closeAndCommitTransaction();
         } catch (Exception e) {
@@ -539,11 +541,13 @@ public class HostAPITest extends IntegrationTestBase  {
      */
     private void deleteHost(final Host host, final User user)
             throws DotHibernateException, InterruptedException, ExecutionException {
-
+        if (null == host || null == user) {
+            return;
+        }
         Optional<Future<Boolean>> hostDeleteResult = Optional.empty();
         try {
             HibernateUtil.startTransaction();
-            host.setIndexPolicy(IndexPolicy.FORCE);
+            host.setIndexPolicy(IndexPolicy.WAIT_FOR);
             hostDeleteResult = APILocator.getHostAPI().delete(host, user, false, true);
             HibernateUtil.closeAndCommitTransaction();
         } catch (Exception e) {
@@ -1219,14 +1223,15 @@ public class HostAPITest extends IntegrationTestBase  {
     }
 
     /**
-     * Method to test: {@link HostAPI#searchByStopped(String, boolean, boolean, int, int, User, boolean)}
-     *
-     * Given Scenario: Create a test Site and stop it. Then, create another Site, then stop it and archive it. Finally,
-     * compare the total count of stopped Sites.
-     *
-     * Expected Result: When compared to the initial stopped Sites count, after stopping the new Site, the count must
-     * increase by one. After stopping and archivnig the second Site, the count must be increased by two because
-     * archived Sites are also considered "stopped Sites".
+     * <ul>
+     *     <li><b>Method to test:
+     *     </b>{@link HostAPI#searchByStopped(String, boolean, boolean, int, int, User, boolean)}</li>
+     *     <li><b>Given Scenario: </b>Create a test Site and stop it. Then, create another Site, then stop it and
+     *     archive it. Finally, compare the total count of stopped Sites.</li>
+     *     <li><b>Expected Result: </b>When compared to the initial stopped Sites count, after stopping the new Site,
+     *     the count must be increased by one. After stopping AND archiving the second Site, the total count difference
+     *     must be 2 because archived Sites are also considered "stopped Sites" as well.</li>
+     * </ul>
      */
     @Test
     public void searchByStopped() throws DotHibernateException, ExecutionException, InterruptedException {
@@ -1242,7 +1247,7 @@ public class HostAPITest extends IntegrationTestBase  {
             final PaginatedArrayList<Host> stoppedSites = hostAPI.searchByStopped(null, true, false, 0, 0, systemUser,
                     false);
             testSite = siteDataGen.nextPersisted();
-            unpublishHost(testSite, systemUser);
+            this.unpublishHost(testSite, systemUser);
             final PaginatedArrayList<Host> updatedStoppedSites = hostAPI.searchByStopped(null, true, false, 0, 0,
                     systemUser, false);
 
@@ -1253,8 +1258,8 @@ public class HostAPITest extends IntegrationTestBase  {
             // Test data generation #2
             siteDataGen = new SiteDataGen();
             testSiteTwo = siteDataGen.nextPersisted();
-            unpublishHost(testSiteTwo, systemUser);
-            archiveHost(testSiteTwo, systemUser);
+            this.unpublishHost(testSiteTwo, systemUser);
+            this.archiveHost(testSiteTwo, systemUser);
             final PaginatedArrayList<Host> updatedStoppedAndArchivedSites = hostAPI.searchByStopped(null, true,
                     false, 0, 0, systemUser, false);
 
