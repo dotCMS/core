@@ -22,6 +22,9 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
@@ -233,6 +236,13 @@ public class WebAssetHelper {
                 .inode(folder.getInode())
                 .build();
     }
+
+    public void createOrReplaceAsset(final String assetPath, final String fileName, final InputStream fileInputStream,  final User user){
+           System.out.println(assetPath);
+           System.out.println(fileName);
+           System.out.println(fileInputStream);
+    }
+
 
     /**
      * Creates a new instance of {@link WebAssetHelper}
