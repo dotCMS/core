@@ -52,3 +52,4 @@ This maintenance release includes the following code fixes:
 40. https://github.com/dotCMS/core/issues/24465 : Block editor add video.vtl to render a video by default #24465
 41. https://github.com/dotCMS/core/issues/23846 : StoryBlock - Embedding a content item to itself causes stackoverflow #23846
 42. https://github.com/dotCMS/core/issues/24285 : Block Editor: Error uploading images in a different default language. #24285
+43. https://github.com/dotCMS/core/issues/25037 : PP an existing bundle it doesn't consider Timezone #25037
