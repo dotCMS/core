@@ -46,14 +46,14 @@ export const processExperimentConfigProps = (
 ): Record<string, number> => {
     const config: Record<string, number> = {};
 
-    config.EXPERIMENTS_MIN_DURATION =
-        configProps.EXPERIMENTS_MIN_DURATION === PROP_NOT_FOUND
+    config['EXPERIMENTS_MIN_DURATION'] =
+        configProps['EXPERIMENTS_MIN_DURATION'] === PROP_NOT_FOUND
             ? TIME_14_DAYS
-            : daysToMilliseconds(+configProps.EXPERIMENTS_MIN_DURATION);
-    config.EXPERIMENTS_MAX_DURATION =
-        configProps.EXPERIMENTS_MAX_DURATION === PROP_NOT_FOUND
+            : daysToMilliseconds(+configProps['EXPERIMENTS_MIN_DURATION']);
+    config['EXPERIMENTS_MAX_DURATION'] =
+        configProps['EXPERIMENTS_MAX_DURATION'] === PROP_NOT_FOUND
             ? TIME_90_DAYS
-            : daysToMilliseconds(+configProps.EXPERIMENTS_MAX_DURATION);
+            : daysToMilliseconds(+configProps['EXPERIMENTS_MAX_DURATION']);
 
     return config;
 };

@@ -28,8 +28,11 @@ import {
 } from '@dotcms/dotcms-models';
 
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
-import { ACTIVE_ROUTE_MOCK_CONFIG, getExperimentMock, MockDotMessageService } from "@dotcms/utils-testing";
-
+import {
+    ACTIVE_ROUTE_MOCK_CONFIG,
+    getExperimentMock,
+    MockDotMessageService
+} from "@dotcms/utils-testing";
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotExperimentsConfigurationVariantsComponent } from './dot-experiments-configuration-variants.component';

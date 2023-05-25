@@ -1,7 +1,7 @@
 import { Routes } from '@angular/router';
 
 import { ExperimentsConfigProperties } from '@dotcms/dotcms-models';
-import { DotExperimentsConfigResolver } from '@portlets/dot-experiments/shared/resolvers/dot-experiments-config-resolver';
+import { DotExperimentsConfigResolver } from '@dotcms/portlets/dot-experiments/data-access';
 
 import { DotExperimentsShellComponent } from './dot-experiments-shell/dot-experiments-shell.component';
 

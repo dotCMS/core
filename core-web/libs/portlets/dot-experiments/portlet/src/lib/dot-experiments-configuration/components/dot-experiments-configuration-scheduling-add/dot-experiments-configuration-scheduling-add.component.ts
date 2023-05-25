@@ -101,8 +101,8 @@ export class DotExperimentsConfigurationSchedulingAddComponent implements OnInit
      */
     setDateBoundaries(): void {
         this.vm$.pipe(take(1)).subscribe(({ schedulingBoundaries }) => {
-            this.setMinEndDate(schedulingBoundaries.EXPERIMENTS_MIN_DURATION);
-            this.setMaxEndDate(schedulingBoundaries.EXPERIMENTS_MAX_DURATION);
+            this.setMinEndDate(schedulingBoundaries['EXPERIMENTS_MIN_DURATION']);
+            this.setMaxEndDate(schedulingBoundaries['EXPERIMENTS_MAX_DURATION']);
         });
     }
 

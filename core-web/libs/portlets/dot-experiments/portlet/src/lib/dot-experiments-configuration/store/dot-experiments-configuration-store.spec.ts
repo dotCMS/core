@@ -32,16 +32,18 @@ import {
     Variant
 } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
-import { getExperimentMock, GoalsMock, MockDotMessageService } from '@dotcms/utils-testing';
+import {
+    ACTIVE_ROUTE_MOCK_CONFIG,
+    getExperimentMock,
+    GoalsMock,
+    MockDotMessageService
+} from '@dotcms/utils-testing';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import {
     DotExperimentsConfigurationState,
     DotExperimentsConfigurationStore
-} from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
-import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
-import { getExperimentMock, GoalsMock } from '@portlets/dot-experiments/test/mocks';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+} from './dot-experiments-configuration-store';
 
 const EXPERIMENT_MOCK = getExperimentMock(0);
 const EXPERIMENT_MOCK_1 = getExperimentMock(1);

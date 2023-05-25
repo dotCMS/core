@@ -29,7 +29,6 @@ import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot
 import { checkIfExperimentDescriptionIsSaving, processExperimentConfigProps } from "../../shared/dot-experiment.utils";
 import { DotExperimentsService } from "@dotcms/portlets/dot-experiments/data-access";
 
-
 export interface DotExperimentsConfigurationState {
     experiment: DotExperiment;
     status: ComponentStatus;
@@ -855,7 +854,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         private readonly title: Title,
         private readonly route: ActivatedRoute
     ) {
-        const configProps = route.snapshot.data["config"];
+        const configProps = route.snapshot.data.config;
 
         super({ ...initialState, configProps });
     }

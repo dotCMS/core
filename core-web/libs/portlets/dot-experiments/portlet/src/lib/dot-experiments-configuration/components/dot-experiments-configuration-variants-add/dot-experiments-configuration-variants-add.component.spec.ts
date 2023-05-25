@@ -15,9 +15,7 @@ import { DotFieldValidationMessageModule } from '@components/_common/dot-field-v
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus, ExperimentSteps } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
-import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
+import { ACTIVE_ROUTE_MOCK_CONFIG, MockDotMessageService } from '@dotcms/utils-testing';
 import { DotSidebarDirective } from '@portlets/shared/directives/dot-sidebar.directive';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sidebar-header.component';

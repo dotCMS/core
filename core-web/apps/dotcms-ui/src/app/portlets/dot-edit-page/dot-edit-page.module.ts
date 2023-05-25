@@ -11,10 +11,10 @@ import {
 } from '@dotcms/data-access';
 import {
     DotExperimentExperimentResolver,
+    DotExperimentsConfigResolver,
     DotExperimentsService
 } from '@dotcms/portlets/dot-experiments/data-access';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { DotExperimentExperimentResolver } from '@portlets/dot-experiments/shared/resolvers/dot-experiment-experiment.resolver';
 import { DotFeatureFlagResolver } from '@portlets/shared/resolvers/dot-feature-flag-resolver.service';
 import { DotDirectivesModule } from '@shared/dot-directives.module';
 
