@@ -17,6 +17,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.util.Enumeration;
 import javax.servlet.ServletContext;
+import org.apache.felix.http.api.ExtHttpService;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 
@@ -174,23 +175,23 @@ class ActivatorUtil {
     @SuppressWarnings ("unchecked")
     static void unregisterAll ( BundleContext context ) throws Exception {
 
-        ServiceReference sRef = context.getServiceReference( "ExtHttpService" );
+        ServiceReference<ExtHttpService> sRef = context.getServiceReference( ExtHttpService.class );
         if ( sRef != null ) {
 
             /*
-             Why don't use it in the same way as the activators???, classpaths :)
-
-             On the felix framework initialization dotCMS loads this class (ExtHttpService) using its own ClassLoader.
-             So I can't use directly this class and its implementation because on this class felix can't use its
-             instance (Created with its own ClassLoader because the dotCMS ClassLoader already loaded the same class,
-             meaning we have in memory a definition that is not the one provided by felix and for that reason they are different, nice... :) ),
-             That will cause runtime errors and that's why we use reflection.
+             We cannot create or get a direct class reference to an implementation class in the osgi classloader
+             as it is in a different classloader than the main dotCMS classloader, so we need to use the service reference
+                to get the service instance and then invoke the method on it. OSGI services can provide an interface as
+                a means of communication between the service and the client. The service interface is the only way that
+                a client can access the service. The service interface is defined by the service provider and is implemented
              */
 
-            //ExtHttpService httpService = (ExtHttpService) context.getService( sRef );
-            Object httpService = context.getService( sRef );
+            ExtHttpService httpService = context.getService( sRef );
 
             //Now invoke the method that will unregister all the registered Servlets and Filters
+            //This is a hack as the unregisterAll method is not exposed by the ExtHttpService interface
+            //it is only available on the implementation class org.apache.felix.http.base.internal.service.HttpServiceImpl
+            //This class is only available in the osgi classloader and not in the main dotCMS classloader
             Method unregisterAllMethod = httpService.getClass().getMethod( "unregisterAll" );
             unregisterAllMethod.invoke( httpService );
         }

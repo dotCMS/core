@@ -359,11 +359,10 @@ dowloadStarterForTests.description = 'Downloads the test starter zip to the inte
 
 ext.prepareFelixExternalFolder = { String felixExternalFolder ->
 
-    println "Configuring felix in folder [" + felixExternalFolder + "]"
 
     if (felixExternalFolder.startsWith("/")) {// We need an absolute path here
-
-        from (felixBundleSourceFolder) {
+        copy {
+            from felixBundleSourceFolder
             into felixExternalFolder.concat("/bundle")
             include '**/*.jar'
         }
@@ -372,7 +371,6 @@ ext.prepareFelixExternalFolder = { String felixExternalFolder ->
             from 'src/main/webapp/WEB-INF/felix/osgi-extra-generated.conf'
             into felixExternalFolder
         }
-
 
     } else {
         // For integration tests we need an absolute path for the felix folder
@@ -386,12 +384,13 @@ task prepareFelixForTests {
     description='Copies the felix bundle jars and the osgi-extra-generated.conf file to the specified felix home location'
 
     doLast {
-
+        println "Preparing felix for integration tests"
+        println integrationTestFelixFolder?.toString()
         //If we want the felix folder to live in a custom folder
         if (project.hasProperty("integrationTestFelixFolder")
                 && integrationTestFelixFolder?.trim()) {
 
-            prepareFelixExternalFolder(integrationTestFelixFolder)
+            prepareFelixExternalFolder(new File(integrationTestFelixFolder).toPath().toString())
         }
     }
 

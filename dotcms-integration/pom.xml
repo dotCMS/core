@@ -68,6 +68,11 @@
             <type>war</type>
         </dependency>
 
+        <dependency>
+            <groupId>com.dotcms</groupId>
+            <artifactId>dotcms-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <dependency>
             <groupId>com.dotcms</groupId>
