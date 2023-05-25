@@ -1,0 +1,59 @@
+<ng-template [ngIf]="size !== 'small'">
+    <p-card
+        [ngClass]="{
+            'template-builder-box__medium': size === 'medium',
+            'template-builder-box__large': size === 'large'
+        }"
+    >
+        <ng-template pTemplate="header">
+            <div class="template-builder-box">
+                <p-button
+                    [label]="size === 'large' ? 'Add Container' : ''"
+                    icon="pi pi-plus"
+                    styleClass="p-button-text p-button-sm"
+                ></p-button>
+
+                <p-button
+                    icon="pi pi-palette"
+                    styleClass="p-button-rounded p-button-text p-button-sm"
+                ></p-button>
+
+                <p-button
+                    *ngIf="size === 'medium'"
+                    icon="pi pi-trash"
+                    styleClass="p-button-secondary p-button-rounded p-button-text p-button-sm"
+                ></p-button>
+            </div>
+        </ng-template>
+        <p-scrollPanel [style]="{ width: '100%', height: '14rem' }" styleClass="custombar2">
+            <ng-template pTemplate="content">
+                <div class="template-builder-box-item" *ngFor="let item of items">
+                    <p>{{ item.label }}</p>
+                    <p-button
+                        icon="pi pi-trash"
+                        styleClass="p-button-secondary p-button-rounded p-button-text p-button-sm"
+                    ></p-button>
+                </div>
+            </ng-template>
+        </p-scrollPanel>
+    </p-card>
+</ng-template>
+
+<ng-template [ngIf]="size === 'small'">
+    <p-card class="template-builder-box__small">
+        <ng-template pTemplate="content">
+            <p-button
+                icon="pi pi-plus"
+                styleClass="p-button-rounded  p-button-text p-button-sm"
+            ></p-button>
+            <p-button
+                icon="pi pi-palette"
+                styleClass="p-button-rounded  p-button-text p-button-sm"
+            ></p-button>
+            <p-button
+                icon="pi pi-trash"
+                styleClass=" p-button-rounded p-button-text p-button-sm"
+            ></p-button>
+        </ng-template>
+    </p-card>
+</ng-template>
