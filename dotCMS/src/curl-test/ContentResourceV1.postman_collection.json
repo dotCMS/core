@@ -1,8 +1,9 @@
 {
 	"info": {
-		"_postman_id": "a7037756-a113-4775-888b-9a96d00896bc",
+		"_postman_id": "ab32ee6a-75a8-4252-bc8f-512b7723e0ac",
 		"name": "ContentResourceV1",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "781456"
 	},
 	"item": [
 		{
@@ -119,7 +120,7 @@
 					"raw": "{ \"contentlet\" : {\n  \"stInode\" : \"f4d7c1b8-2c88-4071-abf1-a5328977b07d\",\n  \"languageId\" : 1,\n  \"key\": \"SucessRequest{{$timestamp}}\",\n  \"value\": \"SucessRequest{{$timestamp}}\"\n}\n}"
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+					"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -131,6 +132,12 @@
 						"default",
 						"fire",
 						"PUBLISH"
+					],
+					"query": [
+						{
+							"key": "indexPolicy",
+							"value": "WAIT_FOR"
+						}
 					]
 				},
 				"description": "Fire any action using the actionId\n\nOptional: If you pass ?inode={inode}, you don't need body here.\n\n@Path(\"/actions/{actionId}/fire\")"
@@ -563,7 +570,7 @@
 					"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"ParentContentType\",\n        \"title\": \"parent 1\"\n    }\n}"
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+					"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -575,6 +582,12 @@
 						"default",
 						"fire",
 						"PUBLISH"
+					],
+					"query": [
+						{
+							"key": "indexPolicy",
+							"value": "WAIT_FOR"
+						}
 					]
 				},
 				"description": "Create the a parent content instance"
@@ -640,7 +653,7 @@
 					"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"ParentContentType\",\n        \"title\": \"parent 2\"\n    }\n}"
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+					"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -652,6 +665,12 @@
 						"default",
 						"fire",
 						"PUBLISH"
+					],
+					"query": [
+						{
+							"key": "indexPolicy",
+							"value": "WAIT_FOR"
+						}
 					]
 				},
 				"description": "Create the a parent content instance"
@@ -709,7 +728,7 @@
 					}
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+					"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -721,6 +740,12 @@
 						"default",
 						"fire",
 						"PUBLISH"
+					],
+					"query": [
+						{
+							"key": "indexPolicy",
+							"value": "WAIT_FOR"
+						}
 					]
 				},
 				"description": "Save all child for parent1"
@@ -772,7 +797,7 @@
 					}
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+					"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -784,6 +809,12 @@
 						"default",
 						"fire",
 						"PUBLISH"
+					],
+					"query": [
+						{
+							"key": "indexPolicy",
+							"value": "WAIT_FOR"
+						}
 					]
 				},
 				"description": "Save all childs for parent2"
@@ -848,7 +879,7 @@
 					"raw": "    {\n        \"contentlet\": {\n            \"identifier\":\"{{parentId1}}\",\n            \"contentType\": \"ParentContentType\",\n            \"title\": \"parent 1\",\n            \"children\":\"+contentType:ChildContentType +title:Content*\"\n        }\n    }"
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?identifier={{parentId1}}",
+					"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?identifier={{parentId1}}&indexPolicy=WAIT_FOR",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -865,6 +896,10 @@
 						{
 							"key": "identifier",
 							"value": "{{parentId1}}"
+						},
+						{
+							"key": "indexPolicy",
+							"value": "WAIT_FOR"
 						}
 					]
 				},
@@ -928,7 +963,7 @@
 					"raw": "    {\n        \"contentlet\": {\n            \"identifier\":\"{{parentId2}}\",\n            \"contentType\": \"ParentContentType\",\n            \"title\": \"parent 2\",\n            \"children\":\"+contentType:ChildContentType +title:Dontent*\"\n        }\n    }"
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?identifier={{parentId2}}",
+					"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?identifier={{parentId2}}&indexPolicy=WAIT_FOR",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -945,6 +980,10 @@
 						{
 							"key": "identifier",
 							"value": "{{parentId2}}"
+						},
+						{
+							"key": "indexPolicy",
+							"value": "WAIT_FOR"
 						}
 					]
 				},

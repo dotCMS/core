@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "6d361561-936b-403d-9179-cc1af1dd8d88",
+		"_postman_id": "51b5ebbd-ddc2-4992-8a56-8cc59fc18607",
 		"name": "Workflow Resource Tests [/api/v1/workflows]",
 		"description": "Test the necesary validations to every end point of the worlflow resource ",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -12694,7 +12694,7 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/NEW",
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/NEW?indexPolicy=WAIT_FOR",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -12706,6 +12706,12 @@
 								"default",
 								"fire",
 								"NEW"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
 							]
 						}
 					},
@@ -12764,7 +12770,7 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -12776,6 +12782,12 @@
 								"default",
 								"fire",
 								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
 							]
 						}
 					},
@@ -12829,7 +12841,7 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/NEW",
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/NEW?indexPolicy=WAIT_FOR",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -12841,6 +12853,12 @@
 								"default",
 								"fire",
 								"NEW"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
 							]
 						}
 					},
@@ -12899,7 +12917,7 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?inode={{genericContentletInode}}",
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?inode={{genericContentletInode}}&indexPolicy=WAIT_FOR",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -12916,6 +12934,10 @@
 								{
 									"key": "inode",
 									"value": "{{genericContentletInode}}"
+								},
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
 								}
 							]
 						}
@@ -12981,7 +13003,7 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?inode=xxxx",
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?inode=xxxx&indexPolicy=WAIT_FOR",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -12998,6 +13020,10 @@
 								{
 									"key": "inode",
 									"value": "xxxx"
+								},
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
 								}
 							]
 						}
