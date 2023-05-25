@@ -32,7 +32,11 @@ import {
     DotExperimentsConfigurationStore
 } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
-import { getExperimentMock, GoalsMock } from '@portlets/dot-experiments/test/mocks';
+import {
+    ACTIVE_ROUTE_MOCK_CONFIG,
+    getExperimentMock,
+    GoalsMock
+} from '@portlets/dot-experiments/test/mocks';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 const EXPERIMENT_MOCK = getExperimentMock(0);
@@ -45,7 +49,8 @@ const ActivatedRouteMock = {
         params: {
             experimentId: EXPERIMENT_MOCK.id,
             pageId: EXPERIMENT_MOCK.pageId
-        }
+        },
+        data: ACTIVE_ROUTE_MOCK_CONFIG.snapshot.data
     }
 };
 
@@ -98,7 +103,8 @@ describe('DotExperimentsConfigurationStore', () => {
                 status: ComponentStatus.IDLE,
                 isOpen: false,
                 experimentStep: null
-            }
+            },
+            configProps: ACTIVE_ROUTE_MOCK_CONFIG.snapshot.data.config
         };
 
         expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_MOCK.id);
@@ -587,8 +593,9 @@ describe('DotExperimentsConfigurationStore', () => {
 
             store.startExperiment(experimentWithGoalsAndVariant);
 
-            store.state$.subscribe(({ experiment }) => {
+            store.state$.subscribe(({ experiment, status }) => {
                 expect(experiment.status).toEqual(DotExperimentStatusList.RUNNING);
+                expect(status).toEqual(ComponentStatus.IDLE);
                 done();
             });
         });

@@ -112,6 +112,8 @@ public class CubeJSClient {
      * @see #sendWithPagination(CubeJSQuery)
      */
     public CubeJSResultSet send(final CubeJSQuery query) {
+        DotPreconditions.notNull(query, "Query not must be NULL");
+
         final CircuitBreakerUrl cubeJSClient = CircuitBreakerUrl.builder()
                 .setMethod(Method.GET)
                 .setUrl(String.format("%s/cubejs-api/v1/load", url))
