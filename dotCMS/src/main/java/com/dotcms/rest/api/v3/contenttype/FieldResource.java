@@ -206,6 +206,15 @@ public class FieldResource {
 
         final List<String> fieldsID = deleteFieldsForm.getFieldsID();
         final ContentType contentType = APILocator.getContentTypeAPI(user).find(typeIdOrVarName);
+        final String publishDateVar = contentType.publishDateVar();
+        final String expireDateVar = contentType.expireDateVar();
+
+        for (final String fieldId : fieldsID) {
+            final Field field = APILocator.getContentTypeFieldAPI().find(fieldId);
+            if ((publishDateVar != null && publishDateVar.equals(field.variable())) || (expireDateVar != null && expireDateVar.equals(field.variable()))) {
+                throw new DotDataException("Field is being used as Publish or Expire Field at Content Type Level. Please unlink the field before deleting it.");
+            }
+        }
 
         final ContentTypeFieldLayoutAPI.DeleteFieldResult deleteFieldResult =
                 this.contentTypeFieldLayoutAPI.deleteField(contentType, fieldsID, user);
