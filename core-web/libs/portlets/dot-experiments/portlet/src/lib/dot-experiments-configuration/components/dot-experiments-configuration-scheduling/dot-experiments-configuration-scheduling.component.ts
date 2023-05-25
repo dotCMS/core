@@ -5,7 +5,6 @@ import { ChangeDetectionStrategy, Component, ComponentRef, ViewChild } from '@an
 
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
-import { ConfirmPopupModule } from 'primeng/confirmpopup';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { tap } from 'rxjs/operators';
@@ -35,7 +34,6 @@ import { DotExperimentsConfigurationStore } from "../../store/dot-experiments-co
         // PrimeNg
         CardModule,
         ButtonModule,
-        ConfirmPopupModule,
         TooltipModule
     ],
     templateUrl: './dot-experiments-configuration-scheduling.component.html',

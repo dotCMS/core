@@ -54,7 +54,7 @@ const messageServiceMock = new MockDotMessageService({
     Saturday: 'Saturday'
 });
 
-xdescribe('DotExperimentsReportsStore', () => {
+describe('DotExperimentsReportsStore', () => {
     let spectator: SpectatorService<DotExperimentsReportsStore>;
     let store: DotExperimentsReportsStore;
     let dotExperimentsService: SpyObject<DotExperimentsService>;
@@ -148,7 +148,7 @@ xdescribe('DotExperimentsReportsStore', () => {
             done();
         });
     });
-    xdescribe('Bayesian response map hasSession = 0', () => {
+    describe('Bayesian response map hasSession = 0', () => {
         it('should summaryWinnerLegend$ get `NO_WINNER_FOUND` when experiment status `ENDED` and any winnerSuggestion', (done) => {
             dotExperimentsService.getById.mockReturnValue(
                 of({
@@ -203,7 +203,7 @@ xdescribe('DotExperimentsReportsStore', () => {
             });
         });
     });
-    xdescribe('Bayesian response map hasSession > 0', () => {
+    describe('Bayesian response map hasSession > 0', () => {
         it('should summaryWinnerLegend$ get `NO_WINNER_FOUND` when experiment status `ENDED` and winnerSuggestion=`TIE`', (done) => {
             dotExperimentsService.getById.mockReturnValue(
                 of({
@@ -399,7 +399,7 @@ xdescribe('DotExperimentsReportsStore', () => {
         });
     });
 
-    xdescribe('Effects', () => {
+    describe('Effects', () => {
         it('should load experiment to store', (done) => {
             dotExperimentsService.getById.mockReturnValue(of(EXPERIMENT_MOCK));
 
@@ -430,7 +430,7 @@ xdescribe('DotExperimentsReportsStore', () => {
         });
     });
 
-    xdescribe('chartJs parser', () => {
+    describe('chartJs parser', () => {
         beforeEach(() => {
             dotExperimentsService.getById.mockReturnValue(
                 of({

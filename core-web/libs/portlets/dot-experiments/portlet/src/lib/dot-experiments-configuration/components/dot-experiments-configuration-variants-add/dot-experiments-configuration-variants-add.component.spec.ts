@@ -1,4 +1,10 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator,
+    SpyObject
+} from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
@@ -29,9 +35,10 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.action.add': 'Add'
 });
 
-xdescribe('DotExperimentsConfigurationVariantsAddComponent', () => {
+describe('DotExperimentsConfigurationVariantsAddComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationVariantsAddComponent>;
     let store: DotExperimentsConfigurationStore;
+    let dotExperimentsService: SpyObject<DotExperimentsService>;
 
     const createComponent = createComponentFactory({
         imports: [
@@ -66,6 +73,8 @@ xdescribe('DotExperimentsConfigurationVariantsAddComponent', () => {
         });
 
         store = spectator.inject(DotExperimentsConfigurationStore);
+        dotExperimentsService = spectator.inject(DotExperimentsService);
+        dotExperimentsService.addVariant.mockReturnValue(of());
 
         spectator.component.vm$ = of({
             experimentId: '1',

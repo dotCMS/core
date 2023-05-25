@@ -54,9 +54,9 @@ xdescribe('DotExperimentsConfigurationGoalsComponent', () => {
             CardModule,
             DotExperimentsConfigurationGoalSelectComponent,
             DotDynamicDirective,
-            ConfirmPopupModule,
             TooltipModule,
-            DotExperimentsDetailsTableComponent
+            DotExperimentsDetailsTableComponent,
+            ConfirmPopupModule
         ],
         component: DotExperimentsConfigurationGoalsComponent,
         componentProviders: [],
@@ -177,9 +177,11 @@ xdescribe('DotExperimentsConfigurationGoalsComponent', () => {
         spectator.component.vm$ = of(vmMock$);
 
         spectator.detectComponentChanges();
+        const deleteIcon = spectator.query(byTestId('goal-delete-button')) as HTMLButtonElement;
 
-        const deleteIcon = spectator.query(byTestId('goal-delete-button'));
         spectator.click(deleteIcon);
+        deleteIcon.click();
+        spectator.detectComponentChanges();
 
         expect(spectator.query(ConfirmPopup)).toExist();
 

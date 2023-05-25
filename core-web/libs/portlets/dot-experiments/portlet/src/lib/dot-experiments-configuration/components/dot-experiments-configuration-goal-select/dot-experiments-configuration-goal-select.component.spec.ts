@@ -43,7 +43,7 @@ const messageServiceMock = new MockDotMessageService({
 
 const EXPERIMENT_MOCK = getExperimentMock(0);
 
-xdescribe('DotExperimentsConfigurationGoalSelectComponent', () => {
+describe('DotExperimentsConfigurationGoalSelectComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationGoalSelectComponent>;
     let store: DotExperimentsConfigurationStore;
     let dotExperimentsService: SpyObject<DotExperimentsService>;

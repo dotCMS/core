@@ -12,7 +12,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { Card, CardModule } from 'primeng/card';
-import { ConfirmPopup, ConfirmPopupModule } from 'primeng/confirmpopup';
+import { ConfirmPopup } from 'primeng/confirmpopup';
 import { Inplace, InplaceModule } from 'primeng/inplace';
 import { Tooltip, TooltipModule } from 'primeng/tooltip';
 
@@ -65,7 +65,7 @@ const ActivatedRouteMock = {
 const EXPERIMENT_MOCK = getExperimentMock(0);
 const EXPERIMENT_MOCK_2 = getExperimentMock(2);
 
-xdescribe('DotExperimentsConfigurationVariantsComponent', () => {
+describe('DotExperimentsConfigurationVariantsComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationVariantsComponent>;
     let store: DotExperimentsConfigurationStore;
     let dotExperimentsService: SpyObject<DotExperimentsService>;
@@ -80,8 +80,7 @@ xdescribe('DotExperimentsConfigurationVariantsComponent', () => {
             InplaceModule,
             DotExperimentsConfigurationVariantsAddComponent,
             DotCopyButtonModule,
-            TooltipModule,
-            ConfirmPopupModule
+            TooltipModule
         ],
         component: DotExperimentsConfigurationVariantsComponent,
         providers: [

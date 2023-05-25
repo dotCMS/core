@@ -9,6 +9,7 @@ import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { InplaceModule } from 'primeng/inplace';
 import { InputTextModule } from 'primeng/inputtext';
+import { ConfirmPopupModule } from 'primeng/confirmpopup';
 import { RippleModule } from 'primeng/ripple';
 
 import { DotExperiment, DotExperimentStatusList, ComponentStatus } from '@dotcms/dotcms-models';
@@ -47,7 +48,9 @@ import { DotMessagePipe, DotMessagePipeModule } from "@dotcms/ui";
         ButtonModule,
         RippleModule,
         InplaceModule,
-        InputTextModule
+        InputTextModule,
+        RippleModule,
+        ConfirmPopupModule
     ],
     selector: 'dot-experiments-configuration',
     templateUrl: './dot-experiments-configuration.component.html',

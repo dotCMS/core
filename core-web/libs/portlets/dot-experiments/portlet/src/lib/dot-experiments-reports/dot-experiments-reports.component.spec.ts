@@ -74,7 +74,7 @@ xdescribe('DotExperimentsReportsComponent', () => {
     const createComponent = createComponentFactory({
         imports: [
             DotExperimentsUiHeaderComponent,
-            DotExperimentsReportsChartComponent,
+            // DotExperimentsReportsChartComponent,
             DotExperimentsReportsSkeletonComponent,
             DotExperimentsExperimentSummaryComponent,
             DotExperimentsDetailsTableComponent,
@@ -82,6 +82,7 @@ xdescribe('DotExperimentsReportsComponent', () => {
             DotDynamicDirective
         ],
         component: DotExperimentsReportsComponent,
+
         componentProviders: [DotExperimentsReportsStore],
         providers: [
             {

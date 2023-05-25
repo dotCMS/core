@@ -65,7 +65,7 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.action.start-experiment': 'run-experiment'
 });
 
-xdescribe('DotExperimentsConfigurationStore', () => {
+describe('DotExperimentsConfigurationStore', () => {
     let spectator: SpectatorService<DotExperimentsConfigurationStore>;
     let store: DotExperimentsConfigurationStore;
     let dotExperimentsService: SpyObject<DotExperimentsService>;
@@ -198,7 +198,7 @@ xdescribe('DotExperimentsConfigurationStore', () => {
         });
     });
 
-    xdescribe('Effects', () => {
+    describe('Effects', () => {
         it('should load experiment to store', (done) => {
             dotExperimentsService.getById.mockReturnValue(of(EXPERIMENT_MOCK_1));
 

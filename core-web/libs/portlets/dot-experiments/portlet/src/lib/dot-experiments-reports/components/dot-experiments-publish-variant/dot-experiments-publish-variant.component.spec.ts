@@ -35,7 +35,7 @@ const messageServiceMock = new MockDotMessageService({
 const EXPERIMENT_MOCK = getExperimentMock(1);
 const EXPERIMENT_RESULTS_MOCK = getExperimentResultsMock(0);
 
-xdescribe('DotExperimentsPublishVariantComponent', () => {
+describe('DotExperimentsPublishVariantComponent', () => {
     let spectator: Spectator<DotExperimentsPublishVariantComponent>;
     let store: DotExperimentsReportsStore;
     let dotExperimentsService: SpyObject<DotExperimentsService>;
@@ -130,7 +130,7 @@ xdescribe('DotExperimentsPublishVariantComponent', () => {
             expect(dialog.visible).toEqual(false);
         });
 
-        xdescribe('save action', () => {
+        describe('save action', () => {
             it('should allow save button when you select one option', async () => {
                 store.showPromoteDialog();
                 spectator.detectComponentChanges();
@@ -146,7 +146,7 @@ xdescribe('DotExperimentsPublishVariantComponent', () => {
             });
         });
     });
-    xdescribe('with winner and promoted', () => {
+    describe('with winner and promoted', () => {
         beforeEach(() => {
             const EXPERIMENT_MOCK = getExperimentMock(4);
             const EXPERIMENT_RESULTS_MOCK = getExperimentResultsMock(1);

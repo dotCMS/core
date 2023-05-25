@@ -7,7 +7,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
-import { ConfirmPopupModule } from 'primeng/confirmpopup';
 import { InplaceModule } from 'primeng/inplace';
 import { InputTextModule } from 'primeng/inputtext';
 import { TooltipModule } from 'primeng/tooltip';
@@ -25,7 +24,6 @@ import {
     ExperimentSteps,
     MAX_VARIANTS_ALLOWED,
     SIDEBAR_STATUS,
-    StepStatus,
     TrafficProportion,
     Variant
 } from '@dotcms/dotcms-models';
@@ -37,6 +35,7 @@ import { DotExperimentsConfigurationItemsCountComponent } from '../dot-experimen
 import { DotExperimentsConfigurationVariantsAddComponent } from '../dot-experiments-configuration-variants-add/dot-experiments-configuration-variants-add.component';
 import { DotIconModule, DotMessagePipe, DotMessagePipeModule } from "@dotcms/ui";
 import { DotAutofocusModule } from "@dotcms/dot-rules";
+import { ConfirmPopupModule } from "primeng/confirmpopup";
 
 @Component({
     selector: 'dot-experiments-configuration-variants',

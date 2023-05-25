@@ -23,7 +23,11 @@ import {
     TrafficProportionTypes
 } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
-import { ACTIVE_ROUTE_MOCK_CONFIG, getExperimentMock, MockDotMessageService } from '@dotcms/utils-testing';
+import {
+    ACTIVE_ROUTE_MOCK_CONFIG,
+    getExperimentMock,
+    MockDotMessageService
+} from '@dotcms/utils-testing';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotExperimentsConfigurationTrafficSplitAddComponent } from './dot-experiments-configuration-traffic-split-add.component';
@@ -32,13 +36,14 @@ import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-co
 
 const messageServiceMock = new MockDotMessageService({
     Done: 'Done',
+    'experiments.action.stop.confirm-message': 'stop',
     'experiments.configure.traffic.split.variants.error':
         'The total sum of the weights of the variables must be 100.'
 });
 
 const EXPERIMENT_MOCK = getExperimentMock(1);
 
-xdescribe('DotExperimentsConfigurationTrafficSplitAddComponent', () => {
+describe('DotExperimentsConfigurationTrafficSplitAddComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationTrafficSplitAddComponent>;
     let store: DotExperimentsConfigurationStore;
     let dotExperimentsService: SpyObject<DotExperimentsService>;
@@ -51,6 +56,7 @@ xdescribe('DotExperimentsConfigurationTrafficSplitAddComponent', () => {
         providers: [
             DotExperimentsConfigurationStore,
             mockProvider(DotExperimentsService),
+            mockProvider(MessageService),
             mockProvider(MessageService),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(ActivatedRoute, ACTIVE_ROUTE_MOCK_CONFIG),
@@ -68,6 +74,7 @@ xdescribe('DotExperimentsConfigurationTrafficSplitAddComponent', () => {
         store = spectator.inject(DotExperimentsConfigurationStore);
         dotExperimentsService = spectator.inject(DotExperimentsService);
         dotExperimentsService.getById.mockReturnValue(of({ ...EXPERIMENT_MOCK }));
+        dotExperimentsService.setTrafficProportion.mockReturnValue(of({ ...EXPERIMENT_MOCK }));
         store.loadExperiment(EXPERIMENT_MOCK.id);
         store.setSidebarStatus({
             experimentStep: ExperimentSteps.TRAFFICS_SPLIT,

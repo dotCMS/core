@@ -2,7 +2,7 @@ import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { DotExperimentsConfigurationSkeletonComponent } from './dot-experiments-configuration-skeleton.component';
 
-xdescribe('DotExperimentsConfigurationSkeletonComponent', () => {
+describe('DotExperimentsConfigurationSkeletonComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationSkeletonComponent>;
     const createComponent = createComponentFactory({
         component: DotExperimentsConfigurationSkeletonComponent

@@ -17,7 +17,11 @@ import { Tooltip } from 'primeng/tooltip';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotExperimentStatusList, ExperimentSteps } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
-import { ACTIVE_ROUTE_MOCK_CONFIG, getExperimentMock, MockDotMessageService } from '@dotcms/utils-testing';
+import {
+    ACTIVE_ROUTE_MOCK_CONFIG,
+    getExperimentMock,
+    MockDotMessageService
+} from '@dotcms/utils-testing';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotExperimentsConfigurationTrafficComponent } from './dot-experiments-configuration-traffic.component';
@@ -32,7 +36,7 @@ const messageServiceMock = new MockDotMessageService({
 
 const EXPERIMENT_MOCK = getExperimentMock(0);
 
-xdescribe('DotExperimentsConfigurationTrafficComponent', () => {
+describe('DotExperimentsConfigurationTrafficComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationTrafficComponent>;
     let store: DotExperimentsConfigurationStore;
     let dotExperimentsService: SpyObject<DotExperimentsService>;

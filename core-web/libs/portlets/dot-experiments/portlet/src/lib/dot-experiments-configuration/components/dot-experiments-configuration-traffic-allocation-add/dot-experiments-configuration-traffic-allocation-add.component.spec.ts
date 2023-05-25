@@ -19,7 +19,11 @@ import { Slider, SliderModule } from 'primeng/slider';
 import { DotMessageService } from '@dotcms/data-access';
 import { ExperimentSteps } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
-import { ACTIVE_ROUTE_MOCK_CONFIG, getExperimentMock, MockDotMessageService } from '@dotcms/utils-testing';
+import {
+    ACTIVE_ROUTE_MOCK_CONFIG,
+    getExperimentMock,
+    MockDotMessageService
+} from '@dotcms/utils-testing';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotExperimentsConfigurationTrafficAllocationAddComponent } from './dot-experiments-configuration-traffic-allocation-add.component';
@@ -32,7 +36,7 @@ const messageServiceMock = new MockDotMessageService({
 
 const EXPERIMENT_MOCK = getExperimentMock(0);
 
-xdescribe('DotExperimentsConfigurationTrafficAllocationAddComponent', () => {
+describe('DotExperimentsConfigurationTrafficAllocationAddComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationTrafficAllocationAddComponent>;
     let store: DotExperimentsConfigurationStore;
     let dotExperimentsService: SpyObject<DotExperimentsService>;
@@ -63,6 +67,7 @@ xdescribe('DotExperimentsConfigurationTrafficAllocationAddComponent', () => {
         store = spectator.inject(DotExperimentsConfigurationStore);
         dotExperimentsService = spectator.inject(DotExperimentsService);
         dotExperimentsService.getById.mockReturnValue(of(EXPERIMENT_MOCK));
+        dotExperimentsService.setTrafficAllocation.mockReturnValue(of(EXPERIMENT_MOCK));
 
         store.loadExperiment(EXPERIMENT_MOCK.id);
         store.setSidebarStatus({
