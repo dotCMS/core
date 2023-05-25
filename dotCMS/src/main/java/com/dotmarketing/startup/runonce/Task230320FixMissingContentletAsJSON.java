@@ -7,9 +7,6 @@ import com.dotmarketing.quartz.job.PopulateContentletAsJSONJob;
 import com.dotmarketing.startup.StartupTask;
 import com.dotmarketing.util.Logger;
 
-import java.io.IOException;
-import java.sql.SQLException;
-
 public class Task230320FixMissingContentletAsJSON implements StartupTask {
 
     @Override
@@ -26,13 +23,8 @@ public class Task230320FixMissingContentletAsJSON implements StartupTask {
         // will execute a background stateful quartz job
         PopulateContentletAsJSONJob.fireJob("Host");
 
-        try {
-            // Now we populate the contentlet as JSON for Hosts, this will execute in the same thread
-            new PopulateContentletAsJSONUtil().populateForAssetSubType("Host");
-        } catch (SQLException | IOException e) {
-            Logger.error(this, "Error populating Contentlet as JSON population column for Hosts", e);
-            throw new DotDataException(e.getMessage(), e);
-        }
+        // Now we populate the contentlet as JSON for Hosts, this will execute in the same thread
+        new PopulateContentletAsJSONUtil().populateForAssetSubType("Host");
     }
 
 }
