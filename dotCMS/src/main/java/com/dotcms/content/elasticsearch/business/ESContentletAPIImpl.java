@@ -6644,6 +6644,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         Map<String, Object> cmap = contentlet.getMap();
         workingContentlet.setStructureInode(contentlet.getStructureInode());
         workingContentlet.setInode(contentletInode);
+        workingContentlet.setVariantId(contentlet.getVariantId());
         copyProperties(workingContentlet, cmap);
         workingContentlet.setInode("");
 
@@ -7087,8 +7088,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     contentlet.setFolder((String) value);
                 } else if (isSetPropertyVariable(conVariable)) {
                     contentlet.setProperty(conVariable, value);
-                } else if (conVariable.equals(Contentlet.VARIANT_ID)) {
-                    contentlet.setVariantId(value.toString());
                 } else if (velFieldmap.get(conVariable) != null) {
                     Field field = velFieldmap.get(conVariable);
                     if (isFieldTypeString(field)) {
