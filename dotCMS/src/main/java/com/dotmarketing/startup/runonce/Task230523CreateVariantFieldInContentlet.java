@@ -13,7 +13,7 @@ import com.liferay.util.StringPool;
 import java.sql.SQLException;
 import java.util.stream.Collectors;
 
-public class Task230523CreateVariantFieldInContentlet extends AbstractJDBCStartupTask {
+public class Task230523CreateVariantFieldInContentlet implements StartupTask {
 
     @Override
     public boolean forceRun() {
@@ -21,13 +21,15 @@ public class Task230523CreateVariantFieldInContentlet extends AbstractJDBCStartu
     }
 
     @Override
-    public String getPostgresScript() {
-        return !forceRun() ? StringPool.BLANK : getStatements();
-    }
-
-    @Override
-    public String getMSSQLScript(){
-        return !forceRun() ? StringPool.BLANK : getStatements();
+    public void executeUpgrade() throws DotDataException, DotRuntimeException {
+        if (forceRun()) {
+            final DotConnect dotConnect = new DotConnect();
+            try {
+                dotConnect.executeStatement(getStatements());
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     private String getStatements() {
