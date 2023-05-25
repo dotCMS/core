@@ -211,8 +211,8 @@ public class PublisherAPIImplTest {
         workingVersion.setStringProperty(textField.variable(), "Working versions");
         ContentletDataGen.checkin(workingVersion);
 
-        /*final Variant variant = new VariantDataGen().nextPersisted();
-        ContentletDataGen.createNewVersion(workingVersion, variant, map());*/
+        final Variant variant = new VariantDataGen().nextPersisted();
+        ContentletDataGen.createNewVersion(workingVersion, variant, map());
 
         final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
 
