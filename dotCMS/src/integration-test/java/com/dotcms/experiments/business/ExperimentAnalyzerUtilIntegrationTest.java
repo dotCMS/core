@@ -45,7 +45,7 @@ import org.junit.Test;
 /**
  * Test of {@link ExperimentAnalyzerUtil}
  */
-public class ExperimentAnalyzerUtilIT {
+public class ExperimentAnalyzerUtilIntegrationTest {
 
     @BeforeClass
     public static void prepare() throws Exception {

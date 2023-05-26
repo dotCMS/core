@@ -30,9 +30,9 @@ function isARowWidget(el: Element): boolean {
 }
 
 export const subGridOptions: GridStackOptions = {
-    cellHeight: 85,
+    cellHeight: 224,
     column: 'auto',
-    margin: 10,
+    margin: 16,
     minRow: 1,
     maxRow: 1,
     acceptWidgets: isAColumnWidget
@@ -40,8 +40,11 @@ export const subGridOptions: GridStackOptions = {
 
 export const gridOptions: GridStackOptions = {
     disableResize: true,
-    cellHeight: 100,
-    margin: 10,
+    cellHeight: 264, // 8px more so it overflows and we can see the 8px of space between rows
+    margin: 8,
     minRow: 1,
-    acceptWidgets: isARowWidget
+    acceptWidgets: isARowWidget,
+    draggable: {
+        handle: '.row__drag-container'
+    }
 };
