@@ -4,7 +4,8 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
-enum TemplateBuilderBoxSize {
+
+export enum TemplateBuilderBoxSize {
     large = 'large',
     medium = 'medium',
     small = 'small'
