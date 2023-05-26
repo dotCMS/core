@@ -12,14 +12,17 @@ import org.immutables.value.Value;
  */
 @Value.Style(typeImmutable="*", typeAbstract="Abstract*")
 @Value.Immutable
-@JsonDeserialize(as = VariantProbability.class)
+@JsonDeserialize(as = VariantBayesianInput.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public interface AbstractVariantProbability {
+public interface AbstractVariantBayesianInput {
 
     @JsonProperty("variant")
     String variant();
 
-    @JsonProperty("value")
-    double value();
+    @JsonProperty("successes")
+    long successes();
+
+    @JsonProperty("failures")
+    long failures();
 
 }
