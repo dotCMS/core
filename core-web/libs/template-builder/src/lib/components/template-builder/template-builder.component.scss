@@ -1,3 +1,5 @@
+@use "variables" as *;
+
 :host {
     // Added this temporaly to test the col with 12 width on the grid
     width: calc(100% - 80px);
@@ -21,14 +23,7 @@
 }
 
 .tools {
-    display: grid;
-    grid-template-columns: repeat(2, auto);
-
-    .add {
-        width: 100px;
-    }
-}
-
-.grid-stack-item {
-    border: solid 1px black;
+    display: flex;
+    gap: $spacing-3;
+    margin-bottom: $spacing-3;
 }

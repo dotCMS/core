@@ -63,6 +63,9 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
             this.store.moveRow(nodes as DotGridStackWidget[]);
         });
 
+        // TODO: Find why the drag and drop hanlder
+        // Give me error with the animation and remove
+        // drag and drop events
         GridStack.setupDragIn('.add', {
             appendTo: 'body',
             helper: 'clone'

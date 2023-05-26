@@ -1,18 +1,20 @@
 <div class="tools">
-    <div class="grid-stack-item add" data-widget-type="row" gs-w="12" gs-h="1">
-        <div class="grid-stack-item-content">
-            <div>
-                <span>ROW</span>
-            </div>
-        </div>
-    </div>
-    <div class="grid-stack-item add" data-widget-type="col" gs-w="1" gs-h="1">
-        <div class="grid-stack-item-content">
-            <div>
-                <span>COL</span>
-            </div>
-        </div>
-    </div>
+    <dotcms-drag-box
+        class="add"
+        [label]="'Add Row'"
+        [icon]="'row'"
+        data-widget-type="row"
+        gs-w="12"
+        gs-h="1"
+    ></dotcms-drag-box>
+    <dotcms-drag-box
+        class="add"
+        [label]="'Add Box'"
+        [icon]="'box'"
+        data-widget-type="col"
+        gs-w="1"
+        gs-h="1"
+    ></dotcms-drag-box>
 </div>
 <div class="grid-stack">
     <div

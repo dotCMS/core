@@ -1,0 +1,27 @@
+@use "variables" as *;
+
+:host {
+    display: block;
+}
+
+.drag-box {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: $spacing-1 $spacing-3;
+    gap: $spacing-3;
+    width: fit-content;
+    height: 40px;
+    background: $white;
+    border: 1.5px solid $color-palette-primary-500;
+    border-radius: $border-radius-md;
+
+    &:hover {
+        box-shadow: $md-shadow-6;
+    }
+}
+
+.drag-box--dragging {
+    transform: rotate(-3.66deg);
+    box-shadow: $md-shadow-6;
+}
