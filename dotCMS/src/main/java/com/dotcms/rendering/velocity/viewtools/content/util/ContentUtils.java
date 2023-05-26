@@ -28,6 +28,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
+import org.apache.commons.math3.exception.OutOfRangeException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -824,6 +825,9 @@ public class ContentUtils {
 						contentlet.getIdentifier() + ", msg:" + e.getMessage(), e);
 				throw new DotRuntimeException(e);
 			}
+		} else {
+
+			throw new IllegalArgumentException("Depth must be a number between 0 and 3");
 		}
 
 	}
