@@ -13,6 +13,10 @@ import com.liferay.util.StringPool;
 import java.sql.SQLException;
 import java.util.stream.Collectors;
 
+/**
+ * Task to create the variant_id column in the contentlet table, Also it remove the variantId attribute
+ * from the contentlet_as_json column and set the variant_id column to the default value 'DEFAULT'
+ */
 public class Task230523CreateVariantFieldInContentlet implements StartupTask {
 
     @Override
