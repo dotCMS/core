@@ -32,7 +32,6 @@ import {
     VmReportExperiment
 } from './store/dot-experiments-reports-store';
 
-import { DotExperimentsDetailsTableComponent } from '../shared/ui/dot-experiments-details-table/dot-experiments-details-table.component';
 import { DotExperimentsExperimentSummaryComponent } from '../shared/ui/dot-experiments-experiment-summary/dot-experiments-experiment-summary.component';
 import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
 
@@ -65,22 +64,14 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.configure.scheduling.name': 'xx'
 });
 
-xdescribe('DotExperimentsReportsComponent', () => {
+describe('DotExperimentsReportsComponent', () => {
     let spectator: Spectator<DotExperimentsReportsComponent>;
     let router: SpyObject<Router>;
     let store: DotExperimentsReportsStore;
     let dotExperimentsService: SpyObject<DotExperimentsService>;
 
     const createComponent = createComponentFactory({
-        imports: [
-            DotExperimentsUiHeaderComponent,
-            // DotExperimentsReportsChartComponent,
-            DotExperimentsReportsSkeletonComponent,
-            DotExperimentsExperimentSummaryComponent,
-            DotExperimentsDetailsTableComponent,
-            DotExperimentsPublishVariantComponent,
-            DotDynamicDirective
-        ],
+        imports: [DotDynamicDirective],
         component: DotExperimentsReportsComponent,
 
         componentProviders: [DotExperimentsReportsStore],
@@ -104,6 +95,15 @@ xdescribe('DotExperimentsReportsComponent', () => {
         spectator = createComponent({
             detectChanges: false
         });
+
+        window.ResizeObserver =
+            window.ResizeObserver ||
+            jest.fn().mockImplementation(() => ({
+                disconnect: jest.fn(),
+                observe: jest.fn(),
+                unobserve: jest.fn()
+            }));
+
         store = spectator.inject(DotExperimentsReportsStore, true);
 
         dotExperimentsService = spectator.inject(DotExperimentsService);
@@ -146,46 +146,60 @@ xdescribe('DotExperimentsReportsComponent', () => {
             isLoading: false,
             showSummary: true
         });
-        spectator.detectChanges();
+        spectator.detectComponentChanges();
         expect(spectator.query(DotExperimentsExperimentSummaryComponent)).toExist();
     });
 
-    it('should back to Experiment List', () => {
-        spectator.detectChanges();
-        spectator.component.goToExperimentList(EXPERIMENT_MOCK.pageId);
-        expect(router.navigate).toHaveBeenCalledWith(
-            ['/edit-page/experiments/', EXPERIMENT_MOCK.pageId],
-            {
-                queryParams: {
-                    mode: null,
-                    variantName: null,
-                    experimentId: null
-                },
-                queryParamsHandling: 'merge'
-            }
-        );
+    it('should back to Experiment List', async () => {
+        spectator.component.vm$ = of({
+            ...defaultVmMock,
+            experiment: {
+                ...defaultVmMock.experiment,
+                status: DotExperimentStatusList.RUNNING
+            },
+            isLoading: false,
+            showSummary: true
+        });
+
+        spectator.detectComponentChanges();
+        spectator.fixture.whenStable().then(() => {
+            spectator.component.goToExperimentList(EXPERIMENT_MOCK.pageId);
+            expect(router.navigate).toHaveBeenCalledWith(
+                ['/edit-page/experiments/', EXPERIMENT_MOCK.pageId],
+                {
+                    queryParams: {
+                        mode: null,
+                        variantName: null,
+                        experimentId: null
+                    },
+                    queryParamsHandling: 'merge'
+                }
+            );
+        });
     });
 
     it('should load the publish variant dialog', () => {
         spectator.detectChanges();
 
-        spectator.click(spectator.query(byTestId('publish-variant-button')));
-        spectator.detectComponentChanges();
+        spectator.fixture.whenStable().then(() => {
+            spectator.click(spectator.query(byTestId('publish-variant-button')));
+            spectator.detectComponentChanges();
 
-        expect(spectator.query(DotExperimentsPublishVariantComponent)).toExist();
+            expect(spectator.query(DotExperimentsPublishVariantComponent)).toExist();
+        });
     });
 
     it('should load the publish variant dialog and close', () => {
-        spectator.detectChanges();
-
-        spectator.click(spectator.query(byTestId('publish-variant-button')));
+        spectator.component.openPublishVariantDialog();
         spectator.detectComponentChanges();
 
-        expect(spectator.query(DotExperimentsPublishVariantComponent)).toExist();
+        spectator.fixture.whenStable().then(() => {
+            expect(spectator.query(DotExperimentsPublishVariantComponent)).toExist();
 
-        store.hidePromoteDialog();
-        spectator.detectComponentChanges();
+            store.hidePromoteDialog();
+            spectator.detectComponentChanges();
 
-        expect(spectator.query(DotExperimentsPublishVariantComponent)).not.toExist();
+            expect(spectator.query(DotExperimentsPublishVariantComponent)).not.toExist();
+        });
     });
 });

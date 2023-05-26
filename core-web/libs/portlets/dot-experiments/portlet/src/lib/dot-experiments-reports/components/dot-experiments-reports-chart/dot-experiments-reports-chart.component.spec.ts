@@ -17,7 +17,7 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.reports.chart.empty.title': 'x axis label',
     'experiments.reports.chart.empty.description': 'y axis label'
 });
-xdescribe('DotExperimentsReportsChartComponent', () => {
+describe('DotExperimentsReportsChartComponent', () => {
     let spectator: Spectator<DotExperimentsReportsChartComponent>;
 
     const createComponent = createComponentFactory({
@@ -35,6 +35,15 @@ xdescribe('DotExperimentsReportsChartComponent', () => {
 
     beforeEach(() => {
         spectator = createComponent();
+
+        // Jest mock for ResizeObserver (it is not supported by JSDOM)
+        window.ResizeObserver =
+            window.ResizeObserver ||
+            jest.fn().mockImplementation(() => ({
+                disconnect: jest.fn(),
+                observe: jest.fn(),
+                unobserve: jest.fn()
+            }));
     });
 
     it('should has title, legends container and PrimeNG Chart Component', () => {

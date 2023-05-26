@@ -27,12 +27,12 @@
 
             <div class="flex justify-content-center w-full container">
                 <div class="flex flex-column gap-2 content">
-                    <!--                    <dot-experiments-reports-chart-->
-                    <!--                        [config]="chartConfig"-->
-                    <!--                        [data]="vm.chartData"-->
-                    <!--                        [isEmpty]="!vm.hasEnoughSessions"-->
-                    <!--                        [isLoading]="vm.isLoading"-->
-                    <!--                    />-->
+                    <dot-experiments-reports-chart
+                        [config]="chartConfig"
+                        [data]="vm.chartData"
+                        [isEmpty]="!vm.hasEnoughSessions"
+                        [isLoading]="vm.isLoading"
+                    />
                     <dot-experiments-details-table
                         [data]="vm.detailData"
                         [isEmpty]="!vm.hasEnoughSessions"
