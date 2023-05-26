@@ -1,19 +1,19 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { DragBoxComponent } from './drag-box.component';
+import { AddWidgetComponent } from './add-widget.component';
 
-import { boxIcon, rowIcon } from '../../assets/icons';
+import { boxIcon, rowIcon } from '../../../../assets/icons';
 
-fdescribe('DragBoxComponent', () => {
-    let component: DragBoxComponent;
-    let fixture: ComponentFixture<DragBoxComponent>;
+fdescribe('AddWidgetComponent', () => {
+    let component: AddWidgetComponent;
+    let fixture: ComponentFixture<AddWidgetComponent>;
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            imports: [DragBoxComponent]
+            imports: [AddWidgetComponent]
         }).compileComponents();
 
-        fixture = TestBed.createComponent(DragBoxComponent);
+        fixture = TestBed.createComponent(AddWidgetComponent);
         component = fixture.componentInstance;
         fixture.detectChanges();
 
@@ -42,28 +42,28 @@ fdescribe('DragBoxComponent', () => {
     });
 
     describe('dragging', () => {
-        it('should set dragging to true on mouse down and add drag-box--dragging class', () => {
+        it('should set dragging to true on mouse down and add drag-widget--dragging class', () => {
             const element = fixture.nativeElement;
-            const box = element.querySelector('.drag-box');
+            const box = element.querySelector('.drag-widget');
             element.dispatchEvent(new MouseEvent('mousedown'));
             expect(component.isDragging).toBe(true);
-            expect(box.classList.contains('drag-box--dragging')).toBe(true);
+            expect(box.classList.contains('drag-widget--dragging')).toBe(true);
         });
 
-        it('should set dragging to false on mouse up and remove drag-box--dragging class', () => {
+        it('should set dragging to false on mouse up and remove drag-widget--dragging class', () => {
             const element = fixture.nativeElement;
-            const box = element.querySelector('.drag-box');
+            const box = element.querySelector('.drag-widget');
             element.dispatchEvent(new MouseEvent('mouseup'));
             expect(component.isDragging).toBe(false);
-            expect(box.classList.contains('drag-box--dragging')).toBe(false);
+            expect(box.classList.contains('drag-widget--dragging')).toBe(false);
         });
 
-        it('should set dragging to false on dragend and remove drag-box--dragging class', () => {
+        it('should set dragging to false on dragend and remove drag-widget--dragging class', () => {
             const element = fixture.nativeElement;
-            const box = element.querySelector('.drag-box');
+            const box = element.querySelector('.drag-widget');
             element.dispatchEvent(new MouseEvent('dragend'));
             expect(component.isDragging).toBe(false);
-            expect(box.classList.contains('drag-box--dragging')).toBe(false);
+            expect(box.classList.contains('drag-widget--dragging')).toBe(false);
         });
     });
 });

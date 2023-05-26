@@ -1,18 +1,18 @@
 import { moduleMetadata, Story, Meta } from '@storybook/angular';
 
-import { DragBoxComponent } from './drag-box.component';
+import { AddWidgetComponent } from './add-widget.component';
 
 export default {
-    title: 'DragBoxComponent',
-    component: DragBoxComponent,
+    title: 'AddWidgetComponent',
+    component: AddWidgetComponent,
     decorators: [
         moduleMetadata({
             imports: []
         })
     ]
-} as Meta<DragBoxComponent>;
+} as Meta<AddWidgetComponent>;
 
-const Template: Story<DragBoxComponent> = (args: DragBoxComponent) => ({
+const Template: Story<AddWidgetComponent> = (args: AddWidgetComponent) => ({
     props: args
 });
 
@@ -20,5 +20,5 @@ export const Primary = Template.bind({});
 
 Primary.args = {
     label: 'Add Row',
-    icon: 'row'
+    type: 'row'
 };

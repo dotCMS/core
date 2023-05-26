@@ -6,7 +6,7 @@ import {
     Input
 } from '@angular/core';
 
-import { boxIcon, rowIcon } from '../../assets/icons';
+import { boxIcon, rowIcon } from '../../../../assets/icons';
 
 type WidgetType = 'box' | 'row';
 
@@ -16,13 +16,13 @@ const iconsMap = {
 };
 
 @Component({
-    selector: 'dotcms-drag-box',
-    templateUrl: './drag-box.component.html',
-    styleUrls: ['./drag-box.component.scss'],
+    selector: 'dotcms-drag-widget',
+    templateUrl: './drag-widget.component.html',
+    styleUrls: ['./drag-widget.component.scss'],
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DragBoxComponent {
+export class DragWidgetComponent {
     public isDragging = false;
 
     @Input() label = '';
@@ -38,7 +38,7 @@ export class DragBoxComponent {
      * It's important to do it on the document:mouseup because the gragend event is not
      * propagated to the host element when it's rendered by gridstack
      *
-     * @memberof DragBoxComponent
+     * @memberof AddWidgetComponent
      */
     @HostListener('document:mouseup') onMouseUpDocument(): void {
         if (this.isDragging) {
@@ -56,7 +56,7 @@ export class DragBoxComponent {
      * @description
      * Handle the mouse down event on the host element to set the dragging state
      *
-     * @memberof DragBoxComponent
+     * @memberof AddWidgetComponent
      */
     @HostListener('mousedown', ['$event']) onMouseDown(): void {
         this.setisDraggingState(true);

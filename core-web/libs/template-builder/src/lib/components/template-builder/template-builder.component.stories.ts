@@ -1,16 +1,15 @@
 import { moduleMetadata, Story, Meta } from '@storybook/angular';
 
+import { AddWidgetComponent } from './components/add-widget/add-widget.component';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { TemplateBuilderComponent } from './template-builder.component';
-
-import { DragBoxComponent } from '../drag-box/drag-box.component';
 
 export default {
     title: 'TemplateBuilderComponent',
     component: TemplateBuilderComponent,
     decorators: [
         moduleMetadata({
-            imports: [DragBoxComponent],
+            imports: [AddWidgetComponent],
             providers: [DotTemplateBuilderStore]
         })
     ]
