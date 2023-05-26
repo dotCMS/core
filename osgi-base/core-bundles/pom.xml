@@ -22,7 +22,7 @@
             <groupId>org.apache.felix</groupId>
             <artifactId>org.apache.felix.configadmin</artifactId>
             <version>1.9.24</version>
-            <scope>provided</scope>
+            <scope>runtime</scope>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -35,7 +35,7 @@
             <groupId>org.apache.felix</groupId>
             <artifactId>org.apache.felix.fileinstall</artifactId>
             <version>3.7.4</version>
-            <scope>provided</scope>
+            <scope>runtime</scope>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -48,7 +48,7 @@
             <groupId>org.apache.felix</groupId>
             <artifactId>org.apache.felix.http.api</artifactId>
             <version>3.0.0</version>
-            <scope>provided</scope>
+            <scope>runtime</scope>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -62,7 +62,7 @@
             <groupId>org.osgi</groupId>
             <artifactId>org.osgi.compendium</artifactId>
             <version>5.0.0</version>
-            <scope>provided</scope>
+            <scope>runtime</scope>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -75,7 +75,7 @@
             <groupId>org.apache.felix</groupId>
             <artifactId>org.apache.felix.http.bundle</artifactId>
             <version>3.0.0</version>
-            <scope>provided</scope>
+            <scope>runtime</scope>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -98,6 +98,7 @@
                             <goal>copy-dependencies</goal>
                         </goals>
                         <configuration>
+                            <includeScope>runtime</includeScope>
                             <excludeTransitive>true</excludeTransitive>
                             <outputDirectory>${project.build.directory}/bundle</outputDirectory>
                             <overWriteReleases>false</overWriteReleases>

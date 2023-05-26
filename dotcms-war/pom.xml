@@ -246,11 +246,6 @@
 
                         <configuration>
                             <target>
-                                <mkdir dir="${project.build.directory}/testing/assets" />
-                                <copy todir="${project.build.directory}/testing/assets">
-                                    <fileset dir="${user.home}/.dotcms/license" includes="license.zip" />
-                                </copy>
-
                                 <mkdir dir="${project.build.directory}/felix/" />
                                 <copy todir="${project.build.directory}/felix">
                                     <fileset dir="${legacy.webapp.dir}/WEB-INF/felix" includes="osgi-extra-generated.conf" />

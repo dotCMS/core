@@ -54,6 +54,11 @@
 
             <dependency>
                 <groupId>com.dotcms</groupId>
+                <artifactId>tika-api</artifactId>
+            </dependency>
+
+            <dependency>
+                <groupId>com.dotcms</groupId>
                 <artifactId>logging-bom</artifactId>
                 <version>${project.version}</version>
                 <type>pom</type>
@@ -1308,7 +1313,7 @@
                 <groupId>javax.ws.rs</groupId>
                 <artifactId>javax.ws.rs-api</artifactId>
                 <version>2.0.1</version>
-                <scope>provided</scope>
+                <scope>compile</scope>
             </dependency>
 
             <!-- Rest API Documentation -->

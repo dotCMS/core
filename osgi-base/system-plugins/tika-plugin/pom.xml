@@ -22,22 +22,14 @@
         <skip.rewrite>true</skip.rewrite>
     </properties>
     <dependencies>
+
         <dependency>
             <groupId>com.dotcms</groupId>
-            <artifactId>dotcms-core</artifactId>
+            <artifactId>tika-api</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>xerces</groupId>
-                    <artifactId>xercesImpl</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>xml-apis</groupId>
-                    <artifactId>xml-apis</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
+
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-slf4j2-impl</artifactId>

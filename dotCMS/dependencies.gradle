@@ -92,6 +92,7 @@ dependencies {
     implementation (group: 'com.dotcms.lib', name: 'dot.woodstox-core-lgpl', version: '4.2.0_2'){}
     implementation (group: 'com.dotcms.lib', name: 'dot.xpp3-min', version: '1.1.4c_2'){}
     implementation (group: 'com.dotcms', name: 'ant-tooling', version: '1.3.2'){}
+    implementation (group: 'com.dotcms', name: 'tika-api', version: '1.0.0-SNAPSHOT'){}
     implementation (group: 'com.ettrema', name: 'milton-api', version: '1.8.1.4') {
         transitive=false
     }
@@ -236,7 +237,7 @@ dependencies {
     compileOnly (group: 'javax.servlet', name: 'javax.servlet-api', version: '3.1.0'){}
     implementation (group: 'javax.validation', name: 'validation-api', version: '1.1.0.Final'){}
     implementation (group: 'javax.websocket', name: 'javax.websocket-api', version: '1.1'){}
-    compileOnly (group: 'javax.ws.rs', name: 'javax.ws.rs-api', version: '2.0.1'){}
+    implementation (group: 'javax.ws.rs', name: 'javax.ws.rs-api', version: '2.0.1'){}
     implementation (group: 'jaxen', name: 'jaxen', version: '1.2.0'){}
     implementation (group: 'joda-time', name: 'joda-time', version: '2.8.1'){}
     testImplementation (group: 'junit', name: 'junit', version: '4.13.2'){}
@@ -449,6 +450,7 @@ dependencies {
     implementation (group: 'werken-xpath', name: 'werken-xpath', version: '0.9.4'){}
     implementation (group: 'xml-apis', name: 'xml-apis-ext', version: '1.3.04'){}
     implementation (group: 'xmlpull', name: 'xmlpull', version: '1.1.3.1'){}
+    implementation (group: 'com.dotcms', name: 'tika-api', version: '1.0.0-SNAPSHOT'){}
     implementation (group: 'com.dotcms', name: 'ant-tooling', version: '1.3.2'){}
     implementation (group: 'com.dotcms.lib', name: 'dot.aopalliance-repackaged', version: '2.4.0-b10_2'){}
     implementation (group: 'com.dotcms.lib', name: 'dot.asm', version: '3.1_2'){}
@@ -782,7 +784,7 @@ dependencies {
     implementation (group: 'org.bouncycastle', name: 'bcpkix-jdk15on', version: '1.70'){}
     implementation (group: 'org.bouncycastle', name: 'bcutil-jdk15on', version: '1.70'){}
     implementation (group: 'org.bouncycastle', name: 'bcprov-jdk15on', version: '1.70'){}
-    compileOnly (group: 'javax.ws.rs', name: 'javax.ws.rs-api', version: '2.0.1'){}
+    implementation (group: 'javax.ws.rs', name: 'javax.ws.rs-api', version: '2.0.1'){}
     implementation (group: 'io.swagger.core.v3', name: 'swagger-jaxrs2', version: '2.2.0'){}
     implementation (group: 'io.github.classgraph', name: 'classgraph', version: '4.8.138'){}
     implementation (group: 'org.javassist', name: 'javassist', version: '3.29.2-GA'){}

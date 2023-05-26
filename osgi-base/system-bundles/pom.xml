@@ -25,7 +25,7 @@
             <groupId>com.dotcms.samlbundle</groupId>
             <artifactId>com.dotcms.samlbundle</artifactId>
             <version>22.03</version>
-            <scope>provided</scope>
+            <scope>runtime</scope>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -38,7 +38,7 @@
             <groupId>org.osgi</groupId>
             <artifactId>org.osgi.compendium</artifactId>
             <version>5.0.0</version>
-            <scope>provided</scope>
+            <scope>runtime</scope>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -60,6 +60,7 @@
                             <goal>copy-dependencies</goal>
                         </goals>
                         <configuration>
+                            <includeScope>runtime</includeScope>
                             <excludeTransitive>true</excludeTransitive>
                             <outputDirectory>${project.build.directory}/bundle</outputDirectory>
                             <overWriteReleases>false</overWriteReleases>
@@ -98,7 +99,8 @@
             <id>use-legacy-tika-plugin</id>
             <activation>
                 <property>
-                    <name>!useLegacyTikaPlugin</name>
+                    <name>useLegacyTikaPlugin</name>
+                    <value>true</value>
                 </property>
             </activation>
             <dependencies>
@@ -106,7 +108,7 @@
                     <groupId>com.dotcms.tika</groupId>
                     <artifactId>com.dotcms.tika</artifactId>
                     <version>${tika.plugin.bundle.version}</version>
-                    <scope>provided</scope>
+                    <scope>runtime</scope>
                     <exclusions>
                         <exclusion>
                             <groupId>*</groupId>
@@ -122,7 +124,6 @@
             <activation>
                 <property>
                     <name>!useLegacyTikaPlugin</name>
-                    <value>true</value>
                 </property>
             </activation>
             <dependencies>
@@ -130,7 +131,7 @@
                     <groupId>com.dotcms</groupId>
                     <artifactId>com.dotcms.tika</artifactId>
                     <version>${project.version}</version>
-                    <scope>provided</scope>
+                    <scope>runtime</scope>
                     <exclusions>
                         <exclusion>
                             <groupId>*</groupId>
@@ -138,6 +139,19 @@
                         </exclusion>
                     </exclusions>
                 </dependency>
+                <dependency>
+                    <groupId>com.dotcms</groupId>
+                    <artifactId>com.dotcms.tika</artifactId>
+                    <version>${project.version}</version>
+                    <scope>runtime</scope>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>*</groupId>
+                            <artifactId>*</artifactId>
+                        </exclusion>
+                    </exclusions>
+                </dependency>
+
             </dependencies>
         </profile>
 

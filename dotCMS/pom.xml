@@ -46,7 +46,11 @@
 
     </properties>
     <dependencies>
-
+        <dependency>
+            <groupId>com.dotcms</groupId>
+            <artifactId>tika-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <!--
           *****************************
              dotcms repackaged dependencies
@@ -962,6 +966,7 @@
         <dependency>
             <groupId>javax.ws.rs</groupId>
             <artifactId>javax.ws.rs-api</artifactId>
+            <scope>compile</scope>
         </dependency>
 
         <!-- Rest API Documentation -->
@@ -1579,36 +1584,21 @@
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <executions>
-
-                    <execution>
-                        <phase>generate-test-resources</phase>
-
-                        <configuration>
-                            <target>
-                                <mkdir dir="${project.build.directory}/test-temp" />
-                                <mkdir dir="${project.build.directory}/testing/assets" />
-                                <copy todir="${project.build.directory}/testing/assets">
-                                    <fileset dir="${user.home}/.dotcms/license" includes="license.zip" />
-                                </copy>
-
-                                <mkdir dir="${project.build.directory}/felix/" />
-                                <copy todir="${project.build.directory}/felix">
-                                    <fileset dir="src/main/webapp/WEB-INF/felix" includes="osgi-extra-generated.conf" />
-                                </copy>
-                            </target>
-                        </configuration>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                    </execution>
-                </executions>
+                <artifactId>maven-jar-plugin</artifactId>
             </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <systemPropertyVariables>
+                        <DOT_ASSET_REAL_PATH>${test.assets.dir}</DOT_ASSET_REAL_PATH>
+                        <DOT_DYNAMIC_CONTENT_PATH>${test.dynamic.dir}</DOT_DYNAMIC_CONTENT_PATH>
+                        <workingDirectory>${test.working.dir}</workingDirectory>
+                        <java.io.tmpdir>${test.temp.dir}</java.io.tmpdir>
+                    </systemPropertyVariables>
+                    <trimStackTrace>false</trimStackTrace>
+                </configuration>
             </plugin>
 
         </plugins>

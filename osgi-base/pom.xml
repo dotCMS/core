@@ -12,6 +12,7 @@
     <artifactId>osgi-base</artifactId>
 
     <modules>
+        <module>system-plugins</module>
         <module>core-bundles</module>
         <module>system-bundles</module>
     </modules>

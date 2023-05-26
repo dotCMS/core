@@ -46,7 +46,7 @@
         <skipApplyFormat>true</skipApplyFormat>
         <skipFormat>true</skipFormat>
         <skipOwasp>true</skipOwasp>
-        <skipRewriteDryRun>false</skipRewriteDryRun>
+        <skipRewriteDryRun>true</skipRewriteDryRun>
         <rewriteRun>false</rewriteRun>
         <sourceReleaseAssemblyDescriptor>source-release</sourceReleaseAssemblyDescriptor>
         <!--  maven-project-info-reports-plugins  -->
@@ -88,7 +88,8 @@
         <version.versions.plugin>2.8.1</version.versions.plugin>
         <version.maven.plugin.plugin>3.8.1</version.maven.plugin.plugin>
         <version.war.plugin>3.2.3</version.war.plugin>
-        <test.temp.dir>${project.build.directory}/test-temp</test.temp.dir>
+        <test.working.dir>${project.build.directory}/testdata</test.working.dir>
+        <test.temp.dir>${test.working.dir}/testtemp</test.temp.dir>
     </properties>
 
     <build>
@@ -473,10 +474,10 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>${version.surefire.plugin}</version>
                     <configuration>
                         <systemPropertyVariables>
                             <java.io.tmpdir>${test.temp.dir}</java.io.tmpdir>
+                            <workingDirectory>${test.working.dir}</workingDirectory>
                         </systemPropertyVariables>
                         <trimStackTrace>false</trimStackTrace>
                     </configuration>

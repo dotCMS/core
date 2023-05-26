@@ -17,6 +17,11 @@
     <artifactId>build-parent</artifactId>
     <packaging>pom</packaging>
 
+    <properties>
+        <test.assets.dir>${test.working.dir}/assets</test.assets.dir>
+        <test.dynamic.dir>${test.working.dir}/dotsecure</test.dynamic.dir>
+        <test.license.dir>${user.home}/.dotcms/license</test.license.dir>
+    </properties>
     <dependencies>
         <dependency>
             <groupId>org.jetbrains</groupId>
@@ -36,7 +41,12 @@
                     <phase>generate-test-resources</phase>
                     <configuration>
                         <target>
+                            <mkdir dir="${test.working.dir}"/>
                             <mkdir dir="${test.temp.dir}"/>
+                            <mkdir dir="${test.assets.dir}"/>
+                            <copy todir="${test.assets.dir}">
+                                <fileset dir="${test.license.dir}" includes="license.zip" />
+                            </copy>
                         </target>
                     </configuration>
                     <goals>
@@ -44,6 +54,21 @@
                     </goals>
                 </execution>
                 </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${version.surefire.plugin}</version>
+                <configuration>
+                    <systemPropertyVariables>
+                        <DOT_ASSET_REAL_PATH>${test.assets.dir}</DOT_ASSET_REAL_PATH>
+                        <DOT_DYNAMIC_CONTENT_PATH>${test.dynamic.dir}</DOT_DYNAMIC_CONTENT_PATH>
+                        <workingDirectory>${test.working.dir}</workingDirectory>
+                        <java.io.tmpdir>${test.temp.dir}</java.io.tmpdir>
+                    </systemPropertyVariables>
+                    <trimStackTrace>false</trimStackTrace>
+                </configuration>
             </plugin>
         </plugins>
     </build>

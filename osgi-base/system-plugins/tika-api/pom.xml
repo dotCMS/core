@@ -3,14 +3,14 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>dotcms-parent</artifactId>
+        <artifactId>build-parent</artifactId>
         <groupId>com.dotcms</groupId>
         <version>1.0.0-SNAPSHOT</version>
+        <relativePath>../../../build-parent.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>plugins-core</artifactId>
-    <packaging>pom</packaging>
+    <artifactId>tika-api</artifactId>
 
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
@@ -18,11 +18,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
-    <modules>
+    <dependencies>
 
-    </modules>
-    <build>
-
-    </build>
-
+    </dependencies>
 </project>
