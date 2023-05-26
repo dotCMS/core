@@ -34,7 +34,6 @@ import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.MultiTreeDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
-import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.exception.NotAllowedException;
 import com.dotcms.experiments.business.result.BrowserSession;
 import com.dotcms.experiments.business.result.ExperimentAnalyzerUtil;
@@ -47,17 +46,12 @@ import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.experiments.model.GoalFactory;
 import com.dotcms.experiments.model.Goals;
-import com.dotcms.http.CircuitBreakerUrl;
-import com.dotcms.http.CircuitBreakerUrl.Method;
-import com.dotcms.http.CircuitBreakerUrl.Response;
 import com.dotcms.http.server.mock.MockHttpServer;
 import com.dotcms.http.server.mock.MockHttpServerContext;
 import com.dotcms.http.server.mock.MockHttpServerContext.RequestContext;
-import com.dotcms.jitsu.EventLogRunnable;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.JsonUtil;
 import com.dotcms.util.network.IPUtils;
-import com.dotcms.variant.VariantAPI;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -101,7 +95,7 @@ import org.junit.Test;
 /**
  * Test of {@link ExperimentsAPIImpl}
  */
-public class ExperimentAPIImpIT extends IntegrationTestBase {
+public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     
     private static final String CUBEJS_SERVER_IP = "127.0.0.1";
     private static final int CUBEJS_SERVER_PORT = 5000;

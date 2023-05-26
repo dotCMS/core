@@ -34,24 +34,19 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.rules.model.LogicalOperator;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.UtilMethods;
-import com.liferay.util.StringPool;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class ExperimentWebAPIImplIT {
+public class ExperimentWebAPIImplIntegrationTest {
 
     @BeforeClass
     public static void prepare() throws Exception {
