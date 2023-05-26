@@ -6,13 +6,13 @@ import {
     Input
 } from '@angular/core';
 
-import { colIcon, rowIcon } from './icons';
+import { colIcon, rowIcon } from '../template-builder/components/add-widget/icons';
 
-type WidgetType = 'col' | 'row';
+type WidgetType = 'box' | 'row';
 
 const iconsMap = {
     row: rowIcon,
-    col: colIcon
+    box: colIcon
 };
 
 @Component({
@@ -22,11 +22,11 @@ const iconsMap = {
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class AddWidgetComponent {
+export class DragWidgetComponent {
     public isDragging = false;
 
-    @Input() label = 'Add Widget';
-    @Input() type: WidgetType = 'row';
+    @Input() label = '';
+    @Input() type: WidgetType = 'box';
 
     get icon(): string {
         return iconsMap[this.type];
@@ -38,17 +38,15 @@ export class AddWidgetComponent {
      * It's important to do it on the document:mouseup because the gragend event is not
      * propagated to the host element when it's rendered by gridstack
      *
-     * @memberof AddWidgetComponent
+     * @memberof DragBoxComponent
      */
-    @HostListener('dragend')
-    @HostListener('document:mouseup')
-    onDragEnd(): void {
+    @HostListener('document:mouseup') onMouseUpDocument(): void {
         if (this.isDragging) {
             this.setisDraggingState(false);
         }
     }
 
-    onDragEndDocument(): void {
+    @HostListener('dragend') onDragEndDocument(): void {
         if (this.isDragging) {
             this.setisDraggingState(false);
         }
@@ -58,7 +56,7 @@ export class AddWidgetComponent {
      * @description
      * Handle the mouse down event on the host element to set the dragging state
      *
-     * @memberof AddWidgetComponent
+     * @memberof DragBoxComponent
      */
     @HostListener('mousedown', ['$event']) onMouseDown(): void {
         this.setisDraggingState(true);

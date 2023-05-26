@@ -63,7 +63,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
             this.store.moveRow(nodes as DotGridStackWidget[]);
         });
 
-        GridStack.setupDragIn('dotcms-drag-box', {
+        GridStack.setupDragIn('dotcms-add-widget', {
             appendTo: 'body',
             helper: 'clone'
         });

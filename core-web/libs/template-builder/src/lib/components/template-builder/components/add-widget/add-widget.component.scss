@@ -4,7 +4,7 @@
     display: block;
 }
 
-.drag-widget {
+.add-widget {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -19,14 +19,14 @@
         box-shadow: $md-shadow-6;
     }
 
-    .drag-widget__label {
+    .add-widget__label {
         font-size: $font-size-md;
         line-height: 140%;
         color: $black;
     }
 }
 
-.drag-widget--dragging {
+.add-widget--dragging {
     transform: rotate(-3.66deg);
     box-shadow: $md-shadow-6;
 }
