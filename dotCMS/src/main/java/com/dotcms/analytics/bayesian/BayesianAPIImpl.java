@@ -16,6 +16,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableMap;
+import io.vavr.Lazy;
 import org.apache.commons.math3.analysis.UnivariateFunction;
 import org.apache.commons.math3.analysis.integration.SimpsonIntegrator;
 import org.apache.commons.math3.analysis.integration.UnivariateIntegrator;
@@ -23,7 +24,6 @@ import org.apache.commons.math3.distribution.BetaDistribution;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.apache.commons.math3.util.FastMath;
 import org.apache.commons.math3.util.Pair;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,6 +44,9 @@ import java.util.stream.Stream;
  */
 public class BayesianAPIImpl implements BayesianAPI {
 
+    private final Lazy<Integer> betaDistSamples =
+            Lazy.of(() -> Config.getIntProperty("BETA_DISTRIBUTION_SAMPLE_SIZE", 1000));
+
     /**
      * {@inheritDoc}
      */
@@ -62,7 +65,6 @@ public class BayesianAPIImpl implements BayesianAPI {
      * @param input Bayesian input
      * @return Bayesian result
      */
-    @NotNull
     private BayesianResult getAbBayesianResult(final BayesianInput input) {
         final VariantBayesianInput control = input.control();
         final VariantBayesianInput test = input.variantPairs().get(0);
@@ -201,7 +203,6 @@ public class BayesianAPIImpl implements BayesianAPI {
      * @param input Bayesian input
      * @return Bayesian result
      */
-    @NotNull
     private BayesianResult getAbcBayesianResult(final BayesianInput input) {
         final List<VariantResult> results = calcAbcProbabilities(
             Pair.create(input.priors().get(0), input.control()),
@@ -472,7 +473,6 @@ public class BayesianAPIImpl implements BayesianAPI {
      * @param test test variant
      * @return winner variant name
      */
-    @NotNull
     private String suggestAbWinner(final double value, final String control, final String test) {
         if (Double.compare(HALF, value) == 0 || Math.abs(HALF - value) <= TIE_COMPARE_DELTA) {
             return TIE;
@@ -487,7 +487,6 @@ public class BayesianAPIImpl implements BayesianAPI {
      * @param results list of probabilities
      * @return winner variant name
      */
-    @NotNull
     private String suggestAbcWinner(final List<VariantResult> results) {
         final VariantResult controlResult = results.get(0);
         if (results
@@ -572,7 +571,7 @@ public class BayesianAPIImpl implements BayesianAPI {
      * @return sample size
      */
     private int resolveSampleSize() {
-        return Config.getIntProperty("BETA_DISTRIBUTION_SAMPLE_SIZE", 1000);
+        return betaDistSamples.get();
     }
 
     /**

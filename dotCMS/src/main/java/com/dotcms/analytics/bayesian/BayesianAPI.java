@@ -13,7 +13,9 @@ import java.util.function.BiFunction;
 import java.util.function.Predicate;
 
 /**
- * Bayesian calculation API.
+ * Bayesian calculation API that defines the methods to calculate the Bayesian results from a provided set of inputs.
+ * Basically iw defines one method that receive a BayesianInput object and returns a BayesianResult object and a set of
+ * constants required to be consumed by implementing classes.
  *
  * @author vico
  */
