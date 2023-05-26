@@ -8,7 +8,7 @@ import {
 
 import { colIcon, rowIcon } from './icons';
 
-type WidgetType = 'col' | 'row';
+import { WidgetType } from '../../models/models';
 
 const iconsMap = {
     row: rowIcon,
