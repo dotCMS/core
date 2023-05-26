@@ -8,7 +8,7 @@ import {
 
 import { boxIcon, rowIcon } from '../../assets/icons';
 
-type DragIcon = 'box' | 'row';
+type WidgetType = 'box' | 'row';
 
 const iconsMap = {
     row: rowIcon,
@@ -20,16 +20,16 @@ const iconsMap = {
     templateUrl: './drag-box.component.html',
     styleUrls: ['./drag-box.component.scss'],
     standalone: true,
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: []
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DragBoxComponent {
     public isDragging = false;
-    public src;
 
     @Input() label = '';
-    @Input() set icon(icon: DragIcon) {
-        this.src = iconsMap[icon];
+    @Input() type: WidgetType = 'box';
+
+    get icon(): string {
+        return iconsMap[this.type];
     }
 
     /**
