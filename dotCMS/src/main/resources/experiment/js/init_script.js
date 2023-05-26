@@ -44,10 +44,27 @@ function redirectIfNeedIt(experimentsData,
     return false;
 }
 
+function catchEvent(event, className){
+    const elements = document.getElementsByClassName(className);
+    console.log('elements', elements);
+    if (elements.length) {
+
+        for (let i = 0; i < elements.length; i++) {
+            elements[i].addEventListener(event, (event) => {
+                jitsu('track', 'click');
+            });
+        }
+    }
+}
+
 window.addEventListener("experiment_loaded", function (event) {
     let experimentsData = event.detail;
     setJitsuExperimentData(experimentsData);
     redirectIfNeedIt(experimentsData, (experimentData) => experimentData.variant.name !== 'DEFAULT');
+
+    window.addEventListener("load", (event) => {
+        catchEvent('click', 'post-img');
+    });
 });
 
 window.addEventListener("experiment_loaded_from_endpoint", function (event) {
@@ -58,6 +75,10 @@ window.addEventListener("experiment_loaded_from_endpoint", function (event) {
     if (!wasRedirect) {
         location.reload();
     }
+
+    window.addEventListener("load", (event) => {
+        catchEvent('click', 'post-img');
+    });
 });
 
 let experimentAlreadyCheck = sessionStorage.getItem("experimentAlreadyCheck");
