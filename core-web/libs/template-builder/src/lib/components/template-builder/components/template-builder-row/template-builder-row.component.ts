@@ -14,7 +14,7 @@ import { DotIconModule } from '@dotcms/ui';
 })
 export class TemplateBuilderRowComponent {
     @Output()
-    editStyleClasses: EventEmitter<undefined> = new EventEmitter<undefined>();
+    editStyleClasses: EventEmitter<void> = new EventEmitter<void>();
     @Output()
-    deleteRow: EventEmitter<undefined> = new EventEmitter<undefined>();
+    deleteRow: EventEmitter<void> = new EventEmitter<void>();
 }
