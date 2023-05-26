@@ -25,7 +25,8 @@ import org.eclipse.aether.graph.Dependency;
  * Maven plugin that processes the resolved dependencies of the project and
  * generates a file containing gradle dependencies for each dependency.
  */
-@Mojo(name = "generate", defaultPhase = LifecyclePhase.PROCESS_RESOURCES)
+
+@Mojo(name = "generate", defaultPhase = LifecyclePhase.PROCESS_RESOURCES, threadSafe = true)
 public class GradleDepsMojo extends AbstractMojo {
 
     @Parameter(defaultValue = "${project}", required = true, readonly = true)
