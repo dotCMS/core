@@ -602,10 +602,11 @@ public class WorkflowAPITest extends IntegrationTestBase {
         final Role cmsOwnerRole = APILocator.getRoleAPI().loadCMSOwnerRole();
         final User wflimitedUser = new UserDataGen().active(true).emailAddress("wflimiteduser" + time + "@dotcms.com").roles(backendRole).nextPersisted();
         // create a content type with cms owner full permissions
-        final ContentType testContentType = new ContentTypeDataGen().velocityVarName("testcontenttype" + time).name("testcontenttype" + time).nextPersisted();
+        final ContentType testContentType = new ContentTypeDataGen().velocityVarName("testcontenttype" + time)
+                .host(APILocator.systemHost()).name("testcontenttype" + time).nextPersisted();
         final int permissionType = PermissionAPI.PERMISSION_USE | PermissionAPI.PERMISSION_EDIT |
                 PermissionAPI.PERMISSION_PUBLISH | PermissionAPI.PERMISSION_EDIT_PERMISSIONS;
-        final Permission permission = new Permission(testContentType.getPermissionId(), backendRole.getId(), permissionType);
+        final Permission permission = new Permission(testContentType.getPermissionId(), cmsOwnerRole.getId(), permissionType);
         APILocator.getPermissionAPI().save(permission, testContentType, APILocator.systemUser(), false);
         // create a contentlet of the type given permissions to the someone else
         final Contentlet contentlet = new ContentletDataGen(testContentType).user(wflimitedUser).next();
