@@ -1,6 +1,8 @@
 package com.dotcms.rest.api.v1.system.role;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.repackage.org.directwebremoting.WebContext;
+import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -8,19 +10,30 @@ import com.dotcms.rest.api.v1.system.permission.ResponseEntityPermissionView;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.web.UserWebAPI;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.RoleNameException;
 import com.dotmarketing.portlets.user.ajax.UserAjax;
+import com.dotmarketing.util.ActivityLogger;
+import com.dotmarketing.util.AdminLogger;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.PortalException;
+import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
@@ -30,6 +43,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.vavr.control.Try;
 import org.apache.commons.beanutils.BeanUtils;
 
 import java.io.IOException;
@@ -40,6 +54,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -162,7 +177,7 @@ public class RoleResource implements Serializable {
 
 			final String roleId         = roleLayoutForm.getRoleId();
 			final Set<String> layoutIds = roleLayoutForm.getLayoutIds();
-			final Role role 			= roleAPI.loadRoleById(roleId);
+			final Role role = roleAPI.loadRoleById(roleId);
 			final LayoutAPI layoutAPI   = APILocator.getLayoutAPI();
 
 			Logger.debug(this, ()-> "Deleting the layouts : " + layoutIds + " to the role: " + roleId);
@@ -177,6 +192,73 @@ public class RoleResource implements Serializable {
 					initDataObject.getUser().getUserId() + " from " + remoteIp);
 			throw new DotSecurityException("User: '" +  initDataObject.getUser().getUserId() + "' not authorized");
 		}
+	}
+
+	/**
+	 * Add a new role
+	 * Only admins can add roles.
+	 */
+	@POST
+	@Produces("application/json")
+	public Response addNewRole(
+			final @Context HttpServletRequest request,
+			final @Context HttpServletResponse response,
+			final RoleForm roleForm) throws DotDataException, DotSecurityException {
+
+		final InitDataObject initDataObject = new WebResource.InitBuilder(this.webResource)
+				.requiredFrontendUser(false).rejectWhenNoUser(true)
+				.requiredBackendUser(true).requiredPortlet("roles")
+				.requestAndResponse(request, response).init();
+
+		if (this.roleAPI.doesUserHaveRole(initDataObject.getUser(), this.roleAPI.loadCMSAdminRole())) {
+
+			final User user = initDataObject.getUser();
+			Role role = new Role();
+			role.setName(roleForm.getRoleName());
+			role.setRoleKey(roleForm.getRoleKey());
+			role.setEditUsers(roleForm.isCanEditUsers());
+			role.setEditPermissions(roleForm.isCanEditPermissions());
+			role.setEditLayouts(roleForm.isCanEditLayouts());
+			role.setDescription(roleForm.getDescription());
+
+			if(Objects.nonNull(roleForm.getParentRoleId())) {
+
+				final Role parentRole = roleAPI.loadRoleById(roleForm.getParentRoleId());
+				role.setParent(parentRole.getId());
+			}
+
+			final String date = DateUtil.getCurrentDate();
+
+			ActivityLogger.logInfo(getClass(), "Adding Role", "Date: " + date + "; "+ "User:" + user.getUserId());
+			AdminLogger.log(getClass(), "Adding Role", "Date: " + date + "; "+ "User:" + user.getUserId());
+
+			try {
+
+				role = roleAPI.save(role);
+			}  catch(RoleNameException e) {
+
+				ActivityLogger.logInfo(getClass(), "Error Adding Role. Invalid Name", "Date: " + date + ";  "+ "User:" + user.getUserId());
+				AdminLogger.log(getClass(), "Error Adding Role. Invalid Name", "Date: " + date + ";  "+ "User:" + user.getUserId());
+				throw new DotDataException(
+						Try.of(()->LanguageUtil.get(initDataObject.getUser(),"Role-Save-Name-Failed")).getOrElse("Role Name not valid"),
+						"Role-Save-Name-Failed", e);
+
+			} catch(DotDataException | DotStateException e) {
+				ActivityLogger.logInfo(getClass(), "Error Adding Role", "Date: " + date + ";  "+ "User:" + user.getUserId());
+				AdminLogger.log(getClass(), "Error Adding Role", "Date: " + date + ";  "+ "User:" + user.getUserId());
+				throw e;
+			}
+
+			ActivityLogger.logInfo(getClass(), "Role Created", "Date: " + date + "; "+ "User:" + user.getUserId() + "; RoleID: " + role.getId() );
+			AdminLogger.log(getClass(), "Role Created", "Date: " + date + "; "+ "User:" + user.getUserId() + "; RoleID: " + role.getId() );
+
+			return Response.ok(new RoleResponseEntityView(role.toMap())).build();
+		}
+
+		final String remoteIp = request.getRemoteHost();
+		SecurityLogger.logInfo(UserAjax.class, "unauthorized attempt to call create a role by user "+
+				initDataObject.getUser().getUserId() + " from " + remoteIp);
+		throw new DotSecurityException("User: '" +  initDataObject.getUser().getUserId() + "' not authorized");
 	}
 
 	/**
@@ -200,7 +282,7 @@ public class RoleResource implements Serializable {
 
 			final String roleId         = roleLayoutForm.getRoleId();
 			final Set<String> layoutIds = roleLayoutForm.getLayoutIds();
-			final Role role 			= roleAPI.loadRoleById(roleId);
+			final Role role = roleAPI.loadRoleById(roleId);
 			final LayoutAPI layoutAPI   = APILocator.getLayoutAPI();
 
 			Logger.debug(this, ()-> "Saving the layouts : " + layoutIds + " to the role: " + roleId);
@@ -208,13 +290,12 @@ public class RoleResource implements Serializable {
 			return Response.ok(new ResponseEntityView(map("savedLayouts",
 					this.roleHelper.saveRoleLayouts(role, layoutIds, layoutAPI,
 							this.roleAPI, APILocator.getSystemEventsAPI())))).build();
-		} else {
-
-			final String remoteIp = request.getRemoteHost();
-			SecurityLogger.logInfo(UserAjax.class, "unauthorized attempt to call save role layouts by user "+
-					initDataObject.getUser().getUserId() + " from " + remoteIp);
-			throw new DotSecurityException("User: '" +  initDataObject.getUser().getUserId() + "' not authorized");
 		}
+
+		final String remoteIp = request.getRemoteHost();
+		SecurityLogger.logInfo(UserAjax.class, "unauthorized attempt to call save role layouts by user "+
+				initDataObject.getUser().getUserId() + " from " + remoteIp);
+		throw new DotSecurityException("User: '" +  initDataObject.getUser().getUserId() + "' not authorized");
 	}
 
 	/**
@@ -259,10 +340,10 @@ public class RoleResource implements Serializable {
 	@Produces("application/json")
 	@SuppressWarnings("unchecked")
 	public Response loadUsersAndRolesByRoleId(@Context final HttpServletRequest request,
-			@Context final HttpServletResponse response,
-			@PathParam   ("roleid") final String roleId,
-			@DefaultValue("false") @QueryParam("roleHierarchyForAssign") final boolean roleHierarchyForAssign,
-			@QueryParam  ("name") final String roleNameToFilter) throws DotDataException, DotSecurityException {
+											  @Context final HttpServletResponse response,
+											  @PathParam   ("roleid") final String roleId,
+											  @DefaultValue("false") @QueryParam("roleHierarchyForAssign") final boolean roleHierarchyForAssign,
+											  @QueryParam  ("name") final String roleNameToFilter) throws DotDataException, DotSecurityException {
 
 		new WebResource.InitBuilder(this.webResource).requiredBackendUser(true)
 				.requiredFrontendUser(false).requestAndResponse(request, response)
@@ -326,9 +407,9 @@ public class RoleResource implements Serializable {
 	@Path("/{roleid}")
 	@Produces("application/json")
 	public Response loadRoleByRoleId(@Context final HttpServletRequest request,
-			@Context final HttpServletResponse response,
-			@PathParam   ("roleid") final String roleId,
-			@DefaultValue("true") @QueryParam("loadChildrenRoles") final boolean loadChildrenRoles)
+									 @Context final HttpServletResponse response,
+									 @PathParam   ("roleid") final String roleId,
+									 @DefaultValue("true") @QueryParam("loadChildrenRoles") final boolean loadChildrenRoles)
 			throws DotDataException, DotSecurityException {
 
 		new WebResource.InitBuilder(this.webResource).requiredBackendUser(true)
@@ -366,8 +447,8 @@ public class RoleResource implements Serializable {
 	@GET
 	@Produces("application/json")
 	public Response loadRootRoles(@Context final HttpServletRequest request,
-			@Context final HttpServletResponse response,
-			@DefaultValue("true") @QueryParam("loadChildrenRoles") final boolean loadChildrenRoles)
+								  @Context final HttpServletResponse response,
+								  @DefaultValue("true") @QueryParam("loadChildrenRoles") final boolean loadChildrenRoles)
 			throws DotDataException, DotSecurityException {
 
 		new WebResource.InitBuilder(this.webResource).requiredBackendUser(true)
@@ -433,21 +514,21 @@ public class RoleResource implements Serializable {
 							content = @Content(mediaType = "application/json",
 									schema = @Schema(implementation = ResponseEntitySmallRoleView.class)))})
 	public Response searchRoles(@Context final HttpServletRequest request,
-							    @Context final HttpServletResponse response,
-							    @Parameter(name = "searchName", description = "Value to filter by role name")
-									@DefaultValue("")   @QueryParam("searchName") final String searchName,
+								@Context final HttpServletResponse response,
+								@Parameter(name = "searchName", description = "Value to filter by role name")
+								@DefaultValue("")   @QueryParam("searchName") final String searchName,
 								@Parameter(name = "searchKey", description = "Value to filter by role key")
-									@DefaultValue("")   @QueryParam("searchKey") final String searchKey,
+								@DefaultValue("")   @QueryParam("searchKey") final String searchKey,
 								@Parameter(name = "roleId", description = "Value for specific role id")
-									@DefaultValue("")   @QueryParam("roleId")     final String roleId,
+								@DefaultValue("")   @QueryParam("roleId")     final String roleId,
 								@Parameter(name = "start", description = "Offset on pagination")
-									@DefaultValue("0")  @QueryParam("start")      final int startParam,
+								@DefaultValue("0")  @QueryParam("start")      final int startParam,
 								@Parameter(name = "count", description = "Size on pagination")
-									@DefaultValue("20") @QueryParam("count")      final int count,
+								@DefaultValue("20") @QueryParam("count")      final int count,
 								@Parameter(name = "includeUserRoles", description = "Set false if do not want to include user rules")
-									@DefaultValue("true") @QueryParam("includeUserRoles")      final boolean includeUserRoles,
+								@DefaultValue("true") @QueryParam("includeUserRoles")      final boolean includeUserRoles,
 								@Parameter(name = "includeWorkflowRoles", description = "Set to true if want to include the workflow roles")
-									@DefaultValue("false") @QueryParam("includeWorkflowRoles")  final boolean includeWorkflowRoles)
+								@DefaultValue("false") @QueryParam("includeWorkflowRoles")  final boolean includeWorkflowRoles)
             throws DotDataException, DotSecurityException, LanguageException, IOException, InvocationTargetException, IllegalAccessException {
 
 		final InitDataObject initDataObject = new WebResource.InitBuilder(this.webResource).requiredBackendUser(true)
@@ -455,7 +536,7 @@ public class RoleResource implements Serializable {
 				.rejectWhenNoUser(true).init();
 
 		Logger.debug(this, ()-> "Searching role, searchName: " + searchName + ", searchKey: " + searchKey + ", roleId: " + roleId
-						+ ", start: " + startParam + ", count: " + count + ", includeUserRoles: " + includeUserRoles + ", includeWorkflowRoles: " + includeWorkflowRoles);
+				+ ", start: " + startParam + ", count: " + count + ", includeUserRoles: " + includeUserRoles + ", includeWorkflowRoles: " + includeWorkflowRoles);
 
         int start = startParam;
         final Role cmsAnonOrig    = this.roleAPI.loadCMSAnonymousRole();
@@ -487,6 +568,53 @@ public class RoleResource implements Serializable {
 		return Response.ok(new ResponseEntitySmallRoleView(rolesToView(roleList))).build();
 	}
 
+
+	/**
+	 * Get all layouts
+	 *
+	 * @return {@link LayoutMapResponseEntityView} List of Layouts
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	@GET
+	@Path("/layouts")
+	@Produces("application/json")
+	public Response getAllLayouts(@Context final HttpServletRequest request,
+								  @Context final HttpServletResponse response)
+			throws DotDataException, LanguageException, DotRuntimeException, PortalException, SystemException {
+
+		final List<Map<String, Object>> layoutsMap = new ArrayList<>();
+		final List<Layout> layouts = APILocator.getLayoutAPI().findAllLayouts();
+
+		for(final Layout layout: layouts) {
+
+			final Map<String, Object> layoutMap = layout.toMap();
+			layoutMap.put("portletTitles", getPorletTitlesFromLayout(layout, request));
+			layoutsMap.add(layoutMap);
+		}
+
+		return Response.ok(new LayoutMapResponseEntityView(layoutsMap)).build();
+	}
+
+	private List<String> getPorletTitlesFromLayout (final Layout layout,
+													final HttpServletRequest request)
+			throws LanguageException, DotRuntimeException, PortalException, SystemException {
+
+		final List<String> portletIds    = layout.getPortletIds();
+		final List<String> portletTitles = new ArrayList<>();
+		if(portletIds != null) {
+			for(final String portletId: portletIds) {
+
+				final String portletTitle = LanguageUtil.get(
+						WebAPILocator.getUserWebAPI().getLoggedInUser(request),
+						"com.dotcms.repackage.javax.portlet.title." + portletId);
+				portletTitles.add(portletTitle);
+			}
+		}
+
+		return portletTitles;
+	}
+
 	private boolean fillRoles(final String searchName, final int count, final int startParam,
 							  final Role cmsAnon, final String cmsAnonName, final List<Role> roleList,
 							  final boolean includeUserRoles, final String searchKey) throws DotDataException {
@@ -497,8 +625,8 @@ public class RoleResource implements Serializable {
 		while (roleList.size() < count) {
 
 			final List<Role> roles = StringUtils.isSet(searchKey)?
-						this.roleAPI.findRolesByKeyFilterLeftWildcard(searchKey, start, count):
-						this.roleAPI.findRolesByFilterLeftWildcard(searchName, start, count);
+					this.roleAPI.findRolesByKeyFilterLeftWildcard(searchKey, start, count):
+					this.roleAPI.findRolesByFilterLeftWildcard(searchName, start, count);
 			if (roles.isEmpty()) {
 
 				break;

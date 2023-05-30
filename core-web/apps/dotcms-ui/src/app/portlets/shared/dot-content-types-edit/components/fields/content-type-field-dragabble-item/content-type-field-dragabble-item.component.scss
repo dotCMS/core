@@ -46,8 +46,7 @@
 .field-properties {
     display: flex;
     flex-direction: column;
-    overflow-x: clip;
-    overflow-y: visible;
+    overflow: hidden;
     padding-right: $spacing-1;
     flex-grow: 1;
 
