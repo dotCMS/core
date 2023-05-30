@@ -212,8 +212,8 @@ public class FieldResource {
         final ContentType contentType = APILocator.getContentTypeAPI(user).find(typeIdOrVarName);
         final String publishDateVar = contentType.publishDateVar();
         final String expireDateVar = contentType.expireDateVar();
-        Stream<Field> cacheVals = contentType.fields().stream();
-        List<Field> filteredFields = cacheVals.filter(field -> fieldsID.contains(field.id())).collect(Collectors.toList());
+
+        final List<Field> filteredFields = contentType.fields().stream().filter(field -> fieldsID.contains(field.id())).collect(Collectors.toList());
 
         for (final Field field : filteredFields) {
             if ((publishDateVar != null && publishDateVar.equals(field.variable())) ||
