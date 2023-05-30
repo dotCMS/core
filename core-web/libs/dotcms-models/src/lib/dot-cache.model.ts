@@ -5,3 +5,8 @@ export interface DotCacheProvider {
     key: string;
     name: string;
 }
+
+export interface DotCacheProviderListResolverData {
+    apps: DotCacheProvider[];
+    isEnterpriseLicense: boolean;
+}
