@@ -1,0 +1,27 @@
+@use "variables" as *;
+
+.container-listing__header-options {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 0 $spacing-3;
+
+    .container-listing__filter-controls {
+        display: flex;
+        gap: $spacing-3;
+    }
+}
+
+.container-listing ::ng-deep {
+    overflow-y: auto;
+    height: 100%;
+}
+
+.container-listing__path {
+    color: $color-palette-gray-500;
+}
+
+dot-content-type-selector {
+    margin-right: $spacing-3;
+}
