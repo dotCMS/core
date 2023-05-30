@@ -21,8 +21,30 @@ const Template: Story<TemplateBuilderBoxComponent> = (args: TemplateBuilderBoxCo
     props: args
 });
 
-export const Primary = Template.bind({});
+const items = [
+    { label: 'demo.dotcms.com' },
+    { label: 'System Container' },
+    { label: 'demo.dotcms.com' },
+    { label: 'demo.dotcms.com' },
+    { label: 'demo.dotcms.com' },
+    { label: 'demo.dotcms.com' }
+];
 
-Primary.args = {
-    size: 'large'
+export const Small = Template.bind({});
+
+export const Medium = Template.bind({});
+
+export const Large = Template.bind({});
+
+Small.args = {
+    size: 'small',
+    items
+};
+Medium.args = {
+    size: 'medium',
+    items
+};
+Large.args = {
+    size: 'large',
+    items
 };

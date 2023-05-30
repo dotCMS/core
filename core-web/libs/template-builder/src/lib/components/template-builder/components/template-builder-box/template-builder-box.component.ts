@@ -20,14 +20,8 @@ export enum TemplateBuilderBoxSize {
     imports: [NgFor, NgIf, NgClass, ButtonModule, CardModule, ScrollPanelModule]
 })
 export class TemplateBuilderBoxComponent {
-    items = [
-        { label: 'demo.dotcms.com' },
-        { label: 'System Container' },
-        { label: 'demo.dotcms.com' },
-        { label: 'demo.dotcms.com' },
-        { label: 'demo.dotcms.com' },
-        { label: 'demo.dotcms.com' }
-    ];
+    @Input() items = [];
 
+    protected readonly templateBuilderSizes = TemplateBuilderBoxSize;
     @Input() size: TemplateBuilderBoxSize = TemplateBuilderBoxSize.large;
 }

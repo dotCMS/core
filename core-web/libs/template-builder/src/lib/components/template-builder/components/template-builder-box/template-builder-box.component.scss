@@ -1,4 +1,5 @@
 @use "variables" as *;
+@import "mixins";
 
 ::ng-deep {
     .p-card {
@@ -9,13 +10,13 @@
         padding: 0;
     }
 
-    .template-builder-box {
+    .template-builder-box__header-container {
         display: flex;
         justify-content: space-between;
         align-items: center;
     }
 
-    .template-builder-box-item {
+    .template-builder-box__item {
         padding: 0px $spacing-1 0px $spacing-3;
         border: 1px solid $color-palette-primary-300;
         margin: $spacing-1 $spacing-3;
@@ -33,9 +34,7 @@
         justify-content: space-between;
 
         p {
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+            @include truncate-text;
         }
     }
 
@@ -48,7 +47,7 @@
         color: $color-palette-primary-400;
     }
 
-    .template-builder-box__medium {
+    .template-builder-box--medium {
         width: $spacing-11;
         display: block;
 
@@ -57,12 +56,12 @@
         }
     }
 
-    .template-builder-box__large {
+    .template-builder-box--large {
         width: 100%;
         display: block;
     }
 
-    .template-builder-box__small {
+    .template-builder-box--small {
         width: $spacing-9;
         display: block;
 

@@ -1,6 +1,6 @@
+import { byTestId, createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
+
 import { NgClass, NgIf } from '@angular/common';
-import { Component, DebugElement } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
@@ -11,85 +11,69 @@ import {
     TemplateBuilderBoxSize
 } from './template-builder-box.component';
 
-@Component({
-    selector: 'dotcms-host-component',
-    template: ` <dotcms-template-builder-box [size]="size"> </dotcms-template-builder-box>`
-})
-class TemplateBuilderBoxHostComponent {
-    size = 'large';
-}
-
 describe('TemplateBuilderBoxComponent', () => {
-    let component: TemplateBuilderBoxHostComponent;
-    let hostFixture: ComponentFixture<TemplateBuilderBoxHostComponent>;
-    let de: DebugElement;
+    let spectator: SpectatorHost<TemplateBuilderBoxComponent>;
 
-    beforeEach(async () => {
-        await TestBed.configureTestingModule({
-            imports: [
-                TemplateBuilderBoxComponent,
-                NgClass,
-                NgIf,
-                ButtonModule,
-                CardModule,
-                ScrollPanelModule
-            ],
-            declarations: [TemplateBuilderBoxHostComponent]
-        }).compileComponents();
+    const createHost = createHostFactory({
+        component: TemplateBuilderBoxComponent,
+        imports: [NgClass, NgIf, ButtonModule, CardModule, ScrollPanelModule]
+    });
 
-        hostFixture = TestBed.createComponent(TemplateBuilderBoxHostComponent);
-        component = hostFixture.componentInstance;
-        de = hostFixture.debugElement;
-        hostFixture.detectChanges();
+    beforeEach(() => {
+        spectator = createHost(
+            `<dotcms-template-builder-box [size]="size"> </dotcms-template-builder-box>`,
+            {
+                hostProps: {
+                    size: 'large'
+                }
+            }
+        );
     });
 
     it('should create the component', () => {
-        expect(component).toBeTruthy();
+        expect(spectator).toBeTruthy();
     });
 
     it('should render with default size', () => {
-        expect(de.nativeElement.querySelector('.template-builder-box__large')).toBeTruthy();
+        expect(spectator.query(byTestId('template-builder-box'))).toHaveClass(
+            'template-builder-box--large'
+        );
     });
 
-    it('should render with medium size and update the class', async () => {
-        component.size = TemplateBuilderBoxSize.medium;
-        hostFixture.detectChanges();
-
-        expect(de.nativeElement.querySelector('.template-builder-box__medium')).toBeTruthy();
+    it('should render with medium size and update the class', () => {
+        spectator.setInput('size', TemplateBuilderBoxSize.medium);
+        spectator.detectComponentChanges();
+        expect(spectator.query(byTestId('template-builder-box'))).toHaveClass(
+            'template-builder-box--medium'
+        );
     });
 
-    it('should render with small size and update the class', async () => {
-        component.size = TemplateBuilderBoxSize.small;
-        hostFixture.detectChanges();
-
-        expect(de.nativeElement.querySelector('.template-builder-box__small')).toBeTruthy();
-    });
-
-    it('should show all buttons for small size', () => {
-        component.size = TemplateBuilderBoxSize.small;
-        hostFixture.detectChanges();
-        const addButton = hostFixture.nativeElement.querySelector(
-            '.p-button-rounded.p-button-text.p-button-sm'
+    it('should render with small size and update the class', () => {
+        spectator.setInput('size', TemplateBuilderBoxSize.small);
+        spectator.detectComponentChanges();
+        expect(spectator.query(byTestId('template-builder-box-small'))).toHaveClass(
+            'template-builder-box--small'
         );
-        const paletteButton = hostFixture.nativeElement.querySelector(
-            '.p-button-rounded.p-button-text.p-button-sm'
-        );
-        const deleteButton = hostFixture.nativeElement.querySelector(
-            '.p-button-rounded.p-button-text.p-button-sm'
-        );
-        expect(addButton).toBeTruthy();
-        expect(paletteButton).toBeTruthy();
-        expect(deleteButton).toBeTruthy();
     });
 
     it('should render the first ng-template for large and medium sizes', () => {
-        component.size = TemplateBuilderBoxSize.large;
-        hostFixture.detectChanges();
-        const firstTemplate = hostFixture.nativeElement.querySelector('.template-builder-box');
-        const secondTemplate = hostFixture.nativeElement.querySelector(
-            '.template-builder-box__small'
-        );
+        spectator.setInput('size', TemplateBuilderBoxSize.large);
+        spectator.detectComponentChanges();
+        const firstTemplate = spectator.query(byTestId('template-builder-box'));
+        const secondTemplate = spectator.query(byTestId('template-builder-box-small'));
         expect(firstTemplate).toBeTruthy();
         expect(secondTemplate).toBeNull();
+    });
+
+    it('should show all buttons for small size', () => {
+        spectator.setInput('size', TemplateBuilderBoxSize.small);
+        spectator.detectComponentChanges();
+
+        const addButton = spectator.query(byTestId('btn-plus-small'));
+        const paletteButton = spectator.query(byTestId('btn-palette-small'));
+        const deleteButton = spectator.query(byTestId('btn-trash-small'));
+        expect(addButton).toBeTruthy();
+        expect(paletteButton).toBeTruthy();
+        expect(deleteButton).toBeTruthy();
     });
 });
