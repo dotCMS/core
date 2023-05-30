@@ -6,7 +6,7 @@ import {
     Input
 } from '@angular/core';
 
-import { colIcon, rowIcon } from './icons';
+import { colIcon, rowIcon } from './utils/icons';
 
 import { WidgetType } from '../../models/models';
 
@@ -40,7 +40,6 @@ export class AddWidgetComponent {
      *
      * @memberof AddWidgetComponent
      */
-    @HostListener('dragend')
     @HostListener('document:mouseup')
     onDragEnd(): void {
         if (this.isDragging) {

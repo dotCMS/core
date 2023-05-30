@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { AddWidgetComponent } from './add-widget.component';
-import { colIcon, rowIcon } from './icons';
+import { colIcon, rowIcon } from './utils/icons';
 
 describe('AddWidgetComponent', () => {
     let component: AddWidgetComponent;
