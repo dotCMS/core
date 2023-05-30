@@ -258,8 +258,12 @@ describe('DotPagesFavoritePanelComponent', () => {
             expect(elem.componentInstance['iconPos']).toBe('start');
             expect(elem.componentInstance['expandIcon']).toBe('pi pi-angle-down');
             expect(elem.componentInstance['collapseIcon']).toBe('pi pi-angle-up');
-            expect(elem.componentInstance['header']).toBe('favoritePage.panel.header');
             expect(elem.componentInstance['toggleable']).toBe(true);
+        });
+
+        it('should have a star icon in the header', () => {
+            const elem = de.query(By.css('.dot-pages-panel__header'));
+            expect(elem.nativeElement.querySelector('.pi-star-fill')).toBeTruthy();
         });
 
         it('should set secondary button in panel', () => {
