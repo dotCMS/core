@@ -6,6 +6,8 @@ import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
@@ -690,6 +692,40 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		return permissionable instanceof Contentlet? // we can check if the content type has edit permissions
 				doesUserHavePermission(Contentlet.class.cast(permissionable).getContentType(), PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user):false;
 	}
+
+
+	@Override
+	public boolean doesUserHavePermission(final ContentType permissionable, final int permissionType, final User user) throws DotDataException {
+
+		return doesUserHavePermission(permissionable, permissionType, user, true);
+	}
+
+	@Override
+	public boolean doesUserHavePermission(final ContentType type, final int permissionType,
+										  final User user, final boolean respectFrontendRoles) throws DotDataException {
+
+		    // try the legacy way
+			final boolean hasPermission = this.doesUserHavePermission((Permissionable) type, permissionType, user, respectFrontendRoles);
+
+			// if the user does not have permission, check if the type allows CMS owner
+			if (!hasPermission) {
+
+				final Role cmsOwnerRole = Try.of(() -> APILocator.getRoleAPI().loadCMSOwnerRole())
+						.getOrElseThrow(e -> new DotRuntimeException(e.getMessage(), e));
+
+				final List<Permission> contentTypePermissions = getPermissions(type, true);
+				for(final Permission contentTypePermission : contentTypePermissions) {
+					if (user.isBackendUser() && contentTypePermission.getRoleId().equals(cmsOwnerRole.getId())) {
+
+						if (type.fields(HostFolderField.class).isEmpty() && Host.SYSTEM_HOST.equals(type.host())) {
+							return true;
+						}
+					}
+				}
+			}
+
+			return hasPermission;
+	} // doesUserHavePermission
 
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.business.PermissionFactory#assignPermissions
@@ -1687,6 +1723,11 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 					Host.class.getCanonicalName()
 			);
 
+            final Set<String> ContentTypeInheritableClasses = Sets.newHashSet(
+                            Contentlet.class.getCanonicalName()
+                    );
+			
+			
 			final Set<String> classesToIgnoreHost = Sets
 					.newHashSet(Category.class.getCanonicalName());
 
@@ -1710,11 +1751,14 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 					for (final Permission permission : permissions) {
 
-						if (finalPermissionableType.equals(Folder.class.getCanonicalName())
-								&& classesToIgnoreFolder.contains(permission.getType())) {
+						if (finalPermissionableType.equals(Structure.class.getCanonicalName())
+								&& !ContentTypeInheritableClasses.contains(permission.getType())) {
 							continue;
 						}
-
+                        if (finalPermissionableType.equals(Folder.class.getCanonicalName())
+                                && classesToIgnoreFolder.contains(permission.getType())) {
+                            continue;
+                        }
 						if (finalPermissionableType.equals(Host.class.getCanonicalName())
 								&& classesToIgnoreHost.contains(permission.getType())) {
 							continue;

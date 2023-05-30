@@ -106,6 +106,9 @@ describe('DotPagesFavoritePanelComponent', () => {
                 }
             });
         }
+        setLocalStorageFavoritePanelCollapsedParams(_collapsed: boolean): void {
+            /* */
+        }
     }
 
     describe('Empty state', () => {
@@ -150,6 +153,18 @@ describe('DotPagesFavoritePanelComponent', () => {
             ).toBeTruthy();
         });
 
+        it('should set panel collapsed state', () => {
+            spyOn(store, 'setLocalStorageFavoritePanelCollapsedParams');
+            component.toggleFavoritePagesPanel(
+                new Event('myevent', {
+                    bubbles: true,
+                    cancelable: true,
+                    composed: false
+                })
+            );
+            expect(store.setLocalStorageFavoritePanelCollapsedParams).toHaveBeenCalledTimes(1);
+        });
+
         it('should load empty pages cards container', () => {
             expect(
                 de
@@ -191,6 +206,9 @@ describe('DotPagesFavoritePanelComponent', () => {
                 });
             }
             getFavoritePages(_itemsPerPage: number): void {
+                /* */
+            }
+            setLocalStorageFavoritePanelCollapsedParams(_collapsed: boolean): void {
                 /* */
             }
         }
@@ -380,6 +398,9 @@ describe('DotPagesFavoritePanelComponent', () => {
                 /* */
             }
             limitFavoritePages(_limit: number): void {
+                /* */
+            }
+            setLocalStorageFavoritePanelCollapsedParams(_collapsed: boolean): void {
                 /* */
             }
         }
