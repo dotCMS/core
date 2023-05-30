@@ -959,7 +959,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final String goal = StringUtils.defaultIfBlank(goalName, PRIMARY_GOAL);
         final BayesianInput bayesianInput = BayesianHelper.get().toBayesianInput(experimentResults, goal);
 
-        return variantsNumber == 2 ? bayesianAPI.calcProbBOverA(bayesianInput) : bayesianAPI.calcProbABC(bayesianInput);
+        return bayesianAPI.doBayesian(bayesianInput);
     }
 
     @Override
