@@ -34,6 +34,12 @@
                 data-testid="seeAllBtn"
             ></button>
         </ng-template>
+        <ng-template pTemplate="header">
+            <span class="dot-pages-panel__header">
+                <i class="pi pi-star-fill"></i>
+                <span>{{ 'favoritePage.panel.header' | dm }}</span>
+            </span>
+        </ng-template>
 
         <ng-template [ngIf]="vm.favoritePages?.items?.length !== 0" [ngIfElse]="emptyState">
             <dot-pages-card

@@ -86,6 +86,17 @@
             margin-bottom: $spacing-3;
         }
     }
+
+    .pi-star-fill {
+        color: $color-palette-primary;
+        margin-right: $spacing-1;
+    }
+
+    .dot-pages-panel__header {
+        display: flex;
+        align-items: center;
+        margin-left: $spacing-3;
+    }
 }
 
 .dot-pages-empty__header {
