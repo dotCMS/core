@@ -215,7 +215,7 @@ public class ContentTypesPaginatorTest {
         // Initialization
         final String DEFAULT_ORDER_BY = "UPPER(name)";
         final String NO_FILTER = StringPool.BLANK;
-        final String contentTypeVars = "webPageContent,calendarEvent,Vanityurl,DotAsset,htmlpageasset";
+        final String contentTypeVars = "webPageContent,Vanityurl,DotAsset,htmlpageasset";
         final List<String> typeVarNames = Arrays.asList(contentTypeVars.split(COMMA));
         final Map<String, Object> extraParams = new HashMap<>();
         extraParams.put(ContentTypesPaginator.TYPES_PARAMETER_NAME, typeVarNames);
@@ -226,7 +226,7 @@ public class ContentTypesPaginatorTest {
                 paginator.getItems(user, NO_FILTER, -1, -1, DEFAULT_ORDER_BY, OrderDirection.ASC, extraParams);
 
         // Assertions
-        assertEquals("There must be 5 Content Types returned by the paginator", 5, contentTypes.size());
+        assertEquals("There must be 5 Content Types returned by the paginator", 4, contentTypes.size());
         assertEquals("The 'Content (Generic)' type must come first", "Content (Generic)",
                 contentTypes.get(0).get("name").toString());
     }
@@ -243,8 +243,8 @@ public class ContentTypesPaginatorTest {
     public void getFilteredAllowedContentTypesOrderedByName() {
         // Initialization
         final String DEFAULT_ORDER_BY = "UPPER(name)";
-        final String FILTER = "ent";
-        final String contentTypeVars = "webPageContent,calendarEvent,Vanityurl,DotAsset,htmlpageasset";
+        final String FILTER = "va";
+        final String contentTypeVars = "webPageContent,Vanityurl,DotAsset,htmlpageasset,languagevariable,vanityurl";
         final List<String> typeVarNames = Arrays.asList(contentTypeVars.split(COMMA));
         final Map<String, Object> extraParams = new HashMap<>();
         extraParams.put(ContentTypesPaginator.TYPES_PARAMETER_NAME, typeVarNames);
@@ -256,7 +256,7 @@ public class ContentTypesPaginatorTest {
 
         // Assertions
         assertEquals("There must be 2 Content Types returned by the paginator", 2, contentTypes.size());
-        assertEquals("The 'Content (Generic)' type must come first", "Content (Generic)",
+        assertEquals("The 'Language Variable' type must come first", "Language Variable",
                 contentTypes.get(0).get("name").toString());
     }
 
