@@ -6,7 +6,7 @@ import { By } from '@angular/platform-browser';
 
 import { ButtonModule } from 'primeng/button';
 
-import { DotIconModule } from '@dotcms/ui';
+// import { DotIconModule, DotIconComponent } from '@dotcms/ui';
 
 import { TemplateBuilderRowComponent } from './template-builder-row.component';
 
@@ -34,7 +34,7 @@ describe('TemplateBuilderRowComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            imports: [DotIconModule, ButtonModule, TemplateBuilderRowComponent],
+            imports: [ButtonModule, TemplateBuilderRowComponent],
             declarations: [HostComponent]
         }).compileComponents();
 
@@ -51,9 +51,7 @@ describe('TemplateBuilderRowComponent', () => {
     });
 
     it('should have a drag handler', () => {
-        expect(
-            fixture.debugElement.query(By.css('dot-icon[data-testid="row-drag-handler"]'))
-        ).toBeTruthy();
+        expect(fixture.debugElement.query(By.css('[data-testid="row-drag-handler"]'))).toBeTruthy();
     });
     it('should have a style class edit button', () => {
         expect(
