@@ -13,13 +13,7 @@ import { SidebarModule } from 'primeng/sidebar';
 import { take } from 'rxjs/operators';
 
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
-import {
-    ComponentStatus,
-    RangeOfDateAndTime,
-    StepStatus,
-    TIME_14_DAYS,
-    TIME_90_DAYS
-} from '@dotcms/dotcms-models';
+import { ComponentStatus, RangeOfDateAndTime, StepStatus } from '@dotcms/dotcms-models';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 import { DotSidebarDirective } from '@portlets/shared/directives/dot-sidebar.directive';
@@ -57,8 +51,12 @@ export class DotExperimentsConfigurationSchedulingAddComponent implements OnInit
     minEndDate: Date;
     maxEndDate: Date;
 
-    vm$: Observable<{ experimentId: string; scheduling: RangeOfDateAndTime; status: StepStatus }> =
-        this.dotExperimentsConfigurationStore.schedulingStepVm$;
+    vm$: Observable<{
+        experimentId: string;
+        scheduling: RangeOfDateAndTime;
+        status: StepStatus;
+        schedulingBoundaries: Record<string, number>;
+    }> = this.dotExperimentsConfigurationStore.schedulingStepVm$;
 
     constructor(
         private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore
@@ -102,8 +100,10 @@ export class DotExperimentsConfigurationSchedulingAddComponent implements OnInit
      * @memberof DotExperimentsConfigurationSchedulingAddComponent
      */
     setDateBoundaries(): void {
-        this.setMinEndDate();
-        this.setMaxEndDate();
+        this.vm$.pipe(take(1)).subscribe(({ schedulingBoundaries }) => {
+            this.setMinEndDate(schedulingBoundaries.EXPERIMENTS_MIN_DURATION);
+            this.setMaxEndDate(schedulingBoundaries.EXPERIMENTS_MAX_DURATION);
+        });
     }
 
     private initForm() {
@@ -134,16 +134,16 @@ export class DotExperimentsConfigurationSchedulingAddComponent implements OnInit
     }
 
     /**
-     * Initial end date should be at least 14 days after start date.
+     * Initial end date should be at waht is comes from the schedulingBoundaries.
      */
-    private setMinEndDate(): void {
+    private setMinEndDate(experimentMinDuration: number): void {
         if (this.form.value.startDate) {
-            this.minEndDate = new Date(this.form.value.startDate.getTime() + TIME_14_DAYS);
+            this.minEndDate = new Date(this.form.value.startDate.getTime() + experimentMinDuration);
         } else {
-            this.minEndDate = new Date(Date.now() + TIME_14_DAYS);
+            this.minEndDate = new Date(Date.now() + experimentMinDuration);
         }
 
-        if (this.isStatDateMoreRecent()) {
+        if (this.isStatDateMoreRecent(experimentMinDuration)) {
             this.form.patchValue({
                 endDate: null
             });
@@ -151,36 +151,38 @@ export class DotExperimentsConfigurationSchedulingAddComponent implements OnInit
     }
 
     /**
-     * End date should be at most 90 days after start date.
+     * End date should be at most what is comes from schedulingBoundaries.
      * @private
      */
-    private setMaxEndDate(): void {
+    private setMaxEndDate(experimentMaxDuration: number): void {
         if (this.form.value.startDate) {
-            this.maxEndDate = new Date(this.form.value.startDate.getTime() + TIME_90_DAYS);
+            this.maxEndDate = new Date(this.form.value.startDate.getTime() + experimentMaxDuration);
         } else {
-            this.maxEndDate = new Date(Date.now() + TIME_90_DAYS);
+            this.maxEndDate = new Date(Date.now() + experimentMaxDuration);
         }
 
-        if (this.isEndDateOutOfBoundaries()) {
+        if (this.isEndDateOutOfBoundaries(experimentMaxDuration)) {
             this.form.patchValue({
                 endDate: null
             });
         }
     }
 
-    private isStatDateMoreRecent(): boolean {
+    private isStatDateMoreRecent(experimentMinDuration: number): boolean {
         return (
             this.form.value.startDate &&
             this.form.value.endDate &&
-            this.form.value.startDate.getTime() + TIME_14_DAYS > this.form.value.endDate.getTime()
+            this.form.value.startDate.getTime() + experimentMinDuration >
+                this.form.value.endDate.getTime()
         );
     }
 
-    private isEndDateOutOfBoundaries(): boolean {
+    private isEndDateOutOfBoundaries(experimentMaxDuration: number): boolean {
         return (
             this.form.value.startDate &&
             this.form.value.endDate &&
-            this.form.value.startDate.getTime() + TIME_90_DAYS < this.form.value.endDate.getTime()
+            this.form.value.startDate.getTime() + experimentMaxDuration <
+                this.form.value.endDate.getTime()
         );
     }
 }

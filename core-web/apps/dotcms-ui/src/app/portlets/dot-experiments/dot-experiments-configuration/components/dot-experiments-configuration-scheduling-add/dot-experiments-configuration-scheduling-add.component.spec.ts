@@ -7,6 +7,8 @@ import {
 } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
+import { ActivatedRoute } from '@angular/router';
+
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { Calendar } from 'primeng/calendar';
@@ -14,11 +16,11 @@ import { CardModule } from 'primeng/card';
 import { Sidebar } from 'primeng/sidebar';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { ExperimentSteps } from '@dotcms/dotcms-models';
+import { ExperimentSteps, TIME_90_DAYS } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
-import { getExperimentMock } from '@portlets/dot-experiments/test/mocks';
+import { ACTIVE_ROUTE_MOCK_CONFIG, getExperimentMock } from '@portlets/dot-experiments/test/mocks';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotExperimentsConfigurationSchedulingAddComponent } from './dot-experiments-configuration-scheduling-add.component';
@@ -47,6 +49,7 @@ describe('DotExperimentsConfigurationSchedulingAddComponent', () => {
             mockProvider(DotExperimentsService),
             mockProvider(MessageService),
             mockProvider(DotHttpErrorManagerService),
+            mockProvider(ActivatedRoute, ACTIVE_ROUTE_MOCK_CONFIG),
             {
                 provide: DotMessageService,
                 useValue: messageServiceMock
@@ -117,8 +120,8 @@ describe('DotExperimentsConfigurationSchedulingAddComponent', () => {
 
         const component = spectator.component;
         const mockDate = new Date(1682099633467);
-        const time14days = 12096e5;
-        const mockMinEndDate = 1682099633467 + time14days;
+        const time5days = 432e6; // value set in the ActiveRouteMock
+        const mockMinEndDate = 1682099633467 + time5days;
         jasmine.clock().install();
         jasmine.clock().mockDate(mockDate);
 
@@ -157,6 +160,8 @@ describe('DotExperimentsConfigurationSchedulingAddComponent', () => {
 
         const component = spectator.component;
         const mockDate = new Date(16820996334200);
+        // Default vale of 90 because max end date is not defined in the Active Route
+        const expectedEndDate = new Date(16820996334200 + TIME_90_DAYS);
         jasmine.clock().install();
         jasmine.clock().mockDate(mockDate);
 
@@ -165,7 +170,7 @@ describe('DotExperimentsConfigurationSchedulingAddComponent', () => {
 
         spectator.detectChanges();
 
-        expect(component.maxEndDate).toEqual(new Date(16820996334200 + 7776e6));
+        expect(component.maxEndDate).toEqual(expectedEndDate);
 
         jasmine.clock().uninstall();
     });
