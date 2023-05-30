@@ -61,7 +61,7 @@ export const favoritePagesInitialTestData = [
     }
 ];
 
-describe('DotPagesListingPanelComponent', () => {
+fdescribe('DotPagesListingPanelComponent', () => {
     let fixture: ComponentFixture<DotPagesListingPanelComponent>;
     let component: DotPagesListingPanelComponent;
     let de: DebugElement;
@@ -184,6 +184,8 @@ describe('DotPagesListingPanelComponent', () => {
             expect(elem.lazy).toBe(true);
             expect(elem.selectionMode).toBe('single');
             expect(elem.scrollHeight).toBe('flex');
+            expect(elem.sortField).toEqual('modDate');
+            expect(elem.sortOrder).toEqual(-1);
         });
 
         it('should contain header with filter for keyword, language and archived', () => {
@@ -200,8 +202,8 @@ describe('DotPagesListingPanelComponent', () => {
         it('should getPages method from store have been called', () => {
             expect(store.getPages).toHaveBeenCalledWith({
                 offset: 0,
-                sortField: '',
-                sortOrder: 1
+                sortField: 'modDate',
+                sortOrder: -1
             });
         });
 
