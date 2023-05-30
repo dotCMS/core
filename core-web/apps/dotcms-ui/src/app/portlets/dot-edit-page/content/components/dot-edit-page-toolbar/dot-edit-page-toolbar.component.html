@@ -78,7 +78,6 @@
 
 <ng-template #defaultHeaderRightTpl>
     <dot-global-message data-testId="globalMessage" right></dot-global-message>
-    {{ runningExperiment.pageId | json }} - {{ runningExperiment.id | json }}
     <button
         class="p-button-secondary"
         *ngIf="runningExperiment"
@@ -86,10 +85,11 @@
             '/edit-page/experiments/',
             runningExperiment.pageId,
             runningExperiment.id,
-            '/reports'
+            'reports'
         ]"
-        [label]="'Running Experiemnt - Go To Resutls'"
+        [label]="'dot.edit.page.toolbar.running.experiments' | dm"
         queryParamsHandling="preserve"
+        data-testId="runningExperimentButton"
         pButton
     ></button>
     <dot-edit-page-workflows-actions

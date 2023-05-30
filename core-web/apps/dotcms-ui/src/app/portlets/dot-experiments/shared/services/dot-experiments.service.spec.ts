@@ -37,6 +37,11 @@ describe('DotExperimentsService', () => {
         spectator.expectOne(`${API_ENDPOINT}?pageId=${PAGE_Id}`, HttpMethod.GET);
     });
 
+    it('should get a list of running experiments of pageId', () => {
+        spectator.service.getRunning(PAGE_Id).subscribe();
+        spectator.expectOne(`${API_ENDPOINT}?pageId=${PAGE_Id}&status=RUNNING`, HttpMethod.GET);
+    });
+
     it('should get an experiment by getById using experimentId', () => {
         spectator.service.getById(EXPERIMENT_ID).subscribe();
         spectator.expectOne(`${API_ENDPOINT}/${EXPERIMENT_ID}`, HttpMethod.GET);

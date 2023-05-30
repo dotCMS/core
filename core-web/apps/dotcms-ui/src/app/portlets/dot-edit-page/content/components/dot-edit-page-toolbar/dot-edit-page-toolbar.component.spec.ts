@@ -1,12 +1,13 @@
 import { Observable, of } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, Injectable, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
+import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -45,7 +46,13 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
-import { DotPageMode, DotPageRender, DotPageRenderState, ESContent } from '@dotcms/dotcms-models';
+import {
+    DotExperiment,
+    DotPageMode,
+    DotPageRender,
+    DotPageRenderState,
+    ESContent
+} from '@dotcms/dotcms-models';
 import {
     CoreWebServiceMock,
     dotcmsContentletMock,
@@ -72,10 +79,16 @@ import { DotEditPageWorkflowsActionsModule } from '../dot-edit-page-workflows-ac
 
 @Component({
     selector: 'dot-test-host-component',
-    template: ` <dot-edit-page-toolbar [pageState]="pageState"></dot-edit-page-toolbar> `
+    template: `
+        <dot-edit-page-toolbar
+            [pageState]="pageState"
+            [runningExperiment]="runningExperiment"
+        ></dot-edit-page-toolbar>
+    `
 })
 class TestHostComponent {
     @Input() pageState: DotPageRenderState = mockDotRenderedPageState;
+    @Input() runningExperiment: DotExperiment = null;
 }
 
 @Component({
@@ -149,7 +162,13 @@ describe('DotEditPageToolbarComponent', () => {
                 DotPipesModule,
                 DotWizardModule,
                 TooltipModule,
-                DotExperimentClassDirective
+                DotExperimentClassDirective,
+                RouterTestingModule.withRoutes([
+                    {
+                        path: 'edit-page/experiments/pageId/id/reports',
+                        component: TestHostComponent
+                    }
+                ])
             ],
             providers: [
                 { provide: DotLicenseService, useClass: MockDotLicenseService },
@@ -158,7 +177,9 @@ describe('DotEditPageToolbarComponent', () => {
                     useValue: new MockDotMessageService({
                         'dot.common.whats.changed': 'Whats',
                         'dot.common.cancel': 'Cancel',
-                        'favoritePage.dialog.header': 'Add Favorite Page'
+                        'favoritePage.dialog.header': 'Add Favorite Page',
+                        'dot.edit.page.toolbar.running.experiments':
+                            'Running Experiment - Go To Results'
                     })
                 },
                 {
@@ -369,6 +390,27 @@ describe('DotEditPageToolbarComponent', () => {
 
             const favoritePageIcon = de.query(By.css('[data-testId="addFavoritePageButton"]'));
             expect(favoritePageIcon.componentInstance.icon).toBe('star_outline');
+        });
+    });
+
+    describe('Go to Experiment results', () => {
+        it('should show an go to the experiment results', (done) => {
+            const location = de.injector.get(Location);
+            componentHost.runningExperiment = { pageId: 'pageId', id: 'id' } as DotExperiment;
+
+            fixtureHost.detectChanges();
+
+            const experimentBtn = de.query(By.css('[data-testId="runningExperimentButton"]'));
+
+            experimentBtn.triggerEventHandler('click', {});
+
+            // expect(experimentBtn.nativeElement.innerText).toEqual(
+            //     'Running Experiment - Go To Results'
+            // );
+            fixtureHost.whenStable().then(() => {
+                expect(location.path()).toEqual('/edit-page/experiments/pageId/id/reports');
+                done();
+            });
         });
     });
 
