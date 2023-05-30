@@ -824,6 +824,9 @@ public class ContentUtils {
 						contentlet.getIdentifier() + ", msg:" + e.getMessage(), e);
 				throw new DotRuntimeException(e);
 			}
+		} else {
+
+			throw new IllegalArgumentException("Depth must be a number between 0 and 3");
 		}
 
 	}
