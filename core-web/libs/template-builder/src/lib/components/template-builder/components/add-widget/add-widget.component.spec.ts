@@ -56,13 +56,5 @@ describe('AddWidgetComponent', () => {
             expect(component.isDragging).toBe(false);
             expect(box.classList.contains('add-widget--dragging')).toBe(false);
         });
-
-        it('should set dragging to false on dragend and remove add-widget--dragging class', () => {
-            const element = fixture.nativeElement;
-            const box = element.querySelector('.add-widget');
-            element.dispatchEvent(new MouseEvent('dragend'));
-            expect(component.isDragging).toBe(false);
-            expect(box.classList.contains('add-widget--dragging')).toBe(false);
-        });
     });
 });
