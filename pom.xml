@@ -23,7 +23,7 @@
         <elasticsearch.version>7.10.2</elasticsearch.version>
         <gib.fetchBaseBranch>true</gib.fetchBaseBranch>
         <gib.referenceBranch>refs/remotes/origin/master</gib.referenceBranch>
-        <gitflow-incremental-builder.version>4.1.1</gitflow-incremental-builder.version>
+        <gitflow-incremental-builder.version>4.4.1</gitflow-incremental-builder.version>
         <insecure.repositories>WARN</insecure.repositories>
         <!-- jandex maven plugin version -->
         <jandex-maven-plugin.version>1.2.3</jandex-maven-plugin.version>
@@ -50,41 +50,41 @@
         <rewriteRun>false</rewriteRun>
         <sourceReleaseAssemblyDescriptor>source-release</sourceReleaseAssemblyDescriptor>
         <!--  maven-project-info-reports-plugins  -->
-        <version.antrun.plugin>1.8</version.antrun.plugin>
+        <version.antrun.plugin>3.1.0</version.antrun.plugin>
         <version.assembly.plugin>3.6.0</version.assembly.plugin>
-        <version.buildhelper.plugin>3.0.0</version.buildhelper.plugin>
-        <version.buildnumber.plugin>1.4</version.buildnumber.plugin>
-        <version.cargo.plugin>1.10.6</version.cargo.plugin>
+        <version.buildhelper.plugin>3.4.0</version.buildhelper.plugin>
+        <version.buildnumber.plugin>3.1.0</version.buildnumber.plugin>
+        <version.cargo.plugin>1.10.7</version.cargo.plugin>
         <version.checkstyle>10.11.0</version.checkstyle>
-        <version.checkstyle.plugin>3.1.1</version.checkstyle.plugin>
-        <version.clean.plugin>3.1.0</version.clean.plugin>
-        <version.compiler.plugin>3.8.1</version.compiler.plugin>
-        <version.dependency.plugin>3.1.1</version.dependency.plugin>
-        <version.deploy.plugin>2.8.2</version.deploy.plugin>
+        <version.checkstyle.plugin>3.3.0</version.checkstyle.plugin>
+        <version.clean.plugin>3.2.0</version.clean.plugin>
+        <version.compiler.plugin>3.11.0</version.compiler.plugin>
+        <version.dependency.plugin>3.6.0</version.dependency.plugin>
+        <version.deploy.plugin>3.1.1</version.deploy.plugin>
         <version.docker-compose.plugin>4.0.0</version.docker-compose.plugin>
-        <version.enforcer.plugin>3.0.0-M3</version.enforcer.plugin>
         <!-- version.* properties are defined in jboss-parent and are overridden/updated here: -->
-        <version.enforcer.plugin>3.0.0-M3</version.enforcer.plugin>
+        <version.enforcer.plugin>3.0.0</version.enforcer.plugin>
         <version.exec.plugin>3.0.0</version.exec.plugin>
+        <version.surefire.plugin>3.1.0</version.surefire.plugin>
         <version.failsafe.plugin>${version.surefire.plugin}</version.failsafe.plugin>
         <version.findbugs.plugin>3.0.5</version.findbugs.plugin>
-        <version.gpg.plugin>1.6</version.gpg.plugin>
-        <version.help.plugin>3.2.0</version.help.plugin>
-        <version.install.plugin>2.5.2</version.install.plugin>
-        <version.jar.plugin>3.1.2</version.jar.plugin>
+        <version.gpg.plugin>3.1.0</version.gpg.plugin>
+        <version.help.plugin>3.4.0</version.help.plugin>
+        <version.install.plugin>3.1.1</version.install.plugin>
+        <version.jar.plugin>3.3.0</version.jar.plugin>
         <version.javadoc.plugin>3.1.1</version.javadoc.plugin>
         <version.javancss.plugin>2.1</version.javancss.plugin>
         <version.license.plugin>1.20</version.license.plugin>
         <version.pir.plugin>3.4.0</version.pir.plugin>
         <version.rar.plugin>2.4</version.rar.plugin>
         <version.release.plugin>2.5.3</version.release.plugin>
-        <version.resources.plugin>3.2.0</version.resources.plugin>
+        <version.resources.plugin>3.3.1</version.resources.plugin>
         <version.rewrite-maven-plugin>4.46.0</version.rewrite-maven-plugin>
         <version.shade.plugin>3.2.1</version.shade.plugin>
         <version.site.plugin>3.8.2</version.site.plugin>
         <version.sonar.plugin>3.7.0.1746</version.sonar.plugin>
         <version.source.plugin>3.1.0</version.source.plugin>
-        <version.surefire.plugin>3.0.0-M7</version.surefire.plugin>
+
         <version.versions.plugin>2.8.1</version.versions.plugin>
         <version.maven.plugin.plugin>3.8.1</version.maven.plugin.plugin>
         <version.war.plugin>3.2.3</version.war.plugin>
@@ -123,7 +123,7 @@
                 <plugin>
                     <groupId>com.diffplug.spotless</groupId>
                     <artifactId>spotless-maven-plugin</artifactId>
-                    <version>2.35.0</version>
+                    <version>2.37.0</version>
                     <configuration>
                         <skip>${skipFormat}</skip>
                         <!-- These are the defaults, you can override if you want -->
@@ -481,6 +481,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${version.surefire.plugin}</version>
                     <configuration>
                         <systemPropertyVariables>
                             <java.io.tmpdir>${test.temp.dir}</java.io.tmpdir>

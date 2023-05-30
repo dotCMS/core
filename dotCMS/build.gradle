@@ -310,8 +310,9 @@ import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import java.text.SimpleDateFormat
 
 // Import and apply the dependencies from the dependencies scripts.
-apply from: "$rootDir/dependencies.gradle"
-
+if (!gradle.startParameter.taskNames.contains("generateDependenciesFromMaven")) {
+    apply from: "$rootDir/dependencies.gradle"
+}
 
 
 idea {
@@ -564,7 +565,7 @@ class ClonePullTomcatTask extends DefaultTask{
 
 task generateDependenciesFromMavenPre(type: Exec) {
     workingDir parentProjectDir
-    commandLine mvnCommand, 'install','-pl',':generate-gradle-dependencies,:dotcms-bom,:core-web,:core-bundles,:system-bundles,:tika-api','--am'
+    commandLine mvnCommand, 'install','-pl',':generate-gradle-dependencies,:application-bom,:logging-bom,:core-web,:build-parent,:tika-api,:tika-plugin,:core-bundles,:system-bundles,','--am'
 }
 
 task generateDependenciesFromMaven(type: Exec) {

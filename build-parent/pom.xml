@@ -67,7 +67,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>${version.surefire.plugin}</version>
                 <configuration>
                     <systemPropertyVariables>
                         <DOT_ASSET_REAL_PATH>${test.assets.dir}</DOT_ASSET_REAL_PATH>

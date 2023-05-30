@@ -53,8 +53,10 @@
         <dependencies>
 
             <dependency>
-                <groupId>com.dotcms</groupId>
+                <groupId>com.dotcms.plugins</groupId>
                 <artifactId>tika-api</artifactId>
+                <version>${project.version}</version>
+                <scope>provided</scope>
             </dependency>
 
             <dependency>

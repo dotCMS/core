@@ -63,7 +63,7 @@
         </dependency>
 
         <dependency>
-            <groupId>com.dotcms</groupId>
+            <groupId>com.dotcms.plugins</groupId>
             <artifactId>core-bundles</artifactId>
             <version>${project.version}</version>
             <type>zip</type>
@@ -71,7 +71,7 @@
         </dependency>
 
         <dependency>
-            <groupId>com.dotcms</groupId>
+            <groupId>com.dotcms.plugins</groupId>
             <artifactId>system-bundles</artifactId>
             <version>${project.version}</version>
             <type>zip</type>
@@ -161,7 +161,7 @@
                                     <outputDirectory>${project.build.directory}/core-web</outputDirectory>
                                 </artifactItem>
                                 <artifactItem>
-                                    <groupId>com.dotcms</groupId>
+                                    <groupId>com.dotcms.plugins</groupId>
                                     <artifactId>core-bundles</artifactId>
                                     <version>${project.version}</version>
                                     <type>zip</type>
@@ -482,7 +482,7 @@
             <plugin>
                 <groupId>com.google.cloud.tools</groupId>
                 <artifactId>jib-maven-plugin</artifactId>
-                <version>3.3.1</version>
+                <version>3.3.2</version>
                 <configuration>
                     <skip>true</skip>
                     <to>

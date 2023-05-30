@@ -3,6 +3,7 @@ package com.dotcms.maven.plugins.gradledeps;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -47,6 +48,10 @@ public class GradleDepsMojo extends AbstractMojo {
     private String outputFileName;
 
 
+    @Parameter
+    private List<Exclusion> exclusions;
+
+
     @Override
     public void execute() throws MojoExecutionException {
         try {
@@ -78,6 +83,10 @@ public class GradleDepsMojo extends AbstractMojo {
 
 
             for (Dependency artifact : sortedList) {
+                if (isExcluded(artifact)) {
+                    getLog().info("Skipping excluded artifact: " + artifact);
+                    continue;
+                }
                 count++;
                 getLog().debug("Resolved Dependency: " + artifact.toString());
                 if (artifact.getScope().equals("system")) {
@@ -87,15 +96,6 @@ public class GradleDepsMojo extends AbstractMojo {
                 sb.append(convertToGradleDependency(artifact)).append(System.lineSeparator());
             }
 
-            for (Dependency artifact : resolutionResult.getResolvedDependencies()) {
-                count++;
-                getLog().debug("Resolved Dependency: " + artifact.toString());
-                if (artifact.getScope().equals("system")) {
-                    getLog().debug("Skipping system dependency: " + artifact);
-                    continue;
-                }
-                sb.append(convertToGradleDependency(artifact)).append(System.lineSeparator());
-            }
             sb.append("}").append(System.lineSeparator());
 
 
@@ -158,5 +158,38 @@ public class GradleDepsMojo extends AbstractMojo {
             sb.append("{}");
         }
         return sb.toString();
+    }
+
+    private boolean isExcluded(Dependency artifact) {
+        for (Exclusion exclusion : exclusions) {
+            String artifactId = artifact.getArtifact().getArtifactId();
+            String groupId = artifact.getArtifact().getGroupId();
+            if ((exclusion.getGroupId().equals("*") || exclusion.getGroupId().equals(groupId)) &&
+                    (exclusion.getArtifactId().equals("*") || exclusion.getArtifactId().equals(artifactId))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static class Exclusion {
+        private String groupId;
+        private String artifactId;
+
+        public String getGroupId() {
+            return groupId;
+        }
+
+        public void setGroupId(String groupId) {
+            this.groupId = groupId;
+        }
+
+        public String getArtifactId() {
+            return artifactId;
+        }
+
+        public void setArtifactId(String artifactId) {
+            this.artifactId = artifactId;
+        }
     }
 }
