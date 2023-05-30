@@ -48,6 +48,18 @@ export class DotExperimentsService {
     }
 
     /**
+     * Get an array of experiments of a pageId that are running
+     * @param {string} pageId
+     * @returns Observable<DotExperiment[]>
+     * @memberof DotExperimentsService
+     */
+    getRunning(pageId: string): Observable<DotExperiment[]> {
+        return this.http
+            .get<DotCMSResponse<DotExperiment[]>>(`${API_ENDPOINT}?pageId=${pageId}&status=RUNNING`)
+            .pipe(pluck('entity'));
+    }
+
+    /**
      * Get details of an experiment
      * @param {string} experimentId
      * @returns Observable<DotExperiment>

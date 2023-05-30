@@ -78,6 +78,20 @@
 
 <ng-template #defaultHeaderRightTpl>
     <dot-global-message data-testId="globalMessage" right></dot-global-message>
+    {{ runningExperiment.pageId | json }} - {{ runningExperiment.id | json }}
+    <button
+        class="p-button-secondary"
+        *ngIf="runningExperiment"
+        [routerLink]="[
+            '/edit-page/experiments/',
+            runningExperiment.pageId,
+            runningExperiment.id,
+            '/reports'
+        ]"
+        [label]="'Running Experiemnt - Go To Resutls'"
+        queryParamsHandling="preserve"
+        pButton
+    ></button>
     <dot-edit-page-workflows-actions
         [page]="pageState.page"
         (fired)="actionFired.emit($event)"
