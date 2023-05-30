@@ -25,21 +25,27 @@
         [attr.gs-w]="row.w"
         [attr.gs-h]="row.h"
     >
-        id: {{ row.id }} - y: {{ row.y }}
-        <div class="grid-stack-item-content grid-stack">
-            <div
-                class="grid-stack-item sub"
-                #boxes
-                *ngFor="let box of row.subGridOpts?.children; trackBy: identify"
-                [attr.gs-id]="box.id"
-                [attr.gs-auto]="true"
-                [attr.gs-x]="box.x"
-                [attr.gs-y]="box.y"
-                [attr.gs-w]="box.w"
-                [attr.gs-h]="box.h"
-            >
-                <div class="grid-stack-item-content">Hello World</div>
+        <dotcms-template-builder-row>
+            <div class="grid-stack-item-content grid-stack">
+                <div
+                    class="grid-stack-item sub"
+                    #boxes
+                    *ngFor="let box of row.subGridOpts?.children; trackBy: identify"
+                    [attr.gs-id]="box.id"
+                    [attr.gs-auto]="true"
+                    [attr.gs-x]="box.x"
+                    [attr.gs-y]="box.y"
+                    [attr.gs-w]="box.w"
+                    [attr.gs-h]="box.h"
+                >
+                    <div class="grid-stack-item-content">
+                        styleClass: {{ box.styleClass?.join(' ') }}
+                        <p *ngFor="let container of box.containers">
+                            identifier: {{ container.identifier }}
+                        </p>
+                    </div>
+                </div>
             </div>
-        </div>
+        </dotcms-template-builder-row>
     </div>
 </div>

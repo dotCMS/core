@@ -1,6 +1,4 @@
-import { DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
 import * as dotUtils from '@dotcms/utils/lib/dot-utils';
-import { mockDotRenderedPage, mockUser } from '@dotcms/utils-testing';
 
 describe('Dot Utils', () => {
     it('should return anchor with the correct values', () => {
@@ -14,24 +12,11 @@ describe('Dot Utils', () => {
     });
 
     it('should return unique URL with host, language and device Ids', () => {
-        const mockRenderedPageState = new DotPageRenderState(
-            mockUser(),
-            new DotPageRender({
-                ...mockDotRenderedPage(),
-                viewAs: {
-                    ...mockDotRenderedPage().viewAs,
-                    device: {
-                        identifier: 'abc123',
-                        cssHeight: '800',
-                        cssWidth: '1200',
-                        name: 'custom',
-                        inode: '123zxc'
-                    }
-                }
-            })
-        );
-
-        const url = dotUtils.generateDotFavoritePageUrl(mockRenderedPageState);
+        const url = dotUtils.generateDotFavoritePageUrl({
+            languageId: 1,
+            pageURI: '/an/url/test',
+            deviceInode: '123zxc'
+        });
 
         expect(url).toEqual('/an/url/test?&language_id=1&device_inode=123zxc');
     });

@@ -67,7 +67,7 @@ public class DBPropertiesDataSourceStrategy implements DotDataSourceStrategy {
                             + " from db.properties file",
                     e);
 
-            throw new DotRuntimeException(e.toString());
+            throw new DotRuntimeException(e.toString(), e);
         }
     }
 

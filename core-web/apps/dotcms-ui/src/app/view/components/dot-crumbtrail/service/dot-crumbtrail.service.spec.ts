@@ -12,7 +12,7 @@ import { DotMenu } from '../../../../shared/models/navigation';
 import { DotNavigationService } from '../../dot-navigation/services/dot-navigation.service';
 
 @Injectable()
-class MockDotNavigationService {
+class MockDotMainNavigationService {
     readonly navigationEnd: Subject<NavigationEnd> = new Subject();
 
     onNavigationEnd(): Observable<NavigationEnd> {
@@ -97,6 +97,105 @@ class MockDotNavigationService {
     }
 }
 
+/**
+ *  Class with added portlets to test the crumbtrail
+ *
+ * @class MockDotAlternativeNavigationService
+ * @extends {MockDotMainNavigationService}
+ */
+@Injectable()
+class MockDotAlternativeNavigationService extends MockDotMainNavigationService {
+    constructor() {
+        super();
+    }
+
+    get items$(): Observable<DotMenu[]> {
+        return of([
+            {
+                active: false,
+                id: 'menu',
+                isOpen: false,
+                menuItems: [
+                    {
+                        active: false,
+                        ajax: false,
+                        angular: false,
+                        id: 'first_portlet',
+                        label: 'First Portlet Label',
+                        url: '/url/fisrt_portlet',
+                        menuLink: 'menulink/first_portlet'
+                    },
+                    {
+                        active: false,
+                        ajax: false,
+                        angular: false,
+                        id: 'portlet',
+                        label: 'Potlet Label',
+                        url: '/url/portlet',
+                        menuLink: 'menulink/portlet'
+                    }
+                ],
+                name: 'menu',
+                tabDescription: '',
+                tabIcon: '',
+                tabName: 'Menu Label',
+                url: '/url/menu'
+            },
+            {
+                active: false,
+                id: 'menu_2',
+                isOpen: false,
+                menuItems: [
+                    {
+                        active: false,
+                        ajax: false,
+                        angular: false,
+                        id: 'content-types-angular',
+                        label: 'Content Types',
+                        url: '/content-types-angular',
+                        menuLink: 'content-types-angular'
+                    }
+                ],
+                name: 'Types & Tag',
+                tabDescription: '',
+                tabIcon: '',
+                tabName: 'Types & Tag',
+                url: '/url/menu_2'
+            },
+            {
+                active: false,
+                id: 'site',
+                isOpen: false,
+                menuItems: [
+                    {
+                        active: false,
+                        ajax: false,
+                        angular: false,
+                        id: 'site-browser',
+                        label: 'Browser',
+                        url: '/site-browser',
+                        menuLink: 'c/site-browser'
+                    },
+                    {
+                        active: false,
+                        ajax: false,
+                        angular: false,
+                        id: 'pages',
+                        label: 'Pages',
+                        url: '/pages',
+                        menuLink: '/pages'
+                    }
+                ],
+                name: 'site',
+                tabDescription: '',
+                tabIcon: '',
+                tabName: 'Site',
+                url: '/url/menu_3'
+            }
+        ]);
+    }
+}
+
 @Injectable()
 class MockRouter {
     url = '/portlet';
@@ -108,7 +207,8 @@ class MockActivatedRoute {
 }
 
 describe('DotCrumbtrailService', () => {
-    const dotNavigationServiceMock: MockDotNavigationService = new MockDotNavigationService();
+    const dotNavigationServiceMock: MockDotMainNavigationService =
+        new MockDotMainNavigationService();
     const mockRouter = new MockRouter();
     const mockActivatedRoute = new MockActivatedRoute();
 
@@ -409,6 +509,90 @@ describe('DotCrumbtrailService', () => {
         expect(secondCrumb).toEqual([
             {
                 label: 'new',
+                target: '_self',
+                url: ''
+            }
+        ]);
+    });
+});
+describe('DotCrumbtrailService with alternative Menu', () => {
+    const dotNavigationServiceMock: MockDotAlternativeNavigationService =
+        new MockDotAlternativeNavigationService();
+    const mockRouter = new MockRouter();
+    const mockActivatedRoute = new MockActivatedRoute();
+
+    let service: DotCrumbtrailService;
+    let firstCrumb: DotCrumb[];
+    let secondCrumb: DotCrumb[];
+
+    beforeEach(() => {
+        const testbed = TestBed.configureTestingModule({
+            providers: [
+                DotCrumbtrailService,
+                {
+                    provide: DotNavigationService,
+                    useValue: dotNavigationServiceMock
+                },
+                {
+                    provide: Router,
+                    useValue: mockRouter
+                },
+                {
+                    provide: ActivatedRoute,
+                    useValue: mockActivatedRoute
+                }
+            ]
+        });
+
+        service = testbed.get(DotCrumbtrailService);
+
+        service.crumbTrail$.subscribe((crumbs) => {
+            if (!firstCrumb) {
+                firstCrumb = crumbs;
+            } else {
+                secondCrumb = crumbs;
+            }
+        });
+    });
+
+    it('Should take edit page alternative data when pages portlet exists', () => {
+        mockActivatedRoute.root = {
+            firstChild: {
+                data: new BehaviorSubject({}),
+                firstChild: {
+                    data: new BehaviorSubject({}),
+                    firstChild: {
+                        firstChild: {
+                            firstChild: null,
+                            data: new BehaviorSubject({})
+                        },
+                        data: new BehaviorSubject({
+                            content: {
+                                page: {
+                                    title: 'About Us'
+                                }
+                            }
+                        })
+                    }
+                }
+            }
+        };
+
+        const mockNavigationEnd = new NavigationEnd(
+            1,
+            '/edit-page/content?url=%2Fabout-us%2Findex&language_id=1',
+            '/edit-page/content?url=%2Fabout-us%2Findex&language_id=1'
+        );
+        dotNavigationServiceMock.navigationEnd.next(mockNavigationEnd);
+
+        expect(secondCrumb).toEqual([
+            {
+                label: 'Pages',
+                target: '_self',
+                url: '#//pages'
+            },
+            {
+                label: 'About Us',
                 target: '_self',
                 url: ''
             }

@@ -7,6 +7,8 @@ import {
 } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
+import { ActivatedRoute } from '@angular/router';
+
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
@@ -19,7 +21,7 @@ import { ExperimentSteps } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
-import { getExperimentMock } from '@portlets/dot-experiments/test/mocks';
+import { ACTIVE_ROUTE_MOCK_CONFIG, getExperimentMock } from '@portlets/dot-experiments/test/mocks';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotExperimentsConfigurationTrafficAllocationAddComponent } from './dot-experiments-configuration-traffic-allocation-add.component';
@@ -44,6 +46,7 @@ describe('DotExperimentsConfigurationTrafficAllocationAddComponent', () => {
             DotExperimentsConfigurationStore,
             mockProvider(DotExperimentsService),
             mockProvider(MessageService),
+            mockProvider(ActivatedRoute, ACTIVE_ROUTE_MOCK_CONFIG),
             mockProvider(DotHttpErrorManagerService),
             {
                 provide: DotMessageService,
