@@ -1,5 +1,7 @@
-.grid-stack-item {
-    border: solid 1px black;
+:host {
+    // Added this temporaly to test the col with 12 width on the grid
+    width: calc(100% - 80px);
+    display: block;
 }
 
 .grid-stack-item.sub .grid-stack-item-content {
@@ -17,8 +19,9 @@
 .tools {
     display: grid;
     grid-template-columns: repeat(2, auto);
-}
 
-.grid-stack-item {
-    border: solid 1px black;
+    .add {
+        width: 100px;
+        border: 1px solid black;
+    }
 }

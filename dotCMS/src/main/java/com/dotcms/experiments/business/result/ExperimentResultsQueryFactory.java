@@ -2,11 +2,11 @@ package com.dotcms.experiments.business.result;
 
 import static com.dotcms.util.CollectionsUtils.map;
 
-import com.dotcms.analytics.metrics.Metric;
 import com.dotcms.analytics.metrics.MetricType;
 import com.dotcms.cube.CubeJSQuery;
 import com.dotcms.cube.filters.Filter.Order;
 import com.dotcms.cube.filters.SimpleFilter.Operator;
+import com.dotcms.experiments.model.Goal;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Goals;
 import com.dotcms.util.DotPreconditions;
@@ -110,9 +110,9 @@ public enum ExperimentResultsQueryFactory {
         final Goals goals = experiment.goals()
                 .orElseThrow(() -> new IllegalArgumentException("The Experiment must have a Goal"));
 
-        final Metric primaryGoal = goals.primary();
+        final Goal primaryGoal = goals.primary();
         final MetricExperimentResultQuery metricExperimentResultQuery = experimentResultQueryHelpers.get()
-                .get(primaryGoal.type());
+                .get(primaryGoal.getMetric().type());
         return metricExperimentResultQuery.getCubeJSQuery(experiment);
     }
 }

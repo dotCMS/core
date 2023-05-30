@@ -9,7 +9,6 @@ source /srv/20-copy-overriden-files.sh
 source /srv/30-override-config-props.sh
 source /srv/40-custom-starter-zip.sh
 
-
 echo ""
 echo "Starting dotCMS ..."
 echo "-------------------"

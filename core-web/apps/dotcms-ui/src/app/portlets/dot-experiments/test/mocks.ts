@@ -14,6 +14,7 @@ import {
     GOAL_PARAMETERS,
     GOAL_TYPES,
     Goals,
+    PROP_NOT_FOUND,
     SummaryLegend,
     TrafficProportionTypes
 } from '@dotcms/dotcms-models';
@@ -440,6 +441,11 @@ export const DotExperimentsConfigurationStoreMock = {
     targetStepVm$: of({})
 };
 
+export const DotExperimentsStoreMock = {
+    getPageId$: of('1111111'),
+    getPageTitle$: of('title of page')
+};
+
 export const DotExperimentsReportsStoreMock = {
     loadExperimentAndResults: () => of([]),
     promoteVariant: () => of([])
@@ -470,6 +476,17 @@ export class ActivatedRouteMock {
         };
     }
 }
+
+export const ACTIVE_ROUTE_MOCK_CONFIG = {
+    snapshot: {
+        data: {
+            config: {
+                EXPERIMENTS_MIN_DURATION: '5',
+                EXPERIMENTS_MAX_DURATION: PROP_NOT_FOUND
+            }
+        }
+    }
+};
 
 export class ActivatedRouteListStoreMock {
     get snapshot() {

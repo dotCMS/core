@@ -1,8 +1,9 @@
 package com.dotcms.analytics.helper;
 
+import com.dotcms.UnitTestBase;
 import com.dotcms.analytics.bayesian.model.ABTestingType;
 import com.dotcms.analytics.bayesian.model.BayesianInput;
-import com.dotcms.analytics.bayesian.model.VariantInputPair;
+import com.dotcms.analytics.bayesian.model.VariantBayesianInput;
 import com.dotcms.experiments.business.result.ExperimentResults;
 import com.dotcms.experiments.business.result.GoalResults;
 import com.dotcms.experiments.business.result.VariantResults;
@@ -23,7 +24,7 @@ import static org.mockito.Mockito.when;
  *
  * @author vico
  */
-public class BayesianHelperTest {
+public class BayesianHelperTest extends UnitTestBase {
 
     private static final String DEFAULT_VARIANT = "DEFAULT";
     private static final String TEST_VARIANT = "test";
@@ -76,7 +77,7 @@ public class BayesianHelperTest {
         assertEquals(16L, bayesianInput.control().successes());
         assertEquals(44L, bayesianInput.control().failures());
         assertEquals(1, bayesianInput.variantPairs().size());
-        final VariantInputPair testInputPair = bayesianInput.variantPairs().get(0);
+        final VariantBayesianInput testInputPair = bayesianInput.variantPairs().get(0);
         assertEquals(TEST_VARIANT, testInputPair.variant());
         assertEquals(50L, testInputPair.successes());
         assertEquals(10L, testInputPair.failures());

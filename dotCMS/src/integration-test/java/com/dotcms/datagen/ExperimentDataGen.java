@@ -8,6 +8,7 @@ import com.dotcms.experiments.business.ExperimentsAPI;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Experiment.Builder;
+import com.dotcms.experiments.model.GoalFactory;
 import com.dotcms.experiments.model.Goals;
 import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.experiments.model.TargetingCondition;
@@ -111,7 +112,7 @@ public class ExperimentDataGen  extends AbstractDataGen<Experiment> {
                         .build())
                 .build();
 
-        return Goals.builder().primary(metric).build();
+        return Goals.builder().primary(GoalFactory.create(metric)).build();
     }
 
     private HTMLPageAsset createPage() {

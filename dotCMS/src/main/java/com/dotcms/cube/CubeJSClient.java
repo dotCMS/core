@@ -13,6 +13,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -92,6 +93,10 @@ public class CubeJSClient {
                 .map(value -> Long.parseLong(value.toString()))
                 .orElseThrow();
 
+        if (totalItems == 0) {
+            return new CubeJSResultSetImpl(Collections.emptyList());
+        }
+
         return totalItems > PAGE_SIZE ?
                 new PaginationCubeJSResultSet(this, query, totalItems, PAGE_SIZE) :
                 this.send(query);
@@ -107,6 +112,8 @@ public class CubeJSClient {
      * @see #sendWithPagination(CubeJSQuery)
      */
     public CubeJSResultSet send(final CubeJSQuery query) {
+        DotPreconditions.notNull(query, "Query not must be NULL");
+
         final CircuitBreakerUrl cubeJSClient = CircuitBreakerUrl.builder()
                 .setMethod(Method.GET)
                 .setUrl(String.format("%s/cubejs-api/v1/load", url))
