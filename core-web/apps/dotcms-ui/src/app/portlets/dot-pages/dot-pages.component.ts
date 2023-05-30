@@ -13,14 +13,14 @@ import {
 import { Menu } from 'primeng/menu';
 
 import { Observable } from 'rxjs/internal/Observable';
-import { filter, skip, take, takeUntil } from 'rxjs/operators';
+import { filter, take, takeUntil } from 'rxjs/operators';
 
 import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotEventsService, DotPageRenderService } from '@dotcms/data-access';
-import { HttpCode, SiteService } from '@dotcms/dotcms-js';
+import { HttpCode } from '@dotcms/dotcms-js';
 import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import {
@@ -54,7 +54,6 @@ export class DotPagesComponent implements AfterViewInit, OnDestroy {
         private dotMessageDisplayService: DotMessageDisplayService,
         private dotEventsService: DotEventsService,
         private dotHttpErrorManagerService: DotHttpErrorManagerService,
-        private dotSiteService: SiteService,
         private dotPageRenderService: DotPageRenderService,
         private element: ElementRef
     ) {
@@ -177,10 +176,6 @@ export class DotPagesComponent implements AfterViewInit, OnDestroy {
                     type: DotMessageType.SIMPLE_MESSAGE
                 });
             });
-
-        this.dotSiteService.switchSite$.pipe(takeUntil(this.destroy$), skip(1)).subscribe(() => {
-            this.store.getPages({ offset: 0 });
-        });
     }
 
     ngOnDestroy(): void {
