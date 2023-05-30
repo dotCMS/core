@@ -48,12 +48,6 @@ export class AddWidgetComponent {
         }
     }
 
-    onDragEndDocument(): void {
-        if (this.isDragging) {
-            this.setisDraggingState(false);
-        }
-    }
-
     /**
      * @description
      * Handle the mouse down event on the host element to set the dragging state
