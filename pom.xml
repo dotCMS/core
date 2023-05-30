@@ -93,7 +93,7 @@
         <it.test.working.dir>${project.build.directory}/it-testdata</it.test.working.dir>
         <it.test.temp.dir>${it.test.working.dir}/temp</it.test.temp.dir>
 
-        <starter.version>empty_20220718</starter.version>
+        <starter.version>empty_20230525</starter.version>
         <!--<starter.version>empty_20230509</starter.version>-->
     </properties>
 
