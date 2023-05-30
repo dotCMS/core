@@ -23,7 +23,7 @@ import org.xml.sax.SAXException;
 public class TikaProxy implements TikaProxyService {
 
     private static Logger LOG = LoggerFactory.getLogger(TikaProxy.class);
-    private Tika tika;
+    transient private Tika tika;
     private Metadata metadata;
 
     /**
@@ -89,55 +89,34 @@ public class TikaProxy implements TikaProxyService {
 
     @Override
     public Reader parse(File file) throws IOException {
-        LOG.info("Parsing File: {}", file.getPath());
         return this.tika.parse(file, this.metadata);
     }
 
     @Override
     public Reader parse(URL url) throws IOException {
-        LOG.info("Parsing URL: {}", url);
         return this.tika.parse(url);
     }
 
     @Override
     public String parseToString(InputStream stream) throws Exception {
-        LOG.info("Parsing toString stream:");
         return this.tika.parseToString(stream, this.metadata);
     }
 
     @Override
     public String parseToString(File file) throws Exception {
-        LOG.info("Parsing toString File: {}", file.getPath());
         return this.tika.parseToString(file);
     }
 
     @Override
     public String parseToString(URL url) throws Exception {
-        LOG.info("Parsing toString URL: {}", url);
         return this.tika.parseToString(url);
     }
 
     @Override
     public String parseToStringAsPlainText(InputStream stream) throws Exception {
-        LOG.info("Parsing stream toString As Plain Text");
         BodyContentHandler handler = new BodyContentHandler(this.tika.getMaxStringLength());
-
-        try {
             AutoDetectParser parser = new AutoDetectParser();
-            Metadata metadata = new Metadata();
-            parser.parse(stream, handler, metadata);
-
-        } catch (SAXException var8) {
-            throw new TikaException("Unexpected SAX processing failure", var8);
-
-        } catch (Exception e) {
-            LOG.error("Error parsing stream to string as plain text", e);
-            throw e;
-        }
-
-        finally {
-            stream.close();
-        }
+            parser.parse(stream, handler, this.metadata);
         return handler.toString();
     }
 

@@ -564,7 +564,7 @@ class ClonePullTomcatTask extends DefaultTask{
 
 task generateDependenciesFromMavenPre(type: Exec) {
     workingDir parentProjectDir
-    commandLine mvnCommand, 'install','-pl',':generate-gradle-dependencies,:dotcms-bom,:core-web,:core-bundles,:system-bundles','--am', '-DskipRewriteDryRun=true'
+    commandLine mvnCommand, 'install','-pl',':generate-gradle-dependencies,:dotcms-bom,:core-web,:core-bundles,:system-bundles,:tika-api','--am'
 }
 
 task generateDependenciesFromMaven(type: Exec) {

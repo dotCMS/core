@@ -40,7 +40,7 @@
         <maven.compiler.target>11</maven.compiler.target>
         <maven.compiler.testSource>${maven.compiler.source}</maven.compiler.testSource>
         <maven.compiler.testTarget>${maven.compiler.target}</maven.compiler.testTarget>
-        <maven.min.version>3.2.5</maven.min.version>
+        <maven.min.version>3.8.1</maven.min.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <skipApplyFormat>true</skipApplyFormat>
@@ -89,7 +89,12 @@
         <version.maven.plugin.plugin>3.8.1</version.maven.plugin.plugin>
         <version.war.plugin>3.2.3</version.war.plugin>
         <test.working.dir>${project.build.directory}/testdata</test.working.dir>
-        <test.temp.dir>${test.working.dir}/testtemp</test.temp.dir>
+        <test.temp.dir>${test.working.dir}/temp</test.temp.dir>
+        <it.test.working.dir>${project.build.directory}/it-testdata</it.test.working.dir>
+        <it.test.temp.dir>${it.test.working.dir}/temp</it.test.temp.dir>
+
+        <starter.version>empty_20220718</starter.version>
+        <!--<starter.version>empty_20230509</starter.version>-->
     </properties>
 
     <build>
@@ -344,8 +349,10 @@
                     <version>${version.failsafe.plugin}</version>
                     <configuration>
                         <systemPropertyVariables>
-                            <java.io.tmpdir>${test.temp.dir}</java.io.tmpdir>
+                            <java.io.tmpdir>${it.test.temp.dir}</java.io.tmpdir>
+                            <workingDirectory>${it.test.working.dir}</workingDirectory>
                         </systemPropertyVariables>
+                        <trimStackTrace>false</trimStackTrace>
                     </configuration>
                 </plugin>
                 <plugin>

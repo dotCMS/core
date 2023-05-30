@@ -32,7 +32,7 @@
         <starter.filename>starter.zip</starter.filename>
         <starter.path>${project.build.directory}/starter</starter.path>
         <starter.full.path>${starter.path}/${starter.filename}</starter.full.path>
-        <starter.version>empty_20230112</starter.version>
+
 
         <clean.docker.volumes>false</clean.docker.volumes>
         <!-- Tomcat -->
@@ -185,7 +185,6 @@
                                     <outputDirectory>${project.build.directory}/core</outputDirectory>
                                 </artifactItem>
 
-
                             </artifactItems>
                             <overWriteReleases>false</overWriteReleases>
                             <overWriteSnapshots>true</overWriteSnapshots>
@@ -203,27 +202,6 @@
                                     <groupId>com.dotcms</groupId>
                                     <artifactId>starter</artifactId>
                                     <!--   <version>empty_20210903</version>-->
-                                    <version>empty_20220718</version>
-                                    <type>zip</type>
-                                    <overWrite>true</overWrite>
-                                    <outputDirectory>${starter.path}</outputDirectory>
-                                    <destFileName>${starter.filename}</destFileName>
-                                </artifactItem>
-                            </artifactItems>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>copy-test-starter</id>
-                        <phase>generate-test-resources</phase>
-                        <goals>
-                            <goal>copy</goal>
-                        </goals>
-                        <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>com.dotcms</groupId>
-                                    <artifactId>starter</artifactId>
-                                    <!-- <version>empty_20210903</version>-->
                                     <version>${starter.version}</version>
                                     <type>zip</type>
                                     <overWrite>true</overWrite>

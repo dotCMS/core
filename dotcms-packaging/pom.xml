@@ -32,7 +32,7 @@
         <starter.filename>starter.zip</starter.filename>
         <starter.path>${project.build.directory}/starter</starter.path>
         <starter.full.path>${starter.path}/${starter.filename}</starter.full.path>
-        <starter.version>empty_20230112</starter.version>
+
     </properties>
 
     <dependencies>

@@ -27,7 +27,7 @@
         <starter.filename>starter.zip</starter.filename>
         <starter.path>${project.build.directory}/starter</starter.path>
         <starter.full.path>${starter.path}/${starter.filename}</starter.full.path>
-        <starter.version>empty_20230112</starter.version>
+
 
         <clean.docker.volumes>false</clean.docker.volumes>
         <!-- Tomcat -->
@@ -1546,12 +1546,10 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>${version.compiler.plugin}</version>
             </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
-                <version>3.2.0</version>
                 <executions>
                     <execution>
                         <id>add-source</id>
@@ -1620,7 +1618,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-report-plugin</artifactId>
-                <version>3.1.0</version>
             </plugin>
         </plugins>
     </reporting>
