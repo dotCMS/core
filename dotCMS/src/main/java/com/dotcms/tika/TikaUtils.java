@@ -7,6 +7,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.osgi.OSGIConstants;
+import com.dotcms.storage.model.ExtendedMetadataFields;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
@@ -388,10 +389,8 @@ public class TikaUtils {
             metaMap.putAll(this.buildMetaDataMap());
             metaMap.put(FileAssetAPI.CONTENT_FIELD, content);
 
-            //From Tika 2.x the title is mapped to dcTitle (https://cwiki.apache.org/confluence/display/TIKA/Migrating+to+Tika+2.0.0)
-            if(!metaMap.containsKey(TITLE_META_KEY.key()) && metaMap.containsKey(DC_TITLE_META_KEY.key())){
-                metaMap.put(TITLE_META_KEY.key(), metaMap.get(DC_TITLE_META_KEY.key()));
-            }
+            //Adding missing keys that were excluded in Tika 2.0
+            includeMissingKeys(metaMap);
         } catch (IOException ioExc) {
             if (this.isZeroByteFileException(ioExc.getCause())) {
                 logWarning(binFile, ioExc.getCause());
@@ -409,6 +408,23 @@ public class TikaUtils {
         }
 
         return metaMap;
+    }
+
+    /**
+     * This method adds missing keys from Tika 1.x that were excluded in Tika 2.0. For example: keywords and title
+     * For further details, please visit https://cwiki.apache.org/confluence/display/TIKA/Migrating+to+Tika+2.0.0
+     * @param metaMap
+     */
+    private static void includeMissingKeys(Map<String, Object> metaMap) {
+        ExtendedMetadataFields.keyMap().forEach((key, value) -> {
+            if(metaMap.containsKey(key)){
+                value.forEach(v -> {
+                    if(!metaMap.containsKey(v)){
+                        metaMap.put(v, metaMap.get(key));
+                    }
+                });
+            }
+        });
     }
 
     private void parseFallbackAsPlainText(final File binFile, final Map<String, Object> metaMap, final IOException ioExc) {

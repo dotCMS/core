@@ -14,7 +14,6 @@ public enum BasicMetadataFields {
     VERSION_KEY            ("version"),
     NAME_META_KEY          ("name"),
     TITLE_META_KEY         ("title"),
-    DC_TITLE_META_KEY         ("dcTitle"),
     PATH_META_KEY          ("path"),
     CONTENT_TYPE_META_KEY  ("contentType"),
     SHA256_META_KEY        ("sha256"),

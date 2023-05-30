@@ -755,6 +755,11 @@ war {
         from(configurations.felixsystem) {
             into felixSystemFolder.concat("/bundle")
         }
+
+        from(configurations.runtimeClasspath) {
+            into felixSystemFolder.concat("/bundle")
+            include '**/org.apache.felix.http.api*.jar'
+        }
     //}
 
     from (configurations.starter) {
