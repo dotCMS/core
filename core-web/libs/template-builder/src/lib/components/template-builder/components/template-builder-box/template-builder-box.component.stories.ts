@@ -1,7 +1,6 @@
 import { moduleMetadata, Story, Meta } from '@storybook/angular';
 
 import { ButtonModule } from 'primeng/button';
-import { CardModule } from 'primeng/card';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
 
 import { TemplateBuilderBoxComponent } from './template-builder-box.component';
@@ -11,7 +10,7 @@ export default {
     component: TemplateBuilderBoxComponent,
     decorators: [
         moduleMetadata({
-            imports: [ButtonModule, CardModule, ScrollPanelModule],
+            imports: [ButtonModule, ScrollPanelModule],
             providers: []
         })
     ]

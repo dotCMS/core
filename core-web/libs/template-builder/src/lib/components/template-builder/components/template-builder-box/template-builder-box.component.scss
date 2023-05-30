@@ -2,78 +2,76 @@
 @import "mixins";
 
 ::ng-deep {
-    .p-card {
-        border: 1px solid $color-palette-primary-300;
-    }
-
-    .p-card .p-card-body {
-        padding: 0;
-    }
-
-    .template-builder-box__header-container {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .template-builder-box__item {
-        padding: 0px $spacing-1 0px $spacing-3;
-        border: 1px solid $color-palette-primary-300;
-        margin: $spacing-1 $spacing-3;
-
-        &:first-child {
-            margin-top: $spacing-3;
+    .template-builder-box,
+    .template-builder-box--small {
+        .pi.pi-trash {
+            color: $color-palette-primary-400;
         }
-
-        &:last-child {
-            margin-bottom: $spacing-3;
-        }
-
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-
-        p {
-            @include truncate-text;
-        }
-    }
-
-    .p-card .p-card-header {
-        background-color: $color-palette-primary-100;
-        padding: $spacing-1 $spacing-5 $spacing-1 $spacing-2;
-    }
-
-    .p-button.p-button-text .pi.pi-trash {
-        color: $color-palette-primary-400;
-    }
-
-    .template-builder-box--medium {
-        width: $spacing-11;
-        display: block;
-
-        .p-card .p-card-header {
-            padding: $spacing-1 $spacing-5 $spacing-1 $spacing-4;
-        }
-    }
-
-    .template-builder-box--large {
-        width: 100%;
-        display: block;
     }
 
     .template-builder-box--small {
-        width: $spacing-9;
-        display: block;
-
-        .p-card-content .p-button-text {
+        .p-button-text {
             margin: $spacing-3 0;
         }
-
-        .p-card-content {
-            justify-content: center;
-            display: flex;
-            align-items: center;
-            flex-direction: column;
-        }
     }
+}
+
+.template-builder-box {
+    border: 1px solid $color-palette-primary-300;
+    border-radius: $border-radius-sm;
+}
+
+.template-builder-box__header-container {
+    background-color: $color-palette-primary-100;
+    padding: $spacing-1 $spacing-4 $spacing-1 $spacing-2;
+
+    border-top: 1px solid #f7f9fe;
+    border-radius: 4px;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.template-builder-box__item {
+    padding: 0px $spacing-1 0px $spacing-3;
+    border: 1px solid $color-palette-primary-300;
+    margin: $spacing-1 $spacing-3;
+
+    &:first-child {
+        margin-top: $spacing-3;
+    }
+
+    &:last-child {
+        margin-bottom: $spacing-3;
+    }
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    p {
+        @include truncate-text;
+    }
+}
+
+.template-builder-box--medium {
+    width: $spacing-11;
+}
+
+.template-builder-box--large {
+    width: 100%;
+}
+
+.template-builder-box--small {
+    border: 1px solid $color-palette-primary-300;
+    border-radius: $border-radius-sm;
+
+    width: $spacing-9;
+    display: block;
+
+    justify-content: center;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
 }

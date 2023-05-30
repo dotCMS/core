@@ -3,7 +3,6 @@ import { byTestId, createHostFactory, SpectatorHost } from '@ngneat/spectator/je
 import { NgClass, NgIf } from '@angular/common';
 
 import { ButtonModule } from 'primeng/button';
-import { CardModule } from 'primeng/card';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
 
 import {
@@ -16,7 +15,7 @@ describe('TemplateBuilderBoxComponent', () => {
 
     const createHost = createHostFactory({
         component: TemplateBuilderBoxComponent,
-        imports: [NgClass, NgIf, ButtonModule, CardModule, ScrollPanelModule]
+        imports: [NgClass, NgIf, ButtonModule, ScrollPanelModule]
     });
 
     beforeEach(() => {
