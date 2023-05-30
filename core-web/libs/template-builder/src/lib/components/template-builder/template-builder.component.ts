@@ -21,7 +21,7 @@ import {
 
 import { DotLayout } from '@dotcms/dotcms-models';
 
-import { colIcon, rowIcon } from './components/add-widget/utils/icons';
+import { colIcon, rowIcon } from './assets/icons';
 import { DotGridStackWidget } from './models/models';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { gridOptions, subGridOptions } from './utils/gridstack-options';

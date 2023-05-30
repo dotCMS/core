@@ -1,4 +1,12 @@
-<div class="add-widget" draggable="true">
-    <img [src]="icon" alt="drag-icon" draggable="false" />
-    <span class="add-widget__label" draggable="false">{{ label }}</span>
+<div class="add-widget">
+    <div class="add-widget__icon">
+        <ng-template [ngIf]="!imageError" [ngIfElse]="materialIcon">
+            <img [src]="icon" (error)="imageError = true" alt="drag-icon" draggable="false" />
+        </ng-template>
+    </div>
+    <span class="add-widget__label" data-testid="addWidgetLabel">{{ label }}</span>
 </div>
+
+<ng-template #materialIcon>
+    <i class="material-icons">{{ icon }}</i>
+</ng-template>

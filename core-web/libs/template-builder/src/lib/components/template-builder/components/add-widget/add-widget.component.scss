@@ -24,4 +24,12 @@
         line-height: 140%;
         color: $black;
     }
+
+    .add-widget__icon {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-width: $spacing-4;
+        min-height: $spacing-4;
+    }
 }

@@ -24,7 +24,8 @@
     margin-bottom: $spacing-3;
 }
 
-.ui-draggable-dragging {
+// Class added by the gridstack library when the widget is being dragged
+dotcms-add-widget.ui-draggable-dragging {
     transform: rotate(-3.66deg);
     box-shadow: $md-shadow-6;
 }
