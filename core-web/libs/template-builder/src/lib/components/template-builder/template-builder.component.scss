@@ -23,3 +23,8 @@
     gap: $spacing-3;
     margin-bottom: $spacing-3;
 }
+
+.ui-draggable-dragging {
+    transform: rotate(-3.66deg);
+    box-shadow: $md-shadow-6;
+}

@@ -21,6 +21,7 @@ import {
 
 import { DotLayout } from '@dotcms/dotcms-models';
 
+import { colIcon, rowIcon } from './components/add-widget/utils/icons';
 import { DotGridStackWidget } from './models/models';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { gridOptions, subGridOptions } from './utils/gridstack-options';
@@ -49,6 +50,9 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     boxes!: QueryList<ElementRef<GridItemHTMLElement>>;
 
     grid!: GridStack;
+
+    public readonly rowIcon = rowIcon;
+    public readonly colIcon = colIcon;
 
     constructor(private store: DotTemplateBuilderStore) {
         this.items$ = this.store.items$;

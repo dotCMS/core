@@ -6,8 +6,6 @@ import { By } from '@angular/platform-browser';
 
 import { ButtonModule } from 'primeng/button';
 
-// import { DotIconModule, DotIconComponent } from '@dotcms/ui';
-
 import { TemplateBuilderRowComponent } from './template-builder-row.component';
 
 @Component({

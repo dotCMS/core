@@ -17,7 +17,7 @@ describe('AddWidgetComponent', () => {
         fixture.detectChanges();
 
         component.label = 'test';
-        component.type = 'row';
+        component.icon = rowIcon;
     });
 
     it('should create', () => {
@@ -34,27 +34,9 @@ describe('AddWidgetComponent', () => {
         });
 
         it('should have col icon', () => {
-            component.type = 'col';
+            component.icon = colIcon;
             fixture.detectChanges();
             expect(component.icon).toBe(colIcon);
-        });
-    });
-
-    describe('dragging', () => {
-        it('should set dragging to true on mouse down and add add-widget--dragging class', () => {
-            const element = fixture.nativeElement;
-            const box = element.querySelector('.add-widget');
-            element.dispatchEvent(new MouseEvent('mousedown'));
-            expect(component.isDragging).toBe(true);
-            expect(box.classList.contains('add-widget--dragging')).toBe(true);
-        });
-
-        it('should set dragging to false on mouse up and remove add-widget--dragging class', () => {
-            const element = fixture.nativeElement;
-            const box = element.querySelector('.add-widget');
-            element.dispatchEvent(new MouseEvent('mouseup'));
-            expect(component.isDragging).toBe(false);
-            expect(box.classList.contains('add-widget--dragging')).toBe(false);
         });
     });
 });
