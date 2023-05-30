@@ -1,16 +1,19 @@
 package com.dotcms.contenttype.business;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 import org.junit.Assert;
@@ -30,6 +33,35 @@ public class ContentTypeInitializerTest extends IntegrationTestBase {
 
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
+    }
+
+    /**
+     * Method to test: {@link com.dotmarketing.portlets.contentlet.business.ContentletAPI#search(String, int, int, String, User, boolean)}
+     * Given Scenario: Creates a few favorite pages
+     * ExpectedResult: On search, since favorite pages are system content, they should not be returned
+     *
+     */
+    @Test
+    public void test_system_field() throws Exception {
+
+        final ContentType contentType = Try.of(()-> APILocator.getContentTypeAPI(APILocator.systemUser())
+                .find(ContentTypeInitializer.FAVORITE_PAGE_VAR_NAME)).getOrNull();
+
+        new ContentletDataGen(contentType).setPolicy(IndexPolicy.WAIT_FOR)
+                .setProperty("title", "test").setProperty("url", "test" + System.currentTimeMillis()).nextPersisted();
+        new ContentletDataGen(contentType).setPolicy(IndexPolicy.WAIT_FOR)
+                .setProperty("title", "test").setProperty("url", "test" + System.currentTimeMillis()).nextPersisted();
+        new ContentletDataGen(contentType).setPolicy(IndexPolicy.WAIT_FOR)
+                .setProperty("title", "test").setProperty("url", "test" + System.currentTimeMillis()).nextPersisted();
+
+        final StringBuffer luceneQuery = new StringBuffer();
+        luceneQuery.append("+contentType:"+contentType.variable() + " ");
+        luceneQuery.append("+" + ESMappingConstants.SYSTEM_TYPE + ":false ");
+        final List<Contentlet> contentlets = APILocator.getContentletAPI().search(luceneQuery.toString(),
+                0, 10, null, APILocator.systemUser(), false);
+
+        Assert.assertNotNull("The contentlets shouldn't be null", contentlets);
+        Assert.assertTrue("Should not return any contentlet since they are system contentlets",contentlets.isEmpty());
     }
 
     /**
