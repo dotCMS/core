@@ -49,12 +49,7 @@
                             <mkdir dir="${it.test.temp.dir}"/>
                             <mkdir dir="${test.assets.dir}"/>
                             <mkdir dir="${it.test.assets.dir}"/>
-                            <copy todir="${test.assets.dir}">
-                                <fileset dir="${test.license.dir}" includes="license.zip" />
-                            </copy>
-                            <copy todir="${it.test.assets.dir}">
-                                <fileset dir="${test.license.dir}" includes="license.zip" />
-                            </copy>
+
                         </target>
                     </configuration>
                     <goals>
