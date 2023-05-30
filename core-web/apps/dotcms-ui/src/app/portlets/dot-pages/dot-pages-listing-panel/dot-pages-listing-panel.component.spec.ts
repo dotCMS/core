@@ -64,7 +64,7 @@ export const favoritePagesInitialTestData = [
     }
 ];
 
-fdescribe('DotPagesListingPanelComponent', () => {
+describe('DotPagesListingPanelComponent', () => {
     let fixture: ComponentFixture<DotPagesListingPanelComponent>;
     let component: DotPagesListingPanelComponent;
     let de: DebugElement;
