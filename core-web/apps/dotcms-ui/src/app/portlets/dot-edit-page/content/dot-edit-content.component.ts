@@ -32,6 +32,7 @@ import {
     DotCMSContentType,
     DotContainerStructure,
     DotExperiment,
+    DotExperimentStatusList,
     DotIframeEditEvent,
     DotPageContainer,
     DotPageMode,
@@ -642,7 +643,7 @@ browse from the page internal links
     private getRunningExperiment(): void {
         this.pageState$.pipe(take(1)).subscribe((content) => {
             this.runningExperiment$ = this.dotExperimentsService
-                .getRunning(content.page.identifier)
+                .getByStatus(content.page.identifier, DotExperimentStatusList.RUNNING)
                 .pipe(
                     map((experiments) => {
                         return experiments.length ? experiments[0] : null;

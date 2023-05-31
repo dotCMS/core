@@ -416,7 +416,7 @@ describe('DotEditContentComponent', () => {
                 dotExperimentsService = de.injector.get(DotExperimentsService);
 
                 spyOn(dialogService, 'open');
-                spyOn(dotExperimentsService, 'getRunning').and.returnValue(of([EXPERIMENT_MOCK]));
+                spyOn(dotExperimentsService, 'getByStatus').and.returnValue(of([EXPERIMENT_MOCK]));
 
                 fixture.detectChanges();
                 toolbarElement = de.query(By.css('dot-edit-page-toolbar'));

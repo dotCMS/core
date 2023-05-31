@@ -78,30 +78,30 @@
 
 <ng-template #defaultHeaderRightTpl>
     <dot-global-message data-testId="globalMessage" right></dot-global-message>
-    <p-tag
-        class="sm p-tag-success"
-        *ngIf="runningExperiment"
-        [value]="'running' | dm | titlecase"
-        data-testId="runningExperimentTag"
-    >
-        <i class="material-icons">science</i>
-    </p-tag>
+    <ng-container *ngIf="runningExperiment">
+        <p-tag
+            class="sm p-tag-success"
+            [value]="'running' | dm | titlecase"
+            data-testId="runningExperimentTag"
+        >
+            <i class="material-icons">science</i>
+        </p-tag>
 
-    <a
-        class="dot-edit__experiments-results-button"
-        *ngIf="runningExperiment"
-        [routerLink]="[
-            '/edit-page/experiments/',
-            runningExperiment.pageId,
-            runningExperiment.id,
-            'reports'
-        ]"
-        queryParamsHandling="preserve"
-        data-testId="preliminaryResultsButton"
-    >
-        <i class="pi pi-chart-line"></i>
-        <span>{{ 'dot.edit.page.toolbar.preliminary.results' | dm }}</span>
-    </a>
+        <a
+            class="dot-edit__experiments-results-button"
+            [routerLink]="[
+                '/edit-page/experiments/',
+                runningExperiment.pageId,
+                runningExperiment.id,
+                'reports'
+            ]"
+            queryParamsHandling="preserve"
+            data-testId="preliminaryResultsButton"
+        >
+            <i class="pi pi-chart-line"></i>
+            <span>{{ 'dot.edit.page.toolbar.preliminary.results' | dm }}</span>
+        </a>
+    </ng-container>
 
     <dot-edit-page-workflows-actions
         [page]="pageState.page"
