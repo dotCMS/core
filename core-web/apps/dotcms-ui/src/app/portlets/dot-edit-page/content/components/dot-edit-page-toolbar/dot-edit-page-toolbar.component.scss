@@ -13,6 +13,18 @@
     display: flex;
 }
 
+.dot-edit__experiments-results-button {
+    padding: $spacing-1 $spacing-2;
+    text-decoration: none;
+    display: flex;
+    gap: $spacing-1;
+    align-items: center;
+
+    span {
+        color: $black;
+    }
+}
+
 ::ng-deep {
     .dot-favorite-page-highlight i {
         color: $color-palette-primary;

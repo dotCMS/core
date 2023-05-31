@@ -78,8 +78,17 @@
 
 <ng-template #defaultHeaderRightTpl>
     <dot-global-message data-testId="globalMessage" right></dot-global-message>
-    <button
-        class="p-button-secondary"
+    <p-tag
+        class="sm p-tag-success"
+        *ngIf="runningExperiment"
+        [value]="'running' | dm | titlecase"
+        data-testId="runningExperimentTag"
+    >
+        <i class="material-icons">science</i>
+    </p-tag>
+
+    <a
+        class="dot-edit__experiments-results-button"
         *ngIf="runningExperiment"
         [routerLink]="[
             '/edit-page/experiments/',
@@ -87,11 +96,27 @@
             runningExperiment.id,
             'reports'
         ]"
-        [label]="'dot.edit.page.toolbar.running.experiments' | dm"
         queryParamsHandling="preserve"
-        data-testId="runningExperimentButton"
-        pButton
-    ></button>
+        data-testId="preliminaryResultsButton"
+    >
+        <i class="pi pi-chart-line"></i>
+        <span>{{ 'dot.edit.page.toolbar.preliminary.results' | dm }}</span>
+    </a>
+
+    <!--    <button-->
+    <!--        class="p-button-secondary"-->
+    <!--        *ngIf="runningExperiment"-->
+    <!--        [routerLink]="[-->
+    <!--            '/edit-page/experiments/',-->
+    <!--            runningExperiment.pageId,-->
+    <!--            runningExperiment.id,-->
+    <!--            'reports'-->
+    <!--        ]"-->
+    <!--        [label]="'dot.edit.page.toolbar.running.experiments' | dm"-->
+    <!--        queryParamsHandling="preserve"-->
+    <!--        data-testId="runningExperimentButton"-->
+    <!--        pButton-->
+    <!--    ></button>-->
     <dot-edit-page-workflows-actions
         [page]="pageState.page"
         (fired)="actionFired.emit($event)"

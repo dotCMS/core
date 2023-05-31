@@ -6,6 +6,7 @@ import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { DialogService } from 'primeng/dynamicdialog';
+import { TagModule } from 'primeng/tag';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
 
@@ -44,7 +45,8 @@ import { DotEditPageWorkflowsActionsModule } from '../dot-edit-page-workflows-ac
         UiDotIconButtonModule,
         DotIconModule,
         DotEditPageNavDirective,
-        RouterLink
+        RouterLink,
+        TagModule
     ],
     exports: [DotEditPageToolbarComponent],
     declarations: [DotEditPageToolbarComponent],

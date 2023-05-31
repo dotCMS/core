@@ -13,6 +13,7 @@ import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { DialogService } from 'primeng/dynamicdialog';
+import { TagModule } from 'primeng/tag';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
 
@@ -162,6 +163,7 @@ describe('DotEditPageToolbarComponent', () => {
                 DotPipesModule,
                 DotWizardModule,
                 TooltipModule,
+                TagModule,
                 DotExperimentClassDirective,
                 RouterTestingModule.withRoutes([
                     {
@@ -178,8 +180,8 @@ describe('DotEditPageToolbarComponent', () => {
                         'dot.common.whats.changed': 'Whats',
                         'dot.common.cancel': 'Cancel',
                         'favoritePage.dialog.header': 'Add Favorite Page',
-                        'dot.edit.page.toolbar.running.experiments':
-                            'Running Experiment - Go To Results'
+                        'dot.edit.page.toolbar.preliminary.results': 'Preliminary Results',
+                        running: 'Running'
                     })
                 },
                 {
@@ -394,19 +396,20 @@ describe('DotEditPageToolbarComponent', () => {
     });
 
     describe('Go to Experiment results', () => {
-        it('should show an go to the experiment results', (done) => {
+        it('should show an experiment is running an go to results', (done) => {
             const location = de.injector.get(Location);
             componentHost.runningExperiment = { pageId: 'pageId', id: 'id' } as DotExperiment;
 
             fixtureHost.detectChanges();
 
-            const experimentBtn = de.query(By.css('[data-testId="runningExperimentButton"]'));
+            const goToResultsLink = de.query(By.css('[data-testId="preliminaryResultsButton"]'));
+            const experimentTag = de.query(By.css('[data-testId="runningExperimentTag"]'));
 
-            experimentBtn.triggerEventHandler('click', {});
+            expect(goToResultsLink.nativeElement.innerText).toContain('Preliminary Results');
+            expect(experimentTag.componentInstance.value).toEqual('Running');
 
-            // expect(experimentBtn.nativeElement.innerText).toEqual(
-            //     'Running Experiment - Go To Results'
-            // );
+            goToResultsLink.nativeElement.click();
+
             fixtureHost.whenStable().then(() => {
                 expect(location.path()).toEqual('/edit-page/experiments/pageId/id/reports');
                 done();
