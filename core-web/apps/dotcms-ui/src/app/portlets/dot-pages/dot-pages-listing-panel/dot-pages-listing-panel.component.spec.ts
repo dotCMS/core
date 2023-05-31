@@ -212,6 +212,8 @@ describe('DotPagesListingPanelComponent', () => {
             expect(elem.sortOrder).toEqual(-1);
             expect(elem.rows).toEqual(40);
             expect(elem.paginator).toEqual(true);
+            expect(elem.showPageLinks).toEqual(false);
+            expect(elem.showCurrentPageReport).toEqual(true);
         });
 
         it('should contain header with filter for keyword, language and archived', () => {

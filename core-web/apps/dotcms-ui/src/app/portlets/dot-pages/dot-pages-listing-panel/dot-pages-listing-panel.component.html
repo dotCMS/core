@@ -15,11 +15,13 @@
         [paginator]="true"
         [rows]="40"
         [scrollHeight]="vm.isFavoritePanelCollaped ? 'calc(100vh - 350px)' : 'calc(100vh - 600px)'"
+        [sortOrder]="-1"
+        [showPageLinks]="false"
+        [showCurrentPageReport]="true"
         (onLazyLoad)="loadPagesLazy($event)"
         (onRowSelect)="onRowSelect($event)"
         selectionMode="single"
         sortField="modDate"
-        [sortOrder]="-1"
     >
         <ng-template pTemplate="caption">
             <div class="flex justify-content-between dot-pages-listing-header">
