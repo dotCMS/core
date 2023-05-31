@@ -49,9 +49,14 @@ export class DotExperimentsConfigurationSchedulingAddComponent implements OnInit
     today = new Date();
     initialDate = new Date();
     minEndDate: Date;
+    maxEndDate: Date;
 
-    vm$: Observable<{ experimentId: string; scheduling: RangeOfDateAndTime; status: StepStatus }> =
-        this.dotExperimentsConfigurationStore.schedulingStepVm$;
+    vm$: Observable<{
+        experimentId: string;
+        scheduling: RangeOfDateAndTime;
+        status: StepStatus;
+        schedulingBoundaries: Record<string, number>;
+    }> = this.dotExperimentsConfigurationStore.schedulingStepVm$;
 
     constructor(
         private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore
@@ -60,6 +65,7 @@ export class DotExperimentsConfigurationSchedulingAddComponent implements OnInit
     ngOnInit(): void {
         this.setInitialDate();
         this.initForm();
+        this.setDateBoundaries();
     }
 
     /**
@@ -85,6 +91,18 @@ export class DotExperimentsConfigurationSchedulingAddComponent implements OnInit
                 endDate: endDate ? endDate.getTime() : endDate
             },
             experimentId
+        });
+    }
+
+    /**
+     * Set min and max date for the End date
+     * @returns void
+     * @memberof DotExperimentsConfigurationSchedulingAddComponent
+     */
+    setDateBoundaries(): void {
+        this.vm$.pipe(take(1)).subscribe(({ schedulingBoundaries }) => {
+            this.setMinEndDate(schedulingBoundaries.EXPERIMENTS_MIN_DURATION);
+            this.setMaxEndDate(schedulingBoundaries.EXPERIMENTS_MAX_DURATION);
         });
     }
 
@@ -116,25 +134,55 @@ export class DotExperimentsConfigurationSchedulingAddComponent implements OnInit
     }
 
     /**
-     * Initial end date should be at least 30 minutes after start date.
-     * @returns void
-     * @memberof DotExperimentsConfigurationSchedulingAddComponent
+     * Initial end date should be at waht is comes from the schedulingBoundaries.
      */
-    setMinEndDate(): void {
+    private setMinEndDate(experimentMinDuration: number): void {
         if (this.form.value.startDate) {
-            this.minEndDate = new Date(this.form.value.startDate.getTime() + 1000 * 60 * 30);
+            this.minEndDate = new Date(this.form.value.startDate.getTime() + experimentMinDuration);
         } else {
-            this.minEndDate = null;
+            this.minEndDate = new Date(Date.now() + experimentMinDuration);
         }
 
-        if (this.isStatDateMoreRecent()) {
+        if (this.isStatDateMoreRecent(experimentMinDuration)) {
             this.form.patchValue({
                 endDate: null
             });
         }
     }
 
-    private isStatDateMoreRecent(): boolean {
-        return this.form.value.startDate && this.form.value.startDate >= this.form.value.endDate;
+    /**
+     * End date should be at most what is comes from schedulingBoundaries.
+     * @private
+     */
+    private setMaxEndDate(experimentMaxDuration: number): void {
+        if (this.form.value.startDate) {
+            this.maxEndDate = new Date(this.form.value.startDate.getTime() + experimentMaxDuration);
+        } else {
+            this.maxEndDate = new Date(Date.now() + experimentMaxDuration);
+        }
+
+        if (this.isEndDateOutOfBoundaries(experimentMaxDuration)) {
+            this.form.patchValue({
+                endDate: null
+            });
+        }
+    }
+
+    private isStatDateMoreRecent(experimentMinDuration: number): boolean {
+        return (
+            this.form.value.startDate &&
+            this.form.value.endDate &&
+            this.form.value.startDate.getTime() + experimentMinDuration >
+                this.form.value.endDate.getTime()
+        );
+    }
+
+    private isEndDateOutOfBoundaries(experimentMaxDuration: number): boolean {
+        return (
+            this.form.value.startDate &&
+            this.form.value.endDate &&
+            this.form.value.startDate.getTime() + experimentMaxDuration <
+                this.form.value.endDate.getTime()
+        );
     }
 }

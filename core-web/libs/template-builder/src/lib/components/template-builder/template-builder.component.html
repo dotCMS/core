@@ -1,0 +1,51 @@
+<div class="tools">
+    <dotcms-add-widget
+        [label]="'Add Row'"
+        [icon]="rowIcon"
+        data-widget-type="row"
+        gs-w="12"
+        gs-h="1"
+    ></dotcms-add-widget>
+    <dotcms-add-widget
+        [label]="'Add Box'"
+        [icon]="colIcon"
+        data-widget-type="col"
+        gs-w="1"
+        gs-h="1"
+    ></dotcms-add-widget>
+</div>
+<div class="grid-stack">
+    <div
+        class="grid-stack-item"
+        #rows
+        *ngFor="let row of items$ | async; trackBy: identify"
+        [attr.gs-id]="row.id"
+        [attr.gs-x]="row.x"
+        [attr.gs-y]="row.y"
+        [attr.gs-w]="row.w"
+        [attr.gs-h]="row.h"
+    >
+        <dotcms-template-builder-row>
+            <div class="grid-stack-item-content grid-stack">
+                <div
+                    class="grid-stack-item sub"
+                    #boxes
+                    *ngFor="let box of row.subGridOpts?.children; trackBy: identify"
+                    [attr.gs-id]="box.id"
+                    [attr.gs-auto]="true"
+                    [attr.gs-x]="box.x"
+                    [attr.gs-y]="box.y"
+                    [attr.gs-w]="box.w"
+                    [attr.gs-h]="box.h"
+                >
+                    <div class="grid-stack-item-content">
+                        styleClass: {{ box.styleClass?.join(' ') }}
+                        <p *ngFor="let container of box.containers">
+                            identifier: {{ container.identifier }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </dotcms-template-builder-row>
+    </div>
+</div>

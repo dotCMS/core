@@ -7,6 +7,9 @@ import com.dotcms.cube.filters.LogicalFilter;
 import com.dotcms.cube.filters.SimpleFilter;
 import com.dotcms.cube.filters.SimpleFilter.Operator;
 import com.dotcms.cube.filters.Filter;
+import com.dotcms.experiments.business.result.ExperimentResults;
+import com.dotcms.experiments.business.result.ExperimentResults.Builder;
+import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.Iterables;
@@ -79,15 +82,22 @@ public class CubeJSQuery {
 
     private OrderItem[] orders;
 
+    private long limit = -1;
+    private long offset = -1;
+
     private CubeJSQuery(final String[] dimensions,
             final String[] measures,
             final Filter[] filters,
-            final OrderItem[] orderItems) {
+            final OrderItem[] orderItems,
+            final long limit,
+            final long offset) {
 
         this.dimensions = dimensions;
         this.measures = measures;
         this.filters = filters;
         this.orders = orderItems;
+        this.limit = limit;
+        this.offset = offset;
     }
 
     @Override
@@ -122,6 +132,14 @@ public class CubeJSQuery {
             map.put("order", getOrdersAsMap());
         }
 
+        if (limit > 0) {
+            map.put("limit", limit);
+        }
+
+        if (offset >= 0) {
+            map.put("offset", offset);
+        }
+
         return map;
     }
 
@@ -141,12 +159,40 @@ public class CubeJSQuery {
                 .collect(Collectors.toList());
     }
 
+    public Filter[] filters() {
+        return filters;
+    }
+
+    public OrderItem[] orders() {
+        return orders;
+    }
+
+    public CubeJSQuery.Builder builder() {
+        final Builder builder = new Builder()
+                .dimensions(dimensions)
+                .measures(measures)
+                .filters(Arrays.asList(filters))
+                .orders(Arrays.asList(orders));
+
+        if (limit > 0) {
+            builder.limit(limit);
+        }
+
+        if (offset > 0) {
+            builder.offset(offset);
+        }
+
+        return builder;
+    }
+
     public static class Builder {
         private String[] dimensions;
         private String[] measures;
 
         private Collection<Filter> filters = new ArrayList<>();
         private Collection<OrderItem> orders = new ArrayList<>();
+        private long limit = -1;
+        private long offset = -1;
 
         /**
          * Merge two {@link CubeJSQuery}, each section of the Query is merge ignoring duplicated values
@@ -235,12 +281,12 @@ public class CubeJSQuery {
             return this;
         }
 
-        private Builder orders(final Collection<OrderItem> orders) {
+        public Builder orders(final Collection<OrderItem> orders) {
             this.orders = orders;
             return this;
         }
 
-        private Builder filters(final Collection<Filter> filters) {
+        public Builder filters(final Collection<Filter> filters) {
             this.filters = filters;
             return this;
         }
@@ -263,7 +309,8 @@ public class CubeJSQuery {
 
             return new CubeJSQuery(dimensions, measures,
                     filters.toArray(new Filter[filters.size()]),
-                    orders.toArray(new OrderItem[orders.size()]));
+                    orders.toArray(new OrderItem[orders.size()]),
+                    limit, offset);
         }
 
         public Builder dimensions(final String... dimensions) {
@@ -288,6 +335,21 @@ public class CubeJSQuery {
 
         public Builder order(final String orderBy, final Order order) {
             orders.add(new OrderItem(orderBy, order));
+            return this;
+        }
+
+        public Builder limit(final long limit) {
+
+            DotPreconditions.checkArgument(limit >= 0, "Limit must be greater than 0");
+            DotPreconditions.checkArgument(limit <= 50000, "Limit must be less than or equal to 50000");
+
+            this.limit = limit;
+            return this;
+        }
+
+        public Builder offset(final long offset) {
+            DotPreconditions.checkArgument(offset >= 0, "Offset must be greater than or equal to 0");
+            this.offset = offset;
             return this;
         }
     }

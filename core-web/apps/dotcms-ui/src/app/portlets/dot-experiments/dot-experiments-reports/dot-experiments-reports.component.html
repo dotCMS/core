@@ -7,21 +7,22 @@
     >
         <button
             class="p-button-outlined"
+            *ngIf="vm.hasEnoughSessions"
             [label]="'experiments.report.promote.variant' | dm"
             (click)="openPublishVariantDialog()"
             data-testId="publish-variant-button"
             pButton
-            pRipple
             type="button"
         ></button>
     </dot-experiments-header>
-
     <div class="flex flex-column dot-experiment-report-content">
         <ng-container *ngIf="!vm.isLoading; else loadingTpl">
             <dot-experiments-experiment-summary
                 *ngIf="vm.showSummary"
                 [goals]="vm.experiment.goals"
                 [scheduling]="vm.experiment.scheduling"
+                [sessionsReached]="vm.results ? vm.results.sessions.total : 0"
+                [suggestedWinner]="vm.winnerLegendSummary"
             />
 
             <div class="flex justify-content-center w-full container">
@@ -29,12 +30,12 @@
                     <dot-experiments-reports-chart
                         [config]="chartConfig"
                         [data]="vm.chartData"
-                        [isEmpty]="vm.hasEnoughSessions"
+                        [isEmpty]="!vm.hasEnoughSessions"
                         [isLoading]="vm.isLoading"
                     />
                     <dot-experiments-details-table
-                        [data]="vm.summaryData"
-                        [isEmpty]="vm.hasEnoughSessions"
+                        [data]="vm.detailData"
+                        [isEmpty]="!vm.hasEnoughSessions"
                         [title]="'experiments.reports.resume' | dm"
                     >
                         <ng-template #headers>

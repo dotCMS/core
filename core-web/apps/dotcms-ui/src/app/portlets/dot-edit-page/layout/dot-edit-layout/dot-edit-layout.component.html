@@ -1,6 +1,9 @@
 <!--Advance template support was removed on commit https://github.com/dotCMS/core-web/pull/589-->
 <ng-template #enabledComponent>
-    <h1 data-testId="new-template-builder">New Template Builder</h1>
+    <dotcms-template-builder
+        [templateLayout]="pageState.layout"
+        data-testId="new-template-builder"
+    ></dotcms-template-builder>
 </ng-template>
 
 <ng-template #disabledComponent>

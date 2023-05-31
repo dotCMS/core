@@ -31,7 +31,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotExperimentsConfigurationVariantsAddComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-variants-add/dot-experiments-configuration-variants-add.component';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
-import { getExperimentMock } from '@portlets/dot-experiments/test/mocks';
+import { ACTIVE_ROUTE_MOCK_CONFIG, getExperimentMock } from '@portlets/dot-experiments/test/mocks';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotExperimentsConfigurationVariantsComponent } from './dot-experiments-configuration-variants.component';
@@ -52,7 +52,8 @@ const ActivatedRouteMock = {
     snapshot: {
         params: {
             experimentId: 'test'
-        }
+        },
+        data: ACTIVE_ROUTE_MOCK_CONFIG.snapshot.data
     }
 };
 
@@ -118,6 +119,9 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
     describe('should render', () => {
         it('a DEFAULT variant', () => {
             expect(spectator.queryAll(byTestId('variant-name')).length).toBe(1);
+            expect(spectator.query(byTestId('variants-card-header'))).toHaveClass(
+                'p-label-input-required'
+            );
 
             expect(spectator.query(byTestId('variant-weight'))).toHaveText(
                 EXPERIMENT_MOCK.trafficProportion.variants[0].weight + '.00% weight'
