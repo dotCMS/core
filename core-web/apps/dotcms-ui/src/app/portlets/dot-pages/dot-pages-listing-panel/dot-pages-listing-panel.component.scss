@@ -35,6 +35,10 @@
 
     .p-datatable {
         .p-datatable-wrapper {
+            height: calc(
+                100vh - 350px
+            ); // To prevent the table from resizing when the results are too low to fill the page
+
             transition: max-height 400ms cubic-bezier(0.86, 0, 0.07, 1);
             -moz-transition: max-height 400ms cubic-bezier(0.86, 0, 0.07, 1);
             -webkit-transition: max-height 400ms cubic-bezier(0.86, 0, 0.07, 1);
