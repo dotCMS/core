@@ -578,6 +578,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         bulkRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
         putToIndex(bulkRequest);
         contentToIndex.stream().forEach(CacheLocator.getContentletCache()::remove);
+        CacheLocator.getESQueryCache().clearCache();
     } // indexContentListNow.
 
     private void indexContentListWaitFor(final List<Contentlet> contentToIndex) {
@@ -585,6 +586,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         bulkRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.WAIT_UNTIL);
         putToIndex(bulkRequest);
         contentToIndex.stream().forEach(CacheLocator.getContentletCache()::remove);
+        CacheLocator.getESQueryCache().clearCache();
     } // indexContentListWaitFor.
 
     private void indexContentListDefer(final List<Contentlet> contentToIndex) {
