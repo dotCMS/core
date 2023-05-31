@@ -95,6 +95,13 @@ export interface DotSessionStorageFilter {
     languageId: string;
 }
 
+interface UserPagePermission {
+    canUserReadPage: boolean;
+    canUserReadContent: boolean;
+    canUserWritePage: boolean;
+    canUserWriteContent: boolean;
+}
+
 export const FAVORITE_PAGE_LIMIT = 5;
 
 export const LOCAL_STORAGE_FAVORITES_PANEL_KEY = 'FavoritesPanelCollapsed';
@@ -739,9 +746,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         if (favoritePage) {
             actionsMenu.push({
                 label: this.dotMessageService.get('favoritePage.dialog.delete.button'),
-                command: () => {
-                    this.deleteFavoritePage(favoritePage.inode);
-                }
+                command: () => this.deleteFavoritePage(favoritePage.inode)
             });
         }
 
@@ -754,18 +759,17 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         }
 
         // Adding Edit & View actions
-        const { loggedUser, isEnterprise, environments } = this.get();
+        const { isEnterprise, environments } = this.get();
 
-        if (
-            (item.live || item.working) &&
-            ((item.baseType === 'HTMLPAGE' && loggedUser.canRead.htmlPages == true) ||
-                (item.baseType === 'CONTENT' && loggedUser.canRead.contentlets == true)) &&
-            !item.deleted
-        ) {
+        const isEditable = (item.live || item.working) && !item.deleted;
+        const { canUserReadPage, canUserReadContent, canUserWritePage, canUserWriteContent } =
+            this.getUserPagePermissions(item);
+
+        // Adding Edit & View actions
+        if (isEditable && (canUserReadPage || canUserReadContent)) {
             actionsMenu.push({
                 label:
-                    (item.baseType === 'HTMLPAGE' && loggedUser.canWrite.htmlPages == true) ||
-                    (item.baseType === 'CONTENT' && loggedUser.canWrite.contentlets == true)
+                    canUserWritePage || canUserWriteContent
                         ? this.dotMessageService.get('Edit')
                         : this.dotMessageService.get('View'),
                 command: () => {
@@ -1037,5 +1041,37 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             SESSION_STORAGE_FAVORITES_KEY,
             JSON.stringify({ keyword, languageId, archived })
         );
+    }
+
+    /**
+     * Get user permission for a page or contentlet
+     *
+     * @private
+     * @param {DotCMSContentlet} item
+     * @return {*}  {UserPagePermission}
+     * @memberof DotPageStore
+     */
+    private getUserPagePermissions(item: DotCMSContentlet): UserPagePermission {
+        // Logged user
+        const { loggedUser } = this.get();
+
+        // Item types
+        const isPage = item.baseType === 'HTMLPAGE';
+        const isContent = item.baseType === 'CONTENT';
+
+        // Page permissions
+        const canUserReadPage = isPage && loggedUser.canRead.htmlPages == true;
+        const canUserWritePage = isPage && loggedUser.canWrite.htmlPages == true;
+
+        // Contentlet permissions
+        const canUserReadContent = isContent && loggedUser.canRead.contentlets == true;
+        const canUserWriteContent = isContent && loggedUser.canWrite.contentlets == true;
+
+        return {
+            canUserReadPage,
+            canUserReadContent,
+            canUserWritePage,
+            canUserWriteContent
+        };
     }
 }
