@@ -35,7 +35,10 @@
 
     .p-datatable {
         .p-datatable-wrapper {
-            transition: max-height 400ms ease-in-out;
+            transition: max-height 400ms cubic-bezier(0.86, 0, 0.07, 1);
+            -moz-transition: max-height 400ms cubic-bezier(0.86, 0, 0.07, 1);
+            -webkit-transition: max-height 400ms cubic-bezier(0.86, 0, 0.07, 1);
+            -o-transition: max-height 400ms cubic-bezier(0.86, 0, 0.07, 1);
         }
     }
 }
