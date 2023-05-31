@@ -630,14 +630,16 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 "You don't have permission to archive the Experiment. "
                         + "Experiment Id: " + persistedExperimentOpt.get().id());
 
-        DotPreconditions.isTrue(experimentFromFactory.status()==Status.RUNNING,()->
+        DotPreconditions.isTrue(experimentFromFactory.status()==Status.RUNNING
+                || experimentFromFactory.status()== SCHEDULED, ()->
                         "Only RUNNING experiments can be ended", DotStateException.class);
-
-        DotPreconditions.isTrue(experimentFromFactory.status()!= ENDED,
-                ()-> "Cannot end an already ended Experiment.", DotStateException.class);
 
         DotPreconditions.isTrue(persistedExperimentOpt.get().scheduling().isPresent(),
                 ()-> "Scheduling not valid.", DotStateException.class);
+
+        if(experimentFromFactory.status()==SCHEDULED) {
+            return save(experimentFromFactory.withStatus(DRAFT), user);
+        }
 
         final Scheduling endedScheduling = Scheduling.builder().from(persistedExperimentOpt.get()
                 .scheduling().get()).endDate(Instant.now().plus(1, ChronoUnit.MINUTES))
