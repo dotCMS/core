@@ -581,7 +581,7 @@ task mavenClean(type: Exec) {
 }
 tasks.clean.dependsOn(tasks.mavenClean)
 
-task unpackMavenUI(type: Copy, dependsOn: generateDependenciesFromMaven) {
+task unpackMavenUI(type: Copy) {
        from(zipTree("${project.projectDir}/../core-web/target/core-web-${mavenUiVersion}.war")) {
                 include "dotAdmin/**"
                 include "dotcms-webcomponents/**"
@@ -693,7 +693,7 @@ processResources {
 }
 
 compileJava {
-    dependsOn generateDependenciesFromMaven
+
 }
 
 war {

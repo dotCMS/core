@@ -56,7 +56,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ~/.gradle/caches
-          key: gradle-cache-${{ hashFiles('**/build.gradle') }}
+          key: gradle-cache-${{ hashFiles('**/build.gradle') }}-${{ env.BUILD_ENV }}
           restore-keys: |
             gradle-cache-${{ hashFiles('**/build.gradle') }}-${{ env.BUILD_ENV }}
             gradle-cache-${{ hashFiles('**/build.gradle') }}
@@ -84,10 +84,10 @@ jobs:
         uses: actions/cache@v2
         with:
           path: core-web/installs/node
-          key: node-cache-${{ hashFiles('**/installs/node/node') }}-${{ env.BUILD_ENV }}
+          key: node-cache-${{ hashFiles('**/node') }}-${{ env.BUILD_ENV }}
           restore-keys: |
-            node-cache-${{ hashFiles('**/installs/node/node') }}-${{ env.BUILD_ENV }}
-            node-cache-${{ hashFiles('**/installs/node/node') }}
+            node-cache-${{ hashFiles('**/node') }}-${{ env.BUILD_ENV }}
+            node-cache-${{ hashFiles('**/node') }}
             node-cache-
 
       - id: build-core
@@ -117,12 +117,52 @@ jobs:
       - id: read-cicd-local-env
         name: Read CICD local library
         run: source ${GITHUB_WORKSPACE}/cicd/local-env.sh
-      - id: restore-core
-        name: Restore Core Cache
-        uses: ./.github/actions/restore-core
+      - name: Cache for maven dependencies
+        uses: actions/cache@v2
         with:
-          cache_metadata: ${{ needs.build-core-job.outputs.cache_metadata }}
-        if: success()
+          path: ~/.m2/repository
+          key: maven-repo-${{ hashFiles('**/pom.xml') }}-${{ env.BUILD_ENV }}
+          restore-keys: |
+            maven-repo-${{ hashFiles('**/pom.xml') }}-${{ env.BUILD_ENV }}
+            maven-repo-${{ hashFiles('**/pom.xml') }}
+            maven-repo-
+      - name: Cache for gradle dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.gradle/caches
+          key: gradle-cache-${{ hashFiles('**/build.gradle') }}-${{ env.BUILD_ENV }}
+          restore-keys: |
+            gradle-cache-${{ hashFiles('**/build.gradle') }}-${{ env.BUILD_ENV }}
+            gradle-cache-${{ hashFiles('**/build.gradle') }}
+            gradle-cache-
+      - name: Cache for gradle wrapper
+        uses: actions/cache@v2
+        with:
+          path: ~/.gradle/wrapper
+          key: gradle-wrapper-${{ hashFiles('**/gradle/wrapper/gradle-wrapper.properties') }}-${{ env.BUILD_ENV }}
+          restore-keys: |
+            gradle-wrapper-${{ hashFiles('**/gradle/wrapper/gradle-wrapper.properties') }}-${{ env.BUILD_ENV }}
+            gradle-wrapper-${{ hashFiles('**/gradle/wrapper/gradle-wrapper.properties') }}
+            gradle-wrapper-
+      - name: Cache for node modules
+        uses: actions/cache@v2
+        with:
+          path: ~/.npm
+          key: npm-cache-${{ hashFiles('**/package-lock.json') }}-${{ env.BUILD_ENV }}
+          restore-keys: |
+            npm-cache-${{ hashFiles('**/package-lock.json') }}-${{ env.BUILD_ENV }}
+            npm-cache-${{ hashFiles('**/package-lock.json') }}
+            npm-cache-
+            - name: Cache for node modules
+      - name: Cache for node executables
+        uses: actions/cache@v2
+        with:
+          path: core-web/installs/node
+          key: node-cache-${{ hashFiles('**/node') }}-${{ env.BUILD_ENV }}
+          restore-keys: |
+            node-cache-${{ hashFiles('**/node') }}-${{ env.BUILD_ENV }}
+            node-cache-${{ hashFiles('**/node') }}
+            node-cache-
       - id: run-unit-tests
         name: Run Unit Tests
         uses: ./.github/actions/run-unit-tests
@@ -173,12 +213,52 @@ jobs:
       - id: read-cicd-local-env
         name: Read CICD local library
         run: source ${GITHUB_WORKSPACE}/cicd/local-env.sh
-      - id: restore-core
-        name: Restore Core Cache
-        uses: ./.github/actions/restore-core
+      - name: Cache for maven dependencies
+        uses: actions/cache@v2
         with:
-          cache_metadata: ${{ needs.build-core-job.outputs.cache_metadata }}
-        if: success()
+          path: ~/.m2/repository
+          key: maven-repo-${{ hashFiles('**/pom.xml') }}-${{ env.BUILD_ENV }}
+          restore-keys: |
+            maven-repo-${{ hashFiles('**/pom.xml') }}-${{ env.BUILD_ENV }}
+            maven-repo-${{ hashFiles('**/pom.xml') }}
+            maven-repo-
+      - name: Cache for gradle dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.gradle/caches
+          key: gradle-cache-${{ hashFiles('**/build.gradle') }}-${{ env.BUILD_ENV }}
+          restore-keys: |
+            gradle-cache-${{ hashFiles('**/build.gradle') }}-${{ env.BUILD_ENV }}
+            gradle-cache-${{ hashFiles('**/build.gradle') }}
+            gradle-cache-
+      - name: Cache for gradle wrapper
+        uses: actions/cache@v2
+        with:
+          path: ~/.gradle/wrapper
+          key: gradle-wrapper-${{ hashFiles('**/gradle/wrapper/gradle-wrapper.properties') }}-${{ env.BUILD_ENV }}
+          restore-keys: |
+            gradle-wrapper-${{ hashFiles('**/gradle/wrapper/gradle-wrapper.properties') }}-${{ env.BUILD_ENV }}
+            gradle-wrapper-${{ hashFiles('**/gradle/wrapper/gradle-wrapper.properties') }}
+            gradle-wrapper-
+      - name: Cache for node modules
+        uses: actions/cache@v2
+        with:
+          path: ~/.npm
+          key: npm-cache-${{ hashFiles('**/package-lock.json') }}-${{ env.BUILD_ENV }}
+          restore-keys: |
+            npm-cache-${{ hashFiles('**/package-lock.json') }}-${{ env.BUILD_ENV }}
+            npm-cache-${{ hashFiles('**/package-lock.json') }}
+            npm-cache-
+            - name: Cache for node modules
+      - name: Cache for node executables
+        uses: actions/cache@v2
+        with:
+          path: core-web/installs/node
+          key: node-cache-${{ hashFiles('**/node') }}-${{ env.BUILD_ENV }}
+          restore-keys: |
+            node-cache-${{ hashFiles('**/node') }}-${{ env.BUILD_ENV }}
+            node-cache-${{ hashFiles('**/node') }}
+            node-cache-
       - id: docker-login
         name: Login to GHCR
         uses: docker/login-action@v2
