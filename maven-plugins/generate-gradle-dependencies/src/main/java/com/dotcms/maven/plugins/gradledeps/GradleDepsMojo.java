@@ -48,7 +48,7 @@ public class GradleDepsMojo extends AbstractMojo {
     private String outputFileName;
 
 
-    @Parameter
+    @Parameter(property = "exclusions", defaultValue = "")
     private List<Exclusion> exclusions;
 
 
