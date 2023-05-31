@@ -1049,18 +1049,19 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
     private getUserPagePermissions(item: DotCMSContentlet): UserPagePermission {
         // Logged user
         const { loggedUser } = this.get();
+        const { canRead, canWrite } = loggedUser;
 
         // Item types
         const isPage = item.baseType === 'HTMLPAGE';
         const isContent = item.baseType === 'CONTENT';
 
         // Page permissions
-        const canUserReadPage = isPage && loggedUser.canRead.htmlPages == true;
-        const canUserWritePage = isPage && loggedUser.canWrite.htmlPages == true;
+        const canUserReadPage = isPage && canRead.htmlPages;
+        const canUserWritePage = isPage && canWrite.htmlPages;
 
         // Contentlet permissions
-        const canUserReadContent = isContent && loggedUser.canRead.contentlets == true;
-        const canUserWriteContent = isContent && loggedUser.canWrite.contentlets == true;
+        const canUserReadContent = isContent && canRead.contentlets;
+        const canUserWriteContent = isContent && canWrite.contentlets;
 
         return {
             canUserReadPage,
