@@ -36,7 +36,7 @@ jobs:
             ${{ runner.os }}-node-
 
       - name: Build and Test with Maven
-        run: mvn --no-transfer-progress --install-after --fail-at-end  --show-version --update-snapshots verify --file pom.xml
+        run: mvn --no-transfer-progress --install-at-end --fail-at-end  --show-version --update-snapshots verify --file pom.xml
 
       - name: Publish Test Results
         uses: actions/upload-artifact@v2
