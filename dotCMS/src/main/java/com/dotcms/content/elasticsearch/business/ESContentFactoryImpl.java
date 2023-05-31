@@ -1019,7 +1019,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             (final Identifier identifier, final Variant variant) throws DotDataException {
 
         return new DotConnect()
-                .setSQL("select inode from contentlet where identifier = ? and variant_id = ?")
+                .setSQL("select inode from contentlet where identifier = ? and variant_id = ?  order by mod_date desc")
                 .addParam(identifier.getId())
                 .addParam(variant.name())
                 .loadResults();
