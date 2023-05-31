@@ -210,9 +210,9 @@ describe('DotPageStore', () => {
     it('should limit Favorite Pages', () => {
         spyOn(dotPageStore, 'setFavoritePages').and.callThrough();
         dotPageStore.limitFavoritePages(5);
-        expect(dotPageStore.setFavoritePages).toHaveBeenCalledWith(
-            favoritePagesInitialTestData.slice(0, 5)
-        );
+        expect(dotPageStore.setFavoritePages).toHaveBeenCalledWith({
+            items: favoritePagesInitialTestData.slice(0, 5)
+        });
     });
 
     // Selectors
@@ -285,7 +285,7 @@ describe('DotPageStore', () => {
 
     // Updaters
     it('should update Favorite Pages', () => {
-        dotPageStore.setFavoritePages(favoritePagesInitialTestData);
+        dotPageStore.setFavoritePages({ items: favoritePagesInitialTestData });
         dotPageStore.state$.subscribe((data) => {
             expect(data.favoritePages.items).toEqual(favoritePagesInitialTestData);
         });

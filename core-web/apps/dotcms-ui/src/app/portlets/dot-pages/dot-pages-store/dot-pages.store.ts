@@ -71,13 +71,15 @@ export interface DotPagesInfo {
     total?: number;
 }
 
+export interface DotFavoritePagesInfo {
+    collapsed?: boolean;
+    items?: DotCMSContentlet[];
+    showLoadMoreButton?: boolean;
+    total?: number;
+}
+
 export interface DotPagesState {
-    favoritePages: {
-        collapsed?: boolean;
-        items: DotCMSContentlet[];
-        showLoadMoreButton: boolean;
-        total: number;
-    };
+    favoritePages: DotFavoritePagesInfo;
     environments: boolean;
     isEnterprise: boolean;
     languages: DotLanguage[];
@@ -179,13 +181,13 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
 
     readonly pageTypes$ = this.select(({ pageTypes }) => pageTypes);
 
-    readonly setFavoritePages = this.updater<DotCMSContentlet[]>(
-        (state: DotPagesState, favoritePages: DotCMSContentlet[]) => {
+    readonly setFavoritePages = this.updater<DotFavoritePagesInfo>(
+        (state: DotPagesState, favoritePages: DotFavoritePagesInfo) => {
             return {
                 ...state,
                 favoritePages: {
                     ...state.favoritePages,
-                    items: [...favoritePages]
+                    ...favoritePages
                 }
             };
         }
@@ -197,9 +199,8 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                 ...state,
                 pages: {
                     ...state.pages,
-                    items: [...pagesInfo.items],
                     status: ComponentStatus.LOADED,
-                    total: pagesInfo.total
+                    ...pagesInfo
                 }
             };
         }
@@ -411,7 +412,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                                                 }
                                             );
 
-                                            this.setFavoritePages(pagesData);
+                                            this.setFavoritePages({ items: pagesData });
                                         } else {
                                             let pagesData = this.get().pages.items;
 
@@ -1010,7 +1011,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
      */
     limitFavoritePages(limit: number): void {
         const favoritePages = this.get().favoritePages.items;
-        this.setFavoritePages(favoritePages.slice(0, limit));
+        this.setFavoritePages({ items: favoritePages.slice(0, limit) });
     }
 
     /**
