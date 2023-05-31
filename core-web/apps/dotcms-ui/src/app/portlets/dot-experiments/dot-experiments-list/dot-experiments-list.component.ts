@@ -1,8 +1,12 @@
 import { provideComponentStore } from '@ngrx/component-store';
 import { Observable } from 'rxjs';
 
+import { AsyncPipe, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ComponentRef, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
+
+import { ButtonModule } from 'primeng/button';
+import { RippleModule } from 'primeng/ripple';
 
 import { tap } from 'rxjs/operators';
 
@@ -10,18 +14,39 @@ import { DotMessagePipe } from '@dotcms/app/view/pipes';
 import {
     ComponentStatus,
     DotExperiment,
+    DotExperimentStatusList,
     ExperimentsStatusList,
     SidebarStatus
 } from '@dotcms/dotcms-models';
+import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotExperimentsCreateComponent } from '@portlets/dot-experiments/dot-experiments-list/components/dot-experiments-create/dot-experiments-create.component';
+import { DotExperimentsEmptyExperimentsComponent } from '@portlets/dot-experiments/dot-experiments-list/components/dot-experiments-empty-experiments/dot-experiments-empty-experiments.component';
+import { DotExperimentsListSkeletonComponent } from '@portlets/dot-experiments/dot-experiments-list/components/dot-experiments-list-skeleton/dot-experiments-list-skeleton.component';
+import { DotExperimentsListTableComponent } from '@portlets/dot-experiments/dot-experiments-list/components/dot-experiments-list-table/dot-experiments-list-table.component';
+import { DotExperimentsStatusFilterComponent } from '@portlets/dot-experiments/dot-experiments-list/components/dot-experiments-status-filter/dot-experiments-status-filter.component';
 import {
     DotExperimentsListStore,
     VmListExperiments
 } from '@portlets/dot-experiments/dot-experiments-list/store/dot-experiments-list-store';
+import { DotExperimentsUiHeaderComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
 
 @Component({
+    standalone: true,
     selector: 'dot-experiments-list',
+    imports: [
+        AsyncPipe,
+        NgIf,
+        DotExperimentsListSkeletonComponent,
+        DotExperimentsEmptyExperimentsComponent,
+        DotExperimentsStatusFilterComponent,
+        DotExperimentsListTableComponent,
+        DotExperimentsUiHeaderComponent,
+        DotDynamicDirective,
+        DotMessagePipeModule,
+        ButtonModule,
+        RippleModule
+    ],
     templateUrl: './dot-experiments-list.component.html',
     styleUrls: ['./dot-experiments-list.component.scss'],
     providers: [DotMessagePipe, provideComponentStore(DotExperimentsListStore)],
@@ -33,7 +58,6 @@ export class DotExperimentsListComponent {
         tap(({ sidebar }) => this.handleSidebar(sidebar))
     );
     statusOptionList = ExperimentsStatusList;
-
     private componentRef: ComponentRef<DotExperimentsCreateComponent>;
 
     constructor(
@@ -67,18 +91,8 @@ export class DotExperimentsListComponent {
      * @returns void
      * @memberof DotExperimentsListComponent
      */
-    archiveExperiment(experiment: DotExperiment): void {
+    archiveExperimentAction(experiment: DotExperiment): void {
         this.dotExperimentsListStore.archiveExperiment(experiment);
-    }
-
-    /**
-     * Delete experiment
-     * @param {DotExperiment} experiment
-     * @returns void
-     * @memberof DotExperimentsListComponent
-     */
-    deleteExperiment(experiment: DotExperiment): void {
-        this.dotExperimentsListStore.deleteExperiment(experiment);
     }
 
     /**
@@ -98,14 +112,25 @@ export class DotExperimentsListComponent {
     }
 
     /**
-     * Opens the experiment report page for a given experiment
-     * @param {DotExperiment} experiment The experiment whose report page needs to be opened
+     * Go to the experiment report or configuration depending on the experiment status
+     * @param {DotExperiment} experiment - Experiment to navigate to
      * @returns void
      * @memberof DotExperimentsShellComponent
      */
 
-    goToViewExperimentReport(experiment: DotExperiment) {
-        this.router.navigate(['/edit-page/experiments/reports/', experiment.id], {
+    goToContainerAction(experiment: DotExperiment) {
+        const route = ['/edit-page/experiments/', experiment.pageId, experiment.id];
+
+        if (
+            experiment.status === DotExperimentStatusList.RUNNING ||
+            experiment.status === DotExperimentStatusList.ENDED
+        ) {
+            route.push('reports');
+        } else {
+            route.push('configuration');
+        }
+
+        this.router.navigate([...route], {
             queryParams: {
                 mode: null,
                 variantName: null,
@@ -113,6 +138,34 @@ export class DotExperimentsListComponent {
             },
             queryParamsHandling: 'merge'
         });
+    }
+
+    /**
+     * Delete experiment
+     * @param {DotExperiment} experiment
+     * @returns void
+     * @memberof DotExperimentsListComponent
+     */
+    deleteExperimentAction(experiment: DotExperiment): void {
+        this.dotExperimentsListStore.deleteExperiment(experiment);
+    }
+
+    /**
+     * Go to the experiment configuration container
+     * @param experiment
+     */
+    gotToConfigurationAction(experiment: DotExperiment) {
+        this.router.navigate(
+            ['/edit-page/experiments/', experiment.pageId, experiment.id, 'configuration'],
+            {
+                queryParams: {
+                    mode: null,
+                    variantName: null,
+                    experimentId: null
+                },
+                queryParamsHandling: 'merge'
+            }
+        );
     }
 
     private handleSidebar(status: SidebarStatus): void {

@@ -48,9 +48,9 @@ import java.util.stream.Collectors;
  */
 public class HostAjax {
 
-	private HostAPI hostAPI = APILocator.getHostAPI();
-	private UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
-    private PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+	private final HostAPI hostAPI = APILocator.getHostAPI();
+	private final UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
+    private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 
 	public Map<String, Object> findHostsForDataStore(String filter, boolean showArchived, int offset, int count) throws PortalException, SystemException, DotDataException, DotSecurityException {
 		return findHostsForDataStore(filter, showArchived, offset, count, Boolean.FALSE);
@@ -103,8 +103,8 @@ public class HostAjax {
 
     /**
      * Returns the complete list of Sites that exist in a dotCMS instance based on specific case-insensitive filtering
-     * criteria. When filtering results, only listed text-type fields can be searched, which are basically the two
-     * columns displayed in the UI: {@code Site Key}, and {@code Aliases}.
+     * criteria, and <b>excluding the System Host</b>. When filtering results, only listed text-type fields can be
+	 * searched, which are basically the two columns displayed in the UI: {@code Site Key}, and {@code Aliases}.
      *
      * @param filter       Search term used to filter results.
      * @param showArchived If archived Sites must be returned, set to {@code true}. Otherwise, set to {@code false}.
@@ -121,16 +121,15 @@ public class HostAjax {
      * @throws SystemException      An application error has occurred.
      */
     public Map<String, Object> findHostsPaginated(final String filter, final boolean showArchived, int offset, int count) throws DotDataException, DotSecurityException, PortalException, SystemException {
-
 		final User user = this.getLoggedInUser();
 		final boolean respectFrontend = !this.userWebAPI.isLoggedToBackend(this.getHttpRequest());
-		final List<Host> sitesFromDb = this.hostAPI.findAllFromDB(user, respectFrontend);
+		final List<Host> sitesFromDb = this.hostAPI.findAllFromDB(user, false, respectFrontend);
 		final List<Field> fields = FieldsCache.getFieldsByStructureVariableName(Host.HOST_VELOCITY_VAR_NAME);
         final List<Field> searchableFields = fields.stream().filter(field -> field.isListed() && field
                 .getFieldType().startsWith("text")).collect(Collectors.toList());
 
         List<Map<String, Object>> siteList = new ArrayList<>(sitesFromDb.size());
-		Collections.sort(sitesFromDb, new HostNameComparator());
+		sitesFromDb.sort(new HostNameComparator());
 		for (final Host site : sitesFromDb) {
 			boolean addToResultList = false;
 			if (showArchived || !site.isArchived()) {
@@ -174,7 +173,7 @@ public class HostAjax {
             }
         }
 
-        final List<Map<String, Object>> fieldMapList = fields.stream().map(field -> field.getMap()).collect(Collectors.toList());
+        final List<Map<String, Object>> fieldMapList = fields.stream().map(Field::getMap).collect(Collectors.toList());
         final Structure siteContentType = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(Host.HOST_VELOCITY_VAR_NAME);
         return CollectionsUtils.map(
                 "total", totalResults,

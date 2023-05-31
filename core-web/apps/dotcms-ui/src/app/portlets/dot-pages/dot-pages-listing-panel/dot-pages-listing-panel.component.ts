@@ -137,6 +137,7 @@ export class DotPagesListingPanelComponent implements OnInit, OnDestroy, AfterVi
     filterData(keyword: string): void {
         this.store.setKeyword(keyword);
         this.store.getPages({ offset: 0 });
+        this.store.setSessionStorageFilterParams();
     }
 
     /**
@@ -162,6 +163,7 @@ export class DotPagesListingPanelComponent implements OnInit, OnDestroy, AfterVi
     setPagesLanguage(languageId: string): void {
         this.store.setLanguageId(languageId);
         this.store.getPages({ offset: 0 });
+        this.store.setSessionStorageFilterParams();
     }
 
     /**
@@ -173,5 +175,6 @@ export class DotPagesListingPanelComponent implements OnInit, OnDestroy, AfterVi
     setPagesArchived(archived: string): void {
         this.store.setArchived(archived);
         this.store.getPages({ offset: 0 });
+        this.store.setSessionStorageFilterParams();
     }
 }
