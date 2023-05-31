@@ -1,10 +1,11 @@
 <div class="row__drag-container">
-    <dot-icon
-        class="drag-container__drag-handler"
-        [size]="16"
+    <i
+        class="drag-container__drag-handler material-icons"
+        [style.font-size.px]="16"
         data-testid="row-drag-handler"
-        name="drag_indicator"
-    ></dot-icon>
+    >
+        drag_indicator
+    </i>
 </div>
 <div class="row__content-container">
     <ng-content></ng-content>

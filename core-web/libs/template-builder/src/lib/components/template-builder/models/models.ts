@@ -26,3 +26,5 @@ export interface DotGridStackNode extends GridStackNode {
 export interface DotTemplateBuilderState {
     items: DotGridStackWidget[];
 }
+
+export type WidgetType = 'col' | 'row';
