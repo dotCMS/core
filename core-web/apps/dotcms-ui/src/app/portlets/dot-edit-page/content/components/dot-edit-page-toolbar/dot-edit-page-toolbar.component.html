@@ -103,20 +103,6 @@
         <span>{{ 'dot.edit.page.toolbar.preliminary.results' | dm }}</span>
     </a>
 
-    <!--    <button-->
-    <!--        class="p-button-secondary"-->
-    <!--        *ngIf="runningExperiment"-->
-    <!--        [routerLink]="[-->
-    <!--            '/edit-page/experiments/',-->
-    <!--            runningExperiment.pageId,-->
-    <!--            runningExperiment.id,-->
-    <!--            'reports'-->
-    <!--        ]"-->
-    <!--        [label]="'dot.edit.page.toolbar.running.experiments' | dm"-->
-    <!--        queryParamsHandling="preserve"-->
-    <!--        data-testId="runningExperimentButton"-->
-    <!--        pButton-->
-    <!--    ></button>-->
     <dot-edit-page-workflows-actions
         [page]="pageState.page"
         (fired)="actionFired.emit($event)"
