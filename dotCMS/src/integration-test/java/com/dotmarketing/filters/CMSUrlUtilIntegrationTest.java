@@ -37,7 +37,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class CMSUrlUtilTest {
+public class CMSUrlUtilIntegrationTest {
     private static final String TEST_PATTERN = "/testpattern";
     private static ContentletAPI contentletAPI;
     private static Host site;
