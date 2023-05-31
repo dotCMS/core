@@ -20,9 +20,16 @@ import { of } from 'rxjs/internal/observable/of';
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { DotMessagePipeModule } from '@dotcms/app/view/pipes/dot-message/dot-message-pipe.module';
+import { DotRelativeDatePipe } from '@dotcms/app/view/pipes/dot-relative-date/dot-relative-date.pipe';
 import { DotMessageService } from '@dotcms/data-access';
-import { CoreWebService, CoreWebServiceMock, SiteService } from '@dotcms/dotcms-js';
 import {
+    CoreWebService,
+    CoreWebServiceMock,
+    DotcmsConfigService,
+    SiteService
+} from '@dotcms/dotcms-js';
+import {
+    DotcmsConfigServiceMock,
     dotcmsContentletMock,
     dotcmsContentTypeBasicMock,
     MockDotMessageService,
@@ -146,6 +153,7 @@ describe('DotPagesListingPanelComponent', () => {
                     DropdownModule,
                     DotAutofocusModule,
                     DotMessagePipeModule,
+                    DotRelativeDatePipe,
                     InputTextModule,
                     SkeletonModule,
                     TableModule,
@@ -155,6 +163,7 @@ describe('DotPagesListingPanelComponent', () => {
                 ],
                 providers: [
                     DialogService,
+                    { provide: DotcmsConfigService, useClass: DotcmsConfigServiceMock },
                     { provide: CoreWebService, useClass: CoreWebServiceMock },
                     { provide: DotPageStore, useClass: storeMock },
                     { provide: DotMessageService, useValue: messageServiceMock },
@@ -196,13 +205,13 @@ describe('DotPagesListingPanelComponent', () => {
             const elem = de.query(By.css('p-table')).componentInstance;
             expect(elem.scrollable).toBe(true);
             expect(elem.loading).toBe(undefined);
-            expect(elem.virtualScroll).toBe(true);
-            expect(elem.virtualScrollItemSize).toBe(47);
             expect(elem.lazy).toBe(true);
             expect(elem.selectionMode).toBe('single');
-            expect(elem.scrollHeight).toBe('flex');
+            expect(elem.scrollHeight).toBe('calc(100vh - 600px)');
             expect(elem.sortField).toEqual('modDate');
             expect(elem.sortOrder).toEqual(-1);
+            expect(elem.rows).toEqual(40);
+            expect(elem.paginator).toEqual(true);
         });
 
         it('should contain header with filter for keyword, language and archived', () => {
