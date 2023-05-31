@@ -1052,8 +1052,8 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         const { canRead, canWrite } = loggedUser;
 
         // Item types
-        const isPage = item.baseType === 'HTMLPAGE';
-        const isContent = item.baseType === 'CONTENT';
+        const isPage = item.baseType === PermissionsType.HTMLPAGES;
+        const isContent = item.baseType === PermissionsType.CONTENT;
 
         // Page permissions
         const canUserReadPage = isPage && canRead.htmlPages;
