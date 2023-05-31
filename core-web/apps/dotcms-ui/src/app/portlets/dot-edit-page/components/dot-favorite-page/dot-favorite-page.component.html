@@ -87,10 +87,11 @@
     </form>
 
     <button
-        class="p-button-secondary dot-favorite-dialog-footer__delete-button"
+        class="p-button-danger p-button-text dot-favorite-dialog-footer__delete-button"
         [disabled]="!vm.formState?.inode"
         [label]="'favoritePage.dialog.delete.button' | dm"
         (click)="onDelete(vm.formState?.inode)"
+        icon="pi pi-trash"
         footerActions
         data-testid="dotFavoriteDialogDeleteButton"
         pButton
