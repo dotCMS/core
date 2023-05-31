@@ -205,4 +205,12 @@ public interface ExperimentsAPI {
      */
     Experiment promoteVariant(String experimentId, String variantName, User user)
             throws DotDataException, DotSecurityException;
+
+    /*
+     * Cancels a Scheduled {@link com.dotcms.experiments.model.Experiment}.
+     * By Canceling an Experiment, its future execution will not take place.
+     * In order to be canceled, the Experiment needs to be in the
+     * {@link com.dotcms.experiments.model.Experiment.Status#SCHEDULED} state.
+     */
+    Experiment cancel(String experimentId, User user) throws DotDataException, DotSecurityException;
 }

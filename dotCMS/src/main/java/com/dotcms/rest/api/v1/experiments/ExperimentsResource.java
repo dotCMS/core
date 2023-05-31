@@ -302,6 +302,25 @@ public class ExperimentsResource {
     }
 
     /**
+     * Cancels the future execution of a Scheduled {@link Experiment}. The Experiment needs to be in
+     * {@link Status#SCHEDULED} status to be able to cancel it.
+     */
+
+    @POST
+    @Path("/scheduled/{experimentId}/_cancel")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public ResponseEntitySingleExperimentView cancel(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("experimentId") final String experimentId) throws DotDataException, DotSecurityException {
+        final InitDataObject initData = getInitData(request, response);
+        final User user = initData.getUser();
+        final Experiment endedExperiment = experimentsAPI.cancel(experimentId, user);
+        return new ResponseEntitySingleExperimentView(endedExperiment);
+    }
+
+    /**
      * Adds a new {@link com.dotcms.variant.model.Variant} to the {@link Experiment}
      *
      */
