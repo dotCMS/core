@@ -109,11 +109,14 @@ describe('DotPagesFavoritePanelComponent', () => {
         setLocalStorageFavoritePanelCollapsedParams(_collapsed: boolean): void {
             /* */
         }
+        setFavoritePages() {
+            /* */
+        }
     }
 
     describe('Empty state', () => {
-        beforeEach(() => {
-            TestBed.configureTestingModule({
+        beforeEach(async () => {
+            await TestBed.configureTestingModule({
                 declarations: [DotPagesFavoritePanelComponent, MockDotIconComponent],
                 imports: [
                     BrowserAnimationsModule,
@@ -155,6 +158,7 @@ describe('DotPagesFavoritePanelComponent', () => {
 
         it('should set panel collapsed state', () => {
             spyOn(store, 'setLocalStorageFavoritePanelCollapsedParams');
+            spyOn(store, 'setFavoritePages');
             component.toggleFavoritePagesPanel(
                 new Event('myevent', {
                     bubbles: true,
@@ -163,6 +167,7 @@ describe('DotPagesFavoritePanelComponent', () => {
                 })
             );
             expect(store.setLocalStorageFavoritePanelCollapsedParams).toHaveBeenCalledTimes(1);
+            expect(store.setFavoritePages).toHaveBeenCalledTimes(1);
         });
 
         it('should load empty pages cards container', () => {
