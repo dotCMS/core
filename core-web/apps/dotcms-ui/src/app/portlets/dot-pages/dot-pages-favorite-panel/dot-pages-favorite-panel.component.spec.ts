@@ -255,7 +255,7 @@ describe('DotPagesFavoritePanelComponent', () => {
         it('should set panel inputs and attributes', () => {
             const elem = de.query(By.css('p-panel'));
             expect(elem.nativeElement.classList.contains('dot-pages-panel__expanded')).toBeFalse();
-            expect(elem.componentInstance['iconPos']).toBe('start');
+            expect(elem.componentInstance['iconPos']).toBe('end');
             expect(elem.componentInstance['expandIcon']).toBe('pi pi-angle-down');
             expect(elem.componentInstance['collapseIcon']).toBe('pi pi-angle-up');
             expect(elem.componentInstance['toggleable']).toBe(true);
