@@ -1,3 +1,5 @@
+import { Subject } from 'rxjs';
+
 import { CommonModule } from '@angular/common';
 import { Component, DebugElement, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -19,11 +21,12 @@ import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-i
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { DotMessagePipeModule } from '@dotcms/app/view/pipes/dot-message/dot-message-pipe.module';
 import { DotMessageService } from '@dotcms/data-access';
-import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
+import { CoreWebService, CoreWebServiceMock, SiteService } from '@dotcms/dotcms-js';
 import {
     dotcmsContentletMock,
     dotcmsContentTypeBasicMock,
-    MockDotMessageService
+    MockDotMessageService,
+    mockSites
 } from '@dotcms/utils-testing';
 
 import { DotPagesListingPanelComponent } from './dot-pages-listing-panel.component';
@@ -66,6 +69,8 @@ describe('DotPagesListingPanelComponent', () => {
     let component: DotPagesListingPanelComponent;
     let de: DebugElement;
     let store: DotPageStore;
+
+    const switchSiteSubject = new Subject();
 
     class storeMock {
         get vm$() {
@@ -152,7 +157,19 @@ describe('DotPagesListingPanelComponent', () => {
                     DialogService,
                     { provide: CoreWebService, useClass: CoreWebServiceMock },
                     { provide: DotPageStore, useClass: storeMock },
-                    { provide: DotMessageService, useValue: messageServiceMock }
+                    { provide: DotMessageService, useValue: messageServiceMock },
+                    {
+                        provide: SiteService,
+                        useValue: {
+                            get currentSite() {
+                                return undefined;
+                            },
+
+                            get switchSite$() {
+                                return switchSiteSubject.asObservable();
+                            }
+                        }
+                    }
                 ]
             }).compileComponents();
         });
@@ -246,6 +263,12 @@ describe('DotPagesListingPanelComponent', () => {
             expect(component.goToUrl.emit).toHaveBeenCalledOnceWith(
                 'abc123?language_id=1&device_inode='
             );
+        });
+
+        it('should reload portlet only when the site change', () => {
+            switchSiteSubject.next(mockSites[0]); // setting the site
+            switchSiteSubject.next(mockSites[1]); // switching the site
+            expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
         });
     });
 });
