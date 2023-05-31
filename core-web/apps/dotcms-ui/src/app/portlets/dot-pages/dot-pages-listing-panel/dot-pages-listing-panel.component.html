@@ -13,10 +13,12 @@
         [virtualScroll]="true"
         [virtualScrollItemSize]="47"
         [lazy]="true"
+        [sortOrder]="-1"
         (onLazyLoad)="loadPagesLazy($event)"
         (onRowSelect)="onRowSelect($event)"
         selectionMode="single"
         scrollHeight="flex"
+        sortField="modDate"
     >
         <ng-template pTemplate="caption">
             <div class="flex justify-content-between dot-pages-listing-header">
