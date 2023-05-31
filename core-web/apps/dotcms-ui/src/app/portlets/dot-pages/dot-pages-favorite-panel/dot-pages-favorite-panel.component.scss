@@ -2,11 +2,10 @@
 
 ::ng-deep {
     .p-panel-toggleable {
-        border: 1px solid $color-palette-gray-300;
         cursor: pointer;
+        background-color: $color-palette-primary-100;
 
         &.p-panel-expanded {
-            border-color: $white;
             cursor: default;
         }
     }
@@ -49,6 +48,8 @@
         height: 266px;
         overflow: hidden;
         position: relative;
+        padding-left: $spacing-3;
+        padding-right: $spacing-3;
     }
 
     .dot-pages-panel__expanded .p-toggleable-content .p-panel-content {
@@ -96,6 +97,24 @@
         display: flex;
         align-items: center;
         margin-left: $spacing-3;
+        font-weight: 400;
+    }
+
+    .p-panel-icons {
+        display: flex;
+        justify-content: end;
+        flex: 1;
+    }
+
+    .p-panel-header-icon {
+        .pi {
+            border: 1px solid;
+            border-radius: 100px;
+        }
+    }
+
+    .p-panel-header .p-panel-icons span {
+        margin-right: $spacing-4;
     }
 }
 
