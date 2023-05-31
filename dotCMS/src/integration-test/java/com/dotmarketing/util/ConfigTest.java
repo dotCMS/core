@@ -13,9 +13,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+
+import com.dotcms.enterprise.cluster.ClusterFactory;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.powermock.api.mockito.PowerMockito;
 import org.tuckey.web.filters.urlrewrite.Conf;
 
 public class ConfigTest {
@@ -47,15 +50,16 @@ public class ConfigTest {
      */
     private static void setTestEnvVariables() {
 
-        System.getenv().put(DOT_TESTING_INTEGER, String.valueOf(Integer.MAX_VALUE));
-        System.getenv().put(XXX_TESTING_INTEGER, String.valueOf(Integer.MIN_VALUE));
-        System.getenv().put(DOT_TESTING_LONG, String.valueOf(Long.MAX_VALUE));
-        System.getenv().put(DOT_TESTING_BOOLEAN, String.valueOf(Boolean.TRUE));
-        System.getenv().put(DOT_TESTING_FLOAT, String.valueOf(Float.MAX_VALUE));
-        System.getenv().put(DOT_TESTING_STRING_WITH_COMMA, "VALUE1,VALUE2");
-        System.getenv().put(DOT_TESTING_STRING_WITH_SPACES, "VALUE1 VALUE2");
-        System.getenv().put(DOT_TESTING_STRING, "VALUE_ABC");
-        System.getenv().put(UNABLE_TO_READ_VAR, "NOPE");
+        EnvironmentVariablesService.getInstance().put(DOT_TESTING_INTEGER, String.valueOf(Integer.MAX_VALUE))
+        .put(XXX_TESTING_INTEGER, String.valueOf(Integer.MIN_VALUE))
+        .put(DOT_TESTING_LONG, String.valueOf(Long.MAX_VALUE))
+        .put(DOT_TESTING_BOOLEAN, String.valueOf(Boolean.TRUE))
+        .put(DOT_TESTING_FLOAT, String.valueOf(Float.MAX_VALUE))
+        .put(DOT_TESTING_STRING_WITH_COMMA, "VALUE1,VALUE2")
+        .put(DOT_TESTING_STRING_WITH_SPACES, "VALUE1 VALUE2")
+        .put(DOT_TESTING_STRING, "VALUE_ABC")
+        .put(UNABLE_TO_READ_VAR, "NOPE");
+
         //This forces a re-load.
         Config.props = null;
         Config.initializeConfig();
@@ -108,7 +112,7 @@ public class ConfigTest {
         Config.setProperty(propertyName,"var");
         final String fictionalProperty = Config.getStringProperty(propertyName);
         assertEquals("var",fictionalProperty);
-        System.getenv().put("DOT_FICTIONAL_PROPERTY", "foo");
+        EnvironmentVariablesService.getInstance().put("DOT_FICTIONAL_PROPERTY", "foo");
         Config.props = null; //force props reload
 
         final String fictionalPropertyOverride = Config.getStringProperty(propertyName);

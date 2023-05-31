@@ -317,7 +317,7 @@ public class Config {
 
     private static void readEnvironmentVariables() {
         synchronized (Config.class) {
-            System.getenv().entrySet().stream().filter(e -> e.getKey().startsWith(ENV_PREFIX))
+            EnvironmentVariablesService.getInstance().getenv().entrySet().stream().filter(e -> e.getKey().startsWith(ENV_PREFIX))
                     .forEach(e -> props.setProperty(e.getKey(), e.getValue()));
         }
     }
