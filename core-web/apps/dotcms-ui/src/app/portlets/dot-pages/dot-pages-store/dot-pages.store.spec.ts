@@ -767,7 +767,8 @@ describe('DotPageStore', () => {
         const page = dotcmsContentletMock;
         const error: HttpErrorResponse = new HttpErrorResponse({
             error: {
-                message: 'Workflow Action is not available for current step'
+                message:
+                    'The Workflow Action is not available in the Workflow Step the content is currently in.'
             }
         });
         const item = {
