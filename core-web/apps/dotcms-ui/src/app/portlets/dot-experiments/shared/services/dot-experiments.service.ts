@@ -51,6 +51,7 @@ export class DotExperimentsService {
     /**
      * Get an array of experiments of a pageId filter by status
      * @param {string} pageId
+     * @param {DotExperimentStatusList} status
      * @returns Observable<DotExperiment[]>
      * @memberof DotExperimentsService
      */
