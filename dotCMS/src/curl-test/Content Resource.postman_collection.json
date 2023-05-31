@@ -1,15 +1,311 @@
 {
 	"info": {
-		"_postman_id": "debc118d-ab19-430a-8488-b33662e964ce",
+		"_postman_id": "30e7c950-c42b-4489-a163-8fa82bdbbb54",
 		"name": "Content Resource",
 		"description": "Content Resource test",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "4500400"
+		"_exporter_id": "781456"
 	},
 	"item": [
 		{
 			"name": "Test Content Search",
 			"item": [
+				{
+					"name": "Story Block Field Tests",
+					"item": [
+						{
+							"name": "Create Content Type with WYSIWYG field",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test Content Type creation must be successful\", function() {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"var contentType = jsonData.entity[0];",
+											"",
+											"pm.collectionVariables.set(\"contentTypeId\", contentType.id);",
+											"pm.collectionVariables.set(\"contentTypeName\", contentType.name);",
+											"pm.collectionVariables.set(\"fieldId\", contentType.fields[0].id);"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"type": "text",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n   \"defaultType\":false,\n   \"fixed\":false,\n   \"system\":false,\n   \"clazz\":\"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n   \"description\":\"\",\n   \"host\":\"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n   \"folder\":\"SYSTEM_FOLDER\",\n   \"name\":\"TestRichCT\",\n   \"fields\": [{\n       \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableWysiwygField\",\n\t\t\"dataType\": \"LONG_TEXT\",\n\t\t\"fieldVariables\": [],\n\t\t\"fixed\": false,\n\t\t\"iDate\": 1662153603216,\n\t\t\"indexed\": true,\n\t\t\"listed\": false,\n\t\t\"modDate\": 1662153603216,\n\t\t\"name\": \"Description\",\n\t\t\"readOnly\": false,\n\t\t\"required\": false,\n\t\t\"searchable\": true,\n\t\t\"sortOrder\": 1,\n\t\t\"unique\": false,\n\t\t\"variable\": \"description\"\n    }\n   ]\n}"
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype"
+									]
+								},
+								"description": "Creates a test Content Type with a single WYSIWYG field, which will be transformed into a Story Block field later on."
+							},
+							"response": []
+						},
+						{
+							"name": "Create Test Content",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test Content creation must be successful\", function() {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Test contentlet was created successfully\", function () {",
+											"    var jsonData = pm.response.json().entity;",
+											"",
+											"    pm.expect(jsonData.summary.failCount).to.eql(0, \"An error occurred when creating the test Content Type\");",
+											"    pm.expect(jsonData.summary.successCount).to.eql(1, \"One piece of content should have been created\");",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"{{contentTypeName}}\",\n            \"description\": \"<h1>My Title</h1><p>This is my test content.</p>\",\n            \"contentHost\": \"default\"\n        }\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"default",
+										"fire",
+										"PUBLISH"
+									],
+									"query": [
+										{
+											"key": "indexPolicy",
+											"value": "WAIT_FOR"
+										}
+									]
+								},
+								"description": "Creates a test Contentlet of the previously generated Content Type."
+							},
+							"response": []
+						},
+						{
+							"name": "Transform WYSIWYG field into Story Block",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"WYSIWYG transformation must be successful\", function() {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Checking transformation of WYSIWYG field into Story Block\", function () {",
+											"    var jsonData = pm.response.json().entity;",
+											"",
+											"    pm.expect(jsonData[0].columns[0].fields[0].clazz).to.eql(\"com.dotcms.contenttype.model.field.ImmutableStoryBlockField\", \"Field type is not the expected ImmutableStoryBlockField\");",
+											"    pm.expect(jsonData[0].columns[0].fields[0].variable).to.eql(\"description\", \"Story Block Field does not correspond to expected 'description' field\");",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"field\": {\n        \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableStoryBlockField\",\n        \"contentTypeId\": \"{{contentTypeId}}\",\n        \"dataType\": \"LONG_TEXT\",\n        \"fieldType\": \"Story-Block\",\n        \"fieldTypeLabel\": \"Story Block\",\n        \"fieldVariables\": [],\n        \"fixed\": false,\n        \"iDate\": 1662153603000,\n        \"id\": \"{{fieldId}}\",\n        \"indexed\": true,\n        \"listed\": false,\n        \"modDate\": 1662153723000,\n        \"name\": \"Description\",\n        \"readOnly\": false,\n        \"required\": false,\n        \"searchable\": true,\n        \"sortOrder\": 1,\n        \"unique\": false,\n        \"variable\": \"description\"\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v3/contenttype/{{contentTypeId}}/fields/{{fieldId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v3",
+										"contenttype",
+										"{{contentTypeId}}",
+										"fields",
+										"{{fieldId}}"
+									]
+								},
+								"description": "Transforms the WYSIWYG into the Story Block field. This is NOT a new REST Endpoint, it is the existing Endpoint used to update data for any field."
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Test Content Type",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test Content Type deletion must be successful\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "saveHelperData",
+											"type": "any"
+										},
+										{
+											"key": "showPassword",
+											"value": false,
+											"type": "boolean"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}?indexPolicy=WAIT_FOR",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									],
+									"query": [
+										{
+											"key": "indexPolicy",
+											"value": "WAIT_FOR"
+										}
+									]
+								},
+								"description": "Deletes the test Content Type with the now-transformed Story Block field."
+							},
+							"response": []
+						}
+					],
+					"description": "This folder contains Postman tests related to the interaction with Story Block fields in dotCMS."
+				},
 				{
 					"name": "Create ContentType with 360 Icon",
 					"event": [
@@ -146,7 +442,7 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -158,6 +454,12 @@
 								"default",
 								"fire",
 								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
 							]
 						}
 					},
@@ -225,25 +527,24 @@
 			]
 		},
 		{
-			"name": "testSearch_givenContentOnDefaultAndVariant_shouldExcludeVariant",
+			"name": "Test Related Items Pagination",
 			"item": [
 				{
-					"name": "Create page in DEFAULT variant",
+					"name": "Import Content ManyToMany Parent Children",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"exec": [
-									"var jsonData = pm.response.json();",
-									"",
-									"",
-									"pm.test(\"Status code should be ok 200\", function () {",
+									"pm.test(\"Bundle uploaded sucessfully\", function () {",
 									"    pm.response.to.have.status(200);",
-									"});",
 									"",
-									"pm.collectionVariables.set(\"page_id\", jsonData.entity.identifier);",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData);",
 									"",
-									""
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"issue-22236-RelatedPagination-01GA6T1VX69MHWX2NYME3EG238.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});"
 								],
 								"type": "text/javascript"
 							}
@@ -254,249 +555,67 @@
 							"type": "basic",
 							"basic": [
 								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
 									"key": "username",
 									"value": "admin@dotcms.com",
 									"type": "string"
-								}
-							]
-						},
-						"method": "PUT",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{ \n    \"contentlet\" : {\n        \"title\" : \"test_variants_page\",\n        \"languageId\" : 1,\n        \"stInode\": \"c541abb1-69b3-4bc5-8430-5e09e5239cc8\",\n        \"url\": \"test_variants_page\",\n        \"hostFolder\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n        \"template\": \"SYSTEM_TEMPLATE\",\n        \"cachettl\": 0,\n        \"friendlyName\": \"friendlyName\"\n    }\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"workflow",
-								"actions",
-								"default",
-								"fire",
-								"PUBLISH"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "createDraftExperiment_shoudSucceed",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var jsonData = pm.response.json();",
-									"",
-									"",
-									"pm.test(\"Status code should be ok 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"pm.collectionVariables.set(\"experimentId\", jsonData.entity.id);",
-									"pm.collectionVariables.set(\"experimentShortId\", jsonData.entity.id.substring(0, 11).replace('-', ''));",
-									"",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
+								},
 								{
 									"key": "password",
 									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
 									"type": "string"
 								}
 							]
 						},
 						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"pageId\": \"{{page_id}}\",\n    \"name\": \"Add/Remove content Experiment\",\n    \"description\": \"Expriment ro Add/Remove contentlet from a specific variant page\" \n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/octet-stream"
+							},
+							{
+								"key": "Content-Disposition",
+								"type": "text",
+								"value": "attachment"
 							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/issue-22236-RelatedPagination-01GA6T1VX69MHWX2NYME3EG238.tar.gz"
+								}
+							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/experiments/",
+							"raw": "{{serverURL}}/api/bundle?sync=true",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"v1",
-								"experiments",
-								""
-							]
-						},
-						"description": "Create a new Experiment named \"Add/Remove content Experiment\" with the page created in the previous request."
-					},
-					"response": []
-				},
-				{
-					"name": "pre_addVariantToExperiment",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"",
-									"pm.test(\"Variants with correct weight\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"var jsonData = pm.response.json();",
-									"pm.collectionVariables.set(\"variantId\", jsonData.entity.trafficProportion.variants[1].id);",
-									"",
-									"",
-									"",
-									"",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
+								"bundle"
+							],
+							"query": [
 								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
+									"key": "sync",
+									"value": "true"
 								},
 								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
 								}
 							]
 						},
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"description\": \"Variant to Add/Remove contentlet test\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/experiments/{{experimentId}}/variants",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"experiments",
-								"{{experimentId}}",
-								"variants"
-							]
-						},
-						"description": "Create a new variant into the previous created experiment"
+						"description": "Imports a Bundle that includes:\n\n*   pp-test page with all the dependencies. pp-test page was created on a demo.dotcms.com site"
 					},
 					"response": []
 				},
 				{
-					"name": "Create page in Variant",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var jsonData = pm.response.json();",
-									"",
-									"",
-									"pm.test(\"Status code should be ok 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"pm.collectionVariables.set(\"page_id\", jsonData.entity.identifier);",
-									"",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								}
-							]
-						},
-						"method": "PUT",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{ \n    \"contentlet\" : {\n        \"identifier\": \"{{page_id}}\",\n        \"title\" : \"test_variants_page on variant\",\n        \"languageId\" : 1,\n        \"stInode\": \"c541abb1-69b3-4bc5-8430-5e09e5239cc8\",\n        \"url\": \"test_variants_page\",\n        \"hostFolder\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n        \"template\": \"SYSTEM_TEMPLATE\",\n        \"cachettl\": 0,\n        \"friendlyName\": \"friendlyName\", \n        \"variantId\": \"{{variantId}}\",\n        \"indexPolicy\" : \"FORCE\"\n    }\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"workflow",
-								"actions",
-								"default",
-								"fire",
-								"PUBLISH"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "testSearch_givenContentOnDefaultAndVariant_shouldExcludeVariant",
+					"name": "Request a Contet With Offset 0 Expect 3 Items",
 					"event": [
 						{
 							"listen": "test",
@@ -508,10 +627,11 @@
 									"",
 									"var jsonData = pm.response.json();",
 									"",
-									"",
-									"pm.test(\"Verify no variant is present\", function () {",
-									"    pm.expect(jsonData.entity.jsonObjectView.contentlets.length).eq(1);",
-									"    pm.expect(jsonData.entity.jsonObjectView.contentlets[0].variantId).eq(\"DEFAULT\");",
+									"pm.test(\"check items\", function () {",
+									"    pm.expect(jsonData.contentlets.length).eql(3);    ",
+									"    pm.expect(jsonData.contentlets[0].title).eql('Parent-1');",
+									"    pm.expect(jsonData.contentlets[1].title).eql('Parent-2');",
+									"    pm.expect(jsonData.contentlets[2].title).eql('Parent-3');",
 									"});",
 									""
 								],
@@ -535,11 +655,358 @@
 								}
 							]
 						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/content/render/false/query/+contentType:Issue22236Parent%20+languageId:1%20+deleted:false%20+working:true/orderby/title,modDate%20desc/related/Issue22236Parent.children:a696acd4d82bce47eac68da48e26ca96/limit/10/offset/0",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"content",
+								"render",
+								"false",
+								"query",
+								"+contentType:Issue22236Parent%20+languageId:1%20+deleted:false%20+working:true",
+								"orderby",
+								"title,modDate%20desc",
+								"related",
+								"Issue22236Parent.children:a696acd4d82bce47eac68da48e26ca96",
+								"limit",
+								"10",
+								"offset",
+								"0"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Request a Contet With Offset 1 Expect 2 items",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"check items\", function () {",
+									"    pm.expect(jsonData.contentlets.length).eql(2);    ",
+									"    pm.expect(jsonData.contentlets[0].title).eql('Parent-2');",
+									"    pm.expect(jsonData.contentlets[1].title).eql('Parent-3');    ",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/content/render/false/query/+contentType:Issue22236Parent%20+languageId:1%20+deleted:false%20+working:true/orderby/title,modDate%20desc/related/Issue22236Parent.children:a696acd4d82bce47eac68da48e26ca96/limit/10/offset/1",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"content",
+								"render",
+								"false",
+								"query",
+								"+contentType:Issue22236Parent%20+languageId:1%20+deleted:false%20+working:true",
+								"orderby",
+								"title,modDate%20desc",
+								"related",
+								"Issue22236Parent.children:a696acd4d82bce47eac68da48e26ca96",
+								"limit",
+								"10",
+								"offset",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Request a Contet With Offset 2 Expect 1 items",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"check items\", function () {",
+									"    pm.expect(jsonData.contentlets.length).eql(1);        ",
+									"    pm.expect(jsonData.contentlets[0].title).eql('Parent-3');    ",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/content/render/false/query/+contentType:Issue22236Parent%20+languageId:1%20+deleted:false%20+working:true/orderby/title,modDate%20desc/related/Issue22236Parent.children:a696acd4d82bce47eac68da48e26ca96/limit/10/offset/2",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"content",
+								"render",
+								"false",
+								"query",
+								"+contentType:Issue22236Parent%20+languageId:1%20+deleted:false%20+working:true",
+								"orderby",
+								"title,modDate%20desc",
+								"related",
+								"Issue22236Parent.children:a696acd4d82bce47eac68da48e26ca96",
+								"limit",
+								"10",
+								"offset",
+								"2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Request a Contet With Offset 0 Limit 1 Expect 1 items",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"check items\", function () {",
+									"    pm.expect(jsonData.contentlets.length).eql(1);        ",
+									"    pm.expect(jsonData.contentlets[0].title).eql('Parent-1');    ",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/content/render/false/query/+contentType:Issue22236Parent%20+languageId:1%20+deleted:false%20+working:true/orderby/title,modDate%20desc/related/Issue22236Parent.children:a696acd4d82bce47eac68da48e26ca96/limit/1/offset/0",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"content",
+								"render",
+								"false",
+								"query",
+								"+contentType:Issue22236Parent%20+languageId:1%20+deleted:false%20+working:true",
+								"orderby",
+								"title,modDate%20desc",
+								"related",
+								"Issue22236Parent.children:a696acd4d82bce47eac68da48e26ca96",
+								"limit",
+								"1",
+								"offset",
+								"0"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Categories",
+			"item": [
+				{
+					"name": "create-content-type-with-categories",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);        ",
+									"    let jsonData = pm.response.json();",
+									"    pm.expect(jsonData[\"bundleName\"]).to.eql(\"issue-22756-categories-01GCAK78NPY1JH8TRGX8SWCVN3.tar.gz\");",
+									"    pm.expect(jsonData[\"status\"]).to.eql(\"SUCCESS\");",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/issue-22756-categories-01GCAK78NPY1JH8TRGX8SWCVN3.tar.gz"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/bundle/sync",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"bundle",
+								"sync"
+							]
+						},
+						"description": "This endpoint imports a bundle that contains an instance of a Content Type that contains 2 category fields."
+					},
+					"response": []
+				},
+				{
+					"name": "get-contentlet-identifier-by-contnet-type",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200); ",
+									"    const jsonData = pm.response.json();",
+									"    const entity = (jsonData.entity);",
+									"    const identifier = entity.jsonObjectView.contentlets[0].identifier;       ",
+									"    pm.collectionVariables.set(\"identifier22756\", identifier);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
 						"method": "POST",
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"query\": \"+working:true  +(urlmap:* OR basetype:5)  +deleted:false +(title:test_variants_page* OR path:*test_variants_page* OR urlmap:*test_variants_page*)    \",\n    \"sort\": \"modDate DESC\",\n    \"limit\": 40,\n    \"offset\": \"0\"\n}",
+							"raw": "{\"query\":\"+contentType:BikeNameAndCategory +languageId:1 +deleted:false +working:true\",\"sort\":\"modDate desc\",\"offset\":0}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -556,12 +1023,988 @@
 								"content",
 								"_search"
 							]
+						},
+						"description": "Once the Content type that contains the category fields has been imported this request finds it and gets the identifier from it."
+					},
+					"response": []
+				},
+				{
+					"name": "update-contentlet-add-category-1",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);               ",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{    \n    \"title\": \"Update Norco Revolver\",\n    \"contentHost\": \"demo.dotcms.com\",\n    \"identifier\": \"{{identifier22756}}\",              \n    \"contentType\":\"BikeNameAndCategory\",\n    \"bikeType\":[\"MTB\",\"Road\"],\n    \"make\":[\"Norco\"]   \n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/content/publish/1",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"content",
+								"publish",
+								"1"
+							]
+						},
+						"description": "This is basically the happy path test. We validate that the content-type can be updated passing arrays of valid categories. Then verify the response to check the categories are the expected."
+					},
+					"response": []
+				},
+				{
+					"name": "validate-contentlet-categories-post-update-1",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200); ",
+									"    const jsonData = pm.response.json();",
+									"    const entity = (jsonData.entity);",
+									"    const contentlet = entity.jsonObjectView.contentlets[0];",
+									"    pm.expect(contentlet.bikeType).to.eql([{\"MTB\":\"MTB\"},{\"Road\":\"Road\"}]);    ",
+									"    pm.expect(contentlet.make).to.eql([{\"Norco\":\"Norco\"}]);    ",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"query\":\"+contentType:BikeNameAndCategory +languageId:1 +deleted:false +working:true\",\"sort\":\"modDate desc\",\"offset\":0}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/content/_search",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"content",
+								"_search"
+							]
+						},
+						"description": "Once the Content type that contains the category fields has been imported this request finds it and gets the identifier from it."
+					},
+					"response": []
+				},
+				{
+					"name": "update-contentlet-test-null-category",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);               ",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{    \n    \"title\": \"Update Norco Revolver\",\n    \"contentHost\": \"demo.dotcms.com\",\n    \"identifier\": \"{{identifier22756}}\",              \n    \"contentType\":\"BikeNameAndCategory\",\n    \"bikeType\":null,\n    \"make\":null   \n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/content/publish/1",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"content",
+								"publish",
+								"1"
+							]
+						},
+						"description": "Update categories passing null values on eachoena of them"
+					},
+					"response": []
+				},
+				{
+					"name": "validate-contentlet-categories-post-update-with-null",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200); ",
+									"    const jsonData = pm.response.json();",
+									"    const entity = (jsonData.entity);",
+									"    const contentlet = entity.jsonObjectView.contentlets[0];",
+									"    pm.expect(contentlet.bikeType).to.eql([{\"MTB\":\"MTB\"},{\"Road\":\"Road\"}]);    ",
+									"    pm.expect(contentlet.make).to.eql([{\"Norco\":\"Norco\"}]);    ",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"query\":\"+contentType:BikeNameAndCategory +languageId:1 +deleted:false +working:true\",\"sort\":\"modDate desc\",\"offset\":0}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/content/_search",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"content",
+								"_search"
+							]
+						},
+						"description": "validate that passing null did not affected the content. specifically the category fields."
+					},
+					"response": []
+				},
+				{
+					"name": "update-contentlet-test-ignored-category-fields",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);               ",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{    \n    \"title\": \"Update Norco Revolver\",\n    \"contentHost\": \"demo.dotcms.com\",\n    \"identifier\": \"{{identifier22756}}\",              \n    \"contentType\":\"BikeNameAndCategory\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/content/publish/1",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"content",
+								"publish",
+								"1"
+							]
+						},
+						"description": "Test ignoring the fields."
+					},
+					"response": []
+				},
+				{
+					"name": "validate-contentlet-categories-post-update-ignored-fields",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200); ",
+									"    const jsonData = pm.response.json();",
+									"    const entity = (jsonData.entity);",
+									"    const contentlet = entity.jsonObjectView.contentlets[0];",
+									"    pm.expect(contentlet.bikeType).to.eql([{\"MTB\":\"MTB\"},{\"Road\":\"Road\"}]);    ",
+									"    pm.expect(contentlet.make).to.eql([{\"Norco\":\"Norco\"}]);    ",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"query\":\"+contentType:BikeNameAndCategory +languageId:1 +deleted:false +working:true\",\"sort\":\"modDate desc\",\"offset\":0}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/content/_search",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"content",
+								"_search"
+							]
+						},
+						"description": "Validate the results after having ignored the fields."
+					},
+					"response": []
+				},
+				{
+					"name": "update-contentlet-test-ignored-category-fields Copy",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);               ",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{    \n    \"title\": \"Update Norco Revolver\",\n    \"contentHost\": \"demo.dotcms.com\",\n    \"identifier\": \"{{identifier22756}}\",              \n    \"contentType\":\"BikeNameAndCategory\",\n    \"bikeType\":[] \n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/content/publish/1",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"content",
+								"publish",
+								"1"
+							]
+						},
+						"description": "Test removing the categories on one fields and ignoring the other"
+					},
+					"response": []
+				},
+				{
+					"name": "validate-contentlet-categories-post-update-ignored-fields Copy",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200); ",
+									"    const jsonData = pm.response.json();",
+									"    const entity = (jsonData.entity);",
+									"    const contentlet = entity.jsonObjectView.contentlets[0];",
+									"    pm.expect(contentlet.bikeType).to.eql(undefined);   ",
+									"    pm.expect(contentlet.make).to.eql([{\"Norco\":\"Norco\"}]);    ",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"query\":\"+contentType:BikeNameAndCategory +languageId:1 +deleted:false +working:true\",\"sort\":\"modDate desc\",\"offset\":0}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/content/_search",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"content",
+								"_search"
+							]
+						},
+						"description": "Validate that the fiel that got the empty array has lost the categories while the other one remains intact"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "File Asset Metadata",
+			"item": [
+				{
+					"name": "Create Test File",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Test File created successfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"No errors must be present\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"",
+									"    pm.collectionVariables.set(\"fileId\", jsonData.entity.identifier);",
+									"    pm.collectionVariables.set(\"fileInode\", jsonData.entity.inode);",
+									"    pm.collectionVariables.set(\"fileName\", jsonData.entity.fileName);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Origin",
+								"value": "{{serverURL}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/testpdf.pdf"
+								},
+								{
+									"key": "json",
+									"value": "{\"contentlet\": {\"contentType\":\"FileAsset\",\"title\":\"testpdf.pdf\",\"hostFolder\":\"default\"}}",
+									"type": "text"
+								},
+								{
+									"key": "file",
+									"type": "file",
+									"src": [],
+									"disabled": true
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
+							]
+						},
+						"description": "Create a test File Asset that will be used to read Metadata from."
+					},
+					"response": []
+				},
+				{
+					"name": "Check Metadata Section",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status must be successfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Metadata section must be present and not empty\", function () {",
+									"    pm.expect(jsonData.contentlets[0].metaData.length).to.greaterThan(0);",
+									"});",
+									"",
+									"pm.test(\"Expected Metadata are present\", function () {",
+									"    var expectedFileName = pm.collectionVariables.get(\"fileName\");",
+									"    var expectedFileInode = pm.collectionVariables.get(\"fileInode\");",
+									"    pm.expect(jsonData.contentlets[0].metaData.isImage).to.eq(false);",
+									"    pm.expect(jsonData.contentlets[0].metaData.name).to.eq(expectedFileName);",
+									"    pm.expect(jsonData.contentlets[0].metaData.contentType).to.eq(\"application/pdf\");",
+									"    pm.expect(jsonData.contentlets[0].metaData.path).to.include(\"/\" + expectedFileInode + \"/fileAsset/\" + expectedFileName);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/content/id/{{fileId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"content",
+								"id",
+								"{{fileId}}"
+							]
+						},
+						"description": "Checks a few Metadata properties, such as:\n\n- **isImage:** should be \"false\" for a PDF.\n- **name:** File name.\n- **contentType**: The HTTP content type, not the dotCMS content Type.\n- **path**: The Inode-based path to the file."
+					},
+					"response": []
+				},
+				{
+					"name": "Unpublish Test File",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Test File unpublished successfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"No errors must be present\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Origin",
+								"value": "{{serverURL}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/UNPUBLISH?inode={{fileInode}}&identifier={{fileId}}&indexPolicy=WAIT_FOR",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"UNPUBLISH"
+							],
+							"query": [
+								{
+									"key": "inode",
+									"value": "{{fileInode}}"
+								},
+								{
+									"key": "identifier",
+									"value": "{{fileId}}"
+								},
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Archive Test File",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Test File archived successfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"No errors must be present\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Origin",
+								"value": "{{serverURL}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/ARCHIVE?inode={{fileInode}}&identifier={{fileId}}&indexPolicy=WAIT_FOR",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"ARCHIVE"
+							],
+							"query": [
+								{
+									"key": "inode",
+									"value": "{{fileInode}}"
+								},
+								{
+									"key": "identifier",
+									"value": "{{fileId}}"
+								},
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Test File",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Test File deleted successfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"No errors must be present\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Origin",
+								"value": "{{serverURL}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/DELETE?inode={{fileInode}}&identifier={{fileId}}&indexPolicy=WAIT_FOR",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"DELETE"
+							],
+							"query": [
+								{
+									"key": "inode",
+									"value": "{{fileInode}}"
+								},
+								{
+									"key": "identifier",
+									"value": "{{fileId}}"
+								},
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
+							]
 						}
 					},
 					"response": []
 				}
 			],
-			"description": "This test do the follow:\n\n*   add/remove contentlet type called 'add/remove contentlet type' with just a title field\n*   Create 4 contentlet with title:\n    *   content_1\n    *   content_2\n    *   content_3\n    *   content_4\n*   Create a Page called 'page_to_add_remove_contentlet'\n*   Add the first 3 contentlet into the Page.\n*   Create a experiment called 'Add/Remove content Experiment' using this page as Original\n*   Create a variant into this experiment called \"Variant to Add/Remove contentlet test\".\n*   Render the page in the DEFAULT variant and the specific variant created before, the 3 contentlets should be render.\n*   Remove 'content-2' and 'content-3' also add 'content-4' into the page for the variant \"Variant to Add/Remove contentlet test\".\n*   Render the page for the variant \"Variant to Add/Remove contentlet test\" should have just 'content-1' and 'content-4'.\n*   Render the page for the DEFAULT variant should render 'content-1', 'content-2' and 'content-3'"
+			"description": "Verifies that the Metadata section in the JSON response in a File Asset is added."
+		},
+		{
+			"name": "invalidateSession",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/logout",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"logout"
+					]
+				}
+			},
+			"response": []
 		},
 		{
 			"name": "Save Multiple Generic Contentlets",
@@ -643,7 +2086,7 @@
 			"response": []
 		},
 		{
-			"name": "invalidateSession",
+			"name": "invalidateSessionAgain",
 			"event": [
 				{
 					"listen": "test",
@@ -1128,12 +2571,10 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "http://localhost:8080/api/content/render/false/query/+contentType:host +title:default",
-					"protocol": "http",
+					"raw": "{{serverURL}}/api/content/render/false/query/+contentType:host +title:default",
 					"host": [
-						"localhost"
+						"{{serverURL}}"
 					],
-					"port": "8080",
 					"path": [
 						"api",
 						"content",
@@ -1147,33 +2588,53 @@
 			"response": []
 		}
 	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
 	"variable": [
 		{
 			"key": "contentTypeId",
 			"value": ""
 		},
 		{
-			"key": "content1_id",
+			"key": "fieldId",
 			"value": ""
 		},
 		{
-			"key": "content2_id",
+			"key": "contentTypeName",
 			"value": ""
 		},
 		{
-			"key": "page_id",
+			"key": "identifier22756",
 			"value": ""
 		},
 		{
-			"key": "experimentId",
+			"key": "fileId",
 			"value": ""
 		},
 		{
-			"key": "experimentShortId",
+			"key": "fileInode",
 			"value": ""
 		},
 		{
-			"key": "variantId",
+			"key": "fileName",
 			"value": ""
 		}
 	]
