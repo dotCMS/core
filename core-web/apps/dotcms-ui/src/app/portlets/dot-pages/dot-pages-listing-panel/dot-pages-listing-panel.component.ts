@@ -15,9 +15,10 @@ import { LazyLoadEvent } from 'primeng/api';
 import { ContextMenu } from 'primeng/contextmenu';
 import { Table } from 'primeng/table';
 
-import { filter, takeUntil } from 'rxjs/operators';
+import { filter, skip, takeUntil } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { SiteService } from '@dotcms/dotcms-js';
 
 import { DotPagesState, DotPageStore } from '../dot-pages-store/dot-pages.store';
 import { DotActionsMenuEventParams } from '../dot-pages.component';
@@ -46,7 +47,11 @@ export class DotPagesListingPanelComponent implements OnInit, OnDestroy, AfterVi
         draft: this.dotMessageService.get('Draft')
     };
 
-    constructor(private store: DotPageStore, private dotMessageService: DotMessageService) {}
+    constructor(
+        private store: DotPageStore,
+        private dotMessageService: DotMessageService,
+        private dotSiteService: SiteService
+    ) {}
 
     ngOnInit() {
         this.store.actionMenuDomId$
@@ -69,6 +74,11 @@ export class DotPagesListingPanelComponent implements OnInit, OnDestroy, AfterVi
         this.scrollElement.addEventListener('scroll', () => {
             this.closeContextMenu();
             this.tableScroll.emit();
+        });
+
+        this.dotSiteService.switchSite$.pipe(takeUntil(this.destroy$), skip(1)).subscribe(() => {
+            this.store.getPages({ offset: 0 });
+            this.scrollElement.scrollTop = 0; // To reset the scroll so it shows the data it retrieves
         });
     }
 

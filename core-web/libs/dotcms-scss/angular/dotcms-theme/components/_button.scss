@@ -358,6 +358,9 @@
     color: $white;
     background: $color-accessible-text-red;
     border: 0 none;
+    .pi {
+        color: $color-accessible-text-red;
+    }
 }
 
 .p-button.p-button-danger:enabled:hover,
