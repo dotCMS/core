@@ -8,6 +8,7 @@ import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Scheduling;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
@@ -205,4 +206,5 @@ public interface ExperimentsAPI {
      */
     Experiment promoteVariant(String experimentId, String variantName, User user)
             throws DotDataException, DotSecurityException;
+
 }

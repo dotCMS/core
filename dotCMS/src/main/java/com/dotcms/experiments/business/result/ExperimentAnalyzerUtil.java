@@ -14,6 +14,7 @@ import com.dotcms.cube.CubeJSQuery.Builder;
 import com.dotcms.cube.CubeJSResultSet;
 import com.dotcms.cube.filters.SimpleFilter.Operator;
 
+import com.dotcms.experiments.business.ExperimentUrlPatternCalculator;
 import com.dotcms.experiments.model.Goal;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.ExperimentVariant;
@@ -118,21 +119,14 @@ public enum ExperimentAnalyzerUtil {
         final MetricExperimentAnalyzer metricExperimentAnalyzer = experimentResultQueryHelpers.get()
                 .get(goalMetricType);
 
+        final String urlRegexPattern = ExperimentUrlPatternCalculator.INSTANCE
+                .calculateUrlRegexPattern(page);
+
         for (final BrowserSession browserSession : browserSessions) {
 
             final boolean isIntoExperiment = browserSession.getEvents().stream()
                     .map(event -> event.get("url").map(Object::toString).orElse(StringPool.BLANK))
-                    .anyMatch(url -> {
-                        try {
-                            final String uri = page.getURI();
-                            final String alternativeURI = uri.endsWith("index")
-                                ? uri.substring(0, uri.indexOf("index"))
-                                : uri;
-                            return url.contains(uri) || url.contains(alternativeURI);
-                        } catch (DotDataException e) {
-                            throw new RuntimeException(e);
-                        }
-                    });
+                    .anyMatch(url -> url.matches(urlRegexPattern));
 
             if (isIntoExperiment) {
                 builder.addSession(browserSession);
