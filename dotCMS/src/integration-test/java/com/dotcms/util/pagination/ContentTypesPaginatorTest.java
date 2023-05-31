@@ -226,7 +226,7 @@ public class ContentTypesPaginatorTest {
                 paginator.getItems(user, NO_FILTER, -1, -1, DEFAULT_ORDER_BY, OrderDirection.ASC, extraParams);
 
         // Assertions
-        assertEquals("There must be 5 Content Types returned by the paginator", 4, contentTypes.size());
+        assertEquals("There must be 4 Content Types returned by the paginator", 4, contentTypes.size());
         assertEquals("The 'Content (Generic)' type must come first", "Content (Generic)",
                 contentTypes.get(0).get("name").toString());
     }
