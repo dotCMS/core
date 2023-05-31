@@ -214,6 +214,7 @@ describe('DotPagesListingPanelComponent', () => {
             expect(elem.paginator).toEqual(true);
             expect(elem.showPageLinks).toEqual(false);
             expect(elem.showCurrentPageReport).toEqual(true);
+            expect(elem.showFirstLastIcon).toEqual(false);
         });
 
         it('should contain header with filter for keyword, language and archived', () => {
