@@ -788,14 +788,15 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                         };
                         this.dotWorkflowEventHandlerService.open(wfActionEvent);
                     } else {
-                        this.dotWorkflowActionsFireService
-                            .fireTo(item.inode, action.id)
-                            .subscribe((item) => {
+                        this.dotWorkflowActionsFireService.fireTo(item.inode, action.id).subscribe(
+                            (item) => {
                                 this.dotEventsService.notify('save-page', {
                                     payload: item,
                                     value: this.dotMessageService.get('Workflow-executed')
                                 });
-                            });
+                            },
+                            (error) => this.httpErrorManagerService.handle(error, true)
+                        );
                     }
                 }
             });
