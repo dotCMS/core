@@ -4,6 +4,8 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
 
+import { DotContainers } from '../../models/models';
+
 export enum TemplateBuilderBoxSize {
     large = 'large',
     medium = 'medium',
@@ -19,7 +21,7 @@ export enum TemplateBuilderBoxSize {
     imports: [NgFor, NgIf, NgClass, ButtonModule, ScrollPanelModule]
 })
 export class TemplateBuilderBoxComponent {
-    @Input() items = [];
+    @Input() items: DotContainers;
 
     protected readonly templateBuilderSizes = TemplateBuilderBoxSize;
     @Input() size: TemplateBuilderBoxSize = TemplateBuilderBoxSize.large;
