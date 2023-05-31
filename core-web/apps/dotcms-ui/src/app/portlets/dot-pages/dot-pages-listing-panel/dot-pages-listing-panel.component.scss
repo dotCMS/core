@@ -32,6 +32,12 @@
     .p-datatable .p-datatable-tbody tr td.dot-pages-listing__empty-content {
         text-align: center;
     }
+
+    .p-datatable {
+        .p-datatable-wrapper {
+            transition: max-height 400ms ease-in-out;
+        }
+    }
 }
 
 .dot-pages-listing-header__inputs {

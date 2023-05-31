@@ -14,10 +14,10 @@
         [lazy]="true"
         [paginator]="true"
         [rows]="40"
+        [scrollHeight]="vm.isFavoritePanelCollaped ? 'calc(100vh - 350px)' : 'calc(100vh - 600px)'"
         (onLazyLoad)="loadPagesLazy($event)"
         (onRowSelect)="onRowSelect($event)"
         selectionMode="single"
-        scrollHeight="calc(100vh - 350px)"
     >
         <ng-template pTemplate="caption">
             <div class="flex justify-content-between dot-pages-listing-header">
