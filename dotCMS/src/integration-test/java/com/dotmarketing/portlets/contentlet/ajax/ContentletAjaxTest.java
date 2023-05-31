@@ -8,14 +8,19 @@ import static org.junit.Assert.assertTrue;
 
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
+import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
+import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
@@ -329,6 +334,34 @@ public class ContentletAjaxTest {
 	@Test
 	public void test_searchContentletsByUser_filteringByDates_returns_validResults()
 			throws DotDataException, DotSecurityException {
+
+		final ContentType currentCalendarEventType = APILocator.getContentTypeAPI(APILocator.systemUser()).find("calendarEvent");
+		if (null != currentCalendarEventType) {
+
+			APILocator.getContentTypeAPI(APILocator.systemUser()).delete(currentCalendarEventType);
+		}
+
+		final ContentType calendarEventType = new ContentTypeDataGen().velocityVarName("calendarEvent").nextPersisted();
+		ContentTypeDataGen.addField(new FieldDataGen()
+				.velocityVarName("title")
+				.contentTypeId(calendarEventType.id())
+				.type(TextField.class)
+				.nextPersisted());
+
+		ContentTypeDataGen.addField(new FieldDataGen()
+				.velocityVarName("startDate")
+				.contentTypeId(calendarEventType.id())
+				.type(DateTimeField.class)
+				.defaultValue("")
+				.nextPersisted());
+
+		ContentTypeDataGen.addField(new FieldDataGen()
+				.velocityVarName("endDate")
+				.contentTypeId(calendarEventType.id())
+				.type(DateTimeField.class)
+				.defaultValue("")
+				.nextPersisted());
+
 		final ContentletAjax contentletAjax = new ContentletAjax();
 		final ContentType eventContentType = contentTypeAPI.find("calendarEvent");
 		final Date currentDate = new Date();
