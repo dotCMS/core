@@ -10,17 +10,20 @@
     <div class="template-builder-box__header-container">
         <p-button
             [label]="size === templateBuilderSizes.large ? 'Add Container' : ''"
+            (onClick)="addColumn.emit()"
             icon="pi pi-plus"
             styleClass="p-button-text p-button-sm"
         ></p-button>
 
         <div>
             <p-button
+                (onClick)="editStyle.emit()"
                 icon="pi pi-palette"
                 styleClass="p-button-rounded p-button-text p-button-sm"
             ></p-button>
 
             <p-button
+                (onClick)="deleteColumn.emit()"
                 icon="pi pi-trash"
                 styleClass="p-button-secondary p-button-rounded p-button-text p-button-sm"
             ></p-button>
@@ -30,6 +33,7 @@
         <div class="template-builder-box__item" *ngFor="let item of items">
             <p>{{ item.identifier }}</p>
             <p-button
+                (onClick)="deleteContainer.emit()"
                 icon="pi pi-trash"
                 styleClass="p-button-secondary p-button-rounded p-button-text p-button-sm"
             ></p-button>
@@ -40,16 +44,19 @@
 <ng-template #smallTemplate>
     <div class="template-builder-box--small" data-testId="template-builder-box-small">
         <p-button
+            (onClick)="addContainer.emit()"
             data-testId="btn-plus-small"
             icon="pi pi-plus"
             styleClass="p-button-rounded  p-button-text p-button-sm"
         ></p-button>
         <p-button
+            (onClick)="editStyle.emit()"
             data-testId="btn-palette-small"
             icon="pi pi-palette"
             styleClass="p-button-rounded  p-button-text p-button-sm"
         ></p-button>
         <p-button
+            (onClick)="deleteColumn.emit()"
             data-testId="btn-trash-small"
             icon="pi pi-trash"
             styleClass=" p-button-rounded p-button-text p-button-sm"

@@ -1,5 +1,5 @@
 import { NgClass, NgFor, NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
@@ -21,6 +21,15 @@ export enum TemplateBuilderBoxSize {
     imports: [NgFor, NgIf, NgClass, ButtonModule, ScrollPanelModule]
 })
 export class TemplateBuilderBoxComponent {
+    @Output()
+    editStyle: EventEmitter<void> = new EventEmitter<void>();
+    @Output()
+    deleteContainer: EventEmitter<void> = new EventEmitter<void>();
+    @Output()
+    addColumn: EventEmitter<void> = new EventEmitter<void>();
+    @Output()
+    deleteColumn: EventEmitter<void> = new EventEmitter<void>();
+
     @Input() items: DotContainers;
 
     protected readonly templateBuilderSizes = TemplateBuilderBoxSize;
