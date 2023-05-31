@@ -12,18 +12,21 @@
             [label]="size === templateBuilderSizes.large ? 'Add Container' : ''"
             (onClick)="addContainer.emit()"
             icon="pi pi-plus"
+            data-testId="btn-plus"
             styleClass="p-button-text p-button-sm"
         ></p-button>
 
         <div>
             <p-button
                 (onClick)="editStyle.emit()"
+                data-testId="btn-palette"
                 icon="pi pi-palette"
                 styleClass="p-button-rounded p-button-text p-button-sm"
             ></p-button>
 
             <p-button
                 (onClick)="deleteColumn.emit()"
+                data-testId="btn-trash"
                 icon="pi pi-trash"
                 styleClass="p-button-secondary p-button-rounded p-button-text p-button-sm"
             ></p-button>

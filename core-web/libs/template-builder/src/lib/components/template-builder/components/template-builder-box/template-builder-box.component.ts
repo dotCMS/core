@@ -24,7 +24,7 @@ export class TemplateBuilderBoxComponent {
     @Output()
     editStyle: EventEmitter<void> = new EventEmitter<void>();
     @Output()
-    deleteContainer: EventEmitter<void> = new EventEmitter<void>();
+    addContainer: EventEmitter<void> = new EventEmitter<void>();
     @Output()
     addColumn: EventEmitter<void> = new EventEmitter<void>();
     @Output()
