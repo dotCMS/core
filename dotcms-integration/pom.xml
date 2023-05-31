@@ -57,6 +57,9 @@
 
         <webapp.extract.dir>${project.build.directory}/core-war</webapp.extract.dir>
         <test.webapp.root>${webapp.extract.dir}</test.webapp.root>
+        <!--suppress UnresolvedMavenProperty -->
+        <!--<dotcmsLicense>${env.MY_ENV_VAR}</dotcmsLicense>-->
+        <dotcmsLicense>testerlicense</dotcmsLicense>
     </properties>
     <dependencies>
         <dependency>
@@ -490,7 +493,18 @@
 
                         <configuration>
                             <skip>${skipITs}</skip>
-                            <target>
+                            <target xmlns:if="ant:if" xmlns:unless="ant:unless">
+                                <taskdef resource="net/sf/antcontrib/antcontrib.properties"
+                                    classpathref="maven.plugin.classpath" />
+
+                                <property unless:set="dotcmsLicense" name="license.is.set" value="false"/>
+                                <property if:set="dotcmsLicense" name="license.is.set" value="true"/>
+
+                                <echo message="license.is.set: ${license.is.set}"/>
+
+
+
+
 
                                 <delete dir="${it.test.temp.dir}" />
                                 <delete dir="${it.test.assets.dir}" includeemptydirs="true">
@@ -507,6 +521,7 @@
                                 <delete dir="${test.dynamic.dir}" />
 
                             </target>
+
                         </configuration>
                         <goals>
                             <goal>run</goal>
@@ -519,6 +534,18 @@
                         <configuration>
                             <skip>${skipITs}</skip>
                             <target>
+                                <!-- get LICENSE_KEY environment variable -->
+                                <property environment="env"/>
+
+                                <!-- check if LICENSE_KEY exists -->
+                                <condition property="LICENSE_KEY_exists">
+                                    <isset property="env.LICENSE_KEY"/>
+                                </condition>
+
+                                <!-- write LICENSE_KEY to a file if it exists -->
+                                <echo file="path/to/yourfile.txt" append="false" message="License key: ${env.LICENSE_KEY}" if:true="${LICENSE_KEY_exists}"/>
+
+
                                 <mkdir dir="${it.test.temp.dir}" />
                                 <mkdir dir="${it.test.assets.dir}" />
 
@@ -534,6 +561,7 @@
                                 </copy>
 
                             </target>
+
                         </configuration>
                         <goals>
                             <goal>run</goal>
@@ -541,7 +569,6 @@
                     </execution>
                 </executions>
             </plugin>
-
 
             <plugin>
                 <groupId>com.dkanejs.maven.plugins</groupId>

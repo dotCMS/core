@@ -36,6 +36,8 @@ jobs:
             ${{ runner.os }}-node-
 
       - name: Build and Test with Maven
+        env:
+          LICENSE_KEY: ${{ secrets.DOTCMS_LICENSE }}
         run: mvn --no-transfer-progress --fail-at-end  --show-version --update-snapshots verify --file pom.xml
 
       - name: Publish Test Results
