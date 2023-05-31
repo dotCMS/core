@@ -292,7 +292,7 @@ describe('DotPageStore', () => {
     });
 
     it('should update Pages', () => {
-        dotPageStore.setPages(favoritePagesInitialTestData);
+        dotPageStore.setPages({ items: favoritePagesInitialTestData });
         dotPageStore.state$.subscribe((data) => {
             expect(data.pages.items).toEqual(favoritePagesInitialTestData);
         });
@@ -464,7 +464,7 @@ describe('DotPageStore', () => {
             }
         ];
 
-        dotPageStore.setPages(pagesData);
+        dotPageStore.setPages({ items: pagesData });
 
         spyOn(dotESContentService, 'get').and.returnValue(
             of({
@@ -497,7 +497,7 @@ describe('DotPageStore', () => {
     });
 
     it('should keep fetching Pages data until new value comes from the DB in store', fakeAsync(() => {
-        dotPageStore.setPages(favoritePagesInitialTestData);
+        dotPageStore.setPages({ items: favoritePagesInitialTestData });
         const old = {
             contentTook: 0,
             jsonObjectView: {
@@ -561,7 +561,7 @@ describe('DotPageStore', () => {
     }));
 
     it('should remove page archived from pages collection and add undefined at the bottom', fakeAsync(() => {
-        dotPageStore.setPages(favoritePagesInitialTestData);
+        dotPageStore.setPages({ items: favoritePagesInitialTestData });
         const old = {
             contentTook: 0,
             jsonObjectView: {
