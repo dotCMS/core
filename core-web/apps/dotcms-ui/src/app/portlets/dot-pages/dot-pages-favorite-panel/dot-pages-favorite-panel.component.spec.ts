@@ -261,9 +261,9 @@ describe('DotPagesFavoritePanelComponent', () => {
             expect(elem.componentInstance['toggleable']).toBe(true);
         });
 
-        it('should have a star icon in the header', () => {
-            const elem = de.query(By.css('.dot-pages-panel__header'));
-            expect(elem.nativeElement.querySelector('.pi-star-fill')).toBeTruthy();
+        it('should have an icon for bookmarks in the header', () => {
+            const elem = de.query(By.css('.dot-pages-panel__header [data-testId="bookmarksIcon"]'));
+            expect(elem).toBeTruthy();
         });
 
         it('should set secondary button in panel', () => {
