@@ -783,25 +783,20 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             actionsMenu.push({
                 label: `${this.dotMessageService.get(action.name)}`,
                 command: () => {
-                    if (action.actionInputs?.length > 0) {
-                        const wfActionEvent: DotCMSWorkflowActionEvent = {
-                            workflow: action,
-                            callback: 'ngWorkflowEventCallback',
-                            inode: item.inode,
-                            selectedInodes: null
-                        };
-                        this.dotWorkflowEventHandlerService.open(wfActionEvent);
-                    } else {
-                        this.dotWorkflowActionsFireService.fireTo(item.inode, action.id).subscribe(
-                            (item) => {
-                                this.dotEventsService.notify('save-page', {
-                                    payload: item,
-                                    value: this.dotMessageService.get('Workflow-executed')
-                                });
-                            },
-                            (error) => this.httpErrorManagerService.handle(error, true)
-                        );
+                    if (!(action.actionInputs?.length > 0)) {
+                        this.fireWorkflowAction(item.inode, action.id);
+
+                        return;
                     }
+
+                    const wfActionEvent: DotCMSWorkflowActionEvent = {
+                        workflow: action,
+                        callback: 'ngWorkflowEventCallback',
+                        inode: item.inode,
+                        selectedInodes: null
+                    };
+
+                    this.dotWorkflowEventHandlerService.open(wfActionEvent);
                 }
             });
         });
@@ -1073,5 +1068,20 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             canUserWritePage,
             canUserWriteContent
         };
+    }
+    /**
+     * Fire workflow action
+     *
+     * @private
+     * @param {string} contentletInode
+     * @param {string} actionId
+     * @memberof DotPageStore
+     */
+    private fireWorkflowAction(contentletInode: string, actionId: string): void {
+        const value = this.dotMessageService.get('Workflow-executed');
+        this.dotWorkflowActionsFireService.fireTo(contentletInode, actionId).subscribe(
+            (payload) => this.dotEventsService.notify('save-page', { payload, value }),
+            (error) => this.httpErrorManagerService.handle(error, true)
+        );
     }
 }
