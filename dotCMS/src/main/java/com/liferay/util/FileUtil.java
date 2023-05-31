@@ -421,9 +421,14 @@ public class FileUtil {
 	 */
 	public static String getRealPath(String relativePath){
 		ServletContext context = Config.CONTEXT;
+		// This is for UNIT TESTS
 		if(context ==null){
-			Logger.fatal(FileUtil.class, "Config.CONTEXT not initialized with a servlet context, dying");
-			throw new DotStateException("Config.CONTEXT not initialized with a servlet context, dying");
+		    String tmpPath = System.getProperty("java.io.tmpdir");
+		    relativePath = relativePath.replace("/", File.separator);
+		    relativePath = relativePath.startsWith(File.separator) ? relativePath : File.separator + relativePath;
+		    Logger.error(FileUtil.class, "Config.CONTEXT not initialized returning a tmp path: " + tmpPath + relativePath);
+		    return tmpPath + relativePath;
+
 		}
 
 		//Fallback for wrong use of the File.separator using the context.getRealPath
