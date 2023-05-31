@@ -21,12 +21,12 @@ const Template: Story<TemplateBuilderBoxComponent> = (args: TemplateBuilderBoxCo
 });
 
 const items = [
-    { label: 'demo.dotcms.com' },
-    { label: 'System Container' },
-    { label: 'demo.dotcms.com' },
-    { label: 'demo.dotcms.com' },
-    { label: 'demo.dotcms.com' },
-    { label: 'demo.dotcms.com' }
+    { identifier: 'demo.dotcms.com' },
+    { identifier: 'System Container' },
+    { identifier: 'demo.dotcms.com' },
+    { identifier: 'demo.dotcms.com' },
+    { identifier: 'demo.dotcms.com' },
+    { identifier: 'demo.dotcms.com' }
 ];
 
 export const Small = Template.bind({});
