@@ -44,6 +44,7 @@ import {
 import { DotPushPublishDialogService, SiteService } from '@dotcms/dotcms-js';
 import {
     ComponentStatus,
+    DotCMSBaseTypesContentTypes,
     DotCMSContentlet,
     DotCMSContentType,
     DotCMSWorkflowAction,
@@ -1052,8 +1053,8 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         const { canRead, canWrite } = loggedUser;
 
         // Item types
-        const isPage = item.baseType === PermissionsType.HTMLPAGES;
-        const isContent = item.baseType === PermissionsType.CONTENT;
+        const isPage = item.baseType === DotCMSBaseTypesContentTypes.HTMLPAGE;
+        const isContent = item.baseType === DotCMSBaseTypesContentTypes.CONTENT;
 
         // Page permissions
         const canUserReadPage = isPage && canRead.htmlPages;
