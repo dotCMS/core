@@ -127,7 +127,7 @@ const reportDir = `${dotCmsRoot}/build/reports/tests/test`;
 exports.COMMANDS = {
     gradle: {
         cmd: './gradlew',
-        args: ['test', '--stacktrace'],
+        args: ['generateDependenciesFromMaven', '&&','test', '--stacktrace'],
         workingDir: dotCmsRoot,
         outputDir: outputDir,
         reportDir: reportDir

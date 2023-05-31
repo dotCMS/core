@@ -85,6 +85,11 @@ const DEPS_ENV = {
 exports.COMMANDS = {
     gradle: [
         {
+            cmd: gradleCmd,
+            args: ['generateDependenciesFromMaven'],
+            workingDir: dotCmsRoot
+        },
+        {
             cmd: './gradlew',
             args: ['integrationTest', `-PdatabaseType=${dbType}`, '--stacktrace'],
             workingDir: dotCmsRoot

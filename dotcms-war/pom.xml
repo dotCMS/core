@@ -169,7 +169,7 @@
                                     <outputDirectory>${project.build.directory}/felix</outputDirectory>
                                 </artifactItem>
                                 <artifactItem>
-                                    <groupId>com.dotcms</groupId>
+                                    <groupId>com.dotcms.plugins</groupId>
                                     <artifactId>system-bundles</artifactId>
                                     <version>${project.version}</version>
                                     <type>zip</type>

@@ -129,7 +129,7 @@
             <dependencies>
                 <dependency>
                     <groupId>com.dotcms.plugins</groupId>
-                    <artifactId>tika-plugin</artifactId>
+                    <artifactId>com.dotcms.tika</artifactId>
                     <version>${project.version}</version>
                     <scope>provided</scope>
                     <exclusions>

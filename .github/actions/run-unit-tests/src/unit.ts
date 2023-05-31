@@ -29,7 +29,7 @@ export interface Commands {
 export const COMMANDS: Commands = {
   gradle: {
     cmd: './gradlew',
-    args: ['test', '--stacktrace'],
+    args: ['generateDependenciesFromMaven', '&&', 'test', '--stacktrace'],
     workingDir: dotCmsRoot,
     outputDir: outputDir,
     reportDir: reportDir
