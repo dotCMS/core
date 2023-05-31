@@ -1,5 +1,7 @@
 package com.dotcms.api.traversal;
 
+import static com.dotcms.model.asset.BasicMetadataFields.PATH_META_KEY;
+
 import com.dotcms.model.asset.AssetVersionsView;
 import com.dotcms.model.asset.AssetView;
 import com.dotcms.model.asset.FolderView;
@@ -77,7 +79,8 @@ public class Filter {
         if (folder.assets() != null) {
             folder.assets().versions().iterator().forEachRemaining(assetVersion -> {
 
-                var assetPath = Paths.get(assetVersion.path()).
+                var assetVersionPath = assetVersion.metadata().get(PATH_META_KEY.key()).toString();
+                var assetPath = Paths.get(assetVersionPath).
                         resolve(assetVersion.name()).toString();
 
                 if (!rootPath.equals("/")) {

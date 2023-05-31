@@ -14,6 +14,15 @@ import java.io.IOException;
 public class TreeNodeSerializer extends StdSerializer<TreeNode> {
 
     /**
+     * Constructs a new instance of the TreeNodeSerializer with a null class argument. This
+     * constructor is required for Jackson's serializer instantiation and should not be directly
+     * invoked.
+     */
+    public TreeNodeSerializer() {
+        this(null);
+    }
+
+    /**
      * Constructs a new TreeNodeSerializer instance.
      *
      * @param t The class of the TreeNode objects to serialize.
@@ -35,6 +44,7 @@ public class TreeNodeSerializer extends StdSerializer<TreeNode> {
             throws IOException {
 
         gen.writeStartObject();
+        gen.writeStringField("path", node.folder().path());
         gen.writeStringField("name", node.folder().name());
         gen.writeNumberField("level", node.folder().level());
 

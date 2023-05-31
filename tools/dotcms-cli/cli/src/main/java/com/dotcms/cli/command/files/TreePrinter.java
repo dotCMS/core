@@ -1,9 +1,15 @@
 package com.dotcms.cli.command.files;
 
 import com.dotcms.api.traversal.TreeNode;
+import com.dotcms.api.traversal.TreeNodeSerializer;
 import com.dotcms.model.asset.AssetView;
 import com.dotcms.model.asset.FolderView;
 import com.dotcms.model.language.Language;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import java.io.IOException;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -45,6 +51,47 @@ public class TreePrinter {
     }
 
     /**
+     * Serializes a TreeNode object to JSON format and appends the JSON representation to the
+     * provided StringBuilder.
+     *
+     * @param sb   The StringBuilder to which the JSON representation will be appended.
+     * @param node The TreeNode object to serialize.
+     * @throws IOException If an I/O error occurs during serialization.
+     */
+    public void jsonFormat(StringBuilder sb, final TreeNode node) throws IOException {
+
+        // Create an instance of ObjectMapper
+        ObjectMapper mapper = new ObjectMapper();
+
+        // Create a SimpleModule and register the TreeNodeSerializer
+        SimpleModule module = new SimpleModule();
+        module.addSerializer(TreeNode.class, new TreeNodeSerializer(TreeNode.class));
+        mapper.registerModule(module);
+
+        // Enable pretty printing for the JSON output
+        mapper.enable(SerializationFeature.INDENT_OUTPUT);
+
+        // Serialize the TreeNode to JSON using a StringWriter
+        StringWriter writer = new StringWriter();
+        mapper.writeValue(writer, node);
+
+        // Convert the StringWriter output to a StringBuilder
+        sb.append(writer);
+    }
+
+    /**
+     * Helper method to generate a short string representation of a tree. The string representation
+     * includes the names of the folder and all files under it in the format
+     * {@code <filename> [<language>] (<status>)}.
+     *
+     * @param sb   the StringBuilder to which the string representation of the tree is appended
+     * @param node the root of the tree that needs to be printed
+     */
+    public void shortFormat(StringBuilder sb, final TreeNode node) {
+        shortFormat(sb, "", node, true, "    ", false);
+    }
+
+    /**
      * Recursive helper method to generate a short string representation of a tree. The string
      * representation includes the names of the folder and all files under it in the format
      * {@code <filename> [<language>] (<status>)}. The string representation for each node is
@@ -62,16 +109,21 @@ public class TreePrinter {
      * @param indent        the string used for indentation
      * @param isLastSibling true if the current node is the last sibling, false otherwise
      */
-    public void shortFormat(StringBuilder sb, String prefix, final TreeNode node,
-            final boolean root,
-            final String indent, boolean isLastSibling) {
+    private void shortFormat(StringBuilder sb, String prefix, final TreeNode node,
+            final boolean root, final String indent, boolean isLastSibling) {
 
-        var folderNameStr = String.format("@|bold \uD83D\uDDC0 %s|@", node.folder().name());
+        var folderNameStr = String.format("@|bold %s|@", node.folder().name());
         if (!root) {
             sb.append(prefix).append(isLastSibling ? "└── " : "├── ").append(folderNameStr)
                     .append('\n');
         } else {
-            sb.append("\r").append(folderNameStr).append('\n');
+
+            if (node.folder().name().equals("/")) {
+                folderNameStr = String.format("@|bold %s|@", node.folder().host());
+                sb.append("\r").append(folderNameStr).append('\n');
+            } else {
+                sb.append("\r").append(folderNameStr).append('\n');
+            }
         }
 
         String filePrefix = indent + (root ? "    " : (isLastSibling ? "    " : "│   "));
@@ -176,7 +228,7 @@ public class TreePrinter {
             sb.append("     ").
                     append((isLastLang ? "    " : "│   ")).
                     append("└── ").
-                    append(rootNode.folder().site()).
+                    append(rootNode.folder().host()).
                     append('\n');
 
             if (rootNode.folder().path().equals("/")) {

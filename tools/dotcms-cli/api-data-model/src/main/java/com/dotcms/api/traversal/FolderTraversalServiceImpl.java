@@ -128,7 +128,7 @@ public class FolderTraversalServiceImpl implements FolderTraversalService {
                 filter,
                 site,
                 FolderView.builder()
-                        .site(site)
+                        .host(site)
                         .path(parentFolderName)
                         .name(folderName)
                         .level(0)

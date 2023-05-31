@@ -4,6 +4,7 @@ import com.dotcms.model.annotation.ValueType;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.time.Instant;
+import java.util.Map;
 import org.immutables.value.Value;
 
 @ValueType
@@ -11,8 +12,6 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = AssetView.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public interface AbstractAssetView {
-
-    String path();
 
     String name();
 
@@ -22,12 +21,12 @@ public interface AbstractAssetView {
 
     String inode();
 
-    String sha256();
-
-    Long size();
+    long sortOrder();
 
     boolean live();
 
     String lang();
+
+    Map<String, Object> metadata();
 
 }

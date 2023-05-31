@@ -16,11 +16,14 @@ import org.immutables.value.Value;
 public interface AbstractFolderView {
 
     @Nullable
-    String site();
+    String host();
 
     String path();
 
     String name();
+
+    @Nullable
+    String title();
 
     @Nullable
     Instant modDate();
@@ -30,6 +33,18 @@ public interface AbstractFolderView {
 
     @Nullable
     String inode();
+
+    @Nullable
+    Boolean showOnMenu();
+
+    @Nullable
+    Integer sortOrder();
+
+    @Nullable
+    String filesMasks();
+
+    @Nullable
+    String defaultFileType();
 
     @Value.Default
     default int level() {

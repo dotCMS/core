@@ -1,10 +1,15 @@
 package com.dotcms.api.traversal;
 
+import static com.dotcms.model.asset.BasicMetadataFields.PATH_META_KEY;
+import static com.dotcms.model.asset.BasicMetadataFields.SHA256_META_KEY;
+import static com.dotcms.model.asset.BasicMetadataFields.SIZE_META_KEY;
+
 import com.dotcms.model.asset.AssetVersionsView;
 import com.dotcms.model.asset.AssetView;
 import com.dotcms.model.asset.FolderView;
 import io.quarkus.test.junit.QuarkusTest;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -602,17 +607,24 @@ public class FilterTest {
     }
 
     private AssetView assetViewForPath(String name, String path) {
-        return AssetView.builder().
+
+        var metadata = new HashMap<String, Object>();
+        metadata.put(PATH_META_KEY.key(), path);
+        metadata.put(SHA256_META_KEY.key(),
+                "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
+        metadata.put(SIZE_META_KEY.key(), 1000L);
+
+        var asset = AssetView.builder().
                 name(name).
-                path(path).
                 modDate(new Date().toInstant()).
                 identifier(UUID.randomUUID().toString()).
                 inode(UUID.randomUUID().toString()).
-                sha256("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad").
-                size(1000L).
                 live(true).
                 lang("en-US").
+                sortOrder(0).
                 build();
+
+        return asset.withMetadata(metadata);
     }
 
 }

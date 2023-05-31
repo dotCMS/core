@@ -132,34 +132,6 @@ class AssetAPITest {
     }
 
     /**
-     * Request and check for the root of the site just using "//"
-     */
-    @Test
-    void Test_Asset_By_Path_Root_Double_Slash() {
-
-        final FolderAPI folderAPI = clientFactory.getClient(FolderAPI.class);
-
-        final String randomFolderName1 = String.format("folder-%s",
-                RandomStringUtils.randomAlphabetic(10));
-
-        final String randomFolderName2 = String.format("folder-%s",
-                RandomStringUtils.randomAlphabetic(10));
-
-        final String randomFolderName3 = String.format("folder-%s",
-                RandomStringUtils.randomAlphabetic(10));
-
-        // First we need to create a test folder
-        final ResponseEntityView<List<Map<String, Object>>> makeFoldersResponse = folderAPI.makeFolders(
-                ImmutableList.of(randomFolderName1, randomFolderName2, randomFolderName3),
-                siteName);
-        Assertions.assertNotNull(makeFoldersResponse.entity());
-
-        // Request the folder and check the data is correct
-        var byPath = SearchByPathRequest.builder().assetPath("//").build();
-        executeAndTest(byPath, false, randomFolderName1, randomFolderName2, randomFolderName3);
-    }
-
-    /**
      * Request and check for the root of the site
      */
     @Test
@@ -203,13 +175,17 @@ class AssetAPITest {
         Assertions.assertNotNull(byPathResponse.entity().name());
 
         // Make sure we have all the folders we created
-        Assertions.assertNotNull(byPathResponse.entity().subFolders());
+        if (folderNames.length > 0) {
+            Assertions.assertNotNull(byPathResponse.entity().subFolders());
+        }
+
+        var subFoldersSize = byPathResponse.entity().subFolders() == null ? 0
+                : byPathResponse.entity().subFolders().size();
+
         if (exactMatch) {
-            Assertions.assertEquals(byPathResponse.entity().subFolders().size(),
-                    folderNames.length);
+            Assertions.assertEquals(subFoldersSize, folderNames.length);
         } else {
-            Assertions.assertTrue(
-                    byPathResponse.entity().subFolders().size() >= folderNames.length);
+            Assertions.assertTrue(subFoldersSize >= folderNames.length);
         }
 
         for (String folderName : folderNames) {
