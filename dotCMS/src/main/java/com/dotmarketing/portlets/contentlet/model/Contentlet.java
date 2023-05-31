@@ -1623,6 +1623,10 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     }
 
 	public String getVariantId() {
+		if (!UtilMethods.isSet(variantId)) {
+			this.variantId = VariantAPI.DEFAULT_VARIANT.name();
+		}
+
 		return this.variantId;
 	}
 
