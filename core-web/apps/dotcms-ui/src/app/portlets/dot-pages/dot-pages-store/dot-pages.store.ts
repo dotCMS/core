@@ -1069,6 +1069,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             canUserWriteContent
         };
     }
+
     /**
      * Fire workflow action
      *
