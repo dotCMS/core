@@ -37,8 +37,9 @@ const messageServiceMock = new MockDotMessageService({
 });
 
 const EXPERIMENT_MOCK = { ...getExperimentMock(0), scheduling: { startDate: 1, endDate: 12196e5 } };
-
-xdescribe('DotExperimentsConfigurationSchedulingAddComponent', () => {
+const MOCK_DATA_MILLISECONDS = 16820996334200;
+const MOCK_DATE = new Date(MOCK_DATA_MILLISECONDS);
+describe('DotExperimentsConfigurationSchedulingAddComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationSchedulingAddComponent>;
     let store: DotExperimentsConfigurationStore;
     let dotExperimentsService: SpyObject<DotExperimentsService>;
@@ -62,6 +63,8 @@ xdescribe('DotExperimentsConfigurationSchedulingAddComponent', () => {
     });
 
     beforeEach(async () => {
+        jest.useFakeTimers();
+        jest.setSystemTime(MOCK_DATE);
         spectator = createComponent({
             detectChanges: false
         });
@@ -121,13 +124,9 @@ xdescribe('DotExperimentsConfigurationSchedulingAddComponent', () => {
     it('should set min dates correctly', () => {
         const startDateCalendar: Calendar = spectator.query(Calendar);
         const endDateCalendar: Calendar = spectator.queryLast(Calendar);
-
         const component = spectator.component;
-        const mockDate = new Date(1682099633467);
         const time5days = 432e6; // value set in the ActiveRouteMock
-        const mockMinEndDate = 1682099633467 + time5days;
-        jasmine.clock().install();
-        jasmine.clock().mockDate(mockDate);
+        const mockMinEndDate = MOCK_DATA_MILLISECONDS + time5days;
 
         component.form.get('startDate').setValue(new Date());
         startDateCalendar.onSelect.emit();
@@ -136,17 +135,11 @@ xdescribe('DotExperimentsConfigurationSchedulingAddComponent', () => {
 
         expect(endDateCalendar.minDate.getTime()).toEqual(mockMinEndDate);
         expect(endDateCalendar.defaultDate.getTime()).toEqual(mockMinEndDate);
-
-        jasmine.clock().uninstall();
     });
 
     it('should clear end date if start date is equal or more', () => {
         const startDateCalendar: Calendar = spectator.query(Calendar);
-
         const component = spectator.component;
-        const mockDate = new Date(16820996334200);
-        jasmine.clock().install();
-        jasmine.clock().mockDate(mockDate);
 
         component.form.get('startDate').setValue(new Date());
         component.form.get('endDate').setValue(new Date());
@@ -155,19 +148,13 @@ xdescribe('DotExperimentsConfigurationSchedulingAddComponent', () => {
         spectator.detectChanges();
 
         expect(component.form.get('endDate').value).toEqual(null);
-
-        jasmine.clock().uninstall();
     });
 
     it('max end date date should be 90 days', () => {
         const startDateCalendar: Calendar = spectator.query(Calendar);
-
         const component = spectator.component;
-        const mockDate = new Date(16820996334200);
         // Default vale of 90 because max end date is not defined in the Active Route
-        const expectedEndDate = new Date(16820996334200 + TIME_90_DAYS);
-        jasmine.clock().install();
-        jasmine.clock().mockDate(mockDate);
+        const expectedEndDate = new Date(MOCK_DATA_MILLISECONDS + TIME_90_DAYS);
 
         component.form.get('startDate').setValue(new Date());
         startDateCalendar.onSelect.emit();
@@ -175,8 +162,6 @@ xdescribe('DotExperimentsConfigurationSchedulingAddComponent', () => {
         spectator.detectChanges();
 
         expect(component.maxEndDate).toEqual(expectedEndDate);
-
-        jasmine.clock().uninstall();
     });
 
     it('should close sidebar', () => {
@@ -185,5 +170,9 @@ xdescribe('DotExperimentsConfigurationSchedulingAddComponent', () => {
         sidebar.hide();
 
         expect(store.closeSidebar).toHaveBeenCalledTimes(1);
+    });
+
+    afterEach(() => {
+        jest.useRealTimers();
     });
 });
