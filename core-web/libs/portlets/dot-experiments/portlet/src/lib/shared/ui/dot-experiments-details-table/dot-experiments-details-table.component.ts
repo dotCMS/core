@@ -8,10 +8,10 @@ import {
 } from '@angular/core';
 
 import { SkeletonModule } from 'primeng/skeleton';
+import { DotStringTemplateOutletDirective } from "@portlets/shared/directives/dot-string-template-outlet.directive";
+import { DotMessagePipeModule } from "@dotcms/ui";
+import { ComponentStatus, DotExperimentVariantDetail } from "@dotcms/dotcms-models";
 
-import { ComponentStatus, DotExperimentVariantDetail } from '@dotcms/dotcms-models';
-import { DotMessagePipeModule } from '@dotcms/ui';
-import { DotStringTemplateOutletDirective } from '@portlets/shared/directives/dot-string-template-outlet.directive';
 
 /**
  *

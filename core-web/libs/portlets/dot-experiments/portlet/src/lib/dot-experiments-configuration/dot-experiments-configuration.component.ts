@@ -7,8 +7,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
-import { InplaceModule } from 'primeng/inplace';
-import { InputTextModule } from 'primeng/inputtext';
 import { ConfirmPopupModule } from 'primeng/confirmpopup';
 import { RippleModule } from 'primeng/ripple';
 
@@ -29,6 +27,8 @@ import { DotExperimentsExperimentSummaryComponent } from '../shared/ui/dot-exper
 import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
 import { DotExperimentsInlineEditTextComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-inline-edit-text/dot-experiments-inline-edit-text.component';
 import { DotMessagePipe, DotMessagePipeModule } from "@dotcms/ui";
+import { InputTextModule } from "primeng/inputtext";
+import { InplaceModule } from "primeng/inplace";
 
 @Component({
     standalone: true,
@@ -49,8 +49,7 @@ import { DotMessagePipe, DotMessagePipeModule } from "@dotcms/ui";
         RippleModule,
         InplaceModule,
         InputTextModule,
-        RippleModule,
-        ConfirmPopupModule
+        RippleModule
     ],
     selector: 'dot-experiments-configuration',
     templateUrl: './dot-experiments-configuration.component.html',
@@ -113,7 +112,7 @@ export class DotExperimentsConfigurationComponent implements OnInit {
      */
     stopExperiment($event: MouseEvent, experiment: DotExperiment) {
         this.confirmationService.confirm({
-            target: $event.target,
+            target: $event.target as EventTarget,
             message: this.dotMessagePipe.transform('experiments.action.stop.delete-confirm'),
             icon: 'pi pi-exclamation-triangle',
             acceptLabel: this.dotMessagePipe.transform('stop'),

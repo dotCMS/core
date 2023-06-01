@@ -1,6 +1,13 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator, SpyObject } from "@ngneat/spectator/jest";
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator,
+    SpyObject
+} from "@ngneat/spectator/jest";
 import { of } from 'rxjs';
 
+import { Component } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -78,18 +85,24 @@ const defaultVmMock: ConfigurationViewModel = {
     isDescriptionSaving: false
 };
 
-xdescribe('DotExperimentsConfigurationComponent', () => {
+@Component({
+    // eslint-disable-next-line @angular-eslint/component-selector
+    selector: `p-confirmPopup`,
+    template: `ConfirmPopupMockComponent`,
+    standalone: true
+})
+export class ConfirmPopupMockComponent {}
+
+describe('DotExperimentsConfigurationComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationComponent>;
     let dotExperimentsService: SpyObject<DotExperimentsService>;
     let dotExperimentsConfigurationStore: SpyObject<DotExperimentsConfigurationStore>;
 
     const createComponent = createComponentFactory({
         component: DotExperimentsConfigurationComponent,
-
         componentProviders: [DotExperimentsConfigurationStore],
-        componentMocks: [ConfirmPopup],
         providers: [
-            mockProvider(ConfirmationService),
+            ConfirmationService,
             {
                 provide: ActivatedRoute,
                 useValue: ActivatedRouteMock
@@ -191,30 +204,13 @@ xdescribe('DotExperimentsConfigurationComponent', () => {
     //     );
     // });
     //
-    // it('should show Cancel Scheduling button if experiment status is Schedule and call cancel after confirmation', () => {
-        spyOn(dotExperimentsConfigurationStore, 'cancelSchedule');
-        spectator.component.vm$ = of({
-            ...defaultVmMock,
-            experimentStatus: DotExperimentStatusList.SCHEDULED
-        });
-        spectator.detectChanges();
-
-        spectator.click(byTestId('cancel-schedule-experiment-button'));
-        spectator.query(ConfirmPopup).accept();
-
-        expect(dotExperimentsConfigurationStore.cancelSchedule).toHaveBeenCalledWith(
-            EXPERIMENT_MOCK
-        );
-    });
-
-    it('should show hide stop Experiment and unscheduled button if experiment status is different than running', () => {
+    // it('should show hide stop Experiment button if experiment status is different than running', () => {
     //     spectator.component.vm$ = of({
     //         ...defaultVmMock,
     //         experimentStatus: DotExperimentStatusList.DRAFT
     //     });
     //     spectator.detectChanges();
     //     expect(spectator.query(byTestId('stop-experiment-button'))).not.toExist();
-    //     expect(spectator.query(byTestId('cancel-schedule-experiment-button'))).not.toExist();
     // });
     //
     // it('should show Start Experiment button disabled if disabledStartExperiment true', () => {

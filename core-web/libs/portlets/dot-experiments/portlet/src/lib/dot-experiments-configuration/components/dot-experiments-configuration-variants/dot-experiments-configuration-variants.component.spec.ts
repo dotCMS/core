@@ -10,14 +10,12 @@ import { of } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
-import { ButtonModule } from 'primeng/button';
-import { Card, CardModule } from 'primeng/card';
+import { Card } from 'primeng/card';
 import { ConfirmPopup } from 'primeng/confirmpopup';
-import { Inplace, InplaceModule } from 'primeng/inplace';
-import { Tooltip, TooltipModule } from 'primeng/tooltip';
+import { Inplace } from 'primeng/inplace';
+import { Tooltip } from 'primeng/tooltip';
 
 import { DotCopyButtonComponent } from '@components/dot-copy-button/dot-copy-button.component';
-import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 import { DotMessageService, DotSessionStorageService } from '@dotcms/data-access';
 import {
     DEFAULT_VARIANT_ID,
@@ -38,7 +36,7 @@ import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot
 import { DotExperimentsConfigurationVariantsComponent } from './dot-experiments-configuration-variants.component';
 
 import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-configuration-store';
-import { DotExperimentsConfigurationVariantsAddComponent } from '../dot-experiments-configuration-variants-add/dot-experiments-configuration-variants-add.component';
+
 import { DotMessagePipe } from "@dotcms/ui";
 
 const messageServiceMock = new MockDotMessageService({
@@ -74,14 +72,6 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
     let dotSessionStorageService: DotSessionStorageService;
 
     const createComponent = createComponentFactory({
-        imports: [
-            ButtonModule,
-            CardModule,
-            InplaceModule,
-            DotExperimentsConfigurationVariantsAddComponent,
-            DotCopyButtonModule,
-            TooltipModule
-        ],
         component: DotExperimentsConfigurationVariantsComponent,
         providers: [
             DotExperimentsConfigurationStore,
@@ -115,12 +105,13 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
 
         dotExperimentsService = spectator.inject(DotExperimentsService);
         dotExperimentsService.getById.mockReturnValue(of(EXPERIMENT_MOCK));
+        dotExperimentsService.getById.mockReturnValue(of(EXPERIMENT_MOCK));
 
         store.loadExperiment(EXPERIMENT_MOCK.id);
         spectator.detectChanges();
     });
 
-    xdescribe('should render', () => {
+    describe('should render', () => {
         it('a DEFAULT variant', () => {
             expect(spectator.queryAll(byTestId('variant-name')).length).toBe(1);
             expect(spectator.query(byTestId('variants-card-header'))).toHaveClass(
@@ -196,7 +187,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
         });
     });
 
-    xdescribe('interactions', () => {
+    describe('interactions', () => {
         const variants = [
             {
                 id: DEFAULT_VARIANT_ID,
@@ -209,6 +200,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
         ];
         beforeEach(() => {
             loadExperiment(EXPERIMENT_MOCK, variants);
+            spectator.detectChanges();
         });
 
         it('should open sideBar to add a variant ', () => {
@@ -290,12 +282,14 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
             });
         });
 
-        it('should save when press enter', () => {
+        it('should save when press enter', async () => {
             jest.spyOn(store, 'editVariant');
 
             spectator.query(Inplace).activate();
 
             spectator.detectComponentChanges();
+
+            await spectator.fixture.whenStable();
 
             const inplaceInput = spectator.query(byTestId('inplace-input')) as HTMLInputElement;
             inplaceInput.value = 'new value';
@@ -311,7 +305,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
             });
         });
 
-        fit('should confirm before delete a variant', () => {
+        it('should confirm before delete a variant', () => {
             jest.spyOn(store, 'deleteVariant');
 
             const button = spectator.queryLast(byTestId('variant-delete-button'));

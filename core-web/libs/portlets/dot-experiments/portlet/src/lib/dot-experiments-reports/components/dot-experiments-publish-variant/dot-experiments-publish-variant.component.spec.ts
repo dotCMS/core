@@ -70,7 +70,7 @@ describe('DotExperimentsPublishVariantComponent', () => {
         dotExperimentsService = spectator.inject(DotExperimentsService);
     });
 
-    xdescribe('with no winner', () => {
+    describe('with no winner', () => {
         beforeEach(async () => {
             dotExperimentsService.getById.mockReturnValue(of(EXPERIMENT_MOCK));
             dotExperimentsService.getResults.mockReturnValue(of({ ...EXPERIMENT_RESULTS_MOCK }));

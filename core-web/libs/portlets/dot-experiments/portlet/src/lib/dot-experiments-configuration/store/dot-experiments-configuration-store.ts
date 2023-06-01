@@ -267,7 +267,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                                         : this.dotMessageService.get(
                                               'dot.common.http.error.400.experiment.run-scheduling-error.header'
                                           ),
-                                    message: error.message.split('.')[0]
+                                    message: error.message
                                 }
                             });
                         }

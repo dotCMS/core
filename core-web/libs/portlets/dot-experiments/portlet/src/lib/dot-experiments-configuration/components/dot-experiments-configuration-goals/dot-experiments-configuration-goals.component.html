@@ -105,7 +105,6 @@
                 data-testId="tooltip-on-disabled"
                 tooltipPosition="bottom"
             >
-                {{ vm.isExperimentADraft }}
                 <button
                     class="p-button-rounded p-button-text"
                     [disabled]="!vm.isExperimentADraft"
@@ -121,3 +120,4 @@
 </ng-container>
 
 <ng-container dotDynamic></ng-container>
+<p-confirmPopup></p-confirmPopup>

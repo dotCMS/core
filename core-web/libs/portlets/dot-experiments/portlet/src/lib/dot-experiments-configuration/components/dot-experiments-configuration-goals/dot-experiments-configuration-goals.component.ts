@@ -6,6 +6,7 @@ import { ChangeDetectionStrategy, Component, ComponentRef, ViewChild } from '@an
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
+import { ConfirmPopupModule } from 'primeng/confirmpopup';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { tap } from 'rxjs/operators';
@@ -47,7 +48,8 @@ import { DotExperimentsConfigurationGoalSelectComponent } from '../dot-experimen
         // PrimeNg
         ButtonModule,
         CardModule,
-        TooltipModule
+        TooltipModule,
+        ConfirmPopupModule
     ],
     templateUrl: './dot-experiments-configuration-goals.component.html',
     styleUrls: ['./dot-experiments-configuration-goals.component.scss'],
