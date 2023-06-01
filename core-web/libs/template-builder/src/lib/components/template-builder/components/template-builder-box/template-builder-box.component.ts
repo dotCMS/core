@@ -4,7 +4,7 @@ import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from 
 import { ButtonModule } from 'primeng/button';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
 
-import { DotContainers } from '../../models/models';
+import { DotContainer } from '../../models/models';
 
 export enum TemplateBuilderBoxSize {
     large = 'large',
@@ -26,11 +26,11 @@ export class TemplateBuilderBoxComponent {
     @Output()
     addContainer: EventEmitter<void> = new EventEmitter<void>();
     @Output()
-    addColumn: EventEmitter<void> = new EventEmitter<void>();
+    deleteContainer: EventEmitter<void> = new EventEmitter<void>();
     @Output()
     deleteColumn: EventEmitter<void> = new EventEmitter<void>();
 
-    @Input() items: DotContainers;
+    @Input() items: DotContainer[];
 
     protected readonly templateBuilderSizes = TemplateBuilderBoxSize;
     @Input() size: TemplateBuilderBoxSize = TemplateBuilderBoxSize.large;
