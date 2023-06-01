@@ -13,16 +13,8 @@
     display: flex;
 }
 
-.dot-edit__experiments-results-button {
-    padding: $spacing-1 $spacing-2;
-    text-decoration: none;
-    display: flex;
-    gap: $spacing-1;
-    align-items: center;
-
-    span {
-        color: $black;
-    }
+.dot-edit__experiments-results-tag {
+    cursor: pointer;
 }
 
 ::ng-deep {

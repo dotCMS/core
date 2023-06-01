@@ -402,14 +402,11 @@ describe('DotEditPageToolbarComponent', () => {
 
             fixtureHost.detectChanges();
 
-            const goToResultsLink = de.query(By.css('[data-testId="preliminaryResultsButton"]'));
             const experimentTag = de.query(By.css('[data-testId="runningExperimentTag"]'));
 
-            expect(goToResultsLink.nativeElement.innerText).toContain('Preliminary Results');
+            experimentTag.nativeElement.click();
+
             expect(experimentTag.componentInstance.value).toEqual('Running');
-
-            goToResultsLink.nativeElement.click();
-
             fixtureHost.whenStable().then(() => {
                 expect(location.path()).toEqual('/edit-page/experiments/pageId/id/reports');
                 done();
