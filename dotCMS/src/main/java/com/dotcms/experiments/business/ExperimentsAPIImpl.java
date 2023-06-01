@@ -231,15 +231,6 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         }
     }
 
-    private void addRefererCondition(final HTMLPageAsset page, final Builder builder, final Goals goals) {
-
-        final com.dotcms.analytics.metrics.Condition refererCondition = createConditionWithUrlValue(
-                page, "referer");
-
-        final Goals newGoal = createNewGoals(goals, refererCondition);
-        builder.goals(newGoal);
-    }
-
     private void addUrlCondition(final HTMLPageAsset page, final Builder builder, final Goals goals) {
 
         final com.dotcms.analytics.metrics.Condition refererCondition = createConditionWithUrlValue(
@@ -263,18 +254,16 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 .stream()
                 .anyMatch(condition ->conditionName .equals(condition.parameter()));
     }
-    private com.dotcms.analytics.metrics.Condition createConditionWithUrlValue(final HTMLPageAsset page,
+    private com.dotcms.analytics.metrics.Condition createConditionWithUrlValue(
+            final HTMLPageAsset page,
             final String conditionName) {
 
-        try {
             return com.dotcms.analytics.metrics.Condition.builder()
                     .parameter(conditionName)
-                    .operator(Operator.CONTAINS)
-                    .value(page.getURI().replace("index", ""))
+                    .operator(Operator.REGEX)
+                    .value(ExperimentUrlPatternCalculator.INSTANCE.calculateUrlRegexPattern(page))
                     .build();
-        } catch (DotDataException e) {
-            throw new RuntimeException(e);
-        }
+
     }
 
     private void saveTargetingConditions(final Experiment experiment, final User user)
