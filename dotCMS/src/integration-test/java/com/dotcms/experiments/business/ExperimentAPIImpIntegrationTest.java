@@ -1891,7 +1891,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         final String lookBackWindows = new RandomString(20).nextString();
         final List<Map<String, String>> dataList = new ArrayList<>();
         Instant nextEventTriggerTime = firstEventTime;
-        String previousPageUrl = null;
+        String previousPageUrl = StringPool.BLANK;
 
         for (final String pageUrl : pagesUrl) {
             dataList.add(map(
