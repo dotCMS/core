@@ -471,6 +471,9 @@
     background-color: transparent !important;
     border-color: $color-palette-gray-500;
     color: $color-palette-gray-500;
+    .pi {
+        color: $button-text-color-disabled;
+    }
 }
 
 .p-button.p-button-raised:enabled:focus {
