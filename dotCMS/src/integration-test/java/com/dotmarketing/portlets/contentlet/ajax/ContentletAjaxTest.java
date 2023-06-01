@@ -55,6 +55,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpSession;
+
+import io.vavr.control.Try;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -335,7 +337,7 @@ public class ContentletAjaxTest {
 	public void test_searchContentletsByUser_filteringByDates_returns_validResults()
 			throws DotDataException, DotSecurityException {
 
-		final ContentType currentCalendarEventType = APILocator.getContentTypeAPI(APILocator.systemUser()).find("calendarEvent");
+		final ContentType currentCalendarEventType = Try.of(()->APILocator.getContentTypeAPI(APILocator.systemUser()).find("calendarEvent")).getOrNull();
 		if (null != currentCalendarEventType) {
 
 			APILocator.getContentTypeAPI(APILocator.systemUser()).delete(currentCalendarEventType);
