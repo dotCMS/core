@@ -11,14 +11,13 @@ volumes:
 
 services:
     elasticsearch-test:
-        image: ${ES_IMAGE:-docker.elastic.co/elasticsearch/elasticsearch:7.11.2}
+        image: ${ES_IMAGE:-elasticsearch:7.9.1}
         environment:
             - cluster.name=elastic-cluster
             - discovery.type=single-node
             - data
-            - bootstrap.system_call_filter=false
             - bootstrap.memory_lock=true
-            - 'ES_JAVA_OPTS=-Xmx1G'
+            - CLI_JAVA_OPTS="-Xms3g -Xmx3g"
         ports:
             - ${ES_HOST_PORT:-9207}:9200
         volumes:
