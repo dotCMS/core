@@ -1,3 +1,5 @@
+@use "variables" as *;
+
 :host {
     // Added this temporaly to test the col with 12 width on the grid
     width: calc(100% - 80px);
@@ -17,11 +19,13 @@
 }
 
 .tools {
-    display: grid;
-    grid-template-columns: repeat(2, auto);
+    display: flex;
+    gap: $spacing-3;
+    margin-bottom: $spacing-3;
+}
 
-    .add {
-        width: 100px;
-        border: 1px solid black;
-    }
+// Class added by the gridstack library when the widget is being dragged
+dotcms-add-widget.ui-draggable-dragging {
+    transform: rotate(-3.66deg);
+    box-shadow: $md-shadow-6;
 }
