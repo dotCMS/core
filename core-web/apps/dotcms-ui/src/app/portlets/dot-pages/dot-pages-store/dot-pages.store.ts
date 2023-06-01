@@ -73,9 +73,9 @@ export interface DotPagesInfo {
 
 export interface DotFavoritePagesInfo {
     collapsed?: boolean;
-    items?: DotCMSContentlet[];
-    showLoadMoreButton?: boolean;
-    total?: number;
+    items: DotCMSContentlet[];
+    showLoadMoreButton: boolean;
+    total: number;
 }
 
 export interface DotPagesState {
@@ -181,7 +181,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
 
     readonly pageTypes$ = this.select(({ pageTypes }) => pageTypes);
 
-    readonly setFavoritePages = this.updater<DotFavoritePagesInfo>(
+    readonly setFavoritePages = this.updater<Partial<DotFavoritePagesInfo>>(
         (state: DotPagesState, favoritePages: DotFavoritePagesInfo) => {
             return {
                 ...state,
@@ -193,7 +193,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         }
     );
 
-    readonly setPages = this.updater<DotPagesInfo>(
+    readonly setPages = this.updater<Partial<DotPagesInfo>>(
         (state: DotPagesState, pagesInfo: DotPagesInfo) => {
             return {
                 ...state,
