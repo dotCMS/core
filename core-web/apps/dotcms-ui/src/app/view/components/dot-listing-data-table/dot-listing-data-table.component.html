@@ -113,7 +113,7 @@
             {{ rowData[col.fieldName] | dotRelativeDate : true }}
         </span>
         <a
-            *ngIf="col.fieldName === 'nEntries'"
+            *ngIf="col.fieldName === 'nEntries' && rowData.variable !== 'dotFavoritePage'"
             [queryParams]="rowData.variable === 'Host' ? {} : { filter: rowData.variable }"
             [routerLink]="rowData.variable === 'Host' ? '/c/sites' : '/c/content'"
             (click)="$event.stopPropagation()"
