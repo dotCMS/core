@@ -28,10 +28,10 @@ public class FilterTest {
 
         var filteredFolderView = filter.apply(folder);
 
-        // Test when the path matches an include pattern
+        // Test when the path matches an implicitGlobInclude pattern
         Assertions.assertNotNull(filteredFolderView);
         Assertions.assertEquals(3, filteredFolderView.subFolders().stream().
-                filter(FolderView::include).count());
+                filter(FolderView::implicitGlobInclude).count());
         Assertions.assertEquals(5, filteredFolderView.assets().versions().size());
     }
 
@@ -47,10 +47,10 @@ public class FilterTest {
 
         var filteredFolderView = filter.apply(folder);
 
-        // Test when the path matches an include pattern
+        // Test when the path matches an implicitGlobInclude pattern
         Assertions.assertNotNull(filteredFolderView);
         Assertions.assertEquals(3, filteredFolderView.subFolders().stream().
-                filter(FolderView::include).count());
+                filter(FolderView::implicitGlobInclude).count());
         Assertions.assertEquals(1, filteredFolderView.assets().versions().size());
     }
 
@@ -66,10 +66,10 @@ public class FilterTest {
 
         var filteredFolderView = filter.apply(folder);
 
-        // Test when the path matches an include pattern
+        // Test when the path matches an implicitGlobInclude pattern
         Assertions.assertNotNull(filteredFolderView);
         Assertions.assertEquals(3, filteredFolderView.subFolders().stream().
-                filter(FolderView::include).count());
+                filter(FolderView::implicitGlobInclude).count());
         Assertions.assertEquals(3, filteredFolderView.assets().versions().size());
     }
 
@@ -85,10 +85,10 @@ public class FilterTest {
 
         var filteredFolderView = filter.apply(folder);
 
-        // Test when the path matches an include pattern
+        // Test when the path matches an implicitGlobInclude pattern
         Assertions.assertNotNull(filteredFolderView);
         Assertions.assertEquals(3, filteredFolderView.subFolders().stream().
-                filter(FolderView::include).count());
+                filter(FolderView::implicitGlobInclude).count());
         Assertions.assertEquals(3, filteredFolderView.assets().versions().size());
     }
 
@@ -104,10 +104,10 @@ public class FilterTest {
 
         var filteredFolderView = filter.apply(folder);
 
-        // Test when the path matches an include pattern
+        // Test when the path matches an implicitGlobInclude pattern
         Assertions.assertNotNull(filteredFolderView);
         Assertions.assertEquals(3, filteredFolderView.subFolders().stream().
-                filter(FolderView::include).count());
+                filter(FolderView::implicitGlobInclude).count());
         Assertions.assertEquals(5, filteredFolderView.assets().versions().size());
     }
 
@@ -124,10 +124,10 @@ public class FilterTest {
 
         var filteredFolderView = filter.apply(folder);
 
-        // Test when the path matches an include pattern
+        // Test when the path matches an implicitGlobInclude pattern
         Assertions.assertNotNull(filteredFolderView);
         Assertions.assertEquals(3, filteredFolderView.subFolders().stream().
-                filter(FolderView::include).count());
+                filter(FolderView::implicitGlobInclude).count());
         Assertions.assertEquals(4, filteredFolderView.assets().versions().size());
     }
 
@@ -144,10 +144,10 @@ public class FilterTest {
 
         var filteredFolderView = filter.apply(folder);
 
-        // Test when the path matches an include pattern
+        // Test when the path matches an implicitGlobInclude pattern
         Assertions.assertNotNull(filteredFolderView);
         Assertions.assertEquals(0, filteredFolderView.subFolders().stream().
-                filter(FolderView::include).count());
+                filter(FolderView::implicitGlobInclude).count());
         Assertions.assertEquals(1, filteredFolderView.assets().versions().size());
     }
 
@@ -164,10 +164,10 @@ public class FilterTest {
 
         var filteredFolderView = filter.apply(folder);
 
-        // Test when the path matches an include pattern
+        // Test when the path matches an implicitGlobInclude pattern
         Assertions.assertNotNull(filteredFolderView);
         Assertions.assertEquals(3, filteredFolderView.subFolders().stream().
-                filter(FolderView::include).count());
+                filter(FolderView::implicitGlobInclude).count());
         Assertions.assertEquals(1, filteredFolderView.assets().versions().size());
     }
 
@@ -184,10 +184,10 @@ public class FilterTest {
 
         var filteredFolderView = filter.apply(folder);
 
-        // Test when the path matches an include pattern
+        // Test when the path matches an implicitGlobInclude pattern
         Assertions.assertNotNull(filteredFolderView);
         Assertions.assertEquals(3, filteredFolderView.subFolders().stream().
-                filter(FolderView::include).count());
+                filter(FolderView::implicitGlobInclude).count());
         Assertions.assertEquals(1, filteredFolderView.assets().versions().size());
     }
 
@@ -204,10 +204,10 @@ public class FilterTest {
 
         var filteredFolderView = filter.apply(folder);
 
-        // Test when the path matches an include pattern
+        // Test when the path matches an implicitGlobInclude pattern
         Assertions.assertNotNull(filteredFolderView);
         Assertions.assertEquals(0, filteredFolderView.subFolders().stream().
-                filter(FolderView::include).count());
+                filter(FolderView::implicitGlobInclude).count());
         Assertions.assertEquals(0, filteredFolderView.assets().versions().size());
     }
 
@@ -224,10 +224,10 @@ public class FilterTest {
 
         var filteredFolderView = filter.apply(folder);
 
-        // Test when the path matches an include pattern
+        // Test when the path matches an implicitGlobInclude pattern
         Assertions.assertNotNull(filteredFolderView);
         Assertions.assertEquals(0, filteredFolderView.subFolders().stream().
-                filter(FolderView::include).count());
+                filter(FolderView::implicitGlobInclude).count());
         Assertions.assertEquals(0, filteredFolderView.assets().versions().size());
     }
 
@@ -244,10 +244,10 @@ public class FilterTest {
 
         var filteredFolderView = filter.apply(folder);
 
-        // Test when the path matches an include pattern
+        // Test when the path matches an implicitGlobInclude pattern
         Assertions.assertNotNull(filteredFolderView);
         Assertions.assertEquals(3, filteredFolderView.subFolders().stream().
-                filter(FolderView::include).count());
+                filter(FolderView::implicitGlobInclude).count());
         Assertions.assertEquals(1, filteredFolderView.assets().versions().size());
     }
 
@@ -264,10 +264,10 @@ public class FilterTest {
 
         var filteredFolderView = filter.apply(folder);
 
-        // Test when the path matches an include pattern
+        // Test when the path matches an implicitGlobInclude pattern
         Assertions.assertNotNull(filteredFolderView);
         Assertions.assertEquals(1, filteredFolderView.subFolders().stream().
-                filter(FolderView::include).count());
+                filter(FolderView::implicitGlobInclude).count());
         Assertions.assertEquals(1, filteredFolderView.assets().versions().size());
     }
 
@@ -284,10 +284,10 @@ public class FilterTest {
 
         var filteredFolderView = filter.apply(folder);
 
-        // Test when the path matches an include pattern
+        // Test when the path matches an implicitGlobInclude pattern
         Assertions.assertNotNull(filteredFolderView);
         Assertions.assertEquals(1, filteredFolderView.subFolders().stream().
-                filter(FolderView::include).count());
+                filter(FolderView::implicitGlobInclude).count());
         Assertions.assertEquals(1, filteredFolderView.assets().versions().size());
     }
 
@@ -304,10 +304,10 @@ public class FilterTest {
 
         var filteredFolderView = filter.apply(folder);
 
-        // Test when the path matches an include pattern
+        // Test when the path matches an implicitGlobInclude pattern
         Assertions.assertNotNull(filteredFolderView);
         Assertions.assertEquals(0, filteredFolderView.subFolders().stream().
-                filter(FolderView::include).count());
+                filter(FolderView::implicitGlobInclude).count());
         Assertions.assertEquals(0, filteredFolderView.assets().versions().size());
     }
 
@@ -324,10 +324,10 @@ public class FilterTest {
 
         var filteredFolderView = filter.apply(folder);
 
-        // Test when the path matches an include pattern
+        // Test when the path matches an implicitGlobInclude pattern
         Assertions.assertNotNull(filteredFolderView);
         Assertions.assertEquals(2, filteredFolderView.subFolders().stream().
-                filter(FolderView::include).count());
+                filter(FolderView::implicitGlobInclude).count());
         Assertions.assertEquals(5, filteredFolderView.assets().versions().size());
     }
 
@@ -343,10 +343,10 @@ public class FilterTest {
 
         var filteredFolderView = filter.apply(folder);
 
-        // Test when the path matches an include pattern
+        // Test when the path matches an implicitGlobInclude pattern
         Assertions.assertNotNull(filteredFolderView);
         Assertions.assertEquals(3, filteredFolderView.subFolders().stream().
-                filter(FolderView::include).count());
+                filter(FolderView::implicitGlobInclude).count());
         Assertions.assertEquals(4, filteredFolderView.assets().versions().size());
     }
 
@@ -362,10 +362,10 @@ public class FilterTest {
 
         var filteredFolderView = filter.apply(folder);
 
-        // Test when the path matches an include pattern
+        // Test when the path matches an implicitGlobInclude pattern
         Assertions.assertNotNull(filteredFolderView);
         Assertions.assertEquals(3, filteredFolderView.subFolders().stream().
-                filter(FolderView::include).count());
+                filter(FolderView::implicitGlobInclude).count());
         Assertions.assertEquals(3, filteredFolderView.assets().versions().size());
     }
 
@@ -381,10 +381,10 @@ public class FilterTest {
 
         var filteredFolderView = filter.apply(folder);
 
-        // Test when the path matches an include pattern
+        // Test when the path matches an implicitGlobInclude pattern
         Assertions.assertNotNull(filteredFolderView);
         Assertions.assertEquals(0, filteredFolderView.subFolders().stream().
-                filter(FolderView::include).count());
+                filter(FolderView::implicitGlobInclude).count());
         Assertions.assertEquals(5, filteredFolderView.assets().versions().size());
     }
 
@@ -400,10 +400,10 @@ public class FilterTest {
 
         var filteredFolderView = filter.apply(folder);
 
-        // Test when the path matches an include pattern
+        // Test when the path matches an implicitGlobInclude pattern
         Assertions.assertNotNull(filteredFolderView);
         Assertions.assertEquals(0, filteredFolderView.subFolders().stream().
-                filter(FolderView::include).count());
+                filter(FolderView::implicitGlobInclude).count());
         Assertions.assertEquals(5, filteredFolderView.assets().versions().size());
     }
 
@@ -420,10 +420,10 @@ public class FilterTest {
 
         var filteredFolderView = filter.apply(folder);
 
-        // Test when the path matches an include pattern
+        // Test when the path matches an implicitGlobInclude pattern
         Assertions.assertNotNull(filteredFolderView);
         Assertions.assertEquals(0, filteredFolderView.subFolders().stream().
-                filter(FolderView::include).count());
+                filter(FolderView::implicitGlobInclude).count());
         Assertions.assertEquals(3, filteredFolderView.assets().versions().size());
     }
 
@@ -440,10 +440,10 @@ public class FilterTest {
 
         var filteredFolderView = filter.apply(folder);
 
-        // Test when the path matches an include pattern
+        // Test when the path matches an implicitGlobInclude pattern
         Assertions.assertNotNull(filteredFolderView);
         Assertions.assertEquals(0, filteredFolderView.subFolders().stream().
-                filter(FolderView::include).count());
+                filter(FolderView::implicitGlobInclude).count());
         Assertions.assertEquals(2, filteredFolderView.assets().versions().size());
     }
 
@@ -460,10 +460,10 @@ public class FilterTest {
 
         var filteredFolderView = filter.apply(folder);
 
-        // Test when the path matches an include pattern
+        // Test when the path matches an implicitGlobInclude pattern
         Assertions.assertNotNull(filteredFolderView);
         Assertions.assertEquals(1, filteredFolderView.subFolders().stream().
-                filter(FolderView::include).count());
+                filter(FolderView::implicitGlobInclude).count());
         Assertions.assertEquals(5, filteredFolderView.assets().versions().size());
     }
 
@@ -480,10 +480,10 @@ public class FilterTest {
 
         var filteredFolderView = filter.apply(folder);
 
-        // Test when the path matches an include pattern
+        // Test when the path matches an implicitGlobInclude pattern
         Assertions.assertNotNull(filteredFolderView);
         Assertions.assertEquals(0, filteredFolderView.subFolders().stream().
-                filter(FolderView::include).count());
+                filter(FolderView::implicitGlobInclude).count());
         Assertions.assertEquals(2, filteredFolderView.assets().versions().size());
     }
 
@@ -501,10 +501,10 @@ public class FilterTest {
 
         var filteredFolderView = filter.apply(folder);
 
-        // Test when the path matches an include pattern
+        // Test when the path matches an implicitGlobInclude pattern
         Assertions.assertNotNull(filteredFolderView);
         Assertions.assertEquals(3, filteredFolderView.subFolders().stream().
-                filter(FolderView::include).count());
+                filter(FolderView::implicitGlobInclude).count());
         Assertions.assertEquals(3, filteredFolderView.assets().versions().size());
     }
 
@@ -522,10 +522,10 @@ public class FilterTest {
 
         var filteredFolderView = filter.apply(folder);
 
-        // Test when the path matches an include pattern
+        // Test when the path matches an implicitGlobInclude pattern
         Assertions.assertNotNull(filteredFolderView);
         Assertions.assertEquals(0, filteredFolderView.subFolders().stream().
-                filter(FolderView::include).count());
+                filter(FolderView::implicitGlobInclude).count());
         Assertions.assertEquals(0, filteredFolderView.assets().versions().size());
     }
 
@@ -543,10 +543,10 @@ public class FilterTest {
 
         var filteredFolderView = filter.apply(folder);
 
-        // Test when the path matches an include pattern
+        // Test when the path matches an implicitGlobInclude pattern
         Assertions.assertNotNull(filteredFolderView);
         Assertions.assertEquals(3, filteredFolderView.subFolders().stream().
-                filter(FolderView::include).count());
+                filter(FolderView::implicitGlobInclude).count());
         Assertions.assertEquals(0, filteredFolderView.assets().versions().size());
     }
 
@@ -564,10 +564,10 @@ public class FilterTest {
 
         var filteredFolderView = filter.apply(folder);
 
-        // Test when the path matches an include pattern
+        // Test when the path matches an implicitGlobInclude pattern
         Assertions.assertNotNull(filteredFolderView);
         Assertions.assertEquals(3, filteredFolderView.subFolders().stream().
-                filter(FolderView::include).count());
+                filter(FolderView::implicitGlobInclude).count());
         Assertions.assertEquals(3, filteredFolderView.assets().versions().size());
     }
 
