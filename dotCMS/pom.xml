@@ -1431,12 +1431,6 @@
                         <configuration>
                             <outputDirectory>${project.basedir}</outputDirectory>
                             <outputFileName>dependencies.gradle</outputFileName>
-                            <exclusions>
-                                <exclusion>
-                                    <groupId>com.dotcms.plugins</groupId>
-                                    <artifactId>tika-api</artifactId>
-                                </exclusion>
-                            </exclusions>
                         </configuration>
                     </execution>
                 </executions>
@@ -1584,7 +1578,6 @@
                     </execution>
                 </executions>
             </plugin>
-
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

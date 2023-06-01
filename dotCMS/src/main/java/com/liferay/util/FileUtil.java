@@ -351,7 +351,7 @@ public class FileUtil {
 	 */
 	private static boolean internalDelete(File f) {
 		try {
-			Files.delete(f.toPath());
+			Files.deleteIfExists(f.toPath());
 			return true;
 		} catch (IOException e) {
 			Logger.debug(FileUtil.class, String.format("Fail to delete file/dir [%s]", f), e);
