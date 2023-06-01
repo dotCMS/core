@@ -194,3 +194,8 @@ export const FULL_DATA_MOCK: DotLayoutBody = {
         }
     ]
 };
+
+export const MESSAGES_MOCK = {
+    'dot.template.builder.add.row': 'Add Row',
+    'dot.template.builder.add.box': 'Add Box'
+};

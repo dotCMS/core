@@ -1,4 +1,4 @@
-import { NgClass, NgFor, NgIf } from '@angular/common';
+import { NgClass, NgFor, NgForOf, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -18,7 +18,7 @@ export enum TemplateBuilderBoxSize {
     styleUrls: ['./template-builder-box.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     standalone: true,
-    imports: [NgFor, NgIf, NgClass, ButtonModule, ScrollPanelModule]
+    imports: [NgFor, NgForOf, NgIf, NgClass, ButtonModule, ScrollPanelModule]
 })
 export class TemplateBuilderBoxComponent {
     @Output()

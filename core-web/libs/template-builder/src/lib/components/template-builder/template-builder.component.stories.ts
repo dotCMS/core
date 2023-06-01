@@ -2,19 +2,41 @@ import { moduleMetadata, Story, Meta } from '@storybook/angular';
 
 import { NgFor, AsyncPipe } from '@angular/common';
 
+import { DotMessageService } from '@dotcms/data-access';
+import { DotMessagePipeModule } from '@dotcms/ui';
+
 import { AddWidgetComponent } from './components/add-widget/add-widget.component';
 import { TemplateBuilderRowComponent } from './components/template-builder-row/template-builder-row.component';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { TemplateBuilderComponent } from './template-builder.component';
-import { FULL_DATA_MOCK } from './utils/mocks';
+import { FULL_DATA_MOCK, MESSAGES_MOCK } from './utils/mocks';
 
 export default {
     title: 'TemplateBuilderComponent',
     component: TemplateBuilderComponent,
     decorators: [
         moduleMetadata({
-            imports: [NgFor, AsyncPipe, TemplateBuilderRowComponent, AddWidgetComponent],
-            providers: [DotTemplateBuilderStore]
+            imports: [
+                NgFor,
+                AsyncPipe,
+                TemplateBuilderRowComponent,
+                AddWidgetComponent,
+                DotMessagePipeModule
+            ],
+            providers: [
+                DotTemplateBuilderStore,
+                {
+                    provide: DotMessageService,
+                    useValue: {
+                        get(key: string, ..._args: string[]): string {
+                            return MESSAGES_MOCK[key];
+                        },
+                        init() {
+                            /* */
+                        }
+                    }
+                }
+            ]
         })
     ]
 } as Meta<TemplateBuilderComponent>;

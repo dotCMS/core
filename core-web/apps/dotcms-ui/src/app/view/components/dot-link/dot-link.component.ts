@@ -3,7 +3,7 @@ import { Component, Input } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { DotMessagePipeModule } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-link',

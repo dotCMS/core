@@ -7,7 +7,7 @@ import {
     RangeOfDateAndTime,
     SummaryLegend
 } from '@dotcms/dotcms-models';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { DotMessagePipeModule } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-experiments-experiment-summary',

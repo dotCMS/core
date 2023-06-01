@@ -1,10 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
+import { DotMessageService } from '@dotcms/data-access';
+
 import { AddWidgetComponent } from './components/add-widget/add-widget.component';
 import { TemplateBuilderRowComponent } from './components/template-builder-row/template-builder-row.component';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { TemplateBuilderComponent } from './template-builder.component';
-import { FULL_DATA_MOCK } from './utils/mocks';
+import { FULL_DATA_MOCK, MESSAGES_MOCK } from './utils/mocks';
 
 describe('TemplateBuilderComponent', () => {
     let component: TemplateBuilderComponent;
@@ -13,7 +15,20 @@ describe('TemplateBuilderComponent', () => {
     beforeEach(async () => {
         await TestBed.configureTestingModule({
             declarations: [TemplateBuilderComponent],
-            providers: [DotTemplateBuilderStore],
+            providers: [
+                DotTemplateBuilderStore,
+                {
+                    provide: DotMessageService,
+                    useValue: {
+                        get(key: string, ..._args: string[]): string {
+                            return MESSAGES_MOCK[key];
+                        },
+                        init() {
+                            /* */
+                        }
+                    }
+                }
+            ],
             imports: [AddWidgetComponent, TemplateBuilderRowComponent]
         }).compileComponents();
 
