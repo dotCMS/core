@@ -55,6 +55,16 @@ public class Task230523CreateVariantFieldInContentletIntegrationTest {
         assertTrue(existsVariantId);
     }
 
+    /**
+     * Method to test: {@link Task230523CreateVariantFieldInContentlet#executeUpgrade()} and
+     * {@link Task230523CreateVariantFieldInContentlet#forceRun()}
+     * when: the variant_id column does not exist in the contentlet table.
+     * should: create the variant_id column and set the default value to 'DEFAULT' also the method
+     * forceRun should return true.
+     * @throws SQLException
+     * @throws DotDataException
+     * @throws IOException
+     */
     @Test
     public void executeTaskUpgrade() throws SQLException, DotDataException, IOException {
         final DotConnect dotConnect = new DotConnect();
@@ -94,23 +104,24 @@ public class Task230523CreateVariantFieldInContentletIntegrationTest {
         assertTrue(databaseMetaData.hasColumn("contentlet", "variant_id"));
 
         final ArrayList<Map<String, Object>> contentlets_1 = dotConnect.setSQL(
-                        "SELECT contentlet_as_json FROM contentlet WHERE inode = ?")
+                        "SELECT contentlet_as_json, variant_id FROM contentlet WHERE inode = ?")
                 .addParam(contentlet_1.getInode())
                 .loadResults();
 
         assertEquals(1, contentlets_1.size());
-
+        assertEquals("DEFAULT", contentlets_1.get(0).get("variant_id"));
         final Map<String, Object> contentletAsMapFromDB = JsonUtil.getJsonFromString(
                 contentlets_1.get(0).get("contentlet_as_json").toString());
         assertNull(contentletAsMapFromDB.get(Contentlet.VARIANT_ID));
 
 
         final ArrayList<Map<String, Object>> contentlets_2 = dotConnect.setSQL(
-                        "SELECT contentlet_as_json FROM contentlet WHERE inode = ?")
+                        "SELECT contentlet_as_json, variant_id FROM contentlet WHERE inode = ?")
                 .addParam(contentlet_2.getInode())
                 .loadResults();
 
         assertEquals(1, contentlets_2.size());
+        assertEquals("DEFAULT", contentlets_2.get(0).get("variant_id"));
 
         final Object contentletAsJson = contentlets_2.get(0).get("contentlet_as_json");
         assertFalse(contentletAsJson != null && UtilMethods.isSet(contentletAsJson.toString()));

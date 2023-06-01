@@ -2423,7 +2423,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     /***
      * Method to test:
      * When: Save a {@link Contentlet}
-     * Should: Save the Variant name inside a new column and not inside the Jsong Field
+     * Should: Save the Variant name inside a new column and not inside the Json Field
      *
      * @throws DotDataException
      * @throws JsonProcessingException
