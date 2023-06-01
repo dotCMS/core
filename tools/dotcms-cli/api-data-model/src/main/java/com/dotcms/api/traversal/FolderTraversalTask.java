@@ -12,7 +12,7 @@ import java.util.concurrent.RecursiveTask;
  */
 public class FolderTraversalTask extends RecursiveTask<TreeNode> {
 
-    private final Executor executor;
+    private final Retriever retriever;
     private final Filter filter;
     private final String siteName;
     private final FolderView folder;
@@ -23,22 +23,22 @@ public class FolderTraversalTask extends RecursiveTask<TreeNode> {
      * Constructs a new FolderTraversalTask instance with the specified site name, folder, root
      * flag, and depth.
      *
-     * @param executor The executor used for REST calls and other operations.
-     * @param filter   The filter used to include or exclude folders and assets.
-     * @param siteName The name of the site containing the folder to traverse.
-     * @param folder   The folder to traverse.
-     * @param root     Whether this task is for the root folder.
-     * @param depth    The maximum depth to traverse the directory tree.
+     * @param retriever The retriever used for REST calls and other operations.
+     * @param filter    The filter used to include or exclude folders and assets.
+     * @param siteName  The name of the site containing the folder to traverse.
+     * @param folder    The folder to traverse.
+     * @param root      Whether this task is for the root folder.
+     * @param depth     The maximum depth to traverse the directory tree.
      */
     FolderTraversalTask(
-            Executor executor,
+            Retriever retriever,
             Filter filter,
             final String siteName,
             final FolderView folder,
             final Boolean root,
             final int depth) {
 
-        this.executor = executor;
+        this.retriever = retriever;
         this.filter = filter;
         this.siteName = siteName;
         this.folder = folder;
@@ -69,7 +69,9 @@ public class FolderTraversalTask extends RecursiveTask<TreeNode> {
                     folder.path(),
                     folder.name(),
                     folder.level(),
-                    folder.include()
+                    folder.implicitGlobInclude(),
+                    folder.explicitGlobInclude(),
+                    folder.explicitGlobExclude()
             );
 
             // Process the fetched sub-folders
@@ -85,7 +87,9 @@ public class FolderTraversalTask extends RecursiveTask<TreeNode> {
                                 folder.name(),
                                 subFolder.name(),
                                 subFolder.level(),
-                                subFolder.include()
+                                subFolder.implicitGlobInclude(),
+                                subFolder.explicitGlobInclude(),
+                                subFolder.explicitGlobExclude()
                         );
                         forks.add(task);
                         task.fork();
@@ -112,7 +116,9 @@ public class FolderTraversalTask extends RecursiveTask<TreeNode> {
                                 folder.path(),
                                 subFolder.name(),
                                 subFolder.level(),
-                                subFolder.include()
+                                subFolder.implicitGlobInclude(),
+                                subFolder.explicitGlobInclude(),
+                                subFolder.explicitGlobExclude()
                         );
                         forks.add(task);
                         task.fork();
@@ -151,12 +157,16 @@ public class FolderTraversalTask extends RecursiveTask<TreeNode> {
             final String parentFolderName,
             final String folderName,
             final int level,
-            final boolean include
+            final boolean include,
+            final Boolean explicitGlobInclude,
+            final Boolean explicitGlobExclude
     ) {
 
-        final var folder = this.restCall(siteName, parentFolderName, folderName, level, include);
+        final var folder = this.restCall(siteName, parentFolderName, folderName, level, include,
+                explicitGlobInclude, explicitGlobExclude);
+
         return new FolderTraversalTask(
-                this.executor,
+                this.retriever,
                 this.filter,
                 siteName,
                 folder,
@@ -176,14 +186,17 @@ public class FolderTraversalTask extends RecursiveTask<TreeNode> {
      * @return an {@code FolderView} object containing the metadata for the requested folder
      */
     private FolderView restCall(final String siteName, final String parentFolderName,
-            final String folderName, final int level, final boolean include) {
-        
-        var foundFolder = this.executor.restCall(
+            final String folderName, final int level, final boolean include,
+            final Boolean explicitGlobInclude, final Boolean explicitGlobExclude) {
+
+        var foundFolder = this.retriever.retrieveFolderContents(
                 siteName,
                 parentFolderName,
                 folderName,
                 level,
-                include
+                include,
+                explicitGlobInclude,
+                explicitGlobExclude
         );
         return this.filter.apply(foundFolder);
     }

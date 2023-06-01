@@ -23,7 +23,7 @@ import javax.inject.Inject;
 public class FolderTraversalServiceImpl implements FolderTraversalService {
 
     @Inject
-    protected Executor executor;
+    protected Retriever retriever;
 
     /**
      * Traverses the file system directory at the specified path and builds a hierarchical tree
@@ -124,7 +124,7 @@ public class FolderTraversalServiceImpl implements FolderTraversalService {
         var forkJoinPool = ForkJoinPool.commonPool();
 
         var task = new FolderTraversalTask(
-                executor,
+                retriever,
                 filter,
                 site,
                 FolderView.builder()

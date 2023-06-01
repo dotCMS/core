@@ -52,7 +52,17 @@ public interface AbstractFolderView {
     }
 
     @Value.Default
-    default boolean include() {
+    default boolean explicitGlobInclude() {
+        return false;
+    }
+
+    @Value.Default
+    default boolean explicitGlobExclude() {
+        return false;
+    }
+
+    @Value.Default
+    default boolean implicitGlobInclude() {
         return true;
     }
 

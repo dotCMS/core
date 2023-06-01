@@ -17,7 +17,7 @@ import javax.inject.Inject;
  * An application-scoped bean that provides a method to retrieve folder contents via REST API.
  */
 @ApplicationScoped
-public class Executor {
+public class Retriever {
 
     @Inject
     protected RestClientFactory clientFactory;
@@ -34,8 +34,9 @@ public class Executor {
      * @return an {@code FolderView} object containing the metadata for the requested folder
      */
     @ActivateRequestContext
-    public FolderView restCall(String siteName, String parentFolderName,
-            String folderName, final int level, final boolean include) {
+    public FolderView retrieveFolderContents(String siteName, String parentFolderName,
+            String folderName, final int level, final boolean implicitGlobInclude,
+            final boolean explicitGlobInclude, final boolean explicitGlobExclude) {
 
         // Determine if the parent folder and folder names are empty or null
         var emptyParent = parentFolderName == null
@@ -69,7 +70,9 @@ public class Executor {
 
         var foundFolder = response.entity();
         foundFolder = foundFolder.withLevel(level);
-        foundFolder = foundFolder.withInclude(include);
+        foundFolder = foundFolder.withImplicitGlobInclude(implicitGlobInclude);
+        foundFolder = foundFolder.withExplicitGlobExclude(explicitGlobExclude);
+        foundFolder = foundFolder.withExplicitGlobInclude(explicitGlobInclude);
 
         if (foundFolder.subFolders() != null && !foundFolder.subFolders().isEmpty()) {
 

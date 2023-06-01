@@ -65,13 +65,7 @@ public class Filter {
         if (folder.subFolders() != null) {
             folder.subFolders().iterator().forEachRemaining(subFolder -> {
 
-                var folderPath = subFolder.path();
-
-                if (!rootPath.equals("/")) {
-                    folderPath = folderPath.replaceFirst("^" + rootPath, "");
-                }
-
-                subFolder = subFolder.withInclude(use(true, folderPath));
+                subFolder = validateFolder(subFolder);
                 filteredSubFolders.add(subFolder);
             });
         }
@@ -87,7 +81,7 @@ public class Filter {
                     assetPath = assetPath.replaceFirst("^" + rootPath, "");
                 }
 
-                if (use(false, assetPath)) {
+                if (useAsset(assetPath)) {
                     filteredAssets.add(assetVersion);
                 }
             });
@@ -99,33 +93,73 @@ public class Filter {
     }
 
     /**
-     * Determines whether the given path should be included based on the includes and excludes
-     * patterns for folders or assets.
+     * Validates the given folder by determining whether it should be included based on the includes
+     * and excludes patterns for folders setting specific flags in the {@link FolderView} object.
      *
-     * @param isFolder Specifies whether the path is for a folder or asset.
-     * @param path     The path to check.
-     * @return {@code true} if the path should be included, {@code false} otherwise.
+     * @param subFolder The folder to validate.
+     * @return The validated folder view.
      */
-    private boolean use(Boolean isFolder, String path) {
+    private FolderView validateFolder(FolderView subFolder) {
 
-        var includes = isFolder ? folderIncludes : assetIncludes;
-        var excludes = isFolder ? folderExcludes : assetExcludes;
+        var folderPath = subFolder.path();
+
+        if (!rootPath.equals("/")) {
+            folderPath = folderPath.replaceFirst("^" + rootPath, "");
+        }
+
+        //subFolder = subFolder.withInclude(use(true, folderPath));
 
         FileSystem fileSystem = FileSystems.getDefault();
 
         // Check if the path should be used according to the excludes
-        for (PathMatcher exclude : excludes) {
+        for (PathMatcher exclude : folderExcludes) {
+            if (exclude.matches(fileSystem.getPath(folderPath))) {
+
+                subFolder = subFolder.withExplicitGlobExclude(true);
+                return subFolder.withImplicitGlobInclude(false);
+            }
+        }
+
+        // Check if the path should be used according to the includes, no includes means include all
+        if (folderIncludes.isEmpty()) {
+            return subFolder.withImplicitGlobInclude(true);
+        }
+
+        for (PathMatcher include : folderIncludes) {
+            if (include.matches(fileSystem.getPath(folderPath))) {
+                subFolder = subFolder.withExplicitGlobInclude(true);
+                return subFolder.withImplicitGlobInclude(true);
+            }
+        }
+
+        // If no include patterns matched, exclude the path by default
+        return subFolder.withImplicitGlobInclude(false);
+    }
+
+    /**
+     * Determines whether the given asset path should be included based on the includes and excludes
+     * patterns for assets.
+     *
+     * @param path The asset path to check.
+     * @return {@code true} if the path should be included, {@code false} otherwise.
+     */
+    private boolean useAsset(String path) {
+
+        FileSystem fileSystem = FileSystems.getDefault();
+
+        // Check if the path should be used according to the excludes
+        for (PathMatcher exclude : assetExcludes) {
             if (exclude.matches(fileSystem.getPath(path))) {
                 return false;
             }
         }
 
         // Check if the path should be used according to the includes
-        if (includes.isEmpty()) {
+        if (assetIncludes.isEmpty()) {
             return true;
         }
 
-        for (PathMatcher include : includes) {
+        for (PathMatcher include : assetIncludes) {
             if (include.matches(fileSystem.getPath(path))) {
                 return true;
             }

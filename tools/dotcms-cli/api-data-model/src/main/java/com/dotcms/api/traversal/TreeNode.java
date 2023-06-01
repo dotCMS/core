@@ -128,13 +128,18 @@ public class TreeNode {
         // Clone children without assets
         for (TreeNode child : this.children) {
 
+            // If we have an explicit rule to exclude this folder, we skip it
+            if (child.folder().explicitGlobExclude()) {
+                continue;
+            }
+
             TreeNode clonedChild = child.cloneAndFilterAssets(status, language, showEmptyFolders);
 
             if (showEmptyFolders
                     || !clonedChild.assets.isEmpty()
                     || hasAssetsInSubtree(clonedChild)) {
 
-                if (clonedChild.folder.include() || hasIncludeInSubtree(clonedChild)) {
+                if (clonedChild.folder.implicitGlobInclude() || hasIncludeInSubtree(clonedChild)) {
                     newNode.addChild(clonedChild);
                 }
             }
@@ -175,7 +180,7 @@ public class TreeNode {
      */
     private boolean hasIncludeInSubtree(TreeNode node) {
 
-        if (node.folder().include()) {
+        if (node.folder().implicitGlobInclude()) {
             return true;
         }
 
