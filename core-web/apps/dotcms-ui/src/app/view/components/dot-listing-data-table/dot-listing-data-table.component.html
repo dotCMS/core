@@ -55,7 +55,7 @@
             [attr.data-testRowId]="rowData.identifier"
             [pContextMenuRow]="rowData"
             [pSelectableRow]="rowData"
-            [attr.data-testId]="rowData.variable ? 'row-' + rowData.variable : null"
+            [attr.data-testId]="rowData?.variable ? 'row-' + rowData.variable : null"
             (click)="handleRowClick(rowData)"
             (keyup.enter)="handleRowClick(rowData)"
             data-testClass="testTableRow"
@@ -118,7 +118,7 @@
             {{ rowData[col.fieldName] | dotRelativeDate : true }}
         </span>
         <a
-            *ngIf="col.fieldName === 'nEntries' && rowData.variable !== 'dotFavoritePage'"
+            *ngIf="col.fieldName === 'nEntries' && !rowData?.system"
             [queryParams]="rowData.variable === 'Host' ? {} : { filter: rowData.variable }"
             [routerLink]="rowData.variable === 'Host' ? '/c/sites' : '/c/content'"
             (click)="$event.stopPropagation()"

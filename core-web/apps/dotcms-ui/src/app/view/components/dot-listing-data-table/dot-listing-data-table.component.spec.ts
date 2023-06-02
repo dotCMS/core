@@ -111,7 +111,8 @@ describe('DotListingDataTableComponent', () => {
         field2: 'item7-value2',
         field3: 'item7-value3',
         nEntries: 'item1-value4',
-        variable: 'dotFavoritePage'
+        variable: 'dotFavoritePage',
+        system: true
     };
 
     beforeEach(() => {
@@ -571,7 +572,7 @@ describe('DotListingDataTableComponent', () => {
         expect(noResults.nativeElement.innerText).toEqual('No Results Found');
     }));
 
-    it('should hide entries for favorite pages content type', fakeAsync(() => {
+    it('should hide entries for system content types', fakeAsync(() => {
         setRequestSpy([...items, favoritePagesItem]);
         hostFixture.detectChanges();
         tick(1);
