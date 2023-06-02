@@ -1,15 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { ActivatedRouteSnapshot } from '@angular/router';
+// const route: any = jasmine.createSpyObj<ActivatedRouteSnapshot>("ActivatedRouteSnapshot", [
+//   "toString"
+// ]);
 
-const route: any = jasmine.createSpyObj<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [
-    'toString'
-]);
+// route.queryParams = {};
 
-route.queryParams = {};
-
-describe('DotExperimentExperimentResolver', () => {
-    pending('pass to spectator');
+xdescribe('DotExperimentExperimentResolver', () => {
+    it('move this to spectator', () => {
+        const val = 1;
+        expect(val).toBe(1);
+    });
     // let dotHttpErrorManagerService: DotHttpErrorManagerService;
     // let dotPageStateService: DotPageStateService;
     // let dotPageStateServiceRequestPageSpy: jasmine.Spy;
