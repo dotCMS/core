@@ -325,8 +325,8 @@ dependencies {
     implementation (group: 'org.apache.lucene', name: 'lucene-suggest', version: '8.7.0') {
         transitive=false
     }
-    implementation (group: 'org.apache.pdfbox', name: 'fontbox', version: '2.0.27'){}
-    implementation (group: 'org.apache.pdfbox', name: 'pdfbox', version: '2.0.27'){}
+    implementation (group: 'org.apache.pdfbox', name: 'fontbox', version: '2.0.28'){}
+    implementation (group: 'org.apache.pdfbox', name: 'pdfbox', version: '2.0.28'){}
     implementation (group: 'org.apache.poi', name: 'poi', version: '3.17'){}
     compileOnly (group: 'org.apache.tomcat', name: 'tomcat-api', version: '9.0.73'){}
     compileOnly (group: 'org.apache.tomcat', name: 'tomcat-el-api', version: '9.0.73'){}
