@@ -1,25 +1,20 @@
 @use "variables" as *;
 
 ::ng-deep {
-    .p-dialog-mask.p-component-overlay {
-        background-color: transparent;
-        backdrop-filter: none;
-    }
-
-    .p-confirm-dialog-icon {
+    .p-confirm-popup-icon {
         color: $color-palette-primary-500;
     }
 
-    .p-dialog.p-confirm-dialog .p-confirm-dialog-icon {
-        font-size: 1.125rem;
-        padding-right: $spacing-1;
+    .p-confirm-popup {
+        width: 21.75rem;
+        border-radius: $border-radius-md;
     }
 
-    .p-dialog .p-dialog-header {
-        display: none;
+    .p-confirm-popup .p-button.p-button-text.p-confirm-popup-reject {
+        border: 1.5px solid $color-palette-primary-400;
     }
 
-    .p-dialog .p-dialog-content {
-        padding: $spacing-4;
+    .p-confirm-popup .p-confirm-popup-content {
+        padding: $spacing-3;
     }
 }

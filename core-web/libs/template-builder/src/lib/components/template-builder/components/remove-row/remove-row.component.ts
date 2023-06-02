@@ -3,7 +3,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { ConfirmPopupModule } from 'primeng/confirmpopup';
 
 @Component({
     selector: 'dotcms-remove-row',
@@ -11,21 +11,21 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
     styleUrls: ['./remove-row.component.scss'],
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [ConfirmDialogModule, ButtonModule, BrowserAnimationsModule],
+    imports: [ConfirmPopupModule, ButtonModule, BrowserAnimationsModule],
     providers: [ConfirmationService]
 })
 export class RemoveRowComponent {
     @Output() deleteRow: EventEmitter<void> = new EventEmitter();
     constructor(private confirmationService: ConfirmationService) {}
 
-    confirm(): void {
+    confirm(event: Event): void {
         this.confirmationService.confirm({
+            target: event.target,
             message: 'Are you sure you want to proceed deleting this item?',
             icon: 'pi pi-info-circle',
-            acceptLabel: 'Yes',
-            rejectLabel: 'No',
-            rejectButtonStyleClass: 'p-button-sm p-button-secondary',
-            acceptButtonStyleClass: 'p-button-sm p-button-primary'
+            accept: () => {
+                this.deleteRow.emit();
+            }
         });
     }
 }

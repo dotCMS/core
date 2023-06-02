@@ -1,11 +1,6 @@
-<p-confirmDialog
-    [defaultFocus]="'reject'"
-    [closable]="false"
-    [position]="'right'"
-></p-confirmDialog>
+<p-confirmPopup></p-confirmPopup>
 <p-button
-    id="row-trash-button"
-    (onClick)="confirm()"
+    (onClick)="confirm($event)"
     styleClass="p-button-text p-button-sm p-button-rounded"
     icon="pi pi-trash"
 >
