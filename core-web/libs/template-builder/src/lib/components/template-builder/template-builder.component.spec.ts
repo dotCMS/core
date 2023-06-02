@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { DotMessagePipeModule } from '@dotcms/ui';
 
 import { AddWidgetComponent } from './components/add-widget/add-widget.component';
 import { TemplateBuilderRowComponent } from './components/template-builder-row/template-builder-row.component';
@@ -29,7 +30,7 @@ describe('TemplateBuilderComponent', () => {
                     }
                 }
             ],
-            imports: [AddWidgetComponent, TemplateBuilderRowComponent]
+            imports: [AddWidgetComponent, TemplateBuilderRowComponent, DotMessagePipeModule]
         }).compileComponents();
 
         fixture = TestBed.createComponent(TemplateBuilderComponent);
