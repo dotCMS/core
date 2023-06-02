@@ -42,6 +42,7 @@
                         <dotcms-template-builder-box
                             [items]="box.containers"
                             [size]="box.w"
+                            (deleteColumn)="removeColumn(box, row.id)"
                         ></dotcms-template-builder-box>
                     </div>
                 </div>

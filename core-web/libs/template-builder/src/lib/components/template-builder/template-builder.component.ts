@@ -3,7 +3,8 @@ import {
     GridItemHTMLElement,
     GridStack,
     GridStackNode,
-    GridStackWidget
+    GridStackWidget,
+    numberOrString
 } from 'gridstack';
 import { Observable } from 'rxjs';
 
@@ -145,5 +146,20 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
 
     identify(_: number, w: GridStackWidget) {
         return w.id;
+    }
+
+    removeColumn(column: DotGridStackWidget, rowID: numberOrString): void {
+        // The gridstack model is polutted with the subgrid data
+
+        const columnToDelete = this.boxes.find(
+            (elem) => elem.nativeElement.getAttribute('gs-id') === column.id
+        ).nativeElement;
+
+        // So we need to delete the node from the GridStack Model
+        this.grid.engine.nodes
+            .find((node) => node.id === rowID)
+            .subGrid?.removeWidget(columnToDelete);
+
+        this.store.removeColumn({ ...column, parentId: rowID as string });
     }
 }
