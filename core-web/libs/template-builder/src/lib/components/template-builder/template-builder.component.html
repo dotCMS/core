@@ -5,6 +5,7 @@
         data-widget-type="row"
         gs-w="12"
         gs-h="1"
+        data-testId="add-row"
     ></dotcms-add-widget>
     <dotcms-add-widget
         [label]="'Add Box'"
@@ -12,6 +13,7 @@
         data-widget-type="col"
         gs-w="1"
         gs-h="1"
+        data-testId="add-box"
     ></dotcms-add-widget>
 </div>
 <div class="grid-stack">
@@ -24,6 +26,7 @@
         [attr.gs-y]="row.y"
         [attr.gs-w]="row.w"
         [attr.gs-h]="row.h"
+        data-testId="row"
     >
         <dotcms-template-builder-row>
             <div class="grid-stack-item-content grid-stack">
@@ -37,6 +40,7 @@
                     [attr.gs-y]="box.y"
                     [attr.gs-w]="box.w"
                     [attr.gs-h]="box.h"
+                    data-testId="box"
                 >
                     <div class="grid-stack-item-content">
                         <dotcms-template-builder-box
