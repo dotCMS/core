@@ -1,6 +1,7 @@
 import { moduleMetadata, Story, Meta } from '@storybook/angular';
 
 import { NgFor, AsyncPipe } from '@angular/common';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { AddWidgetComponent } from './components/add-widget/add-widget.component';
 import { RemoveRowComponent } from './components/remove-row/remove-row.component';
@@ -19,7 +20,8 @@ export default {
                 AsyncPipe,
                 TemplateBuilderRowComponent,
                 AddWidgetComponent,
-                RemoveRowComponent
+                RemoveRowComponent,
+                BrowserAnimationsModule
             ],
             providers: [DotTemplateBuilderStore]
         })

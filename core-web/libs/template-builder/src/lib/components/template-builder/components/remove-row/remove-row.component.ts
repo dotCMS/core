@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Output } from '@angular/core';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -11,7 +10,7 @@ import { ConfirmPopupModule } from 'primeng/confirmpopup';
     styleUrls: ['./remove-row.component.scss'],
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [ConfirmPopupModule, ButtonModule, BrowserAnimationsModule],
+    imports: [ConfirmPopupModule, ButtonModule],
     providers: [ConfirmationService]
 })
 export class RemoveRowComponent {
