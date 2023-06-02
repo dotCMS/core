@@ -630,11 +630,8 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 "You don't have permission to archive the Experiment. "
                         + "Experiment Id: " + persistedExperimentOpt.get().id());
 
-        DotPreconditions.isTrue(experimentFromFactory.status()==Status.RUNNING,()->
+        DotPreconditions.isTrue(experimentFromFactory.status()==Status.RUNNING, ()->
                         "Only RUNNING experiments can be ended", DotStateException.class);
-
-        DotPreconditions.isTrue(experimentFromFactory.status()!= ENDED,
-                ()-> "Cannot end an already ended Experiment.", DotStateException.class);
 
         DotPreconditions.isTrue(persistedExperimentOpt.get().scheduling().isPresent(),
                 ()-> "Scheduling not valid.", DotStateException.class);
@@ -1067,6 +1064,30 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         }
 
         return withUpdatedVariants;
+    }
+
+    @Override
+    public Experiment cancel(String experimentId, User user)
+            throws DotDataException, DotSecurityException {
+        DotPreconditions.checkArgument(UtilMethods.isSet(experimentId), "experiment Id must be provided.");
+
+        final Optional<Experiment> persistedExperimentOpt =  find(experimentId, user);
+
+        DotPreconditions.isTrue(persistedExperimentOpt.isPresent(),()-> "Experiment with provided id not found",
+                DoesNotExistException.class);
+
+        final Experiment experimentFromFactory = persistedExperimentOpt.get();
+        validatePermissions(user, experimentFromFactory,
+                "You don't have permission to cancel the Experiment. "
+                        + "Experiment Id: " + persistedExperimentOpt.get().id());
+
+        DotPreconditions.isTrue(experimentFromFactory.status()== SCHEDULED, ()->
+                "Only SCHEDULED experiments can be canceled", DotStateException.class);
+
+        DotPreconditions.isTrue(persistedExperimentOpt.get().scheduling().isPresent(),
+                ()-> "Scheduling not valid.", DotStateException.class);
+
+        return save(experimentFromFactory.withStatus(DRAFT), user);
     }
 
     @Override
