@@ -15,7 +15,7 @@
     ></dotcms-add-widget>
 </div>
 <div class="grid-stack">
-    <div
+    <dotcms-template-builder-row
         class="grid-stack-item"
         #rows
         *ngFor="let row of items$ | async; trackBy: identify"
@@ -27,6 +27,7 @@
     >
         <dotcms-template-builder-row (deleteRow)="deleteRow(row.id)">
             <div class="grid-stack-item-content grid-stack">
+                <dotcms-template-builder-background-columns></dotcms-template-builder-background-columns>
                 <div
                     class="grid-stack-item sub"
                     #boxes

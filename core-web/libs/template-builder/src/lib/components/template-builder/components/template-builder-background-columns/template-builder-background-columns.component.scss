@@ -1,0 +1,17 @@
+@use "variables" as *;
+
+.background-columns {
+    height: 100%;
+    width: 100%;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    display: grid;
+    gap: $spacing-5;
+    left: $spacing-3;
+    padding-right: 2rem;
+    position: absolute;
+}
+
+.column {
+    height: 100%;
+    background-color: $color-palette-gray-200;
+}
