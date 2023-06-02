@@ -5,10 +5,7 @@ import { NgClass, NgIf } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
 
-import {
-    TemplateBuilderBoxComponent,
-    TemplateBuilderBoxSize
-} from './template-builder-box.component';
+import { TemplateBuilderBoxComponent } from './template-builder-box.component';
 
 import { CONTAINERS_DATA_MOCK } from '../../utils/mocks';
 
@@ -25,7 +22,7 @@ describe('TemplateBuilderBoxComponent', () => {
             `<dotcms-template-builder-box [size]="size" [items]="items"> </dotcms-template-builder-box>`,
             {
                 hostProps: {
-                    size: TemplateBuilderBoxSize.large,
+                    size: 10,
                     items: CONTAINERS_DATA_MOCK
                 }
             }
@@ -43,7 +40,7 @@ describe('TemplateBuilderBoxComponent', () => {
     });
 
     it('should render with medium size and update the class', () => {
-        spectator.setInput('size', TemplateBuilderBoxSize.medium);
+        spectator.setInput('size', 3);
         spectator.detectComponentChanges();
         expect(spectator.query(byTestId('template-builder-box'))).toHaveClass(
             'template-builder-box--medium'
@@ -51,7 +48,7 @@ describe('TemplateBuilderBoxComponent', () => {
     });
 
     it('should render with small size and update the class', () => {
-        spectator.setInput('size', TemplateBuilderBoxSize.small);
+        spectator.setInput('size', 1);
         spectator.detectComponentChanges();
         expect(spectator.query(byTestId('template-builder-box-small'))).toHaveClass(
             'template-builder-box--small'
@@ -59,7 +56,7 @@ describe('TemplateBuilderBoxComponent', () => {
     });
 
     it('should render the first ng-template for large and medium sizes', () => {
-        spectator.setInput('size', TemplateBuilderBoxSize.large);
+        spectator.setInput('size', 10);
         spectator.detectComponentChanges();
         const firstTemplate = spectator.query(byTestId('template-builder-box'));
         const secondTemplate = spectator.query(byTestId('template-builder-box-small'));
@@ -68,7 +65,7 @@ describe('TemplateBuilderBoxComponent', () => {
     });
 
     it('should show all buttons for small size', () => {
-        spectator.setInput('size', TemplateBuilderBoxSize.small);
+        spectator.setInput('size', 1);
         spectator.detectComponentChanges();
 
         const addButton = spectator.query(byTestId('btn-plus-small'));
