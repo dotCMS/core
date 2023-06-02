@@ -90,8 +90,6 @@
         <version.war.plugin>3.2.3</version.war.plugin>
         <test.working.dir>${project.build.directory}/testdata</test.working.dir>
         <test.temp.dir>${test.working.dir}/temp</test.temp.dir>
-        <it.test.working.dir>${project.build.directory}/it-testdata</it.test.working.dir>
-        <it.test.temp.dir>${it.test.working.dir}/temp</it.test.temp.dir>
 
         <starter.version>empty_20230525</starter.version>
         <!--<starter.version>empty_20230509</starter.version>-->
@@ -349,8 +347,8 @@
                     <version>${version.failsafe.plugin}</version>
                     <configuration>
                         <systemPropertyVariables>
-                            <java.io.tmpdir>${it.test.temp.dir}</java.io.tmpdir>
-                            <workingDirectory>${it.test.working.dir}</workingDirectory>
+                            <java.io.tmpdir>${test.temp.dir}</java.io.tmpdir>
+                            <workingDirectory>${test.working.dir}</workingDirectory>
                         </systemPropertyVariables>
                         <trimStackTrace>false</trimStackTrace>
                     </configuration>

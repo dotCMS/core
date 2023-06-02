@@ -21,8 +21,6 @@
         <test.assets.dir>${test.working.dir}/assets</test.assets.dir>
         <test.dynamic.dir>${test.working.dir}/dotsecure</test.dynamic.dir>
         <test.license.dir>${user.home}/.dotcms/license</test.license.dir>
-        <it.test.assets.dir>${it.test.working.dir}/assets</it.test.assets.dir>
-        <it.test.dynamic.dir>${it.test.working.dir}/dotsecure</it.test.dynamic.dir>
     </properties>
     <dependencies>
         <dependency>
@@ -45,10 +43,7 @@
                         <target>
                             <mkdir dir="${test.working.dir}"/>
                             <mkdir dir="${test.temp.dir}"/>
-                            <mkdir dir="${it.test.working.dir}"/>
-                            <mkdir dir="${it.test.temp.dir}"/>
                             <mkdir dir="${test.assets.dir}"/>
-                            <mkdir dir="${it.test.assets.dir}"/>
 
                         </target>
                     </configuration>

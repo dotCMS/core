@@ -411,6 +411,37 @@
                     <excludes>
                         <exclude>**/*</exclude>
                     </excludes>
+                    <systemPropertyVariables>
+                        <hazelcast.logging.type>log4j2</hazelcast.logging.type>
+                        <DOT_TEST_WEBAPP_ROOT>${test.webapp.root}</DOT_TEST_WEBAPP_ROOT>
+                        <DOT_ASSET_REAL_PATH>${test.assets.dir}</DOT_ASSET_REAL_PATH>
+                        <DOT_DYNAMIC_CONTENT_PATH>${test.dynamic.dir}</DOT_DYNAMIC_CONTENT_PATH>
+
+                        <DOT_DATASOURCE_PROVIDER_STRATEGY_CLASS>com.dotmarketing.db.SystemEnvDataSourceStrategy</DOT_DATASOURCE_PROVIDER_STRATEGY_CLASS>
+                        <DOT_DB_DRIVER>org.postgresql.Driver</DOT_DB_DRIVER>
+                        <DOT_DB_BASE_URL>jdbc:postgresql://localhost:5437/dotcms?autosave=conservative</DOT_DB_BASE_URL>
+                        <DOT_DB_USERNAME>postgres</DOT_DB_USERNAME>
+                        <DOT_DB_PASSWORD>postgres</DOT_DB_PASSWORD>
+                        <DOT_DOTCMS_DEV_MODE>true</DOT_DOTCMS_DEV_MODE>
+
+                        <!-- from cicd/docker/dotcms-compose.yml -->
+                        <DOT_INDEX_POLICY_SINGLE_CONTEN>FORCE</DOT_INDEX_POLICY_SINGLE_CONTEN>
+                        <DOT_ASYNC_REINDEX_COMMIT_LISTENERS>false</DOT_ASYNC_REINDEX_COMMIT_LISTENERS>
+                        <DOT_ASYNC_COMMIT_LISTENERS>false</DOT_ASYNC_COMMIT_LISTENERS>
+                        <DOT_CACHE_GRAPHQLQUERYCACHE_SECONDS>600</DOT_CACHE_GRAPHQLQUERYCACHE_SECONDS>
+
+                        <DOT_ES_ENDPOINTS>http://localhost:9207</DOT_ES_ENDPOINTS>
+                        <DOT_STARTER_DATA_LOAD>${starter.full.path}</DOT_STARTER_DATA_LOAD>
+                        <DOT_FELIX_BASE_DIR>${felix.base.dir}</DOT_FELIX_BASE_DIR>
+                        <DOT_SYSTEM_FELIX_BASE_DIR>${felix.system.base.dir}</DOT_SYSTEM_FELIX_BASE_DIR>
+                        <DOT_VELOCITY_ROOT>${test.webapp.root}/WEB-INF/velocity</DOT_VELOCITY_ROOT>
+                        <DOT_GEOIP2_CITY_DATABASE_PATH_OVERRIDE>${test.webapp.root}/WEB-INF/geoip2/GeoLite2-City.mmdb</DOT_GEOIP2_CITY_DATABASE_PATH_OVERRIDE>
+                        <DOT_DARTSASS_COMPILER_LOCATION>${test.webapp.root}/WEB-INF/bin</DOT_DARTSASS_COMPILER_LOCATION>
+
+
+                        <buildDirectory>${project.build.directory}</buildDirectory>
+
+                    </systemPropertyVariables>
                 </configuration>
             </plugin>
             <plugin>
