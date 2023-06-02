@@ -17,4 +17,8 @@
     .p-confirm-popup .p-confirm-popup-content {
         padding: $spacing-3;
     }
+
+    .p-button.p-button-text .pi.pi-trash {
+        color: $color-palette-primary-400;
+    }
 }

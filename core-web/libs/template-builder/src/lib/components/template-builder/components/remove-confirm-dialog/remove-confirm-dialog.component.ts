@@ -5,16 +5,16 @@ import { ButtonModule } from 'primeng/button';
 import { ConfirmPopupModule } from 'primeng/confirmpopup';
 
 @Component({
-    selector: 'dotcms-remove-row',
-    templateUrl: './remove-row.component.html',
-    styleUrls: ['./remove-row.component.scss'],
+    selector: 'dotcms-remove-confirm-dialog',
+    templateUrl: './remove-confirm-dialog.component.html',
+    styleUrls: ['./remove-confirm-dialog.component.scss'],
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [ConfirmPopupModule, ButtonModule],
     providers: [ConfirmationService]
 })
-export class RemoveRowComponent {
-    @Output() deleteRow: EventEmitter<void> = new EventEmitter();
+export class RemoveConfirmDialogComponent {
+    @Output() confirmEvent: EventEmitter<void> = new EventEmitter();
     constructor(private confirmationService: ConfirmationService) {}
 
     confirm(event: Event): void {
@@ -23,7 +23,7 @@ export class RemoveRowComponent {
             message: 'Are you sure you want to proceed deleting this item?',
             icon: 'pi pi-info-circle',
             accept: () => {
-                this.deleteRow.emit();
+                this.confirmEvent.emit();
             }
         });
     }

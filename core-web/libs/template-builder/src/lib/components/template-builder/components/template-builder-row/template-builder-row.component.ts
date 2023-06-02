@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, EventEmitter, Output } from '@angul
 
 import { ButtonModule } from 'primeng/button';
 
-import { RemoveRowComponent } from '../remove-row/remove-row.component';
+import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-confirm-dialog.component';
 
 @Component({
     selector: 'dotcms-template-builder-row',
@@ -10,7 +10,7 @@ import { RemoveRowComponent } from '../remove-row/remove-row.component';
     templateUrl: './template-builder-row.component.html',
     styleUrls: ['./template-builder-row.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [ButtonModule, RemoveRowComponent]
+    imports: [ButtonModule, RemoveConfirmDialogComponent]
 })
 export class TemplateBuilderRowComponent {
     @Output()
