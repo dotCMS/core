@@ -39,10 +39,10 @@
                     [attr.gs-h]="box.h"
                 >
                     <div class="grid-stack-item-content">
-                        styleClass: {{ box.styleClass?.join(' ') }}
-                        <p *ngFor="let container of box.containers">
-                            identifier: {{ container.identifier }}
-                        </p>
+                        <dotcms-template-builder-box
+                            [items]="box.containers"
+                            [size]="box.w"
+                        ></dotcms-template-builder-box>
                     </div>
                 </div>
             </div>

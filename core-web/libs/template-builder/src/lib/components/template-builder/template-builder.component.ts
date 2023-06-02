@@ -77,7 +77,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
             const subgrid = GridStack.addGrid(el as HTMLElement, subGridOptions);
 
             subgrid.on('change', (_: Event, nodes: GridStackNode[]) => {
-                this.store.updateColumn(nodes as DotGridStackWidget[]);
+                this.store.updateColumnGridStackData(nodes as DotGridStackWidget[]);
             });
             subgrid.on('dropped', (_: Event, oldNode: GridStackNode, newNode: GridStackNode) => {
                 this.store.subGridOnDropped(oldNode, newNode);
@@ -127,7 +127,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
                                 }
                             )
                             .on('change', (_: Event, nodes: GridStackNode[]) => {
-                                this.store.updateColumn(nodes as DotGridStackWidget[]);
+                                this.store.updateColumnGridStackData(nodes as DotGridStackWidget[]);
                             });
                     }
 

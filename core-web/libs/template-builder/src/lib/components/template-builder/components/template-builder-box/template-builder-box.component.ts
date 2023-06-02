@@ -1,16 +1,18 @@
 import { NgClass, NgFor, NgIf } from '@angular/common';
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    EventEmitter,
+    Input,
+    OnChanges,
+    Output
+} from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
 
-import { DotTemplateBuilderContainer } from '../../models/models';
-
-export enum TemplateBuilderBoxSize {
-    large = 'large',
-    medium = 'medium',
-    small = 'small'
-}
+import { DotTemplateBuilderContainer, TemplateBuilderBoxSize } from '../../models/models';
+import { getBoxSize } from '../../utils/gridstack-utils';
 
 @Component({
     selector: 'dotcms-template-builder-box',
@@ -20,7 +22,9 @@ export enum TemplateBuilderBoxSize {
     standalone: true,
     imports: [NgFor, NgIf, NgClass, ButtonModule, ScrollPanelModule]
 })
-export class TemplateBuilderBoxComponent {
+export class TemplateBuilderBoxComponent implements OnChanges {
+    protected readonly templateBuilderSizes = TemplateBuilderBoxSize;
+
     @Output()
     editStyle: EventEmitter<void> = new EventEmitter<void>();
     @Output()
@@ -32,6 +36,11 @@ export class TemplateBuilderBoxComponent {
 
     @Input() items: DotTemplateBuilderContainer[];
 
-    protected readonly templateBuilderSizes = TemplateBuilderBoxSize;
-    @Input() size: TemplateBuilderBoxSize = TemplateBuilderBoxSize.large;
+    @Input() size = 1;
+
+    boxSize = TemplateBuilderBoxSize.small;
+
+    ngOnChanges(): void {
+        this.boxSize = getBoxSize(this.size);
+    }
 }

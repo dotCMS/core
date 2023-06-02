@@ -30,7 +30,7 @@ function isARowWidget(el: Element): boolean {
 }
 
 export const subGridOptions: GridStackOptions = {
-    cellHeight: 224,
+    cellHeight: 257, // 32px more to make the padding
     column: 'auto',
     margin: 16,
     minRow: 1,

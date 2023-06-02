@@ -1,15 +1,15 @@
 <div
     class="template-builder-box"
-    *ngIf="size !== templateBuilderSizes.small; else smallTemplate"
+    *ngIf="boxSize !== templateBuilderSizes.small; else smallTemplate"
     [ngClass]="{
-        'template-builder-box--medium': size === templateBuilderSizes.medium,
-        'template-builder-box--large': size === templateBuilderSizes.large
+        'template-builder-box--medium': boxSize === templateBuilderSizes.medium,
+        'template-builder-box--large': boxSize === templateBuilderSizes.large
     }"
     data-testId="template-builder-box"
 >
     <div class="template-builder-box__header-container">
         <p-button
-            [label]="size === templateBuilderSizes.large ? 'Add Container' : ''"
+            [label]="boxSize === templateBuilderSizes.large ? 'Add Container' : ''"
             (onClick)="addContainer.emit()"
             icon="pi pi-plus"
             data-testId="btn-plus"

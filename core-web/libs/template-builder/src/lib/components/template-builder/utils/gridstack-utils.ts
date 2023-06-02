@@ -2,7 +2,7 @@ import { v4 as uuid } from 'uuid';
 
 import { DotLayoutBody } from '@dotcms/dotcms-models';
 
-import { DotGridStackNode, DotGridStackWidget } from '../models/models';
+import { DotGridStackNode, DotGridStackWidget, TemplateBuilderBoxSize } from '../models/models';
 
 /**
  * @description This function parses the oldNode and newNode to a DotGridStackWidget array
@@ -56,10 +56,13 @@ export function createDotGridStackWidgets(columns: DotGridStackNode[]): DotGridS
  * @param {DotGridStackNode} node
  * @return {*}  {DotGridStackWidget}
  */
-export function createDotGridStackWidgetFromNode(node: DotGridStackNode): DotGridStackWidget {
+export function createDotGridStackWidgetFromNode(
+    node: DotGridStackNode,
+    isNewNode: boolean = false
+): DotGridStackWidget {
     return {
         x: node.x,
-        id: uuid(),
+        id: isNewNode ? uuid() : node.id,
         parentId: node.grid?.parentGridItem?.id as string,
         w: node.w,
         styleClass: node.styleClass,
@@ -129,4 +132,18 @@ export function parseFromDotObjectToGridStack(
         id: uuid(),
         styleClass: row.styleClass ? row.styleClass.split(' ') : []
     })) as DotGridStackWidget[];
+}
+
+/**
+ *@description This function returns the size of a box based on the number of width
+ *
+ * @param {number} width
+ * @return {*}  {TemplateBuilderBoxSize}
+ */
+export function getBoxSize(width: number): TemplateBuilderBoxSize {
+    if (width <= 1) return TemplateBuilderBoxSize.small;
+
+    if (width <= 3) return TemplateBuilderBoxSize.medium;
+
+    return TemplateBuilderBoxSize.large;
 }

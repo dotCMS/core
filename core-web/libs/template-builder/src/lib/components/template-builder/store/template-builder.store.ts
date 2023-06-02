@@ -104,7 +104,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      * @memberof DotTemplateBuilderStore
      */
     readonly addColumn = this.updater(({ items }, column: DotGridStackNode) => {
-        const newColumn = createDotGridStackWidgetFromNode(column);
+        const newColumn = createDotGridStackWidgetFromNode(column, true);
 
         return {
             items: items.map((row) => {
@@ -166,27 +166,29 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      *
      * @memberof DotTemplateBuilderStore
      */
-    readonly updateColumn = this.updater(({ items }, affectedColumns: DotGridStackNode[]) => {
-        affectedColumns = createDotGridStackWidgets(affectedColumns);
+    readonly updateColumnGridStackData = this.updater(
+        ({ items }, affectedColumns: DotGridStackNode[]) => {
+            affectedColumns = createDotGridStackWidgets(affectedColumns);
 
-        return {
-            items: items.map((row) => {
-                if (row.id === affectedColumns[0].parentId) {
-                    if (row.subGridOpts) {
-                        row.subGridOpts.children = row.subGridOpts.children.map((child) => {
-                            const column = getColumnByID(affectedColumns, child.id as string);
+            return {
+                items: items.map((row) => {
+                    if (row.id === affectedColumns[0].parentId) {
+                        if (row.subGridOpts) {
+                            row.subGridOpts.children = row.subGridOpts.children.map((child) => {
+                                const column = getColumnByID(affectedColumns, child.id as string);
+                                if (column)
+                                    return { ...child, x: column.x, y: column.y, w: column.w };
 
-                            if (column) return { ...child, ...column };
-
-                            return child;
-                        });
+                                return child;
+                            });
+                        }
                     }
-                }
 
-                return row;
-            })
-        };
-    });
+                    return row;
+                })
+            };
+        }
+    );
 
     /**
      * @description This method removes a column from the grid

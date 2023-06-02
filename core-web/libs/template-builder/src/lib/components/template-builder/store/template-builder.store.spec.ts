@@ -218,7 +218,7 @@ describe('DotTemplateBuilderStore', () => {
             parentId
         }));
 
-        service.updateColumn(affectedColumns);
+        service.updateColumnGridStackData(affectedColumns);
 
         expect.assertions(1);
         service.items$.subscribe((items) => {
