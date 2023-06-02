@@ -352,13 +352,7 @@ public class TreePrinter {
 
         // Get the default language from the list of languages
         var defaultLanguage = languages.stream()
-                .filter(language -> {
-                    if (language.defaultLanguage().isPresent()) {
-                        return language.defaultLanguage().get();
-                    }
-
-                    return false;
-                })
+                .filter(Language::defaultLanguage)
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("No default language found"));
 

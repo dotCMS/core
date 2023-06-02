@@ -22,5 +22,5 @@ public interface AbstractLanguage {
 
     String country();
 
-    Optional<Boolean> defaultLanguage();
+    boolean defaultLanguage();
 }
