@@ -227,6 +227,13 @@ describe('DotListingDataTableComponent', () => {
                 field3: 'item7-value3',
                 nEntries: 'item1-value4',
                 variable: 'Banner'
+            },
+            {
+                field1: 'item7-value1',
+                field2: 'item7-value2',
+                field3: 'item7-value3',
+                nEntries: 'item1-value4',
+                variable: 'dotFavoritePage'
             }
         ];
 
@@ -562,6 +569,16 @@ describe('DotListingDataTableComponent', () => {
         hostFixture.detectChanges();
         const noResults = de.query(By.css('[data-testid="listing-datatable__empty"]'));
         expect(noResults.nativeElement.innerText).toEqual('No Results Found');
+    }));
+
+    it('should hide entries for favorite pages content type', fakeAsync(() => {
+        setRequestSpy(items);
+        hostFixture.detectChanges();
+        tick(1);
+        hostFixture.detectChanges();
+        const row = de.query(By.css('[data-testId="row-dotFavoritePage"]'));
+        const entriesColumn = row.query(By.css('[data-testId="nEntries"]'));
+        expect(entriesColumn.nativeElement.textContent).toBeFalsy();
     }));
 
     function setRequestSpy(response: any): void {

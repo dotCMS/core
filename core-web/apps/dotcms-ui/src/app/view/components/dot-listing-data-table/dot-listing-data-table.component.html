@@ -55,6 +55,7 @@
             [attr.data-testRowId]="rowData.identifier"
             [pContextMenuRow]="rowData"
             [pSelectableRow]="rowData"
+            [attr.data-testId]="'row-' + rowData.variable"
             (click)="handleRowClick(rowData)"
             (keyup.enter)="handleRowClick(rowData)"
             data-testClass="testTableRow"
@@ -101,7 +102,11 @@
 </ng-template>
 
 <ng-template #defaultRowTemplate let-rowData="rowData">
-    <td *ngFor="let col of columns" [ngStyle]="{ width: col.width, 'text-align': getAlign(col) }">
+    <td
+        *ngFor="let col of columns"
+        [ngStyle]="{ width: col.width, 'text-align': getAlign(col) }"
+        [attr.data-testId]="col.fieldName"
+    >
         <div class="listing-datatable__column-icon" *ngIf="col.icon">
             <dot-icon name="{{ col.icon(rowData) }}"></dot-icon>
             <span>{{ col.textContent || rowData[col.fieldName] }}</span>
