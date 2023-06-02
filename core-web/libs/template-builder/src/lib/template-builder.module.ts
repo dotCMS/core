@@ -1,5 +1,6 @@
 import { AsyncPipe, NgFor } from '@angular/common';
 import { NgModule } from '@angular/core';
+import { provideAnimations } from '@angular/platform-browser/animations';
 
 import { AddWidgetComponent } from './components/template-builder/components/add-widget/add-widget.component';
 import { RemoveRowComponent } from './components/template-builder/components/remove-row/remove-row.component';
@@ -18,7 +19,7 @@ import { TemplateBuilderComponent } from './components/template-builder/template
         TemplateBuilderBoxComponent
     ],
     declarations: [TemplateBuilderComponent],
-    providers: [DotTemplateBuilderStore],
+    providers: [DotTemplateBuilderStore, provideAnimations()],
     exports: [TemplateBuilderComponent]
 })
 export class TemplateBuilderModule {}
