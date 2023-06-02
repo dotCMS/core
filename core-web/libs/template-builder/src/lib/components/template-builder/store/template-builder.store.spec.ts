@@ -177,7 +177,7 @@ describe('DotTemplateBuilderStore', () => {
         });
     });
 
-    it('should update a column', () => {
+    it('should update gridStack data of a column', () => {
         const parentId = uuid();
         const [firstId, secondId, thirdId, fourthId] = [1, 2, 3, 4].map(() => uuid());
 
@@ -205,9 +205,7 @@ describe('DotTemplateBuilderStore', () => {
                 x: 1,
                 y: 0,
                 w: 1,
-                id: firstId,
-                containers: [{ identifier: 'mock-container', uuid: uuid() }],
-                styleClass: ['mock-styles']
+                id: firstId
             },
             { x: 0, y: 0, w: 1, id: secondId },
             { x: 3, y: 0, w: 1, id: thirdId },
