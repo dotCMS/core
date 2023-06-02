@@ -55,7 +55,7 @@
             [attr.data-testRowId]="rowData.identifier"
             [pContextMenuRow]="rowData"
             [pSelectableRow]="rowData"
-            [attr.data-testId]="'row-' + rowData.variable"
+            [attr.data-testId]="rowData.variable ? 'row-' + rowData.variable : null"
             (click)="handleRowClick(rowData)"
             (keyup.enter)="handleRowClick(rowData)"
             data-testClass="testTableRow"
