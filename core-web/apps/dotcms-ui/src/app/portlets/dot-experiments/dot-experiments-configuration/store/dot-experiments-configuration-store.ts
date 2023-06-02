@@ -298,6 +298,33 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         );
     });
 
+    readonly cancelSchedule = this.effect((experiment$: Observable<DotExperiment>) => {
+        return experiment$.pipe(
+            tap(() => this.setComponentStatus(ComponentStatus.SAVING)),
+            switchMap((experiment) =>
+                this.dotExperimentsService.cancel(experiment.id).pipe(
+                    tapResponse(
+                        (response) => {
+                            this.messageService.add({
+                                severity: 'info',
+                                summary: this.dotMessageService.get(
+                                    'experiments.notification.stop.schedule-title'
+                                ),
+                                detail: this.dotMessageService.get(
+                                    'experiments.notification.stop.schedule',
+                                    experiment.name
+                                )
+                            });
+                            this.setExperiment(response);
+                        },
+                        (error: HttpErrorResponse) => this.dotHttpErrorManagerService.handle(error),
+                        () => this.setComponentStatus(ComponentStatus.IDLE)
+                    )
+                )
+            )
+        );
+    });
+
     // Variants
     readonly addVariant = this.effect(
         (variant$: Observable<{ experimentId: string; name: string }>) => {

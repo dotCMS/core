@@ -111,4 +111,24 @@ export class DotExperimentsConfigurationComponent implements OnInit {
             }
         });
     }
+
+    /**
+     * Stop the Schedule Experiment and set the status to Draft
+     * @param {MouseEvent} $event
+     * @param {DotExperiment} experiment
+     * @returns void
+     * @memberof DotExperimentsConfigurationVariantsComponent
+     */
+    stopScheduleExperiment($event: MouseEvent, experiment: DotExperiment) {
+        this.confirmationService.confirm({
+            target: $event.target,
+            message: this.dotMessagePipe.transform('experiments.action.stop.schedule-confirm'),
+            icon: 'pi pi-exclamation-triangle',
+            acceptLabel: this.dotMessagePipe.transform('dot.common.dialog.accept'),
+            rejectLabel: this.dotMessagePipe.transform('dot.common.dialog.reject'),
+            accept: () => {
+                this.dotExperimentsConfigurationStore.cancelSchedule(experiment);
+            }
+        });
+    }
 }

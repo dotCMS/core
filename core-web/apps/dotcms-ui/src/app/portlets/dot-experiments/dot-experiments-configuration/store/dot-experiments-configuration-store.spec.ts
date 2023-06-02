@@ -631,5 +631,39 @@ describe('DotExperimentsConfigurationStore', () => {
                 'error' as unknown as HttpErrorResponse
             );
         });
+
+        it('should call the cancel experiment method when cancel scheduling', (done) => {
+            dotExperimentsService.getById.and
+                .callThrough()
+                .and.returnValue(
+                    of({ ...EXPERIMENT_MOCK_2, status: DotExperimentStatusList.SCHEDULED })
+                );
+
+            dotExperimentsService.cancel.and.callThrough().and.returnValue(
+                of({
+                    ...EXPERIMENT_MOCK_2,
+                    status: DotExperimentStatusList.DRAFT
+                })
+            );
+
+            spectator.service.loadExperiment(EXPERIMENT_MOCK_2.id);
+
+            store.cancelSchedule(EXPERIMENT_MOCK_2);
+
+            store.state$.subscribe(() => {
+                expect(dotExperimentsService.cancel).toHaveBeenCalledOnceWith(EXPERIMENT_MOCK_2.id);
+                done();
+            });
+        });
+
+        it('should handle error when canceling the experiment', () => {
+            dotExperimentsService.cancel.and.returnValue(throwError('error'));
+
+            store.cancelSchedule(EXPERIMENT_MOCK_2);
+
+            expect(dotHttpErrorManagerService.handle).toHaveBeenCalledOnceWith(
+                'error' as unknown as HttpErrorResponse
+            );
+        });
     });
 });
