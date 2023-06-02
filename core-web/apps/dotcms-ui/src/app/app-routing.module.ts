@@ -138,7 +138,7 @@ const PORTLETS_IFRAME = [
         ]
     },
     {
-        canActivate: [PagesGuardService, MenuGuardService],
+        canActivate: [MenuGuardService, PagesGuardService],
         path: 'pages',
         loadChildren: () =>
             import('@portlets/dot-pages/dot-pages.module').then((m) => m.DotPagesModule)
