@@ -1,0 +1,25 @@
+@use "variables" as *;
+
+::ng-deep {
+    .p-dialog-mask.p-component-overlay {
+        background-color: transparent;
+        backdrop-filter: none;
+    }
+
+    .p-confirm-dialog-icon {
+        color: $color-palette-primary-500;
+    }
+
+    .p-dialog.p-confirm-dialog .p-confirm-dialog-icon {
+        font-size: 1.125rem;
+        padding-right: $spacing-1;
+    }
+
+    .p-dialog .p-dialog-header {
+        display: none;
+    }
+
+    .p-dialog .p-dialog-content {
+        padding: $spacing-4;
+    }
+}

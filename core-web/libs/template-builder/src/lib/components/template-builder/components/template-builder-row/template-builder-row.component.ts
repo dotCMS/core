@@ -2,13 +2,15 @@ import { ChangeDetectionStrategy, Component, EventEmitter, Output } from '@angul
 
 import { ButtonModule } from 'primeng/button';
 
+import { RemoveRowComponent } from '../remove-row/remove-row.component';
+
 @Component({
     selector: 'dotcms-template-builder-row',
     standalone: true,
-    imports: [ButtonModule],
     templateUrl: './template-builder-row.component.html',
     styleUrls: ['./template-builder-row.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [ButtonModule, RemoveRowComponent]
 })
 export class TemplateBuilderRowComponent {
     @Output()

@@ -12,10 +12,10 @@ import { TemplateBuilderComponent } from './components/template-builder/template
     imports: [
         NgFor,
         AsyncPipe,
+        RemoveRowComponent,
         TemplateBuilderRowComponent,
         AddWidgetComponent,
-        TemplateBuilderBoxComponent,
-        RemoveRowComponent
+        TemplateBuilderBoxComponent
     ],
     declarations: [TemplateBuilderComponent],
     providers: [DotTemplateBuilderStore],

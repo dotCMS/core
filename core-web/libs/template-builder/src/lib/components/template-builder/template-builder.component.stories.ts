@@ -3,6 +3,7 @@ import { moduleMetadata, Story, Meta } from '@storybook/angular';
 import { NgFor, AsyncPipe } from '@angular/common';
 
 import { AddWidgetComponent } from './components/add-widget/add-widget.component';
+import { RemoveRowComponent } from './components/remove-row/remove-row.component';
 import { TemplateBuilderRowComponent } from './components/template-builder-row/template-builder-row.component';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { TemplateBuilderComponent } from './template-builder.component';
@@ -13,7 +14,13 @@ export default {
     component: TemplateBuilderComponent,
     decorators: [
         moduleMetadata({
-            imports: [NgFor, AsyncPipe, TemplateBuilderRowComponent, AddWidgetComponent],
+            imports: [
+                NgFor,
+                AsyncPipe,
+                TemplateBuilderRowComponent,
+                AddWidgetComponent,
+                RemoveRowComponent
+            ],
             providers: [DotTemplateBuilderStore]
         })
     ]

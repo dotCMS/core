@@ -18,11 +18,5 @@
         icon="pi pi-palette"
     >
     </p-button>
-    <p-button
-        (onClick)="deleteRow.emit()"
-        data-testid="row-trash-button"
-        styleClass="p-button-text p-button-sm p-button-rounded"
-        icon="pi pi-trash"
-    >
-    </p-button>
+    <dotcms-remove-row (deleteRow)="deleteRow.emit()"> </dotcms-remove-row>
 </div>
