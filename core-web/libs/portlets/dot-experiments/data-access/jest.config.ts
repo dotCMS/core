@@ -1,6 +1,6 @@
 /* eslint-disable */
 export default {
-    displayName: 'portlets-dot-experiments-data-access',
+    displayName: 'DotExperiments Data Access',
     preset: '../../../../jest.preset.js',
     setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
     globals: {
