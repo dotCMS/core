@@ -11,12 +11,14 @@ import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
@@ -117,6 +119,65 @@ public class BrowserAPITest extends IntegrationTestBase {
 
         testlink = new LinkDataGen().hostId(testHost.getIdentifier()).title("testLink").parent(testFolder).target("https://google.com").linkType("EXTERNAL").nextPersisted();
     }
+
+    /**
+     * Given scenario: Create a folder place multiple versions in different languages of the same content
+     * Expected result: We're testing that BrowserAPI can be used to bring multiple versions of the same content in different languages
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws IOException
+     */
+    @Test()
+    public void Test_GetFolderContent_Multiple_Langs() throws DotDataException, DotSecurityException, IOException {
+
+        final SiteDataGen   siteDataGen   = new SiteDataGen();
+        final FolderDataGen folderDataGen = new FolderDataGen();
+        final Host          host          = siteDataGen.nextPersisted();
+        final Folder        folder        = folderDataGen.site(host).nextPersisted();
+
+        final File file = FileUtil.createTemporaryFile("test", ".txt", "this is a test!");
+
+        final Contentlet persisted = new FileAssetDataGen(file)
+                .languageId(1)
+                .host(host)
+                .folder(folder)
+                .setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+
+        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+
+        List<Long> languages = new ArrayList<>();
+        languages.add(persisted.getLanguageId());
+        languages.add(new LanguageDataGen().nextPersisted().getId());
+        languages.add(new LanguageDataGen().nextPersisted().getId());
+
+        for (Long lang:languages) {
+            final Contentlet next = new FileAssetDataGen(file)
+                    .languageId(lang)
+                    .host(host)
+                    .folder(folder)
+                    .setPolicy(IndexPolicy.WAIT_FOR).next();
+
+            next.setIdentifier(persisted.getIdentifier());
+            next.setInode(null);
+            contentletAPI.checkin(next, APILocator.systemUser(), false);
+        }
+
+        final List<Treeable> contentList = browserAPI.getFolderContentList(
+                BrowserQuery.builder()
+                        .showDotAssets(false)
+                        .showLinks(false)
+                        .withHostOrFolderId(folder.getIdentifier())
+                        .offset(0)
+                        .showFiles(true)
+                        .showFolders(true)
+                        .showWorking(true)
+                        .build());
+
+        assertEquals(3, contentList.size());
+        assertTrue(contentList.stream().allMatch(c->  persisted.getIdentifier().equals(c.getIdentifier())));
+        assertTrue(contentList.stream().map(c->(Contentlet)c).anyMatch(c-> languages.contains( c.getLanguageId())));
+    }
+
 
     /**
      * Method to test: testing the pagination of the BrowserAPI, the test creates a site and a folder, them add 10 files and iterate over them with the browser api
@@ -487,6 +548,36 @@ public class BrowserAPITest extends IntegrationTestBase {
                 ImmutableSet.of(
                         testlink.getName()))
         );
+
+        // When requesting content in the folder for non the default language,
+        //should return the content in the language requested + the content in the
+        //default language
+        testCases.add( Tuple.of(
+                "Request Content No default lang, should return content also in default lang",
+
+                BrowserQuery.builder()
+                        .withHostOrFolderId(testFolder.getInode())
+                        .showWorking(true)
+                        .showArchived(false)
+                        .showFolders(true)
+                        .showPages(true)
+                        .showFiles(true)
+                        .showLinks(true)
+                        .showDefaultLangItems(true)
+                        .showDotAssets(true)
+                        .withLanguageId(testLanguage.getId())
+                        .build()
+                ,
+                ImmutableSet.of(
+                        testFileAsset.getName(),
+                        testFileAsset2.getName(),
+                        testFileAsset2MultiLingual.getName(),
+                        testSubFolder.getName(),
+                        testlink.getName(),
+                        testDotAsset.getTitle(),
+                        testPage.getPageUrl()
+                ))
+        );
         
         return testCases;
     }
@@ -534,10 +625,10 @@ public class BrowserAPITest extends IntegrationTestBase {
 
         assertNotNull(sql);
         if (DbConnectionFactory.isPostgres()) {
-            assertTrue(sql.contains("-> 'fields' -> 'asset' -> 'metadata' ->> 'name'"));
+            assertTrue(sql.contains("-> 'fields' -> 'fileName' ->> 'value'" ));
         }
         else{
-            assertTrue(sql.contains("$.fields.asset.metadata.name"));
+            assertTrue(sql.contains("$.fields.fileName.value"));
         }
     }
 
@@ -586,6 +677,48 @@ public class BrowserAPITest extends IntegrationTestBase {
 
         assertNotNull(contentletList);
         assertNotNull(result);
+    }
+
+
+    /**
+     * Generally speaking in most cases when a file is uploaded title and file name are the same.
+     * But this is not always the case. Since we can upload a file via workflows and the title is not required.
+     * Or it can take any value.
+     * Given scenario: A folder with a file asset with no title.
+     * Expected result: We query using the file name The file asset should be returned by the API.
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws IOException
+     */
+    @Test
+    public void getFolderContent_searchAssetWithNoTitleUsingFilter_Expect_Results()
+            throws DotDataException, DotSecurityException, IOException {
+
+        final File file = FileUtil.createTemporaryFile("lol", ".txt", "lol");
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final Contentlet contentlet = new FileAssetDataGen(folder, file).title("testFileAsset1").languageId(1).nextPersisted();
+        final FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
+        //Title is different from file name to test the filter
+
+        final User user = APILocator.systemUser();
+
+        final BrowserQuery browserQuery = BrowserQuery.builder()
+                .withUser(user)
+                .maxResults(1)
+                .withHostOrFolderId(folder.getIdentifier())
+                .withFilter(fileAsset.getFileName())
+                .showWorking(true)
+                .showArchived(false)
+                .showFolders(false)
+                .showFiles(true)
+                .showContent(true)
+                .withLanguageId(1)
+                .showDotAssets(false)
+                .build();
+
+        final List<Contentlet> contentletList = this.browserAPI.getContentUnderParentFromDB(browserQuery);
+        assertFalse(contentletList.isEmpty());
+
     }
 
 }

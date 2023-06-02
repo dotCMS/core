@@ -3,6 +3,8 @@ package com.dotcms.experiments.business.result;
 import com.dotcms.analytics.metrics.EventType;
 import com.dotcms.analytics.metrics.Metric;
 import com.dotcms.experiments.model.Experiment;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -19,23 +21,26 @@ public class BounceRateExperimentAnalyzer implements MetricExperimentAnalyzer  {
      *
      * @see com.dotcms.analytics.metrics.MetricType#BOUNCE_RATE
      * @see MetricExperimentAnalyzer
-     *
-     * @param goal
+     * @param metric
      * @param browserSession
-     * @param experimentResultBuilder
+     * @return
      */
     @Override
-    public void addResults(final Metric goal, final BrowserSession browserSession,
-            final ExperimentResults.Builder experimentResultBuilder) {
+    public Collection<Event> getOccurrences(final Metric metric, final BrowserSession browserSession) {
+
+        final Collection<Event> results = new ArrayList<>();
+
         final List<Event> events = browserSession.getEvents().stream()
                 .filter(event -> event.getType() == EventType.PAGE_VIEW)
                 .collect(Collectors.toList());
 
         final Event lastEvent = events.get(events.size() - 1);
 
-        if (goal.validateConditions(lastEvent)) {
-            experimentResultBuilder.goal(goal).success(browserSession.getLookBackWindow(), lastEvent);
+        if (metric.validateConditions(lastEvent)) {
+            results.add(lastEvent);
         }
+
+        return results;
     }
 
 

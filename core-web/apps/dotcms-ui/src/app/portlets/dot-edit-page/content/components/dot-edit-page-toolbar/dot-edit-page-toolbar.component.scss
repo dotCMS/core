@@ -13,6 +13,10 @@
     display: flex;
 }
 
+.dot-edit__experiments-results-tag {
+    cursor: pointer;
+}
+
 ::ng-deep {
     .dot-favorite-page-highlight i {
         color: $color-palette-primary;

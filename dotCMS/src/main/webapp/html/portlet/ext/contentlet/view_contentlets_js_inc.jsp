@@ -1776,7 +1776,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
         }
 
         function clearAllContentsMessage()      {
-                $('tablemessage').innerHTML = " &nbsp ";
+                $('tablemessage').innerHTML = "";
                 unCheckedInodes = "";
                 document.getElementById('allUncheckedContentsInodes').value = "";
                 document.getElementById("fullCommand").value = "false";
@@ -2482,7 +2482,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 
                         div = document.getElementById("matchingResultsDiv")
                         var structureInode = dijit.byId('structure_inode').value;
-                        var strbuff = dataViewButton + "<div id=\"tablemessage\" class=\"contentlet-selection\"></div><div class=\"contentlet-results\"><%= LanguageUtil.get(pageContext, "Showing") %> " + begin + "-" + end + " <%= LanguageUtil.get(pageContext, "of1") %> " + num + "</div>";
+                        var strbuff = dataViewButton + "<div class=\"contentlet-results\"><%= LanguageUtil.get(pageContext, "Showing") %> " + begin + "-" + end + " <%= LanguageUtil.get(pageContext, "of1") %> " + num + "</div>";
                         var actionPrimaryMenu = dijit.byId('actionPrimaryMenu');
                         var donwloadToExcelMenuItem = dijit.byId('donwloadToExcel');
                         if (num > 0 && structureInode != "catchall") {

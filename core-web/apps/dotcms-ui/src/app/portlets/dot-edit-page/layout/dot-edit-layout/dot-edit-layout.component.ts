@@ -22,7 +22,8 @@ import {
     DotContainerMap,
     DotLayout,
     DotPageRender,
-    DotPageRenderState
+    DotPageRenderState,
+    FeaturedFlags
 } from '@dotcms/dotcms-models';
 
 @Component({
@@ -36,6 +37,7 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
 
     updateTemplate = new Subject<DotLayout>();
     destroy$: Subject<boolean> = new Subject<boolean>();
+    featureFlag = FeaturedFlags.FEATURE_FLAG_TEMPLATE_BUILDER;
 
     @HostBinding('style.minWidth') width = '100%';
 

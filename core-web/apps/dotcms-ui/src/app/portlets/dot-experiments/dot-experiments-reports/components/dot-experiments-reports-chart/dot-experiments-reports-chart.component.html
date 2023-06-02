@@ -1,4 +1,4 @@
-<ng-container *ngIf="!loading; else loadingStateTpl">
+<ng-container *ngIf="!isLoading; else loadingStateTpl">
     <div class="flex flex-column gap-3">
         <div class="flex flex-row justify-content-between header">
             <h1 class="header-title" data-testId="chart-title">
@@ -35,9 +35,9 @@
         class="empty flex justify-content-center align-items-center flex-column"
         data-testId="empty-data-msg"
     >
-        <i class="empty_icon pi pi-chart-line mb-2"></i>
-        <p class="empty_message m-0">{{ 'experiments.reports.chart.empty.title' | dm }}</p>
-        <p class="empty_description m-0">
+        <i class="empty__icon pi pi-chart-line mb-2"></i>
+        <p class="empty__message m-0">{{ 'experiments.reports.chart.empty.title' | dm }}</p>
+        <p class="empty__description m-0">
             {{ 'experiments.reports.chart.empty.description' | dm }}
         </p>
     </div>

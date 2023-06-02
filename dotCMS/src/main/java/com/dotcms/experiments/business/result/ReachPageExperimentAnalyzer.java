@@ -10,6 +10,8 @@ import com.dotcms.cube.CubeJSResultSet;
 import com.dotcms.experiments.model.Experiment;
 import com.google.common.collect.ImmutableList;
 import com.liferay.util.StringPool;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import java.util.Optional;
@@ -23,26 +25,29 @@ import java.util.stream.Collectors;
  */
 public class ReachPageExperimentAnalyzer implements MetricExperimentAnalyzer {
 
+
     /**
      *
-     * @param goal
-     * @param session
-     * @param experimentResultBuilder
+     * @param metric
+     * @param browserSession
+     * @return
      */
     @Override
-    public void addResults(final Metric goal, final BrowserSession session,
-            final ExperimentResults.Builder experimentResultBuilder) {
+    public Collection<Event> getOccurrences(final Metric metric, final BrowserSession browserSession) {
 
+        final Collection<Event> results = new ArrayList<>();
 
-        final List<Event> events = session.getEvents().stream()
+        final List<Event> events = browserSession.getEvents().stream()
                 .filter(event -> event.getType() == EventType.PAGE_VIEW)
                 .collect(Collectors.toList());
 
         for (final Event event : events) {
-            if (goal.validateConditions(event)) {
-                experimentResultBuilder.goal(goal).success(session.getLookBackWindow(), event);
+            if (metric.validateConditions(event)) {
+                results.add(event);
             }
         }
+
+        return results;
 
     }
 }

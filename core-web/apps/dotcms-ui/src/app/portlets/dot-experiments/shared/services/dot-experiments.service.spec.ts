@@ -3,6 +3,7 @@ import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator'
 import {
     DefaultGoalConfiguration,
     DotExperiment,
+    DotExperimentStatusList,
     Goals,
     GoalsLevels,
     TrafficProportionTypes
@@ -35,6 +36,11 @@ describe('DotExperimentsService', () => {
     it('should get a list of experiments of pageId', () => {
         spectator.service.getAll(PAGE_Id).subscribe();
         spectator.expectOne(`${API_ENDPOINT}?pageId=${PAGE_Id}`, HttpMethod.GET);
+    });
+
+    it('should get a list of experiments filter by status', () => {
+        spectator.service.getByStatus(PAGE_Id, DotExperimentStatusList.RUNNING).subscribe();
+        spectator.expectOne(`${API_ENDPOINT}?pageId=${PAGE_Id}&status=RUNNING`, HttpMethod.GET);
     });
 
     it('should get an experiment by getById using experimentId', () => {
@@ -83,8 +89,11 @@ describe('DotExperimentsService', () => {
     });
 
     it('should promote a variant', () => {
-        spectator.service.promoteVariant('variantName').subscribe();
-        spectator.expectOne(`/api/v1/variants/variantName/_promote`, HttpMethod.PUT);
+        spectator.service.promoteVariant(EXPERIMENT_ID, VARIANT_ID).subscribe();
+        spectator.expectOne(
+            `/api/v1/experiments/${EXPERIMENT_ID}/variants/${VARIANT_ID}/_promote`,
+            HttpMethod.PUT
+        );
     });
 
     it('should delete a variant with experimentId', () => {

@@ -3,6 +3,8 @@ package  com.dotcms.api.web;
 import javax.servlet.ServletRequestEvent;
 import javax.servlet.ServletRequestListener;
 import javax.servlet.http.HttpServletRequest;
+
+import com.dotcms.rendering.velocity.viewtools.secrets.DotVelocitySecretAppConfigThreadLocal;
 import com.dotmarketing.util.Logger;
 
 
@@ -16,7 +18,7 @@ public class RequestThreadLocalListener implements ServletRequestListener {
 
 	public void requestDestroyed(ServletRequestEvent requestEvent) {
 	    HttpServletRequestThreadLocal.INSTANCE.setRequest(null);
-
+		DotVelocitySecretAppConfigThreadLocal.INSTANCE.clearConfig();
 	}
 
 
