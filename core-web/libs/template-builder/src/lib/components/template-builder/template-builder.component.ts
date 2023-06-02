@@ -148,6 +148,13 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
         return w.id;
     }
 
+    /**
+     * @description This function maintains the GridStack Model in sync with the store when you delete a column
+     *
+     * @param {DotGridStackWidget} column
+     * @param {numberOrString} rowID
+     * @memberof TemplateBuilderComponent
+     */
     removeColumn(column: DotGridStackWidget, rowID: numberOrString): void {
         // The gridstack model is polutted with the subgrid data
 
