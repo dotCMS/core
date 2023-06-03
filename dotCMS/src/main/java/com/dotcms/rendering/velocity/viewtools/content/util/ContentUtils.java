@@ -228,7 +228,9 @@ public class ContentUtils {
                             .replaceAll("\\+working\\:true", "");
                     final String formatedDate = ESMappingAPIImpl.datetimeFormat.format(futureDate);
 
-                    final String notExpired = " +expdate:[" + formatedDate + " TO 29990101000000] ";
+					// Have to use a date range need maximum date higher though than the dateOutOfRange set
+					// when no date is specified in the contentlet in ESMappingsAPIImpl
+                    final String notExpired = " +expdate:[" + formatedDate + " TO 99990101000000] ";
                     final String workingQuery = query + " +working:true " +
                             "+pubdate:[" + ESMappingAPIImpl.datetimeFormat.format(new Date())
                             +
