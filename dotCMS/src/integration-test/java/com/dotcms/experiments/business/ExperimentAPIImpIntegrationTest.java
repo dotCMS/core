@@ -2134,14 +2134,14 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link ExperimentsAPIImpl#save(Experiment, User)}
-     * When: Try to save a Experiment with a REACh PAGE goal and it does not have ane referer parameter set
-     * Should: set this parameter automatically to be CONTAINS the Experiment's page URL
+     * When: Saving an Experiment
+     * Should: set the Url parameter automatically with a CONTAINS condition for the url of the page to reach
      *
      * @throws DotDataException
      * @throws DotSecurityException
      */
     @Test
-    public void addRefererConditionToReachPageGoal() throws DotDataException, DotSecurityException {
+    public void addUrlConditionToReachPageGoal() throws DotDataException, DotSecurityException {
         final Host host = new SiteDataGen().nextPersisted();
         final Template template = new TemplateDataGen().host(host).nextPersisted();
 
@@ -2170,17 +2170,12 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         final Goals goals = experimentFromDataBase.goals().orElseThrow();
         final ImmutableList<Condition> conditions = goals.primary().getMetric().conditions();
 
-        assertEquals(2, conditions.size());
+        assertEquals(1, conditions.size());
 
-        for (final Condition condition : conditions) {
-            if (condition.parameter().equals("url")) {
-                assertEquals(reachPage.getPageUrl(), condition.value());
-                assertEquals(Operator.CONTAINS, condition.operator());
-            } else if (condition.parameter().equals("referer")) {
-                assertEquals(experimentPage.getURI(), condition.value());
-                assertEquals(Operator.CONTAINS, condition.operator());
-            }
-        }
+        final Condition condition = conditions.get(0);
+        assertEquals("url", condition.parameter());
+        assertEquals(reachPage.getPageUrl(), condition.value());
+        assertEquals(Operator.CONTAINS, condition.operator());
     }
 
     /**

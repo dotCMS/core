@@ -21,6 +21,7 @@ import {
 
 import { DotLayout } from '@dotcms/dotcms-models';
 
+import { colIcon, rowIcon } from './assets/icons';
 import { DotGridStackWidget } from './models/models';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { gridOptions, subGridOptions } from './utils/gridstack-options';
@@ -50,6 +51,9 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
 
     grid!: GridStack;
 
+    public readonly rowIcon = rowIcon;
+    public readonly colIcon = colIcon;
+
     constructor(private store: DotTemplateBuilderStore) {
         this.items$ = this.store.items$;
     }
@@ -63,7 +67,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
             this.store.moveRow(nodes as DotGridStackWidget[]);
         });
 
-        GridStack.setupDragIn('.add', {
+        GridStack.setupDragIn('dotcms-add-widget', {
             appendTo: 'body',
             helper: 'clone'
         });

@@ -2,12 +2,10 @@ import { ChangeDetectionStrategy, Component, EventEmitter, Output } from '@angul
 
 import { ButtonModule } from 'primeng/button';
 
-import { DotIconModule } from '@dotcms/ui';
-
 @Component({
     selector: 'dotcms-template-builder-row',
     standalone: true,
-    imports: [DotIconModule, ButtonModule],
+    imports: [ButtonModule],
     templateUrl: './template-builder-row.component.html',
     styleUrls: ['./template-builder-row.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
