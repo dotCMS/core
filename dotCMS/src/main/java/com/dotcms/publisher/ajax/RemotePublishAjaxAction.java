@@ -890,6 +890,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
         final String iWantTo = request.getParameter( "iWantTo" );
         final String whoToSendTmp = request.getParameter( "whoToSend" );
         final String filterKey = request.getParameter("filterKey");
+        final String timezoneId = request.getParameter( "timezoneId" );
 
         try {
             final boolean forcePush = (boolean) APILocator.getPublisherAPI().getFilterDescriptorByKey(filterKey).getFilters().getOrDefault(FilterDescriptor.FORCE_PUSH_KEY,false);
@@ -910,13 +911,19 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 return;
             }
 
+            final TimeZone currentTimeZone =
+                    UtilMethods.isSet(timezoneId) ? TimeZone.getTimeZone(timezoneId)
+                            : APILocator.systemTimeZone();
+
+            final Date publishDate = DateUtil
+                    .convertDate(contentPushPublishDate + "-" + contentPushPublishTime,
+                            currentTimeZone, STANDARD_DATE_FORMAT);
+
             //Put the selected environments in session in order to have the list of the last selected environments
             request.getSession().setAttribute( WebKeys.SELECTED_ENVIRONMENTS + getUser().getUserId(), envsToSendTo );
             //Clean up the selected bundle
             request.getSession().removeAttribute( WebKeys.SELECTED_BUNDLE + getUser().getUserId() );
 
-            final SimpleDateFormat dateFormat = new SimpleDateFormat(STANDARD_DATE_FORMAT);
-            final Date publishDate = dateFormat.parse( contentPushPublishDate + "-" + contentPushPublishTime );
             final Bundle bundle = bundleAPI.getBundleById(bundleId);
             bundle.setForcePush(forcePush);
             bundle.setFilterKey(filterKey);
@@ -927,12 +934,16 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 bundleAPI.updateBundle(bundle);
              	publisherAPI.publishBundleAssets(bundle.getId(), publishDate);
             } else if (iWantTo.equals(RemotePublishAjaxAction.DIALOG_ACTION_EXPIRE) && UtilMethods.isSet(contentPushExpireDate) && UtilMethods.isSet(contentPushExpireTime)) {
-                final Date expireDate = dateFormat.parse( contentPushExpireDate + "-" + contentPushExpireTime );
+                final Date expireDate = DateUtil
+                        .convertDate(contentPushExpireDate + "-" + contentPushExpireTime,
+                                currentTimeZone, STANDARD_DATE_FORMAT);
                 bundle.setExpireDate(expireDate);
                 bundleAPI.updateBundle(bundle);
                 publisherAPI.unpublishBundleAssets(bundle.getId(), expireDate);
             } else if (iWantTo.equals(RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH_AND_EXPIRE) && UtilMethods.isSet(contentPushExpireDate) && UtilMethods.isSet(contentPushExpireTime)) {
-                final Date expireDate = dateFormat.parse( contentPushExpireDate + "-" + contentPushExpireTime );
+                final Date expireDate = DateUtil
+                        .convertDate(contentPushExpireDate + "-" + contentPushExpireTime,
+                                currentTimeZone, STANDARD_DATE_FORMAT);
                 bundle.setPublishDate(publishDate);
                 bundle.setExpireDate(expireDate);
                 bundleAPI.updateBundle(bundle);
