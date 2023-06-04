@@ -85,7 +85,7 @@ const DEPS_ENV = {
 exports.COMMANDS = {
     gradle: [
         {
-            cmd: gradleCmd,
+            cmd: './gradlew',
             args: ['generateDependenciesFromMaven'],
             workingDir: dotCmsRoot
         },
