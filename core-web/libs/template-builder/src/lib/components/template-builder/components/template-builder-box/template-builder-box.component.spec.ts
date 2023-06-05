@@ -10,6 +10,8 @@ import {
     TemplateBuilderBoxSize
 } from './template-builder-box.component';
 
+import { CONTAINERS_DATA_MOCK } from '../../utils/mocks';
+
 describe('TemplateBuilderBoxComponent', () => {
     let spectator: SpectatorHost<TemplateBuilderBoxComponent>;
 
@@ -20,10 +22,11 @@ describe('TemplateBuilderBoxComponent', () => {
 
     beforeEach(() => {
         spectator = createHost(
-            `<dotcms-template-builder-box [size]="size"> </dotcms-template-builder-box>`,
+            `<dotcms-template-builder-box [size]="size" [items]="items"> </dotcms-template-builder-box>`,
             {
                 hostProps: {
-                    size: 'large'
+                    size: TemplateBuilderBoxSize.large,
+                    items: CONTAINERS_DATA_MOCK
                 }
             }
         );
@@ -74,5 +77,40 @@ describe('TemplateBuilderBoxComponent', () => {
         expect(addButton).toBeTruthy();
         expect(paletteButton).toBeTruthy();
         expect(deleteButton).toBeTruthy();
+    });
+
+    it('should trigger addContainer when click on plus button', () => {
+        const addContainerMock = jest.spyOn(spectator.component.addContainer, 'emit');
+        const addButton = spectator.query(byTestId('btn-plus'));
+
+        spectator.dispatchFakeEvent(addButton, 'onClick');
+        expect(addContainerMock).toHaveBeenCalled();
+    });
+
+    it('should trigger editStyle when click on palette button', () => {
+        const editStyleMock = jest.spyOn(spectator.component.editStyle, 'emit');
+        const paletteButton = spectator.query(byTestId('btn-palette'));
+
+        spectator.dispatchFakeEvent(paletteButton, 'onClick');
+
+        expect(editStyleMock).toHaveBeenCalled();
+    });
+
+    it('should trigger deleteContainer when click on container trash button', () => {
+        const deleteContainerMock = jest.spyOn(spectator.component.deleteContainer, 'emit');
+        const containerTrashButton = spectator.query(byTestId('btn-trash-container'));
+
+        spectator.dispatchFakeEvent(containerTrashButton, 'onClick');
+
+        expect(deleteContainerMock).toHaveBeenCalled();
+    });
+
+    it('should trigger deleteColumn when click on column trash button', () => {
+        const deleteColumnMock = jest.spyOn(spectator.component.deleteColumn, 'emit');
+        const columnTrashButton = spectator.query(byTestId('btn-trash-column'));
+
+        spectator.dispatchFakeEvent(columnTrashButton, 'onClick');
+
+        expect(deleteColumnMock).toHaveBeenCalled();
     });
 });

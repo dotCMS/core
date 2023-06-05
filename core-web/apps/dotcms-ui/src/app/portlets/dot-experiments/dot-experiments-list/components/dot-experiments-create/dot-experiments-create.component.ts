@@ -12,7 +12,7 @@ import { SidebarModule } from 'primeng/sidebar';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
-import { DotExperiment, MAX_INPUT_LENGTH } from '@dotcms/dotcms-models';
+import { DotExperiment, MAX_INPUT_TITLE_LENGTH } from '@dotcms/dotcms-models';
 import { DotMessagePipeModule } from '@dotcms/ui';
 import {
     DotExperimentsListStore,
@@ -54,7 +54,7 @@ export class DotExperimentsCreateComponent implements OnInit {
     vm$: Observable<VmCreateExperiments> = this.dotExperimentsListStore.createVm$;
 
     form: FormGroup<CreateForm>;
-    protected readonly maxNameLength = MAX_INPUT_LENGTH;
+    protected readonly maxNameLength = MAX_INPUT_TITLE_LENGTH;
 
     constructor(private readonly dotExperimentsListStore: DotExperimentsListStore) {}
 

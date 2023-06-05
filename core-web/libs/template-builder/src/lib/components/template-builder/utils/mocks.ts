@@ -18,6 +18,25 @@ export const GRIDSTACK_DATA_MOCK: DotGridStackWidget[] = [
     }
 ];
 
+export const CONTAINERS_DATA_MOCK = [
+    {
+        identifier: '//demo.dotcms.com/application/containers/banner/',
+        uuid: '1'
+    },
+    {
+        identifier: '//demo.dotcms.com/application/containers/banner/',
+        uuid: '2'
+    },
+    {
+        identifier: '//demo.dotcms.com/application/containers/banner/',
+        uuid: '3'
+    },
+    {
+        identifier: '//demo.dotcms.com/application/containers/banner/',
+        uuid: '4'
+    }
+];
+
 export const MINIMAL_DATA_MOCK: DotLayoutBody = {
     rows: [
         {

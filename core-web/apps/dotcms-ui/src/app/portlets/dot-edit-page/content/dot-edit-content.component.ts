@@ -32,6 +32,7 @@ import {
     DotCMSContentType,
     DotContainerStructure,
     DotExperiment,
+    DotExperimentStatusList,
     DotIframeEditEvent,
     DotPageContainer,
     DotPageMode,
@@ -41,6 +42,7 @@ import {
     ESContent
 } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService, generateDotFavoritePageUrl } from '@dotcms/utils';
+import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 
 import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
 import {
@@ -84,6 +86,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     paletteCollapsed = false;
     isEnterpriseLicense = false;
     variantData: Observable<DotVariantData>;
+    runningExperiment$: Observable<DotExperiment | null>;
 
     private readonly customEventsHandler;
     private destroy$: Subject<boolean> = new Subject<boolean>();
@@ -113,7 +116,8 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         private dotESContentService: DotESContentService,
         private dotSessionStorageService: DotSessionStorageService,
         private dotCurrentUser: DotCurrentUserService,
-        private dotFavoritePageService: DotFavoritePageService
+        private dotFavoritePageService: DotFavoritePageService,
+        private dotExperimentsService: DotExperimentsService
     ) {
         if (!this.customEventsHandler) {
             this.customEventsHandler = {
@@ -181,6 +185,7 @@ browse from the page internal links
         this.subscribeOverlayService();
         this.subscribeDraggedContentType();
         this.getExperimentResolverData();
+        this.getRunningExperiment();
     }
 
     ngOnDestroy(): void {
@@ -632,6 +637,19 @@ browse from the page internal links
                     mode: mode
                 } as DotVariantData;
             })
+        );
+    }
+
+    private getRunningExperiment(): void {
+        this.runningExperiment$ = this.pageState$.pipe(
+            take(1),
+            switchMap((content) =>
+                this.dotExperimentsService.getByStatus(
+                    content.page.identifier,
+                    DotExperimentStatusList.RUNNING
+                )
+            ),
+            map((experiments) => (experiments.length ? experiments[0] : null))
         );
     }
 }

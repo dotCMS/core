@@ -78,6 +78,23 @@
 
 <ng-template #defaultHeaderRightTpl>
     <dot-global-message data-testId="globalMessage" right></dot-global-message>
+
+    <p-tag
+        class="sm p-tag-success dot-edit__experiments-results-tag"
+        *ngIf="runningExperiment"
+        [value]="'running' | dm | titlecase"
+        [routerLink]="[
+            '/edit-page/experiments/',
+            runningExperiment.pageId,
+            runningExperiment.id,
+            'reports'
+        ]"
+        role="button"
+        data-testId="runningExperimentTag"
+        queryParamsHandling="preserve"
+    >
+        <i class="material-icons">science</i>
+    </p-tag>
     <dot-edit-page-workflows-actions
         [page]="pageState.page"
         (fired)="actionFired.emit($event)"

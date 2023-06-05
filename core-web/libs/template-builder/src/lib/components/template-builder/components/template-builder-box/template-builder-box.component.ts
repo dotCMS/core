@@ -6,7 +6,7 @@ import { ScrollPanelModule } from 'primeng/scrollpanel';
 
 import { DotMessagePipeModule } from '@dotcms/ui';
 
-import { DotContainers } from '../../models/models';
+import { DotTemplateBuilderContainer } from '../../models/models';
 
 export enum TemplateBuilderBoxSize {
     large = 'large',
@@ -28,11 +28,11 @@ export class TemplateBuilderBoxComponent {
     @Output()
     addContainer: EventEmitter<void> = new EventEmitter<void>();
     @Output()
-    addColumn: EventEmitter<void> = new EventEmitter<void>();
+    deleteContainer: EventEmitter<void> = new EventEmitter<void>();
     @Output()
     deleteColumn: EventEmitter<void> = new EventEmitter<void>();
 
-    @Input() items: DotContainers;
+    @Input() items: DotTemplateBuilderContainer[];
 
     protected readonly templateBuilderSizes = TemplateBuilderBoxSize;
     @Input() size: TemplateBuilderBoxSize = TemplateBuilderBoxSize.large;
