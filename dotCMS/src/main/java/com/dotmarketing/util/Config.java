@@ -340,11 +340,8 @@ public class Config {
 
     private static void readEnvironmentVariables() {
         synchronized (Config.class) {
-            System.getenv().entrySet().stream().filter(e -> e.getKey().startsWith(ENV_PREFIX))
+            EnvironmentVariablesService.getInstance().getenv().entrySet().stream().filter(e -> e.getKey().startsWith(ENV_PREFIX))
                     .forEach(e -> props.setProperty(e.getKey(), e.getValue()));
-            // Override with system properties
-            System.getProperties().entrySet().stream().filter(e -> e.getKey().toString().startsWith(ENV_PREFIX))
-                    .forEach(e -> props.setProperty(e.getKey().toString(), e.getValue()));
         }
     }
 
@@ -588,8 +585,6 @@ public class Config {
      */
     public static void setProperty(String key, Object value) {
         if (props != null) {
-            if (props.containsKey(envKey(key)))
-                  key = envKey(key);
             trackOverrides(key, value);
             Logger.info(Config.class, "Setting property: " + key + " to " + value);
             props.setProperty(key, value);
