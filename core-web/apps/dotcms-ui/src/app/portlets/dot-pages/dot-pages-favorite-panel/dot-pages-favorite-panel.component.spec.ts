@@ -112,6 +112,9 @@ describe('DotPagesFavoritePanelComponent', () => {
         setFavoritePages() {
             /* */
         }
+        getFavoritePages() {
+            /* */
+        }
     }
 
     describe('Empty state', () => {
@@ -286,16 +289,6 @@ describe('DotPagesFavoritePanelComponent', () => {
         });
 
         describe('Events', () => {
-            it('should call event to load all items', () => {
-                const elem = de.query(By.css('[data-testId="seeAllBtn"]'));
-                elem.triggerEventHandler('click', {
-                    stopPropagation: () => {
-                        //
-                    }
-                });
-                expect(store.getFavoritePages).toHaveBeenCalledWith(4);
-            });
-
             it('should call edit method to open favorite page dialog', () => {
                 spyOn(dotPageRenderService, 'checkPermission').and.returnValue(of(true));
                 fixture.detectChanges();

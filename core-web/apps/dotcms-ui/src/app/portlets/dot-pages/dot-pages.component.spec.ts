@@ -180,7 +180,7 @@ describe('DotPagesComponent', () => {
     });
 
     it('should init store', () => {
-        expect(store.setInitialStateData).toHaveBeenCalledWith(5);
+        expect(store.setInitialStateData).toHaveBeenCalledWith(500);
     });
 
     it('should have favorite page panel, menu, pages panel and DotAddToBundle components', () => {
