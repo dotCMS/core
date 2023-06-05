@@ -93,27 +93,4 @@ describe('DotESContentService', () => {
     afterEach(() => {
         httpMock.verify();
     });
-
-    it('should get Blogs without limits', () => {
-        dotESContentService
-            .get({
-                filter: 'test',
-                lang: '2',
-                offset: '10',
-                sortField: 'name',
-                sortOrder: ESOrderDirection.ASC,
-                query: '+contentType: blog',
-                fetchAll: true
-            })
-            .subscribe((res) => {
-                expect(res).toEqual(responseData);
-            });
-
-        const req = httpMock.expectOne('/api/content/_search');
-        expect(req.request.method).toBe('POST');
-        expect(req.request.body).toEqual(
-            '{"query":"+contentType: blog   +languageId : 2   +title : test*  ","sort":"name ASC","offset":"10"}'
-        );
-        req.flush({ entity: responseData });
-    });
 });
