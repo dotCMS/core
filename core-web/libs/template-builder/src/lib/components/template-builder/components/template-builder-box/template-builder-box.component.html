@@ -1,48 +1,50 @@
-<div
-    class="template-builder-box"
-    *ngIf="boxSize !== templateBuilderSizes.small; else smallTemplate"
-    [ngClass]="{
-        'template-builder-box--medium': boxSize === templateBuilderSizes.medium,
-        'template-builder-box--large': boxSize === templateBuilderSizes.large
-    }"
-    data-testId="template-builder-box"
->
-    <div class="template-builder-box__header-container">
-        <p-button
-            [label]="boxSize === templateBuilderSizes.large ? 'Add Container' : ''"
-            (onClick)="addContainer.emit()"
-            icon="pi pi-plus"
-            data-testId="btn-plus"
-            styleClass="p-button-text p-button-sm"
-        ></p-button>
-
-        <div>
+<div class="grid-stack-item-content">
+    <div
+        class="template-builder-box"
+        *ngIf="boxSize !== templateBuilderSizes.small; else smallTemplate"
+        [ngClass]="{
+            'template-builder-box--medium': boxSize === templateBuilderSizes.medium,
+            'template-builder-box--large': boxSize === templateBuilderSizes.large
+        }"
+        data-testId="template-builder-box"
+    >
+        <div class="template-builder-box__header-container">
             <p-button
-                (onClick)="editStyle.emit()"
-                data-testId="btn-palette"
-                icon="pi pi-palette"
-                styleClass="p-button-rounded p-button-text p-button-sm"
+                [label]="boxSize === templateBuilderSizes.large ? 'Add Container' : ''"
+                (onClick)="addContainer.emit()"
+                icon="pi pi-plus"
+                data-testId="btn-plus"
+                styleClass="p-button-text p-button-sm"
             ></p-button>
 
-            <p-button
-                (onClick)="deleteColumn.emit()"
-                data-testId="btn-trash-column"
-                icon="pi pi-trash"
-                styleClass="p-button-secondary p-button-rounded p-button-text p-button-sm"
-            ></p-button>
+            <div>
+                <p-button
+                    (onClick)="editStyle.emit()"
+                    data-testId="btn-palette"
+                    icon="pi pi-palette"
+                    styleClass="p-button-rounded p-button-text p-button-sm"
+                ></p-button>
+
+                <p-button
+                    (onClick)="deleteColumn.emit()"
+                    data-testId="btn-trash-column"
+                    icon="pi pi-trash"
+                    styleClass="p-button-secondary p-button-rounded p-button-text p-button-sm"
+                ></p-button>
+            </div>
         </div>
+        <p-scrollPanel [style]="{ width: '100%', height: '10.9375rem' }">
+            <div class="template-builder-box__item" *ngFor="let item of items">
+                <p>{{ item.identifier }}</p>
+                <p-button
+                    (onClick)="deleteContainer.emit()"
+                    icon="pi pi-trash"
+                    styleClass="p-button-secondary p-button-rounded p-button-text p-button-sm"
+                    data-testId="btn-trash-container"
+                ></p-button>
+            </div>
+        </p-scrollPanel>
     </div>
-    <p-scrollPanel [style]="{ width: '100%', height: '10.9375rem' }">
-        <div class="template-builder-box__item" *ngFor="let item of items">
-            <p>{{ item.identifier }}</p>
-            <p-button
-                (onClick)="deleteContainer.emit()"
-                icon="pi pi-trash"
-                styleClass="p-button-secondary p-button-rounded p-button-text p-button-sm"
-                data-testId="btn-trash-container"
-            ></p-button>
-        </div>
-    </p-scrollPanel>
 </div>
 
 <ng-template #smallTemplate>

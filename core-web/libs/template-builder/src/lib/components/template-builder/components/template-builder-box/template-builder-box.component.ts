@@ -1,7 +1,10 @@
+import { GridHTMLElement } from 'gridstack';
+
 import { NgClass, NgFor, NgIf } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
+    ElementRef,
     EventEmitter,
     Input,
     OnChanges,
@@ -39,6 +42,12 @@ export class TemplateBuilderBoxComponent implements OnChanges {
     @Input() size = 1;
 
     boxSize = TemplateBuilderBoxSize.small;
+
+    constructor(private el: ElementRef) {}
+
+    get nativeElement(): GridHTMLElement {
+        return this.el.nativeElement;
+    }
 
     ngOnChanges(): void {
         this.boxSize = getBoxSize(this.size);

@@ -23,6 +23,8 @@ import {
 import { DotLayout } from '@dotcms/dotcms-models';
 
 import { colIcon, rowIcon } from './assets/icons';
+import { TemplateBuilderBoxComponent } from './components/template-builder-box/template-builder-box.component';
+import { TemplateBuilderRowComponent } from './components/template-builder-row/template-builder-row.component';
 import { DotGridStackWidget } from './models/models';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { gridOptions, subGridOptions } from './utils/gridstack-options';
@@ -40,15 +42,15 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
 
     public items$: Observable<DotGridStackWidget[]>;
 
-    @ViewChildren('rows', {
+    @ViewChildren('rowElement', {
         emitDistinctChangesOnly: true
     })
-    rows!: QueryList<ElementRef<GridItemHTMLElement>>;
+    rows!: QueryList<ElementRef<TemplateBuilderRowComponent>>;
 
-    @ViewChildren('boxes', {
+    @ViewChildren('boxElement', {
         emitDistinctChangesOnly: true
     })
-    boxes!: QueryList<ElementRef<GridItemHTMLElement>>;
+    boxes!: QueryList<ElementRef<TemplateBuilderBoxComponent>>;
 
     grid!: GridStack;
 
@@ -97,10 +99,13 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
 
         this.boxes.changes.subscribe(() => {
             this.boxes.forEach((ref) => {
-                if (!ref.nativeElement.gridstackNode) {
-                    const parentGrid = ref.nativeElement.closest('.grid-stack') as GridHTMLElement;
+                // ref.nativeElement still says that is the Template Builder Box Component
+                const nativeElement = ref.nativeElement as unknown as GridItemHTMLElement;
+
+                if (!nativeElement.gridstackNode) {
+                    const parentGrid = nativeElement.closest('.grid-stack') as GridHTMLElement;
                     const grid = parentGrid.gridstack as GridStack;
-                    grid.makeWidget(ref.nativeElement);
+                    grid.makeWidget(nativeElement);
                 }
             });
         });
@@ -109,11 +114,14 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
             const layout: GridStackWidget[] = [];
 
             this.rows.forEach((ref) => {
-                const isNew = !ref.nativeElement.gridstackNode;
+                // ref.nativeElement still says that is the Template Builder Row Component
+                const nativeElement = ref.nativeElement as unknown as GridItemHTMLElement;
+
+                const isNew = !nativeElement.gridstackNode;
 
                 const row =
-                    ref.nativeElement.gridstackNode ||
-                    this.grid.makeWidget(ref.nativeElement).gridstackNode;
+                    nativeElement.gridstackNode ||
+                    this.grid.makeWidget(nativeElement).gridstackNode;
 
                 if (row && row.el) {
                     if (isNew) {
@@ -155,17 +163,14 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
      * @param {numberOrString} rowID
      * @memberof TemplateBuilderComponent
      */
-    removeColumn(column: DotGridStackWidget, rowID: numberOrString): void {
+    removeColumn(
+        column: DotGridStackWidget,
+        element: GridHTMLElement,
+        rowID: numberOrString
+    ): void {
         // The gridstack model is polutted with the subgrid data
-
-        const columnToDelete = this.boxes.find(
-            (elem) => elem.nativeElement.getAttribute('gs-id') === column.id
-        ).nativeElement;
-
         // So we need to delete the node from the GridStack Model
-        this.grid.engine.nodes
-            .find((node) => node.id === rowID)
-            .subGrid?.removeWidget(columnToDelete);
+        this.grid.engine.nodes.find((node) => node.id === rowID).subGrid?.removeWidget(element);
 
         this.store.removeColumn({ ...column, parentId: rowID as string });
     }

@@ -17,9 +17,9 @@
     ></dotcms-add-widget>
 </div>
 <div class="grid-stack">
-    <div
+    <dotcms-template-builder-row
         class="grid-stack-item"
-        #rows
+        #rowElement
         *ngFor="let row of items$ | async; trackBy: identify"
         [attr.gs-id]="row.id"
         [attr.gs-x]="row.x"
@@ -28,29 +28,22 @@
         [attr.gs-h]="row.h"
         data-testId="row"
     >
-        <dotcms-template-builder-row>
-            <div class="grid-stack-item-content grid-stack">
-                <div
-                    class="grid-stack-item sub"
-                    #boxes
-                    *ngFor="let box of row.subGridOpts?.children; trackBy: identify"
-                    [attr.gs-id]="box.id"
-                    [attr.gs-auto]="true"
-                    [attr.gs-x]="box.x"
-                    [attr.gs-y]="box.y"
-                    [attr.gs-w]="box.w"
-                    [attr.gs-h]="box.h"
-                    data-testId="box"
-                >
-                    <div class="grid-stack-item-content">
-                        <dotcms-template-builder-box
-                            [items]="box.containers"
-                            [size]="box.w"
-                            (deleteColumn)="removeColumn(box, row.id)"
-                        ></dotcms-template-builder-box>
-                    </div>
-                </div>
-            </div>
-        </dotcms-template-builder-row>
-    </div>
+        <div class="grid-stack-item-content grid-stack">
+            <dotcms-template-builder-box
+                class="grid-stack-item sub"
+                #boxElement
+                *ngFor="let box of row.subGridOpts?.children; trackBy: identify"
+                [attr.gs-id]="box.id"
+                [attr.gs-auto]="true"
+                [attr.gs-x]="box.x"
+                [attr.gs-y]="box.y"
+                [attr.gs-w]="box.w"
+                [attr.gs-h]="box.h"
+                [items]="box.containers"
+                [size]="box.w"
+                (deleteColumn)="removeColumn(box, boxElement.nativeElement, row.id)"
+                data-testId="box"
+            ></dotcms-template-builder-box>
+        </div>
+    </dotcms-template-builder-row>
 </div>
