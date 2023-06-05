@@ -25,6 +25,7 @@
         [attr.gs-y]="row.y"
         [attr.gs-w]="row.w"
         [attr.gs-h]="row.h"
+        [ngStyle]="{ height: rowDisplayHeight }"
         (deleteRow)="deleteRow(row.id)"
     >
         <div class="grid-stack-item-content grid-stack">

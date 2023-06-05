@@ -1,4 +1,4 @@
-import { AsyncPipe, NgFor } from '@angular/common';
+import { AsyncPipe, NgFor, NgStyle } from '@angular/common';
 import { NgModule } from '@angular/core';
 
 import { AddWidgetComponent } from './components/template-builder/components/add-widget/add-widget.component';
@@ -17,7 +17,8 @@ import { TemplateBuilderComponent } from './components/template-builder/template
         TemplateBuilderRowComponent,
         AddWidgetComponent,
         TemplateBuilderBoxComponent,
-        TemplateBuilderBackgroundColumnsComponent
+        TemplateBuilderBackgroundColumnsComponent,
+        NgStyle
     ],
     declarations: [TemplateBuilderComponent],
     providers: [DotTemplateBuilderStore],
