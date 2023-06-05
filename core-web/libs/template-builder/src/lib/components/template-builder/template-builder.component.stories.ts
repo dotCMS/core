@@ -11,7 +11,7 @@ import { RemoveConfirmDialogComponent } from './components/remove-confirm-dialog
 import { TemplateBuilderRowComponent } from './components/template-builder-row/template-builder-row.component';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { TemplateBuilderComponent } from './template-builder.component';
-import { FULL_DATA_MOCK, MESSAGES_MOCK } from './utils/mocks';
+import { DOT_MESSAGE_SERVICE_TB_MOCK, FULL_DATA_MOCK } from './utils/mocks';
 
 export default {
     title: 'TemplateBuilderComponent',
@@ -31,14 +31,7 @@ export default {
                 DotTemplateBuilderStore,
                 {
                     provide: DotMessageService,
-                    useValue: {
-                        get(key: string, ..._args: string[]): string {
-                            return MESSAGES_MOCK[key];
-                        },
-                        init() {
-                            /* */
-                        }
-                    }
+                    useValue: DOT_MESSAGE_SERVICE_TB_MOCK
                 }
             ]
         })

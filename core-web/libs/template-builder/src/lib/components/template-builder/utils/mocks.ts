@@ -1,6 +1,7 @@
 import { v4 as uuid } from 'uuid';
 
 import { DotLayoutBody } from '@dotcms/dotcms-models';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotGridStackWidget } from '../models/models';
 
@@ -228,3 +229,5 @@ export const MESSAGES_MOCK = {
     'dot.template.builder.comfirmation.popup.option.no': 'No',
     'dot.template.builder.comfirmation.popup.option.yes': 'Yes'
 };
+
+export const DOT_MESSAGE_SERVICE_TB_MOCK = new MockDotMessageService(MESSAGES_MOCK);

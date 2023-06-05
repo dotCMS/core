@@ -8,7 +8,7 @@ import { DotMessageService } from '@dotcms/data-access';
 
 import { TemplateBuilderBoxComponent } from './template-builder-box.component';
 
-import { MESSAGES_MOCK } from '../../utils/mocks';
+import { DOT_MESSAGE_SERVICE_TB_MOCK } from '../../utils/mocks';
 
 export default {
     title: 'TemplateBuilderBoxComponent',
@@ -20,14 +20,7 @@ export default {
                 ConfirmationService,
                 {
                     provide: DotMessageService,
-                    useValue: {
-                        get(key: string, ..._args: string[]): string {
-                            return MESSAGES_MOCK[key];
-                        },
-                        init() {
-                            /* */
-                        }
-                    }
+                    useValue: DOT_MESSAGE_SERVICE_TB_MOCK
                 }
             ]
         })

@@ -3,6 +3,8 @@ import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/j
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmPopup } from 'primeng/confirmpopup';
 
+import { DotMessagePipe, DotMessagePipeModule } from '@dotcms/ui';
+
 import { RemoveConfirmDialogComponent } from './remove-confirm-dialog.component';
 
 describe('RemoveConfirmDialogComponent', () => {
@@ -10,7 +12,8 @@ describe('RemoveConfirmDialogComponent', () => {
 
     const createComponent = createComponentFactory({
         component: RemoveConfirmDialogComponent,
-        providers: [ConfirmationService]
+        imports: [DotMessagePipeModule],
+        providers: [ConfirmationService, DotMessagePipe]
     });
 
     beforeEach(() => {
