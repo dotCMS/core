@@ -71,4 +71,10 @@ describe('TemplateBuilderRowComponent', () => {
 
         expect(fixture.componentInstance.editRowStyleClass).toHaveBeenCalled();
     });
+
+    it('should have a remove item button', () => {
+        expect(
+            fixture.debugElement.query(By.css('p-button[data-testid="btn-remove-item"]'))
+        ).toBeTruthy();
+    });
 });

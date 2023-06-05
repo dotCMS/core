@@ -23,7 +23,7 @@ describe('RemoveConfirmDialogComponent', () => {
     });
 
     it('should emit confirm event', () => {
-        const confirmMock = jest.spyOn(spectator.component, 'confirm');
+        const confirmMock = jest.spyOn(spectator.component, 'openConfirmationDialog');
         const deleteButton = spectator.query(byTestId('btn-remove-item'));
         spectator.dispatchFakeEvent(deleteButton, 'onClick');
 
@@ -31,7 +31,7 @@ describe('RemoveConfirmDialogComponent', () => {
     });
 
     it('should emit confirm event and call accept function', async () => {
-        const confirmEventSpy = jest.spyOn(spectator.component.confirmEvent, 'emit');
+        const confirmEventSpy = jest.spyOn(spectator.component.deleteConfirmed, 'emit');
 
         const deleteButton = spectator.query(byTestId('btn-remove-item'));
         spectator.dispatchMouseEvent(deleteButton, 'onClick');

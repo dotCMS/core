@@ -18,5 +18,8 @@
         icon="pi pi-palette"
     >
     </p-button>
-    <dotcms-remove-confirm-dialog (confirmEvent)="deleteRow.emit()"></dotcms-remove-confirm-dialog>
+    <dotcms-remove-confirm-dialog
+        (deleteConfirmed)="deleteRow.emit()"
+        data-testid="row-trash-button"
+    ></dotcms-remove-confirm-dialog>
 </div>
