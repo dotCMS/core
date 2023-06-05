@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Spectator, createComponentFactory } from '@ngneat/spectator';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipeModule } from '@dotcms/ui';
@@ -10,45 +10,49 @@ import { TemplateBuilderComponent } from './template-builder.component';
 import { FULL_DATA_MOCK, MESSAGES_MOCK } from './utils/mocks';
 
 describe('TemplateBuilderComponent', () => {
-    let component: TemplateBuilderComponent;
-    let fixture: ComponentFixture<TemplateBuilderComponent>;
-
-    beforeEach(async () => {
-        await TestBed.configureTestingModule({
-            declarations: [TemplateBuilderComponent],
-            providers: [
-                DotTemplateBuilderStore,
-                {
-                    provide: DotMessageService,
-                    useValue: {
-                        get(key: string, ..._args: string[]): string {
-                            return MESSAGES_MOCK[key];
-                        },
-                        init() {
-                            /* */
-                        }
+    let spectator: Spectator<TemplateBuilderComponent>;
+    const createComponent = createComponentFactory({
+        component: TemplateBuilderComponent,
+        imports: [
+            AddWidgetComponent,
+            TemplateBuilderRowComponent,
+            TemplateBuilderRowComponent,
+            DotMessagePipeModule
+        ],
+        providers: [
+            DotTemplateBuilderStore,
+            {
+                provide: DotMessageService,
+                useValue: {
+                    get(key: string, ..._args: string[]): string {
+                        return MESSAGES_MOCK[key];
+                    },
+                    init() {
+                        /* */
                     }
                 }
-            ],
-            imports: [AddWidgetComponent, TemplateBuilderRowComponent, DotMessagePipeModule]
-        }).compileComponents();
-
-        fixture = TestBed.createComponent(TemplateBuilderComponent);
-        component = fixture.componentInstance;
-
-        component.templateLayout = {
-            body: FULL_DATA_MOCK,
-            footer: false,
-            header: false,
-            sidebar: {},
-            title: '',
-            width: ''
-        };
-
-        fixture.detectChanges();
+            }
+        ]
     });
 
-    it('should create', () => {
-        expect(component).toBeTruthy();
+    beforeEach(() => {
+        spectator = createComponent({
+            props: {
+                templateLayout: {
+                    body: FULL_DATA_MOCK,
+                    footer: false,
+                    header: false,
+                    sidebar: {},
+                    title: '',
+                    width: ''
+                }
+            }
+        });
+    });
+
+    it('should call deleteRow', () => {
+        const deleteRowMock = jest.spyOn(spectator.component, 'deleteRow');
+        spectator.component.deleteRow('123');
+        expect(deleteRowMock).toHaveBeenCalledWith('123');
     });
 });

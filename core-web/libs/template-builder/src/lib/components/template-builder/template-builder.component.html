@@ -25,7 +25,7 @@
         [attr.gs-w]="row.w"
         [attr.gs-h]="row.h"
     >
-        <dotcms-template-builder-row>
+        <dotcms-template-builder-row (deleteRow)="deleteRow(row.id)">
             <div class="grid-stack-item-content grid-stack">
                 <div
                     class="grid-stack-item sub"
