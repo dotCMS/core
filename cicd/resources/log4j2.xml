@@ -30,7 +30,7 @@
     <Loggers>
 
         <Root level="INFO">
-            <AppenderRef ref="Console" />
+            <AppenderRef ref="generic" />
         </Root>
         <logger name="org.apache.tika" level="WARN" additivity="false">
             <AppenderRef ref="generic"/>
