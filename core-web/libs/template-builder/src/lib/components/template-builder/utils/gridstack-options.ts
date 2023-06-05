@@ -2,7 +2,7 @@ import { GridStackOptions } from 'gridstack';
 
 export const WIDGET_TYPE_ATTRIBUTE = 'data-widget-type';
 
-export const GRID_STACK_MARGIN = 1;
+export const GRID_STACK_MARGIN = 0.5;
 
 export const GRID_STACK_MARGIN_UNITS = 'rem';
 
