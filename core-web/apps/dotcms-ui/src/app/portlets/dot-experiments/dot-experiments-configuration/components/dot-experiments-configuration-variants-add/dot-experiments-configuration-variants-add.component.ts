@@ -12,7 +12,7 @@ import { DotFieldValidationMessageModule } from '@components/_common/dot-field-v
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import {
     ComponentStatus,
-    MAX_INPUT_LENGTH,
+    MAX_INPUT_TITLE_LENGTH,
     StepStatus,
     TrafficProportion
 } from '@dotcms/dotcms-models';
@@ -44,17 +44,15 @@ import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sideba
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationVariantsAddComponent implements OnInit {
-    protected readonly maxNameLength = MAX_INPUT_LENGTH;
     stepStatus = ComponentStatus;
-
     form: FormGroup;
-
     vm$: Observable<{
         experimentId: string;
         trafficProportion: TrafficProportion;
         status: StepStatus;
         isExperimentADraft: boolean;
     }> = this.dotExperimentsConfigurationStore.variantsStepVm$;
+    protected readonly maxNameLength = MAX_INPUT_TITLE_LENGTH;
 
     constructor(
         private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore
