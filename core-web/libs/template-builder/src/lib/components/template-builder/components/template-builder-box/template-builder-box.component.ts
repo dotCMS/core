@@ -1,4 +1,4 @@
-import { GridHTMLElement } from 'gridstack';
+import { GridItemHTMLElement } from 'gridstack';
 
 import { NgClass, NgFor, NgIf } from '@angular/common';
 import {
@@ -45,7 +45,7 @@ export class TemplateBuilderBoxComponent implements OnChanges {
 
     constructor(private el: ElementRef) {}
 
-    get nativeElement(): GridHTMLElement {
+    get nativeElement(): GridItemHTMLElement {
         return this.el.nativeElement;
     }
 

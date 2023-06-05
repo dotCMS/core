@@ -1,6 +1,5 @@
 import {
     GridHTMLElement,
-    GridItemHTMLElement,
     GridStack,
     GridStackNode,
     GridStackWidget,
@@ -12,7 +11,6 @@ import {
     AfterViewInit,
     ChangeDetectionStrategy,
     Component,
-    ElementRef,
     Input,
     OnDestroy,
     OnInit,
@@ -45,12 +43,12 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     @ViewChildren('rowElement', {
         emitDistinctChangesOnly: true
     })
-    rows!: QueryList<ElementRef<TemplateBuilderRowComponent>>;
+    rows!: QueryList<TemplateBuilderRowComponent>;
 
     @ViewChildren('boxElement', {
         emitDistinctChangesOnly: true
     })
-    boxes!: QueryList<ElementRef<TemplateBuilderBoxComponent>>;
+    boxes!: QueryList<TemplateBuilderBoxComponent>;
 
     grid!: GridStack;
 
@@ -99,13 +97,10 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
 
         this.boxes.changes.subscribe(() => {
             this.boxes.forEach((ref) => {
-                // ref.nativeElement still says that is the Template Builder Box Component
-                const nativeElement = ref.nativeElement as unknown as GridItemHTMLElement;
-
-                if (!nativeElement.gridstackNode) {
-                    const parentGrid = nativeElement.closest('.grid-stack') as GridHTMLElement;
+                if (!ref.nativeElement.gridstackNode) {
+                    const parentGrid = ref.nativeElement.closest('.grid-stack') as GridHTMLElement;
                     const grid = parentGrid.gridstack as GridStack;
-                    grid.makeWidget(nativeElement);
+                    grid.makeWidget(ref.nativeElement);
                 }
             });
         });
@@ -114,14 +109,11 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
             const layout: GridStackWidget[] = [];
 
             this.rows.forEach((ref) => {
-                // ref.nativeElement still says that is the Template Builder Row Component
-                const nativeElement = ref.nativeElement as unknown as GridItemHTMLElement;
-
-                const isNew = !nativeElement.gridstackNode;
+                const isNew = !ref.nativeElement.gridstackNode;
 
                 const row =
-                    nativeElement.gridstackNode ||
-                    this.grid.makeWidget(nativeElement).gridstackNode;
+                    ref.nativeElement.gridstackNode ||
+                    this.grid.makeWidget(ref.nativeElement).gridstackNode;
 
                 if (row && row.el) {
                     if (isNew) {

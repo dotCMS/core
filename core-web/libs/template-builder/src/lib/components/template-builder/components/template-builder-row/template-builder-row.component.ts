@@ -1,4 +1,4 @@
-import { GridHTMLElement } from 'gridstack';
+import { GridItemHTMLElement } from 'gridstack';
 
 import {
     ChangeDetectionStrategy,
@@ -26,7 +26,7 @@ export class TemplateBuilderRowComponent {
 
     constructor(private el: ElementRef) {}
 
-    get nativeElement(): GridHTMLElement {
+    get nativeElement(): GridItemHTMLElement {
         return this.el.nativeElement;
     }
 }
