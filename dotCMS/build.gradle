@@ -287,7 +287,7 @@ dependencies {
     felix group: 'org.slf4j', name: 'jcl-over-slf4j', version: '1.7.35'
 
     //// Felix system configuration
-    felixsystem group: 'com.dotcms.tika', name: 'com.dotcms.tika', version: '2.7.0'
+    felixsystem group: 'com.dotcms.tika', name: 'com.dotcms.tika', version: '2.7.1'
     felixsystem group: 'com.dotcms.samlbundle', name: 'com.dotcms.samlbundle', version: '22.03'
 
     //// starter config
