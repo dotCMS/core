@@ -56,13 +56,10 @@ export function createDotGridStackWidgets(columns: DotGridStackNode[]): DotGridS
  * @param {DotGridStackNode} node
  * @return {*}  {DotGridStackWidget}
  */
-export function createDotGridStackWidgetFromNode(
-    node: DotGridStackNode,
-    isNewNode: boolean = false
-): DotGridStackWidget {
+export function createDotGridStackWidgetFromNode(node: DotGridStackNode): DotGridStackWidget {
     return {
         x: node.x,
-        id: isNewNode ? uuid() : node.id,
+        id: node.id || uuid(),
         parentId: node.grid?.parentGridItem?.id as string,
         w: node.w,
         styleClass: node.styleClass,

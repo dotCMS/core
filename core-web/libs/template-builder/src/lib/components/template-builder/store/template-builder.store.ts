@@ -104,7 +104,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      * @memberof DotTemplateBuilderStore
      */
     readonly addColumn = this.updater(({ items }, column: DotGridStackNode) => {
-        const newColumn = createDotGridStackWidgetFromNode(column, true);
+        const newColumn = createDotGridStackWidgetFromNode(column);
 
         return {
             items: items.map((row) => {
