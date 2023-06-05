@@ -271,11 +271,6 @@ describe('DotPagesFavoritePanelComponent', () => {
             expect(elem).toBeTruthy();
         });
 
-        it('should set secondary button in panel', () => {
-            const elem = de.query(By.css('.dot-pages-panel-action__button span'));
-            expect(elem.nativeElement.outerText.toUpperCase()).toBe('SEE.ALL'.toUpperCase());
-        });
-
         it('should load pages cards with attributes', () => {
             const elem = de.queryAll(By.css('dot-pages-card'));
             expect(elem.length).toBe(2);
@@ -375,101 +370,6 @@ describe('DotPagesFavoritePanelComponent', () => {
                 expect(component.goToUrl.emit).toHaveBeenCalledOnceWith(
                     favoritePagesInitialTestData[0].url
                 );
-            });
-        });
-    });
-
-    describe('Loading all items', () => {
-        class storeMock {
-            get vm$() {
-                return of({
-                    favoritePages: {
-                        items: [...favoritePagesInitialTestData, ...favoritePagesInitialTestData],
-                        showLoadMoreButton: true,
-                        total: 4
-                    },
-                    isEnterprise: true,
-                    environments: true,
-                    languages: [],
-                    loggedUser: {
-                        id: 'admin',
-                        canRead: { contentlets: true, htmlPages: true },
-                        canWrite: { contentlets: true, htmlPages: true }
-                    },
-                    pages: {
-                        actionMenuDomId: '',
-                        items: [],
-                        addToBundleCTId: 'test1'
-                    }
-                });
-            }
-            getFavoritePages(_itemsPerPage: number): void {
-                /* */
-            }
-            limitFavoritePages(_limit: number): void {
-                /* */
-            }
-            setLocalStorageFavoritePanelCollapsedParams(_collapsed: boolean): void {
-                /* */
-            }
-        }
-        beforeEach(() => {
-            TestBed.configureTestingModule({
-                declarations: [DotPagesFavoritePanelComponent, MockDotIconComponent],
-                imports: [
-                    BrowserAnimationsModule,
-                    DotMessagePipeModule,
-                    ButtonModule,
-                    DotPagesCardModule,
-                    PanelModule,
-                    HttpClientTestingModule
-                ],
-                providers: [
-                    DialogService,
-                    DotPageRenderService,
-                    {
-                        provide: DotHttpErrorManagerService,
-                        useClass: MockDotHttpErrorManagerService
-                    },
-                    { provide: CoreWebService, useClass: CoreWebServiceMock },
-                    { provide: DotPageStore, useClass: storeMock },
-                    { provide: DotMessageService, useValue: messageServiceMock }
-                ]
-            }).compileComponents();
-
-            store = TestBed.inject(DotPageStore);
-            dialogService = TestBed.inject(DialogService);
-            fixture = TestBed.createComponent(DotPagesFavoritePanelComponent);
-            de = fixture.debugElement;
-            component = fixture.componentInstance;
-
-            spyOn(store, 'getFavoritePages');
-            spyOn(store, 'limitFavoritePages');
-            spyOn(dialogService, 'open');
-            spyOn(component.goToUrl, 'emit');
-
-            fixture.detectChanges();
-        });
-
-        it('should set panel inputs and attributes', () => {
-            const elem = de.query(By.css('p-panel'));
-            expect(elem.nativeElement.classList.contains('dot-pages-panel__expanded')).toBeTrue();
-        });
-
-        it('should set secondary button in panel', () => {
-            const elem = de.query(By.css('.dot-pages-panel-action__button span'));
-            expect(elem.nativeElement.outerText.toUpperCase()).toBe('SEE.LESS'.toUpperCase());
-        });
-
-        describe('Show less items', () => {
-            it('should call event to show less items', () => {
-                const elem = de.query(By.css('[data-testId="seeAllBtn"]'));
-                elem.triggerEventHandler('click', {
-                    stopPropagation: () => {
-                        //
-                    }
-                });
-                expect(store.limitFavoritePages).toHaveBeenCalledWith(5);
             });
         });
     });
