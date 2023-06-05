@@ -209,14 +209,6 @@ describe('DotPageStore', () => {
         });
     });
 
-    it('should limit Favorite Pages', () => {
-        spyOn(dotPageStore, 'setFavoritePages').and.callThrough();
-        dotPageStore.limitFavoritePages(5);
-        expect(dotPageStore.setFavoritePages).toHaveBeenCalledWith({
-            items: favoritePagesInitialTestData.slice(0, 5)
-        });
-    });
-
     // Selectors
     it('should get language options for dropdown', () => {
         dotPageStore.languageOptions$.subscribe((data) => {

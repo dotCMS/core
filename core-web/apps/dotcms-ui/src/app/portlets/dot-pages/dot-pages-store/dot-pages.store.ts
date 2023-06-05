@@ -1006,16 +1006,6 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
     }
 
     /**
-     * Limit Favorite page data
-     * @param number limit
-     * @memberof DotFavoritePageStore
-     */
-    limitFavoritePages(limit: number): void {
-        const favoritePages = this.get().favoritePages.items;
-        this.setFavoritePages({ items: favoritePages.slice(0, limit) });
-    }
-
-    /**
      * Sets on LocalStorage Favorite Page panel collapsed state
      * @param boolean collapsed
      * @memberof DotFavoritePageStore
