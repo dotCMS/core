@@ -383,12 +383,12 @@ describe('DotPageStore', () => {
                 resultsSize: 4
             })
         );
-        dotPageStore.getFavoritePages(4);
+        dotPageStore.getFavoritePages({ fetchAll: true });
 
         dotPageStore.state$.subscribe((data) => {
             expect(data.favoritePages.items).toEqual(expectedInputArray);
             expect(data.favoritePages.total).toEqual(expectedInputArray.length);
-            expect(data.favoritePages.collapsed).toEqual(undefined);
+            expect(data.favoritePages.collapsed).toEqual(true);
         });
         expect(dotFavoritePageService.get).toHaveBeenCalledTimes(1);
     });
