@@ -39,7 +39,8 @@ export const subGridOptions: GridStackOptions = {
     margin: BOX_MARGIN / 2, // Spacing between columns and the edge of the grid
     minRow: 1,
     maxRow: 1,
-    acceptWidgets: isAColumnWidget
+    acceptWidgets: isAColumnWidget,
+    disableOneColumnMode: true
 };
 
 export const gridOptions: GridStackOptions = {
@@ -50,5 +51,6 @@ export const gridOptions: GridStackOptions = {
     acceptWidgets: isARowWidget,
     draggable: {
         handle: '.row__drag-container'
-    }
+    },
+    disableOneColumnMode: true
 };
