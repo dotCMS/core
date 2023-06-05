@@ -36,7 +36,7 @@ export class DotPagesFavoritePanelComponent implements OnInit {
     ) {}
 
     ngOnInit(): void {
-        this.store.getFavoritePages();
+        this.store.getFavoritePages({ fetchAll: true });
     }
 
     /**
@@ -101,11 +101,11 @@ export class DotPagesFavoritePanelComponent implements OnInit {
                 },
                 onSave: () => {
                     this.timeStamp = this.getTimeStamp();
-                    this.store.getFavoritePages();
+                    this.store.getFavoritePages({ fetchAll: true });
                 },
                 onDelete: () => {
                     this.timeStamp = this.getTimeStamp();
-                    this.store.getFavoritePages();
+                    this.store.getFavoritePages({ fetchAll: true });
                 }
             }
         });

@@ -30,8 +30,9 @@ export class DotFavoritePageService {
         offset?: string;
         sortField?: string;
         sortOrder?: ESOrderDirection;
+        fetchAll?: boolean;
     }): Observable<ESContent> {
-        const { limit, userId, identifier, url, offset, sortField, sortOrder } = params;
+        const { limit, userId, identifier, url, offset, sortField, sortOrder, fetchAll } = params;
 
         let extraQueryParams = '';
         if (identifier) {
@@ -46,7 +47,7 @@ export class DotFavoritePageService {
             query: `${FAVORITE_PAGES_ES_QUERY} +owner:${userId} ${extraQueryParams}`,
             sortField: sortField || 'dotFavoritePage.order',
             sortOrder: sortOrder || ESOrderDirection.ASC,
-            fetchAll: !limit
+            fetchAll: fetchAll
         });
     }
 }

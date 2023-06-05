@@ -106,7 +106,7 @@ interface UserPagePermission {
     canUserWriteContent: boolean;
 }
 
-export const FAVORITE_PAGE_LIMIT = 30;
+export const FAVORITE_PAGE_LIMIT = 5;
 
 export const LOCAL_STORAGE_FAVORITES_PANEL_KEY = 'FavoritesPanelCollapsed';
 
@@ -306,21 +306,23 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
     });
 
     // EFFECTS
-    readonly getFavoritePages = this.effect((itemsPerPage$: Observable<number | void>) => {
-        return itemsPerPage$.pipe(
-            switchMap((itemsPerPage: number | undefined) =>
-                this.getFavoritePagesData({ limit: itemsPerPage }).pipe(
-                    tapResponse(
-                        (items) => {
-                            const favoritePages = this.getNewFavoritePages(items);
-                            this.patchState({ favoritePages });
-                        },
-                        (error: HttpErrorResponse) => this.httpErrorManagerService.handle(error)
+    readonly getFavoritePages = this.effect(
+        (filters$: Observable<{ fetchAll?: boolean; itemsPerPage?: number }>) => {
+            return filters$.pipe(
+                switchMap(({ fetchAll, itemsPerPage }) =>
+                    this.getFavoritePagesData({ limit: itemsPerPage, fetchAll }).pipe(
+                        tapResponse(
+                            (items) => {
+                                const favoritePages = this.getNewFavoritePages(items);
+                                this.patchState({ favoritePages });
+                            },
+                            (error: HttpErrorResponse) => this.httpErrorManagerService.handle(error)
+                        )
                     )
                 )
-            )
-        );
-    });
+            );
+        }
+    );
 
     readonly getPageTypes = this.effect<void>((trigger$) =>
         trigger$.pipe(
@@ -678,12 +680,19 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         limit?: number;
         identifier?: string;
         url?: string;
+        fetchAll?: boolean;
     }) => {
-        const { limit, identifier, url } = params;
+        const { limit, identifier, url, fetchAll } = params;
 
         return this.dotCurrentUser.getCurrentUser().pipe(
             switchMap(({ userId }) => {
-                return this.dotFavoritePageService.get({ limit, userId, identifier, url });
+                return this.dotFavoritePageService.get({
+                    limit,
+                    userId,
+                    identifier,
+                    url,
+                    fetchAll
+                });
             })
         );
     };
@@ -733,10 +742,10 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                                 favoritePage
                             },
                             onSave: () => {
-                                this.getFavoritePages(FAVORITE_PAGE_LIMIT);
+                                this.getFavoritePages({ fetchAll: true });
                             },
                             onDelete: () => {
-                                this.getFavoritePages(FAVORITE_PAGE_LIMIT);
+                                this.getFavoritePages({ fetchAll: true });
                             }
                         }
                     });
