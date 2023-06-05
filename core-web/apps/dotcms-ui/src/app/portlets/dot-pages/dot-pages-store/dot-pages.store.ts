@@ -75,7 +75,6 @@ export interface DotPagesInfo {
 export interface DotFavoritePagesInfo {
     collapsed?: boolean;
     items: DotCMSContentlet[];
-    showLoadMoreButton: boolean;
     total: number;
 }
 
@@ -307,21 +306,23 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
     });
 
     // EFFECTS
-    readonly getFavoritePages = this.effect((itemsPerPage$: Observable<number>) => {
-        return itemsPerPage$.pipe(
-            switchMap((itemsPerPage: number) =>
-                this.getFavoritePagesData({ limit: itemsPerPage }).pipe(
-                    tapResponse(
-                        (items) => {
-                            const favoritePages = this.getNewFavoritePages(items);
-                            this.patchState({ favoritePages });
-                        },
-                        (error: HttpErrorResponse) => this.httpErrorManagerService.handle(error)
+    readonly getFavoritePages = this.effect(
+        (filters$: Observable<{ fetchAll?: boolean; itemsPerPage?: number }>) => {
+            return filters$.pipe(
+                switchMap(({ fetchAll, itemsPerPage }) =>
+                    this.getFavoritePagesData({ limit: itemsPerPage, fetchAll }).pipe(
+                        tapResponse(
+                            (items) => {
+                                const favoritePages = this.getNewFavoritePages(items);
+                                this.patchState({ favoritePages });
+                            },
+                            (error: HttpErrorResponse) => this.httpErrorManagerService.handle(error)
+                        )
                     )
                 )
-            )
-        );
-    });
+            );
+        }
+    );
 
     readonly getPageTypes = this.effect<void>((trigger$) =>
         trigger$.pipe(
@@ -356,7 +357,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                 })
             ),
             switchMap(() => {
-                return this.getFavoritePagesData({ limit: FAVORITE_PAGE_LIMIT }).pipe(
+                return this.getFavoritePagesData({ limit: undefined }).pipe(
                     tapResponse(
                         (items) => {
                             const favoritePages = this.getNewFavoritePages(items);
@@ -676,15 +677,22 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
     };
 
     private getFavoritePagesData = (params: {
-        limit: number;
+        limit?: number;
         identifier?: string;
         url?: string;
+        fetchAll?: boolean;
     }) => {
-        const { limit, identifier, url } = params;
+        const { limit, identifier, url, fetchAll = false } = params;
 
         return this.dotCurrentUser.getCurrentUser().pipe(
             switchMap(({ userId }) => {
-                return this.dotFavoritePageService.get({ limit, userId, identifier, url });
+                return this.dotFavoritePageService.get({
+                    limit,
+                    userId,
+                    identifier,
+                    url,
+                    fetchAll
+                });
             })
         );
     };
@@ -696,9 +704,9 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
     }
 
     private getLocalStorageFavoritePanelParams(): Observable<boolean> {
-        const collapsed = JSON.parse(
-            this.dotLocalstorageService.getItem(LOCAL_STORAGE_FAVORITES_PANEL_KEY)
-        );
+        const collapsed =
+            JSON.parse(this.dotLocalstorageService.getItem(LOCAL_STORAGE_FAVORITES_PANEL_KEY)) ??
+            true;
 
         return of(collapsed);
     }
@@ -734,10 +742,10 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                                 favoritePage
                             },
                             onSave: () => {
-                                this.getFavoritePages(FAVORITE_PAGE_LIMIT);
+                                this.getFavoritePages({ fetchAll: true });
                             },
                             onDelete: () => {
-                                this.getFavoritePages(FAVORITE_PAGE_LIMIT);
+                                this.getFavoritePages({ fetchAll: true });
                             }
                         }
                     });
@@ -826,11 +834,13 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         return actionsMenu;
     }
 
-    private getNewFavoritePages(items: ESContent) {
+    private getNewFavoritePages(items: ESContent): DotFavoritePagesInfo {
         return {
             items: [...items.jsonObjectView.contentlets],
-            showLoadMoreButton: items.jsonObjectView.contentlets.length <= items.resultsSize,
-            total: items.resultsSize
+            total: items.resultsSize,
+            collapsed: JSON.parse(
+                this.dotLocalstorageService.getItem(LOCAL_STORAGE_FAVORITES_PANEL_KEY)
+            )
         };
     }
 
@@ -943,9 +953,6 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                         favoritePages: {
                             collapsed: collapsedParam,
                             items: favoritePages?.jsonObjectView.contentlets,
-                            showLoadMoreButton:
-                                favoritePages.jsonObjectView.contentlets.length <
-                                favoritePages.resultsSize,
                             total: favoritePages.resultsSize
                         },
                         isEnterprise,
@@ -977,7 +984,6 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                         favoritePages: {
                             collapsed: true,
                             items: [],
-                            showLoadMoreButton: false,
                             total: 0
                         },
                         isEnterprise: false,
@@ -1003,16 +1009,6 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                     });
                 }
             );
-    }
-
-    /**
-     * Limit Favorite page data
-     * @param number limit
-     * @memberof DotFavoritePageStore
-     */
-    limitFavoritePages(limit: number): void {
-        const favoritePages = this.get().favoritePages.items;
-        this.setFavoritePages({ items: favoritePages.slice(0, limit) });
     }
 
     /**
