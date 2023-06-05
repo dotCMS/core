@@ -40,7 +40,8 @@ describe('DotFavoritePageService', () => {
             offset: '0',
             query: '+contentType:dotFavoritePage +deleted:false +working:true +owner:123 +DotFavoritePage.url_dotraw:index.html',
             sortField: 'dotFavoritePage.order',
-            sortOrder: ESOrderDirection.ASC
+            sortOrder: ESOrderDirection.ASC,
+            fetchAll: false
         });
     });
 
@@ -58,7 +59,26 @@ describe('DotFavoritePageService', () => {
             offset: '0',
             query: '+contentType:dotFavoritePage +deleted:false +working:true +owner:123 +identifier:1',
             sortField: 'dotFavoritePage.order',
-            sortOrder: ESOrderDirection.ASC
+            sortOrder: ESOrderDirection.ASC,
+            fetchAll: false
+        });
+    });
+
+    it('should call dotESContentService with fetchAll set true and itemsPerPage as undefined when limit is undefined ', () => {
+        dotFavoritePageService
+            .get({
+                userId: '123',
+                url: 'index.html'
+            })
+            .subscribe();
+
+        expect(dotESContentService.get).toHaveBeenCalledWith({
+            itemsPerPage: undefined,
+            offset: '0',
+            query: '+contentType:dotFavoritePage +deleted:false +working:true +owner:123 +DotFavoritePage.url_dotraw:index.html',
+            sortField: 'dotFavoritePage.order',
+            sortOrder: ESOrderDirection.ASC,
+            fetchAll: true
         });
     });
 });

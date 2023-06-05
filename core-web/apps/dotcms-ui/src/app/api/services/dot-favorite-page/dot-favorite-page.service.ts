@@ -23,7 +23,7 @@ export class DotFavoritePageService {
      * @memberof DotFavoritePageService
      */
     get(params: {
-        limit: number;
+        limit?: number;
         userId: string;
         identifier?: string;
         url?: string;
@@ -41,11 +41,12 @@ export class DotFavoritePageService {
         }
 
         return this.dotESContentService.get({
-            itemsPerPage: limit || 5,
+            itemsPerPage: limit,
             offset: offset || '0',
             query: `${FAVORITE_PAGES_ES_QUERY} +owner:${userId} ${extraQueryParams}`,
             sortField: sortField || 'dotFavoritePage.order',
-            sortOrder: sortOrder || ESOrderDirection.ASC
+            sortOrder: sortOrder || ESOrderDirection.ASC,
+            fetchAll: !limit
         });
     }
 }

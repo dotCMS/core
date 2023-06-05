@@ -172,7 +172,6 @@ describe('DotPageStore', () => {
         dotPageStore.state$.subscribe((data) => {
             expect(data.environments).toEqual(true);
             expect(data.favoritePages.items).toEqual(favoritePagesInitialTestData);
-            expect(data.favoritePages.showLoadMoreButton).toEqual(false);
             expect(data.favoritePages.total).toEqual(favoritePagesInitialTestData.length);
             expect(data.isEnterprise).toEqual(true);
             expect(data.languages).toEqual([mockDotLanguage]);
@@ -196,7 +195,6 @@ describe('DotPageStore', () => {
         dotPageStore.state$.subscribe((data) => {
             expect(data.environments).toEqual(false);
             expect(data.favoritePages.items).toEqual([]);
-            expect(data.favoritePages.showLoadMoreButton).toEqual(false);
             expect(data.favoritePages.total).toEqual(0);
             expect(data.isEnterprise).toEqual(false);
             expect(data.languages).toEqual(null);
@@ -206,14 +204,6 @@ describe('DotPageStore', () => {
             expect(data.pages.items).toEqual([]);
             expect(data.pages.keyword).toEqual('');
             expect(data.pages.status).toEqual(ComponentStatus.INIT);
-        });
-    });
-
-    it('should limit Favorite Pages', () => {
-        spyOn(dotPageStore, 'setFavoritePages').and.callThrough();
-        dotPageStore.limitFavoritePages(5);
-        expect(dotPageStore.setFavoritePages).toHaveBeenCalledWith({
-            items: favoritePagesInitialTestData.slice(0, 5)
         });
     });
 
@@ -397,7 +387,6 @@ describe('DotPageStore', () => {
 
         dotPageStore.state$.subscribe((data) => {
             expect(data.favoritePages.items).toEqual(expectedInputArray);
-            expect(data.favoritePages.showLoadMoreButton).toEqual(true);
             expect(data.favoritePages.total).toEqual(expectedInputArray.length);
             expect(data.favoritePages.collapsed).toEqual(undefined);
         });
@@ -753,7 +742,6 @@ describe('DotPageStore', () => {
 
         dotPageStore.state$.subscribe((data) => {
             expect(data.favoritePages.items).toEqual(expectedInputArray);
-            expect(data.favoritePages.showLoadMoreButton).toEqual(true);
             expect(data.favoritePages.total).toEqual(expectedInputArray.length);
         });
         expect(dotESContentService.get).toHaveBeenCalledTimes(1);
