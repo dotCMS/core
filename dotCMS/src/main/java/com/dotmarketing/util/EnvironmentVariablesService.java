@@ -28,8 +28,9 @@ public class EnvironmentVariablesService {
     private final Map<String, String> envMap = new ConcurrentHashMap<>();
     private EnvironmentVariablesService() {
 
-        System.getenv().entrySet().stream()
-                .forEach(e -> envMap.put(e.getKey(), e.getValue()));
+        envMap.putAll(System.getenv());
+        System.getProperties()
+                .forEach((key, value) -> envMap.put(key.toString(), value.toString()));
     }
 
     @VisibleForTesting

@@ -13,13 +13,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
-
-import com.dotcms.enterprise.cluster.ClusterFactory;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.powermock.api.mockito.PowerMockito;
-import org.tuckey.web.filters.urlrewrite.Conf;
 
 public class ConfigTest {
 
@@ -109,7 +105,11 @@ public class ConfigTest {
     @Test
     public void Test_Add_Env_Prop_Then_Test_Read_Value() {
         final String propertyName = "fictional_property";
-        Config.setProperty(propertyName,"var");
+        // Here we need to set the original property
+        // as we are testing overriding it with the "DOT_" env variable
+        // Otherwise our setProperty will update as a configOverride and we
+        // will not see the change of the env variable
+        Config.props.setProperty(propertyName,"var");
         final String fictionalProperty = Config.getStringProperty(propertyName);
         assertEquals("var",fictionalProperty);
         EnvironmentVariablesService.getInstance().put("DOT_FICTIONAL_PROPERTY", "foo");
@@ -127,7 +127,6 @@ public class ConfigTest {
 
 
     }
-
 
     @Test
     public void testing_default_returns() {
