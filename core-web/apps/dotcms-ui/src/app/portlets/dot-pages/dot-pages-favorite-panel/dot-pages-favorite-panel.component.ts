@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
-import { Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Output } from '@angular/core';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
@@ -11,7 +11,11 @@ import { HttpCode } from '@dotcms/dotcms-js';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { DotFavoritePageComponent } from '../../dot-edit-page/components/dot-favorite-page/dot-favorite-page.component';
-import { DotPagesState, DotPageStore } from '../dot-pages-store/dot-pages.store';
+import {
+    DotPagesState,
+    DotPageStore,
+    FAVORITE_PAGE_LIMIT
+} from '../dot-pages-store/dot-pages.store';
 import { DotActionsMenuEventParams } from '../dot-pages.component';
 
 @Component({
@@ -19,13 +23,15 @@ import { DotActionsMenuEventParams } from '../dot-pages.component';
     templateUrl: './dot-pages-favorite-panel.component.html',
     styleUrls: ['./dot-pages-favorite-panel.component.scss']
 })
-export class DotPagesFavoritePanelComponent implements OnInit {
+export class DotPagesFavoritePanelComponent {
     @Output() goToUrl = new EventEmitter<string>();
     @Output() showActionsMenu = new EventEmitter<DotActionsMenuEventParams>();
 
     vm$: Observable<DotPagesState> = this.store.vm$;
 
     timeStamp = this.getTimeStamp();
+
+    private currentLimitSize = FAVORITE_PAGE_LIMIT;
 
     constructor(
         private store: DotPageStore,
@@ -35,8 +41,27 @@ export class DotPagesFavoritePanelComponent implements OnInit {
         private dotHttpErrorManagerService: DotHttpErrorManagerService
     ) {}
 
-    ngOnInit(): void {
-        this.store.getFavoritePages({ fetchAll: true });
+    /**
+     * Event to load more/less Favorite page data
+     *
+     * @param {boolean} areAllFavoritePagesLoaded
+     * @param {number} [favoritePagesToLoad]
+     * @memberof DotPagesComponent
+     */
+    toggleFavoritePagesData(
+        $event: Event,
+        areAllFavoritePagesLoaded: boolean,
+        favoritePagesToLoad?: number
+    ): void {
+        $event.stopPropagation();
+
+        if (areAllFavoritePagesLoaded) {
+            this.store.limitFavoritePages(FAVORITE_PAGE_LIMIT);
+        } else {
+            this.store.getFavoritePages(favoritePagesToLoad);
+        }
+
+        this.currentLimitSize = FAVORITE_PAGE_LIMIT;
     }
 
     /**
@@ -101,11 +126,11 @@ export class DotPagesFavoritePanelComponent implements OnInit {
                 },
                 onSave: () => {
                     this.timeStamp = this.getTimeStamp();
-                    this.store.getFavoritePages({ fetchAll: true });
+                    this.store.getFavoritePages(this.currentLimitSize);
                 },
                 onDelete: () => {
                     this.timeStamp = this.getTimeStamp();
-                    this.store.getFavoritePages({ fetchAll: true });
+                    this.store.getFavoritePages(this.currentLimitSize);
                 }
             }
         });
