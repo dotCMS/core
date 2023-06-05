@@ -4,6 +4,11 @@
     height: 16rem;
     border: 1px solid $color-palette-gray-300;
     border-radius: $border-radius-md;
+
+    &.ui-draggable-dragging {
+        background-color: $white;
+        box-shadow: $md-shadow-2;
+    }
 }
 
 .row__drag-container,
