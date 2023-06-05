@@ -10,17 +10,18 @@ import java.util.regex.Pattern;
 import org.awaitility.Awaitility;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import com.dotcms.regex.TimeLimitedMatcherFactory.RegExpTimeoutException;
-import com.dotmarketing.util.Config;
+import com.dotcms.regex.MatcherTimeoutFactory.RegExpTimeoutException;
+import com.dotcms.regex.MatcherTimeoutFactory.TimeLimitedCharSequence;
+import io.vavr.control.Try;
 
 
-public class TimeLimitedMatcherFactoryTest {
+public class MatcherTimeoutFactoryTest {
 
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
         // prime regex engine - takes about 800ms
-        test_regex_performance();
-        Config.setProperty("VANITY_URL_QUARANTINE_MS", 6000L);
+        //test_regex_performance();
+
 
     }
     
@@ -57,7 +58,7 @@ public class TimeLimitedMatcherFactoryTest {
     
 
     static void test_regex_performance() {
-        TimeLimitedMatcherFactory.SLOW_REGEX_CACHE.invalidateAll();
+        MatcherTimeoutFactory.SLOW_REGEX_CACHE.invalidateAll();
         for (String patternStr : testPatterns) {
             Pattern pattern = Pattern.compile(patternStr);
             System.out.println("");
@@ -69,7 +70,7 @@ public class TimeLimitedMatcherFactoryTest {
                 long startTime = System.currentTimeMillis();
                 boolean matches = false;
                 try {
-                    matches = TimeLimitedMatcherFactory.matcher(pattern, str).matches();
+                    matches = MatcherTimeoutFactory.matcher(pattern, str).matches();
                 } catch (RegExpTimeoutException ret) {
                     System.err.println(" FAILED : " + str);
                 }
@@ -88,21 +89,21 @@ public class TimeLimitedMatcherFactoryTest {
 
     @Test
     public void test_regex_timeout() {
-        TimeLimitedMatcherFactory.SLOW_REGEX_CACHE.invalidateAll();
+        MatcherTimeoutFactory.SLOW_REGEX_CACHE.invalidateAll();
 
         for (String[] evil : evilPatternAndMatchingString) {
             Pattern pattern = Pattern.compile(evil[0]);
             long startTime = System.currentTimeMillis();
-            TimeLimitedMatcherFactory.RegExpTimeoutException exception = assertThrows(TimeLimitedMatcherFactory.RegExpTimeoutException.class,()->
-                TimeLimitedMatcherFactory.matcher(pattern, evil[1]).matches()
+            MatcherTimeoutFactory.RegExpTimeoutException exception = assertThrows(MatcherTimeoutFactory.RegExpTimeoutException.class,()->
+                MatcherTimeoutFactory.matcher(pattern, evil[1]).matches()
             );
             long endTime = System.currentTimeMillis();
             
             // the regex returned after the expected timeout time.
-            assertTrue(endTime >= startTime + TimeLimitedMatcherFactory.VANITY_URL_REGEX_TIMEOUT);
+            assertTrue(endTime >= startTime + MatcherTimeoutFactory.VANITY_URL_REGEX_TIMEOUT);
             
             // the regex returned within 100ms of the expected timeout time
-            assertTrue(endTime < startTime + TimeLimitedMatcherFactory.VANITY_URL_REGEX_TIMEOUT + 100);
+            assertTrue(endTime < startTime + MatcherTimeoutFactory.VANITY_URL_REGEX_TIMEOUT + 100);
             
             //we got a good exception message
             assertTrue(exception.getMessage().contains(pattern.toString()));
@@ -112,25 +113,25 @@ public class TimeLimitedMatcherFactoryTest {
 
     @Test
     public void test_regex_quarantine() {
-        TimeLimitedMatcherFactory.SLOW_REGEX_CACHE.invalidateAll();
+        MatcherTimeoutFactory.SLOW_REGEX_CACHE.invalidateAll();
 
         for (String[] evil : evilPatternAndMatchingString) {
             Pattern pattern = Pattern.compile(evil[0]);
-            long quarantineTime =  TimeLimitedMatcherFactory.VANITY_URL_QUARANTINE_MS;
+            long quarantineTime =  MatcherTimeoutFactory.VANITY_URL_QUARANTINE_MS;
             long runUntil = System.currentTimeMillis() + quarantineTime;
             
             
             // this should throw a timeout and add pattern to quarantine
-            assertThrows(TimeLimitedMatcherFactory.RegExpTimeoutException.class,()->
-                TimeLimitedMatcherFactory.matcher(pattern, evil[1]).matches()
+            assertThrows(MatcherTimeoutFactory.RegExpTimeoutException.class,()->
+                MatcherTimeoutFactory.matcher(pattern, evil[1]).matches()
             );
             
             // while the regex is in quarantine, we should get the NO_MATCH_PATTERN result
             while (System.currentTimeMillis() < runUntil) {
                 long startTime = System.currentTimeMillis();
-                Matcher matcher = TimeLimitedMatcherFactory.matcher(pattern, evil[1]);
+                Matcher matcher = MatcherTimeoutFactory.matcher(pattern, evil[1]);
                 // we have the NO_MATCH_PATTERN
-                assertEquals(TimeLimitedMatcherFactory.NO_MATCH_PATTERN, matcher.pattern());
+                assertEquals(MatcherTimeoutFactory.NO_MATCH_PATTERN, matcher.pattern());
                 
                 //asert that we are now returning a no match regex in under 100ms
                 assertTrue(System.currentTimeMillis() < startTime + 100);
@@ -139,14 +140,14 @@ public class TimeLimitedMatcherFactoryTest {
             // wait until the regex is released from quarantine
             Awaitility.await()
                 .atMost(quarantineTime,TimeUnit.MILLISECONDS)
-                .until(()->TimeLimitedMatcherFactory.SLOW_REGEX_CACHE.getIfPresent(pattern.toString())==null);
+                .until(()->MatcherTimeoutFactory.SLOW_REGEX_CACHE.getIfPresent(pattern.toString())==null);
             
             
             // this should throw a timeout and add pattern to quarantine AGAIN
-            assertThrows(TimeLimitedMatcherFactory.RegExpTimeoutException.class,()->TimeLimitedMatcherFactory.matcher(pattern, evil[1]).matches());
+            assertThrows(MatcherTimeoutFactory.RegExpTimeoutException.class,()->MatcherTimeoutFactory.matcher(pattern, evil[1]).matches());
             
             // AGAIN, we have the NO_MATCH_PATTERN
-            assertEquals(TimeLimitedMatcherFactory.NO_MATCH_PATTERN, TimeLimitedMatcherFactory.matcher(pattern, evil[1]).pattern());
+            assertEquals(MatcherTimeoutFactory.NO_MATCH_PATTERN, MatcherTimeoutFactory.matcher(pattern, evil[1]).pattern());
 
         }
     }
@@ -155,11 +156,43 @@ public class TimeLimitedMatcherFactoryTest {
     public void test_no_matcher_regex() {
         
         for (String str : testStrings) {
-           assertFalse(TimeLimitedMatcherFactory.NO_MATCH_PATTERN.matcher(str).matches());
+           assertFalse(MatcherTimeoutFactory.NO_MATCH_PATTERN.matcher(str).matches());
         }
 
     }
 
+    
+    @Test
+    public void test_timelimited_char_sequence() {
+        CharSequence charSequence = "This is a big CharSequence";
+
+        TimeLimitedCharSequence timedChar = new TimeLimitedCharSequence(charSequence, MatcherTimeoutFactory.VANITY_URL_REGEX_TIMEOUT, MatcherTimeoutFactory.NO_MATCH_PATTERN, charSequence);
+        
+
+        
+
+        assertEquals(timedChar.length(),charSequence.length());
+        assertEquals(timedChar.toString(),charSequence.toString());
+        assertEquals(timedChar.subSequence(0,1).charAt(0),charSequence.subSequence(0,1).charAt(0));
+
+        
+        Try.run(()->Thread.sleep(MatcherTimeoutFactory.VANITY_URL_REGEX_TIMEOUT));
+
+        
+        assertThrows(MatcherTimeoutFactory.RegExpTimeoutException.class,()->timedChar.subSequence(0,1).charAt(0));
+        
+        assertThrows(MatcherTimeoutFactory.RegExpTimeoutException.class,()->timedChar.length());
+        
+        assertThrows(MatcherTimeoutFactory.RegExpTimeoutException.class,()->timedChar.toString());
+        
+
+        
+
+        
+        
+        
+        
+    }
     
 
 }

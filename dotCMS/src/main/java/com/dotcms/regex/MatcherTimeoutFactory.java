@@ -16,9 +16,9 @@ import com.liferay.util.StringPool;
  * MIT Licensed and Taken from
  * https://www.exratione.com/2017/06/preventing-unbounded-regular-expression-operations-in-java/
  */
-public abstract class TimeLimitedMatcherFactory {
+public abstract class MatcherTimeoutFactory {
 
-    private TimeLimitedMatcherFactory() {
+    private MatcherTimeoutFactory() {
         
     }
 
@@ -109,7 +109,7 @@ public abstract class TimeLimitedMatcherFactory {
      * Since charAt() is invoked frequently in regular expression operations on a string, this gives a
      * way to abort long-running regular expression operations.
      */
-    private static class TimeLimitedCharSequence implements CharSequence {
+    static class TimeLimitedCharSequence implements CharSequence {
         private final CharSequence inner;
 
         private final long timeoutAfterTimestamp;
@@ -147,7 +147,8 @@ public abstract class TimeLimitedMatcherFactory {
             this.pattern = pattern;
             this.originalCharSequence = originalCharSequence;
         }
-
+        
+        @Override
         public char charAt(int index) {
 
             // This is an unavoidable slowdown, but what can you do?
@@ -156,7 +157,7 @@ public abstract class TimeLimitedMatcherFactory {
         }
 
         private void checkTimeout() {
-            if (System.currentTimeMillis() > timeoutAfterTimestamp) {
+            if (System.currentTimeMillis() >= timeoutAfterTimestamp) {
                 SLOW_REGEX_CACHE.put(this.pattern.toString(), Boolean.TRUE);
                 // Note that we add the original charsequence to the exception
                 // message. This condition can be met on a subsequence of the
@@ -164,18 +165,19 @@ public abstract class TimeLimitedMatcherFactory {
                 // anywhere near as helpful.
                 final String message = "RegEx timeout for [ " + pattern.pattern() + " ] on [ " + originalCharSequence
                                 + " ].  Skipping Regex Evaluation for " + (VANITY_URL_QUARANTINE_MS / 1000) + " sec.";
-                Logger.warn(TimeLimitedMatcherFactory.class, message);
+                Logger.warn(MatcherTimeoutFactory.class, message);
                 throw new RegExpTimeoutException(message);
             }
 
         }
 
-
+        @Override
         public int length() {
             checkTimeout();
             return inner.length();
         }
-
+        
+        @Override
         public CharSequence subSequence(int start, int end) {
             // Ensure that any subsequence generated during a regular expression
             // operation is still going to explode on time.

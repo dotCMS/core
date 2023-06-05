@@ -18,7 +18,7 @@ import com.dotcms.vanityurl.cache.VanityUrlCache;
 import com.dotcms.vanityurl.filters.VanityUrlRequestWrapper;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.vanityurl.model.DefaultVanityUrl;
-import com.dotcms.regex.TimeLimitedMatcherFactory;
+import com.dotcms.regex.MatcherTimeoutFactory;
 import com.dotcms.vanityurl.model.VanityUrl;
 import com.dotcms.vanityurl.model.VanityUrlResult;
 import com.dotcms.vanityurl.util.VanityUrlUtil;
@@ -228,7 +228,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
       matched = load(site, language)
                       .stream()
                       .filter(cachedVanityUrl ->
-                      Try.of(()-> TimeLimitedMatcherFactory.matcher(cachedVanityUrl.pattern, url).matches()).getOrElseThrow(DotRuntimeException::new))
+                      Try.of(()-> MatcherTimeoutFactory.matcher(cachedVanityUrl.pattern, url).matches()).getOrElseThrow(DotRuntimeException::new))
                       .findFirst();
         }
         catch(Exception e) {
