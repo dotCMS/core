@@ -196,6 +196,16 @@ export const FULL_DATA_MOCK: DotLayoutBody = {
 };
 
 export const MESSAGES_MOCK = {
+    'dot.template.builder.action.cancel': 'Cancel',
+    'dot.template.builder.action.create': 'Create',
+    'dot.template.builder.add.container': 'Add Container',
+    'dot.template.builder.add.box': 'Add Box',
     'dot.template.builder.add.row': 'Add Row',
-    'dot.template.builder.add.box': 'Add Box'
+    'dot.template.builder.edit.classes': 'Edit Classes',
+    'dot.template.builder.edit.box': 'Edit Box',
+    'dot.template.builder.label.classes': 'Classes',
+    'dot.template.builder.comfirmation.popup.message':
+        'Are you sure you want to proceed deleting this item?',
+    'dot.template.builder.comfirmation.popup.option.no': 'No',
+    'dot.template.builder.comfirmation.popup.option.yes': 'Yes'
 };
