@@ -13,6 +13,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
@@ -24,8 +25,12 @@ import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -40,19 +45,25 @@ public class WebAssetHelper {
 
     FileAssetAPI fileAssetAPI;
 
+    ContentletAPI contentletAPI;
+
     BrowserAPI browserAPI;
 
     /**
      * Constructor for testing
      * @param languageAPI
      * @param fileAssetAPI
+     * @param contentletAPI
      * @param browserAPI
      */
     WebAssetHelper(
             final LanguageAPI languageAPI,
-            final FileAssetAPI fileAssetAPI, final BrowserAPI browserAPI) {
+            final FileAssetAPI fileAssetAPI,
+            final ContentletAPI contentletAPI,
+            final BrowserAPI browserAPI) {
         this.languageAPI = languageAPI;
         this.fileAssetAPI = fileAssetAPI;
+        this.contentletAPI = contentletAPI;
         this.browserAPI = browserAPI;
     }
 
@@ -63,6 +74,7 @@ public class WebAssetHelper {
         this(
                 APILocator.getLanguageAPI(),
                 APILocator.getFileAssetAPI(),
+                APILocator.getContentletAPI(),
                 APILocator.getBrowserAPI()
         );
     }
@@ -237,11 +249,44 @@ public class WebAssetHelper {
                 .build();
     }
 
-    public void createOrReplaceAsset(final String assetPath, final String fileName, final InputStream fileInputStream,  final User user){
-           System.out.println(assetPath);
-           System.out.println(fileName);
-           System.out.println(fileInputStream);
+    public void createOrReplaceAsset(final String rawPath, final String fileName, final InputStream fileInputStream,  final User user)
+            throws DotDataException, DotSecurityException, IOException {
+
+        final ResolvedAssetAndPath assetAndPath = AssetPathResolver.newInstance()
+                .resolve(rawPath, user, true);
+
+        final Host host = assetAndPath.resolvedHost();
+        final Folder folder = assetAndPath.resolvedFolder();
+        final String assetName = assetAndPath.asset();
+
+        System.out.println(host);
+        System.out.println(folder);
+        System.out.println(assetName);
+
+        if(null != fileInputStream) {
+            //TODO validate size length
+
+            final Path tempFile = Files.createTempFile(assetName, "temp");
+
+            Files.copy(fileInputStream, tempFile);
+
+            final Contentlet contentlet = makeFileAsset(tempFile, folder);
+            final Contentlet savedContentlet = contentletAPI.checkin(contentlet, user, false);
+
+        }
     }
+
+        Contentlet makeFileAsset(final Path filePath, final Folder folder){
+            final File file = filePath.toFile();
+            final Contentlet contentlet = new Contentlet();
+            final String fileName = file.getName();
+            contentlet.setProperty(FileAssetAPI.TITLE_FIELD, fileName);
+            contentlet.setProperty(FileAssetAPI.FILE_NAME_FIELD, fileName);
+            contentlet.setProperty(FileAssetAPI.BINARY_FIELD, file);
+            contentlet.setFolder(folder.getInode());
+            return contentlet;
+        }
+
 
 
     /**

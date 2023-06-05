@@ -81,12 +81,9 @@ public class WebAssetResource {
                 .rejectWhenNoUser(true).init();
 
         final User user = initDataObject.getUser();
-/*
-        String fileName = form.contentDispositionHeader().getFileName();
-        String assetPath =  form.assetPath();
-        InputStream fileInputStream = form.fileInputStream();
+        final String fileName = contentDispositionHeader  == null ? null : contentDispositionHeader.getFileName();
         helper.createOrReplaceAsset(assetPath, fileName, fileInputStream, user);
-*/
+
         //Logger.info(this, String.format("User [%s] is requesting assets info for path [%s]", user.getUserId(), form.assetPath()));
 
         return Response.ok(new WebAssetEntityView(null)).build();
