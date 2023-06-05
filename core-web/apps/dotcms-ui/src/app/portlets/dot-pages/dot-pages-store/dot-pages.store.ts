@@ -107,7 +107,7 @@ interface UserPagePermission {
     canUserWriteContent: boolean;
 }
 
-export const FAVORITE_PAGE_LIMIT = 5;
+export const FAVORITE_PAGE_LIMIT = 500;
 
 export const LOCAL_STORAGE_FAVORITES_PANEL_KEY = 'FavoritesPanelCollapsed';
 
@@ -1003,16 +1003,6 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                     });
                 }
             );
-    }
-
-    /**
-     * Limit Favorite page data
-     * @param number limit
-     * @memberof DotFavoritePageStore
-     */
-    limitFavoritePages(limit: number): void {
-        const favoritePages = this.get().favoritePages.items;
-        this.setFavoritePages({ items: favoritePages.slice(0, limit) });
     }
 
     /**
