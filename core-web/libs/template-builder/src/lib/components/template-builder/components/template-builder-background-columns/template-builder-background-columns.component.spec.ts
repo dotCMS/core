@@ -1,22 +1,30 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
+
+import { NgFor, NgStyle } from '@angular/common';
+import { By } from '@angular/platform-browser';
 
 import { TemplateBuilderBackgroundColumnsComponent } from './template-builder-background-columns.component';
 
 describe('TemplateBuilderBackgroundColumnsComponent', () => {
-    let component: TemplateBuilderBackgroundColumnsComponent;
-    let fixture: ComponentFixture<TemplateBuilderBackgroundColumnsComponent>;
+    let spectator: SpectatorHost<TemplateBuilderBackgroundColumnsComponent>;
 
-    beforeEach(async () => {
-        await TestBed.configureTestingModule({
-            declarations: [TemplateBuilderBackgroundColumnsComponent]
-        }).compileComponents();
-
-        fixture = TestBed.createComponent(TemplateBuilderBackgroundColumnsComponent);
-        component = fixture.componentInstance;
-        fixture.detectChanges();
+    const createHost = createHostFactory({
+        component: TemplateBuilderBackgroundColumnsComponent,
+        imports: [NgFor, NgStyle]
     });
 
-    it('should create', () => {
-        expect(component).toBeTruthy();
+    beforeEach(() => {
+        spectator = createHost(
+            `<dotcms-template-builder-background-columns></dotcms-template-builder-background-columns>`
+        );
+    });
+
+    it('should create the component', () => {
+        expect(spectator.component).toBeTruthy();
+    });
+
+    it('should have 12 columns', () => {
+        const columns = spectator.debugElement.queryAll(By.css('[data-testclass="column"]'));
+        expect(columns.length).toEqual(12);
     });
 });

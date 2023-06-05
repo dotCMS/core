@@ -16,7 +16,8 @@ import { TemplateBuilderComponent } from './components/template-builder/template
         RemoveConfirmDialogComponent,
         TemplateBuilderRowComponent,
         AddWidgetComponent,
-        TemplateBuilderBoxComponent
+        TemplateBuilderBoxComponent,
+        TemplateBuilderBackgroundColumnsComponent
     ],
     declarations: [TemplateBuilderComponent],
     providers: [DotTemplateBuilderStore],

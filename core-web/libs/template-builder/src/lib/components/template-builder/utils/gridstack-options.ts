@@ -2,6 +2,10 @@ import { GridStackOptions } from 'gridstack';
 
 export const WIDGET_TYPE_ATTRIBUTE = 'data-widget-type';
 
+export const GRID_STACK_MARGIN = 1;
+
+export const GRID_STACK_MARGIN_UNITS = 'rem';
+
 export enum widgetType {
     ROW = 'row',
     COLUMN = 'col'
@@ -32,7 +36,7 @@ function isARowWidget(el: Element): boolean {
 export const subGridOptions: GridStackOptions = {
     cellHeight: 224,
     column: 'auto',
-    margin: 16,
+    margin: `${GRID_STACK_MARGIN}${GRID_STACK_MARGIN_UNITS}`,
     minRow: 1,
     maxRow: 1,
     acceptWidgets: isAColumnWidget

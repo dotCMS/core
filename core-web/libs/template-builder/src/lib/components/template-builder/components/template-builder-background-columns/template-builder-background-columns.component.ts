@@ -1,9 +1,17 @@
+import { NgFor, NgStyle } from '@angular/common';
 import { ChangeDetectionStrategy, Component } from '@angular/core';
+
+import { GRID_STACK_MARGIN, GRID_STACK_MARGIN_UNITS } from '../../utils/gridstack-options';
 
 @Component({
     selector: 'dotcms-template-builder-background-columns',
     templateUrl: './template-builder-background-columns.component.html',
     styleUrls: ['./template-builder-background-columns.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: true,
+    imports: [NgFor, NgStyle]
 })
-export class TemplateBuilderBackgroundColumnsComponent {}
+export class TemplateBuilderBackgroundColumnsComponent {
+    readonly columnList = [].constructor(12);
+    readonly gridStackGap = `${GRID_STACK_MARGIN * 2}${GRID_STACK_MARGIN_UNITS}`;
+}
