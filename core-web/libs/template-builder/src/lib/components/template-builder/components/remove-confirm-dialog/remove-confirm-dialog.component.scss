@@ -1,23 +1,6 @@
 @use "variables" as *;
 
 ::ng-deep {
-    .p-confirm-popup-icon {
-        color: $color-palette-primary-500;
-    }
-
-    .p-confirm-popup {
-        width: 21.75rem;
-        border-radius: $border-radius-md;
-    }
-
-    .p-confirm-popup .p-button.p-button-text.p-confirm-popup-reject {
-        border: 1.5px solid $color-palette-primary-400;
-    }
-
-    .p-confirm-popup .p-confirm-popup-content {
-        padding: $spacing-3;
-    }
-
     .p-button.p-button-text .pi.pi-trash {
         color: $color-palette-primary-400;
     }
