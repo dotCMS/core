@@ -3,7 +3,11 @@ import { moduleMetadata, Story, Meta } from '@storybook/angular';
 import { ButtonModule } from 'primeng/button';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
 
+import { DotMessageService } from '@dotcms/data-access';
+
 import { TemplateBuilderBoxComponent } from './template-builder-box.component';
+
+import { MESSAGES_MOCK } from '../../utils/mocks';
 
 export default {
     title: 'TemplateBuilderBoxComponent',
@@ -11,7 +15,19 @@ export default {
     decorators: [
         moduleMetadata({
             imports: [ButtonModule, ScrollPanelModule],
-            providers: []
+            providers: [
+                {
+                    provide: DotMessageService,
+                    useValue: {
+                        get(key: string, ..._args: string[]): string {
+                            return MESSAGES_MOCK[key];
+                        },
+                        init() {
+                            /* */
+                        }
+                    }
+                }
+            ]
         })
     ]
 } as Meta<TemplateBuilderBoxComponent>;

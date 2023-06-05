@@ -4,6 +4,8 @@ import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from 
 import { ButtonModule } from 'primeng/button';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
 
+import { DotMessagePipeModule } from '@dotcms/ui';
+
 import { DotContainers } from '../../models/models';
 
 export enum TemplateBuilderBoxSize {
@@ -18,7 +20,7 @@ export enum TemplateBuilderBoxSize {
     styleUrls: ['./template-builder-box.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     standalone: true,
-    imports: [NgFor, NgForOf, NgIf, NgClass, ButtonModule, ScrollPanelModule]
+    imports: [NgFor, NgForOf, NgIf, NgClass, ButtonModule, ScrollPanelModule, DotMessagePipeModule]
 })
 export class TemplateBuilderBoxComponent {
     @Output()

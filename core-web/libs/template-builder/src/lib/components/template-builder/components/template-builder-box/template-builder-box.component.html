@@ -9,7 +9,11 @@
 >
     <div class="template-builder-box__header-container">
         <p-button
-            [label]="size === templateBuilderSizes.large ? 'Add Container' : ''"
+            [label]="
+                size === templateBuilderSizes.large
+                    ? ('dot.template.builder.add.container' | dm)
+                    : ''
+            "
             (onClick)="addContainer.emit()"
             icon="pi pi-plus"
             data-testId="btn-plus"
