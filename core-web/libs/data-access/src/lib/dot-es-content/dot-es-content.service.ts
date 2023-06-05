@@ -20,6 +20,7 @@ export interface queryEsParams {
     query: string;
     sortField?: string;
     sortOrder?: ESOrderDirection;
+    fetchAll?: boolean;
 }
 
 /**
@@ -29,7 +30,7 @@ export interface queryEsParams {
  */
 @Injectable()
 export class DotESContentService {
-    private _paginationPerPage = 40;
+    private _paginationPerPage? = 40;
     private _offset = '0';
     private _url = '/api/content/_search';
     private _defaultQueryParams = { '+languageId': '1', '+deleted': 'false', '+working': 'true' };
@@ -69,12 +70,12 @@ export class DotESContentService {
         params: queryEsParams,
         extraParams: { [key: string]: string | number }
     ): {
-        [key: string]: string | number;
+        [key: string]: string | number | undefined;
     } {
         const query = {
             query: `${params.query} ${JSON.stringify(extraParams).replace(/["{},]/g, ' ')}`,
             sort: `${this._sortField || ''} ${this._sortOrder || ''}`,
-            limit: this._paginationPerPage,
+            limit: this._paginationPerPage, // We can set undefined here, because JSON.stringify() will remove it
             offset: this._offset
         };
 
@@ -83,7 +84,10 @@ export class DotESContentService {
 
     private setBaseParams(params: queryEsParams): void {
         this._extraParams.clear();
-        this._paginationPerPage = params.itemsPerPage || this._paginationPerPage;
+        this._paginationPerPage = params.fetchAll
+            ? undefined
+            : params.itemsPerPage || this._paginationPerPage;
+
         this._sortField = params.sortField || this._sortField;
         this._sortOrder = params.sortOrder || this._sortOrder;
         this._offset = params.offset || this._offset;
