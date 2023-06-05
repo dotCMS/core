@@ -199,7 +199,7 @@ describe('DotExperimentsConfigurationComponent', () => {
         );
     });
 
-    it('should show Stop Scheduling button if experiment status is Schedule and call cancel after confirmation', () => {
+    it('should show Cancel Scheduling button if experiment status is Schedule and call cancel after confirmation', () => {
         spyOn(dotExperimentsConfigurationStore, 'cancelSchedule');
         spectator.component.vm$ = of({
             ...defaultVmMock,
@@ -207,7 +207,7 @@ describe('DotExperimentsConfigurationComponent', () => {
         });
         spectator.detectChanges();
 
-        spectator.click(byTestId('stop-schedule-experiment-button'));
+        spectator.click(byTestId('cancel-schedule-experiment-button'));
         spectator.query(ConfirmPopup).accept();
 
         expect(dotExperimentsConfigurationStore.cancelSchedule).toHaveBeenCalledWith(
@@ -222,7 +222,7 @@ describe('DotExperimentsConfigurationComponent', () => {
         });
         spectator.detectChanges();
         expect(spectator.query(byTestId('stop-experiment-button'))).not.toExist();
-        expect(spectator.query(byTestId('stop-schedule-experiment-button'))).not.toExist();
+        expect(spectator.query(byTestId('cancel-schedule-experiment-button'))).not.toExist();
     });
 
     it('should show Start Experiment button disabled if disabledStartExperiment true', () => {

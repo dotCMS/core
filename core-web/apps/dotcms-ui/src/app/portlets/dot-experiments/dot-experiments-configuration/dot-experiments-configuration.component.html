@@ -21,8 +21,8 @@
                 class="p-button-outlined"
                 *ngIf="vm.experimentStatus === experimentStatus.SCHEDULED"
                 [loading]="vm.isSaving"
-                (click)="stopScheduleExperiment($event, vm.experiment)"
-                data-testId="stop-schedule-experiment-button"
+                (click)="cancelScheduleExperiment($event, vm.experiment)"
+                data-testId="cancel-schedule-experiment-button"
                 label="{{ 'experiments.configure.scheduling.cancel' | dm }}"
                 pButton
                 type="button"

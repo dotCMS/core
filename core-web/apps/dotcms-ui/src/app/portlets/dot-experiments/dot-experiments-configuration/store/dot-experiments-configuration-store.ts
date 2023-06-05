@@ -302,16 +302,16 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         return experiment$.pipe(
             tap(() => this.setComponentStatus(ComponentStatus.SAVING)),
             switchMap((experiment) =>
-                this.dotExperimentsService.cancel(experiment.id).pipe(
+                this.dotExperimentsService.cancelSchedule(experiment.id).pipe(
                     tapResponse(
                         (response) => {
                             this.messageService.add({
                                 severity: 'info',
                                 summary: this.dotMessageService.get(
-                                    'experiments.notification.stop.schedule-title'
+                                    'experiments.notification.cancel.schedule-title'
                                 ),
                                 detail: this.dotMessageService.get(
-                                    'experiments.notification.stop.schedule',
+                                    'experiments.notification.cancel.schedule',
                                     experiment.name
                                 )
                             });

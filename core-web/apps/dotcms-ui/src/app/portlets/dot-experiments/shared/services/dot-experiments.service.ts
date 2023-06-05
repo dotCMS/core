@@ -141,7 +141,7 @@ export class DotExperimentsService {
      * @returns Observable<DotExperiment>
      * @memberof DotExperimentsService
      */
-    cancel(experimentId: string): Observable<DotExperiment> {
+    cancelSchedule(experimentId: string): Observable<DotExperiment> {
         return this.http
             .post<DotCMSResponse<DotExperiment>>(
                 `${API_ENDPOINT}/scheduled/${experimentId}/_cancel`,

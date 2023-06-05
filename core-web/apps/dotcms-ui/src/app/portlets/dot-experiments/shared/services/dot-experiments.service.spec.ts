@@ -68,8 +68,8 @@ describe('DotExperimentsService', () => {
         spectator.expectOne(`${API_ENDPOINT}/${EXPERIMENT_ID}/_end`, HttpMethod.POST);
     });
 
-    it('should cancel an experiment with experimentId as param', () => {
-        spectator.service.cancel(EXPERIMENT_ID).subscribe();
+    it('should cancel schedule an experiment with experimentId as param', () => {
+        spectator.service.cancelSchedule(EXPERIMENT_ID).subscribe();
         spectator.expectOne(`${API_ENDPOINT}/scheduled/${EXPERIMENT_ID}/_cancel`, HttpMethod.POST);
     });
 

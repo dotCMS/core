@@ -639,7 +639,7 @@ describe('DotExperimentsConfigurationStore', () => {
                     of({ ...EXPERIMENT_MOCK_2, status: DotExperimentStatusList.SCHEDULED })
                 );
 
-            dotExperimentsService.cancel.and.callThrough().and.returnValue(
+            dotExperimentsService.cancelSchedule.and.callThrough().and.returnValue(
                 of({
                     ...EXPERIMENT_MOCK_2,
                     status: DotExperimentStatusList.DRAFT
@@ -651,13 +651,15 @@ describe('DotExperimentsConfigurationStore', () => {
             store.cancelSchedule(EXPERIMENT_MOCK_2);
 
             store.state$.subscribe(() => {
-                expect(dotExperimentsService.cancel).toHaveBeenCalledOnceWith(EXPERIMENT_MOCK_2.id);
+                expect(dotExperimentsService.cancelSchedule).toHaveBeenCalledOnceWith(
+                    EXPERIMENT_MOCK_2.id
+                );
                 done();
             });
         });
 
         it('should handle error when canceling the experiment', () => {
-            dotExperimentsService.cancel.and.returnValue(throwError('error'));
+            dotExperimentsService.cancelSchedule.and.returnValue(throwError('error'));
 
             store.cancelSchedule(EXPERIMENT_MOCK_2);
 
