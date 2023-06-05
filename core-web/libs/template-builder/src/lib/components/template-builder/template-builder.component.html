@@ -15,6 +15,7 @@
     ></dotcms-add-widget>
 </div>
 <div class="grid-stack">
+    <dotcms-template-builder-background-columns></dotcms-template-builder-background-columns>
     <dotcms-template-builder-row
         class="grid-stack-item"
         #rows
@@ -27,7 +28,6 @@
         (deleteRow)="deleteRow(row.id)"
     >
         <div class="grid-stack-item-content grid-stack">
-            <dotcms-template-builder-background-columns></dotcms-template-builder-background-columns>
             <div
                 class="grid-stack-item sub"
                 #boxes
