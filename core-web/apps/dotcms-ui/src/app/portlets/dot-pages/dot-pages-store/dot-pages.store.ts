@@ -107,7 +107,7 @@ interface UserPagePermission {
     canUserWriteContent: boolean;
 }
 
-export const FAVORITE_PAGE_LIMIT = 5;
+export const FAVORITE_PAGE_LIMIT = 500;
 
 export const LOCAL_STORAGE_FAVORITES_PANEL_KEY = 'FavoritesPanelCollapsed';
 
