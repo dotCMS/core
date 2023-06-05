@@ -64,11 +64,12 @@ describe('DotFavoritePageService', () => {
         });
     });
 
-    it('should call dotESContentService with fetchAll set true and itemsPerPage as undefined when limit is undefined ', () => {
+    it('should call dotESContentService with fetchAll set true when service is called with fetchAll set to true', () => {
         dotFavoritePageService
             .get({
                 userId: '123',
-                url: 'index.html'
+                url: 'index.html',
+                fetchAll: true
             })
             .subscribe();
 

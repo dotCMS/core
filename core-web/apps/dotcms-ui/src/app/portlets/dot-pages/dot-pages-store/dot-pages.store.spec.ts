@@ -635,7 +635,8 @@ describe('DotPageStore', () => {
             identifier: undefined,
             limit: 1,
             userId: 'testId',
-            url: '/index1?&language_id=1&device_inode='
+            url: '/index1?&language_id=1&device_inode=',
+            fetchAll: false
         });
         expect(dotWorkflowsActionsService.getByInode).toHaveBeenCalledWith(
             favoritePagesInitialTestData[0].inode,

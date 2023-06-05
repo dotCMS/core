@@ -682,7 +682,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         url?: string;
         fetchAll?: boolean;
     }) => {
-        const { limit, identifier, url, fetchAll } = params;
+        const { limit, identifier, url, fetchAll = false } = params;
 
         return this.dotCurrentUser.getCurrentUser().pipe(
             switchMap(({ userId }) => {

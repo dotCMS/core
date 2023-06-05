@@ -32,7 +32,16 @@ export class DotFavoritePageService {
         sortOrder?: ESOrderDirection;
         fetchAll?: boolean;
     }): Observable<ESContent> {
-        const { limit, userId, identifier, url, offset, sortField, sortOrder, fetchAll } = params;
+        const {
+            limit,
+            userId,
+            identifier,
+            url,
+            offset,
+            sortField,
+            sortOrder,
+            fetchAll = false
+        } = params;
 
         let extraQueryParams = '';
         if (identifier) {
