@@ -27,7 +27,7 @@
             <groupId>com.dotcms.plugins</groupId>
             <artifactId>tika-api</artifactId>
             <version>${project.version}</version>
-            <scope>provided</scope>
+            <scope>compile</scope>
         </dependency>
 
         <dependency>

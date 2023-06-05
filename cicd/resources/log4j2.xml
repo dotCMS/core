@@ -28,12 +28,9 @@
 
     </Appenders>
     <Loggers>
-        <Root level="info">
-            <!--<AppenderRef ref="Console"/>-->
-            <AppenderRef ref="generic"/>
-        </Root>
+
         <Root level="INFO">
-            <AppenderRef ref="generic" />
+            <AppenderRef ref="Console" />
         </Root>
         <logger name="org.apache.tika" level="WARN" additivity="false">
             <AppenderRef ref="generic"/>
@@ -74,7 +71,7 @@
             <AppenderRef ref="generic"/>
         </logger>
         <logger name="com.dotcms.contenttype.business.FieldAPIImpl" level="WARN" additivity="false">
-            <AppenderRef ref="Console"/>
+            <AppenderRef ref="generic"/>
         </logger>
         <!-- remove erorrs of type  An error occurred when getting shorty value for '' of type 'CONTENT': shorty  is not a short id.  Short Ids should be 10 chars in length -->
         <logger name="com.dotcms.uuid.shorty.ShortyIdAPIImpl" level="ERROR" additivity="false">
@@ -96,5 +93,6 @@
         <logger name="com.liferay.util.FileUtil" level="DEBUG" additivity="false">
             <AppenderRef ref="generic"/>
         </logger>
+
     </Loggers>
 </Configuration>
