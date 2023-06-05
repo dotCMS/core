@@ -15,6 +15,7 @@ import { ConfirmPopupModule } from 'primeng/confirmpopup';
 })
 export class RemoveConfirmDialogComponent {
     @Output() deleteConfirmed: EventEmitter<void> = new EventEmitter();
+    @Output() deleteRejected: EventEmitter<void> = new EventEmitter();
     constructor(private confirmationService: ConfirmationService) {}
 
     openConfirmationDialog(event: Event): void {
@@ -24,6 +25,9 @@ export class RemoveConfirmDialogComponent {
             icon: 'pi pi-info-circle',
             accept: () => {
                 this.deleteConfirmed.emit();
+            },
+            reject: () => {
+                this.deleteRejected.emit();
             }
         });
     }
