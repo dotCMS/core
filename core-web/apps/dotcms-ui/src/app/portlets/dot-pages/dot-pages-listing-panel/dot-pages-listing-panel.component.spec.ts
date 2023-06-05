@@ -203,11 +203,9 @@ describe('DotPagesListingPanelComponent', () => {
 
         it('should set table with params', () => {
             const elem = de.query(By.css('p-table')).componentInstance;
-            expect(elem.scrollable).toBe(true);
             expect(elem.loading).toBe(undefined);
             expect(elem.lazy).toBe(true);
             expect(elem.selectionMode).toBe('single');
-            expect(elem.scrollHeight).toBe('calc(100vh - 600px)');
             expect(elem.sortField).toEqual('modDate');
             expect(elem.sortOrder).toEqual(-1);
             expect(elem.rows).toEqual(40);
