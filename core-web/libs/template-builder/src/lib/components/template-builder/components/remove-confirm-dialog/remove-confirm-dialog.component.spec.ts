@@ -1,23 +1,21 @@
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { ConfirmationService } from 'primeng/api';
+import { ConfirmPopup } from 'primeng/confirmpopup';
 
 import { RemoveConfirmDialogComponent } from './remove-confirm-dialog.component';
 
 describe('RemoveConfirmDialogComponent', () => {
     let spectator: Spectator<RemoveConfirmDialogComponent>;
-    let mockConfirmationService: ConfirmationService;
 
     const createComponent = createComponentFactory({
         component: RemoveConfirmDialogComponent,
-        providers: [ConfirmationService],
-        mocks: [ConfirmationService]
+        providers: [ConfirmationService]
     });
 
     beforeEach(() => {
         spectator = createComponent();
-        mockConfirmationService = spectator.inject(ConfirmationService);
-        jest.spyOn(mockConfirmationService, 'confirm').mockImplementation(({ accept }) => accept());
+        jest.spyOn(ConfirmPopup.prototype, 'bindScrollListener').mockImplementation(jest.fn());
     });
 
     it('should create', () => {
@@ -27,8 +25,20 @@ describe('RemoveConfirmDialogComponent', () => {
     it('should emit confirm event', () => {
         const confirmMock = jest.spyOn(spectator.component, 'confirm');
         const deleteButton = spectator.query(byTestId('btn-remove-item'));
-        spectator.dispatchMouseEvent(deleteButton, 'onClick');
+        spectator.dispatchFakeEvent(deleteButton, 'onClick');
 
         expect(confirmMock).toHaveBeenCalled();
+    });
+
+    it('should emit confirm event and call accept function', async () => {
+        const confirmEventSpy = jest.spyOn(spectator.component.confirmEvent, 'emit');
+
+        const deleteButton = spectator.query(byTestId('btn-remove-item'));
+        spectator.dispatchMouseEvent(deleteButton, 'onClick');
+
+        const confirmAccept = spectator.query('.p-confirm-popup-accept');
+        spectator.click(confirmAccept);
+
+        expect(confirmEventSpy).toHaveBeenCalled();
     });
 });
