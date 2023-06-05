@@ -6,24 +6,6 @@
     display: block;
 }
 
-.background-columns-wrapper {
-    padding-right: 2rem;
-}
-
-.background-columns {
-    background: repeating-linear-gradient(
-        -90deg,
-        transparent,
-        transparent 0.5rem,
-        #f3f3f4 0.5rem,
-        #f3f3f4 8.3333333333%
-    );
-    height: 100%;
-    width: 100%;
-    position: absolute;
-    left: 1rem;
-}
-
 .grid-stack-item.sub .grid-stack-item-content {
     background: pink;
 }

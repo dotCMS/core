@@ -1,12 +1,14 @@
 @use "variables" as *;
 
+$offset: 3.7rem;
+$columns-padding: 3.688rem;
+
 .background-columns {
     height: 100%;
     width: 100%;
     grid-template-columns: repeat(12, minmax(0, 1fr));
     display: grid;
-    left: 3.7rem;
-    padding-right: 7.3rem;
+    padding: 0 $columns-padding 0 $columns-padding;
     position: absolute;
 }
 
