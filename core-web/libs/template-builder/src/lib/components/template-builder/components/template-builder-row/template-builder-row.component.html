@@ -18,11 +18,8 @@
         icon="pi pi-palette"
     >
     </p-button>
-    <p-button
-        (onClick)="deleteRow.emit()"
+    <dotcms-remove-confirm-dialog
+        (deleteConfirmed)="deleteRow.emit()"
         data-testid="row-trash-button"
-        styleClass="p-button-text p-button-sm p-button-rounded"
-        icon="pi pi-trash"
-    >
-    </p-button>
+    ></dotcms-remove-confirm-dialog>
 </div>

@@ -146,4 +146,8 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     identify(_: number, w: GridStackWidget) {
         return w.id;
     }
+
+    deleteRow(id: string): void {
+        this.store.removeRow(id);
+    }
 }

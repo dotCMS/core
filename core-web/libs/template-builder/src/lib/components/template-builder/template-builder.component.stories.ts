@@ -1,8 +1,10 @@
 import { moduleMetadata, Story, Meta } from '@storybook/angular';
 
 import { NgFor, AsyncPipe } from '@angular/common';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { AddWidgetComponent } from './components/add-widget/add-widget.component';
+import { RemoveConfirmDialogComponent } from './components/remove-confirm-dialog/remove-confirm-dialog.component';
 import { TemplateBuilderRowComponent } from './components/template-builder-row/template-builder-row.component';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { TemplateBuilderComponent } from './template-builder.component';
@@ -13,7 +15,14 @@ export default {
     component: TemplateBuilderComponent,
     decorators: [
         moduleMetadata({
-            imports: [NgFor, AsyncPipe, TemplateBuilderRowComponent, AddWidgetComponent],
+            imports: [
+                NgFor,
+                AsyncPipe,
+                TemplateBuilderRowComponent,
+                AddWidgetComponent,
+                RemoveConfirmDialogComponent,
+                BrowserAnimationsModule
+            ],
             providers: [DotTemplateBuilderStore]
         })
     ]
