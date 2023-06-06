@@ -7,7 +7,7 @@ import { DotIconModule } from '@dotcms/ui';
 import { TemplateBuilderRowComponent } from './template-builder-row.component';
 
 export default {
-    title: 'TemplateBuilderRowComponent',
+    title: 'Components/Row',
     component: TemplateBuilderRowComponent,
     decorators: [
         moduleMetadata({
