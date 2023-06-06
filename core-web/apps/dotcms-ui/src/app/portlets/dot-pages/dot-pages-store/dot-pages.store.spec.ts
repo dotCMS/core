@@ -331,7 +331,7 @@ describe('DotPageStore', () => {
         );
     });
 
-    it('should have favorites collapsed state set to true when requesting favorite pages', () => {
+    it('should have favorites collapsed state setted when requesting favorite pages', () => {
         dotPageStore.getFavoritePages(5); // Here it sets the favorite state again
 
         dotPageStore.state$.subscribe((data) => {
