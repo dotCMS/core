@@ -2,7 +2,7 @@ package com.dotcms.api.traversal;
 
 import com.dotcms.model.asset.AssetView;
 import com.dotcms.model.asset.FolderView;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -14,7 +14,6 @@ import java.util.stream.Collectors;
  * The class is annotated with {@code @JsonSerialize(using = TreeNodeSerializer.class)} to specify a
  * custom serializer for JSON serialization of TreeNode instances.
  */
-@JsonSerialize(using = TreeNodeSerializer.class)
 public class TreeNode {
 
     private final FolderView folder;
@@ -26,7 +25,7 @@ public class TreeNode {
      *
      * @param folder The folder to use as the root node for the tree.
      */
-    public TreeNode(FolderView folder) {
+    public TreeNode(final FolderView folder) {
         this.folder = folder;
         this.children = new ArrayList<>();
         if (folder.assets() != null) {
@@ -42,7 +41,7 @@ public class TreeNode {
      * @param ignoreAssets whether to exclude the assets from the cloned node ({@code true}) or not
      *                     ({@code false})
      */
-    public TreeNode(FolderView folder, Boolean ignoreAssets) {
+    public TreeNode(final FolderView folder, final boolean ignoreAssets) {
         this.folder = folder;
         this.children = new ArrayList<>();
         if (!ignoreAssets) {
@@ -82,7 +81,7 @@ public class TreeNode {
      *
      * @param child the child node to add
      */
-    public void addChild(TreeNode child) {
+    public void addChild(final TreeNode child) {
         this.children.add(child);
     }
 
@@ -91,7 +90,7 @@ public class TreeNode {
      *
      * @param assets the list of files to set
      */
-    public void assets(List<AssetView> assets) {
+    public void assets(final List<AssetView> assets) {
         this.assets = assets;
     }
 
@@ -111,8 +110,8 @@ public class TreeNode {
      * the provided status and language, and its folders filtered based on the showEmptyFolders
      * parameter.
      */
-    public TreeNode cloneAndFilterAssets(boolean status, String language,
-            boolean showEmptyFolders) {
+    public TreeNode cloneAndFilterAssets(final boolean status, final String language,
+                                         final boolean showEmptyFolders) {
 
         TreeNode newNode = new TreeNode(this.folder, true);
 
@@ -155,19 +154,15 @@ public class TreeNode {
      * @return A boolean value, true if the node or any of its children contains assets, false
      * otherwise.
      */
-    private boolean hasAssetsInSubtree(TreeNode node) {
+    private boolean hasAssetsInSubtree(final TreeNode node) {
 
         if (!node.assets().isEmpty()) {
             return true;
         }
 
-        for (TreeNode child : node.children()) {
-            if (hasAssetsInSubtree(child)) {
-                return true;
-            }
-        }
-
-        return false;
+        return node.children().
+                stream().
+                anyMatch(this::hasAssetsInSubtree);
     }
 
     /**
@@ -178,19 +173,15 @@ public class TreeNode {
      * @return A boolean value, true if the node or any of its children have folders marked as
      * include, false otherwise.
      */
-    private boolean hasIncludeInSubtree(TreeNode node) {
+    private boolean hasIncludeInSubtree(final TreeNode node) {
 
         if (node.folder().implicitGlobInclude()) {
             return true;
         }
 
-        for (TreeNode child : node.children()) {
-            if (hasIncludeInSubtree(child)) {
-                return true;
-            }
-        }
-
-        return false;
+        return node.children().
+                stream().
+                anyMatch(this::hasIncludeInSubtree);
     }
 
 }

@@ -1,21 +1,11 @@
 package com.dotcms.cli.command.files;
 
 import com.dotcms.api.traversal.TreeNode;
-import com.dotcms.api.traversal.TreeNodeSerializer;
 import com.dotcms.model.asset.AssetView;
 import com.dotcms.model.asset.FolderView;
 import com.dotcms.model.language.Language;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
+
+import java.util.*;
 
 /**
  * The {@code TreePrinter} class provides a utility for printing a tree structure of
@@ -48,35 +38,6 @@ public class TreePrinter {
     }
 
     private TreePrinter() {
-    }
-
-    /**
-     * Serializes a TreeNode object to JSON format and appends the JSON representation to the
-     * provided StringBuilder.
-     *
-     * @param sb   The StringBuilder to which the JSON representation will be appended.
-     * @param node The TreeNode object to serialize.
-     * @throws IOException If an I/O error occurs during serialization.
-     */
-    public void jsonFormat(StringBuilder sb, final TreeNode node) throws IOException {
-
-        // Create an instance of ObjectMapper
-        ObjectMapper mapper = new ObjectMapper();
-
-        // Create a SimpleModule and register the TreeNodeSerializer
-        SimpleModule module = new SimpleModule();
-        module.addSerializer(TreeNode.class, new TreeNodeSerializer(TreeNode.class));
-        mapper.registerModule(module);
-
-        // Enable pretty printing for the JSON output
-        mapper.enable(SerializationFeature.INDENT_OUTPUT);
-
-        // Serialize the TreeNode to JSON using a StringWriter
-        StringWriter writer = new StringWriter();
-        mapper.writeValue(writer, node);
-
-        // Convert the StringWriter output to a StringBuilder
-        sb.append(writer);
     }
 
     /**

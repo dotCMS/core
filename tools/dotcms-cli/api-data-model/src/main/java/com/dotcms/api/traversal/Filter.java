@@ -5,14 +5,13 @@ import static com.dotcms.model.asset.BasicMetadataFields.PATH_META_KEY;
 import com.dotcms.model.asset.AssetVersionsView;
 import com.dotcms.model.asset.AssetView;
 import com.dotcms.model.asset.FolderView;
+
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Stream;
 
 /**
  * A filter that determines whether a path should be included or excluded based on the given
@@ -62,13 +61,11 @@ public class Filter {
         List<FolderView> filteredSubFolders = new ArrayList<>();
         List<AssetView> filteredAssets = new ArrayList<>();
 
-        if (folder.subFolders() != null) {
-            folder.subFolders().iterator().forEachRemaining(subFolder -> {
-
-                subFolder = validateFolder(subFolder);
-                filteredSubFolders.add(subFolder);
-            });
-        }
+        Optional.ofNullable(folder.subFolders()).ifPresent(
+                subFolders -> subFolders.stream().
+                        map(this::evaluateFolder).
+                        forEach(filteredSubFolders::add)
+        );
 
         if (folder.assets() != null) {
             folder.assets().versions().iterator().forEachRemaining(assetVersion -> {
@@ -93,13 +90,13 @@ public class Filter {
     }
 
     /**
-     * Validates the given folder by determining whether it should be included based on the includes
+     * Evaluates the given folder by determining whether it should be included based on the includes
      * and excludes patterns for folders setting specific flags in the {@link FolderView} object.
      *
      * @param subFolder The folder to validate.
      * @return The validated folder view.
      */
-    private FolderView validateFolder(FolderView subFolder) {
+    private FolderView evaluateFolder(FolderView subFolder) {
 
         var folderPath = subFolder.path();
 
@@ -107,12 +104,10 @@ public class Filter {
             folderPath = folderPath.replaceFirst("^" + rootPath, "");
         }
 
-        //subFolder = subFolder.withInclude(use(true, folderPath));
-
         FileSystem fileSystem = FileSystems.getDefault();
 
         // Check if the path should be used according to the excludes
-        for (PathMatcher exclude : folderExcludes) {
+        for (final PathMatcher exclude : folderExcludes) {
             if (exclude.matches(fileSystem.getPath(folderPath))) {
 
                 subFolder = subFolder.withExplicitGlobExclude(true);
@@ -125,7 +120,7 @@ public class Filter {
             return subFolder.withImplicitGlobInclude(true);
         }
 
-        for (PathMatcher include : folderIncludes) {
+        for (final PathMatcher include : folderIncludes) {
             if (include.matches(fileSystem.getPath(folderPath))) {
                 subFolder = subFolder.withExplicitGlobInclude(true);
                 return subFolder.withImplicitGlobInclude(true);
@@ -212,12 +207,14 @@ public class Filter {
          * @param include The include patterns for folders.
          * @return The builder instance.
          */
-        public Builder includeFolder(String... include) {
-            for (String pattern : include) {
-                includeFolderPatterns.add(
-                        FileSystems.getDefault().getPathMatcher("glob:" + pattern)
-                );
-            }
+        public Builder includeFolder(final String... include) {
+
+            Stream.of(include).forEach(
+                    pattern -> includeFolderPatterns.add(
+                            FileSystems.getDefault().getPathMatcher("glob:" + pattern)
+                    )
+            );
+
             return this;
         }
 
@@ -227,12 +224,14 @@ public class Filter {
          * @param include The include patterns for assets.
          * @return The builder instance.
          */
-        public Builder includeAsset(String... include) {
-            for (String pattern : include) {
-                includeAssetPatterns.add(
-                        FileSystems.getDefault().getPathMatcher("glob:" + pattern)
-                );
-            }
+        public Builder includeAsset(final String... include) {
+
+            Stream.of(include).forEach(
+                    pattern -> includeAssetPatterns.add(
+                            FileSystems.getDefault().getPathMatcher("glob:" + pattern)
+                    )
+            );
+
             return this;
         }
 
@@ -242,12 +241,14 @@ public class Filter {
          * @param exclude The exclude patterns for folders.
          * @return The builder instance.
          */
-        public Builder excludeFolder(String... exclude) {
-            for (String pattern : exclude) {
-                excludeFolderPatterns.add(
-                        FileSystems.getDefault().getPathMatcher("glob:" + pattern)
-                );
-            }
+        public Builder excludeFolder(final String... exclude) {
+
+            Stream.of(exclude).forEach(
+                    pattern -> excludeFolderPatterns.add(
+                            FileSystems.getDefault().getPathMatcher("glob:" + pattern)
+                    )
+            );
+
             return this;
         }
 
@@ -257,12 +258,14 @@ public class Filter {
          * @param exclude The exclude patterns for assets.
          * @return The builder instance.
          */
-        public Builder excludeAsset(String... exclude) {
-            for (String pattern : exclude) {
-                excludeAssetPatterns.add(
-                        FileSystems.getDefault().getPathMatcher("glob:" + pattern)
-                );
-            }
+        public Builder excludeAsset(final String... exclude) {
+
+            Stream.of(exclude).forEach(
+                    pattern -> excludeAssetPatterns.add(
+                            FileSystems.getDefault().getPathMatcher("glob:" + pattern)
+                    )
+            );
+
             return this;
         }
 

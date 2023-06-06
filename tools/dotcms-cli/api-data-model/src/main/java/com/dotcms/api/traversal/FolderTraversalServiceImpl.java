@@ -2,6 +2,11 @@ package com.dotcms.api.traversal;
 
 import com.dotcms.model.asset.FolderView;
 import io.quarkus.arc.DefaultBean;
+import org.jboss.logging.Logger;
+
+import javax.enterprise.context.Dependent;
+import javax.enterprise.context.control.ActivateRequestContext;
+import javax.inject.Inject;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.InvalidPathException;
@@ -9,9 +14,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Set;
 import java.util.concurrent.ForkJoinPool;
-import javax.enterprise.context.Dependent;
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
 
 /**
  * Service for traversing a file system directory and building a hierarchical tree representation of
@@ -21,6 +23,9 @@ import javax.inject.Inject;
 @DefaultBean
 @Dependent
 public class FolderTraversalServiceImpl implements FolderTraversalService {
+
+    @Inject
+    Logger logger;
 
     @Inject
     protected Retriever retriever;
@@ -49,51 +54,19 @@ public class FolderTraversalServiceImpl implements FolderTraversalService {
             final Set<String> excludeAssetPatterns
     ) {
 
-        if (path == null || path.isEmpty()) {
-            throw new IllegalArgumentException("path cannot be null or empty");
-        }
+        // Parsing and validating the given path
+        InternalFolderPath dotCMSPath = parse(path);
 
-        final URI uri;
-        try {
-            uri = new URI(path);
-        } catch (URISyntaxException e) {
-            throw new IllegalArgumentException(e.getMessage(), e);
-        }
-
-        final String site = uri.getHost();
-        if (null == site) {
-            throw new IllegalArgumentException(String.format(
-                    "Unable to determine site from path: [%s]. Site must start with a valid protocol or simply // ",
-                    path));
-        }
-
-        String folderPath = uri.getPath();
-        if (null == folderPath) {
-            throw new IllegalArgumentException(
-                    String.format("Unable to determine path: [%s].", path));
-        }
-        if (folderPath.isEmpty()) {
-            folderPath = "/";
-        }
-
-        Path dotCMSPath;
-        try {
-            dotCMSPath = Paths.get(folderPath);
-        } catch (InvalidPathException e) {
-            throw new IllegalArgumentException(
-                    String.format("Invalid folder path [%s] provided", path), e);
-        }
-
-        int nameCount = dotCMSPath.getNameCount();
+        int nameCount = dotCMSPath.path.getNameCount();
 
         String parentFolderName = "/";
         String folderName = "/";
 
         if (nameCount > 1) {
-            parentFolderName = dotCMSPath.subpath(0, nameCount - 1).toString();
-            folderName = dotCMSPath.subpath(nameCount - 1, nameCount).toString();
+            parentFolderName = dotCMSPath.path.subpath(0, nameCount - 1).toString();
+            folderName = dotCMSPath.path.subpath(nameCount - 1, nameCount).toString();
         } else if (nameCount == 1) {
-            folderName = dotCMSPath.subpath(0, nameCount).toString();
+            folderName = dotCMSPath.path.subpath(0, nameCount).toString();
         }
 
         // Setting the depth to -1 will make the traversal go all the way down
@@ -101,23 +74,15 @@ public class FolderTraversalServiceImpl implements FolderTraversalService {
         int depthToUse = depth == null ? -1 : depth;
 
         // Building the glob filter
-        var filterRootPath = dotCMSPath.toString();
+        var filterRootPath = dotCMSPath.path.toString();
         if (!filterRootPath.endsWith("/")) {
             filterRootPath += "/";
         }
         var filterBuilder = Filter.builder().rootPath(filterRootPath);
-        for (var includePattern : includeFolderPatterns) {
-            filterBuilder.includeFolder(includePattern);
-        }
-        for (var includePattern : includeAssetPatterns) {
-            filterBuilder.includeAsset(includePattern);
-        }
-        for (var excludePattern : excludeFolderPatterns) {
-            filterBuilder.excludeFolder(excludePattern);
-        }
-        for (var excludePattern : excludeAssetPatterns) {
-            filterBuilder.excludeAsset(excludePattern);
-        }
+        includeFolderPatterns.forEach(filterBuilder::includeFolder);
+        includeAssetPatterns.forEach(filterBuilder::includeAsset);
+        excludeFolderPatterns.forEach(filterBuilder::excludeFolder);
+        excludeAssetPatterns.forEach(filterBuilder::excludeAsset);
         var filter = filterBuilder.build();
 
         // ---
@@ -126,9 +91,9 @@ public class FolderTraversalServiceImpl implements FolderTraversalService {
         var task = new FolderTraversalTask(
                 retriever,
                 filter,
-                site,
+                dotCMSPath.site,
                 FolderView.builder()
-                        .host(site)
+                        .host(dotCMSPath.site)
                         .path(parentFolderName)
                         .name(folderName)
                         .level(0)
@@ -138,6 +103,87 @@ public class FolderTraversalServiceImpl implements FolderTraversalService {
         );
 
         return forkJoinPool.invoke(task);
+    }
+
+    /**
+     * Parses the given path and extracts the site and folder path components.
+     *
+     * @param path the path to parse
+     * @return an InternalFolderPath object containing the site and folder path
+     */
+    private InternalFolderPath parse(String path) {
+
+        if (path == null || path.isEmpty()) {
+            var error = "path cannot be null or empty";
+            logger.error(error);
+            throw new IllegalArgumentException(error);
+        }
+
+        final URI uri;
+        try {
+            uri = new URI(path);
+        } catch (URISyntaxException e) {
+            logger.error(e.getMessage(), e);
+            throw new IllegalArgumentException(e.getMessage(), e);
+        }
+
+        final String site = uri.getHost();
+        if (null == site) {
+            var error = String.format(
+                    "Unable to determine site from path: [%s]. Site must start with a valid protocol or simply // ",
+                    path);
+            logger.error(error);
+            throw new IllegalArgumentException(error);
+        }
+
+        String folderPath = uri.getPath();
+        if (null == folderPath) {
+            var error = String.format("Unable to determine path: [%s].", path);
+            logger.error(error);
+            throw new IllegalArgumentException(error);
+        }
+        if (folderPath.isEmpty()) {
+            folderPath = "/";
+        }
+
+        Path dotCMSPath;
+        try {
+            dotCMSPath = Paths.get(folderPath);
+        } catch (InvalidPathException e) {
+            var error = String.format("Invalid folder path [%s] provided", path);
+            logger.error(error, e);
+            throw new IllegalArgumentException(error, e);
+        }
+
+        // Represents the site and folder path components of the parsed path.
+        return new InternalFolderPath(site, dotCMSPath);
+    }
+
+    /**
+     * Represents the site and folder path components of the parsed path.
+     */
+    private static class InternalFolderPath {
+
+        /**
+         * The site component of the parsed path.
+         */
+        public final String site;
+
+        /**
+         * The folder path component of the parsed path.
+         */
+        public final Path path;
+
+        /**
+         * Constructs an InternalFolderPath object with the given site and folder path.
+         *
+         * @param site the site component
+         * @param path the folder path component
+         */
+        public InternalFolderPath(String site, Path path) {
+            this.site = site;
+            this.path = path;
+        }
     }
 
 }

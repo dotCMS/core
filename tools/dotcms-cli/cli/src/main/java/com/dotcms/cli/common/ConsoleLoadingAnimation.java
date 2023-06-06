@@ -1,5 +1,8 @@
 package com.dotcms.cli.common;
 
+import java.util.ArrayDeque;
+import java.util.Arrays;
+import java.util.Queue;
 import java.util.concurrent.Future;
 
 /**
@@ -42,7 +45,7 @@ public class ConsoleLoadingAnimation implements Runnable {
     };
 
     private final Future<?> futureResult;
-    private final String[] animationChars;
+    private final Queue<String> animationQueue;
     private final long animationDelay;
 
     /**
@@ -55,9 +58,13 @@ public class ConsoleLoadingAnimation implements Runnable {
      */
     public ConsoleLoadingAnimation(Future<?> futureResult, String[] animationChars,
             long animationDelay) {
+
         this.futureResult = futureResult;
-        this.animationChars = animationChars;
         this.animationDelay = animationDelay;
+
+        this.animationQueue = new ArrayDeque<>();  // Initialize an ArrayDeque as the animationQueue
+        // Add characters from the array to the queue
+        animationQueue.addAll(Arrays.asList(animationChars));
     }
 
     /**
@@ -66,11 +73,14 @@ public class ConsoleLoadingAnimation implements Runnable {
      */
     @Override
     public void run() {
-        int counter = 0;
+
         try {
             while (!futureResult.isDone()) {
-                System.out.print("\r" + animationChars[counter % animationChars.length]);
-                counter++;
+
+                var nextCharacter = animationQueue.poll();  // Retrieve the next character from the front of the queue
+                animationQueue.offer(nextCharacter);  // Add the character back to the end of the queue
+                System.out.print("\r" + nextCharacter);
+
                 Thread.sleep(animationDelay);
             }
         } catch (InterruptedException e) {
