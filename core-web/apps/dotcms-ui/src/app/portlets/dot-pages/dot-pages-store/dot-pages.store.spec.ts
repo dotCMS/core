@@ -334,6 +334,11 @@ describe('DotPageStore', () => {
     it('should have favorites collapsed state setted when requesting favorite pages', () => {
         dotPageStore.getFavoritePages(5); // Here it sets the favorite state again
 
+        // Should retrieve the value from local storage when setting the state
+        expect(dotLocalstorageService.getItem).toHaveBeenCalledWith(
+            LOCAL_STORAGE_FAVORITES_PANEL_KEY
+        );
+
         dotPageStore.state$.subscribe((data) => {
             expect(data.favoritePages.collapsed).toEqual(true);
         });
