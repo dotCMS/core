@@ -20,20 +20,21 @@ import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
+import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 
 /**
  * In typical dotCMS resource fashion this class is responsible for undertaking the heavy lifting
@@ -249,43 +250,91 @@ public class WebAssetHelper {
                 .build();
     }
 
-    public void createOrReplaceAsset(final String rawPath, final String fileName, final InputStream fileInputStream,  final User user)
+    public WebAssetView saveOrUpdateAsset(FileUploadData form,  final User user)
             throws DotDataException, DotSecurityException, IOException {
 
+        final FormDataContentDisposition contentDisposition = form.getContentDisposition();
+        final String fileName = contentDisposition.getFileName();
+        final InputStream fileInputStream = form.getFileInputStream();
+        final FileUploadDetail detail = form.getDetail();
+        final String assetPath = detail.getAssetPath();
         final ResolvedAssetAndPath assetAndPath = AssetPathResolver.newInstance()
-                .resolve(rawPath, user, true);
+                .resolve(assetPath, user, true);
 
         final Host host = assetAndPath.resolvedHost();
         final Folder folder = assetAndPath.resolvedFolder();
-        final String assetName = assetAndPath.asset();
+        final String assetName =  fileName != null ? fileName : assetAndPath.asset();
 
-        System.out.println(host);
-        System.out.println(folder);
-        System.out.println(assetName);
 
-        if(null != fileInputStream) {
-            //TODO validate size length
+        if(null == fileInputStream) {
+            return toAssetsFolder(folder);
+        }
+            //TODO validate size length so we dont get out of memory by a malicious user
 
             final Path tempFile = Files.createTempFile(assetName, "temp");
 
             Files.copy(fileInputStream, tempFile);
 
-            final Contentlet contentlet = makeFileAsset(tempFile, folder);
-            final Contentlet savedContentlet = contentletAPI.checkin(contentlet, user, false);
+                final Builder builder = BrowserQuery.builder();
+                builder.showDotAssets(false)
+                        .withUser(user)
+                        .showFiles(true)
+                        .showFolders(true)
+                        .showArchived(false)
+                        .showWorking(true)
+                        .showLinks(false)
+                        .showDotAssets(false)
+                        .showImages(true)
+                        .showContent(true);
 
-        }
+                if(folder.isSystemFolder()){
+                    builder.withHostOrFolderId(host.getIdentifier());
+                } else {
+                    builder.withHostOrFolderId(folder.getInode());
+                }
+
+                builder.withFilter(assetName);
+                final List<Treeable> folderContent = browserAPI.getFolderContentList(builder.build());
+                final List<Treeable> assets = folderContent.stream()
+                        .filter(Contentlet.class::isInstance).collect(Collectors.toList());
+
+                Contentlet savedAsset = null;
+
+                if(assets.isEmpty()){
+                    //The file does not exist
+                    final Contentlet contentlet = makeFileAsset(tempFile, folder);
+                    savedAsset = contentletAPI.checkin(contentlet, user, false);
+                } else {
+                    final Optional<Treeable> first = assets.stream().findFirst();
+                    final Contentlet asset = (Contentlet) first.get();
+                    updateFileAsset(tempFile, folder, asset);
+                    savedAsset = contentletAPI.checkinWithoutVersioning(asset,
+                            (ContentletRelationships) null, null, null,
+                            APILocator.systemUser(), false);
+                }
+
+        final FileAsset fileAsset = fileAssetAPI.fromContentlet(savedAsset);
+        return toAsset(fileAsset);
     }
 
-        Contentlet makeFileAsset(final Path filePath, final Folder folder){
-            final File file = filePath.toFile();
-            final Contentlet contentlet = new Contentlet();
-            final String fileName = file.getName();
-            contentlet.setProperty(FileAssetAPI.TITLE_FIELD, fileName);
-            contentlet.setProperty(FileAssetAPI.FILE_NAME_FIELD, fileName);
-            contentlet.setProperty(FileAssetAPI.BINARY_FIELD, file);
-            contentlet.setFolder(folder.getInode());
-            return contentlet;
-        }
+
+
+
+    Contentlet makeFileAsset(final Path filePath, final Folder folder){
+        final Contentlet contentlet = new Contentlet();
+        return updateFileAsset(filePath, folder, contentlet);
+    }
+
+
+    Contentlet updateFileAsset(final Path filePath, final Folder folder, final Contentlet contentlet){
+        final File file = filePath.toFile();
+        final String fileName = file.getName();
+        contentlet.setProperty(FileAssetAPI.TITLE_FIELD, fileName);
+        contentlet.setProperty(FileAssetAPI.FILE_NAME_FIELD, fileName);
+        contentlet.setProperty(FileAssetAPI.BINARY_FIELD, file);
+        contentlet.setFolder(folder.getInode());
+        return contentlet;
+    }
 
 
 

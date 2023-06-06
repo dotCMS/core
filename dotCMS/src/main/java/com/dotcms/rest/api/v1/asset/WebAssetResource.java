@@ -9,11 +9,11 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
-import java.io.InputStream;
+import java.io.IOException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.FormParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -21,8 +21,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
-import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.glassfish.jersey.server.JSONP;
 
 /**
@@ -69,10 +67,8 @@ public class WebAssetResource {
     public Response putAsset(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @FormDataParam("file") InputStream fileInputStream,
-            @FormDataParam("file") FormDataContentDisposition contentDispositionHeader,
-            @FormDataParam("assetPath") String assetPath
-    ) throws DotSecurityException, DotDataException {
+            @BeanParam FileUploadData form
+    ) throws DotSecurityException, DotDataException, IOException {
 
         final InitDataObject initDataObject = new WebResource.InitBuilder()
                 .requiredBackendUser(true)
@@ -81,12 +77,10 @@ public class WebAssetResource {
                 .rejectWhenNoUser(true).init();
 
         final User user = initDataObject.getUser();
-        final String fileName = contentDispositionHeader  == null ? null : contentDispositionHeader.getFileName();
-        helper.createOrReplaceAsset(assetPath, fileName, fileInputStream, user);
 
+        final WebAssetView webAssetView = helper.saveOrUpdateAsset(form, user);
         //Logger.info(this, String.format("User [%s] is requesting assets info for path [%s]", user.getUserId(), form.assetPath()));
-
-        return Response.ok(new WebAssetEntityView(null)).build();
+        return Response.ok(new WebAssetEntityView(webAssetView)).build();
     }
 
 }

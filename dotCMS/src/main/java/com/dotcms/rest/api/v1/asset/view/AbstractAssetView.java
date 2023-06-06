@@ -9,7 +9,7 @@ import org.immutables.value.Value;
 @Value.Style(typeImmutable="*", typeAbstract="Abstract*")
 @Value.Immutable
 @JsonDeserialize(as = AssetView.Builder.class)
-public interface AbstractAssetView  {
+public interface AbstractAssetView  extends WebAssetView {
 
     String name();
     String identifier();
