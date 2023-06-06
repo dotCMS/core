@@ -7,17 +7,7 @@ import { Injectable } from '@angular/core';
 import { MenuItem, SelectItem } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 
-import {
-    catchError,
-    delay,
-    filter,
-    map,
-    mergeMap,
-    retryWhen,
-    switchMap,
-    take,
-    tap
-} from 'rxjs/operators';
+import { catchError, filter, map, mergeMap, switchMap, take, tap } from 'rxjs/operators';
 
 import { DotFavoritePageService } from '@dotcms/app/api/services/dot-favorite-page/dot-favorite-page.service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
@@ -385,49 +375,45 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
 
                     if (!isFavoritePage) this.setPagesStatus(ComponentStatus.LOADING);
 
-                    return this.getPagesDataFn(isFavoritePage, sortOrderValue, identifier)
-                        .pipe(
-                            tap(
-                                (items) => {
-                                    // Finished fetch loop and will proceed to set data on store
-                                    if (isFavoritePage) {
-                                        const pagesData = this.get().favoritePages.items.map(
-                                            (page) => {
-                                                return page?.identifier === identifier
-                                                    ? items.jsonObjectView.contentlets[0]
-                                                    : page;
-                                            }
-                                        );
+                    return this.getPagesDataFn(isFavoritePage, sortOrderValue, identifier).pipe(
+                        tap(
+                            (items) => {
+                                // Finished fetch loop and will proceed to set data on store
+                                if (isFavoritePage) {
+                                    const pagesData = this.get().favoritePages.items.map((page) => {
+                                        return page?.identifier === identifier
+                                            ? items.jsonObjectView.contentlets[0]
+                                            : page;
+                                    });
 
-                                        this.setFavoritePages({ items: pagesData });
+                                    this.setFavoritePages({ items: pagesData });
+                                } else {
+                                    let pagesData = this.get().pages.items;
+
+                                    if (items.jsonObjectView.contentlets[0] === undefined) {
+                                        pagesData = pagesData.filter((page) => {
+                                            return page?.identifier !== identifier;
+                                        });
+
+                                        // Add undefined to keep the same length of the array,
+                                        // otherwise the pagination(endless scroll) will break
+                                        pagesData.push(undefined);
                                     } else {
-                                        let pagesData = this.get().pages.items;
-
-                                        if (items.jsonObjectView.contentlets[0] === undefined) {
-                                            pagesData = pagesData.filter((page) => {
-                                                return page?.identifier !== identifier;
-                                            });
-
-                                            // Add undefined to keep the same length of the array,
-                                            // otherwise the pagination(endless scroll) will break
-                                            pagesData.push(undefined);
-                                        } else {
-                                            pagesData = pagesData.map((page) => {
-                                                return page?.identifier === identifier
-                                                    ? items.jsonObjectView.contentlets[0]
-                                                    : page;
-                                            });
-                                        }
-
-                                        this.setPages({ items: pagesData });
+                                        pagesData = pagesData.map((page) => {
+                                            return page?.identifier === identifier
+                                                ? items.jsonObjectView.contentlets[0]
+                                                : page;
+                                        });
                                     }
-                                },
-                                (error: HttpErrorResponse) => {
-                                    return this.httpErrorManagerService.handle(error);
+
+                                    this.setPages({ items: pagesData });
                                 }
-                            )
+                            },
+                            (error: HttpErrorResponse) => {
+                                return this.httpErrorManagerService.handle(error);
+                            }
                         )
-                        .pipe(retryWhen((errors) => errors.pipe(delay(1000))));
+                    );
                 })
             );
         }
