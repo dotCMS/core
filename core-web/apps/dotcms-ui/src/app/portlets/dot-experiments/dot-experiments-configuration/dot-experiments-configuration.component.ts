@@ -140,6 +140,13 @@ export class DotExperimentsConfigurationComponent implements OnInit {
         });
     }
 
+    /**
+     * Save the description of the experiment
+     * @param description
+     * @param experiment
+     * @returns void
+     * @memberof DotExperimentsConfigurationComponent
+     */
     saveDescriptionAction(description: string, experiment: DotExperiment) {
         this.dotExperimentsConfigurationStore.setDescription({
             data: {
