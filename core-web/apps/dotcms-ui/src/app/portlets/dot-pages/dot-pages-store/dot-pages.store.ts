@@ -831,9 +831,10 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             items: [...items.jsonObjectView.contentlets],
             showLoadMoreButton: items.jsonObjectView.contentlets.length <= items.resultsSize,
             total: items.resultsSize,
-            collapsed: JSON.parse(
-                this.dotLocalstorageService.getItem(LOCAL_STORAGE_FAVORITES_PANEL_KEY)
-            )
+            collapsed:
+                JSON.parse(
+                    this.dotLocalstorageService.getItem(LOCAL_STORAGE_FAVORITES_PANEL_KEY)
+                ) ?? true
         };
     }
 
