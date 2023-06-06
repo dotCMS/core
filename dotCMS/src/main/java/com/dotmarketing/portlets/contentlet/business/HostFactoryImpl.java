@@ -116,7 +116,8 @@ public class HostFactoryImpl implements HostFactory {
             .SYSTEM_HOST).append("' ");
 
     private static final StringBuilder SITE_IS_LIVE = new StringBuilder().append("cvi.live_inode IS NOT NULL");
-
+    private static final StringBuilder SITE_IS_LIVE_OR_STOPPED = new StringBuilder().append("cvi.live_inode IS NOT null or " +
+            "(cvi.live_inode IS NULL AND cvi.deleted = false )");
     private static final StringBuilder SITE_IS_STOPPED = new StringBuilder().append("cvi.live_inode IS NULL AND cvi" +
             ".deleted = ").append(getDBFalse());
 
@@ -647,6 +648,21 @@ public class HostFactoryImpl implements HostFactory {
         final String condition =
                 includeArchivedSites ? SITE_IS_STOPPED_OR_ARCHIVED.toString() : SITE_IS_STOPPED.toString();
         return search(siteNameFilter, condition, showSystemHost, limit, offset, user, respectFrontendRoles);
+    }
+
+    @Override
+    public Optional<List<Host>> findLiveAndStopped(final String siteNameFilter,
+                                                   final int limit, final int offset, final boolean showSystemHost,
+                                                   final User user, boolean respectFrontendRoles) {
+
+        final StringBuilder sqlQuery = new StringBuilder();
+        
+        if (!showSystemHost) {
+            sqlQuery.append(EXCLUDE_SYSTEM_HOST);
+            sqlQuery.append(AND);
+        }
+        sqlQuery.append(SITE_IS_LIVE_OR_STOPPED);
+        return search(siteNameFilter, sqlQuery.toString(), showSystemHost, limit, offset, user, respectFrontendRoles);
     }
 
     @Override
