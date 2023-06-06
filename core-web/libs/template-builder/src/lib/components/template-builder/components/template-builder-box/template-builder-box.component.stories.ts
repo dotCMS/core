@@ -7,7 +7,7 @@ import { ScrollPanelModule } from 'primeng/scrollpanel';
 import { TemplateBuilderBoxComponent } from './template-builder-box.component';
 
 export default {
-    title: 'TemplateBuilderBoxComponent',
+    title: 'Components/Box',
     component: TemplateBuilderBoxComponent,
     decorators: [
         moduleMetadata({

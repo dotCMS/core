@@ -12,7 +12,7 @@ import { TemplateBuilderComponent } from './template-builder.component';
 import { FULL_DATA_MOCK } from './utils/mocks';
 
 export default {
-    title: 'TemplateBuilderComponent',
+    title: 'Template Builder',
     component: TemplateBuilderComponent,
     decorators: [
         moduleMetadata({
@@ -34,8 +34,8 @@ const Template: Story<TemplateBuilderComponent> = (args: TemplateBuilderComponen
     props: args
 });
 
-export const Primary = Template.bind({});
+export const Base = Template.bind({});
 
-Primary.args = {
+Base.args = {
     templateLayout: { body: FULL_DATA_MOCK }
 };
