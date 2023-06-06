@@ -55,6 +55,7 @@ import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.WebKeys;
@@ -247,8 +248,8 @@ public class HTMLPageAssetRenderedTest {
                 .setProperty("body", "content1")
                 .nextPersisted();
 
-        contentlet1.setIndexPolicy(IndexPolicy.WAIT_FOR);
-        contentlet1.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
+        contentlet1.setIndexPolicy(IndexPolicy.FORCE);
+        contentlet1.setIndexPolicyDependencies(IndexPolicy.FORCE);
         contentlet1.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         contentletAPI.publish(contentlet1, systemUser, false);
         //Assign permissions
@@ -264,8 +265,8 @@ public class HTMLPageAssetRenderedTest {
                 .setProperty("body", "content2")
                 .nextPersisted();
 
-        contentlet2English.setIndexPolicy(IndexPolicy.WAIT_FOR);
-        contentlet2English.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
+        contentlet2English.setIndexPolicy(IndexPolicy.FORCE);
+        contentlet2English.setIndexPolicyDependencies(IndexPolicy.FORCE);
         contentlet2English.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         contentletAPI.publish(contentlet2English, systemUser, false);
 
@@ -274,13 +275,13 @@ public class HTMLPageAssetRenderedTest {
         contentlet2Spanish.setProperty("title", "content2Spa");
         contentlet2Spanish.setProperty("body", "content2Spa");
         contentlet2Spanish.setLanguageId(spanishLanguage.getId());
-        contentlet2Spanish.setIndexPolicy(IndexPolicy.WAIT_FOR);
-        contentlet2Spanish.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
+        contentlet2Spanish.setIndexPolicy(IndexPolicy.FORCE);
+        contentlet2Spanish.setIndexPolicyDependencies(IndexPolicy.FORCE);
         contentlet2Spanish.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         contentlet2Spanish = contentletAPI.checkin(contentlet2Spanish, systemUser, false);
 
-        contentlet2Spanish.setIndexPolicy(IndexPolicy.WAIT_FOR);
-        contentlet2Spanish.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
+        contentlet2Spanish.setIndexPolicy(IndexPolicy.FORCE);
+        contentlet2Spanish.setIndexPolicyDependencies(IndexPolicy.FORCE);
         contentlet2Spanish.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         contentletAPI.publish(contentlet2Spanish, systemUser, false);
         //Assign permissions
@@ -296,8 +297,8 @@ public class HTMLPageAssetRenderedTest {
                 .setProperty("body", "content3Spa")
                 .nextPersisted();
 
-        contentlet3.setIndexPolicy(IndexPolicy.WAIT_FOR);
-        contentlet3.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
+        contentlet3.setIndexPolicy(IndexPolicy.FORCE);
+        contentlet3.setIndexPolicyDependencies(IndexPolicy.FORCE);
         contentlet3.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         contentletAPI.publish(contentlet3, systemUser, false);
         //Assign permissions
@@ -311,8 +312,8 @@ public class HTMLPageAssetRenderedTest {
                 .setProperty("body", "content4")
                 .nextPersisted();
 
-        contentlet4.setIndexPolicy(IndexPolicy.WAIT_FOR);
-        contentlet4.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
+        contentlet4.setIndexPolicy(IndexPolicy.FORCE);
+        contentlet4.setIndexPolicyDependencies(IndexPolicy.FORCE);
         contentlet4.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         contentletAPI.publish(contentlet4, systemUser, false);
         //Assign permissions
@@ -358,26 +359,43 @@ public class HTMLPageAssetRenderedTest {
     @AfterClass
     public static void restore() throws Exception {
 
+        Logger.info(HTMLPageAssetRenderedTest.class,"Cleaning up ..............................");
         Config.setProperty(DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE, contentFallbackDefaultValue);
         Config.setProperty(DEFAULT_PAGE_TO_DEFAULT_LANGUAGE, pageFallbackDefaultValue);
 
+
+        TestDataUtils.waitForEmptyQueue();
+
         //Deleting the folder will delete all the pages inside it
         if (folder != null) {
+
             APILocator.getFolderAPI().delete(folder, systemUser, false);
         }
 
+        TestDataUtils.waitForEmptyQueue();
+
         for (final String contentletId : contentletsIds) {
+
             final Contentlet contentlet = contentletAPI.findContentletByIdentifierAnyLanguage(
                     contentletId);
             if (null == contentlet) {
+                Logger.warn(HTMLPageAssetRenderedTest.class,
+                        "Contentlet with identifier " + contentletId + " not found to delete");
                 continue;
             }
+            else
+            {
+                Logger.info(HTMLPageAssetRenderedTest.class,"Deleting contentlet with identifier " + contentletId);
+            }
 
-            contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
-            contentlet.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
+            contentlet.setIndexPolicy(IndexPolicy.FORCE);
+            contentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
             contentlet.setBoolProperty(Contentlet.IS_TEST_MODE, true);
             contentletAPI.destroy(contentlet, systemUser, false);
         }
+
+        TestDataUtils.waitForEmptyQueue();
+        Logger.info(HTMLPageAssetRenderedTest.class,"Cleanup complete ..............................");
 
     }
 
@@ -548,8 +566,8 @@ public class HTMLPageAssetRenderedTest {
                 .cacheTTL(0)
                 .nextPersisted();
 
-        pageEnglishVersion.setIndexPolicy(IndexPolicy.WAIT_FOR);
-        pageEnglishVersion.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
+        pageEnglishVersion.setIndexPolicy(IndexPolicy.FORCE);
+        pageEnglishVersion.setIndexPolicyDependencies(IndexPolicy.FORCE);
         pageEnglishVersion.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         contentletAPI.publish(pageEnglishVersion, systemUser, false);
         addAnonymousPermissions(pageEnglishVersion);
@@ -580,13 +598,13 @@ public class HTMLPageAssetRenderedTest {
         Contentlet pageSpanishVersion = contentletAPI.checkout(pageEnglishVersion.getInode(),
                 systemUser, false);
         pageSpanishVersion.setLanguageId(spanishLanguage.getId());
-        pageSpanishVersion.setIndexPolicy(IndexPolicy.WAIT_FOR);
-        pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
+        pageSpanishVersion.setIndexPolicy(IndexPolicy.FORCE);
+        pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.FORCE);
         pageSpanishVersion.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         pageSpanishVersion = contentletAPI.checkin(pageSpanishVersion, systemUser, false);
 
-        pageSpanishVersion.setIndexPolicy(IndexPolicy.WAIT_FOR);
-        pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
+        pageSpanishVersion.setIndexPolicy(IndexPolicy.FORCE);
+        pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.FORCE);
         pageSpanishVersion.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         contentletAPI.publish(pageSpanishVersion, systemUser, false);
         addAnonymousPermissions(pageSpanishVersion);
@@ -971,12 +989,12 @@ public class HTMLPageAssetRenderedTest {
         Contentlet pageSpanishVersion = contentletAPI.checkout(pageEnglishVersion.getInode(),
                 systemUser, false);
         pageSpanishVersion.setLanguageId(spanishLanguage.getId());
-        pageSpanishVersion.setIndexPolicy(IndexPolicy.WAIT_FOR);
-        pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
+        pageSpanishVersion.setIndexPolicy(IndexPolicy.FORCE);
+        pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.FORCE);
         pageSpanishVersion.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         pageSpanishVersion = contentletAPI.checkin(pageSpanishVersion, systemUser, false);
-        pageSpanishVersion.setIndexPolicy(IndexPolicy.WAIT_FOR);
-        pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
+        pageSpanishVersion.setIndexPolicy(IndexPolicy.FORCE);
+        pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.FORCE);
         pageSpanishVersion.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         contentletAPI.publish(pageSpanishVersion, systemUser, false);
         addAnonymousPermissions(pageSpanishVersion);
@@ -1042,13 +1060,13 @@ public class HTMLPageAssetRenderedTest {
                 systemUser, false);
 
         pageSpanishVersion.setLanguageId(spanishLanguage.getId());
-        pageSpanishVersion.setIndexPolicy(IndexPolicy.WAIT_FOR);
-        pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
+        pageSpanishVersion.setIndexPolicy(IndexPolicy.FORCE);
+        pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.FORCE);
         pageEnglishVersion.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         pageSpanishVersion = contentletAPI.checkin(pageSpanishVersion, systemUser, false);
 
-        pageSpanishVersion.setIndexPolicy(IndexPolicy.WAIT_FOR);
-        pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
+        pageSpanishVersion.setIndexPolicy(IndexPolicy.FORCE);
+        pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.FORCE);
         pageEnglishVersion.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         contentletAPI.publish(pageSpanishVersion, systemUser, false);
         addAnonymousPermissions(pageSpanishVersion);
