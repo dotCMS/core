@@ -6,12 +6,14 @@ import { ScrollPanelModule } from 'primeng/scrollpanel';
 
 import { TemplateBuilderBoxComponent } from './template-builder-box.component';
 
+import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-confirm-dialog.component';
+
 export default {
     title: 'TemplateBuilderBoxComponent',
     component: TemplateBuilderBoxComponent,
     decorators: [
         moduleMetadata({
-            imports: [ButtonModule, ScrollPanelModule],
+            imports: [ButtonModule, ScrollPanelModule, RemoveConfirmDialogComponent],
             providers: [ConfirmationService]
         })
     ]

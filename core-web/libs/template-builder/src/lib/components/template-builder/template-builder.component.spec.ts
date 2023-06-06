@@ -1,11 +1,16 @@
+import { expect } from '@jest/globals';
 import { SpectatorHost, byTestId, createHostFactory } from '@ngneat/spectator';
+import { GridItemHTMLElement } from 'gridstack';
 
 import { AsyncPipe, NgFor } from '@angular/common';
+
+import { take } from 'rxjs/operators';
 
 import { AddWidgetComponent } from './components/add-widget/add-widget.component';
 import { TemplateBuilderBackgroundColumnsComponent } from './components/template-builder-background-columns/template-builder-background-columns.component';
 import { TemplateBuilderBoxComponent } from './components/template-builder-box/template-builder-box.component';
 import { TemplateBuilderRowComponent } from './components/template-builder-row/template-builder-row.component';
+import { DotGridStackWidget } from './models/models';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { TemplateBuilderComponent } from './template-builder.component';
 import { FULL_DATA_MOCK } from './utils/mocks';
@@ -67,14 +72,24 @@ describe('TemplateBuilderComponent', () => {
         expect(spectator.queryAll(byTestId('box')).length).toBe(totalBoxes);
     });
 
-    it('should trigger removeColumn when clicking on delete column', () => {
-        const deleteColumnButton = spectator.query(byTestId('btn-trash-column'));
+    it('should trigger removeColumn on store when triggering removeColumn', () => {
+        const removeColMock = jest.spyOn(store, 'removeColumn');
 
-        const mockRemoveColumn = jest.spyOn(spectator.component, 'removeColumn');
+        let widgetToDelete: DotGridStackWidget;
+        let rowId: string;
+        let elementToDelete: GridItemHTMLElement;
 
-        spectator.dispatchFakeEvent(deleteColumnButton, 'onClick');
+        expect.assertions(1);
 
-        expect(mockRemoveColumn).toHaveBeenCalled();
+        store.state$.pipe(take(1)).subscribe(({ items }) => {
+            widgetToDelete = items[0].subGridOpts.children[0];
+            rowId = items[0].id as string;
+            elementToDelete = document.createElement('div');
+
+            spectator.component.removeColumn(widgetToDelete, elementToDelete, rowId);
+
+            expect(removeColMock).toHaveBeenCalledWith({ ...widgetToDelete, parentId: rowId });
+        });
     });
 
     it('should call removeRow from store when triggering deleteRow', () => {

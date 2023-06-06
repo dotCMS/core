@@ -16,6 +16,7 @@ import { ScrollPanelModule } from 'primeng/scrollpanel';
 
 import { DotTemplateBuilderContainer, TemplateBuilderBoxSize } from '../../models/models';
 import { getBoxSize } from '../../utils/gridstack-utils';
+import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-confirm-dialog.component';
 
 @Component({
     selector: 'dotcms-template-builder-box',
@@ -23,7 +24,7 @@ import { getBoxSize } from '../../utils/gridstack-utils';
     styleUrls: ['./template-builder-box.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     standalone: true,
-    imports: [NgFor, NgIf, NgClass, ButtonModule, ScrollPanelModule]
+    imports: [NgFor, NgIf, NgClass, ButtonModule, ScrollPanelModule, RemoveConfirmDialogComponent]
 })
 export class TemplateBuilderBoxComponent implements OnChanges {
     protected readonly templateBuilderSizes = TemplateBuilderBoxSize;
@@ -36,6 +37,8 @@ export class TemplateBuilderBoxComponent implements OnChanges {
     deleteContainer: EventEmitter<void> = new EventEmitter<void>();
     @Output()
     deleteColumn: EventEmitter<void> = new EventEmitter<void>();
+    @Output()
+    deleteColumnRejected: EventEmitter<void> = new EventEmitter<void>();
 
     @Input() items: DotTemplateBuilderContainer[];
 

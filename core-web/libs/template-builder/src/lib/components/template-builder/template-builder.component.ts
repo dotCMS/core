@@ -1,5 +1,6 @@
 import {
     GridHTMLElement,
+    GridItemHTMLElement,
     GridStack,
     GridStackNode,
     GridStackWidget,
@@ -171,7 +172,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
      */
     removeColumn(
         column: DotGridStackWidget,
-        element: GridHTMLElement,
+        element: GridItemHTMLElement,
         rowID: numberOrString
     ): void {
         // The gridstack model is polutted with the subgrid data

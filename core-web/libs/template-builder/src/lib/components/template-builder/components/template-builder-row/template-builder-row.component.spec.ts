@@ -97,8 +97,8 @@ describe('TemplateBuilderRowComponent', () => {
 
         fixture.detectChanges();
 
-        const confirmAccept = document.querySelector('.p-confirm-popup-accept');
-        confirmAccept.dispatchEvent(new Event('click'));
+        const confirmButton = document.querySelector('.p-confirm-popup-accept');
+        confirmButton.dispatchEvent(new Event('click'));
 
         expect(deleteMock).toHaveBeenCalled();
     });
@@ -114,8 +114,8 @@ describe('TemplateBuilderRowComponent', () => {
 
         fixture.detectChanges();
 
-        const confirmAccept = document.querySelector('.p-confirm-popup-reject');
-        confirmAccept.dispatchEvent(new Event('click'));
+        const rejectButton = document.querySelector('.p-confirm-popup-reject');
+        rejectButton.dispatchEvent(new Event('click'));
 
         expect(deleteMock).toHaveBeenCalledTimes(0);
     });
