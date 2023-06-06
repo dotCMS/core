@@ -6,7 +6,12 @@ import { By } from '@angular/platform-browser';
 
 import { ButtonModule } from 'primeng/button';
 
+import { DotMessageService } from '@dotcms/data-access';
+import { DotMessagePipeModule } from '@dotcms/ui';
+
 import { TemplateBuilderRowComponent } from './template-builder-row.component';
+
+import { DOT_MESSAGE_SERVICE_TB_MOCK } from '../../utils/mocks';
 
 @Component({
     selector: 'dotcms-host-component',
@@ -32,8 +37,14 @@ describe('TemplateBuilderRowComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            imports: [ButtonModule, TemplateBuilderRowComponent],
-            declarations: [HostComponent]
+            imports: [ButtonModule, TemplateBuilderRowComponent, DotMessagePipeModule],
+            declarations: [HostComponent],
+            providers: [
+                {
+                    provide: DotMessageService,
+                    useValue: DOT_MESSAGE_SERVICE_TB_MOCK
+                }
+            ]
         }).compileComponents();
 
         fixture = TestBed.createComponent(HostComponent);
