@@ -8,6 +8,7 @@ import { TemplateBuilderBoxComponent } from './components/template-builder/compo
 import { TemplateBuilderRowComponent } from './components/template-builder/components/template-builder-row/template-builder-row.component';
 import { DotTemplateBuilderStore } from './components/template-builder/store/template-builder.store';
 import { TemplateBuilderComponent } from './components/template-builder/template-builder.component';
+import { TemplateBuilderSectionComponent } from './components/template-builder/components/template-builder-section/template-builder-section.component';
 
 @NgModule({
     imports: [
@@ -18,6 +19,7 @@ import { TemplateBuilderComponent } from './components/template-builder/template
         AddWidgetComponent,
         TemplateBuilderBoxComponent,
         TemplateBuilderBackgroundColumnsComponent,
+        TemplateBuilderSectionComponent,
         NgStyle
     ],
     declarations: [TemplateBuilderComponent],
