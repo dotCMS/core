@@ -1,5 +1,7 @@
 import { moduleMetadata, Story, Meta } from '@storybook/angular';
 
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
@@ -13,7 +15,12 @@ export default {
     component: TemplateBuilderBoxComponent,
     decorators: [
         moduleMetadata({
-            imports: [ButtonModule, ScrollPanelModule, RemoveConfirmDialogComponent],
+            imports: [
+                ButtonModule,
+                ScrollPanelModule,
+                RemoveConfirmDialogComponent,
+                BrowserAnimationsModule
+            ],
             providers: [ConfirmationService]
         })
     ]

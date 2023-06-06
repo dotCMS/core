@@ -1,5 +1,7 @@
 import { moduleMetadata, Story, Meta } from '@storybook/angular';
 
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
 import { ButtonModule } from 'primeng/button';
 
 import { DotIconModule } from '@dotcms/ui';
@@ -13,7 +15,12 @@ export default {
     component: TemplateBuilderRowComponent,
     decorators: [
         moduleMetadata({
-            imports: [DotIconModule, ButtonModule, RemoveConfirmDialogComponent],
+            imports: [
+                DotIconModule,
+                ButtonModule,
+                RemoveConfirmDialogComponent,
+                BrowserAnimationsModule
+            ],
             providers: []
         })
     ]
