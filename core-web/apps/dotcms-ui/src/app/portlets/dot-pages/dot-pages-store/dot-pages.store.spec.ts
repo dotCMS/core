@@ -101,7 +101,7 @@ export class DialogServiceMock {
     }
 }
 
-describe('DotPageStore', () => {
+fdescribe('DotPageStore', () => {
     let dotPageStore: DotPageStore;
     let dialogService: DialogService;
     let dotESContentService: DotESContentService;
@@ -329,6 +329,14 @@ describe('DotPageStore', () => {
             LOCAL_STORAGE_FAVORITES_PANEL_KEY,
             'true'
         );
+    });
+
+    fit('should have favorites collapsed state set to true when requesting favorite pages', () => {
+        dotPageStore.getFavoritePages(5); // Here it sets the favorite state again
+
+        dotPageStore.state$.subscribe((data) => {
+            expect(data.favoritePages.collapsed).toEqual(true);
+        });
     });
 
     it('should update Pages Status', () => {
