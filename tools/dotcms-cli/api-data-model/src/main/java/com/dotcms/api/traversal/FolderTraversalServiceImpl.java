@@ -54,6 +54,8 @@ public class FolderTraversalServiceImpl implements FolderTraversalService {
             final Set<String> excludeAssetPatterns
     ) {
 
+        logger.debug(String.format("Traversing folder: %s - with depth: %d", path, depth));
+
         // Parsing and validating the given path
         InternalFolderPath dotCMSPath = parse(path);
 
@@ -115,7 +117,7 @@ public class FolderTraversalServiceImpl implements FolderTraversalService {
 
         if (path == null || path.isEmpty()) {
             var error = "path cannot be null or empty";
-            logger.error(error);
+            logger.debug(error);
             throw new IllegalArgumentException(error);
         }
 
@@ -123,7 +125,7 @@ public class FolderTraversalServiceImpl implements FolderTraversalService {
         try {
             uri = new URI(path);
         } catch (URISyntaxException e) {
-            logger.error(e.getMessage(), e);
+            logger.debug(e.getMessage(), e);
             throw new IllegalArgumentException(e.getMessage(), e);
         }
 
@@ -132,14 +134,14 @@ public class FolderTraversalServiceImpl implements FolderTraversalService {
             var error = String.format(
                     "Unable to determine site from path: [%s]. Site must start with a valid protocol or simply // ",
                     path);
-            logger.error(error);
+            logger.debug(error);
             throw new IllegalArgumentException(error);
         }
 
         String folderPath = uri.getPath();
         if (null == folderPath) {
             var error = String.format("Unable to determine path: [%s].", path);
-            logger.error(error);
+            logger.debug(error);
             throw new IllegalArgumentException(error);
         }
         if (folderPath.isEmpty()) {
@@ -151,7 +153,7 @@ public class FolderTraversalServiceImpl implements FolderTraversalService {
             dotCMSPath = Paths.get(folderPath);
         } catch (InvalidPathException e) {
             var error = String.format("Invalid folder path [%s] provided", path);
-            logger.error(error, e);
+            logger.debug(error, e);
             throw new IllegalArgumentException(error, e);
         }
 
