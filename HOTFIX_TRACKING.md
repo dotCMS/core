@@ -134,3 +134,5 @@ This maintenance release includes the following code fixes:
 111. https://github.com/dotCMS/core/issues/21700 : When relating content, clicking anywhere on the content list should check the relate box #21700
 112. https://github.com/dotCMS/core/issues/21782 : HostAPI method findAllFromDB relies on Name instead of VarName #21782
 113. https://github.com/dotCMS/core/issues/22872 : Lucene queries for personas returning unexpected results #22872
+114. https://github.com/dotCMS/core/issues/23199 : Unable to create contentlet through workflow API even if user has appropriate permissions #23199
+

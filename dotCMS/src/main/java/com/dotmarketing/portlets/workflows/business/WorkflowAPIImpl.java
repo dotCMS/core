@@ -4429,4 +4429,26 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return null;
     }
 
+	@Override
+	@CloseDBIfOpened
+	public List<WorkflowAction> findActions(final WorkflowScheme scheme, final User user, final Contentlet contentlet)
+			throws DotDataException, DotSecurityException {
+
+		validateWorkflowLicense(scheme.getId(), "Workflow-Actions-License-required");
+
+		return permissionAPI.filterCollection(
+				workFlowFactory.findActions(scheme),
+				PermissionAPI.PERMISSION_USE,
+				RESPECT_FRONTEND_ROLES,
+				user,
+				contentlet);
+	} // findActions.
+
+	private void validateWorkflowLicense(String scheme, String message) {
+		if (!SYSTEM_WORKFLOW_ID.equals(scheme)) {
+			if (!hasValidLicense() && !this.getFriendClass().isFriend()) {
+				throw new InvalidLicenseException(message);
+			}
+		}
+	}
 }

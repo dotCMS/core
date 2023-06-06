@@ -120,11 +120,34 @@ public interface PermissionAPI {
 
 	/**
 	 * Return true if the user have over the permissionable the specified
-	 * permission This method is meant to be used by frontend call because
-	 * assumes that frontend roles should respected
+	 * permission. This method is meant to be used by frontend call because
+	 * assumes that frontend roles should be respected. When the contentlet is
+	 * detected to be new then permissions associated to the contentlet's content
+	 * type are evaluated.
 	 *
-	 * @param o permissionable
-	 * @param permissionId
+	 * @param permissionable permissionable
+	 * @param permissionType
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @param contentlet
+	 * @return boolean
+	 * @version 1.8
+	 * @throws DotDataException
+	 * @since 1.0
+	 */
+	boolean doesUserHavePermission(Permissionable permissionable,
+								   int permissionType,
+								   User user,
+								   boolean respectFrontendRoles,
+								   Contentlet contentlet) throws DotDataException;
+
+	/**
+	 * Return true if the user have over the permissionable the specified
+	 * permission. This method is meant to be used by frontend call because
+	 * assumes that frontend roles should be respected.
+	 *
+	 * @param permissionable permissionable
+	 * @param permissionType
 	 * @param user
 	 * @return boolean
 	 * @version 1.8
@@ -137,8 +160,8 @@ public interface PermissionAPI {
 	 * Return true if the user have over the permissionable the specified
 	 * permission
 	 *
-	 * @param o permissionable
-	 * @param permissionId
+	 * @param permissionable permissionable
+	 * @param permissionType
 	 * @param user
 	 * @param respectFrontendRoles
 	 * @return boolean
@@ -554,6 +577,28 @@ public interface PermissionAPI {
 	 * @throws DotDataException
 	 */
 	List<Permission> getPermissionsByRole(Role role, boolean onlyFoldersAndHosts, boolean bitPermissions) throws DotDataException;
+
+	/**
+	 * Filters the given list of permissionables that meet the required permission mask using the contentlet's content
+	 * type to evaluate its permisisions when contentlet is new.
+	 *
+	 * @param <P> The type of permissionable given to the method
+	 * @param permissionables
+	 * @param requiredPermission
+	 * @param respectFrontendRoles
+	 * @param user
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 * @since 1.6
+	 * @version 1.8
+	 */
+	<P extends Permissionable> List<P> filterCollection(List<P> permissionables,
+														int requiredPermission,
+														boolean respectFrontendRoles,
+														User user,
+														Contentlet contentlet)
+			throws DotDataException, DotSecurityException;
 
 	/**
 	 * Filters the given list of permissionables that meet the required permission mask
