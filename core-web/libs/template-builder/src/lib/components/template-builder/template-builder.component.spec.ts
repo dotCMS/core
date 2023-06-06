@@ -3,6 +3,7 @@ import { SpectatorHost, byTestId, createHostFactory } from '@ngneat/spectator';
 import { AsyncPipe, NgFor } from '@angular/common';
 
 import { AddWidgetComponent } from './components/add-widget/add-widget.component';
+import { TemplateBuilderBackgroundColumnsComponent } from './components/template-builder-background-columns/template-builder-background-columns.component';
 import { TemplateBuilderBoxComponent } from './components/template-builder-box/template-builder-box.component';
 import { TemplateBuilderRowComponent } from './components/template-builder-row/template-builder-row.component';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
@@ -11,6 +12,7 @@ import { FULL_DATA_MOCK } from './utils/mocks';
 
 describe('TemplateBuilderComponent', () => {
     let spectator: SpectatorHost<TemplateBuilderComponent>;
+    let store: DotTemplateBuilderStore;
 
     const createHost = createHostFactory({
         component: TemplateBuilderComponent,
@@ -19,7 +21,8 @@ describe('TemplateBuilderComponent', () => {
             AsyncPipe,
             TemplateBuilderRowComponent,
             AddWidgetComponent,
-            TemplateBuilderBoxComponent
+            TemplateBuilderBoxComponent,
+            TemplateBuilderBackgroundColumnsComponent
         ],
         providers: [DotTemplateBuilderStore]
     });
@@ -32,6 +35,8 @@ describe('TemplateBuilderComponent', () => {
                 }
             }
         );
+
+        store = spectator.inject(DotTemplateBuilderStore);
     });
 
     it('should create', () => {
@@ -44,6 +49,10 @@ describe('TemplateBuilderComponent', () => {
 
     it('should have a Add Box Button', () => {
         expect(spectator.query(byTestId('add-box'))).toBeTruthy();
+    });
+
+    it('should have a 12 columns as background', () => {
+        expect(spectator.queryAll(byTestId('column')).length).toBe(12);
     });
 
     it('should have the same quantity of rows as mocked data', () => {
@@ -68,9 +77,9 @@ describe('TemplateBuilderComponent', () => {
         expect(mockRemoveColumn).toHaveBeenCalled();
     });
 
-    it('should call deleteRow', () => {
-        const deleteRowMock = jest.spyOn(spectator.component, 'deleteRow');
+    it('should call removeRow from store when triggering deleteRow', () => {
+        const removeRowMock = jest.spyOn(store, 'removeRow');
         spectator.component.deleteRow('123');
-        expect(deleteRowMock).toHaveBeenCalledWith('123');
+        expect(removeRowMock).toHaveBeenCalledWith('123');
     });
 });
