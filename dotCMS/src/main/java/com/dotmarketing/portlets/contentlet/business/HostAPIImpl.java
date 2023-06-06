@@ -389,7 +389,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         final List<Host> hosts = new ArrayList<Host>();
 
         final String sql = "select  c.title, c.inode from contentlet_version_info clvi, contentlet c, structure s  " +
-                " where c.structure_inode = s.inode and  s.name = 'Host' and c.identifier <> ? and clvi.working_inode = c.inode ";
+                " where c.structure_inode = s.inode and  s.velocity_var_name = 'Host' and c.identifier <> ? and clvi.working_inode = c.inode ";
 
         final DotConnect dc = new DotConnect();
         dc.setSQL(sql);
