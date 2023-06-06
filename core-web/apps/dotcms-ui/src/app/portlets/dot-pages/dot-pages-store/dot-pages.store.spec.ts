@@ -404,7 +404,7 @@ describe('DotPageStore', () => {
             expect(data.favoritePages.items).toEqual(expectedInputArray);
             expect(data.favoritePages.showLoadMoreButton).toEqual(true);
             expect(data.favoritePages.total).toEqual(expectedInputArray.length);
-            expect(data.favoritePages.collapsed).toEqual(undefined);
+            expect(data.favoritePages.collapsed).toEqual(true);
         });
         expect(dotFavoritePageService.get).toHaveBeenCalledTimes(1);
     });
