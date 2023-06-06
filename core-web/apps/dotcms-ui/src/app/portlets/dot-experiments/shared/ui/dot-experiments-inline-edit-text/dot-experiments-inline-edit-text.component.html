@@ -1,0 +1,53 @@
+<p-inplace>
+    <ng-template pTemplate="display">
+        <div class="flex">
+            <span *ngIf="text; else noTextDefinedTpl" data-testId="text-input">
+                {{ text }}
+            </span>
+            <i class="pi pi-pencil cursor-pointer" data-testId="text-input-icon"></i>
+        </div>
+
+        <ng-template #noTextDefinedTpl
+            ><span class="text-muted" data-testId="empty-text-message">{{
+                'experiments.configure.description.add' | dm
+            }}</span>
+        </ng-template>
+    </ng-template>
+
+    <ng-template pTemplate="content">
+        <form [formGroup]="form" novalidate>
+            <div class="flex gap-2 control">
+                <div class="field p-input-icon-right flex flex-column w-full">
+                    <input
+                        [maxLength]="maxDescriptiveLengthLength + 1"
+                        data-testId="inplace-input"
+                        dotAutofocus
+                        formControlName="text"
+                        pInputText
+                    />
+                    <i
+                        class="pi pi-times cursor-pointer"
+                        (click)="deactivateInplace()"
+                        data-testId="variant-inplace-button"
+                    ></i>
+                </div>
+                <button
+                    class="p-button-rounded p-button-text"
+                    [disabled]="form.invalid"
+                    [loading]="isLoading"
+                    (click)="saveAction()"
+                    data-testId="text-save-btn"
+                    icon="pi pi-save"
+                    pButton
+                    type="button"
+                ></button>
+            </div>
+
+            <div class="validation-error">
+                <dot-field-validation-message
+                    [field]="form.controls['text']"
+                ></dot-field-validation-message>
+            </div>
+        </form>
+    </ng-template>
+</p-inplace>

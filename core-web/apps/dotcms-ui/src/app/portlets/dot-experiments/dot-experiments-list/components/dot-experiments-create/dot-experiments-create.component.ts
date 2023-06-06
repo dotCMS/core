@@ -13,6 +13,7 @@ import { DotFieldValidationMessageModule } from '@components/_common/dot-field-v
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { DotExperiment, MAX_INPUT_TITLE_LENGTH } from '@dotcms/dotcms-models';
+import { DotFieldRequiredDirective } from '@dotcms/ui';
 import { DotMessagePipeModule } from '@dotcms/ui';
 import {
     DotExperimentsListStore,
@@ -44,7 +45,8 @@ interface CreateForm {
         InputTextareaModule,
         InputTextModule,
         SidebarModule,
-        ButtonModule
+        ButtonModule,
+        DotFieldRequiredDirective
     ],
     templateUrl: './dot-experiments-create.component.html',
     styleUrls: ['./dot-experiments-create.component.scss'],

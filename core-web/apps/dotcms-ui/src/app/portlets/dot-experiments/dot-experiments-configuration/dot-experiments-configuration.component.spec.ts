@@ -33,6 +33,7 @@ import {
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { DotExperimentsExperimentSummaryComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-experiment-summary/dot-experiments-experiment-summary.component';
 import { DotExperimentsUiHeaderComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
+import { DotExperimentsInlineEditTextComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-inline-edit-text/dot-experiments-inline-edit-text.component';
 import { getExperimentMock } from '@portlets/dot-experiments/test/mocks';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
@@ -72,7 +73,8 @@ const defaultVmMock: ConfigurationViewModel = {
     disabledStartExperiment: false,
     showExperimentSummary: false,
     isSaving: false,
-    experimentStatus: null
+    experimentStatus: null,
+    isDescriptionSaving: false
 };
 
 describe('DotExperimentsConfigurationComponent', () => {
@@ -151,20 +153,7 @@ describe('DotExperimentsConfigurationComponent', () => {
         // expect(spectator.query(DotExperimentsConfigurationTargetingComponent)).toExist();
         expect(spectator.query(DotExperimentsConfigurationTrafficComponent)).toExist();
         expect(spectator.query(DotExperimentsConfigurationSchedulingComponent)).toExist();
-        expect(spectator.query(byTestId('experiment-description'))).toExist();
-    });
-
-    it('should hide description if empty', () => {
-        spectator.component.vm$ = of({
-            ...defaultVmMock,
-            experiment: {
-                ...EXPERIMENT_MOCK,
-                description: ''
-            }
-        });
-        spectator.detectChanges();
-
-        expect(spectator.query(byTestId('experiment-description'))).not.toExist();
+        expect(spectator.query(DotExperimentsInlineEditTextComponent)).toExist();
     });
 
     it('should show Start Experiment button if isExperimentADraft true', () => {

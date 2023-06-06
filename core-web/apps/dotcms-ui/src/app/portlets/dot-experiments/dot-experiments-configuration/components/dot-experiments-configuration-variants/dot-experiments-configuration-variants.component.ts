@@ -17,6 +17,8 @@ import { tap } from 'rxjs/operators';
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
+import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
+
 import { DotSessionStorageService } from '@dotcms/data-access';
 import {
     ComponentStatus,
@@ -56,7 +58,8 @@ import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.dir
         ButtonModule,
         InputTextModule,
         TooltipModule,
-        ConfirmPopupModule
+        ConfirmPopupModule,
+        DotAutofocusModule
     ],
     templateUrl: './dot-experiments-configuration-variants.component.html',
     styleUrls: ['./dot-experiments-configuration-variants.component.scss'],
