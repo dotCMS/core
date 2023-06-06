@@ -18,7 +18,6 @@ public class SitePaginator implements PaginatorOrdered<Host> {
     public static final String ARCHIVED_PARAMETER_NAME = "archive";
     public static final  String LIVE_PARAMETER_NAME = "live";
     public static final  String SYSTEM_PARAMETER_NAME = "system";
-    public static final  String STOP_PARAMETER_NAME = "stop";
 
     private final HostAPI hostAPI;
 
@@ -55,7 +54,6 @@ public class SitePaginator implements PaginatorOrdered<Host> {
             sites = this.hostAPI.search(sanitizedFilter, showArchived, !showLive, showSystem, limit, offset,
                     user, false);
         } else if (showArchived != null) {
-
             if (!showArchived){
                 sites = this.hostAPI.search(sanitizedFilter, false, true, showSystem, limit, offset,
                         user, false);
@@ -65,7 +63,6 @@ public class SitePaginator implements PaginatorOrdered<Host> {
                 sites = this.hostAPI.search(sanitizedFilter, showArchived, showStopped, showSystem, limit, offset,
                         user, false);
             }
-
         } else if (showLive != null) {
             sites = this.hostAPI.searchByStopped(sanitizedFilter, !showLive, showSystem, limit, offset,
                     user, false);
