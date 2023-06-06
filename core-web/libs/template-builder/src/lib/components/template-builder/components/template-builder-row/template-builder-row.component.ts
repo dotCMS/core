@@ -25,6 +25,8 @@ export class TemplateBuilderRowComponent {
     editStyleClasses: EventEmitter<void> = new EventEmitter<void>();
     @Output()
     deleteRow: EventEmitter<void> = new EventEmitter<void>();
+    @Output()
+    deleteRowRejected: EventEmitter<void> = new EventEmitter<void>();
 
     constructor(private el: ElementRef) {}
 

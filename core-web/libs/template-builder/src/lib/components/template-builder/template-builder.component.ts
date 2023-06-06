@@ -144,12 +144,20 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
         this.grid.destroy(true);
     }
 
-    identify(_: number, w: GridStackWidget) {
-        return w.id;
+    /**
+     * @description This method is used to identify items by id
+     *
+     * @param {number} _
+     * @param {GridStackWidget} w
+     * @return {*}
+     * @memberof TemplateBuilderComponent
+     */
+    identify(_: number, w: GridStackWidget): string {
+        return w.id as string;
     }
 
     /**
-     * @description This function maintains the GridStack Model in sync with the store when you delete a column
+     * @description This method maintains the GridStack Model in sync with the store when you delete a column
      *
      * @param {DotGridStackWidget} column
      * @param {numberOrString} rowID
@@ -164,10 +172,16 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
         // So we need to delete the node from the GridStack Model
         this.grid.engine.nodes.find((node) => node.id === rowID).subGrid?.removeWidget(element);
 
-        this.store.removeColumn({ ...column, parentId: rowID as string 
-    });
+        this.store.removeColumn({ ...column, parentId: rowID as string });
+    }
 
-    deleteRow(id: string): void {
-        this.store.removeRow(id);
+    /**
+     * @description This method deletes the row from the store
+     *
+     * @param {numberOrString} id
+     * @memberof TemplateBuilderComponent
+     */
+    deleteRow(id: numberOrString): void {
+        this.store.removeRow(id as string);
     }
 }

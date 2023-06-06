@@ -3,10 +3,13 @@ import { describe, it, expect } from '@jest/globals';
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
 
 import { TemplateBuilderRowComponent } from './template-builder-row.component';
+
+import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-confirm-dialog.component';
 
 @Component({
     selector: 'dotcms-host-component',
@@ -32,7 +35,12 @@ describe('TemplateBuilderRowComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            imports: [ButtonModule, TemplateBuilderRowComponent],
+            imports: [
+                ButtonModule,
+                TemplateBuilderRowComponent,
+                RemoveConfirmDialogComponent,
+                NoopAnimationsModule
+            ],
             declarations: [HostComponent]
         }).compileComponents();
 
@@ -62,19 +70,53 @@ describe('TemplateBuilderRowComponent', () => {
     });
 
     it('should trigger editRowStyleClass when clicking on editStyleClass button', () => {
-        jest.spyOn(fixture.componentInstance, 'editRowStyleClass');
+        const editRowStyleClassMock = jest.spyOn(fixture.componentInstance, 'editRowStyleClass');
         const button = fixture.debugElement.query(
             By.css('p-button[data-testid="row-style-class-button"]')
         );
 
         button.nativeElement.dispatchEvent(new Event('onClick'));
 
-        expect(fixture.componentInstance.editRowStyleClass).toHaveBeenCalled();
+        expect(editRowStyleClassMock).toHaveBeenCalled();
     });
 
     it('should have a remove item button', () => {
         expect(
             fixture.debugElement.query(By.css('p-button[data-testid="btn-remove-item"]'))
         ).toBeTruthy();
+    });
+
+    it('should trigger deleteRow when clicking on deleteRow button and click yes', () => {
+        const deleteMock = jest.spyOn(fixture.componentInstance, 'deleteRow');
+
+        const deleteButton = fixture.debugElement.query(
+            By.css('p-button[data-testid="btn-remove-item"]')
+        );
+
+        deleteButton.nativeElement.dispatchEvent(new Event('onClick'));
+
+        fixture.detectChanges();
+
+        const confirmAccept = document.querySelector('.p-confirm-popup-accept');
+        confirmAccept.dispatchEvent(new Event('click'));
+
+        expect(deleteMock).toHaveBeenCalled();
+    });
+
+    it('should not trigger deleteRow when clicking on deleteRow button and click no', () => {
+        const deleteMock = jest.spyOn(fixture.componentInstance, 'deleteRow');
+
+        const deleteButton = fixture.debugElement.query(
+            By.css('p-button[data-testid="btn-remove-item"]')
+        );
+
+        deleteButton.nativeElement.dispatchEvent(new Event('onClick'));
+
+        fixture.detectChanges();
+
+        const confirmAccept = document.querySelector('.p-confirm-popup-reject');
+        confirmAccept.dispatchEvent(new Event('click'));
+
+        expect(deleteMock).toHaveBeenCalledTimes(0);
     });
 });
