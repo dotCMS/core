@@ -1,0 +1,16 @@
+@use "variables" as *;
+
+.section-wrapper {
+    padding-top: $spacing-3;
+    padding-bottom: $spacing-4;
+}
+
+.section {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: $color-palette-primary-300;
+    height: 5rem;
+    color: $color-palette-primary;
+    font-size: $font-size-xl;
+}

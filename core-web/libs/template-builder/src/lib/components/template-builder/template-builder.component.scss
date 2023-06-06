@@ -17,25 +17,10 @@ dotcms-add-widget.ui-draggable-dragging {
     box-shadow: $md-shadow-6;
 }
 
-.header {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background: $color-palette-primary-300;
-    height: 5rem;
-    color: $color-palette-primary;
-    font-size: $font-size-xl;
-}
-
 .rows {
     display: flex;
     flex-direction: column;
     gap: $spacing-3;
-}
-
-.header-wrapper {
-    padding-top: $spacing-3;
-    padding-bottom: $spacing-4;
 }
 
 .grid-stack {

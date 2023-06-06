@@ -11,6 +11,7 @@ import { RemoveConfirmDialogComponent } from './components/remove-confirm-dialog
 import { TemplateBuilderBackgroundColumnsComponent } from './components/template-builder-background-columns/template-builder-background-columns.component';
 import { TemplateBuilderBoxComponent } from './components/template-builder-box/template-builder-box.component';
 import { TemplateBuilderRowComponent } from './components/template-builder-row/template-builder-row.component';
+import { TemplateBuilderSectionComponent } from './components/template-builder-section/template-builder-section.component';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { TemplateBuilderComponent } from './template-builder.component';
 import { DOT_MESSAGE_SERVICE_TB_MOCK, FULL_DATA_MOCK } from './utils/mocks';
@@ -29,7 +30,8 @@ export default {
                 DotMessagePipeModule,
                 RemoveConfirmDialogComponent,
                 BrowserAnimationsModule,
-                TemplateBuilderBackgroundColumnsComponent
+                TemplateBuilderBackgroundColumnsComponent,
+                TemplateBuilderSectionComponent
             ],
             providers: [
                 DotTemplateBuilderStore,
