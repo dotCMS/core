@@ -3,6 +3,9 @@ package com.dotmarketing.portlets.containers.model;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -103,4 +106,8 @@ public class SystemContainer extends Container {
                 .build();
     }
 
+    @Override
+    public boolean isLive() throws DotStateException, DotDataException, DotSecurityException {
+        return true; // System container is always live
+    }
 }
