@@ -74,19 +74,20 @@ public class TagAPIImpl implements TagAPI {
     }
 
     @Override
-    public Tag getTagAndCreate(final String name, final String userId, final String siteId, final boolean persona, final boolean searchInSystemHost) throws DotDataException, DotSecurityException {
-
-        boolean localTransaction = false;
+    @WrapInTransaction
+    public Tag getTagAndCreate(final String tagName, final String userId, final String siteId,
+                               final boolean persona, final boolean searchInSystemHost) throws DotDataException, DotSecurityException {
 
         try {
-
-            //Check for a transaction and start one if required
-            localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
 
             Tag newTag = new Tag();
 
             //Search for tags with this given name
             Tag existingTag = null;
+
+            final String tagNameNoPersona = tagName.endsWith(":persona")
+                    ? tagName.substring(0, tagName.indexOf(":persona"))
+                    : tagName;
 
             //Before to decide if exist or not lets give it a try to the System host
             if ( searchInSystemHost ) {
@@ -101,7 +102,7 @@ public class TagAPIImpl implements TagAPI {
                 Tag hostTag = null;
                 Tag globalTag = null;
 
-                final List<Tag> existingTags = tagFactory.getTagsByName(name);
+                final List<Tag> existingTags = tagFactory.getTagsByName(tagNameNoPersona);
                 if ( existingTags != null ) {
                     for (final Tag foundTag : existingTags) {
 
@@ -133,13 +134,13 @@ public class TagAPIImpl implements TagAPI {
 
                 }
             } else {
-                existingTag = tagFactory.getTagByNameAndHost(name, siteId);
+                existingTag = tagFactory.getTagByNameAndHost(tagNameNoPersona, siteId);
             }
 
             // if doesn't exists then the tag is created
             if ( existingTag == null || !UtilMethods.isSet(existingTag.getTagId()) ) {
                 // creating tag
-                return saveTag(name, userId, siteId, persona);
+                return saveTag(tagNameNoPersona, userId, siteId, persona);
             } else {
 
                 String existHostId;
@@ -169,7 +170,7 @@ public class TagAPIImpl implements TagAPI {
                 if ( !globalTagExists ) {
                     //if global doesn't exist, then save the tag and after it checks if it was stored as a global tag
                     if ( !tagExists ) {
-                        newTag = saveTag(name, userId, siteId, persona);
+                        newTag = saveTag(tagNameNoPersona, userId, siteId, persona);
                     }
 
                     if ( newTag.getHostId().equals(Host.SYSTEM_HOST) ) {
@@ -183,26 +184,13 @@ public class TagAPIImpl implements TagAPI {
                 }
             }
 
-            //Everything ok..., committing the transaction
-            if ( localTransaction ) {
-                HibernateUtil.closeAndCommitTransaction();
-            }
-
             return newTag;
 
         } catch (final Exception e) {
             Logger.error(this, String.format("An error occurred when getting and creating Tag with name '%s' under " +
-                    "Site ID '%s': %s", name, siteId, e.getMessage()));
-            if ( localTransaction ) {
-                HibernateUtil.rollbackTransaction();
-            }
+                    "Site ID '%s': %s", tagName, siteId, e.getMessage()));
             throw e;
-        } finally {
-            if ( localTransaction ) {
-                HibernateUtil.closeSessionSilently();
-            }
         }
-
     }
 
     @CloseDBIfOpened
