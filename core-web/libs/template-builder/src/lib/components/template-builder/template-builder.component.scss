@@ -8,10 +8,38 @@
     display: flex;
     gap: $spacing-3;
     margin-bottom: $spacing-3;
+    flex: 1 0 auto;
 }
 
 // Class added by the gridstack library when the widget is being dragged
 dotcms-add-widget.ui-draggable-dragging {
     transform: rotate(-3.66deg);
     box-shadow: $md-shadow-6;
+}
+
+.header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: $color-palette-primary-300;
+    height: 5rem;
+    color: $color-palette-primary;
+    font-size: $font-size-xl;
+}
+
+.rows {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-3;
+}
+
+.header-wrapper {
+    padding-top: $spacing-3;
+    padding-bottom: $spacing-4;
+}
+
+.grid-stack {
+    flex: 0 1 auto;
+    overflow-y: auto;
+    max-height: calc(100vh - 5rem);
 }

@@ -9,6 +9,7 @@ $columns-padding: 3.2rem;
     display: grid;
     padding: 0 $columns-padding 0 $columns-padding;
     position: absolute;
+    z-index: -1;
 }
 
 .column {
