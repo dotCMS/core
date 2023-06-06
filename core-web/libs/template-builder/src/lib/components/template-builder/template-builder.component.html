@@ -17,7 +17,9 @@
     ></dotcms-add-widget>
 </div>
 <div class="grid-stack">
-    <dotcms-template-builder-row
+
+   <dotcms-template-builder-background-columns></dotcms-template-builder-background-columns>
+   <dotcms-template-builder-row
         class="grid-stack-item"
         #rowElement
         *ngFor="let row of items$ | async; trackBy: identify"

@@ -6,6 +6,12 @@ export const BOX_MARGIN = 32;
 
 export const ROW_MARGIN = 8;
 
+export const GRID_STACK_MARGIN = 0.5;
+
+export const GRID_STACK_UNIT = 'rem';
+
+export const GRID_STACK_ROW_HEIGHT = 16.5;
+
 export enum widgetType {
     ROW = 'row',
     COLUMN = 'col'
@@ -36,7 +42,7 @@ function isARowWidget(el: Element): boolean {
 export const subGridOptions: GridStackOptions = {
     cellHeight: 225 + BOX_MARGIN, // 32px more to make the padding
     column: 'auto',
-    margin: BOX_MARGIN / 2, // Spacing between columns and the edge of the grid
+    margin: `${GRID_STACK_MARGIN}${GRID_STACK_UNIT}`,
     minRow: 1,
     maxRow: 1,
     acceptWidgets: isAColumnWidget,
@@ -46,7 +52,7 @@ export const subGridOptions: GridStackOptions = {
 export const gridOptions: GridStackOptions = {
     disableResize: true,
     cellHeight: 256 + ROW_MARGIN, // 8px more so it overflows and we can see the 8px of space between rows
-    margin: ROW_MARGIN, // Spacing between rows
+    margin: `${GRID_STACK_ROW_HEIGHT}${GRID_STACK_UNIT}`,
     minRow: 1,
     acceptWidgets: isARowWidget,
     draggable: {
