@@ -8,6 +8,7 @@ import { DotMessagePipeModule } from '@dotcms/ui';
 
 import { AddWidgetComponent } from './components/add-widget/add-widget.component';
 import { RemoveConfirmDialogComponent } from './components/remove-confirm-dialog/remove-confirm-dialog.component';
+import { TemplateBuilderBackgroundColumnsComponent } from './components/template-builder-background-columns/template-builder-background-columns.component';
 import { TemplateBuilderRowComponent } from './components/template-builder-row/template-builder-row.component';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { TemplateBuilderComponent } from './template-builder.component';
@@ -25,7 +26,8 @@ export default {
                 AddWidgetComponent,
                 DotMessagePipeModule,
                 RemoveConfirmDialogComponent,
-                BrowserAnimationsModule
+                BrowserAnimationsModule,
+                TemplateBuilderBackgroundColumnsComponent
             ],
             providers: [
                 DotTemplateBuilderStore,
