@@ -1,29 +1,11 @@
 import { describe, expect, it } from '@jest/globals';
 
 import { parseFromDotObjectToGridStack } from './gridstack-utils';
+import { MINIMAL_DATA_MOCK } from './mocks';
 
 describe('parseFromDotObjectToGridStack', () => {
     it('should parse the backend object to gridStack', () => {
-        const data = {
-            rows: [
-                {
-                    columns: [
-                        {
-                            containers: [
-                                {
-                                    identifier: '//demo.dotcms.com/application/containers/banner/',
-                                    uuid: '1'
-                                }
-                            ],
-                            leftOffset: 1,
-                            width: 12,
-                            styleClass: 'banner-tall'
-                        }
-                    ],
-                    styleClass: 'p-0 banner-tall'
-                }
-            ]
-        };
+        const data = MINIMAL_DATA_MOCK;
 
         const result = parseFromDotObjectToGridStack(data);
 

@@ -1,0 +1,35 @@
+@use "variables" as *;
+
+:host {
+    display: block;
+}
+
+.add-widget {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: $spacing-1 $spacing-3;
+    gap: $spacing-3;
+    width: fit-content;
+    background: $white;
+    border: 1.5px solid $color-palette-primary-500;
+    border-radius: $border-radius-md;
+
+    &:hover {
+        box-shadow: $md-shadow-6;
+    }
+
+    .add-widget__label {
+        font-size: $font-size-md;
+        line-height: 140%;
+        color: $black;
+    }
+
+    .add-widget__icon {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-width: $spacing-4;
+        min-height: $spacing-4;
+    }
+}

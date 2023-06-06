@@ -199,13 +199,30 @@ describe('DotExperimentsConfigurationComponent', () => {
         );
     });
 
-    it('should show hide stop Experiment button if experiment status is different than running', () => {
+    it('should show Cancel Scheduling button if experiment status is Schedule and call cancel after confirmation', () => {
+        spyOn(dotExperimentsConfigurationStore, 'cancelSchedule');
+        spectator.component.vm$ = of({
+            ...defaultVmMock,
+            experimentStatus: DotExperimentStatusList.SCHEDULED
+        });
+        spectator.detectChanges();
+
+        spectator.click(byTestId('cancel-schedule-experiment-button'));
+        spectator.query(ConfirmPopup).accept();
+
+        expect(dotExperimentsConfigurationStore.cancelSchedule).toHaveBeenCalledWith(
+            EXPERIMENT_MOCK
+        );
+    });
+
+    it('should show hide stop Experiment and unscheduled button if experiment status is different than running', () => {
         spectator.component.vm$ = of({
             ...defaultVmMock,
             experimentStatus: DotExperimentStatusList.DRAFT
         });
         spectator.detectChanges();
         expect(spectator.query(byTestId('stop-experiment-button'))).not.toExist();
+        expect(spectator.query(byTestId('cancel-schedule-experiment-button'))).not.toExist();
     });
 
     it('should show Start Experiment button disabled if disabledStartExperiment true', () => {

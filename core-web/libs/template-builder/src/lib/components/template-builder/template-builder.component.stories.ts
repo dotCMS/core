@@ -1,14 +1,30 @@
 import { moduleMetadata, Story, Meta } from '@storybook/angular';
 
+import { NgFor, AsyncPipe } from '@angular/common';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { AddWidgetComponent } from './components/add-widget/add-widget.component';
+import { RemoveConfirmDialogComponent } from './components/remove-confirm-dialog/remove-confirm-dialog.component';
+import { TemplateBuilderBackgroundColumnsComponent } from './components/template-builder-background-columns/template-builder-background-columns.component';
+import { TemplateBuilderRowComponent } from './components/template-builder-row/template-builder-row.component';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { TemplateBuilderComponent } from './template-builder.component';
+import { FULL_DATA_MOCK } from './utils/mocks';
 
 export default {
-    title: 'TemplateBuilderComponent',
+    title: 'Template Builder',
     component: TemplateBuilderComponent,
     decorators: [
         moduleMetadata({
-            imports: [],
+            imports: [
+                NgFor,
+                AsyncPipe,
+                TemplateBuilderRowComponent,
+                AddWidgetComponent,
+                RemoveConfirmDialogComponent,
+                BrowserAnimationsModule,
+                TemplateBuilderBackgroundColumnsComponent
+            ],
             providers: [DotTemplateBuilderStore]
         })
     ]
@@ -18,6 +34,8 @@ const Template: Story<TemplateBuilderComponent> = (args: TemplateBuilderComponen
     props: args
 });
 
-export const Primary = Template.bind({});
+export const Base = Template.bind({});
 
-Primary.args = {};
+Base.args = {
+    templateLayout: { body: FULL_DATA_MOCK }
+};

@@ -11,6 +11,7 @@
         overflow: hidden;
         text-overflow: ellipsis;
         max-width: 0;
+        padding: 0 $spacing-2;
 
         &:last-child {
             padding-right: $spacing-2;
@@ -24,16 +25,25 @@
         padding: $spacing-3;
     }
 
-    .p-datatable .p-datatable-tbody tr.dot-pages-listing-content__row {
-        height: 47px;
-    }
-
     .dot-pages-listing-header__language-input .p-dropdown-label.p-inputtext {
         min-width: 115px;
     }
 
     .p-datatable .p-datatable-tbody tr td.dot-pages-listing__empty-content {
         text-align: center;
+    }
+
+    .p-datatable {
+        .p-datatable-wrapper {
+            height: calc(
+                100vh - 350px
+            ); // To prevent the table from resizing when the results are not enough to fill the page
+
+            transition: max-height 400ms cubic-bezier(0.86, 0, 0.07, 1);
+            -moz-transition: max-height 400ms cubic-bezier(0.86, 0, 0.07, 1);
+            -webkit-transition: max-height 400ms cubic-bezier(0.86, 0, 0.07, 1);
+            -o-transition: max-height 400ms cubic-bezier(0.86, 0, 0.07, 1);
+        }
     }
 }
 

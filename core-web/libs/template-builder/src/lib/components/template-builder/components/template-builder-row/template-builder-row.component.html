@@ -1,0 +1,25 @@
+<div class="row__drag-container">
+    <i
+        class="drag-container__drag-handler material-icons"
+        [style.font-size.px]="16"
+        data-testid="row-drag-handler"
+    >
+        drag_indicator
+    </i>
+</div>
+<div class="row__content-container">
+    <ng-content></ng-content>
+</div>
+<div class="row__actions-container">
+    <p-button
+        (onClick)="editStyleClasses.emit()"
+        data-testid="row-style-class-button"
+        styleClass="p-button-text p-button-sm p-button-rounded"
+        icon="pi pi-palette"
+    >
+    </p-button>
+    <dotcms-remove-confirm-dialog
+        (deleteConfirmed)="deleteRow.emit()"
+        data-testid="row-trash-button"
+    ></dotcms-remove-confirm-dialog>
+</div>

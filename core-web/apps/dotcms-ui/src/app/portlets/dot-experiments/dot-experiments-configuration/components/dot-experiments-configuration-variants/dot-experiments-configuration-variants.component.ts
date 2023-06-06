@@ -24,7 +24,7 @@ import {
     DEFAULT_VARIANT_NAME,
     DotPageMode,
     ExperimentSteps,
-    MAX_INPUT_LENGTH,
+    MAX_INPUT_TITLE_LENGTH,
     MAX_VARIANTS_ALLOWED,
     SIDEBAR_STATUS,
     StepStatus,
@@ -73,17 +73,14 @@ export class DotExperimentsConfigurationVariantsComponent {
     }> = this.dotExperimentsConfigurationStore.variantsStepVm$.pipe(
         tap(({ status }) => this.handleSidebar(status))
     );
-
-    protected readonly maxNameLength = MAX_INPUT_LENGTH;
     statusList = ComponentStatus;
     sidebarStatusList = SIDEBAR_STATUS;
     maxVariantsAllowed = MAX_VARIANTS_ALLOWED;
     defaultVariantName = DEFAULT_VARIANT_NAME;
     experimentStepName = ExperimentSteps.VARIANTS;
     dotPageMode = DotPageMode;
-
     @ViewChild(DotDynamicDirective, { static: true }) sidebarHost!: DotDynamicDirective;
-
+    protected readonly maxNameLength = MAX_INPUT_TITLE_LENGTH;
     private componentRef: ComponentRef<DotExperimentsConfigurationVariantsAddComponent>;
 
     constructor(

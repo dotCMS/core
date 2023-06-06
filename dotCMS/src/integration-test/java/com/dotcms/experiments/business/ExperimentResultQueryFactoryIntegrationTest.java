@@ -19,15 +19,13 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
-import graphql.AssertException;
-import org.jetbrains.annotations.NotNull;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
  * Test of {@link ExperimentResultQueryFactory}
  */
-public class ExperimentResultQueryFactoryIT {
+public class ExperimentResultQueryFactoryIntegrationTest {
 
     @BeforeClass
     public static void prepare() throws Exception {

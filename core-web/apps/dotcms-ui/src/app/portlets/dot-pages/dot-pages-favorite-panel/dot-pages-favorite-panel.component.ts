@@ -65,6 +65,17 @@ export class DotPagesFavoritePanelComponent {
     }
 
     /**
+     * Event to collapse or not Favorite Page panel
+     *
+     * @param {Event} event
+     * @memberof DotPagesComponent
+     */
+    toggleFavoritePagesPanel($event: Event): void {
+        this.store.setLocalStorageFavoritePanelCollapsedParams($event['collapsed']);
+        this.store.setFavoritePages({ collapsed: $event['collapsed'] as boolean });
+    }
+
+    /**
      * Event that opens dialog to edit/delete Favorite Page
      *
      * @param {DotCMSContentlet} favoritePage

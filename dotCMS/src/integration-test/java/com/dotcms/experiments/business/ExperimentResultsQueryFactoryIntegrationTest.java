@@ -25,7 +25,7 @@ import org.junit.Test;
 /**
  * Test of {@link ExperimentResultsQueryFactory}
  */
-public class ExperimentResultsQueryFactoryIT {
+public class ExperimentResultsQueryFactoryIntegrationTest {
 
     @BeforeClass
     public static void prepare() throws Exception {

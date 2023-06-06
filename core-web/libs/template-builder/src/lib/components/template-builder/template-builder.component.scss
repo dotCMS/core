@@ -1,11 +1,9 @@
+@use "variables" as *;
+
 :host {
     // Added this temporaly to test the col with 12 width on the grid
     width: calc(100% - 80px);
     display: block;
-}
-
-.grid-stack-item {
-    border: solid 1px black;
 }
 
 .grid-stack-item.sub .grid-stack-item-content {
@@ -21,14 +19,13 @@
 }
 
 .tools {
-    display: grid;
-    grid-template-columns: repeat(2, auto);
-
-    .add {
-        width: 100px;
-    }
+    display: flex;
+    gap: $spacing-3;
+    margin-bottom: $spacing-3;
 }
 
-.grid-stack-item {
-    border: solid 1px black;
+// Class added by the gridstack library when the widget is being dragged
+dotcms-add-widget.ui-draggable-dragging {
+    transform: rotate(-3.66deg);
+    box-shadow: $md-shadow-6;
 }

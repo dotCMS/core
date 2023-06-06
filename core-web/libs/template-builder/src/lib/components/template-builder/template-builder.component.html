@@ -1,21 +1,22 @@
 <div class="tools">
-    <div class="grid-stack-item add" data-widget-type="row" gs-w="12" gs-h="1">
-        <div class="grid-stack-item-content">
-            <div>
-                <span>ROW</span>
-            </div>
-        </div>
-    </div>
-    <div class="grid-stack-item add" data-widget-type="col" gs-w="1" gs-h="1">
-        <div class="grid-stack-item-content">
-            <div>
-                <span>COL</span>
-            </div>
-        </div>
-    </div>
+    <dotcms-add-widget
+        [label]="'Add Row'"
+        [icon]="rowIcon"
+        data-widget-type="row"
+        gs-w="12"
+        gs-h="1"
+    ></dotcms-add-widget>
+    <dotcms-add-widget
+        [label]="'Add Box'"
+        [icon]="colIcon"
+        data-widget-type="col"
+        gs-w="1"
+        gs-h="1"
+    ></dotcms-add-widget>
 </div>
 <div class="grid-stack">
-    <div
+    <dotcms-template-builder-background-columns></dotcms-template-builder-background-columns>
+    <dotcms-template-builder-row
         class="grid-stack-item"
         #rows
         *ngFor="let row of items$ | async; trackBy: identify"
@@ -24,8 +25,9 @@
         [attr.gs-y]="row.y"
         [attr.gs-w]="row.w"
         [attr.gs-h]="row.h"
+        [ngStyle]="{ height: rowDisplayHeight }"
+        (deleteRow)="deleteRow(row.id)"
     >
-        id: {{ row.id }} - y: {{ row.y }} - styleClass: {{ row.styleClass?.join(' ') }}
         <div class="grid-stack-item-content grid-stack">
             <div
                 class="grid-stack-item sub"
@@ -46,5 +48,5 @@
                 </div>
             </div>
         </div>
-    </div>
+    </dotcms-template-builder-row>
 </div>

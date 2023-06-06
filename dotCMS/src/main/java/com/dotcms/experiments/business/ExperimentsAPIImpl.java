@@ -73,7 +73,9 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
+import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.factories.MultiTreeAPI;
+import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
@@ -223,10 +225,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     private void addConditionIfIsNeed(final Goals goals, final HTMLPageAsset page,
             final Builder builder) {
 
-        if (goals.primary().getMetric().type() == MetricType.REACH_PAGE &&
-                !hasCondition(goals, "referer")) {
-            addRefererCondition(page, builder, goals);
-        } else if (goals.primary().getMetric().type() == MetricType.BOUNCE_RATE &&
+        if (goals.primary().getMetric().type() == MetricType.BOUNCE_RATE &&
                 !hasCondition(goals, "url")) {
             addUrlCondition(page, builder, goals);
         }
@@ -507,6 +506,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             final Experiment experimentToSave = persistedExperiment.withScheduling(scheduling).withStatus(RUNNING);
             validateNoConflictsWithScheduledExperiments(experimentToSave, user);
             toReturn = save(experimentToSave, user);
+            publishExperimentPage(toReturn, user);
             publishContentOnExperimentVariants(user, toReturn);
             cacheRunningExperiments();
         } else {
@@ -517,6 +517,30 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         }
 
         return toReturn;
+    }
+
+    private void publishExperimentPage(final Experiment experiment, final User user)
+            throws DotDataException, DotSecurityException {
+        final HTMLPageAsset htmlPageAsset = APILocator.getHTMLPageAssetAPI().fromContentlet(contentletAPI
+                .findContentletByIdentifierAnyLanguage(experiment.pageId(), false));
+
+        if(htmlPageAsset.isLive()) {
+            return;
+        }
+
+        final List relatedNotPublished = PublishFactory.getUnpublishedRelatedAssetsForPage(htmlPageAsset, new ArrayList(),
+                true, user, false);
+        relatedNotPublished.stream().filter(asset -> asset instanceof Contentlet).forEach(
+                asset -> Contentlet.class.cast(asset)
+                        .setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE));
+        //Publish the page and the related content
+        htmlPageAsset.setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE);
+        try {
+            PublishFactory.publishHTMLPage(htmlPageAsset, relatedNotPublished, user,
+                    false);
+        } catch(WebAssetException e) {
+            throw new DotDataException(e);
+        }
     }
 
     private static boolean emptyScheduling(Experiment persistedExperiment) {
@@ -567,6 +591,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
         Experiment running = save(persistedExperiment.withStatus(RUNNING), user);
         cacheRunningExperiments();
+        publishExperimentPage(running, user);
         publishContentOnExperimentVariants(user, running);
 
         return running;
@@ -605,11 +630,8 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 "You don't have permission to archive the Experiment. "
                         + "Experiment Id: " + persistedExperimentOpt.get().id());
 
-        DotPreconditions.isTrue(experimentFromFactory.status()==Status.RUNNING,()->
+        DotPreconditions.isTrue(experimentFromFactory.status()==Status.RUNNING, ()->
                         "Only RUNNING experiments can be ended", DotStateException.class);
-
-        DotPreconditions.isTrue(experimentFromFactory.status()!= ENDED,
-                ()-> "Cannot end an already ended Experiment.", DotStateException.class);
 
         DotPreconditions.isTrue(persistedExperimentOpt.get().scheduling().isPresent(),
                 ()-> "Scheduling not valid.", DotStateException.class);
@@ -931,7 +953,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final String goal = StringUtils.defaultIfBlank(goalName, PRIMARY_GOAL);
         final BayesianInput bayesianInput = BayesianHelper.get().toBayesianInput(experimentResults, goal);
 
-        return variantsNumber == 2 ? bayesianAPI.calcProbBOverA(bayesianInput) : bayesianAPI.calcProbABC(bayesianInput);
+        return bayesianAPI.doBayesian(bayesianInput);
     }
 
     @Override
@@ -1042,6 +1064,30 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         }
 
         return withUpdatedVariants;
+    }
+
+    @Override
+    public Experiment cancel(String experimentId, User user)
+            throws DotDataException, DotSecurityException {
+        DotPreconditions.checkArgument(UtilMethods.isSet(experimentId), "experiment Id must be provided.");
+
+        final Optional<Experiment> persistedExperimentOpt =  find(experimentId, user);
+
+        DotPreconditions.isTrue(persistedExperimentOpt.isPresent(),()-> "Experiment with provided id not found",
+                DoesNotExistException.class);
+
+        final Experiment experimentFromFactory = persistedExperimentOpt.get();
+        validatePermissions(user, experimentFromFactory,
+                "You don't have permission to cancel the Experiment. "
+                        + "Experiment Id: " + persistedExperimentOpt.get().id());
+
+        DotPreconditions.isTrue(experimentFromFactory.status()== SCHEDULED, ()->
+                "Only SCHEDULED experiments can be canceled", DotStateException.class);
+
+        DotPreconditions.isTrue(persistedExperimentOpt.get().scheduling().isPresent(),
+                ()-> "Scheduling not valid.", DotStateException.class);
+
+        return save(experimentFromFactory.withStatus(DRAFT), user);
     }
 
     @Override

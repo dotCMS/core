@@ -1,6 +1,11 @@
 import { Component, Prop, h, Host, Event, EventEmitter, State } from '@stencil/core';
 import '@material/mwc-circular-progress';
 
+type HtmlIframeDoc = {
+    doc: Document;
+    iframe: HTMLIFrameElement;
+};
+
 @Component({
     tag: 'dot-html-to-image',
     styleUrl: 'dot-html-to-image.scss',
@@ -21,8 +26,6 @@ export class DotHtmlToImage {
         error?: string;
     }>;
     @State() previewImg: string;
-    @State() iframe: HTMLIFrameElement;
-    @State() doc: Document;
 
     boundOnMessageHandler = null;
     iframeId = `iframe_${Math.floor(Date.now() / 1000).toString()}`;
@@ -53,24 +56,23 @@ export class DotHtmlToImage {
     ;`;
 
     componentDidLoad() {
+        const { doc } = this.getIframeDocument();
         try {
-            this.doc.open();
-            this.doc.write(this.value);
-            this.doc.close();
+            doc.open();
+            doc.write(this.value);
+            doc.close();
         } catch (error) {
             this.pageThumbnail.emit({ file: null, error });
         }
     }
 
     private onLoad() {
+        const { doc, iframe } = this.getIframeDocument();
         try {
-            this.iframe = document.querySelector(`#${this.iframeId}`) as HTMLIFrameElement;
-            this.doc = this.iframe.contentDocument || this.iframe.contentWindow.document;
-
             const scriptLib = document.createElement('script') as HTMLScriptElement;
             scriptLib.src = '/html/js/html2canvas/html2canvas.min.js';
             scriptLib.type = 'text/javascript';
-            this.doc.body.appendChild(scriptLib);
+            doc.body.appendChild(scriptLib);
 
             scriptLib.onload = () => {
                 const script: HTMLScriptElement = document.createElement('script');
@@ -81,14 +83,21 @@ export class DotHtmlToImage {
                           .replace(/IMG_WIDTH/g, this.width)
                     : this.loadScript;
 
-                this.doc.body.appendChild(script);
+                doc.body.appendChild(script);
 
-                this.boundOnMessageHandler = this.onMessageHandler.bind(null, this.iframe, this);
+                this.boundOnMessageHandler = this.onMessageHandler.bind(null, iframe, this);
                 window.addEventListener('message', this.boundOnMessageHandler);
             };
         } catch (error) {
             this.pageThumbnail.emit({ file: null, error });
         }
+    }
+
+    private getIframeDocument(): HtmlIframeDoc {
+        const iframe: HTMLIFrameElement = document.querySelector(`#${this.iframeId}`);
+        const doc = iframe.contentDocument || iframe.contentWindow.document;
+
+        return { doc, iframe };
     }
 
     render() {

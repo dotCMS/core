@@ -6,23 +6,20 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.immutables.value.Value;
 
 /**
- * Variant successes and failures pair.
+ * Credibility interval class
  *
  * @author vico
  */
 @Value.Style(typeImmutable="*", typeAbstract="Abstract*")
 @Value.Immutable
-@JsonDeserialize(as = VariantInputPair.class)
+@JsonDeserialize(as = CredibilityInterval.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public interface AbstractVariantInputPair {
+public interface AbstractCredibilityInterval {
 
-    @JsonProperty("variant")
-    String variant();
+    @JsonProperty("lower")
+    double lower();
 
-    @JsonProperty("successes")
-    long successes();
-
-    @JsonProperty("failures")
-    long failures();
+    @JsonProperty("upper")
+    double upper();
 
 }

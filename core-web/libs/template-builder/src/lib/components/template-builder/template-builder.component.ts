@@ -21,9 +21,15 @@ import {
 
 import { DotLayout } from '@dotcms/dotcms-models';
 
+import { colIcon, rowIcon } from './assets/icons';
 import { DotGridStackWidget } from './models/models';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
-import { gridOptions, subGridOptions } from './utils/gridstack-options';
+import {
+    GRID_STACK_ROW_HEIGHT,
+    GRID_STACK_UNIT,
+    gridOptions,
+    subGridOptions
+} from './utils/gridstack-options';
 import { parseFromDotObjectToGridStack } from './utils/gridstack-utils';
 
 @Component({
@@ -50,6 +56,10 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
 
     grid!: GridStack;
 
+    public readonly rowIcon = rowIcon;
+    public readonly colIcon = colIcon;
+    public readonly rowDisplayHeight = `${GRID_STACK_ROW_HEIGHT - 1}${GRID_STACK_UNIT}`; // setting a lower height to have space between rows
+
     constructor(private store: DotTemplateBuilderStore) {
         this.items$ = this.store.items$;
     }
@@ -63,7 +73,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
             this.store.moveRow(nodes as DotGridStackWidget[]);
         });
 
-        GridStack.setupDragIn('.add', {
+        GridStack.setupDragIn('dotcms-add-widget', {
             appendTo: 'body',
             helper: 'clone'
         });
@@ -141,5 +151,9 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
 
     identify(_: number, w: GridStackWidget) {
         return w.id;
+    }
+
+    deleteRow(id: string): void {
+        this.store.removeRow(id);
     }
 }

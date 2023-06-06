@@ -629,6 +629,8 @@ public class ContentletAjax {
 		            break;
 		        }
 		    }
+
+			luceneQuery.append("+" + ESMappingConstants.SYSTEM_TYPE + ":false ");
             luceneQuery.append("-contentType:forms ");
             luceneQuery.append("-contentType:Host ");
 		}
