@@ -631,7 +631,10 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             catchError((error: HttpErrorResponse) => {
                 console.warn(error);
 
-                return of(null);
+                return of({
+                    actions: [],
+                    page: item
+                });
             })
         );
     };
