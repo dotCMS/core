@@ -209,14 +209,6 @@ describe('DotPageStore', () => {
         });
     });
 
-    it('should limit Favorite Pages', () => {
-        spyOn(dotPageStore, 'setFavoritePages').and.callThrough();
-        dotPageStore.limitFavoritePages(5);
-        expect(dotPageStore.setFavoritePages).toHaveBeenCalledWith({
-            items: favoritePagesInitialTestData.slice(0, 5)
-        });
-    });
-
     // Selectors
     it('should get language options for dropdown', () => {
         dotPageStore.languageOptions$.subscribe((data) => {
@@ -339,6 +331,19 @@ describe('DotPageStore', () => {
         );
     });
 
+    it('should have favorites collapsed state setted when requesting favorite pages', () => {
+        dotPageStore.getFavoritePages(5); // Here it sets the favorite state again
+
+        // Should retrieve the value from local storage when setting the state
+        expect(dotLocalstorageService.getItem).toHaveBeenCalledWith(
+            LOCAL_STORAGE_FAVORITES_PANEL_KEY
+        );
+
+        dotPageStore.state$.subscribe((data) => {
+            expect(data.favoritePages.collapsed).toEqual(true);
+        });
+    });
+
     it('should update Pages Status', () => {
         dotPageStore.setPagesStatus(ComponentStatus.LOADING);
         dotPageStore.state$.subscribe((data) => {
@@ -399,7 +404,7 @@ describe('DotPageStore', () => {
             expect(data.favoritePages.items).toEqual(expectedInputArray);
             expect(data.favoritePages.showLoadMoreButton).toEqual(true);
             expect(data.favoritePages.total).toEqual(expectedInputArray.length);
-            expect(data.favoritePages.collapsed).toEqual(undefined);
+            expect(data.favoritePages.collapsed).toEqual(true);
         });
         expect(dotFavoritePageService.get).toHaveBeenCalledTimes(1);
     });
