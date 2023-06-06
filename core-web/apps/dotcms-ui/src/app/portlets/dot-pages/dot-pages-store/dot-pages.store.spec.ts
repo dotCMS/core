@@ -101,7 +101,7 @@ export class DialogServiceMock {
     }
 }
 
-fdescribe('DotPageStore', () => {
+describe('DotPageStore', () => {
     let dotPageStore: DotPageStore;
     let dialogService: DialogService;
     let dotESContentService: DotESContentService;
