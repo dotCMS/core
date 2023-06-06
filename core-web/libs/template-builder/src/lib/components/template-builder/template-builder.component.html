@@ -27,6 +27,7 @@
         [attr.gs-w]="row.w"
         [attr.gs-h]="row.h"
         data-testId="row"
+        (deleteRow)="deleteRow(row.id)"
     >
         <div class="grid-stack-item-content grid-stack">
             <dotcms-template-builder-box

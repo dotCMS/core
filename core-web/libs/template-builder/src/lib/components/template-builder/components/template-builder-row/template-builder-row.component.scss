@@ -39,11 +39,3 @@
 .row__content-container {
     flex-grow: 1;
 }
-
-.row__actions-container {
-    p-button ::ng-deep {
-        .pi-trash {
-            color: $color-palette-primary-400;
-        }
-    }
-}

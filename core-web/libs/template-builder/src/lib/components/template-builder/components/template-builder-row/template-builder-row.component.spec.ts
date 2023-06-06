@@ -56,25 +56,11 @@ describe('TemplateBuilderRowComponent', () => {
             fixture.debugElement.query(By.css('p-button[data-testid="row-style-class-button"]'))
         ).toBeTruthy();
     });
-    it('should have a trash button', () => {
-        expect(
-            fixture.debugElement.query(By.css('p-button[data-testid="row-trash-button"]'))
-        ).toBeTruthy();
-    });
+
     it('should render child', () => {
         expect(fixture.debugElement.query(By.css('p'))).toBeTruthy();
     });
 
-    it('should trigger deleteRow when clicking on delete button', () => {
-        jest.spyOn(fixture.componentInstance, 'deleteRow');
-        const button = fixture.debugElement.query(
-            By.css('p-button[data-testid="row-trash-button"]')
-        );
-
-        button.nativeElement.dispatchEvent(new Event('onClick'));
-
-        expect(fixture.componentInstance.deleteRow).toHaveBeenCalled();
-    });
     it('should trigger editRowStyleClass when clicking on editStyleClass button', () => {
         jest.spyOn(fixture.componentInstance, 'editRowStyleClass');
         const button = fixture.debugElement.query(
@@ -84,5 +70,11 @@ describe('TemplateBuilderRowComponent', () => {
         button.nativeElement.dispatchEvent(new Event('onClick'));
 
         expect(fixture.componentInstance.editRowStyleClass).toHaveBeenCalled();
+    });
+
+    it('should have a remove item button', () => {
+        expect(
+            fixture.debugElement.query(By.css('p-button[data-testid="btn-remove-item"]'))
+        ).toBeTruthy();
     });
 });

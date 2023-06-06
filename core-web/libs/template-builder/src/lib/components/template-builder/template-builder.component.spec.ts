@@ -41,12 +41,15 @@ describe('TemplateBuilderComponent', () => {
     it('should have a Add Row Button', () => {
         expect(spectator.query(byTestId('add-row'))).toBeTruthy();
     });
+
     it('should have a Add Box Button', () => {
         expect(spectator.query(byTestId('add-box'))).toBeTruthy();
     });
+
     it('should have the same quantity of rows as mocked data', () => {
         expect(spectator.queryAll(byTestId('row')).length).toBe(FULL_DATA_MOCK.rows.length);
     });
+
     it('should have the same quantity of boxes as mocked data', () => {
         const totalBoxes = FULL_DATA_MOCK.rows.reduce((acc, row) => {
             return acc + row.columns.length;
@@ -63,5 +66,11 @@ describe('TemplateBuilderComponent', () => {
         spectator.dispatchFakeEvent(deleteColumnButton, 'onClick');
 
         expect(mockRemoveColumn).toHaveBeenCalled();
+    });
+
+    it('should call deleteRow', () => {
+        const deleteRowMock = jest.spyOn(spectator.component, 'deleteRow');
+        spectator.component.deleteRow('123');
+        expect(deleteRowMock).toHaveBeenCalledWith('123');
     });
 });

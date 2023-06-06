@@ -164,6 +164,10 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
         // So we need to delete the node from the GridStack Model
         this.grid.engine.nodes.find((node) => node.id === rowID).subGrid?.removeWidget(element);
 
-        this.store.removeColumn({ ...column, parentId: rowID as string });
+        this.store.removeColumn({ ...column, parentId: rowID as string 
+    });
+
+    deleteRow(id: string): void {
+        this.store.removeRow(id);
     }
 }
