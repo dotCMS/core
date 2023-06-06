@@ -15,7 +15,8 @@
     ></dotcms-add-widget>
 </div>
 <div class="grid-stack">
-    <div
+    <dotcms-template-builder-background-columns></dotcms-template-builder-background-columns>
+    <dotcms-template-builder-row
         class="grid-stack-item"
         #rows
         *ngFor="let row of items$ | async; trackBy: identify"
@@ -24,28 +25,28 @@
         [attr.gs-y]="row.y"
         [attr.gs-w]="row.w"
         [attr.gs-h]="row.h"
+        [ngStyle]="{ height: rowDisplayHeight }"
+        (deleteRow)="deleteRow(row.id)"
     >
-        <dotcms-template-builder-row>
-            <div class="grid-stack-item-content grid-stack">
-                <div
-                    class="grid-stack-item sub"
-                    #boxes
-                    *ngFor="let box of row.subGridOpts?.children; trackBy: identify"
-                    [attr.gs-id]="box.id"
-                    [attr.gs-auto]="true"
-                    [attr.gs-x]="box.x"
-                    [attr.gs-y]="box.y"
-                    [attr.gs-w]="box.w"
-                    [attr.gs-h]="box.h"
-                >
-                    <div class="grid-stack-item-content">
-                        styleClass: {{ box.styleClass?.join(' ') }}
-                        <p *ngFor="let container of box.containers">
-                            identifier: {{ container.identifier }}
-                        </p>
-                    </div>
+        <div class="grid-stack-item-content grid-stack">
+            <div
+                class="grid-stack-item sub"
+                #boxes
+                *ngFor="let box of row.subGridOpts?.children; trackBy: identify"
+                [attr.gs-id]="box.id"
+                [attr.gs-auto]="true"
+                [attr.gs-x]="box.x"
+                [attr.gs-y]="box.y"
+                [attr.gs-w]="box.w"
+                [attr.gs-h]="box.h"
+            >
+                <div class="grid-stack-item-content">
+                    styleClass: {{ box.styleClass?.join(' ') }}
+                    <p *ngFor="let container of box.containers">
+                        identifier: {{ container.identifier }}
+                    </p>
                 </div>
             </div>
-        </dotcms-template-builder-row>
-    </div>
+        </div>
+    </dotcms-template-builder-row>
 </div>

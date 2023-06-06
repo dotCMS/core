@@ -72,6 +72,7 @@ export class DotPagesFavoritePanelComponent {
      */
     toggleFavoritePagesPanel($event: Event): void {
         this.store.setLocalStorageFavoritePanelCollapsedParams($event['collapsed']);
+        this.store.setFavoritePages({ collapsed: $event['collapsed'] as boolean });
     }
 
     /**

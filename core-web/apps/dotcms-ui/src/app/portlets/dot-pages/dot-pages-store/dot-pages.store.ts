@@ -60,14 +60,27 @@ import { generateDotFavoritePageUrl } from '@dotcms/utils';
 
 import { DotFavoritePageComponent } from '../../dot-edit-page/components/dot-favorite-page/dot-favorite-page.component';
 import { DotPagesCreatePageDialogComponent } from '../dot-pages-create-page-dialog/dot-pages-create-page-dialog.component';
+export interface DotPagesInfo {
+    actionMenuDomId?: string;
+    addToBundleCTId?: string;
+    archived?: boolean;
+    items: DotCMSContentlet[];
+    keyword?: string;
+    languageId?: string;
+    menuActions?: MenuItem[];
+    status?: ComponentStatus;
+    total?: number;
+}
+
+export interface DotFavoritePagesInfo {
+    collapsed?: boolean;
+    items: DotCMSContentlet[];
+    showLoadMoreButton: boolean;
+    total: number;
+}
 
 export interface DotPagesState {
-    favoritePages: {
-        collapsed?: boolean;
-        items: DotCMSContentlet[];
-        showLoadMoreButton: boolean;
-        total: number;
-    };
+    favoritePages: DotFavoritePagesInfo;
     environments: boolean;
     isEnterprise: boolean;
     languages: DotLanguage[];
@@ -76,16 +89,7 @@ export interface DotPagesState {
         canWrite: { contentlets: boolean; htmlPages: boolean };
         id: string;
     };
-    pages?: {
-        actionMenuDomId?: string;
-        addToBundleCTId?: string;
-        archived?: boolean;
-        items: DotCMSContentlet[];
-        keyword?: string;
-        languageId?: string;
-        menuActions?: MenuItem[];
-        status: ComponentStatus;
-    };
+    pages?: DotPagesInfo;
     pageTypes?: DotCMSContentType[];
     portletStatus: ComponentStatus;
 }
@@ -185,26 +189,26 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
 
     readonly pageTypes$ = this.select(({ pageTypes }) => pageTypes);
 
-    readonly setFavoritePages = this.updater<DotCMSContentlet[]>(
-        (state: DotPagesState, favoritePages: DotCMSContentlet[]) => {
+    readonly setFavoritePages = this.updater<Partial<DotFavoritePagesInfo>>(
+        (state: DotPagesState, favoritePages: DotFavoritePagesInfo) => {
             return {
                 ...state,
                 favoritePages: {
                     ...state.favoritePages,
-                    items: [...favoritePages]
+                    ...favoritePages
                 }
             };
         }
     );
 
-    readonly setPages = this.updater<DotCMSContentlet[]>(
-        (state: DotPagesState, pages: DotCMSContentlet[]) => {
+    readonly setPages = this.updater<Partial<DotPagesInfo>>(
+        (state: DotPagesState, pagesInfo: DotPagesInfo) => {
             return {
                 ...state,
                 pages: {
                     ...state.pages,
-                    items: [...pages],
-                    status: ComponentStatus.LOADED
+                    status: ComponentStatus.LOADED,
+                    ...pagesInfo
                 }
             };
         }
@@ -416,7 +420,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                                                 }
                                             );
 
-                                            this.setFavoritePages(pagesData);
+                                            this.setFavoritePages({ items: pagesData });
                                         } else {
                                             let pagesData = this.get().pages.items;
 
@@ -436,7 +440,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                                                 });
                                             }
 
-                                            this.setPages(pagesData);
+                                            this.setPages({ items: pagesData });
                                         }
                                     }
                                 },
@@ -467,13 +471,10 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                     return this.getPagesData(offset, sortOrderValue, sortField).pipe(
                         tapResponse(
                             (items) => {
-                                const currentPages = Array.from({ length: items.resultsSize });
-
-                                Array.prototype.splice.apply(currentPages, [
-                                    ...[offset, 40],
-                                    ...items.jsonObjectView.contentlets
-                                ]);
-                                this.setPages(currentPages as DotCMSContentlet[]);
+                                this.setPages({
+                                    items: items.jsonObjectView.contentlets as DotCMSContentlet[],
+                                    total: items.resultsSize
+                                });
                             },
                             (error: HttpErrorResponse) => {
                                 this.setPagesStatus(ComponentStatus.LOADED);
@@ -1011,7 +1012,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
      */
     limitFavoritePages(limit: number): void {
         const favoritePages = this.get().favoritePages.items;
-        this.setFavoritePages(favoritePages.slice(0, limit));
+        this.setFavoritePages({ items: favoritePages.slice(0, limit) });
     }
 
     /**

@@ -6,11 +6,10 @@
             'dot-pages-panel__empty-state': vm.favoritePages?.items?.length === 0
         }"
         [toggleable]="true"
-        [header]="'favoritePage.panel.header' | dm"
         [collapsed]="vm.isFavoritePanelCollaped"
         (onAfterToggle)="toggleFavoritePagesPanel($event)"
         toggler="header"
-        iconPos="start"
+        iconPos="end"
         expandIcon="pi pi-angle-down"
         collapseIcon="pi pi-angle-up"
     >
@@ -33,6 +32,12 @@
                 type="button"
                 data-testid="seeAllBtn"
             ></button>
+        </ng-template>
+        <ng-template pTemplate="header">
+            <span class="dot-pages-panel__header">
+                <i class="pi pi-star-fill" data-testId="bookmarksIcon"></i>
+                <span>{{ 'favoritePage.panel.header' | dm }}</span>
+            </span>
         </ng-template>
 
         <ng-template [ngIf]="vm.favoritePages?.items?.length !== 0" [ngIfElse]="emptyState">

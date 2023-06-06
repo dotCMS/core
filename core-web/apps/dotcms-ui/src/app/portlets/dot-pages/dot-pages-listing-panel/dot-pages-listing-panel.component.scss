@@ -32,6 +32,19 @@
     .p-datatable .p-datatable-tbody tr td.dot-pages-listing__empty-content {
         text-align: center;
     }
+
+    .p-datatable {
+        .p-datatable-wrapper {
+            height: calc(
+                100vh - 350px
+            ); // To prevent the table from resizing when the results are not enough to fill the page
+
+            transition: max-height 400ms cubic-bezier(0.86, 0, 0.07, 1);
+            -moz-transition: max-height 400ms cubic-bezier(0.86, 0, 0.07, 1);
+            -webkit-transition: max-height 400ms cubic-bezier(0.86, 0, 0.07, 1);
+            -o-transition: max-height 400ms cubic-bezier(0.86, 0, 0.07, 1);
+        }
+    }
 }
 
 .dot-pages-listing-header__inputs {

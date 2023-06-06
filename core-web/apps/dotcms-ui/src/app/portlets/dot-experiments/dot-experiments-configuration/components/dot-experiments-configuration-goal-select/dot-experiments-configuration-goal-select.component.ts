@@ -27,7 +27,7 @@ import {
     GOAL_TYPES,
     Goals,
     GOALS_METADATA_MAP,
-    MAX_INPUT_LENGTH,
+    MAX_INPUT_DESCRIPTIVE_LENGTH,
     StepStatus
 } from '@dotcms/dotcms-models';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
@@ -76,7 +76,7 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
     statusList = ComponentStatus;
     vm$: Observable<{ experimentId: string; goals: Goals; status: StepStatus }> =
         this.dotExperimentsConfigurationStore.goalsStepVm$;
-    protected readonly maxNameLength = MAX_INPUT_LENGTH;
+    protected readonly maxNameLength = MAX_INPUT_DESCRIPTIVE_LENGTH;
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private BOUNCE_RATE_LABEL = this.dotMessageService.get(
         'experiments.goal.conditions.minimize.bounce.rate'

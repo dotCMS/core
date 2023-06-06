@@ -214,11 +214,11 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
         expect(store.setSelectedGoal).toHaveBeenCalledWith(expectedGoal);
     });
 
-    it('should disable submit button if the input name of the goal has more than MAX_INPUT_LENGTH constant', () => {
+    it('should disable submit button if the input name of the goal has more than MAX_INPUT_DESCRIPTIVE_LENGTH constant', () => {
         const invalidFormValues = {
             primary: {
                 ...DefaultGoalConfiguration.primary,
-                name: 'Really really really really really long name for a goal',
+                name: 'Really really really really really Really really really really really Really really Really really really really really Really really really really really Really really Really really really really really Really really really really really Really really Really really really really really Really really really really really Really really Really really really really really Really really really really really Really really Really really really really really Really really really really really Really really really really really long name for a goal',
                 type: GOAL_TYPES.BOUNCE_RATE
             }
         };
