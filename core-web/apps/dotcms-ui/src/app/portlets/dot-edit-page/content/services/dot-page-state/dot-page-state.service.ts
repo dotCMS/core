@@ -265,57 +265,16 @@ export class DotPageStateService {
                         });
 
                         return forkJoin([
-                            this.dotFavoritePageService
-                                .get({
-                                    limit: 10,
-                                    userId: user.userId,
-                                    url: urlParam
-                                })
-                                .pipe(
-                                    catchError((error: HttpErrorResponse) => {
-                                        // Set message to throw a custom Favorite Page error message
-                                        error.error.message = this.dotMessageService.get(
-                                            'favoritePage.error.fetching.data'
-                                        );
-
-                                        this.dotHttpErrorManagerService.handle(error, true);
-
-                                        return null;
-                                    })
-                                ),
-                            this.dotExperimentsService
-                                .getByStatus(page.page.identifier, DotExperimentStatusList.RUNNING)
-                                .pipe(
-                                    catchError((error: HttpErrorResponse) => {
-                                        // Set message to throw a custom Favorite Page error message
-                                        error.error.message = this.dotMessageService.get(
-                                            'experiments.error.fetching.data'
-                                        );
-
-                                        this.dotHttpErrorManagerService.handle(error, true);
-
-                                        return null;
-                                    })
-                                )
+                            this.getFavoritePage(user, urlParam),
+                            this.getRunningExperiment(page.page.identifier)
                         ]).pipe(
                             take(1),
                             switchMap(
-                                ([content, runningExperiments]: [
-                                    content: ESContent,
-                                    runningExperiments: DotExperiment[]
+                                ([favoritePage, experiment]: [
+                                    favoritePage: DotCMSContentlet,
+                                    experiment: DotExperiment
                                 ]) => {
-                                    const favoritePage = content?.jsonObjectView?.contentlets[0];
-
-                                    const experimentRunning =
-                                        runningExperiments && runningExperiments.length > 0
-                                            ? runningExperiments[0]
-                                            : null;
-
-                                    return this.setLocalPageState(
-                                        page,
-                                        favoritePage,
-                                        experimentRunning
-                                    );
+                                    return this.setLocalPageState(page, favoritePage, experiment);
                                 }
                             )
                         );
@@ -402,5 +361,46 @@ export class DotPageStateService {
 
     private setState(state: DotPageRenderState): void {
         this.state$.next(state);
+    }
+
+    private getFavoritePage(user: CurrentUser, urlParam: string): Observable<DotCMSContentlet> {
+        return this.dotFavoritePageService
+            .get({
+                limit: 10,
+                userId: user.userId,
+                url: urlParam
+            })
+            .pipe(
+                take(1),
+                catchError((error: HttpErrorResponse) => {
+                    // Set message to throw a custom Favorite Page error message
+                    error.error.message = this.dotMessageService.get(
+                        'favoritePage.error.fetching.data'
+                    );
+
+                    this.dotHttpErrorManagerService.handle(error, true);
+
+                    return null;
+                }),
+                switchMap((content: ESContent) => {
+                    return of(content?.jsonObjectView?.contentlets[0]);
+                })
+            );
+    }
+
+    private getRunningExperiment(pageId: string): Observable<DotExperiment> {
+        return this.dotExperimentsService.getByStatus(pageId, DotExperimentStatusList.RUNNING).pipe(
+            take(1),
+            catchError((error: HttpErrorResponse) => {
+                error.error.message = this.dotMessageService.get('experiments.error.fetching.data');
+
+                this.dotHttpErrorManagerService.handle(error, true);
+
+                return null;
+            }),
+            switchMap((experiments: DotExperiment[]) => {
+                return of(experiments && experiments.length > 0 ? experiments[0] : null);
+            })
+        );
     }
 }

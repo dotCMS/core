@@ -9,8 +9,7 @@ import { pluck, takeUntil, tap } from 'rxjs/operators';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotExperiment, DotPageRenderState } from '@dotcms/dotcms-models';
-import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
+import { DotPageRenderState } from '@dotcms/dotcms-models';
 
 import { DotPageStateService } from '../../content/services/dot-page-state/dot-page-state.service';
 
@@ -21,7 +20,6 @@ import { DotPageStateService } from '../../content/services/dot-page-state/dot-p
 })
 export class DotEditPageMainComponent implements OnInit, OnDestroy {
     pageState$: Observable<DotPageRenderState>;
-    runningExperiment$: Observable<DotExperiment | null>;
     private pageUrl: string;
     private languageId: string;
     private pageIsSaved = false;
@@ -34,8 +32,7 @@ export class DotEditPageMainComponent implements OnInit, OnDestroy {
         private dotPageStateService: DotPageStateService,
         private dotRouterService: DotRouterService,
         private dotCustomEventHandlerService: DotCustomEventHandlerService,
-        private titleService: Title,
-        private dotExperimentsService: DotExperimentsService
+        private titleService: Title
     ) {
         if (!this.customEventsHandler) {
             this.customEventsHandler = {
