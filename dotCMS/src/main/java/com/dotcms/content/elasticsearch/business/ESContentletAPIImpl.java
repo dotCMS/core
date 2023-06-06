@@ -924,7 +924,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     user, respectFrontendRoles);
             if (contentletOpt.isPresent()) {
 
-                Logger.info(this, "A Workflow has been run instead of a simple publish: " +
+                Logger.debug(this, "A Workflow has been run instead of a simple publish: " +
                         contentlet.getIdentifier());
                 if (!contentlet.getInode().equals(contentletOpt.get().getInode())) {
                     this.copyProperties(contentlet, contentletOpt.get().getMap());
