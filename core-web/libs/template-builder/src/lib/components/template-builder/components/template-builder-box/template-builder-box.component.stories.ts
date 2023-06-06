@@ -11,7 +11,7 @@ import { TemplateBuilderBoxComponent } from './template-builder-box.component';
 import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-confirm-dialog.component';
 
 export default {
-    title: 'TemplateBuilderBoxComponent',
+    title: 'Components/Box',
     component: TemplateBuilderBoxComponent,
     decorators: [
         moduleMetadata({

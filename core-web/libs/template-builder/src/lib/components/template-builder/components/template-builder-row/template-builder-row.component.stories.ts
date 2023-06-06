@@ -11,7 +11,7 @@ import { TemplateBuilderRowComponent } from './template-builder-row.component';
 import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-confirm-dialog.component';
 
 export default {
-    title: 'TemplateBuilderRowComponent',
+    title: 'Components/Row',
     component: TemplateBuilderRowComponent,
     decorators: [
         moduleMetadata({
