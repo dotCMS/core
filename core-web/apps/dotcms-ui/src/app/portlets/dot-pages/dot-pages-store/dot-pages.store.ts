@@ -697,7 +697,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
 
     private getLocalStorageFavoritePanelParams(): Observable<boolean> {
         const collapsed =
-            JSON.parse(this.dotLocalstorageService.getItem(LOCAL_STORAGE_FAVORITES_PANEL_KEY)) ||
+            JSON.parse(this.dotLocalstorageService.getItem(LOCAL_STORAGE_FAVORITES_PANEL_KEY)) ??
             true;
 
         return of(collapsed);
