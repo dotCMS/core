@@ -101,7 +101,7 @@ export class DialogServiceMock {
     }
 }
 
-fdescribe('DotPageStore', () => {
+describe('DotPageStore', () => {
     let dotPageStore: DotPageStore;
     let dialogService: DialogService;
     let dotESContentService: DotESContentService;
@@ -331,7 +331,7 @@ fdescribe('DotPageStore', () => {
         );
     });
 
-    fit('should have favorites collapsed state set to true when requesting favorite pages', () => {
+    it('should have favorites collapsed state set to true when requesting favorite pages', () => {
         dotPageStore.getFavoritePages(5); // Here it sets the favorite state again
 
         dotPageStore.state$.subscribe((data) => {
