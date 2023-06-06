@@ -699,9 +699,9 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
     }
 
     private getLocalStorageFavoritePanelParams(): Observable<boolean> {
-        const collapsed = JSON.parse(
-            this.dotLocalstorageService.getItem(LOCAL_STORAGE_FAVORITES_PANEL_KEY)
-        );
+        const collapsed =
+            JSON.parse(this.dotLocalstorageService.getItem(LOCAL_STORAGE_FAVORITES_PANEL_KEY)) ??
+            true;
 
         return of(collapsed);
     }
@@ -829,11 +829,15 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         return actionsMenu;
     }
 
-    private getNewFavoritePages(items: ESContent) {
+    private getNewFavoritePages(items: ESContent): DotFavoritePagesInfo {
         return {
             items: [...items.jsonObjectView.contentlets],
             showLoadMoreButton: items.jsonObjectView.contentlets.length <= items.resultsSize,
-            total: items.resultsSize
+            total: items.resultsSize,
+            collapsed:
+                JSON.parse(
+                    this.dotLocalstorageService.getItem(LOCAL_STORAGE_FAVORITES_PANEL_KEY)
+                ) ?? true
         };
     }
 
