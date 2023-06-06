@@ -1,20 +1,31 @@
 import { byTestId, createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
 
-import { NgClass, NgIf } from '@angular/common';
+import { NgClass, NgFor, NgIf } from '@angular/common';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
+import { ConfirmPopup } from 'primeng/confirmpopup';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
 
 import { TemplateBuilderBoxComponent } from './template-builder-box.component';
 
 import { CONTAINERS_DATA_MOCK } from '../../utils/mocks';
+import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-confirm-dialog.component';
 
 describe('TemplateBuilderBoxComponent', () => {
     let spectator: SpectatorHost<TemplateBuilderBoxComponent>;
 
     const createHost = createHostFactory({
         component: TemplateBuilderBoxComponent,
-        imports: [NgClass, NgIf, ButtonModule, ScrollPanelModule]
+        imports: [
+            NgClass,
+            NgIf,
+            NgFor,
+            ButtonModule,
+            ScrollPanelModule,
+            RemoveConfirmDialogComponent,
+            NoopAnimationsModule
+        ]
     });
 
     beforeEach(() => {
@@ -27,6 +38,10 @@ describe('TemplateBuilderBoxComponent', () => {
                 }
             }
         );
+
+        spectator.detectChanges();
+
+        jest.spyOn(ConfirmPopup.prototype, 'bindScrollListener').mockImplementation(jest.fn());
     });
 
     it('should create the component', () => {
@@ -70,7 +85,7 @@ describe('TemplateBuilderBoxComponent', () => {
 
         const addButton = spectator.query(byTestId('btn-plus-small'));
         const paletteButton = spectator.query(byTestId('btn-palette-small'));
-        const deleteButton = spectator.query(byTestId('btn-trash-small'));
+        const deleteButton = spectator.query(byTestId('btn-remove-item'));
         expect(addButton).toBeTruthy();
         expect(paletteButton).toBeTruthy();
         expect(deleteButton).toBeTruthy();
@@ -102,12 +117,35 @@ describe('TemplateBuilderBoxComponent', () => {
         expect(deleteContainerMock).toHaveBeenCalled();
     });
 
-    it('should trigger deleteColumn when click on column trash button', () => {
-        const deleteColumnMock = jest.spyOn(spectator.component.deleteColumn, 'emit');
-        const columnTrashButton = spectator.query(byTestId('btn-trash-column'));
+    it('should trigger deleteColumn when clicking on deleteColumn button and click yes', () => {
+        const deleteMock = jest.spyOn(spectator.component.deleteColumn, 'emit');
 
-        spectator.dispatchFakeEvent(columnTrashButton, 'onClick');
+        const deleteButton = spectator.query(byTestId('btn-remove-item'));
 
-        expect(deleteColumnMock).toHaveBeenCalled();
+        spectator.dispatchFakeEvent(deleteButton, 'onClick');
+
+        spectator.detectChanges();
+
+        const confirmDelete = spectator.query('.p-confirm-popup-accept');
+
+        spectator.dispatchFakeEvent(confirmDelete, 'click');
+
+        expect(deleteMock).toHaveBeenCalled();
+    });
+
+    it('should trigger deleteColumnRejected when clicking on deleteColumn button and click no', () => {
+        const rejectDeleteMock = jest.spyOn(spectator.component.deleteColumnRejected, 'emit');
+
+        const deleteButton = spectator.query(byTestId('btn-remove-item'));
+
+        spectator.dispatchFakeEvent(deleteButton, 'onClick');
+
+        spectator.detectChanges();
+
+        const rejectButton = spectator.query('.p-confirm-popup-reject');
+
+        spectator.dispatchFakeEvent(rejectButton, 'click');
+
+        expect(rejectDeleteMock).toHaveBeenCalled();
     });
 });
