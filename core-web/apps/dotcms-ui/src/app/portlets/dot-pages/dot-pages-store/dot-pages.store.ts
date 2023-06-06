@@ -44,6 +44,7 @@ import {
 import { DotPushPublishDialogService, SiteService } from '@dotcms/dotcms-js';
 import {
     ComponentStatus,
+    DotCMSBaseTypesContentTypes,
     DotCMSContentlet,
     DotCMSContentType,
     DotCMSWorkflowAction,
@@ -59,14 +60,27 @@ import { generateDotFavoritePageUrl } from '@dotcms/utils';
 
 import { DotFavoritePageComponent } from '../../dot-edit-page/components/dot-favorite-page/dot-favorite-page.component';
 import { DotPagesCreatePageDialogComponent } from '../dot-pages-create-page-dialog/dot-pages-create-page-dialog.component';
+export interface DotPagesInfo {
+    actionMenuDomId?: string;
+    addToBundleCTId?: string;
+    archived?: boolean;
+    items: DotCMSContentlet[];
+    keyword?: string;
+    languageId?: string;
+    menuActions?: MenuItem[];
+    status?: ComponentStatus;
+    total?: number;
+}
+
+export interface DotFavoritePagesInfo {
+    collapsed?: boolean;
+    items: DotCMSContentlet[];
+    showLoadMoreButton: boolean;
+    total: number;
+}
 
 export interface DotPagesState {
-    favoritePages: {
-        collapsed?: boolean;
-        items: DotCMSContentlet[];
-        showLoadMoreButton: boolean;
-        total: number;
-    };
+    favoritePages: DotFavoritePagesInfo;
     environments: boolean;
     isEnterprise: boolean;
     languages: DotLanguage[];
@@ -75,16 +89,7 @@ export interface DotPagesState {
         canWrite: { contentlets: boolean; htmlPages: boolean };
         id: string;
     };
-    pages?: {
-        actionMenuDomId?: string;
-        addToBundleCTId?: string;
-        archived?: boolean;
-        items: DotCMSContentlet[];
-        keyword?: string;
-        languageId?: string;
-        menuActions?: MenuItem[];
-        status: ComponentStatus;
-    };
+    pages?: DotPagesInfo;
     pageTypes?: DotCMSContentType[];
     portletStatus: ComponentStatus;
 }
@@ -93,6 +98,13 @@ export interface DotSessionStorageFilter {
     archived: boolean;
     keyword: string;
     languageId: string;
+}
+
+interface UserPagePermission {
+    canUserReadPage: boolean;
+    canUserReadContent: boolean;
+    canUserWritePage: boolean;
+    canUserWriteContent: boolean;
 }
 
 export const FAVORITE_PAGE_LIMIT = 5;
@@ -177,26 +189,26 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
 
     readonly pageTypes$ = this.select(({ pageTypes }) => pageTypes);
 
-    readonly setFavoritePages = this.updater<DotCMSContentlet[]>(
-        (state: DotPagesState, favoritePages: DotCMSContentlet[]) => {
+    readonly setFavoritePages = this.updater<Partial<DotFavoritePagesInfo>>(
+        (state: DotPagesState, favoritePages: DotFavoritePagesInfo) => {
             return {
                 ...state,
                 favoritePages: {
                     ...state.favoritePages,
-                    items: [...favoritePages]
+                    ...favoritePages
                 }
             };
         }
     );
 
-    readonly setPages = this.updater<DotCMSContentlet[]>(
-        (state: DotPagesState, pages: DotCMSContentlet[]) => {
+    readonly setPages = this.updater<Partial<DotPagesInfo>>(
+        (state: DotPagesState, pagesInfo: DotPagesInfo) => {
             return {
                 ...state,
                 pages: {
                     ...state.pages,
-                    items: [...pages],
-                    status: ComponentStatus.LOADED
+                    status: ComponentStatus.LOADED,
+                    ...pagesInfo
                 }
             };
         }
@@ -408,7 +420,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                                                 }
                                             );
 
-                                            this.setFavoritePages(pagesData);
+                                            this.setFavoritePages({ items: pagesData });
                                         } else {
                                             let pagesData = this.get().pages.items;
 
@@ -428,7 +440,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                                                 });
                                             }
 
-                                            this.setPages(pagesData);
+                                            this.setPages({ items: pagesData });
                                         }
                                     }
                                 },
@@ -459,13 +471,10 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                     return this.getPagesData(offset, sortOrderValue, sortField).pipe(
                         tapResponse(
                             (items) => {
-                                const currentPages = Array.from({ length: items.resultsSize });
-
-                                Array.prototype.splice.apply(currentPages, [
-                                    ...[offset, 40],
-                                    ...items.jsonObjectView.contentlets
-                                ]);
-                                this.setPages(currentPages as DotCMSContentlet[]);
+                                this.setPages({
+                                    items: items.jsonObjectView.contentlets as DotCMSContentlet[],
+                                    total: items.resultsSize
+                                });
                             },
                             (error: HttpErrorResponse) => {
                                 this.setPagesStatus(ComponentStatus.LOADED);
@@ -739,9 +748,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         if (favoritePage) {
             actionsMenu.push({
                 label: this.dotMessageService.get('favoritePage.dialog.delete.button'),
-                command: () => {
-                    this.deleteFavoritePage(favoritePage.inode);
-                }
+                command: () => this.deleteFavoritePage(favoritePage.inode)
             });
         }
 
@@ -754,18 +761,17 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         }
 
         // Adding Edit & View actions
-        const { loggedUser, isEnterprise, environments } = this.get();
+        const { isEnterprise, environments } = this.get();
 
-        if (
-            (item.live || item.working) &&
-            ((item.baseType === 'HTMLPAGE' && loggedUser.canRead.htmlPages == true) ||
-                (item.baseType === 'CONTENT' && loggedUser.canRead.contentlets == true)) &&
-            !item.deleted
-        ) {
+        const isEditable = (item.live || item.working) && !item.deleted;
+        const { canUserReadPage, canUserReadContent, canUserWritePage, canUserWriteContent } =
+            this.getUserPagePermissions(item);
+
+        // Adding Edit & View actions
+        if (isEditable && (canUserReadPage || canUserReadContent)) {
             actionsMenu.push({
                 label:
-                    (item.baseType === 'HTMLPAGE' && loggedUser.canWrite.htmlPages == true) ||
-                    (item.baseType === 'CONTENT' && loggedUser.canWrite.contentlets == true)
+                    canUserWritePage || canUserWriteContent
                         ? this.dotMessageService.get('Edit')
                         : this.dotMessageService.get('View'),
                 command: () => {
@@ -779,24 +785,20 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             actionsMenu.push({
                 label: `${this.dotMessageService.get(action.name)}`,
                 command: () => {
-                    if (action.actionInputs?.length > 0) {
-                        const wfActionEvent: DotCMSWorkflowActionEvent = {
-                            workflow: action,
-                            callback: 'ngWorkflowEventCallback',
-                            inode: item.inode,
-                            selectedInodes: null
-                        };
-                        this.dotWorkflowEventHandlerService.open(wfActionEvent);
-                    } else {
-                        this.dotWorkflowActionsFireService
-                            .fireTo(item.inode, action.id)
-                            .subscribe((item) => {
-                                this.dotEventsService.notify('save-page', {
-                                    payload: item,
-                                    value: this.dotMessageService.get('Workflow-executed')
-                                });
-                            });
+                    if (!(action.actionInputs?.length > 0)) {
+                        this.fireWorkflowAction(item.inode, action.id);
+
+                        return;
                     }
+
+                    const wfActionEvent: DotCMSWorkflowActionEvent = {
+                        workflow: action,
+                        callback: 'ngWorkflowEventCallback',
+                        inode: item.inode,
+                        selectedInodes: null
+                    };
+
+                    this.dotWorkflowEventHandlerService.open(wfActionEvent);
                 }
             });
         });
@@ -1010,7 +1012,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
      */
     limitFavoritePages(limit: number): void {
         const favoritePages = this.get().favoritePages.items;
-        this.setFavoritePages(favoritePages.slice(0, limit));
+        this.setFavoritePages({ items: favoritePages.slice(0, limit) });
     }
 
     /**
@@ -1035,6 +1037,55 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         sessionStorage.setItem(
             SESSION_STORAGE_FAVORITES_KEY,
             JSON.stringify({ keyword, languageId, archived })
+        );
+    }
+
+    /**
+     * Get user permission for a page or contentlet
+     *
+     * @private
+     * @param {DotCMSContentlet} item
+     * @return {*}  {UserPagePermission}
+     * @memberof DotPageStore
+     */
+    private getUserPagePermissions(item: DotCMSContentlet): UserPagePermission {
+        // Logged user
+        const { loggedUser } = this.get();
+        const { canRead, canWrite } = loggedUser;
+
+        // Item types
+        const isPage = item.baseType === DotCMSBaseTypesContentTypes.HTMLPAGE;
+        const isContent = item.baseType === DotCMSBaseTypesContentTypes.CONTENT;
+
+        // Page permissions
+        const canUserReadPage = isPage && canRead.htmlPages;
+        const canUserWritePage = isPage && canWrite.htmlPages;
+
+        // Contentlet permissions
+        const canUserReadContent = isContent && canRead.contentlets;
+        const canUserWriteContent = isContent && canWrite.contentlets;
+
+        return {
+            canUserReadPage,
+            canUserReadContent,
+            canUserWritePage,
+            canUserWriteContent
+        };
+    }
+
+    /**
+     * Fire workflow action
+     *
+     * @private
+     * @param {string} contentletInode
+     * @param {string} actionId
+     * @memberof DotPageStore
+     */
+    private fireWorkflowAction(contentletInode: string, actionId: string): void {
+        const value = this.dotMessageService.get('Workflow-executed');
+        this.dotWorkflowActionsFireService.fireTo(contentletInode, actionId).subscribe(
+            (payload) => this.dotEventsService.notify('save-page', { payload, value }),
+            (error) => this.httpErrorManagerService.handle(error, true)
         );
     }
 }

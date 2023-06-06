@@ -1,5 +1,6 @@
 import { Observable, of, throwError } from 'rxjs';
 
+import { HttpErrorResponse } from '@angular/common/http';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Injectable } from '@angular/core';
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
@@ -59,7 +60,8 @@ import {
     mockDotLanguage,
     MockDotRouterService,
     mockResponseView,
-    mockWorkflowsActions
+    mockWorkflowsActions,
+    mockPublishAction
 } from '@dotcms/utils-testing';
 
 import {
@@ -210,9 +212,9 @@ describe('DotPageStore', () => {
     it('should limit Favorite Pages', () => {
         spyOn(dotPageStore, 'setFavoritePages').and.callThrough();
         dotPageStore.limitFavoritePages(5);
-        expect(dotPageStore.setFavoritePages).toHaveBeenCalledWith(
-            favoritePagesInitialTestData.slice(0, 5)
-        );
+        expect(dotPageStore.setFavoritePages).toHaveBeenCalledWith({
+            items: favoritePagesInitialTestData.slice(0, 5)
+        });
     });
 
     // Selectors
@@ -285,14 +287,14 @@ describe('DotPageStore', () => {
 
     // Updaters
     it('should update Favorite Pages', () => {
-        dotPageStore.setFavoritePages(favoritePagesInitialTestData);
+        dotPageStore.setFavoritePages({ items: favoritePagesInitialTestData });
         dotPageStore.state$.subscribe((data) => {
             expect(data.favoritePages.items).toEqual(favoritePagesInitialTestData);
         });
     });
 
     it('should update Pages', () => {
-        dotPageStore.setPages(favoritePagesInitialTestData);
+        dotPageStore.setPages({ items: favoritePagesInitialTestData });
         dotPageStore.state$.subscribe((data) => {
             expect(data.pages.items).toEqual(favoritePagesInitialTestData);
         });
@@ -464,7 +466,7 @@ describe('DotPageStore', () => {
             }
         ];
 
-        dotPageStore.setPages(pagesData);
+        dotPageStore.setPages({ items: pagesData });
 
         spyOn(dotESContentService, 'get').and.returnValue(
             of({
@@ -497,7 +499,7 @@ describe('DotPageStore', () => {
     });
 
     it('should keep fetching Pages data until new value comes from the DB in store', fakeAsync(() => {
-        dotPageStore.setPages(favoritePagesInitialTestData);
+        dotPageStore.setPages({ items: favoritePagesInitialTestData });
         const old = {
             contentTook: 0,
             jsonObjectView: {
@@ -561,7 +563,7 @@ describe('DotPageStore', () => {
     }));
 
     it('should remove page archived from pages collection and add undefined at the bottom', fakeAsync(() => {
-        dotPageStore.setPages(favoritePagesInitialTestData);
+        dotPageStore.setPages({ items: favoritePagesInitialTestData });
         const old = {
             contentTook: 0,
             jsonObjectView: {
@@ -757,6 +759,37 @@ describe('DotPageStore', () => {
         expect(dotESContentService.get).toHaveBeenCalledTimes(1);
         expect(dotWorkflowActionsFireService.deleteContentlet).toHaveBeenCalledWith({
             inode: testInode
+        });
+    });
+
+    it('should handle error when a Workflow Action Request fails', (done) => {
+        const actions = [mockPublishAction];
+        const page = dotcmsContentletMock;
+        const error: HttpErrorResponse = new HttpErrorResponse({
+            error: {
+                message:
+                    'The Workflow Action is not available in the Workflow Step the content is currently in.'
+            }
+        });
+        const item = {
+            ...favoritePagesInitialTestData[0],
+            contentType: 'dotFavoritePage',
+            archived: true
+        };
+
+        spyOn(dotPageWorkflowsActionsService, 'getByUrl').and.returnValue(of({ actions, page }));
+        spyOn(dotWorkflowActionsFireService, 'fireTo').and.returnValue(throwError(error));
+
+        dotPageStore.showActionsMenu({ item, actionMenuDomId: 'test1' });
+
+        dotPageStore.state$.subscribe(({ pages }) => {
+            const menuAction = pages.menuActions;
+            const publishAction = menuAction.find(
+                (action) => action.label === mockPublishAction.name
+            );
+            publishAction.command();
+            expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(error, true);
+            done();
         });
     });
 });

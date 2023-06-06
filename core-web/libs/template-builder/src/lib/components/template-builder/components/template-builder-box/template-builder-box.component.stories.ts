@@ -1,5 +1,6 @@
 import { moduleMetadata, Story, Meta } from '@storybook/angular';
 
+import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
 
@@ -11,7 +12,7 @@ export default {
     decorators: [
         moduleMetadata({
             imports: [ButtonModule, ScrollPanelModule],
-            providers: []
+            providers: [ConfirmationService]
         })
     ]
 } as Meta<TemplateBuilderBoxComponent>;
