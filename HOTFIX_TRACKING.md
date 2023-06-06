@@ -131,3 +131,5 @@ This maintenance release includes the following code fixes:
 
 109. https://github.com/dotCMS/core/issues/24937 : Unable to upload File Asset using Podman #24937
 110. https://github.com/dotCMS/core/issues/24444 : File Browser Dialog doesn't show files in default lang as fallback if they doesn't exist in requested lang #24444
+111. https://github.com/dotCMS/core/issues/21700 : When relating content, clicking anywhere on the content list should check the relate box #21700
+
