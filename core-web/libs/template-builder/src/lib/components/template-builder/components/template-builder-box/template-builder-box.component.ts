@@ -1,6 +1,6 @@
 import { GridItemHTMLElement } from 'gridstack';
 
-import { NgClass, NgFor, NgIf, NgForOf } from '@angular/common';
+import { NgClass, NgFor, NgIf } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -28,7 +28,6 @@ import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-co
     standalone: true,
     imports: [
         NgFor,
-        NgForOf,
         NgIf,
         NgClass,
         ButtonModule,
@@ -55,7 +54,7 @@ export class TemplateBuilderBoxComponent implements OnChanges {
 
     @Input() size = 1;
 
-    boxSize = TemplateBuilderBoxSize.small;
+    boxVariant = TemplateBuilderBoxSize.small;
 
     constructor(private el: ElementRef) {}
 
@@ -64,6 +63,6 @@ export class TemplateBuilderBoxComponent implements OnChanges {
     }
 
     ngOnChanges(): void {
-        this.boxSize = getBoxSize(this.size);
+        this.boxVariant = getBoxSize(this.size);
     }
 }
