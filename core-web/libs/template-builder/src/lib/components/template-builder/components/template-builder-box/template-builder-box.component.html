@@ -8,20 +8,20 @@
         }"
         data-testId="template-builder-box"
     >
-    <div class="template-builder-box__header-container">
-        <p-button
-            [label]="
-                size === templateBuilderSizes.large
-                    ? ('dot.template.builder.add.container' | dm)
-                    : ''
-            "
-            (onClick)="addContainer.emit()"
-            icon="pi pi-plus"
-            data-testId="btn-plus"
-            styleClass="p-button-text p-button-sm"
-        ></p-button>
+        <div class="template-builder-box__header-container">
+            <p-button
+                [label]="
+                    boxSize === templateBuilderSizes.large
+                        ? ('dot.template.builder.add.container' | dm)
+                        : ''
+                "
+                (onClick)="addContainer.emit()"
+                icon="pi pi-plus"
+                data-testId="btn-plus"
+                styleClass="p-button-text p-button-sm"
+            ></p-button>
 
-        <div>
+            <div>
                 <p-button
                     (onClick)="editStyle.emit()"
                     data-testId="btn-palette"

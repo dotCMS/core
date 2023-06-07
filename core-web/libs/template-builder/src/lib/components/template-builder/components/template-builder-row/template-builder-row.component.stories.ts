@@ -9,10 +9,8 @@ import { DotIconModule } from '@dotcms/ui';
 
 import { TemplateBuilderRowComponent } from './template-builder-row.component';
 
-import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-confirm-dialog.component';
-
 import { DOT_MESSAGE_SERVICE_TB_MOCK } from '../../utils/mocks';
-
+import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-confirm-dialog.component';
 
 export default {
     title: 'Components/Row',
@@ -24,7 +22,7 @@ export default {
                 ButtonModule,
                 RemoveConfirmDialogComponent,
                 BrowserAnimationsModule
-            ],   
+            ],
             providers: [
                 {
                     provide: DotMessageService,

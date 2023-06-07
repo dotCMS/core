@@ -7,13 +7,13 @@ import { ButtonModule } from 'primeng/button';
 import { ConfirmPopup } from 'primeng/confirmpopup';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
 
-import { TemplateBuilderBoxComponent } from './template-builder-box.component';
-import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-confirm-dialog.component';
-
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipeModule } from '@dotcms/ui';
 
+import { TemplateBuilderBoxComponent } from './template-builder-box.component';
+
 import { CONTAINERS_DATA_MOCK, DOT_MESSAGE_SERVICE_TB_MOCK } from '../../utils/mocks';
+import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-confirm-dialog.component';
 
 describe('TemplateBuilderBoxComponent', () => {
     let spectator: SpectatorHost<TemplateBuilderBoxComponent>;
@@ -27,9 +27,9 @@ describe('TemplateBuilderBoxComponent', () => {
             ButtonModule,
             ScrollPanelModule,
             RemoveConfirmDialogComponent,
-            NoopAnimationsModule, 
-            DotMessagePipeModule,
-          ],
+            NoopAnimationsModule,
+            DotMessagePipeModule
+        ],
         providers: [
             {
                 provide: DotMessageService,

@@ -14,13 +14,11 @@ import {
 import { ButtonModule } from 'primeng/button';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
 
+import { DotMessagePipeModule } from '@dotcms/ui';
+
 import { DotTemplateBuilderContainer, TemplateBuilderBoxSize } from '../../models/models';
 import { getBoxSize } from '../../utils/gridstack-utils';
 import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-confirm-dialog.component';
-import { DotMessagePipeModule } from '@dotcms/ui';
-
-import { DotTemplateBuilderContainer } from '../../models/models';
-
 
 @Component({
     selector: 'dotcms-template-builder-box',
@@ -28,7 +26,16 @@ import { DotTemplateBuilderContainer } from '../../models/models';
     styleUrls: ['./template-builder-box.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     standalone: true,
-    imports: [NgFor, NgForOf, NgIf, NgClass, ButtonModule, ScrollPanelModule, DotMessagePipeModule, RemoveConfirmDialogComponent]
+    imports: [
+        NgFor,
+        NgForOf,
+        NgIf,
+        NgClass,
+        ButtonModule,
+        ScrollPanelModule,
+        DotMessagePipeModule,
+        RemoveConfirmDialogComponent
+    ]
 })
 export class TemplateBuilderBoxComponent implements OnChanges {
     protected readonly templateBuilderSizes = TemplateBuilderBoxSize;
