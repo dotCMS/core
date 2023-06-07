@@ -58,3 +58,4 @@ This maintenance release includes the following code fixes:
 
 44. https://github.com/dotCMS/core/issues/25008 : Date format has changed for fields in newer versions of dotCMS #25008
 45. https://github.com/dotCMS/core/issues/25097 : Update Normalization Filter #25097
+46. https://github.com/dotCMS/core/issues/24286 : Creating a content in a third language in a row throws an error #24286
