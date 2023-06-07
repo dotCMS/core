@@ -46,14 +46,14 @@ export const Medium = Template.bind({});
 export const Large = Template.bind({});
 
 Small.args = {
-    size: 'small',
+    size: 1,
     items
 };
 Medium.args = {
-    size: 'medium',
+    size: 3,
     items
 };
 Large.args = {
-    size: 'large',
+    size: 10,
     items
 };
