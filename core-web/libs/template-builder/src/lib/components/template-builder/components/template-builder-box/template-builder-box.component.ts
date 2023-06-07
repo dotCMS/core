@@ -17,7 +17,7 @@ import { ScrollPanelModule } from 'primeng/scrollpanel';
 import { DotMessagePipeModule } from '@dotcms/ui';
 
 import { DotTemplateBuilderContainer, TemplateBuilderBoxSize } from '../../models/models';
-import { getBoxSize } from '../../utils/gridstack-utils';
+import { getBoxVariantByWidth } from '../../utils/gridstack-utils';
 import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-confirm-dialog.component';
 
 @Component({
@@ -52,7 +52,7 @@ export class TemplateBuilderBoxComponent implements OnChanges {
 
     @Input() items: DotTemplateBuilderContainer[];
 
-    @Input() size = 1;
+    @Input() width = 1;
 
     boxVariant = TemplateBuilderBoxSize.small;
 
@@ -63,6 +63,6 @@ export class TemplateBuilderBoxComponent implements OnChanges {
     }
 
     ngOnChanges(): void {
-        this.boxVariant = getBoxSize(this.size);
+        this.boxVariant = getBoxVariantByWidth(this.width);
     }
 }

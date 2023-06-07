@@ -132,12 +132,12 @@ export function parseFromDotObjectToGridStack(
 }
 
 /**
- *@description This function returns the size of a box based on the number of width
+ *@description This function returns the variant of a box based on the number of width
  *
  * @param {number} width
  * @return {*}  {TemplateBuilderBoxSize}
  */
-export function getBoxSize(width: number): TemplateBuilderBoxSize {
+export function getBoxVariantByWidth(width: number): TemplateBuilderBoxSize {
     if (width <= 1) return TemplateBuilderBoxSize.small;
 
     if (width <= 3) return TemplateBuilderBoxSize.medium;
