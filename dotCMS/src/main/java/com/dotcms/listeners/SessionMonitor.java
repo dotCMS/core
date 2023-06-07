@@ -33,7 +33,7 @@ import static com.dotcms.cms.login.LoginServiceAPIFactory.LOG_OUT_ATTRIBUTE;
 public class SessionMonitor implements ServletRequestListener,
         HttpSessionAttributeListener, HttpSessionListener {
 
-    public static final String PERSIST_SESSION_ATTRIBUTE = "persist-session";
+    public static final String DOT_CLUSTER_SESSION = "DOT_CLUSTER_SESSION";
 
     private final SystemEventsAPI systemEventsAPI;
 
@@ -159,7 +159,7 @@ public class SessionMonitor implements ServletRequestListener,
                 }
             }
             if (UtilMethods.isSet(userId) && !UserAPI.CMS_ANON_USER_ID.equalsIgnoreCase(userId)) {
-                session.setAttribute(PERSIST_SESSION_ATTRIBUTE, true);
+                session.setAttribute(DOT_CLUSTER_SESSION, true);
             }
         }
         event.getServletContext().setAttribute(WebKeys.USER_SESSIONS, this);
