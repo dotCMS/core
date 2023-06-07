@@ -446,7 +446,18 @@
                             <artifactId>jsch</artifactId>
                             <version>0.2.9</version>
                         </dependency>
+                        <dependency>
+                            <groupId>com.github.danielflower.mavenplugins</groupId>
+                            <artifactId>multi-module-maven-release-plugin</artifactId>
+                           <exclusions>
+                               <exclusion>
+                                   <groupId>com.jcraft</groupId>
+                                   <artifactId>jsch</artifactId>
+                               </exclusion>
+                           </exclusions>
+                        </dependency>
                     </dependencies>
+                </plugin>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
