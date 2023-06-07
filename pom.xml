@@ -449,6 +449,7 @@
                         <dependency>
                             <groupId>com.github.danielflower.mavenplugins</groupId>
                             <artifactId>multi-module-maven-release-plugin</artifactId>
+                            <version>0.2.9</version>
                            <exclusions>
                                <exclusion>
                                    <groupId>com.jcraft</groupId>
