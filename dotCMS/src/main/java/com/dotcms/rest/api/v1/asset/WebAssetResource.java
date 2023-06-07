@@ -64,7 +64,7 @@ public class WebAssetResource {
     @NoCache
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public Response putAsset(
+    public Response saveUpdateAsset(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @BeanParam FileUploadData form
@@ -78,7 +78,7 @@ public class WebAssetResource {
 
         final User user = initDataObject.getUser();
 
-        final WebAssetView webAssetView = helper.saveOrUpdateAsset(form, user);
+        final WebAssetView webAssetView = helper.saveUpdateAsset(request, form, user);
         //Logger.info(this, String.format("User [%s] is requesting assets info for path [%s]", user.getUserId(), form.assetPath()));
         return Response.ok(new WebAssetEntityView(webAssetView)).build();
     }

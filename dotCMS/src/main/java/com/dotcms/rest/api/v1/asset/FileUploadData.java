@@ -1,5 +1,9 @@
 package com.dotcms.rest.api.v1.asset;
 
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.MapperFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.InputStream;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
@@ -10,10 +14,13 @@ public class FileUploadData {
     private InputStream fileInputStream;
 
     @FormDataParam("file")
-        private FormDataContentDisposition contentDisposition;
+    private FormDataContentDisposition contentDisposition;
 
     @FormDataParam("assetPath")
     private String assetPath;
+
+    @FormDataParam("detail")
+    private String jsonDetail;
 
     @FormDataParam("detail")
     private FileUploadDetail detail;
@@ -42,7 +49,14 @@ public class FileUploadData {
         this.assetPath = assetPath;
     }
 
-    public FileUploadDetail getDetail() {
+    public String getJsonDetail() {
+        return jsonDetail;
+    }
+
+    public FileUploadDetail getDetail() throws JsonProcessingException {
+        if(null == detail){
+            detail =  new ObjectMapper().readValue(getJsonDetail(), FileUploadDetail.class);
+        }
         return detail;
     }
 

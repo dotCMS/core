@@ -1,18 +1,20 @@
 package com.dotcms.rest.api.v1.asset;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class FileUploadDetail {
 
     @JsonCreator
     public FileUploadDetail(@JsonProperty("assetPath") final String assetPath,
             @JsonProperty("language") final String language,
-            @JsonProperty("status") final String status,
+            @JsonProperty("status") final Boolean live,
             @JsonProperty("createNewVersion") final Boolean createNewVersion) {
         this.assetPath = assetPath;
         this.language = language;
-        this.status = status;
+        this.live = live;
         this.createNewVersion = createNewVersion;
     }
 
@@ -22,8 +24,8 @@ public class FileUploadDetail {
     @JsonProperty("language")
     private String language;
 
-    @JsonProperty("status")
-    private String status;
+    @JsonProperty("live")
+    private Boolean live;
 
     @JsonProperty("createNewVersion")
     private Boolean createNewVersion;
@@ -44,19 +46,19 @@ public class FileUploadDetail {
         this.language = language;
     }
 
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
     public Boolean getCreateNewVersion() {
         return createNewVersion;
     }
 
     public void setCreateNewVersion(Boolean createNewVersion) {
         this.createNewVersion = createNewVersion;
+    }
+
+    public Boolean getLive() {
+        return live;
+    }
+
+    public void setLive(Boolean live) {
+        this.live = live;
     }
 }
