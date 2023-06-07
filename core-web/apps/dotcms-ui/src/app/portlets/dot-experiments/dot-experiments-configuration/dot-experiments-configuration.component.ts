@@ -11,7 +11,6 @@ import { InplaceModule } from 'primeng/inplace';
 import { InputTextModule } from 'primeng/inputtext';
 import { RippleModule } from 'primeng/ripple';
 
-import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { DotExperiment, DotExperimentStatusList, ComponentStatus } from '@dotcms/dotcms-models';
 import { DotMessagePipe, DotMessagePipeModule } from '@dotcms/ui';
 import { DotExperimentsConfigurationGoalsComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-goals/dot-experiments-configuration-goals.component';
@@ -40,13 +39,12 @@ import { DotExperimentsInlineEditTextComponent } from '@portlets/dot-experiments
         DotExperimentsConfigurationTrafficComponent,
         DotExperimentsConfigurationSchedulingComponent,
         DotExperimentsConfigurationSkeletonComponent,
+        DotExperimentsInlineEditTextComponent,
         CardModule,
         ButtonModule,
         RippleModule,
         InplaceModule,
-        InputTextModule,
-        DotAutofocusModule,
-        DotExperimentsInlineEditTextComponent
+        InputTextModule
     ],
     selector: 'dot-experiments-configuration',
     templateUrl: './dot-experiments-configuration.component.html',
@@ -142,8 +140,8 @@ export class DotExperimentsConfigurationComponent implements OnInit {
 
     /**
      * Save the description of the experiment
-     * @param description
-     * @param experiment
+     * @param {string} description
+     * @param {DotExperiment} experiment
      * @returns void
      * @memberof DotExperimentsConfigurationComponent
      */

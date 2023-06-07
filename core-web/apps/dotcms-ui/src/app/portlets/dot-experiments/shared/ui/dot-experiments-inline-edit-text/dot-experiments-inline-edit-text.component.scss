@@ -5,6 +5,11 @@
 }
 
 :host ::ng-deep {
+    .p-disabled,
+    .p-component:disabled {
+        opacity: 0.8;
+    }
+
     p-inplace .p-inplace {
         .p-inplace-display {
             padding: 0;
@@ -14,6 +19,10 @@
                 margin-left: $spacing-1;
                 margin-right: $spacing-1;
                 font-size: 0.85rem;
+            }
+
+            &.p-disabled {
+                color: $color-palette-gray-800;
             }
 
             &:not(.p-disabled):hover {

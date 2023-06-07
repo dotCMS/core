@@ -9,6 +9,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotExperimentsInlineEditTextComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-inline-edit-text/dot-experiments-inline-edit-text.component';
 
 const messageServiceMock = new MockDotMessageService({
+    'dot.common.inplace.empty.text': 'default message',
     'experiments.configure.description.add': 'click',
     'experiments.configure.scheduling.start': 'When the experiment start'
 });
@@ -44,7 +45,23 @@ describe('DotExperimentsExperimentSummaryComponent', () => {
         it('should show a message of `add a description`', () => {
             spectator.setInput('text', '');
             expect(spectator.query(byTestId('empty-text-message'))).toExist();
-            expect(spectator.query(byTestId('empty-text-message'))).toContainText('click');
+            expect(spectator.query(byTestId('empty-text-message'))).toContainText(
+                'default message'
+            );
+        });
+
+        it('should show a empty message sent by `@Input emptyText` ', () => {
+            spectator.setInput('text', '');
+            spectator.setInput('emptyText', 'message.sent.by.input');
+            expect(spectator.query(byTestId('empty-text-message'))).toExist();
+            expect(spectator.query(byTestId('empty-text-message'))).toContainText(
+                'message.sent.by.input'
+            );
+        });
+
+        it('should disable the Inplace with `@Input disabled` ', () => {
+            spectator.setInput('disabled', true);
+            expect(spectator.query(Inplace).disabled).toBe(true);
         });
     });
 
@@ -57,6 +74,14 @@ describe('DotExperimentsExperimentSummaryComponent', () => {
         it('should show a icon to edit', () => {
             expect(spectator.query(byTestId('text-input'))).toExist();
             expect(spectator.query(byTestId('text-input-icon'))).toExist();
+        });
+
+        it('should change the `maxLength` Validator if the `@Input maxCharacterLength` is sent', () => {
+            const maxLength = 5;
+            spectator.setInput('text', SHORT_TEXT);
+            spectator.setInput('maxCharacterLength', maxLength);
+
+            expect(spectator.component.form.invalid).toEqual(true);
         });
 
         describe('/interactions', () => {
@@ -81,8 +106,11 @@ describe('DotExperimentsExperimentSummaryComponent', () => {
                 spectator.output('textChanged').subscribe((result) => (output = result));
 
                 spectator.dispatchMouseEvent(byTestId('text-input'), 'click');
-                spectator.component.form.controls['text'].setValue(NEW_EXPERIMENT_DESCRIPTION);
 
+                spectator.component.form.controls['text'].setValue(NEW_EXPERIMENT_DESCRIPTION);
+                spectator.component.form.controls['text'].markAsDirty();
+
+                spectator.detectComponentChanges();
                 const saveButton = spectator.query(byTestId('text-save-btn')) as HTMLButtonElement;
                 expect(saveButton.disabled).toBe(false);
 

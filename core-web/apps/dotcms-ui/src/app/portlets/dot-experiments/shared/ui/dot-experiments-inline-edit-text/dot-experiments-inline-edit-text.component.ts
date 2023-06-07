@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { NgIf } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -30,52 +30,62 @@ import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module
     selector: 'dot-experiments-inplace-edit-text',
     standalone: true,
     imports: [
+        ReactiveFormsModule,
         DotMessagePipeModule,
-        InplaceModule,
-        CommonModule,
-        ChipsModule,
         DotAutofocusModule,
         DotFieldValidationMessageModule,
-        ReactiveFormsModule
+        ChipsModule,
+        InplaceModule,
+        NgIf
     ],
     templateUrl: './dot-experiments-inline-edit-text.component.html',
     styleUrls: ['./dot-experiments-inline-edit-text.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsInlineEditTextComponent implements OnChanges {
-    /**
-     * Saving status
-     * required
-     * */
+    @Input()
+    maxCharacterLength = MAX_INPUT_DESCRIPTIVE_LENGTH;
+
     @Input()
     isLoading = false;
 
-    /**
-     * Text to be edited
-     * required
-     * */
     @Input()
     text: string;
 
-    /**
-     * Fired when the text is changed
-     * */
+    @Input()
+    emptyText = 'dot.common.inplace.empty.text';
+
     @Output()
     textChanged = new EventEmitter<string>();
 
     @ViewChild(Inplace) inplace!: Inplace;
 
     form: FormGroup;
-    protected readonly maxDescriptiveLengthLength = MAX_INPUT_DESCRIPTIVE_LENGTH;
+    /**
+     * Enable or disable Inplace
+     * */
+    @Input()
+    disabled: boolean;
 
-    ngOnChanges(changes: SimpleChanges): void {
-        const { text, isLoading } = changes;
+    constructor() {
+        this.initForm();
+    }
+
+    get textControl(): FormControl {
+        return this.form.controls['text'] as FormControl;
+    }
+
+    ngOnChanges({ text, isLoading, maxCharacterLength }: SimpleChanges): void {
         if (text) {
-            this.setForm(text.currentValue);
+            this.textControl.setValue(text.currentValue);
         }
 
         if (isLoading && isLoading.previousValue === true && isLoading.currentValue === false) {
             this.inplace.deactivate();
+        }
+
+        if (maxCharacterLength && maxCharacterLength.currentValue) {
+            this.updateValidators();
         }
     }
 
@@ -83,7 +93,7 @@ export class DotExperimentsInlineEditTextComponent implements OnChanges {
      * Take te value of the input and emit the value
      */
     saveAction() {
-        this.textChanged.emit(this.form.value['text']);
+        this.textChanged.emit(this.textControl.value);
     }
 
     /**
@@ -94,19 +104,25 @@ export class DotExperimentsInlineEditTextComponent implements OnChanges {
         this.resetForm();
     }
 
-    private setForm(textValue: string) {
+    private initForm() {
         this.form = new FormGroup({
-            text: new FormControl<string>(textValue, {
+            text: new FormControl<string>('', {
                 nonNullable: true,
-                validators: [
-                    Validators.required,
-                    Validators.maxLength(this.maxDescriptiveLengthLength)
-                ]
+                validators: [Validators.required, Validators.maxLength(this.maxCharacterLength)]
             })
         });
     }
 
     private resetForm() {
-        this.form.controls['text'].setValue(this.text);
+        this.textControl.setValue(this.text);
+    }
+
+    private updateValidators() {
+        this.textControl.clearValidators();
+        this.textControl.setValidators([
+            Validators.required,
+            Validators.maxLength(this.maxCharacterLength)
+        ]);
+        this.textControl.updateValueAndValidity();
     }
 }

@@ -25,7 +25,10 @@ import {
     TrafficProportion,
     Variant
 } from '@dotcms/dotcms-models';
-import { processExperimentConfigProps } from '@portlets/dot-experiments/shared/dot-experiment.utils';
+import {
+    checkIfExperimentDescriptionIsSaving,
+    processExperimentConfigProps
+} from '@portlets/dot-experiments/shared/dot-experiment.utils';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
@@ -102,12 +105,9 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         stepStatusSidebar.experimentStep === ExperimentSteps.VARIANTS ? stepStatusSidebar : null
     );
 
-    readonly getDescriptionState$: Observable<boolean> = this.select(
+    readonly getIsDescriptionSaving$: Observable<boolean> = this.select(
         this.state$,
-        ({ stepStatusSidebar }) =>
-            stepStatusSidebar &&
-            stepStatusSidebar.experimentStep === ExperimentSteps.EXPERIMENT_DESCRIPTION &&
-            stepStatusSidebar.status === ComponentStatus.SAVING
+        ({ stepStatusSidebar }) => checkIfExperimentDescriptionIsSaving(stepStatusSidebar)
     );
 
     // Goals Step //
@@ -718,7 +718,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         this.showExperimentSummary$,
         this.isSaving$,
         this.getExperimentStatus$,
-        this.getDescriptionState$,
+        this.getIsDescriptionSaving$,
         (
             { experiment, stepStatusSidebar },
             isExperimentADraft,

@@ -1,25 +1,27 @@
-<p-inplace>
+<p-inplace [disabled]="disabled">
     <ng-template pTemplate="display">
         <div class="flex">
             <span *ngIf="text; else noTextDefinedTpl" data-testId="text-input">
                 {{ text }}
             </span>
-            <i class="pi pi-pencil cursor-pointer" data-testId="text-input-icon"></i>
+            <i
+                class="pi pi-pencil cursor-pointer"
+                *ngIf="!disabled"
+                data-testId="text-input-icon"
+            ></i>
         </div>
 
-        <ng-template #noTextDefinedTpl
-            ><span class="text-muted" data-testId="empty-text-message">{{
-                'experiments.configure.description.add' | dm
-            }}</span>
+        <ng-template #noTextDefinedTpl>
+            <span class="text-muted" data-testId="empty-text-message">{{ emptyText | dm }}</span>
         </ng-template>
     </ng-template>
 
     <ng-template pTemplate="content">
         <form [formGroup]="form" novalidate>
             <div class="flex gap-2 control">
-                <div class="field p-input-icon-right flex flex-column w-full">
+                <div class="p-input-icon-right flex flex-column w-full">
                     <input
-                        [maxLength]="maxDescriptiveLengthLength + 1"
+                        [maxLength]="maxCharacterLength + 1"
                         data-testId="inplace-input"
                         dotAutofocus
                         formControlName="text"
@@ -33,7 +35,7 @@
                 </div>
                 <button
                     class="p-button-rounded p-button-text"
-                    [disabled]="form.invalid"
+                    [disabled]="form.invalid || textControl.pristine"
                     [loading]="isLoading"
                     (click)="saveAction()"
                     data-testId="text-save-btn"
@@ -44,9 +46,7 @@
             </div>
 
             <div class="validation-error">
-                <dot-field-validation-message
-                    [field]="form.controls['text']"
-                ></dot-field-validation-message>
+                <dot-field-validation-message [field]="textControl"></dot-field-validation-message>
             </div>
         </form>
     </ng-template>
