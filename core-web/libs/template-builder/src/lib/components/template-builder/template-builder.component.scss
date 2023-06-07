@@ -4,14 +4,6 @@
     position: relative;
 }
 
-.grid-stack-item.sub .grid-stack-item-content {
-    background: pink;
-}
-
-.grid-stack-item-content {
-    display: flex;
-}
-
 .grid-stack-nested {
     flex: 1;
 }
@@ -21,7 +13,7 @@
     gap: $spacing-3;
     background-color: $white;
     border-bottom: solid 1px $color-palette-gray-300;
-    padding: 1rem 0;
+    padding: $spacing-3 0;
     position: sticky;
     top: 0;
     z-index: 1;
