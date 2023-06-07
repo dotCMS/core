@@ -1,9 +1,10 @@
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
+
 import { Sidebar } from 'primeng/sidebar';
 
 import { DotSidebarHeaderComponent } from './dot-sidebar-header.component';
 
-fdescribe('DotSidebarHeaderComponent', () => {
+describe('DotSidebarHeaderComponent', () => {
     let spectator: Spectator<DotSidebarHeaderComponent>;
     const createComponent = createComponentFactory({
         component: DotSidebarHeaderComponent,
