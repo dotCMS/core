@@ -57,3 +57,4 @@ This maintenance release includes the following code fixes:
 **Release-23.01.4**
 
 44. https://github.com/dotCMS/core/issues/25008 : Date format has changed for fields in newer versions of dotCMS #25008
+45. https://github.com/dotCMS/core/issues/25097 : Update Normalization Filter #25097
