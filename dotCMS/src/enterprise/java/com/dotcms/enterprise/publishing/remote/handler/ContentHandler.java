@@ -128,9 +128,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static com.dotcms.contenttype.model.type.PageContentType.PAGE_FRIENDLY_NAME_FIELD_VAR;
 
@@ -264,7 +266,7 @@ public class ContentHandler implements IHandler {
 		ContentWrapper wrapper = null;
     	try{
 	        final XStream xstream = newXStreamInstance();
-			final List<String> pushedIdsToIgnore = new ArrayList<>();
+			final Set<Pair<String,Long>> pushedIdsToIgnore = new HashSet<>();
             for (final File contentFile : contents) {
                 workingOn=contentFile;
                 content = null;
@@ -331,14 +333,29 @@ public class ContentHandler implements IHandler {
 						// This operation (PUBLISH) publishes/un-publishes a Content that is NOT archived. The un-publishing
 						// is taken care of at the end of this handleContents() method
 						publish(content, folderOut, systemUser, wrapper, isHost,remoteLocalLanguages);
+						Logger.debug(this, "Content saved: " + content.getIdentifier()
+								+ " , inode: " + content.getInode() + " , language: " + content.getLanguageId());
 					} else if (wrapper.getOperation().equals(PushPublisherConfig.Operation.PUBLISH) && isPushedContentArchived) {
 						// This operation (PUBLISH) flags the pushed Content as Archived, WITHOUT deleting it
+						boolean localContentAlreadyExists = APILocator.getContentletAPI().isContentlet(content.getInode());
+						if (!localContentAlreadyExists) {
+							// If the content doesn't exist in the local instance yet, we need to save it first
+							publish(content, folderOut, systemUser, wrapper, isHost, remoteLocalLanguages);
+							Logger.debug(this, "Content saved before archive: " + content.getIdentifier()
+									+ " , inode: " + content.getInode() + " , language: " + content.getLanguageId());
+						}
 						unpublish(content, systemUser, isHost, remoteLocalLanguages, true);
+						Logger.debug(this, "Content archived: " + content.getIdentifier()
+								+ " , inode: " + content.getInode() + " , language: " + content.getLanguageId());
 						// Store the IDs that will be archived in the receiver
-						pushedIdsToIgnore.add(content.getIdentifier());
+						final Pair<String,Long> idAndLanguageKey = Pair.of(content.getIdentifier(),
+								remoteLocalLanguages.getRight());
+						pushedIdsToIgnore.add(idAndLanguageKey);
 					} else {
 						// Finally, this operation (UNPUBLISH) deletes a Content altogether
 						unpublish(content, systemUser, isHost, remoteLocalLanguages, false);
+						Logger.debug(this, "Content deleted: " + content.getIdentifier()
+								+ " , inode: " + content.getInode() + " , language: " + content.getLanguageId());
 					}
 				} catch (final FileAssetValidationException e1){
                     Logger.error(ContentHandler.class, "Content id ["+content.getIdentifier()+"] could not be processed because of missing binary file. Error: "+e1.getMessage(),e1);
@@ -356,11 +373,6 @@ public class ContentHandler implements IHandler {
 				content = null;
 
                 if(wrapper.getOperation().equals(PushPublisherConfig.Operation.PUBLISH)) {
-					if (pushedIdsToIgnore.contains(wrapper.getContent().getIdentifier())) {
-						// The specified Content has been pushed as Archived to the receiver. So, DO NOT execute
-						// any more code, just continue
-						continue;
-					}
 	                ContentletVersionInfo info = wrapper.getInfo();
 	                content = wrapper.getContent();
 	                boolean updateExisting = Boolean.FALSE;
@@ -384,6 +396,16 @@ public class ContentHandler implements IHandler {
 								info.setLang(localLang.getId());
 							}
 						}
+					}
+
+					final Pair<String,Long> idAndLanguageKey = Pair.of(content.getIdentifier(),
+							remoteLocalLanguages.getRight());
+					if (pushedIdsToIgnore.contains(idAndLanguageKey)) {
+						// The specified Content has been pushed as Archived to the receiver. So, DO NOT execute
+						// any more code, just continue
+						Logger.debug(this, "Content skipped because it's archived, id: " + content.getIdentifier()
+								+ " , inode: " + content.getInode() + " , language: " + content.getLanguageId());
+						continue;
 					}
 
 					final Pair<String, Long> contentIdAndLang = Pair.of(
@@ -521,6 +543,8 @@ public class ContentHandler implements IHandler {
 	                    content = contentletAPI.findContentletByIdentifier(content.getIdentifier(), false, content.getLanguageId(), systemUser, false);
 						content.setProperty(Contentlet.DISABLE_WORKFLOW, true);
 	                    contentletAPI.publish(content, systemUser, false);
+						Logger.debug(this, "Content published: " + content.getIdentifier()
+								+ ", inode: " + content.getInode() + ", language: " + content.getLanguageId());
 	                }
                 } //end PUBLISH
             } //end for contentWrapper
@@ -540,7 +564,7 @@ public class ContentHandler implements IHandler {
 			throw new DotPublishingException(errorMsg, e);
 		}
     }
-
+	
 	private void addRelatedContentsToInfoToRemove(Contentlet content, ContentletVersionInfo info) {
 		try {
 			final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
@@ -1133,22 +1157,48 @@ public class ContentHandler implements IHandler {
 	    		APILocator.getHostAPI().delete(site, user, !RESPECT_FRONTEND_ROLES);
 	    	}
 	    }else{
-            List<Contentlet> contents = findContents(content.getIdentifier(), user);
-            if (!UtilMethods.isSet(contents)) {
+			// if the content is not live, then we don't need to unpublish it
+			Optional<ContentletVersionInfo> existingInfoOptional = Optional.empty();
+            final List<Contentlet> contents = findContents(content.getIdentifier(), user);
+            if (UtilMethods.isSet(contents)) {
+				final Optional<Contentlet> contentletOptional = contents.stream()
+						.filter(c -> c.getLanguageId() == remoteLocalLanguages.getRight()).findFirst();
+				if (contentletOptional.isPresent()) {
+					final Contentlet existingContent = contentletOptional.get();
+					existingInfoOptional = this.versionableAPI.getContentletVersionInfo(
+							existingContent.getIdentifier(), remoteLocalLanguages.getRight());
+				}
+			} else {
                 final List<Field> fields = FieldsCache.getFieldsByStructureInode(content.getContentTypeId());
                 content = findUniqueContentMatch(content, fields,remoteLocalLanguages);
+				final Pair<String, Long> contentIdAndLang = Pair.of(
+						content.getIdentifier(), remoteLocalLanguages.getLeft());
+				if (this.existingContentMap.hasExistingContent(contentIdAndLang)) {
+					final String existingIdentifier = this.existingContentMap
+							.getExistingContentIdentifier(contentIdAndLang);
+					existingInfoOptional = this.versionableAPI.getContentletVersionInfo(
+							existingIdentifier, remoteLocalLanguages.getRight());
+				}
             }
 
-			try {
-				contentletAPI.unpublish(content, user, !RESPECT_FRONTEND_ROLES);
-			} catch(DotStateException dse) {
-				if (isPushedContentArchived) {
-					Logger.debug(getClass(), String.format(
-							"No live version, not able to archive, contentlet: id -> %s, inode-> %s",
-							content.getIdentifier(), content.getInode()));
-				} else {
-					Logger.debug(getClass(), String.format("No live version, not able to unpublish, contentlet: id -> %s, inode-> %s",
-							content.getIdentifier(), content.getInode()));
+			boolean isExistingContentLive = false;
+			if (existingInfoOptional.isPresent()) {
+				ContentletVersionInfo existingVersionInfo = existingInfoOptional.get();
+				isExistingContentLive = UtilMethods.isSet(existingVersionInfo.getLiveInode());
+			}
+
+			if (isExistingContentLive) {
+				try {
+					contentletAPI.unpublish(content, user, !RESPECT_FRONTEND_ROLES);
+				} catch (DotStateException dse) {
+					if (isPushedContentArchived) {
+						Logger.debug(getClass(), String.format(
+								"No live version, not able to archive, contentlet: id -> %s, inode-> %s",
+								content.getIdentifier(), content.getInode()));
+					} else {
+						Logger.debug(getClass(), String.format("No live version, not able to unpublish, contentlet: id -> %s, inode-> %s",
+								content.getIdentifier(), content.getInode()));
+					}
 				}
 			}
 
