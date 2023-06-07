@@ -20,6 +20,8 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.system.AppContext;
+import com.dotcms.system.CompositeAppContext;
+import com.dotcms.system.SimpleMapAppContext;
 import com.dotcms.util.LongPollingService;
 import com.dotcms.util.marshal.MarshalFactory;
 import com.dotcms.util.marshal.MarshalUtils;
@@ -143,8 +145,8 @@ public class EventsResource implements Serializable {
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .rejectWhenNoUser(true).init();
 
-        //final AppContext appContext =  new SimpleMapAppContext();
-        final AppContext appContext   =  WebSessionContext.getInstance(httpServletRequest);
+        final AppContext simpleAppContext =  new SimpleMapAppContext();
+        final AppContext webAppContext    =  WebSessionContext.getInstance(httpServletRequest);
 
         try {
 
@@ -155,14 +157,15 @@ public class EventsResource implements Serializable {
                 asyncResponse.setTimeout(this.timeoutSeconds, TimeUnit.SECONDS);
 
                 Logger.debug(this, "Getting syncr system events with a lastcallback as: " + lastCallback);
-                appContext.setAttribute(SystemEventsDelegate.LAST_CALLBACK, lastCallback != null ? lastCallback :
+                webAppContext.setAttribute(SystemEventsDelegate.LAST_CALLBACK, lastCallback != null ? lastCallback :
                         System.currentTimeMillis());
 
-                appContext.setAttribute(SystemEventsDelegate.LAST_CALLBACK, (null != lastCallback)?lastCallback:System.currentTimeMillis());
-                appContext.setAttribute(SystemEventsDelegate.RESPONSE, asyncResponse);
-                appContext.setAttribute(SystemEventsDelegate.USER,   initData.getUser());
+                webAppContext.setAttribute(SystemEventsDelegate.LAST_CALLBACK, (null != lastCallback)?lastCallback:System.currentTimeMillis());
+                webAppContext.setAttribute(SystemEventsDelegate.USER,   initData.getUser());
 
-                this.longPollingService.executeAsync(appContext);
+                simpleAppContext.setAttribute(SystemEventsDelegate.RESPONSE, asyncResponse); // we can not store this object on session b/c it is not serializable.
+
+                this.longPollingService.executeAsync(new CompositeAppContext(webAppContext, webAppContext, simpleAppContext));
             }
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
 
