@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.dotcms</groupId>
+        <artifactId>dotcms-parent</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>core-web</artifactId>
+    <packaging>war</packaging>
+
+    <properties>
+        <java.version>11</java.version>
+        <maven.compiler.source>${java.version}</maven.compiler.source>
+        <maven.compiler.target>${java.version}</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <node.js.version>v16.13.2</node.js.version>
+        <npm.version>8.5.1</npm.version>
+        <maven.plugin.cargo.version>1.9.0</maven.plugin.cargo.version>
+        <cargo.tomcat.major.version>9</cargo.tomcat.major.version>
+        <nx.build.options>--prod</nx.build.options>
+        <cargo.server.port>8084</cargo.server.port>
+    </properties>
+
+    <dependencies>
+
+    </dependencies>
+    <build>
+
+        <plugins>
+            <plugin>
+                <artifactId>maven-clean-plugin</artifactId>
+                <version>3.2.0</version>
+                <configuration>
+                    <filesets>
+                        <fileset>
+                            <directory>dist</directory>
+                            <includes>
+                                <include>*</include>
+                            </includes>
+                        </fileset>
+                    </filesets>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>process-resources</phase>
+                        <configuration>
+                            <target>
+                                <echo file="${basedir}/.nvmrc" append="false">${node.js.version}</echo>
+                                <!--
+                                <filter token="node.js.version" value="${node.js.version}"/>
+                                <copy file="${basedir}/version-template.txt" tofile="${basedir}/.nvmrc" overwrite="true" filtering="true"/>
+                                -->
+                            </target>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>com.github.eirslett</groupId>
+                <artifactId>frontend-maven-plugin</artifactId>
+                <!-- Use the latest released version:
+                https://repo1.maven.org/maven2/com/github/eirslett/frontend-maven-plugin/ -->
+                <version>1.12.1</version>
+                <configuration>
+                    <workingDirectory>${project.basedir}</workingDirectory>
+                    <installDirectory>${project.basedir}/installs</installDirectory>
+
+                    <nodeVersion>${node.js.version}</nodeVersion>
+                    <!-- <npmVersion>${npm.version}</npmVersion>-->
+                    <!--<yarnVersion>v0.16.1</yarnVersion>-->
+
+                    <!-- optional: where to download node and npm from. Defaults to https://nodejs.org/dist/ -->
+                    <!--<downloadRoot>http://myproxy.example.org/nodejs/</downloadRoot>-->
+
+                </configuration>
+                <executions>
+                    <execution>
+                        <!-- optional: you don't really need execution ids, but it looks nice in your build log. -->
+                        <id>install node and npm</id>
+                        <goals>
+                            <goal>install-node-and-npm</goal>
+                        </goals>
+                        <!-- optional: default phase is "generate-resources" -->
+                        <phase>generate-resources</phase>
+                    </execution>
+
+                    <execution>
+                        <id>config npm</id>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>config set timeout 6000000</arguments>
+                        </configuration>
+                    </execution>
+
+                    <execution>
+                        <id>install</id>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+
+                        <!-- optional: the default phase is "generate-resources" -->
+                        <phase>generate-resources</phase>
+
+                        <configuration>
+                            <arguments>install --registry=https://dotcms-npm.b-cdn.net</arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>build dotcms-ui</id>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+
+                        <!-- optional: the default phase is "generate-resources" -->
+                        <phase>generate-resources</phase>
+
+                        <configuration>
+                            <arguments>run nx build dotcms-ui -- ${nx.build.options}</arguments>
+                        </configuration>
+                    </execution>
+
+                    <execution>
+                        <id>test</id>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+
+                        <!-- optional: the default phase is "generate-resources" -->
+                        <phase>generate-resources</phase>
+
+                        <configuration>
+                            <skip>${skipTests}</skip>
+                            <arguments>run nx run dotcms-ui:test</arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <configuration>
+                    <webResources>
+                        <resource>
+                            <!-- this is relative to the pom.xml directory -->
+                            <directory>${project.basedir}/dist/apps/dotcms-ui</directory>
+                            <filtering>false</filtering>
+                            <targetPath>dotAdmin</targetPath>
+                        </resource>
+                        <resource>
+                            <directory>${project.basedir}/dist/libs</directory>
+                            <filtering>false</filtering>
+                            <includes>
+                                <include>dotcms-webcomponents/**/*</include>
+                            </includes>
+                        </resource>
+                    </webResources>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.cargo</groupId>
+                <artifactId>cargo-maven3-plugin</artifactId>
+                <version>${version.cargo.plugin}</version>
+                <configuration>
+
+                    <container>
+                        <timeout>1800000</timeout>
+                        <systemProperties>
+                            <file.encoding>UTF-8</file.encoding>
+                        </systemProperties>
+
+                        <dependencies>
+
+                        </dependencies>
+                    </container>
+                    <configuration>
+
+                        <!--<home>${project.build.directory}/catalina-base</home>-->
+                        <properties>
+                            <!--    <cargo.servlet.port>${cargo.samples.servlet.port}</cargo.servlet.port>
+                                <cargo.rmi.port>${cargo.samples.rmi.port}</cargo.rmi.port>
+                                <cargo.tomcat.ajp.port>${cargo.samples.tomcat.ajp.port}</cargo.tomcat.ajp.port>
+                          -->
+
+                            <cargo.servlet.port>${cargo.server.port}</cargo.servlet.port>
+
+                        </properties>
+                    </configuration>
+                    <deployables>
+                        <deployable>
+                            <properties>
+                                <context>/</context>
+                            </properties>
+                        </deployable>
+                    </deployables>
+                </configuration>
+
+            </plugin>
+        </plugins>
+
+    </build>
+
+    <profiles>
+        <profile>
+            <id>dev</id>
+            <activation>
+                <property>
+                    <name>dev</name>
+                </property>
+            </activation>
+            <properties>
+                <nx.build.options>-dev</nx.build.options>
+            </properties>
+            <build>
+            </build>
+        </profile>
+    </profiles>
+
+
+</project>

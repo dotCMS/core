@@ -1,0 +1,682 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.dotcms</groupId>
+        <artifactId>build-parent</artifactId>
+        <version>1.0.0</version>
+        <relativePath>../build-parent/pom.xml</relativePath>
+    </parent>
+    <packaging>jar</packaging>
+    <artifactId>dotcms-integration</artifactId>
+
+    <version>1.0.0</version>
+    <properties>
+        <servlet.port>8080</servlet.port>
+        <palantirJavaFormat.version>2.29.0</palantirJavaFormat.version>
+
+        <version.spotless.plugin>2.37.0</version.spotless.plugin>
+        <jackson.version>2.13.4</jackson.version>
+        <batik.version>1.16</batik.version>
+        <glowroot.version>0.13.1</glowroot.version>
+        <version.cargo.plugin>1.10.6</version.cargo.plugin>
+        <assembly-directory>${basedir}/target/dist</assembly-directory>
+        <skipDockerEnv>false</skipDockerEnv>
+        <skipITs>false</skipITs>
+        <skipOwasp>true</skipOwasp>
+        <starter.filename>starter.zip</starter.filename>
+        <starter.path>${project.build.directory}/starter</starter.path>
+        <starter.full.path>${starter.path}/${starter.filename}</starter.full.path>
+
+
+        <clean.docker.volumes>true</clean.docker.volumes>
+
+        <!-- Tomcat -->
+        <tomcat.version>9.0.53</tomcat.version>
+        <enableDebug>true</enableDebug>
+        <debugPort>8000</debugPort>
+        <debugHost>localhost</debugHost>
+        <debugWait>false</debugWait>
+        <buildDocker>true</buildDocker>
+        <buildJib>false</buildJib>
+        <tomcat-dist-folder>dotserver/tomcat-${tomcat.version}</tomcat-dist-folder>
+        <tomcat9-overrides>${project.basedir}/src/main/resources/container/tomcat9</tomcat9-overrides>
+
+        <docker.base.image>tomcat:9.0.74-jdk11</docker.base.image>
+        <docker.output.image.name>dotcms/dotcms-test</docker.output.image.name>
+
+
+        <felix.base.dir>${project.build.directory}/core-war/WEB-INF/felix</felix.base.dir>
+        <felix.system.base.dir>${project.build.directory}/core-war/WEB-INF/felix-system</felix.system.base.dir>
+
+<!--
+        <felix.base.dir>/Users/stevebolton/felix_test/felix</felix.base.dir>
+        <felix.system.base.dir>/Users/stevebolton/felix_test/felix_system</felix.system.base.dir>
+-->
+        <!-- <testSourceDirectory>${basedir}/../dotCMS/src/integration-test/java2</testSourceDirectory>-->
+
+        <webapp.extract.dir>${project.build.directory}/core-war</webapp.extract.dir>
+        <test.webapp.root>${webapp.extract.dir}</test.webapp.root>
+    </properties>
+    <dependencies>
+        <dependency>
+            <groupId>com.dotcms</groupId>
+            <artifactId>dotcms-war</artifactId>
+            <version>${project.version}</version>
+            <type>war</type>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms</groupId>
+            <artifactId>dotcms-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dotcms</groupId>
+            <artifactId>dotcms-core</artifactId>
+            <version>${project.version}</version>
+            <classifier>tests</classifier>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jetbrains</groupId>
+            <artifactId>annotations</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+            <version>3.1.0</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>javax.servlet.jsp</groupId>
+            <artifactId>javax.servlet.jsp-api</artifactId>
+            <version>2.2.1</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.tomcat</groupId>
+            <artifactId>tomcat-jasper</artifactId>
+            <version>9.0.73</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>42.5.1</version>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.checkerframework</groupId>
+                    <artifactId>checker-qual</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.microsoft.sqlserver</groupId>
+            <artifactId>mssql-jdbc</artifactId>
+            <version>7.4.1.jre8</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
+            <version>3.0.0</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.glassfish.jaxb</groupId>
+            <artifactId>jaxb-runtime</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>2.28.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.powermock</groupId>
+            <artifactId>powermock-api-mockito2</artifactId>
+            <version>2.0.9</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.powermock</groupId>
+            <artifactId>powermock-module-junit4</artifactId>
+            <version>2.0.9</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.tngtech.junit.dataprovider</groupId>
+            <artifactId>junit4-dataprovider</artifactId>
+            <version>2.6</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.dotcms</groupId>
+                <artifactId>application-bom</artifactId>
+                <version>${project.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <build>
+
+        <plugins>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>unpack2</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>com.dotcms</groupId>
+                                    <artifactId>dotcms-war</artifactId>
+                                    <version>${project.version}</version>
+                                    <type>war</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${webapp.extract.dir}</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                            <overWriteReleases>false</overWriteReleases>
+                            <overWriteSnapshots>true</overWriteSnapshots>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-test-starter</id>
+                        <phase>generate-test-resources</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>com.dotcms</groupId>
+                                    <artifactId>starter</artifactId>
+                                    <!-- <version>empty_20210903</version>-->
+                                    <version>${starter.version}</version>
+                                    <type>zip</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${starter.path}</outputDirectory>
+                                    <destFileName>${starter.filename}</destFileName>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+
+            <plugin>
+                <groupId>org.owasp</groupId>
+                <artifactId>dependency-check-maven</artifactId>
+                <configuration>
+                    <skip>${skipOwasp}</skip>
+                    <suppressionFiles>
+                        <suppressionFile>${maven.multiModuleProjectDirectory}/owasp-suppressions.xml</suppressionFile>
+                    </suppressionFiles>
+                    <!-- Turn down when we clean up or have suppressions-->
+                    <failBuildOnCVSS>11</failBuildOnCVSS>
+                    <assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
+                    <failOnError>false</failOnError>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>format-core</id>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${skipFormat}</skip>
+                            <!-- These are the defaults, you can override if you want -->
+                            <!-- optional: limit format enforcement to just the files changed by this feature branch -->
+                            <!-- <ratchetFrom>origin/main</ratchetFrom>-->
+                            <formats>
+                                <!-- you can define as many formats as you want, each is independent -->
+                                <format>
+                                    <!-- define the files to apply to -->
+                                    <includes>
+                                        <include>*.md</include>
+                                        <include>.gitignore</include>
+                                    </includes>
+                                    <!-- define the steps to apply to those files -->
+                                    <trimTrailingWhitespace />
+                                    <endWithNewline />
+                                    <toggleOffOn />
+                                    <indent>
+                                        <tabs>true</tabs>
+                                        <spacesPerTab>4</spacesPerTab>
+                                    </indent>
+                                </format>
+                            </formats>
+                            <!-- define a language-specific format -->
+                            <java>
+                                <includes>
+                                    <include>src/main/java/**/*.java</include>
+                                    <include>src/test/java/**/*.java</include>
+                                    <include>src/enterprise/java/**/*.java</include>
+                                </includes>
+                                <palantirJavaFormat>
+                                    <version>${palantirJavaFormat.version}</version>
+                                </palantirJavaFormat>
+                                <!--
+                                <googleJavaFormat>
+                                    <version>1.8</version>
+                                    <style>AOSP</style>
+                                    <reflowLongStrings>true</reflowLongStrings>
+                                </googleJavaFormat>
+                                -->
+                                <!--
+                                <eclipse>
+                                    <file>../docs/styleguide/eclipse-java-google-style.xml</file>
+                                    <version>4.10</version>
+                                </eclipse>
+                                -->
+                                <removeUnusedImports />
+                                <trimTrailingWhitespace />
+                                <endWithNewline />
+                                <importOrder />
+                                <!--<importOrder>
+                                    <order>java,javax,org,com,net,com.dotcms,com.dotmarketing</order>
+                                </importOrder>-->
+                            </java>
+                            <pom>
+                                <!-- These are the defaults, you can override if you want -->
+                                <includes>
+                                    <include>pom.xml</include>
+                                </includes>
+                                <sortPom>
+                                    <encoding>UTF-8</encoding>
+                                    <!-- The encoding of the pom files -->
+                                    <lineSeparator>${line.separator}</lineSeparator>
+                                    <!-- line separator to use -->
+                                    <expandEmptyElements>false</expandEmptyElements>
+                                    <!-- Should empty elements be expanded-->
+                                    <spaceBeforeCloseEmptyElement>false</spaceBeforeCloseEmptyElement>
+                                    <!-- Should a space be added inside self-closing elements-->
+                                    <keepBlankLines>false</keepBlankLines>
+                                    <!-- Keep empty lines -->
+                                    <nrOfIndentSpace>4</nrOfIndentSpace>
+                                    <!-- Indentation -->
+                                    <indentBlankLines>false</indentBlankLines>
+                                    <!-- Should empty lines be indented -->
+                                    <indentSchemaLocation>false</indentSchemaLocation>
+                                    <!-- Should schema locations be indented -->
+                                    <predefinedSortOrder>custom_1</predefinedSortOrder>
+                                    <!-- Sort order of elements: https://github.com/Ekryd/sortpom/wiki/PredefinedSortOrderProfiles-->
+                                    <sortOrderFile />
+                                    <!-- Custom sort order of elements: https://raw.githubusercontent.com/Ekryd/sortpom/master/sorter/src/main/resources/custom_1.xml -->
+                                    <sortDependencies>scope,groupId,artifactId</sortDependencies>
+                                    <!-- Sort dependencies: https://github.com/Ekryd/sortpom/wiki/SortDependencies-->
+                                    <sortDependencyExclusions />
+                                    <!-- Sort dependency exclusions: https://github.com/Ekryd/sortpom/wiki/SortDependencies-->
+                                    <sortPlugins />
+                                    <!-- Sort plugins: https://github.com/Ekryd/sortpom/wiki/SortPlugins -->
+                                    <sortProperties>true</sortProperties>
+                                    <!-- Sort properties -->
+                                    <sortModules>false</sortModules>
+                                    <!-- Sort modules -->
+                                    <sortExecutions>false</sortExecutions>
+                                    <!-- Sort plugin executions -->
+                                </sortPom>
+                            </pom>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${version.compiler.plugin}</version>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <executions>
+                  <execution>
+                        <id>add-test-source</id>
+                        <goals>
+                            <goal>add-test-source</goal>
+                        </goals>
+                        <phase>generate-test-sources</phase>
+                        <configuration>
+                            <sources>
+                                <source>${basedir}/../dotCMS/src/integration-test/java</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+
+                    <execution>
+                        <id>add-it-test-resource</id>
+                        <goals>
+                            <goal>add-test-resource</goal>
+                        </goals>
+                        <phase>generate-test-resources</phase>
+                        <configuration>
+                            <resources>
+                                <resource>
+                                    <directory>${test.webapp.root}/WEB-INF/classes</directory>
+                                    <excludes>
+                                        <exclude>**/*.class</exclude>
+                                    </excludes>
+                                </resource>
+                                <resource>
+                                    <!-- This is the old directory where the integration tests are located.  These will be moved to this project-->
+                                    <directory>${maven.multiModuleProjectDirectory}/dotCMS/src/integration-test/resources</directory>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                  <skip>true</skip>
+                    <forkCount>1</forkCount>
+                    <reuseForks>false</reuseForks>
+                    <excludes>
+                        <exclude>**/*</exclude>
+                    </excludes>
+                    <systemPropertyVariables>
+                        <hazelcast.logging.type>log4j2</hazelcast.logging.type>
+                        <DOT_TEST_WEBAPP_ROOT>${test.webapp.root}</DOT_TEST_WEBAPP_ROOT>
+                        <DOT_ASSET_REAL_PATH>${test.assets.dir}</DOT_ASSET_REAL_PATH>
+                        <DOT_DYNAMIC_CONTENT_PATH>${test.dynamic.dir}</DOT_DYNAMIC_CONTENT_PATH>
+
+                        <DOT_DATASOURCE_PROVIDER_STRATEGY_CLASS>com.dotmarketing.db.SystemEnvDataSourceStrategy</DOT_DATASOURCE_PROVIDER_STRATEGY_CLASS>
+                        <DOT_DB_DRIVER>org.postgresql.Driver</DOT_DB_DRIVER>
+                        <DOT_DB_BASE_URL>jdbc:postgresql://localhost:5437/dotcms?autosave=conservative</DOT_DB_BASE_URL>
+                        <DOT_DB_USERNAME>postgres</DOT_DB_USERNAME>
+                        <DOT_DB_PASSWORD>postgres</DOT_DB_PASSWORD>
+                        <DOT_DOTCMS_DEV_MODE>true</DOT_DOTCMS_DEV_MODE>
+
+                        <!-- from cicd/docker/dotcms-compose.yml -->
+                        <DOT_INDEX_POLICY_SINGLE_CONTEN>FORCE</DOT_INDEX_POLICY_SINGLE_CONTEN>
+                        <DOT_ASYNC_REINDEX_COMMIT_LISTENERS>false</DOT_ASYNC_REINDEX_COMMIT_LISTENERS>
+                        <DOT_ASYNC_COMMIT_LISTENERS>false</DOT_ASYNC_COMMIT_LISTENERS>
+                        <DOT_CACHE_GRAPHQLQUERYCACHE_SECONDS>600</DOT_CACHE_GRAPHQLQUERYCACHE_SECONDS>
+
+                        <DOT_ES_ENDPOINTS>http://localhost:9207</DOT_ES_ENDPOINTS>
+                        <DOT_STARTER_DATA_LOAD>${starter.full.path}</DOT_STARTER_DATA_LOAD>
+                        <DOT_FELIX_BASE_DIR>${felix.base.dir}</DOT_FELIX_BASE_DIR>
+                        <DOT_SYSTEM_FELIX_BASE_DIR>${felix.system.base.dir}</DOT_SYSTEM_FELIX_BASE_DIR>
+                        <DOT_VELOCITY_ROOT>${test.webapp.root}/WEB-INF/velocity</DOT_VELOCITY_ROOT>
+                        <DOT_GEOIP2_CITY_DATABASE_PATH_OVERRIDE>${test.webapp.root}/WEB-INF/geoip2/GeoLite2-City.mmdb</DOT_GEOIP2_CITY_DATABASE_PATH_OVERRIDE>
+                        <DOT_DARTSASS_COMPILER_LOCATION>${test.webapp.root}/WEB-INF/bin</DOT_DARTSASS_COMPILER_LOCATION>
+
+
+                        <buildDirectory>${project.build.directory}</buildDirectory>
+
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <configuration>
+                    <forkCount>1</forkCount>
+                    <reuseForks>false</reuseForks>
+                    <argLine>
+                        -Djavax.xml.transform.TransformerFactory=com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl
+                        -Djavax.xml.parsers.DocumentBuilderFactory=com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl
+                        -Djavax.xml.parsers.SAXParserFactory=com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl
+                        -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
+                        --add-modules java.se
+                        --add-exports java.base/jdk.internal.ref=ALL-UNNAMED
+                        --add-opens java.base/java.lang=ALL-UNNAMED
+                        --add-opens java.base/java.nio=ALL-UNNAMED
+                        --add-opens java.base/sun.nio.ch=ALL-UNNAMED
+                        --add-opens java.management/sun.management=ALL-UNNAMED
+                        --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED
+                    </argLine>
+                    <systemPropertyVariables>
+                        <hazelcast.logging.type>log4j2</hazelcast.logging.type>
+                        <DOT_TEST_WEBAPP_ROOT>${test.webapp.root}</DOT_TEST_WEBAPP_ROOT>
+                        <DOT_ASSET_REAL_PATH>${test.assets.dir}</DOT_ASSET_REAL_PATH>
+                        <DOT_DYNAMIC_CONTENT_PATH>${test.dynamic.dir}</DOT_DYNAMIC_CONTENT_PATH>
+
+                        <DOT_DATASOURCE_PROVIDER_STRATEGY_CLASS>com.dotmarketing.db.SystemEnvDataSourceStrategy</DOT_DATASOURCE_PROVIDER_STRATEGY_CLASS>
+                        <DOT_DB_DRIVER>org.postgresql.Driver</DOT_DB_DRIVER>
+                        <DOT_DB_BASE_URL>jdbc:postgresql://localhost:5437/dotcms?autosave=conservative</DOT_DB_BASE_URL>
+                        <DOT_DB_USERNAME>postgres</DOT_DB_USERNAME>
+                        <DOT_DB_PASSWORD>postgres</DOT_DB_PASSWORD>
+                        <DOT_DOTCMS_DEV_MODE>true</DOT_DOTCMS_DEV_MODE>
+
+                        <!-- from cicd/docker/dotcms-compose.yml -->
+                        <DOT_INDEX_POLICY_SINGLE_CONTEN>FORCE</DOT_INDEX_POLICY_SINGLE_CONTEN>
+                        <DOT_ASYNC_REINDEX_COMMIT_LISTENERS>false</DOT_ASYNC_REINDEX_COMMIT_LISTENERS>
+                        <DOT_ASYNC_COMMIT_LISTENERS>false</DOT_ASYNC_COMMIT_LISTENERS>
+                        <DOT_CACHE_GRAPHQLQUERYCACHE_SECONDS>600</DOT_CACHE_GRAPHQLQUERYCACHE_SECONDS>
+
+                        <DOT_ES_ENDPOINTS>http://localhost:9207</DOT_ES_ENDPOINTS>
+                        <DOT_STARTER_DATA_LOAD>${starter.full.path}</DOT_STARTER_DATA_LOAD>
+                        <DOT_FELIX_BASE_DIR>${felix.base.dir}</DOT_FELIX_BASE_DIR>
+                        <DOT_SYSTEM_FELIX_BASE_DIR>${felix.system.base.dir}</DOT_SYSTEM_FELIX_BASE_DIR>
+                        <DOT_VELOCITY_ROOT>${test.webapp.root}/WEB-INF/velocity</DOT_VELOCITY_ROOT>
+                        <DOT_GEOIP2_CITY_DATABASE_PATH_OVERRIDE>${test.webapp.root}/WEB-INF/geoip2/GeoLite2-City.mmdb</DOT_GEOIP2_CITY_DATABASE_PATH_OVERRIDE>
+                        <DOT_DARTSASS_COMPILER_LOCATION>${test.webapp.root}/WEB-INF/bin</DOT_DARTSASS_COMPILER_LOCATION>
+
+
+                        <buildDirectory>${project.build.directory}</buildDirectory>
+
+                    </systemPropertyVariables>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                        <configuration>
+                            <includes>
+                                <include>**/*</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>cleanup-it-test-data</id>
+                        <phase>pre-integration-test</phase>
+
+                        <configuration>
+                            <skip>${skipITs}</skip>
+                            <target>
+
+                                <delete dir="${test.temp.dir}" />
+                                <delete dir="${test.assets.dir}" includeemptydirs="true">
+                                    <include name="**/*" />
+                                    <exclude name="license.zip" />
+                                </delete>
+                                <delete dir="${test.dynamic.dir}" />
+
+                                <delete dir="${test.temp.dir}" />
+                                <delete dir="${test.assets.dir}" includeemptydirs="true">
+                                    <include name="**/*" />
+                                    <exclude name="license.zip" />
+                                </delete>
+                                <delete dir="${test.dynamic.dir}" />
+
+                            </target>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>initialize-it-test-data</id>
+                        <phase>pre-integration-test</phase>
+
+                        <configuration>
+                            <skip>${skipITs}</skip>
+                            <target>
+                                <mkdir dir="${test.temp.dir}" />
+                                <mkdir dir="${test.assets.dir}" />
+
+                                <copy todir="${test.assets.dir}">
+                                    <fileset dir="${user.home}/.dotcms/license" includes="license.zip" />
+                                </copy>
+
+                                <mkdir dir="${test.temp.dir}" />
+                                <mkdir dir="${test.assets.dir}" />
+
+                                <copy todir="${test.assets.dir}">
+                                    <fileset dir="${user.home}/.dotcms/license" includes="license.zip" />
+                                </copy>
+
+                            </target>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+
+            <plugin>
+                <groupId>com.dkanejs.maven.plugins</groupId>
+                <artifactId>docker-compose-maven-plugin</artifactId>
+                <configuration>
+                    <!--  <envFile>${project.basedir}/.env</envFile>-->
+                    <services>
+                        <service>db-test</service>
+                        <service>elasticsearch-test</service>
+                    </services>
+                    <removeVolumes>false</removeVolumes>
+                    <projectName>cargo-it</projectName>
+                    <removeImages>true</removeImages>
+                    <removeImagesType>local</removeImagesType>
+                    <skip>${skipDockerEnv}</skip>
+                    <composeFile>${project.basedir}/docker-compose.yml</composeFile>
+                    <detachedMode>true</detachedMode>
+                    <removeVolumes>true</removeVolumes>
+                    <envFile>${project.basedir}/it-test.env</envFile>
+                </configuration>
+
+                <executions>
+                    <execution>
+                        <id>up</id>
+                        <phase>pre-integration-test</phase>
+                        <goals>
+                            <goal>down</goal>
+                            <goal>up</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${skipITs}</skip>
+                            <removeVolumes>${clean.docker.volumes}</removeVolumes>
+                            <ignorePullFailures>true</ignorePullFailures>
+                            <detachedMode>true</detachedMode>
+                            <services>
+                                <service>db-test</service>
+                                <service>elasticsearch-test</service>
+                            </services>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>down</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>down</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${skipITs}</skip>
+                            <!--We clean docker volumes before but not after as we may need to debug -->
+                            <!--<removeVolumes>${clean.docker.volumes}</removeVolumes>-->
+                            <services>
+                                <service>db</service>
+                                <service>elasticsearch</service>
+                            </services>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+
+
+        </plugins>
+    </build>
+    <profiles>
+
+
+    </profiles>
+    <repositories>
+        <repository>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>dotcms-libs</id>
+            <url>https://repo.dotcms.com/artifactory/libs-release</url>
+        </repository>
+        <repository>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+            <id>dotcms-libs-snapshot</id>
+            <url>https://repo.dotcms.com/artifactory/libs-snapshot-local</url>
+        </repository>
+        <repository>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>jitpack</id>
+            <url>https://jitpack.io</url>
+        </repository>
+    </repositories>
+    <reporting>
+        <plugins>
+            <plugin>
+                <groupId>org.owasp</groupId>
+                <artifactId>dependency-check-maven</artifactId>
+                <reportSets>
+                    <reportSet>
+                        <reports>
+                            <report>aggregate</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
+            </plugin>
+        </plugins>
+    </reporting>
+</project>
+

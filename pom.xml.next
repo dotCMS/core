@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.dotcms</groupId>
     <artifactId>dotcms-parent</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.1-SNAPSHOT</version>
     <packaging>pom</packaging>
     <description>DotCMS</description>
     <modules>
@@ -28,7 +28,7 @@
         <!-- jandex maven plugin version -->
         <jandex-maven-plugin.version>1.2.3</jandex-maven-plugin.version>
         <java.version>11</java.version>
-        <javadoc.additional.params/>
+        <javadoc.additional.params />
         <jdk.min.version>${maven.compiler.argument.source}</jdk.min.version>
         <maven.compiler.argument.source>${maven.compiler.source}</maven.compiler.argument.source>
         <maven.compiler.argument.target>${maven.compiler.target}</maven.compiler.argument.target>
@@ -137,9 +137,9 @@
                                     <include>.gitignore</include>
                                 </includes>
                                 <!-- define the steps to apply to those files -->
-                                <trimTrailingWhitespace/>
-                                <endWithNewline/>
-                                <toggleOffOn/>
+                                <trimTrailingWhitespace />
+                                <endWithNewline />
+                                <toggleOffOn />
                                 <indent>
                                     <tabs>true</tabs>
                                     <spacesPerTab>4</spacesPerTab>
@@ -171,11 +171,11 @@
                                 <!-- Should schema locations be indented -->
                                 <predefinedSortOrder>custom_1</predefinedSortOrder>
                                 <!-- Sort order of elements: https://github.com/Ekryd/sortpom/wiki/PredefinedSortOrderProfiles-->
-                                <sortOrderFile/>
+                                <sortOrderFile />
                                 <!-- Custom sort order of elements: https://raw.githubusercontent.com/Ekryd/sortpom/master/sorter/src/main/resources/custom_1.xml -->
                                 <sortDependencies>scope,groupId,artifactId</sortDependencies>
                                 <!-- Sort dependencies: https://github.com/Ekryd/sortpom/wiki/SortDependencies-->
-                                <sortDependencyExclusions/>
+                                <sortDependencyExclusions />
                                 <!-- Sort dependency exclusions: https://github.com/Ekryd/sortpom/wiki/SortDependencies-->
                                 <sortPlugins>groupId,artifactId</sortPlugins>
                                 <!-- Sort plugins: https://github.com/Ekryd/sortpom/wiki/SortPlugins -->
@@ -436,6 +436,9 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-release-plugin</artifactId>
                     <version>${version.release.plugin}</version>
+                    <configuration>
+                        <preparationGoals>install -DskipTests=true</preparationGoals>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>no.sparebank1</groupId>
@@ -806,7 +809,7 @@
     <profiles>
         <profile>
             <id>release</id>
-            <modules/>
+            <modules />
             <build>
                 <plugins>
                     <plugin>
@@ -817,10 +820,7 @@
                             <id>release</id>
                             <properties>
                                 <gpg.useagent>false</gpg.useagent>
-                                <gpg.executable>/usr/local/Cellar/gnupg@1.4/1.4.23_1/bin/gpg1</gpg.executable> <- use gpg1 on Mac OS X
-                                <gpg.homedir>~/.gnupg</gpg.homedir>  <- Update to your own directory
-                                <gpg.passphrase>******</gpg.passphrase> <- Add your passphrase
-                            </properties>
+                                <gpg.executable>/usr/local/Cellar/gnupg@1.4/1.4.23_1/bin/gpg1</gpg.executable> <- use gpg1 on Mac OS X <gpg.homedir>~/.gnupg</gpg.homedir>  <- Update to your own directory <gpg.passphrase>******</gpg.passphrase> <- Add your passphrase </properties>
                         </profile>
                          -->
                         <groupId>org.apache.maven.plugins</groupId>
