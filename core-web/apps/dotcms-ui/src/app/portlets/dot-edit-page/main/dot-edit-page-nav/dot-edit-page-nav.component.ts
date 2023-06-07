@@ -153,8 +153,8 @@ export class DotEditPageNavComponent implements OnChanges {
     }
 
     private disableLayoutOnExperimentVariant(): boolean {
-        const experimentId = this.route.snapshot.queryParams.experimentId;
-        const runningExperiment = this.pageState.state.runningExperiment;
+        const experimentId = this.route.snapshot?.queryParams?.experimentId;
+        const runningExperiment = this.pageState.state?.runningExperiment;
 
         const isCurrentExperimentAndRunning = experimentId === runningExperiment?.id;
 

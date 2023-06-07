@@ -380,7 +380,7 @@ export class DotPageStateService {
 
                     this.dotHttpErrorManagerService.handle(error, true);
 
-                    return null;
+                    return of(null);
                 }),
                 switchMap((content: ESContent) => {
                     return of(content?.jsonObjectView?.contentlets[0]);
@@ -396,7 +396,7 @@ export class DotPageStateService {
 
                 this.dotHttpErrorManagerService.handle(error, true);
 
-                return null;
+                return of(null);
             }),
             switchMap((experiments: DotExperiment[]) => {
                 return of(experiments && experiments.length > 0 ? experiments[0] : null);
