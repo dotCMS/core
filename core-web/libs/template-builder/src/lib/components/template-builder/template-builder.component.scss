@@ -33,12 +33,6 @@ dotcms-add-widget.ui-draggable-dragging {
     box-shadow: $md-shadow-6;
 }
 
-.rows {
-    display: flex;
-    flex-direction: column;
-    gap: $spacing-3;
-}
-
 dotcms-template-builder-background-columns {
     position: absolute;
     inset: 0 3.2rem;
