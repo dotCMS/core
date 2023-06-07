@@ -92,6 +92,7 @@
         <test.temp.dir>${test.working.dir}/temp</test.temp.dir>
 
         <starter.version>empty_20230525</starter.version>
+        <turbo-maven-plugin.version>1.0.0</turbo-maven-plugin.version>
         <!--<starter.version>empty_20230509</starter.version>-->
     </properties>
 
@@ -437,33 +438,16 @@
                     <version>${version.release.plugin}</version>
                 </plugin>
                 <plugin>
-                    <groupId>com.github.danielflower.mavenplugins</groupId>
-                    <artifactId>multi-module-maven-release-plugin</artifactId>
-                    <version>3.6.4</version>
-                    <dependencies>
-                        <dependency>
-                            <groupId>com.github.mwiede</groupId>
-                            <artifactId>jsch</artifactId>
-                            <version>0.2.9</version>
-                        </dependency>
-                        <dependency>
-                            <groupId>com.github.danielflower.mavenplugins</groupId>
-                            <artifactId>multi-module-maven-release-plugin</artifactId>
-                            <version>0.2.9</version>
-                           <exclusions>
-                               <exclusion>
-                                   <groupId>com.jcraft</groupId>
-                                   <artifactId>jsch</artifactId>
-                               </exclusion>
-                           </exclusions>
-                        </dependency>
-                    </dependencies>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-resources-plugin</artifactId>
-                    <version>${version.resources.plugin}</version>
-                </plugin>
+                    <groupId>no.sparebank1</groupId>
+                    <artifactId>turbo-maven-plugin</artifactId>
+                    <version>${turbo-maven-plugin.version}</version>
+                    <extensions>true</extensions>
+                    <configuration>
+                        <enabled>false</enabled>
+                        <ignoreChangesInFiles>swagger.json</ignoreChangesInFiles>
+                        <alwaysBuildModules>distribution</alwaysBuildModules>
+                    </configuration>
+                </plugin
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-shade-plugin</artifactId>
@@ -601,6 +585,17 @@
             </plugins>
         </pluginManagement>
         <plugins>
+            <plugin>
+                <groupId>no.sparebank1</groupId>
+                <artifactId>turbo-maven-plugin</artifactId>
+                <version>${turbo-maven-plugin.version}</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <enabled>false</enabled>
+                    <ignoreChangesInFiles>swagger.json</ignoreChangesInFiles>
+                    <alwaysBuildModules>distribution</alwaysBuildModules>
+                </configuration>
+            </plugin
             <plugin>
                 <groupId>com.diffplug.spotless</groupId>
                 <artifactId>spotless-maven-plugin</artifactId>
