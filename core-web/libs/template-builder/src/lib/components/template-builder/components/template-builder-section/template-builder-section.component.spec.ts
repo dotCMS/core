@@ -13,10 +13,10 @@ describe('TemplateBuilderSectionComponent', () => {
 
     beforeEach(() => {
         spectator = createHost(
-            `<dotcms-template-builder-section [title]="title"></dotcms-template-builder-section>`,
+            `<dotcms-template-builder-section>{{MOCK_TEXT}}</dotcms-template-builder-section>`,
             {
                 hostProps: {
-                    title: MOCK_TEXT
+                    MOCK_TEXT
                 }
             }
         );

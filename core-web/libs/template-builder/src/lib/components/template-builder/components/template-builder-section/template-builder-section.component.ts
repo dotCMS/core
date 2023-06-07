@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 
 @Component({
     selector: 'dotcms-template-builder-section',
@@ -7,7 +7,4 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
     changeDetection: ChangeDetectionStrategy.OnPush,
     standalone: true
 })
-export class TemplateBuilderSectionComponent {
-    @Input()
-    title: string;
-}
+export class TemplateBuilderSectionComponent {}
