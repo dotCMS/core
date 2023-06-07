@@ -1,181 +1,53 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+import {
+    createServiceFactory,
+    mockProvider,
+    SpectatorService,
+    SpyObject
+} from '@ngneat/spectator/jest';
+import { of } from 'rxjs';
 
-// const route: any = jasmine.createSpyObj<ActivatedRouteSnapshot>("ActivatedRouteSnapshot", [
-//   "toString"
-// ]);
+import { ActivatedRouteSnapshot } from '@angular/router';
 
-// route.queryParams = {};
+import {
+    DotExperimentExperimentResolver,
+    DotExperimentsService
+} from '@dotcms/portlets/dot-experiments/data-access';
+import { getExperimentMock } from '@dotcms/utils-testing';
 
-xdescribe('DotExperimentExperimentResolver', () => {
-    it('move this to spectator', () => {
-        const val = 1;
-        expect(val).toBe(1);
+const EXPERIMENT_MOCK = getExperimentMock(0);
+
+describe('DotExperimentExperimentResolver', () => {
+    let spectator: SpectatorService<DotExperimentExperimentResolver>;
+    let dotExperimentsService: SpyObject<DotExperimentsService>;
+    let activatedRouteSnapshotMock: SpyObject<ActivatedRouteSnapshot>;
+
+    const createService = createServiceFactory({
+        service: DotExperimentExperimentResolver,
+        providers: [mockProvider(ActivatedRouteSnapshot), mockProvider(DotExperimentsService)]
     });
-    // let dotHttpErrorManagerService: DotHttpErrorManagerService;
-    // let dotPageStateService: DotPageStateService;
-    // let dotPageStateServiceRequestPageSpy: jasmine.Spy;
-    // let dotRouterService: DotRouterService;
-    //
-    // let injector: TestBed;
-    // let dotEditPageResolver: DotEditPageResolver;
-    //
-    // beforeEach(() => {
-    //     TestBed.configureTestingModule({
-    //         imports: [HttpClientTestingModule],
-    //         providers: [
-    //             { provide: CoreWebService, useClass: CoreWebServiceMock },
-    //             DotHttpErrorManagerService,
-    //             DotPageStateService,
-    //             DotEditPageResolver,
-    //             DotPageRenderService,
-    //             DotContentletLockerService,
-    //             DotAlertConfirmService,
-    //             ConfirmationService,
-    //             DotFormatDateService,
-    //             DotESContentService,
-    //             DotFavoritePageService,
-    //             { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
-    //             { provide: DotRouterService, useClass: MockDotRouterService },
-    //             {
-    //                 provide: ActivatedRouteSnapshot,
-    //                 useValue: route
-    //             },
-    //             {
-    //                 provide: LoginService,
-    //                 useClass: LoginServiceMock
-    //             }
-    //         ]
-    //     });
-    //     injector = getTestBed();
-    //     dotEditPageResolver = injector.get(DotEditPageResolver);
-    //     dotHttpErrorManagerService = injector.get(DotHttpErrorManagerService);
-    //     dotPageStateService = injector.get(DotPageStateService);
-    //     dotPageStateServiceRequestPageSpy = spyOn(dotPageStateService, 'requestPage');
-    //     dotRouterService = injector.get(DotRouterService);
-    //
-    //     spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
-    // });
-    //
-    // beforeEach(() => {
-    //     route.queryParams.url = 'edit-page/content';
-    //     route.queryParams.language_id = '2';
-    //     route.children = [
-    //         {
-    //             url: [
-    //                 {
-    //                     path: 'content'
-    //                 }
-    //             ]
-    //         }
-    //     ];
-    // });
-    //
-    // it('should return a DotRenderedPageState', () => {
-    //     const mock = new DotPageRenderState(mockUser(), new DotPageRender(mockDotRenderedPage()));
-    //     dotPageStateServiceRequestPageSpy.and.returnValue(of(mock));
-    //
-    //     dotEditPageResolver.resolve(route).subscribe((state: DotPageRenderState) => {
-    //         expect(state).toEqual(mock);
-    //     });
-    //
-    //     expect<any>(dotPageStateService.requestPage).toHaveBeenCalledWith({
-    //         url: 'edit-page/content',
-    //         viewAs: {
-    //             language: '2'
-    //         }
-    //     });
-    // });
-    //
-    // it('should redirect to site-browser when request fail', () => {
-    //     const fake403Response = mockResponseView(403);
-    //
-    //     dotPageStateServiceRequestPageSpy.and.returnValue(throwError(fake403Response));
-    //
-    //     dotEditPageResolver.resolve(route).subscribe();
-    //     expect(dotRouterService.goToSiteBrowser).toHaveBeenCalledTimes(1);
-    // });
-    //
-    // it('should return DotPageRenderState from local state', () => {
-    //     const mock = new DotPageRenderState(mockUser(), new DotPageRender(mockDotRenderedPage()));
-    //     dotPageStateService.setInternalNavigationState(mock);
-    //
-    //     dotEditPageResolver.resolve(route).subscribe((state: DotPageRenderState) => {
-    //         expect(state).toEqual(mock);
-    //     });
-    //
-    //     expect(dotPageStateServiceRequestPageSpy).not.toHaveBeenCalled();
-    // });
-    //
-    // describe('handle layout', () => {
-    //     beforeEach(() => {
-    //         route.children = [
-    //             {
-    //                 url: [
-    //                     {
-    //                         path: 'layout'
-    //                     }
-    //                 ]
-    //             }
-    //         ];
-    //     });
-    //
-    //     it('should return a DotRenderedPageState', () => {
-    //         const mock = new DotPageRenderState(
-    //             mockUser(),
-    //             new DotPageRender(mockDotRenderedPage())
-    //         );
-    //         dotPageStateServiceRequestPageSpy.and.returnValue(of(mock));
-    //
-    //         dotEditPageResolver.resolve(route).subscribe((state: DotPageRenderState) => {
-    //             expect(state).toEqual(mock);
-    //         });
-    //         expect(dotRouterService.goToSiteBrowser).not.toHaveBeenCalled();
-    //     });
-    //
-    //     it('should handle error and redirect to site-browser when cant edit layout', () => {
-    //         const mock = new DotPageRenderState(
-    //             mockUser(),
-    //             new DotPageRender({
-    //                 ...mockDotRenderedPage(),
-    //                 page: {
-    //                     ...mockDotRenderedPage().page,
-    //                     canEdit: false
-    //                 }
-    //             })
-    //         );
-    //         dotPageStateServiceRequestPageSpy.and.returnValue(of(mock));
-    //
-    //         dotEditPageResolver.resolve(route).subscribe((state: DotPageRenderState) => {
-    //             expect(state).toBeNull();
-    //         });
-    //         expect(dotRouterService.goToSiteBrowser).toHaveBeenCalled();
-    //         expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(
-    //             new HttpErrorResponse(
-    //                 new HttpResponse({
-    //                     body: null,
-    //                     status: HttpCode.FORBIDDEN,
-    //                     headers: null,
-    //                     url: ''
-    //                 })
-    //             )
-    //         );
-    //     });
-    //
-    //     it('should handle error and redirect to site-browser when layout is not drawed', () => {
-    //         const mock = new DotPageRenderState(
-    //             mockUser(),
-    //             new DotPageRender({
-    //                 ...mockDotRenderedPage(),
-    //                 layout: null
-    //             })
-    //         );
-    //         dotPageStateServiceRequestPageSpy.and.returnValue(of(mock));
-    //
-    //         dotEditPageResolver.resolve(route).subscribe((state: DotPageRenderState) => {
-    //             expect(state).toBeNull();
-    //         });
-    //         expect(dotRouterService.goToSiteBrowser).toHaveBeenCalled();
-    //         expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
-    //     });
-    // });
+    beforeEach(() => {
+        spectator = createService();
+        dotExperimentsService = spectator.inject(DotExperimentsService);
+        activatedRouteSnapshotMock = spectator.inject(ActivatedRouteSnapshot);
+    });
+
+    it("shouldn't get a experiment by experimentId", () => {
+        activatedRouteSnapshotMock.queryParams = {};
+
+        spectator.service.resolve(activatedRouteSnapshotMock).subscribe((result) => {
+            expect(result).toBe(null);
+        });
+    });
+
+    it('should get a experiment by experimentId', () => {
+        const experimentId = '123';
+        activatedRouteSnapshotMock.queryParams = { experimentId };
+
+        dotExperimentsService.getById.mockReturnValue(of(EXPERIMENT_MOCK));
+
+        spectator.service.resolve(activatedRouteSnapshotMock).subscribe((result) => {
+            expect(result).toBe(EXPERIMENT_MOCK);
+            expect(dotExperimentsService.getById).toHaveBeenCalledWith(experimentId);
+        });
+    });
 });

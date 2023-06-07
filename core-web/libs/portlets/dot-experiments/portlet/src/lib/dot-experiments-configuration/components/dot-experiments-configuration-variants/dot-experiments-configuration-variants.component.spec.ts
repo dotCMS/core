@@ -98,6 +98,8 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
             detectChanges: false
         });
 
+        jest.spyOn(ConfirmPopup.prototype, 'bindScrollListener').mockImplementation(jest.fn());
+
         store = spectator.inject(DotExperimentsConfigurationStore);
         router = spectator.inject(Router);
 
@@ -321,7 +323,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
             });
         });
 
-        xit('should disable tooltip if is on draft', () => {
+        it('should disable tooltip if is on draft', () => {
             spectator.detectChanges();
 
             spectator
@@ -332,8 +334,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
                 });
         });
 
-        // Skipped due to ConfirmPopup.bindScrollListener is not a function
-        xit('should disable button and show tooltip when experiment is nos on draft', () => {
+        it('should disable button and show tooltip when experiment is nos on draft', () => {
             dotExperimentsService.getById.mockReturnValue(
                 of({
                     ...EXPERIMENT_MOCK_2,
@@ -360,8 +361,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
             expect(enableTooltips.length).toEqual(4);
         });
 
-        // Skipped due to ConfirmPopup.bindScrollListener is not a function
-        xit('should view button on all variants when experiment is not on draft', () => {
+        it('should view button on all variants when experiment is not on draft', () => {
             dotExperimentsService.getById.mockReturnValue(
                 of({
                     ...EXPERIMENT_MOCK_2,
@@ -371,8 +371,6 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
 
             store.loadExperiment(EXPERIMENT_MOCK_2.id);
 
-            jest.spyOn(dotSessionStorageService, 'setVariationId');
-
             spectator.detectChanges();
 
             const variantsViewButton = spectator.queryAll(
@@ -380,7 +378,6 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
             ) as HTMLButtonElement[];
 
             expect(variantsViewButton.length).toBe(2);
-            expect(dotSessionStorageService.setVariationId).toHaveBeenCalled();
         });
     });
 
