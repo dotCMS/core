@@ -20,7 +20,7 @@ on:
       multi_arch:
         description: 'Multi-arch flag, true: linux/amd64,linux/arm64 or false: linux/amd64'
         required: false
-        default: 'false'
+        default: 'true'
 jobs:
   publish_image:
     name: Publish DotCMS docker image
