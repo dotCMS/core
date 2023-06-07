@@ -17,7 +17,7 @@ import { Inplace, InplaceModule } from 'primeng/inplace';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { MAX_INPUT_DESCRIPTIVE_LENGTH } from '@dotcms/dotcms-models';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { DotMessagePipeModule } from '@dotcms/ui';
 
 /**
  * Component to edit a text inplace and expose

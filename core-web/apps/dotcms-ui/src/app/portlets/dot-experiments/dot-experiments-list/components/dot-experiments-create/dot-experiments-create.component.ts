@@ -13,8 +13,7 @@ import { DotFieldValidationMessageModule } from '@components/_common/dot-field-v
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { DotExperiment, MAX_INPUT_TITLE_LENGTH } from '@dotcms/dotcms-models';
-import { DotFieldRequiredDirective } from '@dotcms/ui';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotFieldRequiredDirective, DotMessagePipeModule } from '@dotcms/ui';
 import {
     DotExperimentsListStore,
     VmCreateExperiments
