@@ -1,5 +1,9 @@
 @use "variables" as *;
 
+:host {
+    position: relative;
+}
+
 .grid-stack-nested {
     flex: 1;
 }
@@ -7,11 +11,32 @@
 .tools {
     display: flex;
     gap: $spacing-3;
-    margin-bottom: $spacing-3;
+    background-color: $white;
+    border-bottom: solid 1px $color-palette-gray-300;
+    padding: $spacing-3 0;
+    position: sticky;
+    top: 0;
+    z-index: 1;
 }
 
 // Class added by the gridstack library when the widget is being dragged
 dotcms-add-widget.ui-draggable-dragging {
     transform: rotate(-3.66deg);
     box-shadow: $md-shadow-6;
+}
+
+dotcms-template-builder-background-columns {
+    position: absolute;
+    inset: 0 3.2rem;
+    z-index: -1;
+}
+
+dotcms-add-widget {
+    cursor: grab;
+    z-index: 1;
+}
+
+dotcms-template-builder-section {
+    margin-top: $spacing-3;
+    margin-bottom: $spacing-4;
 }

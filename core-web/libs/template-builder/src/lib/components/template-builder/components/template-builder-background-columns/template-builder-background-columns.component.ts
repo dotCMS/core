@@ -1,5 +1,6 @@
 import { NgFor, NgStyle } from '@angular/common';
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostBinding } from '@angular/core';
+import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
 
 import { GRID_STACK_MARGIN_HORIZONTAL, GRID_STACK_UNIT } from '../../utils/gridstack-options';
 
@@ -14,4 +15,11 @@ import { GRID_STACK_MARGIN_HORIZONTAL, GRID_STACK_UNIT } from '../../utils/grids
 export class TemplateBuilderBackgroundColumnsComponent {
     readonly columnList = [].constructor(12);
     readonly gridStackGap = `${GRID_STACK_MARGIN_HORIZONTAL * 2}${GRID_STACK_UNIT}`;
+
+    @HostBinding('style')
+    hostStyle: SafeStyle;
+
+    constructor(private sanitizer: DomSanitizer) {
+        this.hostStyle = sanitizer.bypassSecurityTrustStyle(`gap: ${this.gridStackGap}`);
+    }
 }
