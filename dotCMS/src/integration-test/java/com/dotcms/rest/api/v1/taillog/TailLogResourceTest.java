@@ -39,7 +39,7 @@ public class TailLogResourceTest {
         tailerThread.start();
         try {
             //Give some time to the tailerThread to read the file
-            Thread.sleep(2000);
+            Thread.sleep(500);
             Object outputData = ((TailerTestEventOutput) eventOutput).getTestOutputData();
             String outputName = ((TailerTestEventOutput) eventOutput).getTestOutputName();
 
