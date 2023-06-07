@@ -2,14 +2,10 @@
 
 $columns-padding: 3.2rem;
 
-.background-columns {
-    height: 100%;
-    width: 100%;
+:host {
     grid-template-columns: repeat(12, minmax(0, 1fr));
     display: grid;
-    padding: 0 $columns-padding 0 $columns-padding;
-    position: absolute;
-    z-index: -1;
+    gap: 1rem;
 }
 
 .column {
