@@ -5,7 +5,6 @@ $columns-padding: 3.2rem;
 :host {
     grid-template-columns: repeat(12, minmax(0, 1fr));
     display: grid;
-    gap: $spacing-3;
 }
 
 .column {

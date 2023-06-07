@@ -22,10 +22,6 @@ describe('TemplateBuilderSectionComponent', () => {
         );
     });
 
-    it('should create the component', () => {
-        expect(spectator.component).toBeTruthy();
-    });
-
     it('should use the given title', () => {
         expect(spectator.debugElement.nativeElement.textContent).toEqual(MOCK_TEXT);
     });
