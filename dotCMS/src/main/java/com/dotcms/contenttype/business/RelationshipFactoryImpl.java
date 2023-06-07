@@ -587,7 +587,7 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
             query.append(" order by c.")
                     .append(orderBy);
         } else {
-            query.append(" order by t.tree_order");
+            query.append(" order by t.tree_order, cvi.version_ts");
         }
 
         final DotConnect dc = new DotConnect();
