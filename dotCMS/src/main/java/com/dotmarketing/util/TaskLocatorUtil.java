@@ -367,6 +367,7 @@ public class TaskLocatorUtil {
 	public static List<Class<?>> getBackportedUpgradeTaskClasses() {
 		final List<Class<?>> ret = new ArrayList<Class<?>>();
 		ret.add(Task230320FixMissingContentletAsJSON.class);
+		ret.add(Task230426AlterVarcharLengthOfLockedByCol.class);
 		return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
 
