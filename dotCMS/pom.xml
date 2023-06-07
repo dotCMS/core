@@ -47,9 +47,8 @@
     </properties>
     <dependencies>
         <dependency>
-            <groupId>com.dotcms.plugins</groupId>
+            <groupId>com.dotcms.core.plugins</groupId>
             <artifactId>tika-api</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <!--
           *****************************

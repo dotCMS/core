@@ -23,6 +23,7 @@
         <glowroot.version>0.13.1</glowroot.version>
         <jackson.version>2.13.4</jackson.version>
         <jersey.version>2.22.1</jersey.version>
+        <dotcms.tika-api.version>1.0.0-SNAPSHOT</dotcms.tika-api.version>
     </properties>
     <dependencyManagement>
 
@@ -53,9 +54,9 @@
         <dependencies>
 
             <dependency>
-                <groupId>com.dotcms.plugins</groupId>
+                <groupId>com.dotcms.core.plugins</groupId>
                 <artifactId>tika-api</artifactId>
-                <version>${project.version}</version>
+                <version>${dotcms.tika-api.version}</version>
             </dependency>
 
             <dependency>
