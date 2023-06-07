@@ -9,6 +9,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
@@ -41,6 +44,7 @@ import org.junit.Test;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
 import org.quartz.SchedulerException;
 
 
@@ -118,5 +122,30 @@ public class StartEndScheduledExperimentsJobTest extends IntegrationTestBase {
             }
 
         }
+    }
+
+
+    /**
+     * Method to test: StartEndScheduledExperimentsJobTest.run
+     * Given scenario: No license
+     * Expected result: Should not call the api methods
+     */
+    @Test
+    public void testJob_noLicense() throws Exception {
+
+        runNoLicense(()-> {
+            final ExperimentsAPI experimentsAPI1 = mock(ExperimentsAPI.class);
+
+            try {
+                new StartEndScheduledExperimentsJob(experimentsAPI1).run(null);
+            } catch (JobExecutionException e) {
+                throw new RuntimeException(e);
+            }
+
+            verify(experimentsAPI1, times(0)).startScheduledToStartExperiments(
+                    APILocator.systemUser());
+
+            verify(experimentsAPI1, times(0)).endFinalizedExperiments(APILocator.systemUser());
+        });
     }
 }
