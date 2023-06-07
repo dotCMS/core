@@ -436,6 +436,9 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-release-plugin</artifactId>
                     <version>${version.release.plugin}</version>
+                    <configuration>
+                        <preparationGoals>install -DskipTests=true</preparationGoals>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>no.sparebank1</groupId>
@@ -443,11 +446,12 @@
                     <version>${turbo-maven-plugin.version}</version>
                     <extensions>true</extensions>
                     <configuration>
-                        <enabled>false</enabled>
-                        <ignoreChangesInFiles>swagger.json</ignoreChangesInFiles>
+                        <enabled>true</enabled>
+                       <!-- <ignoreChangesInFiles>swagger.json</ignoreChangesInFiles>
                         <alwaysBuildModules>distribution</alwaysBuildModules>
+                        -->
                     </configuration>
-                </plugin
+                </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-shade-plugin</artifactId>
@@ -588,14 +592,7 @@
             <plugin>
                 <groupId>no.sparebank1</groupId>
                 <artifactId>turbo-maven-plugin</artifactId>
-                <version>${turbo-maven-plugin.version}</version>
-                <extensions>true</extensions>
-                <configuration>
-                    <enabled>false</enabled>
-                    <ignoreChangesInFiles>swagger.json</ignoreChangesInFiles>
-                    <alwaysBuildModules>distribution</alwaysBuildModules>
-                </configuration>
-            </plugin
+            </plugin>
             <plugin>
                 <groupId>com.diffplug.spotless</groupId>
                 <artifactId>spotless-maven-plugin</artifactId>

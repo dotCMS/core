@@ -31,6 +31,7 @@ import java.util.stream.Stream;
 public class AnalyticsApp {
 
     public static final String ANALYTICS_APP_KEY = "dotAnalytics-config";
+    // test
     public static final String ANALYTICS_APP_CONFIG_URL_KEY = "analytics.app.config.url";
     public static final String ANALYTICS_APP_WRITE_URL_KEY = "analytics.app.write.url";
     public static final String ANALYTICS_APP_READ_URL_KEY = "analytics.app.read.url";
