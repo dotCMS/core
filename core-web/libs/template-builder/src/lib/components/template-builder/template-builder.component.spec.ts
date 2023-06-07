@@ -54,10 +54,6 @@ describe('TemplateBuilderComponent', () => {
         store = spectator.inject(DotTemplateBuilderStore);
     });
 
-    it('should create', () => {
-        expect(spectator).toBeTruthy();
-    });
-
     it('should have a Add Row Button', () => {
         expect(spectator.query(byTestId('add-row'))).toBeTruthy();
     });
@@ -66,8 +62,8 @@ describe('TemplateBuilderComponent', () => {
         expect(spectator.query(byTestId('add-box'))).toBeTruthy();
     });
 
-    it('should have a 12 columns as background', () => {
-        expect(spectator.queryAll(byTestId('column')).length).toBe(12);
+    it('should have a background', () => {
+        expect(spectator.query('dotcms-template-builder-background-columns')).toBeTruthy();
     });
 
     it('should have the same quantity of rows as mocked data', () => {

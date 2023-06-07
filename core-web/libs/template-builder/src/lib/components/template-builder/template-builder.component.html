@@ -31,7 +31,7 @@
         data-testId="row"
     >
         <div class="grid-stack-item-content grid-stack">
-            <dotcms-template-builder-box
+            <div
                 class="grid-stack-item sub"
                 #boxElement
                 *ngFor="let box of row.subGridOpts?.children; trackBy: identify"
@@ -41,11 +41,15 @@
                 [attr.gs-y]="box.y"
                 [attr.gs-w]="box.w"
                 [attr.gs-h]="box.h"
-                [items]="box.containers"
-                [size]="box.w"
-                (deleteColumn)="removeColumn(box, boxElement.nativeElement, row.id)"
                 data-testId="box"
-            ></dotcms-template-builder-box>
+            >
+                <dotcms-template-builder-box
+                    class="grid-stack-item-content"
+                    [items]="box.containers"
+                    [size]="box.w"
+                    (deleteColumn)="removeColumn(box, boxElement, row.id)"
+                ></dotcms-template-builder-box>
+            </div>
         </div>
     </dotcms-template-builder-row>
 </div>

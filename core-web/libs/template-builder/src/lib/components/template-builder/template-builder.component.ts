@@ -12,6 +12,7 @@ import {
     AfterViewInit,
     ChangeDetectionStrategy,
     Component,
+    ElementRef,
     Input,
     OnDestroy,
     OnInit,
@@ -22,7 +23,6 @@ import {
 import { DotLayout } from '@dotcms/dotcms-models';
 
 import { colIcon, rowIcon } from './assets/icons';
-import { TemplateBuilderBoxComponent } from './components/template-builder-box/template-builder-box.component';
 import { TemplateBuilderRowComponent } from './components/template-builder-row/template-builder-row.component';
 import { DotGridStackWidget } from './models/models';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
@@ -54,7 +54,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     @ViewChildren('boxElement', {
         emitDistinctChangesOnly: true
     })
-    boxes!: QueryList<TemplateBuilderBoxComponent>;
+    boxes!: QueryList<ElementRef<GridItemHTMLElement>>;
 
     grid!: GridStack;
 
