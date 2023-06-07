@@ -1,23 +1,6 @@
 package com.dotmarketing.portlets.contentlet.transform;
 
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.BINARIES;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.BINARIES_VIEW;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CATEGORIES_INFO;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CATEGORIES_NAME;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CATEGORIES_VIEW;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.FILEASSET_VIEW;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.IDENTIFIER_VIEW;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.COMMON_PROPS;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CONSTANTS;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.KEY_VALUE_VIEW;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.AVOID_MAP_SUFFIX_FOR_VIEWS;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.SITE_VIEW;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.TAGS;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.VERSION_INFO;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LANGUAGE_VIEW;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LANGUAGE_PROPS;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LOAD_META;
-import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.USE_ALIAS;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.*;
 import static com.dotmarketing.util.UtilMethods.isNotSet;
 
 import com.dotmarketing.business.APILocator;
@@ -198,7 +181,8 @@ public class DotTransformerBuilder {
      */
     public DotTransformerBuilder contentResourceOptions(final boolean allCategoriesInfo){
         optionsHolder.clear();
-        optionsHolder.addAll(EnumSet.of(COMMON_PROPS, CONSTANTS, VERSION_INFO, LOAD_META, BINARIES, CATEGORIES_NAME));
+        optionsHolder.addAll(EnumSet.of(COMMON_PROPS, CONSTANTS, VERSION_INFO, LOAD_META, BINARIES, CATEGORIES_NAME,
+                DATETIME_FIELDS_TO_TIMESTAMP));
         if(allCategoriesInfo){
           optionsHolder.remove(CATEGORIES_NAME);
           optionsHolder.add(CATEGORIES_INFO);

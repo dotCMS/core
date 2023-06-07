@@ -53,3 +53,7 @@ This maintenance release includes the following code fixes:
 41. https://github.com/dotCMS/core/issues/23846 : StoryBlock - Embedding a content item to itself causes stackoverflow #23846
 42. https://github.com/dotCMS/core/issues/24285 : Block Editor: Error uploading images in a different default language. #24285
 43. https://github.com/dotCMS/core/issues/25037 : PP an existing bundle it doesn't consider Timezone #25037
+
+**Release-23.01.4**
+
+44. https://github.com/dotCMS/core/issues/25008 : Date format has changed for fields in newer versions of dotCMS #25008
