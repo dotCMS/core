@@ -530,10 +530,9 @@
                 <scope>compile</scope>
             </dependency>
             <dependency>
-                <groupId>com.dotcms.lib</groupId>
-                <artifactId>dot.webp-imageio-core</artifactId>
-                <version>0.1.5</version>
-                <scope>compile</scope>
+                <groupId>io.github.darkxanter</groupId>
+                <artifactId>webp-imageio</artifactId>
+                <version>0.3.2</version>
             </dependency>
             <dependency>
                 <groupId>com.dotcms.lib</groupId>

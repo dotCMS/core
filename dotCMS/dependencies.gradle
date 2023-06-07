@@ -88,7 +88,6 @@ dependencies {
     implementation (group: 'com.dotcms.lib', name: 'dot.util-taglib', version: 'ukv_2'){}
     implementation (group: 'com.dotcms.lib', name: 'dot.validation-api', version: '1.1.0.Final_2'){}
     implementation (group: 'com.dotcms.lib', name: 'dot.wbmp', version: 'ukv_2'){}
-    implementation (group: 'com.dotcms.lib', name: 'dot.webp-imageio-core', version: '0.1.5'){}
     implementation (group: 'com.dotcms.lib', name: 'dot.woodstox-core-lgpl', version: '4.2.0_2'){}
     implementation (group: 'com.dotcms.lib', name: 'dot.xpp3-min', version: '1.1.4c_2'){}
     implementation (group: 'com.dotcms.plugins', name: 'tika-api', version: '1.0.0-SNAPSHOT'){}
@@ -208,6 +207,7 @@ dependencies {
     }
     implementation (group: 'fop', name: 'fop', version: '0.20.3'){}
     implementation (group: 'io.github.classgraph', name: 'classgraph', version: '4.8.138'){}
+    implementation (group: 'io.github.darkxanter', name: 'webp-imageio', version: '0.3.2'){}
     implementation (group: 'io.jsonwebtoken', name: 'jjwt', version: '0.9.1'){}
     implementation (group: 'io.lettuce', name: 'lettuce-core', version: '6.1.1.RELEASE'){}
     implementation (group: 'io.netty', name: 'netty-buffer', version: '4.1.63.Final'){}
