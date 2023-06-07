@@ -18,7 +18,6 @@ import { Tooltip, TooltipModule } from 'primeng/tooltip';
 
 import { DotCopyButtonComponent } from '@components/dot-copy-button/dot-copy-button.component';
 import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
-import { DotMessagePipe } from '@dotcms/app/view/pipes';
 import { DotMessageService, DotSessionStorageService } from '@dotcms/data-access';
 import {
     DEFAULT_VARIANT_ID,
@@ -27,6 +26,7 @@ import {
     DotPageMode,
     ExperimentSteps
 } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotExperimentsConfigurationVariantsAddComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-variants-add/dot-experiments-configuration-variants-add.component';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';

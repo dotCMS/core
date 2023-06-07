@@ -20,8 +20,8 @@ import {
     DotExperimentStatusList,
     GroupedExperimentByStatus
 } from '@dotcms/dotcms-models';
+import { DotMessagePipeModule } from '@dotcms/ui';
 import { DotActionMenuItem } from '@models/dot-action-menu/dot-action-menu-item.model';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotRelativeDatePipe } from '@pipes/dot-relative-date/dot-relative-date.pipe';
 import { DotExperimentsEmptyExperimentsComponent } from '@portlets/dot-experiments/dot-experiments-list/components/dot-experiments-empty-experiments/dot-experiments-empty-experiments.component';
 

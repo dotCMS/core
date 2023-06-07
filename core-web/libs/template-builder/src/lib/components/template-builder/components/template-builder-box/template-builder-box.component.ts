@@ -1,6 +1,6 @@
 import { GridItemHTMLElement } from 'gridstack';
 
-import { NgClass, NgFor, NgIf } from '@angular/common';
+import { NgClass, NgFor, NgIf, NgForOf } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -17,6 +17,10 @@ import { ScrollPanelModule } from 'primeng/scrollpanel';
 import { DotTemplateBuilderContainer, TemplateBuilderBoxSize } from '../../models/models';
 import { getBoxSize } from '../../utils/gridstack-utils';
 import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-confirm-dialog.component';
+import { DotMessagePipeModule } from '@dotcms/ui';
+
+import { DotTemplateBuilderContainer } from '../../models/models';
+
 
 @Component({
     selector: 'dotcms-template-builder-box',
@@ -24,7 +28,7 @@ import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-co
     styleUrls: ['./template-builder-box.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     standalone: true,
-    imports: [NgFor, NgIf, NgClass, ButtonModule, ScrollPanelModule, RemoveConfirmDialogComponent]
+    imports: [NgFor, NgForOf, NgIf, NgClass, ButtonModule, ScrollPanelModule, DotMessagePipeModule, RemoveConfirmDialogComponent]
 })
 export class TemplateBuilderBoxComponent implements OnChanges {
     protected readonly templateBuilderSizes = TemplateBuilderBoxSize;

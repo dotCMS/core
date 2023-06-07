@@ -4,11 +4,15 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
 
+import { DotMessageService } from '@dotcms/data-access';
 import { DotIconModule } from '@dotcms/ui';
 
 import { TemplateBuilderRowComponent } from './template-builder-row.component';
 
 import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-confirm-dialog.component';
+
+import { DOT_MESSAGE_SERVICE_TB_MOCK } from '../../utils/mocks';
+
 
 export default {
     title: 'Components/Row',
@@ -20,8 +24,13 @@ export default {
                 ButtonModule,
                 RemoveConfirmDialogComponent,
                 BrowserAnimationsModule
-            ],
-            providers: []
+            ],   
+            providers: [
+                {
+                    provide: DotMessageService,
+                    useValue: DOT_MESSAGE_SERVICE_TB_MOCK
+                }
+            ]
         })
     ]
 } as Meta<TemplateBuilderRowComponent>;

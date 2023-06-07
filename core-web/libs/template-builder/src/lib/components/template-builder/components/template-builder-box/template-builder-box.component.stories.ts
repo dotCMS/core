@@ -6,9 +6,12 @@ import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
 
+import { DotMessageService } from '@dotcms/data-access';
+
 import { TemplateBuilderBoxComponent } from './template-builder-box.component';
 
 import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-confirm-dialog.component';
+import { DOT_MESSAGE_SERVICE_TB_MOCK } from '../../utils/mocks';
 
 export default {
     title: 'Components/Box',
@@ -21,7 +24,10 @@ export default {
                 RemoveConfirmDialogComponent,
                 BrowserAnimationsModule
             ],
-            providers: [ConfirmationService]
+            providers: [ConfirmationService, {
+                    provide: DotMessageService,
+                    useValue: DOT_MESSAGE_SERVICE_TB_MOCK
+                }]
         })
     ]
 } as Meta<TemplateBuilderBoxComponent>;

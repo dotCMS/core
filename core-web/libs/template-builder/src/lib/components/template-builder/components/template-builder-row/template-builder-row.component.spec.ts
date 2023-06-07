@@ -7,9 +7,14 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
 
+import { DotMessageService } from '@dotcms/data-access';
+import { DotMessagePipeModule } from '@dotcms/ui';
+
 import { TemplateBuilderRowComponent } from './template-builder-row.component';
 
 import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-confirm-dialog.component';
+
+import { DOT_MESSAGE_SERVICE_TB_MOCK } from '../../utils/mocks';
 
 @Component({
     selector: 'dotcms-host-component',
@@ -39,9 +44,16 @@ describe('TemplateBuilderRowComponent', () => {
                 ButtonModule,
                 TemplateBuilderRowComponent,
                 RemoveConfirmDialogComponent,
-                NoopAnimationsModule
+                NoopAnimationsModule,
+                DotMessagePipeModule
             ],
-            declarations: [HostComponent]
+            declarations: [HostComponent],
+            providers: [
+                {
+                    provide: DotMessageService,
+                    useValue: DOT_MESSAGE_SERVICE_TB_MOCK
+                }
+            ]
         }).compileComponents();
 
         fixture = TestBed.createComponent(HostComponent);
