@@ -10,7 +10,6 @@ import { RippleModule } from 'primeng/ripple';
 
 import { tap } from 'rxjs/operators';
 
-import { DotMessagePipe } from '@dotcms/app/view/pipes';
 import {
     ComponentStatus,
     DotExperiment,
@@ -18,7 +17,7 @@ import {
     ExperimentsStatusList,
     SidebarStatus
 } from '@dotcms/dotcms-models';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { DotMessagePipeModule, DotMessagePipe } from '@dotcms/ui';
 import { DotExperimentsCreateComponent } from '@portlets/dot-experiments/dot-experiments-list/components/dot-experiments-create/dot-experiments-create.component';
 import { DotExperimentsEmptyExperimentsComponent } from '@portlets/dot-experiments/dot-experiments-list/components/dot-experiments-empty-experiments/dot-experiments-empty-experiments.component';
 import { DotExperimentsListSkeletonComponent } from '@portlets/dot-experiments/dot-experiments-list/components/dot-experiments-list-skeleton/dot-experiments-list-skeleton.component';

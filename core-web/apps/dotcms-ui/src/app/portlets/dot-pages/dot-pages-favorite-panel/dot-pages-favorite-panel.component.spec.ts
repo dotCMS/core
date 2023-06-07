@@ -15,9 +15,9 @@ import { of } from 'rxjs/internal/observable/of';
 
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { MockDotHttpErrorManagerService } from '@dotcms/app/test/dot-http-error-manager.service.mock';
-import { DotMessagePipeModule } from '@dotcms/app/view/pipes/dot-message/dot-message-pipe.module';
 import { DotMessageService, DotPageRenderService } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock, HttpCode } from '@dotcms/dotcms-js';
+import { DotMessagePipeModule } from '@dotcms/ui';
 import {
     dotcmsContentletMock,
     MockDotMessageService,
@@ -109,11 +109,14 @@ describe('DotPagesFavoritePanelComponent', () => {
         setLocalStorageFavoritePanelCollapsedParams(_collapsed: boolean): void {
             /* */
         }
+        setFavoritePages() {
+            /* */
+        }
     }
 
     describe('Empty state', () => {
-        beforeEach(() => {
-            TestBed.configureTestingModule({
+        beforeEach(async () => {
+            await TestBed.configureTestingModule({
                 declarations: [DotPagesFavoritePanelComponent, MockDotIconComponent],
                 imports: [
                     BrowserAnimationsModule,
@@ -155,6 +158,7 @@ describe('DotPagesFavoritePanelComponent', () => {
 
         it('should set panel collapsed state', () => {
             spyOn(store, 'setLocalStorageFavoritePanelCollapsedParams');
+            spyOn(store, 'setFavoritePages');
             component.toggleFavoritePagesPanel(
                 new Event('myevent', {
                     bubbles: true,
@@ -163,6 +167,7 @@ describe('DotPagesFavoritePanelComponent', () => {
                 })
             );
             expect(store.setLocalStorageFavoritePanelCollapsedParams).toHaveBeenCalledTimes(1);
+            expect(store.setFavoritePages).toHaveBeenCalledTimes(1);
         });
 
         it('should load empty pages cards container', () => {
@@ -255,11 +260,15 @@ describe('DotPagesFavoritePanelComponent', () => {
         it('should set panel inputs and attributes', () => {
             const elem = de.query(By.css('p-panel'));
             expect(elem.nativeElement.classList.contains('dot-pages-panel__expanded')).toBeFalse();
-            expect(elem.componentInstance['iconPos']).toBe('start');
+            expect(elem.componentInstance['iconPos']).toBe('end');
             expect(elem.componentInstance['expandIcon']).toBe('pi pi-angle-down');
             expect(elem.componentInstance['collapseIcon']).toBe('pi pi-angle-up');
-            expect(elem.componentInstance['header']).toBe('favoritePage.panel.header');
             expect(elem.componentInstance['toggleable']).toBe(true);
+        });
+
+        it('should have an icon for bookmarks in the header', () => {
+            const elem = de.query(By.css('.dot-pages-panel__header [data-testId="bookmarksIcon"]'));
+            expect(elem).toBeTruthy();
         });
 
         it('should set secondary button in panel', () => {

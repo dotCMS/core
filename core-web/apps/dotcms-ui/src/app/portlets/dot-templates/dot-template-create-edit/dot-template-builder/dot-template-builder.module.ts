@@ -8,7 +8,7 @@ import { DotEditLayoutDesignerModule } from '@components/dot-edit-layout-designe
 import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
 import { DotShowHideFeatureDirective } from '@dotcms/app/shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
 import { TemplateBuilderModule } from '@dotcms/template-builder';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { DotMessagePipeModule } from '@dotcms/ui';
 
 import { DotTemplateBuilderComponent } from './dot-template-builder.component';
 
