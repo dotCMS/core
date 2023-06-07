@@ -231,3 +231,5 @@ export const MESSAGES_MOCK = {
 };
 
 export const DOT_MESSAGE_SERVICE_TB_MOCK = new MockDotMessageService(MESSAGES_MOCK);
+
+export const MOCK_TEXT = 'Header';

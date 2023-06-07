@@ -1,11 +1,6 @@
 @use "variables" as *;
 
-.section-wrapper {
-    padding-top: $spacing-3;
-    padding-bottom: $spacing-4;
-}
-
-.section {
+:host {
     display: flex;
     justify-content: center;
     align-items: center;

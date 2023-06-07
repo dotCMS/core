@@ -1,10 +1,8 @@
 import { createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
 
-import { By } from '@angular/platform-browser';
-
 import { TemplateBuilderSectionComponent } from './template-builder-section.component';
 
-const MOCK_TEXT = 'Header';
+import { MOCK_TEXT } from '../../utils/mocks';
 
 describe('TemplateBuilderSectionComponent', () => {
     let spectator: SpectatorHost<TemplateBuilderSectionComponent>;
@@ -29,9 +27,6 @@ describe('TemplateBuilderSectionComponent', () => {
     });
 
     it('should use the given title', () => {
-        const sectionElement = spectator.debugElement.query(
-            By.css('[data-testId="templateBuilderSection"]')
-        );
-        expect(sectionElement.nativeElement.textContent).toEqual(MOCK_TEXT);
+        expect(spectator.debugElement.nativeElement.textContent).toEqual(MOCK_TEXT);
     });
 });
