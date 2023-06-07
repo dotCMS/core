@@ -44,7 +44,7 @@ public class SystemEventsWebSocketEndPoint implements Serializable {
 	public static final String ID 				= "userId";
 	public static final String USER 			= "user";
 	public static final String USER_SESSION_ID  = "userSessionId";
-	public static final String API_WS_V1_SYSTEM_EVENTS = "/api/ws/v1/system/events";
+	public static final String API_WS_V1_SYSTEM_EVENTS = "/api/ws/v1/system/events/bla";
 
 
 	private final Queue<Session> queue;

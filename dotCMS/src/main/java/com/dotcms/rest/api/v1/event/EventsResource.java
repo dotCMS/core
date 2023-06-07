@@ -136,9 +136,7 @@ public class EventsResource implements Serializable {
                                 @Context final HttpServletResponse httpServletResponse,
                                 @Suspended final AsyncResponse asyncResponse,
                                 @QueryParam("lastcallback") Long lastCallback) {
-
-
-        Response response             = null;
+        Response response;
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
@@ -162,9 +160,9 @@ public class EventsResource implements Serializable {
 
                 webAppContext.setAttribute(SystemEventsDelegate.LAST_CALLBACK, (null != lastCallback)?lastCallback:System.currentTimeMillis());
                 webAppContext.setAttribute(SystemEventsDelegate.USER,   initData.getUser());
-
-                simpleAppContext.setAttribute(SystemEventsDelegate.RESPONSE, asyncResponse); // we can not store this object on session b/c it is not serializable.
-
+                // The AsyncResponse is not serializable. So, it can't be stored in the Session because it causes
+                // problems with Long Polling when using the Redis Session Manager feature
+                simpleAppContext.setAttribute(SystemEventsDelegate.RESPONSE, asyncResponse);
                 this.longPollingService.executeAsync(new CompositeAppContext(webAppContext, webAppContext, simpleAppContext));
             }
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
