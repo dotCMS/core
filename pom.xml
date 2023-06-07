@@ -440,6 +440,13 @@
                     <groupId>com.github.danielflower.mavenplugins</groupId>
                     <artifactId>multi-module-maven-release-plugin</artifactId>
                     <version>3.6.4</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>com.github.mwiede</groupId>
+                            <artifactId>jsch</artifactId>
+                            <version>0.2.9</version>
+                        </dependency>
+                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
