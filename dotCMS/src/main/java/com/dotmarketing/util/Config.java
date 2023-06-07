@@ -585,6 +585,9 @@ public class Config {
      */
     public static void setProperty(String key, Object value) {
         if (props != null) {
+            if(props.containsKey(envKey(key))) {
+                key = envKey(key);
+            }
             trackOverrides(key, value);
             Logger.info(Config.class, "Setting property: " + key + " to " + value);
             props.setProperty(key, value);
