@@ -1,8 +1,8 @@
 import { NgFor, NgStyle } from '@angular/common';
 import { ChangeDetectionStrategy, Component, HostBinding } from '@angular/core';
+import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
 
 import { GRID_STACK_MARGIN_HORIZONTAL, GRID_STACK_UNIT } from '../../utils/gridstack-options';
-import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
 
 @Component({
     selector: 'dotcms-template-builder-background-columns',
