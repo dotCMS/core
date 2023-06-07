@@ -24,6 +24,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
+import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
@@ -31,6 +32,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -274,7 +278,6 @@ public class WebAssetHelper {
         final FileUploadDetail detail = form.getDetail();
         final String assetPath = detail.getAssetPath();
         final boolean live = BooleanUtils.toBoolean((detail.getLive()));
-        final boolean createNewVersion = BooleanUtils.toBoolean(detail.getCreateNewVersion());
         final Language lang = lang(detail.getLanguage());
         final ResolvedAssetAndPath assetAndPath = AssetPathResolver.newInstance()
                 .resolve(assetPath, user, true);
@@ -289,64 +292,74 @@ public class WebAssetHelper {
 
         final DotTempFile tempFile = tempFileAPI.createTempFile(assetName, request,
                 fileInputStream);
+        try {
 
-        final Builder builder = BrowserQuery.builder();
-        builder.showDotAssets(false)
-                .withUser(user)
-                .showFiles(true)
-                .showFolders(true)
-                .showArchived(false)
-                .showWorking(true)
-                .showLinks(false)
-                .showDotAssets(false)
-                .showImages(true)
-                .showContent(true);
+            final Builder builder = BrowserQuery.builder();
+            builder.showDotAssets(false)
+                    .withUser(user)
+                    .showFiles(true)
+                    .showFolders(true)
+                    .showArchived(false)
+                    .showWorking(true)
+                    .showLinks(false)
+                    .showDotAssets(false)
+                    .showImages(true)
+                    .showContent(true);
 
-        if (folder.isSystemFolder()) {
-            builder.withHostOrFolderId(host.getIdentifier());
-        } else {
-            builder.withHostOrFolderId(folder.getInode());
-        }
+            if (folder.isSystemFolder()) {
+                builder.withHostOrFolderId(host.getIdentifier());
+            } else {
+                builder.withHostOrFolderId(folder.getInode());
+            }
 
-        builder.withFilter(assetName);
-        final List<Treeable> folderContent = browserAPI.getFolderContentList(builder.build());
-        final List<Contentlet> assets = folderContent.stream()
-                .filter(Contentlet.class::isInstance).map(Contentlet.class::cast)
-                .collect(Collectors.toList());
+            builder.withFilter(assetName);
+            final List<Treeable> folderContent = browserAPI.getFolderContentList(builder.build());
+            final List<Contentlet> assets = folderContent.stream()
+                    .filter(Contentlet.class::isInstance).map(Contentlet.class::cast)
+                    .collect(Collectors.toList());
 
-        Contentlet savedAsset = null;
+            Contentlet savedAsset = null;
 
-        if (assets.isEmpty()) {
-            //The file does not exist
-            final Contentlet contentlet = makeFileAsset(tempFile.file, folder, lang);
-            savedAsset = checkinOrPublish(contentlet, user, live);
-
-        } else {
-
-            final Optional<Contentlet> found = assets.stream()
-                    .filter(contentlet -> lang.getId() == contentlet.getLanguageId()).findFirst();
-
-            if (found.isEmpty()) {
-                //We're required to create a new version in a different language
+            if (assets.isEmpty()) {
+                //The file does not exist
                 final Contentlet contentlet = makeFileAsset(tempFile.file, folder, lang);
                 savedAsset = checkinOrPublish(contentlet, user, live);
 
             } else {
-                final Contentlet asset = found.get();
-                final Contentlet checkout = contentletAPI.checkout(asset.getInode(), user, false);
-                updateFileAsset(tempFile.file, folder, checkout);
-                if (createNewVersion) {
-                    savedAsset = checkinOrPublish(checkout, user, live);
+
+                final Optional<Contentlet> found = assets.stream()
+                        .filter(contentlet -> lang.getId() == contentlet.getLanguageId())
+                        .findFirst();
+
+                if (found.isEmpty()) {
+                    //We're required to create a new version in a different language
+                    final Contentlet contentlet = makeFileAsset(tempFile.file, folder, lang);
+                    savedAsset = checkinOrPublish(contentlet, user, live);
+
                 } else {
-                    savedAsset = contentletAPI.checkinWithoutVersioning(checkout,
-                            (ContentletRelationships) null, null, null,
-                            user, false);
+                    final Contentlet asset = found.get();
+                    final Contentlet checkout = contentletAPI.checkout(asset.getInode(), user,
+                            false);
+                    updateFileAsset(tempFile.file, folder, lang, checkout);
+                    savedAsset = checkinOrPublish(checkout, user, live);
                 }
             }
-        }
 
-        final FileAsset fileAsset = fileAssetAPI.fromContentlet(savedAsset);
-        return toAsset(fileAsset);
+            final FileAsset fileAsset = fileAssetAPI.fromContentlet(savedAsset);
+            return toAsset(fileAsset);
+        } finally {
+            disposeTempFile(tempFile);
+        }
+    }
+
+    void disposeTempFile(final DotTempFile tempFile){
+        final File file = tempFile.file;
+        try {
+            Path parentFolder = file.getParentFile().toPath();
+            Files.delete(parentFolder);
+        } catch (IOException e) {
+           Logger.debug(this, e.getMessage(), e);
+        }
     }
 
     Contentlet checkinOrPublish(final Contentlet contentlet, User user, final boolean live) throws DotDataException, DotSecurityException {
@@ -354,24 +367,27 @@ public class WebAssetHelper {
             contentletAPI.publish(contentlet, user, false);
             return contentlet;
         }
-        return contentletAPI.checkin(contentlet, user, false);
+        return contentletAPI.checkinWithoutVersioning(contentlet,
+                (ContentletRelationships) null, null, null,
+                user, false);
+               // contentletAPI.checkin(contentlet, user, false);
     }
 
     Contentlet makeFileAsset(final File file, final Folder folder, Language lang)
             throws DotDataException, DotSecurityException {
         final Contentlet contentlet = new Contentlet();
         contentlet.setContentTypeId(contentTypeAPI.find("FileAsset").id());
-        contentlet.setLanguageId(lang.getId());
-        return updateFileAsset(file, folder, contentlet);
+        return updateFileAsset(file, folder, lang, contentlet);
     }
 
 
-    Contentlet updateFileAsset(final File file, final Folder folder, final Contentlet contentlet){
+    Contentlet updateFileAsset(final File file, final Folder folder, final Language lang, final Contentlet contentlet){
         final String fileName = file.getName();
         contentlet.setProperty(FileAssetAPI.TITLE_FIELD, fileName);
         contentlet.setProperty(FileAssetAPI.FILE_NAME_FIELD, fileName);
         contentlet.setProperty(FileAssetAPI.BINARY_FIELD, file);
         contentlet.setFolder(folder.getInode());
+        contentlet.setLanguageId(lang.getId());
         return contentlet;
     }
 
