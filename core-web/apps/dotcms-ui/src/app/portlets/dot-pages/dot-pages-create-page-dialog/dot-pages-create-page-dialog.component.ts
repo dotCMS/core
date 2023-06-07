@@ -10,7 +10,6 @@ import { distinctUntilChanged, map, startWith, switchMap, takeUntil } from 'rxjs
 
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotMessagePipeModule } from '@dotcms/app/view/pipes/dot-message/dot-message-pipe.module';
 import {
     DotESContentService,
     DotLanguagesService,
@@ -18,7 +17,7 @@ import {
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { DotIconModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipeModule } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-pages-create-page-dialog',

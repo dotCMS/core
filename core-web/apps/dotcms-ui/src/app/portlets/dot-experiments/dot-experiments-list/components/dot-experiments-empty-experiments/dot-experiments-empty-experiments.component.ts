@@ -3,8 +3,7 @@ import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from 
 
 import { ButtonModule } from 'primeng/button';
 
-import { DotIconModule } from '@dotcms/ui';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { DotIconModule, DotMessagePipeModule } from '@dotcms/ui';
 
 // TODO: make more generic
 @Component({

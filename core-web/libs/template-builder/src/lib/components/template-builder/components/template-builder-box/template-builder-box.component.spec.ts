@@ -5,19 +5,28 @@ import { NgClass, NgIf } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
 
+import { DotMessageService } from '@dotcms/data-access';
+import { DotMessagePipeModule } from '@dotcms/ui';
+
 import {
     TemplateBuilderBoxComponent,
     TemplateBuilderBoxSize
 } from './template-builder-box.component';
 
-import { CONTAINERS_DATA_MOCK } from '../../utils/mocks';
+import { CONTAINERS_DATA_MOCK, DOT_MESSAGE_SERVICE_TB_MOCK } from '../../utils/mocks';
 
 describe('TemplateBuilderBoxComponent', () => {
     let spectator: SpectatorHost<TemplateBuilderBoxComponent>;
 
     const createHost = createHostFactory({
         component: TemplateBuilderBoxComponent,
-        imports: [NgClass, NgIf, ButtonModule, ScrollPanelModule]
+        imports: [NgClass, NgIf, ButtonModule, ScrollPanelModule, DotMessagePipeModule],
+        providers: [
+            {
+                provide: DotMessageService,
+                useValue: DOT_MESSAGE_SERVICE_TB_MOCK
+            }
+        ]
     });
 
     beforeEach(() => {

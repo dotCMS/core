@@ -12,9 +12,8 @@ import { UiDotIconButtonTooltipComponent } from '@components/_common/dot-icon-bu
 import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotExperimentStatusList, GroupedExperimentByStatus } from '@dotcms/dotcms-models';
-import { DotIconModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipeModule } from '@dotcms/ui';
 import { DotFormatDateServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotRelativeDatePipe } from '@pipes/dot-relative-date/dot-relative-date.pipe';
 import { getExperimentMock } from '@portlets/dot-experiments/test/mocks';
 import { DotFormatDateService } from '@services/dot-format-date-service';
