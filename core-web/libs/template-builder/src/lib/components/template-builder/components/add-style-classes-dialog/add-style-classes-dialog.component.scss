@@ -21,3 +21,15 @@
     justify-content: end;
     padding: 1.25rem $spacing-5;
 }
+
+::ng-deep {
+    .p-autocomplete-multiple-container {
+        gap: $spacing-1;
+
+        .p-autocomplete.p-autocomplete-multiple
+            .p-autocomplete-multiple-container
+            li.p-autocomplete-token {
+            margin-right: 0;
+        }
+    }
+}
