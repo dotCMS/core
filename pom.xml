@@ -437,7 +437,11 @@
                     <artifactId>maven-release-plugin</artifactId>
                     <version>${version.release.plugin}</version>
                     <configuration>
-                        <preparationGoals>install -DskipTests=true</preparationGoals>
+                        <autoVersionSubmodules>true</autoVersionSubmodules>
+                        <useReleaseProfile>true</useReleaseProfile>
+                        <goals>deploy</goals>
+                        <preparationGoals>clean install</preparationGoals>
+                        <mavenExecutorId>forked-path</mavenExecutorId>
                     </configuration>
                 </plugin>
                 <plugin>
