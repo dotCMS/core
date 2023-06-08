@@ -2688,13 +2688,15 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     /**
      * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
      * When:
-     * - Create 4 pages,: a, B, C and D.
-     * - Create a content type with a text field and pageB as detail page,
+     * - Create a Page.
+     * - Create a content type with a text field and newly created page as detail page,
      * and urlMapper equals to: /testpattern/{field}
      * - Create a new Contentlet with the content type created above and the field value equals to: test
-     * - Create pageview Events for the pages: pageA's url, "/testpattern/test", pageC's Url and pageD's Url
+     * - Create and start a Experiment using the newly created page and one no DEFAULT Variant, the
+     * Goal of the Experiment is a PAGE_REACHbut it doed not really matter.
+     * - Try to render the page in LIVE mode and the no Default Variant of the Experiment
      *
-     * Should: count one session and one goal success.
+     * Should: Not got a {@link DotSecurityException}
      *
      * @throws DotDataException
      * @throws DotSecurityException
