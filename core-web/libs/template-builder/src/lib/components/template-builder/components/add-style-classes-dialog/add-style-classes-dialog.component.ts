@@ -68,7 +68,10 @@ export class AddStyleClassesDialogComponent implements OnInit, AfterViewInit {
 
         for (let i = 0; i < this.classes.length; i++) {
             const currentClass = this.classes[i];
-            if (currentClass.klass.toLowerCase().indexOf(query.toLowerCase()) == 0) {
+            if (
+                currentClass.klass.toLowerCase().indexOf(query.toLowerCase()) == 0 &&
+                !this.selectedClasses.includes(currentClass)
+            ) {
                 filtered.push(currentClass);
             }
         }
