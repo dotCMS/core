@@ -416,9 +416,9 @@ public class TemplateResource {
             this.templateAPI.saveTemplate(template, host, user, pageMode.respectAnonPerms);
         }
 
-        if (UtilMethods.isSet(containerUUIDChanges) &&
-                UtilMethods.isSet(containerUUIDChanges.lostUUIDValues())){
+        if (UtilMethods.isSet(containerUUIDChanges) && UtilMethods.isSet(containerUUIDChanges.lostUUIDValues())){
             updateMultiTree(template, containerUUIDChanges);
+
         }
 
         ActivityLogger.logInfo(this.getClass(), "Saved Template", "User " + user.getPrimaryKey()
@@ -436,12 +436,9 @@ public class TemplateResource {
                 .map(contentlet -> contentlet.getIdentifier())
                 .collect(Collectors.toList());
 
-        if (UtilMethods.isSet(pagesId)) {
-            for (ContainerUUIDChanged lostUUIDValue : containerUUIDChanges.lostUUIDValues()) {
-                APILocator.getMultiTreeAPI().updateMultiTrees(pagesId, lostUUIDValue.containerId,
-                        lostUUIDValue.oldValue,
-                        lostUUIDValue.newValue);
-            }
+        for (ContainerUUIDChanged lostUUIDValue : containerUUIDChanges.lostUUIDValues()) {
+            APILocator.getMultiTreeAPI().updateMultiTrees(pagesId, lostUUIDValue.containerId, lostUUIDValue.oldValue,
+                    lostUUIDValue.newValue);
         }
     }
 
