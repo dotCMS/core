@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "dfe8af9d-ab82-4b71-b3c9-123847b5f791",
+		"_postman_id": "31592fc3-36bb-41de-b415-146e43eb4d48",
 		"name": "Site Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "781456"
+		"_exporter_id": "27636414"
 	},
 	"item": [
 		{
@@ -191,6 +191,272 @@
 								"site",
 								"variable",
 								"{{sitevarId}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Test return stopped and live sites",
+			"item": [
+				{
+					"name": "Create new stopped site",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"File name check\", function () {",
+									"    pm.expect(jsonData.entity.siteName).to.contains('postManTestStopped');",
+									"    pm.expect(jsonData.entity.aliases).to.contains('postManTestStopped');",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"siteId\", jsonData.entity.identifier);",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"siteName\":\"postManTestStopped\",\n    \"aliases\":\"postManTestStopped\",\n    \"tagStorage\":\"default\",\n    \"siteThumbnail\":\"{{temporalFileId}}\",\n    \"runDashboard\":true,\n    \"keywords\":\"key1, key2, key3\",\n    \"description\":\"This is a postman host test\",\n    \"googleMap\":\"google-key\",\n    \"googleAnalytics\":\"google-analytics-key\",\n    \"addThis\":\"add-this-key\",\n    \"proxyUrlForEditMode\":\"proxy.postman.host.com\",\n    \"embeddedDashboard\":\"postman.host.com/dashboard\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/site",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"site"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create new live site",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"File name check\", function () {",
+									"    pm.expect(jsonData.entity.siteName).to.contains('postManTestLive');",
+									"    pm.expect(jsonData.entity.aliases).to.contains('postManTestLive');",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"siteId\", jsonData.entity.identifier);",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"siteName\":\"postManTestLive\",\n    \"aliases\":\"postManTestLive\",\n    \"tagStorage\":\"default\",\n    \"siteThumbnail\":\"{{temporalFileId}}\",\n    \"runDashboard\":true,\n    \"keywords\":\"key1, key2, key3\",\n    \"description\":\"This is a postman host test\",\n    \"googleMap\":\"google-key\",\n    \"googleAnalytics\":\"google-analytics-key\",\n    \"addThis\":\"add-this-key\",\n    \"proxyUrlForEditMode\":\"proxy.postman.host.com\",\n    \"embeddedDashboard\":\"postman.host.com/dashboard\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/site",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"site"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Publish new live Site",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"File name check\", function () {",
+									"    pm.expect(jsonData.entity.siteName).to.contains('postManTestLive');",
+									"    pm.expect(jsonData.entity.aliases).to.contains('postManTestLive');",
+									"    pm.expect(jsonData.entity.live).to.eql(true);",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"siteId\", jsonData.entity.identifier);",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/site/{{siteId}}/_publish",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"site",
+								"{{siteId}}",
+								"_publish"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get live and stopped sites",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Verify that the array has more than two items",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Fields check\", function () {",
+									"    pm.expect(jsonData.entity).to.have.lengthOf.at.least(3);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/site?filter=*&per_page=15&archive=false",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"site"
+							],
+							"query": [
+								{
+									"key": "filter",
+									"value": "*"
+								},
+								{
+									"key": "per_page",
+									"value": "15"
+								},
+								{
+									"key": "archive",
+									"value": "false"
+								}
 							]
 						}
 					},
