@@ -205,6 +205,15 @@
 					"name": "Create new stopped site",
 					"event": [
 						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
 							"listen": "test",
 							"script": {
 								"exec": [
@@ -246,7 +255,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"siteName\":\"postManTestStopped\",\n    \"aliases\":\"postManTestStopped\",\n    \"tagStorage\":\"default\",\n    \"siteThumbnail\":\"{{temporalFileId}}\",\n    \"runDashboard\":true,\n    \"keywords\":\"key1, key2, key3\",\n    \"description\":\"This is a postman host test\",\n    \"googleMap\":\"google-key\",\n    \"googleAnalytics\":\"google-analytics-key\",\n    \"addThis\":\"add-this-key\",\n    \"proxyUrlForEditMode\":\"proxy.postman.host.com\",\n    \"embeddedDashboard\":\"postman.host.com/dashboard\"\n}",
+							"raw": "{\n    \"siteName\":\"postManTestStopped{{$randomPhoneNumber}}\",\n    \"aliases\":\"postManTestStopped{{$randomPhoneNumber}}\",\n    \"tagStorage\":\"default\",\n    \"siteThumbnail\":\"{{temporalFileId}}\",\n    \"runDashboard\":true,\n    \"keywords\":\"key1, key2, key3\",\n    \"description\":\"This is a postman host test\",\n    \"googleMap\":\"google-key\",\n    \"googleAnalytics\":\"google-analytics-key\",\n    \"addThis\":\"add-this-key\",\n    \"proxyUrlForEditMode\":\"proxy.postman.host.com\",\n    \"embeddedDashboard\":\"postman.host.com/dashboard\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -270,6 +279,15 @@
 				{
 					"name": "Create new live site",
 					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
 						{
 							"listen": "test",
 							"script": {
@@ -312,7 +330,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"siteName\":\"postManTestLive\",\n    \"aliases\":\"postManTestLive\",\n    \"tagStorage\":\"default\",\n    \"siteThumbnail\":\"{{temporalFileId}}\",\n    \"runDashboard\":true,\n    \"keywords\":\"key1, key2, key3\",\n    \"description\":\"This is a postman host test\",\n    \"googleMap\":\"google-key\",\n    \"googleAnalytics\":\"google-analytics-key\",\n    \"addThis\":\"add-this-key\",\n    \"proxyUrlForEditMode\":\"proxy.postman.host.com\",\n    \"embeddedDashboard\":\"postman.host.com/dashboard\"\n}",
+							"raw": "{\n    \"siteName\":\"postManTestLive{{$randomPhoneNumber}}\",\n    \"aliases\":\"postManTestLive{{$randomPhoneNumber}}\",\n    \"tagStorage\":\"default\",\n    \"siteThumbnail\":\"{{temporalFileId}}\",\n    \"runDashboard\":true,\n    \"keywords\":\"key1, key2, key3\",\n    \"description\":\"This is a postman host test\",\n    \"googleMap\":\"google-key\",\n    \"googleAnalytics\":\"google-analytics-key\",\n    \"addThis\":\"add-this-key\",\n    \"proxyUrlForEditMode\":\"proxy.postman.host.com\",\n    \"embeddedDashboard\":\"postman.host.com/dashboard\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -409,6 +427,39 @@
 									"",
 									"pm.test(\"Fields check\", function () {",
 									"    pm.expect(jsonData.entity).to.have.lengthOf.at.least(3);",
+									"});",
+									"",
+									"pm.test(\"Check if JSON contains value 'postManTestLive'\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var entity = jsonData.entity;",
+									"    var stopped = \"postManTestStopped\";",
+									"    var live = \"postManTestLive\";",
+									"  ",
+									"    var foundStopped = false;",
+									"    var foundLive = false;",
+									"",
+									"    // Loop through each entity",
+									"    for (var i = 0; i < entity.length; i++) {",
+									"        var aliases = entity[i].aliases;",
+									"",
+									"        // Check if the aliases array contains the value of the stopped alias",
+									"        if (aliases.includes(stopped)) {",
+									"            foundStopped = true;",
+									"        }",
+									"",
+									"        // Check if the aliases array contains the value of the live alias",
+									"        if (aliases.includes(live)) {",
+									"            foundLive = true;",
+									"        }",
+									"",
+									"    }",
+									"",
+									"",
+									"    // Assert that the stopped alias was found in the JSON",
+									"    pm.expect(foundStopped).to.be.true;",
+									"",
+									"    // Assert that the live alias was found in the JSON",
+									"    pm.expect(foundLive).to.be.true;",
 									"});",
 									""
 								],
@@ -2827,6 +2878,18 @@
 		},
 		{
 			"key": "sitevariableId",
+			"value": ""
+		},
+		{
+			"key": "stopedAliases",
+			"value": ""
+		},
+		{
+			"key": "liveAliases",
+			"value": ""
+		},
+		{
+			"key": "stoppedAliases",
 			"value": ""
 		}
 	]

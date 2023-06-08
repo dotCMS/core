@@ -54,9 +54,8 @@ public class HostFactoryImplTest extends IntegrationTestBase {
         final Host stoppedTestSite = new SiteDataGen().name("stoppedHost"+systemMilis).nextPersisted(false);
 
         final Optional<List<Host>> hostsList =  hostFactory.findLiveAndStopped("", limit, offset, false, APILocator.systemUser(), false);
-        assertTrue(hostsList.get().size() >= 3);
-        //the size doesn't give us a good assert since other tests create sites
-        //let's assert that the stoppedHost and the liveHost comes in the hostList
+
+        assertTrue(hostsList.get().contains(LiveTestSite) && hostsList.get().contains(stoppedTestSite));
     }
 }
 
