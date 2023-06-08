@@ -118,7 +118,7 @@ import com.dotmarketing.business.helper.PermissionHelperTest;
 import com.dotmarketing.cache.FolderCacheImplIntegrationTest;
 import com.dotmarketing.common.db.DBTimeZoneCheckTest;
 import com.dotmarketing.filters.AutoLoginFilterTest;
-import com.dotmarketing.filters.CMSUrlUtilTest;
+import com.dotmarketing.filters.CMSUrlUtilIntegrationTest;
 import com.dotmarketing.image.filter.ImageFilterAPIImplTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.osgi.GenericBundleActivatorTest;
@@ -640,7 +640,7 @@ import org.junit.runners.Suite.SuiteClasses;
 //        AnalyticsAPIImplTest.class,
 //        AccessTokenRenewJobTest.class,
         AssetPathResolverImplTest.class,
-        CMSUrlUtilTest.class
+        CMSUrlUtilIntegrationTest.class
 })
 
 public class MainSuite {
