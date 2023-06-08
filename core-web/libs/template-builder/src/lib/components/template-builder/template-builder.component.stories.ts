@@ -1,7 +1,11 @@
 import { moduleMetadata, Story, Meta } from '@storybook/angular';
+import { of } from 'rxjs';
 
 import { NgFor, AsyncPipe } from '@angular/common';
+import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { DialogService, DynamicDialogModule, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipeModule } from '@dotcms/ui';
@@ -15,7 +19,11 @@ import { TemplateBuilderRowComponent } from './components/template-builder-row/t
 import { TemplateBuilderSectionComponent } from './components/template-builder-section/template-builder-section.component';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { TemplateBuilderComponent } from './template-builder.component';
-import { DOT_MESSAGE_SERVICE_TB_MOCK, FULL_DATA_MOCK } from './utils/mocks';
+import {
+    DOT_MESSAGE_SERVICE_TB_MOCK,
+    FULL_DATA_MOCK,
+    MOCK_STYLE_CLASSES_FILE
+} from './utils/mocks';
 
 export default {
     title: 'Template Builder',
@@ -33,13 +41,23 @@ export default {
                 BrowserAnimationsModule,
                 TemplateBuilderBackgroundColumnsComponent,
                 TemplateBuilderSectionComponent,
-                AddStyleClassesDialogComponent
+                AddStyleClassesDialogComponent,
+                DynamicDialogModule,
+                HttpClientModule
             ],
             providers: [
                 DotTemplateBuilderStore,
+                DialogService,
+                DynamicDialogRef,
                 {
                     provide: DotMessageService,
                     useValue: DOT_MESSAGE_SERVICE_TB_MOCK
+                },
+                {
+                    provide: HttpClient,
+                    useValue: {
+                        get: (_: string) => of(MOCK_STYLE_CLASSES_FILE)
+                    }
                 }
             ]
         })

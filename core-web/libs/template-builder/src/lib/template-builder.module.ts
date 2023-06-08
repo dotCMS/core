@@ -1,6 +1,8 @@
 import { AsyncPipe, NgFor, NgStyle } from '@angular/common';
 import { NgModule } from '@angular/core';
 
+import { DialogService, DynamicDialogModule, DynamicDialogRef } from 'primeng/dynamicdialog';
+
 import { DotMessagePipeModule } from '@dotcms/ui';
 
 import { AddStyleClassesDialogComponent } from './components/template-builder/components/add-style-classes-dialog/add-style-classes-dialog.component';
@@ -25,10 +27,11 @@ import { TemplateBuilderComponent } from './components/template-builder/template
         TemplateBuilderBackgroundColumnsComponent,
         TemplateBuilderSectionComponent,
         NgStyle,
-        AddStyleClassesDialogComponent
+        AddStyleClassesDialogComponent,
+        DynamicDialogModule
     ],
     declarations: [TemplateBuilderComponent],
-    providers: [DotTemplateBuilderStore],
+    providers: [DotTemplateBuilderStore, DialogService, DynamicDialogRef],
     exports: [TemplateBuilderComponent]
 })
 export class TemplateBuilderModule {}
