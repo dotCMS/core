@@ -16,8 +16,7 @@ import {
     RangeOfDateAndTime,
     StepStatus
 } from '@dotcms/dotcms-models';
-import { DotIconModule } from '@dotcms/ui';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { DotIconModule, DotMessagePipeModule } from '@dotcms/ui';
 import { DotExperimentsConfigurationSchedulingAddComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-scheduling-add/dot-experiments-configuration-scheduling-add.component';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
