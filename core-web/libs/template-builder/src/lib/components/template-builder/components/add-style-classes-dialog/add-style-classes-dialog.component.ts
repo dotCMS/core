@@ -1,3 +1,5 @@
+import { Subject } from 'rxjs';
+
 import { AfterViewInit, ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -6,7 +8,6 @@ import { ButtonModule } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { StyleClassModel } from '../../models/models';
-import { parseStyleClassFileToModel } from '../../utils/gridstack-utils';
 
 @Component({
     selector: 'dotcms-add-style-classes-dialog',
@@ -27,12 +28,22 @@ export class AddStyleClassesDialogComponent implements OnInit, AfterViewInit {
 
     constructor(
         private ref: DynamicDialogRef,
-        public dynamicDialogConfig: DynamicDialogConfig<{ classes: string[] }>
+        public dynamicDialogConfig: DynamicDialogConfig<{
+            classes: Subject<StyleClassModel[]>;
+            selectedClasses: string[];
+        }>
     ) {}
 
     ngOnInit() {
-        // This will be done in the store I will have the model on the config
-        this.classes = parseStyleClassFileToModel(this.dynamicDialogConfig.data.classes);
+        const { classes: classes$, selectedClasses } = this.dynamicDialogConfig.data;
+
+        classes$.subscribe((classes) => {
+            this.classes = classes;
+        });
+
+        this.selectedClasses = selectedClasses.map((klass) => ({
+            klass
+        }));
     }
 
     ngAfterViewInit() {
@@ -91,6 +102,6 @@ export class AddStyleClassesDialogComponent implements OnInit, AfterViewInit {
      * @memberof AddStyleClassesDialogComponent
      */
     closeDialog(): void {
-        this.ref.close(this.selectedClasses);
+        this.ref.close(this.selectedClasses.map((styleClass) => styleClass.klass));
     }
 }
