@@ -1,8 +1,12 @@
-import { ComponentStore } from '@ngrx/component-store';
+import { ComponentStore, tapResponse } from '@ngrx/component-store';
 import { GridStackElement, GridStackNode } from 'gridstack';
+import { of } from 'rxjs';
 import { v4 as uuid } from 'uuid';
 
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+
+import { finalize, switchMap } from 'rxjs/operators';
 
 import { DotGridStackNode, DotGridStackWidget, DotTemplateBuilderState } from '../models/models';
 import {
@@ -14,6 +18,8 @@ import {
     parseMovedNodeToWidget
 } from '../utils/gridstack-utils';
 
+const STYLE_CLASSES_FILE_URL = '/application/templates/classes.json';
+
 /**
  *
  *
@@ -23,14 +29,20 @@ import {
  */
 @Injectable()
 export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderState> {
-    public items$ = this.select((state) => state.items);
+    private styleClassesInitialized = false;
 
-    constructor() {
-        super({ items: [] });
+    public items$ = this.select((state) => state.items);
+    public styleClasses$ = this.select((state) => state.styleClasses);
+
+    constructor(private http: HttpClient) {
+        super({ items: [], styleClasses: [] });
     }
 
     // Init store
-    readonly init = this.updater((_, payload: DotGridStackWidget[]) => ({ items: payload }));
+    readonly init = this.updater((_, payload: DotGridStackWidget[]) => ({
+        items: payload,
+        styleClasses: []
+    }));
 
     // Rows Updaters
 
@@ -39,8 +51,11 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      *
      * @memberof DotTemplateBuilderStore
      */
-    readonly addRow = this.updater(({ items }, newRow: DotGridStackWidget) => {
+    readonly addRow = this.updater((state, newRow: DotGridStackWidget) => {
+        const { items } = state;
+
         return {
+            ...state,
             items: [
                 ...items,
                 {
@@ -62,7 +77,8 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      *
      * @memberof DotTemplateBuilderStore
      */
-    readonly moveRow = this.updater(({ items }, affectedRows: DotGridStackWidget[]) => {
+    readonly moveRow = this.updater((state, affectedRows: DotGridStackWidget[]) => {
+        const { items } = state;
         const itemsCopy = structuredClone(items) as DotGridStackWidget[];
 
         affectedRows.forEach(({ y, id }) => {
@@ -71,7 +87,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
             if (rowIndex > -1) itemsCopy[rowIndex] = { ...itemsCopy[rowIndex], y };
         });
 
-        return { items: itemsCopy };
+        return { ...state, items: itemsCopy };
     });
 
     /**
@@ -79,8 +95,13 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      *
      * @memberof DotTemplateBuilderStore
      */
-    readonly removeRow = this.updater(({ items }, rowID: string) => {
-        return { items: items.filter((item: DotGridStackWidget) => item.id !== rowID) };
+    readonly removeRow = this.updater((state, rowID: string) => {
+        const { items } = state;
+
+        return {
+            ...state,
+            items: items.filter((item: DotGridStackWidget) => item.id !== rowID)
+        };
     });
 
     /**
@@ -88,12 +109,14 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      *
      * @memberof DotTemplateBuilderStore
      */
-    readonly updateRow = this.updater(({ items }, updatedRow: DotGridStackWidget) => {
+    readonly updateRow = this.updater((state, updatedRow: DotGridStackWidget) => {
+        const { items } = state;
+
         const itemsCopy = structuredClone(items) as DotGridStackWidget[];
         const rowIndex = getIndexRowInItems(itemsCopy, updatedRow.id as string);
         if (rowIndex > -1) itemsCopy[rowIndex] = { ...itemsCopy[rowIndex], ...updatedRow };
 
-        return { items: itemsCopy };
+        return { ...state, items: itemsCopy };
     });
 
     // Columns Updaters
@@ -103,10 +126,12 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      *
      * @memberof DotTemplateBuilderStore
      */
-    readonly addColumn = this.updater(({ items }, column: DotGridStackNode) => {
+    readonly addColumn = this.updater((state, column: DotGridStackNode) => {
+        const { items } = state;
         const newColumn = createDotGridStackWidgetFromNode(column);
 
         return {
+            ...state,
             items: items.map((row) => {
                 if (row.id === newColumn.parentId) {
                     if (row.subGridOpts) row.subGridOpts.children.push(newColumn);
@@ -123,43 +148,44 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      *
      * @memberof DotTemplateBuilderStore
      */
-    readonly moveColumnInYAxis = this.updater(
-        ({ items }, [oldNode, newNode]: DotGridStackNode[]) => {
-            const [columnToDelete, columnToAdd] = parseMovedNodeToWidget(oldNode, newNode);
+    readonly moveColumnInYAxis = this.updater((state, [oldNode, newNode]: DotGridStackNode[]) => {
+        const { items } = state;
 
-            const deleteColParentIndex = getIndexRowInItems(items, columnToDelete.parentId ?? '');
+        const [columnToDelete, columnToAdd] = parseMovedNodeToWidget(oldNode, newNode);
 
-            // In theory, the children should exist because it had one before the removal, but this is a safety check
-            const parentRow = items[deleteColParentIndex] ?? {}; // Empty object so it doesn't break the template builder
-            const parentRowChildren = parentRow.subGridOpts
-                ? parentRow.subGridOpts.children
-                : undefined;
+        const deleteColParentIndex = getIndexRowInItems(items, columnToDelete.parentId ?? '');
 
-            // To maintain the data of the node, as styleClass and containers
-            const oldColumn = getColumnByID(parentRowChildren ?? [], columnToDelete.id as string);
+        // In theory, the children should exist because it had one before the removal, but this is a safety check
+        const parentRow = items[deleteColParentIndex] ?? {}; // Empty object so it doesn't break the template builder
+        const parentRowChildren = parentRow.subGridOpts
+            ? parentRow.subGridOpts.children
+            : undefined;
 
-            // We merge the new GridStack data with the old properties
-            const updatedColumn = { ...oldColumn, ...columnToAdd };
+        // To maintain the data of the node, as styleClass and containers
+        const oldColumn = getColumnByID(parentRowChildren ?? [], columnToDelete.id as string);
 
-            return {
-                items: items.map((row) => {
-                    if (row.id === columnToDelete.parentId) {
-                        row.subGridOpts = {
-                            ...row.subGridOpts,
-                            children: removeColumnByID(row, columnToDelete.id as string)
-                        };
-                    } else if (row.id === columnToAdd.parentId) {
-                        row.subGridOpts = {
-                            ...row.subGridOpts,
-                            children: [...(row.subGridOpts?.children ?? []), updatedColumn]
-                        };
-                    }
+        // We merge the new GridStack data with the old properties
+        const updatedColumn = { ...oldColumn, ...columnToAdd };
 
-                    return row;
-                })
-            };
-        }
-    );
+        return {
+            ...state,
+            items: items.map((row) => {
+                if (row.id === columnToDelete.parentId) {
+                    row.subGridOpts = {
+                        ...row.subGridOpts,
+                        children: removeColumnByID(row, columnToDelete.id as string)
+                    };
+                } else if (row.id === columnToAdd.parentId) {
+                    row.subGridOpts = {
+                        ...row.subGridOpts,
+                        children: [...(row.subGridOpts?.children ?? []), updatedColumn]
+                    };
+                }
+
+                return row;
+            })
+        };
+    });
 
     /**
      * @description This method updates the columns when changes are made
@@ -167,10 +193,12 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      * @memberof DotTemplateBuilderStore
      */
     readonly updateColumnGridStackData = this.updater(
-        ({ items }, affectedColumns: DotGridStackNode[]) => {
+        (state, affectedColumns: DotGridStackNode[]) => {
+            const { items } = state;
             affectedColumns = createDotGridStackWidgets(affectedColumns);
 
             return {
+                ...state,
                 items: items.map((row) => {
                     if (row.id === affectedColumns[0].parentId) {
                         if (row.subGridOpts) {
@@ -195,8 +223,11 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      *
      * @memberof DotTemplateBuilderStore
      */
-    readonly removeColumn = this.updater(({ items }, columnToDelete: DotGridStackWidget) => {
+    readonly removeColumn = this.updater((state, columnToDelete: DotGridStackWidget) => {
+        const { items } = state;
+
         return {
+            ...state,
             items: items.map((row) => {
                 if (row.id === columnToDelete.parentId) {
                     if (row.subGridOpts) {
@@ -210,6 +241,37 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
                 return row;
             })
         };
+    });
+
+    // Effects
+
+    /**
+     * @description This effect fetchs the style classes from the file only once
+     *
+     * @memberof DotTemplateBuilderStore
+     */
+    readonly getStyleClassesFromFile = this.effect((trigger$) => {
+        return trigger$.pipe(
+            switchMap(() =>
+                !this.styleClassesInitialized
+                    ? this.http.get(STYLE_CLASSES_FILE_URL).pipe(
+                          tapResponse(
+                              ({ classes }: { classes: string[] }) => {
+                                  this.patchState({
+                                      styleClasses: classes.map((styleClasses) => ({
+                                          klass: styleClasses
+                                      }))
+                                  });
+                              },
+                              (_) => {
+                                  this.patchState({ styleClasses: [] });
+                              }
+                          ),
+                          finalize(() => (this.styleClassesInitialized = true))
+                      )
+                    : of(null)
+            )
+        );
     });
 
     // Utils methods
