@@ -1,6 +1,5 @@
 import { moduleMetadata, Story, Meta } from '@storybook/angular';
 
-import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -17,13 +16,7 @@ export default {
     component: AddStyleClassesDialogComponent,
     decorators: [
         moduleMetadata({
-            imports: [
-                CommonModule,
-                AutoCompleteModule,
-                FormsModule,
-                NoopAnimationsModule,
-                ButtonModule
-            ],
+            imports: [AutoCompleteModule, FormsModule, NoopAnimationsModule, ButtonModule],
             providers: [
                 {
                     provide: DynamicDialogConfig,

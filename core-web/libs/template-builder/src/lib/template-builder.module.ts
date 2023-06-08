@@ -3,6 +3,7 @@ import { NgModule } from '@angular/core';
 
 import { DotMessagePipeModule } from '@dotcms/ui';
 
+import { AddStyleClassesDialogComponent } from './components/template-builder/components/add-style-classes-dialog/add-style-classes-dialog.component';
 import { AddWidgetComponent } from './components/template-builder/components/add-widget/add-widget.component';
 import { RemoveConfirmDialogComponent } from './components/template-builder/components/remove-confirm-dialog/remove-confirm-dialog.component';
 import { TemplateBuilderBackgroundColumnsComponent } from './components/template-builder/components/template-builder-background-columns/template-builder-background-columns.component';
@@ -23,7 +24,8 @@ import { TemplateBuilderComponent } from './components/template-builder/template
         DotMessagePipeModule,
         TemplateBuilderBackgroundColumnsComponent,
         TemplateBuilderSectionComponent,
-        NgStyle
+        NgStyle,
+        AddStyleClassesDialogComponent
     ],
     declarations: [TemplateBuilderComponent],
     providers: [DotTemplateBuilderStore],

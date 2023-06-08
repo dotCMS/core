@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { AfterViewInit, ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -12,7 +11,7 @@ import { parseStyleClassFileToModel } from '../../utils/gridstack-utils';
 @Component({
     selector: 'dotcms-add-style-classes-dialog',
     standalone: true,
-    imports: [CommonModule, AutoCompleteModule, FormsModule, ButtonModule],
+    imports: [AutoCompleteModule, FormsModule, ButtonModule],
     templateUrl: './add-style-classes-dialog.component.html',
     styleUrls: ['./add-style-classes-dialog.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush

@@ -6,6 +6,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipeModule } from '@dotcms/ui';
 
+import { AddStyleClassesDialogComponent } from './components/add-style-classes-dialog/add-style-classes-dialog.component';
 import { AddWidgetComponent } from './components/add-widget/add-widget.component';
 import { RemoveConfirmDialogComponent } from './components/remove-confirm-dialog/remove-confirm-dialog.component';
 import { TemplateBuilderBackgroundColumnsComponent } from './components/template-builder-background-columns/template-builder-background-columns.component';
@@ -31,7 +32,8 @@ export default {
                 RemoveConfirmDialogComponent,
                 BrowserAnimationsModule,
                 TemplateBuilderBackgroundColumnsComponent,
-                TemplateBuilderSectionComponent
+                TemplateBuilderSectionComponent,
+                AddStyleClassesDialogComponent
             ],
             providers: [
                 DotTemplateBuilderStore,
