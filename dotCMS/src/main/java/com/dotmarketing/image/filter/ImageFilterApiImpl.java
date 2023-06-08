@@ -168,7 +168,7 @@ public class ImageFilterApiImpl implements ImageFilterAPI {
                     return reader.read(0);
                 }
 
-                return this.resizeImage(reader.read(0), width, height, DEFAULT_RESAMPLE_OPT);
+                return this.resizeImage(reader.read(0), width, height, resampleOption);
 
             } finally {
                 reader.dispose();
