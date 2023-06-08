@@ -8,6 +8,16 @@
     flex: 1;
 }
 
+p-toolbar {
+    display: flex;
+    gap: $spacing-3;
+    background-color: $white;
+    padding: $spacing-3 0;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
 // Class added by the gridstack library when the widget is being dragged
 dotcms-add-widget.ui-draggable-dragging {
     transform: rotate(-3.66deg);
@@ -22,10 +32,20 @@ dotcms-template-builder-background-columns {
 
 dotcms-add-widget {
     cursor: grab;
-    z-index: 3;
+    z-index: 2;
 }
 
 dotcms-template-builder-section {
     margin-top: $spacing-3;
     margin-bottom: $spacing-4;
+}
+
+::ng-deep {
+    .p-toolbar.p-component {
+        width: 100%;
+    }
+
+    .p-toolbar-group-end {
+        gap: $spacing-1;
+    }
 }

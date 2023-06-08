@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Output } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { DividerModule } from 'primeng/divider';
@@ -14,4 +14,7 @@ import { DotMessagePipeModule } from '@dotcms/ui';
     styleUrls: ['./template-builder-actions.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class TemplateBuilderActionsComponent {}
+export class TemplateBuilderActionsComponent {
+    @Output() selectLayout: EventEmitter<void> = new EventEmitter();
+    @Output() selectStyles: EventEmitter<void> = new EventEmitter();
+}

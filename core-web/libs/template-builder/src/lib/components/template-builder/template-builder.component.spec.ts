@@ -4,6 +4,8 @@ import { GridItemHTMLElement } from 'gridstack';
 
 import { AsyncPipe, NgFor } from '@angular/common';
 
+import { ToolbarModule } from 'primeng/toolbar';
+
 import { take } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -17,6 +19,7 @@ import { DotGridStackWidget } from './models/models';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { TemplateBuilderComponent } from './template-builder.component';
 import { DOT_MESSAGE_SERVICE_TB_MOCK, FULL_DATA_MOCK } from './utils/mocks';
+import { TemplateBuilderActionsComponent } from './components/template-builder-actions/template-builder-actions.component';
 
 describe('TemplateBuilderComponent', () => {
     let spectator: SpectatorHost<TemplateBuilderComponent>;
@@ -31,7 +34,9 @@ describe('TemplateBuilderComponent', () => {
             AddWidgetComponent,
             TemplateBuilderBoxComponent,
             TemplateBuilderBackgroundColumnsComponent,
-            DotMessagePipeModule
+            TemplateBuilderActionsComponent,
+            DotMessagePipeModule,
+            ToolbarModule
         ],
         providers: [
             DotTemplateBuilderStore,

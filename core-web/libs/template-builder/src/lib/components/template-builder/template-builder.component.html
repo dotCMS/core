@@ -1,7 +1,9 @@
 <dotcms-template-builder-background-columns></dotcms-template-builder-background-columns>
-
-<dotcms-template-builder-toolbar>
-    <ng-container ngProjectAs="[right]">
+<p-toolbar>
+    <div class="p-toolbar-group-start">
+        <ng-content select="[toolbar-right]"></ng-content>
+    </div>
+    <div class="p-toolbar-group-end">
         <dotcms-add-widget
             [label]="'dot.template.builder.add.row' | dm"
             [icon]="rowIcon"
@@ -19,9 +21,10 @@
             data-testId="add-box"
         ></dotcms-add-widget>
 
-        <dotcms-template-builder-actions> </dotcms-template-builder-actions>
-    </ng-container>
-</dotcms-template-builder-toolbar>
+        <dotcms-template-builder-actions></dotcms-template-builder-actions>
+        <ng-content select="[toolbar-actions-right]"></ng-content>
+    </div>
+</p-toolbar>
 
 <dotcms-template-builder-section>{{
     'dot.template.builder.header' | dm

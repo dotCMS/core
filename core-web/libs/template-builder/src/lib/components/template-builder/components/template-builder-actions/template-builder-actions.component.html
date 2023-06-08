@@ -3,6 +3,8 @@
 <button
     class="p-button-text p-button-vertical"
     [label]="'dot.template.builder.toolbar.button.layout.label' | dm"
+    (onClick)="selectStyles.emit()"
+    data-testid="btn-select-styles"
     pButton
     type="button"
     icon="pi pi-palette"
@@ -10,6 +12,8 @@
 <button
     class="p-button-text p-button-vertical"
     [label]="'dot.template.builder.toolbar.button.theme.label' | dm"
+    (onClick)="selectLayout.emit()"
+    data-testid="btn-select-layout"
     pButton
     type="button"
 >
