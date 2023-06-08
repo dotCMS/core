@@ -43,11 +43,13 @@ public class ConfigUtils {
 	}
 
 	public static String getDynamicContentPath() {
-		String realPath = Try.of(()->
-				Config.getStringProperty("DYNAMIC_CONTENT_PATH",
-						com.liferay.util.FileUtil.getRealPath("/dotsecure")))
-				.getOrElse("." + File.separator + "dotsecure");
-		
+
+		String realPath = Config.getStringProperty("DYNAMIC_CONTENT_PATH",null);
+
+		if (realPath == null) {
+			realPath = Try.of(()-> com.liferay.util.FileUtil.getRealPath("/dotsecure")).getOrElse("." + File.separator + "dotsecure");
+		}
+
 		return (realPath.endsWith(File.separator)) ?
 		                realPath.substring(0, realPath.length()-1)
 		                :realPath;
@@ -172,5 +174,5 @@ public class ConfigUtils {
 		return Tuple.of(langCode, countryCode);
 
 	}
-    
+
 }
