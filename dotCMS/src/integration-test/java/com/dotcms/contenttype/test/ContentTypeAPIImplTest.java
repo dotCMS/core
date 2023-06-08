@@ -5,6 +5,7 @@ import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.*;
 import com.dotcms.datagen.*;
+import com.dotcms.enterprise.publishing.PublishDateUpdater;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.beans.PermissionableProxy;
@@ -1401,10 +1402,10 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 	 */
 	@Test
 	public void testAddingUpdatingDeletingContentTypeWithFixedFields() throws Exception{
-		
+
 		int count = contentTypeApi.count();
 		String TEST_VAR_PREFIX = "myTestField";
-		
+
 		long time = System.currentTimeMillis();
 		int base = BaseContentType.WIDGET.ordinal();
 		Thread.sleep(1);
@@ -1412,12 +1413,12 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 					.description("description" + time).folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
 					.name("ContentTypeTestingWithFixedFields" + time).owner("owner").variable("velocityVarNameTesting" + time).build();
 		type = contentTypeApi.save(type, null, null);
-		
+
 		int count2 = contentTypeApi.count();
 		assertThat("contenttypes are added", count == count2 - 1);
 		type = contentTypeApi.find(type.id());
 		assertThat("Content type found", type != null && StringUtils.isNotEmpty(type.id()) );
-		
+
 		//Add Field
 		List<Field> fields = type.fields();
 		int fieldsCount = fields.size();
@@ -1426,16 +1427,16 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		APILocator.getContentTypeFieldAPI().save(savedField, APILocator.systemUser());
 		type = contentTypeApi.find(type.id());
 		List<Field> newFields = type.fields();
-		
+
 		int fieldsCount2 = newFields.size();
 		assertThat("contenttypes field added", fieldsCount < fieldsCount2);
-		
+
 		//remove field
 		contentTypeApi.save(type, fields);
 		type = contentTypeApi.find(type.id());
 		fieldsCount2 = type.fields().size();
 		assertThat("contenttypes field removed", fieldsCount == fieldsCount2);
-		
+
 		//deleting content type
 		delete(type);
 	}
@@ -1638,22 +1639,22 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		//Deleting content type.
 		delete(contentType);
 	}
-	
+
 	/*
 	 * Github: https://github.com/dotCMS/core/issues/11861
-	 * 
+	 *
 	 * Creates a Widget and a couple of DateTimeFields (Publish and Expire) and set it as Publish and Expire properties in the Content Type.
 	 */
 	@Test
 	public void testWidgetContentTypeWithPublishExpireFields() throws Exception{
 		int base = BaseContentType.WIDGET.ordinal();
 		createContentTypeWithPublishExpireFields(base);
-        
+
 	}
-	
+
 	/*
 	 * Github: https://github.com/dotCMS/core/issues/11861
-	 * 
+	 *
 	 * Creates a Page and a couple of DateTimeFields (Publish and Expire) and set it as Publish and Expire properties in the Content Type.
 	 */
 	@Test
@@ -1661,34 +1662,34 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		int base = BaseContentType.HTMLPAGE.ordinal();
 		createContentTypeWithPublishExpireFields(base);
 	}
-	
+
 	/*
 	 * Github: https://github.com/dotCMS/core/issues/11861
-	 * 
+	 *
 	 * Creates a File and a couple of DateTimeFields (Publish and Expire) and set it as Publish and Expire properties in the Content Type.
 	 */
 	@Test
 	public void testFileContentTypeWithPublishExpireFields() throws Exception{
 		int base = BaseContentType.FILEASSET.ordinal();
 		createContentTypeWithPublishExpireFields(base);
-        
+
 	}
-	
+
 	/*
 	 * Github: https://github.com/dotCMS/core/issues/11861
-	 * 
+	 *
 	 * Creates a Form and a couple of DateTimeFields (Publish and Expire) and set it as Publish and Expire properties in the Content Type.
 	 */
 	@Test
 	public void testFormContentTypeWithPublishExpireFields() throws Exception{
 		int base = BaseContentType.FORM.ordinal();
 		createContentTypeWithPublishExpireFields(base);
-        
+
 	}
-	
+
 	/*
 	 * Github: https://github.com/dotCMS/core/issues/11861
-	 * 
+	 *
 	 * Creates a Persona and a couple of DateTimeFields (Publish and Expire) and set it as Publish and Expire properties in the Content Type.
 	 */
 	@Test
@@ -1713,7 +1714,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		assertEquals(savedLanguagaVariableType.host(), Host.SYSTEM_HOST);
 		assertEquals(fields, savedLanguagaVariableType.fields());
 	}
-	
+
 	private void createContentTypeWithPublishExpireFields(int base) throws Exception{
 		long time = System.currentTimeMillis();
 
@@ -1960,20 +1961,20 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 			}
 		}
 	}
-	
-	
+
+
 	 @Test
 	  public void test_get_fields_filtered_by_class() throws Exception{
-	
+
 	   ContentType newType = ContentTypeBuilder.builder(BaseContentType.FILEASSET.immutableClass())
 	        .description("description").folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
 	        .name("ContentTypeTesting"+System.currentTimeMillis()).owner("owner").variable("velocityVarNameTesting"+System.currentTimeMillis()).build();
 	    newType = contentTypeApi.save(newType);
 
-	    
+
 	    List<Field> fields = newType.fields(BinaryField.class);
 		 assertTrue("There must be only one Binary Field in this test File Asset sub-type", fields.size() == 1);
-	     
+
       //Add Field.
       fields = new ArrayList<>( newType.fields() );
 
@@ -1989,16 +1990,16 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
       fields.add( fieldToSave );
 
       newType = contentTypeApi.save( newType, fields );
-	    
-	    
+
+
       fields = newType.fields(TextField.class);
 	  assertTrue("There must be only two Text Field in this test File Asset sub-type", fields.size() == 2);
-	     
+
       fields = newType.fields(SelectField.class);
       assert(fields.size()==0);
 	 }
-	 
-	 
+
+
 	 /**
 	  * This test is to ensure that a content type is returning the correct
 	  * parent permissionable based on where it lives in the hierarchy
@@ -2042,37 +2043,37 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
      assertEquals(hostType.getParentPermissionable(), site);
      assertEquals(folderType.getParentPermissionable(), folder);
    }
-   
-     
+
+
      /**
       * When dotCMS starts up and there is no persisted data, we need to instanciate
       * the content types before we can save the content.  This means that things like
-      * host lookups will fail. So instead of sending the Host as a parent permissionable, 
-      * we send a PermissionProxy that has the same data which can be used temporarilly to 
+      * host lookups will fail. So instead of sending the Host as a parent permissionable,
+      * we send a PermissionProxy that has the same data which can be used temporarilly to
       * calcuate the correct permission inheratance.
       */
      @Test
      public void test_content_type_parent_permissionable_when_no_data() throws Exception{
      // test inheritance if no data available
-     
+
      SimpleContentType fakeType = ImmutableSimpleContentType.builder()
          .name("ContentTypeTesting"+System.currentTimeMillis())
          .variable("velocityVarNameTesting"+System.currentTimeMillis())
          .host("fakeHost")
          .folder("fakeFolder")
          .build();
-     
+
      assert(fakeType.getParentPermissionable() instanceof PermissionableProxy);
-   
+
      assertEquals(fakeType.getParentPermissionable().getPermissionId(), "fakeFolder" );
      fakeType = ImmutableSimpleContentType.copyOf(fakeType).withFolder(Folder.SYSTEM_FOLDER);
      assertEquals(fakeType.getParentPermissionable().getPermissionId(), "fakeHost" );
      fakeType = ImmutableSimpleContentType.copyOf(fakeType).withHost(Host.SYSTEM_HOST);
      assertEquals(fakeType.getParentPermissionable().getPermissionId(), Host.SYSTEM_HOST );
-     
+
    }
-	
-     
+
+
      @Test
      public void test_get_fields_by_type() throws Exception{
 
@@ -2262,7 +2263,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
  	 * @param testCase
 	 * @throws DotSecurityException
 	 * @throws DotDataException
-	 */ 
+	 */
 	@Test
 	@UseDataProvider("getSites")
 	public void Fields_Should_Not_Get_Removed_When_Host_Is_Empty_Null(final SiteTestCase testCase)
@@ -2447,5 +2448,65 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		APILocator.getContentTypeAPI(APILocator.systemUser())
 				.findUrlMappedPattern(null);
 	}
+
+
+	/**
+	 * Method to test: {@link com.dotcms.enterprise.publishing.PublishDateUpdater#getContentTypeVariableWithPublishField()}  }  }}
+	 * Given Scenario: Add empty validation on publish and Expire date of the content type
+	 * ExpectedResult: return only content types with publish date != of null o empty
+	 *
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 *
+	 */
+
+	@Test
+	public void test_getContentTypeVariableWithPublishField_ShouldReturnNonNullOrEmpty() throws Exception {
+		long time = System.currentTimeMillis();
+		int base = BaseContentType.CONTENT.ordinal();
+		//create a new content type with publish date
+		ContentType contentType = ContentTypeBuilder.builder(BaseContentType.getContentTypeClass(base))
+				.description("ContentTypeWithPublishField " + time).folder(FolderAPI.SYSTEM_FOLDER)
+				.host(Host.SYSTEM_HOST).name("ContentTypeWithPublishField " + time)
+				.owner(APILocator.systemUser().toString()).variable("testContentVar"+time).publishDateVar("publishDate")
+				.build();
+
+		contentType = contentTypeApi.save(contentType);
+
+		//validate if the content exist
+		assertThat("Content was not created correctly", contentTypeApi.find(contentType.inode()) != null);
+
+		//create the publishing date field
+		List<Field> newFieldsList = new ArrayList<>();
+		Field fieldToSave = FieldBuilder.builder(DateTimeField.class).name("Publish Date").variable("publishDate")
+				.contentTypeId(contentType.id()).dataType(DataTypes.DATE).indexed(true).build();
+
+		newFieldsList.add(fieldToSave);
+
+		contentType = contentTypeApi.save(contentType, newFieldsList);
+
+		//get all the objects in the structure != null or empty
+		List<String> structureList = PublishDateUpdater.getContentTypeVariableWithPublishField();
+
+		//validate if the content type name appears in the retrieved data
+		assertTrue("The publish date of the content is empty or null", structureList.contains(contentType.variable()));
+
+		//remove the published dates
+		contentType = ContentTypeBuilder.builder(BaseContentType.getContentTypeClass(base))
+				.description("ContentTypeWithPublishExpireFields " + time).folder(FolderAPI.SYSTEM_FOLDER)
+				.host(Host.SYSTEM_HOST).name("ContentTypeWithPublishExpireFields " + time)
+				.id(contentType.inode())
+				.owner(APILocator.systemUser().toString()).variable(contentType.variable()).publishDateVar("")
+				.expireDateVar("").build();
+
+		contentType = contentTypeApi.save(contentType);
+
+		structureList = PublishDateUpdater.getContentTypeVariableWithPublishField();
+
+		//validate that the content type name didn't appear in the retrieved data
+		assertFalse("Publish date wasn't deleted", structureList.contains(contentType.variable()));
+
+	}
+
 
 }

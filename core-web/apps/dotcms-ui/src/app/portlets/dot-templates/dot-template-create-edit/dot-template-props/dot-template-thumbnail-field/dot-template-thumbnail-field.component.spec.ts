@@ -11,12 +11,12 @@ import {
 import { By } from '@angular/platform-browser';
 
 import { DotTempFileUploadService } from '@dotcms/app/api/services/dot-temp-file-upload/dot-temp-file-upload.service';
-import { DotMessagePipe } from '@dotcms/app/view/pipes/dot-message/dot-message.pipe';
 import {
     DotCrudService,
     DotMessageService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
+import { DotMessagePipe } from '@dotcms/ui';
 import { dotcmsContentletMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotTemplateThumbnailFieldComponent } from './dot-template-thumbnail-field.component';

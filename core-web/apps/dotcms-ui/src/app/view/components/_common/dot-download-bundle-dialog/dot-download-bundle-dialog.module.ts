@@ -9,6 +9,7 @@ import { DotDownloadBundleDialogComponent } from '@components/_common/dot-downlo
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotDownloadBundleDialogService } from '@dotcms/app/api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { DotPushPublishFiltersService } from '@dotcms/data-access';
+import { DotFieldRequiredDirective } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 @NgModule({
@@ -22,7 +23,8 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
         ReactiveFormsModule,
         DropdownModule,
         SelectButtonModule,
-        DotPipesModule
+        DotPipesModule,
+        DotFieldRequiredDirective
     ]
 })
 export class DotDownloadBundleDialogModule {}

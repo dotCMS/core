@@ -10,8 +10,13 @@ import { SidebarModule } from 'primeng/sidebar';
 
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
-import { ComponentStatus, StepStatus, TrafficProportion } from '@dotcms/dotcms-models';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import {
+    ComponentStatus,
+    MAX_INPUT_TITLE_LENGTH,
+    StepStatus,
+    TrafficProportion
+} from '@dotcms/dotcms-models';
+import { DotMessagePipeModule } from '@dotcms/ui';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 import { DotSidebarDirective } from '@portlets/shared/directives/dot-sidebar.directive';
 import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sidebar-header.component';
@@ -40,15 +45,14 @@ import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sideba
 })
 export class DotExperimentsConfigurationVariantsAddComponent implements OnInit {
     stepStatus = ComponentStatus;
-
     form: FormGroup;
-
     vm$: Observable<{
         experimentId: string;
         trafficProportion: TrafficProportion;
         status: StepStatus;
         isExperimentADraft: boolean;
     }> = this.dotExperimentsConfigurationStore.variantsStepVm$;
+    protected readonly maxNameLength = MAX_INPUT_TITLE_LENGTH;
 
     constructor(
         private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore
@@ -85,7 +89,7 @@ export class DotExperimentsConfigurationVariantsAddComponent implements OnInit {
         this.form = new FormGroup({
             name: new FormControl<string>('', {
                 nonNullable: true,
-                validators: [Validators.required, Validators.maxLength(255)]
+                validators: [Validators.required, Validators.maxLength(50)]
             })
         });
     }

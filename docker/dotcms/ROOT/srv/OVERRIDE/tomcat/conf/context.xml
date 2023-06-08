@@ -28,4 +28,6 @@
   <!--
   <Manager pathname="" />
   -->
+  ${TOMCAT_REDIS_SESSION_CONFIG}
+
 </Context>

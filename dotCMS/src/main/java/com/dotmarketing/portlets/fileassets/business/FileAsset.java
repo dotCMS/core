@@ -73,7 +73,7 @@ public class FileAsset extends Contentlet implements IFileAsset {
 	}
 
 	public int getMenuOrder() {
-		return new Integer(String.valueOf(getLongProperty(FileAssetAPI.SORT_ORDER)));
+		return Integer.valueOf(String.valueOf(getLongProperty(FileAssetAPI.SORT_ORDER)));
 	}
 
 	private static final long serialVersionUID = 1L;
@@ -102,6 +102,10 @@ public class FileAsset extends Contentlet implements IFileAsset {
 		return 	Try.of(() -> getMetadata().getSize()).getOrElse(0);
 	}
 
+	public String getSha256() {
+		return Try.of(() -> getMetadata().getSha256()).getOrNull();
+	}
+
 	public int getHeight() {
         return  Try.of(()-> getMetadata().getHeight()).getOrElse(0);
 	}
@@ -110,6 +114,13 @@ public class FileAsset extends Contentlet implements IFileAsset {
 		return  Try.of(()-> getMetadata().getWidth()).getOrElse(0);
 	}
 
+	public String getFileTitle() {
+		return  Try.of(()-> getMetadata().getTitle()).getOrElse("unknown");
+	}
+
+	public boolean isImage() {
+		return Try.of(()-> getMetadata().isImage()).getOrElse(false);
+	}
 
   /**
    * This gives you access to the physical file on disk.

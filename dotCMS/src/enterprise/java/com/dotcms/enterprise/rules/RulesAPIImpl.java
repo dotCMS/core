@@ -144,8 +144,8 @@ public class RulesAPIImpl implements RulesAPI {
     private static final Map<String, Conditionlet<?>> conditionletMap = Maps.newHashMap();
     private static final Map<String, RuleActionlet> actionletMap = Maps.newHashMap();
 
-    private static final List<Class> conditionletOSGIclasses = new ArrayList<Class>();
-    private static final List<Class> actionletOSGIclasses = new ArrayList<Class>();
+    private static final List<Class> conditionletOSGIclasses = new ArrayList<>();
+    private static final List<Class> actionletOSGIclasses = new ArrayList<>();
 
     /**
      *  Move these into defaultConditionletClasses list below to re-enable. Disable by doing the opposite.
@@ -314,7 +314,7 @@ public class RulesAPIImpl implements RulesAPI {
 
         final Optional<Permissionable> parentPermissionableOptional = getParentPermissionable(parent);
 
-        if (!parentPermissionableOptional.isPresent()) {
+        if (parentPermissionableOptional.isEmpty()) {
             return;
         }
 
@@ -1207,7 +1207,7 @@ public class RulesAPIImpl implements RulesAPI {
         if(Config.getBooleanProperty("felix.osgi.enable", true)){
             // Register main service
             BundleContext context = HostActivator.instance().getBundleContext();
-            Hashtable<String, String> props = new Hashtable<String, String>();
+            Hashtable<String, String> props = new Hashtable<>();
             context.registerService(ConditionletOSGIService.class.getName(), this, props);
             context.registerService(RuleActionletOSGIService.class.getName(), this, props);
         }
@@ -1269,7 +1269,7 @@ public class RulesAPIImpl implements RulesAPI {
             //Get the OSGi ones.
             List<RuleActionlet> actionlets = Lists.newArrayList(getCustomActionlets());
             //Get the default ones.
-            actionlets.addAll(getDefaultActionlets(new ArrayList<RuleActionlet>()));
+            actionlets.addAll(getDefaultActionlets(new ArrayList<>()));
 
 			for (RuleActionlet actionlet : actionlets) {
                 try {

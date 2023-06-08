@@ -9,9 +9,15 @@
 .dot-pages__container {
     background-color: $white;
     box-shadow: $md-shadow-4;
-    overflow-y: auto;
     padding: $spacing-4 $spacing-5 0;
     width: 100%;
+}
+
+.dot-pages__inner-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
 }
 
 .dot-pages__spinner-container {

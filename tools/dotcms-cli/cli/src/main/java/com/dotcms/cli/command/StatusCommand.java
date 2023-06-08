@@ -5,6 +5,7 @@ import com.dotcms.api.UserAPI;
 import com.dotcms.api.client.DotCmsClientConfig;
 import com.dotcms.api.client.RestClientFactory;
 import com.dotcms.api.client.ServiceManager;
+import com.dotcms.cli.common.HelpOptionMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.annotation.SecuredPassword;
 import com.dotcms.model.config.ServiceBean;
@@ -21,9 +22,13 @@ import java.util.concurrent.Callable;
 @ActivateRequestContext
 @CommandLine.Command(
         name = StatusCommand.NAME,
-        header = "@|bold,green Provide User login and dotCMS profile Status.|@ @|bold No additional params are expected.|@ ",
+        header = {"@|bold,blue Provides Current User logged-in and dotCMS instance Status.|@"},
         description = {
-
+                " This command provides a list with all the available dotCMS instance.",
+                " The info includes API URL, active user and the current profile.",
+                " This should give the user enough information to know which instance is active",
+                " and which user is logged in.",
+                "" // empty line left here on purpose to make room at the end
         })
 public class StatusCommand implements Callable<Integer> {
 
@@ -31,6 +36,9 @@ public class StatusCommand implements Callable<Integer> {
 
     @CommandLine.Mixin(name = "output")
     protected OutputOptionMixin output;
+
+    @CommandLine.Mixin
+    HelpOptionMixin helpOption;
 
     @Inject
     @SecuredPassword

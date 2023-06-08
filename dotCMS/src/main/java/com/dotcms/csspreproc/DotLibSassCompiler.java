@@ -64,7 +64,7 @@ public class DotLibSassCompiler extends DotCSSCompiler {
             final Optional<ContentletVersionInfo> info = APILocator.getVersionableAPI().getContentletVersionInfo(ident.getId(),
                     APILocator.getLanguageAPI().getDefaultLanguage().getId());
 
-            if(!info.isPresent()) {
+            if(info.isEmpty()) {
                 throw new DotDataException("Can't find Contentlet-version-info. Identifier: " + ident.getId() + ". Lang:"
                         + APILocator.getLanguageAPI().getDefaultLanguage().getId());
             }

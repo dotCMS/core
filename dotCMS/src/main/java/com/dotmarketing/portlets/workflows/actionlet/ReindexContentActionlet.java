@@ -96,7 +96,7 @@ public class ReindexContentActionlet extends WorkFlowActionlet {
 
 	@Override
 	public List<WorkflowActionletParameter> getParameters() {
-		List<WorkflowActionletParameter> params = new ArrayList<WorkflowActionletParameter>();
+		List<WorkflowActionletParameter> params = new ArrayList<>();
 
 		params.add(new WorkflowActionletParameter(INDEX_POLICY, "Optional Index Policy for the contentlet (Valid values: DEFER, WAIT_FOR, FORCE)", "", false));
 

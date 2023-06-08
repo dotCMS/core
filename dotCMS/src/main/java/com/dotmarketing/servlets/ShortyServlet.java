@@ -163,7 +163,7 @@ public class ShortyServlet extends HttpServlet {
 
         final Matcher focalPointMatcher = focalPointPattern.matcher(uri);
         Optional<FocalPoint> focalPoint =  focalPointMatcher.find() ? Optional.of(new FocalPoint(focalPointMatcher.group(1))) : Optional.empty();
-        if(!focalPoint.isPresent()) {
+        if(focalPoint.isEmpty()) {
             focalPoint =  this.getParameter(uri, "fp").isPresent() ? Optional.of(new FocalPoint(this.getParameter(uri, "fp").get())) : Optional.empty();
         }
         return focalPoint;
@@ -258,7 +258,7 @@ public class ShortyServlet extends HttpServlet {
     final Optional<ShortyId> shortOpt = this.shortyIdAPI.getShorty(inodeOrIdentifier);
 
     this.addHeaders(response, live);
-    if (!shortOpt.isPresent()) {
+    if (shortOpt.isEmpty()) {
       response.sendError(404);
       return;
     }
@@ -298,7 +298,7 @@ public class ShortyServlet extends HttpServlet {
                       ? APILocator.getContentletAPI().findContentletByIdentifierOrFallback(shorty.longId, live, language.getId(), APILocator.systemUser(), false)
                       : Optional.ofNullable(APILocator.getContentletAPI().find(shorty.longId, systemUser, false));
                       
-          if(!conOpt.isPresent()) {
+          if(conOpt.isEmpty()) {
               response.sendError(HttpServletResponse.SC_NOT_FOUND);
               return;
           }
@@ -438,7 +438,7 @@ public class ShortyServlet extends HttpServlet {
 
         final Optional<Field> fieldOpt = resolveField(contentlet, tryField);
 
-        if (!fieldOpt.isPresent()) {
+        if (fieldOpt.isEmpty()) {
             return "/" + contentlet.getInode() + "/" + FILE_ASSET_DEFAULT;
         }
 

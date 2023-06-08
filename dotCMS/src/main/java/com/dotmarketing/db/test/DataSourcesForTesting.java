@@ -34,7 +34,7 @@ public class DataSourcesForTesting {
    public List<DataSource> dataSources() throws FileNotFoundException, Exception {
 
 
-      List<DataSource> sources = new ArrayList<DataSource>();
+      List<DataSource> sources = new ArrayList<>();
 
       XmlTool xml = new XmlTool().parse(getContextAsString());
       xml = xml.children().find("Resource");

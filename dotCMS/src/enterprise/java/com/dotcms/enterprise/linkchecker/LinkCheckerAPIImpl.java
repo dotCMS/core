@@ -377,7 +377,7 @@ public class LinkCheckerAPIImpl implements LinkCheckerAPI {
     @Override
     public List<InvalidLink> findByInode(String inode) throws DotDataException {
         if(LicenseUtil.getLevel()<LicenseLevel.STANDARD.level)
-            return new ArrayList<InvalidLink>();
+            return new ArrayList<>();
         return linkFactory.findByInode(inode);
     }
 
@@ -385,7 +385,7 @@ public class LinkCheckerAPIImpl implements LinkCheckerAPI {
     @Override
     public List<InvalidLink> findAll(int offset, int pageSize) throws DotDataException {
         if(LicenseUtil.getLevel()<LicenseLevel.STANDARD.level)
-            return new ArrayList<InvalidLink>();
+            return new ArrayList<>();
         return linkFactory.findAll(offset, pageSize);
     }
 
@@ -393,7 +393,7 @@ public class LinkCheckerAPIImpl implements LinkCheckerAPI {
     @Override
     public List<InvalidLink> findAllByStructure(String structureInode, int offset, int pageSize) throws DotDataException {
         if(LicenseUtil.getLevel()<LicenseLevel.STANDARD.level)
-            return new ArrayList<InvalidLink>();
+            return new ArrayList<>();
         return linkFactory.findAllByStructure(structureInode, offset, pageSize);    	
     }
 

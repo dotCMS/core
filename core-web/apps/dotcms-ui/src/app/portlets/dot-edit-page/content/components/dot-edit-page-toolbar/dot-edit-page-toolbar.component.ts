@@ -15,6 +15,7 @@ import { take } from 'rxjs/operators';
 import { DotLicenseService, DotPropertiesService } from '@dotcms/data-access';
 import {
     DotCMSContentlet,
+    DotExperiment,
     DotPageMode,
     DotPageRenderState,
     DotVariantData,
@@ -29,6 +30,7 @@ import {
 export class DotEditPageToolbarComponent implements OnInit, OnChanges, OnDestroy {
     @Input() pageState: DotPageRenderState;
     @Input() variant: DotVariantData | null = null;
+    @Input() runningExperiment: DotExperiment | null = null;
     @Output() cancel = new EventEmitter<boolean>();
     @Output() actionFired = new EventEmitter<DotCMSContentlet>();
     @Output() favoritePage = new EventEmitter<boolean>();

@@ -27,6 +27,7 @@ import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router
 import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
 import { DotEventsService, DotMessageService, DotThemesService } from '@dotcms/data-access';
 import { DotTheme } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 import {
     cleanUpDialog,
     DotThemesServiceMock,
@@ -35,7 +36,6 @@ import {
     mockDotRenderedPage,
     mockDotThemes
 } from '@dotcms/utils-testing';
-import { DotMessagePipe } from '@pipes/dot-message/dot-message.pipe';
 import { DotEditPageInfoModule } from '@portlets/dot-edit-page/components/dot-edit-page-info/dot-edit-page-info.module';
 
 import { DotEditLayoutDesignerComponent } from './dot-edit-layout-designer.component';

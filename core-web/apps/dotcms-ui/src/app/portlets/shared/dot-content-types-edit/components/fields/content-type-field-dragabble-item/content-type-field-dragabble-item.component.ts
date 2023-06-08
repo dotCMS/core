@@ -1,15 +1,15 @@
 import {
     ChangeDetectionStrategy,
-    ChangeDetectorRef,
     Component,
-    ElementRef,
     EventEmitter,
     HostListener,
     Input,
-    OnDestroy,
     OnInit,
-    Output
+    Output,
+    ViewChild
 } from '@angular/core';
+
+import { OverlayPanel } from 'primeng/overlaypanel';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
@@ -27,7 +27,9 @@ import { FieldService } from '../service';
     templateUrl: './content-type-field-dragabble-item.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class ContentTypesFieldDragabbleItemComponent implements OnInit, OnDestroy {
+export class ContentTypesFieldDragabbleItemComponent implements OnInit {
+    @Input()
+    isSmall = false;
     @Input()
     field: DotCMSContentTypeField;
     @Output()
@@ -35,23 +37,22 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit, OnDestro
     @Output()
     edit: EventEmitter<DotCMSContentTypeField> = new EventEmitter();
 
-    shouldResize = false;
-    small = false;
+    @ViewChild('op') overlayPanel: OverlayPanel;
+
     open = false;
-    fieldAttributes: string[];
+
+    fieldAttributesArray: string[];
+
+    fieldTypeLabel: string;
+    fieldAttributesString: string;
     icon: string;
 
-    private resizeObserver: ResizeObserver;
-
-    constructor(
-        private dotMessageService: DotMessageService,
-        public fieldService: FieldService,
-        private el: ElementRef,
-        private cd: ChangeDetectorRef
-    ) {}
+    constructor(private dotMessageService: DotMessageService, public fieldService: FieldService) {}
 
     ngOnInit(): void {
-        this.fieldAttributes = [
+        this.fieldTypeLabel = this.field.fieldTypeLabel ? this.field.fieldTypeLabel : null;
+
+        this.fieldAttributesArray = [
             {
                 name: this.dotMessageService.get('contenttypes.field.atributes.required'),
                 value: this.field.required
@@ -68,31 +69,19 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit, OnDestro
             .filter((field) => field.value)
             .map((field) => field.name);
 
+        this.fieldAttributesString = this.fieldAttributesArray.join(', ');
+
         this.icon = this.fieldService.getIcon(this.field.clazz);
-
-        this.shouldResize = this.fieldAttributes.length > 1;
-
-        if (this.shouldResize) {
-            this.resizeObserver = new ResizeObserver((entries) => {
-                const [host] = entries;
-
-                if (host.contentRect.width < 300 && !this.small) {
-                    this.small = true;
-
-                    this.cd.detectChanges();
-                } else if (host.contentRect.width > 300 && this.small) {
-                    this.small = false;
-
-                    this.cd.detectChanges();
-                }
-            });
-
-            this.resizeObserver.observe(this.el.nativeElement);
-        }
     }
 
-    ngOnDestroy(): void {
-        if (this.shouldResize) this.resizeObserver.disconnect();
+    /**
+     *To reassign the open variable
+     *
+     * @param {boolean} state
+     * @memberof ContentTypesFieldDragabbleItemComponent
+     */
+    setOpen(state: boolean) {
+        this.open = state;
     }
 
     /**
@@ -104,7 +93,7 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit, OnDestro
     onClick($event: MouseEvent) {
         $event.stopPropagation();
         this.edit.emit(this.field);
-        this.open = false;
+        this.overlayPanel.hide();
     }
 
     /**
@@ -113,7 +102,7 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit, OnDestro
      */
     @HostListener('mousedown')
     onMouseDown() {
-        this.open = false;
+        this.overlayPanel.hide();
     }
 
     /**
@@ -124,7 +113,7 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit, OnDestro
     @HostListener('window:click', ['$event'])
     onWindowClick($event: MouseEvent) {
         $event.stopPropagation();
-        this.open = false;
+        this.overlayPanel.hide();
     }
 
     /**
@@ -134,17 +123,11 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit, OnDestro
      */
     openAttr($event: MouseEvent) {
         $event.stopPropagation();
-        this.open = true;
-    }
+        this.overlayPanel.show($event, $event.target);
 
-    /**
-     * This method is used to close the attributes list when the user clicks on the close button
-     * @param {MouseEvent} $event
-     * @memberof ContentTypesFieldDragabbleItemComponent
-     */
-    closeAttr($event: MouseEvent) {
-        $event.stopPropagation();
-        this.open = false;
+        setTimeout(() => {
+            this.overlayPanel.hide();
+        }, 2000);
     }
 
     /**

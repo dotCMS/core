@@ -11,8 +11,12 @@ import { HttpCode } from '@dotcms/dotcms-js';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { DotFavoritePageComponent } from '../../dot-edit-page/components/dot-favorite-page/dot-favorite-page.component';
-import { DotPagesState, DotPageStore } from '../dot-pages-store/dot-pages.store';
-import { DotActionsMenuEventParams, FAVORITE_PAGE_LIMIT } from '../dot-pages.component';
+import {
+    DotPagesState,
+    DotPageStore,
+    FAVORITE_PAGE_LIMIT
+} from '../dot-pages-store/dot-pages.store';
+import { DotActionsMenuEventParams } from '../dot-pages.component';
 
 @Component({
     selector: 'dot-pages-favorite-panel',
@@ -45,9 +49,12 @@ export class DotPagesFavoritePanelComponent {
      * @memberof DotPagesComponent
      */
     toggleFavoritePagesData(
+        $event: Event,
         areAllFavoritePagesLoaded: boolean,
         favoritePagesToLoad?: number
     ): void {
+        $event.stopPropagation();
+
         if (areAllFavoritePagesLoaded) {
             this.store.limitFavoritePages(FAVORITE_PAGE_LIMIT);
         } else {
@@ -55,6 +62,17 @@ export class DotPagesFavoritePanelComponent {
         }
 
         this.currentLimitSize = FAVORITE_PAGE_LIMIT;
+    }
+
+    /**
+     * Event to collapse or not Favorite Page panel
+     *
+     * @param {Event} event
+     * @memberof DotPagesComponent
+     */
+    toggleFavoritePagesPanel($event: Event): void {
+        this.store.setLocalStorageFavoritePanelCollapsedParams($event['collapsed']);
+        this.store.setFavoritePages({ collapsed: $event['collapsed'] as boolean });
     }
 
     /**
@@ -78,24 +96,7 @@ export class DotPagesFavoritePanelComponent {
         this.dotPageRenderService.checkPermission(urlParams).subscribe(
             (hasPermission: boolean) => {
                 if (hasPermission) {
-                    this.dialogService.open(DotFavoritePageComponent, {
-                        header: this.dotMessageService.get('favoritePage.dialog.header.add.page'),
-                        width: '80rem',
-                        data: {
-                            page: {
-                                favoritePageUrl: favoritePage.url,
-                                favoritePage: favoritePage
-                            },
-                            onSave: () => {
-                                this.timeStamp = this.getTimeStamp();
-                                this.store.getFavoritePages(this.currentLimitSize);
-                            },
-                            onDelete: () => {
-                                this.timeStamp = this.getTimeStamp();
-                                this.store.getFavoritePages(this.currentLimitSize);
-                            }
-                        }
-                    });
+                    this.displayFavoritePageDialog(favoritePage);
                 } else {
                     const error = new HttpErrorResponse(
                         new HttpResponse({
@@ -108,10 +109,31 @@ export class DotPagesFavoritePanelComponent {
                     this.dotHttpErrorManagerService.handle(error);
                 }
             },
-            (error: HttpErrorResponse) => {
-                this.dotHttpErrorManagerService.handle(error);
+            () => {
+                this.displayFavoritePageDialog(favoritePage);
             }
         );
+    }
+
+    private displayFavoritePageDialog(favoritePage: DotCMSContentlet) {
+        this.dialogService.open(DotFavoritePageComponent, {
+            header: this.dotMessageService.get('favoritePage.dialog.header'),
+            width: '80rem',
+            data: {
+                page: {
+                    favoritePageUrl: favoritePage.url,
+                    favoritePage: favoritePage
+                },
+                onSave: () => {
+                    this.timeStamp = this.getTimeStamp();
+                    this.store.getFavoritePages(this.currentLimitSize);
+                },
+                onDelete: () => {
+                    this.timeStamp = this.getTimeStamp();
+                    this.store.getFavoritePages(this.currentLimitSize);
+                }
+            }
+        });
     }
 
     private getTimeStamp() {

@@ -92,7 +92,7 @@ public class PublisherConfig implements Map<String, Object>, Cloneable {
 	@SuppressWarnings("unchecked")
 	public Set<String> getFolders() {
 		if(get(Config.FOLDERS.name()) == null){
-			Set<String> foldersToBuild =   new HashSet<String>();
+			Set<String> foldersToBuild =   new HashSet<>();
 			params.put(Config.FOLDERS.name(), foldersToBuild);
 		}
 		return (Set<String>) params.get(Config.FOLDERS.name());
@@ -130,9 +130,9 @@ public class PublisherConfig implements Map<String, Object>, Cloneable {
 
         if ( get( Config.FOLDERS_PENDING_DEFAULT.name() ) == null ) {
 
-            Map<String, ArrayList<Folder>> pendingRecords = new HashMap<String, ArrayList<Folder>>();
+            Map<String, ArrayList<Folder>> pendingRecords = new HashMap<>();
 
-            ArrayList<Folder> foldersToModify = new ArrayList<Folder>();
+            ArrayList<Folder> foldersToModify = new ArrayList<>();
             foldersToModify.add( folder );
             pendingRecords.put( structureInode, foldersToModify );
 
@@ -146,7 +146,7 @@ public class PublisherConfig implements Map<String, Object>, Cloneable {
                 foldersToModify = pendingRecords.get( structureInode );
                 foldersToModify.add( folder );
             } else {
-                foldersToModify = new ArrayList<Folder>();
+                foldersToModify = new ArrayList<>();
                 foldersToModify.add( folder );
             }
 
@@ -157,7 +157,7 @@ public class PublisherConfig implements Map<String, Object>, Cloneable {
     @SuppressWarnings("unchecked")
 	public Set<String> getHostSet() {
 		if(get(Config.HOST_SET.name()) == null){
-			Set<String> hostsToBuild =   new HashSet<String>();
+			Set<String> hostsToBuild =   new HashSet<>();
 			params.put(Config.HOST_SET.name(), hostsToBuild);
 		}
 		return (Set<String>) params.get(Config.HOST_SET.name());
@@ -170,7 +170,7 @@ public class PublisherConfig implements Map<String, Object>, Cloneable {
 	@SuppressWarnings("unchecked")
 	public Set<String> getStructures() {
 		if(get(Config.STRUCTURES.name()) == null){
-			Set<String> structsToBuild =   new HashSet<String>();
+			Set<String> structsToBuild =   new HashSet<>();
 			params.put(Config.STRUCTURES.name(), structsToBuild);
 		}
 		return (Set<String>) params.get(Config.STRUCTURES.name());
@@ -233,7 +233,7 @@ public class PublisherConfig implements Map<String, Object>, Cloneable {
 	}
 
 	public void clear() {
-		this.params = new LinkedHashMap<String, Object>();
+		this.params = new LinkedHashMap<>();
 	}
 
 	public boolean containsKey(Object key) {
@@ -327,7 +327,7 @@ public class PublisherConfig implements Map<String, Object>, Cloneable {
 	}
 
 	public PublisherConfig() {
-		params = java.util.Collections.synchronizedMap(new LinkedHashMap<String, Object>());
+		params = java.util.Collections.synchronizedMap(new LinkedHashMap<>());
 		setId(UtilMethods.dateToJDBC(new Date()).replace(':', '-').replace(' ', '_'));
 
 		setLanguage(APILocator.getLanguageAPI().getDefaultLanguage().getId());
@@ -434,7 +434,7 @@ public class PublisherConfig implements Map<String, Object>, Cloneable {
 	}
 	public void setBundlers(List<IBundler> bundlers) {
 
-		List<String> bs = new ArrayList<String>();
+		List<String> bs = new ArrayList<>();
 		for(IBundler clazz : bundlers){
 			bs.add(clazz.getClass().getName());
 		}
@@ -451,10 +451,10 @@ public class PublisherConfig implements Map<String, Object>, Cloneable {
 	public List<IBundler> getBundlers() {
 
 		 List<String> x = (List<String>) params.get(Config.BUNDLERS.name());
-		 List<IBundler> bs = new ArrayList<IBundler>();
+		 List<IBundler> bs = new ArrayList<>();
 		 for(String name : x){
 			 try {
-				bs.add((IBundler) Class.forName(name).newInstance());
+				bs.add((IBundler) Class.forName(name).getDeclaredConstructor().newInstance());
 			} catch (Exception e) {
 				Logger.error(this.getClass(), "Cannont get bundler:" + e.getMessage(), e);
 			}
@@ -523,8 +523,8 @@ public class PublisherConfig implements Map<String, Object>, Cloneable {
 	}
 
 	public boolean runNow(){
-		return this.get(PushPublisherConfig.MyConfig.RUN_NOW.toString()) !=null && new Boolean((String) this.get(
-			PushPublisherConfig.MyConfig.RUN_NOW.toString()));
+		return this.get(PushPublisherConfig.MyConfig.RUN_NOW.toString()) !=null && Boolean.valueOf((String)this.get(
+                PushPublisherConfig.MyConfig.RUN_NOW.toString()));
 	}
 
 	public void setRunNow(boolean once){

@@ -45,7 +45,6 @@ import java.io.ObjectOutputStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import org.junit.Assert;
@@ -225,7 +224,7 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 				.variable("velocityVarNameTesting" + time)
 				.build();
 		type = contentTypeFactory.save(type);
-		final List<Class> fieldClasses = Collections.singletonList(ImmutableWysiwygField.class);
+		final List<Class> fieldClasses = List.of(ImmutableWysiwygField.class);
 		addFieldsWithVariables(type, fieldClasses);
 		type.fields()
 				.forEach(field -> {

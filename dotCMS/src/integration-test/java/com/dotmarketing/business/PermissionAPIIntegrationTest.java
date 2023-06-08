@@ -92,7 +92,7 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
         template.setTitle("testtemplate");
         template.setBody("<html><head></head><body>en empty template just for test</body></html>");
         APILocator.getTemplateAPI().saveTemplate(template, host, systemUser, false);
-        Map<String, Object> sessionAttrs = new HashMap<String, Object>();
+        Map<String, Object> sessionAttrs = new HashMap<>();
         sessionAttrs.put("USER_ID", "dotcms.org.1");
     }
 

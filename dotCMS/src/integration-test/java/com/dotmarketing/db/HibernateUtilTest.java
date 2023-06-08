@@ -73,7 +73,7 @@ public class HibernateUtilTest {
         container.setPreLoop("pre");
         container.setPostLoop("post");
 
-        List<ContainerStructure> containerStructureList = new ArrayList<ContainerStructure>();
+        List<ContainerStructure> containerStructureList = new ArrayList<>();
         ContainerStructure cs = new ContainerStructure();
         cs.setStructureId(
                 CacheLocator.getContentTypeCache().getStructureByVelocityVarName("webPageContent")
@@ -116,7 +116,7 @@ public class HibernateUtilTest {
         container.setPreLoop("pre");
         container.setPostLoop("post");
 
-        List<ContainerStructure> containerStructureList = new ArrayList<ContainerStructure>();
+        List<ContainerStructure> containerStructureList = new ArrayList<>();
         ContainerStructure cs = new ContainerStructure();
         cs.setStructureId(
                 CacheLocator.getContentTypeCache().getStructureByVelocityVarName("webPageContent")
@@ -133,7 +133,7 @@ public class HibernateUtilTest {
         container.setTitle(title2);
         container.setPreLoop("pre");
         container.setPostLoop("post");
-        containerStructureList = new ArrayList<ContainerStructure>();
+        containerStructureList = new ArrayList<>();
         cs = new ContainerStructure();
         cs.setStructureId(
                 CacheLocator.getContentTypeCache().getStructureByVelocityVarName("webPageContent")

@@ -221,12 +221,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
-import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
-import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PERSONA_NAME_KEY;
-
 /**
  * Implementation class for the {@link ContentletAPI} interface.
  *
@@ -241,6 +235,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private static final String FAILED_TO_DELETE_UNARCHIVED_CONTENT = "Failed to delete unarchived content. Content must be archived first before it can be deleted.";
     private static final String NEVER_EXPIRE = "NeverExpire";
     private static final String CHECKIN_IN_PROGRESS = "__checkin_in_progress__";
+
+    private static final String IS_NEW_CONTENT = "__IS_NEW_CONTENT__";
 
     private final ContentletIndexAPIImpl indexAPI;
     private final ESContentFactoryImpl contentFactory;
@@ -673,14 +669,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             .getContentletVersionInfo(identifier, tryLanguage);
 
             // try the fallback if does not exists
-            if (tryLanguage != defaultLanguageId && (!contentletVersionInfo.isPresent()
+            if (tryLanguage != defaultLanguageId && (contentletVersionInfo.isEmpty()
                     || (live && contentletVersionInfo.get().getLiveInode() == null))) {
                 fallback = true;  // using the fallback
                 contentletVersionInfo = APILocator.getVersionableAPI()
                         .getContentletVersionInfo(identifier, defaultLanguageId);
             }
 
-            if (!contentletVersionInfo.isPresent()) {
+            if (contentletVersionInfo.isEmpty()) {
                 return Optional.empty();
             }
 
@@ -978,8 +974,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             ? contentlet.getInode() : "Unknown"));
 
             //If the contentlet has CMS Owner Publish permission on it, the user creating the new contentlet is allowed to publish
-            final List<Role> roles = permissionAPI.getRoles(contentlet.getPermissionId(),
-                    PermissionAPI.PERMISSION_PUBLISH, "CMS Owner", 0, -1);
+            List<Role> roles = permissionAPI.getRoles(contentlet.getPermissionId(),
+                    PermissionAPI.PERMISSION_PUBLISH, Role.CMS_OWNER_ROLE, 0, -1);
+            if (roles.isEmpty() &&
+                    isNewContentlet(contentlet)) {
+
+                roles = permissionAPI.getRoles(contentlet.getContentType().getPermissionId(),
+                        PermissionAPI.PERMISSION_PUBLISH, Role.CMS_OWNER_ROLE, 0, -1);
+            }
             final Role cmsOwner = APILocator.getRoleAPI().loadCMSOwnerRole();
 
             if (roles.size() > 0) {
@@ -1050,6 +1052,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
         // by now, the publish event is making a duplicate reload events on the site browser
         // so we decided to comment it out by now, and
         //contentletSystemEventUtil.pushPublishEvent(contentlet);
+    }
+
+    private boolean isNewContentlet(final Contentlet contentlet) throws DotDataException {
+        return contentlet.isNew() || null == contentlet.getIdentifier()
+                || ConversionUtils.toBooleanFromDb(contentlet.getMap().getOrDefault(IS_NEW_CONTENT, false))
+                || hasOnlyOneVersion(contentlet);
+    }
+
+    private boolean hasOnlyOneVersion(final Contentlet contentlet) throws DotDataException {
+
+        final int versionCount = new DotConnect().setSQL("SELECT count(*) as count FROM (SELECT 1 FROM contentlet WHERE identifier =? LIMIT 2) AS t")
+                .addParam(contentlet.getIdentifier())
+                .loadInt("count");
+        return versionCount <= 1;
     }
 
     @Override
@@ -1195,8 +1211,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public List<Contentlet> search(String luceneQuery, int limit, int offset, String sortBy,
             User user, boolean respectFrontendRoles, int requiredPermission)
             throws DotDataException, DotSecurityException {
-        PaginatedArrayList<Contentlet> contents = new PaginatedArrayList<Contentlet>();
-        ArrayList<String> inodes = new ArrayList<String>();
+        PaginatedArrayList<Contentlet> contents = new PaginatedArrayList<>();
+        ArrayList<String> inodes = new ArrayList<>();
 
         PaginatedArrayList<ContentletSearch> list = (PaginatedArrayList) searchIndex(luceneQuery,
                 limit, offset, sortBy, user, respectFrontendRoles);
@@ -1207,7 +1223,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         List<Contentlet> contentlets = findContentlets(inodes);
-        Map<String, Contentlet> map = new HashMap<String, Contentlet>(contentlets.size());
+        Map<String, Contentlet> map = new HashMap<>(contentlets.size());
         for (Contentlet contentlet : contentlets) {
             map.put(contentlet.getInode(), contentlet);
         }
@@ -1352,7 +1368,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             String sortBy, User user, boolean respectFrontendRoles)
             throws DotSecurityException, DotDataException {
         boolean isAdmin = false;
-        List<Role> roles = new ArrayList<Role>();
+        List<Role> roles = new ArrayList<>();
         if (user == null && !respectFrontendRoles) {
             throw new DotSecurityException(
                     "You must specify a user if you are not respecting frontend roles");
@@ -1573,7 +1589,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final User user, final boolean respectFrontendRoles)
             throws DotSecurityException, DotDataException, DotContentletStateException {
 
-        final List<Map<String, Object>> results = new ArrayList<Map<String, Object>>();
+        final List<Map<String, Object>> results = new ArrayList<>();
         if (contentlet == null || !InodeUtils.isSet(contentlet.getInode())) {
             throw new DotContentletStateException("Contentlet must exist");
         }
@@ -2614,7 +2630,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             final Optional<Boolean> deleteOpt = this.checkAndRunDestroyAsWorkflow(contentlet, user,
                     respectFrontendRoles);
-            if (!deleteOpt.isPresent()) {
+            if (deleteOpt.isEmpty()) {
 
                 contentletsToDelete.add(contentlet);
             } else {
@@ -3169,7 +3185,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
         List<Contentlet> perCons = permissionAPI.filterCollection(contentlets,
                 PermissionAPI.PERMISSION_PUBLISH, respectFrontendRoles, user);
-        List<Contentlet> contentletsVersion = new ArrayList<Contentlet>();
+        List<Contentlet> contentletsVersion = new ArrayList<>();
         contentletsVersion.addAll(contentlets);
 
         if (perCons.size() != contentlets.size()) {
@@ -3190,7 +3206,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             respectFrontendRoles));
         }
 
-        List<String> contentletInodes = new ArrayList<String>();
+        List<String> contentletInodes = new ArrayList<>();
         for (Iterator<Contentlet> iter = contentletsVersion.iterator(); iter.hasNext(); ) {
             Contentlet element = iter.next();
             contentletInodes.add(element.getInode());
@@ -3251,7 +3267,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
         List<Contentlet> perCons = permissionAPI.filterCollection(contentlets,
                 PermissionAPI.PERMISSION_PUBLISH, respectFrontendRoles, user);
-        List<Contentlet> contentletsVersion = new ArrayList<Contentlet>();
+        List<Contentlet> contentletsVersion = new ArrayList<>();
         contentletsVersion.addAll(contentlets);
 
         if (perCons.size() != contentlets.size()) {
@@ -3269,7 +3285,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         }
 
-        List<String> contentletInodes = new ArrayList<String>();
+        List<String> contentletInodes = new ArrayList<>();
         for (Iterator<Contentlet> iter = contentletsVersion.iterator(); iter.hasNext(); ) {
             Contentlet element = iter.next();
             contentletInodes.add(element.getInode());
@@ -3303,7 +3319,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     + " does not have permission to delete some or all of the contentlets");
         }
 
-        ArrayList<Contentlet> contentlets = new ArrayList<Contentlet>();
+        ArrayList<Contentlet> contentlets = new ArrayList<>();
         contentlets.add(contentlet);
         contentFactory.deleteVersion(contentlet);
 
@@ -5634,7 +5650,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
 
             new ContentletLoader().invalidate(contentlet);
-
+            if (isNewContent) {
+                // we mark as new. b/c next actions on the pipe may need to know if it is new or not.
+                contentlet.setProperty(IS_NEW_CONTENT, true);
+            }
         } catch (Exception e) {
             if (createNewVersion && workingContentlet != null && UtilMethods.isSet(
                     workingContentlet.getInode())) {
@@ -6597,7 +6616,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public List<Contentlet> checkout(List<Contentlet> contentlets, User user,
             boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException, DotContentletStateException {
-        List<Contentlet> result = new ArrayList<Contentlet>();
+        List<Contentlet> result = new ArrayList<>();
         for (Contentlet contentlet : contentlets) {
             result.add(checkout(contentlet.getInode(), user, respectFrontendRoles));
         }
@@ -6609,7 +6628,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public List<Contentlet> checkoutWithQuery(String luceneQuery, User user,
             boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException, DotContentletStateException {
-        List<Contentlet> result = new ArrayList<Contentlet>();
+        List<Contentlet> result = new ArrayList<>();
         List<Contentlet> cons = search(luceneQuery, 0, -1, "", user, respectFrontendRoles);
         for (Contentlet contentlet : cons) {
             result.add(checkout(contentlet.getInode(), user, respectFrontendRoles));
@@ -6622,7 +6641,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public List<Contentlet> checkout(String luceneQuery, User user, boolean respectFrontendRoles,
             int offset, int limit)
             throws DotDataException, DotSecurityException, DotContentletStateException {
-        List<Contentlet> result = new ArrayList<Contentlet>();
+        List<Contentlet> result = new ArrayList<>();
         List<Contentlet> cons = search(luceneQuery, limit, offset, "", user, respectFrontendRoles);
         for (Contentlet contentlet : cons) {
             result.add(checkout(contentlet.getInode(), user, respectFrontendRoles));
@@ -6904,7 +6923,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throws DotSecurityException, DotDataException, DotStateException {
         List<Contentlet> contentlets = contentFactory.findAllUserVersions(identifier);
         if (contentlets.isEmpty()) {
-            return new ArrayList<Contentlet>();
+            return new ArrayList<>();
         }
         if (!permissionAPI.doesUserHavePermission(contentlets.get(0), PermissionAPI.PERMISSION_READ,
                 user, respectFrontendRoles)) {
@@ -6951,7 +6970,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throws DotSecurityException, DotDataException, DotStateException {
         List<Contentlet> contentlets = contentFactory.findAllVersions(identifier, bringOldVersions);
         if (contentlets.isEmpty()) {
-            return new ArrayList<Contentlet>();
+            return new ArrayList<>();
         }
         if (!permissionAPI.doesUserHavePermission(contentlets.get(0), PermissionAPI.PERMISSION_READ,
                 user, respectFrontendRoles)) {
@@ -7014,8 +7033,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
             return;
         }
         List<Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
-        List<String> fieldNames = new ArrayList<String>();
-        Map<String, Field> velFieldmap = new HashMap<String, Field>();
+        List<String> fieldNames = new ArrayList<>();
+        Map<String, Field> velFieldmap = new HashMap<>();
 
         for (Field field : fields) {
             if (!field.getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString())
@@ -7190,7 +7209,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public List<Contentlet> find(Category category, long languageId, boolean live, String orderBy,
             User user, boolean respectFrontendRoles)
             throws DotDataException, DotContentletStateException, DotSecurityException {
-        List<Category> cats = new ArrayList<Category>();
+        List<Category> cats = new ArrayList<>();
         return find(cats, languageId, live, orderBy, user, respectFrontendRoles);
     }
 
@@ -7199,7 +7218,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             String orderBy, User user, boolean respectFrontendRoles)
             throws DotDataException, DotContentletStateException, DotSecurityException {
         if (categories == null || categories.size() < 1) {
-            return new ArrayList<Contentlet>();
+            return new ArrayList<>();
         }
         StringBuffer buffy = new StringBuffer();
         buffy.append("+type:content +deleted:false");
@@ -7310,7 +7329,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             } else if (value instanceof String) {
                 try {
                     contentlet.setFloatProperty(field.getVelocityVarName(),
-                            new Float((String) value));
+                            Float.valueOf((String)value));
                 } catch (Exception e) {
                     if (value != null && value.toString().length() != 0) {
                         contentlet.getMap().put(field.getVelocityVarName(), (String) value);
@@ -7325,7 +7344,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             } else if (value instanceof String) {
                 try {
                     contentlet.setLongProperty(field.getVelocityVarName(),
-                            new Long((String) value));
+                            Long.valueOf((String)value));
                 } catch (Exception e) {
                     //If we throw this exception here.. the contentlet will never get to the validateContentlet Method
                     throw new DotContentletStateException("Unable to set string value as a Long");
@@ -8147,7 +8166,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         Structure st = CacheLocator.getContentTypeCache()
                 .getStructureByInode(contentlet.getStructureInode());
         ContentletRelationships relationshipsData = new ContentletRelationships(contentlet);
-        List<ContentletRelationshipRecords> relationshipsRecords = new ArrayList<ContentletRelationshipRecords>();
+        List<ContentletRelationshipRecords> relationshipsRecords = new ArrayList<>();
         relationshipsData.setRelationshipsRecords(relationshipsRecords);
         for (Entry<Relationship, List<Contentlet>> relEntry : contentRelationships.entrySet()) {
             Relationship relationship = relEntry.getKey();
@@ -8532,7 +8551,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private Contentlet findWorkingContentlet(Contentlet content)
             throws DotSecurityException, DotDataException, DotContentletStateException {
         Contentlet con = null;
-        List<Contentlet> workingCons = new ArrayList<Contentlet>();
+        List<Contentlet> workingCons = new ArrayList<>();
         if (InodeUtils.isSet(content.getIdentifier())) {
             workingCons = contentFactory.findContentletsByIdentifier(content.getIdentifier(), false,
                     content.getLanguageId());
@@ -8592,12 +8611,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public List<String> findFieldValues(String structureInode, Field field, User user,
             boolean respectFrontEndRoles) throws DotDataException {
-        List<String> result = new ArrayList<String>();
+        List<String> result = new ArrayList<>();
 
         List<Contentlet> contentlets;
         if (field.isIndexed()) {
-            contentlets = new ArrayList<Contentlet>();
-            List<Contentlet> tempContentlets = new ArrayList<Contentlet>();
+            contentlets = new ArrayList<>();
+            List<Contentlet> tempContentlets = new ArrayList<>();
             int limit = 500;
 
             StringBuilder query = new StringBuilder(
@@ -8834,7 +8853,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (fields == null || fields.size() < 1) {
             throw new ValidationException("No Fields found for Content");
         }
-        Map<String, String> dbColToObjectAttribute = new HashMap<String, String>();
+        Map<String, String> dbColToObjectAttribute = new HashMap<>();
         for (com.dotcms.contenttype.model.field.Field field : fields) {
             dbColToObjectAttribute.put(field.dbColumn(), field.variable());
         }
@@ -8852,7 +8871,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 query.getSelectAttributes().add(title);
             }
         } else {
-            List<String> atts = new ArrayList<String>();
+            List<String> atts = new ArrayList<>();
             atts.add("*");
             atts.add(title);
             query.setSelectAttributes(atts);
@@ -9751,7 +9770,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 return true;
             } else if (!APILocator.getPermissionAPI().doesUserHavePermission(
-                    contentlet, PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles)) {
+                        contentlet, PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles)
+                    && !APILocator.getPermissionAPI().doesUserHavePermission(
+                        contentlet.getContentType(), PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles)) {
 
                 throw new DotLockException("User: " + (user != null ? user.getUserId() : "Unknown")
                         + " does not have Edit Permissions to lock content: " + (contentlet != null
@@ -9798,7 +9819,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public long indexCount(String luceneQuery, User user, boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException {
         boolean isAdmin = false;
-        List<Role> roles = new ArrayList<Role>();
+        List<Role> roles = new ArrayList<>();
         if (user == null && !respectFrontendRoles) {
             throw new DotSecurityException(
                     "You must specify a user if you are not respecting frontend roles");
@@ -9832,7 +9853,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 "MM/dd/yyyy",
                 "hh:mm:ss aa", "HH:mm:ss", "yyyy-MM-dd"};
 
-        List<Map<String, String>> result = new ArrayList<Map<String, String>>();
+        List<Map<String, String>> result = new ArrayList<>();
 
         String structureInode = CacheLocator.getContentTypeCache()
                 .getStructureByVelocityVarName(structureVariableName).getInode();

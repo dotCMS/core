@@ -69,7 +69,7 @@ public class ReflectionUtilsTest extends UnitTestBase {
 
         assertNull(bean2);
 
-        Class<?> [] types = ReflectionUtils.getTypes(new Integer(2), "Hello", Float.MAX_VALUE);
+        Class<?> [] types = ReflectionUtils.getTypes(Integer.valueOf(2), "Hello", Float.MAX_VALUE);
 
         assertNotNull(types);
         assertTrue(types.length == 3);

@@ -7,6 +7,7 @@ import { ConfirmationService } from 'primeng/api';
 
 import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
+import { DotFavoritePageService } from '@dotcms/app/api/services/dot-favorite-page/dot-favorite-page.service';
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
@@ -51,7 +52,7 @@ describe('DotPageStateService', () => {
     let dotPageRenderService: DotPageRenderService;
     let dotPageRenderServiceGetSpy: jasmine.Spy;
     let dotRouterService: DotRouterService;
-    let dotESContentService: DotESContentService;
+    let dotFavoritePageService: DotFavoritePageService;
     let loginService: LoginService;
     let injector: TestBed;
     let service: DotPageStateService;
@@ -68,6 +69,7 @@ describe('DotPageStateService', () => {
                 ConfirmationService,
                 DotFormatDateService,
                 DotESContentService,
+                DotFavoritePageService,
                 { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotRouterService, useClass: MockDotRouterService },
@@ -84,8 +86,8 @@ describe('DotPageStateService', () => {
         dotHttpErrorManagerService = injector.get(DotHttpErrorManagerService);
         dotPageRenderService = injector.get(DotPageRenderService);
         dotRouterService = injector.get(DotRouterService);
-        dotESContentService = injector.inject(DotESContentService);
         loginService = injector.get(LoginService);
+        dotFavoritePageService = injector.get(DotFavoritePageService);
 
         dotPageRenderServiceGetSpy = spyOn(dotPageRenderService, 'get').and.returnValue(
             of(mockDotRenderedPage())
@@ -102,7 +104,7 @@ describe('DotPageStateService', () => {
             url: '/an/url/test/form/query/params'
         });
 
-        spyOn(dotESContentService, 'get').and.returnValue(
+        spyOn(dotFavoritePageService, 'get').and.returnValue(
             of({
                 contentTook: 0,
                 jsonObjectView: {
@@ -138,16 +140,16 @@ describe('DotPageStateService', () => {
                 {}
             ]);
 
-            expect(dotESContentService.get).toHaveBeenCalledWith({
-                itemsPerPage: 10,
-                offset: '0',
-                query: `+contentType:DotFavoritePage +deleted:false +working:true +DotFavoritePage.url_dotraw:/an/url/test?&language_id=1&device_inode=`
+            expect(dotFavoritePageService.get).toHaveBeenCalledWith({
+                limit: 10,
+                userId: 'dotcms.org.1',
+                url: '/an/url/test?&language_id=1&device_inode='
             });
         });
 
         it('should get with url from queryParams with a Failing fetch from ES Search (favorite page)', () => {
             const error500 = mockResponseView(500, '/test', null, { message: 'error' });
-            dotESContentService.get = jasmine.createSpy().and.returnValue(throwError(error500));
+            dotFavoritePageService.get = jasmine.createSpy().and.returnValue(throwError(error500));
             service.get();
 
             const subscribeCallback = jasmine.createSpy('spy');
@@ -390,8 +392,17 @@ describe('DotPageStateService', () => {
             const renderedPage = getDotPageRenderStateMock(dotcmsContentletMock);
             service.setInternalNavigationState(renderedPage);
 
+            service.state$.subscribe((state: DotPageRenderState) => {
+                expect(state).toEqual(renderedPage);
+            });
+
             expect(service.getInternalNavigationState()).toEqual(renderedPage);
             expect(dotPageRenderServiceGetSpy).not.toHaveBeenCalled();
+            expect(dotFavoritePageService.get).toHaveBeenCalledWith({
+                limit: 10,
+                userId: '123',
+                url: '/an/url/test?&language_id=1&device_inode='
+            });
         });
 
         it('should return null when internal state is not set', () => {

@@ -39,6 +39,7 @@ public class NormalizationFilter implements Filter {
             "..",
             "/./",
             "\\",
+            "//",
             "?",
             "%3B", // encoded semi-colon
             "%2E", // encoded period '.'
@@ -71,7 +72,7 @@ public class NormalizationFilter implements Filter {
         final String originalUri = ((HttpServletRequest) servletRequest).getRequestURI();
 
         try {
-            if (!forbiddenRegex.get().isEmpty() && forbiddenRegex.get().get().matcher(originalUri).find()) {
+            if (forbiddenRegex.get().isPresent() && forbiddenRegex.get().get().matcher(originalUri).find()) {
                 throw new IllegalArgumentException("Invalid URI passed:" + originalUri);
             }
             if (containsNastyChar(originalUri)) {

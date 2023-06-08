@@ -356,7 +356,7 @@ public class RedisProvider extends CacheProvider {
             Logger.error(this, "Error retrieving Redis keys", e);
         }
 
-        return new HashSet<String>();
+        return new HashSet<>();
     }
 
     @Override

@@ -106,7 +106,7 @@ public class LinkCheckerAPITest extends IntegrationTestBase {
             container.setCode("$html");
             container.setMaxContentlets(0);
 
-            List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
+            List<ContainerStructure> csList = new ArrayList<>();
             ContainerStructure cs = new ContainerStructure();
             cs.setStructureId(structure.getInode());
             cs.setCode("this is the code");
@@ -151,7 +151,7 @@ public class LinkCheckerAPITest extends IntegrationTestBase {
     @AfterClass
     public static void disposeThings() throws Exception {
         try {
-            List<Contentlet> contentList=new ArrayList<Contentlet>();
+            List<Contentlet> contentList=new ArrayList<>();
             contentList.addAll(APILocator.getContentletAPI().findByStructure(structure.getInode(), sysuser, false, 0, 0));
             contentList.addAll(APILocator.getContentletAPI().findByStructure(urlmapstructure.getInode(), sysuser, false, 0, 0));
             APILocator.getContentletAPI().archive(contentList, sysuser, false);
@@ -201,7 +201,7 @@ public class LinkCheckerAPITest extends IntegrationTestBase {
             "http://www.oracle.com./index.html", // bad URL
             "https://github.com/dotCMS/core" // this is a good link
         };
-        HashSet<String> links=new HashSet<String>(Arrays.asList(extlinks));
+        HashSet<String> links=new HashSet<>(Arrays.asList(extlinks));
         StringBuilder sb=new StringBuilder("<html><body>\n");
         for(String ll : extlinks) sb.append("<a href='").append(ll).append("' title='short title'>this is a link</a>\n");
         sb.append("</body></html>");
@@ -359,7 +359,7 @@ public class LinkCheckerAPITest extends IntegrationTestBase {
         invalids = APILocator.getLinkCheckerAPI().findInvalidLinks(con);
         assertTrue(invalids!=null);
         assertEquals(3,invalids.size());
-        links=new HashSet<String>(Arrays.asList(new String[] {page2.getURI(),page3.getURI(),page4.getURI()}));
+        links=new HashSet<>(Arrays.asList(new String[] {page2.getURI(),page3.getURI(),page4.getURI()}));
         for(InvalidLink link : invalids)
             assertTrue(links.remove(link.getUrl()));
         
@@ -420,7 +420,7 @@ public class LinkCheckerAPITest extends IntegrationTestBase {
         invalids = APILocator.getLinkCheckerAPI().findInvalidLinks(con);
         assertTrue(invalids!=null);
         assertEquals(3,invalids.size());
-        links=new HashSet<String>(Arrays.asList(new String[] {page6.getURI(),page7.getURI(),page8.getURI()}));
+        links=new HashSet<>(Arrays.asList(new String[] {page6.getURI(),page7.getURI(),page8.getURI()}));
         
         APILocator.getVersionableAPI().setWorking(page6);
         APILocator.getVersionableAPI().setWorking(page7);

@@ -148,7 +148,7 @@ public class CategoryFullBundler implements IBundler {
     }
 
     private Set<String> getChildrenInodes(List<Category> children) {
-        Set<String> inodes = new HashSet<String>();
+        Set<String> inodes = new HashSet<>();
         for (Category child : children) {
             inodes.add(child.getInode());
         }

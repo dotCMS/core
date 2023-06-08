@@ -163,7 +163,7 @@ public class ServerActionFactoryImplProxy extends ParentProxy implements
 		if(allowExecution()){
 			return getServerActionFactoryInstance().getAllServerActions();
 		}else{
-			return new ArrayList<ServerActionBean>();
+			return new ArrayList<>();
 		}
 	}
 
