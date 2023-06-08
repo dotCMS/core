@@ -26,6 +26,7 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import graphql.VisibleForTesting;
 import io.vavr.Lazy;
@@ -113,6 +114,10 @@ public enum ExperimentAnalyzerUtil {
 
         final String pageId = experiment.pageId();
         final HTMLPageAsset page = getPage(pageId);
+
+        if (UtilMethods.isSet(page)) {
+            throw new IllegalArgumentException("The page with id " + pageId + " does not exist");
+        }
 
         final MetricType goalMetricType = goal.getMetric().type();
 
