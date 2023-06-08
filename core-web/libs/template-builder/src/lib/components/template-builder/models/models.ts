@@ -34,3 +34,7 @@ export enum TemplateBuilderBoxSize {
     medium = 'medium',
     small = 'small'
 }
+
+export interface StyleClassModel {
+    klass: string;
+}

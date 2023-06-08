@@ -1,9 +1,18 @@
 import { v4 as uuid } from 'uuid';
 
+import { DynamicDialogConfig } from 'primeng/dynamicdialog';
+
 import { DotLayoutBody } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotGridStackWidget } from '../models/models';
+
+export class MockDynamicDialogConfig<T> extends DynamicDialogConfig {
+    constructor(public data: T) {
+        super();
+        this.data = data;
+    }
+}
 
 export const GRIDSTACK_DATA_MOCK: DotGridStackWidget[] = [
     { x: 0, y: 0, w: 12, id: uuid() },
@@ -235,3 +244,88 @@ export const MESSAGES_MOCK = {
 export const DOT_MESSAGE_SERVICE_TB_MOCK = new MockDotMessageService(MESSAGES_MOCK);
 
 export const MOCK_TEXT = 'Header';
+
+export const MOCK_STYLE_CLASSES_FILE = {
+    classes: [
+        'd-none',
+        'd-inline',
+        'd-inline-block',
+        'd-block',
+        'd-grid',
+        'd-table',
+        'd-table-row',
+        'd-table-cell',
+        'd-flex',
+        'd-inline-flex',
+        'd-sm-none',
+        'd-sm-inline',
+        'd-sm-inline-block',
+        'flex-row',
+        'flex-column',
+        'flex-row-reverse',
+        'flex-column-reverse',
+        'flex-grow-0',
+        'flex-grow-1',
+        'flex-shrink-0',
+        'flex-shrink-1',
+        'flex-fill',
+        'justify-content-start',
+        'justify-content-end',
+        'justify-content-center',
+        'justify-content-between',
+        'justify-content-around',
+        'justify-content-evenly',
+        'align-items-start',
+        'align-items-end',
+        'align-items-center',
+        'align-items-baseline',
+        'align-items-stretch',
+        'align-self-start',
+        'align-self-end',
+        'align-self-center',
+        'align-self-baseline',
+        'align-self-stretch',
+        'flex-nowrap',
+        'flex-wrap',
+        'flex-wrap-reverse',
+        'float-start',
+        'float-end',
+        'text-start',
+        'text-end',
+        'text-center',
+        'text-justify',
+        'text-wrap',
+        'text-nowrap',
+        'text-truncate',
+        'text-lowercase',
+        'text-uppercase',
+        'text-capitalize',
+        'bg-primary',
+        'bg-secondary',
+        'bg-success',
+        'bg-danger',
+        'bg-warning',
+        'bg-info',
+        'bg-light',
+        'bg-dark',
+        'bg-white',
+        'text-primary',
+        'text-secondary',
+        'text-success',
+        'text-danger',
+        'text-warning',
+        'text-info',
+        'text-light',
+        'text-dark',
+        'text-muted',
+        'border-primary',
+        'border-secondary',
+        'border-success',
+        'border-danger',
+        'border-warning',
+        'border-info',
+        'border-light',
+        'border-dark',
+        'border-white'
+    ]
+};

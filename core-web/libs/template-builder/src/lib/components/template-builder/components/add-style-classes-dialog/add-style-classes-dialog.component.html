@@ -1,0 +1,19 @@
+<div class="dialog__auto-complete-container">
+    <p class="auto-complete-container__title">Class</p>
+    <div class="p-fluid">
+        <p-autoComplete
+            [(ngModel)]="selectedClasses"
+            [suggestions]="filteredClasses"
+            [multiple]="true"
+            [completeOnFocus]="true"
+            [size]="446"
+            (completeMethod)="filterClasses($event)"
+            field="klass"
+            inputId="my-autocomplete"
+        >
+        </p-autoComplete>
+    </div>
+</div>
+<div class="dialog__actions-container">
+    <p-button (onClick)="closeDialog()"> Update </p-button>
+</div>

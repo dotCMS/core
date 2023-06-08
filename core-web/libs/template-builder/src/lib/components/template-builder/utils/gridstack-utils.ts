@@ -2,7 +2,12 @@ import { v4 as uuid } from 'uuid';
 
 import { DotLayoutBody } from '@dotcms/dotcms-models';
 
-import { DotGridStackNode, DotGridStackWidget, TemplateBuilderBoxSize } from '../models/models';
+import {
+    StyleClassModel,
+    DotGridStackNode,
+    DotGridStackWidget,
+    TemplateBuilderBoxSize
+} from '../models/models';
 
 /**
  * @description This function parses the oldNode and newNode to a DotGridStackWidget array
@@ -132,7 +137,7 @@ export function parseFromDotObjectToGridStack(
 }
 
 /**
- *@description This function returns the variant of a box based on the number of width
+ * @description This function returns the variant of a box based on the number of width
  *
  * @param {number} width
  * @return {*}  {TemplateBuilderBoxSize}
@@ -143,4 +148,15 @@ export function getBoxVariantByWidth(width: number): TemplateBuilderBoxSize {
     if (width <= 3) return TemplateBuilderBoxSize.medium;
 
     return TemplateBuilderBoxSize.large;
+}
+
+/**
+ * @description This function parses the style class file to a ClassModel array
+ *
+ * @export
+ * @param {string[]} classes
+ * @return {*}  {ClassModel[]}
+ */
+export function parseStyleClassFileToModel(classes: string[]): StyleClassModel[] {
+    return classes.map((styleClass) => ({ klass: styleClass }));
 }
