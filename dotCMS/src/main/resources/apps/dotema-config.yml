@@ -7,7 +7,7 @@ params:
     value: ""
     hidden: false
     type: "STRING"
-    label: "Configuration Data"
+    label: "Configuration"
     hint: "Allows you to match multiple URL patterns with different 3rd party servers, if required. For instance: 
       ```[
             {

@@ -41,6 +41,9 @@ import java.util.Optional;
 public class EMAWebInterceptor implements WebInterceptor {
 
     public static final String PROXY_EDIT_MODE_URL_VAR = "proxyEditModeURL";
+    /**
+     * @deprecated This property is now inside the JSON value set via the {@code proxyEditModeURL} field
+     */
     @Deprecated(forRemoval = true)
     public static final String INCLUDE_RENDERED_VAR = "includeRendered";
     public static final String AUTHENTICATION_TOKEN_VAR = "authenticationToken";
@@ -97,7 +100,7 @@ public class EMAWebInterceptor implements WebInterceptor {
 
                 final ProxyResponse pResponse = proxy.sendPost(proxyUrl, params);
                 final String authTokenFromEma = this.getHeaderValue(pResponse.getHeaders(), EMA_AUTH_HEADER);
-                if (UtilMethods.isSet(authToken) && (UtilMethods.isNotSet(authTokenFromEma) || !authToken.equals(authTokenFromEma))) {
+                if (UtilMethods.isSet(authToken) && (UtilMethods.isNotSet(authTokenFromEma) || (UtilMethods.isSet(authToken) && !authToken.equals(authTokenFromEma)))) {
                     this.sendHttpResponse(this.generateErrorPage("Invalid Authentication Token",
                             proxyUrl, pResponse), postJson, response);
                 } else if (pResponse.getResponseCode() != HttpStatus.SC_OK) {
