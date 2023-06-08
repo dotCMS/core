@@ -22,10 +22,6 @@ describe('TemplateBuilderActionsComponent', () => {
 
     beforeEach(() => (spectator = createComponent()));
 
-    it('should create', () => {
-        expect(spectator.component).toBeTruthy();
-    });
-
     it('should emit selectLayout event when layout button is clicked', () => {
         const spy = jest.spyOn(spectator.component.selectLayout, 'emit');
         spectator.detectChanges();
