@@ -198,7 +198,7 @@ describe('DotTemplateBuilderStore', () => {
             }
         ];
 
-        service.setState({ items: GRIDSTACK_DATA_MOCK });
+        service.setState({ items: GRIDSTACK_DATA_MOCK, styleClasses: [] });
 
         const affectedColumns: DotGridStackNode[] = [
             {
