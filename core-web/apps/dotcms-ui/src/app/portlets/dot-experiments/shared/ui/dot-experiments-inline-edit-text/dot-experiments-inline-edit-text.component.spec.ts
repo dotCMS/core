@@ -19,7 +19,7 @@ const LONG_TEXT =
     'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed condimentum eros sit amet malesuada mattis. Morbi ac congue lectus, ut vestibulum velit. Ut sed ornare metus. Proin a orci lacus. Aenean odio lacus, fringilla eu ipsum non, pellentesque sagittis purus. Integer non.';
 const NEW_EXPERIMENT_DESCRIPTION = 'new experiment description';
 
-fdescribe('DotExperimentsExperimentSummaryComponent', () => {
+describe('DotExperimentsExperimentSummaryComponent', () => {
     let spectator: Spectator<DotExperimentsInlineEditTextComponent>;
     const createComponent = createComponentFactory({
         imports: [],
