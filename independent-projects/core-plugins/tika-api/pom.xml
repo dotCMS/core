@@ -9,7 +9,7 @@
         <version>1.0.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>tika-api</artifactId>
+    <artifactId>com.dotcms.tika-api</artifactId>
     <version>1.0.0-SNAPSHOT</version>
 
     <properties>

@@ -8,7 +8,7 @@ dependencies {
     implementation (group: 'com.carrotsearch', name: 'hppc', version: '0.8.1') {
         transitive=false
     }
-    implementation (group: 'com.dotcms.core.plugins', name: 'tika-api', version: '1.0.0-SNAPSHOT'){}
+    implementation (group: 'com.dotcms.core.plugins', name: 'com.dotcms.tika-api', version: '1.0.0-SNAPSHOT'){}
     implementation (group: 'com.dotcms.lib', name: 'dot.Tidy', version: 'ukv_2'){}
     implementation (group: 'com.dotcms.lib', name: 'dot.aopalliance-repackaged', version: '2.4.0-b10_2'){}
     implementation (group: 'com.dotcms.lib', name: 'dot.asm', version: '3.1_2'){}

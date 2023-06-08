@@ -55,7 +55,7 @@
 
             <dependency>
                 <groupId>com.dotcms.core.plugins</groupId>
-                <artifactId>tika-api</artifactId>
+                <artifactId>com.dotcms.tika-api</artifactId>
                 <version>${dotcms.tika-api.version}</version>
             </dependency>
 

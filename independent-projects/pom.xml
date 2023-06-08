@@ -3,17 +3,16 @@
 
     <parent>
         <groupId>com.dotcms</groupId>
-        <artifactId>independent-projects</artifactId>
+        <artifactId>dotcms-parent</artifactId>
         <version>1.0.0-SNAPSHOT</version>
-
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
 
     <packaging>pom</packaging>
 
-    <groupId>com.dotcms.core.plugins</groupId>
-    <artifactId>core-plugins-parent</artifactId>
+    <groupId>com.dotcms</groupId>
+    <artifactId>independent-projects</artifactId>
 
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
@@ -23,8 +22,7 @@
     </properties>
 
     <modules>
-        <module>tika-api</module>
-        <module>tika-plugin</module>
+        <module>core-plugins</module>
     </modules>
 
     <build>

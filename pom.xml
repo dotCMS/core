@@ -7,6 +7,7 @@
     <packaging>pom</packaging>
     <description>DotCMS</description>
     <modules>
+        <module>independent-projects</module>
         <module>maven-plugins</module>
         <module>bom</module>
         <module>core-web</module>
@@ -450,7 +451,7 @@
                     <version>${turbo-maven-plugin.version}</version>
                     <extensions>true</extensions>
                     <configuration>
-                        <enabled>true</enabled>
+                        <enabled>false</enabled>
                        <!-- <ignoreChangesInFiles>swagger.json</ignoreChangesInFiles>
                         <alwaysBuildModules>distribution</alwaysBuildModules>
                         -->
