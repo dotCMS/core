@@ -1,8 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 
-import { Goals, GOALS_METADATA_MAP, RangeOfDateAndTime } from '@dotcms/dotcms-models';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import {
+    Goals,
+    GOALS_METADATA_MAP,
+    RangeOfDateAndTime,
+    SummaryLegend
+} from '@dotcms/dotcms-models';
+import { DotMessagePipeModule } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-experiments-experiment-summary',
@@ -22,8 +27,8 @@ export class DotExperimentsExperimentSummaryComponent {
     scheduling: RangeOfDateAndTime;
 
     @Input()
-    usersReached: number;
+    sessionsReached: number;
 
     @Input()
-    winnerFound = false;
+    suggestedWinner: SummaryLegend | null = null;
 }

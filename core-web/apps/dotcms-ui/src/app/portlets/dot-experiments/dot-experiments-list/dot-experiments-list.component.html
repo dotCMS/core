@@ -1,10 +1,9 @@
 <ng-container *ngIf="vm$ | async as vm">
     <dot-experiments-header
         [isLoading]="vm.isLoading"
-        [title]="vm.page.pageTitle"
+        [title]="vm.pageTitle"
         (goBack)="goToBrowserBack()"
     />
-
     <div class="dot-experiment">
         <ng-container
             *ngIf="vm.experiments.length; else vm.isLoading ? loadingExperiments : noExperiments"
@@ -21,7 +20,6 @@
                     data-testId="add-experiment-button"
                     label="{{ 'experimentspage.add.new.experiment' | dm }}"
                     pButton
-                    pRipple
                     type="button"
                 ></button>
             </div>
@@ -29,9 +27,10 @@
             <dot-experiments-list-table
                 [experimentGroupedByStatus]="vm.experimentsFiltered"
                 [experimentsCount]="vm.experiments.length"
-                (archiveItem)="archiveExperiment($event)"
-                (deleteItem)="deleteExperiment($event)"
-                (goToReport)="goToViewExperimentReport($event)"
+                (archiveItem)="archiveExperimentAction($event)"
+                (deleteItem)="deleteExperimentAction($event)"
+                (goToConfiguration)="gotToConfigurationAction($event)"
+                (goToContainer)="goToContainerAction($event)"
             />
         </ng-container>
     </div>

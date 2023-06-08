@@ -53,7 +53,8 @@
     <tr>
         <th class="permissionType">${structureWillInherit}</th>
         <td><input type="checkbox" dojoType="dijit.form.CheckBox" id="structure-view-permission-${id}" onclick="viewPermissionChanged('structure', '${id}')" ${structureViewPermissionChecked} ${editPermissionDisabled} /></td>
-        <td>NA</td>
+        <td><input type="checkbox" dojoType="dijit.form.CheckBox" id="structure-add-children-permission-${id}" onclick="addChildrenPermissionChanged('structure', '${id}')" ${structureAddChildrenPermissionChecked} ${editPermissionDisabled} /></td>
+        
         <td><input type="checkbox" dojoType="dijit.form.CheckBox" id="structure-edit-permission-${id}" onclick="editPermissionChanged('structure', '${id}')" ${structureEditPermissionChecked} ${editPermissionDisabled} /></td>
         <td><input type="checkbox" dojoType="dijit.form.CheckBox" id="structure-publish-permission-${id}" onclick="publishPermissionChanged('structure', '${id}')" ${structurePublishPermissionChecked} ${editPermissionDisabled} /></td>
         <td><input type="checkbox" dojoType="dijit.form.CheckBox" id="structure-edit-permissions-permission-${id}" onclick="editPermissionsPermissionChanged('structure', '${id}')" ${structureEditPermissionsPermissionChecked} ${editPermissionDisabled} /></td>

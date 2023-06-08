@@ -10,7 +10,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { tap } from 'rxjs/operators';
 
 import { StepStatus } from '@dotcms/dotcms-models';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { DotMessagePipeModule } from '@dotcms/ui';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 
 @Component({

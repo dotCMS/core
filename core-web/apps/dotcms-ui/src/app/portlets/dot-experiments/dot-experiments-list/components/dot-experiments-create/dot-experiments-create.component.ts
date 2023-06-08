@@ -7,14 +7,13 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { InputTextareaModule } from 'primeng/inputtextarea';
-import { RippleModule } from 'primeng/ripple';
 import { SidebarModule } from 'primeng/sidebar';
 
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
-import { DotExperiment, MAX_INPUT_LENGTH } from '@dotcms/dotcms-models';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { DotExperiment, MAX_INPUT_TITLE_LENGTH } from '@dotcms/dotcms-models';
+import { DotMessagePipeModule } from '@dotcms/ui';
 import {
     DotExperimentsListStore,
     VmCreateExperiments
@@ -45,8 +44,7 @@ interface CreateForm {
         InputTextareaModule,
         InputTextModule,
         SidebarModule,
-        ButtonModule,
-        RippleModule
+        ButtonModule
     ],
     templateUrl: './dot-experiments-create.component.html',
     styleUrls: ['./dot-experiments-create.component.scss'],
@@ -56,7 +54,7 @@ export class DotExperimentsCreateComponent implements OnInit {
     vm$: Observable<VmCreateExperiments> = this.dotExperimentsListStore.createVm$;
 
     form: FormGroup<CreateForm>;
-    protected readonly maxNameLength = MAX_INPUT_LENGTH;
+    protected readonly maxNameLength = MAX_INPUT_TITLE_LENGTH;
 
     constructor(private readonly dotExperimentsListStore: DotExperimentsListStore) {}
 

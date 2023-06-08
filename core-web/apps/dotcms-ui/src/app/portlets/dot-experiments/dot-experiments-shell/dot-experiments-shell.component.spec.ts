@@ -8,28 +8,20 @@ import { MessageService } from 'primeng/api';
 import { Toast, ToastModule } from 'primeng/toast';
 
 import { DotLoadingIndicatorModule } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
+import { DotExperimentsStore } from '@portlets/dot-experiments/dot-experiments-shell/store/dot-experiments.store';
 import { DotExperimentsUiHeaderComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
 
 import { DotExperimentsShellComponent } from './dot-experiments-shell.component';
 
-class ActivatedRouteMock {
-    get parent() {
-        return {
-            parent: {
-                snapshot: {
-                    data: {
-                        content: {
-                            page: {
-                                identifier: '1234',
-                                title: 'My dotCMS experiment'
-                            }
-                        }
-                    }
-                }
-            }
-        };
+const routerParamsPageId = '1111-1111-111';
+const ActivatedRouteMock = {
+    snapshot: {
+        params: {
+            pageId: routerParamsPageId
+        },
+        parent: { parent: { parent: { data: { content: { page: { title: '' } } } } } }
     }
-}
+};
 
 class RouterMock {
     navigate() {
@@ -39,7 +31,6 @@ class RouterMock {
 
 describe('DotExperimentsShellComponent', () => {
     let spectator: Spectator<DotExperimentsShellComponent>;
-    let toastComponent: Toast;
 
     const createComponent = createComponentFactory({
         imports: [
@@ -53,9 +44,10 @@ describe('DotExperimentsShellComponent', () => {
         providers: [
             ComponentStore,
             MessageService,
+            DotExperimentsStore,
             {
                 provide: ActivatedRoute,
-                useClass: ActivatedRouteMock
+                useValue: ActivatedRouteMock
             },
             {
                 provide: Router,
@@ -69,8 +61,6 @@ describe('DotExperimentsShellComponent', () => {
     });
 
     it('should has Toast component', () => {
-        toastComponent = spectator.query(Toast);
-
-        expect(toastComponent).toExist();
+        expect(spectator.query(Toast)).toExist();
     });
 });

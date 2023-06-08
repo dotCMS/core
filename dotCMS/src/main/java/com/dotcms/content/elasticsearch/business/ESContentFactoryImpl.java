@@ -1021,7 +1021,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         return new DotConnect()
                 .setSQL(String.format(
-                        "select inode from contentlet where identifier = ? and %s = ?",
+                        "select inode from contentlet where identifier = ? and %s = ? order by mod_date desc",
                         columnName))
                 .addParam(identifier.getId())
                 .addParam(variant.name())

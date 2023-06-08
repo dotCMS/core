@@ -11,13 +11,20 @@ import { ConfirmationService } from 'primeng/api';
 
 import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
+import { DotFavoritePageService } from '@dotcms/app/api/services/dot-favorite-page/dot-favorite-page.service';
 import {
     DotAlertConfirmService,
     DotContentletLockerService,
     DotESContentService,
     DotPageRenderService
 } from '@dotcms/data-access';
-import { CoreWebService, HttpCode, LoginService } from '@dotcms/dotcms-js';
+import {
+    CoreWebService,
+    HttpCode,
+    LoginService,
+    SiteService,
+    SiteServiceMock
+} from '@dotcms/dotcms-js';
 import { DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
 import {
     CoreWebServiceMock,
@@ -62,8 +69,10 @@ describe('DotExperimentExperimentResolver', () => {
                 ConfirmationService,
                 DotFormatDateService,
                 DotESContentService,
+                DotFavoritePageService,
                 { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
                 { provide: DotRouterService, useClass: MockDotRouterService },
+                { provide: SiteService, useClass: SiteServiceMock },
                 {
                     provide: ActivatedRouteSnapshot,
                     useValue: route

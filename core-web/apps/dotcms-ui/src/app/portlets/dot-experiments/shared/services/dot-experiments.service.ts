@@ -9,6 +9,7 @@ import { DotCMSResponse } from '@dotcms/dotcms-js';
 import {
     DotExperiment,
     DotExperimentResults,
+    DotExperimentStatusList,
     Goals,
     GoalsLevels,
     RangeOfDateAndTime,
@@ -44,6 +45,21 @@ export class DotExperimentsService {
     getAll(pageId: string): Observable<DotExperiment[]> {
         return this.http
             .get<DotCMSResponse<DotExperiment[]>>(`${API_ENDPOINT}?pageId=${pageId}`)
+            .pipe(pluck('entity'));
+    }
+
+    /**
+     * Get an array of experiments of a pageId filter by status
+     * @param {string} pageId
+     * @param {DotExperimentStatusList} status
+     * @returns Observable<DotExperiment[]>
+     * @memberof DotExperimentsService
+     */
+    getByStatus(pageId: string, status: DotExperimentStatusList): Observable<DotExperiment[]> {
+        return this.http
+            .get<DotCMSResponse<DotExperiment[]>>(
+                `${API_ENDPOINT}?pageId=${pageId}&status=${status}`
+            )
             .pipe(pluck('entity'));
     }
 
@@ -116,6 +132,21 @@ export class DotExperimentsService {
     stop(experimentId: string): Observable<DotExperiment> {
         return this.http
             .post<DotCMSResponse<DotExperiment>>(`${API_ENDPOINT}/${experimentId}/_end`, {})
+            .pipe(pluck('entity'));
+    }
+
+    /**
+     * Cancel schedule experiment and set it to draft
+     * @param {string} experimentId
+     * @returns Observable<DotExperiment>
+     * @memberof DotExperimentsService
+     */
+    cancelSchedule(experimentId: string): Observable<DotExperiment> {
+        return this.http
+            .post<DotCMSResponse<DotExperiment>>(
+                `${API_ENDPOINT}/scheduled/${experimentId}/_cancel`,
+                {}
+            )
             .pipe(pluck('entity'));
     }
 

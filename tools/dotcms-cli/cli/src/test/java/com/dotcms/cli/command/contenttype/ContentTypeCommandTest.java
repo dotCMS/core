@@ -1,5 +1,7 @@
 package com.dotcms.cli.command.contenttype;
 
+import static org.junit.jupiter.api.Assertions.fail;
+
 import com.dotcms.api.AuthenticationContext;
 import com.dotcms.api.provider.ClientObjectMapper;
 import com.dotcms.api.provider.YAMLMapperSupplier;
@@ -190,8 +192,15 @@ public class ContentTypeCommandTest extends CommandTest {
         final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeRemove.NAME, varName,  "--cli-test" );
         Assertions.assertEquals(ExitCode.OK, status);
 
-        final int status2 = commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME, varName );
-        Assertions.assertEquals(ExitCode.SOFTWARE, status2);
+        //A simple Thread.sleep() could do it too but Sonar strongly recommends we stay away from it.
+        int count = 0;
+        while(ExitCode.SOFTWARE != commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME, varName )){
+            System.out.println("Waiting for content type to be removed");
+            count++;
+            if(count > 10){
+               fail("Content type was not removed");
+            }
+        }
     }
 
 }

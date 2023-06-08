@@ -20,7 +20,6 @@ WORKDIR /srv
 ENV GRADLE_USER_HOME=/build/src/core/dotCMS/.gradle
 ENV GRADLE_OPTS="-Dfile.encoding=utf-8 -Xmx2g"
 
-
 # dotCMS core distributed under GPLv3 license (https://github.com/dotCMS/core/blob/master/license.txt)
 COPY build-src/ /build/
 RUN chmod 500 /build/build_dotcms.sh && /build/build_dotcms.sh ${BUILD_FROM} ${BUILD_ID}
@@ -36,6 +35,7 @@ RUN ["/bin/bash", "-c", "[ $(ls -d /srv/dotserver/tomcat-* | wc -l) == 1 ] || ex
 # provide stable path to tomcat dir
 RUN ln -s $(ls -d /srv/dotserver/tomcat-*) /srv/dotserver/tomcat
 
+
 # ----------------------------------------------
 # Stage 2:  Construct our container using the minimal-java image
 #           and copying the prebuilt dotcms
@@ -47,14 +47,14 @@ WORKDIR /srv
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Installing basic packages 
-RUN apt update && \
-    apt upgrade -y
+RUN apt update \
+    && apt upgrade -y
 
 # Cleanup
-RUN apt purge --allow-remove-essential -y  && \
-    apt autoremove -y && \
-    apt clean && \
-    rm -rf /var/lib/apt/lists/*
+RUN apt purge --allow-remove-essential -y \
+    && apt autoremove -y \
+    && apt clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Defining default non-root user UID, GID, and name 
 ARG USER_UID="65001"
@@ -83,11 +83,12 @@ COPY --chown=$USER_NAME:$USER_GROUP ROOT/ /
 
     chown -R $USER_NAME:$USER_NAME /data
 
+
 # ----------------------------------------------
 # Stage 3:  Copy pg_dump binary
 # ----------------------------------------------
-FROM dotcms/pg-base:22.02 as composed-base
-COPY --from=container-base / /
+FROM dotcms/pg-base:15 as pg-base
+
 
 # ----------------------------------------------
 # Stage 4:  Flatten everything to 1 layer
@@ -101,13 +102,13 @@ LABEL com.dotcms.description "dotCMS Content Management System"
 ARG USER_UID="65001"
 ARG USER_GID="65001"
 
-COPY --from=composed-base / /
+COPY --from=container-base / /
+COPY --from=pg-base / /
 
-# Switching to non-root user to install SDKMAN! 
+# Switching to non-root user to install SDKMAN!
 USER $USER_UID:$USER_GID
 ENV JAVA_HOME="/java"
 ENV PATH=$PATH:/java/bin
-
 
 ENTRYPOINT ["/usr/bin/tini", "--", "/srv/entrypoint.sh"]
 CMD ["dotcms"]
