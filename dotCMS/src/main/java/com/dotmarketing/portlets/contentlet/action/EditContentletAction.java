@@ -1218,7 +1218,9 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		}
 
 		if(InodeUtils.isSet(contentlet.getInode())){
-			workingContentlet = contAPI.findContentletByIdentifier(contentlet.getIdentifier(), false, contentlet.getLanguageId(), user, false);
+			final String currentVariantId = WebAPILocator.getVariantWebAPI().currentVariantId();
+			workingContentlet = contAPI.findContentletByIdentifier(contentlet.getIdentifier(),
+					false, contentlet.getLanguageId(), currentVariantId, user, false);
 		}else{
 			workingContentlet = contentlet;
 		}
