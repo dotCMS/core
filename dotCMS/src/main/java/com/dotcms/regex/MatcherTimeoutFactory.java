@@ -41,6 +41,13 @@ public abstract class MatcherTimeoutFactory {
 
 
     
+    public static boolean isUrlQuaratined(String url) {
+        
+
+        return null != SLOW_REGEX_CACHE.getIfPresent(url);
+        
+    }
+    
     
 
     /**
@@ -55,6 +62,9 @@ public abstract class MatcherTimeoutFactory {
      */
     public static Matcher matcher(Pattern pattern, CharSequence charSequence, long timeoutInMilliseconds) {
         if (null != SLOW_REGEX_CACHE.getIfPresent(pattern.toString())) {
+            return NO_MATCH_PATTERN.matcher(StringPool.BLANK);
+        }
+        if (null != SLOW_REGEX_CACHE.getIfPresent(charSequence)) {
             return NO_MATCH_PATTERN.matcher(StringPool.BLANK);
         }
         // Substitute in our exploding CharSequence implementation.
@@ -159,6 +169,7 @@ public abstract class MatcherTimeoutFactory {
         private void checkTimeout() {
             if (System.currentTimeMillis() >= timeoutAfterTimestamp) {
                 SLOW_REGEX_CACHE.put(this.pattern.toString(), Boolean.TRUE);
+                SLOW_REGEX_CACHE.put(originalCharSequence.toString(), Boolean.TRUE);
                 // Note that we add the original charsequence to the exception
                 // message. This condition can be met on a subsequence of the
                 // original sequence, and the subsequence string is rarely
