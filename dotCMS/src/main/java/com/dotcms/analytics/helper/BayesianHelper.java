@@ -4,7 +4,7 @@ import com.dotcms.analytics.bayesian.BayesianAPI;
 import com.dotcms.analytics.bayesian.model.ABTestingType;
 import com.dotcms.analytics.bayesian.model.BayesianInput;
 import com.dotcms.analytics.bayesian.model.BayesianPriors;
-import com.dotcms.analytics.bayesian.model.VariantInputPair;
+import com.dotcms.analytics.bayesian.model.VariantBayesianInput;
 import com.dotcms.experiments.business.result.ExperimentResults;
 import com.dotcms.experiments.business.result.GoalResults;
 import com.dotcms.experiments.business.result.VariantResults;
@@ -40,9 +40,8 @@ public class BayesianHelper {
      * @param goalName goal name to get results from
      * @return {@link BayesianInput} bayesian input object
      */
-    public BayesianInput toBayesianInput(final ExperimentResults experimentResults,
-                                         final String goalName) {
-        return getGoalResults(experimentResults, goalName)
+    public BayesianInput toBayesianInput(final ExperimentResults experimentResults, final String goalName) {
+        return extractGoalResults(experimentResults, goalName)
             .map(results -> {
                 final VariantResults controlResults = results.getVariants().get(DEFAULT_VARIANT.name());
                 if (Objects.isNull(controlResults)) {
@@ -65,11 +64,11 @@ public class BayesianHelper {
                 return BayesianInput
                     .builder()
                     .type(variantsResults.size() == 1 ? ABTestingType.AB: ABTestingType.ABC)
-                    .control(toVariantPair(experimentResults, controlResults))
+                    .control(toVariantBayesianInput(experimentResults, controlResults))
                     .variantPairs(
                         variantsResults
                             .stream()
-                            .map(vr -> toVariantPair(experimentResults, vr))
+                            .map(vr -> toVariantBayesianInput(experimentResults, vr))
                             .collect(Collectors.toList()))
                     .priors(resolvePriors(experimentResults))
                     .build();
@@ -84,8 +83,8 @@ public class BayesianHelper {
      * @param experimentResults experiment results
      * @return resolved priors
      */
-    private BayesianPriors resolvePriors(final ExperimentResults experimentResults) {
-        return BayesianAPI.NULL_PRIORS;
+    private List<BayesianPriors> resolvePriors(final ExperimentResults experimentResults) {
+        return List.of(BayesianAPI.DEFAULT_PRIORS);
     }
 
     /**
@@ -95,7 +94,7 @@ public class BayesianHelper {
      * @param goalName goal name to get results from
      * @return
      */
-    private Optional<GoalResults> getGoalResults(final ExperimentResults experimentResults, final String goalName) {
+    private Optional<GoalResults> extractGoalResults(final ExperimentResults experimentResults, final String goalName) {
         return Optional.ofNullable(experimentResults.getGoals().get(goalName));
     }
 
@@ -134,10 +133,10 @@ public class BayesianHelper {
      * @param variantResults variant results
      * @return {@link BayesianInput} bayesian input object
      */
-    private VariantInputPair toVariantPair(final ExperimentResults experimentResults,
-                                           final VariantResults variantResults) {
+    private VariantBayesianInput toVariantBayesianInput(final ExperimentResults experimentResults,
+                                                        final VariantResults variantResults) {
         final long successes = extractSuccesses(variantResults);
-        return VariantInputPair.builder()
+        return VariantBayesianInput.builder()
             .variant(variantResults.getVariantName())
             .successes(successes)
             .failures(extractFailures(experimentResults, variantResults, successes))

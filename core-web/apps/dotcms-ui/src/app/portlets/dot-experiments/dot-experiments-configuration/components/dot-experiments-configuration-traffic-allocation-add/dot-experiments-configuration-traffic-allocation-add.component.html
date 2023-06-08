@@ -9,20 +9,21 @@
             <p>{{ 'experiments.configure.traffic.allocation.add.description' | dm }}</p>
             <form class="p-fluid" [formGroup]="form" novalidate>
                 <div class="field">
-                    <p-slider [min]="1" [max]="100" formControlName="trafficAllocation"></p-slider>
+                    <p-slider [max]="100" [min]="1" formControlName="trafficAllocation"></p-slider>
                     <div class="flex justify-content-end align-items-baseline gap-2">
                         <input
-                            [value]="form.value.trafficAllocation"
-                            [min]="1"
+                            id="trafficAllocation"
                             [max]="100"
+                            [min]="1"
+                            [value]="form.value.trafficAllocation"
                             (keyup)="checkAllocationRange()"
+                            data-testId="traffic-allocation-input"
                             formControlName="trafficAllocation"
                             maxlength="3"
                             pInputText
                             type="number"
-                            data-testId="traffic-allocation-input"
                         />
-                        <label class="p-label-input">%</label>
+                        <label class="p-label-input" for="trafficAllocation">%</label>
                     </div>
                 </div>
             </form>
@@ -37,7 +38,6 @@
             data-testId="add-trafficAllocation-button"
             label="{{ 'Done' | dm }}"
             pButton
-            pRipple
             type="submit"
         ></button>
     </ng-template>

@@ -8,6 +8,7 @@ import { DotExperimentsService } from '@portlets/dot-experiments/shared/services
 
 /**
  * Return a DotExperiment getting the experimentId from query params
+ * to show data in the secondary toolbar
  *
  * @export
  * @class DotExperimentExperimentResolver

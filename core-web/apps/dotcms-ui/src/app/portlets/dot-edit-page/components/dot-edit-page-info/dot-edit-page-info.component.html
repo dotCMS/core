@@ -1,7 +1,7 @@
 <h2>{{ title }}</h2>
 <dot-copy-button
     *ngIf="url"
-    [copy]="url"
+    [copy]="baseUrl + url"
     [tooltipText]="'dot.common.message.pageurl.copy.clipboard' | dm"
     [label]="'editpage.header.copy' | dm"
 ></dot-copy-button>

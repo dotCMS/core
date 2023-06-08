@@ -49,6 +49,7 @@ import {
     StringUtils
 } from '@dotcms/dotcms-js';
 import { DotActionBulkResult, DotContentState, DotTemplate } from '@dotcms/dotcms-models';
+import { DotMessagePipeModule } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     DotFormatDateServiceMock,
@@ -56,7 +57,6 @@ import {
     mockSites
 } from '@dotcms/utils-testing';
 import { ButtonModel } from '@models/action-header';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 
 import { DotTemplateListComponent } from './dot-template-list.component';
 
