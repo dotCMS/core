@@ -168,7 +168,7 @@ public class SiteViewPaginator implements PaginatorOrdered<SiteView> {
             throws DotDataException, DotSecurityException {
 
         Stream<Host> hostStream = hostAPI.findAllFromCache(user, false).stream()
-                .filter(Objects::nonNull)
+                .filter(Objects::nonNull).filter(host -> null != host.getHostname())
                 .filter(host -> Try.of(() -> !host.isArchived()).getOrElse(false));
 
         if (UtilMethods.isSet(filter)) {
