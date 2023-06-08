@@ -20,9 +20,14 @@ import {
     ViewChildren
 } from '@angular/core';
 
+import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
+
+import { filter, take } from 'rxjs/operators';
+
 import { DotLayout } from '@dotcms/dotcms-models';
 
 import { colIcon, rowIcon } from './assets/icons';
+import { AddStyleClassesDialogComponent } from './components/add-style-classes-dialog/add-style-classes-dialog.component';
 import { TemplateBuilderRowComponent } from './components/template-builder-row/template-builder-row.component';
 import { DotGridStackWidget } from './models/models';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
@@ -58,11 +63,13 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
 
     grid!: GridStack;
 
+    ref: DynamicDialogRef;
+
     public readonly rowIcon = rowIcon;
     public readonly colIcon = colIcon;
     public readonly rowDisplayHeight = `${GRID_STACK_ROW_HEIGHT - 1}${GRID_STACK_UNIT}`; // setting a lower height to have space between rows
 
-    constructor(private store: DotTemplateBuilderStore) {
+    constructor(private store: DotTemplateBuilderStore, private dialogService: DialogService) {
         this.items$ = this.store.items$;
     }
 
@@ -190,5 +197,33 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
      */
     deleteRow(id: numberOrString): void {
         this.store.removeRow(id as string);
+    }
+
+    /**
+     * @description This method opens the dialog to edit the row styleclasses
+     *
+     * @param {numberOrString} rowID
+     * @memberof TemplateBuilderComponent
+     */
+    editRowStyleClasses(rowID: numberOrString, styleClasses: string[]): void {
+        this.store.getStyleClassesFromFile();
+
+        this.ref = this.dialogService.open(AddStyleClassesDialogComponent, {
+            header: 'Edit Classes',
+            data: {
+                classes: this.store.styleClasses$,
+                selectedClasses: styleClasses
+            },
+            resizable: false
+        });
+
+        this.ref.onClose
+            .pipe(
+                take(1),
+                filter((styleClasses) => styleClasses)
+            )
+            .subscribe((styleClasses: string[]) => {
+                this.store.updateRow({ id: rowID as string, styleClass: styleClasses });
+            });
     }
 }
