@@ -46,10 +46,10 @@
             <p-card data-testId="experiment-description">
                 <dot-experiments-inplace-edit-text
                     [disabled]="vm.experimentStatus === experimentStatus.RUNNING"
-                    [emptyText]="'experiments.configure.description.add'"
                     [isLoading]="vm.isDescriptionSaving"
                     [text]="vm.experiment.description"
                     (textChanged)="saveDescriptionAction($event, vm.experiment)"
+                    emptyTextMessage="experiments.configure.description.add"
                 />
             </p-card>
 

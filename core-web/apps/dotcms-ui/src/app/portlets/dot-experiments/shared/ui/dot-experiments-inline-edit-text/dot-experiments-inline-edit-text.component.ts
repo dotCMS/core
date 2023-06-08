@@ -9,7 +9,13 @@ import {
     SimpleChanges,
     ViewChild
 } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+    FormControl,
+    FormGroup,
+    ReactiveFormsModule,
+    ValidatorFn,
+    Validators
+} from '@angular/forms';
 
 import { ChipsModule } from 'primeng/chips';
 import { Inplace, InplaceModule } from 'primeng/inplace';
@@ -20,8 +26,7 @@ import { MAX_INPUT_DESCRIPTIVE_LENGTH } from '@dotcms/dotcms-models';
 import { DotMessagePipeModule } from '@dotcms/ui';
 
 /**
- * Component to edit a text inplace and expose
- * the value changed
+ * Component to edit a text inplace and expose the changed value
  *
  * @export
  * @class DotExperimentsInlineEditTextComponent
@@ -53,7 +58,10 @@ export class DotExperimentsInlineEditTextComponent implements OnChanges {
     text: string;
 
     @Input()
-    emptyText = 'dot.common.inplace.empty.text';
+    textRequired = false;
+
+    @Input()
+    emptyTextMessage = 'dot.common.inplace.empty.text';
 
     @Output()
     textChanged = new EventEmitter<string>();
@@ -61,11 +69,11 @@ export class DotExperimentsInlineEditTextComponent implements OnChanges {
     @ViewChild(Inplace) inplace!: Inplace;
 
     form: FormGroup;
-    /**
-     * Enable or disable Inplace
-     * */
+
     @Input()
     disabled: boolean;
+
+    private validatorsFn: ValidatorFn[];
 
     constructor() {
         this.initForm();
@@ -75,7 +83,9 @@ export class DotExperimentsInlineEditTextComponent implements OnChanges {
         return this.form.controls['text'] as FormControl;
     }
 
-    ngOnChanges({ text, isLoading, maxCharacterLength }: SimpleChanges): void {
+    ngOnChanges({ text, isLoading, maxCharacterLength, textRequired }: SimpleChanges): void {
+        this.validatorsFn = [];
+
         if (text) {
             this.textControl.setValue(text.currentValue);
         }
@@ -85,19 +95,33 @@ export class DotExperimentsInlineEditTextComponent implements OnChanges {
         }
 
         if (maxCharacterLength && maxCharacterLength.currentValue) {
-            this.updateValidators();
+            this.validatorsFn.push(Validators.maxLength(maxCharacterLength.currentValue));
+        } else {
+            this.validatorsFn.push(Validators.maxLength(this.maxCharacterLength));
         }
+
+        if (textRequired && textRequired.currentValue === true) {
+            this.validatorsFn.push(Validators.required);
+        }
+
+        this.updateValidators();
     }
 
     /**
      * Take te value of the input and emit the value
+     *
+     * @memberof DotExperimentsInlineEditTextComponent
+     * @returns void
      */
-    saveAction() {
+    saveAction(): void {
         this.textChanged.emit(this.textControl.value);
     }
 
     /**
-     * Deactivate the Inplace Component
+     * Deactivate the Inplace Component and reset the form
+     *
+     * @memberof DotExperimentsInlineEditTextComponent
+     * @returns void
      */
     deactivateInplace() {
         this.inplace.deactivate();
@@ -107,7 +131,6 @@ export class DotExperimentsInlineEditTextComponent implements OnChanges {
     private initForm() {
         this.form = new FormGroup({
             text: new FormControl<string>('', {
-                nonNullable: true,
                 validators: [Validators.required, Validators.maxLength(this.maxCharacterLength)]
             })
         });
@@ -119,10 +142,7 @@ export class DotExperimentsInlineEditTextComponent implements OnChanges {
 
     private updateValidators() {
         this.textControl.clearValidators();
-        this.textControl.setValidators([
-            Validators.required,
-            Validators.maxLength(this.maxCharacterLength)
-        ]);
+        this.textControl.setValidators(this.validatorsFn);
         this.textControl.updateValueAndValidity();
     }
 }

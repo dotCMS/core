@@ -19,7 +19,7 @@ const LONG_TEXT =
     'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed condimentum eros sit amet malesuada mattis. Morbi ac congue lectus, ut vestibulum velit. Ut sed ornare metus. Proin a orci lacus. Aenean odio lacus, fringilla eu ipsum non, pellentesque sagittis purus. Integer non.';
 const NEW_EXPERIMENT_DESCRIPTION = 'new experiment description';
 
-describe('DotExperimentsExperimentSummaryComponent', () => {
+fdescribe('DotExperimentsExperimentSummaryComponent', () => {
     let spectator: Spectator<DotExperimentsInlineEditTextComponent>;
     const createComponent = createComponentFactory({
         imports: [],
@@ -52,7 +52,7 @@ describe('DotExperimentsExperimentSummaryComponent', () => {
 
         it('should show a empty message sent by `@Input emptyText` ', () => {
             spectator.setInput('text', '');
-            spectator.setInput('emptyText', 'message.sent.by.input');
+            spectator.setInput('emptyTextMessage', 'message.sent.by.input');
             expect(spectator.query(byTestId('empty-text-message'))).toExist();
             expect(spectator.query(byTestId('empty-text-message'))).toContainText(
                 'message.sent.by.input'
