@@ -115,7 +115,7 @@ public enum ExperimentAnalyzerUtil {
         final String pageId = experiment.pageId();
         final HTMLPageAsset page = getPage(pageId);
 
-        if (UtilMethods.isSet(page)) {
+        if (!UtilMethods.isSet(page)) {
             throw new IllegalArgumentException("The page with id " + pageId + " does not exist");
         }
 
