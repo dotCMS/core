@@ -16,4 +16,11 @@ import org.immutables.value.Value;
 public interface AbstractAssetsRequestForm {
      @JsonProperty("assetPath")
      String assetPath();
+
+     @JsonProperty("language")
+     String language();
+
+     @JsonProperty("live")
+     Boolean live();
+
 }

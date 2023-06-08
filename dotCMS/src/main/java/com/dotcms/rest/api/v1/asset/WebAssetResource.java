@@ -9,11 +9,13 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
+import java.io.File;
 import java.io.IOException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -53,8 +55,34 @@ public class WebAssetResource {
         Logger.info(this,
                 String.format("User [%s] is requesting assets info for path [%s]", user.getUserId(),
                         form.assetPath()));
-        final WebAssetView asset = helper.getAsset(form.assetPath(), user);
+        final WebAssetView asset = helper.getAssetInfo(form.assetPath(), user);
         return Response.ok(new WebAssetEntityView(asset)).build();
+    }
+
+
+    @Path("/")
+    @GET
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response getAssetContent(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            AssetsRequestForm form
+    ) throws DotSecurityException, DotDataException {
+
+        final InitDataObject initDataObject = new WebResource.InitBuilder()
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true).init();
+
+        final User user = initDataObject.getUser();
+        Logger.info(this,
+                String.format("User [%s] is requesting asset content for download for path [%s]", user.getUserId(), form.assetPath()));
+        final File file = helper.getAssetContent(form, user);
+        return Response.ok(file, MediaType.APPLICATION_OCTET_STREAM)
+                .header("Content-Disposition", "attachment; filename=\"" + file.getName() + "\"")
+                .build();
     }
 
 

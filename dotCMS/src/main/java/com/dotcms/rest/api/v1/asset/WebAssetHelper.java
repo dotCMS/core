@@ -1,5 +1,7 @@
 package com.dotcms.rest.api.v1.asset;
 
+import static org.apache.commons.lang3.StringUtils.defaultIfEmpty;
+
 import com.dotcms.browser.BrowserAPI;
 import com.dotcms.browser.BrowserQuery;
 import com.dotcms.browser.BrowserQuery.Builder;
@@ -24,7 +26,6 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
-import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
@@ -34,7 +35,6 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -108,7 +108,7 @@ public class WebAssetHelper {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    public WebAssetView getAsset(final String path, final User user)
+    public WebAssetView getAssetInfo(final String path, final User user)
             throws DotDataException, DotSecurityException {
 
         final ResolvedAssetAndPath assetAndPath = AssetPathResolver.newInstance()
@@ -267,6 +267,67 @@ public class WebAssetHelper {
                 .identifier(folder.getIdentifier())
                 .inode(folder.getInode())
                 .build();
+    }
+
+    public File getAssetContent(final AssetsRequestForm form, final User user)
+            throws DotDataException, DotSecurityException {
+        final String path = form.assetPath();
+        final ResolvedAssetAndPath assetAndPath = AssetPathResolver.newInstance()
+                .resolve(path, user);
+        final Host host = assetAndPath.resolvedHost();
+        final Folder folder = assetAndPath.resolvedFolder();
+        final String assetName = assetAndPath.asset();
+
+        if (null == assetName) {
+            throw new IllegalArgumentException("Unspecified Asset name.");
+        }
+
+        final List<Contentlet> assets;
+
+        final Builder builder = BrowserQuery.builder();
+        builder.showDotAssets(false)
+                .withUser(user)
+                .showFiles(true)
+                .showFolders(true)
+                .showArchived(false)
+                .showWorking(true)
+                .showLinks(false)
+                .showDotAssets(false)
+                .showImages(true)
+                .showContent(true);
+
+        if (null != form.language()) {
+            final Language language = languageAPI.getLanguage(form.language());
+            builder.withLanguageId(language.getId());
+        }
+
+        if(null != form.live()){
+            final boolean live = BooleanUtils.toBoolean(form.live());
+            builder.showWorking(!live);
+        }
+
+            //We're requesting an asset specifically therefore we need to find it and  build the response
+            if(folder.isSystemFolder()){
+                builder.withHostOrFolderId(host.getIdentifier());
+            } else {
+                builder.withHostOrFolderId(folder.getInode());
+            }
+            builder.withFilter(assetName);
+            final List<Treeable> folderContent = browserAPI.getFolderContentList(builder.build());
+            assets = folderContent.stream().filter(Contentlet.class::isInstance).map(
+                    Contentlet.class::cast).collect(Collectors.toList());
+            if (assets.isEmpty()) {
+
+                throw new NotFoundInDbException(
+                        String.format(" Asset [%s] not found for lang [%s] and working/live state [%b] ",
+                                assetName, defaultIfEmpty(form.language(), "unspecified"),
+                                BooleanUtils.toString(form.live(), "live", "working", "unspecified"))
+                );
+            }
+            final Contentlet asset = assets.get(0);
+            final FileAsset fileAsset = fileAssetAPI.fromContentlet(asset);
+            return fileAsset.getFileAsset();
+
     }
 
     public WebAssetView saveUpdateAsset(final HttpServletRequest request, final FileUploadData form,
