@@ -20,6 +20,8 @@
     border: 1px solid $color-palette-primary-300;
     border-radius: $border-radius-sm;
     height: 14rem;
+    width: 100%;
+    background-color: $white;
 }
 
 .template-builder-box__header-container {
@@ -56,17 +58,8 @@
     }
 }
 
-.template-builder-box--medium {
-    width: $spacing-11;
-}
-
-.template-builder-box--large {
-    width: 100%;
-}
-
 .template-builder-box--small {
     display: flex;
-    width: $spacing-9;
     justify-content: center;
     align-items: center;
     flex-direction: column;

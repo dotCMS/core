@@ -16,8 +16,7 @@ import {
     TrafficProportion,
     TrafficProportionTypes
 } from '@dotcms/dotcms-models';
-import { DotIconModule } from '@dotcms/ui';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { DotIconModule, DotMessagePipeModule } from '@dotcms/ui';
 import { DotExperimentsConfigurationTrafficAllocationAddComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-traffic-allocation-add/dot-experiments-configuration-traffic-allocation-add.component';
 import { DotExperimentsConfigurationTrafficSplitAddComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-traffic-split-add/dot-experiments-configuration-traffic-split-add.component';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';

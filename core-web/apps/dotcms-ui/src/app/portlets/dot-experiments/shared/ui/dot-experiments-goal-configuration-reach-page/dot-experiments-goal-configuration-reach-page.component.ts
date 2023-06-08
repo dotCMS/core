@@ -8,7 +8,7 @@ import { InputTextModule } from 'primeng/inputtext';
 
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { GoalsConditionsOperatorsList, GoalsConditionsParametersList } from '@dotcms/dotcms-models';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { DotMessagePipeModule } from '@dotcms/ui';
 import { DotDropdownDirective } from '@portlets/shared/directives/dot-dropdown.directive';
 
 /**
