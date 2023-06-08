@@ -23,6 +23,6 @@ public class RootIndexRegexUrlPatterStrategy extends RegexUrlPatterStrategy{
 
     @Override
     public String getRegexPattern(HTMLPageAsset htmlPageAsset) {
-        return String.format(REDIRECT_REGEX_TEMPLATE, "(\\/index|\\/)?");;
+        return String.format(REDIRECT_REGEX_TEMPLATE, "(\\/index|\\/)?");
     }
 }
