@@ -10,6 +10,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -136,16 +137,16 @@ public class StartEndScheduledExperimentsJobTest extends IntegrationTestBase {
         runNoLicense(()-> {
             final ExperimentsAPI experimentsAPI1 = mock(ExperimentsAPI.class);
 
-            try {
+            try {ñ
                 new StartEndScheduledExperimentsJob(experimentsAPI1).run(null);
             } catch (JobExecutionException e) {
                 throw new RuntimeException(e);
             }
 
-            verify(experimentsAPI1, times(0)).startScheduledToStartExperiments(
+            verify(experimentsAPI1, never()).startScheduledToStartExperiments(
                     APILocator.systemUser());
 
-            verify(experimentsAPI1, times(0)).endFinalizedExperiments(APILocator.systemUser());
+            verify(experimentsAPI1, never()).endFinalizedExperiments(APILocator.systemUser());
         });
     }
 }
