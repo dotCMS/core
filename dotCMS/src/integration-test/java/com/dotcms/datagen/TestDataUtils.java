@@ -47,10 +47,10 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.portlets.personas.business.PersonaAPI;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
@@ -2513,17 +2513,21 @@ public class TestDataUtils {
          *
          * @return the parent category
          */
-    public static boolean waitForEmptyQueue() {
+    public static boolean waitForEmptyQueue(int waitTime) {
         final ReindexQueueAPI reindexQueueAPI = APILocator.getReindexQueueAPI();
         try {
-            Awaitility.await().atMost(10, TimeUnit.SECONDS)
+            Awaitility.await().atMost(waitTime, TimeUnit.SECONDS)
                     .pollInterval(1, TimeUnit.SECONDS)
                     .until(reindexQueueAPI::areRecordsLeftToIndex, equalTo(false));
             return true;
         } catch (ConditionTimeoutException e) {
-            Logger.warn(TestWorkflowUtils.class, "Reindex Queue is not empty after 120 seconds");
+            Logger.warn(TestWorkflowUtils.class, "Reindex Queue is not empty after "+waitTime+"s", new Throwable());
             return false;
         }
+    }
+
+    public static boolean waitForEmptyQueue() {
+        return waitForEmptyQueue(Config.getIntProperty("DEFAULT_INDEX_QUEUE_WAIT",10));
     }
 
     public static void assertEmptyQueue() {
