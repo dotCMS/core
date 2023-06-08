@@ -56,36 +56,30 @@ export class DotExperimentsInlineEditTextComponent implements OnChanges {
 
     @Input()
     text: string;
-
-    @Input()
-    textRequired = false;
-
     @Input()
     emptyTextMessage = 'dot.common.inplace.empty.text';
-
     @Output()
     textChanged = new EventEmitter<string>();
-
     @ViewChild(Inplace) inplace!: Inplace;
-
     form: FormGroup;
-
     @Input()
     disabled: boolean;
-
-    private validatorsFn: ValidatorFn[];
+    private validatorsFn: ValidatorFn[] = [];
 
     constructor() {
         this.initForm();
+    }
+
+    @Input()
+    set textRequired(value: boolean) {
+        if (value) this.validatorsFn.push(Validators.required);
     }
 
     get textControl(): FormControl {
         return this.form.controls['text'] as FormControl;
     }
 
-    ngOnChanges({ text, isLoading, maxCharacterLength, textRequired }: SimpleChanges): void {
-        this.validatorsFn = [];
-
+    ngOnChanges({ text, isLoading, maxCharacterLength }: SimpleChanges): void {
         if (text) {
             this.textControl.setValue(text.currentValue);
         }
@@ -98,10 +92,6 @@ export class DotExperimentsInlineEditTextComponent implements OnChanges {
             this.validatorsFn.push(Validators.maxLength(maxCharacterLength.currentValue));
         } else {
             this.validatorsFn.push(Validators.maxLength(this.maxCharacterLength));
-        }
-
-        if (textRequired && textRequired.currentValue === true) {
-            this.validatorsFn.push(Validators.required);
         }
 
         this.updateValidators();

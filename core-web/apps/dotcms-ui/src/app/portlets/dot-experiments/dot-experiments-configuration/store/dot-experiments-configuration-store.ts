@@ -430,8 +430,8 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                 experiment: DotExperiment;
                 data: Pick<DotExperiment, 'description'>;
             }>
-        ) => {
-            return description$.pipe(
+        ) =>
+            description$.pipe(
                 tap(() =>
                     this.setSidebarStatus({
                         status: ComponentStatus.SAVING,
@@ -468,8 +468,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                         )
                     )
                 )
-            );
-        }
+            )
     );
 
     readonly deleteVariant = this.effect(
