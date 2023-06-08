@@ -1,0 +1,247 @@
+package com.dotcms.storage;
+
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
+import io.vavr.control.Try;
+
+import java.io.File;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Future;
+
+/**
+ * This implementations implements a composite pattern, which encapsulates a list of StoragePersistenceAPI
+ * This allows to implement chainable storages, for example:
+ * - The first layer could be Redis Mem, second layer could be NFS, third layer could be DB and finally S3.
+ * @author jsanca
+ */
+public class CompositeStoragePersistenceAPI implements StoragePersistenceAPI {
+
+    private final CopyOnWriteArrayList<StoragePersistenceAPI> storagePersistenceAPIList =
+            new CopyOnWriteArrayList<>();
+
+    @Override
+    public boolean existsGroup(final String groupName) throws DotDataException {
+
+        return this.storagePersistenceAPIList.stream().anyMatch(storage -> Try.of(()->storage.existsGroup(groupName)).getOrElse(false));
+    }
+
+    @Override
+    public boolean existsObject(final String groupName, final String objectPath) throws DotDataException {
+
+        return this.storagePersistenceAPIList.stream().anyMatch(storage -> Try.of(()->storage.existsObject(groupName, objectPath)).getOrElse(false));
+    }
+
+    @Override
+    public boolean createGroup(final String groupName) throws DotDataException {
+
+        boolean created = !this.storagePersistenceAPIList.isEmpty();
+
+        for(final StoragePersistenceAPI storage : this.storagePersistenceAPIList) {
+
+            // by default the strategy is to create all the storages, we can make it configurable in the future
+            created &= storage.createGroup(groupName);
+        }
+
+        return created;
+    }
+
+    @Override
+    public boolean createGroup(String groupName, Map<String, Object> extraOptions) throws DotDataException {
+
+        boolean created = !this.storagePersistenceAPIList.isEmpty();
+
+        for(final StoragePersistenceAPI storage : this.storagePersistenceAPIList) {
+
+            // by default the strategy is to create all the storages, we can make it configurable in the future
+            created &= storage.createGroup(groupName, extraOptions);
+        }
+
+        return created;
+    }
+
+    @Override
+    public int deleteGroup(final String groupName) throws DotDataException {
+
+        int deleteCount = 0;
+
+        for(final StoragePersistenceAPI storage : this.storagePersistenceAPIList) {
+
+            // it would be great to have atomic here, so if one storage fails, all fail, but it is ok by now
+            deleteCount += storage.deleteGroup(groupName);
+        }
+
+        return deleteCount;
+    }
+
+    @Override
+    public boolean deleteObjectAndReferences(final String groupName, final String path) throws DotDataException {
+
+        boolean deleted = !this.storagePersistenceAPIList.isEmpty();
+
+        for(final StoragePersistenceAPI storage : this.storagePersistenceAPIList) {
+
+            // it would be great to have atomic here, so if one storage fails, all fail, but it is ok by now
+            deleted &= storage.deleteObjectAndReferences(groupName, path);
+        }
+
+        return deleted;
+    }
+
+    @Override
+    public boolean deleteObjectReference(String groupName, String path) throws DotDataException {
+
+        boolean deleted = !this.storagePersistenceAPIList.isEmpty();
+
+        for(final StoragePersistenceAPI storage : this.storagePersistenceAPIList) {
+
+            // it would be great to have atomic here, so if one storage fails, all fail, but it is ok by now
+            deleted &= storage.deleteObjectReference(groupName, path);
+        }
+
+        return deleted;
+    }
+
+    @Override
+    public List<String> listGroups() throws DotDataException {
+
+        final Set<String> uniqueGroups = new LinkedHashSet<>();
+
+        for(final StoragePersistenceAPI storage : this.storagePersistenceAPIList) {
+
+            uniqueGroups.addAll(storage.listGroups());
+        }
+
+        return List.copyOf(uniqueGroups);
+    }
+
+    @Override
+    public Object pushFile(final String groupName, final String path, final File file,
+                           final Map<String, Serializable> extraMeta) throws DotDataException {
+
+        Object object = null;
+        for(final StoragePersistenceAPI storage : this.storagePersistenceAPIList) {
+
+            // since this is a composite and in theory the object should be the same, we just return the first one
+            final Object localObject = storage.pushFile(groupName, path, file, extraMeta);
+            object = null == object? localObject: object;
+        }
+
+        return object;
+    }
+
+    @Override
+    public Object pushObject(final String groupName, final String path,
+                             final ObjectWriterDelegate writerDelegate, final Serializable objectIn,
+                             final Map<String, Serializable> extraMeta) throws DotDataException {
+
+        Object objectToReturn = null;
+        for(final StoragePersistenceAPI storage : this.storagePersistenceAPIList) {
+
+            // since this is a composite and in theory the object should be the same, we just return the first one
+            final Object localObject = storage.pushObject(groupName, path, writerDelegate, objectIn, extraMeta);
+            objectToReturn = null == objectToReturn? localObject: objectToReturn;
+        }
+
+        return objectToReturn;
+    }
+
+    @Override
+    public Future<Object> pushFileAsync(final String groupName, final String path, final File file, final Map<String, Serializable> extraMeta) {
+
+        final List<Future<Object>> futures = new ArrayList<>();
+        for(final StoragePersistenceAPI storage : this.storagePersistenceAPIList) {
+
+            // since this is a composite and in theory the object should be the same, we just return the first one
+            final Future<Object> future = storage.pushFileAsync(groupName, path, file, extraMeta);
+            futures.add(future);
+        }
+
+        if (futures.isEmpty()) {
+
+            throw new DotRuntimeException("No storage persistence api found");
+        }
+
+        return futures.get(0); // well we return the first one at least
+    }
+
+    @Override
+    public Future<Object> pushObjectAsync(final String bucketName, final String path,
+                                          final ObjectWriterDelegate writerDelegate,
+                                          final Serializable object, final Map<String, Serializable> extraMeta) {
+
+        final List<Future<Object>> futures = new ArrayList<>();
+        for(final StoragePersistenceAPI storage : this.storagePersistenceAPIList) {
+
+            // since this is a composite and in theory the object should be the same, we just return the first one
+            final Future<Object> future = storage.pushObjectAsync(bucketName, path, writerDelegate, object, extraMeta);
+            futures.add(future);
+        }
+
+        if (futures.isEmpty()) {
+
+            throw new DotRuntimeException("No storage persistence api found");
+        }
+
+        return futures.get(0); // well we return the first one at least
+    }
+
+    @Override
+    public File pullFile(String groupName, String path) throws DotDataException {
+
+        // todo: here we will look for on each storage the File, if an upper layer does not have the file, we will look for it in the next one
+        // at the end of the process for each storage without the file, an async call will be execute in order to populate the storage with that particular file
+        File fileToReturn = null;
+
+        final List<StoragePersistenceAPI> missStorageList = new ArrayList<>();
+        for(final StoragePersistenceAPI storage : this.storagePersistenceAPIList) {
+
+            final File localFile = storage.pullFile(groupName, path);
+            if (null != localFile) {
+
+                fileToReturn = localFile;
+                break;
+            } else {
+
+                missStorageList.add(storage); // we will populate this list with the storages that does not have the file, so will be populate async at the end
+            }
+        }
+
+        populateMissStorageChain(groupName, path, missStorageList, fileToReturn);
+
+        return fileToReturn;
+    }
+
+    private void populateMissStorageChain(final String groupName, final String path,
+                                          final List<StoragePersistenceAPI> missStorageList, final File file) {
+
+        if (!missStorageList.isEmpty() && Objects.nonNull(file)) {
+
+            for(final StoragePersistenceAPI storage : missStorageList) {
+
+                storage.pushFileAsync(groupName, path, file, null);
+            }
+        }
+    }
+
+    @Override
+    public Object pullObject(String groupName, String path, ObjectReaderDelegate readerDelegate) throws DotDataException {
+        return null;
+    }
+
+    @Override
+    public Future<File> pullFileAsync(String groupName, String path) {
+        return null;
+    }
+
+    @Override
+    public Future<Object> pullObjectAsync(String groupName, String path, ObjectReaderDelegate readerDelegate) {
+        return null;
+    }
+}
