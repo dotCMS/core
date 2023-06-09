@@ -444,7 +444,7 @@ describe('DotListingDataTableComponent', () => {
         expect(comp.loading).toEqual(false);
     }));
 
-    it('should load first page of resutls and set pagination to 1', fakeAsync(() => {
+    it('should load first page of results and set pagination to 1', fakeAsync(() => {
         setRequestSpy(items);
         hostFixture.detectChanges();
         tick(1);
