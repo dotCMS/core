@@ -28,3 +28,9 @@ export interface DotTemplateBuilderState {
 }
 
 export type WidgetType = 'col' | 'row';
+
+export enum TemplateBuilderBoxSize {
+    large = 'large',
+    medium = 'medium',
+    small = 'small'
+}

@@ -128,6 +128,7 @@ exports.COMMANDS = {
     gradle: {
         cmd: './gradlew',
         args: ['test', '--stacktrace'],
+        preCommands: [{ cmd: './gradlew', args: ['generateDependenciesFromMaven'], workingDir: dotCmsRoot }],
         workingDir: dotCmsRoot,
         outputDir: outputDir,
         reportDir: reportDir
@@ -147,6 +148,18 @@ exports.COMMANDS = {
  * @returns a number representing the command exit code
  */
 const runTests = (cmd) => __awaiter(void 0, void 0, void 0, function* () {
+    if (cmd.preCommands) {
+        for (const preCmd of cmd.preCommands) {
+            core.info(`Executing pre-command: ${preCmd.cmd} ${preCmd.args.join(' ')}`);
+            try {
+                yield exec.exec(preCmd.cmd, preCmd.args, { cwd: preCmd.workingDir });
+            }
+            catch (err) {
+                core.setFailed(`Pre-command failed due to: ${err}`);
+                return 127;
+            }
+        }
+    }
     prepareTests();
     resolveParams(cmd);
     core.info(`

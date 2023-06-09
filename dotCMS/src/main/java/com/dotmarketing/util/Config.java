@@ -165,6 +165,29 @@ public class Config {
         // Include ENV variables that start with DOT_
 
         readEnvironmentVariables();
+
+        reapplyTestOverrides();
+    }
+
+    private static void reapplyTestOverrides() {
+
+        if (props.getBoolean(USE_CONFIG_TEST_OVERRIDE_TRACKER, false)) {
+            testOverrideTracker.forEach((key, value) -> {
+                String currentValue = props.getString(key);
+                if (value.equals("[remove]"))
+                {
+                    if (currentValue != null)
+                        props.clearProperty(key);
+                    else {
+                        testOverrideTracker.remove(key);
+                    }
+                } else if (currentValue == null || !currentValue.equals(value)) {
+                    props.setProperty(key, value);
+                } else {
+                    testOverrideTracker.remove(key);
+                }
+            });
+        }
     }
 
     /**
@@ -317,7 +340,7 @@ public class Config {
 
     private static void readEnvironmentVariables() {
         synchronized (Config.class) {
-            System.getenv().entrySet().stream().filter(e -> e.getKey().startsWith(ENV_PREFIX))
+            EnvironmentVariablesService.getInstance().getenv().entrySet().stream().filter(e -> e.getKey().startsWith(ENV_PREFIX))
                     .forEach(e -> props.setProperty(e.getKey(), e.getValue()));
         }
     }
@@ -562,6 +585,9 @@ public class Config {
      */
     public static void setProperty(String key, Object value) {
         if (props != null) {
+            if(props.containsKey(envKey(key))) {
+                key = envKey(key);
+            }
             trackOverrides(key, value);
             Logger.info(Config.class, "Setting property: " + key + " to " + value);
             props.setProperty(key, value);
@@ -571,7 +597,7 @@ public class Config {
     private static void trackOverrides(String key, Object value) {
         if (props.getBoolean(USE_CONFIG_TEST_OVERRIDE_TRACKER, false)) {
             if (value == null) {
-                testOverrideTracker.remove(key);
+                testOverrideTracker.put(key,"[remove]");
             } else {
                 testOverrideTracker.put(key, value.toString());
             }

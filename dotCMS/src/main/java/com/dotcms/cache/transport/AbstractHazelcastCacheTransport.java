@@ -29,7 +29,6 @@ import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import com.liferay.portal.struts.MultiMessageResources;
 import io.vavr.control.Try;
-import jersey.repackaged.com.google.common.collect.ImmutableMap;
 
 /**
  * Created by jasontesser on 3/28/17.
@@ -222,7 +221,7 @@ public abstract class AbstractHazelcastCacheTransport implements CacheTransport 
                     Thread.sleep(10);
 
                     if(cacheStatus.size()>=numberServers) {
-                        return ImmutableMap.copyOf(cacheStatus);
+                        return Map.copyOf(cacheStatus);
                     }
                 } catch ( InterruptedException ex ) {
                     Thread.currentThread().interrupt();
@@ -231,7 +230,7 @@ public abstract class AbstractHazelcastCacheTransport implements CacheTransport 
             }
         }
 
-        return ImmutableMap.copyOf(cacheStatus);
+        return Map.copyOf(cacheStatus);
 
 
     }

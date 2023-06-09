@@ -28,15 +28,12 @@
         row-gap: $spacing-4;
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-        height: 266px;
+        height: 100%;
         overflow: hidden;
         position: relative;
         padding-left: $spacing-3;
         padding-right: $spacing-3;
-    }
-
-    .dot-pages-panel__expanded .p-toggleable-content .p-panel-content {
-        overflow: auto;
+        padding-bottom: $spacing-4;
     }
 
     .dot-pages-panel__empty-state .p-toggleable-content .p-panel-content {
@@ -45,8 +42,6 @@
 
     dot-pages-card,
     dot-pages-card-empty {
-        min-height: 250px;
-
         p-card {
             cursor: pointer;
         }
