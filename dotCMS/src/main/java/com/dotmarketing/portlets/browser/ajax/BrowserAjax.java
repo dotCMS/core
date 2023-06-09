@@ -214,7 +214,7 @@ public class BrowserAjax {
         	else{
         		Logger.warn(this, "User " + usr.getUserId() + " cannot browse host id " + hostId );
         	}
-        	return new ArrayList<Map>();
+        	return new ArrayList<>();
         }
 
         activeHostId = hostId;
@@ -312,7 +312,7 @@ public class BrowserAjax {
 		HttpServletRequest req = ctx.getHttpServletRequest();
 		User usr = getUser(req);
 		HttpSession session = ctx.getSession();
-		Map<String, Object> selectedBrowserPathObject = new HashMap<String, Object>();
+		Map<String, Object> selectedBrowserPathObject = new HashMap<>();
 		if(UtilMethods.isSet(folderId)){
 			selectedBrowserPathObject.put("path", getSelectedBrowserPathArray(folderId));
 			try {
@@ -327,7 +327,7 @@ public class BrowserAjax {
 	}
 
 	private String[] getSelectedBrowserPathArray(String folderId) {
-		List<String> selectedPath = new ArrayList<String>();
+		List<String> selectedPath = new ArrayList<>();
 		Folder parentFolder = new Folder();
 		String[] pathArray = new String[]{"root"};
 		try{
@@ -649,7 +649,7 @@ public class BrowserAjax {
 	 */
 	private void removeLangOtherThan(List<Map<String, Object>> resultList,
 			String identifier, long languageId) {
-		List<Integer> itemsToRemove = new ArrayList<Integer>();
+		List<Integer> itemsToRemove = new ArrayList<>();
 		for (int i = 0; i < resultList.size(); i++) {
 			Map<String, Object> pageInfo = resultList.get(i);
 			if ((boolean) pageInfo.get("isContentlet")) {
@@ -676,7 +676,7 @@ public class BrowserAjax {
 		WebContext ctx = WebContextFactory.get();
         User user = getUser(ctx.getHttpServletRequest());
 		Contentlet contentlet = null;
-		Map<String, Object> result = new HashMap<String, Object>();
+		Map<String, Object> result = new HashMap<>();
 		WorkflowAPI wapi = APILocator.getWorkflowAPI();
 		try {
 			WorkflowAction action = wapi.findAction(wfActionId, user);
@@ -734,12 +734,12 @@ public class BrowserAjax {
 		if(ident!=null && InodeUtils.isSet(ident.getId()) && ident.getAssetType().equals("contentlet")) {
 		    Optional<ContentletVersionInfo> vinfo=versionAPI.getContentletVersionInfo(ident.getId(), languageId);
 
-			if(!vinfo.isPresent() && Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", false)) {
+			if(vinfo.isEmpty() && Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", false)) {
 				languageId = languageAPI.getDefaultLanguage().getId();
 				vinfo=versionAPI.getContentletVersionInfo(ident.getId(), languageId);
 			}
 
-			if(!vinfo.isPresent()) {
+			if(vinfo.isEmpty()) {
 				throw new DotDataException("Can't find ContentletVersionInfo. Identifier: "
 						+ ident.getId() + ". Lang: " + languageId);
 			}
@@ -869,7 +869,7 @@ public class BrowserAjax {
     public Map<String, Object> renameFolder (String inode, String newName) throws DotDataException, DotSecurityException {
     	WebContext ctx = WebContextFactory.get();
         User usr = getUser(ctx.getHttpServletRequest());
-    	HashMap<String, Object> result = new HashMap<String, Object> ();
+    	HashMap<String, Object> result = new HashMap<> ();
     	Folder folder = APILocator.getFolderAPI().find(inode, usr, false);
     	result.put("lastName", folder.getName());
     	result.put("extension", "");
@@ -992,7 +992,7 @@ public class BrowserAjax {
 
     public Map<String, Object> renameFile (String inode, String newName) throws Exception {
 
-    	HashMap<String, Object> result = new HashMap<String, Object> ();
+    	HashMap<String, Object> result = new HashMap<> ();
 
     	HibernateUtil.startTransaction();
 
@@ -1055,7 +1055,7 @@ public class BrowserAjax {
         HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
         User user = getUser( req );
 
-        Map<String, Object> result = new HashMap<String, Object>();
+        Map<String, Object> result = new HashMap<>();
 
         try{
 			//Contentlet file identifier
@@ -1232,7 +1232,7 @@ public class BrowserAjax {
 		String pageURL = ident.getAssetName();
 		String lastName = (pageURL.lastIndexOf( "." ) > -1) ? pageURL.substring( 0, pageURL.lastIndexOf( "." ) ) : pageURL;
 
-		HashMap<String, Object> result = new HashMap<String, Object>();
+		HashMap<String, Object> result = new HashMap<>();
 		result.put( "lastName", lastName );
 		result.put( "newName", newName );
 		result.put( "inode", inode );
@@ -1261,7 +1261,7 @@ public class BrowserAjax {
         HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
         User user = getUser( req );
 
-        Map<String, Object> result = new HashMap<String, Object>();
+        Map<String, Object> result = new HashMap<>();
 
         try {
             Identifier ident=APILocator.getIdentifierAPI().findFromInode(inode);
@@ -1409,7 +1409,7 @@ public class BrowserAjax {
             throw new DotRuntimeException ("Error trying to obtain the current liferay user from the request.");
         }
 
-    	HashMap<String, Object> result = new HashMap<String, Object> ();
+    	HashMap<String, Object> result = new HashMap<> ();
     	Link link = (Link) InodeFactory.getInode(inode, Link.class);
     	String oldName = link.getTitle();
     	result.put("lastName", oldName);
@@ -1441,7 +1441,7 @@ public class BrowserAjax {
       }
       
       Contentlet c = contentletAPI.find(inode, user, false);
-      HashMap<String, Object> result = new HashMap<String, Object> ();
+      HashMap<String, Object> result = new HashMap<> ();
       result.put("LIVE", false);
       result.put("WORKING", false);
       result.put("LOCKED", false);
@@ -1771,7 +1771,7 @@ public class BrowserAjax {
      * @throws Exception
      */
     public Map<String, Object> deleteHTMLPageAsset(String inode) throws Exception {
-        Map<String, Object> result = new HashMap<String, Object>();
+        Map<String, Object> result = new HashMap<>();
         HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
         User user = getUser(req);
 
@@ -1922,9 +1922,9 @@ public class BrowserAjax {
 
         FolderAPI folderAPI = APILocator.getFolderAPI();
 
-        List<Map<String, Object>> toReturn = new ArrayList<Map<String,Object>>();
+        List<Map<String, Object>> toReturn = new ArrayList<>();
 
-        List<Folder> children = new ArrayList<Folder>();
+        List<Folder> children = new ArrayList<>();
 		try {
 			children = folderAPI.findSubFolders(parent,userAPI.getSystemUser(),false);
 		} catch (Exception e) {
@@ -1932,7 +1932,7 @@ public class BrowserAjax {
 		}
 
         for (final Folder folder : children) {
-            Map<String, Object> folderMap = new HashMap<String, Object>();
+            Map<String, Object> folderMap = new HashMap<>();
             folderMap.put("type", "folder");
             folderMap.put("name", folder.getName());
             folderMap.put("id", folder.getIdentifier());
@@ -1965,7 +1965,7 @@ public class BrowserAjax {
         User user = userWebAPI.getLoggedInUser(ctx.getHttpServletRequest());
         FolderAPI folderAPI = APILocator.getFolderAPI();
         Host newHost = new Host();
-        List<Host> hosts = new ArrayList<Host>();
+        List<Host> hosts = new ArrayList<>();
 
         Role[] roles = new Role[]{};
 		try {
@@ -1974,7 +1974,7 @@ public class BrowserAjax {
 			Logger.error(BrowserAjax.class,e1.getMessage(),e1);
 		}
 
-		List<Map<String,Object>> toReturn = new ArrayList<Map<String,Object>>();
+		List<Map<String,Object>> toReturn = new ArrayList<>();
 		if(UtilMethods.isSet(hostId)&& hostId.equalsIgnoreCase("fullTree")) {
 			   hosts = hostAPI.findAll(user, false);
 		} else if(InodeUtils.isSet(hostId)) {
@@ -1991,13 +1991,13 @@ public class BrowserAjax {
 				continue;
 			if(host.isArchived()==false){
 				String currentPath = host.getHostname();
-				Map<String,Object> hostMap = new HashMap<String, Object>();
+				Map<String,Object> hostMap = new HashMap<>();
 				hostMap.put("type", "host");
 				hostMap.put("name", host.getHostname());
 				hostMap.put("id", host.getIdentifier());
 				hostMap.put("fullPath", currentPath);
 				hostMap.put("absolutePath", currentPath);
-				List<Map<String, Object>> children = new ArrayList<Map<String,Object>>();
+				List<Map<String, Object>> children = new ArrayList<>();
 
 				List<Folder> subFolders = folderAPI.findSubFolders(host,user,false);
 				for (final Folder folder : subFolders) {
@@ -2009,7 +2009,7 @@ public class BrowserAjax {
 							Logger.error(this, "Could not load permissions for folder with ID: " + folder.getIdentifier(),e);
 						}
 						if(permissions.contains(PERMISSION_READ)){
-							Map<String, Object> folderMap = new HashMap<String, Object>();
+							Map<String, Object> folderMap = new HashMap<>();
 							folderMap.put("type", "folder");
 							folderMap.put("name", folder.getName());
 							folderMap.put("id", folder.getIdentifier());
@@ -2032,7 +2032,7 @@ public class BrowserAjax {
 
 	private Map<String, Object> hostMap(Host host) {
     	String currentPath = host.getHostname();
-        Map<String,Object> hostMap = new HashMap<String, Object>();
+        Map<String,Object> hostMap = new HashMap<>();
         hostMap.put("type", "host");
 		hostMap.put("hostName",
 			host.isSystemHost() ? this.languageAPI.getStringKey(this.languageAPI.getDefaultLanguage(), "tag-system-host")
@@ -2089,7 +2089,7 @@ public class BrowserAjax {
         boolean respectFrontendRoles = userWebAPI.isLoggedToFrontend(ctx.getHttpServletRequest());
 		HostAPI hostAPI = APILocator.getHostAPI();
 		List<Host> hosts = hostAPI.findAll(user, respectFrontendRoles);
-		List<Map<String, Object>> hostsToReturn = new ArrayList<Map<String,Object>>(hosts.size());
+		List<Map<String, Object>> hostsToReturn = new ArrayList<>(hosts.size());
 		Collections.sort(hosts, new HostNameComparator());
 		for (Host h: hosts) {
 			List permissions = new ArrayList();
@@ -2113,7 +2113,7 @@ public class BrowserAjax {
         boolean respectFrontendRoles = userWebAPI.isLoggedToFrontend(ctx.getHttpServletRequest());
 		HostAPI hostAPI = APILocator.getHostAPI();
 		List<Host> hosts = hostAPI.findAll(user, respectFrontendRoles);
-		List<Map<String, Object>> hostsToReturn = new ArrayList<Map<String,Object>>(hosts.size());
+		List<Map<String, Object>> hostsToReturn = new ArrayList<>(hosts.size());
 		Collections.sort(hosts, new HostNameComparator());
 		for (Host h: hosts) {
 			if(UtilMethods.isSet(requiredPermissions)){
@@ -2134,8 +2134,8 @@ public class BrowserAjax {
 		// get hosts the user has read permissions on
 		List<Host> hosts = hostAPI.getHostsWithPermission(com.dotmarketing.business.PermissionAPI.PERMISSION_READ, false, user, false);
 
-		List<Map<String, Object>> hostsToReturn = new ArrayList<Map<String,Object>>(hosts.size());
-		List<Host> filteredHosts = new ArrayList<Host>();
+		List<Map<String, Object>> hostsToReturn = new ArrayList<>(hosts.size());
+		List<Host> filteredHosts = new ArrayList<>();
 
 		for (Host h : hosts) {
 			Folder folder = APILocator.getFolderAPI().findFolderByPath("/application/themes/", h , user, false);
@@ -2169,7 +2169,7 @@ public class BrowserAjax {
 		boolean respectFrontendRoles = userWebAPI.isLoggedToFrontend(ctx.getHttpServletRequest());
 		HostAPI hostAPI = APILocator.getHostAPI();
 		List<Host> hosts = hostAPI.findAll(user, respectFrontendRoles);
-		List<Map<String, Object>> hostsToReturn = new ArrayList<Map<String,Object>>(hosts.size());
+		List<Map<String, Object>> hostsToReturn = new ArrayList<>(hosts.size());
 		Collections.sort(hosts, new HostNameComparator());
 		for (Host h: hosts) {
 			List permissions = new ArrayList();
@@ -2202,7 +2202,7 @@ public class BrowserAjax {
 
 	public List<Map<String, Object>> getHostSubfolders(String hostId) throws PortalException, SystemException, DotDataException, DotSecurityException {
 		if(hostId.equals(ALL_SITES_ID)){
-			return  new ArrayList<Map<String,Object>>();
+			return  new ArrayList<>();
 		}
     	UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
     	WebContext ctx = WebContextFactory.get();
@@ -2218,7 +2218,7 @@ public class BrowserAjax {
 		Host host = hostAPI.find(hostId, user, respectFrontendRoles);
 		FolderAPI folderAPI = APILocator.getFolderAPI();
 		List<Folder> folders = folderAPI.findSubFolders(host,user,false);
-		List<Map<String, Object>> foldersToReturn = new ArrayList<Map<String,Object>>(folders.size());
+		List<Map<String, Object>> foldersToReturn = new ArrayList<>(folders.size());
 		for (Folder f: folders){
 			List permissions = new ArrayList();
 			try {
@@ -2242,7 +2242,7 @@ public class BrowserAjax {
 		Host host = hostAPI.find(hostId, user, respectFrontendRoles);
 		FolderAPI folderAPI = APILocator.getFolderAPI();
 		List<Folder> folders = folderAPI.findSubFolders(host,user,false);
-		List<Map<String, Object>> foldersToReturn = new ArrayList<Map<String,Object>>(folders.size());
+		List<Map<String, Object>> foldersToReturn = new ArrayList<>(folders.size());
 		for (Folder f: folders){
 			if(UtilMethods.isSet(requiredPermissions)){
 				if(permissionAPI.doesUserHavePermissions(f,requiredPermissions, user)){
@@ -2294,7 +2294,7 @@ public class BrowserAjax {
 		FolderAPI folderAPI = APILocator.getFolderAPI();
 		Folder parentFolder = folderAPI.find(parentFolderId,user,false);
 		List<Folder> folders = folderAPI.findSubFolders(parentFolder,user,false);
-		List<Map<String, Object>> foldersToReturn = new ArrayList<Map<String,Object>>(folders.size());
+		List<Map<String, Object>> foldersToReturn = new ArrayList<>(folders.size());
 		for (Folder f: folders) {
 			if(UtilMethods.isSet(requiredPermissions)){
 				if(permissionAPI.doesUserHavePermissions(f,requiredPermissions, user)){
@@ -2357,7 +2357,7 @@ public class BrowserAjax {
 			}else{
 				Host host = APILocator.getHostAPI().find(folderId, user, respectFrontendRoles);
 				if(host!=null && InodeUtils.isSet(host.getIdentifier())){
-					Map<String, Object> folderMap = new HashMap<String, Object>();
+					Map<String, Object> folderMap = new HashMap<>();
 					folderMap.put("type", "folder");
 					folderMap.put("name", FolderAPI.SYSTEM_FOLDER);
 					folderMap.put("id", FolderAPI.SYSTEM_FOLDER);
@@ -2377,7 +2377,7 @@ public class BrowserAjax {
 
 	public List<Map<String, Object>> getHostThemes(String hostId) throws PortalException, SystemException, DotDataException, DotSecurityException {
 		if(hostId.equals(ALL_SITES_ID)){
-			return  new ArrayList<Map<String,Object>>();
+			return  new ArrayList<>();
 		}
     	UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
     	WebContext ctx = WebContextFactory.get();
@@ -2393,7 +2393,7 @@ public class BrowserAjax {
 		Host host = hostAPI.find(hostId, user, respectFrontendRoles);
 		FolderAPI folderAPI = APILocator.getFolderAPI();
 		List<Folder> folders = folderAPI.findThemes(host, user, respectFrontendRoles);
-		List<Map<String, Object>> foldersToReturn = new ArrayList<Map<String,Object>>(folders.size());
+		List<Map<String, Object>> foldersToReturn = new ArrayList<>(folders.size());
 		for (Folder f: folders){
 			List permissions = new ArrayList();
 			try {
@@ -2426,7 +2426,7 @@ public class BrowserAjax {
 	}
 	
 	public Map<String, Object> getSelectedBrowserPath(){
-		Map<String, Object> result = new HashMap<String, Object>();
+		Map<String, Object> result = new HashMap<>();
 		HttpSession session = WebContextFactory.get().getSession();
 		if(UtilMethods.isSet(session.getAttribute(SELECTED_BROWSER_PATH_OBJECT)))
 			return (Map<String, Object>) session.getAttribute(SELECTED_BROWSER_PATH_OBJECT);
