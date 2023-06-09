@@ -9,6 +9,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.util.FileUtil;
 import java.nio.file.Paths;
+
+import io.vavr.Lazy;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
@@ -36,6 +38,8 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
     private static final String STORAGE_POOL = "StoragePool";
 
     private final Map<String, File> groups = new ConcurrentHashMap<>();
+
+    private final Lazy<String> contentMetadataCompressor = Lazy.of(()->Config.getStringProperty("CONTENT_METADATA_COMPRESSOR", "none"));
 
     /**
      * default constructor
@@ -238,7 +242,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
                 final File destBucketFile = Paths.get(groupDir.getCanonicalPath(),path.toLowerCase()).toFile();
                 this.prepareParent(destBucketFile);
 
-                final String compressor = Config.getStringProperty("CONTENT_METADATA_COMPRESSOR", "none");
+                final String compressor = contentMetadataCompressor.get();
                 try (OutputStream outputStream = FileUtil.createOutputStream(destBucketFile.toPath(), compressor)) {
                     writerDelegate.write(outputStream, object);
                     outputStream.flush();

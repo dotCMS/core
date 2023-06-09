@@ -9,12 +9,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
@@ -32,6 +34,7 @@ import com.dotcms.concurrent.lock.DotKeyLockManagerBuilder;
 import com.dotcms.concurrent.lock.DotKeyLockManagerFactory;
 import com.dotcms.concurrent.lock.IdentifierStripedLock;
 import com.dotcms.concurrent.lock.ClusterLockManagerFactory;
+import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.ReflectionUtils;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.init.DotInitScheduler;
@@ -525,6 +528,88 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
      */
     public IdentifierStripedLock getIdentifierStripedLock(){
        return this.identifierStripedLock;
+    }
+
+    /**
+     * Create a composite completable futures and results any of the first results done of the futures parameter.
+     * @param futures
+     * @return
+     * @param <T>
+     */
+    public <T> CompletableFuture<T> toCompletableAnyFuture(final Collection<Future<T>> futures) {
+
+        return toCompletableAnyFuture(futures.toArray(new Future[futures.size()]));
+    }
+
+    /**
+     * Create a composite completable futures and results any of the first results done of the futures parameter.
+     * @param futures
+     * @return
+     * @param <T>
+     */
+    public <T> CompletableFuture<T> toCompletableAnyFuture(final Future<T>... futures) {
+
+        final CompletableFuture<T>[] completableFutures = ConversionUtils.INSTANCE.convertToArray(
+                future -> toCompletableFuture(future), CompletableFuture.class, futures);
+
+        return (CompletableFuture<T>) CompletableFuture.anyOf(completableFutures);
+    }
+    /**
+     * Convert a simple future to a completable future
+     * @param future
+     * @return
+     * @param <T>
+     */
+    public <T> CompletableFuture<T> toCompletableFuture(final Future<T> future) {
+
+        return future.isDone()?
+                toDoneFuture(future):
+                CompletableFuture.supplyAsync(() -> {
+                    try {
+                        if (!future.isDone()) {
+                            awaitFutureIsDoneInForkJoinPool(future);
+                        }
+                        return future.get();
+                    } catch (ExecutionException e) {
+
+                        throw new RuntimeException(e);
+                    } catch (InterruptedException e) {
+
+                        Thread.currentThread().interrupt();
+                        throw new RuntimeException(e);
+                    }
+                });
+    }
+
+    private <T> CompletableFuture<T> toDoneFuture(final Future<T> future) {
+
+        final CompletableFuture<T> completableFuture = new CompletableFuture<>();
+        T result;
+        try {
+            result = future.get();
+        } catch (Throwable ex) {
+            completableFuture.completeExceptionally(ex);
+            return completableFuture;
+        }
+        completableFuture.complete(result);
+        return completableFuture;
+    }
+
+    private static void awaitFutureIsDoneInForkJoinPool(final Future<?> future)
+            throws InterruptedException {
+        ForkJoinPool.managedBlock(new ForkJoinPool.ManagedBlocker() {
+            @Override public boolean block() throws InterruptedException {
+                try {
+                    future.get();
+                } catch (ExecutionException e) {
+                    throw new RuntimeException(e);
+                }
+                return true;
+            }
+            @Override public boolean isReleasable() {
+                return future.isDone();
+            }
+        });
     }
 
     /**

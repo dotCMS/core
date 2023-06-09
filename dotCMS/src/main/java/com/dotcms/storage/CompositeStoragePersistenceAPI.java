@@ -1,7 +1,9 @@
 package com.dotcms.storage;
 
+import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.google.common.annotations.VisibleForTesting;
 import io.vavr.control.Try;
 
 import java.io.File;
@@ -25,6 +27,15 @@ public class CompositeStoragePersistenceAPI implements StoragePersistenceAPI {
 
     private final CopyOnWriteArrayList<StoragePersistenceAPI> storagePersistenceAPIList =
             new CopyOnWriteArrayList<>();
+    private final ObjectWriterDelegate defaultWriterDelegate;
+
+    public CompositeStoragePersistenceAPI() {
+        this(new JsonWriterDelegate());
+    }
+
+    public CompositeStoragePersistenceAPI(final ObjectWriterDelegate defaultWriterDelegate) {
+        this.defaultWriterDelegate = defaultWriterDelegate;
+    }
 
     @Override
     public boolean existsGroup(final String groupName) throws DotDataException {
@@ -209,7 +220,7 @@ public class CompositeStoragePersistenceAPI implements StoragePersistenceAPI {
                 break;
             } else {
 
-                missStorageList.add(storage); // we will populate this list with the storages that does not have the file, so will be populate async at the end
+                missStorageList.add(storage); // we will populate this list with the storages that does not have the file, so will be populated async at the end
             }
         }
 
@@ -231,17 +242,72 @@ public class CompositeStoragePersistenceAPI implements StoragePersistenceAPI {
     }
 
     @Override
-    public Object pullObject(String groupName, String path, ObjectReaderDelegate readerDelegate) throws DotDataException {
-        return null;
+    public Object pullObject(final String groupName,
+                             final String path,
+                             final ObjectReaderDelegate readerDelegate) throws DotDataException {
+        // todo: here we will look for on each storage the Object, if an upper layer does not have the object, we will look for it in the next one
+        // at the end of the process for each storage without the object, an async call will be execute in order to populate the storage with that particular object
+        Object objectToReturn = null;
+
+        final List<StoragePersistenceAPI> missStorageList = new ArrayList<>();
+        for(final StoragePersistenceAPI storage : this.storagePersistenceAPIList) {
+
+            final Object localObject = storage.pullObject(groupName, path, readerDelegate);
+            if (null != localObject) {
+
+                objectToReturn = localObject;
+                break;
+            } else {
+
+                missStorageList.add(storage); // we will populate this list with the storages that does not have the object, so will be populated async at the end
+            }
+        }
+
+        populateMissStorageChain(groupName, path, missStorageList, objectToReturn);
+
+        return objectToReturn;
+    }
+
+    private void populateMissStorageChain(final String groupName, final String path,
+                                          final List<StoragePersistenceAPI> missStorageList, final Object objectToReturn) {
+
+        if (!missStorageList.isEmpty() && Objects.nonNull(objectToReturn) && objectToReturn instanceof Serializable) {
+
+            for(final StoragePersistenceAPI storage : missStorageList) {
+
+                storage.pushObjectAsync(groupName, path, defaultWriterDelegate, Serializable.class.cast(objectToReturn), null);
+            }
+        }
     }
 
     @Override
-    public Future<File> pullFileAsync(String groupName, String path) {
-        return null;
+    public Future<File> pullFileAsync(final String groupName, final String path) {
+
+        final List<Future<File>> futures = new ArrayList<>();
+        for(final StoragePersistenceAPI storage : this.storagePersistenceAPIList) {
+
+            final Future<File> localFileFuture = storage.pullFileAsync(groupName, path);
+            futures.add(localFileFuture);
+        }
+
+        // since we do not want to wait for all the futures to be completed, we do not which layer does not have the file, so we fire a new thread to call the sync method
+        DotConcurrentFactory.getInstance().getSubmitter().submit(()-> this.pullFile(groupName, path));
+        return DotConcurrentFactory.getInstance().toCompletableAnyFuture(futures);
     }
 
     @Override
-    public Future<Object> pullObjectAsync(String groupName, String path, ObjectReaderDelegate readerDelegate) {
-        return null;
+    public Future<Object> pullObjectAsync(final String groupName, final String path,
+                                          final ObjectReaderDelegate readerDelegate) {
+
+        final List<Future<Object>> futures = new ArrayList<>();
+        for(final StoragePersistenceAPI storage : this.storagePersistenceAPIList) {
+
+            final Future<Object> localFileFuture = storage.pullObjectAsync(groupName, path, readerDelegate);
+            futures.add(localFileFuture);
+        }
+
+        // since we do not want to wait for all the futures to be completed, we do not which layer does not have the file, so we fire a new thread to call the sync method
+        DotConcurrentFactory.getInstance().getSubmitter().submit(()-> this.pullObject(groupName, path, readerDelegate));
+        return DotConcurrentFactory.getInstance().toCompletableAnyFuture(futures);
     }
 }
