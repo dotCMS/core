@@ -3,6 +3,7 @@ import { moduleMetadata, Story, Meta } from '@storybook/angular';
 import { NgFor, AsyncPipe } from '@angular/common';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
+import { DividerModule } from 'primeng/divider';
 import { ToolbarModule } from 'primeng/toolbar';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -36,7 +37,8 @@ export default {
                 TemplateBuilderBackgroundColumnsComponent,
                 TemplateBuilderSectionComponent,
                 TemplateBuilderActionsComponent,
-                ToolbarModule
+                ToolbarModule,
+                DividerModule
             ],
             providers: [
                 DotTemplateBuilderStore,

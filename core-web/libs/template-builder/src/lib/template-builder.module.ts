@@ -1,6 +1,7 @@
 import { AsyncPipe, NgFor, NgStyle } from '@angular/common';
 import { NgModule } from '@angular/core';
 
+import { DividerModule } from 'primeng/divider';
 import { ToolbarModule } from 'primeng/toolbar';
 
 import { DotMessagePipeModule } from '@dotcms/ui';
@@ -28,7 +29,8 @@ import { TemplateBuilderComponent } from './components/template-builder/template
         TemplateBuilderSectionComponent,
         TemplateBuilderActionsComponent,
         NgStyle,
-        ToolbarModule
+        ToolbarModule,
+        DividerModule
     ],
     declarations: [TemplateBuilderComponent],
     providers: [DotTemplateBuilderStore],
