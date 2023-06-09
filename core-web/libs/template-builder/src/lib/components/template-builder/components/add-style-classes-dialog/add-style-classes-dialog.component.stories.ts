@@ -1,4 +1,5 @@
 import { moduleMetadata, Story, Meta } from '@storybook/angular';
+import { of } from 'rxjs';
 
 import { FormsModule } from '@angular/forms';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
@@ -9,7 +10,7 @@ import { DynamicDialogRef, DynamicDialogConfig } from 'primeng/dynamicdialog';
 
 import { AddStyleClassesDialogComponent } from './add-style-classes-dialog.component';
 
-import { MOCK_STYLE_CLASSES_FILE } from '../../utils/mocks';
+import { MOCK_SELECTED_STYLE_CLASSES, MOCK_STYLE_CLASSES_FILE } from '../../utils/mocks';
 
 export default {
     title: 'Components/Add Style Classes Dialog',
@@ -21,7 +22,12 @@ export default {
                 {
                     provide: DynamicDialogConfig,
                     useValue: {
-                        data: MOCK_STYLE_CLASSES_FILE
+                        data: {
+                            classes: of(
+                                MOCK_STYLE_CLASSES_FILE.classes.map((klass) => ({ klass }))
+                            ),
+                            selectedClasses: MOCK_SELECTED_STYLE_CLASSES
+                        }
                     }
                 },
                 DynamicDialogRef
