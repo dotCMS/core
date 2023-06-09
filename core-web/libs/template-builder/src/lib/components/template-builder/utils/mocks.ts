@@ -1,18 +1,9 @@
 import { v4 as uuid } from 'uuid';
 
-import { DynamicDialogConfig } from 'primeng/dynamicdialog';
-
 import { DotLayoutBody } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotGridStackWidget } from '../models/models';
-
-export class MockDynamicDialogConfig<T> extends DynamicDialogConfig {
-    constructor(public data: T) {
-        super();
-        this.data = data;
-    }
-}
 
 export const GRIDSTACK_DATA_MOCK: DotGridStackWidget[] = [
     { x: 0, y: 0, w: 12, id: uuid() },
