@@ -1,35 +1,42 @@
+<dotcms-template-builder-background-columns></dotcms-template-builder-background-columns>
 <div class="tools">
-    <div class="grid-stack-item add" data-widget-type="row" gs-w="12" gs-h="1">
-        <div class="grid-stack-item-content">
-            <div>
-                <span>ROW</span>
-            </div>
-        </div>
-    </div>
-    <div class="grid-stack-item add" data-widget-type="col" gs-w="1" gs-h="1">
-        <div class="grid-stack-item-content">
-            <div>
-                <span>COL</span>
-            </div>
-        </div>
-    </div>
+    <dotcms-add-widget
+        [label]="'dot.template.builder.add.row' | dm"
+        [icon]="rowIcon"
+        data-widget-type="row"
+        gs-w="12"
+        gs-h="1"
+        data-testId="add-row"
+    ></dotcms-add-widget>
+    <dotcms-add-widget
+        [label]="'dot.template.builder.add.box' | dm"
+        [icon]="colIcon"
+        data-widget-type="col"
+        gs-w="1"
+        gs-h="1"
+        data-testId="add-box"
+    ></dotcms-add-widget>
 </div>
+<dotcms-template-builder-section>{{
+    'dot.template.builder.header' | dm
+}}</dotcms-template-builder-section>
 <div class="grid-stack">
-    <div
+    <dotcms-template-builder-row
         class="grid-stack-item"
-        #rows
+        #rowElement
         *ngFor="let row of items$ | async; trackBy: identify"
         [attr.gs-id]="row.id"
         [attr.gs-x]="row.x"
         [attr.gs-y]="row.y"
         [attr.gs-w]="row.w"
         [attr.gs-h]="row.h"
+        (deleteRow)="deleteRow(row.id)"
+        data-testId="row"
     >
-        id: {{ row.id }} - y: {{ row.y }} - styleClass: {{ row.styleClass?.join(' ') }}
         <div class="grid-stack-item-content grid-stack">
             <div
                 class="grid-stack-item sub"
-                #boxes
+                #boxElement
                 *ngFor="let box of row.subGridOpts?.children; trackBy: identify"
                 [attr.gs-id]="box.id"
                 [attr.gs-auto]="true"
@@ -37,14 +44,18 @@
                 [attr.gs-y]="box.y"
                 [attr.gs-w]="box.w"
                 [attr.gs-h]="box.h"
+                data-testId="box"
             >
-                <div class="grid-stack-item-content">
-                    styleClass: {{ box.styleClass?.join(' ') }}
-                    <p *ngFor="let container of box.containers">
-                        identifier: {{ container.identifier }}
-                    </p>
-                </div>
+                <dotcms-template-builder-box
+                    class="grid-stack-item-content"
+                    [items]="box.containers"
+                    [width]="box.w"
+                    (deleteColumn)="removeColumn(box, boxElement, row.id)"
+                ></dotcms-template-builder-box>
             </div>
         </div>
-    </div>
+    </dotcms-template-builder-row>
 </div>
+<dotcms-template-builder-section>{{
+    'dot.template.builder.footer' | dm
+}}</dotcms-template-builder-section>

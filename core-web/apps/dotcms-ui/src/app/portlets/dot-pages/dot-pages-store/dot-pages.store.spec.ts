@@ -1,5 +1,6 @@
 import { Observable, of, throwError } from 'rxjs';
 
+import { HttpErrorResponse } from '@angular/common/http';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Injectable } from '@angular/core';
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
@@ -24,6 +25,7 @@ import {
     DotEventsService,
     DotLanguagesService,
     DotLicenseService,
+    DotLocalstorageService,
     DotPageTypesService,
     DotPageWorkflowsActionsService,
     DotRenderMode,
@@ -58,10 +60,15 @@ import {
     mockDotLanguage,
     MockDotRouterService,
     mockResponseView,
-    mockWorkflowsActions
+    mockWorkflowsActions,
+    mockPublishAction
 } from '@dotcms/utils-testing';
 
-import { DotPageStore, SESSION_STORAGE_FAVORITES_KEY } from './dot-pages.store';
+import {
+    DotPageStore,
+    LOCAL_STORAGE_FAVORITES_PANEL_KEY,
+    SESSION_STORAGE_FAVORITES_KEY
+} from './dot-pages.store';
 
 import { contentTypeDataMock } from '../../dot-edit-page/components/dot-palette/dot-palette-content-type/dot-palette-content-type.component.spec';
 import { DotLicenseServiceMock } from '../../dot-edit-page/content/services/html/dot-edit-content-toolbar-html.service.spec';
@@ -104,6 +111,7 @@ describe('DotPageStore', () => {
     let dotWorkflowActionsFireService: DotWorkflowActionsFireService;
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
     let dotFavoritePageService: DotFavoritePageService;
+    let dotLocalstorageService: DotLocalstorageService;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -122,6 +130,7 @@ describe('DotPageStore', () => {
                 LoggerService,
                 StringUtils,
                 DotFavoritePageService,
+                DotLocalstorageService,
                 { provide: DialogService, useClass: DialogServiceMock },
                 { provide: DotcmsEventsService, useClass: DotcmsEventsServiceMock },
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
@@ -147,10 +156,11 @@ describe('DotPageStore', () => {
         dotPageWorkflowsActionsService = TestBed.inject(DotPageWorkflowsActionsService);
         dotWorkflowActionsFireService = TestBed.inject(DotWorkflowActionsFireService);
         dotFavoritePageService = TestBed.inject(DotFavoritePageService);
-
+        dotLocalstorageService = TestBed.inject(DotLocalstorageService);
 
         spyOn(dialogService, 'open').and.callThrough();
         spyOn(dotHttpErrorManagerService, 'handle');
+        spyOn(dotLocalstorageService, 'getItem').and.returnValue(`true`);
 
         dotPageStore.setInitialStateData(5);
         dotPageStore.setKeyword('test');
@@ -197,14 +207,6 @@ describe('DotPageStore', () => {
             expect(data.pages.keyword).toEqual('');
             expect(data.pages.status).toEqual(ComponentStatus.INIT);
         });
-    });
-
-    it('should limit Favorite Pages', () => {
-        spyOn(dotPageStore, 'setFavoritePages').and.callThrough();
-        dotPageStore.limitFavoritePages(5);
-        expect(dotPageStore.setFavoritePages).toHaveBeenCalledWith(
-            favoritePagesInitialTestData.slice(0, 5)
-        );
     });
 
     // Selectors
@@ -257,6 +259,12 @@ describe('DotPageStore', () => {
         });
     });
 
+    it('should get isFavoritePanelCollaped Params', () => {
+        dotPageStore.isFavoritePanelCollaped$.subscribe((data) => {
+            expect(data).toEqual(true);
+        });
+    });
+
     it('should get pages loading status', () => {
         dotPageStore.isPagesLoading$.subscribe((data) => {
             expect(data).toEqual(true);
@@ -271,14 +279,14 @@ describe('DotPageStore', () => {
 
     // Updaters
     it('should update Favorite Pages', () => {
-        dotPageStore.setFavoritePages(favoritePagesInitialTestData);
+        dotPageStore.setFavoritePages({ items: favoritePagesInitialTestData });
         dotPageStore.state$.subscribe((data) => {
             expect(data.favoritePages.items).toEqual(favoritePagesInitialTestData);
         });
     });
 
     it('should update Pages', () => {
-        dotPageStore.setPages(favoritePagesInitialTestData);
+        dotPageStore.setPages({ items: favoritePagesInitialTestData });
         dotPageStore.state$.subscribe((data) => {
             expect(data.pages.items).toEqual(favoritePagesInitialTestData);
         });
@@ -312,6 +320,28 @@ describe('DotPageStore', () => {
             SESSION_STORAGE_FAVORITES_KEY,
             '{"keyword":"test","languageId":"1","archived":true}'
         );
+    });
+
+    it('should update Local Storage Panel Collapsed Params', () => {
+        spyOn(dotLocalstorageService, 'setItem').and.callThrough();
+        dotPageStore.setLocalStorageFavoritePanelCollapsedParams(true);
+        expect(dotLocalstorageService.setItem).toHaveBeenCalledWith(
+            LOCAL_STORAGE_FAVORITES_PANEL_KEY,
+            'true'
+        );
+    });
+
+    it('should have favorites collapsed state setted when requesting favorite pages', () => {
+        dotPageStore.getFavoritePages(5); // Here it sets the favorite state again
+
+        // Should retrieve the value from local storage when setting the state
+        expect(dotLocalstorageService.getItem).toHaveBeenCalledWith(
+            LOCAL_STORAGE_FAVORITES_PANEL_KEY
+        );
+
+        dotPageStore.state$.subscribe((data) => {
+            expect(data.favoritePages.collapsed).toEqual(true);
+        });
     });
 
     it('should update Pages Status', () => {
@@ -374,6 +404,7 @@ describe('DotPageStore', () => {
             expect(data.favoritePages.items).toEqual(expectedInputArray);
             expect(data.favoritePages.showLoadMoreButton).toEqual(true);
             expect(data.favoritePages.total).toEqual(expectedInputArray.length);
+            expect(data.favoritePages.collapsed).toEqual(true);
         });
         expect(dotFavoritePageService.get).toHaveBeenCalledTimes(1);
     });
@@ -430,6 +461,36 @@ describe('DotPageStore', () => {
         });
     });
 
+    it('should set Pages to empty when changed from a Site with data to an empty one', () => {
+        const pagesData = [
+            {
+                ...favoritePagesInitialTestData[0]
+            },
+            {
+                ...favoritePagesInitialTestData[1]
+            }
+        ];
+
+        dotPageStore.setPages({ items: pagesData });
+
+        spyOn(dotESContentService, 'get').and.returnValue(
+            of({
+                contentTook: 0,
+                jsonObjectView: {
+                    contentlets: []
+                },
+                queryTook: 1,
+                resultsSize: 0
+            })
+        );
+        dotPageStore.getPages({ offset: 0, sortField: 'title', sortOrder: 1 });
+
+        dotPageStore.state$.subscribe((data) => {
+            expect(data.pages.items).toEqual([]);
+        });
+        expect(dotESContentService.get).toHaveBeenCalledTimes(1);
+    });
+
     it('should handle error when get Pages value fails', () => {
         const error500 = mockResponseView(500, '/test', null, { message: 'error' });
         spyOn(dotESContentService, 'get').and.returnValue(throwError(error500));
@@ -442,80 +503,8 @@ describe('DotPageStore', () => {
         expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(error500, true);
     });
 
-    it('should keep fetching Pages data until new value comes from the DB in store', fakeAsync(() => {
-        dotPageStore.setPages(favoritePagesInitialTestData);
-        const old = {
-            contentTook: 0,
-            jsonObjectView: {
-                contentlets: favoritePagesInitialTestData as unknown as DotCMSContentlet[]
-            },
-            queryTook: 1,
-            resultsSize: 2
-        };
-
-        const updated = {
-            contentTook: 0,
-            jsonObjectView: {
-                contentlets: [
-                    { ...favoritePagesInitialTestData[0], modDate: '2020-09-02 16:50:15.569' },
-                    { ...favoritePagesInitialTestData[1] }
-                ] as unknown as DotCMSContentlet[]
-            },
-            queryTook: 1,
-            resultsSize: 4
-        };
-
-        const mockFunction = (times) => {
-            let count = 1;
-
-            return Observable.create((observer) => {
-                if (count++ > times) {
-                    observer.next(updated);
-                } else {
-                    observer.next(old);
-                }
-            });
-        };
-
-        spyOn(dotESContentService, 'get').and.returnValue(mockFunction(3));
-        spyOn(dotPageStore, 'setPagesStatus').and.callThrough();
-
-        dotPageStore.updateSinglePageData({ identifier: '123', isFavoritePage: false });
-
-        tick(3000);
-
-        // dotESContentService.get only is called 1 time, but "retryWhen" operator makes several request to the SpyOn
-        expect(dotESContentService.get).toHaveBeenCalledTimes(1);
-
-        // Testing to setPagesStatus to LOADING on the first fetch
-        expect((dotPageStore.setPagesStatus as jasmine.Spy).calls.argsFor(0).toString()).toBe(
-            ComponentStatus.LOADING
-        );
-
-        // Testing to pages.status to be LOADED on the last fetch (there can only be 2 calls during the whole process)
-        dotPageStore.state$.subscribe((data) => {
-            expect(data.pages.status).toBe(ComponentStatus.LOADED);
-        });
-
-        // Since dotESContentService.get can only be called 1 time (and once called the data will be changed on "mockFunction"),
-        // we test that the last fetch contains the updated data
-        (dotESContentService.get as jasmine.Spy).calls
-            .mostRecent()
-            .returnValue.subscribe((data) => {
-                expect(data).toEqual(updated);
-            });
-    }));
-
     it('should remove page archived from pages collection and add undefined at the bottom', fakeAsync(() => {
-        dotPageStore.setPages(favoritePagesInitialTestData);
-        const old = {
-            contentTook: 0,
-            jsonObjectView: {
-                contentlets: favoritePagesInitialTestData as unknown as DotCMSContentlet[]
-            },
-            queryTook: 1,
-            resultsSize: 2
-        };
+        dotPageStore.setPages({ items: favoritePagesInitialTestData });
 
         const updated = {
             contentTook: 0,
@@ -526,19 +515,7 @@ describe('DotPageStore', () => {
             resultsSize: 4
         };
 
-        const mockFunction = (times) => {
-            let count = 1;
-
-            return Observable.create((observer) => {
-                if (count++ > times) {
-                    observer.next(updated);
-                } else {
-                    observer.next(old);
-                }
-            });
-        };
-
-        spyOn(dotESContentService, 'get').and.returnValue(mockFunction(3));
+        spyOn(dotESContentService, 'get').and.returnValue(of(updated));
 
         dotPageStore.updateSinglePageData({ identifier: '123', isFavoritePage: false });
 
@@ -614,12 +591,45 @@ describe('DotPageStore', () => {
         });
     });
 
-    it('should get all menu actions from a favorite page when page is archived', () => {
-        const error404 = mockResponseView(404, '/page', null, { message: 'error' });
-        spyOn(dotPageWorkflowsActionsService, 'getByUrl').and.returnValue(throwError(error404));
+    it('should not have Add/Edit Bookmark actions in context menu when contentlet is archived', () => {
+        spyOn(dotPageWorkflowsActionsService, 'getByUrl').and.returnValue(
+            of({ actions: mockWorkflowsActions, page: dotcmsContentletMock })
+        );
 
         dotPageStore.showActionsMenu({
-            item: { ...favoritePagesInitialTestData[0], contentType: 'dotFavoritePage' },
+            item: {
+                ...favoritePagesInitialTestData[1],
+                url: '/index2?host_id=A&language_id=1&device_inode=123',
+                contentType: 'dotFavoritePage',
+                archived: true
+            },
+            actionMenuDomId: 'test1'
+        });
+
+        expect(dotPageWorkflowsActionsService.getByUrl).toHaveBeenCalledWith({
+            host_id: 'A',
+            language_id: '1',
+            url: '/index2'
+        });
+
+        dotPageStore.state$.subscribe((data) => {
+            expect(data.pages.menuActions.length).toEqual(8);
+            expect(data.pages.menuActions[0].label).toEqual('favoritePage.contextMenu.action.edit');
+            expect(data.pages.menuActions[1].label).toEqual('favoritePage.dialog.delete.button');
+        });
+    });
+
+    it('should get all menu actions from a favorite page when page is archived', () => {
+        spyOn(dotPageWorkflowsActionsService, 'getByUrl').and.returnValue(
+            of({ actions: mockWorkflowsActions, page: dotcmsContentletMock })
+        );
+
+        dotPageStore.showActionsMenu({
+            item: {
+                ...favoritePagesInitialTestData[0],
+                contentType: 'dotFavoritePage',
+                archived: true
+            },
             actionMenuDomId: 'test1'
         });
 
@@ -630,9 +640,14 @@ describe('DotPageStore', () => {
         });
 
         dotPageStore.state$.subscribe((data) => {
-            expect(data.pages.menuActions.length).toEqual(2);
             expect(data.pages.menuActions[0].label).toEqual('favoritePage.contextMenu.action.edit');
             expect(data.pages.menuActions[1].label).toEqual('favoritePage.dialog.delete.button');
+            expect(data.pages.menuActions[2]).toEqual({ separator: true });
+            expect(data.pages.menuActions[3].label).toEqual('Assign Workflow');
+            expect(data.pages.menuActions[4].label).toEqual('Save');
+            expect(data.pages.menuActions[5].label).toEqual('Save / Publish');
+            expect(data.pages.menuActions[6].label).toEqual('contenttypes.content.push_publish');
+            expect(data.pages.menuActions[7].label).toEqual('contenttypes.content.add_to_bundle');
         });
     });
 
@@ -665,6 +680,37 @@ describe('DotPageStore', () => {
         expect(dotESContentService.get).toHaveBeenCalledTimes(1);
         expect(dotWorkflowActionsFireService.deleteContentlet).toHaveBeenCalledWith({
             inode: testInode
+        });
+    });
+
+    it('should handle error when a Workflow Action Request fails', (done) => {
+        const actions = [mockPublishAction];
+        const page = dotcmsContentletMock;
+        const error: HttpErrorResponse = new HttpErrorResponse({
+            error: {
+                message:
+                    'The Workflow Action is not available in the Workflow Step the content is currently in.'
+            }
+        });
+        const item = {
+            ...favoritePagesInitialTestData[0],
+            contentType: 'dotFavoritePage',
+            archived: true
+        };
+
+        spyOn(dotPageWorkflowsActionsService, 'getByUrl').and.returnValue(of({ actions, page }));
+        spyOn(dotWorkflowActionsFireService, 'fireTo').and.returnValue(throwError(error));
+
+        dotPageStore.showActionsMenu({ item, actionMenuDomId: 'test1' });
+
+        dotPageStore.state$.subscribe(({ pages }) => {
+            const menuAction = pages.menuActions;
+            const publishAction = menuAction.find(
+                (action) => action.label === mockPublishAction.name
+            );
+            publishAction.command();
+            expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(error, true);
+            done();
         });
     });
 });

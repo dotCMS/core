@@ -7,8 +7,8 @@ import { MenuModule } from 'primeng/menu';
 import { ToolbarModule } from 'primeng/toolbar';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { DotMessagePipeModule } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 
 import { DotPortletToolbarComponent } from './dot-portlet-toolbar.component';
 

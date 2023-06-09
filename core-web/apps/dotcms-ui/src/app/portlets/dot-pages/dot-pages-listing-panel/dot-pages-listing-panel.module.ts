@@ -14,8 +14,8 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
-import { DotMessagePipeModule } from '@dotcms/app/view/pipes/dot-message/dot-message-pipe.module';
 import { DotRelativeDatePipe } from '@dotcms/app/view/pipes/dot-relative-date/dot-relative-date.pipe';
+import { DotMessagePipeModule } from '@dotcms/ui';
 
 import { DotPagesListingPanelComponent } from './dot-pages-listing-panel.component';
 

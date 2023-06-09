@@ -285,6 +285,29 @@ describe('DotExperimentsConfigurationStore', () => {
             });
         });
 
+        it('should edit a description of an experiment', (done) => {
+            const newDescription = 'new description';
+
+            dotExperimentsService.setDescription.and.callThrough().and.returnValue(
+                of({
+                    ...EXPERIMENT_MOCK,
+                    description: newDescription
+                })
+            );
+
+            store.loadExperiment(EXPERIMENT_MOCK.id);
+
+            store.setDescription({
+                experiment: EXPERIMENT_MOCK,
+                data: { description: newDescription }
+            });
+
+            store.state$.subscribe(({ experiment }) => {
+                expect(experiment.description).toEqual(newDescription);
+                done();
+            });
+        });
+
         it('should delete a variant from an experiment', (done) => {
             const variants: Variant[] = [
                 { id: 'DEFAULT', name: 'DEFAULT', weight: 50, promoted: false },
@@ -626,6 +649,42 @@ describe('DotExperimentsConfigurationStore', () => {
             dotExperimentsService.stop.and.returnValue(throwError('error'));
 
             store.stopExperiment(EXPERIMENT_MOCK_2);
+
+            expect(dotHttpErrorManagerService.handle).toHaveBeenCalledOnceWith(
+                'error' as unknown as HttpErrorResponse
+            );
+        });
+
+        it('should call the cancel experiment method when cancel scheduling', (done) => {
+            dotExperimentsService.getById.and
+                .callThrough()
+                .and.returnValue(
+                    of({ ...EXPERIMENT_MOCK_2, status: DotExperimentStatusList.SCHEDULED })
+                );
+
+            dotExperimentsService.cancelSchedule.and.callThrough().and.returnValue(
+                of({
+                    ...EXPERIMENT_MOCK_2,
+                    status: DotExperimentStatusList.DRAFT
+                })
+            );
+
+            spectator.service.loadExperiment(EXPERIMENT_MOCK_2.id);
+
+            store.cancelSchedule(EXPERIMENT_MOCK_2);
+
+            store.state$.subscribe(() => {
+                expect(dotExperimentsService.cancelSchedule).toHaveBeenCalledOnceWith(
+                    EXPERIMENT_MOCK_2.id
+                );
+                done();
+            });
+        });
+
+        it('should handle error when canceling the experiment', () => {
+            dotExperimentsService.cancelSchedule.and.returnValue(throwError('error'));
+
+            store.cancelSchedule(EXPERIMENT_MOCK_2);
 
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalledOnceWith(
                 'error' as unknown as HttpErrorResponse

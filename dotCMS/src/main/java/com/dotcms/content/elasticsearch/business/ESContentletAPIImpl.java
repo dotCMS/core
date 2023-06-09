@@ -221,12 +221,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
-import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
-import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PERSONA_NAME_KEY;
-
 /**
  * Implementation class for the {@link ContentletAPI} interface.
  *
@@ -241,6 +235,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private static final String FAILED_TO_DELETE_UNARCHIVED_CONTENT = "Failed to delete unarchived content. Content must be archived first before it can be deleted.";
     private static final String NEVER_EXPIRE = "NeverExpire";
     private static final String CHECKIN_IN_PROGRESS = "__checkin_in_progress__";
+
+    private static final String IS_NEW_CONTENT = "__IS_NEW_CONTENT__";
 
     private final ContentletIndexAPIImpl indexAPI;
     private final ESContentFactoryImpl contentFactory;
@@ -978,8 +974,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             ? contentlet.getInode() : "Unknown"));
 
             //If the contentlet has CMS Owner Publish permission on it, the user creating the new contentlet is allowed to publish
-            final List<Role> roles = permissionAPI.getRoles(contentlet.getPermissionId(),
-                    PermissionAPI.PERMISSION_PUBLISH, "CMS Owner", 0, -1);
+            List<Role> roles = permissionAPI.getRoles(contentlet.getPermissionId(),
+                    PermissionAPI.PERMISSION_PUBLISH, Role.CMS_OWNER_ROLE, 0, -1);
+            if (roles.isEmpty() &&
+                    isNewContentlet(contentlet)) {
+
+                roles = permissionAPI.getRoles(contentlet.getContentType().getPermissionId(),
+                        PermissionAPI.PERMISSION_PUBLISH, Role.CMS_OWNER_ROLE, 0, -1);
+            }
             final Role cmsOwner = APILocator.getRoleAPI().loadCMSOwnerRole();
 
             if (roles.size() > 0) {
@@ -1050,6 +1052,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
         // by now, the publish event is making a duplicate reload events on the site browser
         // so we decided to comment it out by now, and
         //contentletSystemEventUtil.pushPublishEvent(contentlet);
+    }
+
+    private boolean isNewContentlet(final Contentlet contentlet) throws DotDataException {
+        return contentlet.isNew() || null == contentlet.getIdentifier()
+                || ConversionUtils.toBooleanFromDb(contentlet.getMap().getOrDefault(IS_NEW_CONTENT, false))
+                || hasOnlyOneVersion(contentlet);
+    }
+
+    private boolean hasOnlyOneVersion(final Contentlet contentlet) throws DotDataException {
+
+        final int versionCount = new DotConnect().setSQL("SELECT count(*) as count FROM (SELECT 1 FROM contentlet WHERE identifier =? LIMIT 2) AS t")
+                .addParam(contentlet.getIdentifier())
+                .loadInt("count");
+        return versionCount <= 1;
     }
 
     @Override
@@ -5634,7 +5650,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
 
             new ContentletLoader().invalidate(contentlet);
-
+            if (isNewContent) {
+                // we mark as new. b/c next actions on the pipe may need to know if it is new or not.
+                contentlet.setProperty(IS_NEW_CONTENT, true);
+            }
         } catch (Exception e) {
             if (createNewVersion && workingContentlet != null && UtilMethods.isSet(
                     workingContentlet.getInode())) {
@@ -6644,6 +6663,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         Map<String, Object> cmap = contentlet.getMap();
         workingContentlet.setStructureInode(contentlet.getStructureInode());
         workingContentlet.setInode(contentletInode);
+        workingContentlet.setVariantId(contentlet.getVariantId());
         copyProperties(workingContentlet, cmap);
         workingContentlet.setInode("");
 
@@ -7087,8 +7107,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     contentlet.setFolder((String) value);
                 } else if (isSetPropertyVariable(conVariable)) {
                     contentlet.setProperty(conVariable, value);
-                } else if (conVariable.equals(Contentlet.VARIANT_ID)) {
-                    contentlet.setVariantId(value.toString());
                 } else if (velFieldmap.get(conVariable) != null) {
                     Field field = velFieldmap.get(conVariable);
                     if (isFieldTypeString(field)) {
@@ -9751,7 +9769,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 return true;
             } else if (!APILocator.getPermissionAPI().doesUserHavePermission(
-                    contentlet, PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles)) {
+                        contentlet, PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles)
+                    && !APILocator.getPermissionAPI().doesUserHavePermission(
+                        contentlet.getContentType(), PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles)) {
 
                 throw new DotLockException("User: " + (user != null ? user.getUserId() : "Unknown")
                         + " does not have Edit Permissions to lock content: " + (contentlet != null

@@ -283,19 +283,19 @@ dependencies {
         transitive = false
     }
 
-    felix group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.25'
-    felix group: 'org.slf4j', name: 'jcl-over-slf4j', version: '1.7.25'
+    felix group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.35'
+    felix group: 'org.slf4j', name: 'jcl-over-slf4j', version: '1.7.35'
 
     //// Felix system configuration
-    felixsystem group: 'com.dotcms.tika', name: 'com.dotcms.tika', version: '2.7.0'
+    felixsystem group: 'com.dotcms.tika', name: 'com.dotcms.tika', version: '2.7.0.1'
     felixsystem group: 'com.dotcms.samlbundle', name: 'com.dotcms.samlbundle', version: '22.03'
 
     //// starter config
 
-    starter group: 'com.dotcms', name: 'starter', version: 'empty_20230509', ext: 'zip'
+    starter group: 'com.dotcms', name: 'starter', version: 'empty_20230525', ext: 'zip'
     //Uncomment this line if you want to download the starter that comes with data
     // starter group: 'com.dotcms', name: 'starter', version: '20230518', ext: 'zip'
-    testsStarter group: 'com.dotcms', name: 'starter', version: 'empty_20220718', ext: 'zip'
+    testsStarter group: 'com.dotcms', name: 'starter', version: 'empty_20230525', ext: 'zip'
     
     profiler group: 'glowroot-custom', name: 'glowroot-agent', version: '0.13.1'
     profilerDependencies group: 'glowroot-custom', name: 'collector-https-linux', version: '0.13.1'

@@ -5,7 +5,7 @@ import { ButtonModule } from 'primeng/button';
 import { MenuModule } from 'primeng/menu';
 import { ToolbarModule } from 'primeng/toolbar';
 
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { DotMessagePipeModule } from '@dotcms/ui';
 
 import { DotPortletToolbarComponent } from './dot-portlet-toolbar.component';
 

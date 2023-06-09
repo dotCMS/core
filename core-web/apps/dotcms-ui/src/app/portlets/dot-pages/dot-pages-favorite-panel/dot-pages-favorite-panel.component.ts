@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
-import { Component, EventEmitter, Output } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
@@ -23,7 +23,7 @@ import { DotActionsMenuEventParams } from '../dot-pages.component';
     templateUrl: './dot-pages-favorite-panel.component.html',
     styleUrls: ['./dot-pages-favorite-panel.component.scss']
 })
-export class DotPagesFavoritePanelComponent {
+export class DotPagesFavoritePanelComponent implements OnInit {
     @Output() goToUrl = new EventEmitter<string>();
     @Output() showActionsMenu = new EventEmitter<DotActionsMenuEventParams>();
 
@@ -41,27 +41,19 @@ export class DotPagesFavoritePanelComponent {
         private dotHttpErrorManagerService: DotHttpErrorManagerService
     ) {}
 
+    ngOnInit(): void {
+        this.store.getFavoritePages(this.currentLimitSize);
+    }
+
     /**
-     * Event to load more/less Favorite page data
+     * Event to collapse or not Favorite Page panel
      *
-     * @param {boolean} areAllFavoritePagesLoaded
-     * @param {number} [favoritePagesToLoad]
+     * @param {Event} event
      * @memberof DotPagesComponent
      */
-    toggleFavoritePagesData(
-        $event: Event,
-        areAllFavoritePagesLoaded: boolean,
-        favoritePagesToLoad?: number
-    ): void {
-        $event.stopPropagation();
-
-        if (areAllFavoritePagesLoaded) {
-            this.store.limitFavoritePages(FAVORITE_PAGE_LIMIT);
-        } else {
-            this.store.getFavoritePages(favoritePagesToLoad);
-        }
-
-        this.currentLimitSize = FAVORITE_PAGE_LIMIT;
+    toggleFavoritePagesPanel($event: Event): void {
+        this.store.setLocalStorageFavoritePanelCollapsedParams($event['collapsed']);
+        this.store.setFavoritePages({ collapsed: $event['collapsed'] as boolean });
     }
 
     /**

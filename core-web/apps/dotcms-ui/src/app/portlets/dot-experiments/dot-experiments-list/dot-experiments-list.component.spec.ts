@@ -17,11 +17,9 @@ import { SkeletonModule } from 'primeng/skeleton';
 
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
-import { DotMessagePipe } from '@dotcms/app/view/pipes';
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus, DotExperimentStatusList } from '@dotcms/dotcms-models';
-import { DotIconModule } from '@dotcms/ui';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { DotIconModule, DotMessagePipeModule, DotMessagePipe } from '@dotcms/ui';
 import { DotExperimentsCreateComponent } from '@portlets/dot-experiments/dot-experiments-list/components/dot-experiments-create/dot-experiments-create.component';
 import { DotExperimentsEmptyExperimentsComponent } from '@portlets/dot-experiments/dot-experiments-list/components/dot-experiments-empty-experiments/dot-experiments-empty-experiments.component';
 import { DotExperimentsListSkeletonComponent } from '@portlets/dot-experiments/dot-experiments-list/components/dot-experiments-list-skeleton/dot-experiments-list-skeleton.component';

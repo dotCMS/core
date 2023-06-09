@@ -9,24 +9,11 @@ import { take } from 'rxjs/operators';
 import { DotTemplateBuilderStore } from './template-builder.store';
 
 import { DotGridStackNode, DotGridStackWidget } from '../models/models';
+import { GRIDSTACK_DATA_MOCK } from '../utils/mocks';
 
 global.structuredClone = jest.fn((val) => {
     return JSON.parse(JSON.stringify(val));
 });
-
-const mockInitialState: DotGridStackWidget[] = [
-    { x: 0, y: 0, w: 12, id: uuid() },
-    { x: 0, y: 1, w: 12, id: uuid() },
-    {
-        x: 0,
-        y: 2,
-        w: 12,
-        id: uuid(),
-        subGridOpts: {
-            children: [{ x: 0, y: 0, w: 4, id: uuid() }]
-        }
-    }
-];
 
 describe('DotTemplateBuilderStore', () => {
     let service: DotTemplateBuilderStore;
@@ -39,7 +26,7 @@ describe('DotTemplateBuilderStore', () => {
         service = TestBed.inject(DotTemplateBuilderStore);
 
         // Reset the state because is manipulated by reference
-        service.init(mockInitialState);
+        service.init(GRIDSTACK_DATA_MOCK);
 
         // Get the initial state
         service.items$.pipe(take(1)).subscribe((items) => {
@@ -190,11 +177,11 @@ describe('DotTemplateBuilderStore', () => {
         });
     });
 
-    it('should update a column', () => {
+    it('should update gridStack data of a column', () => {
         const parentId = uuid();
         const [firstId, secondId, thirdId, fourthId] = [1, 2, 3, 4].map(() => uuid());
 
-        const mockInitialState = [
+        const GRIDSTACK_DATA_MOCK = [
             {
                 x: 0,
                 y: 0,
@@ -211,16 +198,14 @@ describe('DotTemplateBuilderStore', () => {
             }
         ];
 
-        service.setState({ items: mockInitialState });
+        service.setState({ items: GRIDSTACK_DATA_MOCK });
 
         const affectedColumns: DotGridStackNode[] = [
             {
                 x: 1,
                 y: 0,
                 w: 1,
-                id: firstId,
-                containers: [{ identifier: 'mock-container', uuid: uuid() }],
-                styleClass: ['mock-styles']
+                id: firstId
             },
             { x: 0, y: 0, w: 1, id: secondId },
             { x: 3, y: 0, w: 1, id: thirdId },
@@ -231,7 +216,7 @@ describe('DotTemplateBuilderStore', () => {
             parentId
         }));
 
-        service.updateColumn(affectedColumns);
+        service.updateColumnGridStackData(affectedColumns);
 
         expect.assertions(1);
         service.items$.subscribe((items) => {

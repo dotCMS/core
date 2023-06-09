@@ -10,6 +10,7 @@ import com.dotcms.publishing.manifest.ManifestBuilder;
 import com.dotcms.publishing.manifest.ManifestItem;
 
 import com.dotmarketing.util.UtilMethods;
+import com.thoughtworks.xstream.annotations.XStreamOmitField;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -59,6 +60,7 @@ public class PushPublisherConfig extends PublisherConfig {
 
 	private List<PublishingEndPoint> endpoints;
 	private boolean downloading = false;
+	@XStreamOmitField
 	private DependencyProcessor dependencyProcessor;
 	private BundleAssets bundleAssets = new BundleAssets();
 	private Set<String> excludes = new HashSet<>();
