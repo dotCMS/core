@@ -15,5 +15,5 @@ import { DotMessagePipeModule } from '@dotcms/ui';
 })
 export class TemplateBuilderActionsComponent {
     @Output() selectLayout: EventEmitter<void> = new EventEmitter();
-    @Output() selectStyles: EventEmitter<void> = new EventEmitter();
+    @Output() selectTheme: EventEmitter<void> = new EventEmitter();
 }
