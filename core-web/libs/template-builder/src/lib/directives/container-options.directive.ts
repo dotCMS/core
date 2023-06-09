@@ -47,7 +47,7 @@ export class ContainerOptionsDirective implements OnInit, OnDestroy {
 
     ngOnInit() {
         this.fetchContainerOptions('').subscribe((options) => {
-            this.control.options = options;
+            this.control.options = this.control.options || options; // avoid overwriting if they were already set
             this.defaultOptions = options;
         });
         this.onFilterSubscription = this.control.onFilter
