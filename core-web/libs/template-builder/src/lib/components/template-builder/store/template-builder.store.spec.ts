@@ -2,7 +2,7 @@ import { expect, jest, describe } from '@jest/globals';
 import { of } from 'rxjs';
 import { v4 as uuid } from 'uuid';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
 import { take } from 'rxjs/operators';
@@ -10,7 +10,7 @@ import { take } from 'rxjs/operators';
 import { DotTemplateBuilderStore } from './template-builder.store';
 
 import { DotGridStackNode, DotGridStackWidget } from '../models/models';
-import { GRIDSTACK_DATA_MOCK } from '../utils/mocks';
+import { GRIDSTACK_DATA_MOCK, MOCK_STYLE_CLASSES_FILE } from '../utils/mocks';
 
 global.structuredClone = jest.fn((val) => {
     return JSON.parse(JSON.stringify(val));
@@ -20,12 +20,16 @@ describe('DotTemplateBuilderStore', () => {
     let service: DotTemplateBuilderStore;
     let initialState: DotGridStackWidget[];
 
+    let httpTestingController: HttpTestingController;
+
     beforeEach(() => {
         TestBed.configureTestingModule({
             imports: [HttpClientTestingModule],
             providers: [DotTemplateBuilderStore]
         });
         service = TestBed.inject(DotTemplateBuilderStore);
+
+        httpTestingController = TestBed.inject(HttpTestingController);
 
         // Reset the state because is manipulated by reference
         service.init(GRIDSTACK_DATA_MOCK);
@@ -34,6 +38,10 @@ describe('DotTemplateBuilderStore', () => {
         service.items$.pipe(take(1)).subscribe((items) => {
             initialState = structuredClone(items); // To lose the reference
         });
+    });
+
+    afterEach(() => {
+        httpTestingController.verify();
     });
 
     it('should be created', () => {
@@ -242,6 +250,55 @@ describe('DotTemplateBuilderStore', () => {
             const row = items.find((item) => item.id === parentRow.id);
 
             expect(row?.subGridOpts?.children).not.toContain(columnToDelete);
+        });
+    });
+
+    it('should fetch style classes file', () => {
+        service.getStyleClassesFromFile();
+
+        const req = httpTestingController.expectOne('/application/templates/classes.json');
+
+        expect(req.request.method).toEqual('GET');
+
+        req.flush(MOCK_STYLE_CLASSES_FILE);
+
+        service.state$.subscribe((state) => {
+            expect(state.styleClasses).toEqual(
+                MOCK_STYLE_CLASSES_FILE.classes.map((klass) => ({ klass }))
+            );
+        });
+    });
+
+    it('should fetch style classes file only once', () => {
+        service.getStyleClassesFromFile();
+
+        const req = httpTestingController.expectOne('/application/templates/classes.json');
+
+        expect(req.request.method).toEqual('GET');
+
+        req.flush(MOCK_STYLE_CLASSES_FILE);
+
+        // This should not throw an error
+        service.getStyleClassesFromFile();
+
+        service.state$.subscribe((state) => {
+            expect(state.styleClasses).toEqual(
+                MOCK_STYLE_CLASSES_FILE.classes.map((klass) => ({ klass }))
+            );
+        });
+    });
+
+    it('should set styleClasses to empty array if fetch style classes fails', () => {
+        service.getStyleClassesFromFile();
+
+        const req = httpTestingController.expectOne('/application/templates/classes.json');
+
+        expect(req.request.method).toEqual('GET');
+
+        req.flush("This file doesn't exist", { status: 404, statusText: 'Not Found' });
+
+        service.state$.subscribe((state) => {
+            expect(state.styleClasses).toEqual([]);
         });
     });
 
