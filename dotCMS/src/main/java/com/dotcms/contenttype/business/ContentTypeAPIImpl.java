@@ -14,6 +14,8 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
+import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.RelationshipFieldBuilder;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
@@ -40,6 +42,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
 import com.dotmarketing.quartz.job.ContentTypeDeleteJob;
 import com.dotmarketing.quartz.job.IdentifierDateJob;
@@ -59,6 +62,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -535,7 +539,11 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
         if (null == newField) {
 
             newField = APILocator.getContentTypeFieldAPI()
-                    .save(FieldBuilder.builder(sourceField).sortOrder(sourceField.sortOrder()).contentTypeId(newContentType.id()).id(null).build(), user);
+                    .save(FieldBuilder.builder(generateNewRelationshipFiled(sourceField, copyContentTypeBean.getName()))
+                            .sortOrder(sourceField.sortOrder())
+                            .contentTypeId(newContentType.id())
+                            .id(null)
+                            .build(), user);
         } else {
 
             // if contains we just need to sort based on the source order
@@ -554,6 +562,20 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     }
 
     return newContentType;
+  }
+
+  private Field generateNewRelationshipFiled(final Field sourceField, final String contentTypeName) {
+
+      if (sourceField instanceof RelationshipField) {
+
+        final RelationshipField relationshipField = (RelationshipField) sourceField;
+
+        return RelationshipFieldBuilder.builder(relationshipField)
+                .relationType(relationshipField.relationType() + "-" + contentTypeName)
+                .build();
+      }
+
+        return sourceField;
   }
 
   @WrapInTransaction
