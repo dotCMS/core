@@ -285,6 +285,29 @@ describe('DotExperimentsConfigurationStore', () => {
             });
         });
 
+        it('should edit a description of an experiment', (done) => {
+            const newDescription = 'new description';
+
+            dotExperimentsService.setDescription.and.callThrough().and.returnValue(
+                of({
+                    ...EXPERIMENT_MOCK,
+                    description: newDescription
+                })
+            );
+
+            store.loadExperiment(EXPERIMENT_MOCK.id);
+
+            store.setDescription({
+                experiment: EXPERIMENT_MOCK,
+                data: { description: newDescription }
+            });
+
+            store.state$.subscribe(({ experiment }) => {
+                expect(experiment.description).toEqual(newDescription);
+                done();
+            });
+        });
+
         it('should delete a variant from an experiment', (done) => {
             const variants: Variant[] = [
                 { id: 'DEFAULT', name: 'DEFAULT', weight: 50, promoted: false },

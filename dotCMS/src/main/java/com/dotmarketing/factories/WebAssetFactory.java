@@ -535,7 +535,7 @@ public class WebAssetFactory {
 	        	FactoryLocator.getTemplateFactory().save(Template.class.cast(workingwebasset));
 			} else {
 				// persists the webasset
-				HibernateUtil.saveOrUpdate(workingwebasset);
+				HibernateUtil.merge(workingwebasset);
 			}
 
 			final Map webAssetMap = currWebAsset.getMap();
