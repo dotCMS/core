@@ -61,15 +61,15 @@ describe('AddStyleClassesDialogComponent', () => {
     it('should have an autocomplete component', () => {
         expect(spectator.query('p-autocomplete')).toBeTruthy();
     });
+
     it('should have an update button', () => {
         expect(spectator.query(byTestId('update-btn'))).toBeTruthy();
     });
-    it('should trigger filterMock when typing on the input', () => {
+
+    it('should trigger filterMock when focusing on the input', () => {
         const filterMock = jest.spyOn(component, 'filterClasses');
 
         const input = spectator.query('#my-autocomplete') as HTMLInputElement;
-
-        input.value = 'd-none';
 
         spectator.click(input);
 
@@ -79,6 +79,21 @@ describe('AddStyleClassesDialogComponent', () => {
     });
 
     it('should trigger addClassByCommaOrSpace when typing on the input and adding comma', () => {
+        const addMock = jest.spyOn(component, 'addClassByCommaOrSpace');
+
+        const input = spectator.query('#my-autocomplete') as HTMLInputElement;
+
+        input.value = 'd-none,';
+
+        spectator.click(input);
+
+        spectator.detectChanges();
+
+        expect(addMock).toHaveBeenCalledWith('d-none,');
+        expect(component.selectedClasses).toContainEqual({ klass: 'd-none' });
+    });
+
+    it('should trigger addClassByCommaOrSpace when typing on the input and adding space', () => {
         const addMock = jest.spyOn(component, 'addClassByCommaOrSpace');
 
         const input = spectator.query('#my-autocomplete') as HTMLInputElement;
