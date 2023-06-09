@@ -5,13 +5,13 @@
 }
 
 .dialog__auto-complete-container {
-    display: flex;
-    flex-direction: column;
     padding: 0.375rem $spacing-7 $spacing-1;
+    overflow: auto;
+    max-height: 5.375rem;
 
     .auto-complete-container__title {
         margin: 0;
-        margin-bottom: 0.375rem;
+        padding-bottom: 0.375rem;
         color: $black;
     }
 }
@@ -25,11 +25,29 @@
 ::ng-deep {
     .p-autocomplete-multiple-container {
         gap: $spacing-1;
+        margin: 0;
 
         .p-autocomplete.p-autocomplete-multiple
             .p-autocomplete-multiple-container
             li.p-autocomplete-token {
             margin-right: 0;
+        }
+    }
+
+    .p-dialog .p-dialog-content {
+        padding: 0;
+    }
+
+    .p-dialog {
+        max-height: 16.375rem;
+
+        .p-dialog-header {
+            padding: 1.75rem $spacing-5;
+
+            .p-dialog-title {
+                font-size: $font-size-xl;
+                line-height: 31px;
+            }
         }
     }
 }
