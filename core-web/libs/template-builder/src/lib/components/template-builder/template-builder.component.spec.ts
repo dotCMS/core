@@ -110,4 +110,14 @@ describe('TemplateBuilderComponent', () => {
         spectator.component.deleteRow('123');
         expect(removeRowMock).toHaveBeenCalledWith('123');
     });
+
+    it('should call editRowStyleClasses from store when clicking on row-style-class-button', () => {
+        const editRowStyleClassesMock = jest.spyOn(spectator.component, 'editRowStyleClasses');
+
+        const editRowStyleClassesButton = spectator.query(byTestId('row-style-class-button'));
+
+        spectator.dispatchFakeEvent(editRowStyleClassesButton, 'onClick');
+
+        expect(editRowStyleClassesMock).toHaveBeenCalled();
+    });
 });
