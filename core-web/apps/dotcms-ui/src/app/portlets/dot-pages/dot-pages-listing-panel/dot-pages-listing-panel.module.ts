@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
@@ -13,8 +14,8 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
-import { DotMessagePipeModule } from '@dotcms/app/view/pipes/dot-message/dot-message-pipe.module';
 import { DotRelativeDatePipe } from '@dotcms/app/view/pipes/dot-relative-date/dot-relative-date.pipe';
+import { DotMessagePipeModule } from '@dotcms/ui';
 
 import { DotPagesListingPanelComponent } from './dot-pages-listing-panel.component';
 
@@ -23,6 +24,7 @@ import { DotPagesListingPanelComponent } from './dot-pages-listing-panel.compone
         ButtonModule,
         CheckboxModule,
         CommonModule,
+        FormsModule,
         DotAutofocusModule,
         DotMessagePipeModule,
         DotRelativeDatePipe,

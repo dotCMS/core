@@ -16,6 +16,8 @@ import java.util.Map;
  *
  */
 public class VariantResults {
+
+    private final float weight;
     ;
     private String variantName;
     private String variantDescription;
@@ -26,13 +28,14 @@ public class VariantResults {
 
     public VariantResults(final String variantName, final String description, final long multiBySession,
             final UniqueBySessionResume uniqueBySession, final Map<String, ResultResumeItem> details,
-            final long totalPageViews) {
+            final long totalPageViews, float weight) {
         this.variantName = variantName;
         this.multiBySession = multiBySession;
         this.uniqueBySession = uniqueBySession;
         this.details = details;
         this.variantDescription = description;
         this.totalPageViews = totalPageViews;
+        this.weight = weight;
     }
 
     public String getVariantDescription() {
@@ -57,6 +60,14 @@ public class VariantResults {
 
     public long getTotalPageViews() {
         return totalPageViews;
+    }
+
+    public float weight() {
+        return weight;
+    }
+
+    public float getWeight() {
+        return weight;
     }
 
     public static class UniqueBySessionResume {

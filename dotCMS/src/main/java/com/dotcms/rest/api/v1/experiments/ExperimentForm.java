@@ -1,15 +1,25 @@
 package com.dotcms.rest.api.v1.experiments;
 
+import static com.dotcms.util.CollectionsUtils.map;
+
+import com.dotcms.experiments.model.AbstractGoals;
+import com.dotcms.experiments.model.Experiment;
+import com.dotcms.experiments.model.Goal;
 import com.dotcms.experiments.model.Goals;
 import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.experiments.model.TargetingCondition;
 import com.dotcms.experiments.model.TrafficProportion;
 import com.dotcms.repackage.javax.validation.constraints.Size;
 import com.dotcms.rest.api.Validated;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.dotcms.util.JsonUtil;
 import com.dotmarketing.business.APILocator;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * From to create/update an {@link com.dotcms.experiments.model.Experiment} from REST
@@ -136,7 +146,7 @@ public class ExperimentForm extends Validated {
             return this;
         }
 
-        public Builder withGoals(Goals goals) {
+        public Builder withGoals(final Goals goals) {
             this.goals = goals;
             return this;
         }
@@ -149,4 +159,6 @@ public class ExperimentForm extends Validated {
     private void validateScheduling(final Scheduling scheduling) {
         APILocator.getExperimentsAPI().validateScheduling(scheduling);
     }
+
+
 }

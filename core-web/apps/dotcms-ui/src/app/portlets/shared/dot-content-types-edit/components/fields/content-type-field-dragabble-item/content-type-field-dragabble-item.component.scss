@@ -5,116 +5,124 @@
     background: $white;
     cursor: move;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    align-items: center;
+    gap: $spacing-1;
     height: $content-type-field-height;
     transition: box-shadow $basic-speed;
+    border-radius: $border-radius-md;
+    border: 1px solid $color-palette-gray-400;
+    margin-bottom: $spacing-1;
 
     &:hover {
         box-shadow: $md-shadow-5;
         z-index: 1;
     }
 
-    &:last-child {
-        margin-bottom: 0;
-    }
-
     &.gu-transit {
         opacity: 0.4;
     }
-}
 
-.field__properties {
-    background: $color-palette-primary-100;
-    padding: $spacing-2 $spacing-3;
-    display: flex;
-    align-items: center;
-    min-height: 4.5625rem;
-
-    dot-icon {
-        margin-right: $spacing-1;
-        color: $color-palette-gray-800;
+    .field-drag {
+        color: $color-palette-gray-400;
     }
 
-    .field__info {
+    .field-icon {
+        height: $spacing-7;
+        min-width: $spacing-7;
+        background-color: $color-palette-secondary-200;
         display: flex;
-        flex-direction: column;
-        flex-grow: 1;
-        overflow: hidden;
-
-        .field__label {
-            color: $color-palette-gray-700;
-            font-size: $font-size-xs;
-            min-height: $font-size-xs;
-        }
-
-        .field__name {
-            @include truncate-text;
-            color: $black;
-            font-size: $font-size-md;
-        }
-    }
-
-    .field__actions {
-        display: flex;
-        flex-shrink: 0;
-        margin-left: $spacing-1;
-
+        justify-content: center;
+        align-items: center;
+        border-radius: 50%;
         ::ng-deep {
-            .p-button {
-                background-color: transparent;
-                &:disabled {
-                    background-color: transparent;
-                }
+            i {
+                color: $color-palette-secondary-500;
             }
         }
     }
 }
 
-.field__attr__container {
-    padding: $spacing-1 $spacing-3 $spacing-1;
+.field-properties {
     display: flex;
     flex-direction: column;
-    background: $white;
-    z-index: 1;
-    border-radius: $border-radius-sm;
     overflow: hidden;
-    gap: $spacing-1;
+    padding-right: $spacing-1;
+    flex-grow: 1;
 
-    &.open {
-        overflow: visible;
-    }
-
-    .field__attr__group {
+    .field-properties__info-container,
+    .field-properties__actions-container {
+        height: $spacing-4;
         display: flex;
+        align-items: center;
         justify-content: space-between;
     }
 
-    .field__attr {
-        display: flex;
-        gap: $spacing-1;
+    .field-properties__info-container {
+        .info-container__name {
+            @include truncate-text;
+            color: #000;
+            font-size: $font-size-md;
+        }
     }
 
-    .small {
-        flex-direction: column;
-    }
-
-    i {
-        height: fit-content;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: $color-palette-primary-500;
-        font-size: $font-size-md;
-
-        &.pi-angle-down {
-            margin-top: 8px;
-            align-self: flex-start;
+    .field-properties__actions-container {
+        dot-copy-link {
+            ::ng-deep {
+                .p-button {
+                    padding-left: 0px;
+                }
+            }
         }
 
-        &.pi-angle-up {
-            margin-bottom: 8px;
-            align-self: flex-end;
+        p-button.open {
+            ::ng-deep .p-button {
+                background-color: $color-palette-primary-200;
+            }
+        }
+
+        .field-properties__attributes-container {
+            display: flex;
+            gap: $spacing-3;
+            font-size: $font-size-sm;
+
+            .attributes-container__field-name {
+                color: $color-palette-gray-900;
+            }
+            .attributes-container__attribute {
+                color: $color-palette-gray-700;
+            }
+        }
+    }
+}
+
+::ng-deep .contentType__overlayPanel {
+    height: fit-content;
+    width: fit-content;
+    max-height: 3.875rem;
+    border-radius: $border-radius-md;
+    box-shadow: $md-shadow-3;
+
+    .p-overlaypanel-content {
+        padding: $spacing-1 $spacing-3;
+
+        .field-properties__overlay-attributes-container {
+            display: flex;
+            flex-direction: column;
+            color: $black;
+
+            p {
+                margin: 0;
+            }
+
+            .overlay-attributes-container__field-name {
+                font-weight: 700;
+                line-height: 1.125rem;
+            }
+
+            .overlay-attributes-container__attributes-text {
+                margin-top: $spacing-1;
+            }
         }
     }
 }

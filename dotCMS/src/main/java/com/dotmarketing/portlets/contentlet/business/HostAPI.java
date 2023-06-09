@@ -200,7 +200,8 @@ public interface HostAPI {
 	List<Host> findAll(User user, int limit, int offset, String sortBy, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
     /**
-     * Returns the complete list of Sites in your dotCMS repository retrieved <b>directly from the data source</b>.
+     * Returns the complete list of Sites in your dotCMS repository retrieved <b>directly from the data source</b>,
+	 * including the System Host.
      *
      * @param user                 The {@link User} that is calling this method.
      * @param respectFrontendRoles If the User's front-end roles need to be taken into account in order to perform this
@@ -213,6 +214,23 @@ public interface HostAPI {
      *                              operation.
      */
     List<Host> findAllFromDB(final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Returns the complete list of Sites in your dotCMS repository retrieved <b>directly from the data source</b>. This
+	 * method allows you to <b>EXCLUDE</b> the System Host from the result list.
+	 *
+	 * @param user                 The {@link User} that is calling this method.
+	 * @param includeSystemHost    If the System Host must be included in the results, set to {@code true}.
+	 * @param respectFrontendRoles If the User's front-end roles need to be taken into account in order to perform this
+	 *                             operation, set to {@code true}. Otherwise, set to {@code false}.
+	 *
+	 * @return The list of {@link Host} objects.
+	 *
+	 * @throws DotDataException     An error occurred when accessing the data source.
+	 * @throws DotSecurityException The specified User does not have the required permissions to perform this
+	 *                              operation.
+	 */
+	List<Host> findAllFromDB(final User user, final boolean includeSystemHost, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
     /**
      * Returns the complete list of Sites in your dotCMS repository retrieved from the cache. If no data is currently
@@ -461,6 +479,8 @@ public interface HostAPI {
      *  <li>{@code showStopped}: Determines if stopped Sites are returned in the result set.</li>
      *  <li>{@code showSystemHost}: Determines whether the System Host must be returned or not.</li>
      * </ol>
+	 * It's very important to note that, if the {@code showStopped} parameter is set to {@code true}, then all archived
+	 * Sites will also be returned because they're considered stopped Sites.
      *
      * @param filter               The initial part or full name of the Site you need to look up.
      * @param showStopped          If stopped Sites must be returned, set to {@code true}. Otherwise, se to {@code

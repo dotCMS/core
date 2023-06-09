@@ -23,13 +23,13 @@ import {
     PaginatorService
 } from '@dotcms/data-access';
 import { CoreWebService, SiteService } from '@dotcms/dotcms-js';
+import { DotMessagePipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     MockDotMessageService,
     mockDotThemes,
     mockSites
 } from '@dotcms/utils-testing';
-import { DotMessagePipe } from '@pipes/dot-message/dot-message.pipe';
 
 import { DotTemplateCreateEditComponent } from './dot-template-create-edit.component';
 import { DotTemplatePropsModule } from './dot-template-props/dot-template-props.module';

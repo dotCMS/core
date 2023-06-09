@@ -12,31 +12,32 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { ConfirmPopupModule } from 'primeng/confirmpopup';
 import { SkeletonModule } from 'primeng/skeleton';
 
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
-import { DotMessagePipe } from '@dotcms/app/view/pipes';
 import { DotMessageService } from '@dotcms/data-access';
-import { ComponentStatus } from '@dotcms/dotcms-models';
-import { DotIconModule } from '@dotcms/ui';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { ComponentStatus, DotExperimentStatusList } from '@dotcms/dotcms-models';
+import { DotIconModule, DotMessagePipeModule, DotMessagePipe } from '@dotcms/ui';
 import { DotExperimentsCreateComponent } from '@portlets/dot-experiments/dot-experiments-list/components/dot-experiments-create/dot-experiments-create.component';
 import { DotExperimentsEmptyExperimentsComponent } from '@portlets/dot-experiments/dot-experiments-list/components/dot-experiments-empty-experiments/dot-experiments-empty-experiments.component';
 import { DotExperimentsListSkeletonComponent } from '@portlets/dot-experiments/dot-experiments-list/components/dot-experiments-list-skeleton/dot-experiments-list-skeleton.component';
-import { DotExperimentsListTableComponent } from '@portlets/dot-experiments/dot-experiments-list/components/dot-experiments-list-table/dot-experiments-list-table.component';
 import { DotExperimentsStatusFilterComponent } from '@portlets/dot-experiments/dot-experiments-list/components/dot-experiments-status-filter/dot-experiments-status-filter.component';
 import {
     DotExperimentsListStore,
     VmListExperiments
 } from '@portlets/dot-experiments/dot-experiments-list/store/dot-experiments-list-store';
+import { DotExperimentsStore } from '@portlets/dot-experiments/dot-experiments-shell/store/dot-experiments.store';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import {
     ActivatedRouteListStoreMock,
+    DotExperimentsStoreMock,
     getExperimentAllMocks,
     getExperimentMock
 } from '@portlets/dot-experiments/test/mocks';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
+import { DotFormatDateService } from '@services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotExperimentsListComponent } from './dot-experiments-list.component';
@@ -51,7 +52,6 @@ describe('ExperimentsListComponent', () => {
     let dotExperimentsEmptyExperimentsComponent: DotExperimentsEmptyExperimentsComponent;
     let dotExperimentsListSkeletonComponent: DotExperimentsListSkeletonComponent;
 
-    let dotExperimentsService: SpyObject<DotExperimentsService>;
     let router: SpyObject<Router>;
 
     const createComponent = createComponentFactory({
@@ -63,23 +63,26 @@ describe('ExperimentsListComponent', () => {
             UiDotIconButtonModule,
             DotExperimentsCreateComponent,
             DotDynamicDirective,
-            ButtonModule
+            ButtonModule,
+            DotExperimentsStatusFilterComponent,
+            DotExperimentsEmptyExperimentsComponent,
+            DotExperimentsListSkeletonComponent,
+            ConfirmPopupModule
         ],
         component: DotExperimentsListComponent,
         componentProviders: [DotExperimentsListStore],
-        declarations: [
-            DotExperimentsStatusFilterComponent,
-            DotExperimentsListSkeletonComponent,
-            DotExperimentsEmptyExperimentsComponent,
-            DotExperimentsListTableComponent
-        ],
+
         providers: [
+            ConfirmationService,
+            mockProvider(DotExperimentsStore, DotExperimentsStoreMock),
             mockProvider(Router),
             mockProvider(DotMessagePipe),
             mockProvider(DotMessageService),
-            mockProvider(DotExperimentsService),
+            mockProvider(DotFormatDateService),
+            mockProvider(DotExperimentsService, {
+                getAll: () => of(EXPERIMENT_MOCKS)
+            }),
             mockProvider(MessageService),
-            mockProvider(ConfirmationService),
             mockProvider(DotHttpErrorManagerService),
             {
                 provide: ActivatedRoute,
@@ -95,16 +98,12 @@ describe('ExperimentsListComponent', () => {
         });
 
         router = spectator.inject(Router);
-        dotExperimentsService = spectator.inject(DotExperimentsService);
-        dotExperimentsService.getAll.and.returnValue(of(EXPERIMENT_MOCKS));
     });
 
     it('should show the skeleton component when is loading', () => {
         const vmListExperimentsMock$: VmListExperiments = {
-            page: {
-                pageId: '',
-                pageTitle: ''
-            },
+            pageId: '',
+            pageTitle: '',
             experiments: [],
             filterStatus: [],
             experimentsFiltered: [],
@@ -123,10 +122,8 @@ describe('ExperimentsListComponent', () => {
 
     it('should show the empty component when is not loading and no experiments', () => {
         const vmListExperimentsMock$: VmListExperiments = {
-            page: {
-                pageId: '',
-                pageTitle: ''
-            },
+            pageId: '',
+            pageTitle: '',
             experiments: [],
             filterStatus: [],
             experimentsFiltered: [],
@@ -147,10 +144,8 @@ describe('ExperimentsListComponent', () => {
 
     it('should show the filters component and add experiment button exist when has experiments', () => {
         const vmListExperimentsMock$: VmListExperiments = {
-            page: {
-                pageId: '1111',
-                pageTitle: 'title'
-            },
+            pageId: '',
+            pageTitle: '',
             experiments: getExperimentAllMocks(),
             filterStatus: [],
             experimentsFiltered: [],
@@ -171,17 +166,109 @@ describe('ExperimentsListComponent', () => {
     });
 
     it('should show the sidebar when click ADD EXPERIMENT', () => {
+        spectator.detectChanges();
         spectator.component.addExperiment();
         spectator.detectComponentChanges();
 
         expect(spectator.query(DotExperimentsCreateComponent)).toExist();
     });
 
-    it('should go to Report Container', () => {
+    it('should go to Configuration Container', () => {
         spectator.detectComponentChanges();
-        spectator.component.goToViewExperimentReport(EXPERIMENT_MOCK);
+        spectator.component.gotToConfigurationAction(EXPERIMENT_MOCK);
         expect(router.navigate).toHaveBeenCalledWith(
-            ['/edit-page/experiments/reports/', EXPERIMENT_MOCK.id],
+            [
+                '/edit-page/experiments/',
+                EXPERIMENT_MOCK.pageId,
+                EXPERIMENT_MOCK.id,
+                'configuration'
+            ],
+            {
+                queryParams: {
+                    mode: null,
+                    variantName: null,
+                    experimentId: null
+                },
+                queryParamsHandling: 'merge'
+            }
+        );
+    });
+
+    it('should go to report Container if the experiment status is RUNNING', () => {
+        spectator.detectComponentChanges();
+        spectator.component.goToContainerAction({
+            ...EXPERIMENT_MOCK,
+            status: DotExperimentStatusList.RUNNING
+        });
+        expect(router.navigate).toHaveBeenCalledWith(
+            ['/edit-page/experiments/', EXPERIMENT_MOCK.pageId, EXPERIMENT_MOCK.id, 'reports'],
+            {
+                queryParams: {
+                    mode: null,
+                    variantName: null,
+                    experimentId: null
+                },
+                queryParamsHandling: 'merge'
+            }
+        );
+    });
+
+    it('should go to report Container if the experiment status is ENDED', () => {
+        spectator.detectComponentChanges();
+        spectator.component.goToContainerAction({
+            ...EXPERIMENT_MOCK,
+            status: DotExperimentStatusList.ENDED
+        });
+        expect(router.navigate).toHaveBeenCalledWith(
+            ['/edit-page/experiments/', EXPERIMENT_MOCK.pageId, EXPERIMENT_MOCK.id, 'reports'],
+            {
+                queryParams: {
+                    mode: null,
+                    variantName: null,
+                    experimentId: null
+                },
+                queryParamsHandling: 'merge'
+            }
+        );
+    });
+
+    it('should go to configuration Container if the experiment status is DRAFT', () => {
+        spectator.detectComponentChanges();
+        spectator.component.goToContainerAction({
+            ...EXPERIMENT_MOCK,
+            status: DotExperimentStatusList.DRAFT
+        });
+        expect(router.navigate).toHaveBeenCalledWith(
+            [
+                '/edit-page/experiments/',
+                EXPERIMENT_MOCK.pageId,
+                EXPERIMENT_MOCK.id,
+                'configuration'
+            ],
+            {
+                queryParams: {
+                    mode: null,
+                    variantName: null,
+                    experimentId: null
+                },
+                queryParamsHandling: 'merge'
+            }
+        );
+    });
+
+    it('should go to configuration Container if the experiment status is SCHEDULED', () => {
+        spectator.detectComponentChanges();
+        spectator.component.goToContainerAction({
+            ...EXPERIMENT_MOCK,
+            status: DotExperimentStatusList.SCHEDULED
+        });
+        expect(router.navigate).toHaveBeenCalledWith(
+            [
+                '/edit-page/experiments/',
+                EXPERIMENT_MOCK.pageId,
+                EXPERIMENT_MOCK.id,
+                'configuration'
+            ],
             {
                 queryParams: {
                     mode: null,

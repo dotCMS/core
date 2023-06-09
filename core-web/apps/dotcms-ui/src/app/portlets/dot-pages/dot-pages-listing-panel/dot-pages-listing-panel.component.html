@@ -8,15 +8,19 @@
         #table
         [contextMenu]="cm"
         [value]="vm.pages.items"
+        [totalRecords]="vm.pages.total"
         [loading]="vm.isPagesLoading"
-        [scrollable]="true"
-        [virtualScroll]="true"
-        [virtualScrollItemSize]="47"
         [lazy]="true"
+        [paginator]="true"
+        [rows]="40"
+        [sortOrder]="-1"
+        [showPageLinks]="false"
+        [showCurrentPageReport]="true"
+        [showFirstLastIcon]="false"
         (onLazyLoad)="loadPagesLazy($event)"
         (onRowSelect)="onRowSelect($event)"
         selectionMode="single"
-        scrollHeight="flex"
+        sortField="modDate"
     >
         <ng-template pTemplate="caption">
             <div class="flex justify-content-between dot-pages-listing-header">
@@ -24,6 +28,7 @@
                     <input
                         class="dot-pages-listing-header__filter-input"
                         [placeholder]="'Type-To-Search' | dm"
+                        [value]="vm.keywordValue"
                         (input)="filterData($event.target.value)"
                         data-testid="dot-pages-listing-header__keyword-input"
                         type="text"
@@ -32,10 +37,12 @@
                     />
                     <p-dropdown
                         class="dot-pages-listing-header__language-input"
+                        [(ngModel)]="vm.languageIdValue"
                         [options]="vm.languageOptions"
                         (onChange)="setPagesLanguage($event.value)"
                     ></p-dropdown>
                     <p-checkbox
+                        [(ngModel)]="vm.showArchivedValue"
                         [binary]="true"
                         [label]="'Show-Archived' | dm"
                         (onChange)="setPagesArchived($event.checked)"
@@ -75,7 +82,6 @@
         </ng-template>
         <ng-template pTemplate="body" let-rowData let-rowIndex="rowIndex">
             <tr
-                class="dot-pages-listing-content__row"
                 id="tableRow-{{ rowIndex }}"
                 [pSelectableRow]="rowData"
                 (contextmenu)="
@@ -85,6 +91,7 @@
                         item: rowData
                     })
                 "
+                style="height: 47px"
                 pContextMenuRow
             >
                 <td>{{ rowData['title'] }}</td>
@@ -127,17 +134,6 @@
                         size="32"
                     ></dot-icon-button>
                 </td>
-            </tr>
-        </ng-template>
-        <ng-template pTemplate="loadingbody">
-            <tr>
-                <td><p-skeleton [ngStyle]="{ width: '25%' }"></p-skeleton></td>
-                <td><p-skeleton [ngStyle]="{ width: '20%' }"></p-skeleton></td>
-                <td><p-skeleton [ngStyle]="{ width: '12%' }"></p-skeleton></td>
-                <td><p-skeleton [ngStyle]="{ width: '12%' }"></p-skeleton></td>
-                <td><p-skeleton [ngStyle]="{ width: '12%' }"></p-skeleton></td>
-                <td><p-skeleton [ngStyle]="{ width: '14%' }"></p-skeleton></td>
-                <td><p-skeleton [ngStyle]="{ width: '5%' }"></p-skeleton></td>
             </tr>
         </ng-template>
         <ng-template pTemplate="emptymessage">

@@ -54,6 +54,7 @@ import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import com.tngtech.junit.dataprovider.format.DataProviderTestNameFormatter;
+import io.vavr.control.Try;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -95,6 +96,12 @@ public class ESMappingUtilHelperTest {
         fieldAPI = APILocator.getContentTypeFieldAPI();
         relationshipAPI = APILocator.getRelationshipAPI();
         language = APILocator.getLanguageAPI().getDefaultLanguage();
+
+        final ContentType currentCalendarEventType = Try.of(()->contentTypeAPI.find("calendarEvent")).getOrNull();
+        if (null != currentCalendarEventType) {
+
+            contentTypeAPI.delete(currentCalendarEventType);
+        }
     }
 
     public static class PlusTestNameFormatter implements DataProviderTestNameFormatter {
