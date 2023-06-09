@@ -1,9 +1,10 @@
 @use "variables" as *;
 
 :host {
-    display: flex;
     min-width: 940px;
     height: 100%;
+    overflow: auto;
+    display: block;
 }
 
 .dot-pages__container {

@@ -106,6 +106,14 @@ describe('DotListingDataTableComponent', () => {
     let enabledItems;
     let disabledItems;
     let coreWebService: CoreWebService;
+    const favoritePagesItem = {
+        field1: 'item7-value1',
+        field2: 'item7-value2',
+        field3: 'item7-value3',
+        nEntries: 'item1-value4',
+        variable: 'dotFavoritePage',
+        system: true
+    };
 
     beforeEach(() => {
         const messageServiceMock = new MockDotMessageService({
@@ -562,6 +570,16 @@ describe('DotListingDataTableComponent', () => {
         hostFixture.detectChanges();
         const noResults = de.query(By.css('[data-testid="listing-datatable__empty"]'));
         expect(noResults.nativeElement.innerText).toEqual('No Results Found');
+    }));
+
+    it('should hide entries for system content types', fakeAsync(() => {
+        setRequestSpy([...items, favoritePagesItem]);
+        hostFixture.detectChanges();
+        tick(1);
+        hostFixture.detectChanges();
+        const row = de.query(By.css('[data-testId="row-dotFavoritePage"]'));
+        const entriesColumn = row.query(By.css('[data-testId="nEntries"]'));
+        expect(entriesColumn.nativeElement.textContent).toBeFalsy();
     }));
 
     function setRequestSpy(response: any): void {
