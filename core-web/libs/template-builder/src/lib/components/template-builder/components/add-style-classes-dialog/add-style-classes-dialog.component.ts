@@ -65,17 +65,19 @@ export class AddStyleClassesDialogComponent implements OnInit, AfterViewInit {
             return;
         }
 
-        for (let i = 0; i < this.classes.length; i++) {
-            const currentClass = this.classes[i];
-            if (
-                currentClass.klass.toLowerCase().indexOf(query.toLowerCase()) == 0 &&
-                !this.selectedClasses.find(({ klass }) => klass === currentClass.klass)
-            ) {
-                filtered.push(currentClass);
-            }
+        for (const classObj of this.classes) {
+            const queryLowerCased = query.toLowerCase();
+            const klassLowerCased = classObj.klass.toLowerCase();
+
+            const isKlassStartsWithQuery = klassLowerCased.startsWith(queryLowerCased);
+            const isKlassAlreadySelected = this.selectedClasses.some(
+                ({ klass }) => klass === classObj.klass
+            );
+
+            if (isKlassStartsWithQuery && !isKlassAlreadySelected) filtered.push(classObj);
         }
 
-        if (query.trim().length > 0 && !filtered.length) filtered.unshift({ klass: query.trim() });
+        if (query.trim().length > 0 && !filtered.length) filtered.push({ klass: query.trim() });
 
         this.filteredClasses = filtered;
     }
