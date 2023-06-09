@@ -10,13 +10,19 @@ import { DotIconModule } from '@dotcms/ui';
 import { TemplateBuilderRowComponent } from './template-builder-row.component';
 
 import { DOT_MESSAGE_SERVICE_TB_MOCK } from '../../utils/mocks';
+import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-confirm-dialog.component';
 
 export default {
     title: 'Components/Row',
     component: TemplateBuilderRowComponent,
     decorators: [
         moduleMetadata({
-            imports: [BrowserAnimationsModule, DotIconModule, ButtonModule],
+            imports: [
+                DotIconModule,
+                ButtonModule,
+                RemoveConfirmDialogComponent,
+                BrowserAnimationsModule
+            ],
             providers: [
                 {
                     provide: DotMessageService,

@@ -1,3 +1,1 @@
-<div class="background-columns" [ngStyle]="{ gap: gridStackGap }">
-    <div class="column" *ngFor="let _ of columnList" data-testClass="column"></div>
-</div>
+<div class="column grid-stack-item" gs-w="1" *ngFor="let _ of columnList" data-testId="column"></div>
