@@ -9,6 +9,8 @@ import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { StyleClassModel } from '../../models/models';
 
+const COMMA_SPACES_REGEX = /(,|\s)(.*)/;
+
 @Component({
     selector: 'dotcms-add-style-classes-dialog',
     standalone: true,
@@ -59,7 +61,7 @@ export class AddStyleClassesDialogComponent implements OnInit, AfterViewInit {
     filterClasses({ query }: { query: string }): void {
         const filtered: StyleClassModel[] = [];
 
-        if ((query.includes(',') || query.includes(' ')) && query.trim().length > 0) {
+        if (query.trim().length && (query.includes(',') || query.includes(' '))) {
             this.addClassByCommaOrSpace(query);
 
             return;
@@ -74,10 +76,14 @@ export class AddStyleClassesDialogComponent implements OnInit, AfterViewInit {
                 ({ klass }) => klass === classObj.klass
             );
 
-            if (isKlassStartsWithQuery && !isKlassAlreadySelected) filtered.push(classObj);
+            if (isKlassStartsWithQuery && !isKlassAlreadySelected) {
+                filtered.push(classObj);
+            }
         }
 
-        if (query.trim().length > 0 && !filtered.length) filtered.push({ klass: query.trim() });
+        if (query.trim().length && !filtered.length) {
+            filtered.push({ klass: query.trim() });
+        }
 
         this.filteredClasses = filtered;
     }
@@ -90,7 +96,7 @@ export class AddStyleClassesDialogComponent implements OnInit, AfterViewInit {
      */
     addClassByCommaOrSpace(query: string): void {
         // Removes all the chars after the comma or space
-        query = query.replace(/(,|\s)(.*)/, '');
+        query = query.replace(COMMA_SPACES_REGEX, '');
 
         this.selectedClasses.push({ klass: query });
 
