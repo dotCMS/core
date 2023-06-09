@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "31592fc3-36bb-41de-b415-146e43eb4d48",
+		"_postman_id": "59470c19-2965-4d11-b142-115797e38fa9",
 		"name": "Site Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "27636414"
@@ -440,15 +440,15 @@
 									"",
 									"    // Loop through each entity",
 									"    for (var i = 0; i < entity.length; i++) {",
-									"        var aliases = entity[i].aliases;",
+									"        var title = entity[i].title;",
 									"",
 									"        // Check if the aliases array contains the value of the stopped alias",
-									"        if (aliases.includes(stopped)) {",
+									"        if (title.includes(stopped)) {",
 									"            foundStopped = true;",
 									"        }",
 									"",
 									"        // Check if the aliases array contains the value of the live alias",
-									"        if (aliases.includes(live)) {",
+									"        if (title.includes(live)) {",
 									"            foundLive = true;",
 									"        }",
 									"",
