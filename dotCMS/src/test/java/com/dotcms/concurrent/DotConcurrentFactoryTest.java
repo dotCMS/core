@@ -6,10 +6,12 @@ import com.dotcms.content.elasticsearch.business.ElasticReadOnlyCommand;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.json.JSONException;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -440,6 +442,31 @@ public class DotConcurrentFactoryTest extends UnitTestBase {
         
         // all of the jobs have been run
         assert(aInt.get()==50);
+    }
+
+    /**
+     * Test the CompleatableFuture any; in this case the last one should be the fastest
+     *
+     * @throws Exception
+     */
+    @Test
+    public void test_toCompletableAnyFuture_success() throws Exception{
+
+        // will kill it from the cache in some time.
+        final DotSubmitter submitter = DotConcurrentFactory.getInstance().getSubmitter();
+        final List<Future<Integer>> futures = new ArrayList<>();
+        for (int i = 1; i <= 10; ++i) {
+            final int finalIndex = i;
+            futures.add(submitter.submit(() ->{
+
+                DateUtil.sleep(Math.abs(finalIndex - 10) * 1000);
+                return finalIndex;
+            }));
+        }
+
+        final CompletableFuture<Integer> completableFuture = DotConcurrentFactory.getInstance().toCompletableAnyFuture(futures);
+        final Integer result = completableFuture.get();
+        Assert.assertEquals("The last one should be the fastest", 10, result.intValue());
     }
 
 }
