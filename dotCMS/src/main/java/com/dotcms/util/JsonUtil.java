@@ -50,7 +50,7 @@ public class JsonUtil {
 
     public static String getJsonFileContentAsString(final String path) throws IOException {
 
-        ClassLoader classLoader = JsonUtil.class.getClassLoader();
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 
         final URL url = classLoader.getResource(path);
         return new String(com.liferay.util.FileUtil.getBytes(new File(url.getPath())));

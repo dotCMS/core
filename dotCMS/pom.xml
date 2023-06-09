@@ -23,7 +23,6 @@
         <assembly-directory>${basedir}/target/dist</assembly-directory>
         <skipDockerEnv>false</skipDockerEnv>
         <skipITs>true</skipITs>
-        <skipOwasp>true</skipOwasp>
         <starter.filename>starter.zip</starter.filename>
         <starter.path>${project.build.directory}/starter</starter.path>
         <starter.full.path>${starter.path}/${starter.filename}</starter.full.path>
@@ -43,7 +42,7 @@
 
         <docker.base.image>tomcat:9.0.74-jdk11</docker.base.image>
         <docker.output.image.name>dotcms/dotcms-test</docker.output.image.name>
-
+        <core.unit.test.fork.count>1C</core.unit.test.fork.count>
     </properties>
     <dependencies>
         <dependency>
@@ -473,7 +472,6 @@
         <dependency>
             <groupId>jakarta.inject</groupId>
             <artifactId>jakarta.inject-api</artifactId>
-            <version>1.0.3</version>
         </dependency>
 
         <dependency>
@@ -607,6 +605,7 @@
                     <artifactId>checker-qual</artifactId>
                 </exclusion>
             </exclusions>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
@@ -618,6 +617,7 @@
             <!-- MSSQL Driver, MSSQL support is deprecated -->
             <groupId>com.microsoft.sqlserver</groupId>
             <artifactId>mssql-jdbc</artifactId>
+            <scope>provided</scope>
         </dependency>
 
 
@@ -1258,12 +1258,14 @@
             <!-- Jasper is the Tomcat JSP Engine -->
             <groupId>org.apache.tomcat</groupId>
             <artifactId>tomcat-jasper</artifactId>
+            <scope>provided</scope>
         </dependency>
 
 
         <dependency>
             <groupId>org.apache.tomcat</groupId>
             <artifactId>tomcat-jdbc</artifactId>
+            <scope>test</scope>
         </dependency>
 
 
@@ -1321,6 +1323,7 @@
         <dependency>
             <groupId>com.tngtech.junit.dataprovider</groupId>
             <artifactId>junit4-dataprovider</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <!-- explicitly add all the declared logging dependencies -->
@@ -1392,9 +1395,17 @@
             </resource>
             -->
         </resources>
+        <extensions>
+            <extension>
+                <groupId>io.quarkus.bot</groupId>
+                <artifactId>build-reporter-maven-extension</artifactId>
+                <version>3.1.0</version>
+            </extension>
+        </extensions>
         <plugins>
 
 
+            <!--
             <plugin>
                 <groupId>org.owasp</groupId>
                 <artifactId>dependency-check-maven</artifactId>
@@ -1403,7 +1414,7 @@
                     <suppressionFiles>
                         <suppressionFile>${maven.multiModuleProjectDirectory}/owasp-suppressions.xml</suppressionFile>
                     </suppressionFiles>
-                    <!-- Turn down when we clean up or have suppressions-->
+
                     <failBuildOnCVSS>11</failBuildOnCVSS>
                     <assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
                     <failOnError>false</failOnError>
@@ -1416,6 +1427,7 @@
                     </execution>
                 </executions>
             </plugin>
+            -->
             <plugin>
                 <groupId>com.dotcms</groupId>
                 <artifactId>generate-gradle-dependencies</artifactId>
@@ -1433,6 +1445,14 @@
                         </configuration>
                     </execution>
                 </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>org.jacoco.agent</artifactId>
+                        <version>0.8.10</version>
+                        <classifier>runtime</classifier>
+                    </dependency>
+                </dependencies>
             </plugin>
             <plugin>
                 <groupId>com.diffplug.spotless</groupId>
@@ -1594,13 +1614,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <systemPropertyVariables>
-                        <DOT_ASSET_REAL_PATH>${test.assets.dir}</DOT_ASSET_REAL_PATH>
-                        <DOT_DYNAMIC_CONTENT_PATH>${test.dynamic.dir}</DOT_DYNAMIC_CONTENT_PATH>
-                        <workingDirectory>${test.working.dir}</workingDirectory>
-                        <java.io.tmpdir>${test.temp.dir}</java.io.tmpdir>
-                    </systemPropertyVariables>
-                    <trimStackTrace>false</trimStackTrace>
+                    <forkCount>${core.unit.test.fork.count}</forkCount>
+                    <reuseForks>true</reuseForks>
                 </configuration>
             </plugin>
 
@@ -1609,21 +1624,15 @@
 
     <reporting>
         <plugins>
-            <plugin>
-                <groupId>org.owasp</groupId>
-                <artifactId>dependency-check-maven</artifactId>
-                <reportSets>
-                    <reportSet>
-                        <reports>
-                            <report>aggregate</report>
-                        </reports>
-                    </reportSet>
-                </reportSets>
-            </plugin>
+             <plugin>
+                  <groupId>org.apache.maven.plugins</groupId>
+                  <artifactId>maven-project-info-reports-plugin</artifactId>
+             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-report-plugin</artifactId>
             </plugin>
+
         </plugins>
     </reporting>
 </project>
