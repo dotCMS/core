@@ -8,6 +8,7 @@ import { RemoveConfirmDialogComponent } from './components/template-builder/comp
 import { TemplateBuilderBackgroundColumnsComponent } from './components/template-builder/components/template-builder-background-columns/template-builder-background-columns.component';
 import { TemplateBuilderBoxComponent } from './components/template-builder/components/template-builder-box/template-builder-box.component';
 import { TemplateBuilderRowComponent } from './components/template-builder/components/template-builder-row/template-builder-row.component';
+import { TemplateBuilderSectionComponent } from './components/template-builder/components/template-builder-section/template-builder-section.component';
 import { DotTemplateBuilderStore } from './components/template-builder/store/template-builder.store';
 import { TemplateBuilderComponent } from './components/template-builder/template-builder.component';
 
@@ -21,6 +22,7 @@ import { TemplateBuilderComponent } from './components/template-builder/template
         RemoveConfirmDialogComponent,
         DotMessagePipeModule,
         TemplateBuilderBackgroundColumnsComponent,
+        TemplateBuilderSectionComponent,
         NgStyle
     ],
     declarations: [TemplateBuilderComponent],

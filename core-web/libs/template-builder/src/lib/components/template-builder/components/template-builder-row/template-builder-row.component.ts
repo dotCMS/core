@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Output } from '@angular/core';
+import { GridItemHTMLElement } from 'gridstack';
+
+import {
+    ChangeDetectionStrategy,
+    Component,
+    ElementRef,
+    EventEmitter,
+    Output
+} from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 
@@ -17,4 +25,12 @@ export class TemplateBuilderRowComponent {
     editStyleClasses: EventEmitter<void> = new EventEmitter<void>();
     @Output()
     deleteRow: EventEmitter<void> = new EventEmitter<void>();
+    @Output()
+    deleteRowRejected: EventEmitter<void> = new EventEmitter<void>();
+
+    constructor(private el: ElementRef) {}
+
+    get nativeElement(): GridItemHTMLElement {
+        return this.el.nativeElement;
+    }
 }

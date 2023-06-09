@@ -27,7 +27,6 @@ public interface ImageFilterAPI {
     String THUMBNAIL = "thumbnail";
     String THUMB = "thumb";
     String WEBP = "webp";
-    String SUBSAMPLE = "subsample";
 
     Function0<ImageFilterApiImpl> apiInstance = Function0.of(()->{ImageIO.scanForPlugins();return new ImageFilterApiImpl();}).memoized();
 
@@ -39,18 +38,18 @@ public interface ImageFilterAPI {
      * returns the filters that have been specified in the filter parameter or in the the arguements
      * passed in
      * 
-     * @param parameters
-     * @return
+     * @param parameters the parameters passed in
+     * @return  a map of the filters that have been specified
      */
-    Map<String, Class<ImageFilter>> resolveFilters(Map<String, String[]> parameters);
+    Map<String, Class<? extends ImageFilter>> resolveFilters(Map<String, String[]> parameters);
 
 
 
     /**
      * returns an image dimensions
      * 
-     * @param image
-     * @return
+     * @param image the image to get the dimensions of
+     * @return the dimensions of the image
      */
     Dimension getWidthHeight(File image);
 
@@ -61,10 +60,10 @@ public interface ImageFilterAPI {
      * cause garbage collections and OOM exceptions. This is because the entire image needs to be
      * decompressed into heap memory before the resizing operation can take place.
      * 
-     * @param image
-     * @param width
-     * @param height
-     * @return
+     * @param image the image to resize
+     * @param width the width to resize to
+     * @param height the height to resize to
+     * @return the resized image
      */
     BufferedImage resizeImage(File image, int width, int height);
 
@@ -77,10 +76,10 @@ public interface ImageFilterAPI {
      * cause garbage collections and OOM exceptions. This is because the entire image needs to be
      * decompressed into heap memory before the resizing operation can take place.
      * 
-     * @param image
-     * @param width
-     * @param height
-     * @return
+     * @param srcImage the image to resize
+     * @param width the width to resize to
+     * @param height the height to resize to
+     * @return the resized image
      */
     BufferedImage resizeImage(BufferedImage srcImage, int width, int height);
 
@@ -88,11 +87,11 @@ public interface ImageFilterAPI {
     /**
      * This method allows you to resize an image and specify what resizing filter should be used to 
      * produce the image.  You can see the available filters
-     * @param srcImage
-     * @param width
-     * @param height
-     * @param resampleOption
-     * @return
+     * @param srcImage the image to resize
+     * @param width the width to resize to
+     * @param height the height to resize to
+     * @param resampleOption the resample option to use
+     * @return the resized image
      */
     BufferedImage resizeImage(BufferedImage srcImage, int width, int height, int resampleOption);
 
@@ -105,10 +104,10 @@ public interface ImageFilterAPI {
      * resize very large images without causing the memory pressures of resizing. If the width and/or
      * height is greater than the original image, the original image will be returned.
      *
-     * @param image
-     * @param width
-     * @param height
-     * @return
+     * @param image the image to subsample
+     * @param width the width to subsample to
+     * @param height the height to subsample to
+     * @return the subsampled image
      */
     BufferedImage subsampleImage(File image, int width, int height);
 

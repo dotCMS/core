@@ -3,7 +3,8 @@ import {
     GridItemHTMLElement,
     GridStack,
     GridStackNode,
-    GridStackWidget
+    GridStackWidget,
+    numberOrString
 } from 'gridstack';
 import { Observable } from 'rxjs';
 
@@ -22,6 +23,7 @@ import {
 import { DotLayout } from '@dotcms/dotcms-models';
 
 import { colIcon, rowIcon } from './assets/icons';
+import { TemplateBuilderRowComponent } from './components/template-builder-row/template-builder-row.component';
 import { DotGridStackWidget } from './models/models';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import {
@@ -44,12 +46,12 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
 
     public items$: Observable<DotGridStackWidget[]>;
 
-    @ViewChildren('rows', {
+    @ViewChildren('rowElement', {
         emitDistinctChangesOnly: true
     })
-    rows!: QueryList<ElementRef<GridItemHTMLElement>>;
+    rows!: QueryList<TemplateBuilderRowComponent>;
 
-    @ViewChildren('boxes', {
+    @ViewChildren('boxElement', {
         emitDistinctChangesOnly: true
     })
     boxes!: QueryList<ElementRef<GridItemHTMLElement>>;
@@ -83,7 +85,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
             const subgrid = GridStack.addGrid(el as HTMLElement, subGridOptions);
 
             subgrid.on('change', (_: Event, nodes: GridStackNode[]) => {
-                this.store.updateColumn(nodes as DotGridStackWidget[]);
+                this.store.updateColumnGridStackData(nodes as DotGridStackWidget[]);
             });
             subgrid.on('dropped', (_: Event, oldNode: GridStackNode, newNode: GridStackNode) => {
                 this.store.subGridOnDropped(oldNode, newNode);
@@ -133,7 +135,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
                                 }
                             )
                             .on('change', (_: Event, nodes: GridStackNode[]) => {
-                                this.store.updateColumn(nodes as DotGridStackWidget[]);
+                                this.store.updateColumnGridStackData(nodes as DotGridStackWidget[]);
                             });
                     }
 
@@ -149,11 +151,44 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
         this.grid.destroy(true);
     }
 
-    identify(_: number, w: GridStackWidget) {
-        return w.id;
+    /**
+     * @description This method is used to identify items by id
+     *
+     * @param {number} _
+     * @param {GridStackWidget} w
+     * @return {*}
+     * @memberof TemplateBuilderComponent
+     */
+    identify(_: number, w: GridStackWidget): string {
+        return w.id as string;
     }
 
-    deleteRow(id: string): void {
-        this.store.removeRow(id);
+    /**
+     * @description This method maintains the GridStack Model in sync with the store when you delete a column
+     *
+     * @param {DotGridStackWidget} column
+     * @param {numberOrString} rowID
+     * @memberof TemplateBuilderComponent
+     */
+    removeColumn(
+        column: DotGridStackWidget,
+        element: GridItemHTMLElement,
+        rowID: numberOrString
+    ): void {
+        // The gridstack model is polutted with the subgrid data
+        // So we need to delete the node from the GridStack Model
+        this.grid.engine.nodes.find((node) => node.id === rowID).subGrid?.removeWidget(element);
+
+        this.store.removeColumn({ ...column, parentId: rowID as string });
+    }
+
+    /**
+     * @description This method deletes the row from the store
+     *
+     * @param {numberOrString} id
+     * @memberof TemplateBuilderComponent
+     */
+    deleteRow(id: numberOrString): void {
+        this.store.removeRow(id as string);
     }
 }
