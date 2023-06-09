@@ -1,11 +1,15 @@
 package com.dotcms.cli.command.files;
 
 import com.dotcms.api.traversal.TreeNode;
+import com.dotcms.cli.common.FilesUtils;
 import com.dotcms.model.asset.AssetView;
 import com.dotcms.model.asset.FolderView;
 import com.dotcms.model.language.Language;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * The {@code TreePrinter} class provides a utility for printing a tree structure of
@@ -16,16 +20,12 @@ import java.util.*;
  */
 public class TreePrinter {
 
-    private static final String STATUS_LIVE = "live";
-    private static final String STATUS_WORKING = "working";
-
     /**
      * The {@code TreePrinterHolder} class is used to implement the singleton pattern for the
      * {@link TreePrinter} class.
      */
     private static class TreePrinterHolder {
-
-        private static TreePrinter instance = new TreePrinter();
+        private static final TreePrinter instance = new TreePrinter();
     }
 
     /**
@@ -97,7 +97,7 @@ public class TreePrinter {
             final var fileStr = String.format("%s [%s] (%s)",
                     asset.name(),
                     asset.lang(),
-                    asset.live() ? STATUS_LIVE : STATUS_WORKING);
+                    FilesUtils.statusToString(asset.live()));
             boolean lastAsset = i == assetCount - 1 && node.children().isEmpty();
             sb.append(filePrefix).append(lastAsset ? "└── " : "├── ").append(fileStr).append('\n');
         }
@@ -129,13 +129,12 @@ public class TreePrinter {
             final List<Language> languages) {
 
         // Collect the list of unique statuses and languages
-        Set<String> uniqueLiveLanguages = new HashSet<>();
-        Set<String> uniqueWorkingLanguages = new HashSet<>();
-
-        collectUniqueStatusesAndLanguages(rootNode, uniqueLiveLanguages, uniqueWorkingLanguages);
+        final var treeNodeInfo = FilesUtils.CollectUniqueStatusesAndLanguages(rootNode);
+        final var uniqueLiveLanguages = treeNodeInfo.liveLanguages();
+        final var uniqueWorkingLanguages = treeNodeInfo.workingLanguages();
 
         if (uniqueLiveLanguages.isEmpty() && uniqueWorkingLanguages.isEmpty()) {
-            fallbackDefaultLanguage(languages, uniqueLiveLanguages);
+            FilesUtils.FallbackDefaultLanguage(languages, uniqueLiveLanguages);
         }
 
         // Sort the sets and convert them into lists
@@ -169,7 +168,7 @@ public class TreePrinter {
             return;
         }
 
-        var status = isLive ? STATUS_LIVE : STATUS_WORKING;
+        var status = FilesUtils.statusToString(isLive);
         sb.append("\r ").append(status).append('\n');
 
         Iterator<String> langIterator = sortedLanguages.iterator();
@@ -272,57 +271,6 @@ public class TreePrinter {
             boolean lastSibling = i == childCount - 1;
             format(sb, filePrefix, child, nextIndent, lastSibling, includeAssets);
         }
-    }
-
-    /**
-     * Traverses the given TreeNode recursively and collects the unique live and working languages
-     * from its assets and its children's assets.
-     *
-     * @param node                   The root TreeNode to start the traversal from.
-     * @param uniqueLiveLanguages    A Set to collect unique live languages found in the assets of
-     *                               the TreeNode and its children.
-     * @param uniqueWorkingLanguages A Set to collect unique working languages found in the assets
-     *                               of the TreeNode and its children.
-     */
-    private void collectUniqueStatusesAndLanguages(
-            TreeNode node, Set<String> uniqueLiveLanguages, Set<String> uniqueWorkingLanguages) {
-
-        if (node.assets() != null) {
-            for (AssetView asset : node.assets()) {
-                if (asset.live()) {
-                    uniqueLiveLanguages.add(asset.lang());
-                } else {
-                    uniqueWorkingLanguages.add(asset.lang());
-                }
-            }
-        }
-
-        for (TreeNode child : node.children()) {
-            collectUniqueStatusesAndLanguages(child, uniqueLiveLanguages,
-                    uniqueWorkingLanguages);
-        }
-    }
-
-    /**
-     * Fallbacks to the default language in case of no languages found scanning the assets.
-     *
-     * @throws RuntimeException if no default language is found in the list of languages
-     */
-    private void fallbackDefaultLanguage(
-            final List<Language> languages, Set<String> uniqueLiveLanguages) {
-
-        // Get the default language from the list of languages
-        var defaultLanguage = languages.stream()
-                .filter(Language::defaultLanguage)
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("No default language found"));
-
-        var languageTag = new StringBuilder(defaultLanguage.languageCode());
-        if (defaultLanguage.countryCode() != null && !defaultLanguage.countryCode().isEmpty()) {
-            languageTag.append("-").append(defaultLanguage.countryCode());
-        }
-
-        uniqueLiveLanguages.add(languageTag.toString());
     }
 
 }

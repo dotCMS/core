@@ -12,6 +12,7 @@ import java.net.URISyntaxException;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ForkJoinPool;
 
@@ -81,10 +82,18 @@ public class FolderTraversalServiceImpl implements FolderTraversalService {
             filterRootPath += "/";
         }
         var filterBuilder = Filter.builder().rootPath(filterRootPath);
-        includeFolderPatterns.forEach(filterBuilder::includeFolder);
-        includeAssetPatterns.forEach(filterBuilder::includeAsset);
-        excludeFolderPatterns.forEach(filterBuilder::excludeFolder);
-        excludeAssetPatterns.forEach(filterBuilder::excludeAsset);
+        Optional.ofNullable(includeFolderPatterns).ifPresent(
+                includes -> includes.forEach(filterBuilder::includeFolder)
+        );
+        Optional.ofNullable(includeAssetPatterns).ifPresent(
+                includes -> includes.forEach(filterBuilder::includeAsset)
+        );
+        Optional.ofNullable(excludeFolderPatterns).ifPresent(
+                excludes -> excludes.forEach(filterBuilder::excludeFolder)
+        );
+        Optional.ofNullable(excludeAssetPatterns).ifPresent(
+                excludes -> excludes.forEach(filterBuilder::excludeAsset)
+        );
         var filter = filterBuilder.build();
 
         // ---
