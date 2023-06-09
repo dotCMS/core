@@ -8,17 +8,15 @@
     data-testId="template-builder-box"
 >
     <div class="template-builder-box__header-container">
-        <p-button
-            [label]="
-                boxVariant === templateBuilderSizes.large
-                    ? ('dot.template.builder.add.container' | dm)
-                    : ''
-            "
-            (onClick)="addContainer.emit()"
-            icon="pi pi-plus"
-            data-testId="btn-plus"
-            styleClass="p-button-text p-button-sm"
-        ></p-button>
+        <p-dropdown
+            [showClear]="false"
+            [filter]="true"
+            [placeholder]="'dot.template.builder.add.container' | dm"
+            dotcmsContainerOptions
+            appendTo="body"
+            dropdownIcon="pi pi-plus"
+            optionLabel="label"
+        ></p-dropdown>
 
         <div>
             <p-button
@@ -53,12 +51,14 @@
         class="template-builder-box template-builder-box--small"
         data-testId="template-builder-box-small"
     >
-        <p-button
-            (onClick)="addContainer.emit()"
-            data-testId="btn-plus-small"
-            icon="pi pi-plus"
-            styleClass="p-button-rounded  p-button-text p-button-sm"
-        ></p-button>
+        <p-dropdown
+            [showClear]="false"
+            [filter]="true"
+            dotcmsContainerOptions
+            appendTo="body"
+            dropdownIcon="pi pi-plus"
+            optionLabel="label"
+        ></p-dropdown>
         <p-button
             (onClick)="editClasses.emit()"
             data-testId="box-style-class-button-small"

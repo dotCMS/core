@@ -71,7 +71,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
         const { items } = state;
         const itemsCopy = structuredClone(items) as DotGridStackWidget[];
 
-        affectedRows.forEach(({ y, id }) => {
+        affectedRows?.forEach(({ y, id }) => {
             const rowIndex = getIndexRowInItems(itemsCopy, id as string);
             // So here I update the positions of the changed ones
             if (rowIndex > -1) itemsCopy[rowIndex] = { ...itemsCopy[rowIndex], y };

@@ -2,6 +2,7 @@ export * from './lib/clean-up-dialog';
 export * from './lib/core-web.service.mock';
 export * from './lib/dot-auth-user.mock';
 export * from './lib/dot-containers.mock';
+export * from './lib/dot-containers.service.mock';
 export * from './lib/dot-content-types.mock';
 export * from './lib/dot-contentlet.mock';
 export * from './lib/dot-device-service.mock';

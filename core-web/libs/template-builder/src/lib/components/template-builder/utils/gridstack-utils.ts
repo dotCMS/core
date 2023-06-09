@@ -46,7 +46,7 @@ export function getIndexRowInItems(items: DotGridStackWidget[], rowID: string): 
  * @return {*}  {DotGridStackWidget[]}
  */
 export function createDotGridStackWidgets(columns: DotGridStackNode[]): DotGridStackWidget[] {
-    return columns.map((node) => createDotGridStackWidgetFromNode(node));
+    return columns?.map((node) => createDotGridStackWidgetFromNode(node));
 }
 
 /**

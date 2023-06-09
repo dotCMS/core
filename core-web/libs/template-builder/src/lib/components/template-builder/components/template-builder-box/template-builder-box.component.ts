@@ -12,10 +12,13 @@ import {
 } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
+import { DropdownModule } from 'primeng/dropdown';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
 
+import { DotContainersService } from '@dotcms/data-access';
 import { DotMessagePipeModule } from '@dotcms/ui';
 
+import { ContainerOptionsDirective } from '../../../../directives/container-options.directive';
 import { DotTemplateBuilderContainer, TemplateBuilderBoxSize } from '../../models/models';
 import { getBoxVariantByWidth } from '../../utils/gridstack-utils';
 import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-confirm-dialog.component';
@@ -33,7 +36,9 @@ import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-co
         ButtonModule,
         ScrollPanelModule,
         DotMessagePipeModule,
-        RemoveConfirmDialogComponent
+        RemoveConfirmDialogComponent,
+        DropdownModule,
+        ContainerOptionsDirective
     ]
 })
 export class TemplateBuilderBoxComponent implements OnChanges {
@@ -56,7 +61,7 @@ export class TemplateBuilderBoxComponent implements OnChanges {
 
     boxVariant = TemplateBuilderBoxSize.small;
 
-    constructor(private el: ElementRef) {}
+    constructor(private containerService: DotContainersService, private el: ElementRef) {}
 
     get nativeElement(): GridItemHTMLElement {
         return this.el.nativeElement;
