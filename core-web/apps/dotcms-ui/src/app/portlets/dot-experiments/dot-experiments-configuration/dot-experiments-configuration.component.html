@@ -43,8 +43,14 @@
 
     <div class="dot-experiment-config-content">
         <ng-container *ngIf="!vm.isLoading; else loadingTpl">
-            <p-card *ngIf="!!vm.experiment.description" data-testId="experiment-description">
-                {{ vm.experiment.description }}
+            <p-card data-testId="experiment-description">
+                <dot-experiments-inplace-edit-text
+                    [disabled]="vm.experimentStatus === experimentStatus.RUNNING"
+                    [isLoading]="vm.isDescriptionSaving"
+                    [text]="vm.experiment.description"
+                    (textChanged)="saveDescriptionAction($event, vm.experiment)"
+                    emptyTextMessage="experiments.configure.description.add"
+                />
             </p-card>
 
             <dot-experiments-configuration-variants />
