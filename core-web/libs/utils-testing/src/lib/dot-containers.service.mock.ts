@@ -2,13 +2,10 @@ import { of, Observable } from 'rxjs';
 
 import { DotContainerEntity } from '@dotcms/dotcms-models';
 
-const MOCK_CONTAINERS: DotContainerEntity[] = Array.from(Array(10).keys()).map((number) => ({
-    container: { friendlyName: `Container ${number}`, parentPermissionable: { hostname: '' } },
-    contentTypes: []
-}));
+import { containersMock } from './dot-containers.mock';
 
 export class DotContainersServiceMock {
     getFiltered(_: string): Observable<DotContainerEntity[] | null> {
-        return of(MOCK_CONTAINERS);
+        return of(containersMock);
     }
 }

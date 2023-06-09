@@ -1,4 +1,4 @@
-import { CONTAINER_SOURCE, DotContainerMap } from '@dotcms/dotcms-models';
+import { CONTAINER_SOURCE, DotContainerEntity, DotContainerMap } from '@dotcms/dotcms-models';
 
 export const dotContainerMapMock = (): DotContainerMap => {
     return {
@@ -66,3 +66,8 @@ export const dotContainerMapMock = (): DotContainerMap => {
         }
     };
 };
+
+export const containersMock: DotContainerEntity[] = Array.from(Array(10).keys()).map((number) => ({
+    container: { friendlyName: `Container ${number}`, parentPermissionable: { hostname: '' } },
+    contentTypes: []
+}));

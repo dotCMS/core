@@ -25,7 +25,6 @@ const DEFAULT_VALUE_NAME_INDEX = 'value';
 export class ContainerOptionsDirective implements OnInit, OnDestroy {
     private readonly control: Dropdown;
     private readonly maxOptions = 10;
-    private defaultOptions: Array<DotDropdownSelectOption<DotContainerEntity>>;
     private onFilterSubscription: Subscription;
 
     constructor(
@@ -37,18 +36,14 @@ export class ContainerOptionsDirective implements OnInit, OnDestroy {
         if (this.control) {
             this.control.optionLabel = DEFAULT_LABEL_NAME_INDEX;
             this.control.optionValue = DEFAULT_VALUE_NAME_INDEX;
-            this.control.showClear = this.control instanceof Dropdown ? true : false;
         } else {
-            console.warn(
-                'ContainerOptionsDirective is for use with PrimeNg Dropdown or MultiSelect'
-            );
+            console.warn('ContainerOptionsDirective is for use with PrimeNg Dropdown');
         }
     }
 
     ngOnInit() {
         this.fetchContainerOptions('').subscribe((options) => {
             this.control.options = this.control.options || options; // avoid overwriting if they were already set
-            this.defaultOptions = options;
         });
         this.onFilterSubscription = this.control.onFilter
             .pipe(
