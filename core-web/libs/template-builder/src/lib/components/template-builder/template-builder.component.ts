@@ -244,7 +244,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
             header: 'Edit Classes',
             data: {
                 classes: this.store.styleClasses$,
-                selectedClasses: styleClasses
+                selectedClasses: styleClasses ?? []
             },
             resizable: false
         });
