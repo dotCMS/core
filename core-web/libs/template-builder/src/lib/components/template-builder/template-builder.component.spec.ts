@@ -120,4 +120,14 @@ describe('TemplateBuilderComponent', () => {
 
         expect(editRowStyleClassesMock).toHaveBeenCalled();
     });
+
+    it('should call editBoxStyleClasses from store when clicking on btn-palette', () => {
+        const editBoxStyleClassesMock = jest.spyOn(spectator.component, 'editBoxStyleClasses');
+
+        const editBoxStyleClassesButton = spectator.query(byTestId('btn-palette'));
+
+        spectator.dispatchFakeEvent(editBoxStyleClassesButton, 'onClick');
+
+        expect(editBoxStyleClassesMock).toHaveBeenCalled();
+    });
 });

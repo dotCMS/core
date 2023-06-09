@@ -29,7 +29,7 @@ import { DotLayout } from '@dotcms/dotcms-models';
 import { colIcon, rowIcon } from './assets/icons';
 import { AddStyleClassesDialogComponent } from './components/add-style-classes-dialog/add-style-classes-dialog.component';
 import { TemplateBuilderRowComponent } from './components/template-builder-row/template-builder-row.component';
-import { DotGridStackWidget } from './models/models';
+import { DotGridStackNode, DotGridStackWidget } from './models/models';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import {
     GRID_STACK_ROW_HEIGHT,
@@ -224,6 +224,42 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
             )
             .subscribe((styleClasses: string[]) => {
                 this.store.updateRow({ id: rowID as string, styleClass: styleClasses });
+            });
+    }
+
+    /**
+     * @description This method opens the dialog to edit the box styleclasses
+     *
+     * @param {numberOrString} rowID
+     * @memberof TemplateBuilderComponent
+     */
+    editBoxStyleClasses(
+        rowID: numberOrString,
+        box: DotGridStackNode,
+        styleClasses: string[]
+    ): void {
+        this.store.getStyleClassesFromFile();
+
+        this.ref = this.dialogService.open(AddStyleClassesDialogComponent, {
+            header: 'Edit Classes',
+            data: {
+                classes: this.store.styleClasses$,
+                selectedClasses: styleClasses
+            },
+            resizable: false
+        });
+
+        this.ref.onClose
+            .pipe(
+                take(1),
+                filter((styleClasses) => styleClasses)
+            )
+            .subscribe((styleClasses: string[]) => {
+                this.store.updateColumnStyleClasses({
+                    ...box,
+                    styleClass: styleClasses,
+                    parentId: rowID as string
+                });
             });
     }
 }
