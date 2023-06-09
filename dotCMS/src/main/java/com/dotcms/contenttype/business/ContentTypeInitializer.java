@@ -71,6 +71,7 @@ public class ContentTypeInitializer implements DotInitializer {
                     .variable(FAVORITE_PAGE_VAR_NAME)
                     .host(Host.SYSTEM_HOST)
                     .host(Folder.SYSTEM_FOLDER)
+                    .system(true)
                     .fixed(true);
             final SimpleContentType simpleContentType = builder.build();
 
@@ -90,6 +91,25 @@ public class ContentTypeInitializer implements DotInitializer {
 
         if (null != contentType) {
             checkDefaultPermissions(contentType);
+            checkIfMarkedAsSystem(contentType, contentTypeAPI);
+        }
+    }
+
+    private void checkIfMarkedAsSystem(final ContentType contentType, final ContentTypeAPI contentTypeAPI) {
+
+        if (!contentType.system()) {
+
+            try {
+                final ImmutableSimpleContentType newType = ImmutableSimpleContentType.builder()
+                        .from(contentType).system(true).build();
+
+                final ContentType savedContentType = contentTypeAPI.save(newType);
+                APILocator.getWorkflowAPI().saveSchemeIdsForContentType(savedContentType,
+                        new HashSet<>(Arrays.asList(WorkflowAPI.SYSTEM_WORKFLOW_ID)));
+            } catch (DotDataException | DotSecurityException e) {
+
+                Logger.warnAndDebug(this.getClass(), e);
+            }
         }
     }
 

@@ -7,7 +7,7 @@ import { DotGlobalMessageModule } from '@components/_common/dot-global-message/d
 import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-base.module';
 import { DotContainerHistoryModule } from '@dotcms/app/portlets/dot-containers/dot-container-create/dot-container-history/dot-container-history.module';
 import { DotContainerPermissionsModule } from '@dotcms/app/portlets/dot-containers/dot-container-create/dot-container-permissions/dot-container-permissions.module';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { DotMessagePipeModule } from '@dotcms/ui';
 import { DotContainerPropertiesModule } from '@portlets/dot-containers/dot-container-create/dot-container-properties/dot-container-properties.module';
 
 import { DotContainerCreateRoutingModule } from './dot-container-create-routing.module';

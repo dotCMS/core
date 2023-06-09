@@ -26,6 +26,7 @@ import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotcms.storage.model.BasicMetadataFields;
 import com.dotcms.storage.model.ContentletMetadata;
 import com.dotcms.storage.model.Metadata;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -45,10 +46,12 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.function.Supplier;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.io.FilenameUtils;
 import org.junit.Assert;
@@ -90,6 +93,27 @@ public class FileMetadataAPITest {
 
             final Contentlet fileAssetContent = getFileAssetContent(true, 1, TestFile.PDF);
             assertTrue(fileAssetContent.get(FileAssetAPI.META_DATA_FIELD) instanceof Map);
+    }
+
+    /**
+     * <b>Method to test:</b> {@link FileMetadataAPI#getFullMetadataNoCache(File, Supplier)}<br>
+     * <b>Given scenario:</b> Getting metadata from a urlMap<br>
+     * <b>Expected Result:</b> Some keywords must be present in the metadata
+     * @throws Exception
+     */
+    @Test
+    public void Test_Generate_Metadata_From_HtmlPage_Should_Resolve_ExtendedMetadata() throws Exception {
+        prepareIfNecessary();
+        final List<String> extendedMetadata = CollectionsUtils.list("metaKeyword", "keywords", "dcSubject",
+                "title", "dcTitle", "description", "copyright", "ogTitle", "language", "ogUrl", "ogImage");
+        Metadata metadata = fileMetadataAPI.getFullMetadataNoCache(new
+                        File(FileMetadataAPITest.class.getResource("5-snow-sports-to-try-this-winter").getFile()),
+                null);
+        assertNotNull(metadata);
+        assertTrue(metadata.getMap().keySet().containsAll(extendedMetadata));
+        assertEquals("5 Snow Sports to Try This Winter", metadata.getMap().get("dcTitle"));
+        assertEquals("5 Snow Sports to Try This Winter", metadata.getMap().get("title"));
+
     }
 
 

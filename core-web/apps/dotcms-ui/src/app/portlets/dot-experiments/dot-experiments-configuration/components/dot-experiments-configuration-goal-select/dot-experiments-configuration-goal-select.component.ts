@@ -27,10 +27,10 @@ import {
     GOAL_TYPES,
     Goals,
     GOALS_METADATA_MAP,
-    MAX_INPUT_LENGTH,
+    MAX_INPUT_DESCRIPTIVE_LENGTH,
     StepStatus
 } from '@dotcms/dotcms-models';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { DotMessagePipeModule } from '@dotcms/ui';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 import { DotExperimentsOptionsModule } from '@portlets/dot-experiments/shared/ui/dot-experiment-options/dot-experiments-options.module';
 import { DotExperimentsGoalConfigurationReachPageComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-goal-configuration-reach-page/dot-experiments-goal-configuration-reach-page.component';
@@ -76,7 +76,7 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
     statusList = ComponentStatus;
     vm$: Observable<{ experimentId: string; goals: Goals; status: StepStatus }> =
         this.dotExperimentsConfigurationStore.goalsStepVm$;
-    protected readonly maxNameLength = MAX_INPUT_LENGTH;
+    protected readonly maxNameLength = MAX_INPUT_DESCRIPTIVE_LENGTH;
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private BOUNCE_RATE_LABEL = this.dotMessageService.get(
         'experiments.goal.conditions.minimize.bounce.rate'

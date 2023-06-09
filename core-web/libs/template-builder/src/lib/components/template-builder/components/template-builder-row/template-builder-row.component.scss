@@ -1,5 +1,14 @@
 @use "variables" as *;
 :host {
+    &.ui-draggable-dragging {
+        .row {
+            background-color: $white;
+            box-shadow: $md-shadow-2;
+        }
+    }
+}
+
+.row {
     display: flex;
     height: 16rem;
     border: 1px solid $color-palette-gray-300;
@@ -31,13 +40,4 @@
 
 .row__content-container {
     flex-grow: 1;
-    padding: $spacing-3 0;
-}
-
-.row__actions-container {
-    p-button ::ng-deep {
-        .pi-trash {
-            color: $color-palette-primary-400;
-        }
-    }
 }

@@ -8,15 +8,21 @@
         #table
         [contextMenu]="cm"
         [value]="vm.pages.items"
+        [totalRecords]="vm.pages.total"
         [loading]="vm.isPagesLoading"
         [scrollable]="true"
-        [virtualScroll]="true"
-        [virtualScrollItemSize]="47"
         [lazy]="true"
+        [paginator]="true"
+        [rows]="40"
+        [scrollHeight]="vm.isFavoritePanelCollaped ? 'calc(100vh - 350px)' : 'calc(100vh - 600px)'"
+        [sortOrder]="-1"
+        [showPageLinks]="false"
+        [showCurrentPageReport]="true"
+        [showFirstLastIcon]="false"
         (onLazyLoad)="loadPagesLazy($event)"
         (onRowSelect)="onRowSelect($event)"
         selectionMode="single"
-        scrollHeight="flex"
+        sortField="modDate"
     >
         <ng-template pTemplate="caption">
             <div class="flex justify-content-between dot-pages-listing-header">
@@ -130,17 +136,6 @@
                         size="32"
                     ></dot-icon-button>
                 </td>
-            </tr>
-        </ng-template>
-        <ng-template pTemplate="loadingbody">
-            <tr style="height: 47px">
-                <td><p-skeleton [ngStyle]="{ width: '25%' }"></p-skeleton></td>
-                <td><p-skeleton [ngStyle]="{ width: '20%' }"></p-skeleton></td>
-                <td><p-skeleton [ngStyle]="{ width: '12%' }"></p-skeleton></td>
-                <td><p-skeleton [ngStyle]="{ width: '12%' }"></p-skeleton></td>
-                <td><p-skeleton [ngStyle]="{ width: '12%' }"></p-skeleton></td>
-                <td><p-skeleton [ngStyle]="{ width: '14%' }"></p-skeleton></td>
-                <td><p-skeleton [ngStyle]="{ width: '5%' }"></p-skeleton></td>
             </tr>
         </ng-template>
         <ng-template pTemplate="emptymessage">
