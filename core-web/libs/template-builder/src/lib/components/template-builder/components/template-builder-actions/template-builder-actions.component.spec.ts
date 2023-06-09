@@ -30,10 +30,10 @@ describe('TemplateBuilderActionsComponent', () => {
         expect(spy).toHaveBeenCalled();
     });
 
-    it('should emit selectStyles event when style button is clicked', () => {
-        const spy = jest.spyOn(spectator.component.selectStyles, 'emit');
+    it('should emit selectTheme event when style button is clicked', () => {
+        const spy = jest.spyOn(spectator.component.selectTheme, 'emit');
         spectator.detectChanges();
-        const btnSelectStyles = spectator.query(byTestId('btn-select-styles'));
+        const btnSelectStyles = spectator.query(byTestId('btn-select-theme'));
         spectator.dispatchMouseEvent(btnSelectStyles, 'onClick');
 
         expect(spy).toHaveBeenCalled();
