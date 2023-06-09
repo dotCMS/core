@@ -233,18 +233,14 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
      * @param {numberOrString} rowID
      * @memberof TemplateBuilderComponent
      */
-    editBoxStyleClasses(
-        rowID: numberOrString,
-        box: DotGridStackNode,
-        styleClasses: string[]
-    ): void {
+    editBoxStyleClasses(rowID: numberOrString, box: DotGridStackNode): void {
         this.store.getStyleClassesFromFile();
 
         this.ref = this.dialogService.open(AddStyleClassesDialogComponent, {
             header: 'Edit Classes',
             data: {
                 classes: this.store.styleClasses$,
-                selectedClasses: styleClasses ?? []
+                selectedClasses: box.styleClass ?? []
             },
             resizable: false
         });
