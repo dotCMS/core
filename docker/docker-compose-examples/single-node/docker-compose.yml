@@ -51,6 +51,7 @@ services:
       - db
     volumes:
       - cms-shared:/data/shared
+      #- ./assets:/data/shared/assets
       #- {license_local_path}/license.zip:/data/shared/assets/license.zip
     networks:
       - db_net
