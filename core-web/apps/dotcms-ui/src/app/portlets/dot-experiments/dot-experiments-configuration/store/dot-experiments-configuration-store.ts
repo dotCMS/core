@@ -25,7 +25,10 @@ import {
     TrafficProportion,
     Variant
 } from '@dotcms/dotcms-models';
-import { processExperimentConfigProps } from '@portlets/dot-experiments/shared/dot-experiment.utils';
+import {
+    checkIfExperimentDescriptionIsSaving,
+    processExperimentConfigProps
+} from '@portlets/dot-experiments/shared/dot-experiment.utils';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
@@ -57,6 +60,7 @@ export interface ConfigurationViewModel {
     showExperimentSummary: boolean;
     experimentStatus: DotExperimentStatusList;
     isSaving: boolean;
+    isDescriptionSaving: boolean;
 }
 
 @Injectable()
@@ -99,6 +103,11 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
 
     readonly variantsStatus$ = this.select(this.state$, ({ stepStatusSidebar }) =>
         stepStatusSidebar.experimentStep === ExperimentSteps.VARIANTS ? stepStatusSidebar : null
+    );
+
+    readonly getIsDescriptionSaving$: Observable<boolean> = this.select(
+        this.state$,
+        ({ stepStatusSidebar }) => checkIfExperimentDescriptionIsSaving(stepStatusSidebar)
     );
 
     // Goals Step //
@@ -298,6 +307,33 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         );
     });
 
+    readonly cancelSchedule = this.effect((experiment$: Observable<DotExperiment>) => {
+        return experiment$.pipe(
+            tap(() => this.setComponentStatus(ComponentStatus.SAVING)),
+            switchMap((experiment) =>
+                this.dotExperimentsService.cancelSchedule(experiment.id).pipe(
+                    tapResponse(
+                        (response) => {
+                            this.messageService.add({
+                                severity: 'info',
+                                summary: this.dotMessageService.get(
+                                    'experiments.notification.cancel.schedule-title'
+                                ),
+                                detail: this.dotMessageService.get(
+                                    'experiments.notification.cancel.schedule',
+                                    experiment.name
+                                )
+                            });
+                            this.setExperiment(response);
+                        },
+                        (error: HttpErrorResponse) => this.dotHttpErrorManagerService.handle(error),
+                        () => this.setComponentStatus(ComponentStatus.IDLE)
+                    )
+                )
+            )
+        );
+    });
+
     // Variants
     readonly addVariant = this.effect(
         (variant$: Observable<{ experimentId: string; name: string }>) => {
@@ -386,6 +422,53 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                 )
             );
         }
+    );
+
+    readonly setDescription = this.effect(
+        (
+            description$: Observable<{
+                experiment: DotExperiment;
+                data: Pick<DotExperiment, 'description'>;
+            }>
+        ) =>
+            description$.pipe(
+                tap(() =>
+                    this.setSidebarStatus({
+                        status: ComponentStatus.SAVING,
+                        experimentStep: ExperimentSteps.EXPERIMENT_DESCRIPTION
+                    })
+                ),
+                switchMap(({ experiment, data }) =>
+                    this.dotExperimentsService.setDescription(experiment.id, data.description).pipe(
+                        tapResponse(
+                            (response) => {
+                                this.messageService.add({
+                                    severity: 'info',
+                                    summary: this.dotMessageService.get(
+                                        'experiments.configure.description.edit.confirm-title'
+                                    ),
+                                    detail: this.dotMessageService.get(
+                                        'experiments.configure.description.edit.confirm-message',
+                                        experiment.name
+                                    )
+                                });
+
+                                this.setExperiment(response);
+                                this.setSidebarStatus({
+                                    status: ComponentStatus.IDLE
+                                });
+                            },
+
+                            (error: HttpErrorResponse) => {
+                                this.setSidebarStatus({
+                                    status: ComponentStatus.IDLE
+                                });
+                                this.dotHttpErrorManagerService.handle(error);
+                            }
+                        )
+                    )
+                )
+            )
     );
 
     readonly deleteVariant = this.effect(
@@ -635,6 +718,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         this.showExperimentSummary$,
         this.isSaving$,
         this.getExperimentStatus$,
+        this.getIsDescriptionSaving$,
         (
             { experiment, stepStatusSidebar },
             isExperimentADraft,
@@ -643,7 +727,8 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
             disabledStartExperiment,
             showExperimentSummary,
             isSaving,
-            experimentStatus
+            experimentStatus,
+            isDescriptionSaving
         ) => ({
             experiment,
             stepStatusSidebar,
@@ -653,7 +738,8 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
             disabledStartExperiment,
             showExperimentSummary,
             isSaving,
-            experimentStatus
+            experimentStatus,
+            isDescriptionSaving
         })
     );
 

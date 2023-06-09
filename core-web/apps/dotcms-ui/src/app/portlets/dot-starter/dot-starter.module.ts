@@ -3,7 +3,7 @@ import { NgModule } from '@angular/core';
 
 import { CheckboxModule } from 'primeng/checkbox';
 
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { DotMessagePipeModule } from '@dotcms/ui';
 
 import { DotStarterResolver } from './dot-starter-resolver.service';
 import { DotStarterRoutingModule } from './dot-starter-routing.module';

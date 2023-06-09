@@ -19,12 +19,22 @@
             ></button>
             <button
                 class="p-button-outlined"
+                *ngIf="vm.experimentStatus === experimentStatus.SCHEDULED"
+                [loading]="vm.isSaving"
+                (click)="cancelScheduleExperiment($event, vm.experiment)"
+                data-testId="cancel-schedule-experiment-button"
+                label="{{ 'experiments.configure.scheduling.cancel' | dm }}"
+                pButton
+                type="button"
+            ></button>
+            <button
+                class="p-button-outlined"
                 *ngIf="vm.experimentStatus === experimentStatus.RUNNING"
                 [disabled]="vm.disabledStartExperiment"
                 [loading]="vm.isSaving"
                 (click)="stopExperiment($event, vm.experiment)"
                 data-testId="stop-experiment-button"
-                label="{{ 'experiments.action.stop-experiment' | dm }}"
+                label="{{ 'experiments.action.end-experiment' | dm }}"
                 pButton
                 type="button"
             ></button>
@@ -33,8 +43,14 @@
 
     <div class="dot-experiment-config-content">
         <ng-container *ngIf="!vm.isLoading; else loadingTpl">
-            <p-card *ngIf="!!vm.experiment.description" data-testId="experiment-description">
-                {{ vm.experiment.description }}
+            <p-card data-testId="experiment-description">
+                <dot-experiments-inplace-edit-text
+                    [disabled]="vm.experimentStatus === experimentStatus.RUNNING"
+                    [isLoading]="vm.isDescriptionSaving"
+                    [text]="vm.experiment.description"
+                    (textChanged)="saveDescriptionAction($event, vm.experiment)"
+                    emptyTextMessage="experiments.configure.description.add"
+                />
             </p-card>
 
             <dot-experiments-configuration-variants />
