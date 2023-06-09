@@ -219,6 +219,35 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
     );
 
     /**
+     * @description This method updates the columns when changes are made on styleClasses
+     *
+     * @memberof DotTemplateBuilderStore
+     */
+    readonly updateColumnStyleClasses = this.updater(
+        (state, affectedColumn: DotGridStackWidget) => {
+            const { items } = state;
+
+            return {
+                ...state,
+                items: items.map((row) => {
+                    if (row.id === affectedColumn.parentId) {
+                        if (row.subGridOpts) {
+                            row.subGridOpts.children = row.subGridOpts.children.map((child) => {
+                                if (affectedColumn.id === child.id)
+                                    return { ...child, styleClass: affectedColumn.styleClass };
+
+                                return child;
+                            });
+                        }
+                    }
+
+                    return row;
+                })
+            };
+        }
+    );
+
+    /**
      * @description This method removes a column from the grid
      *
      * @memberof DotTemplateBuilderStore
