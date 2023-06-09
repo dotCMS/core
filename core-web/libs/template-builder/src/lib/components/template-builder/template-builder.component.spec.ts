@@ -3,6 +3,9 @@ import { SpectatorHost, byTestId, createHostFactory } from '@ngneat/spectator';
 import { GridItemHTMLElement } from 'gridstack';
 
 import { AsyncPipe, NgFor } from '@angular/common';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+
+import { DialogService } from 'primeng/dynamicdialog';
 
 import { take } from 'rxjs/operators';
 
@@ -13,6 +16,7 @@ import { AddWidgetComponent } from './components/add-widget/add-widget.component
 import { TemplateBuilderBackgroundColumnsComponent } from './components/template-builder-background-columns/template-builder-background-columns.component';
 import { TemplateBuilderBoxComponent } from './components/template-builder-box/template-builder-box.component';
 import { TemplateBuilderRowComponent } from './components/template-builder-row/template-builder-row.component';
+import { TemplateBuilderSectionComponent } from './components/template-builder-section/template-builder-section.component';
 import { DotGridStackWidget } from './models/models';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { TemplateBuilderComponent } from './template-builder.component';
@@ -31,14 +35,17 @@ describe('TemplateBuilderComponent', () => {
             AddWidgetComponent,
             TemplateBuilderBoxComponent,
             TemplateBuilderBackgroundColumnsComponent,
-            DotMessagePipeModule
+            DotMessagePipeModule,
+            HttpClientTestingModule,
+            TemplateBuilderSectionComponent
         ],
         providers: [
             DotTemplateBuilderStore,
             {
                 provide: DotMessageService,
                 useValue: DOT_MESSAGE_SERVICE_TB_MOCK
-            }
+            },
+            DialogService
         ]
     });
     beforeEach(() => {

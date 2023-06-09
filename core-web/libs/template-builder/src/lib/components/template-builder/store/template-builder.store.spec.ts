@@ -2,6 +2,7 @@ import { expect, jest, describe } from '@jest/globals';
 import { of } from 'rxjs';
 import { v4 as uuid } from 'uuid';
 
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
 import { take } from 'rxjs/operators';
@@ -21,6 +22,7 @@ describe('DotTemplateBuilderStore', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
+            imports: [HttpClientTestingModule],
             providers: [DotTemplateBuilderStore]
         });
         service = TestBed.inject(DotTemplateBuilderStore);

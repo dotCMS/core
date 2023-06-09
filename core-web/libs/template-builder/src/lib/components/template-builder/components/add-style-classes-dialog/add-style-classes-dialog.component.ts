@@ -59,7 +59,6 @@ export class AddStyleClassesDialogComponent implements OnInit, AfterViewInit {
     filterClasses({ query }: { query: string }): void {
         const filtered: StyleClassModel[] = [];
 
-        //in a real application, make a request to a remote url with the query and return filtered results, for demo we filter at client side
         if ((query.includes(',') || query.includes(' ')) && query.trim().length > 0) {
             this.addClassByCommaOrSpace(query);
 
@@ -70,7 +69,7 @@ export class AddStyleClassesDialogComponent implements OnInit, AfterViewInit {
             const currentClass = this.classes[i];
             if (
                 currentClass.klass.toLowerCase().indexOf(query.toLowerCase()) == 0 &&
-                !this.selectedClasses.includes(currentClass)
+                !this.selectedClasses.find(({ klass }) => klass === currentClass.klass)
             ) {
                 filtered.push(currentClass);
             }

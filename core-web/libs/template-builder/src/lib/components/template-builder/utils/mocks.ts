@@ -245,6 +245,13 @@ export const DOT_MESSAGE_SERVICE_TB_MOCK = new MockDotMessageService(MESSAGES_MO
 
 export const MOCK_TEXT = 'Header';
 
+export const MOCK_SELECTED_STYLE_CLASSES = [
+    'd-flex',
+    'flex-column',
+    'justify-content-center',
+    'align-items-center'
+];
+
 export const MOCK_STYLE_CLASSES_FILE = {
     classes: [
         'd-none',
