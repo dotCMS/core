@@ -41,12 +41,17 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.apache.tools.ant.taskdefs.Classloader;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -167,7 +172,8 @@ public class BinaryExporterServletTest {
     public void requestGifFile()
             throws DotDataException, DotSecurityException, ServletException, IOException {
 
-        File gifFile = new File("src/integration-test/resources/images/issue19338.gif");
+
+        File gifFile = getResourceFile("images/issue19338.gif");
 
         final Contentlet fileContentlet = new FileAssetDataGen(gifFile).host(host)
                 .setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
@@ -193,6 +199,25 @@ public class BinaryExporterServletTest {
 
         assertTrue(equalsIgnoreNewlineStyle(expectedContent, new String(responseContent, StandardCharsets.UTF_8)));
 
+    }
+
+    private File getResourceFile(String s) {
+
+        // If resource is absolute path then use Thread.currentThread().getContextClassLoader()
+        // If resource is relative path then use getClass().getClassLoader();
+
+        ClassLoader classloader = getClass().getClassLoader();
+
+        final URL resource = classloader.getResource(s);
+        if (resource == null) {
+            throw new IllegalArgumentException("Resource not found: " + s);
+        }
+
+        // ir resource is in a jar file then throw exception
+        if (resource.getProtocol().equals("jar")) {
+            throw new IllegalArgumentException("Resource is in a jar file: " + s);
+        }
+        return new File(resource.getFile());
     }
 
     @DataProvider
@@ -221,7 +246,7 @@ public class BinaryExporterServletTest {
         Contentlet fileContentlet = null;
 
         try {
-            File png = new File("src/integration-test/resources/images/issue21652.png");
+            File png = getResourceFile("images/issue21652.png");
 
             fileContentlet = new FileAssetDataGen(png).host(host)
                     .setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
