@@ -1192,6 +1192,9 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     public void updateMultiTrees(final Collection<String> pagesId, final String containerId,
             final String oldValue, final String newValue) throws DotDataException {
 
+        DotPreconditions.notNull(pagesId, () -> "Pages id collection cannot be null");
+        DotPreconditions.isTrue(!pagesId.isEmpty(), () -> "Pages id collection cannot be empty");
+
         final String innerContainerId = FileAssetContainerUtil.getInstance().isFolderAssetContainerId(containerId)
                 ? getFileContainerId(containerId) : containerId;
 
