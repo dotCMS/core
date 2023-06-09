@@ -25,10 +25,8 @@ import com.dotcms.analytics.metrics.EventType;
 import com.dotcms.analytics.metrics.Metric;
 import com.dotcms.analytics.metrics.MetricType;
 import com.dotcms.analytics.model.AbstractAnalyticsProperties;
-<<<<<<< HEAD
-=======
+
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
->>>>>>> origin/master
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContainerDataGen;
