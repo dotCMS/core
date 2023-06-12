@@ -20,7 +20,7 @@
             <ng-template pTemplate="header">
                 <tr>
                     <th style="width: 40%">{{ 'experiments.promote.variant' | dm }}</th>
-                    <th style="width: 20%">{{ 'experiments.promote.probability-to-win' | dm }}</th>
+                    <th style="width: 35%">{{ 'experiments.reports.probability.best' | dm }}</th>
                     <th class="text-right">{{ 'experiments.promote.status' | dm }}</th>
                 </tr>
             </ng-template>
@@ -39,9 +39,7 @@
                         </div>
                     </td>
                     <td>
-                        <span data-testId="variant-percent">{{
-                            variant.probabilityToWin | percent
-                        }}</span>
+                        <span data-testId="variant-percent">{{ variant.probabilityToWin }}</span>
                     </td>
                     <td class="text-right">
                         <div class="flex gap-2 justify-content-end">

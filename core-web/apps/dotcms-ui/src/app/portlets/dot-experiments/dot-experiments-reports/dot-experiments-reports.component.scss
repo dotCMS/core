@@ -42,12 +42,14 @@ $max-container-width: 1100px;
     color: $color-alert-green;
 }
 
-.prospect-winner {
-    font-weight: $font-weight-bold;
+.trophy {
+    fill: $color-accessible-text-green;
+    height: 20px;
+    min-width: 20px;
 }
 
-.row-container div:first-child {
-    flex-basis: 12rem;
+.prospect-winner {
+    font-weight: $font-weight-bold;
 }
 
 @media only screen and (max-width: $screen-lg-max) {

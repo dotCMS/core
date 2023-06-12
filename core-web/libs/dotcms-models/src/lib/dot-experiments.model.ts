@@ -30,10 +30,23 @@ export interface DotExperimentResults {
     sessions: DotResultSessions;
 }
 
-interface DotResultBayesian {
+export interface DotResultBayesian {
     value: number;
     suggestedWinner: BayesianStatusResponse | string;
-    probabilities: Array<{ variant: string; value: number }>;
+    results: DotBayesianVariantResult[];
+}
+
+export interface DotBayesianVariantResult {
+    conversionRate: number;
+    credibilityInterval: DotCreditabilityInterval;
+    probability: number;
+    risk: number;
+    variant: string;
+}
+
+export interface DotCreditabilityInterval {
+    lower: number;
+    upper: number;
 }
 
 export interface DotResultGoal {
@@ -82,13 +95,13 @@ export interface TrafficProportion {
 export interface DotExperimentDetail {
     id: string;
     name: string;
-    trafficSplit: string;
-    pageViews: number;
+    conversions: number;
+    conversionRate: string;
+    conversionRateRange: string;
     sessions: number;
-    clicks: number;
-    bestVariant: number;
-    improvement: number;
+    probabilityToBeBest: string;
     isWinner: boolean;
+    isPromoted: boolean;
 }
 
 export interface Variant {

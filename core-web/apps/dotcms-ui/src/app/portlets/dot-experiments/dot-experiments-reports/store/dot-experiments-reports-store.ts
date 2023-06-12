@@ -2,6 +2,7 @@ import { ComponentStore, tapResponse } from '@ngrx/component-store';
 import { ChartData } from 'chart.js';
 import { forkJoin, Observable, of } from 'rxjs';
 
+import { formatPercent } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Title } from '@angular/platform-browser';
@@ -18,6 +19,8 @@ import {
     daysOfTheWeek,
     DEFAULT_VARIANT_ID,
     DialogStatus,
+    DotBayesianVariantResult,
+    DotCreditabilityInterval,
     DotExperiment,
     DotExperimentDetail,
     DotExperimentResults,
@@ -77,6 +80,8 @@ export interface VmPromoteVariant {
     variants: DotResultSimpleVariant[] | null;
 }
 
+const NOT_ENOUGH_DATA_LABEL = 'Not enough data';
+
 @Injectable()
 export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsReportsState> {
     readonly isLoading$: Observable<boolean> = this.select(
@@ -107,21 +112,30 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
     );
 
     readonly getResultVariant$: Observable<DotResultSimpleVariant[]> = this.select(
-        ({ results, experiment }) =>
-            Object.values(results.goals.primary.variants).map(
-                ({ variantName, variantDescription, uniqueBySession }) => ({
-                    id: variantName,
-                    name: variantDescription,
-                    isPromoted: experiment.trafficProportion.variants.find(
-                        ({ id }) => id === variantName
-                    )?.promoted,
-                    variantPercentage: uniqueBySession.variantPercentage,
-                    isWinner: results.bayesianResult.suggestedWinner === variantName,
-                    probabilityToWin: results.bayesianResult.probabilities.find(
-                        ({ variant }) => variant === variantName
-                    )?.value
-                })
-            )
+        ({ results, experiment }) => {
+            const hasBayesianResults = results?.bayesianResult?.results?.length > 0;
+            const noData = this.dotMessageService.get(NOT_ENOUGH_DATA_LABEL);
+
+            return Object.values(results.goals.primary.variants).map(
+                ({ variantName, variantDescription, uniqueBySession }) => {
+                    const variantBayesianResult = this.getBayesianVariantResult(
+                        variantName,
+                        results.bayesianResult.results
+                    );
+
+                    return {
+                        id: variantName,
+                        name: variantDescription,
+                        isPromoted: this.isPromotedVariant(experiment, variantName),
+                        variantPercentage: uniqueBySession.variantPercentage,
+                        isWinner: results.bayesianResult.suggestedWinner === variantName,
+                        probabilityToWin: hasBayesianResults
+                            ? formatPercent(variantBayesianResult.probability, 'en-US', '1.0-2')
+                            : noData
+                    };
+                }
+            );
+        }
     );
 
     readonly hasEnoughSessions$: Observable<boolean> = this.select(
@@ -179,23 +193,43 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
             : null
     );
 
-    readonly getDetailData$: Observable<DotExperimentDetail[]> = this.select(({ results }) =>
-        results
-            ? Object.values(results.goals.primary.variants).map((variant) => ({
-                  id: variant.variantName,
-                  name: variant.variantDescription,
-                  trafficSplit: 'TBD',
-                  pageViews: variant.totalPageViews,
-                  sessions: results.sessions.variants[variant.variantName],
-                  clicks: variant.uniqueBySession.count,
-                  bestVariant: variant.uniqueBySession.totalPercentage / 100,
-                  improvement:
-                      (variant.uniqueBySession.totalPercentage -
-                          results.goals.primary.variants.DEFAULT.uniqueBySession.totalPercentage) /
-                      100,
-                  isWinner: results.bayesianResult.suggestedWinner === variant.variantName
-              }))
-            : []
+    readonly getDetailData$: Observable<DotExperimentDetail[]> = this.select(
+        ({ experiment, results }) => {
+            const hasBayesianResults = results?.bayesianResult?.results?.length > 0;
+            const noData = this.dotMessageService.get(NOT_ENOUGH_DATA_LABEL);
+
+            return results
+                ? Object.values(results.goals.primary.variants).map((variant) => {
+                      const variantBayesianResult = this.getBayesianVariantResult(
+                          variant.variantName,
+                          results.bayesianResult.results
+                      );
+
+                      return {
+                          id: variant.variantName,
+                          name: variant.variantDescription,
+                          conversions: variant.uniqueBySession.count,
+                          conversionRate: formatPercent(
+                              variant.uniqueBySession.count /
+                                  results.sessions.variants[variant.variantName],
+                              'en-US',
+                              '1.0-2'
+                          ),
+                          conversionRateRange: hasBayesianResults
+                              ? this.getConversionRateRage(
+                                    variantBayesianResult.credibilityInterval
+                                )
+                              : noData,
+                          sessions: results.sessions.variants[variant.variantName],
+                          probabilityToBeBest: hasBayesianResults
+                              ? formatPercent(variantBayesianResult.probability, 'en-US', '1.0-2')
+                              : noData,
+                          isWinner: results.bayesianResult.suggestedWinner === variant.variantName,
+                          isPromoted: this.isPromotedVariant(experiment, variant.variantName)
+                      };
+                  })
+                : [];
+        }
     );
 
     readonly loadExperimentAndResults = this.effect((experimentId$: Observable<string>) =>
@@ -398,5 +432,24 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
         return experiment.status === DotExperimentStatusList.ENDED
             ? { ...ReportSummaryLegendByBayesianStatus.WINNER }
             : { ...ReportSummaryLegendByBayesianStatus.PRELIMINARY_WINNER };
+    }
+
+    private getBayesianVariantResult(
+        variantName: string,
+        results: DotBayesianVariantResult[]
+    ): DotBayesianVariantResult {
+        return results.find((variant) => variant.variant === variantName);
+    }
+
+    private getConversionRateRage(data: DotCreditabilityInterval): string {
+        return `${formatPercent(data.lower, 'en-US', '1.0-2')} to ${formatPercent(
+            data.upper,
+            'en-US',
+            '1.0-2'
+        )}`;
+    }
+
+    private isPromotedVariant(experiment: DotExperiment, variantName: string): boolean {
+        return experiment.trafficProportion.variants.find(({ id }) => id === variantName)?.promoted;
     }
 }

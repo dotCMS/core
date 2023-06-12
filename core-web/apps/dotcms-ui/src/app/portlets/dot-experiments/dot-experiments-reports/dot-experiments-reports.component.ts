@@ -26,6 +26,7 @@ import { tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DEFAULT_VARIANT_NAME } from '@dotcms/dotcms-models';
+import { DotIconModule } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotExperimentsPublishVariantComponent } from '@portlets/dot-experiments/dot-experiments-reports/components/dot-experiments-publish-variant/dot-experiments-publish-variant.component';
 import { DotExperimentsReportsChartComponent } from '@portlets/dot-experiments/dot-experiments-reports/components/dot-experiments-reports-chart/dot-experiments-reports-chart.component';
@@ -61,7 +62,8 @@ import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.dir
         TagModule,
         ButtonModule,
         TitleCasePipe,
-        JsonPipe
+        JsonPipe,
+        DotIconModule
     ],
     templateUrl: './dot-experiments-reports.component.html',
     styleUrls: ['./dot-experiments-reports.component.scss'],
