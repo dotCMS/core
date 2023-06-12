@@ -23,4 +23,9 @@ describe('DotStyleClassesService', () => {
         const req = httpTestingController.expectOne('/application/templates/classes.json');
         expect(req.request.method).toEqual('GET');
     });
+    it('should fetch style classes file from custom file path', () => {
+        service.getStyleClassesFromFile('/test/route/my-custom-classes.json').subscribe();
+        const req = httpTestingController.expectOne('/test/route/my-custom-classes.json');
+        expect(req.request.method).toEqual('GET');
+    });
 });

@@ -18,12 +18,13 @@ export class DotStyleClassesService {
     constructor(private http: HttpClient) {}
 
     /**
-     * @description This method fetchs the style classes from the classes.json file
+     * @description This method fetchs the style classes from a file, if filePath is not provided it will fetch to "/application/templates/classes.json"
      *
-     * @return {*}
+     * @param {string} [filePath=STYLE_CLASSES_FILE_URL]
+     * @return {*}  {Observable<object>}
      * @memberof DotStyleClassesService
      */
-    getStyleClassesFromFile(): Observable<object> {
-        return this.http.get(STYLE_CLASSES_FILE_URL);
+    getStyleClassesFromFile(filePath: string = STYLE_CLASSES_FILE_URL): Observable<object> {
+        return this.http.get(filePath);
     }
 }
