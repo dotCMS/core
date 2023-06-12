@@ -1,13 +1,12 @@
 import { ComponentStore, tapResponse } from '@ngrx/component-store';
 
-import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
 import { switchMap } from 'rxjs/operators';
 
-import { DotRemoveConfirmDialogState as DotAddStyleClassesDialogState } from '../../../models/models';
+import { DotStyleClassesService } from '@dotcms/data-access';
 
-export const STYLE_CLASSES_FILE_URL = '/application/templates/classes.json';
+import { DotAddStyleClassesDialogState } from '../../../models/models';
 
 /**
  *
@@ -20,7 +19,7 @@ export const STYLE_CLASSES_FILE_URL = '/application/templates/classes.json';
 export class DotAddStyleClassesDialogStore extends ComponentStore<DotAddStyleClassesDialogState> {
     public styleClasses$ = this.select((state) => state.styleClasses);
 
-    constructor(private http: HttpClient) {
+    constructor(private styleClassesService: DotStyleClassesService) {
         super({ styleClasses: [] });
     }
 
@@ -30,10 +29,10 @@ export class DotAddStyleClassesDialogStore extends ComponentStore<DotAddStyleCla
      *
      * @memberof DotAddStyleClassesDialogStore
      */
-    readonly getStyleClassesFromFile = this.effect((trigger$) => {
+    readonly fetchStyleClasses = this.effect((trigger$) => {
         return trigger$.pipe(
             switchMap(() =>
-                this.http.get(STYLE_CLASSES_FILE_URL).pipe(
+                this.styleClassesService.getStyleClassesFromFile().pipe(
                     tapResponse(
                         ({ classes }: { classes: string[] }) => {
                             this.patchState({

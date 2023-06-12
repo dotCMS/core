@@ -61,12 +61,12 @@ export interface DotTemplateBuilderState {
 }
 
 /**
- * @description This is the model for the DotRemoveConfirmDialogStore
+ * @description This is the model for the DotAddStyleClassesDialogStore
  *
  * @export
- * @interface DotRemoveConfirmDialogState
+ * @interface DotAddStyleClassesDialogState
  */
-export interface DotRemoveConfirmDialogState {
+export interface DotAddStyleClassesDialogState {
     styleClasses: StyleClassModel[];
 }
 

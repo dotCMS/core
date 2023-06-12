@@ -35,3 +35,4 @@ export * from './lib/dot-workflow-actions-fire/dot-workflow-actions-fire.service
 export * from './lib/dot-workflow/dot-workflow.service';
 export * from './lib/dot-workflows-actions/dot-workflows-actions.service';
 export * from './lib/paginator/paginator.service';
+export * from './lib/dot-style-classes/dot-style-classes.service';

@@ -60,7 +60,7 @@ export class AddStyleClassesDialogComponent implements OnInit, AfterViewInit, On
             this.classes = classes;
         });
 
-        this.store.getStyleClassesFromFile();
+        this.store.fetchStyleClasses();
     }
 
     ngAfterViewInit() {

@@ -11,7 +11,7 @@ import { ToolbarModule } from 'primeng/toolbar';
 
 import { take } from 'rxjs/operators';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessageService, DotStyleClassesService } from '@dotcms/data-access';
 import { DotMessagePipeModule } from '@dotcms/ui';
 
 import { AddWidgetComponent } from './components/add-widget/add-widget.component';
@@ -51,7 +51,8 @@ describe('TemplateBuilderComponent', () => {
                 provide: DotMessageService,
                 useValue: DOT_MESSAGE_SERVICE_TB_MOCK
             },
-            DialogService
+            DialogService,
+            DotStyleClassesService
         ]
     });
     beforeEach(() => {

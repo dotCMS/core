@@ -23,7 +23,7 @@ describe('DotAddStyleClassesDialogStore', () => {
     afterEach(() => httpTestingController.verify());
 
     it('should fetch style classes file', () => {
-        service.getStyleClassesFromFile();
+        service.fetchStyleClasses();
         const req = httpTestingController.expectOne('/application/templates/classes.json');
         expect(req.request.method).toEqual('GET');
         req.flush(MOCK_STYLE_CLASSES_FILE);
@@ -35,7 +35,7 @@ describe('DotAddStyleClassesDialogStore', () => {
     });
 
     it('should set styleClasses to empty array if fetch style classes fails', () => {
-        service.getStyleClassesFromFile();
+        service.fetchStyleClasses();
         const req = httpTestingController.expectOne('/application/templates/classes.json');
         expect(req.request.method).toEqual('GET');
         req.flush("This file doesn't exist", { status: 404, statusText: 'Not Found' });
