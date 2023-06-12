@@ -62,7 +62,7 @@ public class HostFactoryImplTest extends IntegrationTestBase {
         if (listStoppedLive.isPresent()) {
             assertTrue( "Live test is not contained in live/stopped list sites of length "+listStoppedLive.get().size(), listStoppedLive.get().contains(LiveTestSite));
         } else {
-            System.out.println("->Live-Site-Validation live/stopped list not present!!!");
+            assertTrue(listStoppedLive.isPresent());
         }
 
         //stopped site obj
@@ -79,14 +79,7 @@ public class HostFactoryImplTest extends IntegrationTestBase {
         if (hostsList.isPresent()) {
             assertTrue( "Stopped test is not contained in live/stopped list sites of length "+hostsList.get().size(), hostsList.get().contains(stoppedTestSite));
         } else {
-            System.out.println("->Stopped-Site-Validation live/stopped list not present!!!");
-        }
-
-        if (hostsList.isPresent()) {
-            assertTrue("Both sites validations error, length"+ hostsList.get().size(),hostsList.get().contains(LiveTestSite) && hostsList.get().contains(stoppedTestSite));
-
-        } else {
-            System.out.println("->Stopped-live-Site-Validation live/stopped list not present!!!");
+            assertTrue(hostsList.isPresent());
         }
 
     }
