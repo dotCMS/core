@@ -34,3 +34,8 @@ export enum TemplateBuilderBoxSize {
     medium = 'medium',
     small = 'small'
 }
+
+export enum SidebarPosition {
+    left = 'Left',
+    right = 'Right'
+}

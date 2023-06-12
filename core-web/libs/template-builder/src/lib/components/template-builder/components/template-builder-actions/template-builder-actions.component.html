@@ -1,15 +1,45 @@
+<p-overlayPanel #op appendTo="body">
+    <ng-template pTemplate="content">
+        <form [formGroup]="formGroup" novalidate>
+            <ng-container *ngFor="let addon of addons">
+                <div class="p-overlaypanel-content__item">
+                    <p-checkbox
+                        [value]="addon"
+                        [inputId]="addon.label"
+                        [formControlName]="addon.name"
+                    ></p-checkbox>
+                    <label class="item__label" [htmlFor]="addon.label">{{ addon.label }}</label>
+                </div>
+            </ng-container>
+            <div class="p-overlaypanel-content__sidebar-title-container">
+                <p class="sidebar-title-container__text">Sidebar</p>
+            </div>
+            <ng-container *ngFor="let position of posibleSidebarPositions">
+                <div class="p-overlaypanel-content__item">
+                    <p-radioButton
+                        [value]="position"
+                        [inputId]="position"
+                        formControlName="sidebarPosition"
+                    ></p-radioButton>
+                    <label class="item__label" [htmlFor]="position">{{ position }}</label>
+                </div>
+            </ng-container>
+        </form>
+    </ng-template>
+</p-overlayPanel>
 <button
     class="p-button-text p-button-vertical"
     [label]="'dot.template.builder.toolbar.button.layout.label' | dm"
-    (onClick)="selectTheme.emit()"
+    (click)="selectTheme.emit()"
     data-testid="btn-select-theme"
     pButton
     icon="pi pi-palette"
 ></button>
 <button
     class="p-button-text p-button-vertical"
+    #layoutBtn
     [label]="'dot.template.builder.toolbar.button.theme.label' | dm"
-    (onClick)="selectLayout.emit()"
+    (click)="op.toggle($event, layoutBtn)"
     data-testid="btn-select-layout"
     pButton
 >

@@ -4,6 +4,7 @@ import { GridItemHTMLElement } from 'gridstack';
 
 import { AsyncPipe, NgFor } from '@angular/common';
 
+import { DividerModule } from 'primeng/divider';
 import { ToolbarModule } from 'primeng/toolbar';
 
 import { take } from 'rxjs/operators';
@@ -16,6 +17,7 @@ import { TemplateBuilderActionsComponent } from './components/template-builder-a
 import { TemplateBuilderBackgroundColumnsComponent } from './components/template-builder-background-columns/template-builder-background-columns.component';
 import { TemplateBuilderBoxComponent } from './components/template-builder-box/template-builder-box.component';
 import { TemplateBuilderRowComponent } from './components/template-builder-row/template-builder-row.component';
+import { TemplateBuilderSectionComponent } from './components/template-builder-section/template-builder-section.component';
 import { DotGridStackWidget } from './models/models';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { TemplateBuilderComponent } from './template-builder.component';
@@ -36,7 +38,9 @@ describe('TemplateBuilderComponent', () => {
             TemplateBuilderBackgroundColumnsComponent,
             TemplateBuilderActionsComponent,
             DotMessagePipeModule,
-            ToolbarModule
+            ToolbarModule,
+            DividerModule,
+            TemplateBuilderSectionComponent
         ],
         providers: [
             DotTemplateBuilderStore,
