@@ -329,33 +329,36 @@ public class ContentHandler implements IHandler {
 				}
                 try{
 					final boolean isPushedContentArchived = wrapper.getInfo().isDeleted();
+					final String contentId = content.getIdentifier();
+					final String contentInode = content.getInode();
+					final long languageId = content.getLanguageId();
 					if(wrapper.getOperation().equals(PushPublisherConfig.Operation.PUBLISH) && !isPushedContentArchived) {
 						// This operation (PUBLISH) publishes/un-publishes a Content that is NOT archived. The un-publishing
 						// is taken care of at the end of this handleContents() method
-						publish(content, folderOut, systemUser, wrapper, isHost,remoteLocalLanguages);
-						Logger.debug(this, "Content saved: " + content.getIdentifier()
-								+ " , inode: " + content.getInode() + " , language: " + content.getLanguageId());
+						saveContent(content, folderOut, systemUser, wrapper, isHost,remoteLocalLanguages);
+						Logger.debug(this, () -> "Content saved: " + contentId
+								+ " , inode: " + contentInode + " , language: " + languageId);
 					} else if (wrapper.getOperation().equals(PushPublisherConfig.Operation.PUBLISH) && isPushedContentArchived) {
 						// This operation (PUBLISH) flags the pushed Content as Archived, WITHOUT deleting it
 						boolean localContentAlreadyExists = APILocator.getContentletAPI().isContentlet(content.getInode());
 						if (!localContentAlreadyExists) {
 							// If the content doesn't exist in the local instance yet, we need to save it first
-							publish(content, folderOut, systemUser, wrapper, isHost, remoteLocalLanguages);
-							Logger.debug(this, "Content saved before archive: " + content.getIdentifier()
-									+ " , inode: " + content.getInode() + " , language: " + content.getLanguageId());
+							saveContent(content, folderOut, systemUser, wrapper, isHost, remoteLocalLanguages);
+							Logger.debug(this, () -> "Content saved before archive: " + contentId
+									+ " , inode: " + contentInode + " , language: " + languageId);
 						}
-						unpublish(content, systemUser, isHost, remoteLocalLanguages, true);
-						Logger.debug(this, "Content archived: " + content.getIdentifier()
-								+ " , inode: " + content.getInode() + " , language: " + content.getLanguageId());
+						archiveOrDeleteContent(content, systemUser, isHost, remoteLocalLanguages, true);
+						Logger.debug(this, () -> "Content archived: " + contentId
+								+ " , inode: " + contentInode + " , language: " + languageId);
 						// Store the IDs that will be archived in the receiver
 						final Pair<String,Long> idAndLanguageKey = Pair.of(content.getIdentifier(),
 								remoteLocalLanguages.getRight());
 						pushedIdsToIgnore.add(idAndLanguageKey);
 					} else {
 						// Finally, this operation (UNPUBLISH) deletes a Content altogether
-						unpublish(content, systemUser, isHost, remoteLocalLanguages, false);
-						Logger.debug(this, "Content deleted: " + content.getIdentifier()
-								+ " , inode: " + content.getInode() + " , language: " + content.getLanguageId());
+						archiveOrDeleteContent(content, systemUser, isHost, remoteLocalLanguages, false);
+						Logger.debug(this, () -> "Content deleted: " + contentId
+								+ " , inode: " + contentInode + " , language: " + languageId);
 					}
 				} catch (final FileAssetValidationException e1){
                     Logger.error(ContentHandler.class, "Content id ["+content.getIdentifier()+"] could not be processed because of missing binary file. Error: "+e1.getMessage(),e1);
@@ -400,11 +403,15 @@ public class ContentHandler implements IHandler {
 
 					final Pair<String,Long> idAndLanguageKey = Pair.of(content.getIdentifier(),
 							remoteLocalLanguages.getRight());
+					final String contentId = content.getIdentifier();
+					final String contentInode = content.getInode();
+					final long languageId = content.getLanguageId();
+					final String workingOnFile = workingOn.toString();
 					if (pushedIdsToIgnore.contains(idAndLanguageKey)) {
 						// The specified Content has been pushed as Archived to the receiver. So, DO NOT execute
 						// any more code, just continue
-						Logger.debug(this, "Content skipped because it's archived, id: " + content.getIdentifier()
-								+ " , inode: " + content.getInode() + " , language: " + content.getLanguageId());
+						Logger.debug(this, () -> "Content skipped because it's archived, id: " + contentId
+								+ " , inode: " + contentInode+ " , language: " + languageId);
 						continue;
 					}
 
@@ -415,8 +422,8 @@ public class ContentHandler implements IHandler {
                         // the info and content from the local server (receiver), not the bundle (sender)
                         updateExisting = Boolean.TRUE;
 						final String existingIdentifier = this.existingContentMap.getExistingContentIdentifier(contentIdAndLang);
-						Logger.debug(this,"Contentlet in file " + workingOn
-								+ " with id " + content.getIdentifier() + ", language " + remoteLocalLanguages.getLeft()
+						Logger.debug(this,() -> "Contentlet in file " + workingOnFile
+								+ " with id " + contentId + ", language " + remoteLocalLanguages.getLeft()
 								+ " has been mapped to existing content id " + existingIdentifier
 								+ ", language " + remoteLocalLanguages.getRight());
                         boolean isLive = info.getWorkingInode().equals(info.getLiveInode());
@@ -486,36 +493,38 @@ public class ContentHandler implements IHandler {
                     // working match with the current live.
                     final boolean workingWithALiveVersion = !info.getWorkingInode().equals(info.getLiveInode()) && info.getLiveInode()!=null;
                     final boolean onlyWorking = info.getLiveInode()==null;
-                    Logger.debug(this, "*********************** identifier: " + content.getIdentifier());
-                    Logger.debug(this, "*********************** working inode: " + info.getWorkingInode());
-                    Logger.debug(this, "*********************** live inode: " + info.getLiveInode());
-                    Logger.debug(this, "*********************** Is a working with a live version? "+workingWithALiveVersion);
+					final boolean isLiveContentlet = content.isLive();
+					final String workingInode = info.getWorkingInode();
+					final String liveInode = info.getLiveInode();
+                    Logger.debug(this, () -> "*********************** identifier: " + contentId);
+                    Logger.debug(this, () -> "*********************** working inode: " + workingInode);
+                    Logger.debug(this, () -> "*********************** live inode: " + liveInode);
+                    Logger.debug(this, () -> "*********************** Is a working with a live version? " + workingWithALiveVersion);
                     if(info.getLiveInode() == null) {
                         Logger.debug(this, ()-> "*********************** live inode is null");
                     } else {
 						if(Logger.isDebugEnabled(getClass())){
                           //This might generate a DotStateException if we're copying a brand new instance that doesnt have a version on the receiver
 						  Logger.debug(this,
-								"*********************** content " + content.getIdentifier()
-										+ " is live? " + content.isLive());
+								  () -> "*********************** content " + contentId
+										+ " is live? " + isLiveContentlet);
 						}
 					}
                     if (updateExisting && null == wrapper.getInfo().getLiveInode()) {
                         // The content from the sender is unpublished. Therefore, content in the
                         // receiver must be unpublished as well
-                        Logger.debug(this, "*********************** identifier ready to unpublish: " + content.getIdentifier());
+                        Logger.debug(this, () -> "*********************** identifier ready to unpublish: " + contentId);
                         try {
                             contentletAPI.unpublish(content, systemUser, false);
                             // Setting live Inode to null equals unpublishing the content
                             info.setLiveInode(null);
                         } catch (final DotStateException e) {
-                            Logger.debug(this,
-                                            "Content cannot unpublish while remote publishing which is probably because it didn't exist. Moving On",
-                                            e);
+                            Logger.debug(this, e,
+									() -> "Content cannot unpublish while remote publishing which is probably because it didn't exist. Moving On");
                         }
                     } else if((!UtilMethods.isSet(info.getLiveInode()) && !workingWithALiveVersion) || (!UtilMethods.isSet(info.getLiveInode()) && onlyWorking)){
 
-                        Logger.debug(this, "*********************** identifier ready to unpublish: " + content.getIdentifier());
+                        Logger.debug(this, () -> "*********************** identifier ready to unpublish: " + contentId);
                         try{
                             contentletAPI.unpublish(content, systemUser, false);
                         } catch (final DotStateException dpe) {
@@ -523,8 +532,9 @@ public class ContentHandler implements IHandler {
                         }
                     }
 
-					Logger.debug(this, "*********************** Saving content info: " + info
-							+ ", language: " + info.getLang());
+					final ContentletVersionInfo versionInfoToSave = info;
+					Logger.debug(this, () -> "*********************** Saving content info: " + versionInfoToSave
+							+ ", language: " + versionInfoToSave.getLang());
                     APILocator.getVersionableAPI().saveContentletVersionInfo(info);
 
 	                if(isHost) {
@@ -543,8 +553,8 @@ public class ContentHandler implements IHandler {
 	                    content = contentletAPI.findContentletByIdentifier(content.getIdentifier(), false, content.getLanguageId(), systemUser, false);
 						content.setProperty(Contentlet.DISABLE_WORKFLOW, true);
 	                    contentletAPI.publish(content, systemUser, false);
-						Logger.debug(this, "Content published: " + content.getIdentifier()
-								+ ", inode: " + content.getInode() + ", language: " + content.getLanguageId());
+						Logger.debug(this, () -> "Content published: " + contentId
+								+ ", inode: " + contentInode + ", language: " + languageId);
 	                }
                 } //end PUBLISH
             } //end for contentWrapper
@@ -709,7 +719,7 @@ public class ContentHandler implements IHandler {
 	 * @throws Exception
 	 *             An error occurred when processing the content.
 	 */
-	private void publish(Contentlet content, final File folderOut, final User userToUse, final ContentWrapper wrapper, final boolean isHost,final Pair<Long,Long> remoteLocalLanguages)
+	private void saveContent(Contentlet content, final File folderOut, final User userToUse, final ContentWrapper wrapper, final boolean isHost, final Pair<Long,Long> remoteLocalLanguages)
             throws Exception
     {
 	    if(LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level) {
@@ -820,7 +830,7 @@ public class ContentHandler implements IHandler {
 				try {
 					invalidateMultiTreeCache(contentId);
 				} catch (final DotDataException e) {
-					Logger.debug(this, String.format("Failed to flush cache for Contentlet '%s': %s", contentId,
+					Logger.debug(this, () -> String.format("Failed to flush cache for Contentlet '%s': %s", contentId,
 							e.getMessage()));
 				}
 			}
@@ -1144,7 +1154,7 @@ public class ContentHandler implements IHandler {
 	 * @throws Exception
 	 *             An error occurred when deleting the specified asset.
 	 */
-	private void unpublish(Contentlet content, final User user, final boolean isHost, final Pair<Long, Long> remoteLocalLanguages, final boolean isPushedContentArchived)
+	private void archiveOrDeleteContent(Contentlet content, final User user, final boolean isHost, final Pair<Long, Long> remoteLocalLanguages, final boolean isPushedContentArchived)
             throws Exception
     {
 	    if(LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level) {
@@ -1191,13 +1201,15 @@ public class ContentHandler implements IHandler {
 				try {
 					contentletAPI.unpublish(content, user, !RESPECT_FRONTEND_ROLES);
 				} catch (DotStateException dse) {
+					final String contentId = content.getIdentifier();
+					final String contentInode = content.getInode();
 					if (isPushedContentArchived) {
-						Logger.debug(getClass(), String.format(
+						Logger.debug(getClass(), () -> String.format(
 								"No live version, not able to archive, contentlet: id -> %s, inode-> %s",
-								content.getIdentifier(), content.getInode()));
+								contentId, contentInode));
 					} else {
-						Logger.debug(getClass(), String.format("No live version, not able to unpublish, contentlet: id -> %s, inode-> %s",
-								content.getIdentifier(), content.getInode()));
+						Logger.debug(getClass(), () -> String.format("No live version, not able to unpublish, contentlet: id -> %s, inode-> %s",
+								contentId, contentInode));
 					}
 				}
 			}
