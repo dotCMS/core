@@ -209,11 +209,9 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
                           id: variant.variantName,
                           name: variant.variantDescription,
                           conversions: variant.uniqueBySession.count,
-                          conversionRate: formatPercent(
-                              variant.uniqueBySession.count /
-                                  results.sessions.variants[variant.variantName],
-                              'en-US',
-                              '1.0-2'
+                          conversionRate: this.getConversionRate(
+                              variant.uniqueBySession.count,
+                              results.sessions.variants[variant.variantName]
                           ),
                           conversionRateRange: hasBayesianResults
                               ? this.getConversionRateRage(
@@ -447,6 +445,14 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
             'en-US',
             '1.0-2'
         )}`;
+    }
+
+    private getConversionRate(uniqueBySession: number, sessions: number): string {
+        if (uniqueBySession !== 0 && sessions !== 0) {
+            return formatPercent(uniqueBySession / sessions, 'en-US', '1.0-2');
+        }
+
+        return '0%';
     }
 
     private isPromotedVariant(experiment: DotExperiment, variantName: string): boolean {
