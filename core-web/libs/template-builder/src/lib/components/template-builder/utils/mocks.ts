@@ -236,7 +236,7 @@ export const MESSAGES_MOCK = {
     'dot.template.builder.footer': 'Footer',
     'dot.template.builder.toolbar.button.layout.label': 'Layout',
     'dot.template.builder.toolbar.button.theme.label': 'Theme',
-    'dot.template.builder.classes.dialog.update.button': 'Update',
+    'dot.template.builder.box.containers.error': 'Error loading containers',
     'dot.template.builder.classes.dialog.autocomplete.label': 'Class',
     'dot.template.builder.classes.dialog.header.label': 'Edit Classes'
 };

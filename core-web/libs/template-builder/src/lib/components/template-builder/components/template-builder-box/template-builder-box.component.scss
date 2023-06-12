@@ -20,6 +20,7 @@
 
         .p-dropdown-label {
             display: none;
+            @include visually-hidden;
         }
 
         .p-dropdown-trigger-icon {
@@ -29,6 +30,7 @@
     }
 
     .p-dropdown {
+        display: flex;
         flex-direction: row-reverse; // this allows having the plus icon at the left of the placeholder
         border: none;
         background: none;
@@ -36,7 +38,7 @@
         margin-left: $spacing-4;
     }
     .p-dropdown-label.p-inputtext {
-        font-size: 0.875rem;
+        font-size: $font-size-sm;
         color: $black;
         padding: $spacing-2;
     }
