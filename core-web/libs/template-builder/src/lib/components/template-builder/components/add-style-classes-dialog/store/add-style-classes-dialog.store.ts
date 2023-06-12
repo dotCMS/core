@@ -33,14 +33,17 @@ export class DotAddStyleClassesDialogStore extends ComponentStore<DotAddStyleCla
         return trigger$.pipe(
             switchMap(() =>
                 this.styleClassesService.getStyleClassesFromFile().pipe(
+                    // This operator is used to handle the error
                     tapResponse(
+                        // 200 response
                         ({ classes }: { classes: string[] }) => {
                             this.patchState({
-                                styleClasses: classes.map((styleClasses) => ({
-                                    cssClass: styleClasses
+                                styleClasses: classes.map((cssClass) => ({
+                                    cssClass
                                 }))
                             });
                         },
+                        // Here is the error, if it fails for any reason I just fill the state with an empty array
                         (_) => {
                             this.patchState({ styleClasses: [] });
                         }
