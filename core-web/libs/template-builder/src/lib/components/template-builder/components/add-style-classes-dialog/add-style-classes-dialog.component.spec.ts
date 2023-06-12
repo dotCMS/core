@@ -1,7 +1,7 @@
 import { expect } from '@jest/globals';
 import { SpectatorHost, byTestId, createHostFactory } from '@ngneat/spectator';
-import { of } from 'rxjs';
 
+import { HttpClientModule } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -10,8 +10,9 @@ import { ButtonModule } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { AddStyleClassesDialogComponent } from './add-style-classes-dialog.component';
+import { DotAddStyleClassesDialogStore } from './store/add-style-classes-dialog.store';
 
-import { MOCK_SELECTED_STYLE_CLASSES, MOCK_STYLE_CLASSES_FILE } from '../../utils/mocks';
+import { MOCK_SELECTED_STYLE_CLASSES, addStyleClassesStoreMock } from '../../utils/mocks';
 
 describe('AddStyleClassesDialogComponent', () => {
     let component: AddStyleClassesDialogComponent;
@@ -19,16 +20,25 @@ describe('AddStyleClassesDialogComponent', () => {
 
     const createHost = createHostFactory({
         component: AddStyleClassesDialogComponent,
-        imports: [AutoCompleteModule, FormsModule, NoopAnimationsModule, ButtonModule],
+        imports: [
+            AutoCompleteModule,
+            FormsModule,
+            NoopAnimationsModule,
+            ButtonModule,
+            HttpClientModule
+        ],
         providers: [
             {
                 provide: DynamicDialogConfig,
                 useValue: {
                     data: {
-                        classes: of(MOCK_STYLE_CLASSES_FILE.classes.map((klass) => ({ klass }))),
                         selectedClasses: MOCK_SELECTED_STYLE_CLASSES
                     }
                 }
+            },
+            {
+                provide: DotAddStyleClassesDialogStore,
+                useValue: addStyleClassesStoreMock
             },
             DynamicDialogRef
         ]

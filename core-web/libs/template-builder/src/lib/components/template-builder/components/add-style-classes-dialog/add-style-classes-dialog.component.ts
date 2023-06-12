@@ -1,11 +1,21 @@
 import { Subject } from 'rxjs';
 
-import { AfterViewInit, ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import {
+    AfterViewInit,
+    ChangeDetectionStrategy,
+    Component,
+    OnDestroy,
+    OnInit
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { AutoCompleteModule } from 'primeng/autocomplete';
 import { ButtonModule } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
+
+import { takeUntil } from 'rxjs/operators';
+
+import { DotAddStyleClassesDialogStore } from './store/add-style-classes-dialog.store';
 
 import { StyleClassModel } from '../../models/models';
 
@@ -15,11 +25,12 @@ const COMMA_SPACES_REGEX = /(,|\s)(.*)/;
     selector: 'dotcms-add-style-classes-dialog',
     standalone: true,
     imports: [AutoCompleteModule, FormsModule, ButtonModule],
+    providers: [DotAddStyleClassesDialogStore],
     templateUrl: './add-style-classes-dialog.component.html',
     styleUrls: ['./add-style-classes-dialog.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class AddStyleClassesDialogComponent implements OnInit, AfterViewInit {
+export class AddStyleClassesDialogComponent implements OnInit, AfterViewInit, OnDestroy {
     classes: StyleClassModel[];
 
     selectedClasses: StyleClassModel[] = [];
@@ -28,29 +39,39 @@ export class AddStyleClassesDialogComponent implements OnInit, AfterViewInit {
 
     private autoCompleteInput: HTMLInputElement;
 
+    private destroy$: Subject<void> = new Subject<void>();
+
     constructor(
         private ref: DynamicDialogRef,
+        private store: DotAddStyleClassesDialogStore,
         public dynamicDialogConfig: DynamicDialogConfig<{
-            classes: Subject<StyleClassModel[]>;
             selectedClasses: string[];
         }>
     ) {}
 
     ngOnInit() {
-        const { classes: classes$, selectedClasses } = this.dynamicDialogConfig.data;
-
-        classes$.subscribe((classes) => {
-            this.classes = classes;
-        });
+        const { selectedClasses } = this.dynamicDialogConfig.data;
 
         this.selectedClasses = selectedClasses.map((klass) => ({
             klass
         }));
+
+        this.store.styleClasses$.pipe(takeUntil(this.destroy$)).subscribe((classes) => {
+            this.classes = classes;
+        });
+
+        this.store.getStyleClassesFromFile();
     }
 
     ngAfterViewInit() {
         this.autoCompleteInput = document.getElementById('my-autocomplete') as HTMLInputElement;
     }
+
+    ngOnDestroy() {
+        this.destroy$.next();
+        this.destroy$.complete();
+    }
+
     /**
      * @description Filters the classes based on the query
      *

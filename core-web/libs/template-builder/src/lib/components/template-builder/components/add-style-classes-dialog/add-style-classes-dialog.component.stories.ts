@@ -1,6 +1,7 @@
 import { moduleMetadata, Story, Meta } from '@storybook/angular';
 import { of } from 'rxjs';
 
+import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -9,6 +10,7 @@ import { ButtonModule } from 'primeng/button';
 import { DynamicDialogRef, DynamicDialogConfig } from 'primeng/dynamicdialog';
 
 import { AddStyleClassesDialogComponent } from './add-style-classes-dialog.component';
+import { DotAddStyleClassesDialogStore } from './store/add-style-classes-dialog.store';
 
 import { MOCK_SELECTED_STYLE_CLASSES, MOCK_STYLE_CLASSES_FILE } from '../../utils/mocks';
 
@@ -17,20 +19,40 @@ export default {
     component: AddStyleClassesDialogComponent,
     decorators: [
         moduleMetadata({
-            imports: [AutoCompleteModule, FormsModule, NoopAnimationsModule, ButtonModule],
+            imports: [
+                AutoCompleteModule,
+                FormsModule,
+                NoopAnimationsModule,
+                ButtonModule,
+                HttpClientModule
+            ],
             providers: [
                 {
                     provide: DynamicDialogConfig,
                     useValue: {
                         data: {
-                            classes: of(
-                                MOCK_STYLE_CLASSES_FILE.classes.map((klass) => ({ klass }))
-                            ),
                             selectedClasses: MOCK_SELECTED_STYLE_CLASSES
                         }
                     }
                 },
-                DynamicDialogRef
+                {
+                    provide: DotAddStyleClassesDialogStore,
+                    useValue: {
+                        styleClasses$: MOCK_STYLE_CLASSES_FILE.classes.map((styleClasses) => ({
+                            klass: styleClasses
+                        })),
+                        getStyleClassesFromFile: () => {
+                            /* */
+                        }
+                    }
+                },
+                DynamicDialogRef,
+                {
+                    provide: HttpClient,
+                    useValue: {
+                        get: (_: string) => of(MOCK_STYLE_CLASSES_FILE)
+                    }
+                }
             ]
         })
     ]

@@ -206,12 +206,9 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
      * @memberof TemplateBuilderComponent
      */
     editRowStyleClasses(rowID: numberOrString, styleClasses: string[]): void {
-        this.store.getStyleClassesFromFile();
-
         this.ref = this.dialogService.open(AddStyleClassesDialogComponent, {
             header: 'Edit Classes',
             data: {
-                classes: this.store.styleClasses$,
                 selectedClasses: styleClasses ?? []
             },
             resizable: false
@@ -234,12 +231,9 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
      * @memberof TemplateBuilderComponent
      */
     editBoxStyleClasses(rowID: numberOrString, box: DotGridStackNode): void {
-        this.store.getStyleClassesFromFile();
-
         this.ref = this.dialogService.open(AddStyleClassesDialogComponent, {
             header: 'Edit Classes',
             data: {
-                classes: this.store.styleClasses$,
                 selectedClasses: box.styleClass ?? []
             },
             resizable: false

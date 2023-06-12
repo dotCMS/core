@@ -58,6 +58,9 @@ export interface DotGridStackNode extends GridStackNode {
  */
 export interface DotTemplateBuilderState {
     items: DotGridStackWidget[];
+}
+
+export interface DotRemoveConfirmDialogState {
     styleClasses: StyleClassModel[];
 }
 

@@ -1,12 +1,8 @@
-import { ComponentStore, tapResponse } from '@ngrx/component-store';
+import { ComponentStore } from '@ngrx/component-store';
 import { GridStackElement, GridStackNode } from 'gridstack';
-import { of } from 'rxjs';
 import { v4 as uuid } from 'uuid';
 
-import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-
-import { finalize, switchMap } from 'rxjs/operators';
 
 import { DotGridStackNode, DotGridStackWidget, DotTemplateBuilderState } from '../models/models';
 import {
@@ -29,19 +25,15 @@ export const STYLE_CLASSES_FILE_URL = '/application/templates/classes.json';
  */
 @Injectable()
 export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderState> {
-    private styleClassesInitialized = false;
-
     public items$ = this.select((state) => state.items);
-    public styleClasses$ = this.select((state) => state.styleClasses);
 
-    constructor(private http: HttpClient) {
-        super({ items: [], styleClasses: [] });
+    constructor() {
+        super({ items: [] });
     }
 
     // Init store
     readonly init = this.updater((_, payload: DotGridStackWidget[]) => ({
-        items: payload,
-        styleClasses: []
+        items: payload
     }));
 
     // Rows Updaters
@@ -273,35 +265,6 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
     });
 
     // Effects
-
-    /**
-     * @description This effect fetchs the style classes from the file only once
-     *
-     * @memberof DotTemplateBuilderStore
-     */
-    readonly getStyleClassesFromFile = this.effect((trigger$) => {
-        return trigger$.pipe(
-            switchMap(() =>
-                !this.styleClassesInitialized
-                    ? this.http.get(STYLE_CLASSES_FILE_URL).pipe(
-                          tapResponse(
-                              ({ classes }: { classes: string[] }) => {
-                                  this.patchState({
-                                      styleClasses: classes.map((styleClasses) => ({
-                                          klass: styleClasses
-                                      }))
-                                  });
-                              },
-                              (_) => {
-                                  this.patchState({ styleClasses: [] });
-                              }
-                          ),
-                          finalize(() => (this.styleClassesInitialized = true))
-                      )
-                    : of(null)
-            )
-        );
-    });
 
     // Utils methods
 
