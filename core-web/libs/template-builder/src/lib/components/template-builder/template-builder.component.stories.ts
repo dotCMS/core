@@ -10,7 +10,6 @@ import { DividerModule } from 'primeng/divider';
 import { DialogService, DynamicDialogModule, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { ToolbarModule } from 'primeng/toolbar';
 
-import { DotMessageService } from '@dotcms/data-access';
 import { DotContainersService, DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipeModule } from '@dotcms/ui';
 import { DotContainersServiceMock } from '@dotcms/utils-testing';
