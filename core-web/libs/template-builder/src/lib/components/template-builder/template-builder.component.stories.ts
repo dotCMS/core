@@ -5,8 +5,8 @@ import { NgFor, AsyncPipe } from '@angular/common';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { DialogService, DynamicDialogModule, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { DividerModule } from 'primeng/divider';
+import { DialogService, DynamicDialogModule, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { ToolbarModule } from 'primeng/toolbar';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -46,7 +46,7 @@ export default {
                 TemplateBuilderSectionComponent,
                 AddStyleClassesDialogComponent,
                 DynamicDialogModule,
-                HttpClientModule
+                HttpClientModule,
                 TemplateBuilderActionsComponent,
                 ToolbarModule,
                 DividerModule

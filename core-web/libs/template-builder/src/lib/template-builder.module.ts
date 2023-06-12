@@ -1,8 +1,8 @@
 import { AsyncPipe, NgFor, NgStyle } from '@angular/common';
 import { NgModule } from '@angular/core';
 
-import { DialogService, DynamicDialogModule, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { DividerModule } from 'primeng/divider';
+import { DialogService, DynamicDialogModule, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { ToolbarModule } from 'primeng/toolbar';
 
 import { DotMessagePipeModule } from '@dotcms/ui';

@@ -5,8 +5,8 @@ import { GridItemHTMLElement } from 'gridstack';
 import { AsyncPipe, NgFor } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 
+import { DividerModule } from 'primeng/divider';
 import { DialogService } from 'primeng/dynamicdialog';
-
 import { ToolbarModule } from 'primeng/toolbar';
 
 import { take } from 'rxjs/operators';
@@ -40,9 +40,10 @@ describe('TemplateBuilderComponent', () => {
             TemplateBuilderBackgroundColumnsComponent,
             DotMessagePipeModule,
             HttpClientTestingModule,
-            TemplateBuilderSectionComponent
+            TemplateBuilderSectionComponent,
             TemplateBuilderActionsComponent,
-            ToolbarModule
+            ToolbarModule,
+            DividerModule
         ],
         providers: [
             DotTemplateBuilderStore,
