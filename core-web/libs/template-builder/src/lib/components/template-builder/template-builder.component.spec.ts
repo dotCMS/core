@@ -7,12 +7,15 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
+import { ToolbarModule } from 'primeng/toolbar';
+
 import { take } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipeModule } from '@dotcms/ui';
 
 import { AddWidgetComponent } from './components/add-widget/add-widget.component';
+import { TemplateBuilderActionsComponent } from './components/template-builder-actions/template-builder-actions.component';
 import { TemplateBuilderBackgroundColumnsComponent } from './components/template-builder-background-columns/template-builder-background-columns.component';
 import { TemplateBuilderBoxComponent } from './components/template-builder-box/template-builder-box.component';
 import { TemplateBuilderRowComponent } from './components/template-builder-row/template-builder-row.component';
@@ -38,6 +41,8 @@ describe('TemplateBuilderComponent', () => {
             DotMessagePipeModule,
             HttpClientTestingModule,
             TemplateBuilderSectionComponent
+            TemplateBuilderActionsComponent,
+            ToolbarModule
         ],
         providers: [
             DotTemplateBuilderStore,
