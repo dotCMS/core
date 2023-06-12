@@ -26,7 +26,6 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
-import org.eclipse.jetty.security.LoginService;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;

@@ -36,6 +36,7 @@ import {
 } from '@dotcms/utils-testing';
 import { DotPageStateService } from '@portlets/dot-edit-page/content/services/dot-page-state/dot-page-state.service';
 import { DotEditPageResolver } from '@portlets/dot-edit-page/shared/services/dot-edit-page-resolver/dot-edit-page-resolver.service';
+import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { DotFormatDateService } from '@services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
@@ -70,6 +71,7 @@ describe('DotExperimentExperimentResolver', () => {
                 DotFormatDateService,
                 DotESContentService,
                 DotFavoritePageService,
+                DotExperimentsService,
                 { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 { provide: SiteService, useClass: SiteServiceMock },

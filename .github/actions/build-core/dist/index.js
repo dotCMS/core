@@ -51,6 +51,11 @@ const COMMANDS = {
     gradle: [
         {
             cmd: gradleCmd,
+            args: ['generateDependenciesFromMaven'],
+            workingDir: dotCmsRoot
+        },
+        {
+            cmd: gradleCmd,
             args: ['createDistPrep'],
             workingDir: dotCmsRoot
         }

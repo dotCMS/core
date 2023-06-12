@@ -85,6 +85,23 @@ function addResults {
   executeCmd "cp -R ${OUTPUT_FOLDER}/* ${target_folder}"
 }
 
+# Creates required directory structure for the provided results folder and copies them to the new location
+#
+# $1: results_path: to copy to results location
+function addResults {
+  local results_path=${1}
+  if [[ -z "${results_path}" ]]; then
+    echo "Cannot add results path since its empty, ignoring"
+    exit 1
+  fi
+
+  local target_folder=$(resolveResultsPath ${results_path})
+  mkdir -p ${target_folder}
+  echo "Adding test results path ${results_path} to: ${target_folder}"
+
+  executeCmd "cp -R ${OUTPUT_FOLDER}/* ${target_folder}"
+}
+
 # Persists results in 'test-results' repo in the provided INPUT_BUILD_ID branch.
 function persistResults {
   cd ${INPUT_PROJECT_ROOT}

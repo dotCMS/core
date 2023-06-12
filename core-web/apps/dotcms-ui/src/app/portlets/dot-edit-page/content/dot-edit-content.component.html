@@ -15,7 +15,7 @@
         class="dot-edit__toolbar"
         [pageState]="pageState"
         [variant]="variantData | async"
-        [runningExperiment]="runningExperiment$ | async"
+        [runningExperiment]="pageState.state.runningExperiment"
         (actionFired)="reload($event)"
         (backToExperiment)="backToExperiment()"
         (cancel)="onCancelToolbar()"
