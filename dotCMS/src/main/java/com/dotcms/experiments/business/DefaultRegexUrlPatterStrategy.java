@@ -3,6 +3,10 @@ package com.dotcms.experiments.business;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 
+/**
+ * Default Implementation for {@link RegexUrlPatterStrategy}
+ */
+ 
 public class DefaultRegexUrlPatterStrategy extends RegexUrlPatterStrategy {
 
     @Override
