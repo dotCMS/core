@@ -34,12 +34,23 @@ public final class StoragePersistenceProvider {
             StorageType.DB, DataBaseStoragePersistenceAPIImpl::new
     );
 
+    {
+        // default chain, creates a storage composited from file system and db
+        final CompositeStoragePersistenceAPIBuilder builder = new CompositeStoragePersistenceAPIBuilder();
+        builder.add(this.getStorage(StorageType.FILE_SYSTEM));
+        builder.add(this.getStorage(StorageType.DB));
+        addStorageInitializer(StorageType.DEFAULT_CHAIN, builder);
+    }
+
     /**
      * default constructor
      */
     private StoragePersistenceProvider() {
     }
 
+    public void addStorageInitializer(final StorageType storageType, final Supplier<StoragePersistenceAPI> initializer){
+        initializers.put(storageType, initializer);
+    }
     /**
      * default storage type
      * @return

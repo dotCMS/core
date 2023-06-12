@@ -25,16 +25,18 @@ import java.util.concurrent.Future;
  */
 public class CompositeStoragePersistenceAPI implements StoragePersistenceAPI {
 
-    private final CopyOnWriteArrayList<StoragePersistenceAPI> storagePersistenceAPIList =
-            new CopyOnWriteArrayList<>();
+    private final List<StoragePersistenceAPI> storagePersistenceAPIList;
     private final ObjectWriterDelegate defaultWriterDelegate;
 
-    public CompositeStoragePersistenceAPI() {
-        this(new JsonWriterDelegate());
+    public CompositeStoragePersistenceAPI(final List<StoragePersistenceAPI> storagePersistenceAPIList) {
+        this(new JsonWriterDelegate(), storagePersistenceAPIList);
     }
 
-    public CompositeStoragePersistenceAPI(final ObjectWriterDelegate defaultWriterDelegate) {
+    public CompositeStoragePersistenceAPI(final ObjectWriterDelegate defaultWriterDelegate,
+                                          final List<StoragePersistenceAPI> storagePersistenceAPIList) {
+
         this.defaultWriterDelegate = defaultWriterDelegate;
+        this.storagePersistenceAPIList = storagePersistenceAPIList;
     }
 
     @Override
