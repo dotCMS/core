@@ -16,19 +16,18 @@
             <ng-template #enabledComponent>
                 <dotcms-template-builder
                     [templateLayout]="item.layout"
-                    (layoutChange)="updateLayoutAndTemplate($event)"
+                    (layoutChange)="onLayoutChange($event)"
                     data-testId="new-template-builder"
                 >
-                    <ng-container>
-                        <dot-global-message></dot-global-message>
-                        <button
-                            [label]="'Publish' | dm"
-                            (click)="saveAndPublish.emit(item)"
-                            data-testId="save-and-publish-btn"
-                            pButton
-                            type="button"
-                        ></button>
-                    </ng-container>
+                    <dot-global-message toolbar-left></dot-global-message>
+                    <button
+                        [label]="'Publish' | dm"
+                        (click)="saveAndPublish.emit(item)"
+                        type="button"
+                        data-testId="save-and-publish-btn"
+                        toolbar-actions-right
+                        pButton
+                    ></button>
                 </dotcms-template-builder>
             </ng-template>
             <ng-template #disabledComponent>

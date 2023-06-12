@@ -335,7 +335,7 @@ describe('DotEditLayoutComponent', () => {
             );
             const layout = EMPTY_TEMPLATE_DESIGN.layout;
 
-            spyOn(component, 'updateLayout').and.callThrough();
+            spyOn(component, 'onLayoutChange').and.callThrough();
             spyOn(component.updateTemplate, 'next').and.callThrough();
 
             builder.triggerEventHandler('layoutChange', layout);

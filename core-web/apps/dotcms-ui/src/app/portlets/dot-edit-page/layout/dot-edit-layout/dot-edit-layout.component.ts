@@ -131,7 +131,7 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
      * @param {DotLayout} layout
      * @memberof DotEditLayoutComponent
      */
-    updateLayout(layout: DotLayout) {
+    onLayoutChange(layout: DotLayout) {
         this.nextUpdateTemplate({
             layout,
             themeId: this.pageState.template.theme,

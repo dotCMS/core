@@ -48,7 +48,7 @@ export class DotTemplateBuilderComponent implements OnInit, OnChanges {
      * @param {DotLayout} layout
      * @memberof DotTemplateBuilderComponent
      */
-    updateLayoutAndTemplate(layout: DotLayout) {
+    onLayoutChange(layout: DotLayout) {
         this.updateTemplate.emit({
             ...this.item,
             layout

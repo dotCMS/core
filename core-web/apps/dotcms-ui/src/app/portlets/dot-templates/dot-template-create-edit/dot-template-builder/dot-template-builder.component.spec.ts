@@ -37,7 +37,8 @@ import {
 @Component({
     // eslint-disable-next-line @angular-eslint/component-selector
     selector: 'dotcms-template-builder',
-    template: `<ng-content></ng-content>`
+    template: ` <ng-content select="[toolbar-left]"></ng-content>
+        <ng-content select="[toolbar-actions-right]"></ng-content>`
 })
 class TemplateBuilderMockComponent {
     @Input() templateLayout: DotLayout;
@@ -260,11 +261,11 @@ describe('DotTemplateBuilderComponent', () => {
             const builder = de.query(By.css('[data-testId="new-template-builder"]'));
             const layout = EMPTY_TEMPLATE_DESIGN.layout;
 
-            spyOn(component, 'updateLayoutAndTemplate').and.callThrough();
+            spyOn(component, 'onLayoutChange').and.callThrough();
 
             builder.triggerEventHandler('layoutChange', layout);
 
-            expect(component.updateLayoutAndTemplate).toHaveBeenCalledWith(layout);
+            expect(component.onLayoutChange).toHaveBeenCalledWith(layout);
             expect(component.updateTemplate.emit).toHaveBeenCalled();
         });
 
