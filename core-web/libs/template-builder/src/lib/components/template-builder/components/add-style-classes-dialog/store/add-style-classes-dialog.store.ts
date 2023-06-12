@@ -36,7 +36,7 @@ export class DotAddStyleClassesDialogStore extends ComponentStore<DotAddStyleCla
                     // This operator is used to handle the error
                     tapResponse(
                         // 200 response
-                        ({ classes }: { classes: string[] }) => {
+                        ({ classes = [] }: { classes: string[] }) => {
                             this.patchState({
                                 styleClasses: classes.map((cssClass) => ({
                                     cssClass
