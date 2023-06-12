@@ -5,16 +5,18 @@ import com.dotcms.api.provider.DotCMSClientHeaders;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.asset.FolderView;
 import com.dotcms.model.asset.SearchByPathRequest;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.eclipse.microprofile.openapi.annotations.tags.Tags;
 import org.eclipse.microprofile.rest.client.annotation.RegisterClientHeaders;
 import org.eclipse.microprofile.rest.client.annotation.RegisterProvider;
+
+import javax.ws.rs.Consumes;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+import java.io.InputStream;
 
 /**
  * Entry point to dotCMS Assets Rest API
@@ -35,5 +37,12 @@ public interface AssetAPI {
             summary = "Lists the files and directories in the specified path"
     )
     ResponseEntityView<FolderView> byPath(final SearchByPathRequest request);
+
+    @POST
+    @Path("/download")
+    @Operation(
+            summary = "Retrieve a specific asset"
+    )
+    InputStream download(final SearchByPathRequest request);
 
 }

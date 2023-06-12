@@ -35,6 +35,9 @@ public class PullFilesServiceImpl implements PullFilesService {
     Logger logger;
 
     @Inject
+    protected Downloader downloader;
+
+    @Inject
     protected RestClientFactory clientFactory;
 
     /**
@@ -140,26 +143,6 @@ public class PullFilesServiceImpl implements PullFilesService {
     }
 
     /**
-     * Checks the base structure of the destination path and creates the necessary directories.
-     *
-     * @param destination the destination path to save the pulled files
-     * @return the root path for storing the files
-     * @throws IOException if an I/O error occurs while creating directories
-     */
-    private String checkBaseStructure(final String destination) throws IOException {
-
-        // For the pull of files, everything will be stored in a folder called "files"
-        var filesFolder = Paths.get(destination, "files");
-
-        // Create the folder if it does not exist
-        if (!Files.exists(filesFolder)) {
-            Files.createDirectories(filesFolder);
-        }
-
-        return filesFolder.toString();
-    }
-
-    /**
      * Processes the file tree for a specific status and language.
      *
      * @param isLive               true if processing live tree, false for working tree
@@ -169,6 +152,7 @@ public class PullFilesServiceImpl implements PullFilesService {
      * @param generateEmptyFolders true to generate empty folders, false otherwise
      * @param progressBar          the progress bar for tracking the pull progress
      */
+    @ActivateRequestContext
     private void processTreeByStatus(boolean isLive, List<String> sortedLanguages, TreeNode rootNode,
                                      final String destination, final boolean generateEmptyFolders,
                                      final ConsoleProgressBar progressBar) {
@@ -187,6 +171,8 @@ public class PullFilesServiceImpl implements PullFilesService {
             // ---
             var forkJoinPool = ForkJoinPool.commonPool();
             var task = new FileSystemTreeBuilderTask(
+                    logger,
+                    downloader,
                     filteredRoot,
                     rootPath.toString(),
                     generateEmptyFolders,
@@ -194,6 +180,26 @@ public class PullFilesServiceImpl implements PullFilesService {
                     progressBar);
             forkJoinPool.invoke(task);
         }
+    }
+
+    /**
+     * Checks the base structure of the destination path and creates the necessary directories.
+     *
+     * @param destination the destination path to save the pulled files
+     * @return the root path for storing the files
+     * @throws IOException if an I/O error occurs while creating directories
+     */
+    private String checkBaseStructure(final String destination) throws IOException {
+
+        // For the pull of files, everything will be stored in a folder called "files"
+        var filesFolder = Paths.get(destination, "files");
+
+        // Create the folder if it does not exist
+        if (!Files.exists(filesFolder)) {
+            Files.createDirectories(filesFolder);
+        }
+
+        return filesFolder.toString();
     }
 
 }
