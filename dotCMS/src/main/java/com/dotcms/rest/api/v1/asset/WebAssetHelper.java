@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.asset;
 
+import static org.apache.commons.lang3.BooleanUtils.toBooleanDefaultIfNull;
 import static org.apache.commons.lang3.StringUtils.defaultIfEmpty;
 
 import com.dotcms.browser.BrowserAPI;
@@ -271,6 +272,7 @@ public class WebAssetHelper {
 
     public File getAssetContent(final AssetsRequestForm form, final User user)
             throws DotDataException, DotSecurityException {
+
         final String path = form.assetPath();
         final ResolvedAssetAndPath assetAndPath = AssetPathResolver.newInstance()
                 .resolve(path, user);
@@ -296,38 +298,37 @@ public class WebAssetHelper {
                 .showImages(true)
                 .showContent(true);
 
-        if (null != form.language()) {
-            final Language language = languageAPI.getLanguage(form.language());
+        if (form.language().isPresent()) {
+            final Language language = lang(form.language().get());
             builder.withLanguageId(language.getId());
         }
 
-        if(null != form.live()){
-            final boolean live = BooleanUtils.toBoolean(form.live());
+        if (form.live().isPresent()) {
+            final boolean live = BooleanUtils.toBoolean(form.live().get());
             builder.showWorking(!live);
         }
 
-            //We're requesting an asset specifically therefore we need to find it and  build the response
-            if(folder.isSystemFolder()){
-                builder.withHostOrFolderId(host.getIdentifier());
-            } else {
-                builder.withHostOrFolderId(folder.getInode());
-            }
-            builder.withFilter(assetName);
-            final List<Treeable> folderContent = browserAPI.getFolderContentList(builder.build());
-            assets = folderContent.stream().filter(Contentlet.class::isInstance).map(
-                    Contentlet.class::cast).collect(Collectors.toList());
-            if (assets.isEmpty()) {
+        //We're requesting an asset specifically therefore we need to find it and  build the response
+        if (folder.isSystemFolder()) {
+            builder.withHostOrFolderId(host.getIdentifier());
+        } else {
+            builder.withHostOrFolderId(folder.getInode());
+        }
+        builder.withFilter(assetName);
+        final List<Treeable> folderContent = browserAPI.getFolderContentList(builder.build());
+        assets = folderContent.stream().filter(Contentlet.class::isInstance).map(
+                Contentlet.class::cast).collect(Collectors.toList());
+        if (assets.isEmpty()) {
 
-                throw new NotFoundInDbException(
-                        String.format(" Asset [%s] not found for lang [%s] and working/live state [%b] ",
-                                assetName, defaultIfEmpty(form.language(), "unspecified"),
-                                BooleanUtils.toString(form.live(), "live", "working", "unspecified"))
-                );
-            }
-            final Contentlet asset = assets.get(0);
-            final FileAsset fileAsset = fileAssetAPI.fromContentlet(asset);
-            return fileAsset.getFileAsset();
-
+            throw new NotFoundInDbException(
+                    String.format(" Asset [%s] not found for lang [%s] and working/live state [%b] ",
+                            assetName, form.language().orElse("unspecified"),
+                            BooleanUtils.toString(form.live().get(), "live", "working", "unspecified"))
+            );
+        }
+        final Contentlet asset = assets.get(0);
+        final FileAsset fileAsset = fileAssetAPI.fromContentlet(asset);
+        return fileAsset.getFileAsset();
     }
 
     public WebAssetView saveUpdateAsset(final HttpServletRequest request, final FileUploadData form,
@@ -338,7 +339,7 @@ public class WebAssetHelper {
         final InputStream fileInputStream = form.getFileInputStream();
         final FileUploadDetail detail = form.getDetail();
         final String assetPath = detail.getAssetPath();
-        final boolean live = BooleanUtils.toBoolean((detail.getLive()));
+        final boolean live = toBooleanDefaultIfNull(detail.getLive(),true);
         final Language lang = lang(detail.getLanguage());
         final ResolvedAssetAndPath assetAndPath = AssetPathResolver.newInstance()
                 .resolve(assetPath, user, true);
@@ -360,7 +361,7 @@ public class WebAssetHelper {
                     .withUser(user)
                     .showFiles(true)
                     .showFolders(true)
-                    .showArchived(false)
+                    .showArchived(true)
                     .showWorking(true)
                     .showLinks(false)
                     .showDotAssets(false)
@@ -399,8 +400,17 @@ public class WebAssetHelper {
 
                 } else {
                     final Contentlet asset = found.get();
-                    final Contentlet checkout = contentletAPI.checkout(asset.getInode(), user,
-                            false);
+
+                    if(asset.isArchived()){
+                        contentletAPI.unarchive(asset, user, false);
+                    }
+
+                    if(asset.isLocked()){
+                        contentletAPI.unlock(asset, user, false);
+                    }
+
+                    final Contentlet checkout = contentletAPI.checkout(asset.getInode(), user, false);
+
                     updateFileAsset(tempFile.file, folder, lang, checkout);
                     savedAsset = checkinOrPublish(checkout, user, live);
                 }
@@ -423,15 +433,16 @@ public class WebAssetHelper {
         }
     }
 
-    Contentlet checkinOrPublish(final Contentlet contentlet, User user, final boolean live) throws DotDataException, DotSecurityException {
+    Contentlet checkinOrPublish(final Contentlet checkout, User user, final boolean live) throws DotDataException, DotSecurityException {
         if(live){
-            contentletAPI.publish(contentlet, user, false);
-            return contentlet;
+            contentletAPI.publish(checkout, user, false);
+            return checkout;
+        } else {
+            if(checkout.isLive()){
+                contentletAPI.unpublish(checkout, user, false);
+            }
         }
-        return contentletAPI.checkinWithoutVersioning(contentlet,
-                (ContentletRelationships) null, null, null,
-                user, false);
-               // contentletAPI.checkin(contentlet, user, false);
+        return contentletAPI.checkin(checkout, user, false);
     }
 
     Contentlet makeFileAsset(final File file, final Folder folder, Language lang)
@@ -443,9 +454,9 @@ public class WebAssetHelper {
 
 
     Contentlet updateFileAsset(final File file, final Folder folder, final Language lang, final Contentlet contentlet){
-        final String fileName = file.getName();
-        contentlet.setProperty(FileAssetAPI.TITLE_FIELD, fileName);
-        contentlet.setProperty(FileAssetAPI.FILE_NAME_FIELD, fileName);
+        final String name = file.getName();
+        contentlet.setProperty(FileAssetAPI.TITLE_FIELD, name);
+        contentlet.setProperty(FileAssetAPI.FILE_NAME_FIELD, name);
         contentlet.setProperty(FileAssetAPI.BINARY_FIELD, file);
         contentlet.setFolder(folder.getInode());
         contentlet.setLanguageId(lang.getId());
@@ -457,7 +468,11 @@ public class WebAssetHelper {
                     final String[] split = language.split("_", 2);
                     return languageAPI.getLanguage(split[0], split[1]);
                 }
-        ).getOrElse(() -> languageAPI.getDefaultLanguage());
+        ).getOrElse(() -> {
+           final Language defaultLanguage =  languageAPI.getDefaultLanguage();
+           Logger.warn(this, String.format("Unable to  get language from param [%s]. Defaulting to [%s]." , language, defaultLanguage));
+           return defaultLanguage;
+        });
     }
 
     /**

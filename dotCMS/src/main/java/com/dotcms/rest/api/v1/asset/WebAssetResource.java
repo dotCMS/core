@@ -60,12 +60,12 @@ public class WebAssetResource {
     }
 
 
-    @Path("/")
-    @GET
+    @Path("/download")
+    @POST
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public Response getAssetContent(@Context final HttpServletRequest request,
+    public Response download(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             AssetsRequestForm form
     ) throws DotSecurityException, DotDataException {
@@ -107,7 +107,7 @@ public class WebAssetResource {
         final User user = initDataObject.getUser();
 
         final WebAssetView webAssetView = helper.saveUpdateAsset(request, form, user);
-        //Logger.info(this, String.format("User [%s] is requesting assets info for path [%s]", user.getUserId(), form.assetPath()));
+        Logger.info(this, String.format("User [%s] is uploading asset for path [%s]", user.getUserId(), form.getAssetPath()));
         return Response.ok(new WebAssetEntityView(webAssetView)).build();
     }
 

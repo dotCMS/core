@@ -5,11 +5,13 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
 
+import java.util.Optional;
+
 /**
  * Assets Request Form is a json representation of a request to get assets
  * The assetsPath is the uri to the asset, it can be a folder or a file.
  */
-@Value.Style(typeImmutable="*", typeAbstract="Abstract*")
+@Value.Style(typeImmutable = "*", typeAbstract = "Abstract*")
 @Value.Immutable
 @JsonSerialize(as = AssetsRequestForm.class)
 @JsonDeserialize(as = AssetsRequestForm.class)
@@ -18,9 +20,8 @@ public interface AbstractAssetsRequestForm {
      String assetPath();
 
      @JsonProperty("language")
-     String language();
+     Optional<String> language();
 
      @JsonProperty("live")
-     Boolean live();
-
+     Optional<Boolean> live();
 }
