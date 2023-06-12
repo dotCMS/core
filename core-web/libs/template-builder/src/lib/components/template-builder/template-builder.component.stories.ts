@@ -4,12 +4,15 @@ import { NgFor, AsyncPipe } from '@angular/common';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
+import { DividerModule } from 'primeng/divider';
+import { ToolbarModule } from 'primeng/toolbar';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipeModule } from '@dotcms/ui';
 
 import { AddWidgetComponent } from './components/add-widget/add-widget.component';
 import { RemoveConfirmDialogComponent } from './components/remove-confirm-dialog/remove-confirm-dialog.component';
+import { TemplateBuilderActionsComponent } from './components/template-builder-actions/template-builder-actions.component';
 import { TemplateBuilderBackgroundColumnsComponent } from './components/template-builder-background-columns/template-builder-background-columns.component';
 import { TemplateBuilderBoxComponent } from './components/template-builder-box/template-builder-box.component';
 import { TemplateBuilderRowComponent } from './components/template-builder-row/template-builder-row.component';
@@ -34,7 +37,10 @@ export default {
                 BrowserAnimationsModule,
                 TemplateBuilderBackgroundColumnsComponent,
                 TemplateBuilderSectionComponent,
-                ButtonModule
+                ButtonModule,
+                TemplateBuilderActionsComponent,
+                ToolbarModule,
+                DividerModule
             ],
             providers: [
                 DotTemplateBuilderStore,
@@ -52,9 +58,10 @@ const Template: Story<TemplateBuilderComponent> = (args: TemplateBuilderComponen
     template: `
         <dotcms-template-builder [templateLayout]="templateLayout">
             <button
-                [label]="Publish"
-                pButton
+                [label]="'Publish'"
+                toolbar-actions-right
                 type="button"
+                pButton
             ></button>
         </dotcms-template-builder>
     `

@@ -73,25 +73,19 @@ public class VariantResults {
     public static class UniqueBySessionResume {
 
         private final long count;
-        private final float totalPercentage;
-        private final float variantPercentage;
+        private final float conversionRate;
 
         public UniqueBySessionResume(final int count, final long totalVariantSession, long totalSessions) {
             this.count = count;
-            this.totalPercentage = totalSessions > 0 ? (float) (count * 100) / totalSessions : 0;
-            this.variantPercentage = totalVariantSession > 0 ? (float) (count * 100) / totalVariantSession : 0;
+            this.conversionRate = totalVariantSession > 0 ? (float) (count * 100) / totalVariantSession : 0;
         }
 
         public long getCount() {
             return count;
         }
 
-        public float getTotalPercentage() {
-            return totalPercentage;
-        }
-
-        public float getVariantPercentage() {
-            return variantPercentage;
+        public float getConversionRate() {
+            return conversionRate;
         }
     }
 

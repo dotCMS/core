@@ -13,15 +13,23 @@ public class SystemEnvironmentProperties {
      * @param variableName {@link String}
      * @return
      */
-    public String getVariable(final String variableName){
-        
-        String variable = System.getenv(variableName);
-        if(variable!=null) {
+    public String getVariable(final String variableName) {
+        String variable = System.getProperty(variableName);
+        if (variable != null) {
             return variable;
         }
-        return System.getenv("DOT_"+ variableName);
-        
 
+        variable = System.getProperty("DOT_" + variableName);
+        if (variable != null) {
+            return variable;
+        }
+
+        variable = System.getenv(variableName);
+        if (variable != null) {
+            return variable;
+        }
+
+        return System.getenv("DOT_" + variableName);
     }
 
 }

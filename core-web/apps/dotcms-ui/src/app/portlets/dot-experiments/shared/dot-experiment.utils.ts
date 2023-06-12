@@ -1,7 +1,9 @@
 import {
+    ComponentStatus,
     DEFAULT_VARIANT_ID,
     DotResultDate,
     ExperimentChartDatasetColorsVariants,
+    ExperimentSteps,
     LineChartColorsProperties,
     PROP_NOT_FOUND,
     TIME_14_DAYS,
@@ -54,3 +56,8 @@ export const processExperimentConfigProps = (
 export const daysToMilliseconds = (days: number): number => {
     return days * 24 * 60 * 60 * 1000;
 };
+
+export const checkIfExperimentDescriptionIsSaving = (stepStatusSidebar) =>
+    stepStatusSidebar &&
+    stepStatusSidebar.experimentStep === ExperimentSteps.EXPERIMENT_DESCRIPTION &&
+    stepStatusSidebar.status === ComponentStatus.SAVING;

@@ -7,9 +7,11 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
+import { InplaceModule } from 'primeng/inplace';
+import { InputTextModule } from 'primeng/inputtext';
 import { RippleModule } from 'primeng/ripple';
 
-import { DotExperiment, DotExperimentStatusList } from '@dotcms/dotcms-models';
+import { DotExperiment, DotExperimentStatusList, ComponentStatus } from '@dotcms/dotcms-models';
 import { DotMessagePipe, DotMessagePipeModule } from '@dotcms/ui';
 import { DotExperimentsConfigurationGoalsComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-goals/dot-experiments-configuration-goals.component';
 import { DotExperimentsConfigurationSchedulingComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-scheduling/dot-experiments-configuration-scheduling.component';
@@ -22,6 +24,7 @@ import {
 } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 import { DotExperimentsExperimentSummaryComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-experiment-summary/dot-experiments-experiment-summary.component';
 import { DotExperimentsUiHeaderComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
+import { DotExperimentsInlineEditTextComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-inline-edit-text/dot-experiments-inline-edit-text.component';
 
 @Component({
     standalone: true,
@@ -36,9 +39,12 @@ import { DotExperimentsUiHeaderComponent } from '@portlets/dot-experiments/share
         DotExperimentsConfigurationTrafficComponent,
         DotExperimentsConfigurationSchedulingComponent,
         DotExperimentsConfigurationSkeletonComponent,
+        DotExperimentsInlineEditTextComponent,
         CardModule,
         ButtonModule,
-        RippleModule
+        RippleModule,
+        InplaceModule,
+        InputTextModule
     ],
     selector: 'dot-experiments-configuration',
     templateUrl: './dot-experiments-configuration.component.html',
@@ -49,6 +55,7 @@ import { DotExperimentsUiHeaderComponent } from '@portlets/dot-experiments/share
 export class DotExperimentsConfigurationComponent implements OnInit {
     vm$: Observable<ConfigurationViewModel> = this.dotExperimentsConfigurationStore.vm$;
     experimentStatus = DotExperimentStatusList;
+    protected readonly ComponentStatus = ComponentStatus;
 
     constructor(
         private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore,
@@ -128,6 +135,22 @@ export class DotExperimentsConfigurationComponent implements OnInit {
             accept: () => {
                 this.dotExperimentsConfigurationStore.cancelSchedule(experiment);
             }
+        });
+    }
+
+    /**
+     * Save the description of the experiment
+     * @param {string} description
+     * @param {DotExperiment} experiment
+     * @returns void
+     * @memberof DotExperimentsConfigurationComponent
+     */
+    saveDescriptionAction(description: string, experiment: DotExperiment) {
+        this.dotExperimentsConfigurationStore.setDescription({
+            data: {
+                description
+            },
+            experiment
         });
     }
 }
