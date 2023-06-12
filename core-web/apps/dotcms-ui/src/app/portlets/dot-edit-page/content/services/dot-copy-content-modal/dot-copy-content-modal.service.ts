@@ -20,18 +20,18 @@ export interface ModelCopyContentResponse {
 export class DotCopyContentModalService {
     private readonly CONTENT_EDIT_OPTIONS: BINARY_OPTION = {
         option1: {
-            value: 'Copy',
-            message: 'editpage.content.edit.content.in.this.page.message',
-            icon: 'article',
-            label: 'editpage.content.edit.content.in.this.page',
-            buttonLabel: 'editpage.content.edit.content.in.this.page.button.label'
-        },
-        option2: {
             value: 'NotCopy',
             message: 'editpage.content.edit.content.in.all.pages.message',
             icon: 'dynamic_feed',
             label: 'editpage.content.edit.content.in.all.pages',
             buttonLabel: 'editpage.content.edit.content.in.all.pages.button.label'
+        },
+        option2: {
+            value: 'Copy',
+            message: 'editpage.content.edit.content.in.this.page.message',
+            icon: 'article',
+            label: 'editpage.content.edit.content.in.this.page',
+            buttonLabel: 'editpage.content.edit.content.in.this.page.button.label'
         }
     };
 
@@ -61,7 +61,7 @@ export class DotCopyContentModalService {
             // This will complete the observable
             filter((value) => !!value),
             map((value) => {
-                return { shouldCopy: this.CONTENT_EDIT_OPTIONS.option1.value === value };
+                return { shouldCopy: this.CONTENT_EDIT_OPTIONS.option2.value === value };
             })
         );
     }

@@ -1,9 +1,10 @@
 package com.dotcms.experiments.business.result;
 
 import com.dotcms.analytics.bayesian.model.BayesianResult;
-import com.dotcms.analytics.metrics.Metric;
 
 import com.dotcms.experiments.model.ExperimentVariant;
+import com.dotcms.experiments.model.Goal;
+import com.dotcms.experiments.model.TrafficProportion;
 import com.dotcms.util.DotPreconditions;
 import java.util.Collection;
 import java.util.HashMap;
@@ -69,13 +70,14 @@ public class ExperimentResults {
         private final TotalSessionBuilder totalSessionsBuilder;
         private final Map<String, GoalResultsBuilder> goals = new HashMap<>();
         private final Collection<ExperimentVariant> variants;
+        private TrafficProportion trafficProportion;
 
         public Builder(final Collection<ExperimentVariant> variants){
             this.variants = variants;
             totalSessionsBuilder = new TotalSessionBuilder(variants);
         }
 
-        public Builder addPrimaryGoal(final Metric goal) {
+        public Builder addPrimaryGoal(final Goal goal) {
             this.goals.put("primary", new GoalResultsBuilder(goal, variants));
             return this;
         }
@@ -85,12 +87,12 @@ public class ExperimentResults {
 
             final Map<String, GoalResults> goalResultMap = goals.entrySet().stream()
                     .collect(Collectors.toMap(Entry::getKey,
-                            entry -> entry.getValue().build(totalSessions)));
+                            entry -> entry.getValue().build(totalSessions, trafficProportion)));
 
             return new ExperimentResults(totalSessions, goalResultMap);
         }
 
-        public GoalResultsBuilder goal(final Metric goal) {
+        public GoalResultsBuilder goal(final Goal goal) {
             return this.goals.values().stream()
                     .filter(builder -> builder.goal.name().equals(goal.name()))
                     .limit(1)
@@ -101,6 +103,10 @@ public class ExperimentResults {
         public void addSession(final BrowserSession browserSession) {
             final String variantName = browserSession.getVariant().orElseThrow();
             totalSessionsBuilder.count(variantName);
+        }
+
+        public void trafficProportion(final TrafficProportion trafficProportion) {
+            this.trafficProportion = trafficProportion;
         }
 
         private static class TotalSessionBuilder {

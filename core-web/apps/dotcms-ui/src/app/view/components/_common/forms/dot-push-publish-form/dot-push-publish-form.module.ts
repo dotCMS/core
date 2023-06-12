@@ -14,6 +14,7 @@ import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotParseHtmlService } from '@dotcms/app/api/services/dot-parse-html/dot-parse-html.service';
 import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
 import { DotcmsConfigService } from '@dotcms/dotcms-js';
+import { DotFieldRequiredDirective } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 @NgModule({
@@ -30,7 +31,8 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
         DropdownModule,
         DotFieldValidationMessageModule,
         SelectButtonModule,
-        DotPipesModule
+        DotPipesModule,
+        DotFieldRequiredDirective
     ],
     providers: [PushPublishService, DotParseHtmlService, DotcmsConfigService]
 })

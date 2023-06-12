@@ -27,6 +27,7 @@ import { DotMessageDisplayServiceMock } from '@components/dot-message-display/do
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotDownloadBundleDialogService } from '@dotcms/app/api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
+import { DotFavoritePageService } from '@dotcms/app/api/services/dot-favorite-page/dot-favorite-page.service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
@@ -84,6 +85,7 @@ import {
     processedContainers,
     SiteServiceMock
 } from '@dotcms/utils-testing';
+import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { getExperimentMock } from '@portlets/dot-experiments/test/mocks';
 
 import { DotEditPageWorkflowsActionsModule } from './components/dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
@@ -151,6 +153,7 @@ export class MockDotFormSelectorComponent {
 export class MockDotEditPageToolbarComponent {
     @Input() pageState = mockDotRenderedPageState;
     @Input() variant;
+    @Input() runningExperiment;
     @Output() actionFired = new EventEmitter<DotCMSContentlet>();
     @Output() cancel = new EventEmitter<boolean>();
     @Output() favoritePage = new EventEmitter<boolean>();
@@ -168,7 +171,9 @@ export class MockDotPaletteComponent {
 
 const mockRenderedPageState = new DotPageRenderState(
     mockUser(),
-    new DotPageRender(mockDotRenderedPage())
+    new DotPageRender(mockDotRenderedPage()),
+    null,
+    EXPERIMENT_MOCK
 );
 
 describe('DotEditContentComponent', () => {
@@ -271,6 +276,8 @@ describe('DotEditContentComponent', () => {
                 DotESContentService,
                 DotSessionStorageService,
                 DotCopyContentModalService,
+                DotFavoritePageService,
+                DotExperimentsService,
                 {
                     provide: LoginService,
                     useClass: LoginServiceMock
@@ -408,6 +415,7 @@ describe('DotEditContentComponent', () => {
 
             beforeEach(() => {
                 spyOn(dialogService, 'open');
+
                 fixture.detectChanges();
                 toolbarElement = de.query(By.css('dot-edit-page-toolbar'));
             });
@@ -436,6 +444,10 @@ describe('DotEditContentComponent', () => {
                     experimentName: EXPERIMENT_MOCK.name,
                     mode: DotPageMode.PREVIEW
                 });
+            });
+
+            it('should pass running experiment', () => {
+                expect(toolbarElement.componentInstance.runningExperiment).toEqual(EXPERIMENT_MOCK);
             });
 
             describe('events', () => {

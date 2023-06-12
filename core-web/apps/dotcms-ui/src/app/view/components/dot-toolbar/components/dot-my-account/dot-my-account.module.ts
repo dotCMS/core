@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { FormGroupDirective, FormsModule } from '@angular/forms';
 
 import { CheckboxModule } from 'primeng/checkbox';
 import { InputTextModule } from 'primeng/inputtext';
@@ -8,6 +8,7 @@ import { PasswordModule } from 'primeng/password';
 
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotAlertConfirmService } from '@dotcms/data-access';
+import { DotFieldRequiredDirective } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotMyAccountComponent } from './dot-my-account.component';
@@ -20,10 +21,11 @@ import { DotMyAccountComponent } from './dot-my-account.component';
         DotDialogModule,
         CommonModule,
         CheckboxModule,
-        DotPipesModule
+        DotPipesModule,
+        DotFieldRequiredDirective
     ],
     exports: [DotMyAccountComponent],
     declarations: [DotMyAccountComponent],
-    providers: [DotAlertConfirmService]
+    providers: [DotAlertConfirmService, FormGroupDirective]
 })
 export class DotMyAccountModule {}

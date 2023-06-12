@@ -27,10 +27,12 @@ import com.dotcms.rendering.velocity.viewtools.navigation.NavToolCache;
 import com.dotcms.rendering.velocity.viewtools.navigation.NavToolCacheImpl;
 import com.dotcms.security.apps.AppsCache;
 import com.dotcms.security.apps.AppsCacheImpl;
+import com.dotcms.test.TestUtil;
 import com.dotcms.vanityurl.cache.VanityUrlCache;
 import com.dotcms.vanityurl.cache.VanityUrlCacheImpl;
 import com.dotcms.variant.business.VariantCache;
 import com.dotcms.variant.business.VariantCacheImpl;
+import com.dotmarketing.business.cache.provider.NullCacheAdministrator;
 import com.dotmarketing.business.portal.PortletCache;
 import com.dotmarketing.cache.ContentTypeCache;
 import com.dotmarketing.cache.FolderCache;
@@ -103,10 +105,12 @@ public class CacheLocator extends Locator<CacheIndex>{
             return;
         }
         long start = System.currentTimeMillis();
-
-
-
-        Logger.info(CacheLocator.class, "loading cache administrator: ChainableCacheAdministratorImpl");
+        
+        if(TestUtil.isUnitTest()) {
+            adminCache= new NullCacheAdministrator();
+        }else {
+            Logger.info(CacheLocator.class, "loading cache administrator: ChainableCacheAdministratorImpl");
+            
         try {
 
             adminCache = new CommitListenerCacheWrapper(new ChainableCacheAdministratorImpl(new CacheTransportStrategy()));
@@ -116,6 +120,9 @@ public class CacheLocator extends Locator<CacheIndex>{
             Logger.fatal(CacheLocator.class, "Unable to load Cache Admin:" + e.getMessage(), e);
         }
 
+        }
+        
+        
         instance = new CacheLocator();
 
         /*

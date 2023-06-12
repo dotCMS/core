@@ -58,10 +58,10 @@ public class BrowserAPIImpl implements BrowserAPI {
     private final ShortyIdAPI shortyIdAPI = APILocator.getShortyAPI();
     private final ContentletAPI contentletAPI = APILocator.getContentletAPI();
     private static final StringBuilder POSTGRES_ASSETNAME_COLUMN = new StringBuilder(ContentletJsonAPI
-            .CONTENTLET_AS_JSON).append("-> 'fields' -> ").append("'asset' -> 'metadata' ->> ").append("'name' ");
+            .CONTENTLET_AS_JSON).append("-> 'fields' -> ").append("'fileName' ->> 'value' ");
 
     private static final StringBuilder MSSQL_ASSETNAME_COLUMN = new StringBuilder("JSON_VALUE(c.").append
-            (ContentletJsonAPI.CONTENTLET_AS_JSON).append(", '$.fields.").append("asset.metadata.").append("name')" +
+            (ContentletJsonAPI.CONTENTLET_AS_JSON).append(", '$.fields.").append("fileName.").append("value')" +
             " ");
 
     private static final StringBuilder ASSET_NAME_LIKE = new StringBuilder().append("LOWER(%s) LIKE ? ");
@@ -290,9 +290,19 @@ public class BrowserAPIImpl implements BrowserAPI {
             luceneQuery.append("+contentType:(").append(String.join(" OR ", baseTypesNames)).append(") ");
         }
         if (browserQuery.languageId > 0) {
-            sqlQuery.append(" and cvi.lang = ? ");
-            parameters.add(browserQuery.languageId);
-            luceneQuery.append("+languageId:").append(browserQuery.languageId).append(" ");
+            sqlQuery.append(" and cvi.lang in (").append(browserQuery.languageId);
+            luceneQuery.append("+languageId:(").append(browserQuery.languageId);
+
+            final long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+            if(browserQuery.showDefaultLangItems && browserQuery.languageId != defaultLang){
+                sqlQuery.append(",").append(defaultLang);
+                luceneQuery.append(" OR ").append(defaultLang).append(" ");
+            }
+
+            sqlQuery.append(")");
+            luceneQuery.append(") ");
+
+
         }
         if (browserQuery.site != null) {
             sqlQuery.append(" and (id.host_inode = ?) ");

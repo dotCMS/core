@@ -1,24 +1,33 @@
 import { Subject } from 'rxjs';
 
 import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
-import { Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import {
+    AfterViewInit,
+    Component,
+    ElementRef,
+    HostListener,
+    OnDestroy,
+    ViewChild
+} from '@angular/core';
 
 import { Menu } from 'primeng/menu';
 
 import { Observable } from 'rxjs/internal/Observable';
-import { filter, skip, take, takeUntil } from 'rxjs/operators';
+import { filter, take, takeUntil } from 'rxjs/operators';
 
 import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotEventsService, DotPageRenderService } from '@dotcms/data-access';
-import { HttpCode, SiteService } from '@dotcms/dotcms-js';
+import { HttpCode } from '@dotcms/dotcms-js';
 import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
 
-import { DotPagesState, DotPageStore } from './dot-pages-store/dot-pages.store';
-
-export const FAVORITE_PAGE_LIMIT = 5;
+import {
+    DotPagesState,
+    DotPageStore,
+    FAVORITE_PAGE_LIMIT
+} from './dot-pages-store/dot-pages.store';
 
 export interface DotActionsMenuEventParams {
     event: MouseEvent;
@@ -32,7 +41,7 @@ export interface DotActionsMenuEventParams {
     styleUrls: ['./dot-pages.component.scss'],
     templateUrl: './dot-pages.component.html'
 })
-export class DotPagesComponent implements OnInit, OnDestroy {
+export class DotPagesComponent implements AfterViewInit, OnDestroy {
     @ViewChild('menu') menu: Menu;
     vm$: Observable<DotPagesState> = this.store.vm$;
 
@@ -45,7 +54,6 @@ export class DotPagesComponent implements OnInit, OnDestroy {
         private dotMessageDisplayService: DotMessageDisplayService,
         private dotEventsService: DotEventsService,
         private dotHttpErrorManagerService: DotHttpErrorManagerService,
-        private dotSiteService: SiteService,
         private dotPageRenderService: DotPageRenderService,
         private element: ElementRef
     ) {
@@ -103,7 +111,7 @@ export class DotPagesComponent implements OnInit, OnDestroy {
      */
     @HostListener('window:click')
     closeMenu(): void {
-        if (this.domIdMenuAttached.includes('pageActionButton')) {
+        if (this.menuIsLoaded(this.domIdMenuAttached)) {
             this.menu.hide();
             this.store.clearMenuActions();
         }
@@ -132,7 +140,7 @@ export class DotPagesComponent implements OnInit, OnDestroy {
         this.domIdMenuAttached = '';
     }
 
-    ngOnInit(): void {
+    ngAfterViewInit(): void {
         this.store.actionMenuDomId$
             .pipe(
                 takeUntil(this.destroy$),
@@ -140,7 +148,7 @@ export class DotPagesComponent implements OnInit, OnDestroy {
             )
             .subscribe((actionMenuDomId: string) => {
                 const target = this.element.nativeElement.querySelector(`#${actionMenuDomId}`);
-                if (target && actionMenuDomId.includes('pageActionButton')) {
+                if (target && this.menuIsLoaded(actionMenuDomId)) {
                     this.menu.show({ currentTarget: target });
                     this.domIdMenuAttached = actionMenuDomId;
 
@@ -168,14 +176,24 @@ export class DotPagesComponent implements OnInit, OnDestroy {
                     type: DotMessageType.SIMPLE_MESSAGE
                 });
             });
-
-        this.dotSiteService.switchSite$.pipe(takeUntil(this.destroy$), skip(1)).subscribe(() => {
-            this.store.getPages({ offset: 0 });
-        });
     }
 
     ngOnDestroy(): void {
         this.destroy$.next(true);
         this.destroy$.complete();
+    }
+
+    /**
+     * Check if the menu is loaded
+     *
+     * @private
+     * @param {string} menuDOMID
+     * @return {*}  {boolean}
+     * @memberof DotPagesComponent
+     */
+    private menuIsLoaded(menuDOMID: string): boolean {
+        return (
+            menuDOMID.includes('pageActionButton') || menuDOMID.includes('favoritePageActionButton')
+        );
     }
 }

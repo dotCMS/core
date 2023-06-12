@@ -7,12 +7,13 @@ import { AvatarModule } from 'primeng/avatar';
 import { DotAvatarDirective } from './dot-avatar.directive';
 
 @Component({
-    template: `<p-avatar [text]="text" [image]="image" dotAvatar></p-avatar> `
+    template: ` <p-avatar [text]="text" [image]="image" dotAvatar></p-avatar> `
 })
 class TestHostComponent {
     text: string;
     image: string;
 }
+
 describe('DotAvatarDirective', () => {
     let fixture: ComponentFixture<TestHostComponent>;
     let component: TestHostComponent;
@@ -40,12 +41,14 @@ describe('DotAvatarDirective', () => {
         component.text = 'test';
         fixture.detectChanges();
 
-        setTimeout(() => {
-            fixture.detectChanges();
-            expect(element.query(By.css('p-avatar')).nativeElement.textContent).toBe(
-                component.text.charAt(0).toUpperCase()
-            );
-            done();
-        }, 100);
+        fixture.whenStable().then(() => {
+            setTimeout(() => {
+                fixture.detectChanges();
+                expect(element.query(By.css('p-avatar')).nativeElement.textContent).toBe(
+                    component.text.charAt(0).toUpperCase()
+                );
+                done();
+            }, 100);
+        });
     });
 });

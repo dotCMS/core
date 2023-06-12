@@ -1,6 +1,7 @@
-<div [formGroup]="group" class="field">
-    <label class="form__label">{{ 'categories' | dm }} *</label>
+<div class="field" [formGroup]="group">
+    <label dotFieldRequired for="categories">{{ 'categories' | dm }}</label>
     <dot-searchable-dropdown
+        id="categories"
         #searchableDropdown
         [data]="categoriesCurrentPage"
         [formControlName]="property.name"

@@ -20,6 +20,7 @@
                     <input
                         id="name"
                         [tabindex]="1"
+                        [maxlength]="this.maxNameLength + 1"
                         data-testId="add-experiment-description-input"
                         dotAutofocus
                         formControlName="name"
@@ -48,7 +49,6 @@
             form="new-variant-form"
             label="{{ 'experiments.action.add' | dm }}"
             pButton
-            pRipple
             type="submit"
         ></button>
     </ng-template>

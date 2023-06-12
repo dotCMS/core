@@ -61,6 +61,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -69,6 +70,7 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.apache.commons.lang3.BooleanUtils;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
@@ -1337,6 +1339,12 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
                 .equals(contentletLanguage2DefaultVariant.getIdentifier())));
         assertTrue(contentlets.stream().anyMatch(contentlet -> contentlet.getIdentifier()
                 .equals(contentletLanguage3DefaultVariant.getIdentifier())));
+
+      //Now test findAllVersions is returning the versions in descending order
+       final List<Contentlet>  copy = new ArrayList<>(contentlets);
+       copy.sort((o1, o2) -> o2.getModDate().compareTo(o1.getModDate()));
+       assertEquals(copy,contentlets);
+
     }
 
     /**
@@ -1410,6 +1418,12 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
 
         expectedInodes.forEach(inode -> assertTrue(contentlets.stream()
                 .anyMatch(contentlet -> contentlet.getInode().equals(inode))));
+
+        //Now test findAllVersions is returning the versions in descending order
+        final List<Contentlet>  copy = new ArrayList<>(contentlets);
+        copy.sort((o1, o2) -> o2.getModDate().compareTo(o1.getModDate()));
+        assertEquals(copy,contentlets);
+
     }
 
 }

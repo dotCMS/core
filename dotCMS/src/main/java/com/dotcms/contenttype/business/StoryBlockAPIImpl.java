@@ -46,7 +46,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                         final Object storyBlockValue = contentlet.get(field.variable());
                         if (null != storyBlockValue && JsonUtil.isValidJSON(storyBlockValue.toString())) {
                             final StoryBlockReferenceResult result =
-                                    this.refreshStoryBlockValueReferences(storyBlockValue);
+                                    this.refreshStoryBlockValueReferences(storyBlockValue, contentlet.getIdentifier());
                             if (result.isRefreshed()) {
                                 refreshed.setTrue();
                                 contentlet.setProperty(field.variable(), result.getValue());
@@ -60,7 +60,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
 
     @CloseDBIfOpened
     @Override
-    public StoryBlockReferenceResult refreshStoryBlockValueReferences(final Object storyBlockValue) {
+    public StoryBlockReferenceResult refreshStoryBlockValueReferences(final Object storyBlockValue, final String parentContentletIdentifier) {
         boolean refreshed = false;
         try {
             final LinkedHashMap<String, Object> blockEditorMap = this.toMap(storyBlockValue);
@@ -71,8 +71,9 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
             for (final Map<String, Object> contentMap : (List<Map<String, Object>>) contentsMap) {
                 if (UtilMethods.isSet(contentMap)) {
                     final String type = contentMap.get(TYPE_KEY).toString();
-                    if (allowedTypes.contains(type)) {
-                        refreshed |= this.refreshStoryBlockMap(contentMap);
+                    if (allowedTypes.contains(type)) { // if somebody adds a story block to itself, we don't want to refresh it
+
+                        refreshed |= this.refreshStoryBlockMap(contentMap, parentContentletIdentifier);
                     }
                 }
             }
@@ -102,7 +103,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
      * @throws DotDataException     An error occurred when interacting with the data source.
      * @throws DotSecurityException The User accessing the API does not have the required permissions to do so.
      */
-    private boolean refreshStoryBlockMap(final Map<String, Object> contentMap) throws DotDataException, DotSecurityException {
+    private boolean refreshStoryBlockMap(final Map<String, Object> contentMap, final String parentContentletIdentifier) throws DotDataException, DotSecurityException {
         boolean refreshed  = false;
         final Map<String, Object> attrsMap = (Map) contentMap.get(ATTRS_KEY);
         if (UtilMethods.isSet(attrsMap)) {
@@ -112,12 +113,18 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                 final String inode = (String) dataMap.get(INODE_KEY);
                 final long languageId = ConversionUtils.toLong(dataMap.get(LANGUAGE_ID_KEY), ()-> APILocator.getLanguageAPI().getDefaultLanguage().getId());
                 if (UtilMethods.isSet(identifier) && UtilMethods.isSet(inode)) {
-                    final Optional<ContentletVersionInfo> versionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, languageId);
-                    if (versionInfo.isPresent() && UtilMethods.isSet(versionInfo.get().getLiveInode())  &&
+
+                    if (!identifier.equals(parentContentletIdentifier)) { // if somebody adds a story block to itself, we don't want to refresh it
+                        final Optional<ContentletVersionInfo> versionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, languageId);
+                        if (versionInfo.isPresent() && UtilMethods.isSet(versionInfo.get().getLiveInode()) &&
                                 !inode.equals(versionInfo.get().getLiveInode())) {
-                        // The Inode in the JSON of the Story Block field does not match the latest version of the
-                        // referenced Contentlet. This piece of content need to be refreshed
-                        this.refreshBlockEditorDataMap(dataMap, versionInfo.get().getLiveInode());
+                            // The Inode in the JSON of the Story Block field does not match the latest version of the
+                            // referenced Contentlet. This piece of content need to be refreshed
+                            this.refreshBlockEditorDataMap(dataMap, versionInfo.get().getLiveInode());
+                            refreshed = true;
+                        }
+                    } else {
+
                         refreshed = true;
                     }
                 }

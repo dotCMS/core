@@ -7,6 +7,7 @@ import { ConfirmationService } from 'primeng/api';
 
 import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
+import { DotFavoritePageService } from '@dotcms/app/api/services/dot-favorite-page/dot-favorite-page.service';
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
@@ -20,6 +21,7 @@ import { CoreWebService, HttpCode, LoginService } from '@dotcms/dotcms-js';
 import {
     DotCMSContentlet,
     DotDevice,
+    DotExperimentStatusList,
     DotPageMode,
     DotPageRenderState,
     DotPersona
@@ -35,13 +37,21 @@ import {
     mockUser,
     mockUserAuth
 } from '@dotcms/utils-testing';
+import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
+import { getExperimentMock } from '@portlets/dot-experiments/test/mocks';
 
 import { DotPageStateService } from './dot-page-state.service';
 
 import { PageModelChangeEventType } from '../dot-edit-content-html/models';
 
-const getDotPageRenderStateMock = (favoritePage?: DotCMSContentlet) => {
-    return new DotPageRenderState(mockUser(), mockDotRenderedPage(), favoritePage);
+const EXPERIMENT_MOCK = getExperimentMock(0);
+const getDotPageRenderStateMock = (favoritePage?: DotCMSContentlet, runningExperiment = null) => {
+    return new DotPageRenderState(
+        mockUser(),
+        mockDotRenderedPage(),
+        favoritePage,
+        runningExperiment
+    );
 };
 
 describe('DotPageStateService', () => {
@@ -51,10 +61,11 @@ describe('DotPageStateService', () => {
     let dotPageRenderService: DotPageRenderService;
     let dotPageRenderServiceGetSpy: jasmine.Spy;
     let dotRouterService: DotRouterService;
-    let dotESContentService: DotESContentService;
+    let dotFavoritePageService: DotFavoritePageService;
     let loginService: LoginService;
     let injector: TestBed;
     let service: DotPageStateService;
+    let dotExperimentsService: DotExperimentsService;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -68,6 +79,8 @@ describe('DotPageStateService', () => {
                 ConfirmationService,
                 DotFormatDateService,
                 DotESContentService,
+                DotFavoritePageService,
+                DotExperimentsService,
                 { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotRouterService, useClass: MockDotRouterService },
@@ -84,8 +97,9 @@ describe('DotPageStateService', () => {
         dotHttpErrorManagerService = injector.get(DotHttpErrorManagerService);
         dotPageRenderService = injector.get(DotPageRenderService);
         dotRouterService = injector.get(DotRouterService);
-        dotESContentService = injector.inject(DotESContentService);
         loginService = injector.get(LoginService);
+        dotFavoritePageService = injector.get(DotFavoritePageService);
+        dotExperimentsService = injector.get(DotExperimentsService);
 
         dotPageRenderServiceGetSpy = spyOn(dotPageRenderService, 'get').and.returnValue(
             of(mockDotRenderedPage())
@@ -102,7 +116,7 @@ describe('DotPageStateService', () => {
             url: '/an/url/test/form/query/params'
         });
 
-        spyOn(dotESContentService, 'get').and.returnValue(
+        spyOn(dotFavoritePageService, 'get').and.returnValue(
             of({
                 contentTook: 0,
                 jsonObjectView: {
@@ -112,6 +126,8 @@ describe('DotPageStateService', () => {
                 resultsSize: 20
             })
         );
+
+        spyOn(dotExperimentsService, 'getByStatus').and.returnValue(of([]));
     });
 
     describe('Method: get', () => {
@@ -138,16 +154,16 @@ describe('DotPageStateService', () => {
                 {}
             ]);
 
-            expect(dotESContentService.get).toHaveBeenCalledWith({
-                itemsPerPage: 10,
-                offset: '0',
-                query: `+contentType:DotFavoritePage +deleted:false +working:true +owner:dotcms.org.1 +DotFavoritePage.url_dotraw:/an/url/test?&language_id=1&device_inode=`
+            expect(dotFavoritePageService.get).toHaveBeenCalledWith({
+                limit: 10,
+                userId: 'dotcms.org.1',
+                url: '/an/url/test?&language_id=1&device_inode='
             });
         });
 
         it('should get with url from queryParams with a Failing fetch from ES Search (favorite page)', () => {
             const error500 = mockResponseView(500, '/test', null, { message: 'error' });
-            dotESContentService.get = jasmine.createSpy().and.returnValue(throwError(error500));
+            dotFavoritePageService.get = jasmine.createSpy().and.returnValue(throwError(error500));
             service.get();
 
             const subscribeCallback = jasmine.createSpy('spy');
@@ -160,6 +176,54 @@ describe('DotPageStateService', () => {
             service.state$.subscribe((state: DotPageRenderState) => {
                 expect(state).toEqual(mock);
             });
+        });
+    });
+
+    describe('Get Running Experiment', () => {
+        it('should get running experiment', () => {
+            const mock = getDotPageRenderStateMock(null, EXPERIMENT_MOCK);
+            dotExperimentsService.getByStatus = jasmine
+                .createSpy()
+                .and.returnValue(of([EXPERIMENT_MOCK]));
+
+            service.get();
+
+            expect(dotExperimentsService.getByStatus).toHaveBeenCalledWith(
+                '123',
+                DotExperimentStatusList.RUNNING
+            );
+
+            service.state$.subscribe((state: DotPageRenderState) => {
+                expect(state).toEqual(mock);
+            });
+        });
+
+        it('should set running experiment to  null if no running experiments', () => {
+            const mock = getDotPageRenderStateMock();
+
+            service.get();
+
+            service.state$.subscribe((state: DotPageRenderState) => {
+                expect(state).toEqual(mock);
+            });
+        });
+
+        it('should set running experiment to null if endpoint error', () => {
+            const error500 = mockResponseView(500, '/test', null, {
+                message: 'experiments.error.fetching.data'
+            });
+            const mock = getDotPageRenderStateMock();
+
+            dotExperimentsService.getByStatus = jasmine
+                .createSpy()
+                .and.returnValue(throwError(error500));
+
+            service.get();
+
+            service.state$.subscribe((state: DotPageRenderState) => {
+                expect(state).toEqual(mock);
+            });
+            expect(dotHttpErrorManagerServiceHandle).toHaveBeenCalledWith(error500, true);
         });
     });
 
@@ -390,8 +454,17 @@ describe('DotPageStateService', () => {
             const renderedPage = getDotPageRenderStateMock(dotcmsContentletMock);
             service.setInternalNavigationState(renderedPage);
 
+            service.state$.subscribe((state: DotPageRenderState) => {
+                expect(state).toEqual(renderedPage);
+            });
+
             expect(service.getInternalNavigationState()).toEqual(renderedPage);
             expect(dotPageRenderServiceGetSpy).not.toHaveBeenCalled();
+            expect(dotFavoritePageService.get).toHaveBeenCalledWith({
+                limit: 10,
+                userId: '123',
+                url: '/an/url/test?&language_id=1&device_inode='
+            });
         });
 
         it('should return null when internal state is not set', () => {

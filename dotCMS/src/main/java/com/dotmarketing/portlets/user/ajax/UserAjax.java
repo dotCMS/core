@@ -54,7 +54,6 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import io.vavr.control.Try;
-import jersey.repackaged.com.google.common.collect.ImmutableMap;
 
 /**
  * Provides utility methods that are accessed via DWR to build up the UI of the
@@ -694,7 +693,7 @@ public class UserAjax {
     if(access.indexOf("userActive")==0) {
       userToModify.setActive(granted);
       uApi.save(userToModify, loggedInUser, false);
-      return ImmutableMap.of("granted", granted, "role", "active", "user", userToModify.toMap());
+      return Map.of("granted", granted, "role", "active", "user", userToModify.toMap());
     }
     
     final Role role = access.toLowerCase().indexOf("admin") ==0 && APILocator.getRoleAPI().doesUserHaveRole(loggedInUser, APILocator.getRoleAPI().loadCMSAdminRole()) 
@@ -707,7 +706,7 @@ public class UserAjax {
 
     
     if(role==null) {
-      return ImmutableMap.of();
+      return Map.of();
     }
     
     
@@ -717,7 +716,7 @@ public class UserAjax {
       APILocator.getRoleAPI().removeRoleFromUser(role, userToModify);
     }
     
-    return ImmutableMap.of("granted", granted, "role", role.toMap(), "user", userToModify.toMap());
+    return Map.of("granted", granted, "role", role.toMap(), "user", userToModify.toMap());
   }
 	
 	/**
