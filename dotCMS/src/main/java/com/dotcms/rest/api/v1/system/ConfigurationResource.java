@@ -48,7 +48,7 @@ import com.liferay.util.LocaleUtil;
  * be programmatically read and returned.
  *
  * This is a public endpoint and requires no authentiction
- * 
+ *
  * @author Jose Castro
  * @version 3.7
  * @since Jul 22, 2016
@@ -63,7 +63,8 @@ public class ConfigurationResource implements Serializable {
 	private static final Set<String> WHITE_LIST = ImmutableSet.copyOf(
 			Config.getStringArrayProperty("CONFIGURATION_WHITE_LIST",
 					new String[] {"EMAIL_SYSTEM_ADDRESS", "CHARSET","CONTENT_PALETTE_HIDDEN_CONTENT_TYPES",
-					"FEATURE_FLAG_EXPERIMENTS", "DOTFAVORITEPAGE_FEATURE_ENABLE", "SHOW_VIDEO_THUMBNAIL"}));
+					"FEATURE_FLAG_EXPERIMENTS", "DOTFAVORITEPAGE_FEATURE_ENABLE", "FEATURE_FLAG_TEMPLATE_BUILDER_2",
+					"SHOW_VIDEO_THUMBNAIL", "EXPERIMENTS_MIN_DURATION", "EXPERIMENTS_MAX_DURATION"}));
 
 
 	private boolean isOnBlackList(final String key) {
@@ -145,7 +146,7 @@ public class ConfigurationResource implements Serializable {
 	/**
 	 * Returns the list of system properties that are set through the dotCMS
 	 * configuration files.
-	 * 
+	 *
 	 * @param request
 	 *            - The {@link HttpServletRequest} object.
 	 * @return The JSON representation of configuration parameters.

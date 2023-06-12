@@ -4,6 +4,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.content.business.json.ContentletJsonAPI;
+import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.contenttype.util.ContentTypeImportExportUtil;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
@@ -285,7 +286,7 @@ public class ExportStarterUtil {
         HibernateUtil hibernateUtil;
         DotConnect dc;
         List<?> resultList;
-        final ObjectMapper defaultObjectMapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
+        final ObjectMapper defaultObjectMapper = ContentletJsonHelper.INSTANCE.get().objectMapper();
         try {
             for (final Class<?> clazz : dbTablesAsClasses) {
                 int i;

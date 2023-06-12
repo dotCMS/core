@@ -1,4 +1,4 @@
-import { Subject, throwError } from 'rxjs';
+import { throwError } from 'rxjs';
 
 import { HttpClient, HttpErrorResponse, HttpHandler, HttpResponse } from '@angular/common/http';
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
@@ -16,13 +16,7 @@ import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-er
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { MockDotHttpErrorManagerService } from '@dotcms/app/test/dot-http-error-manager.service.mock';
 import { DotEventsService, DotPageRenderService } from '@dotcms/data-access';
-import {
-    CoreWebService,
-    CoreWebServiceMock,
-    HttpCode,
-    mockSites,
-    SiteService
-} from '@dotcms/dotcms-js';
+import { CoreWebService, CoreWebServiceMock, HttpCode } from '@dotcms/dotcms-js';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import {
     dotcmsContentletMock,
@@ -140,8 +134,6 @@ describe('DotPagesComponent', () => {
     let dotPageRenderService: DotPageRenderService;
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
 
-    const switchSiteSubject = new Subject();
-
     beforeEach(() => {
         TestBed.configureTestingModule({
             declarations: [
@@ -162,19 +154,7 @@ describe('DotPagesComponent', () => {
                 },
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
-                { provide: DotRouterService, useClass: MockDotRouterService },
-                {
-                    provide: SiteService,
-                    useValue: {
-                        get currentSite() {
-                            return undefined;
-                        },
-
-                        get switchSite$() {
-                            return switchSiteSubject.asObservable();
-                        }
-                    }
-                }
+                { provide: DotRouterService, useClass: MockDotRouterService }
             ]
         }).compileComponents();
     });
@@ -200,7 +180,7 @@ describe('DotPagesComponent', () => {
     });
 
     it('should init store', () => {
-        expect(store.setInitialStateData).toHaveBeenCalledWith(5);
+        expect(store.setInitialStateData).toHaveBeenCalledWith(500);
     });
 
     it('should have favorite page panel, menu, pages panel and DotAddToBundle components', () => {
@@ -351,29 +331,5 @@ describe('DotPagesComponent', () => {
             identifier: '123',
             isFavoritePage: true
         });
-    });
-
-    it('should reload portlet only when the site change', () => {
-        switchSiteSubject.next(mockSites[0]); // setting the site
-        switchSiteSubject.next(mockSites[1]); // switching the site
-        expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
-    });
-
-    it('should reload portlet only when the site change', () => {
-        switchSiteSubject.next(mockSites[0]); // setting the site
-        switchSiteSubject.next(mockSites[1]); // switching the site
-        expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
-    });
-
-    it('should reload portlet only when the site change', () => {
-        switchSiteSubject.next(mockSites[0]); // setting the site
-        switchSiteSubject.next(mockSites[1]); // switching the site
-        expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
-    });
-
-    it('should reload portlet only when the site change', () => {
-        switchSiteSubject.next(mockSites[0]); // setting the site
-        switchSiteSubject.next(mockSites[1]); // switching the site
-        expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
     });
 });

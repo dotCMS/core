@@ -7,20 +7,21 @@ import {
 } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
+import { ActivatedRoute } from '@angular/router';
+
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { DropdownModule } from 'primeng/dropdown';
 import { Sidebar } from 'primeng/sidebar';
 
-import { DotMessagePipe } from '@dotcms/app/view/pipes';
 import { DotMessageService } from '@dotcms/data-access';
 import { DefaultGoalConfiguration, ExperimentSteps, GOAL_TYPES } from '@dotcms/dotcms-models';
+import { DotMessagePipe, DotMessagePipeModule } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
-import { getExperimentMock } from '@portlets/dot-experiments/test/mocks';
+import { ACTIVE_ROUTE_MOCK_CONFIG, getExperimentMock } from '@portlets/dot-experiments/test/mocks';
 import { DotDropdownDirective } from '@portlets/shared/directives/dot-dropdown.directive';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
@@ -55,6 +56,7 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
             DotExperimentsConfigurationStore,
             mockProvider(DotExperimentsService),
             mockProvider(MessageService),
+            mockProvider(ActivatedRoute, ACTIVE_ROUTE_MOCK_CONFIG),
             {
                 provide: DotMessageService,
                 useValue: messageServiceMock
@@ -211,11 +213,11 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
         expect(store.setSelectedGoal).toHaveBeenCalledWith(expectedGoal);
     });
 
-    it('should disable submit button if the input name of the goal has more than MAX_INPUT_LENGTH constant', () => {
+    it('should disable submit button if the input name of the goal has more than MAX_INPUT_DESCRIPTIVE_LENGTH constant', () => {
         const invalidFormValues = {
             primary: {
                 ...DefaultGoalConfiguration.primary,
-                name: 'Really really really really really long name for a goal',
+                name: 'Really really really really really Really really really really really Really really Really really really really really Really really really really really Really really Really really really really really Really really really really really Really really Really really really really really Really really really really really Really really Really really really really really Really really really really really Really really Really really really really really Really really really really really Really really really really really long name for a goal',
                 type: GOAL_TYPES.BOUNCE_RATE
             }
         };

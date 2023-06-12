@@ -12,9 +12,8 @@ import { UiDotIconButtonTooltipComponent } from '@components/_common/dot-icon-bu
 import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotExperimentStatusList, GroupedExperimentByStatus } from '@dotcms/dotcms-models';
-import { DotIconModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipeModule } from '@dotcms/ui';
 import { DotFormatDateServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotRelativeDatePipe } from '@pipes/dot-relative-date/dot-relative-date.pipe';
 import { getExperimentMock } from '@portlets/dot-experiments/test/mocks';
 import { DotFormatDateService } from '@services/dot-format-date-service';
@@ -76,7 +75,7 @@ describe('DotExperimentsListTableComponent', () => {
         ],
         component: DotExperimentsListTableComponent,
         componentMocks: [ConfirmPopup],
-        declarations: [MockDatePipe, DotExperimentsEmptyExperimentsComponent],
+        declarations: [MockDatePipe],
         providers: [
             {
                 provide: DotMessageService,
@@ -176,7 +175,7 @@ describe('DotExperimentsListTableComponent', () => {
                 spectator.setInput('experimentGroupedByStatus', groupedExperimentByStatus);
 
                 expect(spectator.queryAll(UiDotIconButtonTooltipComponent)[0].icon).toBe(
-                    'bar_chart'
+                    'settings'
                 );
                 expect(spectator.queryAll(UiDotIconButtonTooltipComponent)[1].icon).toBe('archive');
             });
@@ -195,7 +194,7 @@ describe('DotExperimentsListTableComponent', () => {
                 expect(uiDotIconButtonTooltipComponent).not.toExist();
             });
 
-            it('should the row  has REPORTS icon when is RUNNING', () => {
+            it('should the row  has Configuration icon when is RUNNING', () => {
                 const groupedExperimentByStatus: GroupedExperimentByStatus[] = [
                     {
                         status: DotExperimentStatusList.RUNNING,
@@ -206,10 +205,10 @@ describe('DotExperimentsListTableComponent', () => {
                 spectator.setInput('experimentGroupedByStatus', groupedExperimentByStatus);
 
                 uiDotIconButtonTooltipComponent = spectator.query(UiDotIconButtonTooltipComponent);
-                expect(uiDotIconButtonTooltipComponent.icon).toBe('bar_chart');
+                expect(uiDotIconButtonTooltipComponent.icon).toBe('settings');
             });
 
-            it('should the row  has REPORTS icon when is RUNNING', () => {
+            it('should the row  has Configuration icon when is RUNNING', () => {
                 const groupedExperimentByStatus: GroupedExperimentByStatus[] = [
                     {
                         status: DotExperimentStatusList.ENDED,
@@ -220,7 +219,7 @@ describe('DotExperimentsListTableComponent', () => {
                 spectator.setInput('experimentGroupedByStatus', groupedExperimentByStatus);
 
                 uiDotIconButtonTooltipComponent = spectator.query(UiDotIconButtonTooltipComponent);
-                expect(uiDotIconButtonTooltipComponent.icon).toBe('bar_chart');
+                expect(uiDotIconButtonTooltipComponent.icon).toBe('settings');
             });
         });
     });

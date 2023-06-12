@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "98af464f-bfb7-495e-89a3-d26545fecc9c",
+		"_postman_id": "efa22acb-6704-493e-bb14-fec8cb186601",
 		"name": "Page API - [api/v1/page]",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "781456"
@@ -5212,14 +5212,13 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/users/logout",
+							"raw": "{{serverURL}}/api/v1/logout",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
 								"v1",
-								"users",
 								"logout"
 							]
 						}
