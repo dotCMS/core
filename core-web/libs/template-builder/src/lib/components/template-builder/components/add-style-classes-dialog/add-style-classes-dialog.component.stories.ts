@@ -39,7 +39,7 @@ export default {
                     provide: DotAddStyleClassesDialogStore,
                     useValue: {
                         styleClasses$: MOCK_STYLE_CLASSES_FILE.classes.map((styleClasses) => ({
-                            klass: styleClasses
+                            cssClass: styleClasses
                         })),
                         getStyleClassesFromFile: () => {
                             /* */

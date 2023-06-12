@@ -192,17 +192,16 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
             return {
                 ...state,
                 items: items.map((row) => {
-                    if (row.id === affectedColumns[0].parentId) {
-                        if (row.subGridOpts) {
-                            row.subGridOpts.children = row.subGridOpts.children.map((child) => {
-                                const column = getColumnByID(affectedColumns, child.id as string);
-                                if (column)
-                                    return { ...child, x: column.x, y: column.y, w: column.w };
-
-                                return child;
-                            });
-                        }
+                    if (row.id != affectedColumns[0].parentId || !row.subGridOpts) {
+                        return row;
                     }
+
+                    row.subGridOpts.children = row.subGridOpts.children.map((child) => {
+                        const column = getColumnByID(affectedColumns, child.id as string);
+                        if (column) return { ...child, x: column.x, y: column.y, w: column.w };
+
+                        return child;
+                    });
 
                     return row;
                 })
@@ -222,16 +221,16 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
             return {
                 ...state,
                 items: items.map((row) => {
-                    if (row.id === affectedColumn.parentId) {
-                        if (row.subGridOpts) {
-                            row.subGridOpts.children = row.subGridOpts.children.map((child) => {
-                                if (affectedColumn.id === child.id)
-                                    return { ...child, styleClass: affectedColumn.styleClass };
-
-                                return child;
-                            });
-                        }
+                    if (row.id != affectedColumn.parentId || !row.subGridOpts) {
+                        return row;
                     }
+
+                    row.subGridOpts.children = row.subGridOpts.children.map((child) => {
+                        if (affectedColumn.id === child.id)
+                            return { ...child, styleClass: affectedColumn.styleClass };
+
+                        return child;
+                    });
 
                     return row;
                 })

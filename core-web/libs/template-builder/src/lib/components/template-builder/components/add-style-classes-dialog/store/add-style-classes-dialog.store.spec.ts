@@ -29,7 +29,7 @@ describe('DotAddStyleClassesDialogStore', () => {
         req.flush(MOCK_STYLE_CLASSES_FILE);
         service.state$.subscribe((state) => {
             expect(state.styleClasses).toEqual(
-                MOCK_STYLE_CLASSES_FILE.classes.map((klass) => ({ klass }))
+                MOCK_STYLE_CLASSES_FILE.classes.map((cssClass) => ({ cssClass: cssClass }))
             );
         });
     });

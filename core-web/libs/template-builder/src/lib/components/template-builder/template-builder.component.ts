@@ -206,22 +206,9 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
      * @memberof TemplateBuilderComponent
      */
     editRowStyleClasses(rowID: numberOrString, styleClasses: string[]): void {
-        this.ref = this.dialogService.open(AddStyleClassesDialogComponent, {
-            header: 'Edit Classes',
-            data: {
-                selectedClasses: styleClasses ?? []
-            },
-            resizable: false
+        this.openDynamicDialog(styleClasses).subscribe((styleClasses: string[]) => {
+            this.store.updateRow({ id: rowID as string, styleClass: styleClasses });
         });
-
-        this.ref.onClose
-            .pipe(
-                take(1),
-                filter((styleClasses) => styleClasses)
-            )
-            .subscribe((styleClasses: string[]) => {
-                this.store.updateRow({ id: rowID as string, styleClass: styleClasses });
-            });
     }
 
     /**
@@ -231,25 +218,27 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
      * @memberof TemplateBuilderComponent
      */
     editBoxStyleClasses(rowID: numberOrString, box: DotGridStackNode): void {
+        this.openDynamicDialog(box.styleClass).subscribe((styleClasses: string[]) => {
+            this.store.updateColumnStyleClasses({
+                ...box,
+                styleClass: styleClasses,
+                parentId: rowID as string
+            });
+        });
+    }
+
+    private openDynamicDialog(selectedClasses = []): Observable<string[]> {
         this.ref = this.dialogService.open(AddStyleClassesDialogComponent, {
             header: 'Edit Classes',
             data: {
-                selectedClasses: box.styleClass ?? []
+                selectedClasses
             },
             resizable: false
         });
 
-        this.ref.onClose
-            .pipe(
-                take(1),
-                filter((styleClasses) => styleClasses)
-            )
-            .subscribe((styleClasses: string[]) => {
-                this.store.updateColumnStyleClasses({
-                    ...box,
-                    styleClass: styleClasses,
-                    parentId: rowID as string
-                });
-            });
+        return this.ref.onClose.pipe(
+            take(1),
+            filter((styleClasses) => styleClasses)
+        );
     }
 }

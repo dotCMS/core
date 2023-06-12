@@ -334,7 +334,7 @@ export const MOCK_STYLE_CLASSES_FILE = {
 export const addStyleClassesStoreMock = {
     styleClasses$: of(
         MOCK_STYLE_CLASSES_FILE.classes.map((styleClasses) => ({
-            klass: styleClasses
+            cssClass: styleClasses
         }))
     ),
     getStyleClassesFromFile: () => {

@@ -100,7 +100,7 @@ describe('AddStyleClassesDialogComponent', () => {
         spectator.detectChanges();
 
         expect(addMock).toHaveBeenCalledWith('d-none,');
-        expect(component.selectedClasses).toContainEqual({ klass: 'd-none' });
+        expect(component.selectedClasses).toContainEqual({ cssClass: 'd-none' });
     });
 
     it('should trigger addClassByCommaOrSpace when typing on the input and adding space', () => {
@@ -115,7 +115,7 @@ describe('AddStyleClassesDialogComponent', () => {
         spectator.detectChanges();
 
         expect(addMock).toHaveBeenCalledWith('d-none,');
-        expect(component.selectedClasses).toContainEqual({ klass: 'd-none' });
+        expect(component.selectedClasses).toContainEqual({ cssClass: 'd-none' });
     });
 
     it('should filter selectedClasses from filteredClasses when filteringClasses', () => {
@@ -125,7 +125,7 @@ describe('AddStyleClassesDialogComponent', () => {
 
         spectator.detectChanges();
 
-        expect(component.filteredClasses).not.toContainEqual({ klass: 'd-flex' });
+        expect(component.filteredClasses).not.toContainEqual({ cssClass: 'd-flex' });
     });
 
     it('should trigger closeDialog when clicking on update-btn', () => {

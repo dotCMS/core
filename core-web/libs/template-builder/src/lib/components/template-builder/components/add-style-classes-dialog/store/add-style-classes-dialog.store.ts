@@ -38,7 +38,7 @@ export class DotAddStyleClassesDialogStore extends ComponentStore<DotAddStyleCla
                         ({ classes }: { classes: string[] }) => {
                             this.patchState({
                                 styleClasses: classes.map((styleClasses) => ({
-                                    klass: styleClasses
+                                    cssClass: styleClasses
                                 }))
                             });
                         },

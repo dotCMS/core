@@ -52,8 +52,8 @@ export class AddStyleClassesDialogComponent implements OnInit, AfterViewInit, On
     ngOnInit() {
         const { selectedClasses } = this.dynamicDialogConfig.data;
 
-        this.selectedClasses = selectedClasses.map((klass) => ({
-            klass
+        this.selectedClasses = selectedClasses.map((cssClass) => ({
+            cssClass
         }));
 
         this.store.styleClasses$.pipe(takeUntil(this.destroy$)).subscribe((classes) => {
@@ -90,11 +90,11 @@ export class AddStyleClassesDialogComponent implements OnInit, AfterViewInit, On
 
         for (const classObj of this.classes) {
             const queryLowerCased = query.toLowerCase();
-            const klassLowerCased = classObj.klass.toLowerCase();
+            const cssClassLowerCased = classObj.cssClass.toLowerCase();
 
-            const isKlassStartsWithQuery = klassLowerCased.startsWith(queryLowerCased);
+            const isKlassStartsWithQuery = cssClassLowerCased.startsWith(queryLowerCased);
             const isKlassAlreadySelected = this.selectedClasses.some(
-                ({ klass }) => klass === classObj.klass
+                ({ cssClass: cssClass }) => cssClass === classObj.cssClass
             );
 
             if (isKlassStartsWithQuery && !isKlassAlreadySelected) {
@@ -103,7 +103,7 @@ export class AddStyleClassesDialogComponent implements OnInit, AfterViewInit, On
         }
 
         if (query.trim().length && !filtered.length) {
-            filtered.push({ klass: query.trim() });
+            filtered.push({ cssClass: query.trim() });
         }
 
         this.filteredClasses = filtered;
@@ -119,7 +119,7 @@ export class AddStyleClassesDialogComponent implements OnInit, AfterViewInit, On
         // Removes all the chars after the comma or space
         query = query.replace(COMMA_SPACES_REGEX, '');
 
-        this.selectedClasses.push({ klass: query });
+        this.selectedClasses.push({ cssClass: query });
 
         // Reset the input value
         this.autoCompleteInput.value = '';
@@ -133,6 +133,6 @@ export class AddStyleClassesDialogComponent implements OnInit, AfterViewInit, On
      * @memberof AddStyleClassesDialogComponent
      */
     closeDialog(): void {
-        this.ref.close(this.selectedClasses.map((styleClass) => styleClass.klass));
+        this.ref.close(this.selectedClasses.map((styleClass) => styleClass.cssClass));
     }
 }

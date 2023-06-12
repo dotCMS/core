@@ -60,6 +60,12 @@ export interface DotTemplateBuilderState {
     items: DotGridStackWidget[];
 }
 
+/**
+ * @description This is the model for the DotRemoveConfirmDialogStore
+ *
+ * @export
+ * @interface DotRemoveConfirmDialogState
+ */
 export interface DotRemoveConfirmDialogState {
     styleClasses: StyleClassModel[];
 }
@@ -85,5 +91,5 @@ export enum TemplateBuilderBoxSize {
  * @interface StyleClassModel
  */
 export interface StyleClassModel {
-    klass: string;
+    cssClass: string;
 }
