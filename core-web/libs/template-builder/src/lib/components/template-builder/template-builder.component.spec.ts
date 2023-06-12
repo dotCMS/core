@@ -13,6 +13,7 @@ import { AddWidgetComponent } from './components/add-widget/add-widget.component
 import { TemplateBuilderBackgroundColumnsComponent } from './components/template-builder-background-columns/template-builder-background-columns.component';
 import { TemplateBuilderBoxComponent } from './components/template-builder-box/template-builder-box.component';
 import { TemplateBuilderRowComponent } from './components/template-builder-row/template-builder-row.component';
+import { TemplateBuilderSectionComponent } from './components/template-builder-section/template-builder-section.component';
 import { DotGridStackWidget } from './models/models';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { TemplateBuilderComponent } from './template-builder.component';
@@ -31,7 +32,8 @@ describe('TemplateBuilderComponent', () => {
             AddWidgetComponent,
             TemplateBuilderBoxComponent,
             TemplateBuilderBackgroundColumnsComponent,
-            DotMessagePipeModule
+            DotMessagePipeModule,
+            TemplateBuilderSectionComponent
         ],
         providers: [
             DotTemplateBuilderStore,
@@ -102,5 +104,13 @@ describe('TemplateBuilderComponent', () => {
         const removeRowMock = jest.spyOn(store, 'removeRow');
         spectator.component.deleteRow('123');
         expect(removeRowMock).toHaveBeenCalledWith('123');
+    });
+
+    describe('layoutChange', () => {
+        it('should emit layoutChange when the store changes', () => {
+            const layoutChangeMock = jest.spyOn(spectator.component.layoutChange, 'emit');
+            spectator.component.deleteRow('123');
+            expect(layoutChangeMock).toHaveBeenCalled();
+        });
     });
 });

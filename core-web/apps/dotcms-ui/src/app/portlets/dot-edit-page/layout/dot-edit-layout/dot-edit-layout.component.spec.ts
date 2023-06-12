@@ -1,7 +1,7 @@
 import { of, throwError } from 'rxjs';
 
 import { HttpResponse } from '@angular/common/http';
-import { Component, DebugElement, Input } from '@angular/core';
+import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -12,6 +12,7 @@ import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/d
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
+import { EMPTY_TEMPLATE_DESIGN } from '@dotcms/app/portlets/dot-templates/dot-template-create-edit/store/dot-template.store';
 import { DotShowHideFeatureDirective } from '@dotcms/app/shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
 import {
     DotMessageService,
@@ -29,6 +30,19 @@ import {
 } from '@dotcms/utils-testing';
 
 import { DotEditLayoutComponent } from './dot-edit-layout.component';
+
+@Component({
+    // eslint-disable-next-line @angular-eslint/component-selector
+    selector: 'dotcms-template-builder',
+    template: ''
+})
+export class MockTemplateBuilderComponent {
+    @Input()
+    templateLayout: DotLayout;
+
+    @Output()
+    layoutChange = new EventEmitter();
+}
 
 @Component({
     selector: 'dot-edit-layout-designer',
@@ -74,7 +88,11 @@ describe('DotEditLayoutComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [MockDotEditLayoutDesignerComponent, DotEditLayoutComponent],
+            declarations: [
+                MockDotEditLayoutDesignerComponent,
+                DotEditLayoutComponent,
+                MockTemplateBuilderComponent
+            ],
             imports: [DotShowHideFeatureDirective],
             providers: [
                 RouterTestingModule,
@@ -194,14 +212,19 @@ describe('DotEditLayoutComponent', () => {
                 const res: DotPageRender = new DotPageRender(mockDotRenderedPage());
                 spyOn(dotPageLayoutService, 'save').and.returnValue(of(res));
 
-                layoutDesignerDe.triggerEventHandler('save', fakeLayout);
+                layoutDesignerDe.triggerEventHandler('save', {
+                    themeId: '123',
+                    layout: fakeLayout,
+                    title: null
+                });
 
                 expect(dotGlobalMessageService.loading).toHaveBeenCalledWith('Saving');
                 expect(dotGlobalMessageService.success).toHaveBeenCalledWith('Saved');
                 expect(dotGlobalMessageService.error).not.toHaveBeenCalled();
 
                 expect(dotPageLayoutService.save).toHaveBeenCalledWith('123', {
-                    ...fakeLayout,
+                    themeId: '123',
+                    layout: fakeLayout,
                     title: null
                 });
                 expect(dotTemplateContainersCacheService.set).toHaveBeenCalledWith({
@@ -215,7 +238,11 @@ describe('DotEditLayoutComponent', () => {
                 const res: DotPageRender = new DotPageRender(mockDotRenderedPage());
                 spyOn(dotPageLayoutService, 'save').and.returnValue(of(res));
 
-                layoutDesignerDe.triggerEventHandler('updateTemplate', fakeLayout);
+                layoutDesignerDe.triggerEventHandler('updateTemplate', {
+                    themeId: '123',
+                    layout: fakeLayout,
+                    title: null
+                });
 
                 tick(10000);
                 expect(dotGlobalMessageService.loading).toHaveBeenCalledWith('Saving');
@@ -223,7 +250,8 @@ describe('DotEditLayoutComponent', () => {
                 expect(dotGlobalMessageService.error).not.toHaveBeenCalled();
 
                 expect(dotPageLayoutService.save).toHaveBeenCalledWith('123', {
-                    ...fakeLayout,
+                    themeId: '123',
+                    layout: fakeLayout,
                     title: null
                 });
                 expect(dotTemplateContainersCacheService.set).toHaveBeenCalledWith({
@@ -299,6 +327,20 @@ describe('DotEditLayoutComponent', () => {
             );
 
             expect(component).toBeTruthy();
+        });
+
+        it('should emit events from new-template-builder when the layout is changed', () => {
+            const builder = fixture.debugElement.query(
+                By.css('[data-testId="new-template-builder"]')
+            );
+            const layout = EMPTY_TEMPLATE_DESIGN.layout;
+
+            spyOn(component, 'updateLayout').and.callThrough();
+            spyOn(component.updateTemplate, 'next').and.callThrough();
+
+            builder.triggerEventHandler('layoutChange', layout);
+
+            expect(component.updateTemplate.next).toHaveBeenCalled();
         });
     });
 });
