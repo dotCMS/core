@@ -1,21 +1,26 @@
 <dotcms-template-builder-background-columns></dotcms-template-builder-background-columns>
 <div class="tools">
-    <dotcms-add-widget
-        [label]="'dot.template.builder.add.row' | dm"
-        [icon]="rowIcon"
-        data-widget-type="row"
-        gs-w="12"
-        gs-h="1"
-        data-testId="add-row"
-    ></dotcms-add-widget>
-    <dotcms-add-widget
-        [label]="'dot.template.builder.add.box' | dm"
-        [icon]="colIcon"
-        data-widget-type="col"
-        gs-w="1"
-        gs-h="1"
-        data-testId="add-box"
-    ></dotcms-add-widget>
+    <div class="tools-controls">
+        <dotcms-add-widget
+            [label]="'dot.template.builder.add.row' | dm"
+            [icon]="rowIcon"
+            data-widget-type="row"
+            gs-w="12"
+            gs-h="1"
+            data-testId="add-row"
+        ></dotcms-add-widget>
+        <dotcms-add-widget
+            [label]="'dot.template.builder.add.box' | dm"
+            [icon]="colIcon"
+            data-widget-type="col"
+            gs-w="1"
+            gs-h="1"
+            data-testId="add-box"
+        ></dotcms-add-widget>
+    </div>
+    <div class="tools-controls">
+        <ng-content></ng-content>
+    </div>
 </div>
 <dotcms-template-builder-section>{{
     'dot.template.builder.header' | dm

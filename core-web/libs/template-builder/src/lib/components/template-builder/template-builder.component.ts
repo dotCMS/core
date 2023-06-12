@@ -76,11 +76,15 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
         // TODO: Test this
         this.items$ = this.store.items$.pipe(
             tap((items) => {
-                const layout = {
+                if (!items.length) {
+                    return;
+                }
+
+                const body = parseFromGridStackToDotObject(items);
+                this.layoutChange.emit({
                     ...this.templateLayout,
-                    body: parseFromGridStackToDotObject(items)
-                };
-                this.layoutChange.emit(layout);
+                    body
+                });
             })
         );
     }

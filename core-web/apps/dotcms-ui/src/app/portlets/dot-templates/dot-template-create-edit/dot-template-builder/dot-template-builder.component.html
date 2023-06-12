@@ -16,8 +16,19 @@
             <ng-template #enabledComponent>
                 <dotcms-template-builder
                     [templateLayout]="item.layout"
+                    (layoutChange)="updateLayoutAndTemplate($event)"
                     data-testId="new-template-builder"
-                ></dotcms-template-builder>
+                >
+                    <ng-container>
+                        <dot-global-message></dot-global-message>
+                        <button
+                            [label]="'Publish' | dm"
+                            (click)="saveAndPublish.emit(item)"
+                            pButton
+                            type="button"
+                        ></button>
+                    </ng-container>
+                </dotcms-template-builder>
             </ng-template>
             <ng-template #disabledComponent>
                 <dot-edit-layout-designer

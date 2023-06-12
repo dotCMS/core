@@ -2,8 +2,11 @@
 <ng-template #enabledComponent>
     <dotcms-template-builder
         [templateLayout]="pageState.layout"
+        (layoutChange)="updateLayout($event)"
         data-testId="new-template-builder"
-    ></dotcms-template-builder>
+    >
+        <dot-global-message></dot-global-message>
+    </dotcms-template-builder>
 </ng-template>
 
 <ng-template #disabledComponent>

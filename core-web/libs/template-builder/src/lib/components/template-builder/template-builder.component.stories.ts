@@ -3,6 +3,8 @@ import { moduleMetadata, Story, Meta } from '@storybook/angular';
 import { NgFor, AsyncPipe } from '@angular/common';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
+import { ButtonModule } from 'primeng/button';
+
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipeModule } from '@dotcms/ui';
 
@@ -31,7 +33,8 @@ export default {
                 RemoveConfirmDialogComponent,
                 BrowserAnimationsModule,
                 TemplateBuilderBackgroundColumnsComponent,
-                TemplateBuilderSectionComponent
+                TemplateBuilderSectionComponent,
+                ButtonModule
             ],
             providers: [
                 DotTemplateBuilderStore,
@@ -45,7 +48,16 @@ export default {
 } as Meta<TemplateBuilderComponent>;
 
 const Template: Story<TemplateBuilderComponent> = (args: TemplateBuilderComponent) => ({
-    props: args
+    props: args,
+    template: `
+        <dotcms-template-builder [templateLayout]="templateLayout">
+            <button
+                [label]="Publish"
+                pButton
+                type="button"
+            ></button>
+        </dotcms-template-builder>
+    `
 });
 
 export const Base = Template.bind({});

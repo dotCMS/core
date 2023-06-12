@@ -135,7 +135,7 @@ export const parseFromGridStackToDotObject = (gridData: DotGridStackWidget[]): D
     const rows = gridData.map((row) => {
         const { x: colWidth, subGridOpts, styleClass: styles, containers } = row;
         const { children = [] } = subGridOpts || {};
-        const styleClass = styles.join(' ') || null;
+        const styleClass = styles?.join(' ') || null;
 
         // If there is no subgrid, we return a single column
         const column = [
