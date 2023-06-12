@@ -42,20 +42,53 @@ public class HostFactoryImplTest extends IntegrationTestBase {
      *
      */
     @Test
-    public void test_findLiveAndStopped_shouldOnlyRetunLiveAndStoppedSites() {
+    public void test_findLiveAndStopped_shouldOnlyRetunLiveAndStoppedSites() throws DotDataException, DotSecurityException {
         // Initialization
         final int limit = 100;
         final int offset = 0;
         final HostFactoryImpl hostFactory = new HostFactoryImpl();
         final long systemMilis = System.currentTimeMillis();
 
-        final Host LiveTestSite = new SiteDataGen().name("liveHost"+systemMilis).nextPersisted();
+        //live site obj
+        final Host LiveTestSite = new SiteDataGen().name("liveHost"+systemMilis).nextPersisted(true);
 
+        //start validations of the live site
+        //sites lists
+        final List<Host> allSites = hostFactory.findAll(limit, offset,"name");
+        final Optional<List<Host>> listStoppedLive = hostFactory.findLiveAndStopped("", limit, offset, false, APILocator.systemUser(), false);
+
+        //asserts validations
+        assertTrue( "Live test is not contained in all sites list of length "+allSites.size(), allSites.contains(LiveTestSite));
+        if (listStoppedLive.isPresent()) {
+            assertTrue( "Live test is not contained in live/stopped list sites of length "+listStoppedLive.get().size(), listStoppedLive.get().contains(LiveTestSite));
+        } else {
+            System.out.println("->Live-Site-Validation live/stopped list not present!!!");
+        }
+
+        //stopped site obj
         final Host stoppedTestSite = new SiteDataGen().name("stoppedHost"+systemMilis).nextPersisted(false);
 
+        //sites lists
+        final List<Host> allHostsList =  hostFactory.findAll(limit, offset,"name");
         final Optional<List<Host>> hostsList =  hostFactory.findLiveAndStopped("", limit, offset, false, APILocator.systemUser(), false);
 
-        assertTrue(hostsList.get().contains(LiveTestSite) && hostsList.get().contains(stoppedTestSite));
+
+        //validations
+        assertTrue( "Stopped test is not contained in all sites list of length "+allHostsList.size(), allHostsList.contains(stoppedTestSite));
+
+        if (hostsList.isPresent()) {
+            assertTrue( "Stopped test is not contained in live/stopped list sites of length "+hostsList.get().size(), hostsList.get().contains(stoppedTestSite));
+        } else {
+            System.out.println("->Stopped-Site-Validation live/stopped list not present!!!");
+        }
+
+        if (hostsList.isPresent()) {
+            assertTrue("Both sites validations error, length"+ hostsList.get().size(),hostsList.get().contains(LiveTestSite) && hostsList.get().contains(stoppedTestSite));
+
+        } else {
+            System.out.println("->Stopped-live-Site-Validation live/stopped list not present!!!");
+        }
+
     }
 }
 
