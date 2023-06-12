@@ -3,7 +3,9 @@ package com.dotcms.junit;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.common.reindex.ReindexQueueAPI;
+import com.dotmarketing.common.reindex.ReindexQueueFactory;
 import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -66,6 +68,11 @@ public class RuleWatcher extends TestWatcher {
                     TestDataUtils.waitForEmptyQueue();
                     boolean queueEmpty = TestDataUtils.waitForEmptyQueue();
                     Logger.info(MainBaseSuite.class, "Indexer Complete=" + queueEmpty);
+                    if (!queueEmpty) {
+                        ReindexThread.pause();
+                        Logger.info(MainBaseSuite.class, "Cleaning queue");
+                        APILocator.getReindexQueueAPI().deleteReindexAndFailedRecords();
+                    }
                 }
             } catch (DotDataException e) {
                 throw new RuntimeException("Error accessing Index", e);
