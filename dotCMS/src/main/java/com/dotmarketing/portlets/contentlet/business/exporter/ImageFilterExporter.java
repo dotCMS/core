@@ -21,11 +21,11 @@ import io.vavr.control.Try;
 
 /**
  * 
- * A exporter that can take 1 or more filters in a chain
- * 
+ * An exporter that can take 1 or more filters in a chain
+ * <p>
  * the chain is provided by the "filter=" parameter You can chain filters so that you resize then
  * crop to produce the resulting image
- * 
+ * <p>
  * 
  */
 
@@ -46,12 +46,12 @@ public class ImageFilterExporter implements BinaryContentExporter {
     public BinaryContentExporterData exportContent(File file, final Map<String, String[]> parameters)
                     throws BinaryContentExporterException {
 
-        Class<ImageFilter> errorClass = ImageFilter.class;
+        Class<? extends ImageFilter> errorClass = ImageFilter.class;
         try {
 
-            final Map<String,Class<ImageFilter>> filters = new ImageFilterApiImpl().resolveFilters(parameters);
-            parameters.put("filter", filters.keySet().toArray(new String[filters.size()]));
-            parameters.put("filters", filters.keySet().toArray(new String[filters.size()]));
+            final Map<String,Class<? extends ImageFilter>> filters = new ImageFilterApiImpl().resolveFilters(parameters);
+            parameters.put("filter", filters.keySet().toArray(new String[0]));
+            parameters.put("filters", filters.keySet().toArray(new String[0]));
             
             // run pdf filter first (if a pdf)
             if(!filters.isEmpty() && "pdf".equals(UtilMethods.getFileExtension(file.getName())) && !filters.containsKey("pdf")) {
@@ -66,7 +66,7 @@ public class ImageFilterExporter implements BinaryContentExporter {
             }
             
             
-            for (final Class<ImageFilter> filter : filters.values()) {
+            for (final Class<? extends ImageFilter> filter : filters.values()) {
                 errorClass=filter;
                 final ImageFilter imageFilter =  filter.getDeclaredConstructor().newInstance();
                 
@@ -109,12 +109,12 @@ public class ImageFilterExporter implements BinaryContentExporter {
         }
     }
 
-    private Optional<File> alreadyGenerated(final Collection<Class<ImageFilter>> clazzes, final File fileIn,
+    private Optional<File> alreadyGenerated(final Collection<Class<? extends ImageFilter>> clazzes, final File fileIn,
                     final Map<String, String[]> parameters)  {
 
         File fileToReturn = fileIn;
         
-        for (final Class<ImageFilter> filter : clazzes) {
+        for (final Class<? extends ImageFilter> filter : clazzes) {
             final ImageFilter imageFilter =  Try.of(()-> filter.getDeclaredConstructor().newInstance()).getOrElseThrow(DotRuntimeException::new);
             fileToReturn  = imageFilter.getResultsFile(fileToReturn, parameters);
             

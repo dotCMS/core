@@ -351,7 +351,7 @@ public class FileUtil {
 	 */
 	private static boolean internalDelete(File f) {
 		try {
-			Files.delete(f.toPath());
+			Files.deleteIfExists(f.toPath());
 			return true;
 		} catch (IOException e) {
 			Logger.debug(FileUtil.class, String.format("Fail to delete file/dir [%s]", f), e);
@@ -389,7 +389,7 @@ public class FileUtil {
 
 	public static byte[] getBytes(File file) throws IOException {
 		if (file == null || !file.exists()) {
-			return null;
+			return new byte[0];
 		}
 
 		try(
@@ -584,10 +584,11 @@ public class FileUtil {
 	}
 
 	public static void mkdirs(String pathName) {
-		File file = new File(pathName);
-		final boolean mkdirsOk = file.mkdirs();
-		if(!mkdirsOk){
-			Logger.error(FileUtil.class,String.format("Fail to makeDir [%s]",file));
+		Path path = Paths.get(pathName);
+		try {
+			Files.createDirectories(path);
+		} catch (IOException e) {
+			Logger.error(FileUtil.class, String.format("Fail to makeDir [%s]", path), e);
 		}
 	}
 
@@ -786,28 +787,20 @@ public class FileUtil {
 			finalVal = "";
 		}else if(filesize< MEGA_BYTE){
 			byteVal = new BigDecimal(KILO_BYTE);
-			if(size!=null){
-				changedByteVal = size.divide(byteVal,MathContext.UNLIMITED);
-				finalVal = Long.toString(Math.round(Math.ceil(changedByteVal.doubleValue())))+" KB";
-			}
+			changedByteVal = size.divide(byteVal,MathContext.UNLIMITED);
+			finalVal = Long.toString(Math.round(Math.ceil(changedByteVal.doubleValue())))+" KB";
 		}else if(filesize< GIGA_BYTE ){
 			byteVal = new BigDecimal(MEGA_BYTE);
-			if(size!=null){
-				changedByteVal = size.divide(byteVal,MathContext.UNLIMITED);
-				finalVal = Long.toString(Math.round(Math.ceil(changedByteVal.doubleValue())))+" MB";
-			}
+			changedByteVal = size.divide(byteVal,MathContext.UNLIMITED);
+			finalVal = Math.round(Math.ceil(changedByteVal.doubleValue())) +" MB";
 		}else if(filesize< TERA_BYTE){
 			byteVal = new BigDecimal(GIGA_BYTE);
-			if(size!=null){
-				changedByteVal = size.divide(byteVal,MathContext.UNLIMITED);
-				finalVal = Long.toString(Math.round(Math.ceil(changedByteVal.doubleValue())))+" GB";
-			}
+			changedByteVal = size.divide(byteVal,MathContext.UNLIMITED);
+			finalVal = Math.round(Math.ceil(changedByteVal.doubleValue())) +" GB";
 		} else{
 			byteVal = new BigDecimal(TERA_BYTE);
-			if(size!=null){
-				changedByteVal = size.divide(byteVal,MathContext.UNLIMITED);
-				finalVal = Long.toString(Math.round(Math.ceil(changedByteVal.doubleValue())))+" TB";
-			}
+			changedByteVal = size.divide(byteVal,MathContext.UNLIMITED);
+			finalVal = Math.round(Math.ceil(changedByteVal.doubleValue())) +" TB";
 		}
 		return finalVal;
 	}

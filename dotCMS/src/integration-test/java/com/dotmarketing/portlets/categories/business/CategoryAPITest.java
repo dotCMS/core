@@ -101,7 +101,7 @@ public class CategoryAPITest extends IntegrationTestBase {
         assertTrue(categories.getTotalCount() > 0);
 
         //***************************************************************
-        filter = "event";
+        filter = "bike";
         sort = null;
 
         //Test the category API

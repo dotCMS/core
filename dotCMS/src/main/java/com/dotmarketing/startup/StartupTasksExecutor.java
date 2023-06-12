@@ -317,7 +317,7 @@ public class StartupTasksExecutor {
                 if (StartupTask.class.isAssignableFrom(c) && taskId > Config.DATA_VERSION) {
                     StartupTask task;
                     try {
-                        task = (StartupTask) c.newInstance();
+                        task = (StartupTask) c.getDeclaredConstructor().newInstance();
                     } catch (Exception e) {
                         throw new DotRuntimeException(e.getMessage(), e);
                     }
