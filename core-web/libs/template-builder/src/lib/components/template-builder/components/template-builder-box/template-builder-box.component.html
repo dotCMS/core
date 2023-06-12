@@ -12,6 +12,8 @@
             [showClear]="false"
             [filter]="true"
             [placeholder]="'dot.template.builder.add.container' | dm"
+            (onChange)="onContainerSelect()"
+            data-testId="btn-plus"
             dotcmsContainerOptions
             appendTo="body"
             dropdownIcon="pi pi-plus"
@@ -54,8 +56,10 @@
         <p-dropdown
             [showClear]="false"
             [filter]="true"
+            (onChange)="onContainerSelect()"
             dotcmsContainerOptions
             appendTo="body"
+            data-testId="btn-plus-small"
             dropdownIcon="pi pi-plus"
             optionLabel="label"
         ></p-dropdown>

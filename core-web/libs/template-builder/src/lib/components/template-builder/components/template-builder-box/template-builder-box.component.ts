@@ -70,4 +70,8 @@ export class TemplateBuilderBoxComponent implements OnChanges {
     ngOnChanges(): void {
         this.boxVariant = getBoxVariantByWidth(this.width);
     }
+
+    onContainerSelect() {
+        this.addContainer.emit();
+    }
 }

@@ -1,4 +1,7 @@
+import * as _ from 'lodash';
 import { v4 as uuid } from 'uuid';
+
+import { Component } from '@angular/core';
 
 import { DotLayoutBody } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -329,3 +332,27 @@ export const mockMatchMedia = () => {
         })
     });
 };
+
+@Component({
+    selector: 'dotcms-containers-dropdown-mock',
+    template: ` <p-dropdown dotcmsContainerOptions></p-dropdown>`
+})
+export class MockContainersDropdownComponent {}
+
+export function mockMatchMedia() {
+    // needed in component specs that open a prime-ng modal
+    window.matchMedia =
+        window.matchMedia ||
+        function () {
+            return {
+                matches: false,
+                media: '',
+                onchange: null,
+                addListener: _.noop, // deprecated
+                removeListener: _.noop, // deprecated
+                addEventListener: _.noop,
+                removeEventListener: _.noop,
+                dispatchEvent: () => true
+            };
+        };
+}

@@ -49,7 +49,7 @@ export class ContainerOptionsDirective implements OnInit, OnDestroy {
     }
 
     ngOnInit() {
-        this.fetchContainerOptions('')
+        this.fetchContainerOptions()
             .pipe(catchError(() => this.handleContainersLoadError()))
             .subscribe((options) => {
                 this.control.options = this.control.options || options; // avoid overwriting if they were already set
@@ -67,7 +67,7 @@ export class ContainerOptionsDirective implements OnInit, OnDestroy {
     }
 
     private fetchContainerOptions(
-        filter: string
+        filter: string = ''
     ): Observable<DotDropdownSelectOption<DotContainerEntity>[]> {
         return this.dotContainersService.getFiltered(filter, this.maxOptions).pipe(
             take(1),
