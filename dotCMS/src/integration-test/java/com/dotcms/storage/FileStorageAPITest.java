@@ -201,4 +201,69 @@ public class FileStorageAPITest {
         }
     }
 
+
+    /**
+     * Method to test: This test tries the {@link ChainableStoragePersistenceAPI#pullObject(String, String, ObjectReaderDelegate)}
+     * Given Scenario: To start will set a chain storage including as a first layer the file storage, then memory storage
+     * - Then we will push for some objects to mem storage and pull the same on chainable storage
+     * ExpectedResult: since the objects already exist on a storage layer, the cache should be clean
+     *
+     * @throws Exception
+     */
+    @Test
+    public void Test_Chainable_Storage_Cache_404_pulling_existing_objects() throws Exception {
+        prepareIfNecessary();
+
+        // Creates a chain storage with file, memory, and db in that order
+        final JsonReaderDelegate jsonReaderDelegate = new JsonReaderDelegate(String.class);
+        final ChainableStoragePersistenceAPIBuilder chainStorageBuilder = new ChainableStoragePersistenceAPIBuilder();
+
+        // we need to clean any previous storage configuration to proceed on the test
+        StoragePersistenceProvider.INSTANCE.get().forceInitialize();
+        final StoragePersistenceAPI memStorage  = StoragePersistenceProvider.INSTANCE.get().getStorage(StorageType.MEMORY);
+        final StoragePersistenceAPI fileStorage = StoragePersistenceProvider.INSTANCE.get().getStorage(StorageType.FILE_SYSTEM);
+
+        // file -> mem -> db
+        chainStorageBuilder.add(fileStorage);
+        chainStorageBuilder.add(memStorage);
+
+        StoragePersistenceProvider.INSTANCE.get().addStorageInitializer(StorageType.CHAIN2, chainStorageBuilder);
+        final StoragePersistenceAPI chainStorage   = StoragePersistenceProvider.INSTANCE.get().getStorage(StorageType.CHAIN2);
+
+        // creates the group on all storages
+        final String groupName = "bucket-test";
+
+        try {
+
+            // this creates all groups on all storages on the chain
+            Try.run(() -> chainStorage.createGroup(groupName)).getOrElseThrow((e) -> new RuntimeException(e));
+            final String path1 = "/path1.txt";
+            final String path2 = "/path2.txt";
+
+            // Now create a few objects on the chainStorage
+            final String[] paths = {"/path1.txt", "/path2.txt", "/path3.txt"};
+            final String[] objects = {"Object1", "Object2", "Object3"};
+            for (int i = 0; i < paths.length; i++) {
+                memStorage.pushObject(groupName, paths[i], null, objects[i], null);
+            }
+
+            final Object object1 = Try.of(()->chainStorage.pullObject(groupName, path1, jsonReaderDelegate)).getOrNull();
+            Assert.assertNotNull("The object on group bucket-test, /path1 should be NOT null", object1);
+
+            final Object object2 = Try.of(()->chainStorage.pullObject(groupName, path2, jsonReaderDelegate)).getOrNull();
+            Assert.assertNotNull("The object on group bucket-test, /path1 should be NOT null", object2);
+
+            // since the objects were resolved on the chain, the cache 404 should be clean
+            final Chainable404StorageCache cache = ChainableStoragePersistenceAPI.class.cast(chainStorage).getCache();
+            Assert.assertFalse("The object on group bucket-test, /path1 should be 404", cache.is404(groupName, path1));
+            Assert.assertFalse("The object on group bucket-test, /path2 should be 404", cache.is404(groupName, path2));
+
+        } finally {
+
+            Stream.of(fileStorage).forEach(storage -> {
+                Try.run(() -> storage.deleteGroup(groupName)).getOrElseThrow((e) -> new RuntimeException(e));
+            });
+        }
+    }
+
 }
