@@ -234,7 +234,8 @@ export const MESSAGES_MOCK = {
     'dot.template.builder.toolbar.button.layout.label': 'Layout',
     'dot.template.builder.toolbar.button.theme.label': 'Theme',
     'dot.template.builder.classes.dialog.update.button': 'Update',
-    'dot.template.builder.classes.dialog.autocomplete.label': 'Class'
+    'dot.template.builder.classes.dialog.autocomplete.label': 'Class',
+    'dot.template.builder.classes.dialog.header.label': 'Edit Classes'
 };
 
 export const DOT_MESSAGE_SERVICE_TB_MOCK = new MockDotMessageService(MESSAGES_MOCK);
