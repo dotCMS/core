@@ -112,18 +112,21 @@ public class FileSystemTreeBuilderTask extends RecursiveTask<Void> {
      */
     private void createFolderInFileSystem(final String destination, final FolderView folder) {
 
+        String remoteFolderURL = generateRemoteFolderURL(folder);
+
         // Create the corresponding folder in the file system
         var folderPath = Paths.get(destination, folder.path());
 
         try {
             if (!Files.exists(folderPath)) {
+
                 Files.createDirectories(folderPath);
-                logger.debug("Created folder: " + folderPath);
+                logger.debug(String.format("Created folder [%s] to [%s] ", remoteFolderURL, folderPath));
             } else {
-                logger.debug(String.format("Skipping folder [%s], it already exists in the file system", folderPath));
+                logger.debug(String.format("Skipping folder [%s], it already exists in the file system", remoteFolderURL));
             }
         } catch (IOException e) {
-            var message = String.format("Error creating folder [%s]", folderPath);
+            var message = String.format("Error creating folder [%s] to [%s]", remoteFolderURL, folderPath);
             logger.debug(message, e);
             throw new RuntimeException(message, e);
         }
@@ -138,7 +141,7 @@ public class FileSystemTreeBuilderTask extends RecursiveTask<Void> {
      */
     private void createFileInFileSystem(final String destination, final FolderView folder, final AssetView asset) {
 
-        String remoteAssetURL = generateRemoteURL(folder, asset);
+        String remoteAssetURL = generateRemoteFolderURL(folder) + asset.name();
         var assetFilePath = Paths.get(destination, folder.path(), asset.name());
 
         // Remove SHA-256
@@ -170,7 +173,6 @@ public class FileSystemTreeBuilderTask extends RecursiveTask<Void> {
 
                 // Copy the contents of the InputStream to the target file
                 Files.copy(inputStream, assetFilePath, StandardCopyOption.REPLACE_EXISTING);
-
                 logger.debug(String.format("Downloaded file [%s] to [%s] ", remoteAssetURL, assetFilePath));
             } catch (IOException e) {
                 var message = String.format("Error downloading file [%s] to [%s] ", remoteAssetURL, assetFilePath);
@@ -187,24 +189,24 @@ public class FileSystemTreeBuilderTask extends RecursiveTask<Void> {
     }
 
     /**
-     * Generates the remote URL for a given folder and asset.
+     * Generates the remote URL for a given folder
      *
      * @param folder the folder view representing the parent folder
-     * @param asset  the asset view representing the asset
-     * @return the remote URL for the asset
+     * @return the remote URL for the folder
      */
-    private static String generateRemoteURL(FolderView folder, AssetView asset) {
+    private static String generateRemoteFolderURL(FolderView folder) {
 
         String remoteAssetURL;
         if ("/".equals(folder.path())) {
             if (folder.name().isEmpty() || folder.name().equals("/")) {
-                remoteAssetURL = "//" + folder.host() + "/" + asset.name();
+                remoteAssetURL = "//" + folder.host() + "/";
             } else {
-                remoteAssetURL = "//" + folder.host() + "/" + folder.name() + "/" + asset.name();
+                remoteAssetURL = "//" + folder.host() + "/" + folder.name() + "/";
             }
         } else {
-            remoteAssetURL = "//" + folder.host() + folder.path() + asset.name();
+            remoteAssetURL = "//" + folder.host() + folder.path();
         }
+
         return remoteAssetURL;
     }
 
