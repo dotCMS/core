@@ -32,21 +32,4 @@
     .p-autocomplete-multiple-container {
         gap: 0.25rem;
     }
-
-    .p-dialog .p-dialog-content {
-        padding: 0;
-    }
-
-    .p-dialog {
-        max-height: 16.375rem;
-
-        .p-dialog-header {
-            padding: 1.75rem $spacing-5;
-
-            .p-dialog-title {
-                font-size: $font-size-xl;
-                line-height: 31px;
-            }
-        }
-    }
 }
