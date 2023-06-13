@@ -15,8 +15,6 @@ import {
     MockContainersDropdownComponent,
     mockMatchMedia
 } from '../components/template-builder/utils/mocks';
-
-mockMatchMedia();
 describe('ContainerOptionsDirective', () => {
     let spectator: SpectatorHost<MockContainersDropdownComponent>;
 
@@ -40,6 +38,7 @@ describe('ContainerOptionsDirective', () => {
             `<dotcms-containers-dropdown-mock></dotcms-containers-dropdown-mock>`
         );
         spectator.detectChanges();
+        mockMatchMedia();
     });
 
     it('should add the options obtained from the service', async () => {

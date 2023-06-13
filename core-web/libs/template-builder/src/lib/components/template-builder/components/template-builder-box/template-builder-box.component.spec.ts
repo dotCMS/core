@@ -21,8 +21,6 @@ import {
 } from '../../utils/mocks';
 import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-confirm-dialog.component';
 
-mockMatchMedia();
-
 describe('TemplateBuilderBoxComponent', () => {
     let spectator: SpectatorHost<TemplateBuilderBoxComponent>;
 
@@ -64,6 +62,7 @@ describe('TemplateBuilderBoxComponent', () => {
         spectator.detectChanges();
 
         jest.spyOn(ConfirmPopup.prototype, 'bindScrollListener').mockImplementation(jest.fn());
+        mockMatchMedia();
     });
 
     it('should create the component', () => {

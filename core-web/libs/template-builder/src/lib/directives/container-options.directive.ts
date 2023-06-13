@@ -1,4 +1,4 @@
-import { Observable, of, Subject, Subscription } from 'rxjs';
+import { Observable, of, Subject } from 'rxjs';
 
 import { Directive, OnDestroy, OnInit, Optional, Self } from '@angular/core';
 
@@ -26,7 +26,6 @@ export class ContainerOptionsDirective implements OnInit, OnDestroy {
     private readonly control: Dropdown;
     private readonly maxOptions = 10;
     private readonly loadErrorMessage: string;
-    private onFilterSubscription: Subscription;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
@@ -54,7 +53,7 @@ export class ContainerOptionsDirective implements OnInit, OnDestroy {
             .subscribe((options) => {
                 this.control.options = this.control.options || options; // avoid overwriting if they were already set
             });
-        this.onFilterSubscription = this.control.onFilter
+        this.control.onFilter
             .pipe(
                 takeUntil(this.destroy$),
                 debounceTime(500),
