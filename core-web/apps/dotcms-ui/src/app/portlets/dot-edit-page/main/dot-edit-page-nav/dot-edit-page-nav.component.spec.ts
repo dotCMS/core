@@ -14,6 +14,7 @@ import { DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
 import { DotIconModule } from '@dotcms/ui';
 import { MockDotMessageService, mockDotRenderedPage, mockUser } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { getExperimentMock } from '@portlets/dot-experiments/test/mocks';
 
 import { DotEditPageNavComponent } from './dot-edit-page-nav.component';
 
@@ -27,7 +28,8 @@ class ActivatedRouteMock {
                     }
                 ]
             },
-            data: { featuredFlagExperiment: true }
+            data: { featuredFlagExperiment: true },
+            queryParams: { experimentId: EXPERIMENT_MOCK.id }
         };
     }
 }
@@ -59,6 +61,8 @@ class TestHostComponent {
     @Input()
     pageState: DotPageRenderState;
 }
+
+const EXPERIMENT_MOCK = getExperimentMock(1);
 
 describe('DotEditPageNavComponent', () => {
     let dotLicenseService: DotLicenseService;
@@ -222,6 +226,29 @@ describe('DotEditPageNavComponent', () => {
                 );
                 expect(menuListItems[1].nativeElement.getAttribute('ng-reflect-text')).toBe(
                     'Can’t edit advanced template'
+                );
+            });
+
+            it('should have layout option disabled when is on a variant of a running experiment', () => {
+                spyOn(dotLicenseService, 'isEnterprise').and.returnValue(observableOf(true));
+
+                component.model = undefined;
+
+                fixture.componentInstance.pageState = new DotPageRenderState(
+                    mockUser(),
+                    new DotPageRender(mockDotRenderedPage()),
+                    null,
+                    EXPERIMENT_MOCK
+                );
+
+                component.isVariantMode = true;
+
+                fixture.detectChanges();
+
+                const menuListItems = fixture.debugElement.queryAll(By.css('.edit-page-nav__item'));
+
+                expect(menuListItems[1].nativeElement.classList).toContain(
+                    'edit-page-nav__item--disabled'
                 );
             });
 
