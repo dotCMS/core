@@ -3,7 +3,7 @@ package com.dotcms.storage;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.google.common.annotations.VisibleForTesting;
+import com.dotmarketing.util.Config;
 import io.vavr.control.Try;
 
 import java.io.File;
@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Future;
 
 /**
@@ -27,6 +26,8 @@ public class CompositeStoragePersistenceAPI implements StoragePersistenceAPI {
 
     private final List<StoragePersistenceAPI> storagePersistenceAPIList;
     private final ObjectWriterDelegate defaultWriterDelegate;
+
+    private final static String SUBMITTER_NAME = Config.getStringProperty("COMPOSITE_STORAGE_SUBMITTER_NAME", "SubmitterCompositeStoragePersistenceAPI");
 
     public CompositeStoragePersistenceAPI(final List<StoragePersistenceAPI> storagePersistenceAPIList) {
         this(new JsonWriterDelegate(), storagePersistenceAPIList);
@@ -293,7 +294,7 @@ public class CompositeStoragePersistenceAPI implements StoragePersistenceAPI {
         }
 
         // since we do not want to wait for all the futures to be completed, we do not which layer does not have the file, so we fire a new thread to call the sync method
-        DotConcurrentFactory.getInstance().getSubmitter().submit(()-> this.pullFile(groupName, path));
+        DotConcurrentFactory.getInstance().getSubmitter(SUBMITTER_NAME).submit(()-> this.pullFile(groupName, path));
         return DotConcurrentFactory.getInstance().toCompletableAnyFuture(futures);
     }
 
@@ -309,7 +310,7 @@ public class CompositeStoragePersistenceAPI implements StoragePersistenceAPI {
         }
 
         // since we do not want to wait for all the futures to be completed, we do not which layer does not have the file, so we fire a new thread to call the sync method
-        DotConcurrentFactory.getInstance().getSubmitter().submit(()-> this.pullObject(groupName, path, readerDelegate));
+        DotConcurrentFactory.getInstance().getSubmitter(SUBMITTER_NAME).submit(()-> this.pullObject(groupName, path, readerDelegate));
         return DotConcurrentFactory.getInstance().toCompletableAnyFuture(futures);
     }
 }

@@ -7,7 +7,7 @@ package com.dotcms.storage;
  */
 public enum StorageType {
 
-    FILE_SYSTEM, DB, S3, REDIS, DEFAULT_CHAIN,
+    FILE_SYSTEM, DB, S3, MEMORY, DEFAULT_CHAIN,
     // we give you three chains to use to the clients
     CHAIN1, CHAIN2, CHAIN3
 }
