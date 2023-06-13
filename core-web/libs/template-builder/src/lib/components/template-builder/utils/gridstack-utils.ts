@@ -132,7 +132,11 @@ export function parseFromDotObjectToGridStack(
 }
 
 export const parseFromGridStackToDotObject = (gridData: DotGridStackWidget[]): DotLayoutBody => {
-    const rows = gridData.map((row) => {
+    // Clone the data so we don't mutate the original
+    const clone = structuredClone(gridData);
+    const ordered = clone.sort((a, b) => a.y - b.y);
+
+    const rows = ordered.map((row) => {
         const { x: colWidth, subGridOpts, styleClass: styles, containers } = row;
         const { children = [] } = subGridOpts || {};
         const styleClass = styles?.join(' ') || null;
