@@ -5,13 +5,12 @@
 }
 
 .dialog__auto-complete-container {
-    padding: 0.375rem $spacing-7 $spacing-1;
+    padding: $spacing-1 $spacing-7;
     overflow: auto;
-    max-height: 5.375rem;
+    max-height: 5rem;
 
     .auto-complete-container__label {
         margin: 0;
-        padding-bottom: 0.375rem;
         color: $black;
     }
 }
