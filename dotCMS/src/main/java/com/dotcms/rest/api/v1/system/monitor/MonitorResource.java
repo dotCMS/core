@@ -94,10 +94,10 @@ public class MonitorResource {
         }
         //try this twice as it is an imperfect test
         if(helper.isCacheHealthy(3000)) {
-            return Response.status(200).build();
+            return Response.ok().build();
         }
         if(helper.isCacheHealthy(3000)) {
-            return Response.status(200).build();
+            return Response.ok().build();
         }
         
         return Response.status(SERVICE_UNAVAILABLE).build();
@@ -148,7 +148,7 @@ public class MonitorResource {
             return Response.status(SERVICE_UNAVAILABLE).build();
         }
         
-        return Response.status(200).build();
+        return Response.ok().build();
         
     }
     

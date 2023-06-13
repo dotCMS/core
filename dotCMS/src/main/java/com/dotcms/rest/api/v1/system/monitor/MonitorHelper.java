@@ -1,23 +1,5 @@
 package com.dotcms.rest.api.v1.system.monitor;
 
-import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
-import java.io.File;
-import java.io.OutputStream;
-import java.net.UnknownHostException;
-import java.nio.file.Files;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.InternalServerErrorException;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.content.elasticsearch.business.IndiciesInfo;
@@ -26,9 +8,7 @@ import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.util.HttpRequestDataUtil;
 import com.dotcms.util.network.IPUtils;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -39,11 +19,30 @@ import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
-import io.vavr.API;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import net.jodah.failsafe.CircuitBreaker;
 import net.jodah.failsafe.Failsafe;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.InternalServerErrorException;
+import java.io.File;
+import java.io.OutputStream;
+import java.net.UnknownHostException;
+import java.nio.file.Files;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 
 
 class MonitorHelper {
