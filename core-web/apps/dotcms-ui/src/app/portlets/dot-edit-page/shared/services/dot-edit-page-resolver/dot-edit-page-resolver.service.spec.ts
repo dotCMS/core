@@ -33,6 +33,7 @@ import {
     mockUser,
     SiteServiceMock
 } from '@dotcms/utils-testing';
+import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 
 import { DotEditPageResolver } from './dot-edit-page-resolver.service';
 
@@ -64,6 +65,7 @@ describe('DotEditPageResolver', () => {
                     useClass: MockDotHttpErrorManagerService
                 },
                 DotPageStateService,
+                DotExperimentsService,
                 DotEditPageResolver,
                 DotPageRenderService,
                 DotContentletLockerService,

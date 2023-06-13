@@ -25,6 +25,11 @@ import com.dotcms.analytics.metrics.EventType;
 import com.dotcms.analytics.metrics.Metric;
 import com.dotcms.analytics.metrics.MetricType;
 import com.dotcms.analytics.model.AbstractAnalyticsProperties;
+<<<<<<< HEAD
+=======
+
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+>>>>>>> origin/master
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContainerDataGen;
@@ -54,6 +59,7 @@ import com.dotcms.http.server.mock.MockHttpServerContext.RequestContext;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.JsonUtil;
 import com.dotcms.util.network.IPUtils;
+import com.dotcms.variant.VariantAPI;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -65,9 +71,12 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.htmlpageasset.business.render.PageContextBuilder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.WebKeys;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
@@ -89,6 +98,9 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import net.bytebuddy.utility.RandomString;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -2919,6 +2931,94 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
             APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
             IPUtils.disabledIpPrivateSubnet(false);
             mockhttpServer.stop();
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
+     * When:
+     * - Create a Page.
+     * - Create a content type with a text field and newly created page as detail page,
+     * and urlMapper equals to: /testpattern/{field}
+     * - Create a new Contentlet with the content type created above and the field value equals to: test
+     * - Create and start a Experiment using the newly created page and one no DEFAULT Variant, the
+     * Goal of the Experiment is a PAGE_REACHbut it doed not really matter.
+     * - Try to render the page in LIVE mode and the no Default Variant of the Experiment
+     *
+     * Should: Not got a {@link DotSecurityException}
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void renderUrlMapPageWithExperiment() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Field field = new FieldDataGen().next();
+
+        final String prefixUrlMapper = "/testpattern" + System.currentTimeMillis() + "/";
+        final String urlMapper = prefixUrlMapper + "{" + field.variable() + "}";
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .field(field)
+                .detailPage(experimentPage.getIdentifier())
+                .urlMapPattern(urlMapper)
+                .nextPersisted();
+
+        new ContentletDataGen(contentType)
+                .host(host)
+                .setProperty(field.variable(), "test")
+                .nextPersistedAndPublish();
+
+        final HTMLPageAsset reachPageTarget = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Metric metric = Metric.builder()
+                .name("Testing Metric")
+                .type(MetricType.REACH_PAGE)
+                .addConditions(
+                        getUrlCondition(reachPageTarget.getPageUrl()))
+                .build();
+
+        final Experiment experiment = createExperiment(experimentPage, metric, new String[]{RandomString.make(15)});
+
+        final String variantName = getNotDefaultVariantName(experiment);
+        final Variant variant = APILocator.getVariantAPI().get(variantName).orElseThrow();
+
+        APILocator.getExperimentsAPI()
+                .start(experiment.getIdentifier(), APILocator.systemUser());
+
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpSession session = mock(HttpSession.class);
+        when(request.getSession(false)).thenReturn(session);
+        when(request.getSession()).thenReturn(session);
+        when(request.getSession(true)).thenReturn(session);
+        when(request.getRequestURI()).thenReturn(prefixUrlMapper + "test");
+
+        when(request.getParameter(VariantAPI.VARIANT_KEY)).thenReturn(variantName);
+        when(request.getParameter("host_id")).thenReturn(host.getIdentifier());
+        when(request.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(host);
+
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+
+        try {
+            APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                    PageContextBuilder.builder()
+                            .setPageUri(prefixUrlMapper + "test")
+                            .setUser(APILocator.getUserAPI().getAnonymousUser())
+                            .setPageMode(PageMode.LIVE)
+                            .build(),
+                    request,
+                    response
+            );
+        } finally {
+            APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
+
+
         }
     }
 

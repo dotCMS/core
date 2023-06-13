@@ -48,7 +48,6 @@
 
             <plugin>
                 <artifactId>maven-antrun-plugin</artifactId>
-                <version>3.1.0</version>
                 <executions>
                     <execution>
                         <phase>process-resources</phase>
@@ -131,6 +130,21 @@
 
                         <configuration>
                             <arguments>run nx build dotcms-ui -- ${nx.build.options}</arguments>
+                        </configuration>
+                    </execution>
+
+                    <execution>
+                        <id>test</id>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+
+                        <!-- optional: the default phase is "generate-resources" -->
+                        <phase>generate-resources</phase>
+
+                        <configuration>
+                            <skip>${skipTests}</skip>
+                            <arguments>run nx run dotcms-ui:test</arguments>
                         </configuration>
                     </execution>
                 </executions>

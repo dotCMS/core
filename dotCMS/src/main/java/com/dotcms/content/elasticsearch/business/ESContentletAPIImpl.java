@@ -924,7 +924,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     user, respectFrontendRoles);
             if (contentletOpt.isPresent()) {
 
-                Logger.info(this, "A Workflow has been run instead of a simple publish: " +
+                Logger.debug(this, "A Workflow has been run instead of a simple publish: " +
                         contentlet.getIdentifier());
                 if (!contentlet.getInode().equals(contentletOpt.get().getInode())) {
                     this.copyProperties(contentlet, contentletOpt.get().getMap());
@@ -6663,6 +6663,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         Map<String, Object> cmap = contentlet.getMap();
         workingContentlet.setStructureInode(contentlet.getStructureInode());
         workingContentlet.setInode(contentletInode);
+        workingContentlet.setVariantId(contentlet.getVariantId());
         copyProperties(workingContentlet, cmap);
         workingContentlet.setInode("");
 
@@ -7106,8 +7107,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     contentlet.setFolder((String) value);
                 } else if (isSetPropertyVariable(conVariable)) {
                     contentlet.setProperty(conVariable, value);
-                } else if (conVariable.equals(Contentlet.VARIANT_ID)) {
-                    contentlet.setVariantId(value.toString());
                 } else if (velFieldmap.get(conVariable) != null) {
                     Field field = velFieldmap.get(conVariable);
                     if (isFieldTypeString(field)) {

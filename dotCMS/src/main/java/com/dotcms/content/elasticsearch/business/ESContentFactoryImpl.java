@@ -157,7 +157,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
     private static final String[] UPSERT_EXTRA_COLUMNS = {"show_on_menu", "title", "mod_date", "mod_user",
             "sort_order", "friendly_name", "structure_inode", "disabled_wysiwyg", "identifier",
-            "language_id", "contentlet_as_json",
+            "language_id", "contentlet_as_json", "variant_id",
             "date1", "date2", "date3", "date4", "date5", "date6", "date7", "date8",
             "date9", "date10", "date11", "date12", "date13", "date14", "date15", "date16", "date17",
             "date18", "date19", "date20", "date21", "date22", "date23", "date24", "date25", "text1",
@@ -182,7 +182,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
     private static final String[] UPSERT_EXTRA_COLUMNS_ORACLE = {"show_on_menu", "title", "mod_date", "mod_user",
             "sort_order", "friendly_name", "structure_inode", "disabled_wysiwyg", "identifier",
-            "language_id", "contentlet_as_json",
+            "language_id", "contentlet_as_json", "variant_id",
             "date1", "date2", "date3", "date4", "date5", "date6", "date7", "date8",
             "date9", "date10", "date11", "date12", "date13", "date14", "date15", "date16", "date17",
             "date18", "date19", "date20", "date21", "date22", "date23", "date24", "date25", "text1",
@@ -208,7 +208,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
     private static final String[] UPSERT_EXTRA_COLUMNS_MYSQL = {"show_on_menu", "title", "mod_date", "mod_user",
             "sort_order", "friendly_name", "structure_inode", "disabled_wysiwyg", "identifier",
-            "language_id", "contentlet_as_json",
+            "language_id", "contentlet_as_json", "variant_id",
             "date1", "date2", "date3", "date4", "date5", "date6", "date7", "date8",
             "date9", "date10", "date11", "date12", "date13", "date14", "date15", "date16", "date17",
             "date18", "date19", "date20", "date21", "date22", "date23", "date24", "date25", "text1",
@@ -1007,7 +1007,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         DotPreconditions.notNull(variant, () -> "Variant cannot be null");
 
         if (APILocator.getContentletJsonAPI().isJsonSupportedDatabase()){
-            return findContentlets(getContantletInodesFromJsonField(identifier, variant).stream()
+            return findContentlets(getContentletInodesFromJsonField(identifier, variant).stream()
                     .map(map -> map.get("inode").toString())
                     .collect(Collectors.toList()));
         } else {
@@ -1015,22 +1015,14 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
     }
 
-    private static Collection<Map<String, Object>> getContantletInodesFromJsonField
+    private static Collection<Map<String, Object>> getContentletInodesFromJsonField
             (final Identifier identifier, final Variant variant) throws DotDataException {
-        final String columnName = getJsonVariantIdColumnName();
 
         return new DotConnect()
-                .setSQL(String.format(
-                        "select inode from contentlet where identifier = ? and %s = ? order by mod_date desc",
-                        columnName))
+                .setSQL("select inode from contentlet where identifier = ? and variant_id = ?  order by mod_date desc")
                 .addParam(identifier.getId())
                 .addParam(variant.name())
                 .loadResults();
-    }
-
-    private static String getJsonVariantIdColumnName() {
-        return isPostgres() ? ContentletJsonAPI.CONTENTLET_AS_JSON + "->>'variantId'" :
-                "JSON_VALUE(" + ContentletJsonAPI.CONTENTLET_AS_JSON + ", '$.variantId')";
     }
 
     @Override
@@ -2263,6 +2255,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         upsertValues.add(UtilMethods.isSet(contentlet.getIdentifier())?contentlet.getIdentifier():null);
         upsertValues.add(contentlet.getLanguageId());
         upsertValues.add(jsonContentlet);
+        upsertValues.add(contentlet.getVariantId());
 
         if (APILocator.getContentletJsonAPI().isPersistContentletInColumns()) {
             final Map<String, Object> fieldsMap = getFieldsMap(contentlet);

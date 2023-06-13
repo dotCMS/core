@@ -1,34 +1,22 @@
 package com.dotcms.publishing.manifest;
 
-import static com.dotcms.util.CollectionsUtils.list;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toSet;
 
 import com.dotcms.publishing.manifest.ManifestItem.ManifestInfo;
 import com.dotcms.publishing.manifest.ManifestItem.ManifestInfoBuilder;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.util.FileUtil;
-import com.google.common.collect.ImmutableList;
 import com.liferay.util.StringPool;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.Reader;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jersey.repackaged.com.google.common.collect.ImmutableSet;
-import org.apache.commons.io.Charsets;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 
 /**
@@ -91,14 +79,14 @@ public class CSVManifestReader implements ManifestReader{
     public Collection<ManifestInfo> getIncludedAssets() {
         return manifestItemsIncluded.stream()
                 .map(CSVManifestItem::getManifestInfo)
-                .collect(collectingAndThen(toSet(), ImmutableSet::copyOf));
+                .collect(collectingAndThen(toSet(), Collections::unmodifiableSet));
     }
 
     @Override
     public Collection<ManifestInfo> getExcludedAssets() {
         return manifestItemsExcluded.stream()
                 .map(CSVManifestItem::getManifestInfo)
-                .collect(collectingAndThen(toSet(), ImmutableSet::copyOf));
+                .collect(collectingAndThen(toSet(), Collections::unmodifiableSet));
     }
 
     @Override
@@ -106,7 +94,7 @@ public class CSVManifestReader implements ManifestReader{
         return Stream.concat(manifestItemsIncluded.stream(), manifestItemsExcluded.stream())
                 .filter(csvManifestItem -> manifestReason.getMessage().equals(csvManifestItem.getReason()))
                 .map(CSVManifestItem::getManifestInfo)
-                .collect(collectingAndThen(toSet(), ImmutableSet::copyOf));
+                .collect(collectingAndThen(toSet(), Collections::unmodifiableSet));
     }
 
     @Override
@@ -119,7 +107,8 @@ public class CSVManifestReader implements ManifestReader{
         final Set<ManifestInfo> set = Stream.concat(manifestItemsIncluded.stream(), manifestItemsExcluded.stream())
                 .map(CSVManifestItem::getManifestInfo)
                 .collect(Collectors.toSet());
-        return ImmutableSet.copyOf(set);
+        return Set.copyOf(set);
+
     }
 
     private static class CSVManifestItem {

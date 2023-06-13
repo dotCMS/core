@@ -3,7 +3,6 @@ package com.dotcms.experiments.business.web;
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotmarketing.util.FileUtil.getFileContentFromResourceContext;
-import static org.junit.Assert.assertEquals;
 
 import com.dotcms.experiments.business.ConfigExperimentUtil;
 import com.dotcms.experiments.business.ExperimentUrlPatternCalculator;

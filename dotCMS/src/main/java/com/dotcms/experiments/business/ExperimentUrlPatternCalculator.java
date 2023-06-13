@@ -1,5 +1,9 @@
 package com.dotcms.experiments.business;
 
+
+import static com.dotcms.util.CollectionsUtils.list;
+
+
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
@@ -14,8 +18,12 @@ import java.util.List;
 public enum ExperimentUrlPatternCalculator {
     INSTANCE;
 
-    public static String REDIRECT_REGEX_TEMPLATE = "(http|https):\\/\\/.*:.*%s(\\?.*)?";
-    public static final String INDEX = "/index";
+    private final RegexUrlPatterStrategy DEFAULT_REGEX_URL_PATTERN_STRATEGY = new DefaultRegexUrlPatterStrategy();
+    private List<RegexUrlPatterStrategy> URL_REGEX_PATTERN_STRATEGIES = list(
+            new UrlMapRegexUrlPatterStrategy(),
+            new RootIndexRegexUrlPatterStrategy(),
+            new IndexRegexUrlPatterStrategy()
+    );
 
     /**
      * Calculate the URL regex pattern for the given {@link HTMLPageAsset},
@@ -37,43 +45,16 @@ public enum ExperimentUrlPatternCalculator {
      * @return
      */
     public String calculateUrlRegexPattern(final HTMLPageAsset htmlPageAsset) {
-
         try {
-            String resulRegex = null;
+            final String resultRegex = URL_REGEX_PATTERN_STRATEGIES.stream()
+                .filter(strategy -> strategy.isMatch(htmlPageAsset))
+                .findFirst()
+                .orElseGet(()-> DEFAULT_REGEX_URL_PATTERN_STRATEGY).getRegexPattern(htmlPageAsset);
 
-            final List<String> urlMappedPattern = APILocator.getContentTypeAPI(
-                            APILocator.systemUser())
-                    .findUrlMappedPattern(htmlPageAsset.getIdentifier());
 
-            if (UtilMethods.isSet(urlMappedPattern)) {
-                final List<String> regexs = new ArrayList<>();
+            return String.format("^%s$",  resultRegex);
 
-                for (String urlMap : urlMappedPattern) {
-                    String regExForURLMap = StructureUtil.generateRegExForURLMap(urlMap);
-                    regExForURLMap = regExForURLMap.substring(0, regExForURLMap.length() - 1);
-                    final String uriForRegex = getUriForRegex(regExForURLMap);
-
-                    regexs.add(String.format(REDIRECT_REGEX_TEMPLATE, uriForRegex));
-                }
-
-                resulRegex = String.join("|", regexs);
-
-            } else if (htmlPageAsset.getURI().equals(INDEX)) {
-                resulRegex =  String.format(REDIRECT_REGEX_TEMPLATE, "(\\/index|\\/)?");
-            } else if (htmlPageAsset.getURI().endsWith(INDEX)) {
-                final String uriWithoutIndex = htmlPageAsset.getURI().substring(0,
-                        htmlPageAsset.getURI().length() - INDEX.length());
-                final String uriForRegex = getUriForRegex(uriWithoutIndex) + "(\\/index|\\/)?";
-                resulRegex = String.format(REDIRECT_REGEX_TEMPLATE, uriForRegex);
-            } else {
-
-                final String uriForRegex = getUriForRegex(htmlPageAsset.getURI());
-                resulRegex = String.format(REDIRECT_REGEX_TEMPLATE, uriForRegex);
-            }
-
-            return String.format("^%s$",  resulRegex);
-
-        } catch (DotDataException e) {
+        } catch (final RegexUrlPatterStrategyException e) {
             throw new RuntimeException(String.format("It is not possible to get the URI for %s",
                     htmlPageAsset.getInode()), e);
         }

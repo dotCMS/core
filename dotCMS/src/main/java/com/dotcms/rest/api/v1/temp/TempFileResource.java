@@ -253,7 +253,7 @@ public class TempFileResource {
                 throw new BadRequestException("Invalid url attempted for tempFile : " + form.remoteUrl);
             }
 
-            final List<DotTempFile> tempFiles = new ArrayList<DotTempFile>();
+            final List<DotTempFile> tempFiles = new ArrayList<>();
             tempFiles.add(tempApi
                     .createTempFileFromUrl(form.fileName, request, new URL(form.remoteUrl),
                             form.urlTimeoutSeconds, form.maxFileLength));

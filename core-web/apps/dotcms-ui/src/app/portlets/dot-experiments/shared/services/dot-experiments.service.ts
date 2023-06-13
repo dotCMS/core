@@ -232,6 +232,21 @@ export class DotExperimentsService {
     }
 
     /**
+     * Set the description to an experiment
+     * @param {string} experimentId
+     * @param description
+     * @returns Observable<DotExperiment>
+     * @memberof DotExperimentsService
+     */
+    setDescription(experimentId: string, description: string): Observable<DotExperiment> {
+        return this.http
+            .patch<DotCMSResponse<DotExperiment>>(`${API_ENDPOINT}/${experimentId}`, {
+                description
+            })
+            .pipe(pluck('entity'));
+    }
+
+    /**
      * Set scheduling to an experiment
      * @param {string} experimentId
      * @param {RangeOfDateAndTime | null} scheduling

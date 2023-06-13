@@ -2,10 +2,10 @@ import { moduleMetadata, Story, Meta } from '@storybook/angular';
 
 import { AddWidgetComponent } from './add-widget.component';
 
-import { rowIcon } from '../../assets/icons';
+import { rowIcon, colIcon } from '../../assets/icons';
 
 export default {
-    title: 'AddWidgetComponent',
+    title: 'Components/Add',
     component: AddWidgetComponent,
     decorators: [
         moduleMetadata({
@@ -18,16 +18,23 @@ const Template: Story<AddWidgetComponent> = (args: AddWidgetComponent) => ({
     props: args
 });
 
-export const Primary = Template.bind({});
+export const AddRow = Template.bind({});
+
+export const AddBox = Template.bind({});
 
 export const MaterialIcon = Template.bind({});
 
-Primary.args = {
+AddRow.args = {
     label: 'Add Row',
     icon: rowIcon
 };
 
-MaterialIcon.args = {
+AddBox.args = {
     label: 'Add Box',
+    icon: colIcon
+};
+
+MaterialIcon.args = {
+    label: 'Fallback Material Icon',
     icon: 'add'
 };
