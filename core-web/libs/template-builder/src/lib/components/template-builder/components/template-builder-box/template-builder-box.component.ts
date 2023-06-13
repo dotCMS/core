@@ -40,7 +40,7 @@ export class TemplateBuilderBoxComponent implements OnChanges {
     protected readonly templateBuilderSizes = TemplateBuilderBoxSize;
 
     @Output()
-    editStyle: EventEmitter<void> = new EventEmitter<void>();
+    editClasses: EventEmitter<void> = new EventEmitter<void>();
     @Output()
     addContainer: EventEmitter<void> = new EventEmitter<void>();
     @Output()

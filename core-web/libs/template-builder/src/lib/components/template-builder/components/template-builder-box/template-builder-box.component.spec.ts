@@ -109,8 +109,8 @@ describe('TemplateBuilderBoxComponent', () => {
         expect(addContainerMock).toHaveBeenCalled();
     });
 
-    it('should trigger editStyle when click on palette button', () => {
-        const editStyleMock = jest.spyOn(spectator.component.editStyle, 'emit');
+    it('should trigger editClasses when click on palette button', () => {
+        const editStyleMock = jest.spyOn(spectator.component.editClasses, 'emit');
         const paletteButton = spectator.query(byTestId('btn-palette'));
 
         spectator.dispatchFakeEvent(paletteButton, 'onClick');
