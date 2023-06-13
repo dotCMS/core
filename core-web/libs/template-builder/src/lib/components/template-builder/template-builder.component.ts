@@ -73,7 +73,6 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     public readonly rowDisplayHeight = `${GRID_STACK_ROW_HEIGHT - 1}${GRID_STACK_UNIT}`; // setting a lower height to have space between rows
 
     constructor(private store: DotTemplateBuilderStore) {
-        // TODO: Test this
         this.items$ = this.store.items$.pipe(
             tap((items) => {
                 if (!items.length) {

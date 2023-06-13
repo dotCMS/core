@@ -149,7 +149,7 @@ export const parseFromGridStackToDotObject = (gridData: DotGridStackWidget[]): D
 
         const columns = !subGridOpts
             ? column
-            : children.map(({ x, w, containers, styleClass: styles }) => {
+            : children.map(({ x, w, containers = [], styleClass: styles }) => {
                   const leftOffset = x + colWidth + 1;
                   const styleClass = styles?.join(' ') || '';
 
