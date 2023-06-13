@@ -9,7 +9,7 @@
     overflow: auto;
     max-height: 5.375rem;
 
-    .auto-complete-container__title {
+    .auto-complete-container__label {
         margin: 0;
         padding-bottom: 0.375rem;
         color: $black;
@@ -23,15 +23,14 @@
 }
 
 ::ng-deep {
-    .p-autocomplete-multiple-container {
-        gap: $spacing-1;
-        margin: 0;
+    .p-autocomplete.p-autocomplete-multiple
+        .p-autocomplete-multiple-container
+        .p-autocomplete-token {
+        margin-right: 0;
+    }
 
-        .p-autocomplete.p-autocomplete-multiple
-            .p-autocomplete-multiple-container
-            li.p-autocomplete-token {
-            margin-right: 0;
-        }
+    .p-autocomplete-multiple-container {
+        gap: 0.25rem;
     }
 
     .p-dialog .p-dialog-content {

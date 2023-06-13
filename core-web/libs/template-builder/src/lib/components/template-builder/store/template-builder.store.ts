@@ -14,8 +14,6 @@ import {
     parseMovedNodeToWidget
 } from '../utils/gridstack-utils';
 
-export const STYLE_CLASSES_FILE_URL = '/application/templates/classes.json';
-
 /**
  *
  *

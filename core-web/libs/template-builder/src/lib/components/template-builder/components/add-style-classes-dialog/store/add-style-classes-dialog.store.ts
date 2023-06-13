@@ -55,7 +55,8 @@ export class DotAddStyleClassesDialogStore extends ComponentStore<DotAddStyleCla
         );
     });
 
-    /* @description This method fetchs the style classes from  "/application/templates/classes.json"
+    /**
+     * @description This method fetchs the style classes from  "/application/templates/classes.json"
      *
      * @return {*}  {Observable<object>}
      * @memberof DotAddStyleClassesDialogStore

@@ -1,5 +1,7 @@
 <div class="dialog__auto-complete-container">
-    <p class="auto-complete-container__title">Class</p>
+    <label class="auto-complete-container__label" htmlFor="auto-complete-input">{{
+        'dot.template.builder.classes.dialog.autocomplete.label' | dm
+    }}</label>
     <div class="p-fluid">
         <p-autoComplete
             [(ngModel)]="selectedClasses"
@@ -7,14 +9,19 @@
             [multiple]="true"
             [completeOnFocus]="true"
             [size]="446"
+            [tabindex]="1"
             (completeMethod)="filterClasses($event)"
             field="cssClass"
-            inputId="my-autocomplete"
             appendTo="body"
+            inputId="auto-complete-input"
+            name="class"
+            type="text"
         >
         </p-autoComplete>
     </div>
 </div>
 <div class="dialog__actions-container">
-    <p-button (onClick)="closeDialog()" data-testId="update-btn"> Update </p-button>
+    <p-button (onClick)="saveClass()" data-testId="update-btn">
+        {{ 'dot.template.builder.classes.dialog.update.button' | dm }}</p-button
+    >
 </div>

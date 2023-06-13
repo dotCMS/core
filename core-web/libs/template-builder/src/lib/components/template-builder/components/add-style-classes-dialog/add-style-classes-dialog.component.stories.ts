@@ -9,10 +9,17 @@ import { AutoCompleteModule } from 'primeng/autocomplete';
 import { ButtonModule } from 'primeng/button';
 import { DynamicDialogRef, DynamicDialogConfig } from 'primeng/dynamicdialog';
 
+import { DotMessageService } from '@dotcms/data-access';
+import { DotMessagePipeModule } from '@dotcms/ui';
+
 import { AddStyleClassesDialogComponent } from './add-style-classes-dialog.component';
 import { DotAddStyleClassesDialogStore } from './store/add-style-classes-dialog.store';
 
-import { MOCK_SELECTED_STYLE_CLASSES, MOCK_STYLE_CLASSES_FILE } from '../../utils/mocks';
+import {
+    DOT_MESSAGE_SERVICE_TB_MOCK,
+    MOCK_SELECTED_STYLE_CLASSES,
+    MOCK_STYLE_CLASSES_FILE
+} from '../../utils/mocks';
 
 export default {
     title: 'Components/Add Style Classes Dialog',
@@ -24,7 +31,8 @@ export default {
                 FormsModule,
                 NoopAnimationsModule,
                 ButtonModule,
-                HttpClientModule
+                HttpClientModule,
+                DotMessagePipeModule
             ],
             providers: [
                 {
@@ -52,6 +60,10 @@ export default {
                     useValue: {
                         get: (_: string) => of(MOCK_STYLE_CLASSES_FILE)
                     }
+                },
+                {
+                    provide: DotMessageService,
+                    useValue: DOT_MESSAGE_SERVICE_TB_MOCK
                 }
             ]
         })

@@ -232,7 +232,9 @@ export const MESSAGES_MOCK = {
     'dot.template.builder.header': 'Header',
     'dot.template.builder.footer': 'Footer',
     'dot.template.builder.toolbar.button.layout.label': 'Layout',
-    'dot.template.builder.toolbar.button.theme.label': 'Theme'
+    'dot.template.builder.toolbar.button.theme.label': 'Theme',
+    'dot.template.builder.classes.dialog.update.button': 'Update',
+    'dot.template.builder.classes.dialog.autocomplete.label': 'Class'
 };
 
 export const DOT_MESSAGE_SERVICE_TB_MOCK = new MockDotMessageService(MESSAGES_MOCK);
@@ -294,40 +296,7 @@ export const MOCK_STYLE_CLASSES_FILE = {
         'text-start',
         'text-end',
         'text-center',
-        'text-justify',
-        'text-wrap',
-        'text-nowrap',
-        'text-truncate',
-        'text-lowercase',
-        'text-uppercase',
-        'text-capitalize',
-        'bg-primary',
-        'bg-secondary',
-        'bg-success',
-        'bg-danger',
-        'bg-warning',
-        'bg-info',
-        'bg-light',
-        'bg-dark',
-        'bg-white',
-        'text-primary',
-        'text-secondary',
-        'text-success',
-        'text-danger',
-        'text-warning',
-        'text-info',
-        'text-light',
-        'text-dark',
-        'text-muted',
-        'border-primary',
-        'border-secondary',
-        'border-success',
-        'border-danger',
-        'border-warning',
-        'border-info',
-        'border-light',
-        'border-dark',
-        'border-white'
+        'text-justify'
     ]
 };
 
@@ -340,4 +309,30 @@ export const addStyleClassesStoreMock = {
     getStyleClassesFromFile: () => {
         /* */
     }
+};
+
+export const mockMatchMedia = () => {
+    Object.defineProperty(window, 'matchMedia', {
+        writable: true,
+        value: (query: unknown) => ({
+            matches: false,
+            media: query,
+            onchange: null,
+            addListener: () => {
+                /* */
+            }, // Deprecated
+            removeListener: () => {
+                /* */
+            }, // Deprecated
+            addEventListener: () => {
+                /* */
+            },
+            removeEventListener: () => {
+                /* */
+            },
+            dispatchEvent: () => {
+                /* */
+            }
+        })
+    });
 };

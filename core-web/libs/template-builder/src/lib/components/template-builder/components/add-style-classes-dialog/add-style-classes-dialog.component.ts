@@ -15,6 +15,8 @@ import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { takeUntil } from 'rxjs/operators';
 
+import { DotMessagePipeModule } from '@dotcms/ui';
+
 import { DotAddStyleClassesDialogStore } from './store/add-style-classes-dialog.store';
 
 import { StyleClassModel } from '../../models/models';
@@ -24,7 +26,7 @@ const COMMA_SPACES_REGEX = /(,|\s)(.*)/;
 @Component({
     selector: 'dotcms-add-style-classes-dialog',
     standalone: true,
-    imports: [AutoCompleteModule, FormsModule, ButtonModule],
+    imports: [AutoCompleteModule, FormsModule, ButtonModule, DotMessagePipeModule],
     providers: [DotAddStyleClassesDialogStore],
     templateUrl: './add-style-classes-dialog.component.html',
     styleUrls: ['./add-style-classes-dialog.component.scss'],
@@ -64,7 +66,7 @@ export class AddStyleClassesDialogComponent implements OnInit, AfterViewInit, On
     }
 
     ngAfterViewInit() {
-        this.autoCompleteInput = document.getElementById('my-autocomplete') as HTMLInputElement;
+        this.autoCompleteInput = document.getElementById('auto-complete-input') as HTMLInputElement;
     }
 
     ngOnDestroy() {
@@ -80,33 +82,61 @@ export class AddStyleClassesDialogComponent implements OnInit, AfterViewInit, On
      * @memberof AddStyleClassesDialogComponent
      */
     filterClasses({ query }: { query: string }): void {
-        const filtered: StyleClassModel[] = [];
+        const queryIsNotEmpty = query.trim().length > 0;
+        const queryContainsDelimiter = query.includes(',') || query.includes(' ');
 
-        if (query.trim().length && (query.includes(',') || query.includes(' '))) {
+        if (queryIsNotEmpty && queryContainsDelimiter) {
             this.addClassByCommaOrSpace(query);
 
             return;
         }
 
-        for (const classObj of this.classes) {
-            const queryLowerCased = query.toLowerCase();
-            const cssClassLowerCased = classObj.cssClass.toLowerCase();
+        this.filteredClasses = this.getFilteredClasses(query, queryIsNotEmpty);
+    }
+    /**
+     * Returns the filtered classes
+     *
+     * @param {string} query
+     * @param {boolean} queryIsNotEmpty
+     * @return {StyleClassModel[]}
+     */
+    private getFilteredClasses(query: string, queryIsNotEmpty: boolean): StyleClassModel[] {
+        const filtered: StyleClassModel[] = [];
 
-            const isKlassStartsWithQuery = cssClassLowerCased.startsWith(queryLowerCased);
-            const isKlassAlreadySelected = this.selectedClasses.some(
-                ({ cssClass: cssClass }) => cssClass === classObj.cssClass
-            );
-
-            if (isKlassStartsWithQuery && !isKlassAlreadySelected) {
+        this.classes.forEach((classObj) => {
+            if (this.classMatchesQuery(query, classObj) && !this.classAlreadySelected(classObj)) {
                 filtered.push(classObj);
             }
-        }
+        });
 
-        if (query.trim().length && !filtered.length) {
+        // If no classes were found and query is not empty, create a new class based on the query
+        if (queryIsNotEmpty && filtered.length === 0) {
             filtered.push({ cssClass: query.trim() });
         }
 
-        this.filteredClasses = filtered;
+        return filtered;
+    }
+    /**
+     * Checks if a class matches the query
+     *
+     * @param {string} query
+     * @param {StyleClassModel} classObj
+     * @return {boolean}
+     */
+    private classMatchesQuery(query: string, classObj: StyleClassModel): boolean {
+        const queryLowerCased = query.toLowerCase();
+        const cssClassLowerCased = classObj.cssClass.toLowerCase();
+
+        return cssClassLowerCased.startsWith(queryLowerCased);
+    }
+    /**
+     * Checks if a class is already selected
+     *
+     * @param {StyleClassModel} classObj
+     * @return {boolean}
+     */
+    private classAlreadySelected(classObj: StyleClassModel): boolean {
+        return this.selectedClasses.some(({ cssClass }) => cssClass === classObj.cssClass);
     }
 
     /**
@@ -132,7 +162,7 @@ export class AddStyleClassesDialogComponent implements OnInit, AfterViewInit, On
      *
      * @memberof AddStyleClassesDialogComponent
      */
-    closeDialog(): void {
+    saveClass(): void {
         this.ref.close(this.selectedClasses.map((styleClass) => styleClass.cssClass));
     }
 }

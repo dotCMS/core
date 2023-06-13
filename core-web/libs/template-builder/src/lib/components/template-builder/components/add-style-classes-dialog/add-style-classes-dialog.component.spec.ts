@@ -12,11 +12,16 @@ import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { AddStyleClassesDialogComponent } from './add-style-classes-dialog.component';
 import { DotAddStyleClassesDialogStore } from './store/add-style-classes-dialog.store';
 
-import { MOCK_SELECTED_STYLE_CLASSES, addStyleClassesStoreMock } from '../../utils/mocks';
+import {
+    MOCK_SELECTED_STYLE_CLASSES,
+    addStyleClassesStoreMock,
+    mockMatchMedia
+} from '../../utils/mocks';
 
 describe('AddStyleClassesDialogComponent', () => {
     let component: AddStyleClassesDialogComponent;
     let spectator: SpectatorHost<AddStyleClassesDialogComponent>;
+    let input: HTMLInputElement;
 
     const createHost = createHostFactory({
         component: AddStyleClassesDialogComponent,
@@ -53,23 +58,9 @@ describe('AddStyleClassesDialogComponent', () => {
         component = spectator.component;
         spectator.detectChanges();
 
-        Object.defineProperty(window, 'matchMedia', {
-            writable: true,
-            value: jest.fn().mockImplementation((query) => ({
-                matches: false,
-                media: query,
-                onchange: null,
-                addListener: jest.fn(), // Deprecated
-                removeListener: jest.fn(), // Deprecated
-                addEventListener: jest.fn(),
-                removeEventListener: jest.fn(),
-                dispatchEvent: jest.fn()
-            }))
-        });
-    });
+        input = spectator.query('#auto-complete-input');
 
-    it('should have an autocomplete component', () => {
-        expect(spectator.query('p-autocomplete')).toBeTruthy();
+        mockMatchMedia();
     });
 
     it('should have an update button', () => {
@@ -78,8 +69,6 @@ describe('AddStyleClassesDialogComponent', () => {
 
     it('should trigger filterMock when focusing on the input', () => {
         const filterMock = jest.spyOn(component, 'filterClasses');
-
-        const input = spectator.query('#my-autocomplete') as HTMLInputElement;
 
         spectator.click(input);
 
@@ -90,9 +79,6 @@ describe('AddStyleClassesDialogComponent', () => {
 
     it('should trigger addClassByCommaOrSpace when typing on the input and adding comma', () => {
         const addMock = jest.spyOn(component, 'addClassByCommaOrSpace');
-
-        const input = spectator.query('#my-autocomplete') as HTMLInputElement;
-
         input.value = 'd-none,';
 
         spectator.click(input);
@@ -106,8 +92,6 @@ describe('AddStyleClassesDialogComponent', () => {
     it('should trigger addClassByCommaOrSpace when typing on the input and adding space', () => {
         const addMock = jest.spyOn(component, 'addClassByCommaOrSpace');
 
-        const input = spectator.query('#my-autocomplete') as HTMLInputElement;
-
         input.value = 'd-none,';
 
         spectator.click(input);
@@ -119,8 +103,6 @@ describe('AddStyleClassesDialogComponent', () => {
     });
 
     it('should filter selectedClasses from filteredClasses when filteringClasses', () => {
-        const input = spectator.query('#my-autocomplete') as HTMLInputElement;
-
         spectator.click(input);
 
         spectator.detectChanges();
@@ -128,8 +110,8 @@ describe('AddStyleClassesDialogComponent', () => {
         expect(component.filteredClasses).not.toContainEqual({ cssClass: 'd-flex' });
     });
 
-    it('should trigger closeDialog when clicking on update-btn', () => {
-        const closeMock = jest.spyOn(component, 'closeDialog');
+    it('should trigger saveClass when clicking on update-btn', () => {
+        const closeMock = jest.spyOn(component, 'saveClass');
 
         const updateBtn = spectator.query(byTestId('update-btn'));
 
