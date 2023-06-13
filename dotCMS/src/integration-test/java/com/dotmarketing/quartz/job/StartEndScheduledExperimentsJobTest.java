@@ -137,7 +137,7 @@ public class StartEndScheduledExperimentsJobTest extends IntegrationTestBase {
         runNoLicense(()-> {
             final ExperimentsAPI experimentsAPI1 = mock(ExperimentsAPI.class);
 
-            try {ñ
+            try {
                 new StartEndScheduledExperimentsJob(experimentsAPI1).run(null);
             } catch (JobExecutionException e) {
                 throw new RuntimeException(e);
