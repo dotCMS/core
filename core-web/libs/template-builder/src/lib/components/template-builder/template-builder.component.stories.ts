@@ -31,7 +31,7 @@ import {
     MOCK_STYLE_CLASSES_FILE
 } from './utils/mocks';
 
-import { ContainerOptionsDirective } from '../../directives/container-options.directive';
+import { ContainerOptionsDirective } from '../../directives/container-options-directive/container-options.directive';
 
 export default {
     title: 'Template Builder',

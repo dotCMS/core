@@ -9,12 +9,12 @@ import { DotContainersService, DotMessageService } from '@dotcms/data-access';
 import { containersMock, DotContainersServiceMock } from '@dotcms/utils-testing';
 
 import { ContainerOptionsDirective } from './container-options.directive';
+import { MockContainersDropdownComponent } from './mock-containers-dropdown.component';
 
 import {
     DOT_MESSAGE_SERVICE_TB_MOCK,
-    MockContainersDropdownComponent,
     mockMatchMedia
-} from '../components/template-builder/utils/mocks';
+} from '../../components/template-builder/utils/mocks';
 describe('ContainerOptionsDirective', () => {
     let spectator: SpectatorHost<MockContainersDropdownComponent>;
 

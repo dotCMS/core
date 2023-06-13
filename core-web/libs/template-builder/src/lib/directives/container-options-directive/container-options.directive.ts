@@ -1,13 +1,13 @@
 import { Observable, of, Subject } from 'rxjs';
 
-import { Directive, OnDestroy, OnInit, Optional, Self } from '@angular/core';
+import { ChangeDetectorRef, Directive, OnDestroy, OnInit, Optional, Self } from '@angular/core';
 
 import { Dropdown } from 'primeng/dropdown';
 
 import { catchError, debounceTime, map, switchMap, take, takeUntil } from 'rxjs/operators';
 
 import { DotContainersService, DotMessageService } from '@dotcms/data-access';
-import { DotContainerEntity, DotDropdownSelectOption } from '@dotcms/dotcms-models';
+import { DotContainer, DotDropdownSelectOption } from '@dotcms/dotcms-models';
 
 const DEFAULT_LABEL_NAME_INDEX = 'label';
 const DEFAULT_VALUE_NAME_INDEX = 'value';
@@ -31,7 +31,8 @@ export class ContainerOptionsDirective implements OnInit, OnDestroy {
     constructor(
         @Optional() @Self() private readonly primeDropdown: Dropdown,
         private readonly dotContainersService: DotContainersService,
-        private readonly dotMessageService: DotMessageService
+        private readonly dotMessageService: DotMessageService,
+        private readonly changeDetectorRef: ChangeDetectorRef
     ) {
         this.control = this.primeDropdown;
         this.loadErrorMessage = this.dotMessageService.get(
@@ -48,39 +49,39 @@ export class ContainerOptionsDirective implements OnInit, OnDestroy {
     }
 
     ngOnInit() {
-        this.fetchContainerOptions()
-            .pipe(catchError(() => this.handleContainersLoadError()))
-            .subscribe((options) => {
-                this.control.options = this.control.options || options; // avoid overwriting if they were already set
-            });
+        this.fetchContainerOptions().subscribe((options) => {
+            this.control.options = this.control.options || options; // avoid overwriting if they were already set
+        });
         this.control.onFilter
             .pipe(
                 takeUntil(this.destroy$),
                 debounceTime(500),
                 switchMap((event: { filter: string }) => {
                     return this.fetchContainerOptions(event.filter);
-                }),
-                catchError(() => this.handleContainersLoadError())
+                })
             )
             .subscribe((options) => this.setOptions(options));
     }
 
     private fetchContainerOptions(
         filter: string = ''
-    ): Observable<DotDropdownSelectOption<DotContainerEntity>[]> {
+    ): Observable<DotDropdownSelectOption<DotContainer>[]> {
         return this.dotContainersService.getFiltered(filter, this.maxOptions).pipe(
             take(1),
-            map((containerEntities) =>
-                containerEntities.map((containerEntity) => ({
-                    label: containerEntity.container.friendlyName,
-                    value: containerEntity,
+            map((containerEntities) => {
+                return containerEntities.map((container) => ({
+                    label: container.friendlyName,
+                    value: container,
                     inactive: false
-                }))
-            )
+                }));
+            }),
+            catchError(() => {
+                return this.handleContainersLoadError();
+            })
         );
     }
 
-    private getErrorOptions(): DotDropdownSelectOption<DotContainerEntity>[] {
+    private getErrorOptions(): DotDropdownSelectOption<DotContainer>[] {
         return [
             {
                 label: this.loadErrorMessage,
@@ -94,8 +95,9 @@ export class ContainerOptionsDirective implements OnInit, OnDestroy {
         return of(this.getErrorOptions());
     }
 
-    private setOptions(options: Array<DotDropdownSelectOption<DotContainerEntity>>) {
-        this.control.options = options;
+    private setOptions(options: Array<DotDropdownSelectOption<DotContainer>>) {
+        this.control.options = [...options];
+        this.changeDetectorRef.detectChanges();
     }
 
     ngOnDestroy() {

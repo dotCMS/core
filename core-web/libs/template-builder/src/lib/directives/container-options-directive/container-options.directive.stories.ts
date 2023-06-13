@@ -12,7 +12,7 @@ import { ContainerOptionsDirective } from './container-options.directive';
 import {
     DOT_MESSAGE_SERVICE_TB_MOCK,
     MockContainersDropdownComponent
-} from '../components/template-builder/utils/mocks';
+} from '../../components/template-builder/utils/mocks';
 
 export default {
     title: 'Container Options Directive',

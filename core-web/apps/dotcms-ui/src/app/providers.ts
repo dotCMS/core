@@ -11,6 +11,7 @@ import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import {
     DotAlertConfirmService,
+    DotContainersService,
     DotContentTypeService,
     DotContentTypesInfoService,
     DotCrudService,
@@ -49,6 +50,7 @@ const PROVIDERS: Provider[] = [
     AuthGuardService,
     ColorUtil,
     ConfirmationService,
+    DotContainersService,
     DotContentTypesInfoService,
     ContentletGuardService,
     DotCrudService,
