@@ -76,6 +76,19 @@ public class Chainable404StorageCache implements Cachable {
         return NOT_FOUND404.equals(cacheResult);
     }
 
+    /**
+     * Remove the 404 from the cache
+     * @param bucket
+     * @param path
+     */
+    public void remove(final String bucket, final String path) {
+
+        if (bucket != null && null != path) {
+
+            cache.remove(key(bucket, path), this.getPrimaryGroup());
+        }
+    }
+
     String key(final String bucket, final String path) {
         return bucket + StringPool.UNDERLINE + path;
     }

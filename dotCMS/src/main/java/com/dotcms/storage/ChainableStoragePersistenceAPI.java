@@ -1,9 +1,11 @@
 package com.dotcms.storage;
 
 import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
+import com.google.common.annotations.VisibleForTesting;
 import io.vavr.control.Try;
 
 import java.io.File;
@@ -21,7 +23,7 @@ import java.util.concurrent.Future;
  * This allows to implement chainable storages, for example:
  * - The first layer could be Redis Mem, second layer could be NFS, third layer could be DB and finally S3.
  * - Also, incorporates a 404 cache layer which is in front of all storage; the goal of this cache is to avoid to look for over all layers
- * when the path was previously searched on all layers and it wasn't found.
+ * when the path was previously searched on all layers and wasn't found.
  * @author jsanca
  */
 public class ChainableStoragePersistenceAPI implements StoragePersistenceAPI {
@@ -29,17 +31,30 @@ public class ChainableStoragePersistenceAPI implements StoragePersistenceAPI {
     private final List<StoragePersistenceAPI> storagePersistenceAPIList;
     private final ObjectWriterDelegate defaultWriterDelegate;
 
+    private final Chainable404StorageCache cache;
+
     private final static String SUBMITTER_NAME = Config.getStringProperty("COMPOSITE_STORAGE_SUBMITTER_NAME", "SubmitterCompositeStoragePersistenceAPI");
 
     public ChainableStoragePersistenceAPI(final List<StoragePersistenceAPI> storagePersistenceAPIList) {
-        this(new JsonWriterDelegate(), storagePersistenceAPIList);
+        this(new JsonWriterDelegate(), storagePersistenceAPIList, CacheLocator.getChainable4040StorageCache());
     }
 
     public ChainableStoragePersistenceAPI(final ObjectWriterDelegate defaultWriterDelegate,
-                                          final List<StoragePersistenceAPI> storagePersistenceAPIList) {
+                                          final List<StoragePersistenceAPI> storagePersistenceAPIList,
+                                          final Chainable404StorageCache cache) {
 
-        this.defaultWriterDelegate = defaultWriterDelegate;
+        this.defaultWriterDelegate     = defaultWriterDelegate;
         this.storagePersistenceAPIList = storagePersistenceAPIList;
+        this.cache                     = cache;
+    }
+
+    /**
+     * This is method is just for testing purposes
+     * @return Chainable404StorageCache
+     */
+    @VisibleForTesting
+    public Chainable404StorageCache getCache() {
+        return cache;
     }
 
     @Override
@@ -50,6 +65,11 @@ public class ChainableStoragePersistenceAPI implements StoragePersistenceAPI {
 
     @Override
     public boolean existsObject(final String groupName, final String objectPath) throws DotDataException {
+
+        if (this.cache.is404(groupName, objectPath)) {
+
+            return false;
+        }
 
         return this.storagePersistenceAPIList.stream().anyMatch(storage -> Try.of(()->storage.existsObject(groupName, objectPath)).getOrElse(false));
     }
@@ -93,6 +113,9 @@ public class ChainableStoragePersistenceAPI implements StoragePersistenceAPI {
             deleteCount += storage.deleteGroup(groupName);
         }
 
+        // since we do not know if the group was on cache or not, we clear the cache anyway
+        cache.clearCache();
+
         return deleteCount;
     }
 
@@ -107,6 +130,8 @@ public class ChainableStoragePersistenceAPI implements StoragePersistenceAPI {
             deleted &= storage.deleteObjectAndReferences(groupName, path);
         }
 
+        cache.remove(groupName, path);
+
         return deleted;
     }
 
@@ -120,6 +145,8 @@ public class ChainableStoragePersistenceAPI implements StoragePersistenceAPI {
             // it would be great to have atomic here, so if one storage fails, all fail, but it is ok by now
             deleted &= storage.deleteObjectReference(groupName, path);
         }
+
+        cache.remove(groupName, path);
 
         return deleted;
     }
@@ -149,6 +176,9 @@ public class ChainableStoragePersistenceAPI implements StoragePersistenceAPI {
             object = null == object? localObject: object;
         }
 
+        // if the file was previously not found, we remove it from the cache since it is now a valid path
+        cache.remove(groupName, path);
+
         return object;
     }
 
@@ -164,6 +194,9 @@ public class ChainableStoragePersistenceAPI implements StoragePersistenceAPI {
             final Object localObject = storage.pushObject(groupName, path, writerDelegate, objectIn, extraMeta);
             objectToReturn = null == objectToReturn? localObject: objectToReturn;
         }
+
+        // if the object was previously not found, we remove it from the cache since it is now a valid path
+        cache.remove(groupName, path);
 
         return objectToReturn;
     }
@@ -183,6 +216,9 @@ public class ChainableStoragePersistenceAPI implements StoragePersistenceAPI {
 
             throw new DotRuntimeException("No storage persistence api found");
         }
+
+        // if the object was previously not found, we remove it from the cache since it is now a valid path
+        cache.remove(groupName, path);
 
         return futures.get(0); // well we return the first one at least
     }
@@ -205,14 +241,20 @@ public class ChainableStoragePersistenceAPI implements StoragePersistenceAPI {
             throw new DotRuntimeException("No storage persistence api found");
         }
 
+        // if the object was previously not found, we remove it from the cache since it is now a valid path
+        cache.remove(bucketName, path);
+
         return futures.get(0); // well we return the first one at least
     }
 
     @Override
-    public File pullFile(String groupName, String path) throws DotDataException {
+    public File pullFile(final String groupName, final String path) throws DotDataException {
 
-        // todo: here we will look for on each storage the File, if an upper layer does not have the file, we will look for it in the next one
-        // at the end of the process for each storage without the file, an async call will be execute in order to populate the storage with that particular file
+        if (this.cache.is404(groupName, path)) {
+
+            return null;
+        }
+
         File fileToReturn = null;
 
         final List<StoragePersistenceAPI> missStorageList = new ArrayList<>();
@@ -223,13 +265,19 @@ public class ChainableStoragePersistenceAPI implements StoragePersistenceAPI {
 
                 fileToReturn = localFile;
                 break;
-            } else {
-
-                missStorageList.add(storage); // we will populate this list with the storages that does not have the file, so will be populated async at the end
             }
+
+            missStorageList.add(storage); // we will populate this list with the storages that does not have the file, so will be populated async at the end
         }
 
-        populateMissStorageChain(groupName, path, missStorageList, fileToReturn);
+        // if the file is not found in all storages, we will populate the 404 cache
+        if (fileToReturn == null && missStorageList.size() == this.storagePersistenceAPIList.size()) {
+
+            this.cache.put404(groupName, path);
+        } else {
+
+            populateMissStorageChain(groupName, path, missStorageList, fileToReturn);
+        }
 
         return fileToReturn;
     }
@@ -250,25 +298,34 @@ public class ChainableStoragePersistenceAPI implements StoragePersistenceAPI {
     public Object pullObject(final String groupName,
                              final String path,
                              final ObjectReaderDelegate readerDelegate) throws DotDataException {
-        // todo: here we will look for on each storage the Object, if an upper layer does not have the object, we will look for it in the next one
-        // at the end of the process for each storage without the object, an async call will be execute in order to populate the storage with that particular object
+
+        if (this.cache.is404(groupName, path)) {
+
+            return null;
+        }
+
         Object objectToReturn = null;
 
         final List<StoragePersistenceAPI> missStorageList = new ArrayList<>();
         for(final StoragePersistenceAPI storage : this.storagePersistenceAPIList) {
-            // todo: handle the 404 MemCache404StorageApi
+
             final Object localObject = Try.of(()->storage.pullObject(groupName, path, readerDelegate)).getOrNull();
             if (null != localObject) {
 
                 objectToReturn = localObject;
                 break;
-            } else {
-
-                missStorageList.add(storage); // we will populate this list with the storages that does not have the object, so will be populated async at the end
             }
+
+            missStorageList.add(storage); // we will populate this list with the storages that does not have the object, so will be populated async at the end
         }
 
-        populateMissStorageChain(groupName, path, missStorageList, objectToReturn);
+        // if the object is not found in all storages, we will populate the 404 cache
+        if (objectToReturn == null && missStorageList.size() == this.storagePersistenceAPIList.size()) {
+
+            this.cache.put404(groupName, path);
+        } else {
+            populateMissStorageChain(groupName, path, missStorageList, objectToReturn);
+        }
 
         return objectToReturn;
     }
@@ -288,6 +345,11 @@ public class ChainableStoragePersistenceAPI implements StoragePersistenceAPI {
     @Override
     public Future<File> pullFileAsync(final String groupName, final String path) {
 
+        if (this.cache.is404(groupName, path)) {
+
+            return null;
+        }
+
         final List<Future<File>> futures = new ArrayList<>();
         for(final StoragePersistenceAPI storage : this.storagePersistenceAPIList) {
 
@@ -303,6 +365,11 @@ public class ChainableStoragePersistenceAPI implements StoragePersistenceAPI {
     @Override
     public Future<Object> pullObjectAsync(final String groupName, final String path,
                                           final ObjectReaderDelegate readerDelegate) {
+
+        if (this.cache.is404(groupName, path)) {
+
+            return null;
+        }
 
         final List<Future<Object>> futures = new ArrayList<>();
         for(final StoragePersistenceAPI storage : this.storagePersistenceAPIList) {
