@@ -53,6 +53,28 @@ public class ConsoleLoadingAnimation implements Runnable {
     /**
      * Creates a new ConsoleLoadingAnimation object with the given parameters.
      *
+     * @param output       the OutputOptionMixin object that will be used to print the animation.
+     * @param futureResult the Future object that will be used to check if the animation should
+     *                     stop.
+     */
+    public ConsoleLoadingAnimation(
+            OutputOptionMixin output,
+            Future<?> futureResult
+    ) {
+
+        this.out = output;
+
+        this.futureResult = futureResult;
+        this.animationDelay = 250;
+
+        this.animationQueue = new ArrayDeque<>();  // Initialize an ArrayDeque as the animationQueue
+        // Add characters from the array to the queue
+        animationQueue.addAll(Arrays.asList(ANIMATION_CHARS_SIMPLE));
+    }
+
+    /**
+     * Creates a new ConsoleLoadingAnimation object with the given parameters.
+     *
      * @param output         the OutputOptionMixin object that will be used to print the animation.
      * @param futureResult   the Future object that will be used to check if the animation should
      *                       stop.

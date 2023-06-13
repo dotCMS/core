@@ -68,9 +68,7 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
             // ConsoleLoadingAnimation instance to handle the waiting "animation"
             ConsoleLoadingAnimation consoleLoadingAnimation = new ConsoleLoadingAnimation(
                     output,
-                    folderTraversalFuture,
-                    ConsoleLoadingAnimation.ANIMATION_CHARS_SIMPLE,
-                    250
+                    folderTraversalFuture
             );
 
             CompletableFuture<Void> animationFuture = CompletableFuture.runAsync(

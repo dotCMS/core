@@ -62,7 +62,7 @@ public class PullFilesServiceImpl implements PullFilesService {
                 treeNodeInfo.assetsCount(), treeNodeInfo.foldersCount(), treeNodeInfo.languages().size()));
 
         // ConsoleProgressBar instance to handle the download progress bar
-        ConsoleProgressBar progressBar = new ConsoleProgressBar(output, 250);
+        ConsoleProgressBar progressBar = new ConsoleProgressBar(output);
 
         CompletableFuture<Void> treeBuilderFuture = CompletableFuture.supplyAsync(
                 () -> {

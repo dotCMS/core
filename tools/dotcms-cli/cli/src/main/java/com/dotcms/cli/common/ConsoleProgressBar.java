@@ -16,20 +16,39 @@ public class ConsoleProgressBar implements Runnable {
 
     private int totalSteps;
     private int currentStep;
+    private final int animationCharSize;
 
     OutputOptionMixin out;
 
     /**
      * Constructs a new ConsoleProgressBar object.
      *
-     * @param output         the output option mixin to use for printing the progress bar
-     * @param animationDelay the delay between animation frames in milliseconds
+     * @param output the output option mixin to use for printing the progress bar
      */
-    public ConsoleProgressBar(OutputOptionMixin output, long animationDelay) {
+    public ConsoleProgressBar(OutputOptionMixin output) {
+
+        this.out = output;
+
+        this.animationDelay = 250;
+        this.animationCharSize = 100;
+
+        this.totalSteps = 0;
+        this.currentStep = 0;
+    }
+
+    /**
+     * Constructs a new ConsoleProgressBar object.
+     *
+     * @param output            the output option mixin to use for printing the progress bar
+     * @param animationDelay    the delay between animation frames in milliseconds
+     * @param animationCharSize the number of characters to use for the animation
+     */
+    public ConsoleProgressBar(OutputOptionMixin output, final long animationDelay, final int animationCharSize) {
 
         this.out = output;
 
         this.animationDelay = animationDelay;
+        this.animationCharSize = animationCharSize;
 
         this.totalSteps = 0;
         this.currentStep = 0;
@@ -71,11 +90,7 @@ public class ConsoleProgressBar implements Runnable {
         try {
             while (!futureResult.isDone()) {
 
-                if (builder == null && totalSteps > 0) {
-                    builder = new StringBuilder();
-                    Stream.generate(() -> incomplete).limit(totalSteps).forEach(builder::append);
-                }
-
+                builder = initBuilder(builder);
                 printProgress(builder, currentStep, totalSteps);
 
                 Thread.sleep(animationDelay);
@@ -83,11 +98,30 @@ public class ConsoleProgressBar implements Runnable {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } finally {
-            if (currentStep >= totalSteps && builder != null) {
+            if (currentStep >= totalSteps) {
+
+                builder = initBuilder(builder);
+
                 // We reached 100% progress
                 printProgress(builder, totalSteps, totalSteps);
             }
         }
+    }
+
+    /**
+     * Initializes the string builder with the animation characters.
+     *
+     * @param builder the string builder to initialize
+     * @return the initialized string builder
+     */
+    private StringBuilder initBuilder(StringBuilder builder) {
+
+        if (builder == null && totalSteps > 0) {
+            builder = new StringBuilder();
+            Stream.generate(() -> incomplete).limit(animationCharSize).forEach(builder::append);
+        }
+
+        return builder;
     }
 
     /**
@@ -101,11 +135,12 @@ public class ConsoleProgressBar implements Runnable {
 
         if (totalSteps > 0) {
             int progress = (int) ((double) currentStep / totalSteps * 100);
+            int charSizeProgress = (int) ((double) currentStep / totalSteps * animationCharSize);
 
             builder.replace(
                     0,
-                    currentStep,
-                    builder.substring(0, currentStep).replace(incomplete, complete)
+                    charSizeProgress,
+                    builder.substring(0, charSizeProgress).replace(incomplete, complete)
             );
 
             var progressString = String.format("  @|bold,yellow %d%s|@", progress, "%");
