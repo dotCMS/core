@@ -22,6 +22,7 @@ describe('AddStyleClassesDialogComponent', () => {
     let component: AddStyleClassesDialogComponent;
     let spectator: SpectatorHost<AddStyleClassesDialogComponent>;
     let input: HTMLInputElement;
+    let ref: DynamicDialogRef;
 
     const createHost = createHostFactory({
         component: AddStyleClassesDialogComponent,
@@ -58,6 +59,8 @@ describe('AddStyleClassesDialogComponent', () => {
         component = spectator.component;
         spectator.detectChanges();
 
+        ref = spectator.inject(DynamicDialogRef);
+
         input = spectator.query('#auto-complete-input');
 
         mockMatchMedia();
@@ -78,27 +81,22 @@ describe('AddStyleClassesDialogComponent', () => {
     });
 
     it('should trigger addClassByCommaOrSpace when typing on the input and adding comma', () => {
-        const addMock = jest.spyOn(component, 'addClassByCommaOrSpace');
-        input.value = 'd-none,';
+        input.value = 'd-none,'; // This has a comma
 
         spectator.click(input);
 
         spectator.detectChanges();
 
-        expect(addMock).toHaveBeenCalledWith('d-none,');
         expect(component.selectedClasses).toContainEqual({ cssClass: 'd-none' });
     });
 
     it('should trigger addClassByCommaOrSpace when typing on the input and adding space', () => {
-        const addMock = jest.spyOn(component, 'addClassByCommaOrSpace');
-
-        input.value = 'd-none,';
+        input.value = 'd-none '; // This has a space
 
         spectator.click(input);
 
         spectator.detectChanges();
 
-        expect(addMock).toHaveBeenCalledWith('d-none,');
         expect(component.selectedClasses).toContainEqual({ cssClass: 'd-none' });
     });
 
@@ -111,7 +109,7 @@ describe('AddStyleClassesDialogComponent', () => {
     });
 
     it('should trigger saveClass when clicking on update-btn', () => {
-        const closeMock = jest.spyOn(component, 'saveClass');
+        const closeMock = jest.spyOn(ref, 'close');
 
         const updateBtn = spectator.query(byTestId('update-btn'));
 
