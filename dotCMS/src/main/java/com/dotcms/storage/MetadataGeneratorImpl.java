@@ -16,6 +16,7 @@ import com.dotcms.tika.TikaUtils;
 import com.dotcms.util.MimeTypeUtils;
 import com.dotmarketing.image.filter.ImageFilterAPI;
 import com.dotmarketing.image.filter.ImageFilterApiImpl;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
@@ -64,6 +65,7 @@ class MetadataGeneratorImpl implements MetadataGenerator {
     public TreeMap<String, Serializable> standAloneMetadata(final File binary){
         final TreeMap<String, Serializable> metadataMap = new TreeMap<>(Comparator.naturalOrder());
         final String binaryName = binary.getName();
+        final String mimeType = Try.of(()->MimeTypeUtils.getMimeType(binary)).getOrElse(FileAsset.UNKNOWN_MIME_TYPE);
         metadataMap.put(NAME_META_KEY.key(), binaryName);
         metadataMap.put(TITLE_META_KEY.key(), binaryName); //Title gets replaced by the loaded metadata. Otherwise iwe set a default
         final String relativePath = binary.getAbsolutePath()
@@ -73,7 +75,7 @@ class MetadataGeneratorImpl implements MetadataGenerator {
         final long length = binary.length();
         metadataMap.put(LENGTH_META_KEY.key(), length);
         metadataMap.put(SIZE_META_KEY.key(), length);
-        metadataMap.put(CONTENT_TYPE_META_KEY.key(), MimeTypeUtils.getMimeType(binary));
+        metadataMap.put(CONTENT_TYPE_META_KEY.key(), mimeType);
         metadataMap.put(MOD_DATE_META_KEY.key(), binary.lastModified());
         metadataMap.put(SHA256_META_KEY.key(),
                 Try.of(() -> FileUtil.sha256toUnixHash(binary)).getOrElse("unknown"));

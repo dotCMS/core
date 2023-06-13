@@ -613,9 +613,13 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
             metaData.putAll(extraMeta);
         }
 
-        metaData.putAll(APILocator.getFileStorageAPI().generateRawBasicMetaData(file));
+        metaData.putAll(generateRawBasicMetaData(file));
 
         return metaData.build();
+    }
+
+    protected Map<String, Serializable> generateRawBasicMetaData(final File binary) {
+        return APILocator.getFileStorageAPI().generateRawBasicMetaData(binary);
     }
 
     /**

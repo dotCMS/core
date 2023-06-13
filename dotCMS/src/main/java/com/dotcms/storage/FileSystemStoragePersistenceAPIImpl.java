@@ -123,11 +123,16 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         final String groupNameLC = groupName.toLowerCase();
         final File rootGroup = groups.get(getRootGroupKey());
         final File destBucketFile = new File(rootGroup, groupNameLC);
-        final boolean mkdirs = destBucketFile.mkdirs();
-        if(mkdirs) {
-           groups.put(groupNameLC, destBucketFile);
+        if (!destBucketFile.exists()) {
+            final boolean mkdirs = destBucketFile.mkdirs();
+            if (mkdirs) {
+                groups.put(groupNameLC, destBucketFile);
+            }
+            return mkdirs;
         }
-        return mkdirs;
+
+        groups.put(groupNameLC, destBucketFile);
+        return true; // the bucket already exist
     }
 
     /**
@@ -241,6 +246,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
             try {
                 final File destBucketFile = Paths.get(groupDir.getCanonicalPath(),path.toLowerCase()).toFile();
                 this.prepareParent(destBucketFile);
+                destBucketFile.createNewFile(); // we create the file if it does not exist and then write on it.
 
                 final String compressor = contentMetadataCompressor.get();
                 try (OutputStream outputStream = FileUtil.createOutputStream(destBucketFile.toPath(), compressor)) {

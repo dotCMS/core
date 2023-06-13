@@ -216,7 +216,7 @@ public class CompositeStoragePersistenceAPI implements StoragePersistenceAPI {
         final List<StoragePersistenceAPI> missStorageList = new ArrayList<>();
         for(final StoragePersistenceAPI storage : this.storagePersistenceAPIList) {
 
-            final File localFile = storage.pullFile(groupName, path);
+            final File localFile = Try.of(()->storage.pullFile(groupName, path)).getOrNull();
             if (null != localFile) {
 
                 fileToReturn = localFile;
@@ -255,7 +255,7 @@ public class CompositeStoragePersistenceAPI implements StoragePersistenceAPI {
         final List<StoragePersistenceAPI> missStorageList = new ArrayList<>();
         for(final StoragePersistenceAPI storage : this.storagePersistenceAPIList) {
 
-            final Object localObject = storage.pullObject(groupName, path, readerDelegate);
+            final Object localObject = Try.of(()->storage.pullObject(groupName, path, readerDelegate)).getOrNull();
             if (null != localObject) {
 
                 objectToReturn = localObject;

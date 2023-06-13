@@ -8,21 +8,26 @@ import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotcms.storage.model.BasicMetadataFields;
 import com.dotcms.storage.model.ContentletMetadata;
 import com.dotcms.storage.model.Metadata;
+import com.dotcms.tika.TikaUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.util.MimeTypeUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableMap;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
+import io.vavr.control.Try;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.felix.framework.OSGIUtil;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -38,6 +43,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import static com.dotcms.datagen.TestDataUtils.FILE_ASSET_1;
 import static com.dotcms.datagen.TestDataUtils.FILE_ASSET_2;
@@ -74,7 +80,10 @@ public class FileStorageAPITest {
        if(null == fileStorageAPI){
            IntegrationTestInitService.getInstance().init();
            fileStorageAPI = new FileStorageAPIImpl();
+           // we use a dummy to avoid to use tika
+           MimeTypeUtils.setMimeTypeDetector(path -> "text/plain");
            StoragePersistenceProvider.INSTANCE.get().addStorageInitializer(StorageType.MEMORY, ()-> new MemoryStoragePersistanceAPIImpl());
+
        }
     }
 
@@ -86,7 +95,7 @@ public class FileStorageAPITest {
      * @throws Exception
      */
     @Test
-    public void Test_Test_Mem_Storage() throws Exception {
+    public void Test_Mem_Storage() throws Exception {
         prepareIfNecessary();
 
         final String groupName = "mem-test";
@@ -109,6 +118,75 @@ public class FileStorageAPITest {
         Assert.assertTrue("The delete group mem-test should be right", memStorage.deleteGroup(groupName)>0);
         Assert.assertFalse("The object on group mem-test and path2 should not exist", null != memStorage.pullObject(groupName, "/path2", null));
         Assert.assertFalse("The object on group mem-test should not exist", memStorage.existsGroup(groupName));
+    }
+
+    /**
+     * Method to test: This test tries the {@link CompositeStoragePersistenceAPI#pullObject(String, String, ObjectReaderDelegate)}
+     * Given Scenario: To start will set a chain storage including in the first layer is the file then memory storage and finally db
+     * - then will add a few elements to the memory storage
+     * ExpectedResult: The cascate propagation you should ok right, will populate the objects from memory to the upper layer (file)
+     *
+     * @throws Exception
+     */
+    @Test
+    public void Test_Composite_Storage_Chain_Cascate_propagate_stores() throws Exception {
+        prepareIfNecessary();
+
+        // Creates a chain storage with file, memory, and db in that order
+        final JsonWriterDelegate jsonWriterDelegate = new JsonWriterDelegate();
+        final JsonReaderDelegate jsonReaderDelegate = new JsonReaderDelegate(String.class);
+        final CompositeStoragePersistenceAPIBuilder chainStorageBuilder = new CompositeStoragePersistenceAPIBuilder();
+
+        StoragePersistenceProvider.INSTANCE.get().forceInitialize();
+        final StoragePersistenceAPI memStorage  = StoragePersistenceProvider.INSTANCE.get().getStorage(StorageType.MEMORY);
+        final StoragePersistenceAPI fileStorage = StoragePersistenceProvider.INSTANCE.get().getStorage(StorageType.FILE_SYSTEM);
+        final StoragePersistenceAPI dbStorage   = StoragePersistenceProvider.INSTANCE.get().getStorage(StorageType.DB);
+
+        // file -> mem -> db
+        chainStorageBuilder.add(fileStorage);
+        chainStorageBuilder.add(memStorage);
+        chainStorageBuilder.add(dbStorage);
+
+        StoragePersistenceProvider.INSTANCE.get().addStorageInitializer(StorageType.CHAIN1, chainStorageBuilder);
+        final StoragePersistenceAPI chainStorage   = StoragePersistenceProvider.INSTANCE.get().getStorage(StorageType.CHAIN1);
+
+        // creates the group on all storages
+        final String groupName = "bucket-test";
+
+        try {
+
+            // this creates all groups on all storages on the chain
+            Try.run(() -> chainStorage.createGroup(groupName)).getOrElseThrow((e) -> new RuntimeException(e));
+
+            // Now create a few objects on the mem storage
+            final String[] paths = {"/path1.txt", "/path2.txt", "/path3.txt"};
+            final String[] objects = {"Object1", "Object2", "Object3"};
+            for (int i = 0; i < paths.length; i++) {
+                memStorage.pushObject(groupName, paths[i], null, objects[i], null);
+            }
+
+            // Now run the chain cascada to populate file but not db
+            final Object object1 = chainStorage.pullObject(groupName, "/path1.txt", jsonReaderDelegate);
+            Assert.assertNotNull("The object on group bucket-test, /path1 should be not null", object1);
+            Assert.assertEquals("The object on group bucket-test, /path1 should be Object1", objects[0], object1);
+
+            // the push is async so wait a bit
+            DateUtil.sleep(2000);
+
+            // Now the file storage should have the objects by propagation
+            final Object fileObject1 = fileStorage.pullObject(groupName, "/path1.txt", jsonReaderDelegate);
+            Assert.assertNotNull("The object on group bucket-test, /path1 should be not null", fileObject1);
+            Assert.assertEquals("The object on group bucket-test, /path1 should be Object1", objects[0], fileObject1);
+
+            // but the db should not, since it is a lower layer
+            final Object dbObject1 = Try.of(()->dbStorage.pullObject(groupName, "/path1.txt", jsonReaderDelegate)).getOrNull();
+            Assert.assertNull("The object on group bucket-test, /path1 should be null", dbObject1);
+        } finally {
+
+            Stream.of(fileStorage, dbStorage).forEach(storage -> {
+                Try.run(() -> storage.deleteGroup(groupName)).getOrElseThrow((e) -> new RuntimeException(e));
+            });
+        }
     }
 
 

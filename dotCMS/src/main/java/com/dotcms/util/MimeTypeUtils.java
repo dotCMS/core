@@ -9,6 +9,7 @@ import io.vavr.control.Try;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Objects;
 import javax.activation.MimeType;
 
 /**
@@ -19,6 +20,19 @@ public class MimeTypeUtils {
 
     public static final String ACCEPT_ALL = "*/*";
 
+    // defect nothing default implementation
+    private static MimeTypeDetector mimeTypeDetector = path -> null;
+
+    /**
+     * Sets a mime type detector
+     * @param mimeTypeDetector
+     */
+    public static synchronized void setMimeTypeDetector(final MimeTypeDetector mimeTypeDetector) {
+        if (null != mimeTypeDetector) {
+            MimeTypeUtils.mimeTypeDetector = mimeTypeDetector;
+        }
+    }
+
     /**
      * Gets the mime type of a file.
      * @param binary {@link File}
@@ -26,10 +40,17 @@ public class MimeTypeUtils {
      */
     public static String getMimeType (final File binary) {
         if(binary==null) {
+
             return FileAsset.UNKNOWN_MIME_TYPE;
         }
+
         final Path path = binary.toPath();
-        String mimeType = Try.of(() -> Files.probeContentType(path)).getOrNull();
+        String mimeType = Try.of(() -> mimeTypeDetector.detectMimeType(path)).getOrNull();
+
+        if  (!UtilMethods.isSet(mimeType)) {
+
+             mimeType = Try.of(() -> Files.probeContentType(path)).getOrNull();
+        }
 
         if  (!UtilMethods.isSet(mimeType)) {
 

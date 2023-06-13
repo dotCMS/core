@@ -21,6 +21,11 @@ public class CompositeStoragePersistenceAPIBuilder implements Supplier<StoragePe
         return this;
     }
 
+    public CompositeStoragePersistenceAPIBuilder addFirst(final StoragePersistenceAPI storagePersistenceAPI) {
+        storagePersistenceAPIs.add(0, storagePersistenceAPI);
+        return this;
+    }
+
     /**
      * Creates a new builder based on an existing one
      * @param builder CompositeStoragePersistenceAPIBuilder
