@@ -564,33 +564,39 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     return newContentType;
   }
 
+  /**
+   * This method will generate a new relationship field based on the source field
+   * @param sourceField the source field
+   *
+   */
   private Field generateNewRelationshipFiled(final Field sourceField) {
 
-      if (sourceField instanceof RelationshipField) {
+    if (sourceField instanceof RelationshipField) {
 
-        final RelationshipField relationshipField = (RelationshipField) sourceField;
+      final RelationshipField relationshipField = (RelationshipField) sourceField;
 
-        System.out.println("relationshipField = " + relationshipField);
+      return RelationshipFieldBuilder.builder(relationshipField)
+              .relationType(getRelationshipParentName(sourceField.relationType()) + "." + sourceField.variable() + "Copy")
+              .variable(sourceField.variable() + "Copy")
+              .name(sourceField.name() + "-copy")
+              .build();
+    }
 
-        return RelationshipFieldBuilder.builder(relationshipField)
-                .relationType(getRelationshipParentName(sourceField.relationType()) + "." + sourceField.variable() + "Copy")
-                .variable(sourceField.variable() + "Copy")
-                .name(sourceField.name() + "-copy")
-                .build();
-      }
-
-        return sourceField;
+      return sourceField;
   }
 
-    private String getRelationshipParentName(final String relationshipType) {
+  /**
+   * This method will get the parent name of the relationship from the relationship type
+   * @param relationshipType the relationship type
+   *
+   */
+  private String getRelationshipParentName(final String relationshipType) {
 
-        if (relationshipType.contains(".")) {
-
-            return relationshipType.substring(0, relationshipType.indexOf("."));
-        }
-
-        return relationshipType;
+    if (relationshipType.contains(".")) {
+        return relationshipType.substring(0, relationshipType.indexOf("."));
     }
+    return relationshipType;
+  }
 
   @WrapInTransaction
   @Override
