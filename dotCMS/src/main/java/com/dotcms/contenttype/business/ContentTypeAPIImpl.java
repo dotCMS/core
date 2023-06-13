@@ -539,7 +539,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
         if (null == newField) {
 
             newField = APILocator.getContentTypeFieldAPI()
-                    .save(FieldBuilder.builder(generateNewRelationshipFiled(sourceField, copyContentTypeBean.getName()))
+                    .save(FieldBuilder.builder(generateNewRelationshipFiled(sourceField))
                             .sortOrder(sourceField.sortOrder())
                             .contentTypeId(newContentType.id())
                             .id(null)
@@ -564,19 +564,33 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     return newContentType;
   }
 
-  private Field generateNewRelationshipFiled(final Field sourceField, final String contentTypeName) {
+  private Field generateNewRelationshipFiled(final Field sourceField) {
 
       if (sourceField instanceof RelationshipField) {
 
         final RelationshipField relationshipField = (RelationshipField) sourceField;
 
+        System.out.println("relationshipField = " + relationshipField);
+
         return RelationshipFieldBuilder.builder(relationshipField)
-                .relationType(relationshipField.relationType() + "-" + contentTypeName)
+                .relationType(getRelationshipParentName(sourceField.relationType()) + "." + sourceField.variable() + "Copy")
+                .variable(sourceField.variable() + "Copy")
+                .name(sourceField.name() + "-copy")
                 .build();
       }
 
         return sourceField;
   }
+
+    private String getRelationshipParentName(final String relationshipType) {
+
+        if (relationshipType.contains(".")) {
+
+            return relationshipType.substring(0, relationshipType.indexOf("."));
+        }
+
+        return relationshipType;
+    }
 
   @WrapInTransaction
   @Override
