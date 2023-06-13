@@ -44,7 +44,7 @@ public class HostFactoryImplTest extends IntegrationTestBase {
     @Test
     public void test_findLiveAndStopped_shouldOnlyRetunLiveAndStoppedSites() throws DotDataException, DotSecurityException {
         // Initialization
-        final int limit = 100;
+        final int limit = -1;
         final int offset = 0;
         final HostFactoryImpl hostFactory = new HostFactoryImpl();
         final long systemMilis = System.currentTimeMillis();
