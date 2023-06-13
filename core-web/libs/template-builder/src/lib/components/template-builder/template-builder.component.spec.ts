@@ -28,6 +28,8 @@ import { DOT_MESSAGE_SERVICE_TB_MOCK, FULL_DATA_MOCK } from './utils/mocks';
 describe('TemplateBuilderComponent', () => {
     let spectator: SpectatorHost<TemplateBuilderComponent>;
     let store: DotTemplateBuilderStore;
+    let dialog: DialogService;
+    let openDialogMock: jest.SpyInstance;
 
     const createHost = createHostFactory({
         component: TemplateBuilderComponent,
@@ -65,6 +67,8 @@ describe('TemplateBuilderComponent', () => {
         );
 
         store = spectator.inject(DotTemplateBuilderStore);
+        dialog = spectator.inject(DialogService);
+        openDialogMock = jest.spyOn(dialog, 'open');
     });
 
     it('should have a Add Row Button', () => {
@@ -117,23 +121,19 @@ describe('TemplateBuilderComponent', () => {
         expect(removeRowMock).toHaveBeenCalledWith('123');
     });
 
-    it('should call editRowStyleClasses from store when clicking on row-style-class-button', () => {
-        const editRowStyleClassesMock = jest.spyOn(spectator.component, 'editRowStyleClasses');
-
+    it('should open a dialog when clicking on row-style-class-button ', () => {
         const editRowStyleClassesButton = spectator.query(byTestId('row-style-class-button'));
 
         spectator.dispatchFakeEvent(editRowStyleClassesButton, 'onClick');
 
-        expect(editRowStyleClassesMock).toHaveBeenCalled();
+        expect(openDialogMock).toHaveBeenCalled();
     });
 
-    it('should call editBoxStyleClasses from store when clicking on btn-palette', () => {
-        const editBoxStyleClassesMock = jest.spyOn(spectator.component, 'editBoxStyleClasses');
-
-        const editBoxStyleClassesButton = spectator.query(byTestId('btn-palette'));
+    it('should open a dialog when clicking on box-style-class-button', () => {
+        const editBoxStyleClassesButton = spectator.query(byTestId('box-style-class-button'));
 
         spectator.dispatchFakeEvent(editBoxStyleClassesButton, 'onClick');
 
-        expect(editBoxStyleClassesMock).toHaveBeenCalled();
+        expect(openDialogMock).toHaveBeenCalled();
     });
 });
