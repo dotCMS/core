@@ -63,14 +63,6 @@ export interface DotResultVariant {
     totalPageViews: number;
 }
 
-export interface DotResultSimpleVariant {
-    id: string;
-    name: string;
-    isPromoted: boolean;
-    variantPercentage: number;
-    isWinner: boolean;
-}
-
 export interface DotResultUniqueBySession {
     count: number;
     totalPercentage: number;
@@ -92,7 +84,7 @@ export interface TrafficProportion {
     variants: Array<Variant>;
 }
 
-export interface DotExperimentDetail {
+export interface DotExperimentVariantDetail {
     id: string;
     name: string;
     conversions: number;

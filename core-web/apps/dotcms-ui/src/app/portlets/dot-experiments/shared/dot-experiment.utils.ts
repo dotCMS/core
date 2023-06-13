@@ -1,5 +1,10 @@
+import { formatPercent } from '@angular/common';
+
 import {
     DEFAULT_VARIANT_ID,
+    DotBayesianVariantResult,
+    DotCreditabilityInterval,
+    DotExperiment,
     DotResultDate,
     ExperimentChartDatasetColorsVariants,
     LineChartColorsProperties,
@@ -54,3 +59,43 @@ export const processExperimentConfigProps = (
 export const daysToMilliseconds = (days: number): number => {
     return days * 24 * 60 * 60 * 1000;
 };
+
+/* Start function to extract data from the experiment and results endpoint
+ *  To put together the summary table in the experiment results screen  */
+export const getConversionRateRage = (
+    data: DotCreditabilityInterval,
+    noDataLabel: string
+): string => {
+    return data
+        ? `${formatPercent(data.lower, 'en-US', '1.0-2')} to ${formatPercent(
+              data.upper,
+              'en-US',
+              '1.0-2'
+          )}`
+        : noDataLabel;
+};
+
+export const getConversionRate = (uniqueBySession: number, sessions: number): string => {
+    if (uniqueBySession !== 0 && sessions !== 0) {
+        return formatPercent(uniqueBySession / sessions, 'en-US', '1.0-2');
+    }
+
+    return '0%';
+};
+
+export const getBayesianVariantResult = (
+    variantName: string,
+    results: DotBayesianVariantResult[]
+): DotBayesianVariantResult => {
+    return results.find((variant) => variant.variant === variantName);
+};
+
+export const getProbabilityToBeBest = (probability: number, noDataLabel: string): string => {
+    return probability ? formatPercent(probability, 'en-US', '1.0-2') : noDataLabel;
+};
+
+export const isPromotedVariant = (experiment: DotExperiment, variantName: string): boolean => {
+    return experiment.trafficProportion.variants.find(({ id }) => id === variantName)?.promoted;
+};
+
+/*End summary functions */

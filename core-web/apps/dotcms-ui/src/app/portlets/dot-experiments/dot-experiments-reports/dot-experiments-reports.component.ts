@@ -2,7 +2,6 @@ import { Observable } from 'rxjs';
 
 import {
     AsyncPipe,
-    JsonPipe,
     LowerCasePipe,
     NgClass,
     NgIf,
@@ -62,7 +61,6 @@ import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.dir
         TagModule,
         ButtonModule,
         TitleCasePipe,
-        JsonPipe,
         DotIconModule
     ],
     templateUrl: './dot-experiments-reports.component.html',
