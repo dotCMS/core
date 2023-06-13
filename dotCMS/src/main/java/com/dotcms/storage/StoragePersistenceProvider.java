@@ -19,7 +19,7 @@ public final class StoragePersistenceProvider {
 
     private final Map<StorageType, StoragePersistenceAPI> storagePersistenceInstances = new ConcurrentHashMap<>();
     
-    private final Map<StorageType, Supplier<StoragePersistenceAPI>> initializers = ImmutableMap.of(
+    private final Map<StorageType, Supplier<StoragePersistenceAPI>> initializers = new ConcurrentHashMap<>(ImmutableMap.of(
             StorageType.FILE_SYSTEM, () -> {
                 final FileSystemStoragePersistenceAPIImpl fileSystemStorage = new FileSystemStoragePersistenceAPIImpl();
                 final String metadataGroupName = Config
@@ -32,7 +32,7 @@ public final class StoragePersistenceProvider {
                 return fileSystemStorage;
             },
             StorageType.DB, DataBaseStoragePersistenceAPIImpl::new
-    );
+    ));
 
     {
         // default chain, creates a storage composited from file system and db
