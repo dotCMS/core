@@ -46,10 +46,11 @@ public class PullFilesServiceImpl implements PullFilesService {
      * @param output      the output option mixin for printing progress
      * @param tree        the tree node representing the file structure
      * @param destination the destination path to save the pulled files
+     * @param overwrite   true to overwrite existing files, false otherwise
      */
     @ActivateRequestContext
     @Override
-    public void pull(OutputOptionMixin output, final TreeNode tree, final String destination) {
+    public void pull(OutputOptionMixin output, final TreeNode tree, final String destination, final boolean overwrite) {
 
         // Collect important information about the tree
         final var treeNodeInfo = FilesUtils.CollectUniqueStatusesAndLanguages(tree);
@@ -65,7 +66,7 @@ public class PullFilesServiceImpl implements PullFilesService {
 
         CompletableFuture<Void> treeBuilderFuture = CompletableFuture.supplyAsync(
                 () -> {
-                    processTree(tree, treeNodeInfo, destination, progressBar);
+                    processTree(tree, treeNodeInfo, destination, overwrite, progressBar);
                     return null;
                 });
 
@@ -95,12 +96,14 @@ public class PullFilesServiceImpl implements PullFilesService {
      * @param tree         the tree node representing the file structure
      * @param treeNodeInfo the collected information about the tree
      * @param destination  the destination path to save the pulled files
+     * @param overwrite    true to overwrite existing files, false otherwise
      * @param progressBar  the progress bar for tracking the pull progress
      */
     @ActivateRequestContext
     public void processTree(final TreeNode tree,
                             final TreeNodeInfo treeNodeInfo,
                             final String destination,
+                            final boolean overwrite,
                             final ConsoleProgressBar progressBar) {
 
         try {
@@ -133,9 +136,9 @@ public class PullFilesServiceImpl implements PullFilesService {
             Collections.sort(sortedWorkingLanguages);
 
             // Process the live tree
-            processTreeByStatus(true, sortedLiveLanguages, tree, rootPath, true, progressBar);
+            processTreeByStatus(true, sortedLiveLanguages, tree, rootPath, overwrite, true, progressBar);
             // Process the working tree
-            processTreeByStatus(false, sortedWorkingLanguages, tree, rootPath, true, progressBar);
+            processTreeByStatus(false, sortedWorkingLanguages, tree, rootPath, overwrite, true, progressBar);
 
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -149,13 +152,14 @@ public class PullFilesServiceImpl implements PullFilesService {
      * @param sortedLanguages      the sorted list of languages
      * @param rootNode             the root node of the file tree
      * @param destination          the destination path to save the pulled files
+     * @param overwrite            true to overwrite existing files, false otherwise
      * @param generateEmptyFolders true to generate empty folders, false otherwise
      * @param progressBar          the progress bar for tracking the pull progress
      */
     @ActivateRequestContext
     private void processTreeByStatus(boolean isLive, List<String> sortedLanguages, TreeNode rootNode,
-                                     final String destination, final boolean generateEmptyFolders,
-                                     final ConsoleProgressBar progressBar) {
+                                     final String destination, final boolean overwrite,
+                                     final boolean generateEmptyFolders, final ConsoleProgressBar progressBar) {
 
         if (sortedLanguages.isEmpty()) {
             return;
@@ -175,6 +179,7 @@ public class PullFilesServiceImpl implements PullFilesService {
                     downloader,
                     filteredRoot,
                     rootPath.toString(),
+                    overwrite,
                     generateEmptyFolders,
                     lang,
                     progressBar);

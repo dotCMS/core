@@ -37,6 +37,10 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
             description = "Pulls directories and their contents recursively.")
     boolean recursive;
 
+    @CommandLine.Option(names = {"-o", "--override"}, defaultValue = "true",
+            description = "Overrides the local files with the ones from the server.")
+    boolean override;
+
     @Inject
     FolderTraversalService folderTraversalService;
 
@@ -87,7 +91,7 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
 
             // ---
             // Now we need to pull the contents based on the tree we found
-            pullAssetsService.pull(output, result, destination);
+            pullAssetsService.pull(output, result, destination, override);
 
             output.info("\n\nPull process finished successfully.");
 

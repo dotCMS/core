@@ -14,6 +14,7 @@ public interface PullFilesService {
      * @param output      the output option mixin for printing progress
      * @param tree        the tree node representing the file structure
      * @param destination the destination path to save the pulled files
+     * @param overwrite   true to overwrite existing files, false otherwise
      */
-    void pull(OutputOptionMixin output, final TreeNode tree, String destination);
+    void pull(OutputOptionMixin output, final TreeNode tree, String destination, boolean overwrite);
 }

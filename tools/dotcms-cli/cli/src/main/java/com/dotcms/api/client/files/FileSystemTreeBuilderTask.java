@@ -25,6 +25,7 @@ public class FileSystemTreeBuilderTask extends RecursiveTask<Void> {
 
     private final TreeNode rootNode;
     private final String destination;
+    private final boolean overwrite;
     private final boolean generateEmptyFolders;
     private final String language;
 
@@ -42,6 +43,7 @@ public class FileSystemTreeBuilderTask extends RecursiveTask<Void> {
      *                             from a given path through the AssetAPI
      * @param rootNode             the root node of the file system tree
      * @param destination          the destination path to save the pulled files
+     * @param overwrite            true to overwrite existing files, false otherwise
      * @param generateEmptyFolders true to generate empty folders, false otherwise
      * @param language             the language of the assets
      * @param progressBar          the progress bar for tracking the pull progress
@@ -50,12 +52,14 @@ public class FileSystemTreeBuilderTask extends RecursiveTask<Void> {
                                      final Downloader downloader,
                                      final TreeNode rootNode,
                                      final String destination,
+                                     final boolean overwrite,
                                      final boolean generateEmptyFolders,
                                      final String language,
                                      final ConsoleProgressBar progressBar) {
         this.logger = logger;
         this.downloader = downloader;
         this.rootNode = rootNode;
+        this.overwrite = overwrite;
         this.destination = destination;
         this.generateEmptyFolders = generateEmptyFolders;
         this.language = language;
@@ -83,6 +87,7 @@ public class FileSystemTreeBuilderTask extends RecursiveTask<Void> {
                         downloader,
                         child,
                         destination,
+                        overwrite,
                         generateEmptyFolders,
                         language,
                         progressBar
@@ -142,7 +147,13 @@ public class FileSystemTreeBuilderTask extends RecursiveTask<Void> {
         // Local SHA-256
         String localFileHash = null;
         if (Files.exists(assetFilePath)) {
-            localFileHash = Utils.Sha256toUnixHash(assetFilePath);
+
+            if (overwrite) {
+                localFileHash = Utils.Sha256toUnixHash(assetFilePath);
+            } else {
+                // If the file already exist, and we are not overwriting files, there is no point in downloading it
+                localFileHash = remoteFileHash; // Fixing hashes so the download is skipped
+            }
         }
 
         // Verify if we need to download the file
@@ -167,8 +178,8 @@ public class FileSystemTreeBuilderTask extends RecursiveTask<Void> {
                 throw new RuntimeException(message, e);
             }
         } else {
-            logger.debug(String.format("Skipping file [%s], it already exists in the file system",
-                    remoteAssetURL));
+            logger.debug(String.format("Skipping file [%s], it already exists in the file system - Override flag [%b]",
+                    remoteAssetURL, overwrite));
         }
 
         // Downloaded file, updating the progress bar
