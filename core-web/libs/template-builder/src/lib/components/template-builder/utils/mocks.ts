@@ -227,7 +227,13 @@ export const MESSAGES_MOCK = {
     'dot.template.builder.comfirmation.popup.message':
         'Are you sure you want to proceed deleting this item?',
     'dot.template.builder.comfirmation.popup.option.no': 'No',
-    'dot.template.builder.comfirmation.popup.option.yes': 'Yes'
+    'dot.template.builder.comfirmation.popup.option.yes': 'Yes',
+    'dot.template.builder.header': 'Header',
+    'dot.template.builder.footer': 'Footer',
+    'dot.template.builder.toolbar.button.layout.label': 'Layout',
+    'dot.template.builder.toolbar.button.theme.label': 'Theme'
 };
 
 export const DOT_MESSAGE_SERVICE_TB_MOCK = new MockDotMessageService(MESSAGES_MOCK);
+
+export const MOCK_TEXT = 'Header';

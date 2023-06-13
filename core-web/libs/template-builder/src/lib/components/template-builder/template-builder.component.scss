@@ -1,17 +1,47 @@
 @use "variables" as *;
 
-.grid-stack-nested {
-    flex: 1;
+:host {
+    position: relative;
 }
 
-.tools {
-    display: flex;
-    gap: $spacing-3;
-    margin-bottom: $spacing-3;
+.grid-stack-nested {
+    flex: 1;
 }
 
 // Class added by the gridstack library when the widget is being dragged
 dotcms-add-widget.ui-draggable-dragging {
     transform: rotate(-3.66deg);
     box-shadow: $md-shadow-6;
+}
+
+dotcms-template-builder-background-columns {
+    position: absolute;
+    inset: 0 3.2rem;
+    z-index: -1;
+}
+
+dotcms-add-widget {
+    cursor: grab;
+    z-index: 3;
+}
+
+p-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+dotcms-template-builder-section {
+    margin-top: $spacing-3;
+    margin-bottom: $spacing-4;
+}
+
+p-divider {
+    height: 48px;
+}
+
+::ng-deep {
+    .p-toolbar-group-end {
+        gap: $spacing-1;
+    }
 }

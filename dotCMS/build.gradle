@@ -107,6 +107,12 @@ project.ext {
 
     tomcatDistBase = "$distLocation/$tomcatDistInstallLocation-$tomcatInstallVersion"
     dotcmsDistBase = "../$tomcatDistInstallLocation-$tomcatInstallVersion"
+
+    parentProjectDir = project.projectDir.getParentFile().getCanonicalFile().toString();
+    mvnCommand =  new File(parentProjectDir, "mvnw").getCanonicalPath().toString();
+    felixSystemBundleSourceFolder = new File(parentProjectDir, "/osgi-base/system-bundles/target/bundle").getCanonicalFile()
+    felixBundleSourceFolder = new File(parentProjectDir, "/osgi-base/core-bundles/target/bundle").getCanonicalFile()
+
 }
 
 // this is way faster than Grgit
@@ -118,11 +124,15 @@ def getCheckedOutGitCommitHash() {
 
 if (project.hasProperty('jarBaseName')) {
     archivesBaseName = "$jarBaseName"
-}else if(System.getenv("DOT_JAR_BASE_NAME") != ""){
+}else if(System.getenv("DOT_JAR_BASE_NAME") != null && System.getenv("DOT_JAR_BASE_NAME") != ""){
     archivesBaseName = "dotcms_" + System.getenv("DOT_JAR_BASE_NAME")
+    println "SETTING JAR BASE NAME TO:>> " + archivesBaseName
 }else {
     archivesBaseName = 'dotcms_' + dotcmsReleaseVersion + '_' + dotcmsReleaseBuild
 }
+println "JAR BASE NAME SET TO:>> " + archivesBaseName
+
+
 
 // Utils
 
@@ -212,7 +222,7 @@ configurations {
 
     if(JavaVersion.current() >= JavaVersion.VERSION_11) {
         all*.exclude group: "xerces"
-        all*.exclude group: "xml-apis", module: "xml-apiss"
+        all*.exclude group: "xml-apis", module: "xml-apis"
         all*.exclude group: "com.sun.activation"
     }
 
@@ -269,26 +279,9 @@ dependencies {
 
     annotationProcessor 'org.immutables:value:2.9.0'
 
-
     //providedCompile "org.immutables:value-annotations:2.9.0" // for annotations
     //providedCompile "org.immutables:builder:2.9.0" // for annotations
     //providedCompile "org.immutables:gson:2.9.0" // for annotations
-
-    /*****  Felix libs need to be placed in the WEB-INF/felix/bundle directory. This was previously handled using a pre-build copy task.  *****/
-    felix group: 'org.apache.felix', name: 'org.apache.felix.fileinstall', version: '3.6.4'
-    felix(group: 'org.apache.felix', name: 'org.apache.felix.configadmin', version: '1.9.2') {
-        transitive = false
-    }
-    felix(group: 'org.osgi', name: 'org.osgi.compendium', version: '4.3.1') {
-        transitive = false
-    }
-
-    felix group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.35'
-    felix group: 'org.slf4j', name: 'jcl-over-slf4j', version: '1.7.35'
-
-    //// Felix system configuration
-    felixsystem group: 'com.dotcms.tika', name: 'com.dotcms.tika', version: '2.7.0'
-    felixsystem group: 'com.dotcms.samlbundle', name: 'com.dotcms.samlbundle', version: '22.03'
 
     //// starter config
 
@@ -317,8 +310,9 @@ import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import java.text.SimpleDateFormat
 
 // Import and apply the dependencies from the dependencies scripts.
-apply from: "$rootDir/dependencies.gradle"
-
+if (!gradle.startParameter.taskNames.contains("generateDependenciesFromMaven")) {
+    apply from: "$rootDir/dependencies.gradle"
+}
 
 
 idea {
@@ -366,31 +360,17 @@ dowloadStarterForTests.description = 'Downloads the test starter zip to the inte
 
 ext.prepareFelixExternalFolder = { String felixExternalFolder ->
 
-    println "Configuring felix in folder [" + felixExternalFolder + "]"
 
     if (felixExternalFolder.startsWith("/")) {// We need an absolute path here
-
         copy {
-            from configurations.felix
+            from felixBundleSourceFolder
             into felixExternalFolder.concat("/bundle")
+            include '**/*.jar'
         }
 
         copy {
             from 'src/main/webapp/WEB-INF/felix/osgi-extra-generated.conf'
             into felixExternalFolder
-        }
-
-
-        copy {
-            from sourceSets.main.compileClasspath
-            into felixExternalFolder.concat("/bundle")
-            include '**/org.apache.felix.http.api*.jar'
-        }
-
-        copy {
-            from sourceSets.main.compileClasspath
-            into felixExternalFolder.concat("/bundle")
-            include '**/org.apache.felix.http.bundle*.jar'
         }
 
     } else {
@@ -405,12 +385,13 @@ task prepareFelixForTests {
     description='Copies the felix bundle jars and the osgi-extra-generated.conf file to the specified felix home location'
 
     doLast {
-
+        println "Preparing felix for integration tests"
+        println integrationTestFelixFolder?.toString()
         //If we want the felix folder to live in a custom folder
         if (project.hasProperty("integrationTestFelixFolder")
                 && integrationTestFelixFolder?.trim()) {
 
-            prepareFelixExternalFolder(integrationTestFelixFolder)
+            prepareFelixExternalFolder(new File(integrationTestFelixFolder).toPath().toString())
         }
     }
 
@@ -582,24 +563,31 @@ class ClonePullTomcatTask extends DefaultTask{
 
 // WAR
 
-task deleteDotCmsUi(type: Delete) {
-    delete "./build/extracted-ui"
+task generateDependenciesFromMavenPre(type: Exec) {
+    workingDir parentProjectDir
+    commandLine mvnCommand, 'install','--also-make','--fail-at-end','--no-transfer-progress','-pl',':generate-gradle-dependencies,:application-bom,:logging-bom,:core-web,:build-parent,:core-bundles,:system-bundles,:com.dotcms.tika-api,:com.dotcms.tika','-DskipTests=true'
+}
+
+task generateDependenciesFromMaven(type: Exec) {
+    workingDir parentProjectDir
+    commandLine mvnCommand, 'validate','--no-transfer-progress','-pl', ':dotcms-core'
+    dependsOn generateDependenciesFromMavenPre
 }
 
 
-task compileUI(type: Exec) {
-    workingDir "${project.projectDir}/../core-web"
-        commandLine '../mvnw', 'clean', 'install', '-DskipTests', "-Dnx.build.options=${nxBuildOptions}"
+task mavenClean(type: Exec) {
+    workingDir parentProjectDir
+    commandLine mvnCommand, 'clean'
 }
+tasks.clean.dependsOn(tasks.mavenClean)
 
-task unpackMavenUI(type: Copy, dependsOn: compileUI) {
+task unpackMavenUI(type: Copy) {
        from(zipTree("${project.projectDir}/../core-web/target/core-web-${mavenUiVersion}.war")) {
                 include "dotAdmin/**"
                 include "dotcms-webcomponents/**"
                 includeEmptyDirs = true
             }
         into layout.buildDirectory.dir("extracted-ui")
-
 }
 
 
@@ -635,6 +623,7 @@ task copyDotCmsWebComponents(type: Copy, dependsOn:['unpackMavenUI']) {
     include 'dotcms-webcomponents/*'
     dependsOn cleanDotCmsWebComponents
 }
+
 
 
 // By default the war task compiles everything under src/main/java into WEB-INF/classes/
@@ -716,50 +705,25 @@ war {
         into 'WEB-INF/lib'
     }
 
-    /*
-    from (copyDotCmsUi)
-    {
-        into 'dotAdmin'
+    // For the time being always add to default locations for consistency
+    // we can later point to external folder still.  We will resolve differently in maven
+
+
+    from (felixSystemBundleSourceFolder) {
+        into "WEB-INF/felix-system/bundle"
+        include '**/*.jar'
     }
 
-    from (copyDotCmsUi)
-     {
-        into 'dotcms-webcomponents'
+    from (felixBundleSourceFolder) {
+        into "WEB-INF/felix/bundle"
+        include '**/*.jar'
     }
-    */
-
     // Verify if the felix folder is outside the war
-    if (!felixFolder.startsWith("/")) { // Relative to the war
-        from(configurations.felix) {
-            into felixFolder.concat("/bundle")
-        }
-
-        from(configurations.runtimeClasspath) {
-            into felixFolder.concat("/bundle")
-            include '**/org.apache.felix.http.api*.jar'
-        }
-
-        from(configurations.runtimeClasspath) {
-            into felixFolder.concat("/bundle")
-            include '**/org.apache.felix.http.bundle*.jar'
-        }
-    } else { //Outside the war
-
-        doLast {
-            prepareFelixExternalFolder(felixFolder)
-            exclude 'WEB-INF/felix'
-        }
+    if (felixFolder.startsWith("/")) { // Relative to the war
+        println("Felix felixFolder outside: " + felixFolder)
+        prepareFelixExternalFolder(felixFolder)
     }
-    // verify system-felix {
-        from(configurations.felixsystem) {
-            into felixSystemFolder.concat("/bundle")
-        }
 
-        from(configurations.runtimeClasspath) {
-            into felixSystemFolder.concat("/bundle")
-            include '**/org.apache.felix.http.api*.jar'
-        }
-    //}
 
     from (configurations.starter) {
         into dotcmsFolder
@@ -770,6 +734,7 @@ war {
         into profilerFolder
         rename ( /glowroot(.+)\.jar/, "profiler.jar" )
     }
+
     from (configurations.profilerDependencies) {
         into profilerFolder + "/lib"
         rename ( /embedded-collector(.+)\.jar/, "glowroot-embedded-collector.jar" )
@@ -1214,6 +1179,22 @@ task upgradeTask  {
             main = "com.dotcms.upgrade.Upgrade"
             classpath += files("../libs/plugins/plugin-com.dotcms.upgradetask.jar") + sourceSets.main.runtimeClasspath
             args = ["${task}"]
+        }
+    }
+}
+
+task printFlatRuntimeDependencies {
+    doLast {
+        configurations.runtimeClasspath.resolvedConfiguration.resolvedArtifacts.each { artifact ->
+            println "${artifact.moduleVersion.id}"
+        }
+    }
+}
+
+task printFlatTestDependencies {
+    doLast {
+        configurations.testRuntimeClasspath.resolvedConfiguration.resolvedArtifacts.each { artifact ->
+            println "${artifact.moduleVersion.id}"
         }
     }
 }

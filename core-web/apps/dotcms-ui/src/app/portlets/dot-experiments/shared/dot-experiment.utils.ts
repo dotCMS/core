@@ -1,12 +1,14 @@
 import { formatPercent } from '@angular/common';
 
 import {
+    ComponentStatus,
     DEFAULT_VARIANT_ID,
     DotBayesianVariantResult,
     DotCreditabilityInterval,
     DotExperiment,
     DotResultDate,
     ExperimentChartDatasetColorsVariants,
+    ExperimentSteps,
     LineChartColorsProperties,
     PROP_NOT_FOUND,
     TIME_14_DAYS,
@@ -59,6 +61,11 @@ export const processExperimentConfigProps = (
 export const daysToMilliseconds = (days: number): number => {
     return days * 24 * 60 * 60 * 1000;
 };
+
+export const checkIfExperimentDescriptionIsSaving = (stepStatusSidebar) =>
+    stepStatusSidebar &&
+    stepStatusSidebar.experimentStep === ExperimentSteps.EXPERIMENT_DESCRIPTION &&
+    stepStatusSidebar.status === ComponentStatus.SAVING;
 
 /* Start function to extract data from the experiment and results endpoint
  *  To put together the summary table in the experiment results screen  */

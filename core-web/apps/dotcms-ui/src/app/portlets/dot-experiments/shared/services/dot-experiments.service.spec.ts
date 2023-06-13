@@ -127,6 +127,14 @@ describe('DotExperimentsService', () => {
         );
     });
 
+    it('should change the description of an experimentId', () => {
+        const newDescription = 'new description';
+        spectator.service.setDescription(EXPERIMENT_ID, newDescription).subscribe();
+        const req = spectator.expectOne(`${API_ENDPOINT}/${EXPERIMENT_ID}`, HttpMethod.PATCH);
+
+        expect(req.request.body['description']).toEqual(newDescription);
+    });
+
     it('should set scheduling to experiment', () => {
         const newScheduling = { startDate: 1, endDate: 2 };
         spectator.service.setScheduling(EXPERIMENT_ID, newScheduling).subscribe();

@@ -25,11 +25,15 @@ import com.dotcms.analytics.metrics.EventType;
 import com.dotcms.analytics.metrics.Metric;
 import com.dotcms.analytics.metrics.MetricType;
 import com.dotcms.analytics.model.AbstractAnalyticsProperties;
+
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.ExperimentDataGen;
+import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.MultiTreeDataGen;
 import com.dotcms.datagen.SiteDataGen;
@@ -52,6 +56,7 @@ import com.dotcms.http.server.mock.MockHttpServerContext.RequestContext;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.JsonUtil;
 import com.dotcms.util.network.IPUtils;
+import com.dotcms.variant.VariantAPI;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -63,9 +68,12 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.htmlpageasset.business.render.PageContextBuilder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.WebKeys;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
@@ -87,6 +95,9 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import net.bytebuddy.utility.RandomString;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -1877,28 +1888,33 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
             final Experiment experiment,
             final String variantName,
             final HTMLPageAsset... pages) throws DotDataException {
+        return createPageViewEvents(firstEventTime, experiment, variantName, Arrays.stream(pages)
+                .map(HTMLPageAsset::getPageUrl)
+                .toArray(String[]::new));
+    }
+    private List<Map<String, String>> createPageViewEvents(final Instant firstEventTime,
+        final Experiment experiment,
+        final String variantName,
+        final String... pagesUrl) {
 
         final String lookBackWindows = new RandomString(20).nextString();
         final List<Map<String, String>> dataList = new ArrayList<>();
         Instant nextEventTriggerTime = firstEventTime;
-        HTMLPageAsset previousPage = null;
+        String previousPageUrl = StringPool.BLANK;
 
-        for (final HTMLPageAsset page : pages) {
+        for (final String pageUrl : pagesUrl) {
             dataList.add(map(
                     "Events.experiment", experiment.getIdentifier(),
                     "Events.variant", variantName,
                     "Events.utcTime", EVENTS_FORMATTER.format(nextEventTriggerTime),
-                    "Events.referer", Optional
-                        .ofNullable(previousPage)
-                        .map(HTMLPageAsset::getPageUrl)
-                        .orElse(StringPool.BLANK),
-                    "Events.url", "http://127.0.0.1:5000" + page.getURI(),
+                    "Events.referer", previousPageUrl,
+                    "Events.url", "http://127.0.0.1:5000/" + pageUrl,
                     "Events.lookBackWindow", lookBackWindows,
                     "Events.eventType", EventType.PAGE_VIEW.getName()
             ));
 
             nextEventTriggerTime = nextEventTriggerTime.plus(1, ChronoUnit.MILLIS);
-            previousPage = page;
+            previousPageUrl = pageUrl;
         }
         return dataList;
     }
@@ -2302,6 +2318,140 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
      }
 
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
+     * When:
+     * - Create 4 pages,: a, B, C and D.
+     * - Create a content type with a text field and pageB as detail page,
+     * and urlMapper equals to: /testpattern/{field}
+     * - Create a new Contentlet with the content type created above and the field value equals to: test
+     * - Create pageview Events for the pages: pageA's url, "/testpattern/test", pageC's Url and pageD's Url
+     *
+     * Should: count one session and one goal success.
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void resultWithUrlMap() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset pageA = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageB = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Field field = new FieldDataGen().next();
+
+        final String prefixUrlMapper = "/testpattern" + System.currentTimeMillis() + "/";
+        final String urlMapper = prefixUrlMapper + "{" + field.variable() + "}";
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .field(field)
+                .detailPage(pageB.getIdentifier())
+                .urlMapPattern(urlMapper)
+                .nextPersisted();
+
+        new ContentletDataGen(contentType)
+                .host(host)
+                .setProperty(field.variable(), "test")
+                .nextPersisted();
+
+        final HTMLPageAsset pageC = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageD = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Metric metric = Metric.builder()
+                .name("Testing Metric")
+                .type(MetricType.REACH_PAGE)
+                .addConditions(
+                        getUrlCondition(pageD.getPageUrl()))
+                .build();
+
+        final Experiment experiment = createExperiment(pageB, metric, new String[]{RandomString.make(15)});
+
+        final String variantName = getNotDefaultVariantName(experiment);
+        final Variant variant = APILocator.getVariantAPI().get(variantName).orElseThrow();
+
+        final Instant firstEventStartDate = Instant.now();
+        final String[] pagesUrl = new String[]{pageA.getPageUrl(),
+                prefixUrlMapper + "test",
+                pageD.getPageUrl(),
+                pageC.getPageUrl()};
+
+        final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(firstEventStartDate,
+                experiment, variantName, pagesUrl);
+
+        final Map<String, List<Map<String, String>>> cubeJsQueryResult =  map("data", cubeJsQueryData);
+
+        APILocator.getExperimentsAPI()
+                .start(experiment.getIdentifier(), APILocator.systemUser());
+
+        IPUtils.disabledIpPrivateSubnet(true);
+
+        final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
+
+        final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment);
+        addContext(mockhttpServer, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        final String queryTotalPageViews = getTotalPageViewsQuery(experiment.id().get(), "DEFAULT", variantName);
+        final List<Map<String, Object>> totalPageViewsResponseExpected = list(
+                map("Events.variant", variantName, "Events.count", "4")
+        );
+
+        addContext(mockhttpServer, queryTotalPageViews,
+                JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
+
+        addCountQueryContext(experiment, 4, mockhttpServer);
+
+        mockhttpServer.start();
+
+        try {
+            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+
+            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+
+            final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+
+            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
+
+            mockhttpServer.validate();
+
+            assertEquals(1, experimentResults.getSessions().getTotal());
+
+            for (VariantResults variantResult : experimentResults.getGoals().get("primary").getVariants().values()) {
+
+                if (variantResult.getVariantName().equals(variantName)) {
+                    assertEquals(variant.description().get(), variantResult.getVariantDescription());
+                    assertEquals(4, variantResult.getTotalPageViews());
+                } else {
+
+                    assertEquals("DEFAULT", variantResult.getVariantName());
+                    assertEquals("Original", variantResult.getVariantDescription());
+                    assertEquals(0, variantResult.getTotalPageViews());
+                }
+
+                final int sessionExpected = variantResult.getVariantName().equals(variantName) ? 1 : 0;
+
+                Assert.assertEquals(sessionExpected, variantResult.getUniqueBySession().getCount());
+                Assert.assertEquals(sessionExpected, variantResult.getMultiBySession());
+                Assert.assertEquals(sessionExpected, (long) experimentResults.getSessions().getVariants().get(variantResult.getVariantName()));
+
+                final Map<String, ResultResumeItem> details = variantResult.getDetails();
+                final ResultResumeItem resultResumeItem = details.get(
+                        SIMPLE_FORMATTER.format(firstEventStartDate));
+
+                assertNotNull(resultResumeItem);
+
+                Assert.assertEquals(sessionExpected, resultResumeItem.getUniqueBySession());
+                Assert.assertEquals(sessionExpected, resultResumeItem.getMultiBySession());
+            }
+        } finally {
+            APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
+
+            IPUtils.disabledIpPrivateSubnet(false);
+            mockhttpServer.stop();
+        }
+    }
+
      /**
      * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
      * When:
@@ -2672,6 +2822,94 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
             APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
             IPUtils.disabledIpPrivateSubnet(false);
             mockhttpServer.stop();
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
+     * When:
+     * - Create a Page.
+     * - Create a content type with a text field and newly created page as detail page,
+     * and urlMapper equals to: /testpattern/{field}
+     * - Create a new Contentlet with the content type created above and the field value equals to: test
+     * - Create and start a Experiment using the newly created page and one no DEFAULT Variant, the
+     * Goal of the Experiment is a PAGE_REACHbut it doed not really matter.
+     * - Try to render the page in LIVE mode and the no Default Variant of the Experiment
+     *
+     * Should: Not got a {@link DotSecurityException}
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void renderUrlMapPageWithExperiment() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Field field = new FieldDataGen().next();
+
+        final String prefixUrlMapper = "/testpattern" + System.currentTimeMillis() + "/";
+        final String urlMapper = prefixUrlMapper + "{" + field.variable() + "}";
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .field(field)
+                .detailPage(experimentPage.getIdentifier())
+                .urlMapPattern(urlMapper)
+                .nextPersisted();
+
+        new ContentletDataGen(contentType)
+                .host(host)
+                .setProperty(field.variable(), "test")
+                .nextPersistedAndPublish();
+
+        final HTMLPageAsset reachPageTarget = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Metric metric = Metric.builder()
+                .name("Testing Metric")
+                .type(MetricType.REACH_PAGE)
+                .addConditions(
+                        getUrlCondition(reachPageTarget.getPageUrl()))
+                .build();
+
+        final Experiment experiment = createExperiment(experimentPage, metric, new String[]{RandomString.make(15)});
+
+        final String variantName = getNotDefaultVariantName(experiment);
+        final Variant variant = APILocator.getVariantAPI().get(variantName).orElseThrow();
+
+        APILocator.getExperimentsAPI()
+                .start(experiment.getIdentifier(), APILocator.systemUser());
+
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpSession session = mock(HttpSession.class);
+        when(request.getSession(false)).thenReturn(session);
+        when(request.getSession()).thenReturn(session);
+        when(request.getSession(true)).thenReturn(session);
+        when(request.getRequestURI()).thenReturn(prefixUrlMapper + "test");
+
+        when(request.getParameter(VariantAPI.VARIANT_KEY)).thenReturn(variantName);
+        when(request.getParameter("host_id")).thenReturn(host.getIdentifier());
+        when(request.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(host);
+
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+
+        try {
+            APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                    PageContextBuilder.builder()
+                            .setPageUri(prefixUrlMapper + "test")
+                            .setUser(APILocator.getUserAPI().getAnonymousUser())
+                            .setPageMode(PageMode.LIVE)
+                            .build(),
+                    request,
+                    response
+            );
+        } finally {
+            APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
+
+
         }
     }
 

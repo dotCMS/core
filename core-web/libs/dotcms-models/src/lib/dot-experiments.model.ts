@@ -141,6 +141,7 @@ export type StepStatus = SidebarStatus & {
 };
 
 export enum ExperimentSteps {
+    EXPERIMENT_DESCRIPTION = 'experimentDescription',
     VARIANTS = 'variants',
     GOAL = 'goal',
     TARGETING = 'targeting',
