@@ -80,8 +80,6 @@ public class FileStorageAPITest {
        if(null == fileStorageAPI){
            IntegrationTestInitService.getInstance().init();
            fileStorageAPI = new FileStorageAPIImpl();
-           // we use a dummy to avoid to use tika
-           MimeTypeUtils.setMimeTypeDetector(path -> "text/plain");
            StoragePersistenceProvider.INSTANCE.get().addStorageInitializer(StorageType.MEMORY, ()-> new MemoryStoragePersistanceAPIImpl());
 
        }
@@ -122,9 +120,9 @@ public class FileStorageAPITest {
 
     /**
      * Method to test: This test tries the {@link CompositeStoragePersistenceAPI#pullObject(String, String, ObjectReaderDelegate)}
-     * Given Scenario: To start will set a chain storage including in the first layer is the file then memory storage and finally db
+     * Given Scenario: To start will set a chain storage including as a first layer the file storage, then memory storage and finally db storage
      * - then will add a few elements to the memory storage
-     * ExpectedResult: The cascate propagation you should ok right, will populate the objects from memory to the upper layer (file)
+     * ExpectedResult: The cascate propagation you should ok right, will populate the objects from memory storage to the upper layer (file storage)
      *
      * @throws Exception
      */
@@ -133,10 +131,10 @@ public class FileStorageAPITest {
         prepareIfNecessary();
 
         // Creates a chain storage with file, memory, and db in that order
-        final JsonWriterDelegate jsonWriterDelegate = new JsonWriterDelegate();
         final JsonReaderDelegate jsonReaderDelegate = new JsonReaderDelegate(String.class);
         final CompositeStoragePersistenceAPIBuilder chainStorageBuilder = new CompositeStoragePersistenceAPIBuilder();
 
+        // we need to clean any previous storage configuration to proceed on the test
         StoragePersistenceProvider.INSTANCE.get().forceInitialize();
         final StoragePersistenceAPI memStorage  = StoragePersistenceProvider.INSTANCE.get().getStorage(StorageType.MEMORY);
         final StoragePersistenceAPI fileStorage = StoragePersistenceProvider.INSTANCE.get().getStorage(StorageType.FILE_SYSTEM);
@@ -170,7 +168,7 @@ public class FileStorageAPITest {
             Assert.assertNotNull("The object on group bucket-test, /path1 should be not null", object1);
             Assert.assertEquals("The object on group bucket-test, /path1 should be Object1", objects[0], object1);
 
-            // the push is async so wait a bit
+            // the push to file storage is async so wait a bit
             DateUtil.sleep(2000);
 
             // Now the file storage should have the objects by propagation
