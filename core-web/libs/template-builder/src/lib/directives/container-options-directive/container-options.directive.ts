@@ -13,10 +13,10 @@ const DEFAULT_LABEL_NAME_INDEX = 'label';
 const DEFAULT_VALUE_NAME_INDEX = 'value';
 
 /**
- * Directive to set a default configuration of Dropdown or MultiSelect (PrimeNG) and translate the label of the options
+ * Directive to set an element's options from dotCMS's containers
  *
  * @export
- * @class DotDropdownDirective
+ * @class ContainerOptionsDirective
  */
 @Directive({
     selector: 'p-dropdown[dotcmsContainerOptions]',
