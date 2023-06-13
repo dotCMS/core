@@ -495,7 +495,8 @@ import org.junit.runners.Suite.SuiteClasses;
         UtilMethodsITest.class,
         PaginatedContentletsIntegrationTest.class,
         ContentletDependenciesTest.class,
-        ContentWorkflowHandlerTest.class
+        ContentWorkflowHandlerTest.class,
+        Task230119MigrateContentToProperPersonaTagAndRemoveDupTags.class
 })
 public class MainSuite {
 

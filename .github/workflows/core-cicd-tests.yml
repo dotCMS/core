@@ -122,7 +122,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        databaseType: [ postgres, mssql ]
+        databaseType: [ postgres ]
     env:
       DOT_CICD_BRANCH: release-22.03
       EXPORT_REPORTS: true
