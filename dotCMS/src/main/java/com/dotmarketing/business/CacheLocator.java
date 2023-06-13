@@ -27,6 +27,7 @@ import com.dotcms.rendering.velocity.viewtools.navigation.NavToolCache;
 import com.dotcms.rendering.velocity.viewtools.navigation.NavToolCacheImpl;
 import com.dotcms.security.apps.AppsCache;
 import com.dotcms.security.apps.AppsCacheImpl;
+import com.dotcms.storage.Chainable404StorageCache;
 import com.dotcms.test.TestUtil;
 import com.dotcms.vanityurl.cache.VanityUrlCache;
 import com.dotcms.vanityurl.cache.VanityUrlCacheImpl;
@@ -299,8 +300,17 @@ public class CacheLocator extends Locator<CacheIndex>{
 	public static GraphQLCache getGraphQLCache() {
 		return (GraphQLCache) getInstance(CacheIndex.GraphQLCache);
 	}
-    
-    /**
+
+	/**
+	 * Returns the Chainable404StorageCache instance
+	 * It is to keep the track of the 404 on the ChainableStorage
+	 * @return Chainable404StorageCache
+	 */
+	public static Chainable404StorageCache getChainable4040StorageCache() {
+		return (Chainable404StorageCache) getInstance(CacheIndex.Chainable4040StorageCache);
+	}
+
+	/**
      * 
      * @return
      */
@@ -469,7 +479,9 @@ enum CacheIndex
 	GraphQLCache("GraphQLCache"),
 	VariantCache("VariantCache"),
 	ExperimentsCache("ExperimentsCache"),
-	AnalyticsCache("AnalyticsCache");
+	AnalyticsCache("AnalyticsCache"),
+
+	Chainable4040StorageCache("Chainable4040StorageCache");
 
 	Cachable create() {
 		switch(this) {
@@ -524,6 +536,7 @@ enum CacheIndex
 			case VariantCache: return new VariantCacheImpl();
 			case ExperimentsCache: return new ExperimentsCacheImpl();
 			case AnalyticsCache: return new AnalyticsCache();
+			case Chainable4040StorageCache: return new Chainable404StorageCache();
 
 		}
 		throw new AssertionError("Unknown Cache index: " + this);

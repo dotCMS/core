@@ -18,7 +18,7 @@ import java.util.concurrent.Future;
  * @author jsanca
  */
 @VisibleForTesting
-public class MemoryStoragePersistanceAPIImpl implements StoragePersistenceAPI {
+public class MemoryMockTestStoragePersistanceAPIImpl implements StoragePersistenceAPI {
 
     private final Map<String, Map<String, Object>> storageMapByGroup = new ConcurrentHashMap<>();
 

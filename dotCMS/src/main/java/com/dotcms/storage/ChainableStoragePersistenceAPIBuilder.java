@@ -5,9 +5,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
 
 /**
- * Builder to create a {@link CompositeStoragePersistenceAPI}
+ * Builder to create a {@link ChainableStoragePersistenceAPI}
  */
-public class CompositeStoragePersistenceAPIBuilder implements Supplier<StoragePersistenceAPI> {
+public class ChainableStoragePersistenceAPIBuilder implements Supplier<StoragePersistenceAPI> {
 
     private final List<StoragePersistenceAPI> storagePersistenceAPIs =  new CopyOnWriteArrayList<>();
 
@@ -16,12 +16,12 @@ public class CompositeStoragePersistenceAPIBuilder implements Supplier<StoragePe
      * @param storagePersistenceAPI
      * @return CompositeStoragePersistenceAPIBuilder
      */
-    public CompositeStoragePersistenceAPIBuilder add(final StoragePersistenceAPI storagePersistenceAPI) {
+    public ChainableStoragePersistenceAPIBuilder add(final StoragePersistenceAPI storagePersistenceAPI) {
         storagePersistenceAPIs.add(storagePersistenceAPI);
         return this;
     }
 
-    public CompositeStoragePersistenceAPIBuilder addFirst(final StoragePersistenceAPI storagePersistenceAPI) {
+    public ChainableStoragePersistenceAPIBuilder addFirst(final StoragePersistenceAPI storagePersistenceAPI) {
         storagePersistenceAPIs.add(0, storagePersistenceAPI);
         return this;
     }
@@ -31,18 +31,18 @@ public class CompositeStoragePersistenceAPIBuilder implements Supplier<StoragePe
      * @param builder CompositeStoragePersistenceAPIBuilder
      * @return CompositeStoragePersistenceAPIBuilder
      */
-    public static CompositeStoragePersistenceAPIBuilder copyFrom(final CompositeStoragePersistenceAPIBuilder builder) {
-        final CompositeStoragePersistenceAPIBuilder newBuilder = new CompositeStoragePersistenceAPIBuilder();
+    public static ChainableStoragePersistenceAPIBuilder copyFrom(final ChainableStoragePersistenceAPIBuilder builder) {
+        final ChainableStoragePersistenceAPIBuilder newBuilder = new ChainableStoragePersistenceAPIBuilder();
         newBuilder.storagePersistenceAPIs.addAll(builder.storagePersistenceAPIs);
         return newBuilder;
     }
 
     /**
-     * Builds a new {@link CompositeStoragePersistenceAPI}
+     * Builds a new {@link ChainableStoragePersistenceAPI}
      * @return CompositeStoragePersistenceAPI
      */
     @Override
     public StoragePersistenceAPI get() {
-        return new CompositeStoragePersistenceAPI(storagePersistenceAPIs);
+        return new ChainableStoragePersistenceAPI(storagePersistenceAPIs);
     }
 }

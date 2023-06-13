@@ -17,23 +17,25 @@ import java.util.Set;
 import java.util.concurrent.Future;
 
 /**
- * This implementations implements a composite pattern, which encapsulates a list of StoragePersistenceAPI
+ * This API implements a chainable pattern, which encapsulates a list of StoragePersistenceAPI
  * This allows to implement chainable storages, for example:
  * - The first layer could be Redis Mem, second layer could be NFS, third layer could be DB and finally S3.
+ * - Also, incorporates a 404 cache layer which is in front of all storage; the goal of this cache is to avoid to look for over all layers
+ * when the path was previously searched on all layers and it wasn't found.
  * @author jsanca
  */
-public class CompositeStoragePersistenceAPI implements StoragePersistenceAPI {
+public class ChainableStoragePersistenceAPI implements StoragePersistenceAPI {
 
     private final List<StoragePersistenceAPI> storagePersistenceAPIList;
     private final ObjectWriterDelegate defaultWriterDelegate;
 
     private final static String SUBMITTER_NAME = Config.getStringProperty("COMPOSITE_STORAGE_SUBMITTER_NAME", "SubmitterCompositeStoragePersistenceAPI");
 
-    public CompositeStoragePersistenceAPI(final List<StoragePersistenceAPI> storagePersistenceAPIList) {
+    public ChainableStoragePersistenceAPI(final List<StoragePersistenceAPI> storagePersistenceAPIList) {
         this(new JsonWriterDelegate(), storagePersistenceAPIList);
     }
 
-    public CompositeStoragePersistenceAPI(final ObjectWriterDelegate defaultWriterDelegate,
+    public ChainableStoragePersistenceAPI(final ObjectWriterDelegate defaultWriterDelegate,
                                           final List<StoragePersistenceAPI> storagePersistenceAPIList) {
 
         this.defaultWriterDelegate = defaultWriterDelegate;
@@ -254,7 +256,7 @@ public class CompositeStoragePersistenceAPI implements StoragePersistenceAPI {
 
         final List<StoragePersistenceAPI> missStorageList = new ArrayList<>();
         for(final StoragePersistenceAPI storage : this.storagePersistenceAPIList) {
-
+            // todo: handle the 404 MemCache404StorageApi
             final Object localObject = Try.of(()->storage.pullObject(groupName, path, readerDelegate)).getOrNull();
             if (null != localObject) {
 

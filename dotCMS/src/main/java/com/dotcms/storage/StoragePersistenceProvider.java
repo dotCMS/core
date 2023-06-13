@@ -36,7 +36,7 @@ public final class StoragePersistenceProvider {
 
     {
         // default chain, creates a storage composited from file system and db
-        final CompositeStoragePersistenceAPIBuilder builder = new CompositeStoragePersistenceAPIBuilder();
+        final ChainableStoragePersistenceAPIBuilder builder = new ChainableStoragePersistenceAPIBuilder();
         builder.add(this.getStorage(StorageType.FILE_SYSTEM));
         builder.add(this.getStorage(StorageType.DB));
         addStorageInitializer(StorageType.DEFAULT_CHAIN, builder);

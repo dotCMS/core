@@ -1,67 +1,14 @@
 package com.dotcms.storage;
 
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.datagen.TestDataUtils.TestFile;
-import com.dotcms.rest.api.v1.temp.DotTempFile;
-import com.dotcms.rest.api.v1.temp.TempFileAPI;
-import com.dotcms.storage.model.BasicMetadataFields;
-import com.dotcms.storage.model.ContentletMetadata;
-import com.dotcms.storage.model.Metadata;
-import com.dotcms.tika.TikaUtils;
-import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotcms.util.MimeTypeUtils;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
-import com.dotmarketing.util.Logger;
-import com.google.common.collect.ImmutableMap;
-import com.tngtech.java.junit.dataprovider.DataProvider;
-import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import io.vavr.Tuple;
-import io.vavr.Tuple2;
 import io.vavr.control.Try;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.felix.framework.OSGIUtil;
 import org.junit.Assert;
 import org.junit.Test;
 
-import javax.servlet.http.HttpServletRequest;
-import java.io.File;
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
-
-import static com.dotcms.datagen.TestDataUtils.FILE_ASSET_1;
-import static com.dotcms.datagen.TestDataUtils.FILE_ASSET_2;
-import static com.dotcms.datagen.TestDataUtils.FILE_ASSET_3;
-import static com.dotcms.datagen.TestDataUtils.getFileAssetContent;
-import static com.dotcms.datagen.TestDataUtils.getMultipleBinariesContent;
-import static com.dotcms.datagen.TestDataUtils.getMultipleImageBinariesContent;
-import static com.dotcms.datagen.TestDataUtils.removeAnyMetadata;
-import static com.dotcms.rest.api.v1.temp.TempFileAPITest.mockHttpServletRequest;
-import static com.dotcms.storage.FileMetadataAPI.BINARY_METADATA_VERSION;
-import static com.dotcms.storage.StoragePersistenceProvider.DEFAULT_STORAGE_TYPE;
-import static com.dotcms.storage.model.Metadata.CUSTOM_PROP_PREFIX;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 public class FileStorageAPITest {
 
@@ -80,13 +27,13 @@ public class FileStorageAPITest {
        if(null == fileStorageAPI){
            IntegrationTestInitService.getInstance().init();
            fileStorageAPI = new FileStorageAPIImpl();
-           StoragePersistenceProvider.INSTANCE.get().addStorageInitializer(StorageType.MEMORY, ()-> new MemoryStoragePersistanceAPIImpl());
+           StoragePersistenceProvider.INSTANCE.get().addStorageInitializer(StorageType.MEMORY, ()-> new MemoryMockTestStoragePersistanceAPIImpl());
 
        }
     }
 
     /**
-     * Method to test: This test tries the {@link MemoryStoragePersistanceAPIImpl}
+     * Method to test: This test tries the {@link MemoryMockTestStoragePersistanceAPIImpl}
      * Given Scenario: Will create a bucket, put a few objects, remover them and non existing ones, remove them
      * ExpectedResult: The bucket has to be created right, the objects must be there and the non existing ones must not
      *
@@ -119,7 +66,7 @@ public class FileStorageAPITest {
     }
 
     /**
-     * Method to test: This test tries the {@link CompositeStoragePersistenceAPI#pullObject(String, String, ObjectReaderDelegate)}
+     * Method to test: This test tries the {@link ChainableStoragePersistenceAPI#pullObject(String, String, ObjectReaderDelegate)}
      * Given Scenario: To start will set a chain storage including as a first layer the file storage, then memory storage and finally db storage
      * - then will add a few elements to the memory storage
      * ExpectedResult: The cascate propagation you should ok right, will populate the objects from memory storage to the upper layer (file storage)
@@ -132,7 +79,7 @@ public class FileStorageAPITest {
 
         // Creates a chain storage with file, memory, and db in that order
         final JsonReaderDelegate jsonReaderDelegate = new JsonReaderDelegate(String.class);
-        final CompositeStoragePersistenceAPIBuilder chainStorageBuilder = new CompositeStoragePersistenceAPIBuilder();
+        final ChainableStoragePersistenceAPIBuilder chainStorageBuilder = new ChainableStoragePersistenceAPIBuilder();
 
         // we need to clean any previous storage configuration to proceed on the test
         StoragePersistenceProvider.INSTANCE.get().forceInitialize();
