@@ -111,8 +111,8 @@ describe('DotExperimentsPublishVariantComponent', () => {
             );
 
             const probabilities = spectator.queryAll(byTestId('variant-percent'));
-            expect(probabilities[1].innerHTML).toEqual('60%');
-            expect(probabilities[0].innerHTML).toEqual('40%');
+            expect(probabilities[1].innerHTML).toEqual('92.31%');
+            expect(probabilities[0].innerHTML).toEqual('7.69%');
 
             expect(spectator.queryAll(byTestId('variant-winner-tag')).length).toEqual(0);
             expect(spectator.queryAll(byTestId('variant-promoted-tag')).length).toEqual(0);
