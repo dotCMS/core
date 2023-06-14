@@ -92,7 +92,7 @@ $screen-lg-max: $screen-xl-min - 1;
 $screen-device-container-max: 1545px;
 
 // FORMS
-$label-color: rgba($color-palette-gray-800, 0.6);
+$label-color: $color-palette-black-op-60;
 $label-font-size: $font-size-sm;
 $form-field-spacing: $spacing-3;
 $form-width: 400px;
