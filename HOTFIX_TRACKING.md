@@ -138,3 +138,4 @@ This maintenance release includes the following code fixes:
 115. https://github.com/dotCMS/core/issues/23395 : When you hit the Publish action from the tasks page you get the Push Publish dialog #23395
 116. https://github.com/dotCMS/core/issues/23924 : Image editor Download button not working #23924
 117. https://github.com/dotCMS/core/issues/24059 : We are not respecting the widget language when you have a multilingual page have a working version in non-default language #24059
+118. https://github.com/dotCMS/core/issues/24133 : User is unable to lock content because of validation limit on locked_by column of contentlet_version_info #24133

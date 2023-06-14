@@ -9,11 +9,14 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import static org.junit.Assert.assertNotNull;
 
 public class DotDatabaseMetaDataTest extends BaseWorkflowIntegrationTest {
 
@@ -33,7 +36,7 @@ public class DotDatabaseMetaDataTest extends BaseWorkflowIntegrationTest {
                 ("contentlet", "structure",
                         Arrays.asList("structure_inode"), Arrays.asList("inode"));
 
-        Assert.assertNotNull(foreignKey);
+        assertNotNull(foreignKey);
         Assert.assertEquals("FK_structure_inode".toLowerCase(), foreignKey.getForeignKeyName().toLowerCase());
     }
 
@@ -43,7 +46,7 @@ public class DotDatabaseMetaDataTest extends BaseWorkflowIntegrationTest {
         //alter table contentlet add constraint FK_structure_inode foreign key (structure_inode) references structure(inode);
         final List<ForeignKey> foreignKeys = new DotDatabaseMetaData().getForeignKeys("contentlet");
 
-        Assert.assertNotNull(foreignKeys);
+        assertNotNull(foreignKeys);
         Assert.assertTrue(foreignKeys.size()>0);
     }
 
@@ -81,6 +84,22 @@ public class DotDatabaseMetaDataTest extends BaseWorkflowIntegrationTest {
             Assert.assertTrue(lowerStrings.contains("title"));
             Assert.assertTrue(lowerStrings.contains("mod_date"));
         }
+    }
+
+    // the result should not be null
+    @Test
+    public void getModifiedColumnLength() throws SQLException, DotDataException {
+        final String colName = "locked_by";
+        final String tblName = "contentlet_version_info";
+
+        if (DbConnectionFactory.isPostgres()){
+            final String query = "alter table "+tblName+" alter column locked_by type varchar (100);";
+            final DotConnect dotConnect = new DotConnect();
+            dotConnect.executeStatement(query);
+        }
+
+        final Map<String, String> result = new DotDatabaseMetaData().getModifiedColumnLength(tblName, colName);
+        assertNotNull(result);
     }
 
 }

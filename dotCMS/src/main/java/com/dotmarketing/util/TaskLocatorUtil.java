@@ -356,6 +356,7 @@ public class TaskLocatorUtil {
 		ret.add(Task220402UpdateDateTimezones.class);
 		ret.add(Task220912UpdateCorrectShowOnMenuProperty.class);
 		ret.add(Task230119MigrateContentToProperPersonaTagAndRemoveDupTags.class);
+		ret.add(Task230426AlterVarcharLengthOfLockedByCol.class);
 		return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
 
