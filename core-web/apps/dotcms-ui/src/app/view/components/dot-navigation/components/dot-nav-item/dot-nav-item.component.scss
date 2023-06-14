@@ -10,7 +10,7 @@
         transition: background-color $basic-speed ease;
 
         &:hover {
-            background-color: rgba($white, 0.1);
+            background-color: $color-palette-white-op-10;
 
             dot-sub-nav {
                 height: auto !important;

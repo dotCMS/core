@@ -5,7 +5,7 @@ dot-asset-drop-zone {
         --mdc-dialog-scrim-color: transparent;
         --mdc-dialog-max-width: 400px;
         align-items: center;
-        background-color: rgba(255, 255, 255, 0.8);
+        background-color: $color-palette-white-op-80;
         border: 3px solid transparent;
         bottom: 0;
         display: flex;

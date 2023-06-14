@@ -452,7 +452,7 @@ a.p-button:hover,
 }
 
 .p-button .p-ink {
-    background-color: rgba($white, 0.32);
+    background-color: $color-palette-white-op-30;
 }
 
 .p-button:disabled {
