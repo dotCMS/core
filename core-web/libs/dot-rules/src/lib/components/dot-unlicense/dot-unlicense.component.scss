@@ -42,7 +42,7 @@
             text-align: left;
 
             a {
-                color: var(--color-main);
+                color: $color-palette-primary-500;
                 font-size: $font-size-md;
             }
         }
