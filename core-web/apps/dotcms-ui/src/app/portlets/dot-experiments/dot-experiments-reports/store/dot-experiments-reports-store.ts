@@ -19,11 +19,10 @@ import {
     DEFAULT_VARIANT_ID,
     DialogStatus,
     DotExperiment,
-    DotExperimentDetail,
     DotExperimentResults,
     DotExperimentStatusList,
+    DotExperimentVariantDetail,
     DotResultGoal,
-    DotResultSimpleVariant,
     DotResultVariant,
     ExperimentLineChartDatasetDefaultProperties,
     ReportSummaryLegendByBayesianStatus,
@@ -31,8 +30,13 @@ import {
     Variant
 } from '@dotcms/dotcms-models';
 import {
+    getBayesianVariantResult,
+    getConversionRate,
+    getConversionRateRage,
     getParsedChartData,
+    getProbabilityToBeBest,
     getPropertyColors,
+    isPromotedVariant,
     orderVariants
 } from '@portlets/dot-experiments/shared/dot-experiment.utils';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
@@ -60,7 +64,7 @@ export interface VmReportExperiment {
     experiment: DotExperiment;
     results: DotExperimentResults;
     chartData: ChartData<'line'> | null;
-    detailData: DotExperimentDetail[];
+    detailData: DotExperimentVariantDetail[];
     isLoading: boolean;
     hasEnoughSessions: boolean;
     status: ComponentStatus;
@@ -74,8 +78,10 @@ export interface VmPromoteVariant {
     experimentId: string;
     showDialog: boolean;
     isSaving: boolean;
-    variants: DotResultSimpleVariant[] | null;
+    variants: DotExperimentVariantDetail[] | null;
 }
+
+const NOT_ENOUGH_DATA_LABEL = 'Not enough data';
 
 @Injectable()
 export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsReportsState> {
@@ -104,24 +110,6 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
 
     readonly isSavingPromotedDialog$: Observable<boolean> = this.select(
         ({ promoteDialog }) => promoteDialog.status === ComponentStatus.SAVING
-    );
-
-    readonly getResultVariant$: Observable<DotResultSimpleVariant[]> = this.select(
-        ({ results, experiment }) =>
-            Object.values(results.goals.primary.variants).map(
-                ({ variantName, variantDescription, uniqueBySession }) => ({
-                    id: variantName,
-                    name: variantDescription,
-                    isPromoted: experiment.trafficProportion.variants.find(
-                        ({ id }) => id === variantName
-                    )?.promoted,
-                    variantPercentage: uniqueBySession.variantPercentage,
-                    isWinner: results.bayesianResult.suggestedWinner === variantName,
-                    probabilityToWin: results.bayesianResult.probabilities.find(
-                        ({ variant }) => variant === variantName
-                    )?.value
-                })
-            )
     );
 
     readonly hasEnoughSessions$: Observable<boolean> = this.select(
@@ -179,23 +167,21 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
             : null
     );
 
-    readonly getDetailData$: Observable<DotExperimentDetail[]> = this.select(({ results }) =>
-        results
-            ? Object.values(results.goals.primary.variants).map((variant) => ({
-                  id: variant.variantName,
-                  name: variant.variantDescription,
-                  trafficSplit: 'TBD',
-                  pageViews: variant.totalPageViews,
-                  sessions: results.sessions.variants[variant.variantName],
-                  clicks: variant.uniqueBySession.count,
-                  bestVariant: variant.uniqueBySession.totalPercentage / 100,
-                  improvement:
-                      (variant.uniqueBySession.totalPercentage -
-                          results.goals.primary.variants.DEFAULT.uniqueBySession.totalPercentage) /
-                      100,
-                  isWinner: results.bayesianResult.suggestedWinner === variant.variantName
-              }))
-            : []
+    readonly getDetailData$: Observable<DotExperimentVariantDetail[]> = this.select(
+        ({ experiment, results }) => {
+            const noData = this.dotMessageService.get(NOT_ENOUGH_DATA_LABEL);
+
+            return results
+                ? Object.values(results.goals.primary.variants).map((variant) => {
+                      return this.getDotExperimentVariantDetail(
+                          experiment,
+                          results,
+                          variant,
+                          noData
+                      );
+                  })
+                : [];
+        }
     );
 
     readonly loadExperimentAndResults = this.effect((experimentId$: Observable<string>) =>
@@ -318,7 +304,7 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
     readonly promotedDialogVm$: Observable<VmPromoteVariant> = this.select(
         this.state$,
         this.isShowPromotedDialog$,
-        this.getResultVariant$,
+        this.getDetailData$,
         this.isSavingPromotedDialog$,
         ({ experiment }, showDialog, variants, isSaving) => ({
             experimentId: experiment.id,
@@ -398,5 +384,38 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
         return experiment.status === DotExperimentStatusList.ENDED
             ? { ...ReportSummaryLegendByBayesianStatus.WINNER }
             : { ...ReportSummaryLegendByBayesianStatus.PRELIMINARY_WINNER };
+    }
+
+    private getDotExperimentVariantDetail(
+        experiment: DotExperiment,
+        results: DotExperimentResults,
+        variant: DotResultVariant,
+        noDataLabel: string
+    ): DotExperimentVariantDetail {
+        const variantBayesianResult = getBayesianVariantResult(
+            variant.variantName,
+            results.bayesianResult.results
+        );
+
+        return {
+            id: variant.variantName,
+            name: variant.variantDescription,
+            conversions: variant.uniqueBySession.count,
+            conversionRate: getConversionRate(
+                variant.uniqueBySession.count,
+                results.sessions.variants[variant.variantName]
+            ),
+            conversionRateRange: getConversionRateRage(
+                variantBayesianResult?.credibilityInterval,
+                noDataLabel
+            ),
+            sessions: results.sessions.variants[variant.variantName],
+            probabilityToBeBest: getProbabilityToBeBest(
+                variantBayesianResult?.probability,
+                noDataLabel
+            ),
+            isWinner: results.bayesianResult.suggestedWinner === variant.variantName,
+            isPromoted: isPromotedVariant(experiment, variant.variantName)
+        };
     }
 }

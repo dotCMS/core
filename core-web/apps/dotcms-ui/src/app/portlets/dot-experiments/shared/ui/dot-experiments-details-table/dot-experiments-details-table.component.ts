@@ -9,7 +9,7 @@ import {
 
 import { SkeletonModule } from 'primeng/skeleton';
 
-import { ComponentStatus, DotExperimentDetail } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotExperimentVariantDetail } from '@dotcms/dotcms-models';
 import { DotMessagePipeModule } from '@dotcms/ui';
 import { DotStringTemplateOutletDirective } from '@portlets/shared/directives/dot-string-template-outlet.directive';
 
@@ -46,7 +46,7 @@ export class DotExperimentsDetailsTableComponent {
 
     //** List of data to display, without templates, use the index of the objet as a header */
     @Input()
-    data!: DotExperimentDetail[];
+    data!: DotExperimentVariantDetail[];
 
     @Input()
     isLoading = false;

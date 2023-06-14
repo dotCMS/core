@@ -129,6 +129,7 @@ import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactoryT
 import com.dotmarketing.portlets.containers.business.ContainerFactoryImplTest;
 import com.dotmarketing.portlets.containers.business.ContainerStructureFinderStrategyResolverTest;
 import com.dotmarketing.portlets.contentlet.business.ContentletCacheImplTest;
+import com.dotmarketing.portlets.contentlet.business.HostFactoryImplTest;
 import com.dotmarketing.portlets.contentlet.business.web.ContentletWebAPIImplIntegrationTest;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependenciesTest;
 import com.dotmarketing.portlets.contentlet.model.IntegrationResourceLinkTest;
@@ -642,7 +643,8 @@ import org.junit.runners.Suite.SuiteClasses;
 //        AnalyticsAPIImplTest.class,
 //        AccessTokenRenewJobTest.class,
         AssetPathResolverImplTest.class,
-        CMSUrlUtilIntegrationTest.class
+        CMSUrlUtilIntegrationTest.class,
+        HostFactoryImplTest.class
 })
 
 public class MainSuite {
