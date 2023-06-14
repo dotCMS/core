@@ -50,6 +50,9 @@ COPY ROOT/srv/entrypoint.sh /srv/entrypoint.sh
 COPY ROOT/srv/plugins /srv/plugins
 RUN bin/elasticsearch-plugin install discovery-file
 
+## DELETE LOG4Shell JNDI LOOKUP CLASS
+RUN find . -name "*log4j-core-*.jar" -exec zip -q -d {} org/apache/logging/log4j/core/lookup/JndiLookup.class \;
+
 
 RUN chown -R $USER_NAME:$USER_NAME /srv
 RUN chown -R $USER_NAME:$USER_NAME /data

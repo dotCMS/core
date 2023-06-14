@@ -97,6 +97,11 @@ ARG USER_GID="65001"
 
 COPY --from=container-base / /
 
+## DELETE LOG4Shell JNDI LOOKUP CLASS
+RUN find /srv -name "*log4j-core-*.jar" -exec zip -q -d {} org/apache/logging/log4j/core/lookup/JndiLookup.class \;
+
+
+
 # Switching to non-root user to install SDKMAN! 
 USER $USER_UID:$USER_GID
 ENV JAVA_HOME="/java"
