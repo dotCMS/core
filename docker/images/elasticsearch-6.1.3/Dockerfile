@@ -43,8 +43,14 @@ RUN set -ex; \
 	export ES_JAVA_OPTS='-Xms512m -Xmx2g'; \
 	elasticsearch --version;
 	
+	
+	
 COPY ROOT/srv/config/ /srv/config
 COPY ROOT/srv/entrypoint.sh /srv/entrypoint.sh
+COPY ROOT/srv/plugins /srv/plugins
+RUN bin/elasticsearch-plugin install discovery-file
+
+
 RUN chown -R $USER_NAME:$USER_NAME /srv
 RUN chown -R $USER_NAME:$USER_NAME /data
 RUN chown -R $USER_NAME:$USER_NAME /logs

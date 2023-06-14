@@ -1,7 +1,7 @@
 version: '3.5'
 
 # This works because each elasticsearch instance is publishing its address/port on the 
-# External IP - 192.168.86.33
+# External IP - 192.168.86.30
 
 volumes:
   esdata1:
@@ -15,13 +15,13 @@ networks:
 
 services:
   elasticsearch1:
-    image:  dotcms/elasticsearch:6.1.3_for_5.2.8
+    image:  dotcms/elasticsearch:6.1.3_for_5.1.6
     ports:
       - "9201:9200"
-      - "192.168.86.33:9301:9301"
+      - "192.168.86.30:9301:9301"
     environment:
       "DOTCMS_ES_CLUSTER": 'dotcmsProdCluster'
-      "ES_NETWORK_PUBLISH_HOST": 192.168.86.33
+      "ES_NETWORK_PUBLISH_HOST": 192.168.86.30
       "ES_DISCOVERY_NODE": "elasticsearch1"
       "ES_TRANSPORT_PORT": 9301
       "ES_MIN_MASTER_NODES": 2
@@ -33,15 +33,15 @@ services:
 
 
   elasticsearch2:
-    image:  dotcms/elasticsearch:6.1.3_for_5.2.8
+    image:  dotcms/elasticsearch:6.1.3_for_5.1.6
     depends_on:
       - elasticsearch1
     ports:
-      - "192.168.86.33:9302:9302"
+      - "192.168.86.30:9302:9302"
     environment:
       "DOTCMS_ES_CLUSTER": 'dotcmsProdCluster'
-      "ES_DISCOVERY_NODE": "192.168.86.33:9301"
-      "ES_NETWORK_PUBLISH_HOST": 192.168.86.33
+      "ES_DISCOVERY_NODE": "192.168.86.30:9301"
+      "ES_NETWORK_PUBLISH_HOST": 192.168.86.30
       "ES_TRANSPORT_PORT": 9302
       "ES_MIN_MASTER_NODES": 2
       "ES_NODE_MASTER": true
@@ -51,15 +51,15 @@ services:
       - esdata2:/data
 
   elasticsearch3:
-    image:  dotcms/elasticsearch:6.1.3_for_5.2.8
+    image:  dotcms/elasticsearch:6.1.3_for_5.1.6
     depends_on:
       - elasticsearch1
     ports:
       - "9303:9303"
     environment:
       "DOTCMS_ES_CLUSTER": 'dotcmsProdCluster'
-      "ES_DISCOVERY_NODE": "192.168.86.33:9301"
-      "ES_NETWORK_PUBLISH_HOST": 192.168.86.33
+      "ES_DISCOVERY_NODE": "192.168.86.30:9301"
+      "ES_NETWORK_PUBLISH_HOST": 192.168.86.30
       "ES_TRANSPORT_PORT": 9303
       "ES_MIN_MASTER_NODES": 2
       "ES_NODE_MASTER": true
@@ -69,7 +69,7 @@ services:
       - esdata3:/data
 
   dotcms:
-    image: dotcms/dotcms:5.2.8.5_latest_SNAPSHOT
+    image: dotcms/dotcms:5.1.6.k_latest_SNAPSHOT
     #entrypoint: bash -c 'sleep infinity'
     environment:
         CMS_JAVA_OPTS: '-Xmx1g '
@@ -82,8 +82,8 @@ services:
         ES_NODE_MASTER: false
         ES_DATA_DIR: /data/local
         ES_TRANSPORT_PORT: 9304
-        ES_DISCOVERY_NODE: 192.168.86.33:9301
-        ES_NETWORK_PUBLISH_HOST: 192.168.86.33
+        ES_DISCOVERY_NODE: 192.168.86.30:9301
+        ES_NETWORK_PUBLISH_HOST: 192.168.86.30
         xUFoN0UCBp: FEHXWPZdB9
     depends_on:
       - elasticsearch1
@@ -95,10 +95,10 @@ services:
       - db_net
     ports:
       - "8082:8082"
-      - "192.168.86.33:9304:9304"
+      - "192.168.86.30:9304:9304"
 
   db:
-    image: postgres:15
+    image: postgres:13
     command: postgres -c 'max_connections=400' -c 'shared_buffers=128MB'
     environment:
         "POSTGRES_USER": 'dotcmsdbuser'
