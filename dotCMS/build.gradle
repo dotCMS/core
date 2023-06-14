@@ -386,7 +386,6 @@ task prepareFelixForTests {
 
     doLast {
         println "Preparing felix for integration tests"
-        println integrationTestFelixFolder?.toString()
         //If we want the felix folder to live in a custom folder
         if (project.hasProperty("integrationTestFelixFolder")
                 && integrationTestFelixFolder?.trim()) {
