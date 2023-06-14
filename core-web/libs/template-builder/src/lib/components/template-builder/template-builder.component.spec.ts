@@ -4,6 +4,7 @@ import { GridItemHTMLElement } from 'gridstack';
 
 import { AsyncPipe, NgFor } from '@angular/common';
 
+import { DividerModule } from 'primeng/divider';
 import { ToolbarModule } from 'primeng/toolbar';
 
 import { take } from 'rxjs/operators';
@@ -20,7 +21,12 @@ import { TemplateBuilderSectionComponent } from './components/template-builder-s
 import { DotGridStackWidget } from './models/models';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { TemplateBuilderComponent } from './template-builder.component';
+import { parseFromDotObjectToGridStack } from './utils/gridstack-utils';
 import { DOT_MESSAGE_SERVICE_TB_MOCK, FULL_DATA_MOCK } from './utils/mocks';
+
+global.structuredClone = jest.fn((val) => {
+    return JSON.parse(JSON.stringify(val));
+});
 
 describe('TemplateBuilderComponent', () => {
     let spectator: SpectatorHost<TemplateBuilderComponent>;
@@ -33,13 +39,13 @@ describe('TemplateBuilderComponent', () => {
             AsyncPipe,
             AddWidgetComponent,
             DotMessagePipeModule,
-            DotMessagePipeModule,
             TemplateBuilderActionsComponent,
             TemplateBuilderBackgroundColumnsComponent,
             TemplateBuilderBoxComponent,
             TemplateBuilderRowComponent,
             TemplateBuilderSectionComponent,
-            ToolbarModule
+            ToolbarModule,
+            DividerModule
         ],
         providers: [
             DotTemplateBuilderStore,
@@ -113,10 +119,14 @@ describe('TemplateBuilderComponent', () => {
     });
 
     describe('layoutChange', () => {
-        it('should emit layoutChange when the store changes', () => {
+        it('should emit layoutChange when the store changes', (done) => {
             const layoutChangeMock = jest.spyOn(spectator.component.layoutChange, 'emit');
-            spectator.component.deleteRow('123');
-            expect(layoutChangeMock).toHaveBeenCalled();
+            store.init(parseFromDotObjectToGridStack(FULL_DATA_MOCK));
+            store.items$.pipe(take(1)).subscribe(() => {
+                // const body = parseFromGridStackToDotObject(items);
+                expect(layoutChangeMock).toHaveBeenCalledWith({ body: FULL_DATA_MOCK });
+                done();
+            });
         });
     });
 });
