@@ -1,15 +1,15 @@
+@forward "../shared/common";
+@forward "../shared/colors";
+@forward "../shared/fonts";
+@forward "../shared/shadows";
+@forward "../shared/spacing";
+
 @use "sass:math";
 @use "../shared/common" as *;
 @use "../shared/colors" as *;
 @use "../shared/fonts" as *;
 @use "../shared/shadows" as *;
 @use "../shared/spacing" as *;
-
-@forward "../shared/common";
-@forward "../shared/colors";
-@forward "../shared/fonts";
-@forward "../shared/shadows";
-@forward "../shared/spacing";
 
 $input-border-color-hover: $color-palette-primary;
 $input-inset-shadow: inset 0 0 0 1px $color-palette-primary, inset 0 0 0 1px $color-palette-primary,
