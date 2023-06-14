@@ -253,14 +253,6 @@ $table-border: 1px solid $color-palette-gray-200;
         .selected {
             background-color: #e0e9f6;
         }
-
-        // &:not(.trIdxActive, .trIdxNothing):hover {
-        //   background-color: rgba($color-palette-primary-400, 0.05);
-        // }
-
-        // &:not(.trIdxActive, .trIdxNothing):nth-child(even) {
-        //   background-color: $color-palette-gray-200;
-        // }
     }
 
     th,

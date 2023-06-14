@@ -81,12 +81,12 @@ $button-sec: (
         border: solid 1px $color-palette-primary
     ),
     focus: (
-        background: rgba($color-palette-primary, $button-hover-background-opacity),
+        background: $color-palette-primary-op-10,
         color: $color-palette-primary,
         border: $button-border
     ),
     active: (
-        background: rgba($color-palette-primary, 0.26),
+        background: $color-palette-primary-op-30,
         color: $color-palette-primary,
         border: $button-border
     ),
@@ -107,7 +107,7 @@ $selectbutton-hover-bgcolor: $white;
 $selectbutton-hover-border: $button-border;
 $selectbutton-hover-shadow: $md-shadow-2;
 
-$selectbutton-button-hover-bgcolor: rgba($color-palette-secondary, 0.1);
+$selectbutton-button-hover-bgcolor: $color-palette-primary-op-10;
 $selectbutton-button-active-bgcolor: transparent;
 $selectbutton-button-active-color: $color-palette-gray-800;
 
@@ -204,7 +204,7 @@ $dialog-close-button-hover-color: $black;
 
 // INPUTSWITCH
 $inputswitch-normal-track-color: rgba($black, 0.1);
-$inputswitch-checked-track-color: rgba($color-palette-primary, 0.38);
+$inputswitch-checked-track-color: $color-palette-primary-op-40;
 
 $inputswitch-normal-thumb-color: $white;
 $inputswitch-checked-thumb-color: $color-palette-primary;

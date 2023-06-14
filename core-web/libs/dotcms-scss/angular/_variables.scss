@@ -19,11 +19,11 @@ $input-border-color-focus: $color-palette-gray-500;
 $input-bg-color: $color-palette-gray-500;
 $input-bg-color-hover: $color-palette-gray-500;
 
-$bg-highlight: rgba($color-palette-primary, 0.12);
+$bg-highlight: $color-palette-primary-op-10;
 $text-color-highlight: $color-palette-primary;
-$border-color-highlight: rgba($color-palette-primary, 0.12);
+$border-color-highlight: $color-palette-primary-op-10;
 
-$focus-bg: rgba($color-palette-primary, 0.12);
+$focus-bg: $color-palette-primary-op-10;
 $focus-text-color: $black;
 
 $bg-hover: $color-palette-gray-200;

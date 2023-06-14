@@ -1,16 +1,26 @@
 $black: #14151a;
 $white: #ffffff;
 
-$color-palette-primary-100: #f7f9fe;
-$color-palette-primary-200: #edf3ff;
-$color-palette-primary-300: #bccbf6;
-$color-palette-primary-400: #819eee;
-$color-palette-primary-500: var(--color-main, #4a90e2);
-$color-palette-primary-600: var(--color-main, #4656ba);
-$color-palette-primary-700: #34408b;
-$color-palette-primary-800: #0a2680;
-$color-palette-primary-900: #081d63;
+$color-palette-primary-100: var(--color-palette-primary-100);
+$color-palette-primary-200: var(--color-palette-primary-200);
+$color-palette-primary-300: var(--color-palette-primary-300);
+$color-palette-primary-400: var(--color-palette-primary-400);
+$color-palette-primary-500: var(--color-palette-primary-500);
+$color-palette-primary-600: var(--color-palette-primary-600);
+$color-palette-primary-700: var(--color-palette-primary-700);
+$color-palette-primary-800: var(--color-palette-primary-800);
+$color-palette-primary-900: var(--color-palette-primary-900);
 $color-palette-primary: $color-palette-primary-500;
+
+$color-palette-primary-op-10: var(--color-palette-primary-op-10);
+$color-palette-primary-op-20: var(--color-palette-primary-op-20);
+$color-palette-primary-op-30: var(--color-palette-primary-op-30);
+$color-palette-primary-op-40: var(--color-palette-primary-op-40);
+$color-palette-primary-op-50: var(--color-palette-primary-op-50);
+$color-palette-primary-op-60: var(--color-palette-primary-op-60);
+$color-palette-primary-op-70: var(--color-palette-primary-op-70);
+$color-palette-primary-op-80: var(--color-palette-primary-op-80);
+$color-palette-primary-op-90: var(--color-palette-primary-op-90);
 
 $color-palette-secondary-100: #faf6ff;
 $color-palette-secondary-200: #e5d1ff;
