@@ -66,6 +66,77 @@ public class FileStorageAPITest {
     }
 
     /**
+     * Method to test: This test tries the {@link ChainableStoragePersistenceAPI#existsObject(String, String)} (String, String, ObjectReaderDelegate)}
+     * Given Scenario: Creates a group and stores some objects on it
+     * ExpectedResult: The objects should be in each storage configurated on the chainable storage, after the delete the objects should be not on the storages
+     *
+     * @throws Exception
+     */
+    @Test
+    public void Test_Chainable_Storage_check_exist_object() throws Exception {
+        prepareIfNecessary();
+
+        // Creates a chain storage with file, memory, and db in that order
+        final JsonReaderDelegate jsonReaderDelegate = new JsonReaderDelegate(String.class);
+        final JsonWriterDelegate jsonWriterDelegate = new JsonWriterDelegate();
+        final ChainableStoragePersistenceAPIBuilder chainStorageBuilder = new ChainableStoragePersistenceAPIBuilder();
+
+        // we need to clean any previous storage configuration to proceed on the test
+        StoragePersistenceProvider.INSTANCE.get().forceInitialize();
+        final StoragePersistenceAPI memStorage  = StoragePersistenceProvider.INSTANCE.get().getStorage(StorageType.MEMORY);
+        final StoragePersistenceAPI fileStorage = StoragePersistenceProvider.INSTANCE.get().getStorage(StorageType.FILE_SYSTEM);
+
+        // file -> mem -
+        chainStorageBuilder.add(fileStorage);
+        chainStorageBuilder.add(memStorage);
+
+        StoragePersistenceProvider.INSTANCE.get().addStorageInitializer(StorageType.CHAIN3, chainStorageBuilder);
+        final StoragePersistenceAPI chainStorage   = StoragePersistenceProvider.INSTANCE.get().getStorage(StorageType.CHAIN3);
+
+        // creates the group on all storages
+        final String groupName = "bucket-test2-stores";
+
+        try {
+
+            // this creates all groups on all storages on the chain
+            Try.run(() -> chainStorage.createGroup(groupName)).getOrElseThrow((e) -> new RuntimeException(e));
+
+            Assert.assertTrue("The group should exists for the storage: " + chainStorage, Try.of(()->chainStorage.existsGroup(groupName)).getOrElse(false));
+
+            Stream.of(fileStorage, memStorage).forEach(storage -> {
+                Assert.assertTrue("The group should exists for the storage: " + storage, Try.of(()->storage.existsGroup(groupName)).getOrElse(false));
+            });
+
+            // Now create a few objects on the mem storage
+            final String[] paths = {"/path1.txt", "/path2.txt", "/path3.txt"};
+            final String[] objects = {"Object1", "Object2", "Object3"};
+            for (int i = 0; i < paths.length; i++) {
+                chainStorage.pushObject(groupName, paths[i], jsonWriterDelegate, objects[i], null);
+            }
+
+            Assert.assertTrue("Path1 should exist on mem storage", memStorage.existsObject(groupName, "/path1.txt"));
+            Assert.assertTrue("Path1 should exist on file storage", fileStorage.existsObject(groupName, "/path1.txt"));
+            Assert.assertTrue("Path1 should exist on file storage", chainStorage.existsObject(groupName, "/path1.txt"));
+
+            Assert.assertFalse("Path1 should exist on mem storage", memStorage.existsObject(groupName, "/noexist.txt"));
+            Assert.assertFalse("Path1 should exist on file storage", fileStorage.existsObject(groupName, "/noexist.txt"));
+            Assert.assertFalse("Path1 should exist on file storage", chainStorage.existsObject(groupName, "/noexist.txt"));
+
+            Assert.assertTrue("Path1 should exist on file storage", chainStorage.deleteObjectAndReferences(groupName, "/path1.txt"));
+
+            Assert.assertFalse("Path1 should exist on mem storage", memStorage.existsObject(groupName, "/path1.txt"));
+            Assert.assertFalse("Path1 should exist on file storage", fileStorage.existsObject(groupName, "/path1.txt"));
+            Assert.assertFalse("Path1 should exist on file storage", chainStorage.existsObject(groupName, "/path1.txt"));
+
+        } finally {
+
+            Stream.of(fileStorage).forEach(storage -> {
+                Try.run(() -> storage.deleteGroup(groupName)).getOrElseThrow((e) -> new RuntimeException(e));
+            });
+        }
+    }
+
+    /**
      * Method to test: This test tries the {@link ChainableStoragePersistenceAPI#pullObject(String, String, ObjectReaderDelegate)}
      * Given Scenario: To start will set a chain storage including as a first layer the file storage, then memory storage and finally db storage
      * - then will add a few elements to the memory storage
@@ -103,6 +174,8 @@ public class FileStorageAPITest {
             // this creates all groups on all storages on the chain
             Try.run(() -> chainStorage.createGroup(groupName)).getOrElseThrow((e) -> new RuntimeException(e));
 
+            Assert.assertTrue("The group should exists for the storage: " + chainStorage, Try.of(()->chainStorage.existsGroup(groupName)).getOrElse(false));
+
             Stream.of(fileStorage, memStorage, dbStorage).forEach(storage -> {
                 Assert.assertTrue("The group should exists for the storage: " + storage, Try.of(()->storage.existsGroup(groupName)).getOrElse(false));
             });
@@ -137,6 +210,8 @@ public class FileStorageAPITest {
             });
         }
     }
+
+
 
     /**
      * Method to test: This test tries the {@link ChainableStoragePersistenceAPI#pullObject(String, String, ObjectReaderDelegate)}

@@ -21,20 +21,14 @@ public class ChainableStoragePersistenceAPIBuilder implements Supplier<StoragePe
         return this;
     }
 
+    /**
+     * Adds a storage to the builder at the begining of the chain (the order is important)
+     * @param storagePersistenceAPI
+     * @return CompositeStoragePersistenceAPIBuilder
+     */
     public ChainableStoragePersistenceAPIBuilder addFirst(final StoragePersistenceAPI storagePersistenceAPI) {
         storagePersistenceAPIs.add(0, storagePersistenceAPI);
         return this;
-    }
-
-    /**
-     * Creates a new builder based on an existing one
-     * @param builder CompositeStoragePersistenceAPIBuilder
-     * @return CompositeStoragePersistenceAPIBuilder
-     */
-    public static ChainableStoragePersistenceAPIBuilder copyFrom(final ChainableStoragePersistenceAPIBuilder builder) {
-        final ChainableStoragePersistenceAPIBuilder newBuilder = new ChainableStoragePersistenceAPIBuilder();
-        newBuilder.storagePersistenceAPIs.addAll(builder.storagePersistenceAPIs);
-        return newBuilder;
     }
 
     /**
