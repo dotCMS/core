@@ -12,7 +12,7 @@ buildscript {
         classpath 'org.immutables:value:2.9.0'
         classpath 'org.codehaus.groovy:groovy-json:3.0.9'
         
-        rewrite("org.openrewrite.recipe:rewrite-migrate-java:1.18.0")
+        rewrite "org.openrewrite.recipe:rewrite-migrate-java:1.18.0"
     }
 }
 
