@@ -1,5 +1,7 @@
-:host ::ng-deep dotcms-template-builder {
-    display: block;
-    height: 100%;
-    overflow: auto;
+:host {
+    dotcms-template-builder {
+        display: block;
+        height: 100%;
+        overflow: auto;
+    }
 }
