@@ -25,27 +25,6 @@ plugins {
 
 }
 
-rewrite {
-    // https://docs.openrewrite.org/reference/recipes/java/migrate/java8tojava11
-    activeRecipe(
-            "dotcms.java.cleanup.Java11BaseCleanup"
-    )
-
-    exclusion(
-            "**/*.mmdb",
-            "**/*.zip",
-            "**/*.tar.gz",
-            "**/*.log",
-            "**/*.json"
-    )
-
-    failOnDryRunResults = true
-    sizeThresholdMb = 20
-}
-
-
-
-
 sonarqube {
     properties {
         property "sonar.projectKey", "dotCMS_core_AYSbIemxK43eThAXTlt-"
