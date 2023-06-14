@@ -141,3 +141,5 @@ This maintenance release includes the following code fixes:
 118. https://github.com/dotCMS/core/issues/24133 : User is unable to lock content because of validation limit on locked_by column of contentlet_version_info #24133
 119. https://github.com/dotCMS/core/issues/24286 : Creating a content in a third language in a row throws an error #24286
 120. https://github.com/dotCMS/core/issues/25097 : Update Normalization Filter #25097
+121. https://github.com/dotCMS/core/issues/25044 : PP content set as working state instead of live state when there is archived version in other language #25044
+122. https://github.com/dotCMS/core/issues/24705 : PP a folder with Archived Content Fails #24705
