@@ -1,4 +1,3 @@
-import { of } from 'rxjs';
 import { v4 as uuid } from 'uuid';
 
 import { DotLayoutBody } from '@dotcms/dotcms-models';
@@ -299,17 +298,6 @@ export const MOCK_STYLE_CLASSES_FILE = {
         'text-center',
         'text-justify'
     ]
-};
-
-export const addStyleClassesStoreMock = {
-    styleClasses$: of(
-        MOCK_STYLE_CLASSES_FILE.classes.map((styleClasses) => ({
-            cssClass: styleClasses
-        }))
-    ),
-    getStyleClassesFromFile: () => {
-        /* */
-    }
 };
 
 export const mockMatchMedia = () => {
