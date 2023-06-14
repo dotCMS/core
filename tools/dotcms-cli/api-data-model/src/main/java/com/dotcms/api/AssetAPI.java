@@ -39,7 +39,7 @@ public interface AssetAPI {
     ResponseEntityView<FolderView> byPath(final SearchByPathRequest request);
 
     @POST
-    @Path("/download")
+    @Path("/_download")
     @Operation(
             summary = "Retrieve a specific asset"
     )

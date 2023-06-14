@@ -115,7 +115,7 @@ public class FileSystemTreeBuilderTask extends RecursiveTask<Void> {
         String remoteFolderURL = generateRemoteFolderURL(folder);
 
         // Create the corresponding folder in the file system
-        var folderPath = Paths.get(destination, folder.path());
+        var folderPath = Paths.get(destination, generateLocalFolderPath(folder));
 
         try {
             if (!Files.exists(folderPath)) {
@@ -142,7 +142,7 @@ public class FileSystemTreeBuilderTask extends RecursiveTask<Void> {
     private void createFileInFileSystem(final String destination, final FolderView folder, final AssetView asset) {
 
         String remoteAssetURL = generateRemoteFolderURL(folder) + asset.name();
-        var assetFilePath = Paths.get(destination, folder.path(), asset.name());
+        var assetFilePath = Paths.get(destination, generateLocalFolderPath(folder), asset.name());
 
         // Remove SHA-256
         final String remoteFileHash = (String) asset.metadata().get(SHA256_META_KEY.key());
@@ -196,18 +196,40 @@ public class FileSystemTreeBuilderTask extends RecursiveTask<Void> {
      */
     private static String generateRemoteFolderURL(FolderView folder) {
 
-        String remoteAssetURL;
+        String remoteFolderURL;
         if ("/".equals(folder.path())) {
             if (folder.name().isEmpty() || folder.name().equals("/")) {
-                remoteAssetURL = "//" + folder.host() + "/";
+                remoteFolderURL = "//" + folder.host() + "/";
             } else {
-                remoteAssetURL = "//" + folder.host() + "/" + folder.name() + "/";
+                remoteFolderURL = "//" + folder.host() + "/" + folder.name() + "/";
             }
         } else {
-            remoteAssetURL = "//" + folder.host() + folder.path();
+            remoteFolderURL = "//" + folder.host() + folder.path();
         }
 
-        return remoteAssetURL;
+        return remoteFolderURL;
+    }
+
+    /**
+     * Generates the local path for a given folder
+     *
+     * @param folder the folder view representing the parent folder
+     * @return the local path for the folder
+     */
+    private static String generateLocalFolderPath(FolderView folder) {
+
+        String localFolderPath;
+        if ("/".equals(folder.path())) {
+            if (folder.name().isEmpty() || folder.name().equals("/")) {
+                localFolderPath = "/";
+            } else {
+                localFolderPath = "/" + folder.name();
+            }
+        } else {
+            localFolderPath = "/" + folder.path();
+        }
+
+        return localFolderPath;
     }
 
 }
