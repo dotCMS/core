@@ -143,3 +143,4 @@ This maintenance release includes the following code fixes:
 120. https://github.com/dotCMS/core/issues/25097 : Update Normalization Filter #25097
 121. https://github.com/dotCMS/core/issues/25044 : PP content set as working state instead of live state when there is archived version in other language #25044
 122. https://github.com/dotCMS/core/issues/24705 : PP a folder with Archived Content Fails #24705
+123. https://github.com/dotCMS/core/issues/25037 : PP an existing bundle it doesn't consider Timezone #25037
