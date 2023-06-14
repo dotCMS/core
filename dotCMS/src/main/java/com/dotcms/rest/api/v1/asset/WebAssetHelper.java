@@ -1,7 +1,6 @@
 package com.dotcms.rest.api.v1.asset;
 
 import static org.apache.commons.lang3.BooleanUtils.toBooleanDefaultIfNull;
-import static org.apache.commons.lang3.StringUtils.defaultIfEmpty;
 
 import com.dotcms.browser.BrowserAPI;
 import com.dotcms.browser.BrowserQuery;
@@ -26,7 +25,6 @@ import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
@@ -140,7 +138,7 @@ public class WebAssetHelper {
             } else {
                 builder.withHostOrFolderId(folder.getInode());
             }
-            builder.withFilter(assetName);
+            builder.withFileName(assetName);
             final List<Treeable> folderContent = browserAPI.getFolderContentList(builder.build());
             assets = folderContent.stream().filter(Contentlet.class::isInstance).collect(Collectors.toList());
             if (assets.isEmpty()) {
@@ -314,7 +312,7 @@ public class WebAssetHelper {
         } else {
             builder.withHostOrFolderId(folder.getInode());
         }
-        builder.withFilter(assetName);
+        builder.withFileName(assetName);
         final List<Treeable> folderContent = browserAPI.getFolderContentList(builder.build());
         assets = folderContent.stream().filter(Contentlet.class::isInstance).map(
                 Contentlet.class::cast).collect(Collectors.toList());
@@ -464,15 +462,21 @@ public class WebAssetHelper {
     }
 
     Language lang(final String language) {
-        return Try.of(() -> {
-                    final String[] split = language.split("_", 2);
+        Language resolvedLang = Try.of(() -> {
+                    //Typically locales are separated by a dash, but our Language API uses an underscore in the toString method
+                    //So here I'm preparing for both cases
+                    final String splitBy =  language.contains("-") ? "-" : "_"  ;
+                    final String[] split = language.split(splitBy, 2);
                     return languageAPI.getLanguage(split[0], split[1]);
                 }
-        ).getOrElse(() -> {
-           final Language defaultLanguage =  languageAPI.getDefaultLanguage();
-           Logger.warn(this, String.format("Unable to  get language from param [%s]. Defaulting to [%s]." , language, defaultLanguage));
-           return defaultLanguage;
-        });
+        ).getOrElse(() -> languageAPI.getDefaultLanguage());
+        if (null == resolvedLang) {
+            resolvedLang = languageAPI.getDefaultLanguage();
+            Logger.warn(this,
+                    String.format("Unable to  get language from param [%s]. Defaulting to [%s].",
+                            language, resolvedLang));
+        }
+        return resolvedLang;
     }
 
     /**

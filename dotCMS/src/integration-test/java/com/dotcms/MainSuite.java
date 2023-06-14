@@ -84,7 +84,8 @@ import com.dotcms.rest.BundleResourceTest;
 import com.dotcms.rest.IntegrityResourceIntegrationTest;
 import com.dotcms.rest.api.v1.apps.AppsResourceTest;
 import com.dotcms.rest.api.v1.apps.view.AppsInterpolationTest;
-import com.dotcms.rest.api.v1.assets.AssetPathResolverImplTest;
+import com.dotcms.rest.api.v1.assets.AssetPathResolverImplIntegrationTest;
+import com.dotcms.rest.api.v1.assets.WebAssetHelperIntegrationTest;
 import com.dotcms.rest.api.v1.authentication.ResetPasswordTokenUtilTest;
 import com.dotcms.rest.api.v1.folder.FolderResourceTest;
 import com.dotcms.rest.api.v1.menu.MenuResourceTest;
@@ -639,7 +640,8 @@ import org.junit.runners.Suite.SuiteClasses;
         Task230426AlterVarcharLengthOfLockedByColTest.class,
 //        AnalyticsAPIImplTest.class,
 //        AccessTokenRenewJobTest.class,
-        AssetPathResolverImplTest.class,
+        AssetPathResolverImplIntegrationTest.class,
+        WebAssetHelperIntegrationTest.class,
         CMSUrlUtilTest.class
 })
 

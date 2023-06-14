@@ -60,7 +60,7 @@ public class WebAssetResource {
     }
 
 
-    @Path("/download")
+    @Path("/_download")
     @POST
     @JSONP
     @NoCache

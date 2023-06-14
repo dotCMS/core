@@ -18,7 +18,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class AssetPathResolverImplTest {
+public class AssetPathResolverImplIntegrationTest {
 
     static Host host;
 
