@@ -314,6 +314,22 @@ public class NormalizationFilterTest extends UnitTestBase {
         shouldWork(encodedUrl,encodedUrl);
     }
 
+    /**
+     * Test that urls with double slashes are blocked.
+     */
+    @Test
+    public void test_double_slashes_are_blocked() throws IOException, ServletException {
+        // testing double backslashes
+        String originalURI = "//html/portlet/ext/files/edit_text_inc.jsp";
+        shouldFail(originalURI);
+
+
+        originalURI = "/html/portlet/ext/files//edit_text_inc.jsp";
+        shouldFail(originalURI);
+
+
+
+    }
 
 
 

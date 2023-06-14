@@ -140,3 +140,4 @@ This maintenance release includes the following code fixes:
 117. https://github.com/dotCMS/core/issues/24059 : We are not respecting the widget language when you have a multilingual page have a working version in non-default language #24059
 118. https://github.com/dotCMS/core/issues/24133 : User is unable to lock content because of validation limit on locked_by column of contentlet_version_info #24133
 119. https://github.com/dotCMS/core/issues/24286 : Creating a content in a third language in a row throws an error #24286
+120. https://github.com/dotCMS/core/issues/25097 : Update Normalization Filter #25097

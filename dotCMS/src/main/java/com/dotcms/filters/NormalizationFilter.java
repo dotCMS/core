@@ -39,6 +39,7 @@ public class NormalizationFilter implements Filter {
             "..",
             "/./",
             "\\",
+            "//",
             "?",
             "%3B", // encoded semi-colon
             "%2E", // encoded period '.'
