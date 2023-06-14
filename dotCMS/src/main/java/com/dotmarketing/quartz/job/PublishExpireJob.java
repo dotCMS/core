@@ -5,6 +5,7 @@ package com.dotmarketing.quartz.job;
 
 import com.dotcms.business.CloseDBIfOpened;
 import java.io.StringWriter;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -21,7 +22,6 @@ import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
-import com.dotcms.repackage.com.ibm.icu.text.SimpleDateFormat;
 import com.liferay.portal.model.User;
 
 /**

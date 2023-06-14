@@ -7,7 +7,6 @@ import com.dotcms.enterprise.cluster.action.model.ServerActionBean;
 import com.dotcms.enterprise.license.DotLicenseRepoEntry;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.license.LicenseManager;
-import com.dotcms.repackage.com.ibm.icu.text.SimpleDateFormat;
 import com.dotcms.repackage.javax.ws.rs.Consumes;
 import com.dotcms.repackage.javax.ws.rs.DELETE;
 import com.dotcms.repackage.javax.ws.rs.GET;
@@ -40,6 +39,7 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 
 import java.io.InputStream;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Map;
 
