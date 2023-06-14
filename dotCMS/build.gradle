@@ -11,6 +11,8 @@ buildscript {
         classpath group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.11.1'
         classpath 'org.immutables:value:2.9.0'
         classpath 'org.codehaus.groovy:groovy-json:3.0.9'
+        
+        rewrite("org.openrewrite.recipe:rewrite-migrate-java:1.18.0")
     }
 }
 
