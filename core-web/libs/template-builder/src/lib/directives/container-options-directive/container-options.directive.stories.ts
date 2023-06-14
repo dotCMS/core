@@ -8,11 +8,9 @@ import { DotContainersService, DotMessageService } from '@dotcms/data-access';
 import { DotContainersServiceMock } from '@dotcms/utils-testing';
 
 import { ContainerOptionsDirective } from './container-options.directive';
+import { MockContainersDropdownComponent } from './mock-containers-dropdown.component';
 
-import {
-    DOT_MESSAGE_SERVICE_TB_MOCK,
-    MockContainersDropdownComponent
-} from '../../components/template-builder/utils/mocks';
+import { DOT_MESSAGE_SERVICE_TB_MOCK } from '../../components/template-builder/utils/mocks';
 
 export default {
     title: 'Container Options Directive',

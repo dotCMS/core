@@ -18,7 +18,11 @@
             appendTo="body"
             dropdownIcon="pi pi-plus"
             optionLabel="label"
-        ></p-dropdown>
+        >
+            <ng-template pTemplate="selectedItem">
+                {{ 'dot.template.builder.add.container' | dm }}
+            </ng-template>
+        </p-dropdown>
 
         <div>
             <p-button
