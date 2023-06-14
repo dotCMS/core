@@ -11,8 +11,6 @@ buildscript {
         classpath group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.11.1'
         classpath 'org.immutables:value:2.9.0'
         classpath 'org.codehaus.groovy:groovy-json:3.0.9'
-        
-        rewrite "org.openrewrite.recipe:rewrite-migrate-java:1.18.0"
     }
 }
 
@@ -24,7 +22,6 @@ plugins {
     id "com.palantir.docker" version "0.32.0"  // reference:  https://github.com/palantir/gradle-docker
     id "org.sonarqube" version "3.4.0.2513"
     id "jacoco"
-    id("org.openrewrite.rewrite") version("5.38.0")
 
 }
 
