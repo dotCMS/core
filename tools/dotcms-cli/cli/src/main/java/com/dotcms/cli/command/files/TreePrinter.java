@@ -129,7 +129,7 @@ public class TreePrinter {
             final List<Language> languages) {
 
         // Collect the list of unique statuses and languages
-        final var treeNodeInfo = FilesUtils.CollectUniqueStatusesAndLanguages(rootNode);
+        final var treeNodeInfo = rootNode.collectUniqueStatusesAndLanguages(showEmptyFolders);
         final var uniqueLiveLanguages = treeNodeInfo.liveLanguages();
         final var uniqueWorkingLanguages = treeNodeInfo.workingLanguages();
 

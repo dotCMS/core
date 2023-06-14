@@ -43,17 +43,19 @@ public class PullFilesServiceImpl implements PullFilesService {
     /**
      * Pulls files from the server and saves them to the specified destination.
      *
-     * @param output      the output option mixin for printing progress
-     * @param tree        the tree node representing the file structure
-     * @param destination the destination path to save the pulled files
-     * @param overwrite   true to overwrite existing files, false otherwise
+     * @param output               the output option mixin for printing progress
+     * @param tree                 the tree node representing the file structure
+     * @param destination          the destination path to save the pulled files
+     * @param overwrite            true to overwrite existing files, false otherwise
+     * @param generateEmptyFolders true to generate empty folders, false otherwise
      */
     @ActivateRequestContext
     @Override
-    public void pull(OutputOptionMixin output, final TreeNode tree, final String destination, final boolean overwrite) {
+    public void pull(OutputOptionMixin output, final TreeNode tree, final String destination,
+                     final boolean overwrite, final boolean generateEmptyFolders) {
 
         // Collect important information about the tree
-        final var treeNodeInfo = FilesUtils.CollectUniqueStatusesAndLanguages(tree);
+        final var treeNodeInfo = tree.collectUniqueStatusesAndLanguages(generateEmptyFolders);
 
         output.info(String.format("\rStarting pull process for: " +
                         "@|bold,green [%s]|@ Assets in " +
@@ -66,7 +68,7 @@ public class PullFilesServiceImpl implements PullFilesService {
 
         CompletableFuture<Void> treeBuilderFuture = CompletableFuture.supplyAsync(
                 () -> {
-                    processTree(tree, treeNodeInfo, destination, overwrite, progressBar);
+                    processTree(tree, treeNodeInfo, destination, overwrite, generateEmptyFolders, progressBar);
                     return null;
                 });
 
@@ -93,17 +95,19 @@ public class PullFilesServiceImpl implements PullFilesService {
      * Processes the file tree by retrieving languages, checking the base structure,
      * and invoking the appropriate methods for processing the tree by status.
      *
-     * @param tree         the tree node representing the file structure
-     * @param treeNodeInfo the collected information about the tree
-     * @param destination  the destination path to save the pulled files
-     * @param overwrite    true to overwrite existing files, false otherwise
-     * @param progressBar  the progress bar for tracking the pull progress
+     * @param tree                 the tree node representing the file structure
+     * @param treeNodeInfo         the collected information about the tree
+     * @param destination          the destination path to save the pulled files
+     * @param overwrite            true to overwrite existing files, false otherwise
+     * @param generateEmptyFolders true to generate empty folders, false otherwise
+     * @param progressBar          the progress bar for tracking the pull progress
      */
     @ActivateRequestContext
     public void processTree(final TreeNode tree,
                             final TreeNodeInfo treeNodeInfo,
                             final String destination,
                             final boolean overwrite,
+                            final boolean generateEmptyFolders,
                             final ConsoleProgressBar progressBar) {
 
         try {
@@ -136,9 +140,9 @@ public class PullFilesServiceImpl implements PullFilesService {
             Collections.sort(sortedWorkingLanguages);
 
             // Process the live tree
-            processTreeByStatus(true, sortedLiveLanguages, tree, rootPath, overwrite, true, progressBar);
+            processTreeByStatus(true, sortedLiveLanguages, tree, rootPath, overwrite, generateEmptyFolders, progressBar);
             // Process the working tree
-            processTreeByStatus(false, sortedWorkingLanguages, tree, rootPath, overwrite, true, progressBar);
+            processTreeByStatus(false, sortedWorkingLanguages, tree, rootPath, overwrite, generateEmptyFolders, progressBar);
 
         } catch (Exception e) {
             throw new RuntimeException(e);

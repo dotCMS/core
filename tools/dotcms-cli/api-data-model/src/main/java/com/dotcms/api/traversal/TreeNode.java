@@ -148,6 +148,62 @@ public class TreeNode {
     }
 
     /**
+     * Collects unique statuses and languages from the current node and its children.
+     *
+     * @param showEmptyFolders A boolean indicating whether to include empty folders
+     * @return a TreeNodeInfo object containing the collected statuses and languages
+     */
+    public TreeNodeInfo collectUniqueStatusesAndLanguages(final boolean showEmptyFolders) {
+
+        TreeNodeInfo nodeInfo = new TreeNodeInfo();
+        collectUniqueStatusesAndLanguagesHelper(nodeInfo, showEmptyFolders);
+        return nodeInfo;
+    }
+
+    /**
+     * Collects unique statuses and languages from the current tree node and its children.
+     *
+     * @param showEmptyFolders A boolean indicating whether to include empty folders
+     * @param nodeInfo         A TreeNodeInfo object containing the collected statuses and languages
+     */
+    private void collectUniqueStatusesAndLanguagesHelper(TreeNodeInfo nodeInfo, final boolean showEmptyFolders) {
+
+        if (assets() != null) {
+            for (AssetView asset : assets()) {
+                if (asset.live()) {
+                    nodeInfo.addLiveLanguage(asset.lang());
+                } else {
+                    nodeInfo.addWorkingLanguage(asset.lang());
+                }
+
+                nodeInfo.addLanguage(asset.lang());
+
+                nodeInfo.incrementAssetsCount();
+            }
+        }
+
+        for (TreeNode child : children()) {
+
+            // If we have an explicit rule to exclude this folder, we skip it
+            if (child.folder().explicitGlobExclude()) {
+                continue;
+            }
+
+            if (showEmptyFolders
+                    || !child.assets().isEmpty()
+                    || hasAssetsInSubtree(child)) {
+
+                if (child.folder().implicitGlobInclude() || hasIncludeInSubtree(child)) {
+
+                    child.collectUniqueStatusesAndLanguagesHelper(nodeInfo, showEmptyFolders);
+
+                    nodeInfo.incrementFoldersCount();
+                }
+            }
+        }
+    }
+
+    /**
      * Recursively checks if the given node or any of its children contains assets.
      *
      * @param node The TreeNode to check for assets.

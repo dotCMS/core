@@ -1,8 +1,5 @@
 package com.dotcms.cli.common;
 
-import com.dotcms.api.traversal.TreeNode;
-import com.dotcms.api.traversal.TreeNodeInfo;
-import com.dotcms.model.asset.AssetView;
 import com.dotcms.model.language.Language;
 
 import java.util.List;
@@ -28,47 +25,6 @@ public class FilesUtils {
      */
     public static String statusToString(boolean isLive) {
         return isLive ? STATUS_LIVE : STATUS_WORKING;
-    }
-
-    /**
-     * Collects unique statuses and languages from the provided tree node and its children.
-     *
-     * @param node the tree node to collect statuses and languages from
-     * @return a TreeNodeInfo object containing the collected statuses and languages
-     */
-    public static TreeNodeInfo CollectUniqueStatusesAndLanguages(TreeNode node) {
-
-        TreeNodeInfo nodeInfo = new TreeNodeInfo();
-
-        if (node.assets() != null) {
-            for (AssetView asset : node.assets()) {
-                if (asset.live()) {
-                    nodeInfo.addLiveLanguage(asset.lang());
-                } else {
-                    nodeInfo.addWorkingLanguage(asset.lang());
-                }
-
-                nodeInfo.addLanguage(asset.lang());
-
-                nodeInfo.incrementAssetsCount();
-            }
-        }
-
-        for (TreeNode child : node.children()) {
-
-            TreeNodeInfo childInfo = CollectUniqueStatusesAndLanguages(child);
-
-            nodeInfo.languages().addAll(childInfo.languages());
-            nodeInfo.liveLanguages().addAll(childInfo.liveLanguages());
-            nodeInfo.workingLanguages().addAll(childInfo.workingLanguages());
-
-            nodeInfo.incrementAssetsCount(childInfo.assetsCount());
-            nodeInfo.incrementFoldersCount(childInfo.foldersCount());
-
-            nodeInfo.incrementFoldersCount();
-        }
-
-        return nodeInfo;
     }
 
     /**

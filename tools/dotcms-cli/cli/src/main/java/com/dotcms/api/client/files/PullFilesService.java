@@ -11,10 +11,12 @@ public interface PullFilesService {
     /**
      * Pulls files from the server and saves them to the specified destination.
      *
-     * @param output      the output option mixin for printing progress
-     * @param tree        the tree node representing the file structure
-     * @param destination the destination path to save the pulled files
-     * @param overwrite   true to overwrite existing files, false otherwise
+     * @param output               the output option mixin for printing progress
+     * @param tree                 the tree node representing the file structure
+     * @param destination          the destination path to save the pulled files
+     * @param overwrite            true to overwrite existing files, false otherwise
+     * @param generateEmptyFolders true to generate empty folders, false otherwise
      */
-    void pull(OutputOptionMixin output, final TreeNode tree, String destination, boolean overwrite);
+    void pull(OutputOptionMixin output, final TreeNode tree, String destination,
+              boolean overwrite, boolean generateEmptyFolders);
 }

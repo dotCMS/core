@@ -33,13 +33,46 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
             description = "Local root directory of the CLI project.")
     String destination;
 
-    @CommandLine.Option(names = {"-r", "--recursive"}, defaultValue = "false",
+    @CommandLine.Option(names = {"-r", "--recursive"}, defaultValue = "true",
             description = "Pulls directories and their contents recursively.")
     boolean recursive;
 
     @CommandLine.Option(names = {"-o", "--override"}, defaultValue = "true",
             description = "Overrides the local files with the ones from the server.")
     boolean override;
+
+    @CommandLine.Option(names = {"-ee", "--excludeEmptyFolders"}, defaultValue = "true",
+            description =
+                    "When this option is enabled, the pull process will not create folders that do "
+                            + "not contain any assets, as well as folders that have no children with assets. "
+                            + "This can be useful for users who want to focus on the folder structure that "
+                            + "contains assets, making the folder structure more concise and easier to navigate. By "
+                            + "default, this option is enabled, and empty folders will not be created.")
+    boolean excludeEmptyFolders;
+
+    @CommandLine.Option(names = {"-ef", "--excludeFolder"},
+            paramLabel = "patterns",
+            description = "Exclude directories matching the given glob patterns. Multiple "
+                    + "patterns can be specified, separated by commas.")
+    String excludeFolderPatternsOption;
+
+    @CommandLine.Option(names = {"-ea", "--excludeAsset"},
+            paramLabel = "patterns",
+            description = "Exclude assets matching the given glob patterns. Multiple "
+                    + "patterns can be specified, separated by commas.")
+    String excludeAssetPatternsOption;
+
+    @CommandLine.Option(names = {"-if", "--includeFolder"},
+            paramLabel = "patterns",
+            description = "Include directories matching the given glob patterns. Multiple "
+                    + "patterns can be specified, separated by commas.")
+    String includeFolderPatternsOption;
+
+    @CommandLine.Option(names = {"-ia", "--includeAsset"},
+            paramLabel = "patterns",
+            description = "Include assets matching the given glob patterns. Multiple "
+                    + "patterns can be specified, separated by commas.")
+    String includeAssetPatternsOption;
 
     @Inject
     FolderTraversalService folderTraversalService;
@@ -52,16 +85,21 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
 
         try {
 
+            var includeFolderPatterns = parsePatternOption(includeFolderPatternsOption);
+            var includeAssetPatterns = parsePatternOption(includeAssetPatternsOption);
+            var excludeFolderPatterns = parsePatternOption(excludeFolderPatternsOption);
+            var excludeAssetPatterns = parsePatternOption(excludeAssetPatternsOption);
+
             CompletableFuture<TreeNode> folderTraversalFuture = CompletableFuture.supplyAsync(
                     () -> {
                         // Service to handle the traversal of the folder
                         return folderTraversalService.traverse(
                                 source,
                                 recursive ? null : 0,
-                                null,
-                                null,
-                                null,
-                                null
+                                includeFolderPatterns,
+                                includeAssetPatterns,
+                                excludeFolderPatterns,
+                                excludeAssetPatterns
                         );
                     });
 
@@ -89,7 +127,7 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
 
             // ---
             // Now we need to pull the contents based on the tree we found
-            pullAssetsService.pull(output, result, destination, override);
+            pullAssetsService.pull(output, result, destination, override, !excludeEmptyFolders);
 
             output.info("\n\nPull process finished successfully.");
 
