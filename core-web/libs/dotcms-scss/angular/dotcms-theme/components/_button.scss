@@ -82,7 +82,7 @@ a.p-button:hover,
 }
 
 .p-button.p-button-text.p-button-plain:enabled:active {
-    background: rgba(0, 0, 0, 0.16);
+    background: $color-palette-black-op-10;
     color: $black;
 }
 
@@ -134,8 +134,8 @@ a.p-button:hover,
 }
 
 .p-button.p-button-raised {
-    box-shadow: 0 3px 1px -2px rgba(0, 0, 0, 0.2), 0 2px 2px 0 rgba(0, 0, 0, 0.14),
-        0 1px 5px 0 rgba(0, 0, 0, 0.12);
+    box-shadow: 0 3px 1px -2px $color-palette-black-op-20, 0 2px 2px 0 $color-palette-black-op-10,
+        0 1px 5px 0 $color-palette-black-op-10;
 }
 
 .p-button.p-button-rounded {
@@ -267,7 +267,7 @@ a.p-button:hover,
 .p-buttonset.p-button-disabled > .p-button,
 .p-splitbutton.p-button-disabled > .p-button {
     color: $button-text-color-disabled;
-    background: rgba(0, 0, 0, 0.12);
+    background: $color-palette-black-op-10;
     border: none;
 }
 
@@ -456,7 +456,7 @@ a.p-button:hover,
 }
 
 .p-button:disabled {
-    background-color: rgba(0, 0, 0, 0.12) !important;
+    background-color: $color-palette-black-op-10 !important;
     color: $button-text-color-disabled !important;
     opacity: 1;
 }
@@ -480,8 +480,8 @@ a.p-button:hover,
 }
 
 .p-button.p-button-raised:enabled:focus {
-    box-shadow: 0 3px 1px -2px rgba(0, 0, 0, 0.2), 0 2px 2px 0 rgba(0, 0, 0, 0.14),
-        0 1px 5px 0 rgba(0, 0, 0, 0.12);
+    box-shadow: 0 3px 1px -2px $color-palette-black-op-20, 0 2px 2px 0 $color-palette-black-op-10,
+        0 1px 5px 0 $color-palette-black-op-10;
 }
 
 .p-button.p-button-secondary:enabled:focus,

@@ -6,7 +6,7 @@
     display: none;
 
     &.active {
-        background-color: rgba($black, 0.8);
+        background-color: $color-palette-black-op-80;
         backdrop-filter: blur(5px);
         bottom: 0;
         display: block;

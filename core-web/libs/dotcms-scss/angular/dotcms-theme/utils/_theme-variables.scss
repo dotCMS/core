@@ -37,7 +37,6 @@ $button-tiny-height: $field-tiny-height;
 $button-disabled-color: $font-color-base;
 $button-radius: $field-border-radius;
 $button-inverted-color: $white;
-$button-hover-background-opacity: 0.12;
 $button-text-size: 13px;
 $button-tiny-text-size: 11px;
 
@@ -189,7 +188,7 @@ $tabview-item-padding: $spacing-3 $spacing-4 10px; // To match the 48px height
 $tabview-item-border: 3px solid $white;
 $tabview-item-border-height: 4px;
 $tabview-item-selected-border: 5px solid $color-palette-secondary-500;
-$tabview-item-disabled-color: rgba($black, 0.2);
+$tabview-item-disabled-color: $color-palette-black-op-20;
 $tabview-nav-height: 48px;
 
 // MENU
@@ -199,11 +198,11 @@ $menu-link-color: $black;
 $dialog-title-font-size: $font-size-xxl;
 $dialog-message-line-height: $line-height;
 $dialog-message-warning-color: $red;
-$dialog-close-button-normal-color: rgba($black, 0.7);
+$dialog-close-button-normal-color: $color-palette-black-op-70;
 $dialog-close-button-hover-color: $black;
 
 // INPUTSWITCH
-$inputswitch-normal-track-color: rgba($black, 0.1);
+$inputswitch-normal-track-color: $color-palette-black-op-10;
 $inputswitch-checked-track-color: $color-palette-primary-op-40;
 
 $inputswitch-normal-thumb-color: $white;

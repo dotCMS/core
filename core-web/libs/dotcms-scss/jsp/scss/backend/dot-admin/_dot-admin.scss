@@ -64,9 +64,9 @@
     -khtml-border-radius-topright: 14px;
     -moz-border-radius-topright: 4px;
     border-top-right-radius: 4px;
-    -moz-box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.2);
-    -webkit-box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.2);
-    box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.2);
+    -moz-box-shadow: 0px 3px 10px $color-palette-black-op-20;
+    -webkit-box-shadow: 0px 3px 10px $color-palette-black-op-20;
+    box-shadow: 0px 3px 10px $color-palette-black-op-20;
 }
 #closeTab {
     z-index: 8000;
@@ -102,9 +102,9 @@
     border-top: 0;
     background: #fff;
     z-index: 9998;
-    -moz-box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.2);
-    -webkit-box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.2);
-    box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.2);
+    -moz-box-shadow: 0px 2px 10px $color-palette-black-op-20;
+    -webkit-box-shadow: 0px 2px 10px $color-palette-black-op-20;
+    box-shadow: 0px 2px 10px $color-palette-black-op-20;
 }
 .account-flyout h3 {
     margin: 20px 0 0 0;
@@ -160,9 +160,9 @@
 }
 #helpcontent {
     border: 1px solid #ddd;
-    -moz-box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.1);
-    -webkit-box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.1);
-    box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.1);
+    -moz-box-shadow: 3px 3px 5px $color-palette-black-op-10;
+    -webkit-box-shadow: 3px 3px 5px $color-palette-black-op-10;
+    box-shadow: 3px 3px 5px $color-palette-black-op-10;
     color: #dddddd;
     background: #fff;
     margin-bottom: -10px;
@@ -995,10 +995,10 @@ table.sTypeTable.sTypeItem {
     position: relative;
     padding: 20px 20px 30px 40px;
     color: #fff;
-    background: rgba(0, 0, 0, 0.8);
-    -moz-box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.2);
-    -webkit-box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.2);
-    box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.2);
+    background: $color-palette-black-op-80;
+    -moz-box-shadow: 3px 3px 5px $color-palette-black-op-20;
+    -webkit-box-shadow: 3px 3px 5px $color-palette-black-op-20;
+    box-shadow: 3px 3px 5px $color-palette-black-op-20;
     -webkit-border-radius: 8px;
     -khtml-border-radius: 8px;
     -moz-border-radius: 8px;
@@ -1014,10 +1014,10 @@ table.sTypeTable.sTypeItem {
     position: relative;
     padding: 20px 20px 30px 40px;
     color: #fff;
-    background: rgba(0, 0, 0, 0.8);
-    -moz-box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.2);
-    -webkit-box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.2);
-    box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.2);
+    background: $color-palette-black-op-80;
+    -moz-box-shadow: 3px 3px 5px $color-palette-black-op-20;
+    -webkit-box-shadow: 3px 3px 5px $color-palette-black-op-20;
+    box-shadow: 3px 3px 5px $color-palette-black-op-20;
     -webkit-border-radius: 8px;
     -khtml-border-radius: 8px;
     -moz-border-radius: 8px;
@@ -1041,10 +1041,10 @@ table.sTypeTable.sTypeItem {
     width: 150px;
     padding: 20px;
     color: #fff;
-    background: rgba(0, 0, 0, 0.8);
-    -moz-box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.2);
-    -webkit-box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.2);
-    box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.2);
+    background: $color-palette-black-op-80;
+    -moz-box-shadow: 3px 3px 5px $color-palette-black-op-20;
+    -webkit-box-shadow: 3px 3px 5px $color-palette-black-op-20;
+    box-shadow: 3px 3px 5px $color-palette-black-op-20;
     -webkit-border-radius: 8px;
     -khtml-border-radius: 8px;
     -moz-border-radius: 8px;
@@ -1446,9 +1446,9 @@ table.bgThumbnail td div {
     padding: 4px;
     border: 1px solid #a0a0a0;
     margin: 6px;
-    -moz-box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.3);
-    -webkit-box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.3);
-    box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.3);
+    -moz-box-shadow: 0px 3px 10px $color-palette-black-op-30;
+    -webkit-box-shadow: 0px 3px 10px $color-palette-black-op-30;
+    box-shadow: 0px 3px 10px $color-palette-black-op-30;
 }
 table.bgThumbnail td div a {
     border: 1px solid #a0a0a0;

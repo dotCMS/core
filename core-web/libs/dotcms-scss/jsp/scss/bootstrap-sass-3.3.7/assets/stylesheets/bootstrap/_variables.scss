@@ -234,7 +234,7 @@ $cursor-disabled: not-allowed !default;
 //** Background for the dropdown menu.
 $dropdown-bg: #fff !default;
 //** Dropdown menu `border-color`.
-$dropdown-border: rgba(0, 0, 0, 0.15) !default;
+$dropdown-border: $color-palette-black-op-10 !default;
 //** Dropdown menu `border-color` **for IE8**.
 $dropdown-fallback-border: #ccc !default;
 //** Divider color for between dropdown items.
@@ -527,7 +527,7 @@ $popover-bg: #fff !default;
 //** Popover maximum width
 $popover-max-width: 276px !default;
 //** Popover border color
-$popover-border-color: rgba(0, 0, 0, 0.2) !default;
+$popover-border-color: $color-palette-black-op-20 !default;
 //** Popover fallback border color
 $popover-fallback-border-color: #ccc !default;
 
@@ -583,7 +583,7 @@ $modal-title-line-height: $line-height-base !default;
 //** Background color of modal content area
 $modal-content-bg: #fff !default;
 //** Modal content border color
-$modal-content-border-color: rgba(0, 0, 0, 0.2) !default;
+$modal-content-border-color: $color-palette-black-op-20 !default;
 //** Modal content border color **for IE8**
 $modal-content-fallback-border-color: #999 !default;
 

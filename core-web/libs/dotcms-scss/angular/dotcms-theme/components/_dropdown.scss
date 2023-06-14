@@ -55,13 +55,13 @@
     color: $black;
     border: 0 none;
     border-radius: $border-radius-xs;
-    box-shadow: 0 5px 5px -3px rgba(0, 0, 0, 0.2), 0 8px 10px 1px rgba(0, 0, 0, 0.14),
-        0 3px 14px 2px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 5px 5px -3px $color-palette-black-op-20, 0 8px 10px 1px $color-palette-black-op-10,
+        0 3px 14px 2px $color-palette-black-op-10;
 }
 
 .p-dropdown-panel .p-dropdown-header {
     padding: $spacing-2;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+    border-bottom: 1px solid $color-palette-black-op-10;
     color: $black;
     background: $white;
     margin: 0;
