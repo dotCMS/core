@@ -96,12 +96,16 @@ public class FileStorageAPITest {
         final StoragePersistenceAPI chainStorage   = StoragePersistenceProvider.INSTANCE.get().getStorage(StorageType.CHAIN1);
 
         // creates the group on all storages
-        final String groupName = "bucket-test";
+        final String groupName = "bucket-test-stores";
 
         try {
 
             // this creates all groups on all storages on the chain
             Try.run(() -> chainStorage.createGroup(groupName)).getOrElseThrow((e) -> new RuntimeException(e));
+
+            Stream.of(fileStorage, memStorage, dbStorage).forEach(storage -> {
+                Assert.assertTrue("The group should exists for the storage: " + storage, Try.of(()->storage.existsGroup(groupName)).getOrElse(false));
+            });
 
             // Now create a few objects on the mem storage
             final String[] paths = {"/path1.txt", "/path2.txt", "/path3.txt"};
@@ -148,6 +152,7 @@ public class FileStorageAPITest {
 
         // Creates a chain storage with file, memory, and db in that order
         final JsonReaderDelegate jsonReaderDelegate = new JsonReaderDelegate(String.class);
+        final JsonWriterDelegate writerDelegate     = new JsonWriterDelegate();
         final ChainableStoragePersistenceAPIBuilder chainStorageBuilder = new ChainableStoragePersistenceAPIBuilder();
 
         // we need to clean any previous storage configuration to proceed on the test
@@ -163,7 +168,7 @@ public class FileStorageAPITest {
         final StoragePersistenceAPI chainStorage   = StoragePersistenceProvider.INSTANCE.get().getStorage(StorageType.CHAIN2);
 
         // creates the group on all storages
-        final String groupName = "bucket-test";
+        final String groupName = "bucket-test-404";
 
         try {
 
@@ -187,7 +192,7 @@ public class FileStorageAPITest {
             final String[] paths = {"/path1.txt", "/path2.txt", "/path3.txt"};
             final String[] objects = {"Object1", "Object2", "Object3"};
             for (int i = 0; i < paths.length; i++) {
-                chainStorage.pushObject(groupName, paths[i], null, objects[i], null);
+                chainStorage.pushObject(groupName, paths[i], writerDelegate, objects[i], null);
             }
 
             // after that the cache should be clean, since we have pushed objects to the stores that previously were 404 on the cache
@@ -231,7 +236,7 @@ public class FileStorageAPITest {
         final StoragePersistenceAPI chainStorage   = StoragePersistenceProvider.INSTANCE.get().getStorage(StorageType.CHAIN2);
 
         // creates the group on all storages
-        final String groupName = "bucket-test";
+        final String groupName = "bucket-test-404-2";
 
         try {
 
