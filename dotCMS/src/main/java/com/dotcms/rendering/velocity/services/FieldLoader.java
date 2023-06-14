@@ -5,6 +5,8 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.Optional;
 
+import com.dotcms.contenttype.model.field.RelationshipField;
+import io.vavr.control.Try;
 import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.HiddenField;
@@ -75,14 +77,30 @@ public class FieldLoader implements DotLoader {
     }
 
     public void invalidate(Field field) {
-      Optional<Contentlet> con = Optional.empty();
-      this.invalidate(field, con);
+		this.invalidate(field, Optional.empty());
     }
 
+	boolean isVelocityField(Field field, Optional<Contentlet> conOpt) {
+
+		if (field != null && (field instanceof ConstantField || field instanceof HiddenField || field instanceof RelationshipField)) {
+			return true;
+		}
+		if (conOpt.isEmpty()) {
+			return false;
+		}
+		Optional<String> fieldValue = Try.of(() -> APILocator.getContentletAPI().getFieldValue(conOpt.get(), field).toString())
+				.toJavaOptional();
+
+		return fieldValue.isPresent() && (fieldValue.get().contains("#") || fieldValue.get().contains("$"));
+
+	}
 
     public void invalidate(Object obj, Optional<Contentlet> con, PageMode mode) {
-      VelocityResourceKey key = new VelocityResourceKey((Field) obj, con, mode);
-      CacheLocator.getVeloctyResourceCache().remove(key );
+		if (!isVelocityField((Field) obj, con)) {
+			return;
+		}
+		VelocityResourceKey key = new VelocityResourceKey((Field) obj, con, mode);
+		CacheLocator.getVeloctyResourceCache().remove(key);
     }
 
     @Override

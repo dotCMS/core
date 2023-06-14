@@ -144,3 +144,4 @@ This maintenance release includes the following code fixes:
 121. https://github.com/dotCMS/core/issues/25044 : PP content set as working state instead of live state when there is archived version in other language #25044
 122. https://github.com/dotCMS/core/issues/24705 : PP a folder with Archived Content Fails #24705
 123. https://github.com/dotCMS/core/issues/25037 : PP an existing bundle it doesn't consider Timezone #25037
+124. https://github.com/dotCMS/core/issues/24781 : Performance Optimization - don't force field invalidations for non-velocity fields #24781
