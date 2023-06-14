@@ -1036,12 +1036,17 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		// : this is null, but the dialog if does not have any content type for the current user shouldn't be showed.
 
 		String selectedContentType = "";
+		final String siblingStructure = req.getParameter("sibblingStructure");
 		if (InodeUtils.isSet(req.getParameter("selectedStructure"))
-				|| InodeUtils.isSet(cf.getStructureInode())) {
+				|| InodeUtils.isSet(cf.getStructureInode())
+				|| InodeUtils.isSet(siblingStructure)) {
 
 			if (InodeUtils.isSet(req.getParameter("selectedStructure"))) {
 				selectedContentType = req.getParameter("selectedStructure");
-			} else {
+			} else if (InodeUtils.isSet(siblingStructure)){
+				selectedContentType = siblingStructure;
+			}
+			else {
 				selectedContentType = cf.getStructureInode();
 			}
 			contentType = this.transform(contentTypeAPI.find(selectedContentType));
