@@ -141,33 +141,28 @@ export const parseFromGridStackToDotObject = (gridData: DotGridStackWidget[]): D
     const ordered = clone.sort((a, b) => a.y - b.y);
 
     const rows = ordered.map((row) => {
-        const { x: colWidth, subGridOpts, styleClass: styles, containers } = row;
+        const { x: colWidth, subGridOpts, styleClass: styles } = row;
         const { children = [] } = subGridOpts || {};
         const styleClass = styles?.join(' ') || null;
 
-        // If there is no subgrid, we return a single column
-        const column = [
-            {
-                containers,
-                leftOffset: colWidth,
-                width: colWidth,
+        if (!subGridOpts) {
+            return {
+                columns: [],
                 styleClass
-            }
-        ];
+            };
+        }
 
-        const columns = !subGridOpts
-            ? column
-            : children.map(({ x, w, containers = [], styleClass: styles }) => {
-                  const leftOffset = x + colWidth + 1;
-                  const styleClass = styles?.join(' ') || '';
+        const columns = children.map(({ x, w, containers = [], styleClass: styles }) => {
+            const leftOffset = x + colWidth + 1;
+            const styleClass = styles?.join(' ') || '';
 
-                  return {
-                      containers,
-                      leftOffset,
-                      width: w,
-                      styleClass
-                  };
-              });
+            return {
+                containers,
+                leftOffset,
+                width: w,
+                styleClass
+            };
+        });
 
         return {
             columns,

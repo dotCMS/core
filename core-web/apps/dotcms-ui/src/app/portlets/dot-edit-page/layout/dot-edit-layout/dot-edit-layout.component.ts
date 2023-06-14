@@ -126,7 +126,8 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Update layout
+     * Handle layout change event.
+     * Take the layout out, update the template and save it.
      *
      * @param {DotLayout} layout
      * @memberof DotEditLayoutComponent
