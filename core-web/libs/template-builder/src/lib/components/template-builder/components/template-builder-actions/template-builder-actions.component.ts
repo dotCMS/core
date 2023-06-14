@@ -1,12 +1,8 @@
+import { Observable, merge } from 'rxjs';
+
 import { CommonModule, NgFor } from '@angular/common';
 import { ChangeDetectionStrategy, Component, EventEmitter, OnInit, Output } from '@angular/core';
-import {
-    FormBuilder,
-    FormControl,
-    FormGroup,
-    FormsModule,
-    ReactiveFormsModule
-} from '@angular/forms';
+import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
@@ -18,12 +14,6 @@ import { map } from 'rxjs/operators';
 import { DotMessagePipeModule } from '@dotcms/ui';
 
 import { SidebarPosition } from '../../models/models';
-
-interface ActionsForm {
-    header: FormControl<Addon[]>;
-    footer: FormControl<Addon[]>;
-    sidebarPosition?: FormControl<SidebarPosition>;
-}
 
 interface TemplateData {
     header: boolean;
@@ -68,38 +58,41 @@ export class TemplateBuilderActionsComponent implements OnInit {
 
     readonly posibleSidebarPositions = [SidebarPosition.left, SidebarPosition.right];
 
-    formGroup: FormGroup<ActionsForm>;
+    selectedAddons: FormControl<Addon[]>;
+    sidebarPosition: FormControl<SidebarPosition>;
+
+    addons$: Observable<Record<string, boolean>>;
+    sidebarPosition$: Observable<SidebarPosition>;
 
     ngOnInit(): void {
-        this.formGroup = new FormBuilder().group({
-            header: [],
-            footer: [],
-            sidebarPosition: undefined
-        }) as FormGroup<ActionsForm>;
+        this.selectedAddons = new FormControl<Addon[]>([]);
 
-        // This is not working well I need to find a way to toggle off the sidebar
-        this.formGroup.valueChanges
-            .pipe(
-                map((value) => ({
-                    header: !!value.header?.length,
-                    footer: !!value.footer?.length,
-                    sidebarPosition: value.sidebarPosition
-                }))
-            )
-            .subscribe((value) => {
-                // If it's the same we toggle off the sidebar
-                if (this.lastPosition === value.sidebarPosition) {
-                    this.formGroup.patchValue(
-                        {
-                            sidebarPosition: null
-                        },
-                        { emitEvent: false }
-                    );
+        this.sidebarPosition = new FormControl();
+
+        this.addons$ = this.selectedAddons.valueChanges.pipe(
+            map((value) => ({
+                header: !!value.find((addon) => addon.name === 'header'),
+                footer: !!value.find((addon) => addon.name === 'footer')
+            }))
+        );
+
+        this.sidebarPosition$ = this.sidebarPosition.valueChanges.pipe(
+            map((position) => {
+                if (this.lastPosition === position) {
+                    this.sidebarPosition.patchValue(null, { emitEvent: false });
                     this.lastPosition = undefined;
-                } else {
-                    this.valueChanges.emit(value);
-                    this.lastPosition = value.sidebarPosition;
+
+                    return null;
                 }
-            });
+
+                this.lastPosition = position;
+
+                return position;
+            })
+        );
+
+        merge(this.addons$, this.sidebarPosition$).subscribe(() => {
+            /** */
+        });
     }
 }

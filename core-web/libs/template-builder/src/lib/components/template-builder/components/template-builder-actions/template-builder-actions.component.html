@@ -1,32 +1,3 @@
-<p-overlayPanel #op appendTo="body">
-    <ng-template pTemplate="content">
-        <form [formGroup]="formGroup" novalidate>
-            <ng-container *ngFor="let addon of addons">
-                <div class="p-overlaypanel-content__item">
-                    <p-checkbox
-                        [value]="addon"
-                        [inputId]="addon.label"
-                        [formControlName]="addon.name"
-                    ></p-checkbox>
-                    <label class="item__label" [htmlFor]="addon.label">{{ addon.label }}</label>
-                </div>
-            </ng-container>
-            <div class="p-overlaypanel-content__sidebar-title-container">
-                <p class="sidebar-title-container__text">Sidebar</p>
-            </div>
-            <ng-container *ngFor="let position of posibleSidebarPositions">
-                <div class="p-overlaypanel-content__item">
-                    <p-radioButton
-                        [value]="position"
-                        [inputId]="position"
-                        formControlName="sidebarPosition"
-                    ></p-radioButton>
-                    <label class="item__label" [htmlFor]="position">{{ position }}</label>
-                </div>
-            </ng-container>
-        </form>
-    </ng-template>
-</p-overlayPanel>
 <button
     class="p-button-text p-button-vertical"
     [label]="'dot.template.builder.toolbar.button.layout.label' | dm"
@@ -45,3 +16,31 @@
 >
     <span class="p-button-icon material-icons">view_quilt</span>
 </button>
+
+<p-overlayPanel #op appendTo="body">
+    <ng-template pTemplate="content">
+        <ng-container *ngFor="let addon of addons">
+            <div class="p-overlaypanel-content__item">
+                <p-checkbox
+                    [value]="addon"
+                    [inputId]="addon.label"
+                    [formControl]="selectedAddons"
+                ></p-checkbox>
+                <label class="item__label" [htmlFor]="addon.label">{{ addon.label }}</label>
+            </div>
+        </ng-container>
+        <div class="p-overlaypanel-content__sidebar-title-container">
+            <p class="sidebar-title-container__text">Sidebar</p>
+        </div>
+        <ng-container *ngFor="let position of posibleSidebarPositions">
+            <div class="p-overlaypanel-content__item">
+                <p-radioButton
+                    [value]="position"
+                    [inputId]="position"
+                    [formControl]="sidebarPosition"
+                ></p-radioButton>
+                <label class="item__label" [htmlFor]="position">{{ position }}</label>
+            </div>
+        </ng-container>
+    </ng-template>
+</p-overlayPanel>
