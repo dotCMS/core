@@ -13,6 +13,7 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipeModule } from '@dotcms/ui';
 
 import { AddStyleClassesDialogComponent } from './components/add-style-classes-dialog/add-style-classes-dialog.component';
+import { DotAddStyleClassesDialogStore } from './components/add-style-classes-dialog/store/add-style-classes-dialog.store';
 import { AddWidgetComponent } from './components/add-widget/add-widget.component';
 import { RemoveConfirmDialogComponent } from './components/remove-confirm-dialog/remove-confirm-dialog.component';
 import { TemplateBuilderActionsComponent } from './components/template-builder-actions/template-builder-actions.component';
@@ -55,7 +56,7 @@ export default {
                 DotTemplateBuilderStore,
                 DialogService,
                 DynamicDialogRef,
-
+                DotAddStyleClassesDialogStore,
                 {
                     provide: DotMessageService,
                     useValue: DOT_MESSAGE_SERVICE_TB_MOCK

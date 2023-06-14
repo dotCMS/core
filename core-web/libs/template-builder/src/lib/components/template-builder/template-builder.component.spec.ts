@@ -14,6 +14,7 @@ import { take } from 'rxjs/operators';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipeModule } from '@dotcms/ui';
 
+import { DotAddStyleClassesDialogStore } from './components/add-style-classes-dialog/store/add-style-classes-dialog.store';
 import { AddWidgetComponent } from './components/add-widget/add-widget.component';
 import { TemplateBuilderActionsComponent } from './components/template-builder-actions/template-builder-actions.component';
 import { TemplateBuilderBackgroundColumnsComponent } from './components/template-builder-background-columns/template-builder-background-columns.component';
@@ -53,7 +54,8 @@ describe('TemplateBuilderComponent', () => {
                 provide: DotMessageService,
                 useValue: DOT_MESSAGE_SERVICE_TB_MOCK
             },
-            DialogService
+            DialogService,
+            DotAddStyleClassesDialogStore
         ]
     });
     beforeEach(() => {

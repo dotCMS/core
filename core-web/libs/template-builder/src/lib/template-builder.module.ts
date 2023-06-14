@@ -8,6 +8,7 @@ import { ToolbarModule } from 'primeng/toolbar';
 import { DotMessagePipeModule } from '@dotcms/ui';
 
 import { AddStyleClassesDialogComponent } from './components/template-builder/components/add-style-classes-dialog/add-style-classes-dialog.component';
+import { DotAddStyleClassesDialogStore } from './components/template-builder/components/add-style-classes-dialog/store/add-style-classes-dialog.store';
 import { AddWidgetComponent } from './components/template-builder/components/add-widget/add-widget.component';
 import { RemoveConfirmDialogComponent } from './components/template-builder/components/remove-confirm-dialog/remove-confirm-dialog.component';
 import { TemplateBuilderActionsComponent } from './components/template-builder/components/template-builder-actions/template-builder-actions.component';
@@ -37,7 +38,12 @@ import { TemplateBuilderComponent } from './components/template-builder/template
         DividerModule
     ],
     declarations: [TemplateBuilderComponent],
-    providers: [DotTemplateBuilderStore, DialogService, DynamicDialogRef],
+    providers: [
+        DotTemplateBuilderStore,
+        DialogService,
+        DynamicDialogRef,
+        DotAddStyleClassesDialogStore
+    ],
     exports: [TemplateBuilderComponent]
 })
 export class TemplateBuilderModule {}

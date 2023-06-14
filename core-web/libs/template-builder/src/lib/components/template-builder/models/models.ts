@@ -68,6 +68,8 @@ export interface DotTemplateBuilderState {
  */
 export interface DotAddStyleClassesDialogState {
     styleClasses: StyleClassModel[];
+    selectedClasses: StyleClassModel[];
+    filteredClasses: StyleClassModel[];
 }
 
 export type WidgetType = 'col' | 'row';

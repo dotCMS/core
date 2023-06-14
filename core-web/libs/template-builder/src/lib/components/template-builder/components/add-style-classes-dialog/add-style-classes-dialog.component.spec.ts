@@ -1,7 +1,9 @@
 import { expect } from '@jest/globals';
 import { SpectatorHost, byTestId, createHostFactory } from '@ngneat/spectator';
+import { of } from 'rxjs';
 
-import { HttpClientModule } from '@angular/common/http';
+import { AsyncPipe, NgIf } from '@angular/common';
+import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -9,29 +11,36 @@ import { AutoCompleteModule } from 'primeng/autocomplete';
 import { ButtonModule } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
+import { DotMessageService } from '@dotcms/data-access';
+import { DotMessagePipeModule } from '@dotcms/ui';
+
 import { AddStyleClassesDialogComponent } from './add-style-classes-dialog.component';
 import { DotAddStyleClassesDialogStore } from './store/add-style-classes-dialog.store';
 
 import {
+    DOT_MESSAGE_SERVICE_TB_MOCK,
     MOCK_SELECTED_STYLE_CLASSES,
-    addStyleClassesStoreMock,
+    MOCK_STYLE_CLASSES_FILE,
     mockMatchMedia
 } from '../../utils/mocks';
 
 describe('AddStyleClassesDialogComponent', () => {
-    let component: AddStyleClassesDialogComponent;
     let spectator: SpectatorHost<AddStyleClassesDialogComponent>;
     let input: HTMLInputElement;
     let ref: DynamicDialogRef;
+    let store: DotAddStyleClassesDialogStore;
 
     const createHost = createHostFactory({
         component: AddStyleClassesDialogComponent,
         imports: [
             AutoCompleteModule,
             FormsModule,
-            NoopAnimationsModule,
             ButtonModule,
-            HttpClientModule
+            DotMessagePipeModule,
+            NgIf,
+            AsyncPipe,
+            HttpClientModule,
+            NoopAnimationsModule
         ],
         providers: [
             {
@@ -43,23 +52,29 @@ describe('AddStyleClassesDialogComponent', () => {
                 }
             },
             {
-                provide: DotAddStyleClassesDialogStore,
-                useValue: addStyleClassesStoreMock
+                provide: HttpClient,
+                useValue: {
+                    get: () => of(MOCK_STYLE_CLASSES_FILE)
+                }
             },
+            {
+                provide: DotMessageService,
+                useValue: DOT_MESSAGE_SERVICE_TB_MOCK
+            },
+            DotAddStyleClassesDialogStore,
             DynamicDialogRef
         ]
     });
 
     beforeEach(() => {
         spectator = createHost(
-            '<dotcms-add-style-classes-dialog></dotcms-add-style-classes-dialog>',
-            {}
+            '<dotcms-add-style-classes-dialog></dotcms-add-style-classes-dialog>'
         );
 
-        component = spectator.component;
-        spectator.detectChanges();
-
         ref = spectator.inject(DynamicDialogRef);
+        store = spectator.inject(DotAddStyleClassesDialogStore);
+
+        spectator.detectChanges();
 
         input = spectator.query('#auto-complete-input');
 
@@ -70,42 +85,41 @@ describe('AddStyleClassesDialogComponent', () => {
         expect(spectator.query(byTestId('update-btn'))).toBeTruthy();
     });
 
-    it('should trigger filterMock when focusing on the input', () => {
-        const filterMock = jest.spyOn(component, 'filterClasses');
+    it('should trigger filterClasses when focusing on the input', () => {
+        const filterMock = jest.spyOn(store, 'filterClasses');
+        const query = 'custom-class';
+
+        input.value = query;
 
         spectator.click(input);
 
         spectator.detectChanges();
 
-        expect(filterMock).toHaveBeenCalled();
+        expect(filterMock).toHaveBeenCalledWith(query);
     });
 
-    it('should trigger addClassByCommaOrSpace when typing on the input and adding comma', () => {
-        input.value = 'd-none,'; // This has a comma
+    it('should trigger addClass when autocomplete emits onSelect', () => {
+        const autoComplete = spectator.query('p-autocomplete');
 
-        spectator.click(input);
+        const addClassMock = jest.spyOn(store, 'addClass');
+
+        spectator.dispatchFakeEvent(autoComplete, 'onSelect');
 
         spectator.detectChanges();
 
-        expect(component.selectedClasses).toContainEqual({ cssClass: 'd-none' });
+        expect(addClassMock).toHaveBeenCalled();
     });
 
-    it('should trigger addClassByCommaOrSpace when typing on the input and adding space', () => {
-        input.value = 'd-none '; // This has a space
+    it('should trigger removeLastClass when autocomplete emits onUnselect', () => {
+        const autoComplete = spectator.query('p-autocomplete');
 
-        spectator.click(input);
+        const removeLastClassMock = jest.spyOn(store, 'removeLastClass');
 
-        spectator.detectChanges();
-
-        expect(component.selectedClasses).toContainEqual({ cssClass: 'd-none' });
-    });
-
-    it('should filter selectedClasses from filteredClasses when filteringClasses', () => {
-        spectator.click(input);
+        spectator.dispatchFakeEvent(autoComplete, 'onUnselect');
 
         spectator.detectChanges();
 
-        expect(component.filteredClasses).not.toContainEqual({ cssClass: 'd-flex' });
+        expect(removeLastClassMock).toHaveBeenCalled();
     });
 
     it('should trigger saveClass when clicking on update-btn', () => {

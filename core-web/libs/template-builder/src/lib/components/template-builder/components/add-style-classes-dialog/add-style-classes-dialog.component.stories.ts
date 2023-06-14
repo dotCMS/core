@@ -1,6 +1,7 @@
 import { moduleMetadata, Story, Meta } from '@storybook/angular';
 import { of } from 'rxjs';
 
+import { NgIf, AsyncPipe } from '@angular/common';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
@@ -29,10 +30,12 @@ export default {
             imports: [
                 AutoCompleteModule,
                 FormsModule,
-                NoopAnimationsModule,
                 ButtonModule,
+                DotMessagePipeModule,
+                NgIf,
+                AsyncPipe,
                 HttpClientModule,
-                DotMessagePipeModule
+                NoopAnimationsModule
             ],
             providers: [
                 {
@@ -44,18 +47,6 @@ export default {
                     }
                 },
                 {
-                    provide: DotAddStyleClassesDialogStore,
-                    useValue: {
-                        styleClasses$: MOCK_STYLE_CLASSES_FILE.classes.map((styleClasses) => ({
-                            cssClass: styleClasses
-                        })),
-                        getStyleClassesFromFile: () => {
-                            /* */
-                        }
-                    }
-                },
-                DynamicDialogRef,
-                {
                     provide: HttpClient,
                     useValue: {
                         get: (_: string) => of(MOCK_STYLE_CLASSES_FILE)
@@ -64,7 +55,9 @@ export default {
                 {
                     provide: DotMessageService,
                     useValue: DOT_MESSAGE_SERVICE_TB_MOCK
-                }
+                },
+                DynamicDialogRef,
+                DotAddStyleClassesDialogStore
             ]
         })
     ]
