@@ -238,13 +238,12 @@ public class NavTool implements ViewTool {
 
     private List<?> filterNonLiveItems(final List<?> menuItems) {
         if (!menuItems.isEmpty()) {
-            final List<Versionable> nonLive = menuItems.stream()
-                    .filter(o -> o instanceof Versionable)
-                    .filter(o -> !(o instanceof Folder))
-                    .map(o -> (Versionable) o)
-                    .filter(versionable -> Try.of(() -> !versionable.isLive()).getOrElse(false))
+            final List<Contentlet> nonLiveContentlets = menuItems.stream()
+                    .filter(item -> item instanceof Contentlet)
+                    .map(o -> (Contentlet) o)
+                    .filter(item -> Try.of(() -> !item.hasLiveVersion()).getOrElse(false))
                     .collect(Collectors.toList());
-            menuItems.removeAll(nonLive);
+            menuItems.removeAll(nonLiveContentlets);
         }
         return menuItems;
     }
