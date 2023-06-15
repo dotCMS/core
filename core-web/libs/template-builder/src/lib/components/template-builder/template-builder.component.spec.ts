@@ -13,7 +13,7 @@ import { take } from 'rxjs/operators';
 
 import { DotContainersService, DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipeModule } from '@dotcms/ui';
-import { DotContainersServiceMock } from '@dotcms/utils-testing';
+import { containersMock, DotContainersServiceMock } from '@dotcms/utils-testing';
 
 import { DotAddStyleClassesDialogStore } from './components/add-style-classes-dialog/store/add-style-classes-dialog.store';
 import { TemplateBuilderComponentsModule } from './components/template-builder-components.module';
@@ -35,6 +35,7 @@ global.structuredClone = jest.fn((val) => {
 describe('TemplateBuilderComponent', () => {
     let spectator: SpectatorHost<TemplateBuilderComponent>;
     let store: DotTemplateBuilderStore;
+    const mockContainer = containersMock[0];
     let dialog: DialogService;
     let openDialogMock: jest.SpyInstance;
 
@@ -131,6 +132,25 @@ describe('TemplateBuilderComponent', () => {
         const removeRowMock = jest.spyOn(store, 'removeRow');
         spectator.component.deleteRow('123');
         expect(removeRowMock).toHaveBeenCalledWith('123');
+    });
+
+    it('should call addContainer from store when triggering addContainer', (done) => {
+        const addContainerMock = jest.spyOn(store, 'addContainer');
+
+        let widgetToAddContainer: DotGridStackWidget;
+        let rowId: string;
+
+        expect.assertions(1);
+
+        store.state$.pipe(take(1)).subscribe(({ items }) => {
+            widgetToAddContainer = items[0].subGridOpts.children[0];
+            rowId = items[0].id as string;
+
+            spectator.component.addContainer(widgetToAddContainer, rowId, mockContainer);
+
+            expect(addContainerMock).toHaveBeenCalled();
+            done();
+        });
     });
 
     it('should open a dialog when clicking on row-style-class-button ', () => {

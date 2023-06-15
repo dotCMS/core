@@ -279,8 +279,8 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
             const { items } = state;
             const containerCount = items
                 .flatMap((row) =>
-                    row.subGridOpts.children.flatMap((child) =>
-                        child.containers.map((container) => container.identifier)
+                    row.subGridOpts?.children?.flatMap((child) =>
+                        child.containers?.map((container) => container.identifier)
                     )
                 )
                 .filter((identifier) => container.identifier === identifier).length;
