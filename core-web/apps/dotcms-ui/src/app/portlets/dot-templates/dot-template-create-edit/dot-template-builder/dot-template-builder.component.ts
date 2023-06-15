@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 
 import { IframeComponent } from '@components/_common/iframe/iframe-component';
-import { FeaturedFlags } from '@dotcms/dotcms-models';
+import { DotLayout, FeaturedFlags } from '@dotcms/dotcms-models';
 
 import { DotTemplateItem } from '../store/dot-template.store';
 
@@ -40,5 +40,18 @@ export class DotTemplateBuilderComponent implements OnInit, OnChanges {
         if (this.historyIframe) {
             this.historyIframe.iframeElement.nativeElement.contentWindow.location.reload();
         }
+    }
+
+    /**
+     * Update template and publish it
+     *
+     * @param {DotLayout} layout
+     * @memberof DotTemplateBuilderComponent
+     */
+    onLayoutChange(layout: DotLayout) {
+        this.updateTemplate.emit({
+            ...this.item,
+            layout
+        } as DotTemplateItem);
     }
 }
