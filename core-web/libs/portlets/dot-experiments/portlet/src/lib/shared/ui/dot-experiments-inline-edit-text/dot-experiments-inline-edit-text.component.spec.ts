@@ -1,4 +1,4 @@
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
+import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { ButtonDirective } from 'primeng/button';
 import { Inplace } from 'primeng/inplace';
@@ -6,7 +6,8 @@ import { Inplace } from 'primeng/inplace';
 import { DotFieldValidationMessageComponent } from '@components/_common/dot-field-validation-message/dot-field-validation-message';
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotExperimentsInlineEditTextComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-inline-edit-text/dot-experiments-inline-edit-text.component';
+
+import { DotExperimentsInlineEditTextComponent } from './dot-experiments-inline-edit-text.component';
 
 const messageServiceMock = new MockDotMessageService({
     'dot.common.inplace.empty.text': 'default message',
@@ -127,7 +128,7 @@ describe('DotExperimentsExperimentSummaryComponent', () => {
             });
 
             it('should deactivate the inplace if isLoading input has `previusValue= true` and `currentValue = false` ', () => {
-                const deactivate = spyOn(spectator.component.inplace, 'deactivate');
+                const deactivate = jest.spyOn(spectator.component.inplace, 'deactivate');
                 // saving
                 spectator.setInput('isLoading', true);
                 // finished saving

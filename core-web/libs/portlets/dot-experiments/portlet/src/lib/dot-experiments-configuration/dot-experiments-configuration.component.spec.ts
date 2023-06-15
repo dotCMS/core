@@ -19,7 +19,6 @@ import { ComponentStatus, DotExperimentStatusList, PROP_NOT_FOUND } from '@dotcm
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 import { getExperimentMock, MockDotMessageService } from '@dotcms/utils-testing';
-import { DotExperimentsInlineEditTextComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-inline-edit-text/dot-experiments-inline-edit-text.component';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotExperimentsConfigurationGoalsComponent } from './components/dot-experiments-configuration-goals/dot-experiments-configuration-goals.component';
@@ -35,6 +34,7 @@ import {
 
 import { DotExperimentsExperimentSummaryComponent } from '../shared/ui/dot-experiments-experiment-summary/dot-experiments-experiment-summary.component';
 import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
+import { DotExperimentsInlineEditTextComponent } from '../shared/ui/dot-experiments-inline-edit-text/dot-experiments-inline-edit-text.component';
 
 const EXPERIMENT_MOCK = getExperimentMock(0);
 
