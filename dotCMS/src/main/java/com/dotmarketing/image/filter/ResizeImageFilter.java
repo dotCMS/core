@@ -14,10 +14,10 @@ public class ResizeImageFilter extends ImageFilter {
 				"w (int) specifies width",
 				"h (int) specifies height",
 				"i (int) interpolation",
-				"mxw (int) specifies maxWidth",
-				"mxh (int) specifies maxHeight",
-                "minh (int) specifies maxWidth",
-                "minh (int) specifies maxHeight"
+				"maxw (int) specifies maxWidth",
+				"maxh (int) specifies maxHeight",
+                "minw (int) specifies minWidth",
+                "minh (int) specifies minHeight"
 		};
 	}
 	public File runFilter(final File file,    Map<String, String[]> parameters) {
