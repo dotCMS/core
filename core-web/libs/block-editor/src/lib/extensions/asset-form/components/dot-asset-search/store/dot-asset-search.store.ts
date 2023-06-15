@@ -137,7 +137,9 @@ export class DotAssetSearchStore extends ComponentStore<DotImageSearchState> {
 
     private params({ search, assetType, offset = 0, languageId }): EsQueryParams {
         return {
-            query: ` +catchall:${search}* title:'${search}'^15 +languageId:${languageId} +baseType:(4 OR 9) +metadata.contenttype:${
+            query: `+catchall:${
+                search || '*'
+            } title:'${search}'^15 +languageId:${languageId} +baseType:(4 OR 9) +metadata.contenttype:${
                 assetType || ''
             }/* +deleted:false +working:true`,
             sortOrder: ESOrderDirection.ASC,
