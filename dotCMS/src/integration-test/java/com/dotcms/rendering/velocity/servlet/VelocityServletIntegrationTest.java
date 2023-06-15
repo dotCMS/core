@@ -537,7 +537,7 @@ public class VelocityServletIntegrationTest {
         when(response.getOutputStream()).thenReturn(outputStream);
 
         final HTMLPageAssetRenderedAPI pageAssetRenderedAPI = createHtmlPageAssetRenderedAPIMock(
-                loginUser, "<html>lol</html>", PageMode.LIVE);
+                loginUser, "<html>lol</html>", PageMode.PREVIEW_MODE);
 
         final VelocityServlet velocityServlet = new VelocityServlet(WebAPILocator.getUserWebAPI(),
                 pageAssetRenderedAPI);

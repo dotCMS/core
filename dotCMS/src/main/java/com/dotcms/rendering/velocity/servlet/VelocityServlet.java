@@ -72,8 +72,12 @@ public class VelocityServlet extends HttpServlet {
                     :  PageMode.setPageMode(request, PageMode.LIVE);
         }
 
-         return   useNavigateMode(request, loginMode) ?
-                 PageMode.setPageMode(request, PageMode.NAVIGATE_EDIT_MODE) : PageMode.setPageMode(request, PageMode.LIVE);
+        if ( LoginMode.FE == loginMode) {
+            PageMode.setPageMode(request, PageMode.LIVE);
+        }
+
+        return  useNavigateMode(request, loginMode) ?
+                 PageMode.setPageMode(request, PageMode.NAVIGATE_EDIT_MODE) : PageMode.setPageMode(request, PageMode.PREVIEW_MODE);
     }
 
     private static boolean useNavigateMode(final HttpServletRequest request, LoginMode loginMode) {
