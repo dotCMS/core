@@ -1,8 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { describe, expect, it } from '@jest/globals';
+
+import { CommonModule } from '@angular/common';
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { UntypedFormControl, UntypedFormGroup } from '@angular/forms';
+import {
+    FormsModule,
+    ReactiveFormsModule,
+    UntypedFormControl,
+    UntypedFormGroup
+} from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
 import { DotLayoutPropertiesItemComponent } from './dot-layout-properties-item.component';
@@ -16,7 +24,7 @@ import { DotLayoutPropertiesItemComponent } from './dot-layout-properties-item.c
 })
 class TestHostComponent {
     group: UntypedFormGroup;
-    f;
+
     constructor() {
         this.group = new UntypedFormGroup({
             header: new UntypedFormControl({
@@ -34,7 +42,8 @@ describe('DotLayoutPropertiesItemComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [DotLayoutPropertiesItemComponent, TestHostComponent]
+            declarations: [DotLayoutPropertiesItemComponent, TestHostComponent],
+            imports: [FormsModule, CommonModule, ReactiveFormsModule]
         });
 
         fixture = TestBed.createComponent(DotLayoutPropertiesItemComponent);
@@ -46,7 +55,7 @@ describe('DotLayoutPropertiesItemComponent', () => {
         comp.value = false;
         expect(comp.value).toEqual(false);
 
-        spyOn(comp, 'propagateChange');
+        jest.spyOn(comp, 'propagateChange');
         de.nativeElement.click();
 
         expect(comp.value).toEqual(true);
@@ -77,7 +86,7 @@ describe('DotLayoutPropertiesItemComponent', () => {
         const component: DotLayoutPropertiesItemComponent = de.componentInstance;
         comp.value = false;
 
-        spyOn(component, 'writeValue');
+        jest.spyOn(component, 'writeValue');
         fixture.debugElement.nativeElement.click();
         hostComponentfixture.detectChanges();
 

@@ -1,3 +1,5 @@
+import { describe, expect, it } from '@jest/globals';
+
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule, UntypedFormControl, UntypedFormGroup } from '@angular/forms';
@@ -60,7 +62,7 @@ describe('DotLayoutPropertiesComponent', () => {
         de = fixture.debugElement;
     });
 
-    xit('should modify the group model', () => {
+    it.skip('should modify the group model', () => {
         expect(comp.group).toBeDefined();
         expect(de).toBeDefined();
     });
