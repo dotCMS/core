@@ -70,5 +70,14 @@ const Template: Story<TemplateBuilderComponent> = (args: TemplateBuilderComponen
 export const Base = Template.bind({});
 
 Base.args = {
-    templateLayout: { body: FULL_DATA_MOCK }
+    templateLayout: {
+        body: FULL_DATA_MOCK,
+        header: true,
+        footer: false,
+        sidebar: {
+            location: 'left',
+            width: 'small',
+            containers: []
+        }
+    }
 };

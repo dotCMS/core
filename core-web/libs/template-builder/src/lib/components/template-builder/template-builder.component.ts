@@ -28,7 +28,7 @@ import { DotLayout } from '@dotcms/dotcms-models';
 
 import { colIcon, rowIcon } from './assets/icons';
 import { TemplateBuilderRowComponent } from './components/template-builder-row/template-builder-row.component';
-import { DotGridStackWidget } from './models/models';
+import { DotGridStackWidget, DotTemplateLayoutProperties } from './models/models';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import {
     GRID_STACK_ROW_HEIGHT,
@@ -50,6 +50,14 @@ import {
 export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestroy {
     @Input()
     templateLayout!: DotLayout;
+
+    get layoutProperties(): DotTemplateLayoutProperties {
+        return {
+            header: this.templateLayout.header,
+            footer: this.templateLayout.footer,
+            sidebar: this.templateLayout.sidebar
+        };
+    }
 
     @Output()
     layoutChange: EventEmitter<DotLayout> = new EventEmitter<DotLayout>();

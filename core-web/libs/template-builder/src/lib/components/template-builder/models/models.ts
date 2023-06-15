@@ -35,7 +35,18 @@ export enum TemplateBuilderBoxSize {
     small = 'small'
 }
 
-export enum SidebarPosition {
-    left = 'Left',
-    right = 'Right'
+/**
+ * @description This interface is used to define the properties of the template layout
+ *
+ * @export
+ * @interface DotTemplateLayoutProperties
+ */
+export interface DotTemplateLayoutProperties {
+    header: boolean;
+    footer: boolean;
+    sidebar: {
+        location?: string;
+        containers?: DotTemplateBuilderContainer[];
+        width?: string;
+    };
 }

@@ -20,7 +20,22 @@ describe('TemplateBuilderActionsComponent', () => {
         ]
     });
 
-    beforeEach(() => (spectator = createComponent()));
+    beforeEach(
+        () =>
+            (spectator = createComponent({
+                props: {
+                    layoutProperties: {
+                        footer: true,
+                        header: false,
+                        sidebar: {
+                            location: 'left',
+                            width: 'small',
+                            containers: []
+                        }
+                    }
+                }
+            }))
+    );
 
     it('should emit selectTheme event when style button is clicked', () => {
         const spy = jest.spyOn(spectator.component.selectTheme, 'emit');
@@ -37,5 +52,20 @@ describe('TemplateBuilderActionsComponent', () => {
         spectator.dispatchMouseEvent(btnSelectStyles, 'click');
 
         expect(spectator.query('p-overlaypanel')).toBeTruthy();
+    });
+
+    it('should emit changes everytime the layout properties changes', () => {
+        const changesMock = jest.spyOn(spectator.component.layoutPropertiesChange, 'emit');
+        spectator.component.group.setValue({
+            footer: true,
+            header: false,
+            sidebar: {
+                position: 'left',
+                width: '25%',
+                containers: []
+            }
+        });
+
+        expect(changesMock).toHaveBeenCalled();
     });
 });

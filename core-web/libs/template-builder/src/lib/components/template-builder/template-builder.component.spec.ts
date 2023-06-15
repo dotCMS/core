@@ -50,7 +50,16 @@ describe('TemplateBuilderComponent', () => {
             `<dotcms-template-builder [templateLayout]="templateLayout"></dotcms-template-builder>`,
             {
                 hostProps: {
-                    templateLayout: { body: FULL_DATA_MOCK }
+                    templateLayout: {
+                        body: FULL_DATA_MOCK,
+                        header: true,
+                        footer: true,
+                        sidebar: {
+                            position: 'left',
+                            width: 'small',
+                            containers: []
+                        }
+                    }
                 }
             }
         );
@@ -114,7 +123,16 @@ describe('TemplateBuilderComponent', () => {
             store.init(parseFromDotObjectToGridStack(FULL_DATA_MOCK));
             store.items$.pipe(take(1)).subscribe(() => {
                 // const body = parseFromGridStackToDotObject(items);
-                expect(layoutChangeMock).toHaveBeenCalledWith({ body: FULL_DATA_MOCK });
+                expect(layoutChangeMock).toHaveBeenCalledWith({
+                    body: FULL_DATA_MOCK,
+                    header: true,
+                    footer: true,
+                    sidebar: {
+                        position: 'left',
+                        width: 'small',
+                        containers: []
+                    }
+                });
                 done();
             });
         });

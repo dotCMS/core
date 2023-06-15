@@ -5,6 +5,7 @@ import {
     ChangeDetectionStrategy,
     Component,
     EventEmitter,
+    Input,
     OnDestroy,
     OnInit,
     Output
@@ -15,14 +16,8 @@ import { ButtonModule } from 'primeng/button';
 
 import { DotMessagePipeModule } from '@dotcms/ui';
 
-import { SidebarPosition } from '../../models/models';
+import { DotTemplateLayoutProperties } from '../../models/models';
 import { DotLayoutPropertiesModule } from '../dot-layout-properties/dot-layout-properties.module';
-
-interface TemplateData {
-    header: boolean;
-    footer: boolean;
-    sidebarPosition?: SidebarPosition;
-}
 
 @Component({
     selector: 'dotcms-template-builder-actions',
@@ -33,9 +28,12 @@ interface TemplateData {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TemplateBuilderActionsComponent implements OnInit, OnDestroy {
+    @Input() layoutProperties: DotTemplateLayoutProperties;
+
     @Output() selectTheme: EventEmitter<void> = new EventEmitter();
 
-    @Output() valueChanges: EventEmitter<TemplateData> = new EventEmitter();
+    @Output() layoutPropertiesChange: EventEmitter<DotTemplateLayoutProperties> =
+        new EventEmitter();
 
     group: UntypedFormGroup;
 
@@ -43,17 +41,17 @@ export class TemplateBuilderActionsComponent implements OnInit, OnDestroy {
 
     ngOnInit(): void {
         this.group = new UntypedFormGroup({
-            header: new UntypedFormControl(true),
-            footer: new UntypedFormControl(true),
-            sidebar: new UntypedFormControl({
-                location: 'left',
-                containers: [],
-                width: 'small'
-            })
+            header: new UntypedFormControl(this.layoutProperties.header ?? true),
+            footer: new UntypedFormControl(this.layoutProperties.footer ?? true),
+            sidebar: new UntypedFormControl(
+                this.layoutProperties.sidebar ?? {
+                    location: ''
+                }
+            )
         });
 
         this.group.valueChanges.subscribe((value) => {
-            this.valueChanges.emit(value);
+            this.layoutPropertiesChange.emit(value);
         });
     }
 
