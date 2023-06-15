@@ -231,7 +231,11 @@ export const MESSAGES_MOCK = {
     'dot.template.builder.header': 'Header',
     'dot.template.builder.footer': 'Footer',
     'dot.template.builder.toolbar.button.layout.label': 'Layout',
-    'dot.template.builder.toolbar.button.theme.label': 'Theme'
+    'dot.template.builder.toolbar.button.theme.label': 'Theme',
+    'editpage.layout.properties.header': 'Header',
+    'editpage.layout.properties.footer': 'Footer',
+    'editpage.layout.properties.sidebar.left': 'Sidebar Left',
+    'editpage.layout.properties.sidebar.right': 'Sidebar Right'
 };
 
 export const DOT_MESSAGE_SERVICE_TB_MOCK = new MockDotMessageService(MESSAGES_MOCK);
