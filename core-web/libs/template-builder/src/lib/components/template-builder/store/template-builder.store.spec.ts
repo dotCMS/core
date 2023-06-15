@@ -289,7 +289,7 @@ describe('DotTemplateBuilderStore', () => {
         });
     });
 
-    it('should add a container', () => {
+    it('should add a container to specific box', () => {
         const parentRow = initialState[2];
 
         const columnToAddContainer: DotGridStackWidget = {
