@@ -42,6 +42,19 @@ public class FilesPullCommandTest extends CommandTest {
     }
 
     @Test
+    void Test_Command_Files_Pull_Option_Not_Found() {
+
+        final CommandLine commandLine = getFactory().create();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final String path = String.format("//%s", "siteDontExist");
+            final int status = commandLine.execute(FilesCommand.NAME, FilesPull.NAME, path);
+            Assertions.assertEquals(CommandLine.ExitCode.SOFTWARE, status);
+        }
+    }
+
+    @Test
     void Test_Command_Files_Pull_Option_Invalid_Protocol() {
 
         final CommandLine commandLine = getFactory().create();
