@@ -13,18 +13,21 @@ import {
     ChangeDetectionStrategy,
     Component,
     ElementRef,
+    EventEmitter,
     Input,
     OnDestroy,
     OnInit,
+    Output,
     QueryList,
     ViewChildren
 } from '@angular/core';
 
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { filter, take } from 'rxjs/operators';
+import { filter, take, tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
+
 import { DotLayout } from '@dotcms/dotcms-models';
 
 import { colIcon, rowIcon } from './assets/icons';
@@ -38,7 +41,10 @@ import {
     gridOptions,
     subGridOptions
 } from './utils/gridstack-options';
-import { parseFromDotObjectToGridStack } from './utils/gridstack-utils';
+import {
+    parseFromDotObjectToGridStack,
+    parseFromGridStackToDotObject
+} from './utils/gridstack-utils';
 
 @Component({
     selector: 'dotcms-template-builder',
@@ -49,6 +55,9 @@ import { parseFromDotObjectToGridStack } from './utils/gridstack-utils';
 export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestroy {
     @Input()
     templateLayout!: DotLayout;
+
+    @Output()
+    layoutChange: EventEmitter<DotLayout> = new EventEmitter<DotLayout>();
 
     public items$: Observable<DotGridStackWidget[]>;
 
@@ -70,12 +79,20 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     public readonly colIcon = colIcon;
     public readonly rowDisplayHeight = `${GRID_STACK_ROW_HEIGHT - 1}${GRID_STACK_UNIT}`; // setting a lower height to have space between rows
 
-    constructor(
-        private store: DotTemplateBuilderStore,
-        private dialogService: DialogService,
-        private dotMessage: DotMessageService
-    ) {
-        this.items$ = this.store.items$;
+    constructor(private store: DotTemplateBuilderStore, private dialogService: DialogService, private dotMessage: DotMessageService) {
+        this.items$ = this.store.items$.pipe(
+            tap((items) => {
+                if (!items.length) {
+                    return;
+                }
+
+                const body = parseFromGridStackToDotObject(items);
+                this.layoutChange.emit({
+                    ...this.templateLayout,
+                    body
+                });
+            })
+        );
     }
 
     ngOnInit(): void {

@@ -15,16 +15,16 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipeModule } from '@dotcms/ui';
 
 import { DotAddStyleClassesDialogStore } from './components/add-style-classes-dialog/store/add-style-classes-dialog.store';
-import { AddWidgetComponent } from './components/add-widget/add-widget.component';
-import { TemplateBuilderActionsComponent } from './components/template-builder-actions/template-builder-actions.component';
-import { TemplateBuilderBackgroundColumnsComponent } from './components/template-builder-background-columns/template-builder-background-columns.component';
-import { TemplateBuilderBoxComponent } from './components/template-builder-box/template-builder-box.component';
-import { TemplateBuilderRowComponent } from './components/template-builder-row/template-builder-row.component';
-import { TemplateBuilderSectionComponent } from './components/template-builder-section/template-builder-section.component';
+import { TemplateBuilderComponentsModule } from './components/template-builder-components.module';
 import { DotGridStackWidget } from './models/models';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { TemplateBuilderComponent } from './template-builder.component';
+import { parseFromDotObjectToGridStack } from './utils/gridstack-utils';
 import { DOT_MESSAGE_SERVICE_TB_MOCK, FULL_DATA_MOCK } from './utils/mocks';
+
+global.structuredClone = jest.fn((val) => {
+    return JSON.parse(JSON.stringify(val));
+});
 
 describe('TemplateBuilderComponent', () => {
     let spectator: SpectatorHost<TemplateBuilderComponent>;
@@ -37,16 +37,12 @@ describe('TemplateBuilderComponent', () => {
         imports: [
             NgFor,
             AsyncPipe,
-            TemplateBuilderRowComponent,
             AddWidgetComponent,
-            TemplateBuilderBoxComponent,
-            TemplateBuilderBackgroundColumnsComponent,
             DotMessagePipeModule,
             HttpClientTestingModule,
-            TemplateBuilderSectionComponent,
-            TemplateBuilderActionsComponent,
             ToolbarModule,
-            DividerModule
+            DividerModule,
+            TemplateBuilderComponentsModule
         ],
         providers: [
             DotTemplateBuilderStore,
@@ -138,4 +134,15 @@ describe('TemplateBuilderComponent', () => {
 
         expect(openDialogMock).toHaveBeenCalled();
     });
+
+    describe('layoutChange', () => {
+        it('should emit layoutChange when the store changes', (done) => {
+            const layoutChangeMock = jest.spyOn(spectator.component.layoutChange, 'emit');
+            store.init(parseFromDotObjectToGridStack(FULL_DATA_MOCK));
+            store.items$.pipe(take(1)).subscribe(() => {
+                // const body = parseFromGridStackToDotObject(items);
+                expect(layoutChangeMock).toHaveBeenCalledWith({ body: FULL_DATA_MOCK });
+                done();
+            });
+        });
 });

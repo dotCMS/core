@@ -16,6 +16,7 @@ import { TemplateBuilderBackgroundColumnsComponent } from './components/template
 import { TemplateBuilderBoxComponent } from './components/template-builder/components/template-builder-box/template-builder-box.component';
 import { TemplateBuilderRowComponent } from './components/template-builder/components/template-builder-row/template-builder-row.component';
 import { TemplateBuilderSectionComponent } from './components/template-builder/components/template-builder-section/template-builder-section.component';
+import { TemplateBuilderComponentsModule } from './components/template-builder/components/template-builder-components.module';
 import { DotTemplateBuilderStore } from './components/template-builder/store/template-builder.store';
 import { TemplateBuilderComponent } from './components/template-builder/template-builder.component';
 
@@ -23,10 +24,6 @@ import { TemplateBuilderComponent } from './components/template-builder/template
     imports: [
         NgFor,
         AsyncPipe,
-        TemplateBuilderRowComponent,
-        AddWidgetComponent,
-        TemplateBuilderBoxComponent,
-        RemoveConfirmDialogComponent,
         DotMessagePipeModule,
         TemplateBuilderBackgroundColumnsComponent,
         TemplateBuilderSectionComponent,
@@ -35,7 +32,8 @@ import { TemplateBuilderComponent } from './components/template-builder/template
         TemplateBuilderActionsComponent,
         NgStyle,
         ToolbarModule,
-        DividerModule
+        DividerModule,
+        TemplateBuilderComponentsModule
     ],
     declarations: [TemplateBuilderComponent],
     providers: [

@@ -5,6 +5,7 @@ import { NgFor, AsyncPipe } from '@angular/common';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
+import { ButtonModule } from 'primeng/button';
 import { DividerModule } from 'primeng/divider';
 import { DialogService, DynamicDialogModule, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { ToolbarModule } from 'primeng/toolbar';
@@ -48,6 +49,7 @@ export default {
                 AddStyleClassesDialogComponent,
                 DynamicDialogModule,
                 HttpClientModule,
+                ButtonModule,
                 TemplateBuilderActionsComponent,
                 ToolbarModule,
                 DividerModule
@@ -73,7 +75,17 @@ export default {
 } as Meta<TemplateBuilderComponent>;
 
 const Template: Story<TemplateBuilderComponent> = (args: TemplateBuilderComponent) => ({
-    props: args
+    props: args,
+    template: `
+        <dotcms-template-builder [templateLayout]="templateLayout">
+            <button
+                [label]="'Publish'"
+                toolbar-actions-right
+                type="button"
+                pButton
+            ></button>
+        </dotcms-template-builder>
+    `
 });
 
 export const Base = Template.bind({});

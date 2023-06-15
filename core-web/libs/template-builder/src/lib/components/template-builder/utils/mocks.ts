@@ -47,6 +47,10 @@ export const MINIMAL_DATA_MOCK: DotLayoutBody = {
                         {
                             identifier: '//demo.dotcms.com/application/containers/banner/',
                             uuid: '1'
+                        },
+                        {
+                            identifier: 'another-identifier',
+                            uuid: '2'
                         }
                     ],
                     leftOffset: 1,
