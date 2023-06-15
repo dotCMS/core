@@ -12,7 +12,7 @@
             [showClear]="false"
             [filter]="true"
             [placeholder]="'dot.template.builder.add.container' | dm"
-            (onChange)="onContainerSelect()"
+            (onChange)="onContainerSelect($event)"
             data-testId="btn-plus"
             dotcmsContainerOptions
             appendTo="body"

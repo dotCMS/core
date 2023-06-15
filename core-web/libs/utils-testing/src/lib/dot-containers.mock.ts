@@ -74,5 +74,6 @@ export const dotContainerMapMock = (): DotContainerMap => {
 
 export const containersMock: DotContainer[] = Array.from(Array(10).keys()).map((number) => ({
     friendlyName: `Container ${number}`,
-    parentPermissionable: { hostname: '' }
+    parentPermissionable: { hostname: '' },
+    identifier: String(number)
 }));

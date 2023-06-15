@@ -4,6 +4,8 @@ import { v4 as uuid } from 'uuid';
 
 import { Injectable } from '@angular/core';
 
+import { DotContainer } from '@dotcms/dotcms-models';
+
 import { DotGridStackNode, DotGridStackWidget, DotTemplateBuilderState } from '../models/models';
 import {
     getIndexRowInItems,
@@ -260,6 +262,51 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
             })
         };
     });
+
+    readonly addContainer = this.updater(
+        (
+            state,
+            {
+                affectedColumn,
+                container
+            }: { affectedColumn: DotGridStackWidget; container: DotContainer }
+        ) => {
+            const { items } = state;
+            const containerCount = items
+                .flatMap((row) =>
+                    row.subGridOpts.children.flatMap((child) =>
+                        child.containers.map((container) => container.identifier)
+                    )
+                )
+                .filter((identifier) => container.identifier === identifier).length;
+
+            const updatedItems = items.map((row) => {
+                if (row.id != affectedColumn.parentId) {
+                    return row;
+                }
+
+                const updatedChildren = row.subGridOpts.children.map((child) => {
+                    if (affectedColumn.id === child.id)
+                        return {
+                            ...child,
+                            containers: [
+                                ...child.containers,
+                                {
+                                    identifier: container.identifier,
+                                    uuid: String(containerCount + 1)
+                                }
+                            ]
+                        };
+
+                    return child;
+                });
+
+                return { ...row, subGridOpts: { ...row.subGridOpts, children: updatedChildren } };
+            });
+
+            return { ...state, items: updatedItems };
+        }
+    );
 
     // Effects
 

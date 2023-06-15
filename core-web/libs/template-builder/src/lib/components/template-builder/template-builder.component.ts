@@ -22,6 +22,8 @@ import {
     ViewChildren
 } from '@angular/core';
 
+import { DotContainer, DotLayout } from '@dotcms/dotcms-models';
+import { tap } from 'rxjs/operators';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { filter, take, tap } from 'rxjs/operators';
@@ -222,6 +224,13 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
      */
     deleteRow(id: numberOrString): void {
         this.store.removeRow(id as string);
+    }
+
+    addContainer(box: DotGridStackWidget, rowId: numberOrString, container: DotContainer) {
+        this.store.addContainer({
+            affectedColumn: { ...box, parentId: rowId as string },
+            container
+        });
     }
 
     /**

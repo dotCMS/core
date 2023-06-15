@@ -16,6 +16,7 @@ import { DropdownModule } from 'primeng/dropdown';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
 
 import { DotContainersService } from '@dotcms/data-access';
+import { DotContainer } from '@dotcms/dotcms-models';
 import { DotMessagePipeModule } from '@dotcms/ui';
 
 import { ContainerOptionsDirective } from '../../../../directives/container-options-directive/container-options.directive';
@@ -47,7 +48,7 @@ export class TemplateBuilderBoxComponent implements OnChanges {
     @Output()
     editClasses: EventEmitter<void> = new EventEmitter<void>();
     @Output()
-    addContainer: EventEmitter<void> = new EventEmitter<void>();
+    addContainer: EventEmitter<DotContainer> = new EventEmitter<DotContainer>();
     @Output()
     deleteContainer: EventEmitter<void> = new EventEmitter<void>();
     @Output()
@@ -71,7 +72,7 @@ export class TemplateBuilderBoxComponent implements OnChanges {
         this.boxVariant = getBoxVariantByWidth(this.width);
     }
 
-    onContainerSelect() {
-        this.addContainer.emit();
+    onContainerSelect({ value }: { value: DotContainer }) {
+        this.addContainer.emit(value);
     }
 }
