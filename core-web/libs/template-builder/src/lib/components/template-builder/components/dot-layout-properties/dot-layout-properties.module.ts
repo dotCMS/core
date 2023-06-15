@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
-import { ReactiveFormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
@@ -21,7 +21,8 @@ import { DotLayoutSidebarModule } from './dot-layout-property-sidebar/dot-layout
         ButtonModule,
         ReactiveFormsModule,
         UiDotIconButtonModule,
-        DotMessagePipeModule
+        DotMessagePipeModule,
+        FormsModule
     ],
     exports: [DotLayoutPropertiesComponent],
     providers: []

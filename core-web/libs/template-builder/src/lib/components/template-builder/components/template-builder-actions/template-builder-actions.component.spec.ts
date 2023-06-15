@@ -26,8 +26,16 @@ describe('TemplateBuilderActionsComponent', () => {
         const spy = jest.spyOn(spectator.component.selectTheme, 'emit');
         spectator.detectChanges();
         const btnSelectStyles = spectator.query(byTestId('btn-select-theme'));
-        spectator.dispatchMouseEvent(btnSelectStyles, 'click');
+        spectator.dispatchMouseEvent(btnSelectStyles, 'onClick');
 
         expect(spy).toHaveBeenCalled();
+    });
+
+    it('should open an overlayPanel event when layout button is clicked', () => {
+        spectator.detectChanges();
+        const btnSelectStyles = spectator.query(byTestId('btn-select-layout'));
+        spectator.dispatchMouseEvent(btnSelectStyles, 'click');
+
+        expect(spectator.query('p-overlaypanel')).toBeTruthy();
     });
 });

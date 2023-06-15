@@ -158,7 +158,7 @@ describe('DotLayoutSidebarComponent', () => {
         });
     });
 
-    xit('should show selected left or right based on the sidebar location value', () => {
+    it.skip('should show selected left or right based on the sidebar location value', () => {
         //
     });
 });
