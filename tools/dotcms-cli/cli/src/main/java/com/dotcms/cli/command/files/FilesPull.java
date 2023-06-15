@@ -41,14 +41,11 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
             description = "Overrides the local files with the ones from the server.")
     boolean override;
 
-    @CommandLine.Option(names = {"-ee", "--excludeEmptyFolders"}, defaultValue = "true",
+    @CommandLine.Option(names = {"-ie", "--includeEmptyFolders"}, defaultValue = "false",
             description =
-                    "When this option is enabled, the pull process will not create folders that do "
-                            + "not contain any assets, as well as folders that have no children with assets. "
-                            + "This can be useful for users who want to focus on the folder structure that "
-                            + "contains assets, making the folder structure more concise and easier to navigate. By "
-                            + "default, this option is enabled, and empty folders will not be created.")
-    boolean excludeEmptyFolders;
+                    "When this option is enabled, the pull process will not create empty folders. "
+                            + "By default, this option is disabled, and empty folders will not be created.")
+    boolean includeEmptyFolders;
 
     @CommandLine.Option(names = {"-ef", "--excludeFolder"},
             paramLabel = "patterns",
@@ -127,7 +124,7 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
 
             // ---
             // Now we need to pull the contents based on the tree we found
-            pullAssetsService.pull(output, result, destination, override, !excludeEmptyFolders);
+            pullAssetsService.pull(output, result, destination, override, includeEmptyFolders);
 
             output.info("\n\nPull process finished successfully.");
 
