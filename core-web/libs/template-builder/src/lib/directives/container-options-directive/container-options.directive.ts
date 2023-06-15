@@ -81,18 +81,10 @@ export class ContainerOptionsDirective implements OnInit, OnDestroy {
         );
     }
 
-    private getErrorOptions(): DotDropdownSelectOption<DotContainer>[] {
-        return [
-            {
-                label: this.loadErrorMessage,
-                inactive: true,
-                value: null
-            }
-        ];
-    }
-
     private handleContainersLoadError() {
-        return of(this.getErrorOptions());
+        this.control.disabled = true;
+
+        return of([]);
     }
 
     private setOptions(options: Array<DotDropdownSelectOption<DotContainer>>) {

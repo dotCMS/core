@@ -277,13 +277,14 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
             }: { affectedColumn: DotGridStackWidget; container: DotContainer }
         ) => {
             const { items } = state;
-            const containerCount = items
+            const maxUuidForContainer = items
                 .flatMap((row) =>
                     row.subGridOpts?.children?.flatMap((child) =>
-                        child.containers?.map((container) => container.identifier)
+                        child.containers?.map((container) => container)
                     )
                 )
-                .filter((identifier) => container.identifier === identifier).length;
+                .filter((stateContainer) => container.identifier === stateContainer.identifier)
+                .reduce((prev, curr) => (Number(curr.uuid) > prev ? Number(curr.uuid) : prev), 0);
 
             const updatedItems = items.map((row) => {
                 if (row.id != affectedColumn.parentId) {
@@ -298,7 +299,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
                                 ...child.containers,
                                 {
                                     identifier: container.identifier,
-                                    uuid: String(containerCount + 1)
+                                    uuid: String(maxUuidForContainer + 1)
                                 }
                             ]
                         };

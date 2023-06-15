@@ -6,11 +6,12 @@ import { TestBed } from '@angular/core/testing';
 
 import { take } from 'rxjs/operators';
 
+import { containersMock } from '@dotcms/utils-testing';
+
 import { DotTemplateBuilderStore } from './template-builder.store';
 
 import { DotGridStackNode, DotGridStackWidget } from '../models/models';
 import { GRIDSTACK_DATA_MOCK } from '../utils/mocks';
-import { containersMock } from '@dotcms/utils-testing';
 
 global.structuredClone = jest.fn((val) => {
     return JSON.parse(JSON.stringify(val));
