@@ -1,5 +1,3 @@
-@use "variables" as *;
-
 // Font-icons
 @import "font-awesome-4.7.0/mixins";
 @import "font-awesome-4.7.0/variables";
@@ -11,6 +9,8 @@
 @import "bootstrap-sass-3.3.7/assets/stylesheets/bootstrap/variables";
 @import "bootstrap-sass-3.3.7/assets/stylesheets/bootstrap/mixins";
 @import "bootstrap-sass-3.3.7/assets/stylesheets/bootstrap/grid";
+
+@import "variables";
 
 // MATERIAL DESIGN FOR DOJO THEME
 @import "dijit-theme-dotcms";
