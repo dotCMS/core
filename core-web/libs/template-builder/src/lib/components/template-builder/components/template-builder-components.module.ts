@@ -27,7 +27,8 @@ import { TemplateBuilderSectionComponent } from './template-builder-section/temp
         TemplateBuilderBackgroundColumnsComponent,
         TemplateBuilderBoxComponent,
         TemplateBuilderRowComponent,
-        TemplateBuilderSectionComponent
+        TemplateBuilderSectionComponent,
+        DotLayoutPropertiesModule
     ]
 })
 export class TemplateBuilderComponentsModule {}
