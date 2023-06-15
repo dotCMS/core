@@ -196,6 +196,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
             throw new DotStateException("Page Copy Failed", e);
         }
         pa.setHost(con.getHost());
+        pa.setVariantId(con.getVariantId());
         if(UtilMethods.isSet(con.getFolder())){
             try{
                 Identifier ident = identifierAPI.find(con);
@@ -230,7 +231,6 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
 		}
         
-
         return pa;
     }
 

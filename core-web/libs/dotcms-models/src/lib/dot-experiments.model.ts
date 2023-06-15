@@ -1,6 +1,7 @@
 import { ChartDataset } from 'chart.js';
 
 import {
+    BayesianStatusResponse,
     ComponentStatus,
     DotExperimentStatusList,
     TrafficProportionTypes
@@ -24,8 +25,28 @@ export interface DotExperiment {
 }
 
 export interface DotExperimentResults {
+    bayesianResult: DotResultBayesian;
     goals: Record<GoalsLevels, DotResultGoal>;
     sessions: DotResultSessions;
+}
+
+export interface DotResultBayesian {
+    value: number;
+    suggestedWinner: BayesianStatusResponse | string;
+    results: DotBayesianVariantResult[];
+}
+
+export interface DotBayesianVariantResult {
+    conversionRate: number;
+    credibilityInterval: DotCreditabilityInterval;
+    probability: number;
+    risk: number;
+    variant: string;
+}
+
+export interface DotCreditabilityInterval {
+    lower: number;
+    upper: number;
 }
 
 export interface DotResultGoal {
@@ -38,12 +59,8 @@ export interface DotResultVariant {
     multiBySession: number;
     uniqueBySession: DotResultUniqueBySession;
     variantName: string;
-}
-
-export interface DotResultSimpleVariant {
-    id: string;
-    name: string;
-    uniqueBySession: DotResultUniqueBySession;
+    variantDescription: string;
+    totalPageViews: number;
 }
 
 export interface DotResultUniqueBySession {
@@ -67,11 +84,24 @@ export interface TrafficProportion {
     variants: Array<Variant>;
 }
 
+export interface DotExperimentVariantDetail {
+    id: string;
+    name: string;
+    conversions: number;
+    conversionRate: string;
+    conversionRateRange: string;
+    sessions: number;
+    probabilityToBeBest: string;
+    isWinner: boolean;
+    isPromoted: boolean;
+}
+
 export interface Variant {
     id: string;
     name: string;
     weight: number;
     url?: string;
+    promoted?: boolean;
 }
 
 export type GoalsLevels = 'primary';
@@ -111,6 +141,7 @@ export type StepStatus = SidebarStatus & {
 };
 
 export enum ExperimentSteps {
+    EXPERIMENT_DESCRIPTION = 'experimentDescription',
     VARIANTS = 'variants',
     GOAL = 'goal',
     TARGETING = 'targeting',

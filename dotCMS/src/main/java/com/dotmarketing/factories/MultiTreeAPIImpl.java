@@ -74,6 +74,7 @@ import java.util.stream.Collectors;
  */
 public class MultiTreeAPIImpl implements MultiTreeAPI {
 
+    private static final String SELECT_MULTITREES_BY_VARIANT = "SELECT * FROM multi_tree WHERE variant_id = ?";
     private final Lazy<MultiTreeCache> multiTreeCache = Lazy.of(CacheLocator::getMultiTreeCache);
 
     private static final String DELETE_ALL_MULTI_TREE_RELATED_TO_IDENTIFIER_SQL =
@@ -167,6 +168,22 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     @Override
     public void deleteMultiTreeByChild(final String contentIdentifier) throws DotDataException {
         deleteMultiTree(getMultiTreesByChild(contentIdentifier));
+    }
+
+    @WrapInTransaction
+    @Override
+    public void deleteMultiTree(final String pageId, final String variant)throws DotDataException {
+
+        this.getMultiTreeByVariantWithoutFallback(pageId, variant)
+                .forEach(multiTree -> this.multiTreeCache.get()
+                        .removeContentletReferenceCount(multiTree.getContentlet()));
+
+        new DotConnect().setSQL("DELETE FROM multi_tree WHERE parent1 = ? AND variant_id = ?")
+                .addParam(pageId)
+                .addParam(variant)
+                .loadResult();
+
+        refreshPageInCache(pageId, variant);
     }
 
     /**
@@ -385,24 +402,6 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
         return multiTrees;
     } // copyPersonalizationForPage.
-
-    @Override
-    public List<MultiTree> copyVariantForPage (final String pageId, final String baseVariant,
-            final String newVariant) throws DotDataException{
-
-        List<MultiTree> multiTrees = this.getMultiTreeByVariantWithoutFallback(
-                pageId, baseVariant);
-
-        if (UtilMethods.isSet(multiTrees)) {
-
-            multiTrees = multiTrees.stream()
-                    .map(multiTree -> MultiTree.buildMultitreeWithVariant(multiTree, newVariant))
-                    .collect(Collectors.toList());
-            this.saveMultiTrees(multiTrees);
-        }
-
-        return multiTrees;
-    }
 
     @WrapInTransaction
     @Override
@@ -1217,6 +1216,17 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             CacheLocator.getHTMLPageCache().remove(pageId);
         });
     }
+
+    @Override
+    @WrapInTransaction
+    public List<MultiTree> getMultiTrees(final Variant variant) throws DotDataException {
+        final List<Map<String, Object>> results = new DotConnect().setSQL(SELECT_MULTITREES_BY_VARIANT)
+                .addParam(variant.name())
+                .loadResults();
+
+        return TransformerLocator.createMultiTreeTransformer(results).asList();
+    }
+
 
     private String getFileContainerId(final String containerId) {
         try {

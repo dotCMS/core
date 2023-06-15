@@ -1,12 +1,11 @@
 package com.dotcms.util;
 
-import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -28,6 +27,21 @@ public class JsonUtil {
 
     public static Map<String, Object> getJsonFromString(final String json) throws IOException {
         return JSON_MAPPER.readValue(json, Map.class);
+    }
+
+    /**
+     * Takes a JSON value in the form of a String, and maps its attributes into the specified Java Class.
+     *
+     * @param json  The original JSON as String.
+     * @param clazz The Class that the JSON will be transformed into.
+     * @param <T>   The type of the resulting object
+     *
+     * @return The resulting object with the JSON data
+     *
+     * @throws IOException An error occurred when transforming the JSON String.
+     */
+    public static <T> T getObjectFromJson(final String json, Class<T> clazz) throws IOException {
+        return JSON_MAPPER.readValue(json, clazz);
     }
 
     public static String getJsonAsString(final Map<String, Object> json) throws IOException {

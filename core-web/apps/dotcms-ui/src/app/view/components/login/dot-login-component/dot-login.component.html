@@ -5,35 +5,35 @@
                 <img src="{{ loginInfo.entity.logo }}" alt="DotCMS - Hybrid CMS" />
             </div>
             <p-dropdown
-                data-testId="language"
                 class="p-dropdown-sm"
-                [options]="languages"
-                formControlName="language"
                 #languageDropdown
+                [options]="languages"
                 [style]="{ width: '185px' }"
                 (onChange)="onLanguageChange($event.value)"
+                data-testId="language"
+                formControlName="language"
             >
             </p-dropdown>
         </div>
 
-        <h3 data-testId="header" class="login__title">
+        <h3 class="login__title" data-testId="header">
             {{ loginInfo.i18nMessagesMap['welcome-login'] }}
         </h3>
 
         <p
-            [ngClass]="{ 'p-invalid': isError, success: !isError }"
             class="login__message"
-            data-testId="message"
+            [ngClass]="{ 'p-invalid': isError, success: !isError }"
             [innerHTML]="message"
+            data-testId="message"
         ></p>
         <div class="field form__group--validation">
-            <label data-testId="emailLabel" for="inputtext">{{
+            <label dotFieldRequired data-testId="emailLabel" for="inputtext">{{
                 loginInfo.i18nMessagesMap['emailAddressLabel']
             }}</label>
 
             <input
-                type="text"
                 id="inputtext"
+                type="text"
                 pInputText
                 type="text"
                 dotAutofocus
@@ -54,11 +54,12 @@
             </dot-field-validation-message>
         </div>
         <div class="field form__group--validation">
-            <label data-testId="passwordLabel" for="inputtext">{{
+            <label dotFieldRequired data-testId="passwordLabel" for="password">{{
                 loginInfo.i18nMessagesMap['password']
             }}</label>
 
             <input
+                id="password"
                 pInputText
                 type="password"
                 formControlName="password"
@@ -79,29 +80,29 @@
         </div>
         <div class="login__password-settings field">
             <p-checkbox
+                [label]="loginInfo.i18nMessagesMap['remember-me']"
                 formControlName="rememberMe"
                 data-testId="rememberMe"
                 binary="true"
-                [label]="loginInfo.i18nMessagesMap['remember-me']"
             ></p-checkbox>
             <a
-                actionLink
-                data-testId="actionLink"
                 *ngIf="!isLoginInProgress"
                 (click)="goToForgotPassword()"
+                actionLink
+                data-testId="actionLink"
                 >{{ loginInfo.i18nMessagesMap['get-new-password'] }}</a
             >
         </div>
         <div class="field">
             <dot-loading-indicator></dot-loading-indicator>
             <button
-                [disabled]="!loginForm.valid"
-                pButton
-                *ngIf="loginForm.enabled"
-                (click)="logInUser()"
-                [label]="loginInfo.i18nMessagesMap['sign-in']"
-                data-testId="submitButton"
                 class="login__button"
+                *ngIf="loginForm.enabled"
+                [disabled]="!loginForm.valid"
+                [label]="loginInfo.i18nMessagesMap['sign-in']"
+                (click)="logInUser()"
+                pButton
+                data-testId="submitButton"
             ></button>
         </div>
         <div class="login__footer">
@@ -114,12 +115,12 @@
                 {{ loginInfo.entity.buildDateString }}</span
             >
             <span
-                data-testId="license"
                 *ngIf="loginInfo.entity.levelName.indexOf('COMMUNITY') !== -1"
                 [innerHTML]="
                     ' - ' +
                     loginInfo.i18nMessagesMap['angular.login.component.community.licence.message']
                 "
+                data-testId="license"
             >
             </span>
         </div>

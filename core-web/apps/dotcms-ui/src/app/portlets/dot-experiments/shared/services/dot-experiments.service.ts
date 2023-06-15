@@ -9,6 +9,7 @@ import { DotCMSResponse } from '@dotcms/dotcms-js';
 import {
     DotExperiment,
     DotExperimentResults,
+    DotExperimentStatusList,
     Goals,
     GoalsLevels,
     RangeOfDateAndTime,
@@ -44,6 +45,21 @@ export class DotExperimentsService {
     getAll(pageId: string): Observable<DotExperiment[]> {
         return this.http
             .get<DotCMSResponse<DotExperiment[]>>(`${API_ENDPOINT}?pageId=${pageId}`)
+            .pipe(pluck('entity'));
+    }
+
+    /**
+     * Get an array of experiments of a pageId filter by status
+     * @param {string} pageId
+     * @param {DotExperimentStatusList} status
+     * @returns Observable<DotExperiment[]>
+     * @memberof DotExperimentsService
+     */
+    getByStatus(pageId: string, status: DotExperimentStatusList): Observable<DotExperiment[]> {
+        return this.http
+            .get<DotCMSResponse<DotExperiment[]>>(
+                `${API_ENDPOINT}?pageId=${pageId}&status=${status}`
+            )
             .pipe(pluck('entity'));
     }
 
@@ -120,6 +136,21 @@ export class DotExperimentsService {
     }
 
     /**
+     * Cancel schedule experiment and set it to draft
+     * @param {string} experimentId
+     * @returns Observable<DotExperiment>
+     * @memberof DotExperimentsService
+     */
+    cancelSchedule(experimentId: string): Observable<DotExperiment> {
+        return this.http
+            .post<DotCMSResponse<DotExperiment>>(
+                `${API_ENDPOINT}/scheduled/${experimentId}/_cancel`,
+                {}
+            )
+            .pipe(pluck('entity'));
+    }
+
+    /**
      * Add variant to experiment
      * @param  {number} experimentId
      * @param {string} name
@@ -137,7 +168,8 @@ export class DotExperimentsService {
     /**
      * Modify a variant of an experiment
      * @param  {number} experimentId
-     * @param {Variant} variant
+     * @param {string} variantId
+     * @param { description: string } changes
      * @returns Observable<DotExperiment>
      * @memberof DotExperimentsService
      */
@@ -172,26 +204,45 @@ export class DotExperimentsService {
 
     /**
      * Promote variant of experiment
-     * @param  {string} variantName
+     * @param {string} experimentId
+     * @param {string} variantId
      * @returns Observable<DotExperiment>
      * @memberof DotExperimentsService
      */
-    promoteVariant(variantName: string): Observable<DotExperiment> {
+    promoteVariant(experimentId: string, variantId: string): Observable<DotExperiment> {
         return this.http
-            .put<DotCMSResponse<DotExperiment>>(`/api/v1/variants/${variantName}/_promote`, {})
+            .put<DotCMSResponse<DotExperiment>>(
+                `/api/v1/experiments/${experimentId}/variants/${variantId}/_promote`,
+                {}
+            )
             .pipe(pluck('entity'));
     }
 
     /**
      * Set a selectedGoal to an experiment
      * @param {string} experimentId
-     * @param {Goal} selectedGoal
+     * @param {Goals} goals
      * @returns Observable<DotExperiment>
      * @memberof DotExperimentsService
      */
     setGoal(experimentId: string, goals: Goals): Observable<DotExperiment> {
         return this.http
             .patch<DotCMSResponse<DotExperiment>>(`${API_ENDPOINT}/${experimentId}`, { goals })
+            .pipe(pluck('entity'));
+    }
+
+    /**
+     * Set the description to an experiment
+     * @param {string} experimentId
+     * @param description
+     * @returns Observable<DotExperiment>
+     * @memberof DotExperimentsService
+     */
+    setDescription(experimentId: string, description: string): Observable<DotExperiment> {
+        return this.http
+            .patch<DotCMSResponse<DotExperiment>>(`${API_ENDPOINT}/${experimentId}`, {
+                description
+            })
             .pipe(pluck('entity'));
     }
 

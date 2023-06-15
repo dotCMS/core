@@ -42,6 +42,12 @@ $max-container-width: 1100px;
     color: $color-alert-green;
 }
 
+.trophy {
+    fill: $color-accessible-text-green;
+    height: 20px;
+    min-width: 20px;
+}
+
 .prospect-winner {
     font-weight: $font-weight-bold;
 }

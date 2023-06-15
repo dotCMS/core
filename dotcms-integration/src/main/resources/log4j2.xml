@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="INFO" monitorInterval="30">
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{HH:mm:ss.SSS}  %-5level %logger{2}{nolookups} - %msg{nolookups}%n" />
+        </Console>
+    </Appenders>
+    <Loggers>
+        <Root level="INFO">
+            <AppenderRef ref="Console" />
+        </Root>
+        <logger name="org.apache.tika" level="WARN" additivity="false">
+            <AppenderRef ref="Console"/>
+        </logger>
+        <logger name="com.dotmarketing.util.ActivityLogger" level="WARN" additivity="false">
+            <AppenderRef ref="Console"/>
+        </logger>
+        <logger name="com.dotcms.contenttype.business.ContentTypeAPIImpl" level="WARN" additivity="false">
+            <AppenderRef ref="Console"/>
+        </logger>
+        <logger name="com.dotcms.junit.RuleWatcher" level="INFO" additivity="false">
+            <AppenderRef ref="Console"/>
+        </logger>
+        <logger name="com.dotmarketing.common.reindex.ReindexThread
+" level="INFO" additivity="false">
+            <AppenderRef ref="Console"/>
+        </logger>
+
+        <logger name="com.dotmarketing.business.DeterministicIdentifierAPIImpl" level="WARN" additivity="false">
+            <AppenderRef ref="Console"/>
+        </logger>
+        <logger name="com.dotmarketing.business.IdentifierAPIImpl" level="WARN" additivity="false">
+            <AppenderRef ref="Console"/>
+        </logger>
+        <logger name="com.dotmarketing.common.reindex.ReindexQueueAPIImpl" level="WARN" additivity="false">
+            <AppenderRef ref="Console"/>
+        </logger>
+        <logger name="com.dotmarketing.util.SecurityLogger" level="WARN" additivity="false">
+            <AppenderRef ref="Console"/>
+        </logger>
+        <logger name="com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl" level="WARN" additivity="false">
+            <AppenderRef ref="Console"/>
+        </logger>
+        <logger name="com.dotmarketing.util.AdminLogger" level="WARN" additivity="false">
+            <AppenderRef ref="Console"/>
+        </logger>
+        <logger name="com.dotmarketing.portlets.workflows.business.WorkflowAPIImpl" level="WARN" additivity="false">
+            <AppenderRef ref="Console"/>
+        </logger>
+        <logger name="com.dotcms.contenttype.business.FieldAPIImpl" level="WARN" additivity="false">
+            <AppenderRef ref="Console"/>
+        </logger>
+        <!-- remove erorrs of type  An error occurred when getting shorty value for '' of type 'CONTENT': shorty  is not a short id.  Short Ids should be 10 chars in length -->
+        <logger name="com.dotcms.uuid.shorty.ShortyIdAPIImpl" level="ERROR" additivity="false">
+            <AppenderRef ref="Console"/>
+        </logger>
+        <!-- Could not get URI for com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset-->
+        <logger name="com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset" level="ERROR" additivity="false">
+            <AppenderRef ref="Console"/>
+        </logger>
+
+
+        <logger name="com.dotmarketing.common.reindex.ReindexThread" level="WARN" additivity="false">
+            <AppenderRef ref="Console"/>
+        </logger>
+
+        <logger name="com.dotmarketing.common.reindex.BulkProcessorListener" level="WARN" additivity="false">
+            <AppenderRef ref="Console"/>
+        </logger>
+        <logger name="com.liferay.util.FileUtil" level="DEBUG" additivity="false">
+            <AppenderRef ref="Console"/>
+        </logger>
+
+    </Loggers>
+</Configuration>

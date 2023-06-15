@@ -1,0 +1,36 @@
+package com.dotcms.cube;
+
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Spliterator;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+
+/**
+ * Represent a Result from running a CubeJS Query in a CubeJS Server.
+ */
+public class CubeJSResultSetImpl implements CubeJSResultSet {
+
+    private final List<ResultSetItem> data;
+
+    public CubeJSResultSetImpl(final List<Map<String, Object>> data){
+        this.data = data.stream().map(CubeJSResultSet.ResultSetItem::new).collect(Collectors.toList());
+    }
+
+    public long size() {
+        return data.size();
+    }
+
+    @Override
+    public Iterator<ResultSetItem> iterator() {
+        return data.iterator();
+    }
+
+
+
+
+
+}

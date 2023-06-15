@@ -19,7 +19,6 @@ import { of } from 'rxjs/internal/observable/of';
 
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
-import { DotMessagePipeModule } from '@dotcms/app/view/pipes/dot-message/dot-message-pipe.module';
 import { DotRelativeDatePipe } from '@dotcms/app/view/pipes/dot-relative-date/dot-relative-date.pipe';
 import { DotMessageService } from '@dotcms/data-access';
 import {
@@ -28,6 +27,7 @@ import {
     DotcmsConfigService,
     SiteService
 } from '@dotcms/dotcms-js';
+import { DotMessagePipeModule } from '@dotcms/ui';
 import {
     DotcmsConfigServiceMock,
     dotcmsContentletMock,

@@ -122,9 +122,9 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                 },
                 'load-edit-mode-page': (pageRendered: DotPageRender) => {
                     /*
-                        This is the events that gets emitted from the backend when the user
-                        browse from the page internal links
-                    */
+This is the events that gets emitted from the backend when the user
+browse from the page internal links
+*/
 
                     const dotRenderedPageState = new DotPageRenderState(
                         this.pageStateInternal.user,
@@ -201,9 +201,10 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
 
         this.router.navigate(
             [
-                '/edit-page/experiments/configuration',
+                '/edit-page/experiments/',
                 this.pageStateInternal.page.identifier,
-                experimentId
+                experimentId,
+                'configuration'
             ],
             {
                 queryParams: {

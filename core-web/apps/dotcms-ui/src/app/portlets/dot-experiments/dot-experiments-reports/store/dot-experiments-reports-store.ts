@@ -1,30 +1,44 @@
 import { ComponentStore, tapResponse } from '@ngrx/component-store';
 import { ChartData } from 'chart.js';
-import { forkJoin, Observable } from 'rxjs';
+import { forkJoin, Observable, of } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 
-import { switchMap, tap } from 'rxjs/operators';
+import { MessageService } from 'primeng/api';
+
+import { catchError, map, switchMap, tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
+    BayesianNoWinnerStatus,
+    BayesianStatusResponse,
     ComponentStatus,
     daysOfTheWeek,
     DEFAULT_VARIANT_ID,
+    DialogStatus,
     DotExperiment,
     DotExperimentResults,
     DotExperimentStatusList,
-    DotResultDate,
+    DotExperimentVariantDetail,
     DotResultGoal,
-    DotResultSimpleVariant,
     DotResultVariant,
-    ExperimentChartDatasetColorsVariants,
     ExperimentLineChartDatasetDefaultProperties,
-    LineChartColorsProperties,
-    TrafficProportion
+    ReportSummaryLegendByBayesianStatus,
+    SummaryLegend,
+    Variant
 } from '@dotcms/dotcms-models';
+import {
+    getBayesianVariantResult,
+    getConversionRate,
+    getConversionRateRage,
+    getParsedChartData,
+    getProbabilityToBeBest,
+    getPropertyColors,
+    isPromotedVariant,
+    orderVariants
+} from '@portlets/dot-experiments/shared/dot-experiment.utils';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
@@ -32,31 +46,74 @@ export interface DotExperimentsReportsState {
     experiment: DotExperiment | null;
     status: ComponentStatus;
     results: DotExperimentResults | null;
-    variantResults: DotResultSimpleVariant[] | null;
+    promoteDialog: {
+        status: ComponentStatus;
+        visibility: DialogStatus;
+    };
 }
 
 const initialState: DotExperimentsReportsState = {
     experiment: null,
     status: ComponentStatus.INIT,
     results: null,
-    variantResults: null
+    promoteDialog: { status: ComponentStatus.IDLE, visibility: DialogStatus.HIDE }
 };
 
 // ViewModel Interfaces
 export interface VmReportExperiment {
-    isLoading: boolean;
     experiment: DotExperiment;
+    results: DotExperimentResults;
+    chartData: ChartData<'line'> | null;
+    detailData: DotExperimentVariantDetail[];
+    isLoading: boolean;
+    hasEnoughSessions: boolean;
     status: ComponentStatus;
     showSummary: boolean;
-    results: DotExperimentResults;
-    variantResults: DotResultSimpleVariant[] | null;
-    chartData: ChartData<'line'> | null;
+    winnerLegendSummary: SummaryLegend;
+    showPromoteDialog: boolean;
+    suggestedWinner: DotResultVariant | null;
 }
+
+export interface VmPromoteVariant {
+    experimentId: string;
+    showDialog: boolean;
+    isSaving: boolean;
+    variants: DotExperimentVariantDetail[] | null;
+}
+
+const NOT_ENOUGH_DATA_LABEL = 'Not enough data';
 
 @Injectable()
 export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsReportsState> {
     readonly isLoading$: Observable<boolean> = this.select(
         ({ status }) => status === ComponentStatus.LOADING
+    );
+    readonly isShowPromotedDialog$: Observable<boolean> = this.select(
+        ({ promoteDialog }) => promoteDialog.visibility === DialogStatus.SHOW
+    );
+
+    readonly summaryWinnerLegend$: Observable<{ icon: string; legend: string }> = this.select(
+        ({ experiment, results }) => {
+            if (experiment != null && results != null) {
+                return this.getSuggestedWinner(experiment, results);
+            }
+
+            return { ...ReportSummaryLegendByBayesianStatus.NO_ENOUGH_SESSIONS };
+        }
+    );
+
+    readonly getSuggestedWinner$: Observable<DotResultVariant | null> = this.select(({ results }) =>
+        BayesianNoWinnerStatus.includes(results?.bayesianResult.suggestedWinner)
+            ? null
+            : results?.goals.primary.variants[results?.bayesianResult.suggestedWinner]
+    );
+
+    readonly isSavingPromotedDialog$: Observable<boolean> = this.select(
+        ({ promoteDialog }) => promoteDialog.status === ComponentStatus.SAVING
+    );
+
+    readonly hasEnoughSessions$: Observable<boolean> = this.select(
+        ({ results }) => results != null && results.sessions.total > 0
     );
 
     readonly setComponentStatus = this.updater(
@@ -66,6 +123,33 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
         })
     );
 
+    readonly setDialogStatus = this.updater(
+        (state: DotExperimentsReportsState, status: ComponentStatus) => ({
+            ...state,
+            promoteDialog: { ...state.promoteDialog, status }
+        })
+    );
+    readonly setExperiment = this.updater(
+        (state: DotExperimentsReportsState, experiment: DotExperiment) => ({
+            ...state,
+            experiment: {
+                ...state.experiment,
+                ...experiment
+            },
+            promoteDialog: { ...state.promoteDialog, visibility: DialogStatus.HIDE }
+        })
+    );
+
+    readonly showPromoteDialog = this.updater((state: DotExperimentsReportsState) => ({
+        ...state,
+        promoteDialog: { ...state.promoteDialog, visibility: DialogStatus.SHOW }
+    }));
+
+    readonly hidePromoteDialog = this.updater((state: DotExperimentsReportsState) => ({
+        ...state,
+        promoteDialog: { ...state.promoteDialog, visibility: DialogStatus.HIDE }
+    }));
+
     readonly showExperimentSummary$: Observable<boolean> = this.select(({ experiment }) =>
         Object.values([
             DotExperimentStatusList.ENDED,
@@ -74,74 +158,159 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
         ]).includes(experiment?.status)
     );
 
-    readonly getChartData$: Observable<ChartData<'line'>> = this.select(({ experiment, results }) =>
-        experiment && results
+    readonly getChartData$: Observable<ChartData<'line'>> = this.select(({ results }) =>
+        results
             ? {
                   labels: this.getChartLabels(results.goals.primary.variants),
-                  datasets: this.getChartDatasets(results.goals.primary.variants, experiment)
+                  datasets: this.getChartDatasets(results.goals.primary.variants)
               }
             : null
     );
 
-    readonly loadExperimentAndResults = this.effect((experimentId$: Observable<string>) => {
-        return experimentId$.pipe(
+    readonly getDetailData$: Observable<DotExperimentVariantDetail[]> = this.select(
+        ({ experiment, results }) => {
+            const noData = this.dotMessageService.get(NOT_ENOUGH_DATA_LABEL);
+
+            return results
+                ? Object.values(results.goals.primary.variants).map((variant) => {
+                      return this.getDotExperimentVariantDetail(
+                          experiment,
+                          results,
+                          variant,
+                          noData
+                      );
+                  })
+                : [];
+        }
+    );
+
+    readonly loadExperimentAndResults = this.effect((experimentId$: Observable<string>) =>
+        experimentId$.pipe(
             tap(() => this.setComponentStatus(ComponentStatus.LOADING)),
             switchMap((experimentId) =>
-                forkJoin({
-                    experiment: this.dotExperimentsService.getById(experimentId),
-                    results: this.dotExperimentsService.getResults(experimentId)
-                }).pipe(
-                    tapResponse(
-                        ({ experiment, results }) => {
-                            this.patchState({
-                                experiment: experiment,
-                                results: results,
-                                variantResults: this.reduceVariantsData(
-                                    results.goals.primary.variants,
-                                    experiment
-                                )
+                forkJoin([
+                    this.dotExperimentsService.getById(experimentId),
+                    this.dotExperimentsService.getResults(experimentId).pipe(
+                        catchError((response) => {
+                            const { error } = response;
+                            this.dotHttpErrorManagerService.handle({
+                                ...response,
+                                error: {
+                                    ...error,
+                                    header: error.header
+                                        ? error.header
+                                        : this.dotMessageService.get(
+                                              'dot.common.http.error.400.experiment.analytics-app-not-configured.header'
+                                          ),
+                                    message: error.message.split('.')[0]
+                                }
                             });
-                            this.updateTabTitle(experiment);
-                        },
-                        (error: HttpErrorResponse) => this.dotHttpErrorManagerService.handle(error),
-                        () => this.setComponentStatus(ComponentStatus.IDLE)
-                    )
-                )
-            )
-        );
-    });
 
-    readonly promoteVariant = this.effect((variant$: Observable<string>) => {
-        return variant$.pipe(
-            tap(() => this.setComponentStatus(ComponentStatus.LOADING)),
-            switchMap((variant) =>
-                this.dotExperimentsService.promoteVariant(variant).pipe(
-                    tapResponse(
-                        (_experiment) => {
-                            //TODO: Update the experiment & other props in the store
-                            // currently the enpoint is not returning the experiment
-                        },
-                        (error: HttpErrorResponse) => this.dotHttpErrorManagerService.handle(error),
-                        () => this.setComponentStatus(ComponentStatus.IDLE)
+                            return of(null);
+                        })
                     )
+                ]).pipe(
+                    map(([experiment, results]) => {
+                        this.patchState({
+                            experiment: experiment,
+                            results: results,
+                            status: ComponentStatus.IDLE
+                        });
+                        this.updateTabTitle(experiment);
+                        this.setComponentStatus(ComponentStatus.IDLE);
+                    }),
+                    catchError((err) => {
+                        this.setComponentStatus(ComponentStatus.IDLE);
+
+                        return this.dotHttpErrorManagerService.handle(err);
+                    })
                 )
             )
-        );
-    });
+        )
+    );
+
+    readonly promoteVariant = this.effect(
+        (variant$: Observable<{ experimentId: string; variant: Variant }>) => {
+            return variant$.pipe(
+                tap(() => this.setDialogStatus(ComponentStatus.SAVING)),
+                switchMap((variantToPromote) => {
+                    const { experimentId, variant } = variantToPromote;
+
+                    return this.dotExperimentsService.promoteVariant(experimentId, variant.id).pipe(
+                        tapResponse(
+                            (experiment) => {
+                                this.messageService.add({
+                                    severity: 'info',
+                                    summary: this.dotMessageService.get(
+                                        'experiments.action.promote.variant.confirm-title'
+                                    ),
+                                    detail: this.dotMessageService.get(
+                                        'experiments.action.promote.variant.confirm-message',
+                                        variantToPromote.variant.name
+                                    )
+                                });
+                                this.setExperiment(experiment);
+                            },
+                            (error: HttpErrorResponse) =>
+                                this.dotHttpErrorManagerService.handle(error),
+                            () => this.setDialogStatus(ComponentStatus.IDLE)
+                        )
+                    );
+                })
+            );
+        }
+    );
 
     readonly vm$: Observable<VmReportExperiment> = this.select(
         this.state$,
         this.isLoading$,
+        this.hasEnoughSessions$,
         this.showExperimentSummary$,
         this.getChartData$,
-        ({ experiment, status, results, variantResults }, isLoading, showSummary, chartData) => ({
+        this.isShowPromotedDialog$,
+        this.summaryWinnerLegend$,
+        this.getSuggestedWinner$,
+        this.getDetailData$,
+        (
+            { experiment, status, results },
+            isLoading,
+            hasEnoughSessions,
+            showSummary,
+            chartData,
+            showPromoteDialog,
+            winnerLegendSummary,
+            suggestedWinner,
+            detailData
+        ) => ({
             experiment,
             status,
-            isLoading,
-            showSummary,
             results,
-            variantResults,
-            chartData
+            isLoading,
+            hasEnoughSessions,
+            showSummary,
+            chartData,
+            showPromoteDialog,
+            winnerLegendSummary: {
+                ...winnerLegendSummary,
+                legend: this.dotMessageService.get(
+                    winnerLegendSummary?.legend,
+                    suggestedWinner?.variantDescription
+                )
+            },
+            suggestedWinner,
+            detailData
+        })
+    );
+    readonly promotedDialogVm$: Observable<VmPromoteVariant> = this.select(
+        this.state$,
+        this.isShowPromotedDialog$,
+        this.getDetailData$,
+        this.isSavingPromotedDialog$,
+        ({ experiment }, showDialog, variants, isSaving) => ({
+            experimentId: experiment.id,
+            showDialog,
+            variants,
+            isSaving
         })
     );
 
@@ -149,6 +318,7 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
         private readonly dotExperimentsService: DotExperimentsService,
         private readonly dotHttpErrorManagerService: DotHttpErrorManagerService,
         private readonly dotMessageService: DotMessageService,
+        private readonly messageService: MessageService,
         private readonly title: Title
     ) {
         super(initialState);
@@ -158,24 +328,8 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
         this.title.setTitle(`${experiment.name} - ${this.title.getTitle()}`);
     }
 
-    private reduceVariantsData(
-        variants: Record<string, DotResultVariant>,
-        experiment: DotExperiment
-    ): DotResultSimpleVariant[] {
-        return Object.values(variants).map(({ variantName, uniqueBySession }) => ({
-            id: variantName,
-            name: experiment.trafficProportion.variants.find((variant) => variant.id == variantName)
-                .name,
-            uniqueBySession
-        }));
-    }
-
-    private getChartDatasets(
-        result: DotResultGoal['variants'],
-        experiment: DotExperiment
-    ): ChartData<'line'>['datasets'] {
-        const { trafficProportion } = experiment;
-        const variantsOrdered = this.orderVariants(Object.keys(result));
+    private getChartDatasets(result: DotResultGoal['variants']): ChartData<'line'>['datasets'] {
+        const variantsOrdered = orderVariants(Object.keys(result));
 
         let colorIndex = 0;
 
@@ -183,9 +337,9 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
             const { details } = result[variantName];
 
             return {
-                label: this.getLabelName(trafficProportion, variantName),
-                data: this.getParsedChartData(details),
-                ...this.getPropertyColors(colorIndex++),
+                label: result[variantName].variantDescription,
+                data: getParsedChartData(details),
+                ...getPropertyColors(colorIndex++),
                 ...ExperimentLineChartDatasetDefaultProperties
             };
         });
@@ -205,27 +359,63 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
         });
     }
 
-    private getParsedChartData(data: Record<string, DotResultDate>): number[] {
-        return Object.values(data).map((day) => day.multiBySession);
-    }
+    private getSuggestedWinner(
+        experiment: DotExperiment,
+        results: DotExperimentResults
+    ): SummaryLegend {
+        const { bayesianResult, sessions } = results;
 
-    private getPropertyColors(index: number): LineChartColorsProperties {
-        return ExperimentChartDatasetColorsVariants[index];
-    }
+        const hasSessions = sessions.total > 0;
+        const isATieBayesianSuggestionWinner =
+            bayesianResult.suggestedWinner === BayesianStatusResponse.TIE;
+        const isNoneBayesianSuggestionWinner =
+            bayesianResult.suggestedWinner === BayesianStatusResponse.NONE;
 
-    private orderVariants(arrayToOrder: Array<string>): Array<string> {
-        const index = arrayToOrder.indexOf(DEFAULT_VARIANT_ID);
-        if (index > -1) {
-            arrayToOrder.splice(index, 1);
+        if (!hasSessions || isNoneBayesianSuggestionWinner) {
+            return experiment.status === DotExperimentStatusList.ENDED
+                ? ReportSummaryLegendByBayesianStatus.NO_WINNER_FOUND
+                : ReportSummaryLegendByBayesianStatus.NO_ENOUGH_SESSIONS;
         }
 
-        arrayToOrder.unshift(DEFAULT_VARIANT_ID);
+        if (isATieBayesianSuggestionWinner) {
+            return { ...ReportSummaryLegendByBayesianStatus.NO_WINNER_FOUND };
+        }
 
-        return arrayToOrder;
+        return experiment.status === DotExperimentStatusList.ENDED
+            ? { ...ReportSummaryLegendByBayesianStatus.WINNER }
+            : { ...ReportSummaryLegendByBayesianStatus.PRELIMINARY_WINNER };
     }
 
-    //Todo: Remove this when the endpoint sends the name set by the user
-    private getLabelName(trafficProportion: TrafficProportion, variantId: string) {
-        return trafficProportion.variants.find((variant) => variant.id == variantId).name;
+    private getDotExperimentVariantDetail(
+        experiment: DotExperiment,
+        results: DotExperimentResults,
+        variant: DotResultVariant,
+        noDataLabel: string
+    ): DotExperimentVariantDetail {
+        const variantBayesianResult = getBayesianVariantResult(
+            variant.variantName,
+            results.bayesianResult.results
+        );
+
+        return {
+            id: variant.variantName,
+            name: variant.variantDescription,
+            conversions: variant.uniqueBySession.count,
+            conversionRate: getConversionRate(
+                variant.uniqueBySession.count,
+                results.sessions.variants[variant.variantName]
+            ),
+            conversionRateRange: getConversionRateRage(
+                variantBayesianResult?.credibilityInterval,
+                noDataLabel
+            ),
+            sessions: results.sessions.variants[variant.variantName],
+            probabilityToBeBest: getProbabilityToBeBest(
+                variantBayesianResult?.probability,
+                noDataLabel
+            ),
+            isWinner: results.bayesianResult.suggestedWinner === variant.variantName,
+            isPromoted: isPromotedVariant(experiment, variant.variantName)
+        };
     }
 }

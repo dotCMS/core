@@ -68,57 +68,21 @@ function initResults {
     && executeCmd "git push ${test_results_repo_url}"
 }
 
-# Executes logic for matrix partitioned tests such as postman tests
-function closeResults {
-  if [[ "${INPUT_TEST_TYPE}" == 'postman' ]]; then
-    local test_results_repo_url=$(resolveRepoUrl ${TEST_RESULTS_GITHUB_REPO} ${INPUT_CICD_GITHUB_TOKEN} ${GITHUB_USER})
-    local test_results_path=${INPUT_PROJECT_ROOT}/${TEST_RESULTS_GITHUB_REPO}
-
-    gitRemoteLs ${test_results_repo_url} ${BUILD_ID}
-    local remote_branch=$?
-    echo "Branch ${BUILD_ID} exists: ${remote_branch}"
-    [[ ${remote_branch} != 1 ]] \
-      && echo "Tests results branch ${BUILD_ID} does not exist, cannot close results" \
-      && exit 1
-
-    gitClone ${test_results_repo_url} ${BUILD_ID} ${test_results_path}
-
-    executeCmd "mkdir -p ${INPUT_TESTS_RESULTS_LOCATION}"
-    executeCmd "cp -R ${test_results_path}/projects/core/postman/reports/xml/* ${INPUT_TESTS_RESULTS_LOCATION}/"
-    setOutput tests_results_location ${INPUT_TESTS_RESULTS_LOCATION}
-
-    cd ${test_results_path}/projects/core/postman/reports/html
-    gitConfig ${GITHUB_USER}
-
-    executeCmd "cat ./postman-results-header.html > ./index.html"
-    executeCmd "cat ./*.inc >> ./index.html"
-    executeCmd "cat ./postman-results-footer.html >> ./index.html"
-    executeCmd "rm ./*.inc"
-    executeCmd "rm ./postman-results-header.html"
-    executeCmd "rm ./postman-results-footer.html"
-    executeCmd "cat ./index.html"
-    executeCmd "ls -las ."
-
-    executeCmd "git status"
-    executeCmd "git add ."
-    executeCmd "git commit -m \"Closing results for branch ${BUILD_ID}\""
-    executeCmd "git push ${test_results_repo_url}"
-    if [[ ${cmd_result} != 0 ]]; then
-      echo "Error pushing to git for ${INPUT_BUILD_HASH} at ${INPUT_BUILD_ID}, error code: ${cmd_result}"
-      exit 1
-    fi
-
-    for rc_file in *.rc; do
-      local rc_content=$(cat ${rc_file})
-      eval "${rc_content}"
-      if [[ -z "${test_results_rc}" || ${test_results_rc} != 0 ]]; then
-        echo "Error return code at ${rc_file} with content [${rc_content}]"
-        return ${test_results_rc}
-      fi
-    done
-
-    return 0
+# Creates required directory structure for the provided results folder and copies them to the new location
+#
+# $1: results_path: to copy to results location
+function addResults {
+  local results_path=${1}
+  if [[ -z "${results_path}" ]]; then
+    echo "Cannot add results path since its empty, ignoring"
+    exit 1
   fi
+
+  local target_folder=$(resolveResultsPath ${results_path})
+  mkdir -p ${target_folder}
+  echo "Adding test results path ${results_path} to: ${target_folder}"
+
+  executeCmd "cp -R ${OUTPUT_FOLDER}/* ${target_folder}"
 }
 
 # Creates required directory structure for the provided results folder and copies them to the new location
@@ -209,7 +173,6 @@ function persistResults {
       executeCmd "git pull origin ${BUILD_ID}"
       if [[ ${cmd_result} != 0 ]]; then
         echo "Error pulling from git branch ${BUILD_ID}, error code: ${cmd_result}"
-        echo "Trying by deleting "
       fi
     else
       echo "Not pulling ${BUILD_ID} since it is not remote yet"

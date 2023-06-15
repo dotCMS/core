@@ -34,23 +34,26 @@ import org.apache.commons.logging.LogFactory;
  */
 public class PrincipalThreadLocal {
 
-	public static String getName() {
-		String name = (String)_threadLocal.get();
+	private PrincipalThreadLocal() {
+	}
 
-		_log.warn("getName " + name);
+	public static String getName() {
+		String name = threadLocal.get();
+
+		log.debug("getName " + name);
 
 		return name;
 	}
 
 	public static void setName(String name) {
-		_log.debug("setName " + name);
+		log.debug("setName " + name);
 
-		_threadLocal.set(name);
+		threadLocal.set(name);
 	}
 
-	private static final Log _log =
+	private static final Log log =
 		LogFactory.getLog(PrincipalThreadLocal.class);
 
-	private static ThreadLocal _threadLocal = new ThreadLocal();
+	private static final ThreadLocal<String> threadLocal = new ThreadLocal<>();
 
 }

@@ -9,12 +9,25 @@ export const DEFAULT_VARIANT_NAME = 'Original';
 
 export const SESSION_STORAGE_VARIATION_KEY = 'variantName';
 
+export const TIME_14_DAYS = 12096e5;
+
+export const TIME_90_DAYS = 7776e6;
+
+export const PROP_NOT_FOUND = 'NOT_FOUND';
+
+export enum ExperimentsConfigProperties {
+    EXPERIMENTS_MIN_DURATION = 'EXPERIMENTS_MIN_DURATION',
+    EXPERIMENTS_MAX_DURATION = 'EXPERIMENTS_MAX_DURATION'
+}
+
 export enum TrafficProportionTypes {
     SPLIT_EVENLY = 'SPLIT_EVENLY',
     CUSTOM_PERCENTAGES = 'CUSTOM_PERCENTAGES'
 }
 
-export const MAX_INPUT_LENGTH = 50;
+export const MAX_INPUT_TITLE_LENGTH = 50;
+
+export const MAX_INPUT_DESCRIPTIVE_LENGTH = 255;
 
 // Keep the order of this enum is important to respect the order of the experiment listing.
 export enum DotExperimentStatusList {
@@ -112,3 +125,46 @@ export const daysOfTheWeek = [
     'Friday',
     'Saturday'
 ];
+
+export type SummaryLegend = { icon: string; legend: string };
+
+export const enum BayesianStatusResponse {
+    TIE = 'TIE',
+    NONE = 'NONE'
+}
+
+export const BayesianNoWinnerStatus: Array<string> = [
+    BayesianStatusResponse.NONE,
+    BayesianStatusResponse.TIE
+];
+
+const enum BayesianLegendStatus {
+    WINNER = 'WINNER',
+    NO_WINNER_FOUND = 'NO_WINNER_FOUND',
+    NO_WINNER_FOUND_YET = 'NO_WINNER_FOUND_YET',
+    NO_ENOUGH_SESSIONS = 'NO_ENOUGH_SESSIONS',
+    PRELIMINARY_WINNER = 'PRELIMINARY_WINNER'
+}
+
+export const ReportSummaryLegendByBayesianStatus: Record<BayesianLegendStatus, SummaryLegend> = {
+    [BayesianLegendStatus.WINNER]: {
+        icon: 'dot-trophy',
+        legend: 'experiments.summary.suggested-winner.winner-is'
+    },
+    [BayesianLegendStatus.PRELIMINARY_WINNER]: {
+        icon: 'dot-trophy',
+        legend: 'experiments.summary.suggested-winner.preliminary-winner-is'
+    },
+    [BayesianLegendStatus.NO_WINNER_FOUND]: {
+        icon: 'pi-ban',
+        legend: 'experiments.summary.suggested-winner.no-winner-found'
+    },
+    [BayesianLegendStatus.NO_WINNER_FOUND_YET]: {
+        icon: 'pi-ban',
+        legend: 'experiments.summary.suggested-winner.no-winner-found-yet'
+    },
+    [BayesianLegendStatus.NO_ENOUGH_SESSIONS]: {
+        icon: 'pi-ban',
+        legend: 'experiments.summary.suggested-winner.no-enough-sessions'
+    }
+};

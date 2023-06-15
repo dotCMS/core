@@ -1,6 +1,6 @@
 import { ChartData } from 'chart.js';
 
-import { JsonPipe, NgIf } from '@angular/common';
+import { NgIf } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -12,32 +12,28 @@ import {
 
 import { ChartModule, UIChart } from 'primeng/chart';
 import { SkeletonModule } from 'primeng/skeleton';
-import { SpinnerModule } from 'primeng/spinner';
 
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { DotMessagePipeModule } from '@dotcms/ui';
 import { getDotExperimentLineChartJsOptions } from '@portlets/dot-experiments/dot-experiments-reports/components/dot-experiments-reports-chart/chartjs/options/dotExperiments-chartjs.options';
 import { htmlLegendPlugin } from '@portlets/dot-experiments/dot-experiments-reports/components/dot-experiments-reports-chart/chartjs/plugins/dotHtmlLegend-chartjs.plugin';
 
 @Component({
     standalone: true,
     selector: 'dot-experiments-reports-chart',
-    imports: [ChartModule, SpinnerModule, NgIf, SkeletonModule, DotMessagePipeModule, JsonPipe],
+    imports: [ChartModule, NgIf, SkeletonModule, DotMessagePipeModule],
     templateUrl: './dot-experiments-reports-chart.component.html',
     styleUrls: ['./dot-experiments-reports-chart.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsReportsChartComponent implements OnChanges {
     @ViewChild('chart') chart: UIChart;
-
     options;
-    isEmpty = true;
-
     @Input()
-    loading = true;
-
+    isEmpty = true;
+    @Input()
+    isLoading = true;
     @Input()
     config: { xAxisLabel: string; yAxisLabel: string; title: string };
-
     @Input()
     data: ChartData<'line'>;
 
@@ -45,17 +41,11 @@ export class DotExperimentsReportsChartComponent implements OnChanges {
 
     ngOnChanges(changes: SimpleChanges): void {
         const { config, data } = changes;
-        if (config.currentValue && data.currentValue) {
+        if (config?.currentValue && data.currentValue) {
             this.options = getDotExperimentLineChartJsOptions({
                 xAxisLabel: config.currentValue.xAxisLabel,
                 yAxisLabel: config.currentValue.yAxisLabel
             });
-
-            this.isEmpty = this.isEmptyDatasets(data.currentValue);
         }
-    }
-
-    private isEmptyDatasets(data: ChartData<'line'>): boolean {
-        return data.datasets.find((dataset) => dataset.data.length > 0) === undefined;
     }
 }

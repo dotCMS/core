@@ -63,6 +63,7 @@
         .p-datatable-wrapper {
             border-radius: $border-radius-sm;
             border: 1px solid $color-palette-gray-300;
+            overflow: hidden;
 
             .p-datatable-tbody {
                 tr {
@@ -80,7 +81,6 @@
                     }
 
                     td {
-                        height: 40px;
                         padding: 0;
 
                         &:first-child {

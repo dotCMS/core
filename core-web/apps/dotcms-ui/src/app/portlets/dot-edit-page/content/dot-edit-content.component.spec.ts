@@ -85,6 +85,7 @@ import {
     processedContainers,
     SiteServiceMock
 } from '@dotcms/utils-testing';
+import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { getExperimentMock } from '@portlets/dot-experiments/test/mocks';
 
 import { DotEditPageWorkflowsActionsModule } from './components/dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
@@ -152,6 +153,7 @@ export class MockDotFormSelectorComponent {
 export class MockDotEditPageToolbarComponent {
     @Input() pageState = mockDotRenderedPageState;
     @Input() variant;
+    @Input() runningExperiment;
     @Output() actionFired = new EventEmitter<DotCMSContentlet>();
     @Output() cancel = new EventEmitter<boolean>();
     @Output() favoritePage = new EventEmitter<boolean>();
@@ -169,7 +171,9 @@ export class MockDotPaletteComponent {
 
 const mockRenderedPageState = new DotPageRenderState(
     mockUser(),
-    new DotPageRender(mockDotRenderedPage())
+    new DotPageRender(mockDotRenderedPage()),
+    null,
+    EXPERIMENT_MOCK
 );
 
 describe('DotEditContentComponent', () => {
@@ -273,6 +277,7 @@ describe('DotEditContentComponent', () => {
                 DotSessionStorageService,
                 DotCopyContentModalService,
                 DotFavoritePageService,
+                DotExperimentsService,
                 {
                     provide: LoginService,
                     useClass: LoginServiceMock
@@ -410,6 +415,7 @@ describe('DotEditContentComponent', () => {
 
             beforeEach(() => {
                 spyOn(dialogService, 'open');
+
                 fixture.detectChanges();
                 toolbarElement = de.query(By.css('dot-edit-page-toolbar'));
             });
@@ -438,6 +444,10 @@ describe('DotEditContentComponent', () => {
                     experimentName: EXPERIMENT_MOCK.name,
                     mode: DotPageMode.PREVIEW
                 });
+            });
+
+            it('should pass running experiment', () => {
+                expect(toolbarElement.componentInstance.runningExperiment).toEqual(EXPERIMENT_MOCK);
             });
 
             describe('events', () => {
