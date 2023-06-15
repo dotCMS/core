@@ -68,6 +68,28 @@ class AssetAPITest {
     }
 
     /**
+     * Check for the proper response when a file is not found
+     */
+    @Test
+    void Test_Download_Not_Found() {
+
+        final AssetAPI assetAPI = clientFactory.getClient(AssetAPI.class);
+
+        var byPath = SearchByPathRequest.builder().
+                assetPath(String.format("//%s/%s/%s", siteName, "folderDoesNotExist", "image.png")).
+                language("es-CR").
+                live(true).
+                build();
+
+        try {
+            assetAPI.download(byPath);
+            Assertions.fail(" 404 Exception should have been thrown here.");
+        } catch (Exception e) {
+            Assertions.assertTrue(e instanceof NotFoundException);
+        }
+    }
+
+    /**
      * Request and check for a folder three levels deep with no folders on it
      */
     @Test

@@ -159,7 +159,7 @@ public class FilesPullCommandTest extends CommandTest {
             commandLine.setOut(out);
             final String path = String.format("//%s", "default");
             final int status = commandLine.execute(FilesCommand.NAME,
-                    FilesPull.NAME, path, tempFolder.toString(), "--recursive", "true");
+                    FilesPull.NAME, path, tempFolder.toString(), "--recursive", "false");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
         } finally {
             deleteTempDirectory(tempFolder);
@@ -242,7 +242,82 @@ public class FilesPullCommandTest extends CommandTest {
         }
     }
 
-    // Create a method that creates a temp folder
+    @Test
+    void Test_Command_Files_Pull_Option_Include_Empty() throws IOException {
+
+        // Create a temporal folder for the pull
+        var tempFolder = createTempFolder();
+
+        final CommandLine commandLine = getFactory().create();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final String path = String.format("//%s", "default");
+            final int status = commandLine.execute(FilesCommand.NAME,
+                    FilesPull.NAME, path, tempFolder.toString(), "-ie");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+    @Test
+    void Test_Command_Files_Pull_Option_Include_Empty2() throws IOException {
+
+        // Create a temporal folder for the pull
+        var tempFolder = createTempFolder();
+
+        final CommandLine commandLine = getFactory().create();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final String path = String.format("//%s", "default");
+            final int status = commandLine.execute(FilesCommand.NAME,
+                    FilesPull.NAME, path, tempFolder.toString(), "--includeEmptyFolders");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+    @Test
+    void Test_Command_Files_Pull_Option_Include_Empty3() throws IOException {
+
+        // Create a temporal folder for the pull
+        var tempFolder = createTempFolder();
+
+        final CommandLine commandLine = getFactory().create();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final String path = String.format("//%s", "default");
+            final int status = commandLine.execute(FilesCommand.NAME,
+                    FilesPull.NAME, path, tempFolder.toString(), "-ie", "false");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
+    @Test
+    void Test_Command_Files_Pull_Option_Include_Empty4() throws IOException {
+
+        // Create a temporal folder for the pull
+        var tempFolder = createTempFolder();
+
+        final CommandLine commandLine = getFactory().create();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final String path = String.format("//%s", "default");
+            final int status = commandLine.execute(FilesCommand.NAME,
+                    FilesPull.NAME, path, tempFolder.toString(), "--includeEmptyFolders", "true");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+        } finally {
+            deleteTempDirectory(tempFolder);
+        }
+    }
+
     private Path createTempFolder() throws IOException {
 
         String randomFolderName = "folder-" + UUID.randomUUID().toString();
