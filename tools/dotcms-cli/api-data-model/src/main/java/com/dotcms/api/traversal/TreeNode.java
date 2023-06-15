@@ -116,7 +116,8 @@ public class TreeNode {
         TreeNode newNode = new TreeNode(this.folder, true);
 
         // Clone and filter assets based on the status and language
-        if (this.assets != null) {
+        boolean includeAssets = includeAssets();
+        if (includeAssets && this.assets != null) {
             List<AssetView> filteredAssets = this.assets.stream()
                     .filter(asset -> asset.live() == status
                             && asset.lang().equalsIgnoreCase(language))
@@ -168,7 +169,8 @@ public class TreeNode {
      */
     private void collectUniqueStatusesAndLanguagesHelper(TreeNodeInfo nodeInfo, final boolean showEmptyFolders) {
 
-        if (assets() != null) {
+        boolean includeAssets = includeAssets();
+        if (includeAssets && assets() != null) {
             for (AssetView asset : assets()) {
                 if (asset.live()) {
                     nodeInfo.addLiveLanguage(asset.lang());
@@ -201,6 +203,29 @@ public class TreeNode {
                 }
             }
         }
+    }
+
+    /**
+     * Determines whether the assets should be included for the current TreeNode based on its folder's
+     * include and exclude rules.
+     *
+     * @return {@code true} if the assets should be included, {@code false} otherwise.
+     */
+    private boolean includeAssets() {
+
+        // Handling a special case for the root folder
+        var rootFolder = this.folder().path().equals("/");
+        var includeAssets = true;
+
+        if (rootFolder) {
+            if (this.folder().explicitGlobExclude()) {
+                return false;
+            }
+
+            return this.folder().explicitGlobInclude() || this.folder().implicitGlobInclude();
+        }
+
+        return includeAssets;
     }
 
     /**

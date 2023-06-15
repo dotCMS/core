@@ -1,6 +1,7 @@
 package com.dotcms.api.traversal;
 
 import com.dotcms.model.asset.FolderView;
+
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.RecursiveTask;
@@ -74,6 +75,12 @@ public class FolderTraversalTask extends RecursiveTask<TreeNode> {
                     folder.explicitGlobExclude()
             );
 
+            // Using the values set by the filter
+            var detailedFolder = folder.withImplicitGlobInclude(fetchedFolder.implicitGlobInclude());
+            detailedFolder = detailedFolder.withExplicitGlobInclude(fetchedFolder.explicitGlobInclude());
+            detailedFolder = detailedFolder.withExplicitGlobExclude(fetchedFolder.explicitGlobExclude());
+            currentNode = new TreeNode(detailedFolder);
+
             // Process the fetched sub-folders
             if (fetchedFolder.subFolders() != null) {
                 for (FolderView subFolder : fetchedFolder.subFolders()) {
@@ -144,12 +151,27 @@ public class FolderTraversalTask extends RecursiveTask<TreeNode> {
      * Creates a new FolderTraversalTask instance to search for a folder with the specified
      * parameters.
      *
-     * @param siteName         The name of the site containing the folder to search for.
-     * @param parentFolderName The name of the parent folder of the folder to search for.
-     * @param folderName       The name of the folder to search for.
-     * @param level            The level of the folder to search for.
-     * @param include          Whether the folder to search for is included or excluded according to
-     *                         the filter.
+     * @param siteName            The name of the site containing the folder to search for.
+     * @param parentFolderName    The name of the parent folder of the folder to search for.
+     * @param folderName          The name of the folder to search for.
+     * @param level               The level of the folder to search for.
+     * @param implicitGlobInclude This property represents whether a folder should be implicitly included based on the
+     *                            absence of any include patterns. When implicitGlobInclude is set to true, it means
+     *                            that there are no include patterns specified, so all folders should be included by
+     *                            default. In other words, if there are no specific include patterns defined, the
+     *                            filter assumes that all folders should be included unless explicitly excluded.
+     * @param explicitGlobInclude This property represents whether a folder should be explicitly included based on the
+     *                            configured includes patterns for folders. When explicitGlobInclude is set to true,
+     *                            it means that the folder has matched at least one of the include patterns and should
+     *                            be included in the filtered result. The explicit inclusion takes precedence over other
+     *                            rules. If a folder is explicitly included, it will be included regardless of any other
+     *                            rules or patterns.
+     * @param explicitGlobExclude This property represents whether a folder should be explicitly excluded based on the
+     *                            configured excludes patterns for folders. When explicitGlobExclude is set to true, it
+     *                            means that the folder has matched at least one of the exclude patterns and should be
+     *                            excluded from the filtered result. The explicit exclusion takes precedence over other
+     *                            rules. If a folder is explicitly excluded, it will be excluded regardless of any other
+     *                            rules or patterns.
      * @return A new FolderTraversalTask instance to search for the specified folder.
      */
     private FolderTraversalTask searchForFolder(
@@ -157,13 +179,13 @@ public class FolderTraversalTask extends RecursiveTask<TreeNode> {
             final String parentFolderName,
             final String folderName,
             final int level,
-            final boolean include,
+            final boolean implicitGlobInclude,
             final Boolean explicitGlobInclude,
             final Boolean explicitGlobExclude
     ) {
 
-        final var folder = this.restCall(siteName, parentFolderName, folderName, level, include,
-                explicitGlobInclude, explicitGlobExclude);
+        final var folder = this.restCall(siteName, parentFolderName, folderName, level,
+                implicitGlobInclude, explicitGlobInclude, explicitGlobExclude);
 
         return new FolderTraversalTask(
                 this.retriever,
@@ -177,27 +199,45 @@ public class FolderTraversalTask extends RecursiveTask<TreeNode> {
     /**
      * Retrieves the contents of a folder
      *
-     * @param siteName         the name of the site containing the folder
-     * @param parentFolderName the name of the parent folder containing the folder
-     * @param folderName       the name of the folder to retrieve metadata for
-     * @param level            the hierarchical level of the folder
-     * @param include          Whether the folder to search for is included or excluded according to
-     *                         the filter.
+     * @param siteName            the name of the site containing the folder
+     * @param parentFolderName    the name of the parent folder containing the folder
+     * @param folderName          the name of the folder to retrieve metadata for
+     * @param level               the hierarchical level of the folder
+     * @param implicitGlobInclude This property represents whether a folder should be implicitly included based on the
+     *                            absence of any include patterns. When implicitGlobInclude is set to true, it means
+     *                            that there are no include patterns specified, so all folders should be included by
+     *                            default. In other words, if there are no specific include patterns defined, the
+     *                            filter assumes that all folders should be included unless explicitly excluded.
+     * @param explicitGlobInclude This property represents whether a folder should be explicitly included based on the
+     *                            configured includes patterns for folders. When explicitGlobInclude is set to true,
+     *                            it means that the folder has matched at least one of the include patterns and should
+     *                            be included in the filtered result. The explicit inclusion takes precedence over other
+     *                            rules. If a folder is explicitly included, it will be included regardless of any other
+     *                            rules or patterns.
+     * @param explicitGlobExclude This property represents whether a folder should be explicitly excluded based on the
+     *                            configured excludes patterns for folders. When explicitGlobExclude is set to true, it
+     *                            means that the folder has matched at least one of the exclude patterns and should be
+     *                            excluded from the filtered result. The explicit exclusion takes precedence over other
+     *                            rules. If a folder is explicitly excluded, it will be excluded regardless of any other
+     *                            rules or patterns.
      * @return an {@code FolderView} object containing the metadata for the requested folder
      */
     private FolderView restCall(final String siteName, final String parentFolderName,
-            final String folderName, final int level, final boolean include,
-            final Boolean explicitGlobInclude, final Boolean explicitGlobExclude) {
+                                final String folderName, final int level,
+                                final boolean implicitGlobInclude,
+                                final Boolean explicitGlobInclude,
+                                final Boolean explicitGlobExclude) {
 
         var foundFolder = this.retriever.retrieveFolderContents(
                 siteName,
                 parentFolderName,
                 folderName,
                 level,
-                include,
+                implicitGlobInclude,
                 explicitGlobInclude,
                 explicitGlobExclude
         );
+
         return this.filter.apply(foundFolder);
     }
 
