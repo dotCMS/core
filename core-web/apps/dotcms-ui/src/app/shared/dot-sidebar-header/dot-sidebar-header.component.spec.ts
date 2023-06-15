@@ -2,8 +2,7 @@ import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
 
 import { Sidebar } from 'primeng/sidebar';
 
-import { UiDotIconButtonComponent } from '@components/_common/dot-icon-button/dot-icon-button.component';
-import { UiDotIconButtonModule } from '@dotcms/ui';
+import { UiDotIconButtonComponent, UiDotIconButtonModule } from '@dotcms/ui';
 
 import { DotSidebarHeaderComponent } from './dot-sidebar-header.component';
 

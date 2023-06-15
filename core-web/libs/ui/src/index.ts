@@ -7,3 +7,4 @@ export * from './lib/dot-field-required/dot-field-required.directive';
 export * from './lib/dot-message/dot-message-pipe.module';
 export * from './lib/dot-message/dot-message.pipe';
 export * from './lib/dot-icon-button/dot-icon-button.module';
+export * from './lib/dot-icon-button/dot-icon-button.component';

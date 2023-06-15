@@ -5,8 +5,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
 
-import { UiDotIconButtonComponent } from '@components/_common/dot-icon-button/dot-icon-button.component';
-import { UiDotIconButtonModule } from '@dotcms/ui';
+import { UiDotIconButtonComponent, UiDotIconButtonModule } from '@dotcms/ui';
 
 import { DotDialogActions, DotDialogComponent } from './dot-dialog.component';
 

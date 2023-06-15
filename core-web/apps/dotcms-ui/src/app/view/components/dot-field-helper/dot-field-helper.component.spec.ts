@@ -5,8 +5,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
 
-import { UiDotIconButtonComponent } from '@components/_common/dot-icon-button/dot-icon-button.component';
-import { UiDotIconButtonModule } from '@dotcms/ui';
+import { UiDotIconButtonComponent, UiDotIconButtonModule } from '@dotcms/ui';
 
 import { DotFieldHelperComponent } from './dot-field-helper.component';
 
