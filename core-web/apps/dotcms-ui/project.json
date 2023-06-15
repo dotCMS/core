@@ -35,6 +35,11 @@
                     }
                 ],
                 "styles": [
+                    {
+                        "input": "apps/dotcms-ui/src/variables.scss",
+                        "inject": true,
+                        "bundleName": "variables"
+                    },
                     "libs/dotcms-scss/angular/styles.scss",
                     "node_modules/primeicons/primeicons.css",
                     "node_modules/primeicons/primeicons.css",

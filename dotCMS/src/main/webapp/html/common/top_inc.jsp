@@ -38,6 +38,7 @@ THIS FILE AND ITS INCLUDES
 	<link rel="shortcut icon" href="//dotcms.com/favicon.ico" type="image/x-icon">
 	<title>dotCMS : <%= LanguageUtil.get(pageContext, "Enterprise-Web-Content-Management") %></title>
 
+		<link rel="stylesheet" type="text/css" href="/dotAdmin/variables.css" />
     <link rel="stylesheet" type="text/css" href="<%=dojoPath%>/dijit/themes/dijit.css">
     <link rel="stylesheet" type="text/css" href="/html/css/dijit-dotcms/dotcms.css?b=<%= ReleaseInfo.getVersion() %>">
 
