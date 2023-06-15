@@ -1,10 +1,5 @@
 package com.dotcms.rest.api.v1.maintenance;
 
-import java.io.Serializable;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.HashMap;
-import java.util.List;
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.config.DotInitializer;
@@ -16,9 +11,14 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.StringUtils;
 import com.google.common.annotations.VisibleForTesting;
 import io.vavr.control.Try;
+
+import java.io.Serializable;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
+import java.util.List;
 
 /**
  * This topic is intended for cluster aware actions such as restarting the servers or killing
@@ -155,7 +155,7 @@ public class ClusterManagementTopic implements DotPubSubTopic,DotInitializer {
         int rollingDelay = (Integer) event.getPayload()
                         .getOrDefault(ROLLING_DELAY,  Config.getIntProperty("ROLLING_RESTART_DELAY_SECONDS", 60));
 
-        Instant shutdown = Instant.now().plus(serverOrder *   rollingDelay, ChronoUnit.SECONDS);
+        Instant shutdown = Instant.now().plus((long) serverOrder * rollingDelay, ChronoUnit.SECONDS);
         
         
         Logger.info(this.getClass(), "Restarting  " + shutdown + "s, serverOrder:" + serverOrder

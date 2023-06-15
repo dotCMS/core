@@ -11,12 +11,15 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.starter.ExportStarterUtil;
+import com.liferay.portal.model.Portlet;
+import com.liferay.portal.model.PortletModel;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 import org.apache.commons.io.IOUtils;
@@ -88,13 +91,13 @@ public class MaintenanceResource implements Serializable {
                 .requiredRoles(Role.CMS_ADMINISTRATOR_ROLE)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
-                .requiredPortlet("maintenance")
+                .requiredPortlet(Portlet.MAINTENANCE)
                 .init();
 
-        Logger.info(this.getClass(), "User:" + initData.getUser() + " is shutting down dotCMS!"); 
+        Logger.info(this.getClass(), String.format("User '%s' is shutting down dotCMS!", initData.getUser()));
         SecurityLogger.logInfo(
                 this.getClass(),
-                "User:" + initData.getUser() + " is shutting down dotCMS from ip:" + request.getRemoteAddr());
+                String.format("User '%s' is shutting down dotCMS from ip: %s", initData.getUser(), request.getRemoteAddr()));
 
         if (!Config.getBooleanProperty("ALLOW_DOTCMS_SHUTDOWN_FROM_CONSOLE", true)) {
             return Response.status(Status.FORBIDDEN).build();
@@ -132,7 +135,7 @@ public class MaintenanceResource implements Serializable {
                 .requiredRoles(Role.CMS_ADMINISTRATOR_ROLE)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
-                .requiredPortlet("maintenance")
+                .requiredPortlet(Portlet.MAINTENANCE)
                 .init();
 
 
@@ -240,7 +243,7 @@ public class MaintenanceResource implements Serializable {
                     IOUtils.copy(input, output);
 
                 } catch (Exception e) {
-                    throw new RuntimeException(e);
+                    throw new DotRuntimeException(e);
                 }
             }
 
@@ -357,7 +360,7 @@ public class MaintenanceResource implements Serializable {
                 .requiredRoles(Role.CMS_ADMINISTRATOR_ROLE)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
-                .requiredPortlet("maintenance")
+                .requiredPortlet(Portlet.MAINTENANCE)
                 .init();
     }
 
