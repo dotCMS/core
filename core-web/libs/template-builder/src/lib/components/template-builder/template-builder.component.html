@@ -23,50 +23,52 @@
         <p-divider layout="vertical"></p-divider>
         <dotcms-template-builder-actions
             [layoutProperties]="layoutProperties"
+            (layoutPropertiesChange)="layoutPropertiesChange($event)"
         ></dotcms-template-builder-actions>
         <ng-content select="[toolbar-actions-right]"></ng-content>
     </div>
 </p-toolbar>
-
-<dotcms-template-builder-section>{{
-    'dot.template.builder.header' | dm
-}}</dotcms-template-builder-section>
-<div class="grid-stack">
-    <dotcms-template-builder-row
-        class="grid-stack-item"
-        #rowElement
-        *ngFor="let row of items$ | async; trackBy: identify"
-        [attr.gs-id]="row.id"
-        [attr.gs-x]="row.x"
-        [attr.gs-y]="row.y"
-        [attr.gs-w]="row.w"
-        [attr.gs-h]="row.h"
-        (deleteRow)="deleteRow(row.id)"
-        data-testId="row"
-    >
-        <div class="grid-stack-item-content grid-stack">
-            <div
-                class="grid-stack-item sub"
-                #boxElement
-                *ngFor="let box of row.subGridOpts?.children; trackBy: identify"
-                [attr.gs-id]="box.id"
-                [attr.gs-auto]="true"
-                [attr.gs-x]="box.x"
-                [attr.gs-y]="box.y"
-                [attr.gs-w]="box.w"
-                [attr.gs-h]="box.h"
-                data-testId="box"
-            >
-                <dotcms-template-builder-box
-                    class="grid-stack-item-content"
-                    [items]="box.containers"
-                    [width]="box.w"
-                    (deleteColumn)="removeColumn(box, boxElement, row.id)"
-                ></dotcms-template-builder-box>
+<ng-container *ngIf="vm$ | async as vm">
+    <dotcms-template-builder-section *ngIf="vm.layoutProperties.header">{{
+        'dot.template.builder.header' | dm
+    }}</dotcms-template-builder-section>
+    <div class="grid-stack">
+        <dotcms-template-builder-row
+            class="grid-stack-item"
+            #rowElement
+            *ngFor="let row of vm.items; trackBy: identify"
+            [attr.gs-id]="row.id"
+            [attr.gs-x]="row.x"
+            [attr.gs-y]="row.y"
+            [attr.gs-w]="row.w"
+            [attr.gs-h]="row.h"
+            (deleteRow)="deleteRow(row.id)"
+            data-testId="row"
+        >
+            <div class="grid-stack-item-content grid-stack">
+                <div
+                    class="grid-stack-item sub"
+                    #boxElement
+                    *ngFor="let box of row.subGridOpts?.children; trackBy: identify"
+                    [attr.gs-id]="box.id"
+                    [attr.gs-auto]="true"
+                    [attr.gs-x]="box.x"
+                    [attr.gs-y]="box.y"
+                    [attr.gs-w]="box.w"
+                    [attr.gs-h]="box.h"
+                    data-testId="box"
+                >
+                    <dotcms-template-builder-box
+                        class="grid-stack-item-content"
+                        [items]="box.containers"
+                        [width]="box.w"
+                        (deleteColumn)="removeColumn(box, boxElement, row.id)"
+                    ></dotcms-template-builder-box>
+                </div>
             </div>
-        </div>
-    </dotcms-template-builder-row>
-</div>
-<dotcms-template-builder-section>{{
-    'dot.template.builder.footer' | dm
-}}</dotcms-template-builder-section>
+        </dotcms-template-builder-row>
+    </div>
+    <dotcms-template-builder-section *ngIf="vm.layoutProperties.footer">{{
+        'dot.template.builder.footer' | dm
+    }}</dotcms-template-builder-section>
+</ng-container>

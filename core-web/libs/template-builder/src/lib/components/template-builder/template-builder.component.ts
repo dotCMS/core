@@ -28,7 +28,11 @@ import { DotLayout } from '@dotcms/dotcms-models';
 
 import { colIcon, rowIcon } from './assets/icons';
 import { TemplateBuilderRowComponent } from './components/template-builder-row/template-builder-row.component';
-import { DotGridStackWidget, DotTemplateLayoutProperties } from './models/models';
+import {
+    DotGridStackWidget,
+    DotTemplateBuilderState,
+    DotTemplateLayoutProperties
+} from './models/models';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import {
     GRID_STACK_ROW_HEIGHT,
@@ -60,9 +64,10 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     }
 
     @Output()
-    layoutChange: EventEmitter<DotLayout> = new EventEmitter<DotLayout>();
+    layoutChange: EventEmitter<Partial<DotLayout>> = new EventEmitter<DotLayout>();
 
     public items$: Observable<DotGridStackWidget[]>;
+    public vm$: Observable<DotTemplateBuilderState>;
 
     @ViewChildren('rowElement', {
         emitDistinctChangesOnly: true
@@ -81,15 +86,15 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     public readonly rowDisplayHeight = `${GRID_STACK_ROW_HEIGHT - 1}${GRID_STACK_UNIT}`; // setting a lower height to have space between rows
 
     constructor(private store: DotTemplateBuilderStore) {
-        this.items$ = this.store.items$.pipe(
-            tap((items) => {
+        this.vm$ = this.store.vm$.pipe(
+            tap(({ items, layoutProperties }) => {
                 if (!items.length) {
                     return;
                 }
 
                 const body = parseFromGridStackToDotObject(items);
                 this.layoutChange.emit({
-                    ...this.templateLayout,
+                    ...layoutProperties,
                     body
                 });
             })
@@ -97,7 +102,10 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     }
 
     ngOnInit(): void {
-        this.store.init(parseFromDotObjectToGridStack(this.templateLayout.body));
+        this.store.init({
+            items: parseFromDotObjectToGridStack(this.templateLayout.body),
+            layoutProperties: this.layoutProperties
+        });
     }
 
     ngAfterViewInit() {
@@ -220,5 +228,15 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
      */
     deleteRow(id: numberOrString): void {
         this.store.removeRow(id as string);
+    }
+
+    /**
+     * @description This method is used to update the layout properties
+     *
+     * @param {DotTemplateLayoutProperties} layoutProperties
+     * @memberof TemplateBuilderComponent
+     */
+    layoutPropertiesChange(layoutProperties: DotTemplateLayoutProperties): void {
+        this.store.updateLayoutProperties(layoutProperties);
     }
 }

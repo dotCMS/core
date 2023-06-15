@@ -120,7 +120,14 @@ describe('TemplateBuilderComponent', () => {
     describe('layoutChange', () => {
         it('should emit layoutChange when the store changes', (done) => {
             const layoutChangeMock = jest.spyOn(spectator.component.layoutChange, 'emit');
-            store.init(parseFromDotObjectToGridStack(FULL_DATA_MOCK));
+            store.init({
+                items: parseFromDotObjectToGridStack(FULL_DATA_MOCK),
+                layoutProperties: {
+                    header: true,
+                    footer: true,
+                    sidebar: {}
+                }
+            });
             store.items$.pipe(take(1)).subscribe(() => {
                 // const body = parseFromGridStackToDotObject(items);
                 expect(layoutChangeMock).toHaveBeenCalledWith({
