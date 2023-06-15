@@ -37,7 +37,6 @@ describe('TemplateBuilderComponent', () => {
         imports: [
             NgFor,
             AsyncPipe,
-            AddWidgetComponent,
             DotMessagePipeModule,
             HttpClientTestingModule,
             ToolbarModule,
@@ -145,4 +144,5 @@ describe('TemplateBuilderComponent', () => {
                 done();
             });
         });
+    });
 });
