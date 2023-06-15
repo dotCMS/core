@@ -36,7 +36,7 @@
                 ],
                 "styles": [
                     {
-                        "input": "apps/dotcms-ui/src/variables.scss",
+                        "input": "libs/dotcms-scss/shared/variables.css",
                         "inject": true,
                         "bundleName": "variables"
                     },

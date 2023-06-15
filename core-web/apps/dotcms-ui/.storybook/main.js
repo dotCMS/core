@@ -1,3 +1,4 @@
+const path = require('path');
 const rootMain = require('../../../.storybook/main');
 
 module.exports = {
@@ -20,7 +21,12 @@ module.exports = {
             config = await rootMain.webpackFinal(config, { configType });
         }
 
-        // add your own webpack tweaks if needed
+        config.module.rules.push({
+            test: /\.css$/,
+            use: ['style-loader', 'css-loader'],
+            include: path.resolve(__dirname, '../../../libs/dotcms-scss/shared')
+            // include: path.resolve(__dirname, '../'),
+        });
 
         return config;
     }
