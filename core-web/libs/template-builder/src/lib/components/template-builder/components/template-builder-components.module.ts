@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 
 import { AddWidgetComponent } from './add-widget/add-widget.component';
+import { DotLayoutPropertiesModule } from './dot-layout-properties/dot-layout-properties.module';
 import { RemoveConfirmDialogComponent } from './remove-confirm-dialog/remove-confirm-dialog.component';
 import { TemplateBuilderActionsComponent } from './template-builder-actions/template-builder-actions.component';
 import { TemplateBuilderBackgroundColumnsComponent } from './template-builder-background-columns/template-builder-background-columns.component';
@@ -16,7 +17,8 @@ import { TemplateBuilderSectionComponent } from './template-builder-section/temp
         TemplateBuilderBackgroundColumnsComponent,
         TemplateBuilderBoxComponent,
         TemplateBuilderRowComponent,
-        TemplateBuilderSectionComponent
+        TemplateBuilderSectionComponent,
+        DotLayoutPropertiesModule
     ],
     exports: [
         AddWidgetComponent,
