@@ -263,6 +263,11 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
         };
     });
 
+    /**
+     * @description This method adds a container to a box
+     *
+     * @memberof DotTemplateBuilderStore
+     */
     readonly addContainer = this.updater(
         (
             state,
