@@ -19,7 +19,6 @@ import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.starter.ExportStarterUtil;
 import com.liferay.portal.model.Portlet;
-import com.liferay.portal.model.PortletModel;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 import org.apache.commons.io.IOUtils;
