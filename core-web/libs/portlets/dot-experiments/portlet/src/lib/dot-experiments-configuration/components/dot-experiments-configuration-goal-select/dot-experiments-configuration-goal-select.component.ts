@@ -29,8 +29,8 @@ import {
     GoalConditionsControlsNames,
     Goals,
     GOALS_METADATA_MAP,
-    MAX_INPUT_DESCRIPTIVE_LENGTH
-
+    MAX_INPUT_DESCRIPTIVE_LENGTH,
+    StepStatus
 } from '@dotcms/dotcms-models';
 import { DotMessagePipeModule } from "@dotcms/ui";
 import {

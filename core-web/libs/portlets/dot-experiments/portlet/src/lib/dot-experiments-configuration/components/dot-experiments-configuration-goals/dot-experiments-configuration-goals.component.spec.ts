@@ -14,28 +14,22 @@ import { Card } from 'primeng/card';
 import { ConfirmPopup } from 'primeng/confirmpopup';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { ComponentStatus, ExperimentSteps, Goals } from '@dotcms/dotcms-models';
+import { ComponentStatus, ExperimentSteps, Goals, StepStatus } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
+import { DotMessagePipe } from '@dotcms/ui';
 import {
     ACTIVE_ROUTE_MOCK_CONFIG,
     getExperimentMock,
     GoalsMock,
     MockDotMessageService
 } from '@dotcms/utils-testing';
-
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotExperimentsConfigurationGoalsComponent } from "./dot-experiments-configuration-goals.component";
-import { DotExperimentsConfigurationStore } from "../../store/dot-experiments-configuration-store";
 
-import {
-    DotExperimentsConfigurationGoalSelectComponent
-} from "../dot-experiments-configuration-goal-select/dot-experiments-configuration-goal-select.component";
-import {
-    DotExperimentsDetailsTableComponent
-} from "../../../shared/ui/dot-experiments-details-table/dot-experiments-details-table.component";
-import { DotMessagePipe } from "@dotcms/ui";
+import { DotExperimentsConfigurationGoalsComponent } from './dot-experiments-configuration-goals.component';
 
-
+import { DotExperimentsDetailsTableComponent } from '../../../shared/ui/dot-experiments-details-table/dot-experiments-details-table.component';
+import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-configuration-store';
+import { DotExperimentsConfigurationGoalSelectComponent } from '../dot-experiments-configuration-goal-select/dot-experiments-configuration-goal-select.component';
 
 const messageServiceMock = new MockDotMessageService({
     'experiments.configure.goals.name': 'Goal',

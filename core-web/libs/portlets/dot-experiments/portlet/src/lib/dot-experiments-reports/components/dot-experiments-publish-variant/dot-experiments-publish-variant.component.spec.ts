@@ -15,16 +15,22 @@ import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { TableRadioButton } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
-import { getExperimentMock, getExperimentResultsMock, MockDotMessageService } from "@dotcms/utils-testing";
-import { DotExperimentsPublishVariantComponent } from "./dot-experiments-publish-variant.component";
-import { DotExperimentsReportsStore } from "../../store/dot-experiments-reports-store";
-import { DotExperimentsService } from "@dotcms/portlets/dot-experiments/data-access";
-import { DotMessagePipeModule } from "@dotcms/ui";
-import { DotDialogModule } from "@components/dot-dialog/dot-dialog.module";
-import { DotHttpErrorManagerService } from "@services/dot-http-error-manager/dot-http-error-manager.service";
-import { DotMessageService } from "@dotcms/data-access";
-import { DotDialogComponent } from "@components/dot-dialog/dot-dialog.component";
 
+import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
+import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
+import { DotMessagePipeModule } from '@dotcms/ui';
+import {
+    getExperimentMock,
+    getExperimentResultsMock,
+    MockDotMessageService
+} from '@dotcms/utils-testing';
+import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+
+import { DotExperimentsPublishVariantComponent } from './dot-experiments-publish-variant.component';
+
+import { DotExperimentsReportsStore } from '../../store/dot-experiments-reports-store';
 
 const messageServiceMock = new MockDotMessageService({
     'experiments.report.promote.variant': 'Promote Variant',

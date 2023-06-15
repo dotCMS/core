@@ -17,6 +17,7 @@ import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotMessageService } from '@dotcms/data-access';
 import { DEFAULT_VARIANT_ID, Variant } from '@dotcms/dotcms-models';
 import { DotMessagePipeModule } from '@dotcms/ui';
+
 import {
     DotExperimentsReportsStore,
     VmPromoteVariant

@@ -17,7 +17,7 @@ import {
     ExperimentsStatusList,
     SidebarStatus
 } from '@dotcms/dotcms-models';
-
+import { DotMessagePipe, DotMessagePipeModule } from '@dotcms/ui';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
 
 import { DotExperimentsCreateComponent } from './components/dot-experiments-create/dot-experiments-create.component';
@@ -28,7 +28,6 @@ import { DotExperimentsStatusFilterComponent } from './components/dot-experiment
 import { DotExperimentsListStore, VmListExperiments } from './store/dot-experiments-list-store';
 
 import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
-import { DotMessagePipe, DotMessagePipeModule } from "@dotcms/ui";
 
 @Component({
     standalone: true,

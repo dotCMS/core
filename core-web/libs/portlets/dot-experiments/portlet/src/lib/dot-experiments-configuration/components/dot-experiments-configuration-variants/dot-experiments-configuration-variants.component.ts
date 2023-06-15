@@ -5,6 +5,7 @@ import { ChangeDetectionStrategy, Component, ComponentRef, ViewChild } from '@an
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
+import { AutoFocusModule } from 'primeng/autofocus';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { ConfirmPopupModule } from 'primeng/confirmpopup';
@@ -24,19 +25,16 @@ import {
     DotPageMode,
     ExperimentSteps,
     MAX_VARIANTS_ALLOWED,
-    SIDEBAR_STATUS,
+    StepStatus,
     TrafficProportion,
     Variant
 } from '@dotcms/dotcms-models';
-
+import { DotIconModule, DotMessagePipe, DotMessagePipeModule } from '@dotcms/ui';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
 
 import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-configuration-store';
 import { DotExperimentsConfigurationItemsCountComponent } from '../dot-experiments-configuration-items-count/dot-experiments-configuration-items-count.component';
 import { DotExperimentsConfigurationVariantsAddComponent } from '../dot-experiments-configuration-variants-add/dot-experiments-configuration-variants-add.component';
-import { DotIconModule, DotMessagePipe, DotMessagePipeModule } from "@dotcms/ui";
-import { DotAutofocusModule } from "@dotcms/dot-rules";
-import { ConfirmPopupModule } from "primeng/confirmpopup";
 
 @Component({
     selector: 'dot-experiments-configuration-variants',
@@ -59,7 +57,7 @@ import { ConfirmPopupModule } from "primeng/confirmpopup";
         InputTextModule,
         TooltipModule,
         ConfirmPopupModule,
-        DotAutofocusModule
+        AutoFocusModule
     ],
     templateUrl: './dot-experiments-configuration-variants.component.html',
     styleUrls: ['./dot-experiments-configuration-variants.component.scss'],
@@ -75,10 +73,8 @@ export class DotExperimentsConfigurationVariantsComponent {
         tap(({ status }) => this.handleSidebar(status))
     );
     statusList = ComponentStatus;
-    sidebarStatusList = SIDEBAR_STATUS;
     maxVariantsAllowed = MAX_VARIANTS_ALLOWED;
     defaultVariantName = DEFAULT_VARIANT_NAME;
-    experimentStepName = ExperimentSteps.VARIANTS;
     dotPageMode = DotPageMode;
     @ViewChild(DotDynamicDirective, { static: true }) sidebarHost!: DotDynamicDirective;
 

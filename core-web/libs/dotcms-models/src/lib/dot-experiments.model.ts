@@ -136,20 +136,18 @@ export interface SidebarStatus {
     isOpen: boolean;
 }
 
+export type StepStatus = SidebarStatus & {
+    experimentStep: ExperimentSteps | null;
+};
+
 export enum ExperimentSteps {
-    VARIANTS = "variants",
-    GOAL = "goal",
-    TARGETING = "targeting",
-    TRAFFIC_LOAD = "trafficLoad",
-    TRAFFICS_SPLIT = "trafficSplit",
-    SCHEDULING = "scheduling",
-    EXPERIMENT_DESCRIPTION = "EXPERIMENT_DESCRIPTION"
-}   VARIANTS = 'variants',
+    VARIANTS = 'variants',
     GOAL = 'goal',
     TARGETING = 'targeting',
     TRAFFIC_LOAD = 'trafficLoad',
     TRAFFICS_SPLIT = 'trafficSplit',
-    SCHEDULING = 'scheduling'
+    SCHEDULING = 'scheduling',
+    EXPERIMENT_DESCRIPTION = 'EXPERIMENT_DESCRIPTION'
 }
 
 export enum GOAL_TYPES {

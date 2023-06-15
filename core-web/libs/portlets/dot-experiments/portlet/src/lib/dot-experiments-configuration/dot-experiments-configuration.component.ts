@@ -7,11 +7,13 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
-import { ConfirmPopupModule } from 'primeng/confirmpopup';
+import { InplaceModule } from 'primeng/inplace';
+import { InputTextModule } from 'primeng/inputtext';
 import { RippleModule } from 'primeng/ripple';
 
-import { DotExperiment, DotExperimentStatusList, ComponentStatus } from '@dotcms/dotcms-models';
-
+import { ComponentStatus, DotExperiment, DotExperimentStatusList } from '@dotcms/dotcms-models';
+import { DotMessagePipe, DotMessagePipeModule } from '@dotcms/ui';
+import { DotExperimentsInlineEditTextComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-inline-edit-text/dot-experiments-inline-edit-text.component';
 
 import { DotExperimentsConfigurationGoalsComponent } from './components/dot-experiments-configuration-goals/dot-experiments-configuration-goals.component';
 import { DotExperimentsConfigurationSchedulingComponent } from './components/dot-experiments-configuration-scheduling/dot-experiments-configuration-scheduling.component';
@@ -25,10 +27,6 @@ import {
 
 import { DotExperimentsExperimentSummaryComponent } from '../shared/ui/dot-experiments-experiment-summary/dot-experiments-experiment-summary.component';
 import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
-import { DotExperimentsInlineEditTextComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-inline-edit-text/dot-experiments-inline-edit-text.component';
-import { DotMessagePipe, DotMessagePipeModule } from "@dotcms/ui";
-import { InputTextModule } from "primeng/inputtext";
-import { InplaceModule } from "primeng/inplace";
 
 @Component({
     standalone: true,

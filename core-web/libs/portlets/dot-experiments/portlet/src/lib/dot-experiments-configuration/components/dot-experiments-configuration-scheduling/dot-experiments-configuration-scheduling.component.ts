@@ -13,15 +13,13 @@ import {
     ComponentStatus,
     ExperimentSteps,
     RangeOfDateAndTime,
-
+    StepStatus
 } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipeModule } from "@dotcms/ui";
+import { DotIconModule, DotMessagePipeModule } from '@dotcms/ui';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
-import {
-    DotExperimentsConfigurationSchedulingAddComponent
-} from "../dot-experiments-configuration-scheduling-add/dot-experiments-configuration-scheduling-add.component";
-import { DotExperimentsConfigurationStore } from "../../store/dot-experiments-configuration-store";
 
+import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-configuration-store';
+import { DotExperimentsConfigurationSchedulingAddComponent } from '../dot-experiments-configuration-scheduling-add/dot-experiments-configuration-scheduling-add.component';
 
 @Component({
     selector: 'dot-experiments-configuration-scheduling',

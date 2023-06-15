@@ -292,7 +292,7 @@ describe('DotExperimentsConfigurationStore', () => {
         it('should edit a description of an experiment', (done) => {
             const newDescription = 'new description';
 
-            dotExperimentsService.setDescription.and.callThrough().and.returnValue(
+            dotExperimentsService.setDescription.mockReturnValue(
                 of({
                     ...EXPERIMENT_MOCK,
                     description: newDescription
@@ -644,13 +644,11 @@ describe('DotExperimentsConfigurationStore', () => {
         });
 
         it('should call the cancel experiment method when cancel scheduling', (done) => {
-            dotExperimentsService.getById.and
-                .callThrough()
-                .and.returnValue(
-                    of({ ...EXPERIMENT_MOCK_2, status: DotExperimentStatusList.SCHEDULED })
-                );
+            dotExperimentsService.getById.mockReturnValue(
+                of({ ...EXPERIMENT_MOCK_2, status: DotExperimentStatusList.SCHEDULED })
+            );
 
-            dotExperimentsService.cancelSchedule.and.callThrough().and.returnValue(
+            dotExperimentsService.cancelSchedule.mockReturnValue(
                 of({
                     ...EXPERIMENT_MOCK_2,
                     status: DotExperimentStatusList.DRAFT
@@ -662,7 +660,7 @@ describe('DotExperimentsConfigurationStore', () => {
             store.cancelSchedule(EXPERIMENT_MOCK_2);
 
             store.state$.subscribe(() => {
-                expect(dotExperimentsService.cancelSchedule).toHaveBeenCalledOnceWith(
+                expect(dotExperimentsService.cancelSchedule).toHaveBeenCalledWith(
                     EXPERIMENT_MOCK_2.id
                 );
                 done();
@@ -670,11 +668,11 @@ describe('DotExperimentsConfigurationStore', () => {
         });
 
         it('should handle error when canceling the experiment', () => {
-            dotExperimentsService.cancelSchedule.and.returnValue(throwError('error'));
+            dotExperimentsService.cancelSchedule.mockReturnValue(throwError('error'));
 
             store.cancelSchedule(EXPERIMENT_MOCK_2);
 
-            expect(dotHttpErrorManagerService.handle).toHaveBeenCalledOnceWith(
+            expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(
                 'error' as unknown as HttpErrorResponse
             );
         });

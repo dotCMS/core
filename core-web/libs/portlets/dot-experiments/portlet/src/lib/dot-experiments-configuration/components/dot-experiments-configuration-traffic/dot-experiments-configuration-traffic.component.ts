@@ -16,15 +16,12 @@ import {
     TrafficProportion,
     TrafficProportionTypes
 } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipeModule } from "@dotcms/ui";
-import { DotDynamicDirective } from "@portlets/shared/directives/dot-dynamic.directive";
-import {
-    DotExperimentsConfigurationTrafficAllocationAddComponent
-} from "../dot-experiments-configuration-traffic-allocation-add/dot-experiments-configuration-traffic-allocation-add.component";
-import {
-    DotExperimentsConfigurationTrafficSplitAddComponent
-} from "../dot-experiments-configuration-traffic-split-add/dot-experiments-configuration-traffic-split-add.component";
-import { DotExperimentsConfigurationStore } from "../../store/dot-experiments-configuration-store";
+import { DotIconModule, DotMessagePipeModule } from '@dotcms/ui';
+import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
+
+import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-configuration-store';
+import { DotExperimentsConfigurationTrafficAllocationAddComponent } from '../dot-experiments-configuration-traffic-allocation-add/dot-experiments-configuration-traffic-allocation-add.component';
+import { DotExperimentsConfigurationTrafficSplitAddComponent } from '../dot-experiments-configuration-traffic-split-add/dot-experiments-configuration-traffic-split-add.component';
 
 @Component({
     selector: 'dot-experiments-configuration-traffic',

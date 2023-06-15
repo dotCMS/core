@@ -18,20 +18,19 @@ import { Sidebar } from 'primeng/sidebar';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DefaultGoalConfiguration, ExperimentSteps, GOAL_TYPES } from '@dotcms/dotcms-models';
-
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
+import { DotMessagePipe, DotMessagePipeModule } from '@dotcms/ui';
 import {
     ACTIVE_ROUTE_MOCK_CONFIG,
     getExperimentMock,
     MockDotMessageService
-} from "@dotcms/utils-testing";
+} from '@dotcms/utils-testing';
 import { DotDropdownDirective } from '@portlets/shared/directives/dot-dropdown.directive';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotExperimentsConfigurationGoalSelectComponent } from './dot-experiments-configuration-goal-select.component';
 
 import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-configuration-store';
-import { DotMessagePipe, DotMessagePipeModule } from "@dotcms/ui";
 
 const messageServiceMock = new MockDotMessageService({
     'experiments.configure.goals.sidebar.header': 'Select a goal',

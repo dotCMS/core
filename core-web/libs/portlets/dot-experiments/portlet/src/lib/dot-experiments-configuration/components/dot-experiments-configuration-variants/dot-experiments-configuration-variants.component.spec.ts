@@ -24,20 +24,18 @@ import {
     DotPageMode,
     ExperimentSteps
 } from '@dotcms/dotcms-models';
-
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
+import { DotMessagePipe } from '@dotcms/ui';
 import {
     ACTIVE_ROUTE_MOCK_CONFIG,
     getExperimentMock,
     MockDotMessageService
-} from "@dotcms/utils-testing";
+} from '@dotcms/utils-testing';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotExperimentsConfigurationVariantsComponent } from './dot-experiments-configuration-variants.component';
 
 import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-configuration-store';
-
-import { DotMessagePipe } from "@dotcms/ui";
 
 const messageServiceMock = new MockDotMessageService({
     'experiments.configure.variants.weight': 'weight',

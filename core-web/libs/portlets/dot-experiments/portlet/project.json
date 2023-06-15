@@ -30,5 +30,5 @@
             }
         }
     },
-    "tags": []
+    "tags": ["type:feature", "scope:dotcms-ui", "portlet:experiments"]
 }

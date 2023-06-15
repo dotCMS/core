@@ -4,7 +4,7 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from "@ngneat/spectator/jest";
+} from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { Component } from '@angular/core';
@@ -15,37 +15,26 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmPopup } from 'primeng/confirmpopup';
 
 import { DotMessageService, DotSessionStorageService } from '@dotcms/data-access';
-import { ComponentStatus, DotExperimentStatusList, PROP_NOT_FOUND } from "@dotcms/dotcms-models";
+import { ComponentStatus, DotExperimentStatusList, PROP_NOT_FOUND } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
+import { DotMessagePipe } from '@dotcms/ui';
 import { getExperimentMock, MockDotMessageService } from '@dotcms/utils-testing';
-import { ConfigurationViewModel, DotExperimentsConfigurationStore } from "./store/dot-experiments-configuration-store";
-import { DotExperimentsConfigurationComponent } from "./dot-experiments-configuration.component";
-import { DotHttpErrorManagerService } from "@services/dot-http-error-manager/dot-http-error-manager.service";
-import { DotMessagePipe } from "@dotcms/ui";
+import { DotExperimentsInlineEditTextComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-inline-edit-text/dot-experiments-inline-edit-text.component';
+import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+
+import { DotExperimentsConfigurationGoalsComponent } from './components/dot-experiments-configuration-goals/dot-experiments-configuration-goals.component';
+import { DotExperimentsConfigurationSchedulingComponent } from './components/dot-experiments-configuration-scheduling/dot-experiments-configuration-scheduling.component';
+import { DotExperimentsConfigurationSkeletonComponent } from './components/dot-experiments-configuration-skeleton/dot-experiments-configuration-skeleton.component';
+import { DotExperimentsConfigurationTrafficComponent } from './components/dot-experiments-configuration-traffic/dot-experiments-configuration-traffic.component';
+import { DotExperimentsConfigurationVariantsComponent } from './components/dot-experiments-configuration-variants/dot-experiments-configuration-variants.component';
+import { DotExperimentsConfigurationComponent } from './dot-experiments-configuration.component';
 import {
-    DotExperimentsUiHeaderComponent
-} from "../shared/ui/dot-experiments-header/dot-experiments-ui-header.component";
-import {
-    DotExperimentsConfigurationSkeletonComponent
-} from "./components/dot-experiments-configuration-skeleton/dot-experiments-configuration-skeleton.component";
-import {
-    DotExperimentsExperimentSummaryComponent
-} from "../shared/ui/dot-experiments-experiment-summary/dot-experiments-experiment-summary.component";
-import {
-    DotExperimentsConfigurationVariantsComponent
-} from "./components/dot-experiments-configuration-variants/dot-experiments-configuration-variants.component";
-import {
-    DotExperimentsConfigurationGoalsComponent
-} from "./components/dot-experiments-configuration-goals/dot-experiments-configuration-goals.component";
-import {
-    DotExperimentsConfigurationTrafficComponent
-} from "./components/dot-experiments-configuration-traffic/dot-experiments-configuration-traffic.component";
-import {
-    DotExperimentsConfigurationSchedulingComponent
-} from "./components/dot-experiments-configuration-scheduling/dot-experiments-configuration-scheduling.component";
-import {
-    DotExperimentsInlineEditTextComponent
-} from "@portlets/dot-experiments/shared/ui/dot-experiments-inline-edit-text/dot-experiments-inline-edit-text.component";
+    ConfigurationViewModel,
+    DotExperimentsConfigurationStore
+} from './store/dot-experiments-configuration-store';
+
+import { DotExperimentsExperimentSummaryComponent } from '../shared/ui/dot-experiments-experiment-summary/dot-experiments-experiment-summary.component';
+import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
 
 const EXPERIMENT_MOCK = getExperimentMock(0);
 
@@ -131,6 +120,8 @@ describe('DotExperimentsConfigurationComponent', () => {
         dotExperimentsConfigurationStore = spectator.inject(DotExperimentsConfigurationStore, true);
 
         dotExperimentsService.getById.mockReturnValue(of(EXPERIMENT_MOCK));
+
+        jest.spyOn(ConfirmPopup.prototype, 'bindScrollListener').mockImplementation(jest.fn());
     });
 
     it('should show the skeleton component when is loading', () => {
@@ -158,73 +149,60 @@ describe('DotExperimentsConfigurationComponent', () => {
         expect(spectator.query(DotExperimentsInlineEditTextComponent)).toExist();
     });
 
-    // it('should hide description if empty', () => {
-    //     spectator.component.vm$ = of({
-    //         ...defaultVmMock,
-    //         experiment: {
-    //             ...EXPERIMENT_MOCK,
-    //             description: ''
-    //         }
-    //     });
-    //     spectator.detectChanges();
-    //
-    //     expect(spectator.query(byTestId('experiment-description'))).not.toExist();
-    // });
-    //
-    // it('should show Start Experiment button if isExperimentADraft true', () => {
-    //     spectator.detectChanges();
-    //     expect(spectator.query(byTestId('start-experiment-button'))).toExist();
-    // });
-    //
-    // it("shouldn't show Start Experiment button if isExperimentADraft false", () => {
-    //     spectator.component.vm$ = of({
-    //         ...defaultVmMock,
-    //         isExperimentADraft: false
-    //     });
-    //     spectator.detectChanges();
-    //
-    //     expect(spectator.query(byTestId('start-experiment-button'))).not.toExist();
-    // });
-    //
-    // it('should show Stop Experiment button if experiment status is running and call stopExperiment after confirmation', () => {
-    //     jest.spyOn(dotExperimentsConfigurationStore, 'stopExperiment');
-    //     dotExperimentsService.stop.mockReturnValue(of());
-    //
-    //     spectator.component.vm$ = of({
-    //         ...defaultVmMock,
-    //         experimentStatus: DotExperimentStatusList.RUNNING
-    //     });
-    //     spectator.detectChanges();
-    //
-    //     spectator.click(byTestId('stop-experiment-button'));
-    //     spectator.query(ConfirmPopup).accept();
-    //
-    //     expect(dotExperimentsConfigurationStore.stopExperiment).toHaveBeenCalledWith(
-    //         EXPERIMENT_MOCK
-    //     );
-    // });
-    //
-    // it('should show hide stop Experiment button if experiment status is different than running', () => {
-    //     spectator.component.vm$ = of({
-    //         ...defaultVmMock,
-    //         experimentStatus: DotExperimentStatusList.DRAFT
-    //     });
-    //     spectator.detectChanges();
-    //     expect(spectator.query(byTestId('stop-experiment-button'))).not.toExist();
-    // });
-    //
-    // it('should show Start Experiment button disabled if disabledStartExperiment true', () => {
-    //     spectator.component.vm$ = of({
-    //         ...defaultVmMock,
-    //         isExperimentADraft: true,
-    //         disabledStartExperiment: true
-    //     });
-    //     spectator.detectChanges();
-    //
-    //     const startButton = spectator.query(
-    //         byTestId('start-experiment-button')
-    //     ) as HTMLButtonElement;
-    //
-    //     expect(startButton.disabled).toEqual(true);
-    // });
+    it('should show Start Experiment button if isExperimentADraft true', () => {
+        spectator.detectChanges();
+        expect(spectator.query(byTestId('start-experiment-button'))).toExist();
+    });
+
+    it("shouldn't show Start Experiment button if isExperimentADraft false", () => {
+        spectator.component.vm$ = of({
+            ...defaultVmMock,
+            isExperimentADraft: false
+        });
+        spectator.detectChanges();
+
+        expect(spectator.query(byTestId('start-experiment-button'))).not.toExist();
+    });
+
+    it('should show Stop Experiment button if experiment status is running and call stopExperiment after confirmation', () => {
+        jest.spyOn(dotExperimentsConfigurationStore, 'stopExperiment');
+        dotExperimentsService.stop.mockReturnValue(of());
+
+        spectator.component.vm$ = of({
+            ...defaultVmMock,
+            experimentStatus: DotExperimentStatusList.RUNNING
+        });
+        spectator.detectChanges();
+
+        spectator.click(byTestId('stop-experiment-button'));
+        spectator.query(ConfirmPopup).accept();
+
+        expect(dotExperimentsConfigurationStore.stopExperiment).toHaveBeenCalledWith(
+            EXPERIMENT_MOCK
+        );
+    });
+
+    it('should show hide stop Experiment button if experiment status is different than running', () => {
+        spectator.component.vm$ = of({
+            ...defaultVmMock,
+            experimentStatus: DotExperimentStatusList.DRAFT
+        });
+        spectator.detectChanges();
+        expect(spectator.query(byTestId('stop-experiment-button'))).not.toExist();
+    });
+
+    it('should show Start Experiment button disabled if disabledStartExperiment true', () => {
+        spectator.component.vm$ = of({
+            ...defaultVmMock,
+            isExperimentADraft: true,
+            disabledStartExperiment: true
+        });
+        spectator.detectChanges();
+
+        const startButton = spectator.query(
+            byTestId('start-experiment-button')
+        ) as HTMLButtonElement;
+
+        expect(startButton.disabled).toEqual(true);
+    });
 });

@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
+import { AutoFocusModule } from 'primeng/autofocus';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { SidebarModule } from 'primeng/sidebar';
@@ -11,10 +12,11 @@ import { SidebarModule } from 'primeng/sidebar';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import {
-    ComponentStatus, MAX_INPUT_TITLE_LENGTH,
+    ComponentStatus,
+    MAX_INPUT_TITLE_LENGTH,
     StepStatus,
     TrafficProportion
-} from "@dotcms/dotcms-models";
+} from '@dotcms/dotcms-models';
 import { DotMessagePipeModule } from '@dotcms/ui';
 import { DotSidebarDirective } from '@portlets/shared/directives/dot-sidebar.directive';
 import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sidebar-header.component';
@@ -32,12 +34,13 @@ import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-co
         DotMessagePipeModule,
         DotFieldValidationMessageModule,
         DotSidebarDirective,
-        DotAutofocusModule,
 
         //PrimeNg
         SidebarModule,
         ButtonModule,
-        InputTextModule
+        InputTextModule,
+        AutoFocusModule,
+        DotAutofocusModule
     ],
     templateUrl: './dot-experiments-configuration-variants-add.component.html',
     styleUrls: ['./dot-experiments-configuration-variants-add.component.scss'],

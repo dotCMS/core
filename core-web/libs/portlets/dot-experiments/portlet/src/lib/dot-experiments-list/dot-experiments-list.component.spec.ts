@@ -20,14 +20,13 @@ import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-butto
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus, DotExperimentStatusList } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
-import { DotIconModule, DotMessagePipe, DotMessagePipeModule } from "@dotcms/ui";
+import { DotIconModule, DotMessagePipe, DotMessagePipeModule } from '@dotcms/ui';
 import {
     ActivatedRouteListStoreMock,
     DotExperimentsStoreMock,
     getExperimentAllMocks,
     getExperimentMock
 } from '@dotcms/utils-testing';
-
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
 import { DotFormatDateService } from '@services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';

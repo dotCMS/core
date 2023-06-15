@@ -21,13 +21,17 @@ import {
     Goals,
     GoalsLevels,
     RangeOfDateAndTime,
+    StepStatus,
     TrafficProportion,
     Variant
 } from '@dotcms/dotcms-models';
-
+import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { checkIfExperimentDescriptionIsSaving, processExperimentConfigProps } from "../../shared/dot-experiment.utils";
-import { DotExperimentsService } from "@dotcms/portlets/dot-experiments/data-access";
+
+import {
+    checkIfExperimentDescriptionIsSaving,
+    processExperimentConfigProps
+} from '../../shared/dot-experiment.utils';
 
 export interface DotExperimentsConfigurationState {
     experiment: DotExperiment;
@@ -854,7 +858,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         private readonly title: Title,
         private readonly route: ActivatedRoute
     ) {
-        const configProps = route.snapshot.data.config;
+        const configProps = route.snapshot.data['config'];
 
         super({ ...initialState, configProps });
     }
