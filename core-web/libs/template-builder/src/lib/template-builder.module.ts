@@ -5,6 +5,7 @@ import { DividerModule } from 'primeng/divider';
 import { DialogService, DynamicDialogModule, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { ToolbarModule } from 'primeng/toolbar';
 
+import { DotContainersService } from '@dotcms/data-access';
 import { DotMessagePipeModule } from '@dotcms/ui';
 
 import { AddStyleClassesDialogComponent } from './components/template-builder/components/add-style-classes-dialog/add-style-classes-dialog.component';
@@ -33,6 +34,7 @@ import { TemplateBuilderComponent } from './components/template-builder/template
     ],
     declarations: [TemplateBuilderComponent],
     providers: [
+        DotContainersService,
         DotTemplateBuilderStore,
         DialogService,
         DynamicDialogRef,
