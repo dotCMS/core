@@ -283,7 +283,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
                         child.containers?.map((container) => container)
                     )
                 )
-                .filter((stateContainer) => container.identifier === stateContainer.identifier)
+                .filter((stateContainer) => container.identifier === stateContainer?.identifier)
                 .reduce((prev, curr) => (Number(curr.uuid) > prev ? Number(curr.uuid) : prev), 0);
 
             const updatedItems = items.map((row) => {
