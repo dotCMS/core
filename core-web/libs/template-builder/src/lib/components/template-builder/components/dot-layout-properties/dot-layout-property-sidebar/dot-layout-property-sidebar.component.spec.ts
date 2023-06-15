@@ -1,9 +1,8 @@
 import { Component, DebugElement } from '@angular/core';
-import { ComponentFixture } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { UntypedFormControl, UntypedFormGroup } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -12,6 +11,7 @@ import { DotLayoutSidebarComponent } from './dot-layout-property-sidebar.compone
 import { DotLayoutPropertiesItemModule } from '../dot-layout-properties-item/dot-layout-properties-item.module';
 
 @Component({
+    // eslint-disable-next-line @angular-eslint/component-selector
     selector: 'dot-test-host-component',
     template: `<form [formGroup]="group">
         <dot-layout-property-sidebar formControlName="sidebar"></dot-layout-property-sidebar>
@@ -42,13 +42,13 @@ describe('DotLayoutSidebarComponent', () => {
     });
 
     beforeEach(() => {
-        DOTTestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             declarations: [DotLayoutSidebarComponent, TestHostComponent],
             imports: [DotLayoutPropertiesItemModule],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
         });
 
-        fixture = DOTTestBed.createComponent(DotLayoutSidebarComponent);
+        fixture = TestBed.createComponent(DotLayoutSidebarComponent);
         comp = fixture.componentInstance;
         de = fixture.debugElement;
 
@@ -122,7 +122,7 @@ describe('DotLayoutSidebarComponent', () => {
     });
 
     it('should call writeValue to define the initial value of sidebar item', () => {
-        hostComponentfixture = DOTTestBed.createComponent(TestHostComponent);
+        hostComponentfixture = TestBed.createComponent(TestHostComponent);
         de = hostComponentfixture.debugElement.query(By.css('dot-layout-property-sidebar'));
         const component: DotLayoutSidebarComponent = de.componentInstance;
         component.value = {

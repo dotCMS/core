@@ -7,6 +7,7 @@ import { ToolbarModule } from 'primeng/toolbar';
 import { DotMessagePipeModule } from '@dotcms/ui';
 
 import { AddWidgetComponent } from './components/template-builder/components/add-widget/add-widget.component';
+import { DotLayoutPropertiesModule } from './components/template-builder/components/dot-layout-properties/dot-layout-properties.module';
 import { RemoveConfirmDialogComponent } from './components/template-builder/components/remove-confirm-dialog/remove-confirm-dialog.component';
 import { TemplateBuilderActionsComponent } from './components/template-builder/components/template-builder-actions/template-builder-actions.component';
 import { TemplateBuilderBackgroundColumnsComponent } from './components/template-builder/components/template-builder-background-columns/template-builder-background-columns.component';
@@ -30,10 +31,11 @@ import { TemplateBuilderComponent } from './components/template-builder/template
         TemplateBuilderActionsComponent,
         NgStyle,
         ToolbarModule,
-        DividerModule
+        DividerModule,
+        DotLayoutPropertiesModule
     ],
     declarations: [TemplateBuilderComponent],
     providers: [DotTemplateBuilderStore],
-    exports: [TemplateBuilderComponent]
+    exports: [TemplateBuilderComponent, DotLayoutPropertiesModule]
 })
 export class TemplateBuilderModule {}

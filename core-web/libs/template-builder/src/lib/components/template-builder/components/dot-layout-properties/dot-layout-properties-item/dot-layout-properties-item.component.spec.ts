@@ -1,15 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { Component, DebugElement } from '@angular/core';
-import { ComponentFixture } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { UntypedFormControl, UntypedFormGroup } from '@angular/forms';
 import { By } from '@angular/platform-browser';
-
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 
 import { DotLayoutPropertiesItemComponent } from './dot-layout-properties-item.component';
 
 @Component({
+    // eslint-disable-next-line @angular-eslint/component-selector
     selector: 'dot-test-host-component',
     template: `<form [formGroup]="group">
         <dot-layout-properties-item formControlName="header"></dot-layout-properties-item>
@@ -34,11 +33,11 @@ describe('DotLayoutPropertiesItemComponent', () => {
     let hostComponentfixture: ComponentFixture<TestHostComponent>;
 
     beforeEach(() => {
-        DOTTestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             declarations: [DotLayoutPropertiesItemComponent, TestHostComponent]
         });
 
-        fixture = DOTTestBed.createComponent(DotLayoutPropertiesItemComponent);
+        fixture = TestBed.createComponent(DotLayoutPropertiesItemComponent);
         comp = fixture.componentInstance;
         de = fixture.debugElement;
     });
@@ -73,7 +72,7 @@ describe('DotLayoutPropertiesItemComponent', () => {
     });
 
     it('should call writeValue to define the initial value of the property item', () => {
-        hostComponentfixture = DOTTestBed.createComponent(TestHostComponent);
+        hostComponentfixture = TestBed.createComponent(TestHostComponent);
         de = hostComponentfixture.debugElement.query(By.css('dot-layout-properties-item'));
         const component: DotLayoutPropertiesItemComponent = de.componentInstance;
         comp.value = false;

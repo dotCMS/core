@@ -2,6 +2,7 @@ import { Component, EventEmitter, forwardRef, HostListener, Input, Output } from
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 @Component({
+    // eslint-disable-next-line @angular-eslint/component-selector
     selector: 'dot-layout-properties-item',
     templateUrl: './dot-layout-properties-item.component.html',
     styleUrls: ['./dot-layout-properties-item.component.scss'],

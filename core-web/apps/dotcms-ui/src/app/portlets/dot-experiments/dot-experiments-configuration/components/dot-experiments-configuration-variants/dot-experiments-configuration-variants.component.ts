@@ -14,7 +14,6 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { tap } from 'rxjs/operators';
 
-import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
@@ -31,7 +30,12 @@ import {
     TrafficProportion,
     Variant
 } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipe, DotMessagePipeModule } from '@dotcms/ui';
+import {
+    DotIconModule,
+    DotMessagePipe,
+    DotMessagePipeModule,
+    UiDotIconButtonModule
+} from '@dotcms/ui';
 import { DotExperimentsConfigurationItemsCountComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-items-count/dot-experiments-configuration-items-count.component';
 import { DotExperimentsConfigurationVariantsAddComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-variants-add/dot-experiments-configuration-variants-add.component';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
