@@ -145,10 +145,15 @@ public class BinaryMap {
 	    if(getName().length()==0) return "";
 	    StringBuilder uri=new StringBuilder();
 	    uri.append(getResizeUri());
-	    if(width!=null && width>0)
-	        uri.append("/resize_w/").append(width);
-	    if(height!=null && height>0)
-	        uri.append("/resize_h/").append(height);
+		if(width!=null && width>0) {
+			uri.append(width).append("w");
+		}
+		if(width!=null && width>0 && height!=null && height>0) {
+			uri.append("/");
+		}
+		if(height!=null && height>0) {
+			uri.append(height).append("h");
+		}
 	    return uri.toString();
 	}
 	
