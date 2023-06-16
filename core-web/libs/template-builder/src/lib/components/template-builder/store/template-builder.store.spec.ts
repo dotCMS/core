@@ -261,7 +261,14 @@ describe('DotTemplateBuilderStore', () => {
             }
         ];
 
-        service.setState({ items: GRIDSTACK_DATA_MOCK });
+        service.setState({
+            items: GRIDSTACK_DATA_MOCK,
+            layoutProperties: {
+                footer: false,
+                header: false,
+                sidebar: {}
+            }
+        });
 
         const affectedColumn: DotGridStackNode = {
             x: 1,
@@ -326,8 +333,8 @@ describe('DotTemplateBuilderStore', () => {
                 location: 'left',
                 width: 'large'
             });
-
         });
+    });
 
     it('should add a container to specific box', () => {
         const parentRow = initialState[2];
@@ -341,7 +348,6 @@ describe('DotTemplateBuilderStore', () => {
             const row = items.find((item) => item.id === parentRow.id);
 
             expect(row?.subGridOpts?.children[0].containers).toContain(mockContainer);
-
         });
     });
 
