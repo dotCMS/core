@@ -75,10 +75,10 @@ import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream
 @SuppressWarnings("javasecurity:S2083")
 public class FileUtil {
 	//http://jira.dotmarketing.net/browse/DOTCMS-2178
-	static final long KILO_BYTE = 1024L;
-	static final long MEGA_BYTE = 1024L *1024;
-	static final long GIGA_BYTE = 1024L *1024*1024;
-	static final long TERA_BYTE = 1024L *1024*1024*1024;
+	public static final long KILO_BYTE = 1024L;
+	public static final long MEGA_BYTE = 1024L *1024;
+	public static final long GIGA_BYTE = 1024L *1024*1024;
+	public static final long TERA_BYTE = 1024L *1024*1024*1024;
 	private static final String CONTENT_VERSION_HARD_LINK = "CONTENT_VERSION_HARD_LINK";
 	private static final String CONTENT_ALLOW_ZERO_LENGTH_FILES = "CONTENT_ALLOW_ZERO_LENGTH_FILES";
 
