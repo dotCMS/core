@@ -22,7 +22,7 @@ import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-co
 })
 export class TemplateBuilderRowComponent {
     @Output()
-    editStyleClasses: EventEmitter<void> = new EventEmitter<void>();
+    editClasses: EventEmitter<void> = new EventEmitter<void>();
     @Output()
     deleteRow: EventEmitter<void> = new EventEmitter<void>();
     @Output()
