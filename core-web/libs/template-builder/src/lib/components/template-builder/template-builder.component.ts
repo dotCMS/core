@@ -27,7 +27,7 @@ import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { filter, take, tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotLayout } from '@dotcms/dotcms-models';
+import { DotContainer, DotLayout } from '@dotcms/dotcms-models';
 
 import { colIcon, rowIcon } from './assets/icons';
 import { AddStyleClassesDialogComponent } from './components/add-style-classes-dialog/add-style-classes-dialog.component';
@@ -222,6 +222,20 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
      */
     deleteRow(id: numberOrString): void {
         this.store.removeRow(id as string);
+    }
+
+    /**
+     * @description This method calls the store to add a container to a box
+     *
+     * @param {DotGridStackWidget} box
+     * @param {numberOrString} rowId
+     * @param {DotContainer} container
+     */
+    addContainer(box: DotGridStackWidget, rowId: numberOrString, container: DotContainer) {
+        this.store.addContainer({
+            affectedColumn: { ...box, parentId: rowId as string },
+            container
+        });
     }
 
     /**

@@ -1,14 +1,16 @@
 import { byTestId, createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
 
 import { NgClass, NgFor, NgIf } from '@angular/common';
+import { By } from '@angular/platform-browser';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
 import { ConfirmPopup } from 'primeng/confirmpopup';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotContainersService, DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotContainersServiceMock, mockMatchMedia } from '@dotcms/utils-testing';
 
 import { TemplateBuilderBoxComponent } from './template-builder-box.component';
 
@@ -34,6 +36,10 @@ describe('TemplateBuilderBoxComponent', () => {
             {
                 provide: DotMessageService,
                 useValue: DOT_MESSAGE_SERVICE_TB_MOCK
+            },
+            {
+                provide: DotContainersService,
+                useValue: new DotContainersServiceMock()
             }
         ]
     });
@@ -52,6 +58,7 @@ describe('TemplateBuilderBoxComponent', () => {
         spectator.detectChanges();
 
         jest.spyOn(ConfirmPopup.prototype, 'bindScrollListener').mockImplementation(jest.fn());
+        mockMatchMedia();
     });
 
     it('should create the component', () => {
@@ -103,9 +110,11 @@ describe('TemplateBuilderBoxComponent', () => {
 
     it('should trigger addContainer when click on plus button', () => {
         const addContainerMock = jest.spyOn(spectator.component.addContainer, 'emit');
-        const addButton = spectator.query(byTestId('btn-plus'));
+        const addButton = spectator.debugElement.query(By.css('.p-dropdown'));
+        spectator.click(addButton);
+        const option = spectator.query('.p-dropdown-item');
 
-        spectator.dispatchFakeEvent(addButton, 'onClick');
+        spectator.click(option);
         expect(addContainerMock).toHaveBeenCalled();
     });
 

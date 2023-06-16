@@ -11,11 +11,16 @@ import { ToolbarModule } from 'primeng/toolbar';
 
 import { take } from 'rxjs/operators';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotContainersService, DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipeModule } from '@dotcms/ui';
+import { containersMock, DotContainersServiceMock } from '@dotcms/utils-testing';
 
 import { DotAddStyleClassesDialogStore } from './components/add-style-classes-dialog/store/add-style-classes-dialog.store';
+import { TemplateBuilderActionsComponent } from './components/template-builder-actions/template-builder-actions.component';
+import { TemplateBuilderBackgroundColumnsComponent } from './components/template-builder-background-columns/template-builder-background-columns.component';
+import { TemplateBuilderBoxComponent } from './components/template-builder-box/template-builder-box.component';
 import { TemplateBuilderComponentsModule } from './components/template-builder-components.module';
+import { TemplateBuilderSectionComponent } from './components/template-builder-section/template-builder-section.component';
 import { DotGridStackWidget } from './models/models';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { TemplateBuilderComponent } from './template-builder.component';
@@ -29,6 +34,7 @@ global.structuredClone = jest.fn((val) => {
 describe('TemplateBuilderComponent', () => {
     let spectator: SpectatorHost<TemplateBuilderComponent>;
     let store: DotTemplateBuilderStore;
+    const mockContainer = containersMock[0];
     let dialog: DialogService;
     let openDialogMock: jest.SpyInstance;
 
@@ -37,6 +43,11 @@ describe('TemplateBuilderComponent', () => {
         imports: [
             NgFor,
             AsyncPipe,
+            TemplateBuilderBoxComponent,
+            TemplateBuilderBackgroundColumnsComponent,
+            TemplateBuilderSectionComponent,
+            DotMessagePipeModule,
+            TemplateBuilderActionsComponent,
             DotMessagePipeModule,
             HttpClientTestingModule,
             ToolbarModule,
@@ -48,6 +59,10 @@ describe('TemplateBuilderComponent', () => {
             {
                 provide: DotMessageService,
                 useValue: DOT_MESSAGE_SERVICE_TB_MOCK
+            },
+            {
+                provide: DotContainersService,
+                useValue: new DotContainersServiceMock()
             },
             DialogService,
             DotAddStyleClassesDialogStore
@@ -116,6 +131,24 @@ describe('TemplateBuilderComponent', () => {
         const removeRowMock = jest.spyOn(store, 'removeRow');
         spectator.component.deleteRow('123');
         expect(removeRowMock).toHaveBeenCalledWith('123');
+    });
+
+    it('should call addContainer from store when triggering addContainer', () => {
+        const addContainerMock = jest.spyOn(store, 'addContainer');
+
+        let widgetToAddContainer: DotGridStackWidget;
+        let rowId: string;
+
+        expect.assertions(1);
+
+        store.state$.pipe(take(1)).subscribe(({ items }) => {
+            widgetToAddContainer = items[0].subGridOpts.children[0];
+            rowId = items[0].id as string;
+
+            spectator.component.addContainer(widgetToAddContainer, rowId, mockContainer);
+
+            expect(addContainerMock).toHaveBeenCalled();
+        });
     });
 
     it('should open a dialog when clicking on row-style-class-button ', () => {

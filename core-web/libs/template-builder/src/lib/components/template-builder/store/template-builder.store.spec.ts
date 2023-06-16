@@ -6,6 +6,8 @@ import { TestBed } from '@angular/core/testing';
 
 import { take } from 'rxjs/operators';
 
+import { containersMock } from '@dotcms/utils-testing';
+
 import { DotTemplateBuilderStore } from './template-builder.store';
 
 import { DotGridStackNode, DotGridStackWidget } from '../models/models';
@@ -18,6 +20,7 @@ global.structuredClone = jest.fn((val) => {
 describe('DotTemplateBuilderStore', () => {
     let service: DotTemplateBuilderStore;
     let initialState: DotGridStackWidget[];
+    const mockContainer = containersMock[0];
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -283,6 +286,21 @@ describe('DotTemplateBuilderStore', () => {
             const row = items.find((item) => item.id === parentRow.id);
 
             expect(row?.subGridOpts?.children).not.toContain(columnToDelete);
+        });
+    });
+
+    it('should add a container to specific box', () => {
+        const parentRow = initialState[2];
+
+        const columnToAddContainer: DotGridStackWidget = {
+            ...(parentRow.subGridOpts?.children[0] as DotGridStackWidget),
+            parentId: parentRow.id as string
+        };
+        service.addContainer({ affectedColumn: columnToAddContainer, container: mockContainer });
+        service.items$.subscribe((items) => {
+            const row = items.find((item) => item.id === parentRow.id);
+
+            expect(row?.subGridOpts?.children[0].containers).toContain(mockContainer);
         });
     });
 

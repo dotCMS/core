@@ -236,7 +236,7 @@ export const MESSAGES_MOCK = {
     'dot.template.builder.footer': 'Footer',
     'dot.template.builder.toolbar.button.layout.label': 'Layout',
     'dot.template.builder.toolbar.button.theme.label': 'Theme',
-    'dot.template.builder.classes.dialog.update.button': 'Update',
+    'dot.template.builder.box.containers.error': 'Error loading containers',
     'dot.template.builder.classes.dialog.autocomplete.label': 'Class',
     'dot.template.builder.classes.dialog.header.label': 'Edit Classes'
 };
@@ -304,28 +304,25 @@ export const MOCK_STYLE_CLASSES_FILE = {
     ]
 };
 
-export const mockMatchMedia = () => {
-    Object.defineProperty(window, 'matchMedia', {
-        writable: true,
-        value: (query: unknown) => ({
-            matches: false,
-            media: query,
-            onchange: null,
-            addListener: () => {
-                /* */
-            }, // Deprecated
-            removeListener: () => {
-                /* */
-            }, // Deprecated
-            addEventListener: () => {
-                /* */
-            },
-            removeEventListener: () => {
-                /* */
-            },
-            dispatchEvent: () => {
-                /* */
-            }
-        })
-    });
+
+const noop = () => {
+    //
 };
+
+export function mockMatchMedia() {
+    // needed in component specs that open a prime-ng modal
+    window.matchMedia =
+        window.matchMedia ||
+        function () {
+            return {
+                matches: false,
+                media: '',
+                onchange: null,
+                addListener: noop, // deprecated
+                removeListener: noop, // deprecated
+                addEventListener: noop,
+                removeEventListener: noop,
+                dispatchEvent: () => true
+            };
+        };
+}
