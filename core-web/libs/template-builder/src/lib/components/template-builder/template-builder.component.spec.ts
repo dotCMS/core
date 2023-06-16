@@ -16,7 +16,6 @@ import { DotMessagePipeModule } from '@dotcms/ui';
 import { containersMock, DotContainersServiceMock } from '@dotcms/utils-testing';
 
 import { DotAddStyleClassesDialogStore } from './components/add-style-classes-dialog/store/add-style-classes-dialog.store';
-import { TemplateBuilderComponentsModule } from './components/template-builder-components.module';
 import { TemplateBuilderActionsComponent } from './components/template-builder-actions/template-builder-actions.component';
 import { TemplateBuilderBackgroundColumnsComponent } from './components/template-builder-background-columns/template-builder-background-columns.component';
 import { TemplateBuilderBoxComponent } from './components/template-builder-box/template-builder-box.component';
