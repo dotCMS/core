@@ -131,6 +131,48 @@ export function parseFromDotObjectToGridStack(
     })) as DotGridStackWidget[];
 }
 
+export const parseFromGridStackToDotObject = (gridData: DotGridStackWidget[]): DotLayoutBody => {
+    if (!gridData) {
+        return { rows: [] };
+    }
+
+    // Clone the data so we don't mutate the original
+    const clone = structuredClone(gridData);
+    const ordered = clone.sort((a, b) => a.y - b.y);
+
+    const rows = ordered.map((row) => {
+        const { x: colWidth, subGridOpts, styleClass: styles } = row;
+        const { children = [] } = subGridOpts || {};
+        const styleClass = styles?.join(' ') || null;
+
+        if (!subGridOpts) {
+            return {
+                columns: [],
+                styleClass
+            };
+        }
+
+        const columns = children.map(({ x, w, containers = [], styleClass: styles }) => {
+            const leftOffset = x + colWidth + 1;
+            const styleClass = styles?.join(' ') || '';
+
+            return {
+                containers,
+                leftOffset,
+                width: w,
+                styleClass
+            };
+        });
+
+        return {
+            columns,
+            styleClass
+        };
+    });
+
+    return { rows };
+};
+
 /**
  *@description This function returns the variant of a box based on the number of width
  *

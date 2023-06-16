@@ -247,4 +247,18 @@ public interface HostFactory {
      */
     long count() throws DotDataException;
 
+    /** 
+     * Finds live and stopped hosts based on the provided filter criteria and returns them as a list of Host objects.
+     *
+     * @param siteNameFilter A string used to filter the hosts by site name.
+     * @param limit The maximum number of hosts to return.
+     * @param offset The starting index of the hosts to return.
+     * @param showSystemHost A boolean indicating to include or not system hosts in the results.
+     * @param user The user performing the search.
+     * @param respectFrontendRoles A boolean indicating to respect or not frontend roles when performing the search.
+     * @return An Optional object containing a list of Host objects that match the provided criteria, or an empty Optional if no matches are found.
+     */
+    Optional<List<Host>> findLiveAndStopped(final String siteNameFilter,
+                                            final int limit, final int offset, final boolean showSystemHost,
+                                            final User user, boolean respectFrontendRoles);
 }
