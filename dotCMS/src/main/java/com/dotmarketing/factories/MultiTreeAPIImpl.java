@@ -7,6 +7,7 @@ import com.dotcms.enterprise.achecker.utility.Utility;
 import com.dotcms.rendering.velocity.directive.ParseContainer;
 import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
+import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotcms.variant.VariantAPI;
 import com.dotcms.variant.model.Variant;
@@ -73,6 +74,7 @@ import java.util.stream.Collectors;
  */
 public class MultiTreeAPIImpl implements MultiTreeAPI {
 
+    private static final String SELECT_MULTITREES_BY_VARIANT = "SELECT * FROM multi_tree WHERE variant_id = ?";
     private final Lazy<MultiTreeCache> multiTreeCache = Lazy.of(CacheLocator::getMultiTreeCache);
 
     private static final String DELETE_ALL_MULTI_TREE_RELATED_TO_IDENTIFIER_SQL =
@@ -166,6 +168,22 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     @Override
     public void deleteMultiTreeByChild(final String contentIdentifier) throws DotDataException {
         deleteMultiTree(getMultiTreesByChild(contentIdentifier));
+    }
+
+    @WrapInTransaction
+    @Override
+    public void deleteMultiTree(final String pageId, final String variant)throws DotDataException {
+
+        this.getMultiTreeByVariantWithoutFallback(pageId, variant)
+                .forEach(multiTree -> this.multiTreeCache.get()
+                        .removeContentletReferenceCount(multiTree.getContentlet()));
+
+        new DotConnect().setSQL("DELETE FROM multi_tree WHERE parent1 = ? AND variant_id = ?")
+                .addParam(pageId)
+                .addParam(variant)
+                .loadResult();
+
+        refreshPageInCache(pageId, variant);
     }
 
     /**
@@ -384,24 +402,6 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
         return multiTrees;
     } // copyPersonalizationForPage.
-
-    @Override
-    public List<MultiTree> copyVariantForPage (final String pageId, final String baseVariant,
-            final String newVariant) throws DotDataException{
-
-        List<MultiTree> multiTrees = this.getMultiTreeByVariantWithoutFallback(
-                pageId, baseVariant);
-
-        if (UtilMethods.isSet(multiTrees)) {
-
-            multiTrees = multiTrees.stream()
-                    .map(multiTree -> MultiTree.buildMultitreeWithVariant(multiTree, newVariant))
-                    .collect(Collectors.toList());
-            this.saveMultiTrees(multiTrees);
-        }
-
-        return multiTrees;
-    }
 
     @WrapInTransaction
     @Override
@@ -671,36 +671,64 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
         if (!multiTrees.isEmpty()) {
 
-            final List<Params> insertParams = Lists.newArrayList();
-
-            for (final MultiTree tree : multiTrees) {
-                //This is for checking if the content we are trying to add is already added into the container
-                db.setSQL(SELECT_COUNT_MULTI_TREE_BY_RELATION_PERSONALIZATION_PAGE_CONTAINER_AND_CHILD)
-                        .addParam(tree.getRelationType())
-                        .addParam(tree.getPersonalization())
-                        .addParam(pageId)
-                        .addParam(tree.getContainerAsID())
-                        .addParam(tree.getContentlet())
-                        .addParam(tree.getVariantId());
-                final int contentExist = Integer.parseInt(db.loadObjectResults().get(0).get("cc").toString());
-                if(contentExist != 0){
-                    final String contentletTitle = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(tree.getContentlet()).getTitle();
-                    final String errorMsg = String.format("Content '%s' [ %s ] has already been added to Container " +
-                                                                  "'%s'", contentletTitle, tree.getContentlet(),
-                            tree.getContainer());
-                    Logger.debug(this,errorMsg);
-                    throw new IllegalArgumentException(errorMsg);
-                }
-
-                insertParams
-                        .add(new Params(pageId, tree.getContainerAsID(), tree.getContentlet(),
-                                tree.getRelationType(), tree.getTreeOrder(), tree.getPersonalization(), tree.getVariantId()));
-            }
-            db.executeBatch(INSERT_SQL, insertParams);
+            copyMultiTree(pageId, multiTrees);
         }
         this.refreshContentletReferenceCount(originalContentletIds, multiTrees);
         updateHTMLPageVersionTS(pageId, variantId);
         refreshPageInCache(pageId, variantId);
+    }
+
+    public void copyMultiTree(final String pageId, final List<MultiTree> multiTrees) throws DotDataException {
+        copyMultiTree(pageId, multiTrees, null);
+    }
+
+
+    /**
+     * Copy a collection of {@link MultiTree} but to a different {@link Variant}.
+     *
+     * @param pageId {@link String} Page's identifier
+     * @param multiTrees {@link List} of {@link MultiTree} to copy
+     * @param variantName {@link String} name of the variant to copy to
+     * @throws DotDataException
+     */
+    @Override
+    @WrapInTransaction
+    public void copyMultiTree(final String pageId, final List<MultiTree> multiTrees,
+            final String variantName) throws DotDataException {
+
+        DotPreconditions.notNull(multiTrees, () -> "multiTrees can't be null");
+
+        final DotConnect db = new DotConnect();
+        final List<Params> insertParams = Lists.newArrayList();
+
+        for (final MultiTree tree : multiTrees) {
+            final String copiedMultiTreeVariantId =
+                    UtilMethods.isSet(variantName) ? variantName : tree.getVariantId();
+
+            //This is for checking if the content we are trying to add is already added into the container
+            db.setSQL(SELECT_COUNT_MULTI_TREE_BY_RELATION_PERSONALIZATION_PAGE_CONTAINER_AND_CHILD)
+                    .addParam(tree.getRelationType())
+                    .addParam(tree.getPersonalization())
+                    .addParam(pageId)
+                    .addParam(tree.getContainerAsID())
+                    .addParam(tree.getContentlet())
+                    .addParam(copiedMultiTreeVariantId);
+            final int contentExist = Integer.parseInt(db.loadObjectResults().get(0).get("cc").toString());
+            if(contentExist != 0){
+                final String contentletTitle = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(tree.getContentlet()).getTitle();
+                final String errorMsg = String.format("Content '%s' [ %s ] has already been added to Container " +
+                                                              "'%s'", contentletTitle, tree.getContentlet(),
+                        tree.getContainer());
+                Logger.debug(MultiTreeAPIImpl.class, errorMsg);
+                throw new IllegalArgumentException(errorMsg);
+            }
+
+            insertParams
+                    .add(new Params(pageId, tree.getContainerAsID(), tree.getContentlet(),
+                            tree.getRelationType(), tree.getTreeOrder(), tree.getPersonalization(),
+                            copiedMultiTreeVariantId));
+        }
+        db.executeBatch(INSERT_SQL, insertParams);
     }
 
     @Override
@@ -804,6 +832,11 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         for (String variantId : variants) {
             updateHTMLPageVersionTS(pageId, variantId);
             refreshPageInCache(pageId,variantId );
+        }
+
+        if (!variants.contains(VariantAPI.DEFAULT_VARIANT.name())) {
+            updateHTMLPageVersionTS(pageId, VariantAPI.DEFAULT_VARIANT.name());
+            refreshPageInCache(pageId, VariantAPI.DEFAULT_VARIANT.name() );
         }
     }
 
@@ -1163,6 +1196,9 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     public void updateMultiTrees(final Collection<String> pagesId, final String containerId,
             final String oldValue, final String newValue) throws DotDataException {
 
+        DotPreconditions.notNull(pagesId, () -> "Pages id collection cannot be null");
+        DotPreconditions.isTrue(!pagesId.isEmpty(), () -> "Pages id collection cannot be empty");
+
         final String innerContainerId = FileAssetContainerUtil.getInstance().isFolderAssetContainerId(containerId)
                 ? getFileContainerId(containerId) : containerId;
 
@@ -1180,6 +1216,17 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             CacheLocator.getHTMLPageCache().remove(pageId);
         });
     }
+
+    @Override
+    @WrapInTransaction
+    public List<MultiTree> getMultiTrees(final Variant variant) throws DotDataException {
+        final List<Map<String, Object>> results = new DotConnect().setSQL(SELECT_MULTITREES_BY_VARIANT)
+                .addParam(variant.name())
+                .loadResults();
+
+        return TransformerLocator.createMultiTreeTransformer(results).asList();
+    }
+
 
     private String getFileContainerId(final String containerId) {
         try {

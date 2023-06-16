@@ -1,35 +1,41 @@
 package com.dotcms.cli.command.contenttype;
 
 import com.dotcms.api.ContentTypeAPI;
-import com.dotcms.api.client.RestClientFactory;
-import com.dotcms.cli.common.OutputOptionMixin;
+import com.dotcms.cli.common.FormatOptionMixin;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.model.ResponseEntityView;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.lang3.StringUtils;
-import picocli.CommandLine;
-
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.Callable;
+import javax.enterprise.context.control.ActivateRequestContext;
+import org.apache.commons.lang3.StringUtils;
+import picocli.CommandLine;
 
 @ActivateRequestContext
 @CommandLine.Command(
         name = ContentTypePush.NAME,
-        description = "@|bold,green Push / Create a Content-type from a given file definition.|@ @|bold,cyan --file|@ to send the descriptor. "
+        header = "@|bold,blue Use this command to push a Content-type from a file.|@",
+        description = {
+                " This command will push a content-type to the current active",
+                " remote instance of dotCMS from a given file.",
+                " When pulling a content-type from a remote dotCMS instance",
+                " the content-type is saved to a file.",
+                " The file name will be the content-type's variable name.",
+                " To make changes to the a Content-type",
+                " modify the file and push it back to the remote instance.",
+                " The file can also be used as a base to create a brand new content-type.",
+                " The format can be changed using the @|yellow --format|@ option.",
+                "" // empty line left here on purpose to make room at the end
+        }
 )
 public class ContentTypePush extends AbstractContentTypeCommand implements Callable<Integer> {
 
     static final String NAME = "push";
 
-    @CommandLine.Mixin(name = "output")
-    OutputOptionMixin output;
-
-    @Inject
-    RestClientFactory clientFactory;
+    @CommandLine.Mixin(name = "format")
+    FormatOptionMixin formatOptionMixin;
 
     @CommandLine.Parameters(index = "0", arity = "1", description = "The json/yml formatted content-type descriptor file to be pushed. ")
     File file;
@@ -46,7 +52,7 @@ public class ContentTypePush extends AbstractContentTypeCommand implements Calla
             return CommandLine.ExitCode.SOFTWARE;
         }
 
-        final ObjectMapper objectMapper = output.objectMapper();
+        final ObjectMapper objectMapper = formatOptionMixin.objectMapper();
 
         try {
             final ContentType contentType = objectMapper

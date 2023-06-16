@@ -8,6 +8,7 @@ import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Scheduling;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
@@ -23,7 +24,9 @@ import java.util.Optional;
 
 public interface ExperimentsAPI {
 
-    Lazy<Integer> EXPERIMENTS_MAX_DURATION = Lazy.of(()->Config.getIntProperty("EXPERIMENTS_MAX_DURATION", 35));
+    String PRIMARY_GOAL = "primary";
+    Lazy<Integer> EXPERIMENTS_MAX_DURATION = Lazy.of(()->Config.getIntProperty("EXPERIMENTS_MAX_DURATION", 90));
+    Lazy<Integer> EXPERIMENTS_MIN_DURATION = Lazy.of(()->Config.getIntProperty("EXPERIMENTS_MIN_DURATION", 14));
     Lazy<Integer> EXPERIMENT_LOOKBACK_WINDOW = Lazy.of(()->Config.getIntProperty("EXPERIMENTS_LOOKBACK_WINDOW", 10));
 
 
@@ -93,8 +96,8 @@ public interface ExperimentsAPI {
             throws DotDataException, DotSecurityException;
 
     /**
-     * Ends an already started {@link Experiment}. The Experiment needs to be in
-     * {@link Status#RUNNING} status to be able to end it.
+     * Ends an already started {@link Experiment}. The Experiment needs to be in either
+     * {@link Status#RUNNING} or {@link  Status#SCHEDULED} status to be able to end it.
      */
     Experiment end(String experimentId, User user) throws DotDataException, DotSecurityException;
 
@@ -198,4 +201,17 @@ public interface ExperimentsAPI {
      */
     void endFinalizedExperiments(final User user) throws DotDataException;
 
+    /**
+     * Promotes a Variant to the default one for the given Experiment
+     */
+    Experiment promoteVariant(String experimentId, String variantName, User user)
+            throws DotDataException, DotSecurityException;
+
+    /*
+     * Cancels a Scheduled {@link com.dotcms.experiments.model.Experiment}.
+     * By Canceling an Experiment, its future execution will not take place.
+     * In order to be canceled, the Experiment needs to be in the
+     * {@link com.dotcms.experiments.model.Experiment.Status#SCHEDULED} state.
+     */
+    Experiment cancel(String experimentId, User user) throws DotDataException, DotSecurityException;
 }

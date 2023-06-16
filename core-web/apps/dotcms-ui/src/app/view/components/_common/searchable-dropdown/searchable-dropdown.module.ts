@@ -8,8 +8,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
-import { DotIconModule } from '@dotcms/ui';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { DotIconModule, DotMessagePipeModule } from '@dotcms/ui';
 
 import { SearchableDropdownComponent } from './component';
 

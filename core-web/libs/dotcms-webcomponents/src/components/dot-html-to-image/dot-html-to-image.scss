@@ -1,7 +1,9 @@
 dot-html-to-image {
+    align-items: center;
+    background-color: #fafafb; // $color-palette-gray-100
     display: flex;
     flex-direction: column;
-    align-items: center;
+    justify-content: center;
 
     iframe {
         border: 0;
@@ -11,5 +13,7 @@ dot-html-to-image {
 
     mwc-circular-progress {
         --mdc-theme-primary: var(--color-main);
+        position: absolute;
+        z-index: 1;
     }
 }

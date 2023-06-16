@@ -1,6 +1,7 @@
 import { ChartDataset } from 'chart.js';
 
 import {
+    BayesianStatusResponse,
     ComponentStatus,
     DotExperimentStatusList,
     TrafficProportionTypes
@@ -24,13 +25,33 @@ export interface DotExperiment {
 }
 
 export interface DotExperimentResults {
+    bayesianResult: DotResultBayesian;
     goals: Record<GoalsLevels, DotResultGoal>;
     sessions: DotResultSessions;
 }
 
+export interface DotResultBayesian {
+    value: number;
+    suggestedWinner: BayesianStatusResponse | string;
+    results: DotBayesianVariantResult[];
+}
+
+export interface DotBayesianVariantResult {
+    conversionRate: number;
+    credibilityInterval: DotCreditabilityInterval;
+    probability: number;
+    risk: number;
+    variant: string;
+}
+
+export interface DotCreditabilityInterval {
+    lower: number;
+    upper: number;
+}
+
 export interface DotResultGoal {
     goal: Goal;
-    variants: Record<string, DotResultVariant>;
+    variants: Record<'DEFAULT' | string, DotResultVariant>;
 }
 
 export interface DotResultVariant {
@@ -38,12 +59,8 @@ export interface DotResultVariant {
     multiBySession: number;
     uniqueBySession: DotResultUniqueBySession;
     variantName: string;
-}
-
-export interface DotResultSimpleVariant {
-    id: string;
-    name: string;
-    uniqueBySession: DotResultUniqueBySession;
+    variantDescription: string;
+    totalPageViews: number;
 }
 
 export interface DotResultUniqueBySession {
@@ -67,11 +84,24 @@ export interface TrafficProportion {
     variants: Array<Variant>;
 }
 
+export interface DotExperimentVariantDetail {
+    id: string;
+    name: string;
+    conversions: number;
+    conversionRate: string;
+    conversionRateRange: string;
+    sessions: number;
+    probabilityToBeBest: string;
+    isWinner: boolean;
+    isPromoted: boolean;
+}
+
 export interface Variant {
     id: string;
     name: string;
     weight: number;
     url?: string;
+    promoted?: boolean;
 }
 
 export type GoalsLevels = 'primary';
@@ -96,7 +126,10 @@ export interface RangeOfDateAndTime {
     endDate: number;
 }
 
-export type GroupedExperimentByStatus = Partial<Record<DotExperimentStatusList, DotExperiment[]>>;
+export type GroupedExperimentByStatus = {
+    status: DotExperimentStatusList;
+    experiments: DotExperiment[];
+};
 
 export interface SidebarStatus {
     status: ComponentStatus;
@@ -107,9 +140,8 @@ export type StepStatus = SidebarStatus & {
     experimentStep: ExperimentSteps | null;
 };
 
-export type EditPageTabs = 'edit' | 'preview';
-
 export enum ExperimentSteps {
+    EXPERIMENT_DESCRIPTION = 'experimentDescription',
     VARIANTS = 'variants',
     GOAL = 'goal',
     TARGETING = 'targeting',
@@ -168,28 +200,30 @@ export const ChartColors = {
     black: '#000000'
 };
 
-export const DefaultExperimentChartDatasetColors: Record<
-    'DEFAULT' | 'VARIANT1' | 'VARIANT2',
-    { borderColor: string; backgroundColor: string; pointBackgroundColor: string }
-> = {
-    DEFAULT: {
+export type LineChartColorsProperties = Pick<
+    ChartDataset<'line'>,
+    'borderColor' | 'backgroundColor' | 'pointBackgroundColor'
+>;
+
+export const ExperimentChartDatasetColorsVariants: Array<LineChartColorsProperties> = [
+    {
         borderColor: ChartColors.primary.rgb,
         pointBackgroundColor: ChartColors.primary.rgb,
         backgroundColor: ChartColors.primary.rgba_10
     },
-    VARIANT1: {
+    {
         borderColor: ChartColors.secondary.rgb,
         pointBackgroundColor: ChartColors.secondary.rgb,
         backgroundColor: ChartColors.secondary.rgba_10
     },
-    VARIANT2: {
+    {
         borderColor: ChartColors.accent.rgb,
         pointBackgroundColor: ChartColors.accent.rgb,
         backgroundColor: ChartColors.accent.rgba_10
     }
-};
+];
 
-export const DefaultExperimentChartDatasetOption: Partial<ChartDataset<'line'>> = {
+export const ExperimentLineChartDatasetDefaultProperties: Partial<ChartDataset<'line'>> = {
     type: 'line',
     pointRadius: 4,
     pointHoverRadius: 6,

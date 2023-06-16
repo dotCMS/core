@@ -164,6 +164,7 @@
             String displayCountBar = "";
             String charLimit = "";
             String customBlocks = "";
+            String contentletIdentifier = contentlet.getIdentifier();
             Boolean showVideoThumbnail = Config.getBooleanProperty("SHOW_VIDEO_THUMBNAIL", true);
 
             // By default this is an empty JSON `{}`.
@@ -208,7 +209,10 @@
                 display-count-bar="<%=displayCountBar%>"
                 char-limit="<%=charLimit%>"
                 lang="<%=contentLanguage%>"
-                custom-blocks='<%=customBlocks%>'>
+                custom-blocks='<%=customBlocks%>'
+                contentlet-identifier='<%=contentletIdentifier%>'
+            >
+                
             </dotcms-block-editor>
             <input type="hidden" name="<%=field.getFieldContentlet()%>" id="editor-input-value-<%=field.getVelocityVarName()%>"/>
 
@@ -242,22 +246,27 @@
                     const block = blockEditor.querySelector('.ProseMirror');
                     const field = document.querySelector('#editor-input-value-<%=field.getVelocityVarName()%>');
 
-                    if (content) {
-                        blockEditor.value = content;
-                        field.value = JSON.stringify(content); 
+                    /**
+                     * Safeguard just in case the editor changes are not triggering the 
+                     * "valueChange" event.
+                     */
+                    if (typeof <%=textValue%> === 'object') {
+                        field.value = JSON.stringify(<%=textValue%>);
+                    } else {
+                        field.value = <%=textValue%>;
                     }
 
+                    /**
+                     * We need to listen to the "valueChange" event BEFORE setting the value
+                     * to the editor.
+                     */
                     blockEditor.addEventListener('valueChange', (event) => {
-                        // https://tiptap.dev/api/commands/clear-content
-                        // https://github.com/ueberdosis/tiptap/issues/154
-                        // By default Editor Initialize with default node p even if you clear nodes
-                        // block.editor.isEmpty not working in our block editor
-                        if(block.editor.getHTML().toLowerCase() === "<p></p>"){
-                            field.value = null;
-                        } else {
-                            field.value = JSON.stringify(event.detail);
-                        }
+                        field.value = block.editor.isEmpty ? null : JSON.stringify(event.detail);;
                     });
+
+                    if (content) {
+                        blockEditor.value = content;
+                    }
 
                     blockEditor.showVideoThumbnail = <%=showVideoThumbnail%>;
                 })();
@@ -820,13 +829,26 @@
 
     </script>
 
-    <% if (UtilMethods.isSet(value)) {
-            final boolean canUserWriteToContentlet = APILocator.getPermissionAPI().doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_WRITE, user);
-            if (canUserWriteToContentlet && resourceLink.isEditableAsText() && InodeUtils.isSet(binInode)) { %>
-                <%@ include file="/html/portlet/ext/contentlet/field/edit_file_asset_text_inc.jsp"%>
-         <% } %>
-    <% } else { %>
-            <%@ include file="/html/portlet/ext/contentlet/field/edit_file_asset_text_inc.jsp"%>
+
+    <%
+
+        if(UtilMethods.isSet(value) && UtilMethods.isSet(resourceLink)){
+
+          boolean canUserWriteToContentlet = APILocator.getPermissionAPI().doesUserHavePermission(contentlet,PermissionAPI.PERMISSION_WRITE, user);
+
+    %>
+
+        <%if(canUserWriteToContentlet){%>
+            <% if (resourceLink.isEditableAsText()) { %>
+                <%
+                    if (InodeUtils.isSet(binInode) && canUserWriteToContentlet) {
+
+                %>
+                    <%@ include file="/html/portlet/ext/contentlet/field/edit_file_asset_text_inc.jsp"%>
+                <%  } %>
+            <% } %>
+
+        <% } %>
     <% } %>
 
     <!--  END display -->

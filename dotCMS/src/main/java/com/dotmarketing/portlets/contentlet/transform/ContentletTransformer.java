@@ -43,7 +43,7 @@ import java.util.StringTokenizer;
  * @author Nollymar Longa
  * @since Jan 11th, 2018
  */
-public class ContentletTransformer implements DBTransformer {
+public class ContentletTransformer implements DBTransformer<Contentlet> {
 
     private static final String DISABLED_WYSIWYG = "disabled_wysiwyg";
     private static final String INODE = "inode";
@@ -106,10 +106,9 @@ public class ContentletTransformer implements DBTransformer {
         contentlet.setModDate((Date) map.get("mod_date"));
         contentlet.setModUser((String) map.get("mod_user"));
         contentlet.setOwner((String) map.get("owner"));
-        contentlet.setProperty(Contentlet.TITTLE_KEY, map.get(Contentlet.TITTLE_KEY));
         contentlet.setSortOrder(ConversionUtils.toInt(map.get("sort_order"),0));
-
         contentlet.setLanguageId(ConversionUtils.toLong(map.get("language_id"), 0L));
+        contentlet.setVariantId((String) map.get("variant_id"));
 
         try {
            if(!hasJsonFields) {
@@ -233,7 +232,7 @@ public class ContentletTransformer implements DBTransformer {
     private static void populateWysiwyg(final Map<String, Object> map, Contentlet contentlet) {
         final String wysiwyg = (String) map.get(DISABLED_WYSIWYG);
         if( UtilMethods.isSet(wysiwyg) ) {
-            final List<String> wysiwygFields = new ArrayList<String>();
+            final List<String> wysiwygFields = new ArrayList<>();
             final StringTokenizer st = new StringTokenizer(wysiwyg,StringPool.COMMA);
             while( st.hasMoreTokens() ) wysiwygFields.add(st.nextToken().trim());
             contentlet.setDisabledWysiwyg(wysiwygFields);
@@ -247,10 +246,14 @@ public class ContentletTransformer implements DBTransformer {
      */
     private static void populateFields(final Contentlet contentlet, final Map<String, Object> originalMap)
             throws DotDataException, DotSecurityException {
+
         final Map<String, Object> fieldsMap = new HashMap<>();
         final String inode = (String) originalMap.get(INODE);
         final String identifier = (String) originalMap.get(IDENTIFIER);
         final String contentTypeId = (String) originalMap.get(STRUCTURE_INODE);
+
+        // Populate the title
+        contentlet.setProperty(Contentlet.TITTLE_KEY, originalMap.get(Contentlet.TITTLE_KEY));
 
         final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser())
                 .find(contentTypeId);
@@ -278,6 +281,11 @@ public class ContentletTransformer implements DBTransformer {
                             && FileAssetAPI.FILE_NAME_FIELD
                             .equals(field.getVelocityVarName())) {
                         value = APILocator.getIdentifierAPI().find(identifier).getAssetName();
+                    } else if (UtilMethods.isSet(identifier)
+                            && contentType instanceof FileAssetContentType
+                            && FileAssetAPI.META_DATA_FIELD.equals(field.getVelocityVarName())) {
+                        // We can ignore this metadata field, metadata will be generated directly from the asset
+                        value = Collections.emptyMap();
                     } else {
                         if (LegacyFieldTypes.BINARY.legacyValue()
                                 .equals(field.getFieldType())) {

@@ -1,3 +1,5 @@
+import { throwError } from 'rxjs';
+
 import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, Input } from '@angular/core';
@@ -13,10 +15,14 @@ import { of } from 'rxjs/internal/observable/of';
 
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { MockDotHttpErrorManagerService } from '@dotcms/app/test/dot-http-error-manager.service.mock';
-import { DotMessagePipeModule } from '@dotcms/app/view/pipes/dot-message/dot-message-pipe.module';
 import { DotMessageService, DotPageRenderService } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock, HttpCode } from '@dotcms/dotcms-js';
-import { dotcmsContentletMock, MockDotMessageService } from '@dotcms/utils-testing';
+import { DotMessagePipeModule } from '@dotcms/ui';
+import {
+    dotcmsContentletMock,
+    MockDotMessageService,
+    mockResponseView
+} from '@dotcms/utils-testing';
 
 import { DotPagesCardModule } from './dot-pages-card/dot-pages-card.module';
 import { DotPagesFavoritePanelComponent } from './dot-pages-favorite-panel.component';
@@ -100,11 +106,20 @@ describe('DotPagesFavoritePanelComponent', () => {
                 }
             });
         }
+        setLocalStorageFavoritePanelCollapsedParams(_collapsed: boolean): void {
+            /* */
+        }
+        setFavoritePages() {
+            /* */
+        }
+        getFavoritePages() {
+            /* */
+        }
     }
 
     describe('Empty state', () => {
-        beforeEach(() => {
-            TestBed.configureTestingModule({
+        beforeEach(async () => {
+            await TestBed.configureTestingModule({
                 declarations: [DotPagesFavoritePanelComponent, MockDotIconComponent],
                 imports: [
                     BrowserAnimationsModule,
@@ -144,10 +159,27 @@ describe('DotPagesFavoritePanelComponent', () => {
             ).toBeTruthy();
         });
 
+        it('should set panel collapsed state', () => {
+            spyOn(store, 'setLocalStorageFavoritePanelCollapsedParams');
+            spyOn(store, 'setFavoritePages');
+            component.toggleFavoritePagesPanel(
+                new Event('myevent', {
+                    bubbles: true,
+                    cancelable: true,
+                    composed: false
+                })
+            );
+            expect(store.setLocalStorageFavoritePanelCollapsedParams).toHaveBeenCalledTimes(1);
+            expect(store.setFavoritePages).toHaveBeenCalledTimes(1);
+        });
+
         it('should load empty pages cards container', () => {
             expect(
-                de.query(By.css('.dot-pages-empty__container dot-icon')).componentInstance.name
-            ).toBe('star_outline');
+                de
+                    .query(By.css('.dot-pages-empty__container i'))
+                    .nativeElement.classList.contains('pi-star')
+            ).toBeTrue();
+
             expect(de.query(By.css('.dot-pages-empty__header')).nativeElement.outerText).toBe(
                 'favoritePage.listing.empty.header'
             );
@@ -182,6 +214,9 @@ describe('DotPagesFavoritePanelComponent', () => {
                 });
             }
             getFavoritePages(_itemsPerPage: number): void {
+                /* */
+            }
+            setLocalStorageFavoritePanelCollapsedParams(_collapsed: boolean): void {
                 /* */
             }
         }
@@ -228,16 +263,15 @@ describe('DotPagesFavoritePanelComponent', () => {
         it('should set panel inputs and attributes', () => {
             const elem = de.query(By.css('p-panel'));
             expect(elem.nativeElement.classList.contains('dot-pages-panel__expanded')).toBeFalse();
-            expect(elem.componentInstance['iconPos']).toBe('start');
+            expect(elem.componentInstance['iconPos']).toBe('end');
             expect(elem.componentInstance['expandIcon']).toBe('pi pi-angle-down');
             expect(elem.componentInstance['collapseIcon']).toBe('pi pi-angle-up');
-            expect(elem.componentInstance['header']).toBe('favorites');
             expect(elem.componentInstance['toggleable']).toBe(true);
         });
 
-        it('should set secondary button in panel', () => {
-            const elem = de.query(By.css('.dot-pages-panel-action__button span'));
-            expect(elem.nativeElement.outerText.toUpperCase()).toBe('SEE.ALL'.toUpperCase());
+        it('should have an icon for bookmarks in the header', () => {
+            const elem = de.query(By.css('.dot-pages-panel__header [data-testId="bookmarksIcon"]'));
+            expect(elem).toBeTruthy();
         });
 
         it('should load pages cards with attributes', () => {
@@ -255,16 +289,6 @@ describe('DotPagesFavoritePanelComponent', () => {
         });
 
         describe('Events', () => {
-            it('should call event to load all items', () => {
-                const elem = de.query(By.css('[data-testId="seeAllBtn"]'));
-                elem.triggerEventHandler('click', {
-                    stopPropagation: () => {
-                        //
-                    }
-                });
-                expect(store.getFavoritePages).toHaveBeenCalledWith(4);
-            });
-
             it('should call edit method to open favorite page dialog', () => {
                 spyOn(dotPageRenderService, 'checkPermission').and.returnValue(of(true));
                 fixture.detectChanges();
@@ -284,7 +308,7 @@ describe('DotPagesFavoritePanelComponent', () => {
                 expect(dialogService.open).toHaveBeenCalledTimes(1);
             });
 
-            it('should throw error dialgo when call edit method to open favorite page dialog and user does not have access', () => {
+            it('should throw error dialog when call edit method to open favorite page dialog and user does not have access', () => {
                 spyOn(dotPageRenderService, 'checkPermission').and.returnValue(of(false));
                 spyOn(dotHttpErrorManagerService, 'handle');
                 fixture.detectChanges();
@@ -301,6 +325,18 @@ describe('DotPagesFavoritePanelComponent', () => {
                         })
                     )
                 );
+            });
+
+            it('should allow to open Favorite Page dialog when URL checked throws a 404 Error', () => {
+                const error404 = mockResponseView(404);
+                spyOn(dotPageRenderService, 'checkPermission').and.returnValue(
+                    throwError(error404)
+                );
+                fixture.detectChanges();
+                const elem = de.query(By.css('dot-pages-card'));
+                elem.triggerEventHandler('edit', { ...favoritePagesInitialTestData[0] });
+
+                expect(dialogService.open).toHaveBeenCalledTimes(1);
             });
 
             it('should call showActionMenu method to send actions to parent component', () => {
@@ -327,98 +363,6 @@ describe('DotPagesFavoritePanelComponent', () => {
                 expect(component.goToUrl.emit).toHaveBeenCalledOnceWith(
                     favoritePagesInitialTestData[0].url
                 );
-            });
-        });
-    });
-
-    describe('Loading all items', () => {
-        class storeMock {
-            get vm$() {
-                return of({
-                    favoritePages: {
-                        items: [...favoritePagesInitialTestData, ...favoritePagesInitialTestData],
-                        showLoadMoreButton: true,
-                        total: 4
-                    },
-                    isEnterprise: true,
-                    environments: true,
-                    languages: [],
-                    loggedUser: {
-                        id: 'admin',
-                        canRead: { contentlets: true, htmlPages: true },
-                        canWrite: { contentlets: true, htmlPages: true }
-                    },
-                    pages: {
-                        actionMenuDomId: '',
-                        items: [],
-                        addToBundleCTId: 'test1'
-                    }
-                });
-            }
-            getFavoritePages(_itemsPerPage: number): void {
-                /* */
-            }
-            limitFavoritePages(_limit: number): void {
-                /* */
-            }
-        }
-        beforeEach(() => {
-            TestBed.configureTestingModule({
-                declarations: [DotPagesFavoritePanelComponent, MockDotIconComponent],
-                imports: [
-                    BrowserAnimationsModule,
-                    DotMessagePipeModule,
-                    ButtonModule,
-                    DotPagesCardModule,
-                    PanelModule,
-                    HttpClientTestingModule
-                ],
-                providers: [
-                    DialogService,
-                    DotPageRenderService,
-                    {
-                        provide: DotHttpErrorManagerService,
-                        useClass: MockDotHttpErrorManagerService
-                    },
-                    { provide: CoreWebService, useClass: CoreWebServiceMock },
-                    { provide: DotPageStore, useClass: storeMock },
-                    { provide: DotMessageService, useValue: messageServiceMock }
-                ]
-            }).compileComponents();
-
-            store = TestBed.inject(DotPageStore);
-            dialogService = TestBed.inject(DialogService);
-            fixture = TestBed.createComponent(DotPagesFavoritePanelComponent);
-            de = fixture.debugElement;
-            component = fixture.componentInstance;
-
-            spyOn(store, 'getFavoritePages');
-            spyOn(store, 'limitFavoritePages');
-            spyOn(dialogService, 'open');
-            spyOn(component.goToUrl, 'emit');
-
-            fixture.detectChanges();
-        });
-
-        it('should set panel inputs and attributes', () => {
-            const elem = de.query(By.css('p-panel'));
-            expect(elem.nativeElement.classList.contains('dot-pages-panel__expanded')).toBeTrue();
-        });
-
-        it('should set secondary button in panel', () => {
-            const elem = de.query(By.css('.dot-pages-panel-action__button span'));
-            expect(elem.nativeElement.outerText.toUpperCase()).toBe('SEE.LESS'.toUpperCase());
-        });
-
-        describe('Show less items', () => {
-            it('should call event to show less items', () => {
-                const elem = de.query(By.css('[data-testId="seeAllBtn"]'));
-                elem.triggerEventHandler('click', {
-                    stopPropagation: () => {
-                        //
-                    }
-                });
-                expect(store.limitFavoritePages).toHaveBeenCalledWith(5);
             });
         });
     });

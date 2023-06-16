@@ -11,18 +11,15 @@ import {
     ComponentStatus,
     DotExperiment,
     DotExperimentStatusList,
-    GroupedExperimentByStatus,
-    TrafficProportionTypes
+    GroupedExperimentByStatus
 } from '@dotcms/dotcms-models';
-import {
-    DotExperimentsListStore,
-    DotExperimentsState
-} from '@portlets/dot-experiments/dot-experiments-list/store/dot-experiments-list-store';
+import { DotExperimentsListStore } from '@portlets/dot-experiments/dot-experiments-list/store/dot-experiments-list-store';
+import { DotExperimentsStore } from '@portlets/dot-experiments/dot-experiments-shell/store/dot-experiments.store';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import {
+    DotExperimentsStoreMock,
     getExperimentAllMocks,
-    getExperimentMock,
-    GoalsMock
+    getExperimentMock
 } from '@portlets/dot-experiments/test/mocks';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
@@ -32,7 +29,7 @@ const ActivatedRouteMock = {
         params: {
             pageId: routerParamsPageId
         },
-        parent: { parent: { parent: { parent: { data: { content: { page: { title: '' } } } } } } }
+        parent: { parent: { parent: { data: { content: { page: { title: '' } } } } } }
     }
 };
 
@@ -60,50 +57,25 @@ describe('DotExperimentsListStore', () => {
                 provide: ActivatedRoute,
                 useValue: ActivatedRouteMock
             },
-            mockProvider(Router)
+            mockProvider(Router),
+            mockProvider(DotExperimentsStore, DotExperimentsStoreMock)
         ]
     });
 
     beforeEach(() => {
-        spectator = storeService({});
-        store = spectator.inject(DotExperimentsListStore);
-
+        spectator = storeService();
         dotExperimentsService = spectator.inject(DotExperimentsService);
-        messageService = spectator.inject(MessageService);
-
+        dotExperimentsService.getAll.and.callThrough().and.returnValue(of(EXPERIMENT_MOCK_ALL));
         dotExperimentsService.getById.and.callThrough().and.returnValue(of(EXPERIMENT_MOCK));
-    });
 
-    it('should set initial data', (done) => {
-        const expectedInitialState: DotExperimentsState = {
-            page: {
-                pageId: routerParamsPageId,
-                pageTitle: ''
-            },
-            experiments: [],
-            filterStatus: [
-                DotExperimentStatusList.DRAFT,
-                DotExperimentStatusList.ENDED,
-                DotExperimentStatusList.RUNNING,
-                DotExperimentStatusList.SCHEDULED,
-                DotExperimentStatusList.ARCHIVED
-            ],
-            status: ComponentStatus.INIT,
-            sidebar: {
-                status: ComponentStatus.IDLE,
-                isOpen: false
-            }
-        };
-
-        store.state$.subscribe((state) => {
-            expect(state).toEqual(expectedInitialState);
-            done();
-        });
+        store = spectator.inject(DotExperimentsListStore);
+        messageService = spectator.inject(MessageService);
+        store.ngrxOnStateInit();
     });
 
     it('should have getState$ from the store', () => {
-        store.state$.subscribe(({ status }) => {
-            expect(status).toEqual(ComponentStatus.INIT);
+        store.state$.subscribe((state) => {
+            expect(state.status).toEqual(ComponentStatus.LOADED);
         });
     });
 
@@ -147,54 +119,39 @@ describe('DotExperimentsListStore', () => {
 
     it('should get ordered experiment by status', () => {
         const endedExperiments: DotExperiment[] = [
-            {
-                id: '111',
-                identifier: '1111-1111-1111-1111',
-                pageId: '456',
-                status: DotExperimentStatusList.ENDED,
-                archived: false,
-                readyToStart: false,
-                description: 'Praesent at molestie mauris, quis vulputate augue.',
-                name: 'Praesent at molestie mauris',
-                trafficAllocation: 100,
-                scheduling: null,
-                trafficProportion: {
-                    type: TrafficProportionTypes.SPLIT_EVENLY,
-                    variants: [{ id: '111', name: 'DEFAULT', weight: 100.0 }]
-                },
-                creationDate: new Date('2022-08-21 14:50:03'),
-                modDate: new Date('2022-08-21 18:50:03'),
-                goals: { ...GoalsMock }
-            }
-        ];
+            { id: '111', status: DotExperimentStatusList.ENDED }
+        ] as DotExperiment[];
         const archivedExperiments: DotExperiment[] = [
-            {
-                id: '222',
-                identifier: '2222-2222-2222-2222',
-                pageId: '456',
-                status: DotExperimentStatusList.ARCHIVED,
-                archived: false,
-                readyToStart: false,
-                description: 'Praesent at molestie mauris, quis vulputate augue.',
-                name: 'Praesent at molestie mauris',
-                trafficAllocation: 100,
-                scheduling: null,
-                trafficProportion: {
-                    type: TrafficProportionTypes.SPLIT_EVENLY,
-                    variants: [{ id: '222', name: 'DEFAULT', weight: 100.0 }]
-                },
-                creationDate: new Date('2022-08-21 14:50:03'),
-                modDate: new Date('2022-08-21 18:50:03'),
-                goals: { ...GoalsMock }
-            }
+            { id: '10', status: DotExperimentStatusList.ARCHIVED }
+        ] as DotExperiment[];
+
+        const runningExperiments: DotExperiment[] = [
+            { id: '45', status: DotExperimentStatusList.RUNNING }
+        ] as DotExperiment[];
+
+        const draftExperiments: DotExperiment[] = [
+            { id: '33', status: DotExperimentStatusList.DRAFT }
+        ] as DotExperiment[];
+
+        const scheduledExperiments: DotExperiment[] = [
+            { id: '1', status: DotExperimentStatusList.SCHEDULED }
+        ] as DotExperiment[];
+
+        const expected: GroupedExperimentByStatus[] = [
+            { status: DotExperimentStatusList.RUNNING, experiments: [...runningExperiments] },
+            { status: DotExperimentStatusList.SCHEDULED, experiments: [...scheduledExperiments] },
+            { status: DotExperimentStatusList.DRAFT, experiments: [...draftExperiments] },
+            { status: DotExperimentStatusList.ENDED, experiments: [...endedExperiments] },
+            { status: DotExperimentStatusList.ARCHIVED, experiments: [...archivedExperiments] }
         ];
 
-        const expected: GroupedExperimentByStatus = {
-            [DotExperimentStatusList.ENDED]: [...endedExperiments],
-            [DotExperimentStatusList.ARCHIVED]: [...archivedExperiments]
-        };
-
-        store.setExperiments([...endedExperiments, ...archivedExperiments]);
+        store.setExperiments([
+            ...draftExperiments,
+            ...scheduledExperiments,
+            ...endedExperiments,
+            ...archivedExperiments,
+            ...runningExperiments
+        ]);
 
         store.getExperimentsFilteredAndGroupedByStatus$.subscribe((exp) => {
             expect(exp).toEqual(expected);

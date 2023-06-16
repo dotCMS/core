@@ -1118,7 +1118,7 @@ public abstract class AbstractJDBCStartupTask implements StartupTask {
 	 * @return The list of foreign keys associated to the tables.
 	 */
 	protected List<ForeignKey> getForeingKeys(final Connection conn, final List<String> tables, final boolean executeDrop) {
-		List<ForeignKey> ret=new ArrayList<ForeignKey>();
+		List<ForeignKey> ret=new ArrayList<>();
 		Map<String, ForeignKey> fkMap = new HashMap<>();
 		try {
 			DatabaseMetaData dbmd = conn.getMetaData();
@@ -1199,7 +1199,7 @@ public abstract class AbstractJDBCStartupTask implements StartupTask {
 	 * @return The list of indexes associated to the tables.
 	 */
 	protected List<Index> getIndexes(final Connection conn, final List<String> tables, final boolean executeDrop) {
-		List<Index> ret=new ArrayList<Index>();
+		List<Index> ret=new ArrayList<>();
 		try {
 			DatabaseMetaData dbmd = conn.getMetaData();
 
@@ -1223,7 +1223,7 @@ public abstract class AbstractJDBCStartupTask implements StartupTask {
 						i = new Index();
 						i.indexName=indexName;
 						i.tableName=t;
-						i.columnNames=new ArrayList<String>();
+						i.columnNames=new ArrayList<>();
 						i.columnNames.add(idxrs.getString("COLUMN_NAME"));
 						i.unique = !(idxrs.getBoolean("NON_UNIQUE"));
 						
@@ -1305,7 +1305,7 @@ public abstract class AbstractJDBCStartupTask implements StartupTask {
 	protected List<PrimaryKey> getPrimaryKey(final Connection connection,
 											 final List<String> tablesWithKeys, final boolean drop) {
 
-		List<PrimaryKey> ret=new ArrayList<PrimaryKey>();
+		List<PrimaryKey> ret=new ArrayList<>();
 
 		if (tablesWithKeys!=null) {
 			try {
@@ -1328,7 +1328,7 @@ public abstract class AbstractJDBCStartupTask implements StartupTask {
 							key = new PrimaryKey();
 							key.keyName=resultSet.getString("PK_NAME");
 							key.tableName=tableName;
-							key.columnNames=new ArrayList<String>();
+							key.columnNames=new ArrayList<>();
 						}
 						key.columnNames.add(resultSet.getString("COLUMN_NAME"));
 						
@@ -1383,7 +1383,7 @@ public abstract class AbstractJDBCStartupTask implements StartupTask {
 	 */
 	protected List<Constraint> getDefaultConstraints(final Connection conn, final List<String> tables,
 			final boolean executeDrop) {
-		final List<Constraint> defaultConstraints = new ArrayList<Constraint>();
+		final List<Constraint> defaultConstraints = new ArrayList<>();
 		PreparedStatement statement = null;
 		try {
 			if (tables != null) {
@@ -1449,7 +1449,7 @@ public abstract class AbstractJDBCStartupTask implements StartupTask {
 	 */
 	protected List<Constraint> getCheckConstraints(final Connection conn, final List<String> tables,
 			final boolean executeDrop) {
-		final List<Constraint> checkConstraints = new ArrayList<Constraint>();
+		final List<Constraint> checkConstraints = new ArrayList<>();
 		PreparedStatement statement = null;
 		try {
 			if (tables != null) {

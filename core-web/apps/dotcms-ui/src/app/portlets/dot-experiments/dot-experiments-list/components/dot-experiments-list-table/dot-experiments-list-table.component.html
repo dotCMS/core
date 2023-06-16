@@ -1,9 +1,9 @@
 <div class="dot-experiment-list-table">
-    <ng-container *ngIf="groupedExperimentsCount; else noExperimentsTpl">
-        <ng-container *ngFor="let group of experimentGroupedByStatus | keyvalue">
-            <p-table [value]="group.value" styleClass="experiment-list">
+    <ng-container *ngIf="experimentsCount; else noExperimentsTpl">
+        <ng-container *ngFor="let group of experimentGroupedByStatus">
+            <p-table [value]="group.experiments" styleClass="experiment-list">
                 <ng-template pTemplate="caption">
-                    {{ group.key }}
+                    {{ group.status | lowercase | dm | uppercase }}
                 </ng-template>
                 <ng-template pTemplate="header">
                     <tr>
@@ -16,13 +16,8 @@
                 <ng-template let-experiment pTemplate="body">
                     <tr data-testId="experiment-row">
                         <td
-                            [routerLink]="[
-                                '/edit-page/experiments/configuration',
-                                experiment.pageId,
-                                experiment.id
-                            ]"
+                            (click)="goToContainer.emit(experiment)"
                             data-testId="experiment-row__name"
-                            queryParamsHandling="preserve"
                         >
                             {{ experiment.name }}
                         </td>
@@ -49,14 +44,6 @@
 
 <ng-template #actionButtonTpl let-experiment>
     <dot-icon-button-tooltip
-        *ngIf="experiment.status === experimentStatus.ENDED"
-        [icon]="'archive'"
-        (click)="archive($event, experiment)"
-        data-testId="experiment-row-archive-button"
-        tooltipText="{{ 'experiments.action.archive' | dm }}"
-    ></dot-icon-button-tooltip>
-
-    <dot-icon-button-tooltip
         *ngIf="
             experiment.status === experimentStatus.DRAFT ||
             experiment.status === experimentStatus.SCHEDULED
@@ -68,11 +55,22 @@
     ></dot-icon-button-tooltip>
 
     <dot-icon-button-tooltip
-        *ngIf="experiment.status === experimentStatus.RUNNING"
-        [icon]="'bar_chart'"
-        (click)="viewReports(experiment)"
+        *ngIf="
+            experiment.status === experimentStatus.RUNNING ||
+            experiment.status === experimentStatus.ENDED
+        "
+        [icon]="'settings'"
+        (click)="goToConfiguration.emit(experiment)"
         data-testId="experiment-row-report-button"
-        tooltipText="{{ 'experiments.action.reports' | dm }}"
+        tooltipText="{{ 'experiments.action.configuration' | dm }}"
+    ></dot-icon-button-tooltip>
+
+    <dot-icon-button-tooltip
+        *ngIf="experiment.status === experimentStatus.ENDED"
+        [icon]="'archive'"
+        (click)="archive($event, experiment)"
+        data-testId="experiment-row-archive-button"
+        tooltipText="{{ 'experiments.action.archive' | dm }}"
     ></dot-icon-button-tooltip>
 </ng-template>
 

@@ -26,26 +26,38 @@ import {
     TrafficProportionTypes,
     Variant
 } from '@dotcms/dotcms-models';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import {
     DotExperimentsConfigurationState,
     DotExperimentsConfigurationStore
 } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
-import { getExperimentMock, GoalsMock } from '@portlets/dot-experiments/test/mocks';
+import {
+    ACTIVE_ROUTE_MOCK_CONFIG,
+    getExperimentMock,
+    GoalsMock
+} from '@portlets/dot-experiments/test/mocks';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 const EXPERIMENT_MOCK = getExperimentMock(0);
 const EXPERIMENT_MOCK_1 = getExperimentMock(1);
 const EXPERIMENT_MOCK_2 = getExperimentMock(2);
+const EXPERIMENT_MOCK_3 = getExperimentMock(3);
 
 const ActivatedRouteMock = {
     snapshot: {
         params: {
             experimentId: EXPERIMENT_MOCK.id,
             pageId: EXPERIMENT_MOCK.pageId
-        }
+        },
+        data: ACTIVE_ROUTE_MOCK_CONFIG.snapshot.data
     }
 };
+
+const messageServiceMock = new MockDotMessageService({
+    'experiments.action.schedule-experiment': 'schedule-experiment',
+    'experiments.action.start-experiment': 'run-experiment'
+});
 
 describe('DotExperimentsConfigurationStore', () => {
     let spectator: SpectatorService<DotExperimentsConfigurationStore>;
@@ -57,7 +69,6 @@ describe('DotExperimentsConfigurationStore', () => {
         service: DotExperimentsConfigurationStore,
         providers: [
             mockProvider(DotExperimentsService),
-            mockProvider(DotMessageService),
             mockProvider(MessageService),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(Title),
@@ -65,12 +76,16 @@ describe('DotExperimentsConfigurationStore', () => {
                 provide: ActivatedRoute,
                 useValue: ActivatedRouteMock
             },
+            {
+                provide: DotMessageService,
+                useValue: messageServiceMock
+            },
             mockProvider(DotHttpErrorManagerService)
         ]
     });
 
     beforeEach(() => {
-        spectator = createStoreService({});
+        spectator = createStoreService();
 
         store = spectator.inject(DotExperimentsConfigurationStore);
         dotExperimentsService = spectator.inject(DotExperimentsService);
@@ -88,7 +103,8 @@ describe('DotExperimentsConfigurationStore', () => {
                 status: ComponentStatus.IDLE,
                 isOpen: false,
                 experimentStep: null
-            }
+            },
+            configProps: ACTIVE_ROUTE_MOCK_CONFIG.snapshot.data.config
         };
 
         expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_MOCK.id);
@@ -141,6 +157,41 @@ describe('DotExperimentsConfigurationStore', () => {
         });
     });
 
+    it('should return `Schedule Experiment` when the experiment has schedule set', (done) => {
+        spectator.service.loadExperiment(EXPERIMENT_MOCK.id);
+
+        expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_MOCK.id);
+
+        store.vm$.subscribe(({ runExperimentBtnLabel }) => {
+            expect(runExperimentBtnLabel).toEqual('schedule-experiment');
+            done();
+        });
+    });
+
+    it('should return `Run Experiment` when the experiment has schedule `null` ', (done) => {
+        dotExperimentsService.getById.and.callThrough().and.returnValue(of(EXPERIMENT_MOCK_1));
+        spectator.service.loadExperiment(EXPERIMENT_MOCK_1.id);
+
+        expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_MOCK_1.id);
+
+        store.vm$.subscribe(({ runExperimentBtnLabel }) => {
+            expect(runExperimentBtnLabel).toEqual('run-experiment');
+            done();
+        });
+    });
+
+    it('should return `Run Experiment` when the experiment has schedule startDate/endDate `null`', (done) => {
+        dotExperimentsService.getById.and.callThrough().and.returnValue(of(EXPERIMENT_MOCK_3));
+        spectator.service.loadExperiment(EXPERIMENT_MOCK_3.id);
+
+        expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_MOCK_3.id);
+
+        store.vm$.subscribe(({ runExperimentBtnLabel }) => {
+            expect(runExperimentBtnLabel).toEqual('run-experiment');
+            done();
+        });
+    });
+
     describe('Effects', () => {
         it('should load experiment to store', (done) => {
             dotExperimentsService.getById.and.callThrough().and.returnValue(of(EXPERIMENT_MOCK_1));
@@ -169,7 +220,8 @@ describe('DotExperimentsConfigurationStore', () => {
                         {
                             name: newVariant.name,
                             id: '222',
-                            weight: 100
+                            weight: 100,
+                            promoted: false
                         }
                     ]
                 }
@@ -191,12 +243,12 @@ describe('DotExperimentsConfigurationStore', () => {
 
         it('should edit a variant name of an experiment', (done) => {
             const variants: Variant[] = [
-                { id: '111', name: DEFAULT_VARIANT_NAME, weight: 50, url: 'url' },
-                { id: '222', name: 'name to edit', weight: 50, url: 'url' }
+                { id: '111', name: DEFAULT_VARIANT_NAME, weight: 50, url: 'url', promoted: false },
+                { id: '222', name: 'name to edit', weight: 50, url: 'url', promoted: false }
             ];
             const variantEdited: Variant[] = [
-                { id: '111', name: DEFAULT_VARIANT_NAME, weight: 50, url: 'url' },
-                { id: '222', name: 'new name', weight: 50, url: 'url' }
+                { id: '111', name: DEFAULT_VARIANT_NAME, weight: 50, url: 'url', promoted: false },
+                { id: '222', name: 'new name', weight: 50, url: 'url', promoted: false }
             ];
 
             dotExperimentsService.getById.and.callThrough().and.returnValue(
@@ -233,13 +285,37 @@ describe('DotExperimentsConfigurationStore', () => {
             });
         });
 
+        it('should edit a description of an experiment', (done) => {
+            const newDescription = 'new description';
+
+            dotExperimentsService.setDescription.and.callThrough().and.returnValue(
+                of({
+                    ...EXPERIMENT_MOCK,
+                    description: newDescription
+                })
+            );
+
+            store.loadExperiment(EXPERIMENT_MOCK.id);
+
+            store.setDescription({
+                experiment: EXPERIMENT_MOCK,
+                data: { description: newDescription }
+            });
+
+            store.state$.subscribe(({ experiment }) => {
+                expect(experiment.description).toEqual(newDescription);
+                done();
+            });
+        });
+
         it('should delete a variant from an experiment', (done) => {
             const variants: Variant[] = [
-                { id: 'DEFAULT', name: 'DEFAULT', weight: 50 },
+                { id: 'DEFAULT', name: 'DEFAULT', weight: 50, promoted: false },
                 {
                     id: '111',
                     name: '1111',
-                    weight: 50
+                    weight: 50,
+                    promoted: false
                 }
             ];
 
@@ -254,7 +330,7 @@ describe('DotExperimentsConfigurationStore', () => {
                 ...EXPERIMENT_MOCK_1,
                 trafficProportion: {
                     ...EXPERIMENT_MOCK_1.trafficProportion,
-                    variants: [{ id: 'DEFAULT', name: 'DEFAULT', weight: 50 }]
+                    variants: [{ id: 'DEFAULT', name: 'DEFAULT', weight: 50, promoted: false }]
                 }
             };
 
@@ -302,7 +378,7 @@ describe('DotExperimentsConfigurationStore', () => {
             });
         });
 
-        it('should get a isDefault true to the default conditions of type REACH_PAGE', (done) => {
+        it('should remove the default conditions of type REACH_PAGE', (done) => {
             const experimentMock = {
                 ...EXPERIMENT_MOCK,
                 goals: {
@@ -332,13 +408,12 @@ describe('DotExperimentsConfigurationStore', () => {
             store.loadExperiment(EXPERIMENT_MOCK.id);
 
             store.goals$.subscribe(({ primary }) => {
-                expect(primary.conditions[0].isDefault).toBeFalse();
-                expect(primary.conditions[1].parameter).toBe(GOAL_PARAMETERS.REFERER);
-                expect(primary.conditions[1].isDefault).toBeTrue();
+                expect(primary.conditions.length).toBe(1);
+                expect(primary.conditions[0].parameter).toBe(GOAL_PARAMETERS.URL);
                 done();
             });
         });
-        it('should get a isDefault true to the default conditions of type BOUNCE_RATE', (done) => {
+        it('should remove the default conditions of type BOUNCE_RATE', (done) => {
             const experimentMock = {
                 ...EXPERIMENT_MOCK,
                 goals: {
@@ -363,8 +438,7 @@ describe('DotExperimentsConfigurationStore', () => {
             store.loadExperiment(EXPERIMENT_MOCK.id);
 
             store.goals$.subscribe(({ primary }) => {
-                expect(primary.conditions[0].parameter).toBe(GOAL_PARAMETERS.URL);
-                expect(primary.conditions[0].isDefault).toBeTrue();
+                expect(primary.conditions.length).toBe(0);
                 done();
             });
         });
@@ -479,8 +553,8 @@ describe('DotExperimentsConfigurationStore', () => {
             const expectedTrafficProportion: TrafficProportion = {
                 type: TrafficProportionTypes.SPLIT_EVENLY,
                 variants: [
-                    { id: '111', name: 'DEFAULT', weight: 50 },
-                    { id: '111', name: 'A', weight: 50 }
+                    { id: '111', name: 'DEFAULT', weight: 50, promoted: false },
+                    { id: '111', name: 'A', weight: 50, promoted: false }
                 ]
             };
 
@@ -542,8 +616,9 @@ describe('DotExperimentsConfigurationStore', () => {
 
             store.startExperiment(experimentWithGoalsAndVariant);
 
-            store.state$.subscribe(({ experiment }) => {
+            store.state$.subscribe(({ experiment, status }) => {
                 expect(experiment.status).toEqual(DotExperimentStatusList.RUNNING);
+                expect(status).toEqual(ComponentStatus.IDLE);
                 done();
             });
         });
@@ -574,6 +649,42 @@ describe('DotExperimentsConfigurationStore', () => {
             dotExperimentsService.stop.and.returnValue(throwError('error'));
 
             store.stopExperiment(EXPERIMENT_MOCK_2);
+
+            expect(dotHttpErrorManagerService.handle).toHaveBeenCalledOnceWith(
+                'error' as unknown as HttpErrorResponse
+            );
+        });
+
+        it('should call the cancel experiment method when cancel scheduling', (done) => {
+            dotExperimentsService.getById.and
+                .callThrough()
+                .and.returnValue(
+                    of({ ...EXPERIMENT_MOCK_2, status: DotExperimentStatusList.SCHEDULED })
+                );
+
+            dotExperimentsService.cancelSchedule.and.callThrough().and.returnValue(
+                of({
+                    ...EXPERIMENT_MOCK_2,
+                    status: DotExperimentStatusList.DRAFT
+                })
+            );
+
+            spectator.service.loadExperiment(EXPERIMENT_MOCK_2.id);
+
+            store.cancelSchedule(EXPERIMENT_MOCK_2);
+
+            store.state$.subscribe(() => {
+                expect(dotExperimentsService.cancelSchedule).toHaveBeenCalledOnceWith(
+                    EXPERIMENT_MOCK_2.id
+                );
+                done();
+            });
+        });
+
+        it('should handle error when canceling the experiment', () => {
+            dotExperimentsService.cancelSchedule.and.returnValue(throwError('error'));
+
+            store.cancelSchedule(EXPERIMENT_MOCK_2);
 
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalledOnceWith(
                 'error' as unknown as HttpErrorResponse

@@ -26,7 +26,7 @@ public class MockParameterRequest extends HttpServletRequestWrapper implements M
 
     public MockParameterRequest(HttpServletRequest request, Map<String, String> setMe) {
         super(request);
-        HashMap<String, String> mutable = new HashMap<String, String>();
+        HashMap<String, String> mutable = new HashMap<>();
         
         List<NameValuePair> additional = URLEncodedUtils.parse(request.getQueryString(), Charset.forName("UTF-8"));
         for(NameValuePair nvp : additional) {

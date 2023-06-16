@@ -3,11 +3,13 @@
 @use "misc";
 
 @use "components/autocomplete";
+@use "components/avatar";
 @use "components/badge";
 @use "components/breadcrumb";
 @use "components/button";
 @use "components/calendar";
 @use "components/checkbox";
+@use "components/chip";
 @use "components/chips";
 @use "components/contextmenu";
 @use "components/datatable";
@@ -25,8 +27,10 @@
 @use "components/message";
 @use "components/multiselect";
 @use "components/overlaypanel";
+@use "components/panel";
 @use "components/paginator";
 @use "components/progressbar";
+@use "components/progress-spinner";
 @use "components/radiobutton";
 @use "components/selectbutton";
 @use "components/splitbutton";
@@ -42,6 +46,7 @@
 @use "components/card";
 @use "components/slider";
 @use "components/tag";
+@use "components/divider";
 
 @use "utils/validation";
 @use "utils/password";

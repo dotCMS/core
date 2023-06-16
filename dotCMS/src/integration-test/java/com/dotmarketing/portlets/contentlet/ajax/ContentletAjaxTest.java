@@ -8,14 +8,19 @@ import static org.junit.Assert.assertTrue;
 
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
+import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
+import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
@@ -50,6 +55,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpSession;
+
+import io.vavr.control.Try;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -147,18 +154,18 @@ public class ContentletAjaxTest {
 		/*
 		 * Get english version
 		 */
-		List<String> fieldsValues = new ArrayList<String>();
+		List<String> fieldsValues = new ArrayList<>();
 		fieldsValues.add("conHost");
 		fieldsValues.add(host.getIdentifier());
 		fieldsValues.add("webPageContent.title");
 		fieldsValues.add(title);
 		fieldsValues.add("languageId");
 		fieldsValues.add(String.valueOf(defaultLang.getId()));
-		List<String> categories = new ArrayList<String>();
+		List<String> categories = new ArrayList<>();
 		
 		List<Object> results=new ContentletAjax().searchContentletsByUser(structure.getInode(), fieldsValues, categories, false, false, false, false,1, "modDate Desc", 10,systemUser, null, null, null);
 		Map<String,Object> result = (Map<String,Object>)results.get(0);
-		Assert.assertEquals((Long)result.get("total"), new Long(1));
+		Assert.assertEquals((Long)result.get("total"), Long.valueOf(1));
 		result = (Map<String,Object>)results.get(3);
 		assertTrue(Long.parseLong(String.valueOf(result.get("languageId")))==defaultLang.getId());
 		contentlet = contentletAPI.find(String.valueOf(result.get("inode")),systemUser,false);
@@ -168,7 +175,7 @@ public class ContentletAjaxTest {
 		/*
 		 * Get italian version
 		 */
-		fieldsValues = new ArrayList<String>();
+		fieldsValues = new ArrayList<>();
 		fieldsValues.add("conHost");
 		fieldsValues.add(host.getIdentifier());
 		fieldsValues.add("webPageContent.title");
@@ -178,7 +185,7 @@ public class ContentletAjaxTest {
 
 		results=new ContentletAjax().searchContentletsByUser(structure.getInode(), fieldsValues, categories, false, false, false, false,1, "modDate Desc", 10,systemUser, null, null, null);
 		result = (Map<String,Object>)results.get(0);
-		Assert.assertEquals(new Long(1L), (Long)result.get("total"));
+		Assert.assertEquals(Long.valueOf(1L), (Long)result.get("total"));
 		result = (Map<String,Object>)results.get(3);
 		assertTrue(Long.parseLong(String.valueOf(result.get("languageId")))==language.getId());
 		contentlet = contentletAPI.find(String.valueOf(result.get("inode")),systemUser,false);
@@ -329,39 +336,76 @@ public class ContentletAjaxTest {
 	@Test
 	public void test_searchContentletsByUser_filteringByDates_returns_validResults()
 			throws DotDataException, DotSecurityException {
-		final ContentletAjax contentletAjax = new ContentletAjax();
-		final ContentType eventContentType = contentTypeAPI.find("calendarEvent");
-		final Date currentDate = new Date();
-		final String formattedDate = DateUtil.format(currentDate, "MM/dd/yyyy");
-		final Contentlet event = new ContentletDataGen(eventContentType.id())
-				.setProperty("title", "MyEvent" + System.currentTimeMillis())
-				.setProperty("startDate", currentDate).setProperty("endDate", currentDate).nextPersisted();
 
-		//Filtering by specific dates
-		List results = contentletAjax.searchContentletsByUser(ImmutableList.of(BaseContentType.ANY),
-				eventContentType.inode(),
-				CollectionsUtils.list("identifier", event.getIdentifier(), "calendarEvent.startDate",
-						formattedDate),
-				Collections.emptyList(), false, false, false,
-				false, 0, "moddate", 0, systemUser, null, null, null);
+		final ContentType currentCalendarEventType = Try.of(()->contentTypeAPI.find("calendarEvent")).getOrNull();
+		if (null != currentCalendarEventType) {
 
-		assertTrue(UtilMethods.isSet(results));
-		assertEquals(1L, ((HashMap) results.get(0)).get("total"));
-		assertEquals(event.getInode(), ((HashMap) results.get(3)).get("inode"));
+			contentTypeAPI.delete(currentCalendarEventType);
+		}
 
-		//Filtering by date range
-		final StringBuilder dateRange = new StringBuilder();
-		dateRange.append(StringPool.OPEN_BRACKET).append(formattedDate).append(" TO ").append(formattedDate).append(StringPool.CLOSE_BRACKET);
-		results = contentletAjax.searchContentletsByUser(ImmutableList.of(BaseContentType.ANY),
-				eventContentType.inode(),
-				CollectionsUtils.list("identifier", event.getIdentifier(), "calendarEvent.startDate",
-						dateRange.toString()),
-				Collections.emptyList(), false, false, false,
-				false, 0, "moddate", 0, systemUser, null, null, null);
+		final ContentType eventContentType = new ContentTypeDataGen().velocityVarName("calendarEvent").nextPersisted();
 
-		assertTrue(UtilMethods.isSet(results));
-		assertEquals(1L, ((HashMap) results.get(0)).get("total"));
-		assertEquals(event.getInode(), ((HashMap) results.get(3)).get("inode"));
+		try {
+			ContentTypeDataGen.addField(new FieldDataGen()
+					.velocityVarName("title")
+					.contentTypeId(eventContentType.id())
+					.type(TextField.class)
+					.nextPersisted());
+
+			ContentTypeDataGen.addField(new FieldDataGen()
+					.velocityVarName("startDate")
+					.contentTypeId(eventContentType.id())
+					.type(DateTimeField.class)
+					.defaultValue("")
+					.nextPersisted());
+
+			ContentTypeDataGen.addField(new FieldDataGen()
+					.velocityVarName("endDate")
+					.contentTypeId(eventContentType.id())
+					.type(DateTimeField.class)
+					.defaultValue("")
+					.nextPersisted());
+
+			final ContentletAjax contentletAjax = new ContentletAjax();
+			final Date currentDate = new Date();
+			final String formattedDate = DateUtil.format(currentDate, "MM/dd/yyyy");
+			final Contentlet event = new ContentletDataGen(eventContentType.id())
+					.setProperty("title", "MyEvent" + System.currentTimeMillis())
+					.setProperty("startDate", currentDate).setProperty("endDate", currentDate)
+					.nextPersisted();
+
+			//Filtering by specific dates
+			List results = contentletAjax.searchContentletsByUser(
+					ImmutableList.of(BaseContentType.ANY),
+					eventContentType.inode(),
+					CollectionsUtils.list("identifier", event.getIdentifier(),
+							"calendarEvent.startDate",
+							formattedDate),
+					Collections.emptyList(), false, false, false,
+					false, 0, "moddate", 0, systemUser, null, null, null);
+
+			assertTrue(UtilMethods.isSet(results));
+			assertEquals(1L, ((HashMap) results.get(0)).get("total"));
+			assertEquals(event.getInode(), ((HashMap) results.get(3)).get("inode"));
+
+			//Filtering by date range
+			final StringBuilder dateRange = new StringBuilder();
+			dateRange.append(StringPool.OPEN_BRACKET).append(formattedDate).append(" TO ")
+					.append(formattedDate).append(StringPool.CLOSE_BRACKET);
+			results = contentletAjax.searchContentletsByUser(ImmutableList.of(BaseContentType.ANY),
+					eventContentType.inode(),
+					CollectionsUtils.list("identifier", event.getIdentifier(),
+							"calendarEvent.startDate",
+							dateRange.toString()),
+					Collections.emptyList(), false, false, false,
+					false, 0, "moddate", 0, systemUser, null, null, null);
+
+			assertTrue(UtilMethods.isSet(results));
+			assertEquals(1L, ((HashMap) results.get(0)).get("total"));
+			assertEquals(event.getInode(), ((HashMap) results.get(3)).get("inode"));
+		}finally {
+			contentTypeAPI.delete(eventContentType);
+		}
 	}
 
 }

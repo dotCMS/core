@@ -11,42 +11,42 @@
     <form [formGroup]="form" [ngSwitch]="action" novalidate>
         <ng-container *ngSwitchCase="'Export'">
             <div class="field">
-                <label class="form__label" for="export-password">{{ 'Password' | dm }}</label>
+                <label dotFieldRequired for="export-password">{{ 'Password' | dm }}</label>
                 <input
+                    class="dot-apps-export-dialog__password"
+                    id="export-password"
+                    [placeholder]="'apps.confirmation.export.password.label' | dm"
                     dotAutofocus
                     pPassword
-                    id="export-password"
                     autocomplete="new-password"
                     formControlName="password"
                     name="export-password"
                     type="password"
-                    class="dot-apps-export-dialog__password"
-                    [placeholder]="'apps.confirmation.export.password.label' | dm"
                 />
             </div>
         </ng-container>
         <ng-container *ngSwitchCase="'Import'">
             <div class="field">
-                <label class="form__label" for="import-file">{{ 'Upload-File' | dm }}</label>
+                <label dotFieldRequired for="import-file">{{ 'Upload-File' | dm }}</label>
                 <input
-                    #importFile
                     id="import-file"
+                    #importFile
+                    (change)="onFileChange($event.target.files)"
                     type="file"
                     dotAutofocus
-                    (change)="onFileChange($event.target.files)"
                 />
             </div>
             <div class="field">
-                <label class="form__label" for="import-password">{{ 'Password' | dm }}</label>
+                <label dotFieldRequired for="import-password">{{ 'Password' | dm }}</label>
                 <input
-                    id="import-password"
                     class="dot-apps-import-dialog__password"
+                    id="import-password"
+                    [placeholder]="'apps.confirmation.import.password.label' | dm"
                     autocomplete="new-password"
                     formControlName="password"
                     name="import-password"
                     pInputText
                     type="password"
-                    [placeholder]="'apps.confirmation.import.password.label' | dm"
                 />
             </div>
             <input type="hidden" name="fileHidden" formControlName="importFile" />

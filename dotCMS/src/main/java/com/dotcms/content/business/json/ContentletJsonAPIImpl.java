@@ -161,7 +161,6 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
         builder.disabledWysiwyg(contentlet.getDisabledWysiwyg());
         builder.modUser(contentlet.getModUser());
         builder.modDate(Try.of(() -> contentlet.getModDate().toInstant()).getOrNull());
-        builder.variantId(contentlet.getVariantId());
 
         //These two are definitively mandatory but..
         //internalCheckIn calls "save" twice and the first time it is called these two aren't already set
@@ -185,7 +184,7 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
             final Object value = contentlet.get(field.variable());
             if (null != value) {
                 final Optional<FieldValue<?>> fieldValue = hydrateThenGetFieldValue(value, field, contentlet);
-                if (!fieldValue.isPresent()) {
+                if (fieldValue.isEmpty()) {
                     Logger.debug(ContentletJsonAPIImpl.class,
                             String.format("Unable to set field `%s` with the given value %s.",
                                     field.name(), value));
@@ -284,7 +283,6 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
         map.put(SORT_ORDER_KEY, immutableContentlet.sortOrder());
         map.put(LANGUAGEID_KEY, immutableContentlet.languageId());
         map.put(DISABLED_WYSIWYG_KEY, immutableContentlet.disabledWysiwyg());
-        map.put(VARIANT_ID, immutableContentlet.variantId());
 
         final ContentType contentType = contentTypeAPI.find(contentTypeId);
         final Map<String, Field> fieldsByVarName = contentType.fields().stream()

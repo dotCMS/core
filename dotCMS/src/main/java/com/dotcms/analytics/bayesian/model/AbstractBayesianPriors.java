@@ -5,9 +5,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.immutables.value.Value;
 
-import javax.annotation.Nullable;
-
-
 /**
  * Single Bayesian Prior data class to store provided prior (or known) data.
  * This data is required to make some more calculations regarding the quantiles, eventual histogram rendering, etc.
@@ -21,11 +18,9 @@ import javax.annotation.Nullable;
 public interface AbstractBayesianPriors {
 
     @JsonProperty("alpha")
-    @Nullable
-    Double alpha();
+    double alpha();
 
     @JsonProperty("beta")
-    @Nullable
-    Double beta();
+    double beta();
 
 }

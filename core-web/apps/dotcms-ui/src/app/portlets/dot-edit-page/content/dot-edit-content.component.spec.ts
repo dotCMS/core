@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { of, throwError } from 'rxjs';
+import { of } from 'rxjs';
 
-import { HttpErrorResponse } from '@angular/common/http';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, ElementRef, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, fakeAsync, flush, TestBed, tick } from '@angular/core/testing';
@@ -24,9 +23,11 @@ import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
 import { DotContentletEditorModule } from '@components/dot-contentlet-editor/dot-contentlet-editor.module';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotDownloadBundleDialogService } from '@dotcms/app/api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
+import { DotFavoritePageService } from '@dotcms/app/api/services/dot-favorite-page/dot-favorite-page.service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
@@ -84,6 +85,7 @@ import {
     processedContainers,
     SiteServiceMock
 } from '@dotcms/utils-testing';
+import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { getExperimentMock } from '@portlets/dot-experiments/test/mocks';
 
 import { DotEditPageWorkflowsActionsModule } from './components/dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
@@ -92,6 +94,7 @@ import {
     EDIT_BLOCK_EDITOR_CUSTOM_EVENT
 } from './dot-edit-content.component';
 import { DotContainerContentletService } from './services/dot-container-contentlet.service';
+import { DotCopyContentModalService } from './services/dot-copy-content-modal/dot-copy-content-modal.service';
 import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
 import { PageModelChangeEventType } from './services/dot-edit-content-html/models';
 import { DotPageStateService } from './services/dot-page-state/dot-page-state.service';
@@ -150,6 +153,7 @@ export class MockDotFormSelectorComponent {
 export class MockDotEditPageToolbarComponent {
     @Input() pageState = mockDotRenderedPageState;
     @Input() variant;
+    @Input() runningExperiment;
     @Output() actionFired = new EventEmitter<DotCMSContentlet>();
     @Output() cancel = new EventEmitter<boolean>();
     @Output() favoritePage = new EventEmitter<boolean>();
@@ -167,7 +171,9 @@ export class MockDotPaletteComponent {
 
 const mockRenderedPageState = new DotPageRenderState(
     mockUser(),
-    new DotPageRender(mockDotRenderedPage())
+    new DotPageRender(mockDotRenderedPage()),
+    null,
+    EXPERIMENT_MOCK
 );
 
 describe('DotEditContentComponent', () => {
@@ -216,7 +222,8 @@ describe('DotEditContentComponent', () => {
             'dot.common.content.search': 'Content Search',
             'an-unexpected-system-error-occurred': 'Error msg',
             'editpage.content.contentlet.remove.confirmation_message.header': 'header',
-            'editpage.content.contentlet.remove.confirmation_message.message': 'message'
+            'editpage.content.contentlet.remove.confirmation_message.message': 'message',
+            'Edit-Content': 'Edit Content'
         });
 
         TestBed.configureTestingModule({
@@ -268,6 +275,9 @@ describe('DotEditContentComponent', () => {
                 DotPropertiesService,
                 DotESContentService,
                 DotSessionStorageService,
+                DotCopyContentModalService,
+                DotFavoritePageService,
+                DotExperimentsService,
                 {
                     provide: LoginService,
                     useClass: LoginServiceMock
@@ -299,13 +309,13 @@ describe('DotEditContentComponent', () => {
                             queryParams: {
                                 url: '/an/url/test',
                                 variantName: EXPERIMENT_MOCK.trafficProportion.variants[1].id,
-                                editPageTab: 'preview'
+                                mode: DotPageMode.PREVIEW
                             }
                         },
                         data: of({})
                     }
                 },
-                DotMessageDisplayService,
+                { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
                 ConfirmationService,
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 DotEventsService,
@@ -351,9 +361,7 @@ describe('DotEditContentComponent', () => {
         router = de.injector.get(Router);
         spyOn(dotPageStateService, 'reload');
 
-        spyOn(dotEditContentHtmlService, 'renderAddedForm').and.returnValue(
-            of([{ identifier: '123', uuid: 'uui-1' }])
-        );
+        spyOn(dotEditContentHtmlService, 'renderAddedForm');
     });
 
     describe('elements', () => {
@@ -391,12 +399,6 @@ describe('DotEditContentComponent', () => {
                     expect<any>(dotEditContentHtmlService.renderAddedForm).toHaveBeenCalledWith(
                         '123'
                     );
-                    expect(dotEditPageService.save).toHaveBeenCalledWith('123', [
-                        { identifier: '123', uuid: 'uui-1' }
-                    ]);
-
-                    expect(dotGlobalMessageService.success).toHaveBeenCalledTimes(1);
-                    expect(dotPageStateService.reload).toHaveBeenCalledTimes(1);
                     expect(dotFormSelector.componentInstance.show).toBe(false);
                 });
 
@@ -413,6 +415,7 @@ describe('DotEditContentComponent', () => {
 
             beforeEach(() => {
                 spyOn(dialogService, 'open');
+
                 fixture.detectChanges();
                 toolbarElement = de.query(By.css('dot-edit-page-toolbar'));
             });
@@ -439,8 +442,12 @@ describe('DotEditContentComponent', () => {
                     experimentId: EXPERIMENT_MOCK.id,
                     experimentStatus: EXPERIMENT_MOCK.status,
                     experimentName: EXPERIMENT_MOCK.name,
-                    mode: 'preview'
+                    mode: DotPageMode.PREVIEW
                 });
+            });
+
+            it('should pass running experiment', () => {
+                expect(toolbarElement.componentInstance.runningExperiment).toEqual(EXPERIMENT_MOCK);
             });
 
             describe('events', () => {
@@ -1427,38 +1434,25 @@ describe('DotEditContentComponent', () => {
                 fixture.detectChanges();
 
                 expect<any>(dotEditContentHtmlService.renderAddedForm).toHaveBeenCalledWith('123');
-
-                expect<any>(dotEditPageService.save).toHaveBeenCalledWith('123', [
-                    { identifier: '123', uuid: 'uui-1', personaTag: 'SuperPersona' }
-                ]);
             });
         });
     });
 
     describe('errors', () => {
-        let httpErrorManagerService: DotHttpErrorManagerService;
         beforeEach(() => {
-            httpErrorManagerService = de.injector.get(DotHttpErrorManagerService);
             spyOn(dotConfigurationService, 'getKeyAsList').and.returnValue(
                 of(['host', 'vanityurl', 'persona', 'languagevariable'])
             );
+            fixture.detectChanges();
         });
 
         describe('iframe events', () => {
-            it('should handle error message add reload content', () => {
-                const errorResponse = { error: { message: 'error' } } as HttpErrorResponse;
-                spyOn(dotEditPageService, 'save').and.returnValue(throwError(errorResponse));
-                spyOn(dotPageStateService, 'updatePageStateHaveContent');
-                spyOn(httpErrorManagerService, 'handle');
-
-                fixture.detectChanges();
-
+            it('should reload content on SAVE_ERROR', () => {
                 dotEditContentHtmlService.pageModel$.next({
                     model: [{ identifier: 'test', uuid: '111' }],
-                    type: PageModelChangeEventType.ADD_CONTENT
+                    type: PageModelChangeEventType.SAVE_ERROR
                 });
 
-                expect(httpErrorManagerService.handle).toHaveBeenCalledOnceWith(errorResponse);
                 expect(dotPageStateService.reload).toHaveBeenCalledTimes(1);
             });
         });

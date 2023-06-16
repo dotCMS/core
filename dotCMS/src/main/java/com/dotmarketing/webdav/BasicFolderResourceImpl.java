@@ -117,7 +117,7 @@ public abstract class BasicFolderResourceImpl implements FolderResource {
 
     @Override
     public Long getMaxAgeSeconds(Auth arg0) {
-        return new Long(60);
+        return Long.valueOf(60);
     }
 
     @Override

@@ -13,8 +13,6 @@ import Suggestion, { SuggestionOptions, SuggestionProps } from '@tiptap/suggesti
 
 import { RemoteCustomExtensions } from '@dotcms/dotcms-models';
 
-import { ActionButtonComponent } from './action-button.component';
-
 import {
     SuggestionPopperModifiers,
     SuggestionsCommandProps,
@@ -252,7 +250,8 @@ export const ActionsMenu = (
     }
 
     function setUpSuggestionComponent(editor: Editor, range: Range) {
-        const { allowedBlocks, allowedContentTypes, lang } = editor.storage.dotConfig;
+        const { allowedBlocks, allowedContentTypes, lang, contentletIdentifier } =
+            editor.storage.dotConfig;
         const editorAllowedBlocks = allowedBlocks.length > 1 ? allowedBlocks : [];
         const items = getItems({ allowedBlocks: editorAllowedBlocks, editor, range });
 
@@ -262,6 +261,8 @@ export const ActionsMenu = (
         suggestionsComponent.instance.items = items;
         suggestionsComponent.instance.currentLanguage = lang;
         suggestionsComponent.instance.allowedContentTypes = allowedContentTypes;
+        suggestionsComponent.instance.contentletIdentifier = contentletIdentifier;
+
         suggestionsComponent.instance.onSelectContentlet = (props) => {
             clearFilter({ type: ItemsType.CONTENT, editor, range, suggestionKey, ItemsType });
             onSelection({ editor, range, props });
@@ -426,13 +427,10 @@ export const ActionsMenu = (
         },
 
         addProseMirrorPlugins() {
-            const button = viewContainerRef.createComponent(ActionButtonComponent);
-
             return [
                 FloatingActionsPlugin({
                     command: execCommand,
                     editor: this.editor,
-                    element: button.location.nativeElement,
                     render: () => {
                         return {
                             onStart,

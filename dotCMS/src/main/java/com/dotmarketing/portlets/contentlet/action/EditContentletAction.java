@@ -27,6 +27,7 @@ import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotcms.repackage.org.apache.struts.action.ActionMessage;
 import com.dotcms.util.I18NMessage;
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -263,7 +264,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 	 */
 	public void processAction(ActionMapping mapping, ActionForm form, PortletConfig config, ActionRequest req,
 			ActionResponse res) throws Exception {
-		List<Contentlet> contentToIndexAfterCommit  = new ArrayList<Contentlet>();
+		List<Contentlet> contentToIndexAfterCommit  = new ArrayList<>();
 		// wraps request to get session object
 		boolean validate = true;
 		ActionRequestImpl reqImpl = (ActionRequestImpl) req;
@@ -330,7 +331,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 					if (null != ae.getMessage() && ae.getMessage().equals(WebKeys.EDIT_ASSET_EXCEPTION)) {
 						// The web asset edit threw an exception because it's
 						// locked so it should redirect back with message
-						java.util.Map<String, String[]> params = new java.util.HashMap<String, String[]>();
+						java.util.Map<String, String[]> params = new java.util.HashMap<>();
 						params.put("struts_action", new String[] { "/ext/director/direct" });
 						params.put("cmd", new String[] { "editContentlet" });
 						params.put("contentlet", new String[] { req.getParameter("inode") });
@@ -371,7 +372,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 					if (null != ae.getMessage() && ae.getMessage().equals(WebKeys.EDIT_ASSET_EXCEPTION)) {
 						// The web asset edit threw an exception because it's
 						// locked so it should redirect back with message
-						java.util.Map<String, String[]> params = new java.util.HashMap<String, String[]>();
+						java.util.Map<String, String[]> params = new java.util.HashMap<>();
 						params.put("struts_action", new String[] { "/ext/director/direct" });
 						params.put("cmd", new String[] { "editContentlet" });
 						params.put("contentlet", new String[] { req.getParameter("inode") });
@@ -464,7 +465,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			try {
 				Logger.debug(this, "Calling Delete Method");
 
-				List<Contentlet> contentlets = new ArrayList<Contentlet>();
+				List<Contentlet> contentlets = new ArrayList<>();
 				contentlets.add(contentletToEdit);
 				try{
 					conAPI.archive(contentlets, user, false);
@@ -1022,12 +1023,19 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		// : this is null, but the dialog if does not have any content type for the current user shouldn't be showed.
 
 		String selectedContentType = "";
+		final String siblingStructure = req.getParameter("sibblingStructure");
 		if (InodeUtils.isSet(req.getParameter("selectedStructure"))
-				|| InodeUtils.isSet(cf.getStructureInode())) {
+				|| InodeUtils.isSet(cf.getStructureInode())
+				|| InodeUtils.isSet(siblingStructure)) {
 
 			if (InodeUtils.isSet(req.getParameter("selectedStructure"))) {
 				selectedContentType = req.getParameter("selectedStructure");
-			} else {
+
+			} else if (InodeUtils.isSet(siblingStructure)){
+				selectedContentType = siblingStructure;
+
+			}
+			else {
 				selectedContentType = cf.getStructureInode();
 			}
 			contentType = this.transform(contentTypeAPI.find(selectedContentType));
@@ -1050,7 +1058,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		}
 		// Add information regarding the last content search in the session
 		if (httpReq.getSession().getAttribute(WebKeys.CONTENTLET_LAST_SEARCH) == null) {
-			Map<String, Object> lastSearchMap = new HashMap<String, Object>();
+			Map<String, Object> lastSearchMap = new HashMap<>();
 			lastSearchMap.put("structure", contentType);
 			lastSearchMap.put("fieldsSearch", new HashMap<String, String>());
 			lastSearchMap.put("categories", new ArrayList<String>());
@@ -1211,7 +1219,17 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		}
 
 		if(InodeUtils.isSet(contentlet.getInode())){
-			workingContentlet = contAPI.findContentletByIdentifier(contentlet.getIdentifier(), false, contentlet.getLanguageId(), user, false);
+			final String currentVariantId = WebAPILocator.getVariantWebAPI().currentVariantId();
+
+			workingContentlet = contAPI.findContentletByIdentifier(contentlet.getIdentifier(),
+					false, contentlet.getLanguageId(), currentVariantId, user, false);
+
+			if(workingContentlet == null) {
+				workingContentlet = contAPI.findContentletByIdentifier(contentlet.getIdentifier(),
+						false, contentlet.getLanguageId(), VariantAPI.DEFAULT_VARIANT.name(),
+						user, false);
+
+			}
 		}else{
 			workingContentlet = contentlet;
 		}
@@ -1330,7 +1348,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			contentlet.setIdentifier(contentletForm.getIdentifier());
 			contentlet.setInode(contentletForm.getInode());
 			contentlet.setLanguageId(contentletForm.getLanguageId());
-			List<String> disabled = new ArrayList<String>();
+			List<String> disabled = new ArrayList<>();
 			CollectionUtils.addAll(disabled, contentletForm.getDisabledWysiwyg().split(","));
 			contentlet.setDisabledWysiwyg(disabled);
 
@@ -1426,7 +1444,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			throw new DotContentletValidationException(ve.getMessage());
 		}
 
-		ArrayList<Category> cats = new ArrayList<Category>();
+		ArrayList<Category> cats = new ArrayList<>();
 		// Getting categories that come from the entity
 		String[] arr = req.getParameterValues("categories") == null?new String[0]:req.getParameterValues("categories");
 		if (arr != null && arr.length > 0) {
@@ -1565,7 +1583,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 	 * @return
 	 */
 	private ArrayList<Permission> _getSelectedPermissions(ActionRequest req, Contentlet con){
-		ArrayList<Permission> pers = new ArrayList<Permission>();
+		ArrayList<Permission> pers = new ArrayList<>();
 		String[] readPermissions = req.getParameterValues("read");
 		if (readPermissions != null) {
 			for (int k = 0; k < readPermissions.length; k++) {
@@ -1603,13 +1621,13 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		try
 		{
 			User currentUser = com.liferay.portal.util.PortalUtil.getUser(req);
-			Map<String, String[]> params = new HashMap<String, String[]> ();
+			Map<String, String[]> params = new HashMap<> ();
 			params.put("struts_action", new String [] {"/ext/contentlet/edit_contentlet"});
 			params.put("cmd", new String [] {"edit"});
 			params.put("inode", new String [] { String.valueOf(contentlet.getInode()) });
 			String contentURL = PortletURLUtil.getActionURL(req, WindowState.MAXIMIZED.toString(), params);
 			List<Map<String, Object>> references = conAPI.getContentletReferences(contentlet, currentUser, false);
-			List<Map<String, Object>> validReferences = new ArrayList<Map<String, Object>> ();
+			List<Map<String, Object>> validReferences = new ArrayList<> ();
 
 			//Avoiding to send the email to the same users
 			for (Map<String, Object> reference : references)
@@ -1680,7 +1698,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 					Company company = PublicCompanyFactory.getDefaultCompany();
 					User pageUser = (User)reference.get("owner");
 
-					HashMap<String, Object> parameters = new HashMap<String, Object>();
+					HashMap<String, Object> parameters = new HashMap<>();
 					parameters.put("from", company.getEmailAddress());
 					parameters.put("to", pageUser.getEmailAddress());
 					parameters.put("subject", "dotCMS Notification");
@@ -1824,7 +1842,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			if (!InodeUtils.isSet(structure.getInode())) {
 				ActionRequestImpl reqImpl = (ActionRequestImpl) req;
 				HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
-				httpReq.getSession().setAttribute(WebKeys.Structure.STRUCTURE_TYPE, new Integer("1"));
+				httpReq.getSession().setAttribute(WebKeys.Structure.STRUCTURE_TYPE, Integer.valueOf("1"));
 				String selectedStructure = req.getParameter("selectedStructure");
 				if (InodeUtils.isSet(selectedStructure)) {
 					structure = CacheLocator.getContentTypeCache().getStructureByInode(selectedStructure);
@@ -1858,7 +1876,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			        contentlet.setInode(sib);
 
 				//Setting categories in the contentlet form
-				List<String> categoriesArr = new ArrayList<String> ();
+				List<String> categoriesArr = new ArrayList<> ();
 				List<Category> cats = catAPI.getParents(contentlet, user, false);
 
 				for (Category cat : cats) {
@@ -2100,7 +2118,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 	 * @return		ContentletRelationships.
 	 */
 	private ContentletRelationships getCurrentContentletRelationships(ActionRequest req, User user) {
-		List<ContentletRelationships.ContentletRelationshipRecords> relationshipsRecords = new ArrayList<ContentletRelationships.ContentletRelationshipRecords>();
+		List<ContentletRelationships.ContentletRelationshipRecords> relationshipsRecords = new ArrayList<>();
 		Set<String> keys = req.getParameterMap().keySet();
 		ContentletRelationships.ContentletRelationshipRecords contentletRelationshipRecords;
 		boolean hasParent;
@@ -2119,7 +2137,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				inodes = inodesSt.split(",");
 				relationship = APILocator.getRelationshipAPI().byInode(inodes[0]);
 				contentletRelationshipRecords = new ContentletRelationships(null).new ContentletRelationshipRecords(relationship, hasParent);
-				records = new ArrayList<Contentlet>();
+				records = new ArrayList<>();
 
 				for (int i = 1; i < inodes.length; i++) {
 					try {
@@ -2153,7 +2171,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		Set<String> keys = req.getParameterMap().keySet();
 
 		ContentletRelationships relationshipsData = new ContentletRelationships(currentcontent);
-		List<ContentletRelationshipRecords> relationshipsRecords = new ArrayList<ContentletRelationshipRecords> ();
+		List<ContentletRelationshipRecords> relationshipsRecords = new ArrayList<> ();
 		relationshipsData.setRelationshipsRecords(relationshipsRecords);
 
 		for (String key : keys) {
@@ -2165,7 +2183,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 				Relationship relationship = APILocator.getRelationshipAPI().byInode(inodes[0]);
 				ContentletRelationshipRecords records = relationshipsData.new ContentletRelationshipRecords(relationship, hasParent);
-				ArrayList<Contentlet> cons = new ArrayList<Contentlet>();
+				ArrayList<Contentlet> cons = new ArrayList<>();
 				for (String inode : inodes) {
 					String i = "";
 					try{
@@ -2220,7 +2238,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			class UnpublishThread extends Thread {
 				private String[] inodes = new String[0];
 				private User user;
-				List<Contentlet> contentToIndexAfterCommit = new ArrayList<Contentlet>();
+				List<Contentlet> contentToIndexAfterCommit = new ArrayList<>();
 
 				public UnpublishThread(String[] inodes, User user,List<Contentlet> contentToIndexAfterCommit) {
 					this.inodes = inodes;
@@ -2241,7 +2259,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 				public void unpublish(List<Contentlet> contentToIndexAfterCommit) throws DotContentletStateException, DotStateException, DotSecurityException, DotDataException {
 					boolean hasNoPermissionOnAllContent = false;
-					List<Contentlet> contentlets = new ArrayList<Contentlet>();
+					List<Contentlet> contentlets = new ArrayList<>();
 					for(String inode  : inodes){
 
 						Contentlet contentlet = new Contentlet();
@@ -2360,7 +2378,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			class PublishThread extends Thread {
 				private String[] inodes = new String[0];
 				private User user;
-				List<Contentlet> contentToIndexAfterCommit  = new ArrayList<Contentlet>();
+				List<Contentlet> contentToIndexAfterCommit  = new ArrayList<>();
 				Date resetExpireDate;
 
 				public PublishThread(String[] inodes, User user,List<Contentlet> contentToIndexAfterCommit,Date resetExpireDate) {
@@ -2383,7 +2401,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 				public void publish(List<Contentlet> contentToIndexAfterCommit) throws DotContentletStateException, DotStateException, DotSecurityException, DotDataException {
 					boolean hasNoPermissionOnAllContent = false;
-					List<Contentlet> contentlets = new ArrayList<Contentlet>();
+					List<Contentlet> contentlets = new ArrayList<>();
 					for(String inode  : inodes){
 
 						Contentlet contentlet = new Contentlet();
@@ -2501,7 +2519,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			class ArchiveThread extends Thread {
 				private String[] inodes = new String[0];
 				private User user;
-				List<Contentlet> contentToIndexAfterCommit  = new ArrayList<Contentlet>();
+				List<Contentlet> contentToIndexAfterCommit  = new ArrayList<>();
 
 				public ArchiveThread(String[] inodes, User user,List<Contentlet> contentToIndexAfterCommit) {
 					this.inodes = inodes;
@@ -2523,7 +2541,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				public void archive(List<Contentlet> contentToIndexAfterCommit) throws DotContentletStateException, DotStateException, DotSecurityException, DotDataException {
 					boolean hasNoPermissionOnAllContent = false;
 					boolean someContentIsLive = false;
-					List<Contentlet> contentlets = new ArrayList<Contentlet>();
+					List<Contentlet> contentlets = new ArrayList<>();
 					for(String inode  : inodes){
 
 						Contentlet contentlet = new Contentlet();
@@ -2635,12 +2653,12 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				tempInodes = getSelectedInodes(req,user);
 			}
 			
-			ArrayList<String> inodes = new ArrayList<String>(Arrays.asList(tempInodes));
+			ArrayList<String> inodes = new ArrayList<>(Arrays.asList(tempInodes));
 
 			class DeleteThread extends Thread {
-				private List<String> inodes = new ArrayList<String>();
+				private List<String> inodes = new ArrayList<>();
 				private User user;
-				List<Contentlet> contentToIndexAfterCommit  = new ArrayList<Contentlet>();
+				List<Contentlet> contentToIndexAfterCommit  = new ArrayList<>();
 
 				public DeleteThread(List<String> inodes, User user,List<Contentlet> contentToIndexAfterCommit) {
 					this.inodes = inodes;
@@ -2660,7 +2678,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 				public void delete(List<Contentlet> contentToIndexAfterCommit) throws DotContentletStateException, DotStateException, DotSecurityException, DotDataException {
 					boolean hasNoPermissionOnAllContent = false;
-					List<Contentlet> contentlets = new ArrayList<Contentlet>();
+					List<Contentlet> contentlets = new ArrayList<>();
 					for(String inode  : inodes){
 						Contentlet contentlet = new Contentlet();
 						try{
@@ -2677,7 +2695,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 							hasNoPermissionOnAllContent = true;
 						}
 					}
-					List<Contentlet> cons = new ArrayList<Contentlet>();
+					List<Contentlet> cons = new ArrayList<>();
 					for (Contentlet content : contentlets) {
 						cons.clear();
 						cons.add(content);
@@ -2762,7 +2780,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			class UnarchiveThread extends Thread {
 				private String[] inodes = new String[0];
 				private User user;
-				List<Contentlet> contentToIndexAfterCommit  = new ArrayList<Contentlet>();
+				List<Contentlet> contentToIndexAfterCommit  = new ArrayList<>();
 
 				public UnarchiveThread(String[] inodes, User user,List<Contentlet> contentToIndexAfterCommit) {
 					this.inodes = inodes;
@@ -2783,7 +2801,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 				public void unarchive(List<Contentlet> contentToIndexAfterCommit) throws DotContentletStateException, DotStateException, DotSecurityException, DotDataException {
 					boolean hasNoPermissionOnAllContent = false;
-					List<Contentlet> contentlets = new ArrayList<Contentlet>();
+					List<Contentlet> contentlets = new ArrayList<>();
 					for(String inode  : inodes){
 
 						Contentlet contentlet = new Contentlet();
@@ -3055,7 +3073,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			String modDateFrom = req.getParameter("modDateFrom");
 			String modDateTo = req.getParameter("modDateTo");
 
-			List<String> listFieldsValues = new ArrayList<String>();
+			List<String> listFieldsValues = new ArrayList<>();
 			if (UtilMethods.isSet(fieldsValues)) {
 				String[] fieldsValuesArray = fieldsValues.split(",");
 				for (String value: fieldsValuesArray) {
@@ -3063,7 +3081,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				}
 			}
 
-			List<String> listCategoriesValues = new ArrayList<String>();
+			List<String> listCategoriesValues = new ArrayList<>();
 			if (UtilMethods.isSet(categoriesValues)) {
 				String[] categoriesValuesArray = categoriesValues.split(",");
 				for (String value: categoriesValuesArray) {
@@ -3133,7 +3151,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 	    String[] allInodes = new String[0];
         String[] uncheckedInodes = new String[0];
         String[] result;
-        ArrayList<String> resultInodes = new ArrayList<String>();
+        ArrayList<String> resultInodes = new ArrayList<>();
 
 	    if (Boolean.parseBoolean(req.getParameter("fullCommand"))) {
 	        String luceneQuery=req.getParameter("luceneQuery");
@@ -3202,7 +3220,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			class UnlockThread extends Thread {
 				private String[] inodes = new String[0];
 				private User user;
-				List<Contentlet> contentToIndexAfterCommit  = new ArrayList<Contentlet>();
+				List<Contentlet> contentToIndexAfterCommit  = new ArrayList<>();
 
 				public UnlockThread(String[] inodes, User user,List<Contentlet> contentToIndexAfterCommit) {
 					this.inodes = inodes;
@@ -3222,7 +3240,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				}
 
 				public void unlock(List<Contentlet> contentToIndexAfterCommit) throws DotContentletStateException, DotStateException, DotSecurityException, DotDataException {
-					List<Contentlet> contentlets = new ArrayList<Contentlet>();
+					List<Contentlet> contentlets = new ArrayList<>();
 					for(String inode  : inodes){
 
 						Contentlet contentlet = new Contentlet();

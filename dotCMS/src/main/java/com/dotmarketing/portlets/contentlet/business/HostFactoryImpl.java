@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.content.business.json.ContentletJsonAPI;
@@ -52,7 +53,6 @@ import java.util.StringTokenizer;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
-import org.jetbrains.annotations.NotNull;
 
 import static com.dotmarketing.db.DbConnectionFactory.getDBFalse;
 import static com.dotmarketing.db.DbConnectionFactory.getDBTrue;
@@ -116,7 +116,8 @@ public class HostFactoryImpl implements HostFactory {
             .SYSTEM_HOST).append("' ");
 
     private static final StringBuilder SITE_IS_LIVE = new StringBuilder().append("cvi.live_inode IS NOT NULL");
-
+    private static final StringBuilder SITE_IS_LIVE_OR_STOPPED = new StringBuilder().append("cvi.live_inode IS NOT null or " +
+            "(cvi.live_inode IS NULL AND cvi.deleted = false )");
     private static final StringBuilder SITE_IS_STOPPED = new StringBuilder().append("cvi.live_inode IS NULL AND cvi" +
             ".deleted = ").append(getDBFalse());
 
@@ -275,11 +276,21 @@ public class HostFactoryImpl implements HostFactory {
     }
 
     @Override
-    public List<Host> findAll(int limit, int offset, String orderBy) throws DotDataException, DotSecurityException {
+    public List<Host> findAll(final int limit, final int offset, final String orderBy) throws DotDataException, DotSecurityException {
+        return findAll(limit,offset, orderBy, true);
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public List<Host> findAll(final int limit, final int offset, final String orderBy, final boolean includeSystemHost) throws DotDataException, DotSecurityException {
         final DotConnect dc = new DotConnect();
-        final StringBuffer sqlQuery = new StringBuffer().append(SELECT_SITE_INODE)
+        final StringBuilder sqlQuery = new StringBuilder().append(SELECT_SITE_INODE)
                 .append(WHERE)
-                .append(EXCLUDE_SYSTEM_HOST);
+                .append(" true ");
+        if (!includeSystemHost) {
+            sqlQuery.append(AND);
+            sqlQuery.append(EXCLUDE_SYSTEM_HOST);
+        }
         final String sanitizedSortBy = SQLUtil.sanitizeSortBy(orderBy);
         if (UtilMethods.isSet(sanitizedSortBy)) {
             sqlQuery.append(ORDER_BY);
@@ -295,8 +306,7 @@ public class HostFactoryImpl implements HostFactory {
             dc.setStartRow(offset);
         }
         final List<Map<String, String>> dbResults = dc.loadResults();
-        final List<Host> siteList = convertDbResultsToSites(dbResults);
-        return siteList;
+        return this.convertDbResultsToSites(dbResults);
     }
 
     @Override
@@ -638,6 +648,21 @@ public class HostFactoryImpl implements HostFactory {
         final String condition =
                 includeArchivedSites ? SITE_IS_STOPPED_OR_ARCHIVED.toString() : SITE_IS_STOPPED.toString();
         return search(siteNameFilter, condition, showSystemHost, limit, offset, user, respectFrontendRoles);
+    }
+
+    @Override
+    public Optional<List<Host>> findLiveAndStopped(final String siteNameFilter,
+                                                   final int limit, final int offset, final boolean showSystemHost,
+                                                   final User user, boolean respectFrontendRoles) {
+
+        final StringBuilder sqlQuery = new StringBuilder();
+        
+        if (!showSystemHost) {
+            sqlQuery.append(EXCLUDE_SYSTEM_HOST);
+            sqlQuery.append(AND);
+        }
+        sqlQuery.append(SITE_IS_LIVE_OR_STOPPED);
+        return search(siteNameFilter, sqlQuery.toString(), showSystemHost, limit, offset, user, respectFrontendRoles);
     }
 
     @Override

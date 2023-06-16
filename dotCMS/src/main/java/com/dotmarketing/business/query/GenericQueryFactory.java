@@ -120,9 +120,9 @@ public abstract class GenericQueryFactory {
 			
 	public class GroupingCriteria implements ComplexCriteria{
 		
-		private List<Criteria> result = new ArrayList<Criteria>();
+		private List<Criteria> result = new ArrayList<>();
 
-		private Map<Criteria,String> operators = new HashMap<Criteria,String>();
+		private Map<Criteria,String> operators = new HashMap<>();
 		
 		private boolean negate = false;
 		

@@ -12,9 +12,8 @@ import { UiDotIconButtonTooltipComponent } from '@components/_common/dot-icon-bu
 import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotExperimentStatusList, GroupedExperimentByStatus } from '@dotcms/dotcms-models';
-import { DotIconModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipeModule } from '@dotcms/ui';
 import { DotFormatDateServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotRelativeDatePipe } from '@pipes/dot-relative-date/dot-relative-date.pipe';
 import { getExperimentMock } from '@portlets/dot-experiments/test/mocks';
 import { DotFormatDateService } from '@services/dot-format-date-service';
@@ -76,7 +75,7 @@ describe('DotExperimentsListTableComponent', () => {
         ],
         component: DotExperimentsListTableComponent,
         componentMocks: [ConfirmPopup],
-        declarations: [MockDatePipe, DotExperimentsEmptyExperimentsComponent],
+        declarations: [MockDatePipe],
         providers: [
             {
                 provide: DotMessageService,
@@ -90,11 +89,13 @@ describe('DotExperimentsListTableComponent', () => {
 
     beforeEach(() => {
         spectator = createComponent();
+        spectator.setInput('experimentsCount', 2);
     });
 
     describe('Input experiments', () => {
         it('should show empty component with no experiments found', () => {
-            spectator.setInput('experiments', {});
+            spectator.setInput('experimentGroupedByStatus', []);
+            spectator.setInput('experimentsCount', 0);
             dotExperimentsEmpty = spectator.query(DotExperimentsEmptyExperimentsComponent);
 
             expect(dotExperimentsEmpty).toExist();
@@ -102,34 +103,35 @@ describe('DotExperimentsListTableComponent', () => {
 
         it('should show 2 instances of NgPrime Table component', () => {
             const INSTANCES_OF_NGPRIME_TABLE = 2;
-            const groupedExperimentByStatus: GroupedExperimentByStatus = {
-                [DotExperimentStatusList.DRAFT]: [DRAFT_EXPERIMENT_MOCK],
-                [DotExperimentStatusList.ARCHIVED]: [ARCHIVE_EXPERIMENT_MOCK]
-            };
 
-            spectator.setInput('experiments', groupedExperimentByStatus);
+            const groupedExperimentByStatus: GroupedExperimentByStatus[] = [
+                { status: DotExperimentStatusList.DRAFT, experiments: [DRAFT_EXPERIMENT_MOCK] },
+                { status: DotExperimentStatusList.ARCHIVED, experiments: [ARCHIVE_EXPERIMENT_MOCK] }
+            ];
+
+            spectator.setInput('experimentGroupedByStatus', groupedExperimentByStatus);
 
             const pTables = spectator.queryAll<Table>(Table);
 
             expect(pTables).toExist();
             expect(pTables.length).toBe(INSTANCES_OF_NGPRIME_TABLE);
-            expect(spectator.component.groupedExperimentsCount).toBe(INSTANCES_OF_NGPRIME_TABLE);
+            expect(spectator.component.experimentsCount).toBe(INSTANCES_OF_NGPRIME_TABLE);
         });
 
         it('should has experiment with columns correctly rendered', () => {
             const COLUMNS_QTY_BY_ROW = 4;
 
-            const groupedExperimentByStatus: GroupedExperimentByStatus = {
-                [DotExperimentStatusList.DRAFT]: [DRAFT_EXPERIMENT_MOCK]
-            };
+            const groupedExperimentByStatus: GroupedExperimentByStatus[] = [
+                { status: DotExperimentStatusList.DRAFT, experiments: [DRAFT_EXPERIMENT_MOCK] }
+            ];
 
-            spectator.setInput('experiments', groupedExperimentByStatus);
+            spectator.setInput('experimentGroupedByStatus', groupedExperimentByStatus);
 
             const experimentRow = spectator.query(byTestId('experiment-row'));
             expect(experimentRow.querySelectorAll('td').length).toBe(COLUMNS_QTY_BY_ROW);
 
             expect(spectator.query(byTestId('experiment-row__name'))).toHaveText(
-                groupedExperimentByStatus.DRAFT[0].name
+                DRAFT_EXPERIMENT_MOCK.name
             );
             expect(spectator.query(byTestId('experiment-row__createdDate'))).toHaveText(
                 '1 hour ago'
@@ -139,57 +141,85 @@ describe('DotExperimentsListTableComponent', () => {
 
         describe('Actions icons', () => {
             it('should has DELETE icon when experiment is DRAFT', () => {
-                const groupedExperimentByStatus: GroupedExperimentByStatus = {
-                    [DotExperimentStatusList.DRAFT]: [DRAFT_EXPERIMENT_MOCK]
-                };
+                const groupedExperimentByStatus: GroupedExperimentByStatus[] = [
+                    { status: DotExperimentStatusList.DRAFT, experiments: [DRAFT_EXPERIMENT_MOCK] }
+                ];
 
-                spectator.setInput('experiments', groupedExperimentByStatus);
+                spectator.setInput('experimentGroupedByStatus', groupedExperimentByStatus);
 
                 uiDotIconButtonTooltipComponent = spectator.query(UiDotIconButtonTooltipComponent);
                 expect(uiDotIconButtonTooltipComponent.icon).toBe('delete');
             });
 
             it('should the row has DELETE icon when experiment is SCHEDULED', () => {
-                const groupedExperimentByStatus: GroupedExperimentByStatus = {
-                    [DotExperimentStatusList.SCHEDULED]: [SCHEDULED_EXPERIMENT_MOCK]
-                };
+                const groupedExperimentByStatus: GroupedExperimentByStatus[] = [
+                    {
+                        status: DotExperimentStatusList.SCHEDULED,
+                        experiments: [SCHEDULED_EXPERIMENT_MOCK]
+                    }
+                ];
 
-                spectator.setInput('experiments', groupedExperimentByStatus);
+                spectator.setInput('experimentGroupedByStatus', groupedExperimentByStatus);
 
                 uiDotIconButtonTooltipComponent = spectator.query(UiDotIconButtonTooltipComponent);
                 expect(uiDotIconButtonTooltipComponent.icon).toBe('delete');
             });
             it('should the row  has ARCHIVE icon when is ENDED', () => {
-                const groupedExperimentByStatus: GroupedExperimentByStatus = {
-                    [DotExperimentStatusList.ENDED]: [ENDED_EXPERIMENT_MOCK]
-                };
+                const groupedExperimentByStatus: GroupedExperimentByStatus[] = [
+                    {
+                        status: DotExperimentStatusList.ENDED,
+                        experiments: [ENDED_EXPERIMENT_MOCK]
+                    }
+                ];
 
-                spectator.setInput('experiments', groupedExperimentByStatus);
+                spectator.setInput('experimentGroupedByStatus', groupedExperimentByStatus);
 
-                uiDotIconButtonTooltipComponent = spectator.query(UiDotIconButtonTooltipComponent);
-                expect(uiDotIconButtonTooltipComponent.icon).toBe('archive');
+                expect(spectator.queryAll(UiDotIconButtonTooltipComponent)[0].icon).toBe(
+                    'settings'
+                );
+                expect(spectator.queryAll(UiDotIconButtonTooltipComponent)[1].icon).toBe('archive');
             });
 
             it('should the row not has any icon in action column', () => {
-                const groupedExperimentByStatus: GroupedExperimentByStatus = {
-                    [DotExperimentStatusList.ARCHIVED]: [ARCHIVE_EXPERIMENT_MOCK]
-                };
+                const groupedExperimentByStatus: GroupedExperimentByStatus[] = [
+                    {
+                        status: DotExperimentStatusList.ARCHIVED,
+                        experiments: [ARCHIVE_EXPERIMENT_MOCK]
+                    }
+                ];
 
-                spectator.setInput('experiments', groupedExperimentByStatus);
+                spectator.setInput('experimentGroupedByStatus', groupedExperimentByStatus);
 
                 uiDotIconButtonTooltipComponent = spectator.query(UiDotIconButtonTooltipComponent);
                 expect(uiDotIconButtonTooltipComponent).not.toExist();
             });
 
-            it('should the row  has REPORTS icon when is RUNNING', () => {
-                const groupedExperimentByStatus: GroupedExperimentByStatus = {
-                    [DotExperimentStatusList.RUNNING]: [RUNNING_EXPERIMENT_MOCK]
-                };
+            it('should the row  has Configuration icon when is RUNNING', () => {
+                const groupedExperimentByStatus: GroupedExperimentByStatus[] = [
+                    {
+                        status: DotExperimentStatusList.RUNNING,
+                        experiments: [RUNNING_EXPERIMENT_MOCK]
+                    }
+                ];
 
-                spectator.setInput('experiments', groupedExperimentByStatus);
+                spectator.setInput('experimentGroupedByStatus', groupedExperimentByStatus);
 
                 uiDotIconButtonTooltipComponent = spectator.query(UiDotIconButtonTooltipComponent);
-                expect(uiDotIconButtonTooltipComponent.icon).toBe('bar_chart');
+                expect(uiDotIconButtonTooltipComponent.icon).toBe('settings');
+            });
+
+            it('should the row  has Configuration icon when is RUNNING', () => {
+                const groupedExperimentByStatus: GroupedExperimentByStatus[] = [
+                    {
+                        status: DotExperimentStatusList.ENDED,
+                        experiments: [RUNNING_EXPERIMENT_MOCK]
+                    }
+                ];
+
+                spectator.setInput('experimentGroupedByStatus', groupedExperimentByStatus);
+
+                uiDotIconButtonTooltipComponent = spectator.query(UiDotIconButtonTooltipComponent);
+                expect(uiDotIconButtonTooltipComponent.icon).toBe('settings');
             });
         });
     });

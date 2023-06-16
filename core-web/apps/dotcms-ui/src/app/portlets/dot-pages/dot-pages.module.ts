@@ -3,8 +3,10 @@ import { NgModule } from '@angular/core';
 
 import { DialogService } from 'primeng/dynamicdialog';
 import { MenuModule } from 'primeng/menu';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
+import { DotFavoritePageService } from '@dotcms/app/api/services/dot-favorite-page/dot-favorite-page.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotTempFileUploadService } from '@dotcms/app/api/services/dot-temp-file-upload/dot-temp-file-upload.service';
 import { DotWorkflowEventHandlerService } from '@dotcms/app/api/services/dot-workflow-event-handler/dot-workflow-event-handler.service';
@@ -14,9 +16,9 @@ import {
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService,
     DotPageRenderService,
-    DotPageTypesService
+    DotPageTypesService,
+    DotPageWorkflowsActionsService
 } from '@dotcms/data-access';
-import { SiteService } from '@dotcms/dotcms-js';
 
 import { DotPagesCreatePageDialogComponent } from './dot-pages-create-page-dialog/dot-pages-create-page-dialog.component';
 import { DotPagesFavoritePanelModule } from './dot-pages-favorite-panel/dot-pages-favorite-panel.module';
@@ -33,7 +35,8 @@ import { DotPagesComponent } from './dot-pages.component';
         DotPagesFavoritePanelModule,
         DotPagesListingPanelModule,
         DotPagesRoutingModule,
-        MenuModule
+        MenuModule,
+        ProgressSpinnerModule
     ],
     providers: [
         DialogService,
@@ -43,10 +46,11 @@ import { DotPagesComponent } from './dot-pages.component';
         DotPageTypesService,
         DotTempFileUploadService,
         DotWorkflowsActionsService,
+        DotPageWorkflowsActionsService,
         DotWorkflowActionsFireService,
         DotWorkflowEventHandlerService,
         DotRouterService,
-        SiteService
+        DotFavoritePageService
     ]
 })
 export class DotPagesModule {}

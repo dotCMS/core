@@ -20,6 +20,7 @@ import { DataViewModule } from 'primeng/dataview';
 import { DialogService, DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
+import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { ActivatedRouteMock } from '@dotcms/app/portlets/dot-experiments/test/mocks';
@@ -42,8 +43,8 @@ import {
     StringUtils
 } from '@dotcms/dotcms-js';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotMessagePipeModule } from '@dotcms/ui';
 import { CoreWebServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 import { DotAddVariableComponent } from './dot-add-variable.component';
@@ -198,7 +199,7 @@ describe('DotAddVariableComponent', () => {
                 DotcmsEventsService,
                 DotEventsSocket,
                 DotcmsConfigService,
-                DotMessageDisplayService,
+                { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
                 DialogService,
                 DotSiteBrowserService,
                 DotContentTypeService,

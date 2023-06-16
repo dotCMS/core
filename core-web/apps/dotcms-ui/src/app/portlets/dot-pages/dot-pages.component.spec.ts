@@ -1,4 +1,4 @@
-import { Subject } from 'rxjs';
+import { throwError } from 'rxjs';
 
 import { HttpClient, HttpErrorResponse, HttpHandler, HttpResponse } from '@angular/common/http';
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
@@ -16,17 +16,13 @@ import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-er
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { MockDotHttpErrorManagerService } from '@dotcms/app/test/dot-http-error-manager.service.mock';
 import { DotEventsService, DotPageRenderService } from '@dotcms/data-access';
-import {
-    CoreWebService,
-    CoreWebServiceMock,
-    HttpCode,
-    mockSites,
-    SiteService
-} from '@dotcms/dotcms-js';
+import { CoreWebService, CoreWebServiceMock, HttpCode } from '@dotcms/dotcms-js';
+import { ComponentStatus } from '@dotcms/dotcms-models';
 import {
     dotcmsContentletMock,
     dotcmsContentTypeBasicMock,
-    MockDotRouterService
+    MockDotRouterService,
+    mockResponseView
 } from '@dotcms/utils-testing';
 
 import { DotPageStore } from './dot-pages-store/dot-pages.store';
@@ -102,6 +98,7 @@ const storeMock = {
     showActionsMenu: jasmine.createSpy(),
     setInitialStateData: jasmine.createSpy(),
     limitFavoritePages: jasmine.createSpy(),
+    setPortletStatus: jasmine.createSpy(),
     updateSinglePageData: jasmine.createSpy(),
     vm$: of({
         favoritePages: {
@@ -122,7 +119,8 @@ const storeMock = {
             items: [],
             addToBundleCTId: 'test1'
         },
-        pageTypes: []
+        pageTypes: [],
+        portletStatus: ComponentStatus.LOADED
     })
 };
 
@@ -135,8 +133,6 @@ describe('DotPagesComponent', () => {
     let dotMessageDisplayService: DotMessageDisplayService;
     let dotPageRenderService: DotPageRenderService;
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
-
-    const switchSiteSubject = new Subject();
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -158,19 +154,7 @@ describe('DotPagesComponent', () => {
                 },
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
-                { provide: DotRouterService, useClass: MockDotRouterService },
-                {
-                    provide: SiteService,
-                    useValue: {
-                        get currentSite() {
-                            return undefined;
-                        },
-
-                        get switchSite$() {
-                            return switchSiteSubject.asObservable();
-                        }
-                    }
-                }
+                { provide: DotRouterService, useClass: MockDotRouterService }
             ]
         }).compileComponents();
     });
@@ -196,7 +180,7 @@ describe('DotPagesComponent', () => {
     });
 
     it('should init store', () => {
-        expect(store.setInitialStateData).toHaveBeenCalledWith(5);
+        expect(store.setInitialStateData).toHaveBeenCalledWith(500);
     });
 
     it('should have favorite page panel, menu, pages panel and DotAddToBundle components', () => {
@@ -220,12 +204,13 @@ describe('DotPagesComponent', () => {
         });
     });
 
-    it('should call goToUrl method from DotPagesFavoritePanel2', () => {
+    it('should call goToUrl method from DotPagesFavoritePanel and throw User permission error', () => {
         dotPageRenderService.checkPermission = jasmine.createSpy().and.returnValue(of(false));
 
         const elem = de.query(By.css('dot-pages-favorite-panel'));
         elem.triggerEventHandler('goToUrl', '/page/1?lang=1');
 
+        expect(store.setPortletStatus).toHaveBeenCalledWith(ComponentStatus.LOADING);
         expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(
             new HttpErrorResponse(
                 new HttpResponse({
@@ -236,6 +221,19 @@ describe('DotPagesComponent', () => {
                 })
             )
         );
+    });
+
+    it('should throw error dialog when call GoTo and url does not match with existing page', () => {
+        const error404 = mockResponseView(404);
+        dotPageRenderService.checkPermission = jasmine
+            .createSpy()
+            .and.returnValue(throwError(error404));
+
+        const elem = de.query(By.css('dot-pages-favorite-panel'));
+        elem.triggerEventHandler('goToUrl', '/page/1?lang=1');
+
+        expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(error404);
+        expect(store.setPortletStatus).toHaveBeenCalledWith(ComponentStatus.LOADED);
     });
 
     it('should call showActionsMenu method from DotPagesFavoritePanel', () => {
@@ -265,6 +263,7 @@ describe('DotPagesComponent', () => {
         const elem = de.query(By.css('dot-pages-listing-panel'));
         elem.triggerEventHandler('goToUrl', '/page/1?lang=1');
 
+        expect(store.setPortletStatus).toHaveBeenCalledWith(ComponentStatus.LOADING);
         expect(dotRouterService.goToEditPage).toHaveBeenCalledWith({
             lang: '1',
             url: '/page/1'
@@ -296,9 +295,11 @@ describe('DotPagesComponent', () => {
 
     it('should call closedActionsMenu method from p-menu', () => {
         const elem = de.query(By.css('p-menu'));
+
+        component.closedActionsMenu = jasmine.createSpy('closedActionsMenu');
         elem.triggerEventHandler('onHide', {});
 
-        expect(store.clearMenuActions).toHaveBeenCalledTimes(1);
+        expect(component.closedActionsMenu).toHaveBeenCalledTimes(1);
     });
 
     it('should call push method in dotMessageDisplayService once a save-page is received for a non favorite page', () => {
@@ -330,29 +331,5 @@ describe('DotPagesComponent', () => {
             identifier: '123',
             isFavoritePage: true
         });
-    });
-
-    it('should reload portlet only when the site change', () => {
-        switchSiteSubject.next(mockSites[0]); // setting the site
-        switchSiteSubject.next(mockSites[1]); // switching the site
-        expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
-    });
-
-    it('should reload portlet only when the site change', () => {
-        switchSiteSubject.next(mockSites[0]); // setting the site
-        switchSiteSubject.next(mockSites[1]); // switching the site
-        expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
-    });
-
-    it('should reload portlet only when the site change', () => {
-        switchSiteSubject.next(mockSites[0]); // setting the site
-        switchSiteSubject.next(mockSites[1]); // switching the site
-        expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
-    });
-
-    it('should reload portlet only when the site change', () => {
-        switchSiteSubject.next(mockSites[0]); // setting the site
-        switchSiteSubject.next(mockSites[1]); // switching the site
-        expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
     });
 });

@@ -6,6 +6,9 @@ import { waitForAsync } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
+import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
+import { DotFavoritePageService } from '@dotcms/app/api/services/dot-favorite-page/dot-favorite-page.service';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import {
     DotContentletLockerService,
@@ -17,6 +20,7 @@ import { LoginService } from '@dotcms/dotcms-js';
 import { DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
 import { LoginServiceMock, mockDotRenderedPage, mockUser } from '@dotcms/utils-testing';
 import { DotPageStateService } from '@portlets/dot-edit-page/content/services/dot-page-state/dot-page-state.service';
+import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 
 import { DotIframePortletLegacyResolver } from './dot-iframe-porlet-legacy-resolver.service';
 
@@ -40,9 +44,12 @@ describe('DotIframePorletLegacyResolver', () => {
                 DotPageStateService,
                 DotIframePortletLegacyResolver,
                 DotPageRenderService,
+                DotExperimentsService,
                 DotContentletLockerService,
                 DotLicenseService,
                 DotESContentService,
+                DotFavoritePageService,
+                { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
                 {
                     provide: ActivatedRouteSnapshot,
                     useValue: route

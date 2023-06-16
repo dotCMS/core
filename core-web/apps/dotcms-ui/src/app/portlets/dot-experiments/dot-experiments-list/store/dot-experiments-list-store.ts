@@ -1,4 +1,4 @@
-import { ComponentStore, OnStoreInit, tapResponse } from '@ngrx/component-store';
+import { ComponentStore, OnStateInit, tapResponse } from '@ngrx/component-store';
 import { EMPTY, Observable, throwError } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
@@ -17,14 +17,11 @@ import {
     GroupedExperimentByStatus,
     SidebarStatus
 } from '@dotcms/dotcms-models';
+import { DotExperimentsStore } from '@portlets/dot-experiments/dot-experiments-shell/store/dot-experiments.store';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 export interface DotExperimentsState {
-    page: {
-        pageId: string;
-        pageTitle: string;
-    };
     experiments: DotExperiment[];
     filterStatus: Array<string>;
     status: ComponentStatus;
@@ -32,16 +29,12 @@ export interface DotExperimentsState {
 }
 
 const initialState: DotExperimentsState = {
-    page: {
-        pageId: '',
-        pageTitle: ''
-    },
     experiments: [],
     filterStatus: [
-        DotExperimentStatusList.DRAFT,
-        DotExperimentStatusList.ENDED,
         DotExperimentStatusList.RUNNING,
         DotExperimentStatusList.SCHEDULED,
+        DotExperimentStatusList.DRAFT,
+        DotExperimentStatusList.ENDED,
         DotExperimentStatusList.ARCHIVED
     ],
     status: ComponentStatus.INIT,
@@ -53,15 +46,13 @@ const initialState: DotExperimentsState = {
 
 // Vm Interfaces
 export interface VmListExperiments {
-    page: {
-        pageId: string;
-        pageTitle: string;
-    };
     isLoading: boolean;
     experiments: DotExperiment[];
-    experimentsFiltered: { [key: string]: DotExperiment[] };
+    experimentsFiltered: GroupedExperimentByStatus[];
     filterStatus: Array<string>;
     sidebar: SidebarStatus;
+    pageId: string;
+    pageTitle: string;
 }
 
 export interface VmCreateExperiments {
@@ -78,20 +69,38 @@ export interface VmCreateExperiments {
 })
 export class DotExperimentsListStore
     extends ComponentStore<DotExperimentsState>
-    implements OnStoreInit
+    implements OnStateInit
 {
     // Selectors
-    readonly getExperimentsFilteredAndGroupedByStatus$ = this.select(
-        ({ experiments, filterStatus }) =>
-            experiments
-                .filter((experiment) => filterStatus.includes(experiment.status))
-                .reduce<GroupedExperimentByStatus>((group, experiment) => {
-                    group[experiment.status] = group[experiment.status] ?? [];
-                    group[experiment.status].push(experiment);
+    readonly getExperimentsFilteredAndGroupedByStatus$: Observable<GroupedExperimentByStatus[]> =
+        this.select(({ experiments, filterStatus }) => {
+            const grouped: GroupedExperimentByStatus[] = [];
 
-                    return group;
-                }, <GroupedExperimentByStatus>{})
-    );
+            if (experiments.length) {
+                Object.keys(DotExperimentStatusList).forEach((key) =>
+                    grouped.push({ status: DotExperimentStatusList[key], experiments: [] })
+                );
+
+                experiments
+                    .filter((experiment) => filterStatus.includes(experiment.status))
+                    .forEach((experiment) => {
+                        const statusGroup = grouped.find(
+                            (item) => item.status === experiment.status
+                        );
+
+                        if (statusGroup) {
+                            statusGroup.experiments.push(experiment);
+                        } else {
+                            grouped.push({
+                                status: experiment.status,
+                                experiments: [experiment]
+                            });
+                        }
+                    });
+            }
+
+            return grouped.filter((item) => !!item.experiments.length);
+        });
 
     readonly isLoading$: Observable<boolean> = this.select(
         (state) => state.status === ComponentStatus.LOADING || state.status === ComponentStatus.INIT
@@ -204,9 +213,10 @@ export class DotExperimentsListStore
 
                                 this.router.navigate(
                                     [
-                                        '/edit-page/experiments/configuration',
+                                        '/edit-page/experiments/',
                                         experiment.pageId,
-                                        experiment.id
+                                        experiment.id,
+                                        'configuration'
                                     ],
                                     {
                                         queryParamsHandling: 'preserve'
@@ -265,10 +275,10 @@ export class DotExperimentsListStore
                             this.messageService.add({
                                 severity: 'info',
                                 summary: this.dotMessageService.get(
-                                    'experiments.action.archived.confirm-title'
+                                    'experiments.action.archive.confirm-title'
                                 ),
                                 detail: this.dotMessageService.get(
-                                    'experiments.action.archived.confirm-message',
+                                    'experiments.action.archive.confirm-message',
                                     experiment.name
                                 )
                             });
@@ -287,27 +297,38 @@ export class DotExperimentsListStore
         this.state$,
         this.isLoading$,
         this.getExperimentsFilteredAndGroupedByStatus$,
-        ({ page, experiments, filterStatus, sidebar }, isLoading, experimentsFiltered) => ({
-            page,
+        this.dotExperimentsStore.getPageId$,
+        this.dotExperimentsStore.getPageTitle$,
+        (
+            { experiments, filterStatus, sidebar },
+            isLoading,
+            experimentsFiltered,
+            pageId,
+            pageTitle
+        ) => ({
             experiments,
             filterStatus,
             sidebar,
             isLoading,
-            experimentsFiltered
+            experimentsFiltered,
+            pageId,
+            pageTitle
         })
     );
 
     readonly createVm$: Observable<VmCreateExperiments> = this.select(
         this.state$,
         this.isSidebarSaving$,
-        ({ sidebar, page }, isSaving) => ({
-            pageId: page.pageId,
+        this.dotExperimentsStore.getPageId$,
+        ({ sidebar }, isSaving, pageId) => ({
+            pageId: pageId,
             sidebar,
             isSaving
         })
     );
 
     constructor(
+        private readonly dotExperimentsStore: DotExperimentsStore,
         private readonly dotExperimentsService: DotExperimentsService,
         private readonly dotMessageService: DotMessageService,
         private readonly messageService: MessageService,
@@ -316,15 +337,11 @@ export class DotExperimentsListStore
         private readonly dotHttpErrorManagerService: DotHttpErrorManagerService
     ) {
         super({
-            ...initialState,
-            page: {
-                pageId: route.snapshot.params.pageId,
-                pageTitle: route.snapshot.parent?.parent?.parent?.parent.data?.content?.page?.title
-            }
+            ...initialState
         });
     }
 
-    ngrxOnStoreInit() {
+    ngrxOnStateInit(): void {
         const pageId = this.route.snapshot.params.pageId;
         this.loadExperiments(pageId);
     }

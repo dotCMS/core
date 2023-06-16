@@ -1,8 +1,10 @@
-<div [formGroup]="group" *ngIf="radioInputs" class="field">
-    <label class="form__label">{{ 'contenttypes.field.properties.data_type.label' | dm }}</label>
+<div class="field" *ngIf="radioInputs" [formGroup]="group">
+    <label [for]="property.name" [checkIsRequiredControl]="property.name" dotFieldRequired>{{
+        'contenttypes.field.properties.data_type.label' | dm
+    }}</label>
 
     <div class="formgroup-inline">
-        <div *ngFor="let radio of radioInputs" class="field-checkbox">
+        <div class="field-checkbox" *ngFor="let radio of radioInputs">
             <p-radioButton
                 [label]="radio.text | dm"
                 [name]="property.name"

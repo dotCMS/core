@@ -436,9 +436,12 @@ public class TemplateResource {
                 .map(contentlet -> contentlet.getIdentifier())
                 .collect(Collectors.toList());
 
-        for (ContainerUUIDChanged lostUUIDValue : containerUUIDChanges.lostUUIDValues()) {
-            APILocator.getMultiTreeAPI().updateMultiTrees(pagesId, lostUUIDValue.containerId, lostUUIDValue.oldValue,
-                    lostUUIDValue.newValue);
+        if (UtilMethods.isSet(pagesId)) {
+            for (ContainerUUIDChanged lostUUIDValue : containerUUIDChanges.lostUUIDValues()) {
+                APILocator.getMultiTreeAPI().updateMultiTrees(pagesId, lostUUIDValue.containerId,
+                        lostUUIDValue.oldValue,
+                        lostUUIDValue.newValue);
+            }
         }
     }
 

@@ -54,18 +54,18 @@ public class Calendar {
         }
 
         // populate hashtable
-        modelRoot.put("year", (new Integer(year).toString()));
-        modelRoot.put("month", (new Integer(month).toString()));
+        modelRoot.put("year", (Integer.valueOf(year).toString()));
+        modelRoot.put("month", (Integer.valueOf(month).toString()));
         modelRoot.put("data", getCalendarData(month, year));
         modelRoot.put("today",
             today.get(GregorianCalendar.YEAR) + "-" + today.get(GregorianCalendar.MONTH) + "-" +
             today.get(GregorianCalendar.DAY_OF_MONTH));
         modelRoot.put("monthStr", MONTH_NAME[month]);
-        modelRoot.put("showmonth", (new Integer(showmonth).toString()));
-        modelRoot.put("nextYear", (new Integer(year + 1).toString()));
-        modelRoot.put("prevYear", (new Integer(year - 1).toString()));
-        modelRoot.put("prevMonth", (new Integer((month + 11) % 12).toString()));
-        modelRoot.put("nextMonth", (new Integer((month + 01) % 12).toString()));
+        modelRoot.put("showmonth", (Integer.valueOf(showmonth).toString()));
+        modelRoot.put("nextYear", (Integer.valueOf(year + 1).toString()));
+        modelRoot.put("prevYear", (Integer.valueOf(year - 1).toString()));
+        modelRoot.put("prevMonth", (Integer.valueOf((month + 11) % 12).toString()));
+        modelRoot.put("nextMonth", (Integer.valueOf((month + 01) % 12).toString()));
         modelRoot.put("timeZone", TIMEZONE);
         modelRoot.put("totalDays",cal.getActualMaximum(GregorianCalendar.DAY_OF_MONTH));
 
@@ -107,7 +107,7 @@ public class Calendar {
             }
 
             ArrayList weekVect = ( ArrayList ) monthData.get(row);
-            weekVect.set(col, new Integer(i));
+            weekVect.set(col, Integer.valueOf(i));
             prevcol = col;
         }
 

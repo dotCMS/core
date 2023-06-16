@@ -193,7 +193,7 @@ public class PreRenderSEOWebAPIImpl implements PreRenderSEOWebAPI {
                 () -> APILocator.getAppsAPI().getSecrets(AppKeys.APP_KEY, true, host, APILocator.systemUser()))
                 .getOrElse(Optional.empty());
 
-        if (!appSecrets.isPresent()) {
+        if (appSecrets.isEmpty()) {
 
             return Optional.empty();
         }

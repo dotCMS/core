@@ -9,13 +9,22 @@ import { ActivatedRouteSnapshot } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
 
+import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
+import { DotFavoritePageService } from '@dotcms/app/api/services/dot-favorite-page/dot-favorite-page.service';
 import {
     DotAlertConfirmService,
     DotContentletLockerService,
     DotESContentService,
     DotPageRenderService
 } from '@dotcms/data-access';
-import { CoreWebService, HttpCode, LoginService } from '@dotcms/dotcms-js';
+import {
+    CoreWebService,
+    HttpCode,
+    LoginService,
+    SiteService,
+    SiteServiceMock
+} from '@dotcms/dotcms-js';
 import { DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
 import {
     CoreWebServiceMock,
@@ -27,6 +36,7 @@ import {
 } from '@dotcms/utils-testing';
 import { DotPageStateService } from '@portlets/dot-edit-page/content/services/dot-page-state/dot-page-state.service';
 import { DotEditPageResolver } from '@portlets/dot-edit-page/shared/services/dot-edit-page-resolver/dot-edit-page-resolver.service';
+import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { DotFormatDateService } from '@services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
@@ -37,7 +47,7 @@ const route: any = jasmine.createSpyObj<ActivatedRouteSnapshot>('ActivatedRouteS
 
 route.queryParams = {};
 
-describe('DotEditPageResolver', () => {
+describe('DotExperimentExperimentResolver', () => {
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
     let dotPageStateService: DotPageStateService;
     let dotPageStateServiceRequestPageSpy: jasmine.Spy;
@@ -60,7 +70,11 @@ describe('DotEditPageResolver', () => {
                 ConfirmationService,
                 DotFormatDateService,
                 DotESContentService,
+                DotFavoritePageService,
+                DotExperimentsService,
+                { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
                 { provide: DotRouterService, useClass: MockDotRouterService },
+                { provide: SiteService, useClass: SiteServiceMock },
                 {
                     provide: ActivatedRouteSnapshot,
                     useValue: route

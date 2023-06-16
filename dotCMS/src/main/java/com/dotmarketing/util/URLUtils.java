@@ -92,7 +92,7 @@ public class URLUtils {
 		parsedUrl.setResource(matcher.group(7));
 		parsedUrl.setQueryString(matcher.group(8));
 
-		Map<String, List<String>> parameters = new HashMap<String, List<String>>();
+		Map<String, List<String>> parameters = new HashMap<>();
 		String[] queryStringSplitted = parsedUrl.queryString.split("&");
 		
 		for (int i = 0; i < queryStringSplitted.length; i++) {
@@ -104,7 +104,7 @@ public class URLUtils {
 				String parameterValue = queryParamTuple.length > 1?URLDecoder.decode(queryParamTuple[1], "UTF8"):null;
 				List<String> parameterValues = parameters.get(parameterKey);
 				if(parameterValues == null) {
-					parameterValues = new ArrayList<String>(1);
+					parameterValues = new ArrayList<>(1);
 					parameters.put(parameterKey, parameterValues);
 				}
 				if(parameterValue != null)
@@ -115,7 +115,7 @@ public class URLUtils {
 			}
 		}
 		
-		Map<String, String[]> parametersToRet = new HashMap<String, String[]>();
+		Map<String, String[]> parametersToRet = new HashMap<>();
 		for(Map.Entry<String, List<String>> parameterEntry : parameters.entrySet()) {
 			String[] values = parameterEntry.getValue().toArray(new String[0]);
 			parametersToRet.put(parameterEntry.getKey(), values);

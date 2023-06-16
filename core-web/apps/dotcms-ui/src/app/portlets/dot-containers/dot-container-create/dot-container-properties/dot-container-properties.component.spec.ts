@@ -34,6 +34,7 @@ import { DotActionButtonModule } from '@components/_common/dot-action-button/dot
 import { DotActionMenuButtonModule } from '@components/_common/dot-action-menu-button/dot-action-menu-button.module';
 import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
+import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import {
@@ -54,12 +55,12 @@ import {
     StringUtils
 } from '@dotcms/dotcms-js';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotMessagePipeModule } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     DotFormatDateServiceMock,
     MockDotMessageService
 } from '@dotcms/utils-testing';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotContainersService } from '@services/dot-containers/dot-containers.service';
 import { DotFormatDateService } from '@services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
@@ -268,13 +269,12 @@ describe('DotContainerPropertiesComponent', () => {
                 DotcmsEventsService,
                 DotEventsSocket,
                 DotcmsConfigService,
-                DotMessageDisplayService,
+                { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
                 DialogService,
                 DotSiteBrowserService,
                 DotContainersService,
                 DotGlobalMessageService,
                 DotEventsService,
-                DotHttpErrorManagerService,
                 LoggerService,
                 { provide: DotFormatDateService, useClass: DotFormatDateServiceMock }
             ],

@@ -4,9 +4,8 @@ import { Button, ButtonModule } from 'primeng/button';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { DotIconComponent, DotIconModule } from '@dotcms/ui';
+import { DotIconComponent, DotIconModule, DotMessagePipeModule } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 
 import { DotExperimentsEmptyExperimentsComponent } from './dot-experiments-empty-experiments.component';
 

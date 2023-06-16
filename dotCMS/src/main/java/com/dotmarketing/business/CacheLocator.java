@@ -12,6 +12,8 @@ import com.dotcms.contenttype.business.ContentTypeCache2;
 import com.dotcms.contenttype.business.ContentTypeCache2Impl;
 import com.dotcms.csspreproc.CSSCache;
 import com.dotcms.csspreproc.CSSCacheImpl;
+import com.dotcms.experiments.business.ExperimentsCache;
+import com.dotcms.experiments.business.ExperimentsCacheImpl;
 import com.dotcms.graphql.GraphQLCache;
 import com.dotcms.graphql.business.GraphQLSchemaCache;
 import com.dotcms.notifications.business.NewNotificationCache;
@@ -25,10 +27,12 @@ import com.dotcms.rendering.velocity.viewtools.navigation.NavToolCache;
 import com.dotcms.rendering.velocity.viewtools.navigation.NavToolCacheImpl;
 import com.dotcms.security.apps.AppsCache;
 import com.dotcms.security.apps.AppsCacheImpl;
+import com.dotcms.test.TestUtil;
 import com.dotcms.vanityurl.cache.VanityUrlCache;
 import com.dotcms.vanityurl.cache.VanityUrlCacheImpl;
 import com.dotcms.variant.business.VariantCache;
 import com.dotcms.variant.business.VariantCacheImpl;
+import com.dotmarketing.business.cache.provider.NullCacheAdministrator;
 import com.dotmarketing.business.portal.PortletCache;
 import com.dotmarketing.cache.ContentTypeCache;
 import com.dotmarketing.cache.FolderCache;
@@ -101,10 +105,12 @@ public class CacheLocator extends Locator<CacheIndex>{
             return;
         }
         long start = System.currentTimeMillis();
-
-
-
-        Logger.info(CacheLocator.class, "loading cache administrator: ChainableCacheAdministratorImpl");
+        
+        if(TestUtil.isUnitTest()) {
+            adminCache= new NullCacheAdministrator();
+        }else {
+            Logger.info(CacheLocator.class, "loading cache administrator: ChainableCacheAdministratorImpl");
+            
         try {
 
             adminCache = new CommitListenerCacheWrapper(new ChainableCacheAdministratorImpl(new CacheTransportStrategy()));
@@ -114,6 +120,9 @@ public class CacheLocator extends Locator<CacheIndex>{
             Logger.fatal(CacheLocator.class, "Unable to load Cache Admin:" + e.getMessage(), e);
         }
 
+        }
+        
+        
         instance = new CacheLocator();
 
         /*
@@ -335,6 +344,14 @@ public class CacheLocator extends Locator<CacheIndex>{
 	}
 
 	/**
+	 * This will get you an instance of the {@link ExperimentsCache} singleton cache.
+	 * @return
+	 */
+	public static ExperimentsCache getExperimentsCache() {
+		return (ExperimentsCache) getInstance(CacheIndex.ExperimentsCache);
+	}
+
+	/**
 	 * This will get you an instance of the {@link AnalyticsCache} singleton cache.
 	 * @return
 	 */
@@ -451,6 +468,7 @@ enum CacheIndex
 	Metadata("Metadata"),
 	GraphQLCache("GraphQLCache"),
 	VariantCache("VariantCache"),
+	ExperimentsCache("ExperimentsCache"),
 	AnalyticsCache("AnalyticsCache");
 
 	Cachable create() {
@@ -504,6 +522,7 @@ enum CacheIndex
 			case Metadata: return new MetadataCacheImpl();
 			case GraphQLCache: return new GraphQLCache();
 			case VariantCache: return new VariantCacheImpl();
+			case ExperimentsCache: return new ExperimentsCacheImpl();
 			case AnalyticsCache: return new AnalyticsCache();
 
 		}

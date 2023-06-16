@@ -16,11 +16,10 @@ import { CardModule } from 'primeng/card';
 import { ConfirmPopup, ConfirmPopupModule } from 'primeng/confirmpopup';
 import { TagModule } from 'primeng/tag';
 
-import { DotMessagePipe } from '@dotcms/app/view/pipes';
 import { DotMessageService, DotSessionStorageService } from '@dotcms/data-access';
-import { ComponentStatus, DotExperimentStatusList } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotExperimentStatusList, PROP_NOT_FOUND } from '@dotcms/dotcms-models';
+import { DotMessagePipeModule, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotExperimentsConfigurationGoalsComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-goals/dot-experiments-configuration-goals.component';
 import { DotExperimentsConfigurationSchedulingComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-scheduling/dot-experiments-configuration-scheduling.component';
 import { DotExperimentsConfigurationSkeletonComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-skeleton/dot-experiments-configuration-skeleton.component';
@@ -34,6 +33,7 @@ import {
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { DotExperimentsExperimentSummaryComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-experiment-summary/dot-experiments-experiment-summary.component';
 import { DotExperimentsUiHeaderComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
+import { DotExperimentsInlineEditTextComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-inline-edit-text/dot-experiments-inline-edit-text.component';
 import { getExperimentMock } from '@portlets/dot-experiments/test/mocks';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
@@ -46,6 +46,12 @@ const ActivatedRouteMock = {
         params: {
             experimentId: EXPERIMENT_MOCK.id,
             pageId: '222'
+        },
+        data: {
+            config: {
+                EXPERIMENTS_MIN_DURATION: '5',
+                EXPERIMENTS_MAX_DURATION: PROP_NOT_FOUND
+            }
         }
     }
 };
@@ -63,10 +69,12 @@ const defaultVmMock: ConfigurationViewModel = {
     },
     isLoading: false,
     isExperimentADraft: false,
+    runExperimentBtnLabel: '',
     disabledStartExperiment: false,
     showExperimentSummary: false,
     isSaving: false,
-    experimentStatus: null
+    experimentStatus: null,
+    isDescriptionSaving: false
 };
 
 describe('DotExperimentsConfigurationComponent', () => {
@@ -145,20 +153,7 @@ describe('DotExperimentsConfigurationComponent', () => {
         // expect(spectator.query(DotExperimentsConfigurationTargetingComponent)).toExist();
         expect(spectator.query(DotExperimentsConfigurationTrafficComponent)).toExist();
         expect(spectator.query(DotExperimentsConfigurationSchedulingComponent)).toExist();
-        expect(spectator.query(byTestId('experiment-description'))).toExist();
-    });
-
-    it('should hide description if empty', () => {
-        spectator.component.vm$ = of({
-            ...defaultVmMock,
-            experiment: {
-                ...EXPERIMENT_MOCK,
-                description: ''
-            }
-        });
-        spectator.detectChanges();
-
-        expect(spectator.query(byTestId('experiment-description'))).not.toExist();
+        expect(spectator.query(DotExperimentsInlineEditTextComponent)).toExist();
     });
 
     it('should show Start Experiment button if isExperimentADraft true', () => {
@@ -192,13 +187,30 @@ describe('DotExperimentsConfigurationComponent', () => {
         );
     });
 
-    it('should show hide stop Experiment button if experiment status is different than running', () => {
+    it('should show Cancel Scheduling button if experiment status is Schedule and call cancel after confirmation', () => {
+        spyOn(dotExperimentsConfigurationStore, 'cancelSchedule');
+        spectator.component.vm$ = of({
+            ...defaultVmMock,
+            experimentStatus: DotExperimentStatusList.SCHEDULED
+        });
+        spectator.detectChanges();
+
+        spectator.click(byTestId('cancel-schedule-experiment-button'));
+        spectator.query(ConfirmPopup).accept();
+
+        expect(dotExperimentsConfigurationStore.cancelSchedule).toHaveBeenCalledWith(
+            EXPERIMENT_MOCK
+        );
+    });
+
+    it('should show hide stop Experiment and unscheduled button if experiment status is different than running', () => {
         spectator.component.vm$ = of({
             ...defaultVmMock,
             experimentStatus: DotExperimentStatusList.DRAFT
         });
         spectator.detectChanges();
         expect(spectator.query(byTestId('stop-experiment-button'))).not.toExist();
+        expect(spectator.query(byTestId('cancel-schedule-experiment-button'))).not.toExist();
     });
 
     it('should show Start Experiment button disabled if disabledStartExperiment true', () => {
@@ -214,23 +226,5 @@ describe('DotExperimentsConfigurationComponent', () => {
         ) as HTMLButtonElement;
 
         expect(startButton.disabled).toBeTrue();
-    });
-
-    it('should show Experiment Summary component if showExperimentSummary is true', () => {
-        spectator.component.vm$ = of({
-            ...defaultVmMock,
-            showExperimentSummary: true
-        });
-        spectator.detectChanges();
-        expect(spectator.query(DotExperimentsExperimentSummaryComponent)).toExist();
-    });
-
-    it("shouldn't show Experiment Summary component if showExperimentSummary false", () => {
-        spectator.component.vm$ = of({
-            ...defaultVmMock,
-            showExperimentSummary: false
-        });
-        spectator.detectChanges();
-        expect(spectator.query(DotExperimentsExperimentSummaryComponent)).not.toExist();
     });
 });

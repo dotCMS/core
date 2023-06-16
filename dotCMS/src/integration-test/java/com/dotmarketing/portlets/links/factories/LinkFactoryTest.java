@@ -90,7 +90,7 @@ public class LinkFactoryTest extends IntegrationTestBase {
         container.setPreLoop("preloop code");
         container.setPostLoop("postloop code");
 
-        final List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
+        final List<ContainerStructure> csList = new ArrayList<>();
         final ContainerStructure cs = new ContainerStructure();
         cs.setStructureId(widgetContentType.inode());
         cs.setCode("<div><h3>content $!{title}</h3><p>$!{body}</p></div>");

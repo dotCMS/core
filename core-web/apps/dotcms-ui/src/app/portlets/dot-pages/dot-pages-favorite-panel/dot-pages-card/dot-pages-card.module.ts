@@ -9,8 +9,17 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotPagesCardComponent } from './dot-pages-card.component';
 
+import { DotPagesFavoritePageEmptySkeletonComponent } from '../../dot-pages-favorite-page-empty-skeleton/dot-pages-favorite-page-empty-skeleton.component';
+
 @NgModule({
-    imports: [CommonModule, CardModule, UiDotIconButtonModule, TooltipModule, DotPipesModule],
+    imports: [
+        CommonModule,
+        CardModule,
+        DotPagesFavoritePageEmptySkeletonComponent,
+        UiDotIconButtonModule,
+        TooltipModule,
+        DotPipesModule
+    ],
     declarations: [DotPagesCardComponent],
     exports: [DotPagesCardComponent]
 })

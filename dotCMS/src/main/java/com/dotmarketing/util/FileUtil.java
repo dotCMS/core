@@ -2,16 +2,23 @@ package com.dotmarketing.util;
 
 import com.dotcms.util.CloseUtils;
 import com.dotcms.util.DotPreconditions;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.liferay.util.Encryptor;
 import com.liferay.util.HashBuilder;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileFilter;
+import java.io.FileWriter;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URL;
-import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.commons.lang3.StringUtils;
-
-import java.io.*;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -23,6 +30,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class FileUtil {
 
@@ -329,6 +338,21 @@ public class FileUtil {
 
 		return sha256Builder.buildUnixHash();
 	} // sha256toUnixHash.
+
+
+	/**
+	 * Given an inode this gets the path to the binary file
+	 * @param con
+	 * @return
+	 */
+	public static Optional<Path> binaryPath(final Contentlet con) {
+		final String inode = con.getInode();
+		final String path = String.format("%s/%s/%s/%s",
+				APILocator.getFileAssetAPI().getRealAssetsRootPath(), inode.charAt(0),
+				inode.charAt(1), inode);
+		final Path p = Paths.get(path);
+		return p.toFile().exists() ? Optional.of(p) : Optional.empty();
+	}
 
 	/**
 	 * Reads the contents of the specified file, using the {@code Files.newInputStream} approach.

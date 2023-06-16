@@ -736,6 +736,7 @@ create table structure (
    mod_date timestamptz,
    sort_order int4,
    icon varchar(255),
+   marked_for_deletion bool not null default false,
    primary key (inode)
 );
 create table cms_role (
@@ -769,7 +770,7 @@ create table permission (
    primary key (id),
    unique (permission_type, inode_id, roleid)
 );
-	create table contentlet (inode varchar(36) not null,
+create table contentlet (inode varchar(36) not null,
 	show_on_menu bool,
 	title varchar(255),
 	mod_date timestamptz,
@@ -780,6 +781,7 @@ create table permission (
 	disabled_wysiwyg varchar(255),
 	identifier varchar(36),
 	language_id int8,
+    variant_id varchar(255) default 'DEFAULT',
 	contentlet_as_json jsonb,
 	date1 timestamptz,
 	date2 timestamptz,
@@ -1991,7 +1993,7 @@ alter table structure add constraint fk_structure_host foreign key (host) refere
 create index idx_template3 on template (lower(title));
 
 CREATE INDEX idx_contentlet_4 ON contentlet (structure_inode);
-
+CREATE INDEX idx_contentlet_variant ON contentlet (variant_id);
 CREATE INDEX idx_contentlet_identifier ON contentlet (identifier);
 
 alter table contentlet add constraint fk_user_contentlet foreign key (mod_user) references user_(userid);

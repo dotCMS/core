@@ -4,7 +4,11 @@ import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.ema.EMAConfigurationEntry;
+import com.dotcms.ema.EMAConfigurations;
 import com.dotcms.ema.EMAWebInterceptor;
+import com.dotcms.ema.resolver.EMAConfigStrategy;
+import com.dotcms.ema.resolver.EMAConfigStrategyResolver;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityBooleanView;
 import com.dotcms.rest.ResponseEntityView;
@@ -12,11 +16,10 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.api.v1.personalization.PersonalizationPersonaPageViewPaginator;
+import com.dotcms.rest.api.v1.workflow.WorkflowResource;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
-import com.dotcms.security.apps.AppSecrets;
-import com.dotcms.security.apps.AppsAPI;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.HttpRequestDataUtil;
 import com.dotcms.util.PaginationUtil;
@@ -48,6 +51,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
@@ -59,7 +63,6 @@ import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import io.vavr.control.Try;
 import org.apache.commons.collections.keyvalue.MultiKey;
 import org.glassfish.jersey.server.JSONP;
 
@@ -105,6 +108,9 @@ import java.util.stream.Collectors;
 @Path("/v1/page")
 @Tag(name = "Page")
 public class PageResource {
+
+    private static final String LISTING       = "listing";
+    private static final String EDITING       = "editing";
 
     private final PageResourceHelper pageResourceHelper;
     private final WebResource webResource;
@@ -255,10 +261,8 @@ public class PageResource {
             @QueryParam(WebKeys.CMS_PERSONA_PARAMETER) final String personaId,
             @QueryParam(WebKeys.LANGUAGE_ID_PARAMETER) final String languageId,
             @QueryParam("device_inode") final String deviceInode) throws DotSecurityException, DotDataException, SystemException, PortalException {
-        if (HttpRequestDataUtil.getAttribute(originalRequest, EMAWebInterceptor.EMA_REQUEST_ATTR, Boolean.FALSE)) {
-            if (!includeRenderedAttrFromEMA(originalRequest, uri)) {
-                return loadJson(originalRequest, response, uri, modeParam, personaId, languageId, deviceInode);
-            }
+        if (HttpRequestDataUtil.getAttribute(originalRequest, EMAWebInterceptor.EMA_REQUEST_ATTR, false) && !this.includeRenderedAttrFromEMA(originalRequest, uri)) {
+            return this.loadJson(originalRequest, response, uri, modeParam, personaId, languageId, deviceInode);
         }
         Logger.debug(this, ()->String.format(
                 "Rendering page: uri -> %s mode-> %s language -> persona -> %s device_inode -> %s live -> %b",
@@ -856,7 +860,7 @@ public class PageResource {
      * <p>
      * When dotCMS executes a POST to the EMA Service, it is sending the {@code page.rendered} property as part of the
      * JSON payload. This is not required, and dotCMS should not do it. However, if the user needs it anyway, it can be
-     * re-added to the JSON data via UI in the {@code Include 'rendered' attribute?} box in the EMA APP configuration
+     * re-added to the response via UI in the {@code Configuration Data} JSON field in the EMA APP configuration
      * portlet.
      * </p>
      *
@@ -865,25 +869,21 @@ public class PageResource {
      * @return If the {@code rendered} attribute must be added to the JSON data, return {@code true}. Otherwise, return {@code false}.
      */
     private boolean includeRenderedAttrFromEMA(final HttpServletRequest request, final String uri) {
-        final AppsAPI appsAPI = APILocator.getAppsAPI();
-        boolean includeRenderedAttr = Boolean.FALSE;
         Host currentSite = null;
         try {
             currentSite = WebAPILocator.getHostWebAPI().getCurrentHost(request);
-            final Optional<AppSecrets> secretsOpt = appsAPI.getSecrets(EMAWebInterceptor.EMA_APP_CONFIG_KEY, true, currentSite, APILocator.systemUser());
-            if (secretsOpt.isPresent()) {
-                AppSecrets secrets = secretsOpt.get();
-                Optional<Boolean> renderedOpt = secrets.getSecrets().containsKey(EMAWebInterceptor.INCLUDE_RENDERED_VAR) ?
-                        Optional.ofNullable(secrets.getSecrets().get(EMAWebInterceptor.INCLUDE_RENDERED_VAR).getBoolean()) : Optional.empty();
-                if (renderedOpt.isPresent() && renderedOpt.get()) {
-                    includeRenderedAttr = Boolean.TRUE;
-                }
-            }
+            final Optional<EMAConfigStrategy> configStrategy = new EMAConfigStrategyResolver().get(currentSite);
+            final Optional<EMAConfigurations> emaConfig = configStrategy.flatMap(EMAConfigStrategy::resolveConfig);
+            final Optional<EMAConfigurationEntry> config = emaConfig.isPresent()
+                                                                   ? emaConfig.get().byUrl(uri)
+                                                                   : Optional.empty();
+            return config.isPresent() && config.get().isIncludeRendered();
         } catch (final DotDataException | DotSecurityException | SystemException | PortalException e) {
             final String siteName = null != currentSite ? currentSite.getHostname() : "N/A";
-            Logger.debug(this, String.format("An error occurred when checking the 'rendered' attribute in site '%s' for URI '%s': %s", siteName, uri, e.getMessage()));
+            Logger.debug(this, String.format("An error occurred when checking the 'rendered' attribute in site '%s' " +
+                                                     "for URI '%s': %s", siteName, uri, e.getMessage()));
         }
-        return includeRenderedAttr;
+        return false;
     }
 
     /**
@@ -1054,10 +1054,77 @@ public class PageResource {
                  APILocator.getHTMLPageAssetAPI().getPageByPath(
                     pageCheckPermissionForm.getPath(), currentHost, languageId, mode.showLive);
 
-        return null != page?
-                new ResponseEntityBooleanView(APILocator.getPermissionAPI().
+        if (null != page) {
+
+            return new ResponseEntityBooleanView(APILocator.getPermissionAPI().
                     doesUserHavePermission(page, pageCheckPermissionForm.getType().getType(),
-                            user, false)):
-                new ResponseEntityBooleanView(false);
+                            user, false));
+        }
+
+        throw new DoesNotExistException("The page: " + pageCheckPermissionForm.getPath() + " do not exist");
     } // checkPagePermission.
+
+    /**
+     * Returns true if the page exist and the current user has 'type' permission over it
+     * Parameters:
+     * - type: is optional, by default is READ
+     * - path: page path
+     *
+     * @param originalRequest The {@link HttpServletRequest} object.
+     * @param response The {@link HttpServletResponse} object.
+     * @param type {@link String} type: READ by default @see {@link PermissionLevel}
+     * @param path {@link String} page path
+     * @return All the content types that match
+     */
+    @NoCache
+    @POST
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Path("/actions")
+    public ResponseEntityPageWorkflowActionsView findAvailableActions(@Context final HttpServletRequest request,
+                                                         @Context final HttpServletResponse response,
+                                                         final FindAvailableActionsForm findAvailableActionsForm) throws DotSecurityException, DotDataException {
+
+        final User user = new WebResource.InitBuilder(webResource).requestAndResponse(request, response)
+                .rejectWhenNoUser(true).requiredBackendUser(true).init().getUser();
+
+        final PageMode mode = PageMode.get(request);
+        Logger.debug(this, ()-> "Finding available actions, for Page for the page path: " + findAvailableActionsForm.getPath()
+                + ", host id: " + findAvailableActionsForm.getHostId()
+                + ", lang: " + findAvailableActionsForm.getLanguageId());
+
+        final long languageId  = -1 != findAvailableActionsForm.getLanguageId()? findAvailableActionsForm.getLanguageId():
+                WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
+        final Host currentHost = UtilMethods.isSet(findAvailableActionsForm.getHostId())?
+                WebAPILocator.getHostWebAPI().find(findAvailableActionsForm.getHostId(), user, PageMode.get(request).respectAnonPerms):
+                WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+
+        final Optional<URLMapInfo> urlMapInfoOptional = APILocator.getURLMapAPI().processURLMap(
+                UrlMapContextBuilder.builder()
+                        .setHost(currentHost)
+                        .setLanguageId(languageId)
+                        .setMode(mode)
+                        .setUri(findAvailableActionsForm.getPath())
+                        .setUser(user)
+                        .setGraphQL(false)
+                        .build());
+
+        final Contentlet page = urlMapInfoOptional.isPresent()? urlMapInfoOptional.get().getContentlet():
+                (Contentlet)APILocator.getHTMLPageAssetAPI().getPageByPath(
+                        findAvailableActionsForm.getPath(), currentHost, languageId, mode.showLive);
+
+        if  (null != page) {
+
+            final List<WorkflowAction> actions = APILocator.getWorkflowAPI()
+                    .findAvailableActions(page, user, findAvailableActionsForm.getRenderMode());
+
+            return new ResponseEntityPageWorkflowActionsView(new PageWorkflowActionsView(
+                    new DotTransformerBuilder().defaultOptions().content(page).build()
+                            .toMaps().stream().findFirst().orElse(Collections.emptyMap()),
+
+                    actions.stream().map(WorkflowResource::convertToWorkflowActionView).collect(Collectors.toList())
+            ));
+        }
+
+        throw new DoesNotExistException("The page: " + findAvailableActionsForm.getPath() + " do not exist");
+    } // findAvailableActions.
 } // E:O:F:PageResource

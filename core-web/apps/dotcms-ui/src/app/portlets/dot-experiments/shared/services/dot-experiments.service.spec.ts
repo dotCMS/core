@@ -3,6 +3,7 @@ import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator'
 import {
     DefaultGoalConfiguration,
     DotExperiment,
+    DotExperimentStatusList,
     Goals,
     GoalsLevels,
     TrafficProportionTypes
@@ -37,6 +38,11 @@ describe('DotExperimentsService', () => {
         spectator.expectOne(`${API_ENDPOINT}?pageId=${PAGE_Id}`, HttpMethod.GET);
     });
 
+    it('should get a list of experiments filter by status', () => {
+        spectator.service.getByStatus(PAGE_Id, DotExperimentStatusList.RUNNING).subscribe();
+        spectator.expectOne(`${API_ENDPOINT}?pageId=${PAGE_Id}&status=RUNNING`, HttpMethod.GET);
+    });
+
     it('should get an experiment by getById using experimentId', () => {
         spectator.service.getById(EXPERIMENT_ID).subscribe();
         spectator.expectOne(`${API_ENDPOINT}/${EXPERIMENT_ID}`, HttpMethod.GET);
@@ -62,6 +68,11 @@ describe('DotExperimentsService', () => {
         spectator.expectOne(`${API_ENDPOINT}/${EXPERIMENT_ID}/_end`, HttpMethod.POST);
     });
 
+    it('should cancel schedule an experiment with experimentId as param', () => {
+        spectator.service.cancelSchedule(EXPERIMENT_ID).subscribe();
+        spectator.expectOne(`${API_ENDPOINT}/scheduled/${EXPERIMENT_ID}/_cancel`, HttpMethod.POST);
+    });
+
     it('should delete a experiment with experimentId', () => {
         spectator.service.delete(EXPERIMENT_ID).subscribe();
         spectator.expectOne(`${API_ENDPOINT}/${EXPERIMENT_ID}`, HttpMethod.DELETE);
@@ -83,8 +94,11 @@ describe('DotExperimentsService', () => {
     });
 
     it('should promote a variant', () => {
-        spectator.service.promoteVariant('variantName').subscribe();
-        spectator.expectOne(`/api/v1/variants/variantName/_promote`, HttpMethod.PUT);
+        spectator.service.promoteVariant(EXPERIMENT_ID, VARIANT_ID).subscribe();
+        spectator.expectOne(
+            `/api/v1/experiments/${EXPERIMENT_ID}/variants/${VARIANT_ID}/_promote`,
+            HttpMethod.PUT
+        );
     });
 
     it('should delete a variant with experimentId', () => {
@@ -111,6 +125,14 @@ describe('DotExperimentsService', () => {
             `${API_ENDPOINT}/${EXPERIMENT_ID}/goals/${goalType}`,
             HttpMethod.DELETE
         );
+    });
+
+    it('should change the description of an experimentId', () => {
+        const newDescription = 'new description';
+        spectator.service.setDescription(EXPERIMENT_ID, newDescription).subscribe();
+        const req = spectator.expectOne(`${API_ENDPOINT}/${EXPERIMENT_ID}`, HttpMethod.PATCH);
+
+        expect(req.request.body['description']).toEqual(newDescription);
     });
 
     it('should set scheduling to experiment', () => {

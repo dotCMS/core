@@ -83,11 +83,15 @@ public class ExperimentsResource {
         final Experiment.Builder builder = Experiment.builder();
 
         builder.pageId(experimentForm.getPageId()).name(experimentForm.getName())
-                .description(experimentForm.getDescription()).createdBy(user.getUserId())
+                .createdBy(user.getUserId())
                 .lastModifiedBy(user.getUserId())
                 .trafficAllocation(experimentForm.getTrafficAllocation()>-1
                         ? experimentForm.getTrafficAllocation()
                         : 100);
+
+        if(experimentForm.getDescription()!=null) {
+            builder.description(experimentForm.getDescription());
+        }
 
         if(experimentForm.getTrafficProportion()!=null) {
             builder.trafficProportion(experimentForm.getTrafficProportion());
@@ -298,6 +302,25 @@ public class ExperimentsResource {
     }
 
     /**
+     * Cancels the future execution of a Scheduled {@link Experiment}. The Experiment needs to be in
+     * {@link Status#SCHEDULED} status to be able to cancel it.
+     */
+
+    @POST
+    @Path("/scheduled/{experimentId}/_cancel")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public ResponseEntitySingleExperimentView cancel(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("experimentId") final String experimentId) throws DotDataException, DotSecurityException {
+        final InitDataObject initData = getInitData(request, response);
+        final User user = initData.getUser();
+        final Experiment endedExperiment = experimentsAPI.cancel(experimentId, user);
+        return new ResponseEntitySingleExperimentView(endedExperiment);
+    }
+
+    /**
      * Adds a new {@link com.dotcms.variant.model.Variant} to the {@link Experiment}
      *
      */
@@ -370,6 +393,35 @@ public class ExperimentsResource {
 
         final Experiment persistedExperiment = experimentsAPI.editVariantDescription(experimentId,
                 variantName, experimentVariantForm.getDescription(), user);
+        return new ResponseEntitySingleExperimentView(persistedExperiment);
+    }
+
+    /**
+     * Promotes a Variant to become the DEFAULT variant of the Page of the Experiment
+     * Returns the updated version of the Experiment.
+     */
+    @PUT
+    @Path("/{experimentId}/variants/{name}/_promote")
+    @JSONP
+    @NoCache
+    @Consumes({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public ResponseEntitySingleExperimentView promoteVariant(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("experimentId") final String experimentId,
+            @PathParam("name") final String variantName,
+            ExperimentVariantForm experimentVariantForm) throws DotDataException, DotSecurityException {
+        final InitDataObject initData = getInitData(request, response);
+        final User user = initData.getUser();
+
+        final Optional<Experiment> experimentToUpdate =  experimentsAPI.find(experimentId, user);
+
+        if(experimentToUpdate.isEmpty()) {
+            throw new NotFoundException("Experiment with id: " + experimentId + " not found.");
+        }
+
+        final Experiment persistedExperiment = experimentsAPI.promoteVariant(experimentId,
+                variantName, user);
         return new ResponseEntitySingleExperimentView(persistedExperiment);
     }
 
