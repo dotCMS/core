@@ -8,6 +8,19 @@
     flex: 1;
 }
 
+.template-builder__container {
+    display: flex;
+    gap: $spacing-4;
+
+    .grid-stack {
+        flex: 1;
+    }
+}
+
+.template-builder__container--right {
+    flex-direction: row-reverse;
+}
+
 // Class added by the gridstack library when the widget is being dragged
 dotcms-add-widget.ui-draggable-dragging {
     transform: rotate(-3.66deg);

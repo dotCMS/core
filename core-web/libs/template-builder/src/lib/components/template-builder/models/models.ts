@@ -45,9 +45,17 @@ export enum TemplateBuilderBoxSize {
 export interface DotTemplateLayoutProperties {
     header: boolean;
     footer: boolean;
-    sidebar: {
-        location?: string;
-        containers?: DotTemplateBuilderContainer[];
-        width?: string;
-    };
+    sidebar: DotTemplateSidebarProperties;
+}
+
+/**
+ * @description This interface is used to define the properties of the template sidebar
+ *
+ * @export
+ * @interface DotTemplateSidebarProperties
+ */
+export interface DotTemplateSidebarProperties {
+    location?: string;
+    containers?: DotTemplateBuilderContainer[];
+    width?: string;
 }

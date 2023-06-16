@@ -31,7 +31,8 @@ import { TemplateBuilderRowComponent } from './components/template-builder-row/t
 import {
     DotGridStackWidget,
     DotTemplateBuilderState,
-    DotTemplateLayoutProperties
+    DotTemplateLayoutProperties,
+    DotTemplateSidebarProperties
 } from './models/models';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import {
@@ -61,6 +62,9 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
             footer: this.templateLayout.footer,
             sidebar: this.templateLayout.sidebar
         };
+    }
+    get sidebarProperties(): DotTemplateSidebarProperties {
+        return this.templateLayout.sidebar;
     }
 
     @Output()
