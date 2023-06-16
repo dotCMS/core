@@ -23,7 +23,7 @@ public interface StoragePersistenceAPI {
     String STORAGE_POOL = "StoragePool";
 
     /**
-     * Returns true if exists the group
+     * Returns true if exists the group on all storages
      * @param groupName {@link String} group name
      * @return boolean
      */

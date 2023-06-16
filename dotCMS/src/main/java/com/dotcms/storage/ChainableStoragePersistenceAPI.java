@@ -60,7 +60,7 @@ public class ChainableStoragePersistenceAPI implements StoragePersistenceAPI {
     @Override
     public boolean existsGroup(final String groupName) throws DotDataException {
 
-        return this.storagePersistenceAPIList.stream().anyMatch(storage -> Try.of(()->storage.existsGroup(groupName)).getOrElse(false));
+        return this.storagePersistenceAPIList.stream().allMatch(storage -> Try.of(()->storage.existsGroup(groupName)).getOrElse(false));
     }
 
     @Override
@@ -187,7 +187,7 @@ public class ChainableStoragePersistenceAPI implements StoragePersistenceAPI {
                              final ObjectWriterDelegate writerDelegate, final Serializable objectIn,
                              final Map<String, Serializable> extraMeta) throws DotDataException {
 
-        Object objectToReturn = null;
+            Object objectToReturn = null;
         for(final StoragePersistenceAPI storage : this.storagePersistenceAPIList) {
 
             // since this is a composite and in theory the object should be the same, we just return the first one
