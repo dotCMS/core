@@ -860,9 +860,9 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
             }
         }
         if (showStopped && !showArchived) {
-            // Return stopped Sites, which include archived Sites as well
+            // Return stopped Sites, which should not include archived Sites, but should include live sites.
             siteListOpt = this.getHostFactory()
-                    .findStoppedSites(filter, true, limit, offset, showSystemHost, user, respectFrontendRoles);
+                    .findLiveAndStopped(filter, limit, offset, showSystemHost, user, respectFrontendRoles);
             if (siteListOpt.isPresent()) {
                 return convertToSitePaginatedList(siteListOpt.get());
             }

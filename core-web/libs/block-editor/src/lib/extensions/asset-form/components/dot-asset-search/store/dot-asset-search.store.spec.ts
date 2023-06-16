@@ -159,7 +159,7 @@ describe('DotAssetSearchStore', () => {
             });
 
             expect(searchService.get).toHaveBeenCalledWith({
-                query: ` +catchall:${query}* title:'${query}'^15 +languageId:1 +baseType:(4 OR 9) +metadata.contenttype:image/* +deleted:false +working:true`,
+                query: `+catchall:${query} +title:'${query}'^15 +languageId:1 +baseType:(4 OR 9) +metadata.contenttype:image/* +deleted:false +working:true`,
                 sortOrder: ESOrderDirection.ASC,
                 limit: 20,
                 offset: 0
@@ -170,6 +170,34 @@ describe('DotAssetSearchStore', () => {
             expect(loadingMock.mock.calls).toEqual([[true], [false]]);
             expect(service.updateContentlets).toHaveBeenCalledWith(contentlets);
             expect(service.updateSearch).toHaveBeenCalledWith(query);
+        });
+
+        test('should set +catchall:* on search when the query is empty', (done) => {
+            const contentlets = CONTENTLETS_MOCK_WITH_LANG;
+            jest.spyOn(searchService, 'get').mockReturnValue(
+                of({ jsonObjectView: { contentlets } })
+            );
+
+            const query = '';
+
+            service.searchContentlet(query);
+
+            service.vm$.subscribe((res) => {
+                expect(res).toEqual({
+                    preventScroll: false,
+                    loading: false,
+                    contentlets
+                });
+
+                done();
+            });
+
+            expect(searchService.get).toHaveBeenCalledWith({
+                query: `+catchall:* +title:'${query}'^15 +languageId:1 +baseType:(4 OR 9) +metadata.contenttype:image/* +deleted:false +working:true`,
+                sortOrder: ESOrderDirection.ASC,
+                limit: 20,
+                offset: 0
+            });
         });
 
         test('should load the next batch of contentlets based on the offset', (done) => {
