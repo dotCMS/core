@@ -282,6 +282,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
                 ...state,
                 layoutProperties: {
                     ...state.layoutProperties,
+                    ...layoutProperties,
                     sidebar: {
                         ...state.layoutProperties.sidebar,
                         location: layoutProperties.sidebar.location
