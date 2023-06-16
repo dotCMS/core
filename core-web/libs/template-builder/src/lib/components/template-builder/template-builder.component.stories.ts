@@ -3,6 +3,7 @@ import { moduleMetadata, Story, Meta } from '@storybook/angular';
 import { NgFor, AsyncPipe } from '@angular/common';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
+import { ButtonModule } from 'primeng/button';
 import { DividerModule } from 'primeng/divider';
 import { ToolbarModule } from 'primeng/toolbar';
 
@@ -36,6 +37,7 @@ export default {
                 BrowserAnimationsModule,
                 TemplateBuilderBackgroundColumnsComponent,
                 TemplateBuilderSectionComponent,
+                ButtonModule,
                 TemplateBuilderActionsComponent,
                 ToolbarModule,
                 DividerModule
@@ -52,7 +54,17 @@ export default {
 } as Meta<TemplateBuilderComponent>;
 
 const Template: Story<TemplateBuilderComponent> = (args: TemplateBuilderComponent) => ({
-    props: args
+    props: args,
+    template: `
+        <dotcms-template-builder [templateLayout]="templateLayout">
+            <button
+                [label]="'Publish'"
+                toolbar-actions-right
+                type="button"
+                pButton
+            ></button>
+        </dotcms-template-builder>
+    `
 });
 
 export const Base = Template.bind({});
