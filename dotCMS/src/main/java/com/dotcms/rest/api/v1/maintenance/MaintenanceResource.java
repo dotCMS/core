@@ -20,6 +20,7 @@ import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.starter.ExportStarterUtil;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.apache.commons.io.IOUtils;
 import org.glassfish.jersey.server.JSONP;
@@ -57,6 +58,9 @@ import java.util.concurrent.TimeUnit;
 public class MaintenanceResource implements Serializable {
 
     private final WebResource webResource;
+
+    protected static final Lazy<Boolean> ALLOW_DOTCMS_SHUTDOWN_FROM_CONSOLE =
+            Lazy.of(() -> Config.getBooleanProperty("ALLOW_DOTCMS_SHUTDOWN_FROM_CONSOLE", true));
 
     /**
      * Default class constructor.
@@ -98,7 +102,7 @@ public class MaintenanceResource implements Serializable {
                 this.getClass(),
                 String.format("User '%s' is shutting down dotCMS from ip: %s", initData.getUser(), request.getRemoteAddr()));
 
-        if (!Config.getBooleanProperty("ALLOW_DOTCMS_SHUTDOWN_FROM_CONSOLE", true)) {
+        if (!ALLOW_DOTCMS_SHUTDOWN_FROM_CONSOLE.get()) {
             return Response.status(Status.FORBIDDEN).build();
         }
 
@@ -136,23 +140,16 @@ public class MaintenanceResource implements Serializable {
                 .rejectWhenNoUser(true)
                 .requiredPortlet(Portlet.MAINTENANCE)
                 .init();
-
-
-        Logger.info(this.getClass(), "User:" + initData.getUser() + " is shutting down dotCMS Cluster with a rolling delay of " + rollingDelay); 
-        SecurityLogger.logInfo(
-                this.getClass(),
-                "User:" + initData.getUser() + " is shutting down dotCMS Cluster with a rolling delay of " + rollingDelay);
-
-        if (!Config.getBooleanProperty("ALLOW_DOTCMS_SHUTDOWN_FROM_CONSOLE", true)) {
+        final String statusMsg = String.format("User '%s' is shutting down dotCMS Cluster with a rolling delay of %s"
+                , initData.getUser(), rollingDelay);
+        Logger.info(this.getClass(), statusMsg);
+        SecurityLogger.logInfo(this.getClass(), statusMsg);
+        if (!ALLOW_DOTCMS_SHUTDOWN_FROM_CONSOLE.get()) {
             return Response.status(Status.FORBIDDEN).build();
         }
-
         ClusterManagementTopic.getInstance().restartCluster(rollingDelay);
-
         return Response.ok(new ResponseEntityView("Shutdown")).build();
     }
-    
-    
     
     /**
      * This method attempts to send resolved log file using an octet stream http response.

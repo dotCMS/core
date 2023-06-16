@@ -10,6 +10,7 @@ import com.dotcms.dotpubsub.DotPubSubTopic;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import io.vavr.control.Try;
@@ -19,6 +20,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * This topic is intended for cluster aware actions such as restarting the servers or killing
@@ -28,12 +30,12 @@ import java.util.List;
  */
 public class ClusterManagementTopic implements DotPubSubTopic,DotInitializer {
 
-
     private static final long serialVersionUID = 1L;
 
+    public enum ClusterActions {
 
-    public enum CLUSTER_ACTIONS {
         CLUSTER_RESTART, KILL_SESSIONS,KILL_SESSION, NONE;
+
     }
     
     static final String ROLLING_DELAY = "delay";
@@ -42,7 +44,9 @@ public class ClusterManagementTopic implements DotPubSubTopic,DotInitializer {
     static final String TOPIC = "Cluster_Actions";
     
     private static class SingletonHelper {
+
         private static final ClusterManagementTopic INSTANCE = new ClusterManagementTopic();
+
     }
 
     public static ClusterManagementTopic getInstance() {
@@ -56,7 +60,6 @@ public class ClusterManagementTopic implements DotPubSubTopic,DotInitializer {
 
     private ClusterManagementTopic() {
         this(APILocator.getServerAPI().readServerId());
-
     }
 
     @VisibleForTesting
@@ -71,18 +74,14 @@ public class ClusterManagementTopic implements DotPubSubTopic,DotInitializer {
         provider.subscribe(this);
     }
 
-
-    public boolean restartCluster(int rollingDelay) {
-
-        DotPubSubEvent event = new DotPubSubEvent.Builder()
+    public boolean restartCluster(final int rollingDelay) {
+        final DotPubSubEvent event = new DotPubSubEvent.Builder()
                         .addPayload(SERVER_ORDER, myServerOrder())
                         .addPayload(ROLLING_DELAY, rollingDelay)
-                        .addPayload(CLUSTER_ACTION, CLUSTER_ACTIONS.CLUSTER_RESTART.name())
+                        .addPayload(CLUSTER_ACTION, ClusterActions.CLUSTER_RESTART.name())
                         .withTopic(TOPIC)
                         .build();
-
         this.provider.publish(event);
-
         return true;
     }
 
@@ -92,43 +91,34 @@ public class ClusterManagementTopic implements DotPubSubTopic,DotInitializer {
     }
 
     final class Restarter implements Runnable {
+
         final int delaySeconds;
 
-        Restarter(int delaySeconds) {
+        Restarter(final int delaySeconds) {
             this.delaySeconds = delaySeconds;
         }
 
         @Override
         public void run() {
-
             Logger.info(ClusterManagementTopic.class, "Running restart in: " + delaySeconds + " seconds");
             try {
-                Thread.sleep(delaySeconds * 1000L);
-            } catch (Exception e) { // NOSONAR
+                Thread.sleep(delaySeconds * DateUtil.SECOND_MILLIS);
+            } catch (final Exception e) { // NOSONAR
                 // do nothing
-            }finally {
+            } finally {
                 System.exit(Config.getIntProperty("SYSTEM_EXIT_CODE", 0));
             }
         }
     }
 
-    private static CLUSTER_ACTIONS resolveAction(String name) {
-        for(CLUSTER_ACTIONS action : CLUSTER_ACTIONS.values()) {
-            if(action.name().equalsIgnoreCase(name)) {
-                return action;
-            }
-        }
-        return CLUSTER_ACTIONS.NONE;
+    private static ClusterActions resolveAction(final String name) {
+        return Stream.of(ClusterActions.values()).filter(action -> action.name().equalsIgnoreCase(name)).findFirst().orElse(ClusterActions.NONE);
     }
-    
-    
 
     @Override
     public void notify(final DotPubSubEvent event) {
         Logger.info(this.getClass(), () -> "Got DOTCMS_CLUSTER_RESTART from server:" + event.getOrigin() + ".");
-
-
-        CLUSTER_ACTIONS action = resolveAction((String)event.getPayload().get(CLUSTER_ACTION));
+        final ClusterActions action = resolveAction((String)event.getPayload().get(CLUSTER_ACTION));
         
         switch (action) {
             case CLUSTER_RESTART:
@@ -140,38 +130,21 @@ public class ClusterManagementTopic implements DotPubSubTopic,DotInitializer {
             default:
                 break;
         }
-        
-        
-
     }
-
 
     private void fireRestart(final DotPubSubEvent event) {
-        HashMap<String, Integer> serverOrderMap =
+        final HashMap<String, Integer> serverOrderMap =
                         (HashMap<String, Integer>) event.getPayload().getOrDefault(SERVER_ORDER, new HashMap<>());
-
-        int serverOrder = serverOrderMap.getOrDefault(serverId, 0);
-
-        int rollingDelay = (Integer) event.getPayload()
+        final int serverOrder = serverOrderMap.getOrDefault(serverId, 0);
+        final int rollingDelay = (Integer) event.getPayload()
                         .getOrDefault(ROLLING_DELAY,  Config.getIntProperty("ROLLING_RESTART_DELAY_SECONDS", 60));
-
-        Instant shutdown = Instant.now().plus((long) serverOrder * rollingDelay, ChronoUnit.SECONDS);
-        
-        
+        final Instant shutdown = Instant.now().plus((long) serverOrder * rollingDelay, ChronoUnit.SECONDS);
         Logger.info(this.getClass(), "Restarting  " + shutdown + "s, serverOrder:" + serverOrder
                         + ", rollingDelay:" + rollingDelay);
-        Restarter restarter = new Restarter(serverOrder * rollingDelay);
-
-
-
+        final Restarter restarter = new Restarter(serverOrder * rollingDelay);
         System.setProperty("DOTCMS_CLUSTER_RESTART", shutdown.toString());
-        
         DotConcurrentFactory.getInstance().getSingleSubmitter(TOPIC).submit(restarter);
-
-        
-        
     }
-    
     
     /**
      * This is a hashmap of the servers in the cluster and their current order
@@ -181,10 +154,10 @@ public class ClusterManagementTopic implements DotPubSubTopic,DotInitializer {
      */
     private HashMap<String, Serializable> myServerOrder() {
         int serverOrder = 0;
-        HashMap<String, Serializable> serverMap = new HashMap<>();
+        final HashMap<String, Serializable> serverMap = new HashMap<>();
         serverMap.put(serverId, serverOrder++);
  
-        List<Server> servers = Try.of(()-> APILocator.getServerAPI().getAllServers()).getOrElseThrow(DotRuntimeException::new);
+        final List<Server> servers = Try.of(()-> APILocator.getServerAPI().getAllServers()).getOrElseThrow(DotRuntimeException::new);
         for (Server server : servers) {
             if(!serverId.equals(server.getServerId())) {
                 serverMap.put(server.getServerId(), serverOrder++);
@@ -192,21 +165,16 @@ public class ClusterManagementTopic implements DotPubSubTopic,DotInitializer {
         }
 
         return serverMap;
-
     }
-
 
     @Override
     public Comparable getKey() {
-
         return TOPIC;
     }
 
     @Override
     public void init() {
        Logger.info(getClass(), "Intializing " + TOPIC);
-        
     }
-
 
 }
