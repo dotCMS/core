@@ -2,11 +2,11 @@ import { expect } from '@jest/globals';
 import { SpectatorHost, byTestId, createHostFactory } from '@ngneat/spectator';
 import { GridItemHTMLElement } from 'gridstack';
 
-import { AsyncPipe, NgFor } from '@angular/common';
+import { AsyncPipe, NgClass, NgFor, NgIf, NgStyle } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 import { DividerModule } from 'primeng/divider';
-import { DialogService } from 'primeng/dynamicdialog';
+import { DialogService, DynamicDialogModule, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { ToolbarModule } from 'primeng/toolbar';
 
 import { take } from 'rxjs/operators';
@@ -38,16 +38,22 @@ describe('TemplateBuilderComponent', () => {
         component: TemplateBuilderComponent,
         imports: [
             NgFor,
+            NgIf,
             AsyncPipe,
             DotMessagePipeModule,
-            DotMessagePipeModule,
-            HttpClientTestingModule,
+            DynamicDialogModule,
+            NgStyle,
+            NgClass,
             ToolbarModule,
             DividerModule,
-            TemplateBuilderComponentsModule
+            TemplateBuilderComponentsModule,
+            HttpClientTestingModule
         ],
         providers: [
             DotTemplateBuilderStore,
+            DialogService,
+            DynamicDialogRef,
+            DotAddStyleClassesDialogStore,
             {
                 provide: DotMessageService,
                 useValue: DOT_MESSAGE_SERVICE_TB_MOCK
@@ -55,9 +61,7 @@ describe('TemplateBuilderComponent', () => {
             {
                 provide: DotContainersService,
                 useValue: new DotContainersServiceMock()
-            },
-            DialogService,
-            DotAddStyleClassesDialogStore
+            }
         ]
     });
     beforeEach(() => {
@@ -70,7 +74,7 @@ describe('TemplateBuilderComponent', () => {
                         header: true,
                         footer: true,
                         sidebar: {
-                            position: 'left',
+                            location: 'left',
                             width: 'small',
                             containers: []
                         }
@@ -186,7 +190,7 @@ describe('TemplateBuilderComponent', () => {
                     header: true,
                     footer: true,
                     sidebar: {
-                        position: 'left',
+                        location: 'left',
                         width: 'small',
                         containers: []
                     }

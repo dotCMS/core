@@ -14,7 +14,11 @@ import { DotTemplateSidebarProperties } from '../../models/models';
     styleUrls: ['./template-builder-sidebar.component.scss']
 })
 export class TemplateBuilderSidebarComponent {
-    @Input() sidebarProperties: DotTemplateSidebarProperties;
+    @Input() sidebarProperties: DotTemplateSidebarProperties = {
+        width: 'medium',
+        containers: []
+    };
+
     @Output() sidebarPropertiesChange = new EventEmitter<DotTemplateSidebarProperties>();
 
     get width() {
