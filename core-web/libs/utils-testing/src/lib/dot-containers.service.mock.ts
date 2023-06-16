@@ -6,7 +6,6 @@ import { containersMock } from './dot-containers.mock';
 
 export class DotContainersServiceMock {
     getFiltered(_: string): Observable<DotContainer[] | null> {
-        console.log('here, DotContainersServiceMock');
         return of(containersMock);
     }
 }
