@@ -242,7 +242,8 @@ export const MESSAGES_MOCK = {
     'editpage.layout.properties.sidebar.right': 'Sidebar Right',
     'dot.template.builder.box.containers.error': 'Error loading containers',
     'dot.template.builder.classes.dialog.autocomplete.label': 'Class',
-    'dot.template.builder.classes.dialog.header.label': 'Edit Classes'
+    'dot.template.builder.classes.dialog.header.label': 'Edit Classes',
+    'dot.template.builder.classes.dialog.update.button': 'Update'
 };
 
 export const DOT_MESSAGE_SERVICE_TB_MOCK = new MockDotMessageService(MESSAGES_MOCK);
