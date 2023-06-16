@@ -34,3 +34,4 @@ export * from './lib/site-service.mock';
 export * from './lib/field-util';
 export * from './lib/clean-up-dialog';
 export * from './lib/dot-roles.mock';
+export * from './lib/match-media.mock';

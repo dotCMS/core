@@ -6,12 +6,16 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DropdownModule } from 'primeng/dropdown';
 
 import { DotContainersService, DotMessageService } from '@dotcms/data-access';
-import { containersMock, DotContainersServiceMock } from '@dotcms/utils-testing';
+import {
+    containersMock,
+    DotContainersServiceMock,
+    MockDotMessageService,
+    mockMatchMedia
+} from '@dotcms/utils-testing';
 
 import { DotContainerOptionsDirective } from './dot-container-options.directive';
 import { MockContainersDropdownComponent } from './mock-containers-dropdown.component';
 
-import { DOT_MESSAGE_SERVICE_TB_MOCK, mockMatchMedia } from '../../utils/mocks';
 describe('ContainerOptionsDirective', () => {
     let spectator: SpectatorHost<MockContainersDropdownComponent>;
 
@@ -20,20 +24,18 @@ describe('ContainerOptionsDirective', () => {
         imports: [BrowserAnimationsModule, DotContainerOptionsDirective, DropdownModule],
         providers: [
             {
-                provide: DotMessageService,
-                useValue: DOT_MESSAGE_SERVICE_TB_MOCK
-            },
-            {
                 provide: DotContainersService,
                 useValue: new DotContainersServiceMock()
+            },
+            {
+                provide: DotMessageService,
+                useValue: new MockDotMessageService({})
             }
         ]
     });
 
     beforeEach(() => {
-        spectator = createHost(
-            `<dotcms-containers-dropdown-mock></dotcms-containers-dropdown-mock>`
-        );
+        spectator = createHost(`<dot-containers-dropdown-mock></dot-containers-dropdown-mock>`);
         spectator.detectChanges();
         mockMatchMedia();
     });
