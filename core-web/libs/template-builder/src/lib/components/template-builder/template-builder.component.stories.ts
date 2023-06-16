@@ -5,6 +5,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
 import { DividerModule } from 'primeng/divider';
+import { DropdownModule } from 'primeng/dropdown';
 import { ToolbarModule } from 'primeng/toolbar';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -30,7 +31,8 @@ export default {
                 BrowserAnimationsModule,
                 ButtonModule,
                 ToolbarModule,
-                DividerModule
+                DividerModule,
+                DropdownModule
             ],
             providers: [
                 DotTemplateBuilderStore,
@@ -66,7 +68,7 @@ Base.args = {
         footer: false,
         sidebar: {
             location: 'left',
-            width: 'small',
+            width: 'medium',
             containers: []
         }
     }

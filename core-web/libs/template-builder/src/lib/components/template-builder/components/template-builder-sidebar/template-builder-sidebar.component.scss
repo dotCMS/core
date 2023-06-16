@@ -1,7 +1,7 @@
 @use "variables" as *;
 
 :host {
-    width: 301px;
+    width: 18.75rem; // 300px
 
     border: 1px solid $color-palette-primary-500;
     border-radius: $border-radius-md;
@@ -28,4 +28,14 @@
 .template-builder-sidebar__body-container {
     flex: 1;
     background-color: red;
+}
+
+::ng-deep {
+    p-dropdown {
+        width: 7.625rem; //122px
+
+        div {
+            width: 100%;
+        }
+    }
 }

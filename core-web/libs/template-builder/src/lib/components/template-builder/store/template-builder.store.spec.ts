@@ -269,6 +269,20 @@ describe('DotTemplateBuilderStore', () => {
         });
     });
 
+    it('should update sidebar properties', () => {
+        service.updateSidebarProperties({
+            location: 'left',
+            width: 'large'
+        });
+
+        service.layoutProperties$.subscribe((layoutProperties) => {
+            expect(layoutProperties.sidebar).toEqual({
+                location: 'left',
+                width: 'large'
+            });
+        });
+    });
+
     describe('Util Methods', () => {
         describe('subGridOnDropped', () => {
             it('should execute moveColumnInYAxis when oldNode and newNode exist', () => {

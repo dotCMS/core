@@ -8,7 +8,8 @@ import {
     DotGridStackNode,
     DotGridStackWidget,
     DotTemplateBuilderState,
-    DotTemplateLayoutProperties
+    DotTemplateLayoutProperties,
+    DotTemplateSidebarProperties
 } from '../models/models';
 import {
     getIndexRowInItems,
@@ -256,6 +257,25 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
     readonly updateLayoutProperties = this.updater(
         (state, layoutProperties: DotTemplateLayoutProperties) => {
             return { ...state, layoutProperties };
+        }
+    );
+
+    /**
+     * @description This method updates the sidebar properties with new data
+     *
+     * @memberof DotTemplateBuilderStore
+     */
+    readonly updateSidebarProperties = this.updater(
+        (state, sidebarProperties: DotTemplateSidebarProperties) => {
+            const { layoutProperties } = state;
+
+            return {
+                ...state,
+                layoutProperties: {
+                    ...layoutProperties,
+                    sidebar: sidebarProperties
+                }
+            };
         }
     );
 

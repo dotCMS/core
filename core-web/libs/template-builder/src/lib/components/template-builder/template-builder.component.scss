@@ -15,6 +15,13 @@
     .grid-stack {
         flex: 1;
     }
+
+    .template-builder__sidebar--small {
+        width: 16.25rem; // 260px
+    }
+    .template-builder__sidebar--large {
+        width: 21.25rem; // 340px
+    }
 }
 
 .template-builder__container--right {

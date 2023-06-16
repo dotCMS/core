@@ -1,6 +1,10 @@
 <div class="template-builder-sidebar__header">
     <h5 class="header__title">Sidebar</h5>
-    <div>dropdown</div>
+    <p-dropdown
+        [options]="widthOptions"
+        [ngModel]="width"
+        (onChange)="widthChange($event)"
+    ></p-dropdown>
 </div>
 
 <div class="template-builder-sidebar__body-container">BODY</div>
