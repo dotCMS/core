@@ -444,13 +444,13 @@ public class URLMapBundler implements IBundler {
 
                     String pageString = APILocator.getHTMLPageAssetAPI().getHTML(htmlPage, true,
                         contentlet.getInode(), APILocator.getUserAPI().getSystemUser(),
-                        languageId, getUserAgent(config));
+                        languageId, getUserAgent(config), config.isStatic());
 
                     if (!UtilMethods.isSet(pageString)){
                         //Let's try with the default Lang.
                         pageString = APILocator.getHTMLPageAssetAPI().getHTML(htmlPage, true,
                             contentlet.getInode(), APILocator.getUserAPI().getSystemUser(),
-                            langAPI.getDefaultLanguage().getId(), getUserAgent(config));
+                            langAPI.getDefaultLanguage().getId(), getUserAgent(config), config.isStatic());
                     }
 
                     if(bundleOutput.exists(contentletBundlerFilePath)) {
@@ -464,8 +464,9 @@ public class URLMapBundler implements IBundler {
                     bundleOutput.setLastModified(contentletBundlerFilePath, cal.getTimeInMillis());
                 }catch(DotContentletStateException e) {
                     Logger.error(this.getClass(), e);
-                    APILocator.getHTMLPageAssetAPI().getHTML(htmlPage, true, contentlet.getInode(),
-                        APILocator.getUserAPI().getSystemUser(), languageId, getUserAgent(config));
+                    APILocator.getHTMLPageAssetAPI().getHTML(htmlPage, true,
+                        contentlet.getInode(), APILocator.getUserAPI().getSystemUser(),
+                        languageId, getUserAgent(config), config.isStatic());
                 }
             }
 

@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import com.dotcms.rendering.velocity.util.VelocityUtil;
+import com.dotmarketing.util.Config;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
@@ -38,7 +39,10 @@ public class BinaryMap {
 	public BinaryMap(Contentlet content, Field field, Context context) {
 		this.content = content;
 		this.field = field;
-		this.includeLanguageInLink = !(context.containsKey(VelocityUtil.STATIC_PUSH_PUBLISH)
+		final boolean staticPublishIncludeLangUri = Config.getBooleanProperty (
+				"STATIC_PUBLISH_INCLUDE_LANG_URI", false);
+		this.includeLanguageInLink = staticPublishIncludeLangUri ||
+				!(context.containsKey(VelocityUtil.STATIC_PUSH_PUBLISH)
 				&& (boolean) context.get(VelocityUtil.STATIC_PUSH_PUBLISH));
 	}
 	

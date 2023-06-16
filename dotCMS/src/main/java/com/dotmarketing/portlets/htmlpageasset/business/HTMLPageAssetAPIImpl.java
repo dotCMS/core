@@ -714,7 +714,17 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         return getHTML(uri, host, liveMode, contentId, user, langId, userAgent);
     }
 
-	@Override
+    @Override
+    public String getHTML(IHTMLPage htmlPage, boolean liveMode,
+                          String contentId, User user, long langId,
+                          String userAgent, boolean isStaticPublishing)
+            throws DotStateException, DotDataException, DotSecurityException {
+        String uri = htmlPage.getURI();
+        Host host = getParentHost(htmlPage);
+        return getHTML(uri, host, liveMode, contentId, user, langId, userAgent, isStaticPublishing);
+    }
+
+    @Override
 	public String getHTML(String uri, Host host, boolean liveMode,
 			String contentId, User user, String userAgent)
 			throws DotStateException, DotDataException, DotSecurityException {
@@ -839,7 +849,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
             if (isStaticPublishing) {
                 requestProxy.setAttribute(WebKeys.IS_STATIC_PUBLISHING, true);
             }
-            
+
             LanguageWebAPI langWebAPI = WebAPILocator.getLanguageWebAPI();
             langWebAPI.checkSessionLocale(requestProxy);
 

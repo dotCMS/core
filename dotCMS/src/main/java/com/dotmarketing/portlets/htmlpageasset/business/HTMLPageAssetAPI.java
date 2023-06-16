@@ -212,6 +212,11 @@ public interface HTMLPageAssetAPI {
                           String contentId, User user, long langId, String userAgent)
             throws DotStateException, DotDataException, DotSecurityException;
 
+	public String getHTML(IHTMLPage htmlPage, boolean liveMode,
+						  String contentId, User user, long langId, String userAgent,
+						  boolean isStaticPublishing)
+			throws DotStateException, DotDataException, DotSecurityException;
+
 	public String getHTML(String uri, Host host, boolean liveMode,
 			String contentId, User user, String userAgent)
 			throws DotStateException, DotDataException, DotSecurityException;
