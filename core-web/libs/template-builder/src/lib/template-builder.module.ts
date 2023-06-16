@@ -33,7 +33,6 @@ import { TemplateBuilderComponent } from './components/template-builder/template
     ],
     declarations: [TemplateBuilderComponent],
     providers: [
-        DotContainersService,
         DotTemplateBuilderStore,
         DialogService,
         DynamicDialogRef,
