@@ -15,7 +15,6 @@ import { ButtonModule } from 'primeng/button';
 import { DropdownModule } from 'primeng/dropdown';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
 
-import { DotContainersService } from '@dotcms/data-access';
 import { DotContainer } from '@dotcms/dotcms-models';
 import { DotContainerOptionsDirective, DotMessagePipeModule } from '@dotcms/ui';
 
@@ -61,7 +60,7 @@ export class TemplateBuilderBoxComponent implements OnChanges {
 
     boxVariant = TemplateBuilderBoxSize.small;
 
-    constructor(private containerService: DotContainersService, private el: ElementRef) {}
+    constructor(private el: ElementRef) {}
 
     get nativeElement(): GridItemHTMLElement {
         return this.el.nativeElement;
