@@ -354,6 +354,7 @@ public final class WebKeys {
     public static final String WORKFLOW_FILTER_TASKS_COUNT = "com.dotmarketing.workflowtasks.filter.count";
     public static final String WORKFLOW_ACTIONLET_CLASSES = "WORKFLOW_ACTIONLET_CLASSES";
     public static final String WORKFLOW_SEARCHER = "com.dotmarketing.workflowtasks.WORKFLOW_SEARCHER";
+
     public static enum WorkflowStatuses { OPEN, RESOLVED, CANCELLED };
 
     // RULES ENGIGE
@@ -569,6 +570,9 @@ public final class WebKeys {
 
     //VISITOR
     public static final String VISITOR = "com.dotcms.visitor";
+
+    //STATIC PUBLISHING
+    public static final String IS_STATIC_PUBLISHING = "com.dotmarketing.static.publishing";
 
     public static class Cache
     {

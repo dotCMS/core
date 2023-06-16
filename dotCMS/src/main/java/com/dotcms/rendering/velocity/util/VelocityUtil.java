@@ -59,6 +59,7 @@ public class VelocityUtil {
     public final static String REFRESH="refresh";
     public final static String NO="no";
     public final static String DOTCACHE="dotcache";
+	public static final String STATIC_PUSH_PUBLISH = "StaticPushPublish";
 	private static VelocityEngine ve = null;
 	private static Map<String, String> digitToLetter = new HashMap<>();
 
@@ -198,7 +199,7 @@ public class VelocityUtil {
 
 		String [] notallwdvelvars={"inode","type", "modDate", "owner", "ownerCanRead", "ownerCanWrite", "ownerCanPublish",
 				"modUser", "working", "live", "deleted", "locked","structureInode", "languageId", "permissions",
-				"identifier", "conHost", "conFolder", "Host", "folder"}; 
+				"identifier", "conHost", "conFolder", "Host", "folder", STATIC_PUSH_PUBLISH};
 		Boolean found=false;
 		for(String notallowed : notallwdvelvars){
 			 if(variable.equalsIgnoreCase(notallowed)){
@@ -338,7 +339,10 @@ public class VelocityUtil {
         }
         
         final ChainedContext context = new ChainedContext( ctx== null ? getBasicContext() : ctx , getEngine(), request, response );
-    
+
+		if (request.getAttribute(WebKeys.IS_STATIC_PUBLISHING) != null) {
+			context.put(STATIC_PUSH_PUBLISH, request.getAttribute(WebKeys.IS_STATIC_PUBLISHING));
+		}
         
         context.put("context", context);
 

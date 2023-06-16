@@ -9,6 +9,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import org.apache.velocity.context.Context;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -16,6 +17,7 @@ import static com.dotcms.uuid.shorty.ShortyIdAPIImpl.MINIMUM_SHORTY_ID_LENGTH;
 import static com.liferay.util.StringPool.FORWARD_SLASH;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 /**
  * Verifies that the {@link BinaryMap} available in certain ViewTools is working as expected.
@@ -46,7 +48,10 @@ public class BinaryMapTest {
         final Field binaryField = APILocator.getContentTypeFieldAPI()
                 .byContentTypeIdAndVar(banner.getContentTypeId(), "image");
 
-        final BinaryMap binaryMap = new BinaryMap(banner, new LegacyFieldTransformer(binaryField).asOldField());
+        final Context velocityContext = mock(Context.class);
+
+        final BinaryMap binaryMap = new BinaryMap(banner,
+                new LegacyFieldTransformer(binaryField).asOldField(), velocityContext);
 
         assertEquals("154.8 K", binaryMap.getSize());
     }
@@ -64,7 +69,10 @@ public class BinaryMapTest {
         final Field binaryField = APILocator.getContentTypeFieldAPI()
                 .byContentTypeIdAndVar(banner.getContentTypeId(), "image");
 
-        final BinaryMap binaryMap = new BinaryMap(banner, new LegacyFieldTransformer(binaryField).asOldField());
+        final Context velocityContext = mock(Context.class);
+
+        final BinaryMap binaryMap = new BinaryMap(banner,
+                new LegacyFieldTransformer(binaryField).asOldField(), velocityContext);
 
         assertEquals(800, binaryMap.getWidth());
     }
@@ -82,7 +90,10 @@ public class BinaryMapTest {
         final Field binaryField = APILocator.getContentTypeFieldAPI()
                 .byContentTypeIdAndVar(banner.getContentTypeId(), "image");
 
-        final BinaryMap binaryMap = new BinaryMap(banner, new LegacyFieldTransformer(binaryField).asOldField());
+        final Context velocityContext = mock(Context.class);
+
+        final BinaryMap binaryMap = new BinaryMap(banner,
+                new LegacyFieldTransformer(binaryField).asOldField(), velocityContext);
 
         assertEquals(500, binaryMap.getHeight());
     }
@@ -100,7 +111,10 @@ public class BinaryMapTest {
         final Field binaryField = APILocator.getContentTypeFieldAPI()
                 .byContentTypeIdAndVar(banner.getContentTypeId(), "image");
 
-        final BinaryMap binaryMap = new BinaryMap(banner, new LegacyFieldTransformer(binaryField).asOldField());
+        final Context velocityContext = mock(Context.class);
+
+        final BinaryMap binaryMap = new BinaryMap(banner,
+                new LegacyFieldTransformer(binaryField).asOldField(), velocityContext);
 
         assertTrue(binaryMap.getFile().getName().startsWith("image"));
         assertTrue(binaryMap.getFile().getName().endsWith("jpg"));
@@ -119,7 +133,10 @@ public class BinaryMapTest {
         final Field binaryField = APILocator.getContentTypeFieldAPI()
                 .byContentTypeIdAndVar(banner.getContentTypeId(), "image");
 
-        final BinaryMap binaryMap = new BinaryMap(banner, new LegacyFieldTransformer(binaryField).asOldField());
+        final Context velocityContext = mock(Context.class);
+
+        final BinaryMap binaryMap = new BinaryMap(banner,
+                new LegacyFieldTransformer(binaryField).asOldField(), velocityContext);
 
         assertTrue(binaryMap.getThumbnailUri().startsWith("/contentAsset/image/"));
         assertTrue(binaryMap.getThumbnailUri().endsWith("/image/filter/Thumbnail"));
@@ -138,7 +155,10 @@ public class BinaryMapTest {
         final Field binaryField = APILocator.getContentTypeFieldAPI()
                 .byContentTypeIdAndVar(banner.getContentTypeId(), "image");
 
-        final BinaryMap binaryMap = new BinaryMap(banner, new LegacyFieldTransformer(binaryField).asOldField());
+        final Context velocityContext = mock(Context.class);
+
+        final BinaryMap binaryMap = new BinaryMap(banner,
+                new LegacyFieldTransformer(binaryField).asOldField(), velocityContext);
 
         assertTrue(binaryMap.getShortyUrlInode().startsWith("/dA/"));
         assertTrue(binaryMap.getShortyUrlInode().endsWith(".jpg"));
@@ -157,7 +177,10 @@ public class BinaryMapTest {
         final Field binaryField = APILocator.getContentTypeFieldAPI()
                 .byContentTypeIdAndVar(banner.getContentTypeId(), "image");
 
-        final BinaryMap binaryMap = new BinaryMap(banner, new LegacyFieldTransformer(binaryField).asOldField());
+        final Context velocityContext = mock(Context.class);
+
+        final BinaryMap binaryMap = new BinaryMap(banner,
+                new LegacyFieldTransformer(binaryField).asOldField(), velocityContext);
 
         assertEquals(MINIMUM_SHORTY_ID_LENGTH, binaryMap.getShorty().length());
     }
@@ -184,7 +207,10 @@ public class BinaryMapTest {
         final Field binaryField = APILocator.getContentTypeFieldAPI()
                 .byContentTypeIdAndVar(banner.getContentTypeId(), IMAGE_FIELD_VAR_NAME);
 
-        final BinaryMap binaryMap = new BinaryMap(banner, new LegacyFieldTransformer(binaryField).asOldField());
+        final Context velocityContext = mock(Context.class);
+
+        final BinaryMap binaryMap = new BinaryMap(banner,
+                new LegacyFieldTransformer(binaryField).asOldField(), velocityContext);
         final String rawUri = "/dA/" + binaryMap.getShorty() + FORWARD_SLASH + IMAGE_FIELD_VAR_NAME + FORWARD_SLASH;
 
         assertTrue("The generated Raw URI does not match the expected format",
@@ -211,7 +237,10 @@ public class BinaryMapTest {
         final Field binaryField = APILocator.getContentTypeFieldAPI()
                 .byContentTypeIdAndVar(banner.getContentTypeId(), IMAGE_FIELD_VAR_NAME);
 
-        final BinaryMap binaryMap = new BinaryMap(banner, new LegacyFieldTransformer(binaryField).asOldField());
+        final Context velocityContext = mock(Context.class);
+
+        final BinaryMap binaryMap = new BinaryMap(banner,
+                new LegacyFieldTransformer(binaryField).asOldField(), velocityContext);
         final String rawUri = "/dA/" + banner.getIdentifier() + FORWARD_SLASH + IMAGE_FIELD_VAR_NAME + FORWARD_SLASH;
         final String[] uriArray = binaryMap.getRawUri().split(FORWARD_SLASH);
 
@@ -233,7 +262,10 @@ public class BinaryMapTest {
         final Field binaryField = APILocator.getContentTypeFieldAPI()
                 .byContentTypeIdAndVar(banner.getContentTypeId(), "image");
 
-        final BinaryMap binaryMap = new BinaryMap(banner, new LegacyFieldTransformer(binaryField).asOldField());
+        final Context velocityContext = mock(Context.class);
+
+        final BinaryMap binaryMap = new BinaryMap(banner,
+                new LegacyFieldTransformer(binaryField).asOldField(), velocityContext);
 
         assertTrue(binaryMap.getName().startsWith("image"));
         assertTrue(binaryMap.getName().endsWith(".jpg"));

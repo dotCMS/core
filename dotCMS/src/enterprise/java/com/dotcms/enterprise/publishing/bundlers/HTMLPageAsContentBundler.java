@@ -378,7 +378,7 @@ public class HTMLPageAsContentBundler implements IBundler {
 							.getHTML(htmlPageWrapper.getAsset().getURI(),
 									site, live, htmlPageWrapper.getAsset().getInode(),
 									uAPI.getSystemUser(), tryingLang,
-									getUserAgent(config));
+									getUserAgent(config), this.config.isStatic());
 					if (UtilMethods.isSet(html)) {
 						outputStream.write(html.getBytes());
 					} else {

@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.Optional;
+
+import com.dotcms.rendering.velocity.util.VelocityUtil;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
@@ -18,6 +20,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.Lazy;
+import org.apache.velocity.context.Context;
 
 /**
  * A helper class to provide an object to return to the dotCMS when a content has a binary field
@@ -30,15 +33,18 @@ public class BinaryMap {
 	private final Contentlet content;
 	private final Field field;
 
+	private final boolean includeLanguageInLink;
 	
-	public BinaryMap(Contentlet content, Field field) {
+	public BinaryMap(Contentlet content, Field field, Context context) {
 		this.content = content;
 		this.field = field;
-
+		this.includeLanguageInLink = !(context.containsKey(VelocityUtil.STATIC_PUSH_PUBLISH)
+				&& (boolean) context.get(VelocityUtil.STATIC_PUSH_PUBLISH));
 	}
 	
-    public BinaryMap(Contentlet content, com.dotmarketing.portlets.structure.model.Field field) {
-        this(content, new LegacyFieldTransformer(field).from() );
+    public BinaryMap(Contentlet content,
+					 com.dotmarketing.portlets.structure.model.Field field, Context context) {
+        this(content, new LegacyFieldTransformer(field).from(), context);
     }
     
     Lazy<Metadata> meta = Lazy.of(this::getMetadata);
@@ -117,14 +123,17 @@ public class BinaryMap {
 	 */
     public String getRawUri() {
         return getName().length() > 0
-            ? UtilMethods.espaceForVelocity("/dA/" + content.getIdentifier() + "/" + field.variable() + "/" + getName()+ "?language_id=" + content.getLanguageId())
+            ? UtilMethods.espaceForVelocity("/dA/" + content.getIdentifier() + "/"
+				+ field.variable() + "/" + getName()
+				+ (includeLanguageInLink ? "?language_id=" + content.getLanguageId() : ""))
             : null;
     }
 
     public String getShortyUrl() {
 
         if(meta.get() != null) {
-            return "/dA/"+getShorty()+"/"+field.variable()+"/" + getName()+ "?language_id=" + content.getLanguageId();
+            return "/dA/"+getShorty()+"/"+field.variable()+"/" + getName()
+					+ (includeLanguageInLink ? "?language_id=" + content.getLanguageId() : "");
         } else {
 	        return null;
         }

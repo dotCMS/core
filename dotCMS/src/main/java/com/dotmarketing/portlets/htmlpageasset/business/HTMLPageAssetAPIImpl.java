@@ -722,10 +722,18 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 	}
 
 
-    @CloseDBIfOpened
 	@Override
-    public String getHTML(final String uri, final Host host, final boolean liveMode, final String contentId, final User user, final long viewingLang,
-            String userAgent) throws DotStateException, DotDataException, DotSecurityException {
+    public String getHTML(String uri, Host host, boolean liveMode,
+            String contentId, User user, long langId, String userAgent) throws DotStateException, DotDataException, DotSecurityException {
+        return getHTML(uri, host, liveMode, contentId, user, langId, userAgent, false);
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public String getHTML(final String uri, final Host host, final boolean liveMode,
+            final String contentId, User user, final long viewingLang,
+            final String userAgent, final boolean isStaticPublishing)
+            throws DotStateException, DotDataException, DotSecurityException {
 
         HttpServletRequest requestProxy =
             new MockAttributeRequest(
@@ -828,9 +836,10 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
                 requestProxy.setAttribute(WebKeys.WIKI_CONTENTLET, contentId);
             }
 
-
- 
-
+            if (isStaticPublishing) {
+                requestProxy.setAttribute(WebKeys.IS_STATIC_PUBLISHING, true);
+            }
+            
             LanguageWebAPI langWebAPI = WebAPILocator.getLanguageWebAPI();
             langWebAPI.checkSessionLocale(requestProxy);
 
@@ -844,7 +853,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         } 
 
     }
-	
+
     /**
      * This returns the proper ihtml page based on id, state and language
      * 
