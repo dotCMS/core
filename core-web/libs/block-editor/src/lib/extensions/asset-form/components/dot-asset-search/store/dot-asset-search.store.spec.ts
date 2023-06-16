@@ -159,7 +159,7 @@ describe('DotAssetSearchStore', () => {
             });
 
             expect(searchService.get).toHaveBeenCalledWith({
-                query: `+catchall:${query} +title:'${query}'^15 +languageId:1 +baseType:(4 OR 9) +metadata.contenttype:image/* +deleted:false +working:true`,
+                query: `+catchall:${query}* +title:'${query}'^15 +languageId:1 +baseType:(4 OR 9) +metadata.contenttype:image/* +deleted:false +working:true`,
                 sortOrder: ESOrderDirection.ASC,
                 limit: 20,
                 offset: 0
@@ -172,13 +172,13 @@ describe('DotAssetSearchStore', () => {
             expect(service.updateSearch).toHaveBeenCalledWith(query);
         });
 
-        test('should set +catchall:* on search when the query is empty', (done) => {
+        test('should not add "*" when the search has a "-" ', (done) => {
             const contentlets = CONTENTLETS_MOCK_WITH_LANG;
             jest.spyOn(searchService, 'get').mockReturnValue(
                 of({ jsonObjectView: { contentlets } })
             );
 
-            const query = '';
+            const query = 'hola-';
 
             service.searchContentlet(query);
 
@@ -193,7 +193,7 @@ describe('DotAssetSearchStore', () => {
             });
 
             expect(searchService.get).toHaveBeenCalledWith({
-                query: `+catchall:* +title:'${query}'^15 +languageId:1 +baseType:(4 OR 9) +metadata.contenttype:image/* +deleted:false +working:true`,
+                query: `+catchall:${query} +title:'${query}'^15 +languageId:1 +baseType:(4 OR 9) +metadata.contenttype:image/* +deleted:false +working:true`,
                 sortOrder: ESOrderDirection.ASC,
                 limit: 20,
                 offset: 0
