@@ -94,7 +94,7 @@ describe('TemplateBuilderBoxComponent', () => {
         spectator.detectComponentChanges();
 
         const addButton = spectator.query(byTestId('btn-plus-small'));
-        const paletteButton = spectator.query(byTestId('btn-palette-small'));
+        const paletteButton = spectator.query(byTestId('box-style-class-button-small'));
         const deleteButton = spectator.query(byTestId('btn-remove-item'));
         expect(addButton).toBeTruthy();
         expect(paletteButton).toBeTruthy();
@@ -109,9 +109,9 @@ describe('TemplateBuilderBoxComponent', () => {
         expect(addContainerMock).toHaveBeenCalled();
     });
 
-    it('should trigger editStyle when click on palette button', () => {
-        const editStyleMock = jest.spyOn(spectator.component.editStyle, 'emit');
-        const paletteButton = spectator.query(byTestId('btn-palette'));
+    it('should trigger editClasses when click on palette button', () => {
+        const editStyleMock = jest.spyOn(spectator.component.editClasses, 'emit');
+        const paletteButton = spectator.query(byTestId('box-style-class-button'));
 
         spectator.dispatchFakeEvent(paletteButton, 'onClick');
 

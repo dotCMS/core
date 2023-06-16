@@ -40,6 +40,7 @@
         [attr.gs-w]="row.w"
         [attr.gs-h]="row.h"
         (deleteRow)="deleteRow(row.id)"
+        (editClasses)="editRowStyleClasses(row.id, row.styleClass)"
         data-testId="row"
     >
         <div class="grid-stack-item-content grid-stack">
@@ -60,6 +61,7 @@
                     [items]="box.containers"
                     [width]="box.w"
                     (deleteColumn)="removeColumn(box, boxElement, row.id)"
+                    (editClasses)="editBoxStyleClasses(row.id, box)"
                 ></dotcms-template-builder-box>
             </div>
         </div>

@@ -235,9 +235,97 @@ export const MESSAGES_MOCK = {
     'dot.template.builder.header': 'Header',
     'dot.template.builder.footer': 'Footer',
     'dot.template.builder.toolbar.button.layout.label': 'Layout',
-    'dot.template.builder.toolbar.button.theme.label': 'Theme'
+    'dot.template.builder.toolbar.button.theme.label': 'Theme',
+    'dot.template.builder.classes.dialog.update.button': 'Update',
+    'dot.template.builder.classes.dialog.autocomplete.label': 'Class',
+    'dot.template.builder.classes.dialog.header.label': 'Edit Classes'
 };
 
 export const DOT_MESSAGE_SERVICE_TB_MOCK = new MockDotMessageService(MESSAGES_MOCK);
 
 export const MOCK_TEXT = 'Header';
+
+export const MOCK_SELECTED_STYLE_CLASSES = [
+    'd-flex',
+    'flex-column',
+    'justify-content-center',
+    'align-items-center'
+];
+
+export const MOCK_STYLE_CLASSES_FILE = {
+    classes: [
+        'd-none',
+        'd-inline',
+        'd-inline-block',
+        'd-block',
+        'd-grid',
+        'd-table',
+        'd-table-row',
+        'd-table-cell',
+        'd-flex',
+        'd-inline-flex',
+        'd-sm-none',
+        'd-sm-inline',
+        'd-sm-inline-block',
+        'flex-row',
+        'flex-column',
+        'flex-row-reverse',
+        'flex-column-reverse',
+        'flex-grow-0',
+        'flex-grow-1',
+        'flex-shrink-0',
+        'flex-shrink-1',
+        'flex-fill',
+        'justify-content-start',
+        'justify-content-end',
+        'justify-content-center',
+        'justify-content-between',
+        'justify-content-around',
+        'justify-content-evenly',
+        'align-items-start',
+        'align-items-end',
+        'align-items-center',
+        'align-items-baseline',
+        'align-items-stretch',
+        'align-self-start',
+        'align-self-end',
+        'align-self-center',
+        'align-self-baseline',
+        'align-self-stretch',
+        'flex-nowrap',
+        'flex-wrap',
+        'flex-wrap-reverse',
+        'float-start',
+        'float-end',
+        'text-start',
+        'text-end',
+        'text-center',
+        'text-justify'
+    ]
+};
+
+export const mockMatchMedia = () => {
+    Object.defineProperty(window, 'matchMedia', {
+        writable: true,
+        value: (query: unknown) => ({
+            matches: false,
+            media: query,
+            onchange: null,
+            addListener: () => {
+                /* */
+            }, // Deprecated
+            removeListener: () => {
+                /* */
+            }, // Deprecated
+            addEventListener: () => {
+                /* */
+            },
+            removeEventListener: () => {
+                /* */
+            },
+            dispatchEvent: () => {
+                /* */
+            }
+        })
+    });
+};
