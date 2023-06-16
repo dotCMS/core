@@ -22,13 +22,13 @@ public class ResizeImageFilter extends ImageFilter {
 	}
 	public File runFilter(final File file,    Map<String, String[]> parameters) {
 
-        int w = Try.of(()-> Integer.parseInt(parameters.getOrDefault(getPrefix() + "w", new String[]{"0"})[0])).getOrElse(0);
-        int h = Try.of(()-> Integer.parseInt(parameters.getOrDefault(getPrefix() + "h", new String[]{"0"})[0])).getOrElse(0);
-        int resampleOpts = Try.of(()-> Integer.parseInt(parameters.get(getPrefix() +"ro")[0])).getOrElse(ImageFilterApiImpl.DEFAULT_RESAMPLE_OPT);
-        int mxw = Try.of(()-> Integer.parseInt(parameters.getOrDefault(getPrefix() + "maxw", new String[]{"0"})[0])).getOrElse(0);
-        int mxh = Try.of(()-> Integer.parseInt(parameters.getOrDefault(getPrefix() + "maxh", new String[]{"0"})[0])).getOrElse(0);
-        int mnw = Try.of(()-> Integer.parseInt(parameters.getOrDefault(getPrefix() + "minw", new String[]{"0"})[0])).getOrElse(0);
-        int mnh = Try.of(()-> Integer.parseInt(parameters.getOrDefault(getPrefix() + "minh", new String[]{"0"})[0])).getOrElse(0);
+        final int w = Try.of(()-> Integer.parseInt(parameters.getOrDefault(getPrefix() + "w", new String[]{"0"})[0])).getOrElse(0);
+		final int h = Try.of(()-> Integer.parseInt(parameters.getOrDefault(getPrefix() + "h", new String[]{"0"})[0])).getOrElse(0);
+		final int resampleOpts = Try.of(()-> Integer.parseInt(parameters.get(getPrefix() +"ro")[0])).getOrElse(ImageFilterApiImpl.DEFAULT_RESAMPLE_OPT);
+		final int mxw = Try.of(()-> Integer.parseInt(parameters.getOrDefault(getPrefix() + "maxw", new String[]{"0"})[0])).getOrElse(0);
+		final int mxh = Try.of(()-> Integer.parseInt(parameters.getOrDefault(getPrefix() + "maxh", new String[]{"0"})[0])).getOrElse(0);
+		final int mnw = Try.of(()-> Integer.parseInt(parameters.getOrDefault(getPrefix() + "minw", new String[]{"0"})[0])).getOrElse(0);
+		final int mnh = Try.of(()-> Integer.parseInt(parameters.getOrDefault(getPrefix() + "minh", new String[]{"0"})[0])).getOrElse(0);
         
         
         
@@ -76,10 +76,8 @@ public class ResizeImageFilter extends ImageFilter {
             srcImage = null;
             if(tempResultFile.renameTo(resultFile)) {
                 return resultFile;
-            }else {
-                throw new DotRuntimeException("unable to create tmp file :" + resultFile);
             }
-
+			throw new DotRuntimeException("unable to create tmp file :" + resultFile);
         } catch (Exception e) {
             throw new DotRuntimeException("unable to convert file:" +file + " : " +  e.getMessage(),e);
         }
