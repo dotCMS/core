@@ -127,9 +127,9 @@ export class DotExperimentsConfigurationTrafficSplitAddComponent implements OnIn
      * @memberof DotExperimentsConfigurationTrafficSplitAddComponent
      */
     checkControl(arrayIndex: number, value: number): void {
-        (
-          (this.form.get("variants") as FormArray).controls[arrayIndex] as FormGroup
-        ).controls["weight"].setValue(value);
+        ((this.form.get('variants') as FormArray).controls[arrayIndex] as FormGroup).controls[
+            'weight'
+        ].setValue(value);
     }
 
     private initForm() {

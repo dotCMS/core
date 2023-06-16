@@ -13,7 +13,6 @@ import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-he
     selector: 'dot-experiments-shell',
     imports: [
         RouterModule,
-        // DotLoadingIndicatorModule,
         DotExperimentsUiHeaderComponent,
         // PrimeNg
         ToastModule
