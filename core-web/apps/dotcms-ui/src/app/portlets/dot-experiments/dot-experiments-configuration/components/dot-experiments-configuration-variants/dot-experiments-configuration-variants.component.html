@@ -3,15 +3,15 @@
         <ng-template pTemplate="title">
             <div class="flex justify-content-between">
                 <h2 class="flex align-items-center gap-1 uppercase">
-                    <span class="p-label-input-required" data-testId="variants-card-header">{{
-                        'experiments.configure.variants.name' | dm
-                    }}</span>
                     <dot-icon
                         [ngClass]="{ isDone: vm.trafficProportion.variants?.length > 1 }"
                         data-testId="variant-title-step-done"
                         name="check_circle"
                         size="16"
                     ></dot-icon>
+                    <span class="p-label-input-required" data-testId="variants-card-header">{{
+                        'experiments.configure.variants.name' | dm
+                    }}</span>
                 </h2>
                 <dot-experiments-configuration-items-count
                     [count]="vm.trafficProportion.variants?.length"
@@ -139,8 +139,8 @@
                                     editVariantName(variantName.value, variant, vm.experimentId)
                                 "
                                 data-testId="inplace-input"
-                                maxlength="maxNameLength"
                                 dotAutofocus
+                                maxlength="maxNameLength"
                                 pInputText
                                 type="text"
                             />

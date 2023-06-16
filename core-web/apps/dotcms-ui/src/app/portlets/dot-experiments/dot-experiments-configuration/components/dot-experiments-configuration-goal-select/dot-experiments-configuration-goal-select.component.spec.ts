@@ -128,7 +128,7 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
     it('should have rendered BOUCE_RATE and REACH_PAGE options items', () => {
         const optionsRendered = spectator.queryAll(byTestId('dot-options-item-header'));
 
-        expect(optionsRendered.length).toBe(2);
+        expect(optionsRendered.length).toBe(3);
     });
 
     it('should be a form valid in case of click on a No content option item', () => {
@@ -234,12 +234,13 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
     });
 
     it('should add the class expand to an option clicked that contains content', () => {
-        const reachPageOption = spectator.queryLast(byTestId('dot-options-item-header'));
+        const goalsOption = spectator.queryAll(byTestId('dot-options-item-header'));
+        spectator.click(goalsOption[1]);
 
-        spectator.click(reachPageOption);
         spectator.detectComponentChanges();
+        const contentRendered = spectator.queryAll(byTestId('dot-options-item-content'));
 
-        expect(spectator.query(byTestId('dot-options-item-content'))).toHaveClass('expanded');
+        expect(contentRendered[0]).toHaveClass('expanded');
     });
 
     it('should emit closedSidebar when the sidebar its closed', async () => {
