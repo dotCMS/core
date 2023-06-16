@@ -22,14 +22,12 @@ import {
     ViewChildren
 } from '@angular/core';
 
-import { DotContainer, DotLayout } from '@dotcms/dotcms-models';
-import { tap } from 'rxjs/operators';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { filter, take, tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotLayout } from '@dotcms/dotcms-models';
+import { DotContainer, DotLayout } from '@dotcms/dotcms-models';
 
 import { colIcon, rowIcon } from './assets/icons';
 import { AddStyleClassesDialogComponent } from './components/add-style-classes-dialog/add-style-classes-dialog.component';

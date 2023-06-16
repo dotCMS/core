@@ -3,7 +3,7 @@
  */
 export interface DotPageContainer {
     identifier: string;
-    uuid: string;
+    uuid?: string;
     contentletsId?: string[];
     path?: string;
 }
