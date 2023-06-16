@@ -1,11 +1,10 @@
 # ----------------------------------------------
 # Stage 1:  Build dotCMS from our builder image
 # ----------------------------------------------
-FROM dotcms/dotcms:latest as dotcms
+#FROM dotcms/dotcms:latest as dotcms
+
 
 FROM ubuntu:22.04
-
-
 
 LABEL com.dotcms.contact "support@dotcms.com"
 LABEL com.dotcms.vendor "dotCMS LLC"
@@ -22,7 +21,7 @@ RUN groupadd -f -g $USER_GID $USER_GROUP
 # the useradd
 RUN useradd -l -d /srv -g $USER_GID -u $USER_UID $USER_NAME
 
-COPY --from=dotcms --chown=$USER_NAME:$USER_GROUP /srv/ /srv/
+COPY --from=dotcms/dotcms:latest --chown=$USER_NAME:$USER_GROUP /srv/ /srv/
 
 ARG DEBIAN_FRONTEND=noninteractive
 ENV PG_VERSION=14
@@ -67,5 +66,3 @@ COPY entrypoint.sh /
 RUN chmod 755 /entrypoint.sh
 
 ENTRYPOINT ["/usr/bin/tini", "--", "/entrypoint.sh"]
-
-
