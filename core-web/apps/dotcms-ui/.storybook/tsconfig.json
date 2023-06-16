@@ -6,9 +6,7 @@
     "exclude": ["../**/*.spec.ts"],
     "include": [
         "../src/**/*",
-        "../../../libs/utils-testing/src/clean-up-dialog.ts",
-        "../../../libs/dotcms-models/src/lib/dot-es-content.model.ts",
-        "../../../libs/dotcms-models/src/lib/dot-what-changed.model.ts",
-        "../../../libs/ui/src/lib/dot-message"
+        "../../../**/template-builder/**/src/lib/**/*.stories.ts",
+        "../../../**/block-editor/**/src/lib/**/*.stories.ts"
     ]
 }

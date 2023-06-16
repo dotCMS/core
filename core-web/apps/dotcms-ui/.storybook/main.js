@@ -9,7 +9,9 @@ module.exports = {
     stories: [
         ...rootMain.stories,
         '../src/**/*.stories.mdx',
-        '../src/**/*.stories.@(js|jsx|ts|tsx)'
+        '../src/**/*.stories.@(js|jsx|ts|tsx)',
+        '../../../libs/template-builder/**/*.stories.@(js|jsx|ts|tsx|mdx)',
+        '../../../libs/block-editor/**/*.stories.@(js|jsx|ts|tsx|mdx)'
     ],
     addons: ['@storybook/addon-essentials', ...rootMain.addons],
     features: {
