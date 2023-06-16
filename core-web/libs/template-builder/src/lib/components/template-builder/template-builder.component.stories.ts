@@ -21,7 +21,7 @@ import { TemplateBuilderComponent } from './template-builder.component';
 import { DOT_MESSAGE_SERVICE_TB_MOCK, FULL_DATA_MOCK } from './utils/mocks';
 
 export default {
-    title: 'Template Builder',
+    title: 'Library/Template Builder',
     component: TemplateBuilderComponent,
     decorators: [
         moduleMetadata({
