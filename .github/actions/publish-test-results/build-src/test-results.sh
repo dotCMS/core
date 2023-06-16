@@ -189,61 +189,71 @@ function persistResults {
   fi
 }
 
+function gatherResults {
+  local results_base_path=$1
+  executeCmd "cp -R ${results_base_path}/postman/reports/xml/* ${INPUT_TESTS_RESULTS_LOCATION}/"
+  executeCmd "cat ./postman-results-header.html > ./index.html"
+  executeCmd "cat ./*.inc >> ./index.html"
+  executeCmd "cat ./postman-results-footer.html >> ./index.html"
+  executeCmd "rm ./*.inc"
+  executeCmd "rm ./postman-results-header.html"
+  executeCmd "rm ./postman-results-footer.html"
+  executeCmd "cat ./index.html"
+  executeCmd "ls -las ."
+}
+
 # Executes logic for matrix partitioned tests such as postman tests
 function closeResults {
-  if [[ "${INPUT_TEST_TYPE}" == 'postman' ]]; then
-    local test_results_repo_url=$(resolveRepoUrl ${TEST_RESULTS_GITHUB_REPO} ${INPUT_CICD_GITHUB_TOKEN} ${GITHUB_USER})
-    local test_results_path=${INPUT_PROJECT_ROOT}/${TEST_RESULTS_GITHUB_REPO}
+  [[ "${INPUT_TEST_TYPE}" != 'postman' ]] && return 1
 
-    gitRemoteLs ${test_results_repo_url} ${BUILD_ID}
-    local remote_branch=$?
-    echo "Branch ${BUILD_ID} exists: ${remote_branch}"
-    [[ ${remote_branch} != 1 ]] \
-      && echo "Tests results branch ${BUILD_ID} does not exist, cannot close results" \
-      && exit 1
+  local test_results_repo_url=$(resolveRepoUrl ${TEST_RESULTS_GITHUB_REPO} ${INPUT_CICD_GITHUB_TOKEN} ${GITHUB_USER})
+  local test_results_path=${INPUT_PROJECT_ROOT}/${TEST_RESULTS_GITHUB_REPO}
 
-    gitClone ${test_results_repo_url} ${BUILD_ID} ${test_results_path}
+  gitRemoteLs ${test_results_repo_url} ${BUILD_ID}
+  local remote_branch=$?
+  echo "Branch ${BUILD_ID} exists: ${remote_branch}"
+  [[ ${remote_branch} != 1 ]] \
+    && echo "Tests results branch ${BUILD_ID} does not exist, cannot close results" \
+    && exit 1
 
-    local results_base_path=${test_results_path}/projects/${INPUT_TARGET_PROJECT}
-    [[ "${MULTI_COMMIT}" == 'true' ]] && results_base_path="${results_base_path}/${INPUT_BUILD_HASH}"
+  gitClone ${test_results_repo_url} ${BUILD_ID} ${test_results_path}
 
-    executeCmd "mkdir -p ${INPUT_TESTS_RESULTS_LOCATION}"
-    executeCmd "cp -R ${results_base_path}/postman/reports/xml/* ${INPUT_TESTS_RESULTS_LOCATION}/"
-    setOutput tests_results_location ${INPUT_TESTS_RESULTS_LOCATION}
+  local base_path=${test_results_path}/projects/${INPUT_TARGET_PROJECT}
+  local results_base_path=${base_path}
+  [[ "${MULTI_COMMIT}" == 'true' ]] && results_base_path="${results_base_path}/${INPUT_BUILD_HASH}"
 
-    cd ${results_base_path}/postman/reports/html
-    gitConfig ${GITHUB_USER}
+  cd ${results_base_path}/postman/reports/html
+  gitConfig ${GITHUB_USER}
+  executeCmd "mkdir -p ${INPUT_TESTS_RESULTS_LOCATION}"
+  setOutput tests_results_location ${INPUT_TESTS_RESULTS_LOCATION}
 
-    executeCmd "cat ./postman-results-header.html > ./index.html"
-    executeCmd "cat ./*.inc >> ./index.html"
-    executeCmd "cat ./postman-results-footer.html >> ./index.html"
-    executeCmd "rm ./*.inc"
-    executeCmd "rm ./postman-results-header.html"
-    executeCmd "rm ./postman-results-footer.html"
-    executeCmd "cat ./index.html"
-    executeCmd "ls -las ."
+  gatherResults ${results_base_path}
+  [[ "${MULTI_COMMIT}" == 'true' ]] \
+    && results_base_path=${base_path}/current \
+    && cd ${results_base_path}/postman/reports/html \
+    && gatherResults ${results_base_path}
 
-    executeCmd "git status"
-    executeCmd "git add ."
-    executeCmd "git commit -m \"Closing results for branch ${BUILD_ID}\""
-    executeCmd "git pull origin ${BUILD}"
-    executeCmd "git push ${test_results_repo_url}"
-    if [[ ${cmd_result} != 0 ]]; then
-      echo "Error pushing to git for ${INPUT_BUILD_HASH} at ${INPUT_BUILD_ID}, error code: ${cmd_result}"
-      exit 1
-    fi
-
-    for rc_file in *.rc; do
-      local rc_content=$(cat ${rc_file})
-      eval "${rc_content}"
-      if [[ -z "${test_results_rc}" || ${test_results_rc} != 0 ]]; then
-        echo "Error return code at ${rc_file} with content [${rc_content}]"
-        return ${test_results_rc}
-      fi
-    done
-
-    return 0
+  cd ${base_path}
+  executeCmd "git status"
+  executeCmd "git add ."
+  executeCmd "git commit -m \"Closing results for branch ${BUILD_ID}\""
+  executeCmd "git pull origin ${BUILD}"
+  executeCmd "git push ${test_results_repo_url}"
+  if [[ ${cmd_result} != 0 ]]; then
+    echo "Error pushing to git for ${INPUT_BUILD_HASH} at ${INPUT_BUILD_ID}, error code: ${cmd_result}"
+    exit 1
   fi
+
+  for rc_file in *.rc; do
+    local rc_content=$(cat ${rc_file})
+    eval "${rc_content}"
+    if [[ -z "${test_results_rc}" || ${test_results_rc} != 0 ]]; then
+      echo "Error return code at ${rc_file} with content [${rc_content}]"
+      return ${test_results_rc}
+    fi
+  done
+
+  return 0
 }
 
 # Creates a summary status file for test the specific INPUT_TEST_TYPE, INPUT_DB_TYPE in both commit and branch paths.
