@@ -18,6 +18,26 @@ const dictionary = {
     '900': '1000'
 };
 
+type HslObject = { hue: string; saturation: string; lightness: string };
+
+function parseHSL(hslString: string): HslObject {
+    // Use regex to match HSL values with their units
+    const regex = /hsl\((\d+deg),\s*(\d+%),\s*(\d+)%\)/;
+    const match = hslString.match(regex);
+
+    // Check if HSL values were found
+    if (match) {
+        return {
+            hue: match[1],
+            saturation: match[2],
+            lightness: match[3]
+        };
+    } else {
+        // Handle case where input was not in correct format
+        throw new Error('Input is not a valid HSL color string');
+    }
+}
+
 @Injectable()
 export class DotUiColorsService {
     private currentColors: DotUiColors;
@@ -54,12 +74,32 @@ export class DotUiColorsService {
         }
     }
 
-    private setColor(el: HTMLElement, color: string, type: string): void {
-        const shades = ShadeGenerator.hue(color).shadesMap('hsl');
+    private setColor(el: HTMLElement, hex: string, type: string): void {
+        const baseColor = ShadeGenerator.hue(hex).shade('100').hsl();
+        const baseColorHsl = parseHSL(baseColor);
+
+        el.style.setProperty(`--color-${type}-h`, baseColorHsl.hue);
+        el.style.setProperty(`--color-${type}-s`, baseColorHsl.saturation);
+
+        this.setShades(el, hex, type);
+        this.setOpacities(el, baseColorHsl.saturation, type);
+    }
+
+    private setShades(el: HTMLElement, hex: string, type: string) {
+        const shades = ShadeGenerator.hue(hex).shadesMap('hsl');
 
         for (const shade in dictionary) {
             const color = shades[dictionary[shade]];
             el.style.setProperty(`--color-palette-${type}-${shade}`, color);
+        }
+    }
+
+    private setOpacities(el: HTMLElement, saturation: string, type: string) {
+        for (let i = 1; i < 10; i++) {
+            el.style.setProperty(
+                `--color-palette-${type}-op-${i}0`,
+                `hsla(var(--color-primary-h), var(--color-primary-s), ${saturation}, 0.${i})`
+            );
         }
     }
 }
