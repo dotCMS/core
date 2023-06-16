@@ -1,0 +1,31 @@
+<ng-container *ngIf="vm$ | async as vm">
+    <div class="dialog__auto-complete-container field">
+        <label class="auto-complete-container__label" htmlFor="auto-complete-input">{{
+            'dot.template.builder.classes.dialog.autocomplete.label' | dm
+        }}</label>
+        <div class="p-fluid">
+            <p-autoComplete
+                [ngModel]="vm.selectedClasses"
+                [suggestions]="vm.filteredClasses"
+                [multiple]="true"
+                [completeOnFocus]="true"
+                [size]="446"
+                [tabindex]="1"
+                (onSelect)="onSelect($event)"
+                (onUnselect)="onUnselect()"
+                (completeMethod)="filterClasses($event)"
+                field="cssClass"
+                appendTo="body"
+                inputId="auto-complete-input"
+                name="class"
+                type="text"
+            >
+            </p-autoComplete>
+        </div>
+    </div>
+    <div class="dialog__actions-container">
+        <p-button (onClick)="saveClass(vm.selectedClasses)" data-testId="update-btn">
+            {{ 'dot.template.builder.classes.dialog.update.button' | dm }}</p-button
+        >
+    </div>
+</ng-container>
