@@ -125,8 +125,8 @@ const ExperimentMocks: Array<DotExperiment> = [
         trafficProportion: {
             type: TrafficProportionTypes.SPLIT_EVENLY,
             variants: [
-                { id: DEFAULT_VARIANT_ID, name: DEFAULT_VARIANT_NAME, weight: 50 },
-                { id: '222', name: 'Variant A', weight: 50 }
+                { id: DEFAULT_VARIANT_ID, name: DEFAULT_VARIANT_NAME, weight: 50, promoted: false },
+                { id: '222', name: 'Variant A', weight: 50, promoted: false }
             ]
         },
         creationDate: new Date('2022-08-21 14:50:03'),

@@ -9,12 +9,17 @@ import { of } from 'rxjs';
 
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
+import { ConfirmPopup, ConfirmPopupModule } from 'primeng/confirmpopup';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { ComponentStatus, DotExperimentStatusList } from '@dotcms/dotcms-models';
+import {
+    ComponentStatus,
+    DotExperimentStatusList,
+    DotExperimentVariantDetail
+} from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotExperimentsPublishVariantComponent } from '@portlets/dot-experiments/dot-experiments-reports/components/dot-experiments-publish-variant/dot-experiments-publish-variant.component';
 import { DotExperimentsReportsChartComponent } from '@portlets/dot-experiments/dot-experiments-reports/components/dot-experiments-reports-chart/dot-experiments-reports-chart.component';
 import { DotExperimentsReportsSkeletonComponent } from '@portlets/dot-experiments/dot-experiments-reports/components/dot-experiments-reports-skeleton/dot-experiments-reports-skeleton.component';
 import {
@@ -43,9 +48,12 @@ const ActivatedRouteMock = {
     }
 };
 
+const EXPERIMENT_MOCK_3 = getExperimentMock(3);
+const EXPERIMENT_RESULTS_MOCK = getExperimentResultsMock(0);
+
 const defaultVmMock: VmReportExperiment = {
-    experiment: getExperimentMock(3),
-    results: getExperimentResultsMock(1),
+    experiment: EXPERIMENT_MOCK_3,
+    results: EXPERIMENT_RESULTS_MOCK,
     chartData: CHARTJS_DATA_MOCK_WITH_DATA,
     detailData: [],
     isLoading: false,
@@ -53,12 +61,11 @@ const defaultVmMock: VmReportExperiment = {
     status: ComponentStatus.INIT,
     showSummary: false,
     winnerLegendSummary: { icon: 'icon', legend: 'legend' },
-    showPromoteDialog: false,
-    suggestedWinner: null
+    suggestedWinner: null,
+    promotedVariant: null
 };
 
 const EXPERIMENT_MOCK = getExperimentMock(0);
-const EXPERIMENT_RESULTS_MOCK = getExperimentResultsMock(0);
 
 const messageServiceMock = new MockDotMessageService({
     'experiments.configure.scheduling.name': 'xx'
@@ -69,6 +76,7 @@ describe('DotExperimentsReportsComponent', () => {
     let router: SpyObject<Router>;
     let store: DotExperimentsReportsStore;
     let dotExperimentsService: SpyObject<DotExperimentsService>;
+    let confirmPopupComponent: ConfirmPopup;
 
     const createComponent = createComponentFactory({
         imports: [
@@ -77,12 +85,14 @@ describe('DotExperimentsReportsComponent', () => {
             DotExperimentsReportsSkeletonComponent,
             DotExperimentsExperimentSummaryComponent,
             DotExperimentsDetailsTableComponent,
-            DotExperimentsPublishVariantComponent,
-            DotDynamicDirective
+            DotDynamicDirective,
+            ConfirmPopupModule,
+            ButtonModule
         ],
         component: DotExperimentsReportsComponent,
         componentProviders: [DotExperimentsReportsStore],
         providers: [
+            ConfirmationService,
             {
                 provide: ActivatedRoute,
                 useValue: ActivatedRouteMock
@@ -164,26 +174,33 @@ describe('DotExperimentsReportsComponent', () => {
         );
     });
 
-    it('should load the publish variant dialog', () => {
+    it('should show promote variant', () => {
+        const variant: DotExperimentVariantDetail = {
+            id: '111',
+            name: 'Variant 111 Name',
+            conversions: 0,
+            conversionRate: '0%',
+            conversionRateRange: '19.41% to 93.24%',
+            sessions: 0,
+            probabilityToBeBest: '7.69%',
+            isWinner: false,
+            isPromoted: false
+        };
+
         spectator.detectChanges();
+        spyOn(store, 'promoteVariant');
 
-        spectator.click(spectator.query(byTestId('publish-variant-button')));
-        spectator.detectComponentChanges();
+        spectator.click(byTestId('promote-variant-button'));
 
-        expect(spectator.query(DotExperimentsPublishVariantComponent)).toExist();
-    });
+        expect(spectator.query(ConfirmPopup)).toExist();
 
-    it('should load the publish variant dialog and close', () => {
-        spectator.detectChanges();
+        confirmPopupComponent = spectator.query(ConfirmPopup);
+        confirmPopupComponent.accept();
 
-        spectator.click(spectator.query(byTestId('publish-variant-button')));
-        spectator.detectComponentChanges();
-
-        expect(spectator.query(DotExperimentsPublishVariantComponent)).toExist();
-
-        store.hidePromoteDialog();
-        spectator.detectComponentChanges();
-
-        expect(spectator.query(DotExperimentsPublishVariantComponent)).not.toExist();
+        expect(store.promoteVariant).toHaveBeenCalledWith({
+            experimentId: '111',
+            variant: variant
+        });
+        expect(spectator.queryAll(byTestId('variant-promoted-tag')).length).toEqual(0);
     });
 });

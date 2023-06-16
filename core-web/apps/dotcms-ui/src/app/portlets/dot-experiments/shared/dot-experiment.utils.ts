@@ -102,7 +102,7 @@ export const getProbabilityToBeBest = (probability: number, noDataLabel: string)
 };
 
 export const isPromotedVariant = (experiment: DotExperiment, variantName: string): boolean => {
-    return experiment.trafficProportion.variants.find(({ id }) => id === variantName)?.promoted;
+    return !!experiment.trafficProportion.variants.find(({ id }) => id === variantName)?.promoted;
 };
 
 /*End summary functions */

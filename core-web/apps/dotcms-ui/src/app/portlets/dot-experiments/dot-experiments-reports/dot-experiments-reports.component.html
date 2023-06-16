@@ -133,7 +133,7 @@
                                 >
                                     <button
                                         class="p-button p-button-sm p-button-text"
-                                        *ngIf="!vm.promotedVariant"
+                                        *ngIf="!vm.promotedVariant && row.id !== defaultVariantId"
                                         [label]="'experiments.reports.promote' | dm"
                                         (click)="promoteVariant($event, vm.experiment.id, row)"
                                         data-testId="promote-variant-button"

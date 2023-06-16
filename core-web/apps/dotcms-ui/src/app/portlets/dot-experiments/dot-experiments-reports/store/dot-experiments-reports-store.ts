@@ -197,7 +197,7 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
     );
 
     readonly promoteVariant = this.effect(
-        (variant$: Observable<{ experimentId: string; variant: Variant }>) => {
+        (variant$: Observable<{ experimentId: string; variant: DotExperimentVariantDetail }>) => {
             return variant$.pipe(
                 switchMap((variantToPromote) => {
                     const { experimentId, variant } = variantToPromote;

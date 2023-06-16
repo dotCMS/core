@@ -8,7 +8,7 @@ import {
     PercentPipe,
     TitleCasePipe
 } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
@@ -17,7 +17,7 @@ import { ConfirmPopupModule } from 'primeng/confirmpopup';
 import { TagModule } from 'primeng/tag';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DEFAULT_VARIANT_NAME, Variant } from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_ID, DotExperimentVariantDetail } from '@dotcms/dotcms-models';
 import { DotIconModule } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotExperimentsReportsChartComponent } from '@portlets/dot-experiments/dot-experiments-reports/components/dot-experiments-reports-chart/dot-experiments-reports-chart.component';
@@ -69,8 +69,7 @@ export class DotExperimentsReportsComponent implements OnInit {
         title: this.dotMessageService.get('experiments.reports.chart.title')
     };
 
-    @ViewChild(DotDynamicDirective, { static: true }) dialogHost!: DotDynamicDirective;
-    protected readonly defaultVariantName = DEFAULT_VARIANT_NAME;
+    protected readonly defaultVariantId = DEFAULT_VARIANT_ID;
 
     constructor(
         private readonly store: DotExperimentsReportsStore,
@@ -107,7 +106,7 @@ export class DotExperimentsReportsComponent implements OnInit {
      * @returns void
      * @memberof DotExperimentsReportsComponent
      */
-    promoteVariant($event: MouseEvent, experimentId: string, variant: Variant) {
+    promoteVariant($event: MouseEvent, experimentId: string, variant: DotExperimentVariantDetail) {
         this.confirmationService.confirm({
             target: $event.target,
             message: this.dotMessageService.get('experiment.reports.promote.warning'),
