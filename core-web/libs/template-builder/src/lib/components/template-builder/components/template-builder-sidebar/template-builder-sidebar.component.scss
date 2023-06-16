@@ -29,13 +29,3 @@
     flex: 1;
     background-color: red;
 }
-
-::ng-deep {
-    .p-dropdown {
-        width: 7.625rem; //122px
-
-        div {
-            width: 100%;
-        }
-    }
-}
