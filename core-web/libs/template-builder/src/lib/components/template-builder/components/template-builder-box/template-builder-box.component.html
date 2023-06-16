@@ -60,7 +60,7 @@
         <p-dropdown
             [showClear]="false"
             [filter]="true"
-            (onChange)="onContainerSelect()"
+            (onChange)="onContainerSelect($event)"
             dotcmsContainerOptions
             appendTo="body"
             data-testId="btn-plus-small"
