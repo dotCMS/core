@@ -8,6 +8,7 @@ import { TemplateBuilderBackgroundColumnsComponent } from './template-builder-ba
 import { TemplateBuilderBoxComponent } from './template-builder-box/template-builder-box.component';
 import { TemplateBuilderRowComponent } from './template-builder-row/template-builder-row.component';
 import { TemplateBuilderSectionComponent } from './template-builder-section/template-builder-section.component';
+import { TemplateBuilderSidebarComponent } from './template-builder-sidebar/template-builder-sidebar.component';
 
 @NgModule({
     imports: [
@@ -18,7 +19,8 @@ import { TemplateBuilderSectionComponent } from './template-builder-section/temp
         TemplateBuilderBoxComponent,
         TemplateBuilderRowComponent,
         TemplateBuilderSectionComponent,
-        DotLayoutPropertiesModule
+        DotLayoutPropertiesModule,
+        TemplateBuilderSidebarComponent
     ],
     exports: [
         AddWidgetComponent,
@@ -28,7 +30,8 @@ import { TemplateBuilderSectionComponent } from './template-builder-section/temp
         TemplateBuilderBoxComponent,
         TemplateBuilderRowComponent,
         TemplateBuilderSectionComponent,
-        DotLayoutPropertiesModule
+        DotLayoutPropertiesModule,
+        TemplateBuilderSidebarComponent
     ]
 })
 export class TemplateBuilderComponentsModule {}
