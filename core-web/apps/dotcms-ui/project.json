@@ -157,7 +157,6 @@
             "executor": "@storybook/angular:build-storybook",
             "outputs": ["{options.outputPath}"],
             "options": {
-                "deleteOutputPath": false,
                 "outputDir": "dist-docs",
                 "configDir": "apps/dotcms-ui/.storybook",
                 "browserTarget": "dotcms-ui:build",
