@@ -125,7 +125,7 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
         );
     });
 
-    it('should have rendered BOUCE_RATE and REACH_PAGE options items', () => {
+    it('should have rendered BOUNCE_RATE and REACH_PAGE and URL_PARAMETER options items', () => {
         const optionsRendered = spectator.queryAll(byTestId('dot-options-item-header'));
 
         expect(optionsRendered.length).toBe(3);
