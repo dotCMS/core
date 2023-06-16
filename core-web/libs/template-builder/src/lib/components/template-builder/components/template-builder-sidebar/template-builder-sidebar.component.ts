@@ -19,7 +19,7 @@ export class TemplateBuilderSidebarComponent {
         containers: []
     };
 
-    @Output() sidebarPropertiesChange = new EventEmitter<DotTemplateSidebarProperties>();
+    @Output() sidebarWidthChange = new EventEmitter<string>();
 
     get width() {
         return this.sidebarProperties.width.replace(/^\w/g, (l) => l.toUpperCase());
@@ -34,9 +34,6 @@ export class TemplateBuilderSidebarComponent {
      * @memberof TemplateBuilderSidebarComponent
      */
     widthChange({ value }: { value: string }) {
-        this.sidebarPropertiesChange.emit({
-            ...this.sidebarProperties,
-            width: value.toLowerCase()
-        });
+        this.sidebarWidthChange.emit(value.toLowerCase());
     }
 }

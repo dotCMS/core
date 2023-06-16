@@ -256,13 +256,13 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     }
 
     /**
-     * @description This method is used to update the sidebar properties
+     * @description This method is used to update the sidebar width
      *
-     * @param {DotTemplateSidebartProperties} sidebarProperties
+     * @param {string} width
      * @memberof TemplateBuilderComponent
      */
-    sidebarPropertiesChange(sidebarProperties: DotTemplateSidebarProperties): void {
-        this.store.updateSidebarProperties(sidebarProperties);
+    sidebarWidthChange(width: string): void {
+        this.store.updateSidebarWidth(width);
     }
 
     /*

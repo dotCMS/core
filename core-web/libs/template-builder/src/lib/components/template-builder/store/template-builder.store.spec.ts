@@ -322,11 +322,8 @@ describe('DotTemplateBuilderStore', () => {
         });
     });
 
-    it('should update sidebar properties', () => {
-        service.updateSidebarProperties({
-            location: 'left',
-            width: 'large'
-        });
+    it('should update sidebar width properties', () => {
+        service.updateSidebarWidth('large');
 
         service.layoutProperties$.subscribe((layoutProperties) => {
             expect(layoutProperties.sidebar).toEqual({

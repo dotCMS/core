@@ -45,7 +45,7 @@
                 'template-builder__sidebar--large': vm.layoutProperties.sidebar.width == 'large'
             }"
             [sidebarProperties]="vm.layoutProperties.sidebar"
-            (sidebarPropertiesChange)="sidebarPropertiesChange($event)"
+            (sidebarWidthChange)="sidebarWidthChange($event)"
         />
         <div class="grid-stack">
             <dotcms-template-builder-row
