@@ -1,20 +1,29 @@
 import { moduleMetadata, Story, Meta } from '@storybook/angular';
+import { of } from 'rxjs';
 
-import { NgFor, AsyncPipe, NgIf, NgClass } from '@angular/common';
+import { NgFor, NgIf, AsyncPipe, NgClass } from '@angular/common';
+import { HttpClientModule, HttpClient } from '@angular/common/http';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
 import { DividerModule } from 'primeng/divider';
 import { DropdownModule } from 'primeng/dropdown';
+import { DynamicDialogModule, DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { ToolbarModule } from 'primeng/toolbar';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessageService, DotContainersService } from '@dotcms/data-access';
 import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotContainersServiceMock } from '@dotcms/utils-testing';
 
+import { DotAddStyleClassesDialogStore } from './components/add-style-classes-dialog/store/add-style-classes-dialog.store';
 import { TemplateBuilderComponentsModule } from './components/template-builder-components.module';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { TemplateBuilderComponent } from './template-builder.component';
-import { DOT_MESSAGE_SERVICE_TB_MOCK, FULL_DATA_MOCK } from './utils/mocks';
+import {
+    DOT_MESSAGE_SERVICE_TB_MOCK,
+    FULL_DATA_MOCK,
+    MOCK_STYLE_CLASSES_FILE
+} from './utils/mocks';
 
 export default {
     title: 'Template Builder',
@@ -29,6 +38,8 @@ export default {
                 TemplateBuilderComponentsModule,
                 DotMessagePipeModule,
                 BrowserAnimationsModule,
+                DynamicDialogModule,
+                HttpClientModule,
                 ButtonModule,
                 ToolbarModule,
                 DividerModule,
@@ -36,9 +47,22 @@ export default {
             ],
             providers: [
                 DotTemplateBuilderStore,
+                DialogService,
+                DynamicDialogRef,
+                DotAddStyleClassesDialogStore,
                 {
                     provide: DotMessageService,
                     useValue: DOT_MESSAGE_SERVICE_TB_MOCK
+                },
+                {
+                    provide: DotContainersService,
+                    useValue: new DotContainersServiceMock()
+                },
+                {
+                    provide: HttpClient,
+                    useValue: {
+                        get: (_: string) => of(MOCK_STYLE_CLASSES_FILE)
+                    }
                 }
             ]
         })

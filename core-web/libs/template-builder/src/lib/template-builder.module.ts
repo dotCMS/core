@@ -2,10 +2,12 @@ import { AsyncPipe, NgClass, NgFor, NgStyle } from '@angular/common';
 import { NgModule } from '@angular/core';
 
 import { DividerModule } from 'primeng/divider';
+import { DialogService, DynamicDialogModule, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { ToolbarModule } from 'primeng/toolbar';
 
 import { DotMessagePipeModule } from '@dotcms/ui';
 
+import { DotAddStyleClassesDialogStore } from './components/template-builder/components/add-style-classes-dialog/store/add-style-classes-dialog.store';
 import { DotLayoutPropertiesComponent } from './components/template-builder/components/dot-layout-properties/dot-layout-properties.component';
 import { TemplateBuilderComponentsModule } from './components/template-builder/components/template-builder-components.module';
 import { DotTemplateBuilderStore } from './components/template-builder/store/template-builder.store';
@@ -16,6 +18,7 @@ import { TemplateBuilderComponent } from './components/template-builder/template
         NgFor,
         AsyncPipe,
         DotMessagePipeModule,
+        DynamicDialogModule,
         NgStyle,
         NgClass,
         ToolbarModule,
@@ -23,7 +26,12 @@ import { TemplateBuilderComponent } from './components/template-builder/template
         TemplateBuilderComponentsModule
     ],
     declarations: [TemplateBuilderComponent],
-    providers: [DotTemplateBuilderStore],
+    providers: [
+        DotTemplateBuilderStore,
+        DialogService,
+        DynamicDialogRef,
+        DotAddStyleClassesDialogStore
+    ],
     exports: [TemplateBuilderComponent, DotLayoutPropertiesComponent]
 })
 export class TemplateBuilderModule {}

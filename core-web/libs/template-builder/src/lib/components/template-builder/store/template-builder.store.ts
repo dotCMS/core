@@ -4,6 +4,8 @@ import { v4 as uuid } from 'uuid';
 
 import { Injectable } from '@angular/core';
 
+import { DotContainer } from '@dotcms/dotcms-models';
+
 import {
     DotGridStackNode,
     DotGridStackWidget,
@@ -44,6 +46,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
     }
 
     // Init store
+
     readonly init = this.updater((state, { items, layoutProperties }: DotTemplateBuilderState) => ({
         ...state,
         items,
@@ -85,7 +88,6 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      */
     readonly moveRow = this.updater((state, affectedRows: DotGridStackWidget[]) => {
         const { items } = state;
-
         const itemsCopy = structuredClone(items) as DotGridStackWidget[];
 
         affectedRows.forEach(({ y, id }) => {
@@ -132,7 +134,6 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      */
     readonly addColumn = this.updater((state, column: DotGridStackNode) => {
         const { items } = state;
-
         const newColumn = createDotGridStackWidgetFromNode(column);
 
         return {
@@ -200,23 +201,45 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
     readonly updateColumnGridStackData = this.updater(
         (state, affectedColumns: DotGridStackNode[]) => {
             const { items } = state;
-
             affectedColumns = createDotGridStackWidgets(affectedColumns);
 
             return {
                 ...state,
                 items: items.map((row) => {
-                    if (row.id === affectedColumns[0].parentId) {
-                        if (row.subGridOpts) {
-                            row.subGridOpts.children = row.subGridOpts.children.map((child) => {
-                                const column = getColumnByID(affectedColumns, child.id as string);
-                                if (column)
-                                    return { ...child, x: column.x, y: column.y, w: column.w };
-
-                                return child;
-                            });
-                        }
+                    if (row.id != affectedColumns[0].parentId || !row.subGridOpts) {
+                        return row;
                     }
+
+                    row.subGridOpts.children = row.subGridOpts.children.map((child) => {
+                        const column = getColumnByID(affectedColumns, child.id as string);
+                        if (column) return { ...child, x: column.x, y: column.y, w: column.w };
+
+                        return child;
+                    });
+
+                    return row;
+                })
+            };
+        }
+    );
+
+    readonly updateColumnStyleClasses = this.updater(
+        (state, affectedColumn: DotGridStackWidget) => {
+            const { items } = state;
+
+            return {
+                ...state,
+                items: items.map((row) => {
+                    if (row.id != affectedColumn.parentId || !row.subGridOpts) {
+                        return row;
+                    }
+
+                    row.subGridOpts.children = row.subGridOpts.children.map((child) => {
+                        if (affectedColumn.id === child.id)
+                            return { ...child, styleClass: affectedColumn.styleClass };
+
+                        return child;
+                    });
 
                     return row;
                 })
@@ -276,6 +299,42 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
                     sidebar: sidebarProperties
                 }
             };
+        }
+    );
+
+    /**
+     * @description This method adds a container to a box
+     *
+     * @memberof DotTemplateBuilderStore
+     */
+    readonly addContainer = this.updater(
+        (
+            state,
+            {
+                affectedColumn,
+                container
+            }: { affectedColumn: DotGridStackWidget; container: DotContainer }
+        ) => {
+            const { items } = state;
+
+            const updatedItems = items.map((row) => {
+                if (row.id != affectedColumn.parentId) {
+                    return row;
+                }
+
+                const updatedChildren = row.subGridOpts.children.map((child) => {
+                    if (affectedColumn.id === child.id)
+                        child.containers.push({
+                            identifier: container.identifier
+                        });
+
+                    return child;
+                });
+
+                return { ...row, subGridOpts: { ...row.subGridOpts, children: updatedChildren } };
+            });
+
+            return { ...state, items: updatedItems };
         }
     );
 

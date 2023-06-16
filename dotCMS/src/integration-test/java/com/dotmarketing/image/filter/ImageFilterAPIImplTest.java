@@ -13,6 +13,7 @@ import javax.imageio.stream.ImageInputStream;
 import org.apache.commons.collections.IteratorUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import com.google.common.io.Files;
 
 public class ImageFilterAPIImplTest {
 
