@@ -8,26 +8,18 @@ import {
     PercentPipe,
     TitleCasePipe
 } from '@angular/common';
-import {
-    ChangeDetectionStrategy,
-    Component,
-    ComponentRef,
-    inject,
-    OnInit,
-    ViewChild
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
+import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { ConfirmPopupModule } from 'primeng/confirmpopup';
 import { TagModule } from 'primeng/tag';
 
-import { tap } from 'rxjs/operators';
-
 import { DotMessageService } from '@dotcms/data-access';
-import { DEFAULT_VARIANT_NAME } from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_NAME, Variant } from '@dotcms/dotcms-models';
 import { DotIconModule } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { DotExperimentsPublishVariantComponent } from '@portlets/dot-experiments/dot-experiments-reports/components/dot-experiments-publish-variant/dot-experiments-publish-variant.component';
 import { DotExperimentsReportsChartComponent } from '@portlets/dot-experiments/dot-experiments-reports/components/dot-experiments-reports-chart/dot-experiments-reports-chart.component';
 import { DotExperimentsReportsSkeletonComponent } from '@portlets/dot-experiments/dot-experiments-reports/components/dot-experiments-reports-skeleton/dot-experiments-reports-skeleton.component';
 import {
@@ -55,13 +47,13 @@ import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.dir
         DotExperimentsReportsSkeletonComponent,
         DotExperimentsReportsChartComponent,
         DotExperimentsDetailsTableComponent,
-        DotExperimentsPublishVariantComponent,
         DotDynamicDirective,
         //PrimeNg
         TagModule,
         ButtonModule,
         TitleCasePipe,
-        DotIconModule
+        DotIconModule,
+        ConfirmPopupModule
     ],
     templateUrl: './dot-experiments-reports.component.html',
     styleUrls: ['./dot-experiments-reports.component.scss'],
@@ -69,9 +61,7 @@ import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.dir
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsReportsComponent implements OnInit {
-    vm$: Observable<VmReportExperiment> = this.store.vm$.pipe(
-        tap(({ showPromoteDialog }) => this.handlePromoteDialog(showPromoteDialog))
-    );
+    vm$: Observable<VmReportExperiment> = this.store.vm$;
     dotMessageService = inject(DotMessageService);
     readonly chartConfig: { xAxisLabel: string; yAxisLabel: string; title: string } = {
         xAxisLabel: this.dotMessageService.get('experiments.chart.xAxisLabel'),
@@ -81,12 +71,12 @@ export class DotExperimentsReportsComponent implements OnInit {
 
     @ViewChild(DotDynamicDirective, { static: true }) dialogHost!: DotDynamicDirective;
     protected readonly defaultVariantName = DEFAULT_VARIANT_NAME;
-    private componentRef: ComponentRef<DotExperimentsPublishVariantComponent>;
 
     constructor(
         private readonly store: DotExperimentsReportsStore,
         private readonly router: Router,
-        private readonly route: ActivatedRoute
+        private readonly route: ActivatedRoute,
+        private readonly confirmationService: ConfirmationService
     ) {}
 
     ngOnInit(): void {
@@ -111,35 +101,22 @@ export class DotExperimentsReportsComponent implements OnInit {
     }
 
     /**
-     * Open publish variant dialog
-     *
+     * Promote Variant
+     * @param {MouseEvent} $event
+     * @param {DotExperiment} experiment
      * @returns void
      * @memberof DotExperimentsReportsComponent
-     *
      */
-    openPublishVariantDialog() {
-        this.store.showPromoteDialog();
-    }
-
-    private handlePromoteDialog(showDialog: boolean) {
-        if (showDialog) {
-            this.loadPromoteVariantComponent();
-        } else {
-            this.removeSidebarComponent();
-        }
-    }
-
-    private removeSidebarComponent() {
-        if (this.componentRef) {
-            this.dialogHost.viewContainerRef.clear();
-        }
-    }
-
-    private loadPromoteVariantComponent(): void {
-        this.dialogHost.viewContainerRef.clear();
-        this.componentRef =
-            this.dialogHost.viewContainerRef.createComponent<DotExperimentsPublishVariantComponent>(
-                DotExperimentsPublishVariantComponent
-            );
+    promoteVariant($event: MouseEvent, experimentId: string, variant: Variant) {
+        this.confirmationService.confirm({
+            target: $event.target,
+            message: this.dotMessageService.get('experiment.reports.promote.warning'),
+            icon: 'pi pi-info-circle',
+            acceptLabel: this.dotMessageService.get('Yes'),
+            rejectLabel: this.dotMessageService.get('No'),
+            accept: () => {
+                this.store.promoteVariant({ experimentId, variant });
+            }
+        });
     }
 }
