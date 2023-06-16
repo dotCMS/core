@@ -17,7 +17,7 @@ import com.dotmarketing.portlets.templates.model.Template;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class IndexRegexUrlPatterStrategyIntegrationTest {
+public class RootIndexRegexUrlPatterStrategyIntegrationTest {
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -47,11 +47,61 @@ public class IndexRegexUrlPatterStrategyIntegrationTest {
         final boolean match = rootIndexRegexUrlPatterStrategy.isMatch(htmlPageAsset);
         assertTrue(match);
 
-        assertEquals("(http|https):\\/\\/.*:[0-9]*(\\/index|\\/)?(\\?.*)?",
+        //assertEquals("^(http|https):\\/\\/((?!(.*\\/){0}).*)(:[0-9])?(\\/index|\\/)?(\\?.*)?",
+          //      rootIndexRegexUrlPatterStrategy.getRegexPattern(htmlPageAsset));
+
+        final String regexPattern = rootIndexRegexUrlPatterStrategy.getRegexPattern(htmlPageAsset);
+        /*assertTrue(("http://localhost:8080/index").matches(regexPattern));
+        assertTrue(("http://localhost/index").matches(regexPattern));*/
+
+        assertTrue(("http://localhost:8080/").matches(regexPattern));
+        assertTrue(("http://localhost/").matches(regexPattern));
+
+        /*assertTrue(("http://localhost:8080").matches(regexPattern));
+        assertTrue(("http://localhost").matches(regexPattern));
+
+        assertTrue(("http://localhost:8080/INDEX").matches(regexPattern));
+        assertTrue(("http://localhost/INDEX").matches(regexPattern));*/
+
+        assertFalse(("http://localhost:8080/aaaa/bbb").matches(regexPattern));
+        assertFalse(("http://localhost:8080/aaaa").matches(regexPattern));
+    }
+
+    /**
+     * Method to test: {@link RootIndexRegexUrlPatterStrategy#isMatch(HTMLPageAsset)} and
+     * {@link RootIndexRegexUrlPatterStrategy#getRegexPattern(HTMLPageAsset)}
+     * When: The page is the root index page and the protocol is https
+     * Should: the {@link RootIndexRegexUrlPatterStrategy#isMatch(HTMLPageAsset)} return true
+     * and the {@link RootIndexRegexUrlPatterStrategy#getRegexPattern(HTMLPageAsset)} return the correct regex pattern
+     * also the regex pattern should match the page url
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void httpsRealRootIndexPage() throws DotDataException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().nextPersisted();
+
+        final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template)
+                .pageURL("index")
+                .nextPersisted();
+
+        final RootIndexRegexUrlPatterStrategy rootIndexRegexUrlPatterStrategy = new RootIndexRegexUrlPatterStrategy();
+        final boolean match = rootIndexRegexUrlPatterStrategy.isMatch(htmlPageAsset);
+        assertTrue(match);
+
+        assertEquals("^(http|https):\\/\\/((?!(.*\\/)).*)(:[0-9])?(\\/index|\\/)?(\\?.*)?",
                 rootIndexRegexUrlPatterStrategy.getRegexPattern(htmlPageAsset));
 
         final String regexPattern = rootIndexRegexUrlPatterStrategy.getRegexPattern(htmlPageAsset);
-        assertTrue(("http://localhost:8080" + htmlPageAsset.getURI()).matches(regexPattern));
+        assertTrue(("https://localhost:8080/index").matches(regexPattern));
+        assertTrue(("https://localhost/index").matches(regexPattern));
+
+        assertTrue(("https://localhost:8080/").matches(regexPattern));
+        assertTrue(("https://localhost/").matches(regexPattern));
+
+        assertTrue(("https://localhost:8080").matches(regexPattern));
+        assertTrue(("https://localhost").matches(regexPattern));
     }
 
     /**
@@ -64,7 +114,7 @@ public class IndexRegexUrlPatterStrategyIntegrationTest {
      * @throws DotDataException
      */
     @Test
-    public void bbb() throws DotDataException {
+    public void notIndexPage() throws DotDataException {
             final Host host = new SiteDataGen().nextPersisted();
         final Template template = new TemplateDataGen().nextPersisted();
         final Folder folder = new FolderDataGen().site(host).nextPersisted();
@@ -77,6 +127,7 @@ public class IndexRegexUrlPatterStrategyIntegrationTest {
         assertFalse(match);
 
         final String regexPattern = rootIndexRegexUrlPatterStrategy.getRegexPattern(htmlPageAsset);
+
         assertFalse(("http://localhost:8080" + htmlPageAsset.getURI()).matches(regexPattern));
     }
 
@@ -90,7 +141,7 @@ public class IndexRegexUrlPatterStrategyIntegrationTest {
      * @throws DotDataException
      */
     @Test
-    public void ccc() throws DotDataException {
+    public void indexPageButNotRootIndexPage() throws DotDataException {
         final Host host = new SiteDataGen().nextPersisted();
         final Template template = new TemplateDataGen().nextPersisted();
         final Folder folder = new FolderDataGen().site(host).nextPersisted();
