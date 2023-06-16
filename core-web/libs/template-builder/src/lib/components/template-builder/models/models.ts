@@ -30,7 +30,7 @@ export interface DotTemplateBuilderContainer {
  * @extends {GridStackWidget}
  */
 export interface DotGridStackWidget extends GridStackWidget {
-    containers?: DotTemplateBuilderContainer[];
+    containers?: DotTemplateBuilderContainer[]; // Although we are using this for Rows and Boxes, be aware that Rows does not have containers
     styleClass?: string[]; // We can join the classes in the parser, might be easier to work with
     subGridOpts?: DotGridStackOptions;
     parentId?: string;
@@ -44,7 +44,7 @@ export interface DotGridStackWidget extends GridStackWidget {
  * @extends {GridStackNode}
  */
 export interface DotGridStackNode extends GridStackNode {
-    containers?: DotTemplateBuilderContainer[];
+    containers?: DotTemplateBuilderContainer[]; // Although we are using this for Rows and Boxes, be aware that Rows does not have containers
     styleClass?: string[]; // We can join the classes in the parser, might be easier to work with
     subGridOpts?: DotGridStackOptions;
     parentId?: string;
