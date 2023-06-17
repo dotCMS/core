@@ -170,7 +170,7 @@ function persistResults {
     # Do not pull unless branch is remote
     if [[ ${remote_branch} == 1 ]]; then
       # Perform a pull just in case
-      executeCmd "git pull --strategy-options ours origin ${BUILD_ID}"
+      executeCmd "git pull --strategy-option=ours origin ${BUILD_ID}"
       if [[ ${cmd_result} != 0 ]]; then
         echo "Error pulling from git branch ${BUILD_ID}, error code: ${cmd_result}"
       fi
