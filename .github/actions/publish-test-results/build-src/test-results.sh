@@ -200,6 +200,14 @@ function gatherResults {
   executeCmd "rm ./postman-results-footer.html"
   executeCmd "cat ./index.html"
   executeCmd "ls -las ."
+  for rc_file in *.rc; do
+    local rc_content=$(cat ${rc_file})
+    eval "${rc_content}"
+    if [[ -z "${test_results_rc}" || ${test_results_rc} != 0 ]]; then
+      echo "Error return code at ${rc_file} with content [${rc_content}]"
+      return ${test_results_rc}
+    fi
+  done
 }
 
 # Executes logic for matrix partitioned tests such as postman tests
@@ -239,19 +247,9 @@ function closeResults {
   executeCmd "git commit -m \"Closing results for branch ${BUILD_ID}\""
   executeCmd "git pull origin ${BUILD}"
   executeCmd "git push ${test_results_repo_url}"
-  if [[ ${cmd_result} != 0 ]]; then
-    echo "Error pushing to git for ${INPUT_BUILD_HASH} at ${INPUT_BUILD_ID}, error code: ${cmd_result}"
-    exit 1
-  fi
-
-  for rc_file in *.rc; do
-    local rc_content=$(cat ${rc_file})
-    eval "${rc_content}"
-    if [[ -z "${test_results_rc}" || ${test_results_rc} != 0 ]]; then
-      echo "Error return code at ${rc_file} with content [${rc_content}]"
-      return ${test_results_rc}
-    fi
-  done
+  [[ ${cmd_result} != 0 ]] \
+    && echo "Error pushing to git for ${INPUT_BUILD_HASH} at ${INPUT_BUILD_ID}, error code: ${cmd_result}" \
+    && exit 1
 
   return 0
 }

@@ -238,7 +238,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        parallel_collection: ['graphql', 'workflow', 'template', 'page', 'container', 'pp', '*']
+        parallel_collection: ['graphql', 'workflow', 'template', 'page', 'container', 'pp', 'experiment', 'container', '*']
     env:
       PUBLISH_MODE: ALL
       DEBUG: true
