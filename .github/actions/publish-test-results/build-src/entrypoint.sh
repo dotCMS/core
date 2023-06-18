@@ -20,7 +20,6 @@ case "${INPUT_PARTIAL}" in
     ;;
   *)
     copyResults
-    trackCoreTests ${INPUT_TESTS_RUN_EXIT_CODE}
     appendLogLocation
     checkForToken
     persistResults

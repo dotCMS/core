@@ -245,36 +245,13 @@ function closeResults {
   executeCmd "git status"
   executeCmd "git add ."
   executeCmd "git commit -m \"Closing results for branch ${BUILD_ID}\""
-  executeCmd "git pull origin ${BUILD}"
+  executeCmd "git pull --strategy-option=ours origin ${BUILD}"
   executeCmd "git push ${test_results_repo_url}"
   [[ ${cmd_result} != 0 ]] \
     && echo "Error pushing to git for ${INPUT_BUILD_HASH} at ${INPUT_BUILD_ID}, error code: ${cmd_result}" \
     && exit 1
 
   return 0
-}
-
-# Creates a summary status file for test the specific INPUT_TEST_TYPE, INPUT_DB_TYPE in both commit and branch paths.
-#
-# $1: results status
-function trackCoreTests {
-  local status=${1}
-  if [[ ${status} == 0 ]]; then
-    local result_label=SUCCESS
-  else
-    local result_label=FAIL
-  fi
-
-  local result_file=${OUTPUT_FOLDER}/job_results.source
-  echo "Tracking job results in ${result_file}"
-  touch ${result_file}
-  echo "TEST_TYPE=${INPUT_TEST_TYPE^}" >> ${result_file}
-  echo "DB_TYPE=${INPUT_DB_TYPE}" >> ${result_file}
-  echo "TEST_TYPE_RESULT=${result_label}" >> ${result_file}
-  echo "BRANCH_TEST_RESULT_URL=${BRANCH_TEST_RESULT_URL}" >> ${result_file}
-  echo "BRANCH_TEST_LOG_URL=${BRANCH_TEST_LOG_URL}" >> ${result_file}
-
-  cat ${result_file}
 }
 
 # Prepares and copies test results in HTML format and the corresponding log file.
