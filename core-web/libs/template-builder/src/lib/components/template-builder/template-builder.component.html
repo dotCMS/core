@@ -2,7 +2,6 @@
 <p-toolbar>
     <div class="p-toolbar-group-start">
         <ng-content select="[toolbar-left]"></ng-content>
-        <dotcms-template-builder-theme-selector></dotcms-template-builder-theme-selector>
     </div>
     <div class="p-toolbar-group-end">
         <dotcms-add-widget
@@ -22,11 +21,12 @@
             data-testId="add-box"
         ></dotcms-add-widget>
         <p-divider layout="vertical"></p-divider>
-        <dotcms-template-builder-actions></dotcms-template-builder-actions>
+        <dotcms-template-builder-actions
+            (selectTheme)="openThemeSelectorDynamicDialog()"
+        ></dotcms-template-builder-actions>
         <ng-content select="[toolbar-actions-right]"></ng-content>
     </div>
 </p-toolbar>
-
 <dotcms-template-builder-section>{{
     'dot.template.builder.header' | dm
 }}</dotcms-template-builder-section>

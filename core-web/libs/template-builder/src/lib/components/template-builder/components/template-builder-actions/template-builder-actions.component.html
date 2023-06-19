@@ -1,7 +1,7 @@
 <button
     class="p-button-text p-button-vertical"
     [label]="'dot.template.builder.toolbar.button.theme.label' | dm"
-    (onClick)="selectTheme.emit()"
+    (click)="selectTheme.emit()"
     data-testid="btn-select-theme"
     pButton
     icon="pi pi-palette"
@@ -9,7 +9,7 @@
 <button
     class="p-button-text p-button-vertical"
     [label]="'dot.template.builder.toolbar.button.layout.label' | dm"
-    (onClick)="selectLayout.emit()"
+    (click)="selectLayout.emit()"
     data-testid="btn-select-layout"
     pButton
 >

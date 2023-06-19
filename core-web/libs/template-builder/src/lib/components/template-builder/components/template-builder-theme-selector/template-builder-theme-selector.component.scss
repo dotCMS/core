@@ -1,0 +1,43 @@
+@use "variables" as *;
+
+:host {
+    width: 40.875rem;
+    display: block;
+}
+
+.theme-search-box {
+    position: relative;
+
+    input {
+        font-size: $font-size-md;
+        border: 1px solid $color-palette-gray-200;
+        padding: $spacing-1;
+    }
+}
+
+.theme__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.theme-item {
+    align-items: center;
+    background: $color-palette-gray-200;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    height: 15rem;
+    margin: 1rem 0.5rem 0;
+    padding: 1.5rem 1rem;
+    transition: background-color 0.15s ease-in;
+    width: 15rem;
+}
+
+::ng-deep {
+    .p-dropdown {
+        font-size: $font-size-md;
+        border: 1px solid $color-palette-gray-200;
+    }
+}

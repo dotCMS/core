@@ -110,7 +110,11 @@ export class DotSiteSelectorDirective implements OnInit, OnDestroy {
         this.destroy$.complete();
     }
 
-    private setOptions(options: Array<unknown>) {
+    /**
+     * Set the options of the dropdown
+     * @param options
+     */
+    private setOptions(options: Array<Site>): void {
         this.primeDropdown.options = [...options];
         this.changeDetectorRef.detectChanges();
     }
@@ -145,6 +149,7 @@ export class DotSiteSelectorDirective implements OnInit, OnDestroy {
             .subscribe((items: Site[]) => {
                 this.sitesCurrentPage = [...items];
                 this.moreThanOneSite = this.moreThanOneSite || items.length > 1;
+                this.setOptions(items);
             });
     }
 }

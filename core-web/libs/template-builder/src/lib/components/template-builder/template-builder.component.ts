@@ -32,6 +32,7 @@ import { DotContainer, DotLayout } from '@dotcms/dotcms-models';
 import { colIcon, rowIcon } from './assets/icons';
 import { AddStyleClassesDialogComponent } from './components/add-style-classes-dialog/add-style-classes-dialog.component';
 import { TemplateBuilderRowComponent } from './components/template-builder-row/template-builder-row.component';
+import { TemplateBuilderThemeSelectorComponent } from './components/template-builder-theme-selector/template-builder-theme-selector.component';
 import { DotGridStackNode, DotGridStackWidget } from './models/models';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import {
@@ -279,5 +280,12 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
             take(1),
             filter((styleClasses) => styleClasses)
         );
+    }
+
+    public openThemeSelectorDynamicDialog(): void {
+        this.ref = this.dialogService.open(TemplateBuilderThemeSelectorComponent, {
+            header: this.dotMessage.get('dot.template.builder.theme.dialog.header.label'),
+            resizable: false
+        });
     }
 }

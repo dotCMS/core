@@ -26,7 +26,7 @@ describe('TemplateBuilderActionsComponent', () => {
         const spy = jest.spyOn(spectator.component.selectLayout, 'emit');
         spectator.detectChanges();
         const btnSelectLayout = spectator.query(byTestId('btn-select-layout'));
-        spectator.dispatchMouseEvent(btnSelectLayout, 'onClick');
+        spectator.dispatchMouseEvent(btnSelectLayout, 'click');
         expect(spy).toHaveBeenCalled();
     });
 
@@ -34,7 +34,7 @@ describe('TemplateBuilderActionsComponent', () => {
         const spy = jest.spyOn(spectator.component.selectTheme, 'emit');
         spectator.detectChanges();
         const btnSelectStyles = spectator.query(byTestId('btn-select-theme'));
-        spectator.dispatchMouseEvent(btnSelectStyles, 'onClick');
+        spectator.dispatchMouseEvent(btnSelectStyles, 'click');
 
         expect(spy).toHaveBeenCalled();
     });

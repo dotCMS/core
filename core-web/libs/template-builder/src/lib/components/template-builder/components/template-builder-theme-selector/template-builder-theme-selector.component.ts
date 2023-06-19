@@ -1,5 +1,6 @@
 import { fromEvent as observableFromEvent, Subject } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
@@ -15,18 +16,16 @@ import {
 
 import { LazyLoadEvent, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { DataView } from 'primeng/dataview';
+import { DataView, DataViewModule } from 'primeng/dataview';
 import { DropdownModule } from 'primeng/dropdown';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { debounceTime, take, takeUntil } from 'rxjs/operators';
 
-/* import { DotSiteSelectorComponent } from '@components/_common/dot-site-selector/dot-site-selector.component';
-import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component'; */
 import { DotMessageService, PaginatorService } from '@dotcms/data-access';
 import { Site, SiteService } from '@dotcms/dotcms-js';
 import { DotTheme } from '@dotcms/dotcms-models';
-import { DotSiteSelectorDirective } from '@dotcms/ui';
+import { DotMessagePipeModule, DotSiteSelectorDirective } from '@dotcms/ui';
 
 /**
  * The DotThemeSelectorComponent is modal that
@@ -37,7 +36,14 @@ import { DotSiteSelectorDirective } from '@dotcms/ui';
 @Component({
     selector: 'dotcms-template-builder-theme-selector',
     providers: [PaginatorService, DialogService, MessageService],
-    imports: [ButtonModule, DropdownModule, DotSiteSelectorDirective],
+    imports: [
+        ButtonModule,
+        DropdownModule,
+        DotSiteSelectorDirective,
+        DataViewModule,
+        CommonModule,
+        DotMessagePipeModule
+    ],
     standalone: true,
     templateUrl: './template-builder-theme-selector.component.html',
     styleUrls: ['./template-builder-theme-selector.component.scss'],
@@ -82,30 +88,7 @@ export class TemplateBuilderThemeSelectorComponent implements OnInit, OnDestroy 
         public cd: ChangeDetectorRef
     ) {}
 
-    show() {
-        this.ref = this.dialogService.open(null, {
-            header: 'Theme Selection',
-            width: '70%',
-            contentStyle: { overflow: 'auto' },
-            baseZIndex: 10000,
-            maximizable: true
-        });
-    }
-
     ngOnInit() {
-        /*   this.dialogActions = {
-            accept: {
-                label: this.dotMessageService.get('dot.common.apply'),
-                disabled: true,
-                action: () => {
-                    this.apply();
-                }
-            },
-            cancel: {
-                label: this.dotMessageService.get('dot.common.cancel')
-            }
-        };  */
-
         this.current = this.value;
         this.paginatorService.url = 'v1/themes';
         this.paginatorService.setExtraParams(
@@ -138,7 +121,9 @@ export class TemplateBuilderThemeSelectorComponent implements OnInit, OnDestroy 
             .pipe(take(1))
             .subscribe((themes: DotTheme[]) => {
                 if (this.noThemesInInitialLoad(themes, $event)) {
-                    this.siteService.getSiteById('SYSTEM_HOST').subscribe(() => {
+                    this.siteService.getSiteById('SYSTEM_HOST').subscribe((site: Site) => {
+                        // eslint-disable-next-line no-console
+                        console.log(site);
                         /*    this.siteSelector.searchableDropdown.handleClick(site); */
                         this.cd.detectChanges();
                     });
@@ -159,6 +144,8 @@ export class TemplateBuilderThemeSelectorComponent implements OnInit, OnDestroy 
      * @memberof DotThemeSelectorComponent
      */
     siteChange(site: Site): void {
+        // eslint-disable-next-line no-console
+        console.log('SITE:', site);
         this.searchInput.nativeElement.value = null;
         this.paginatorService.setExtraParams('hostId', site.identifier);
         this.filterThemes('');
@@ -172,6 +159,8 @@ export class TemplateBuilderThemeSelectorComponent implements OnInit, OnDestroy 
      */
     selectTheme(theme: DotTheme): void {
         this.current = theme;
+        // eslint-disable-next-line no-console
+        console.log('SELECT:', this.current);
         /*     this.dialogActions = {
             ...this.dialogActions,
             accept: {
@@ -187,6 +176,8 @@ export class TemplateBuilderThemeSelectorComponent implements OnInit, OnDestroy 
      * @memberof DotThemeSelectorComponent
      */
     apply(): void {
+        // eslint-disable-next-line no-console
+        console.log('APPLY:', this.current);
         this.selected.emit(this.current);
     }
 
