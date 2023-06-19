@@ -263,7 +263,7 @@ jobs:
           password: ${{ secrets.GHCR_TOKEN }}
       - id: run-postman-tests
         name: Run Postman Tests
-        timeout-minutes: 80
+        timeout-minutes: 90
         uses: ./.github/actions/run-postman-tests
         with:
           built_image_name: ${{ needs.postman-tests-setup-job.outputs.built_image_name }}
