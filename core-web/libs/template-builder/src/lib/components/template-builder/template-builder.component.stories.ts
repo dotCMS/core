@@ -10,7 +10,13 @@ import { DividerModule } from 'primeng/divider';
 import { DialogService, DynamicDialogModule, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { ToolbarModule } from 'primeng/toolbar';
 
-import { DotContainersService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotContainersService,
+    DotMessageService,
+    DotEventsService,
+    PaginatorService
+} from '@dotcms/data-access';
+import { CoreWebService, CoreWebServiceMock, SiteService } from '@dotcms/dotcms-js';
 import { DotContainerOptionsDirective, DotMessagePipeModule } from '@dotcms/ui';
 import { DotContainersServiceMock } from '@dotcms/utils-testing';
 
@@ -23,6 +29,7 @@ import { TemplateBuilderBackgroundColumnsComponent } from './components/template
 import { TemplateBuilderBoxComponent } from './components/template-builder-box/template-builder-box.component';
 import { TemplateBuilderRowComponent } from './components/template-builder-row/template-builder-row.component';
 import { TemplateBuilderSectionComponent } from './components/template-builder-section/template-builder-section.component';
+import { TemplateBuilderThemeSelectorComponent } from './components/template-builder-theme-selector/template-builder-theme-selector.component';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { TemplateBuilderComponent } from './template-builder.component';
 import {
@@ -52,6 +59,7 @@ export default {
                 HttpClientModule,
                 ButtonModule,
                 TemplateBuilderActionsComponent,
+                TemplateBuilderThemeSelectorComponent,
                 ToolbarModule,
                 DividerModule,
                 DotContainerOptionsDirective
@@ -74,6 +82,24 @@ export default {
                     useValue: {
                         get: (_: string) => of(MOCK_STYLE_CLASSES_FILE)
                     }
+                },
+                {
+                    provide: CoreWebService,
+                    useValue: CoreWebServiceMock
+                },
+                {
+                    provide: PaginatorService
+                },
+                {
+                    provide: SiteService,
+                    useValue: {
+                        getCurrentSite() {
+                            return of({ identifier: '123' });
+                        }
+                    }
+                },
+                {
+                    provide: DotEventsService
                 }
             ]
         })

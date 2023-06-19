@@ -14,6 +14,7 @@ import { TemplateBuilderActionsComponent } from './components/template-builder/c
 import { TemplateBuilderBackgroundColumnsComponent } from './components/template-builder/components/template-builder-background-columns/template-builder-background-columns.component';
 import { TemplateBuilderComponentsModule } from './components/template-builder/components/template-builder-components.module';
 import { TemplateBuilderSectionComponent } from './components/template-builder/components/template-builder-section/template-builder-section.component';
+import { TemplateBuilderThemeSelectorComponent } from './components/template-builder/components/template-builder-theme-selector/template-builder-theme-selector.component';
 import { DotTemplateBuilderStore } from './components/template-builder/store/template-builder.store';
 import { TemplateBuilderComponent } from './components/template-builder/template-builder.component';
 
@@ -27,6 +28,7 @@ import { TemplateBuilderComponent } from './components/template-builder/template
         AddStyleClassesDialogComponent,
         DynamicDialogModule,
         TemplateBuilderActionsComponent,
+        TemplateBuilderThemeSelectorComponent,
         NgStyle,
         ToolbarModule,
         DividerModule,
