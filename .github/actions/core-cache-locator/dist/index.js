@@ -41,13 +41,18 @@ const PROJECT_ROOT = core.getInput('project_root');
 const DOTCMS_ROOT = path.join(PROJECT_ROOT, 'dotCMS');
 const CACHE_CONFIGURATION = {
     gradle: {
-        dependencies: [path.join(GRADLE_FOLDER, 'caches'), path.join(GRADLE_FOLDER, 'wrapper')],
+        dependencies: [
+            path.join(GRADLE_FOLDER, 'caches'),
+            path.join(GRADLE_FOLDER, 'wrapper'),
+            path.join(M2_FOLDER, 'repository')
+        ],
         buildOutput: [
             path.join(DOTCMS_ROOT, '.gradle'),
+            path.join(DOTCMS_ROOT, 'gradle'),
             path.join(DOTCMS_ROOT, 'build', 'classes'),
             path.join(DOTCMS_ROOT, 'build', 'generated'),
-            path.join(DOTCMS_ROOT, 'build', 'resources'),
-            path.join(PROJECT_ROOT, 'dist', 'dotserver')
+            path.join(DOTCMS_ROOT, 'build', 'resources') /*,
+            path.join(PROJECT_ROOT, 'dist', 'dotserver')*/
         ]
     },
     maven: {
