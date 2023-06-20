@@ -140,6 +140,122 @@ public class RootIndexRegexUrlPatterStrategyIntegrationTest {
         assertTrue(("https://localhost").matches(regexPattern));
     }
 
+
+    /**
+     * Method to test: {@link RootIndexRegexUrlPatterStrategy#isMatch(HTMLPageAsset)}
+     * When: The page is the root index page and the domain is not localhost
+     * Should: the {@link RootIndexRegexUrlPatterStrategy#isMatch(HTMLPageAsset)} return true
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void realRootIndexPageNotLocalHost() throws DotDataException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().nextPersisted();
+
+        final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template)
+                .pageURL("index")
+                .nextPersisted();
+
+        final RootIndexRegexUrlPatterStrategy rootIndexRegexUrlPatterStrategy = new RootIndexRegexUrlPatterStrategy();
+        final boolean match = rootIndexRegexUrlPatterStrategy.isMatch(htmlPageAsset);
+        assertTrue(match);
+
+        assertEquals(EXPECTED_REGEX, rootIndexRegexUrlPatterStrategy.getRegexPattern(htmlPageAsset));
+
+        final String regexPattern = rootIndexRegexUrlPatterStrategy.getRegexPattern(htmlPageAsset);
+
+        assertFalse(("http://demo.dotcms.com:8080/any_folder/index").matches(regexPattern));
+        assertFalse(("http://demo.dotcms.com/any_folder/index").matches(regexPattern));
+
+        assertTrue(("http://demo.dotcms.com:8080/index").matches(regexPattern));
+        assertTrue(("http://demo.dotcms.com/index").matches(regexPattern));
+
+        assertFalse(("http://demo.dotcms.com:8080/index/index").matches(regexPattern));
+        assertFalse(("http://demo.dotcms.com/index/index").matches(regexPattern));
+
+        assertTrue(("http://demo.dotcms.com:8080/INDEX").matches(regexPattern));
+        assertTrue(("http://demo.dotcms.com/INDEX").matches(regexPattern));
+
+        assertTrue(("http://demo.dotcms.com:8080/IndEX").matches(regexPattern));
+        assertTrue(("http://demo.dotcms.com/IndEX").matches(regexPattern));
+
+        assertTrue(("http://demo.dotcms.com:8080/").matches(regexPattern));
+        assertTrue(("http://demo.dotcms.com/").matches(regexPattern));
+
+        assertFalse(("http://demo.dotcms.com:8080/aaaa/bbb").matches(regexPattern));
+        assertFalse(("http://demo.dotcms.com:8080/aaaa").matches(regexPattern));
+
+        assertFalse(("http://demo.dotcms.com/aaaa/bbb").matches(regexPattern));
+        assertFalse(("http://demo.dotcms.com/aaaa").matches(regexPattern));
+
+        assertFalse(("http://demo.dotcms.com/xedni").matches(regexPattern));
+
+        assertFalse(("http://demo.dotcms.com:8080/indexindex").matches(regexPattern));
+        assertFalse(("http://demo.dotcms.com/indexindex").matches(regexPattern));
+
+        assertTrue(("http://demo.dotcms.com:8080").matches(regexPattern));
+        assertTrue(("http://demo.dotcms.com").matches(regexPattern));
+        assertTrue(("http://demo.dotcms.com").matches(regexPattern));
+    }
+
+    /**
+     * Method to test: {@link RootIndexRegexUrlPatterStrategy#isMatch(HTMLPageAsset)} and
+     * {@link RootIndexRegexUrlPatterStrategy#getRegexPattern(HTMLPageAsset)}
+     * When: The page is the root index page and the protocol is https and the domain is not localhost
+     * Should: the {@link RootIndexRegexUrlPatterStrategy#isMatch(HTMLPageAsset)} return true
+     * and the {@link RootIndexRegexUrlPatterStrategy#getRegexPattern(HTMLPageAsset)} return the correct regex pattern
+     * also the regex pattern should match the page url
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void httpsRealRootIndexPageNotLocalhost() throws DotDataException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().nextPersisted();
+
+        final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template)
+                .pageURL("index")
+                .nextPersisted();
+
+        final RootIndexRegexUrlPatterStrategy rootIndexRegexUrlPatterStrategy = new RootIndexRegexUrlPatterStrategy();
+        final boolean match = rootIndexRegexUrlPatterStrategy.isMatch(htmlPageAsset);
+        assertTrue(match);
+
+        assertEquals(EXPECTED_REGEX, rootIndexRegexUrlPatterStrategy.getRegexPattern(htmlPageAsset));
+
+        final String regexPattern = rootIndexRegexUrlPatterStrategy.getRegexPattern(htmlPageAsset);
+        assertTrue(("https://demo.dotcms.com:8080/index").matches(regexPattern));
+        assertTrue(("https://demo.dotcms.com/index").matches(regexPattern));
+
+        assertFalse(("https://demo.dotcms.com:8080/index/index").matches(regexPattern));
+        assertFalse(("https://demo.dotcms.com/index/index").matches(regexPattern));
+
+        assertTrue(("https://demo.dotcms.com:8080/INDEX").matches(regexPattern));
+        assertTrue(("https://demo.dotcms.com/INDEX").matches(regexPattern));
+
+        assertTrue(("https://demo.dotcms.com:8080/IndEX").matches(regexPattern));
+        assertTrue(("https://demo.dotcms.com/IndEX").matches(regexPattern));
+
+        assertTrue(("https://demo.dotcms.com:8080/").matches(regexPattern));
+        assertTrue(("https://demo.dotcms.com/").matches(regexPattern));
+
+        assertFalse(("https://demo.dotcms.com:8080/aaaa/bbb").matches(regexPattern));
+        assertFalse(("https://demo.dotcms.com:8080/aaaa").matches(regexPattern));
+
+        assertFalse(("https://demo.dotcms.com/aaaa/bbb").matches(regexPattern));
+        assertFalse(("https://demo.dotcms.com/aaaa").matches(regexPattern));
+
+        assertFalse(("https://demo.dotcms.com/xedni").matches(regexPattern));
+
+        assertFalse(("https://demo.dotcms.com:8080/indexindex").matches(regexPattern));
+        assertFalse(("https://demo.dotcms.com/indexindex").matches(regexPattern));
+
+        assertTrue(("https://demo.dotcms.com:8080").matches(regexPattern));
+        assertTrue(("https://demo.dotcms.com").matches(regexPattern));
+        assertTrue(("https://demo.dotcms.com").matches(regexPattern));
+    }
+
     /**
      * Method to test: {@link RootIndexRegexUrlPatterStrategy#isMatch(HTMLPageAsset)} and
      * {@link RootIndexRegexUrlPatterStrategy#getRegexPattern(HTMLPageAsset)}

@@ -202,6 +202,184 @@ public class IndexRegexUrlPatterStrategyIntegrationTest {
         assertFalse(("https://localhost").matches(regexPattern));
     }
 
+
+
+    /**
+     * Method to test: {@link IndexRegexUrlPatterStrategy#isMatch(HTMLPageAsset)} and
+     * {@link IndexRegexUrlPatterStrategy#getRegexPattern(HTMLPageAsset)}
+     * When: The page an index page but not the root Index Page and the Domain is not localhost
+     * Should: the {@link IndexRegexUrlPatterStrategy#isMatch(HTMLPageAsset)} return true
+     * and the {@link IndexRegexUrlPatterStrategy#getRegexPattern(HTMLPageAsset)} return the correct regex pattern
+     * also the regex pattern should match the page url
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void realIndexPageNotLocalhost() throws DotDataException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+        final Template template = new TemplateDataGen().nextPersisted();
+
+        final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(folder, template)
+                .pageURL("index")
+                .nextPersisted();
+
+        final IndexRegexUrlPatterStrategy indexRegexUrlPatterStrategy = new IndexRegexUrlPatterStrategy();
+        final boolean match = indexRegexUrlPatterStrategy.isMatch(htmlPageAsset);
+        assertTrue(match);
+
+        assertEquals(String.format(EXPECTED_REGEX, folder.getName()), indexRegexUrlPatterStrategy.getRegexPattern(htmlPageAsset));
+
+        final String regexPattern = indexRegexUrlPatterStrategy.getRegexPattern(htmlPageAsset);
+        assertTrue(("http://demo.dotcms.com:8080" + folder.getPath() + "index").matches(regexPattern));
+        assertTrue(("http://demo.dotcms.com" + folder.getPath() + "index").matches(regexPattern));
+
+        assertFalse(("http://demo.dotcms.com:8080" + folder.getPath() + "index/index").matches(regexPattern));
+        assertFalse(("http://demo.dotcms.com" + folder.getPath() + "index/index").matches(regexPattern));
+
+        assertTrue(("http://demo.dotcms.com:8080" + folder.getPath() + "INDEX").matches(regexPattern));
+        assertTrue(("http://demo.dotcms.com" + folder.getPath() + "INDEX").matches(regexPattern));
+
+        assertTrue(("http://demo.dotcms.com:8080" + folder.getPath() + "IndEX").matches(regexPattern));
+        assertTrue(("http://demo.dotcms.com" +folder.getPath() + "IndEX").matches(regexPattern));
+
+        assertTrue(("http://demo.dotcms.com:8080" + folder.getPath()).matches(regexPattern));
+        assertTrue(("http://demo.dotcms.com" + folder.getPath()).matches(regexPattern));
+
+        assertFalse(("http://demo.dotcms.com:8080" + folder.getPath() + "aaaa/bbb").matches(regexPattern));
+        assertFalse(("http://demo.dotcms.com:8080" + folder.getPath() + " aaaa").matches(regexPattern));
+
+        assertFalse(("http://demo.dotcms.com" + folder.getPath() + "aaaa/bbb").matches(regexPattern));
+        assertFalse(("http://demo.dotcms.com" + folder.getPath() +  "aaaa").matches(regexPattern));
+
+        assertFalse(("http://demo.dotcms.com" + folder.getPath() + "xedni").matches(regexPattern));
+
+        assertFalse(("http://demo.dotcms.com:8080" + folder.getPath() + "indexindex").matches(regexPattern));
+        assertFalse(("http://demo.dotcms.com" + folder.getPath() + "indexindex").matches(regexPattern));
+
+        final String folderPathWithoutSlash = folder.getPath().substring(0, folder.getPath().length() - 1);
+        assertTrue(("http://demo.dotcms.com:8080" + folderPathWithoutSlash).matches(regexPattern));
+        assertTrue(("http://demo.dotcms.com" + folderPathWithoutSlash).matches(regexPattern));
+
+        assertFalse(("http://demo.dotcms.com:8080/any_folder/index").matches(regexPattern));
+        assertFalse(("http://demo.dotcms.com/any_folder/index").matches(regexPattern));
+
+        assertFalse(("http://demo.dotcms.com:8080/index").matches(regexPattern));
+        assertFalse(("http://demo.dotcms.com/index").matches(regexPattern));
+
+        assertFalse(("http://demo.dotcms.com:8080/INDEX").matches(regexPattern));
+        assertFalse(("http://demo.dotcms.com/INDEX").matches(regexPattern));
+
+        assertFalse(("http://demo.dotcms.com:8080/IndEX").matches(regexPattern));
+        assertFalse(("http://demo.dotcms.com/IndEX").matches(regexPattern));
+
+        assertFalse(("http://demo.dotcms.com:8080/").matches(regexPattern));
+        assertFalse(("http://demo.dotcms.com/").matches(regexPattern));
+
+        assertFalse(("http://demo.dotcms.com:8080/aaaa/bbb").matches(regexPattern));
+        assertFalse(("http://demo.dotcms.com:8080/aaaa").matches(regexPattern));
+
+        assertFalse(("http://demo.dotcms.com/aaaa/bbb").matches(regexPattern));
+        assertFalse(("http://demo.dotcms.com/aaaa").matches(regexPattern));
+
+        assertFalse(("http://demo.dotcms.com/xedni").matches(regexPattern));
+
+        assertFalse(("http://demo.dotcms.com:8080/indexindex").matches(regexPattern));
+        assertFalse(("http://demo.dotcms.com/indexindex").matches(regexPattern));
+
+        assertFalse(("http://demo.dotcms.com:8080").matches(regexPattern));
+        assertFalse(("http://demo.dotcms.com").matches(regexPattern));
+        assertFalse(("http://demo.dotcms.com").matches(regexPattern));
+    }
+
+    /**
+     * Method to test: {@link IndexRegexUrlPatterStrategy#isMatch(HTMLPageAsset)} and
+     * {@link IndexRegexUrlPatterStrategy#getRegexPattern(HTMLPageAsset)}
+     * When: The page is the an index page and the protocol is https and the Doiman is not Localhost
+     * Should: the {@link IndexRegexUrlPatterStrategy#isMatch(HTMLPageAsset)} return true
+     * and the {@link IndexRegexUrlPatterStrategy#getRegexPattern(HTMLPageAsset)} return the correct regex pattern
+     * also the regex pattern should match the page url
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void httpsRealRootIndexPageNotLocalhost() throws DotDataException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+        final Template template = new TemplateDataGen().nextPersisted();
+
+        final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(folder, template)
+                .pageURL("index")
+                .nextPersisted();
+
+        final IndexRegexUrlPatterStrategy indexRegexUrlPatterStrategy = new IndexRegexUrlPatterStrategy();
+        final boolean match = indexRegexUrlPatterStrategy.isMatch(htmlPageAsset);
+        assertTrue(match);
+
+        assertEquals(String.format(EXPECTED_REGEX, folder.getName()), indexRegexUrlPatterStrategy.getRegexPattern(htmlPageAsset));
+
+        final String regexPattern = indexRegexUrlPatterStrategy.getRegexPattern(htmlPageAsset);
+        assertTrue(("https://demo.dotcms.com:8080" + folder.getPath() + "index").matches(regexPattern));
+        assertTrue(("https://demo.dotcms.com" + folder.getPath() + "index").matches(regexPattern));
+
+        assertFalse(("https://demo.dotcms.com:8080" + folder.getPath() + "index/index").matches(regexPattern));
+        assertFalse(("https://demo.dotcms.com" + folder.getPath() + "index/index").matches(regexPattern));
+
+        assertTrue(("https://demo.dotcms.com:8080" + folder.getPath() + "INDEX").matches(regexPattern));
+        assertTrue(("https://demo.dotcms.com" + folder.getPath() + "INDEX").matches(regexPattern));
+
+        assertTrue(("https://demo.dotcms.com:8080" + folder.getPath() + "IndEX").matches(regexPattern));
+        assertTrue(("https://demo.dotcms.com" +folder.getPath() + "IndEX").matches(regexPattern));
+
+        assertTrue(("https://demo.dotcms.com:8080" + folder.getPath()).matches(regexPattern));
+        assertTrue(("https://demo.dotcms.com" + folder.getPath()).matches(regexPattern));
+
+        assertFalse(("https://demo.dotcms.com:8080" + folder.getPath() + "aaaa/bbb").matches(regexPattern));
+        assertFalse(("https://demo.dotcms.com:8080" + folder.getPath() + " aaaa").matches(regexPattern));
+
+        assertFalse(("https://demo.dotcms.com" + folder.getPath() + "aaaa/bbb").matches(regexPattern));
+        assertFalse(("https://demo.dotcms.com" + folder.getPath() +  "aaaa").matches(regexPattern));
+
+        assertFalse(("https://demo.dotcms.com" + folder.getPath() + "xedni").matches(regexPattern));
+
+        assertFalse(("https://demo.dotcms.com:8080" + folder.getPath() + "indexindex").matches(regexPattern));
+        assertFalse(("https://demo.dotcms.com" + folder.getPath() + "indexindex").matches(regexPattern));
+
+        final String folderPathWithoutSlash = folder.getPath().substring(0, folder.getPath().length() - 1);
+        assertTrue(("https://demo.dotcms.com:8080" + folderPathWithoutSlash).matches(regexPattern));
+        assertTrue(("https://demo.dotcms.com" + folderPathWithoutSlash).matches(regexPattern));
+
+        assertFalse(("https://demo.dotcms.com:8080/any_folder/index").matches(regexPattern));
+        assertFalse(("https://demo.dotcms.com/any_folder/index").matches(regexPattern));
+
+        assertFalse(("https://demo.dotcms.com:8080/index").matches(regexPattern));
+        assertFalse(("https://demo.dotcms.com/index").matches(regexPattern));
+
+        assertFalse(("https://demo.dotcms.com:8080/INDEX").matches(regexPattern));
+        assertFalse(("https://demo.dotcms.com/INDEX").matches(regexPattern));
+
+        assertFalse(("https://demo.dotcms.com:8080/IndEX").matches(regexPattern));
+        assertFalse(("https://demo.dotcms.com/IndEX").matches(regexPattern));
+
+        assertFalse(("https://demo.dotcms.com:8080/").matches(regexPattern));
+        assertFalse(("https://demo.dotcms.com/").matches(regexPattern));
+
+        assertFalse(("https://demo.dotcms.com:8080/aaaa/bbb").matches(regexPattern));
+        assertFalse(("https://demo.dotcms.com:8080/aaaa").matches(regexPattern));
+
+        assertFalse(("https://demo.dotcms.com/aaaa/bbb").matches(regexPattern));
+        assertFalse(("https://demo.dotcms.com/aaaa").matches(regexPattern));
+
+        assertFalse(("https://demo.dotcms.com/xedni").matches(regexPattern));
+
+        assertFalse(("https://demo.dotcms.com:8080/indexindex").matches(regexPattern));
+        assertFalse(("https://demo.dotcms.com/indexindex").matches(regexPattern));
+
+        assertFalse(("https://demo.dotcms.com:8080").matches(regexPattern));
+        assertFalse(("https://locdemo.dotcms.comalhost").matches(regexPattern));
+        assertFalse(("https://demo.dotcms.com").matches(regexPattern));
+    }
+
     /**
      * Method to test: {@link IndexRegexUrlPatterStrategy#isMatch(HTMLPageAsset)} and
      * {@link IndexRegexUrlPatterStrategy#getRegexPattern(HTMLPageAsset)}
