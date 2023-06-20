@@ -73,7 +73,7 @@ public class VelocityServlet extends HttpServlet {
         }
 
         if ( LoginMode.FE == loginMode) {
-            PageMode.setPageMode(request, PageMode.LIVE);
+            return PageMode.setPageMode(request, PageMode.LIVE);
         }
 
         return  useNavigateMode(request, loginMode) ?
