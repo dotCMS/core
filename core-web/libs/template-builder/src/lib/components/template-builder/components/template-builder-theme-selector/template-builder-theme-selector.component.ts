@@ -22,7 +22,7 @@ import { DialogService, DynamicDialogConfig, DynamicDialogRef } from 'primeng/dy
 
 import { debounceTime, take, takeUntil } from 'rxjs/operators';
 
-import { DotMessageService, PaginatorService } from '@dotcms/data-access';
+import { PaginatorService } from '@dotcms/data-access';
 import { Site, SiteService } from '@dotcms/dotcms-js';
 import { DotTheme } from '@dotcms/dotcms-models';
 import { DotMessagePipeModule, DotSiteSelectorDirective } from '@dotcms/ui';
@@ -77,7 +77,6 @@ export class TemplateBuilderThemeSelectorComponent implements OnInit, OnDestroy 
     private initialLoad = true;
 
     constructor(
-        private dotMessageService: DotMessageService,
         public dialogService: DialogService,
         public messageService: MessageService,
         public paginatorService: PaginatorService,
