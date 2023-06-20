@@ -12,6 +12,7 @@ import com.dotcms.IntegrationTestBase;
 import com.dotcms.content.business.json.ContentletJsonHelper.INSTANCE;
 import com.dotcms.content.model.FieldValue;
 import com.dotcms.content.model.ImmutableContentlet;
+import com.dotcms.content.model.hydration.MetadataMapDeserializer;
 import com.dotcms.content.model.type.ImageFieldType;
 import com.dotcms.content.model.type.system.AbstractCategoryFieldType;
 import com.dotcms.content.model.type.system.AbstractTagFieldType;
@@ -43,7 +44,10 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.google.common.collect.ImmutableMap;
 import java.io.File;
 import java.io.IOException;
@@ -59,6 +63,8 @@ import java.util.stream.Stream;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import javax.annotation.Nullable;
 
 public class ContentletJsonAPITest extends IntegrationTestBase {
 
@@ -560,4 +566,29 @@ public class ContentletJsonAPITest extends IntegrationTestBase {
         assertEquals(contentlet2.getIdentifier(), contentletJsonAPI.toMutableContentlet(result.get(1)).getIdentifier());
     }
 
+    static class ClassWithMetadata{
+        @Nullable
+        @JsonProperty("metadata")
+        @JsonDeserialize(using = MetadataMapDeserializer.class)
+        Map<String, Object> metadata;
+    }
+
+    @Test
+    public void TestCustomMetadataDeserializer() throws JsonProcessingException {
+        final String jsonMetadata = "\"metadata\":{\n"
+                + "   \"name\":\"js.vtl\",\n"
+                + "   \"sha256\":\"465dc7f6886a1375b4320b21bd8ad93fa2b7fedc9ca57974843b41092edb7a71\",\n"
+                + "   \"isImage\":false,\n"
+                + "   \"contentType\":\"text/velocity\"\n"
+                + "}";
+
+        final String json = String.format("{%s}", jsonMetadata);
+
+        ClassWithMetadata instance = new ObjectMapper().readValue(json, ClassWithMetadata.class);
+        assertNotNull(instance.metadata);
+        assertEquals("js.vtl", instance.metadata.get("name"));
+        assertEquals("465dc7f6886a1375b4320b21bd8ad93fa2b7fedc9ca57974843b41092edb7a71", instance.metadata.get("sha256"));
+        assertEquals(false, instance.metadata.get("isImage"));
+        assertEquals("text/velocity", instance.metadata.get("contentType"));
+    }
 }
