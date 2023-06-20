@@ -328,7 +328,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
                 sidebar: {
                     ...layoutProperties.sidebar,
                     containers: [
-                        ...layoutProperties.sidebar.containers,
+                        ...(layoutProperties.sidebar.containers ?? []),
                         {
                             identifier: container.identifier
                         }
@@ -339,7 +339,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
     });
 
     /**
-     * @description This method adds a container to the sidebar
+     * @description This method deletes a container from the sidebar
      *
      * @memberof DotTemplateBuilderStore
      */

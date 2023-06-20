@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -12,7 +11,7 @@ import { TemplateBuilderBoxComponent } from '../template-builder-box/template-bu
 @Component({
     selector: 'dotcms-template-builder-sidebar',
     standalone: true,
-    imports: [CommonModule, DropdownModule, FormsModule, TemplateBuilderBoxComponent],
+    imports: [DropdownModule, FormsModule, TemplateBuilderBoxComponent],
     templateUrl: './template-builder-sidebar.component.html',
     styleUrls: ['./template-builder-sidebar.component.scss']
 })

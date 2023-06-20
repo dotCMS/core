@@ -15,8 +15,9 @@ import { ButtonModule } from 'primeng/button';
 import { DropdownModule } from 'primeng/dropdown';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
 
+import { DotMessageService } from '@dotcms/data-access';
 import { DotContainer } from '@dotcms/dotcms-models';
-import { DotContainerOptionsDirective, DotMessagePipeModule } from '@dotcms/ui';
+import { DotContainerOptionsDirective } from '@dotcms/ui';
 
 import { DotTemplateBuilderContainer, TemplateBuilderBoxSize } from '../../models/models';
 import { getBoxVariantByWidth } from '../../utils/gridstack-utils';
@@ -34,7 +35,6 @@ import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-co
         NgClass,
         ButtonModule,
         ScrollPanelModule,
-        DotMessagePipeModule,
         RemoveConfirmDialogComponent,
         DropdownModule,
         DotContainerOptionsDirective
@@ -60,9 +60,9 @@ export class TemplateBuilderBoxComponent implements OnChanges {
     @Input() showEditStyleButton = true;
 
     boxVariant = TemplateBuilderBoxSize.small;
-    dropdownLabel?: string = undefined;
+    dropdownLabel: string | null = null;
 
-    constructor(private el: ElementRef) {}
+    constructor(private el: ElementRef, private dotMessage: DotMessageService) {}
 
     get nativeElement(): GridItemHTMLElement {
         return this.el.nativeElement;
@@ -72,8 +72,8 @@ export class TemplateBuilderBoxComponent implements OnChanges {
         this.boxVariant = getBoxVariantByWidth(this.width);
         this.dropdownLabel =
             this.boxVariant === TemplateBuilderBoxSize.large
-                ? 'dot.template.builder.add.container'
-                : undefined;
+                ? this.dotMessage.get('dot.template.builder.add.container')
+                : null;
     }
 
     onContainerSelect({ value }: { value: DotContainer }) {

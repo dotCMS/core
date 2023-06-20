@@ -39,5 +39,15 @@
                 }
             }
         }
+
+        // Not sure why, but this dropdown is not adding the empty class to the label in this component
+        p-dropdown {
+            ::ng-deep {
+                .p-dropdown-label.p-inputtext {
+                    width: 0;
+                    padding: 0;
+                }
+            }
+        }
     }
 }

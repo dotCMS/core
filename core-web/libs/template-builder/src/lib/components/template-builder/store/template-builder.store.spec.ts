@@ -31,7 +31,15 @@ describe('DotTemplateBuilderStore', () => {
         // Reset the state because is manipulated by reference
         service.init({
             items: GRIDSTACK_DATA_MOCK,
-            layoutProperties: { header: true, footer: true, sidebar: {} }
+            layoutProperties: {
+                header: true,
+                footer: true,
+                sidebar: {
+                    location: 'left',
+                    width: 'small',
+                    containers: []
+                }
+            }
         });
 
         // Get the initial state
@@ -330,6 +338,22 @@ describe('DotTemplateBuilderStore', () => {
                 location: 'left',
                 width: 'large'
             });
+        });
+    });
+
+    it('should add a container to the sidebar', () => {
+        service.addSidebarContainer(mockContainer);
+        service.vm$.subscribe(({ layoutProperties }) => {
+            expect(layoutProperties.sidebar.containers).toContain(mockContainer);
+        });
+    });
+
+    it('should delete a container from the sidebar', () => {
+        service.addSidebarContainer(mockContainer);
+        service.vm$.subscribe(({ layoutProperties }) => {
+            expect(layoutProperties.sidebar.containers).toContain(mockContainer);
+            service.deleteSidebarContainer(0);
+            expect(layoutProperties.sidebar.containers).not.toContain(mockContainer);
         });
     });
 
