@@ -59,9 +59,6 @@ export class TemplateBuilderThemeSelectorComponent implements OnInit, OnDestroy 
     @Output()
     selected = new EventEmitter<DotTheme>();
 
-    @Output()
-    shutdown = new EventEmitter<boolean>();
-
     @ViewChild('searchInput', { static: true })
     searchInput: ElementRef;
 
@@ -168,7 +165,7 @@ export class TemplateBuilderThemeSelectorComponent implements OnInit, OnDestroy 
      * @memberof DotThemeSelectorComponent
      */
     hideDialog(): void {
-        this.shutdown.emit(false);
+        this.config?.data?.onClose();
     }
 
     private filterThemes(searchCriteria?: string): void {

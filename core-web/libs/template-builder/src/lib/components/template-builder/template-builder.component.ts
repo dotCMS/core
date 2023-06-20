@@ -299,12 +299,17 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
             resizable: false,
             width: '80%',
             data: {
-                onSelectTheme: (theme: DotTheme): void =>
+                onSelectTheme: (theme: DotTheme): void => {
                     this.templateChange.emit({
                         themeId: theme.identifier,
                         layout: { ...this.latestLayout },
                         title: null
-                    })
+                    });
+                    this.ref.destroy();
+                },
+                onClose(): void {
+                    this.ref.destroy();
+                }
             }
         });
     }
