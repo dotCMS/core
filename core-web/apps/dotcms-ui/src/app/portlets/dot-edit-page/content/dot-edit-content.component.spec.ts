@@ -70,12 +70,13 @@ import {
     DotPageRender,
     DotPageRenderState
 } from '@dotcms/dotcms-models';
-import { DotExperimentsService } from "@dotcms/portlets/dot-experiments/data-access";
+import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import {
     CoreWebServiceMock,
     dotcmsContentletMock,
-    DotWorkflowServiceMock, getExperimentMock,
+    DotWorkflowServiceMock,
+    getExperimentMock,
     LoginServiceMock,
     mockDotLanguage,
     MockDotMessageService,
@@ -85,8 +86,7 @@ import {
     mockUser,
     processedContainers,
     SiteServiceMock
-} from "@dotcms/utils-testing";
-
+} from '@dotcms/utils-testing';
 
 import { DotEditPageWorkflowsActionsModule } from './components/dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
 import {

@@ -43,6 +43,7 @@ export class DotContainerOptionsDirective implements OnInit, OnDestroy {
             this.control.optionLabel = DEFAULT_LABEL_NAME_INDEX;
             this.control.optionValue = DEFAULT_VALUE_NAME_INDEX;
             this.control.optionDisabled = 'inactive';
+            this.control.filterBy = 'value.friendlyName,value.title';
         } else {
             console.warn('ContainerOptionsDirective is for use with PrimeNg Dropdown');
         }
@@ -70,7 +71,7 @@ export class DotContainerOptionsDirective implements OnInit, OnDestroy {
             take(1),
             map((containerEntities) => {
                 return containerEntities.map((container) => ({
-                    label: container.friendlyName,
+                    label: container.title,
                     value: container,
                     inactive: false
                 }));
