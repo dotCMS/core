@@ -62,9 +62,7 @@ export class AddToBundleService {
                     method: 'POST',
                     url: this.addToBundleUrl
                 })
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                // @ts-ignore
-                .pipe(map((res: DotAjaxActionResponseView) => res))
+                .pipe(map((res) => res as DotAjaxActionResponseView));
         );
     }
 }
