@@ -39,11 +39,8 @@ public class BinaryMap {
 	public BinaryMap(Contentlet content, Field field, Context context) {
 		this.content = content;
 		this.field = field;
-		final boolean staticPublishIncludeLangUri = Config.getBooleanProperty (
-				"STATIC_PUBLISH_INCLUDE_LANG_URI", false);
-		this.includeLanguageInLink = staticPublishIncludeLangUri ||
-				!(context.containsKey(VelocityUtil.STATIC_PUSH_PUBLISH)
-				&& (boolean) context.get(VelocityUtil.STATIC_PUSH_PUBLISH));
+		// TODO: check if the request has the attribute for static PP
+		this.includeLanguageInLink = true;
 	}
 	
     public BinaryMap(Contentlet content,
