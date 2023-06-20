@@ -56,33 +56,27 @@ export class DotUiColorsService {
         this.setColorBackground(el, this.currentColors.background);
     }
 
-    private getDefaultsColors(el: HTMLElement): DotUiColors {
-        const values = window.getComputedStyle(el);
-
-        return {
-            primary: values.getPropertyValue('--color-main'),
-            secondary: values.getPropertyValue('--color-sec'),
-            background: values.getPropertyValue('--color-background')
-        };
-    }
-
     private setColorBackground(el: HTMLElement, color: string): void {
         const colorBackground: TinyColor = new TinyColor(color);
 
-        if (colorBackground.isValid && this.getDefaultsColors(el).background !== color) {
+        if (colorBackground.isValid) {
             el.style.setProperty('--color-background', colorBackground.toHexString().toUpperCase());
         }
     }
 
     private setColor(el: HTMLElement, hex: string, type: string): void {
-        const baseColor = ShadeGenerator.hue(hex).shade('100').hsl();
-        const baseColorHsl = parseHSL(baseColor);
+        const color = new TinyColor(hex);
 
-        el.style.setProperty(`--color-${type}-h`, baseColorHsl.hue);
-        el.style.setProperty(`--color-${type}-s`, baseColorHsl.saturation);
+        if (color.isValid) {
+            const baseColor = ShadeGenerator.hue(hex).shade('100').hsl();
+            const baseColorHsl = parseHSL(baseColor);
 
-        this.setShades(el, hex, type);
-        this.setOpacities(el, baseColorHsl.saturation, type);
+            el.style.setProperty(`--color-${type}-h`, baseColorHsl.hue);
+            el.style.setProperty(`--color-${type}-s`, baseColorHsl.saturation);
+
+            this.setShades(el, hex, type);
+            this.setOpacities(el, baseColorHsl.saturation, type);
+        }
     }
 
     private setShades(el: HTMLElement, hex: string, type: string) {
