@@ -6,7 +6,8 @@ import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotContainersService, DotMessageService } from '@dotcms/data-access';
+import { DotContainersServiceMock } from '@dotcms/utils-testing';
 
 import { TemplateBuilderBoxComponent } from './template-builder-box.component';
 
@@ -29,6 +30,10 @@ export default {
                 {
                     provide: DotMessageService,
                     useValue: DOT_MESSAGE_SERVICE_TB_MOCK
+                },
+                {
+                    provide: DotContainersService,
+                    useValue: new DotContainersServiceMock()
                 }
             ]
         })

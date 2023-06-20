@@ -4,6 +4,8 @@ import { v4 as uuid } from 'uuid';
 
 import { Injectable } from '@angular/core';
 
+import { DotContainer } from '@dotcms/dotcms-models';
+
 import { DotGridStackNode, DotGridStackWidget, DotTemplateBuilderState } from '../models/models';
 import {
     getIndexRowInItems,
@@ -260,6 +262,42 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
             })
         };
     });
+
+    /**
+     * @description This method adds a container to a box
+     *
+     * @memberof DotTemplateBuilderStore
+     */
+    readonly addContainer = this.updater(
+        (
+            state,
+            {
+                affectedColumn,
+                container
+            }: { affectedColumn: DotGridStackWidget; container: DotContainer }
+        ) => {
+            const { items } = state;
+
+            const updatedItems = items.map((row) => {
+                if (row.id != affectedColumn.parentId) {
+                    return row;
+                }
+
+                const updatedChildren = row.subGridOpts.children.map((child) => {
+                    if (affectedColumn.id === child.id)
+                        child.containers.push({
+                            identifier: container.identifier
+                        });
+
+                    return child;
+                });
+
+                return { ...row, subGridOpts: { ...row.subGridOpts, children: updatedChildren } };
+            });
+
+            return { ...state, items: updatedItems };
+        }
+    );
 
     // Effects
 

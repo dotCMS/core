@@ -61,6 +61,7 @@
                     [items]="box.containers"
                     [width]="box.w"
                     (deleteColumn)="removeColumn(box, boxElement, row.id)"
+                    (addContainer)="addContainer(box, row.id, $event)"
                     (editClasses)="editBoxStyleClasses(row.id, box)"
                 ></dotcms-template-builder-box>
             </div>

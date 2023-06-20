@@ -10,8 +10,9 @@ import { DividerModule } from 'primeng/divider';
 import { DialogService, DynamicDialogModule, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { ToolbarModule } from 'primeng/toolbar';
 
-import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotContainersService, DotMessageService } from '@dotcms/data-access';
+import { DotContainerOptionsDirective, DotMessagePipeModule } from '@dotcms/ui';
+import { DotContainersServiceMock } from '@dotcms/utils-testing';
 
 import { AddStyleClassesDialogComponent } from './components/add-style-classes-dialog/add-style-classes-dialog.component';
 import { DotAddStyleClassesDialogStore } from './components/add-style-classes-dialog/store/add-style-classes-dialog.store';
@@ -52,7 +53,8 @@ export default {
                 ButtonModule,
                 TemplateBuilderActionsComponent,
                 ToolbarModule,
-                DividerModule
+                DividerModule,
+                DotContainerOptionsDirective
             ],
             providers: [
                 DotTemplateBuilderStore,
@@ -62,6 +64,10 @@ export default {
                 {
                     provide: DotMessageService,
                     useValue: DOT_MESSAGE_SERVICE_TB_MOCK
+                },
+                {
+                    provide: DotContainersService,
+                    useValue: new DotContainersServiceMock()
                 },
                 {
                     provide: HttpClient,
