@@ -11,7 +11,7 @@ import { containersMock } from '@dotcms/utils-testing';
 import { DotTemplateBuilderStore } from './template-builder.store';
 
 import { DotGridStackNode, DotGridStackWidget } from '../models/models';
-import { GRIDSTACK_DATA_MOCK } from '../utils/mocks';
+import { GRIDSTACK_DATA_MOCK, mockTemplateBuilderContainer } from '../utils/mocks';
 
 global.structuredClone = jest.fn((val) => {
     return JSON.parse(JSON.stringify(val));
@@ -301,6 +301,27 @@ describe('DotTemplateBuilderStore', () => {
             const row = items.find((item) => item.id === parentRow.id);
 
             expect(row?.subGridOpts?.children[0].containers).toContain(mockContainer);
+        });
+    });
+
+    it('should delete a container from specific box', () => {
+        const parentRow = initialState[2];
+
+        const columnToAddContainer: DotGridStackWidget = {
+            ...(parentRow.subGridOpts?.children[0] as DotGridStackWidget),
+            containers: [mockTemplateBuilderContainer],
+            parentId: parentRow.id as string
+        };
+        service.deleteContainer({
+            affectedColumn: columnToAddContainer,
+            containerIndex: 0
+        });
+        service.items$.subscribe((items) => {
+            const row = items.find((item) => item.id === parentRow.id);
+
+            expect(row?.subGridOpts?.children[0].containers).not.toContain(
+                mockTemplateBuilderContainer
+            );
         });
     });
 
