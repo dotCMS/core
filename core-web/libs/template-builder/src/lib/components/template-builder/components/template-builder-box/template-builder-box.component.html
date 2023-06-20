@@ -44,7 +44,7 @@
         <div class="template-builder-box__item" *ngFor="let item of items; let i = index">
             <p>{{ item.identifier }}</p>
             <p-button
-                (onClick)="deleteContainer.emit(index)"
+                (onClick)="deleteContainer.emit(i)"
                 icon="pi pi-trash"
                 styleClass="p-button-secondary p-button-rounded p-button-text p-button-sm"
                 data-testId="btn-trash-container"

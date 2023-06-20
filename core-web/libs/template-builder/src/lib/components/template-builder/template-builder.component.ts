@@ -316,8 +316,14 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
         this.store.addSidebarContainer(container);
     }
 
-    deleteSidebarContainer(_: number): void {
-        /**/
+    /**
+     * @description This method deletes a container from the sidebar
+     *
+     * @param {number} index
+     * @memberof TemplateBuilderComponent
+     */
+    deleteSidebarContainer(index: number): void {
+        this.store.deleteSidebarContainer(index);
     }
 
     private openDynamicDialog(selectedClasses = []): Observable<string[]> {
