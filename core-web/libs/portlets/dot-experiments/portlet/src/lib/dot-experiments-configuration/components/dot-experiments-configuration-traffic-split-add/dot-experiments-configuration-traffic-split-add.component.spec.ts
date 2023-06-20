@@ -57,7 +57,6 @@ describe('DotExperimentsConfigurationTrafficSplitAddComponent', () => {
             DotExperimentsConfigurationStore,
             mockProvider(DotExperimentsService),
             mockProvider(MessageService),
-            mockProvider(MessageService),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(ActivatedRoute, ACTIVE_ROUTE_MOCK_CONFIG),
             {
