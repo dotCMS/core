@@ -5,6 +5,7 @@ import java.io.Serializable;
 import java.util.Map;
 import java.util.Optional;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotmarketing.util.Constants;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import com.dotcms.contenttype.model.field.Field;
@@ -23,6 +24,8 @@ import io.vavr.Lazy;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.context.ViewContext;
 
+import javax.servlet.http.HttpServletRequest;
+
 /**
  * A helper class to provide an object to return to the dotCMS when a content has a binary field
  * @since 1.9.1.3
@@ -40,9 +43,16 @@ public class BinaryMap {
 		this.content = content;
 		this.field = field;
 		// don't include language in the URL if the request has the request attribute User-Agent set for PP
+		HttpServletRequest request = null;
 		if (context instanceof ViewContext) {
 			final ViewContext viewContext = (ViewContext) context;
-			final String userAgent = (String) viewContext.getRequest().getAttribute("User-Agent");
+			request = viewContext.getRequest();
+		}
+		if (request == null) {
+			request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+		}
+		if (request != null) {
+			final String userAgent = (String) request.getAttribute("User-Agent");
 			this.includeLanguageInLink = !(UtilMethods.isSet(userAgent)
 					&& userAgent.equalsIgnoreCase(Constants.USER_AGENT_DOTCMS_PUSH_PUBLISH));
 		} else {
