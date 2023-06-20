@@ -1,4 +1,3 @@
-<dotcms-template-builder-background-columns></dotcms-template-builder-background-columns>
 <p-toolbar>
     <div class="p-toolbar-group-start">
         <ng-content select="[toolbar-left]"></ng-content>
@@ -48,6 +47,7 @@
             (sidebarWidthChange)="sidebarWidthChange($event)"
         />
         <div class="grid-stack">
+            <dotcms-template-builder-background-columns></dotcms-template-builder-background-columns>
             <dotcms-template-builder-row
                 class="grid-stack-item"
                 #rowElement
