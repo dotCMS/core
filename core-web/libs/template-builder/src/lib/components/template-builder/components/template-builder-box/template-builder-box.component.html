@@ -26,6 +26,7 @@
 
         <div>
             <p-button
+                *ngIf="showEditStyleButton"
                 (onClick)="editClasses.emit()"
                 data-testId="box-style-class-button"
                 icon="pi pi-palette"
@@ -68,6 +69,7 @@
             optionLabel="label"
         ></p-dropdown>
         <p-button
+            *ngIf="showEditStyleButton"
             (onClick)="editClasses.emit()"
             data-testId="box-style-class-button-small"
             icon="pi pi-palette"

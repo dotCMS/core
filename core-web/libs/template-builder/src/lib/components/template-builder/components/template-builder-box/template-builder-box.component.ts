@@ -57,6 +57,7 @@ export class TemplateBuilderBoxComponent implements OnChanges {
     @Input() items: DotTemplateBuilderContainer[];
 
     @Input() width = 1;
+    @Input() showEditStyleButton = true;
 
     boxVariant = TemplateBuilderBoxSize.small;
     dropdownLabel?: string = undefined;

@@ -50,7 +50,8 @@ describe('TemplateBuilderBoxComponent', () => {
             {
                 hostProps: {
                     width: 10,
-                    items: CONTAINERS_DATA_MOCK
+                    items: CONTAINERS_DATA_MOCK,
+                    showEditStyleButton: true
                 }
             }
         );
@@ -96,6 +97,15 @@ describe('TemplateBuilderBoxComponent', () => {
         expect(secondTemplate).toBeNull();
     });
 
+    it('should not show edit style classes button when showEditStyleButton is false small variant', () => {
+        spectator.setInput('showEditStyleButton', false);
+        spectator.detectComponentChanges();
+
+        const paletteButton = spectator.query(byTestId('box-style-class-button'));
+
+        expect(paletteButton).toBeFalsy();
+    });
+
     it('should show all buttons for small variant', () => {
         spectator.setInput('width', 1);
         spectator.detectComponentChanges();
@@ -106,6 +116,14 @@ describe('TemplateBuilderBoxComponent', () => {
         expect(addButton).toBeTruthy();
         expect(paletteButton).toBeTruthy();
         expect(deleteButton).toBeTruthy();
+    });
+    it('should not show edit style classes button when showEditStyleButton is false small variant', () => {
+        spectator.setInput('showEditStyleButton', false);
+        spectator.detectComponentChanges();
+
+        const paletteButton = spectator.query(byTestId('box-style-class-button-small'));
+
+        expect(paletteButton).toBeFalsy();
     });
 
     it('should trigger addContainer when click on plus button', () => {

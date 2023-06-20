@@ -28,11 +28,26 @@
             font-size: $font-size-sm;
             margin: $spacing-3;
         }
+
+        .p-dropdown .p-dropdown-trigger {
+            width: 0.875rem; // 14px
+            height: 0.875rem; // 14px
+        }
+
+        .p-dropdown {
+            border-radius: 50%;
+            padding: 0.5625rem; // 9px
+            margin-top: $spacing-3;
+            margin-bottom: $spacing-3;
+        }
     }
 }
 
 p-dropdown {
     ::ng-deep {
+        p-dropdown {
+            height: 100%;
+        }
         .p-dropdown {
             display: flex;
             flex-direction: row-reverse; // this allows having the plus icon at the left of the placeholder
@@ -43,7 +58,7 @@ p-dropdown {
             padding: $spacing-2;
         }
         .p-dropdown:hover {
-            background: $color-palette-primary-200;
+            background: $color-palette-primary-100;
         }
         .p-dropdown-label.p-inputtext {
             font-size: $font-size-sm;
@@ -53,6 +68,7 @@ p-dropdown {
 
             &.p-dropdown-label-empty {
                 width: 0;
+                padding: 0;
             }
         }
         .p-dropdown-trigger-icon {
