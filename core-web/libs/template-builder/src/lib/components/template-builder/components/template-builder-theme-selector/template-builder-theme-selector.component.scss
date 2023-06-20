@@ -33,6 +33,11 @@
     padding: 1.5rem 1rem;
     transition: background-color 0.15s ease-in;
     width: 15rem;
+
+    &.active {
+        box-shadow: 0 10px 10px #0003;
+        background: #ffffff;
+    }
 }
 
 ::ng-deep {

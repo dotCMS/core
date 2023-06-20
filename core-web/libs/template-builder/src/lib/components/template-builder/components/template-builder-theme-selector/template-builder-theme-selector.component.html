@@ -38,6 +38,7 @@
         <ng-template let-theme pTemplate="gridItem">
             <div
                 class="p-col-12 p-lg-3 theme-item"
+                [ngClass]="{ active: theme.inode === current?.inode }"
                 (click)="selectTheme(theme); $event.stopImmediatePropagation()"
             >
                 <svg

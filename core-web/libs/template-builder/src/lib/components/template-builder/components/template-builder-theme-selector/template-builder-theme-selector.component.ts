@@ -18,7 +18,7 @@ import { LazyLoadEvent, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { DataView, DataViewModule } from 'primeng/dataview';
 import { DropdownModule } from 'primeng/dropdown';
-import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { DialogService, DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { debounceTime, take, takeUntil } from 'rxjs/operators';
 
@@ -51,10 +51,7 @@ import { DotMessagePipeModule, DotSiteSelectorDirective } from '@dotcms/ui';
 })
 export class TemplateBuilderThemeSelectorComponent implements OnInit, OnDestroy {
     ref: DynamicDialogRef;
-
     themes: DotTheme[] = [];
-    countries: unknown[];
-    selectedCountry: string;
 
     @Input()
     value: DotTheme;
@@ -85,7 +82,8 @@ export class TemplateBuilderThemeSelectorComponent implements OnInit, OnDestroy 
         public messageService: MessageService,
         public paginatorService: PaginatorService,
         private siteService: SiteService,
-        public cd: ChangeDetectorRef
+        public cd: ChangeDetectorRef,
+        private config: DynamicDialogConfig
     ) {}
 
     ngOnInit() {
@@ -144,8 +142,6 @@ export class TemplateBuilderThemeSelectorComponent implements OnInit, OnDestroy 
      * @memberof DotThemeSelectorComponent
      */
     siteChange(site: Site): void {
-        // eslint-disable-next-line no-console
-        console.log('SITE:', site);
         this.searchInput.nativeElement.value = null;
         this.paginatorService.setExtraParams('hostId', site.identifier);
         this.filterThemes('');
@@ -176,9 +172,7 @@ export class TemplateBuilderThemeSelectorComponent implements OnInit, OnDestroy 
      * @memberof DotThemeSelectorComponent
      */
     apply(): void {
-        // eslint-disable-next-line no-console
-        console.log('APPLY:', this.current);
-        this.selected.emit(this.current);
+        this.config?.data?.onSelectTheme(this.current);
     }
 
     /**

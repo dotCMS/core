@@ -27,7 +27,7 @@ import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { filter, take, tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotContainer, DotLayout } from '@dotcms/dotcms-models';
+import { DotContainer, DotLayout, DotTheme } from '@dotcms/dotcms-models';
 
 import { colIcon, rowIcon } from './assets/icons';
 import { AddStyleClassesDialogComponent } from './components/add-style-classes-dialog/add-style-classes-dialog.component';
@@ -58,6 +58,9 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
 
     @Output()
     layoutChange: EventEmitter<DotLayout> = new EventEmitter<DotLayout>();
+
+    @Output()
+    themeChange: EventEmitter<DotTheme> = new EventEmitter<DotTheme>();
 
     public items$: Observable<DotGridStackWidget[]>;
 
@@ -285,7 +288,10 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     public openThemeSelectorDynamicDialog(): void {
         this.ref = this.dialogService.open(TemplateBuilderThemeSelectorComponent, {
             header: this.dotMessage.get('dot.template.builder.theme.dialog.header.label'),
-            resizable: false
+            resizable: false,
+            data: {
+                onSelectTheme: (theme: DotTheme): void => this.themeChange.emit(theme)
+            }
         });
     }
 }

@@ -24,6 +24,7 @@ import {
     DotPageRender,
     DotPageRenderState,
     DotTemplateDesignerPayload,
+    DotTheme,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
 
@@ -136,6 +137,21 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
         this.nextUpdateTemplate({
             layout,
             themeId: this.pageState.template.theme,
+            title: this.pageState.page.title
+        });
+    }
+
+    /**
+     * Handle theme change event.
+     * Take the theme out, update the template and save it.
+     *
+     * @param {DotLayout} layout
+     * @memberof DotEditLayoutComponent
+     */
+    onThemeChange(theme: DotTheme) {
+        this.nextUpdateTemplate({
+            layout: this.pageState.layout,
+            themeId: theme.identifier,
             title: this.pageState.page.title
         });
     }
