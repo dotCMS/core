@@ -4,26 +4,40 @@ import static com.dotcms.content.business.json.ContentletJsonAPI.SAVE_CONTENTLET
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
+import com.dotcms.business.WrapInTransaction;
+import com.dotcms.datagen.FileAssetDataGen;
+import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
+import io.vavr.Tuple2;
 import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.sql.Connection;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
+import io.vavr.Tuple;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Before;
@@ -263,4 +277,62 @@ public class HostIntegrityCheckerTest extends IntegrationTestBase {
                 false
         };
     }
+
+    /**
+     * Method to test: {@link HostIntegrityChecker#executeFix(String)}
+     * When: Tests that after conflicts are detected a fix is applied in favor of remote host.
+     * Should: fix the content
+     * @throws Exception
+     */
+    @Test
+    public void test_executeFix() throws Exception {
+        final byte[] pngPixel= Base64.getDecoder().decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==");
+        final File pngFile=File.createTempFile("tmp", ".img");
+        Files.write(pngFile.toPath(), pngPixel);
+        final Host host = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
+        final Folder folder = new FolderDataGen().name("testFolder"+UUID.randomUUID().toString()).site(host).nextPersisted();
+        final Contentlet contentlet = new FileAssetDataGen(folder, pngFile).nextPersisted();
+        final FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
+
+//        final Contentlet contentlet = new FileAssetDataGen(folder, file).title("testFileAsset1").languageId(1).nextPersisted();
+
+        final Tuple2<String,String> introConflict = introduceConflict(fileAsset ,endpointId);
+
+        integrityChecker.executeFix(endpointId);
+
+        final DotConnect dotConnect = new DotConnect();
+        dotConnect.setSQL("SELECT asset_type FROM identifier WHERE id = ?");
+        dotConnect.addParam(fileAsset.getIdentifier());
+        final Connection connection = DbConnectionFactory.getConnection();
+        final List<Map<String, Object>> results = dotConnect.loadObjectResults(connection);
+
+        boolean assetSubtypeNotNull = results.stream()
+                .anyMatch(result -> result.containsKey("asset_subtype") && result.get("asset_subtype") != null);
+
+        Assert.assertTrue(assetSubtypeNotNull);
+
+
+    }
+
+    @WrapInTransaction
+    Tuple2<String,String> introduceConflict(final FileAsset contentlet, final String endpointId) throws DotDataException {
+        final DotConnect dotConnect = new DotConnect();
+        dotConnect.setSQL("INSERT INTO fileassets_ir \n"
+                + "(file_name, local_working_inode, remote_working_inode, local_identifier, remote_identifier, endpoint_id, language_id)\n"
+                + "VALUES(?, ?, ?, ?, ?, ?, ?)");
+
+        final String remoteIdentifier = UUID.randomUUID().toString();
+        final String remoteWorkingInode = UUID.randomUUID().toString();
+
+        dotConnect.addParam(contentlet.getFileName());
+        dotConnect.addParam(contentlet.getInode());
+        dotConnect.addParam(remoteWorkingInode);
+        dotConnect.addParam(contentlet.getIdentifier());
+        dotConnect.addParam(remoteIdentifier);
+        dotConnect.addParam(endpointId);
+        dotConnect.addParam(contentlet.getLanguageId());
+        dotConnect.loadResult();
+        return Tuple.of(remoteIdentifier, remoteWorkingInode);
+    }
+
 }
