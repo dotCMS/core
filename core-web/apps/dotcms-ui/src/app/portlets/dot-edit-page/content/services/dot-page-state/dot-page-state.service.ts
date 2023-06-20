@@ -28,8 +28,8 @@ import {
     DotPersona,
     ESContent
 } from '@dotcms/dotcms-models';
+import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import { generateDotFavoritePageUrl } from '@dotcms/utils';
-import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 
 import { PageModelChangeEvent, PageModelChangeEventType } from '../dot-edit-content-html/models';
 
@@ -41,16 +41,6 @@ export class DotPageStateService {
 
     private isInternalNavigation = false;
 
-    get pagePersonalization() {
-        const persona = this.currentState?.viewAs?.persona;
-
-        if (!persona) {
-            return `dot:default`;
-        }
-
-        return `dot:${persona.contentType}:${persona.keyTag}`;
-    }
-
     constructor(
         private dotContentletLockerService: DotContentletLockerService,
         private dotHttpErrorManagerService: DotHttpErrorManagerService,
@@ -61,6 +51,16 @@ export class DotPageStateService {
         private dotFavoritePageService: DotFavoritePageService,
         private dotExperimentsService: DotExperimentsService
     ) {}
+
+    get pagePersonalization() {
+        const persona = this.currentState?.viewAs?.persona;
+
+        if (!persona) {
+            return `dot:default`;
+        }
+
+        return `dot:${persona.contentType}:${persona.keyTag}`;
+    }
 
     /**
      * Get the page state with the options passed
