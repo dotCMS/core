@@ -43,6 +43,15 @@
     }
 }
 
+p-scrollpanel {
+    ::ng-deep {
+        .p-scrollpanel {
+            height: 10.9375rem;
+            width: 100%;
+        }
+    }
+}
+
 p-dropdown {
     ::ng-deep {
         p-dropdown {

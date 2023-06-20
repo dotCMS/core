@@ -306,6 +306,19 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
             });
         });
     }
+    /**
+     * @description This method adds a container to the sidebar
+     *
+     * @param {DotContainer} container
+     * @memberof TemplateBuilderComponent
+     */
+    addSidebarContainer(container: DotContainer): void {
+        this.store.addSidebarContainer(container);
+    }
+
+    deleteSidebarContainer(_: number): void {
+        /**/
+    }
 
     private openDynamicDialog(selectedClasses = []): Observable<string[]> {
         this.ref = this.dialogService.open(AddStyleClassesDialogComponent, {

@@ -314,6 +314,31 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
     });
 
     /**
+     * @description This method adds a container to the sidebar
+     *
+     * @memberof DotTemplateBuilderStore
+     */
+    readonly addSidebarContainer = this.updater((state, container: DotContainer) => {
+        const { layoutProperties } = state;
+
+        return {
+            ...state,
+            layoutProperties: {
+                ...layoutProperties,
+                sidebar: {
+                    ...layoutProperties.sidebar,
+                    containers: [
+                        ...layoutProperties.sidebar.containers,
+                        {
+                            identifier: container.identifier
+                        }
+                    ]
+                }
+            }
+        };
+    });
+
+    /**
      * @description This method adds a container to a box
      *
      * @memberof DotTemplateBuilderStore

@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 
 import { DropdownModule } from 'primeng/dropdown';
 
+import { DotContainer } from '@dotcms/dotcms-models';
+
 import { DotTemplateSidebarProperties } from '../../models/models';
 import { TemplateBuilderBoxComponent } from '../template-builder-box/template-builder-box.component';
 
@@ -21,6 +23,8 @@ export class TemplateBuilderSidebarComponent {
     };
 
     @Output() sidebarWidthChange = new EventEmitter<string>();
+    @Output() addContainer: EventEmitter<DotContainer> = new EventEmitter<DotContainer>();
+    @Output() deleteContainer: EventEmitter<number> = new EventEmitter<number>();
 
     get width() {
         return this.sidebarProperties.width.replace(/^\w/g, (l) => l.toUpperCase());

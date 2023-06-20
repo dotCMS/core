@@ -13,5 +13,7 @@
         [width]="2"
         [items]="containers"
         [showEditStyleButton]="false"
+        (addContainer)="addContainer.emit($event)"
+        (deleteContainer)="deleteContainer.emit($event)"
     ></dotcms-template-builder-box>
 </div>
