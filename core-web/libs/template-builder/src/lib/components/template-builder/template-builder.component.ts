@@ -265,7 +265,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
         this.store.updateSidebarWidth(width);
     }
 
-    /*
+    /**
      * @description This method calls the store to add a container to a box
      *
      * @param {DotGridStackWidget} box
