@@ -11,6 +11,8 @@
 .template-builder__container {
     display: flex;
     gap: $spacing-4;
+    padding-top: $spacing-3;
+    padding-bottom: $spacing-3;
 
     .grid-stack {
         flex: 1;
@@ -53,7 +55,6 @@ p-toolbar {
 
 dotcms-template-builder-section {
     margin-top: $spacing-3;
-    margin-bottom: $spacing-4;
 }
 
 p-divider {
