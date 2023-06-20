@@ -6,11 +6,11 @@ DB_BACKUP_FILE=/data/shared/dotcms_db.sql.gz
 setup_postgres () {
     echo "starting up postgres"
     if [ ! -d "/data/postgres" ]; then
-        mv /var/lib/postgresql/14/main /data/postgres
+        mv /var/lib/postgresql/$PG_VERSION/main /data/postgres
     fi
 
-    rm -rf /var/lib/postgresql/14/main
-    ln -sf  /data/postgres /var/lib/postgresql/14/main
+    rm -rf /var/lib/postgresql/$PG_VERSION/main
+    ln -sf  /data/postgres /var/lib/postgresql/$PG_VERSION/main
 
     /etc/init.d/postgresql start
 
