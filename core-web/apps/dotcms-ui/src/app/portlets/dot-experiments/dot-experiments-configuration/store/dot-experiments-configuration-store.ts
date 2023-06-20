@@ -532,7 +532,12 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                                     isOpen: false
                                 });
                             },
-                            (error: HttpErrorResponse) => throwError(error)
+                            (error: HttpErrorResponse) => {
+                                this.dotHttpErrorManagerService.handle(error);
+                                this.setSidebarStatus({
+                                    status: ComponentStatus.IDLE
+                                });
+                            }
                         )
                     )
                 )

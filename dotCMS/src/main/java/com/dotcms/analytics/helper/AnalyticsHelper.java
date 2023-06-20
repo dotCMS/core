@@ -154,7 +154,7 @@ public class AnalyticsHelper {
      * @return resolved token status
      */
     public TokenStatus resolveTokenStatus(final AccessToken accessToken) {
-        if (accessToken == null) {
+        if (Objects.isNull(accessToken)) {
             return TokenStatus.NONE;
         }
 
@@ -169,6 +169,7 @@ public class AnalyticsHelper {
 
             return TokenStatus.OK;
         }
+
         return Optional.ofNullable(accessToken.status()).map(AccessTokenStatus::tokenStatus).orElse(TokenStatus.NONE);
     }
 
@@ -196,7 +197,7 @@ public class AnalyticsHelper {
      * @return true if it has a {@link TokenStatus#OK} or {@link TokenStatus#IN_WINDOW}
      */
     private static boolean canUseToken(final TokenStatus tokenStatus) {
-        return tokenStatus == TokenStatus.OK || tokenStatus == TokenStatus.IN_WINDOW;
+        return tokenStatus.matchesAny(TokenStatus.OK, TokenStatus.IN_WINDOW);
     }
 
     /**
