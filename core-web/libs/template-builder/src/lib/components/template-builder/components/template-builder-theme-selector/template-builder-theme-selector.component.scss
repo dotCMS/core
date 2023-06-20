@@ -1,7 +1,7 @@
 @use "variables" as *;
 
 :host {
-    width: 40.875rem;
+    width: 100%;
     display: block;
 }
 
@@ -37,7 +37,7 @@
 
     &.active {
         box-shadow: 0 10px 10px #0003;
-        background: #ffffff;
+        background: $white;
     }
 }
 
@@ -50,7 +50,16 @@
 
 ::ng-deep {
     .p-dropdown {
-        font-size: $font-size-md;
-        border: 1px solid $color-palette-gray-200;
+        border: 1px solid $color-palette-gray-500;
+        padding: $spacing-3;
+        margin-left: 0;
+    }
+
+    .p-dropdown-label.p-inputtext {
+        font-size: $font-size-lg;
+    }
+
+    .p-dataview .p-dataview-content {
+        padding-left: 0;
     }
 }

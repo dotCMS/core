@@ -289,6 +289,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
         this.ref = this.dialogService.open(TemplateBuilderThemeSelectorComponent, {
             header: this.dotMessage.get('dot.template.builder.theme.dialog.header.label'),
             resizable: false,
+            width: '80%',
             data: {
                 onSelectTheme: (theme: DotTheme): void => this.themeChange.emit(theme)
             }

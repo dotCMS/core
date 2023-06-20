@@ -3,6 +3,7 @@
         #siteSelector
         [filter]="true"
         [showClear]="true"
+        [showClear]="false"
         (onChange)="siteChange($event.value)"
         dotSiteSelector
         optionLabel="name"
@@ -11,7 +12,6 @@
     ></p-dropdown>
 
     <div class="theme-search-box">
-        <i class="fas fa-search"></i>
         <input
             #searchInput
             data-testId="searchInput"
