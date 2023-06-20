@@ -12,6 +12,7 @@
             [showClear]="false"
             [filter]="true"
             [placeholder]="this.dropdownLabel"
+            [formControl]="formControl"
             (onChange)="onContainerSelect($event)"
             data-testId="btn-plus"
             dotContainerOptions
@@ -62,6 +63,7 @@
         <p-dropdown
             [showClear]="false"
             [filter]="true"
+            [formControl]="formControl"
             (onChange)="onContainerSelect($event)"
             dotContainerOptions
             appendTo="body"

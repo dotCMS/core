@@ -10,6 +10,7 @@ import {
     OnChanges,
     Output
 } from '@angular/core';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { DropdownModule } from 'primeng/dropdown';
@@ -37,7 +38,8 @@ import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-co
         ScrollPanelModule,
         RemoveConfirmDialogComponent,
         DropdownModule,
-        DotContainerOptionsDirective
+        DotContainerOptionsDirective,
+        ReactiveFormsModule
     ]
 })
 export class TemplateBuilderBoxComponent implements OnChanges {
@@ -62,6 +64,7 @@ export class TemplateBuilderBoxComponent implements OnChanges {
 
     boxVariant = TemplateBuilderBoxSize.small;
     dropdownLabel: string | null = null;
+    formControl = new FormControl(null); // used to programmatically set dropdown value, so that the same value can be selected twice consecutively
 
     constructor(private el: ElementRef, private dotMessage: DotMessageService) {}
 
@@ -79,5 +82,6 @@ export class TemplateBuilderBoxComponent implements OnChanges {
 
     onContainerSelect({ value }: { value: DotContainer }) {
         this.addContainer.emit(value);
+        this.formControl.setValue(null);
     }
 }
