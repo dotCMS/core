@@ -5,6 +5,7 @@ import { Component, Input } from '@angular/core';
  * reuses the dot-icon component
  * @export
  * @class UiDotIconButtonComponent
+ * @deprecated
  */
 @Component({
     selector: 'dot-icon-button',

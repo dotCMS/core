@@ -1,0 +1,205 @@
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator,
+    SpyObject
+} from '@ngneat/spectator/jest';
+import { of } from 'rxjs';
+
+import { ActivatedRoute, Router } from '@angular/router';
+
+import { MessageService } from 'primeng/api';
+
+import { DotMessageService } from '@dotcms/data-access';
+import { ComponentStatus, DotExperimentStatusList } from '@dotcms/dotcms-models';
+import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
+import {
+    CHARTJS_DATA_MOCK_WITH_DATA,
+    getExperimentMock,
+    getExperimentResultsMock,
+    MockDotMessageService
+} from '@dotcms/utils-testing';
+import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
+import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+
+import { DotExperimentsPublishVariantComponent } from './components/dot-experiments-publish-variant/dot-experiments-publish-variant.component';
+import { DotExperimentsReportsChartComponent } from './components/dot-experiments-reports-chart/dot-experiments-reports-chart.component';
+import { DotExperimentsReportsSkeletonComponent } from './components/dot-experiments-reports-skeleton/dot-experiments-reports-skeleton.component';
+import { DotExperimentsReportsComponent } from './dot-experiments-reports.component';
+import {
+    DotExperimentsReportsStore,
+    VmReportExperiment
+} from './store/dot-experiments-reports-store';
+
+import { DotExperimentsExperimentSummaryComponent } from '../shared/ui/dot-experiments-experiment-summary/dot-experiments-experiment-summary.component';
+import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
+
+const ActivatedRouteMock = {
+    snapshot: {
+        params: {
+            experimentId: '1111'
+        }
+    }
+};
+
+const defaultVmMock: VmReportExperiment = {
+    experiment: getExperimentMock(3),
+    results: getExperimentResultsMock(1),
+    chartData: CHARTJS_DATA_MOCK_WITH_DATA,
+    detailData: [],
+    isLoading: false,
+    hasEnoughSessions: false,
+    status: ComponentStatus.INIT,
+    showSummary: false,
+    winnerLegendSummary: { icon: 'icon', legend: 'legend' },
+    showPromoteDialog: false,
+    suggestedWinner: null
+};
+
+const EXPERIMENT_MOCK = getExperimentMock(0);
+const EXPERIMENT_RESULTS_MOCK = getExperimentResultsMock(0);
+
+const messageServiceMock = new MockDotMessageService({
+    'experiments.configure.scheduling.name': 'xx'
+});
+
+describe('DotExperimentsReportsComponent', () => {
+    let spectator: Spectator<DotExperimentsReportsComponent>;
+    let router: SpyObject<Router>;
+    let store: DotExperimentsReportsStore;
+    let dotExperimentsService: SpyObject<DotExperimentsService>;
+
+    const createComponent = createComponentFactory({
+        imports: [DotDynamicDirective],
+        component: DotExperimentsReportsComponent,
+
+        componentProviders: [DotExperimentsReportsStore],
+        providers: [
+            {
+                provide: ActivatedRoute,
+                useValue: ActivatedRouteMock
+            },
+            {
+                provide: DotMessageService,
+                useValue: messageServiceMock
+            },
+            mockProvider(Router),
+            mockProvider(DotExperimentsService),
+            mockProvider(DotHttpErrorManagerService),
+            mockProvider(MessageService)
+        ]
+    });
+
+    beforeEach(() => {
+        spectator = createComponent({
+            detectChanges: false
+        });
+
+        window.ResizeObserver =
+            window.ResizeObserver ||
+            jest.fn().mockImplementation(() => ({
+                disconnect: jest.fn(),
+                observe: jest.fn(),
+                unobserve: jest.fn()
+            }));
+
+        store = spectator.inject(DotExperimentsReportsStore, true);
+
+        dotExperimentsService = spectator.inject(DotExperimentsService);
+        dotExperimentsService.getById.mockReturnValue(of(EXPERIMENT_MOCK));
+        dotExperimentsService.getResults.mockReturnValue(of({ ...EXPERIMENT_RESULTS_MOCK }));
+
+        router = spectator.inject(Router);
+    });
+
+    it('should show the skeleton component when is loading', () => {
+        spectator.component.vm$ = of({ ...defaultVmMock, isLoading: true });
+        spectator.detectChanges();
+
+        expect(spectator.query(DotExperimentsUiHeaderComponent)).toExist();
+        expect(spectator.query(DotExperimentsReportsSkeletonComponent)).toExist();
+    });
+
+    it("shouldn't show the skeleton component when is not loading", () => {
+        spectator.component.vm$ = of({ ...defaultVmMock });
+        spectator.detectComponentChanges();
+
+        expect(spectator.query(DotExperimentsUiHeaderComponent)).toExist();
+        expect(spectator.query(DotExperimentsReportsSkeletonComponent)).not.toExist();
+    });
+
+    it('should show DotExperimentsReportsChartComponent when no loading', () => {
+        spectator.component.vm$ = of({ ...defaultVmMock, isLoading: false });
+        spectator.detectChanges();
+
+        expect(spectator.query(DotExperimentsReportsChartComponent)).toExist();
+    });
+
+    it('should show the SummaryComponent', () => {
+        spectator.component.vm$ = of({
+            ...defaultVmMock,
+            experiment: {
+                ...defaultVmMock.experiment,
+                status: DotExperimentStatusList.RUNNING
+            },
+            isLoading: false,
+            showSummary: true
+        });
+        spectator.detectComponentChanges();
+        expect(spectator.query(DotExperimentsExperimentSummaryComponent)).toExist();
+    });
+
+    it('should back to Experiment List', async () => {
+        spectator.component.vm$ = of({
+            ...defaultVmMock,
+            experiment: {
+                ...defaultVmMock.experiment,
+                status: DotExperimentStatusList.RUNNING
+            },
+            isLoading: false,
+            showSummary: true
+        });
+
+        spectator.detectComponentChanges();
+        spectator.fixture.whenStable().then(() => {
+            spectator.component.goToExperimentList(EXPERIMENT_MOCK.pageId);
+            expect(router.navigate).toHaveBeenCalledWith(
+                ['/edit-page/experiments/', EXPERIMENT_MOCK.pageId],
+                {
+                    queryParams: {
+                        mode: null,
+                        variantName: null,
+                        experimentId: null
+                    },
+                    queryParamsHandling: 'merge'
+                }
+            );
+        });
+    });
+
+    it('should load the publish variant dialog', () => {
+        spectator.detectChanges();
+
+        spectator.fixture.whenStable().then(() => {
+            spectator.click(spectator.query(byTestId('publish-variant-button')));
+            spectator.detectComponentChanges();
+
+            expect(spectator.query(DotExperimentsPublishVariantComponent)).toExist();
+        });
+    });
+
+    it('should load the publish variant dialog and close', () => {
+        spectator.component.openPublishVariantDialog();
+        spectator.detectComponentChanges();
+
+        spectator.fixture.whenStable().then(() => {
+            expect(spectator.query(DotExperimentsPublishVariantComponent)).toExist();
+
+            store.hidePromoteDialog();
+            spectator.detectComponentChanges();
+
+            expect(spectator.query(DotExperimentsPublishVariantComponent)).not.toExist();
+        });
+    });
+});
