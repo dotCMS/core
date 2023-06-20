@@ -168,12 +168,17 @@ describe('TemplateBuilderComponent', () => {
     });
 
     describe('layoutChange', () => {
-        it('should emit layoutChange when the store changes', (done) => {
-            const layoutChangeMock = jest.spyOn(spectator.component.layoutChange, 'emit');
+        it('should emit templateChange when the store changes', (done) => {
+            const templateChangeMock = jest.spyOn(spectator.component.templateChange, 'emit');
             store.init(parseFromDotObjectToGridStack(FULL_DATA_MOCK));
             store.items$.pipe(take(1)).subscribe(() => {
                 // const body = parseFromGridStackToDotObject(items);
-                expect(layoutChangeMock).toHaveBeenCalledWith({ body: FULL_DATA_MOCK });
+
+                expect(templateChangeMock).toHaveBeenCalledWith({
+                    title: null,
+                    layout: { body: FULL_DATA_MOCK }
+                });
+
                 done();
             });
         });
