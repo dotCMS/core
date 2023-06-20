@@ -5,8 +5,7 @@ import java.io.Serializable;
 import java.util.Map;
 import java.util.Optional;
 
-import com.dotcms.rendering.velocity.util.VelocityUtil;
-import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Constants;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
@@ -22,6 +21,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.Lazy;
 import org.apache.velocity.context.Context;
+import org.apache.velocity.tools.view.context.ViewContext;
 
 /**
  * A helper class to provide an object to return to the dotCMS when a content has a binary field
@@ -39,8 +39,15 @@ public class BinaryMap {
 	public BinaryMap(Contentlet content, Field field, Context context) {
 		this.content = content;
 		this.field = field;
-		// TODO: check if the request has the attribute for static PP
-		this.includeLanguageInLink = true;
+		// don't include language in the URL if the request has the request attribute User-Agent set for PP
+		if (context instanceof ViewContext) {
+			final ViewContext viewContext = (ViewContext) context;
+			final String userAgent = (String) viewContext.getRequest().getAttribute("User-Agent");
+			this.includeLanguageInLink = !(UtilMethods.isSet(userAgent)
+					&& userAgent.equalsIgnoreCase(Constants.USER_AGENT_DOTCMS_PUSH_PUBLISH));
+		} else {
+			this.includeLanguageInLink = true;
+		}
 	}
 	
     public BinaryMap(Contentlet content,
