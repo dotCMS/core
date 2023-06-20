@@ -95,13 +95,22 @@ describe('TemplateBuilderBoxComponent', () => {
         expect(secondTemplate).toBeNull();
     });
 
-    it('should not show edit style classes button when showEditStyleButton is false small variant', () => {
+    it('should not show edit style classes button when showEditStyleButton is false ', () => {
         spectator.setInput('showEditStyleButton', false);
         spectator.detectComponentChanges();
 
         const paletteButton = spectator.query(byTestId('box-style-class-button'));
 
         expect(paletteButton).toBeFalsy();
+    });
+
+    it('should not show deleteButton button when showEditStyleButton is false ', () => {
+        spectator.setInput('showDeleteButton', false);
+        spectator.detectComponentChanges();
+
+        const deleteButton = spectator.query(byTestId('btn-remove-item'));
+
+        expect(deleteButton).toBeFalsy();
     });
 
     it('should show all buttons for small variant', () => {
@@ -115,13 +124,24 @@ describe('TemplateBuilderBoxComponent', () => {
         expect(paletteButton).toBeTruthy();
         expect(deleteButton).toBeTruthy();
     });
-    it('should not show edit style classes button when showEditStyleButton is false small variant', () => {
+    it('should not show edit style classes button when showEditStyleButton is false for small variant', () => {
+        spectator.setInput('width', 1);
         spectator.setInput('showEditStyleButton', false);
         spectator.detectComponentChanges();
 
         const paletteButton = spectator.query(byTestId('box-style-class-button-small'));
 
         expect(paletteButton).toBeFalsy();
+    });
+
+    it('should not show deleteButton button when showEditStyleButton is false for small variant', () => {
+        spectator.setInput('width', 1);
+        spectator.setInput('showDeleteButton', false);
+        spectator.detectComponentChanges();
+
+        const deleteButton = spectator.query(byTestId('btn-remove-item'));
+
+        expect(deleteButton).toBeFalsy();
     });
 
     it('should trigger addContainer when click on plus button', () => {

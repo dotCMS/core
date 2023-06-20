@@ -10,9 +10,10 @@
 
 <div class="template-builder-sidebar__body-container">
     <dotcms-template-builder-box
-        [width]="3"
+        [width]="4"
         [items]="containers"
         [showEditStyleButton]="false"
+        [showDeleteButton]="false"
         (addContainer)="addContainer.emit($event)"
         (deleteContainer)="deleteContainer.emit($event)"
     ></dotcms-template-builder-box>
