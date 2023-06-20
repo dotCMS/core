@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 
 import { DotUiColorsService } from './dot-ui-colors.service';
 
-fdescribe('DotUiColorsService', () => {
+describe('DotUiColorsService', () => {
     let service: DotUiColorsService;
     let injector;
     let setPropertySpy;
