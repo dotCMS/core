@@ -31,7 +31,7 @@ import { DotDropdownDirective } from '@portlets/shared/directives/dot-dropdown.d
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsGoalConfigurationUrlParameterComponentComponent extends DotExperimentsOptionContentBaseComponent {
-    operatorsList = GoalsConditionsOperatorsListByType['URL_PARAMETER'];
+    override operatorsList = GoalsConditionsOperatorsListByType['URL_PARAMETER'];
 
     constructor(private readonly fgd: FormGroupDirective) {
         super(fgd);
