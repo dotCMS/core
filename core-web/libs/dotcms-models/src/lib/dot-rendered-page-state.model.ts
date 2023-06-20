@@ -44,11 +44,11 @@ export class DotPageRenderState extends DotPageRender {
         return this._state;
     }
 
-    get canCreateTemplate(): boolean {
+    override get canCreateTemplate(): boolean {
         return this.dotRenderedPage.canCreateTemplate;
     }
 
-    get containers(): DotPageContainerStructure {
+    override get containers(): DotPageContainerStructure {
         return this.dotRenderedPage.containers;
     }
 
@@ -56,19 +56,19 @@ export class DotPageRenderState extends DotPageRender {
         return this.dotRenderedPage.page.rendered;
     }
 
-    get layout(): DotLayout {
+    override get layout(): DotLayout {
         return this.dotRenderedPage.layout;
     }
 
-    get page(): DotPage {
+    override get page(): DotPage {
         return this.dotRenderedPage.page;
     }
 
-    get template(): DotTemplate {
+    override get template(): DotTemplate {
         return this.dotRenderedPage.template;
     }
 
-    get viewAs(): DotEditPageViewAs {
+    override get viewAs(): DotEditPageViewAs {
         return this.dotRenderedPage.viewAs;
     }
 

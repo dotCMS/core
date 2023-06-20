@@ -18,9 +18,9 @@ import {
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
+import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import { LoginServiceMock, mockDotRenderedPage, mockUser } from '@dotcms/utils-testing';
 import { DotPageStateService } from '@portlets/dot-edit-page/content/services/dot-page-state/dot-page-state.service';
-import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 
 import { DotIframePortletLegacyResolver } from './dot-iframe-porlet-legacy-resolver.service';
 
