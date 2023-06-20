@@ -36,6 +36,7 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -55,6 +56,7 @@ import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 import java.util.ArrayList;
@@ -101,10 +103,12 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   private final FieldAPI fieldAPI;
   private final LocalSystemEventsAPI localSystemEventsAPI;
 
+  private final RelationshipAPI relationshipAPI;
+
   public static final String TYPES_AND_FIELDS_VALID_VARIABLE_REGEX = "[_A-Za-z][_0-9A-Za-z]*";
 
   public ContentTypeAPIImpl(User user, boolean respectFrontendRoles, ContentTypeFactory fac, FieldFactory ffac,
-      PermissionAPI perms, FieldAPI fAPI, final LocalSystemEventsAPI localSystemEventsAPI) {
+      PermissionAPI perms, FieldAPI fAPI, final LocalSystemEventsAPI localSystemEventsAPI, RelationshipAPI relationshipAPI) {
     super();
     this.contentTypeFactory = fac;
     this.fieldFactory = ffac;
@@ -113,11 +117,12 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     this.respectFrontendRoles = respectFrontendRoles;
     this.fieldAPI = fAPI;
     this.localSystemEventsAPI = localSystemEventsAPI;
+    this.relationshipAPI = relationshipAPI;
   }
 
   public ContentTypeAPIImpl(User user, boolean respectFrontendRoles) {
     this(user, respectFrontendRoles, FactoryLocator.getContentTypeFactory(), FactoryLocator.getFieldFactory(),
-        APILocator.getPermissionAPI(), APILocator.getContentTypeFieldAPI(), APILocator.getLocalSystemEventsAPI());
+        APILocator.getPermissionAPI(), APILocator.getContentTypeFieldAPI(), APILocator.getLocalSystemEventsAPI(), APILocator.getRelationshipAPI());
   }
 
   final Lazy<Boolean>  deleteContentTypeAsynchronously =  Lazy.of(
@@ -539,7 +544,8 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
         if (null == newField) {
 
             newField = APILocator.getContentTypeFieldAPI()
-                    .save(FieldBuilder.builder(generateNewRelationshipFiled(sourceField))
+                    .save(FieldBuilder
+                            .builder(generateNewRelationshipFiledIfNeeded(sourceField, newContentType))
                             .sortOrder(sourceField.sortOrder())
                             .contentTypeId(newContentType.id())
                             .id(null)
@@ -567,35 +573,26 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   /**
    * This method will generate a new relationship field based on the source field
    * @param sourceField the source field
+   * @param newContentType the new content type
    *
    */
-  private Field generateNewRelationshipFiled(final Field sourceField) {
+  private Field generateNewRelationshipFiledIfNeeded(final Field sourceField, ContentType newContentType)
+          throws DotDataException, DotSecurityException {
 
     if (sourceField instanceof RelationshipField) {
 
       final RelationshipField relationshipField = (RelationshipField) sourceField;
+      final Relationship relationship = relationshipAPI.getRelationshipFromField(sourceField, user);
+      final boolean isSelfRelated = relationship.getParentStructureInode().equals(relationship.getChildStructureInode());
 
       return RelationshipFieldBuilder.builder(relationshipField)
-              .relationType(getRelationshipParentName(sourceField.relationType()) + "." + sourceField.variable() + "Copy")
-              .variable(sourceField.variable() + "Copy")
-              .name(sourceField.name() + "-copy")
+              .relationType(isSelfRelated ? newContentType.variable() : sourceField.relationType())
+              .variable(sourceField.variable())
+              .name(sourceField.name())
               .build();
     }
 
       return sourceField;
-  }
-
-  /**
-   * This method will get the parent name of the relationship from the relationship type
-   * @param relationshipType the relationship type
-   *
-   */
-  private String getRelationshipParentName(final String relationshipType) {
-
-    if (relationshipType.contains(".")) {
-        return relationshipType.substring(0, relationshipType.indexOf("."));
-    }
-    return relationshipType;
   }
 
   @WrapInTransaction
