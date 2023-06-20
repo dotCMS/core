@@ -1,4 +1,9 @@
-<p-overlayPanel #op appendTo="body" styleClass="dot-layout-properties__overlayPanel">
+<p-overlayPanel
+    #op
+    appendTo="body"
+    styleClass="dot-layout-properties__overlayPanel"
+    data-testId="template-layout-properties-panel"
+>
     <div class="field" [formGroup]="group">
         <dot-layout-properties-item
             class="property-item__header"

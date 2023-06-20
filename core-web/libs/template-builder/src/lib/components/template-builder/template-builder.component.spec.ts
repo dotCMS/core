@@ -172,6 +172,30 @@ describe('TemplateBuilderComponent', () => {
         expect(openDialogMock).toHaveBeenCalled();
     });
 
+    it('should open a panel when clicking on Layout button', () => {
+        const actionsButton = spectator.query(byTestId('btn-select-layout'));
+
+        spectator.click(actionsButton);
+
+        expect(spectator.query(byTestId('template-layout-properties-panel'))).toBeTruthy();
+    });
+
+    it('should trigger updateSidebarWidth on store when triggering sidebarWidthChange', () => {
+        const updateSidebarWidthMock = jest.spyOn(store, 'updateSidebarWidth');
+        spectator.component.sidebarWidthChange('large');
+        expect(updateSidebarWidthMock).toHaveBeenCalledWith('large');
+    });
+
+    it('should trigger updateLayoutProperties when triggering layoutPropertiesChange', () => {
+        const updateLayoutPropertiesMock = jest.spyOn(store, 'updateLayoutProperties');
+        spectator.component.layoutPropertiesChange({ header: false, footer: false, sidebar: {} });
+        expect(updateLayoutPropertiesMock).toHaveBeenCalledWith({
+            header: false,
+            footer: false,
+            sidebar: {}
+        });
+    });
+
     describe('layoutChange', () => {
         it('should emit layoutChange when the store changes', (done) => {
             const layoutChangeMock = jest.spyOn(spectator.component.layoutChange, 'emit');

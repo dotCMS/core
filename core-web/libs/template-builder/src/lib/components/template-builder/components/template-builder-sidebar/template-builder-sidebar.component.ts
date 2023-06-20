@@ -33,7 +33,7 @@ export class TemplateBuilderSidebarComponent {
      * @param {{ value: string }} { value }
      * @memberof TemplateBuilderSidebarComponent
      */
-    widthChange({ value }: { value: string }) {
+    widthChange({ value = 'medium' }: { value: string }) {
         this.sidebarWidthChange.emit(value.toLowerCase());
     }
 }
