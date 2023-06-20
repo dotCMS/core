@@ -59,6 +59,7 @@ export class TemplateBuilderBoxComponent implements OnChanges {
     @Input() width = 1;
 
     boxVariant = TemplateBuilderBoxSize.small;
+    dropdownLabel?: string = undefined;
 
     constructor(private el: ElementRef) {}
 
@@ -68,6 +69,10 @@ export class TemplateBuilderBoxComponent implements OnChanges {
 
     ngOnChanges(): void {
         this.boxVariant = getBoxVariantByWidth(this.width);
+        this.dropdownLabel =
+            this.boxVariant === TemplateBuilderBoxSize.large
+                ? 'dot.template.builder.add.container'
+                : undefined;
     }
 
     onContainerSelect({ value }: { value: DotContainer }) {

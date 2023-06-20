@@ -11,7 +11,7 @@
         <p-dropdown
             [showClear]="false"
             [filter]="true"
-            [placeholder]="'dot.template.builder.add.container' | dm"
+            [placeholder]="this.dropdownLabel | dm"
             (onChange)="onContainerSelect($event)"
             data-testId="btn-plus"
             dotContainerOptions
@@ -20,7 +20,7 @@
             optionLabel="label"
         >
             <ng-template pTemplate="selectedItem">
-                {{ 'dot.template.builder.add.container' | dm }}
+                {{ this.dropdownLabel | dm }}
             </ng-template>
         </p-dropdown>
 

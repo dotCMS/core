@@ -45,6 +45,10 @@
         color: $black;
         padding: 0 0 0 $spacing-2;
         max-width: 10rem;
+
+        &.p-dropdown-label-empty {
+            width: 0;
+        }
     }
     .p-dropdown-trigger-icon {
         color: $color-palette-primary;
