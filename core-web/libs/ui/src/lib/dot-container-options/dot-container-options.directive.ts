@@ -71,7 +71,7 @@ export class DotContainerOptionsDirective implements OnInit, OnDestroy {
             take(1),
             map((containerEntities) => {
                 return containerEntities.map((container) => ({
-                    label: container.friendlyName,
+                    label: container.title,
                     value: container,
                     inactive: false
                 }));
