@@ -1,9 +1,9 @@
 @use "variables" as *;
 @import "mixins";
 
-::ng-deep {
-    .template-builder-box,
-    .template-builder-box--small {
+.template-builder-box,
+.template-builder-box--small {
+    ::ng-deep {
         .pi.pi-trash {
             color: $color-palette-primary-400;
         }
@@ -12,8 +12,10 @@
             margin-left: 0;
         }
     }
+}
 
-    .template-builder-box--small {
+.template-builder-box--small {
+    ::ng-deep {
         .p-button-text {
             margin: $spacing-3 0;
         }
@@ -27,34 +29,38 @@
             margin: $spacing-3;
         }
     }
+}
 
-    .p-dropdown {
-        display: flex;
-        flex-direction: row-reverse; // this allows having the plus icon at the left of the placeholder
-        border: none;
-        background: none;
-        font-size: $spacing-2;
-        margin-left: $spacing-4;
-        padding: $spacing-2;
-    }
-    .p-dropdown:hover {
-        background: $color-palette-primary-200;
-    }
-    .p-dropdown-label.p-inputtext {
-        font-size: $font-size-sm;
-        color: $black;
-        padding: 0 0 0 $spacing-2;
-        max-width: 10rem;
-
-        &.p-dropdown-label-empty {
-            width: 0;
+p-dropdown {
+    ::ng-deep {
+        .p-dropdown {
+            display: flex;
+            flex-direction: row-reverse; // this allows having the plus icon at the left of the placeholder
+            border: none;
+            background: none;
+            font-size: $spacing-2;
+            margin-left: $spacing-4;
+            padding: $spacing-2;
         }
-    }
-    .p-dropdown-trigger-icon {
-        color: $color-palette-primary;
-    }
-    .p-dropdown .p-dropdown-trigger {
-        width: auto;
+        .p-dropdown:hover {
+            background: $color-palette-primary-200;
+        }
+        .p-dropdown-label.p-inputtext {
+            font-size: $font-size-sm;
+            color: $black;
+            padding: 0 0 0 $spacing-2;
+            max-width: 10rem;
+
+            &.p-dropdown-label-empty {
+                width: 0;
+            }
+        }
+        .p-dropdown-trigger-icon {
+            color: $color-palette-primary;
+        }
+        .p-dropdown .p-dropdown-trigger {
+            width: auto;
+        }
     }
 }
 
