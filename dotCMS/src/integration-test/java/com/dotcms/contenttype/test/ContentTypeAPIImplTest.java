@@ -22,6 +22,7 @@ import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
@@ -172,6 +173,81 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 						try {
 							Assert.assertTrue("Testing relationship field values",
 									relationshipAPI.getRelationshipFromField(field, user).isSelfRelated());
+						} catch (DotDataException | DotSecurityException e) {
+							Assert.fail("Error testing relationship field values");
+						}
+					});
+
+
+		} finally {
+
+			if (null != movieOriginal) {
+				contentTypeAPI.delete(movieOriginal);
+			}
+
+			if (null != movieCopy) {
+				contentTypeAPI.delete(movieCopy);
+			}
+		}
+
+	}
+
+	/**
+	 * Method to test: {@link ContentTypeAPI#copyFrom(CopyContentTypeBean)}
+	 * Given Scenario: Creates a content type related to itself and makes a copy of it
+	 * ExpectedResult: Expected result will be to have a copy of the original content type and related to itself
+	 *
+	 */
+	@Test
+	public void test_copy_content_type_with_a_relationship_field_expected_copy_success () throws DotDataException, DotSecurityException {
+
+		final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
+		ContentType movieCopy = null;
+		final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+		ImmutableSimpleContentType.Builder builder = ImmutableSimpleContentType.builder();
+		final long millis = System.currentTimeMillis();
+		ContentType movieOriginal = builder.name("MovieOriginal" + millis).folder(APILocator.systemHost().getFolder()).build();
+
+		try {
+			movieOriginal = contentTypeAPI.save(movieOriginal);
+
+			ImmutableTextField title = ImmutableTextField.builder().name("Title").indexed(true).required(true).build();
+			ImmutableRelationshipField relationship = ImmutableRelationshipField.builder()
+					.name("rel-inv")
+					.variable("relInv")
+					.values(String.valueOf(3))
+					.relationType("A")
+					.contentTypeId(movieOriginal.id()).build();
+
+			List<Field> fieldList = new ArrayList<>();
+			fieldList.add(title);
+			fieldList.add(relationship);
+
+			contentTypeAPI.save(movieOriginal, fieldList);
+
+			final List<Field> fieldsRecovery = APILocator.getContentTypeFieldAPI().byContentTypeId(movieOriginal.id());
+
+			for (final Field field : fieldsRecovery) {
+
+				assertEquals(movieOriginal.id(), field.contentTypeId());
+			}
+
+			final String newVariableName = "MovieOriginalCopy"+ millis;
+			movieCopy = contentTypeAPI.copyFrom(new CopyContentTypeBean.Builder().sourceContentType(movieOriginal).name(newVariableName).newVariable(newVariableName).build());
+
+			final List<Field> fieldsRecoveryCopy = APILocator.getContentTypeFieldAPI().byContentTypeId(movieCopy.id());
+
+			fieldsRecoveryCopy.stream()
+					.filter(field -> field instanceof RelationshipField).findFirst()
+					.ifPresent(field -> {
+						try {
+							Relationship rel = relationshipAPI.getRelationshipFromField(field, user);
+
+							Assert.assertEquals("Testing relationship relation type value", newVariableName + StringPool.PERIOD + "relInv",
+									rel.getRelationTypeValue());
+							Assert.assertEquals("Testing relationship parent relation name", "relInv",
+									rel.getParentRelationName());
+							Assert.assertNull("Testing relationship child relation name", rel.getChildRelationName());
 						} catch (DotDataException | DotSecurityException e) {
 							Assert.fail("Error testing relationship field values");
 						}
