@@ -238,7 +238,8 @@ export const MESSAGES_MOCK = {
     'dot.template.builder.toolbar.button.theme.label': 'Theme',
     'dot.template.builder.box.containers.error': 'Error loading containers',
     'dot.template.builder.classes.dialog.autocomplete.label': 'Class',
-    'dot.template.builder.classes.dialog.header.label': 'Edit Classes'
+    'dot.template.builder.classes.dialog.header.label': 'Edit Classes',
+    'dot.template.builder.classes.dialog.update.button': 'Update'
 };
 
 export const DOT_MESSAGE_SERVICE_TB_MOCK = new MockDotMessageService(MESSAGES_MOCK);
@@ -303,7 +304,6 @@ export const MOCK_STYLE_CLASSES_FILE = {
         'text-justify'
     ]
 };
-
 
 const noop = () => {
     //

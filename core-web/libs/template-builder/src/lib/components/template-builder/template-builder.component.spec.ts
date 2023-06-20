@@ -91,9 +91,11 @@ describe('TemplateBuilderComponent', () => {
         expect(spectator.query(byTestId('add-box'))).toBeTruthy();
     });
 
-    it('should have a background', () => {
-        expect(spectator.query('dotcms-template-builder-background-columns')).toBeTruthy();
-    });
+    /* TODO: Uncomment when adding again the dotcms-template-builder-background-columns
+     *   it('should have a Add Container Button', () => {it('should have a background', () => {
+     *      expect(spectator.query('dotcms-template-builder-background-columns')).toBeTruthy();
+     *  });
+     */
 
     it('should have the same quantity of rows as mocked data', () => {
         expect(spectator.queryAll(byTestId('row')).length).toBe(FULL_DATA_MOCK.rows.length);
