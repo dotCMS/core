@@ -7,7 +7,7 @@
         <div class="experiment-scheduling-add__form-wrapper flex flex-column">
             <form class="p-fluid" [formGroup]="form" data-testId="add-scheduling-form" novalidate>
                 <div class="field">
-                    <label dotFieldRequired for="initialDate">
+                    <label for="initialDate">
                         {{ 'experiments.configure.scheduling.start.time' | dm }}
                     </label>
                     <p-calendar
@@ -26,14 +26,14 @@
                     ></p-calendar>
                 </div>
                 <div class="field">
-                    <label dotFieldRequired for="endTime">
+                    <label for="endTime">
                         {{ 'experiments.configure.scheduling.end.time' | dm }}
                     </label>
                     <p-calendar
                         id="endTime"
                         [defaultDate]="minEndDate || initialDate"
-                        [minDate]="minEndDate || initialDate"
                         [maxDate]="maxEndDate"
+                        [minDate]="minEndDate || initialDate"
                         [readonlyInput]="true"
                         [showClear]="true"
                         [showIcon]="true"

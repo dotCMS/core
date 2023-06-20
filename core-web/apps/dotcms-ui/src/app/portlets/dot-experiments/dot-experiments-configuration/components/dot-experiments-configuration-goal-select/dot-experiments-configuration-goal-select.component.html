@@ -35,6 +35,16 @@
                                     <dot-experiments-goal-configuration-reach-page />
                                 </ng-template>
                             </dot-experiment-options-item>
+
+                            <dot-experiment-options-item
+                                [value]="goalsTypes.URL_PARAMETER"
+                                detail="{{ goals.URL_PARAMETER.description | dm }}"
+                                title="{{ goals.URL_PARAMETER.label | dm }}"
+                            >
+                                <ng-template dotOptionContent>
+                                    <dot-experiments-goal-configuration-url-parameter-component />
+                                </ng-template>
+                            </dot-experiment-options-item>
                         </dot-experiment-options>
                     </div>
                     <div class="field flex-auto flex flex-column">
