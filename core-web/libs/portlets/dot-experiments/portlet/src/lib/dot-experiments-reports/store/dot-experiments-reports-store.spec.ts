@@ -15,8 +15,8 @@ import { DotMessageService } from '@dotcms/data-access';
 import {
     BayesianStatusResponse,
     ComponentStatus,
-    DialogStatus,
     DotExperimentStatusList,
+    DotExperimentVariantDetail,
     ReportSummaryLegendByBayesianStatus
 } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
@@ -92,11 +92,7 @@ describe('DotExperimentsReportsStore', () => {
         const expectedInitialState: DotExperimentsReportsState = {
             experiment: EXPERIMENT_MOCK,
             status: ComponentStatus.IDLE,
-            results: EXPERIMENT_MOCK_RESULTS,
-            promoteDialog: {
-                status: ComponentStatus.IDLE,
-                visibility: DialogStatus.HIDE
-            }
+            results: EXPERIMENT_MOCK_RESULTS
         };
 
         expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_MOCK.id);
@@ -414,18 +410,25 @@ describe('DotExperimentsReportsStore', () => {
         });
 
         it('should promote variant', () => {
-            const variantToPromote = {
-                experimentId: EXPERIMENT_MOCK.id,
-                variant: EXPERIMENT_MOCK.trafficProportion.variants[1]
+            const variant: DotExperimentVariantDetail = {
+                id: '111',
+                name: 'Variant 111 Name',
+                conversions: 0,
+                conversionRate: '0%',
+                conversionRateRange: '19.41% to 93.24%',
+                sessions: 0,
+                probabilityToBeBest: '7.69%',
+                isWinner: false,
+                isPromoted: false
             };
 
             dotExperimentsService.promoteVariant.mockReturnValue(of(EXPERIMENT_MOCK));
 
-            store.promoteVariant(variantToPromote);
+            store.promoteVariant({ experimentId: EXPERIMENT_MOCK.id, variant: variant });
 
             expect(dotExperimentsService.promoteVariant).toHaveBeenCalledWith(
                 EXPERIMENT_MOCK.id,
-                EXPERIMENT_MOCK.trafficProportion.variants[1].id
+                variant.id
             );
         });
     });

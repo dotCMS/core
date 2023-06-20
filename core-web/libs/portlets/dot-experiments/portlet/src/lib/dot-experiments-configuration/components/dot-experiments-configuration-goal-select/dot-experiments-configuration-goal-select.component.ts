@@ -32,20 +32,19 @@ import {
     MAX_INPUT_DESCRIPTIVE_LENGTH,
     StepStatus
 } from '@dotcms/dotcms-models';
-import { DotMessagePipeModule } from "@dotcms/ui";
+import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotExperimentsGoalConfigurationUrlParameterComponentComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-goal-configuration-url-parameter-component/dot-experiments-goal-configuration-url-parameter-component.component';
+import { DotDropdownDirective } from '@portlets/shared/directives/dot-dropdown.directive';
 import {
-    DotExperimentsGoalConfigurationUrlParameterComponentComponent
-} from "@portlets/dot-experiments/shared/ui/dot-experiments-goal-configuration-url-parameter-component/dot-experiments-goal-configuration-url-parameter-component.component";
-import { DotDropdownDirective } from "@portlets/shared/directives/dot-dropdown.directive";
-import { DotSidebarDirective, SIDEBAR_SIZES } from "@portlets/shared/directives/dot-sidebar.directive";
-import { DotSidebarHeaderComponent } from "@shared/dot-sidebar-header/dot-sidebar-header.component";
-import { DotValidators } from "@shared/validators/dotValidators";
+    DotSidebarDirective,
+    SIDEBAR_SIZES
+} from '@portlets/shared/directives/dot-sidebar.directive';
+import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sidebar-header.component';
+import { DotValidators } from '@shared/validators/dotValidators';
 
-import { DotExperimentsOptionsModule } from "../../../shared/ui/dot-experiment-options/dot-experiments-options.module";
-import {
-    DotExperimentsGoalConfigurationReachPageComponent
-} from "../../../shared/ui/dot-experiments-goal-configuration-reach-page/dot-experiments-goal-configuration-reach-page.component";
-import { DotExperimentsConfigurationStore } from "../../store/dot-experiments-configuration-store";
+import { DotExperimentsOptionsModule } from '../../../shared/ui/dot-experiment-options/dot-experiments-options.module';
+import { DotExperimentsGoalConfigurationReachPageComponent } from '../../../shared/ui/dot-experiments-goal-configuration-reach-page/dot-experiments-goal-configuration-reach-page.component';
+import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-configuration-store';
 
 @Component({
     selector: 'dot-experiments-configuration-goal-select',
