@@ -56,4 +56,8 @@ describe('TemplateBuilderSidebarComponent', () => {
 
         expect(spy).toHaveBeenCalledWith('medium'); // Default in case is undefined
     });
+
+    it('should have a TemplateBuilderBox Component', () => {
+        expect(spectator.query('dotcms-template-builder-box')).toBeTruthy();
+    });
 });
