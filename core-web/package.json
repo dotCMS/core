@@ -214,6 +214,7 @@
         "protractor": "~7.0.0",
         "puppeteer": "~5.3.1",
         "sass": "^1.56.2",
+        "storybook-design-token": "^2.9.0",
         "ts-jest": "28.0.8",
         "ts-node": "10.9.1",
         "tslint": "~6.1.3",

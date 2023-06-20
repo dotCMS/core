@@ -13,7 +13,7 @@ module.exports = {
         '../../../libs/template-builder/**/*.stories.@(js|jsx|ts|tsx|mdx)',
         '../../../libs/block-editor/**/*.stories.@(js|jsx|ts|tsx|mdx)'
     ],
-    addons: ['@storybook/addon-essentials', ...rootMain.addons],
+    addons: ['storybook-design-token', '@storybook/addon-essentials', ...rootMain.addons],
     features: {
         previewMdx2: true
     },
