@@ -4,34 +4,29 @@ import com.dotcms.cache.lettuce.RedisCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 import com.google.common.io.Files;
 import com.liferay.util.FileUtil;
 import org.apache.commons.io.FileUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.OutputStream;
 import java.io.Serializable;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 
 /**
  * Implements a storage based on Redis
- * This implementation is on remote cache and has a filter to avoid to store objects which
+ * This implementation is on remote cache and has a filter to avoid to store objects with
  * certain size.
  * @author jsanca
  */
 public class RedisStoragePersistanceAPI implements StoragePersistenceAPI {
 
-    private final long maxObjectSize = ;
+    private final long maxObjectSize;
     private final RedisCache redisCache = new RedisCache();
     private final Set<String> groups = ConcurrentHashMap.newKeySet();
 
@@ -45,6 +40,11 @@ public class RedisStoragePersistanceAPI implements StoragePersistenceAPI {
 
     @Override
     public boolean existsGroup(final String groupName) throws DotDataException {
+
+        // if the group is not on the local, we try with the remote
+        if (!this.groups.contains(groupName)) {
+            groups.addAll(this.redisCache.getGroups()) ;
+        }
 
         return this.groups.contains(groupName);
     }
@@ -94,6 +94,8 @@ public class RedisStoragePersistanceAPI implements StoragePersistenceAPI {
     @Override
     public List<String> listGroups() throws DotDataException {
 
+        // before sending the list, we update the local list with the remote ones.
+        groups.addAll(this.redisCache.getGroups()) ;
         return List.copyOf(this.groups);
     }
 
@@ -138,6 +140,13 @@ public class RedisStoragePersistanceAPI implements StoragePersistenceAPI {
                 return CharSequence.class.cast(object).length() < this.maxObjectSize;
             }
 
+            if(object instanceof File) {
+                return isSizeAllowed(File.class.cast(object));
+            }
+
+            // todo: we might need other cases for binaries or others
+            // we convert to json, is not the best, but is the only way to know the size of the object
+            // there may be instrumentation mechanism but I do not know if it is worth it.
             if (Objects.nonNull(object) && Objects.nonNull(writerDelegate)) {
 
                 final ByteArrayOutputStream stream = new ByteArrayOutputStream();
