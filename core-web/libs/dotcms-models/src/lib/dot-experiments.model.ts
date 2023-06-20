@@ -1,6 +1,7 @@
 import { ChartDataset } from 'chart.js';
 
 import {
+    BayesianStatusResponse,
     ComponentStatus,
     DotExperimentStatusList,
     TrafficProportionTypes
@@ -24,15 +25,28 @@ export interface DotExperiment {
 }
 
 export interface DotExperimentResults {
+    bayesianResult: DotResultBayesian;
     goals: Record<GoalsLevels, DotResultGoal>;
     sessions: DotResultSessions;
-    bayesianResult: DotBayesianResult;
 }
 
-export interface DotBayesianResult {
-    probabilities: Array<{ variant: string; value: number }>;
-    suggestedWinner: string;
+export interface DotResultBayesian {
     value: number;
+    suggestedWinner: BayesianStatusResponse | string;
+    results: DotBayesianVariantResult[];
+}
+
+export interface DotBayesianVariantResult {
+    conversionRate: number;
+    credibilityInterval: DotCreditabilityInterval;
+    probability: number;
+    risk: number;
+    variant: string;
+}
+
+export interface DotCreditabilityInterval {
+    lower: number;
+    upper: number;
 }
 
 export interface DotResultGoal {
@@ -47,14 +61,6 @@ export interface DotResultVariant {
     variantName: string;
     variantDescription: string;
     totalPageViews: number;
-}
-
-export interface DotResultSimpleVariant {
-    id: string;
-    name: string;
-    isPromoted: boolean;
-    variantPercentage: number;
-    isWinner: boolean;
 }
 
 export interface DotResultUniqueBySession {
@@ -78,16 +84,16 @@ export interface TrafficProportion {
     variants: Array<Variant>;
 }
 
-export interface DotExperimentSummary {
+export interface DotExperimentVariantDetail {
     id: string;
     name: string;
-    trafficSplit: string;
-    pageViews: number;
+    conversions: number;
+    conversionRate: string;
+    conversionRateRange: string;
     sessions: number;
-    clicks: number;
-    bestVariant: number;
-    improvement: number;
+    probabilityToBeBest: string;
     isWinner: boolean;
+    isPromoted: boolean;
 }
 
 export interface Variant {
@@ -135,6 +141,7 @@ export type StepStatus = SidebarStatus & {
 };
 
 export enum ExperimentSteps {
+    EXPERIMENT_DESCRIPTION = 'experimentDescription',
     VARIANTS = 'variants',
     GOAL = 'goal',
     TARGETING = 'targeting',

@@ -160,7 +160,7 @@ public class ViewContentletAction extends DotPortletAction {
         addAll = true;
     }
 
-    contentTypesList.removeIf(t->t.variable().equalsIgnoreCase("forms"));
+    contentTypesList.removeIf(t->t.variable().equalsIgnoreCase("forms") || t.system());
 
     if (!addAll) {
         request.setAttribute("contentTypesJs", buildJsArray(contentTypesList));

@@ -1,7 +1,7 @@
 package com.dotcms.experiments.business.result;
 
-import com.dotcms.analytics.metrics.Metric;
 import com.dotcms.experiments.business.result.ExperimentResults.TotalSession;
+import com.dotcms.experiments.model.Goal;
 import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.experiments.model.TrafficProportion;
 import java.time.Instant;
@@ -14,9 +14,9 @@ import java.util.stream.Collectors;
  * Builder of {@link GoalResults}
  */
 public class GoalResultsBuilder {
-    final Metric goal;
+    final Goal goal;
     final Map<String, VariantResultsBuilder> variants;
-    public GoalResultsBuilder(final Metric goal, final Collection<ExperimentVariant> experimentVariants) {
+    public GoalResultsBuilder(final Goal goal, final Collection<ExperimentVariant> experimentVariants) {
         this.goal = goal;
         this.variants = experimentVariants.stream()
                 .collect(Collectors.toMap(ExperimentVariant::id, VariantResultsBuilder::new));

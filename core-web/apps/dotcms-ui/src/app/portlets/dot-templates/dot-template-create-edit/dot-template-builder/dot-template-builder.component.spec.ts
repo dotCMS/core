@@ -15,12 +15,16 @@ import {
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
+import { ButtonModule } from 'primeng/button';
+
+import { DotGlobalMessageComponent } from '@components/_common/dot-global-message/dot-global-message.component';
 import { IframeComponent } from '@components/_common/iframe/iframe-component';
 import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
 import { DotShowHideFeatureDirective } from '@dotcms/app/shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
-import { DotMessageService, DotPropertiesService } from '@dotcms/data-access';
+import { DotEventsService, DotMessageService, DotPropertiesService } from '@dotcms/data-access';
+import { DotLayout } from '@dotcms/dotcms-models';
+import { DotIconModule, DotMessagePipeModule } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 
 import { DotTemplateBuilderComponent } from './dot-template-builder.component';
 
@@ -29,6 +33,17 @@ import {
     EMPTY_TEMPLATE_ADVANCED,
     EMPTY_TEMPLATE_DESIGN
 } from '../store/dot-template.store';
+
+@Component({
+    // eslint-disable-next-line @angular-eslint/component-selector
+    selector: 'dotcms-template-builder',
+    template: ` <ng-content select="[toolbar-left]"></ng-content>
+        <ng-content select="[toolbar-actions-right]"></ng-content>`
+})
+class TemplateBuilderMockComponent {
+    @Input() templateLayout: DotLayout;
+    @Output() layoutChange: EventEmitter<Event> = new EventEmitter();
+}
 
 @Component({
     selector: 'dot-edit-layout-designer',
@@ -129,9 +144,17 @@ describe('DotTemplateBuilderComponent', () => {
                 IframeMockComponent,
                 TabViewMockComponent,
                 TabPanelMockComponent,
-                DotTestHostComponent
+                DotTestHostComponent,
+                TemplateBuilderMockComponent,
+                DotGlobalMessageComponent
             ],
-            imports: [DotMessagePipeModule, DotPortletBoxModule, DotShowHideFeatureDirective],
+            imports: [
+                DotMessagePipeModule,
+                DotPortletBoxModule,
+                DotShowHideFeatureDirective,
+                ButtonModule,
+                DotIconModule
+            ],
             providers: [
                 {
                     provide: DotMessageService,
@@ -145,7 +168,8 @@ describe('DotTemplateBuilderComponent', () => {
                     useValue: {
                         getKey: () => of('false')
                     }
-                }
+                },
+                DotEventsService
             ]
         }).compileComponents();
     });
@@ -214,7 +238,7 @@ describe('DotTemplateBuilderComponent', () => {
         });
     });
 
-    describe('New design tempalte', () => {
+    describe('New template design', () => {
         beforeEach(() => {
             component.item = {
                 ...EMPTY_TEMPLATE_DESIGN,
@@ -222,15 +246,36 @@ describe('DotTemplateBuilderComponent', () => {
                 live: true
             };
             spyOn(dotPropertiesService, 'getKey').and.returnValue(of('true'));
+            fixture.detectChanges();
         });
 
         it('should show new template builder component', () => {
-            fixture.detectChanges();
             const component: DebugElement = fixture.debugElement.query(
                 By.css('[data-testId="new-template-builder"]')
             );
 
             expect(component).toBeTruthy();
+        });
+
+        it('should emit events from new-template-builder when the layout is changed', () => {
+            const builder = de.query(By.css('[data-testId="new-template-builder"]'));
+            const layout = EMPTY_TEMPLATE_DESIGN.layout;
+
+            spyOn(component, 'onLayoutChange').and.callThrough();
+
+            builder.triggerEventHandler('layoutChange', layout);
+
+            expect(component.onLayoutChange).toHaveBeenCalledWith(layout);
+            expect(component.updateTemplate.emit).toHaveBeenCalled();
+        });
+
+        it('should emit events from new-template-builder when click on save button', () => {
+            const btnsave = de.query(By.css('[data-testId="save-and-publish-btn"]'));
+            spyOn(component.saveAndPublish, 'emit');
+            btnsave.triggerEventHandler('click', component.item);
+
+            (btnsave.nativeElement as HTMLElement).click();
+            expect(component.saveAndPublish.emit).toHaveBeenCalled();
         });
     });
 

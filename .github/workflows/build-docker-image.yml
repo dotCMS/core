@@ -6,7 +6,7 @@ on:
         description: 'Dockerfile location in docker folder'
         required: true
       tags:
-        description: 'Custom label to add as part of the tag'
+        description: 'Docker image tags'
         required: false
         default: 'SNAPSHOT'
       multi_arch:

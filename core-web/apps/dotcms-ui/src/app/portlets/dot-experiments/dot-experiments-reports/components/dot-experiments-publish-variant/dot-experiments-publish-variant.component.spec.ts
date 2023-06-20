@@ -19,8 +19,8 @@ import { TagModule } from 'primeng/tag';
 import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotMessageService } from '@dotcms/data-access';
+import { DotMessagePipeModule } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotExperimentsReportsStore } from '@portlets/dot-experiments/dot-experiments-reports/store/dot-experiments-reports-store';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { getExperimentMock, getExperimentResultsMock } from '@portlets/dot-experiments/test/mocks';
@@ -111,8 +111,8 @@ describe('DotExperimentsPublishVariantComponent', () => {
             );
 
             const probabilities = spectator.queryAll(byTestId('variant-percent'));
-            expect(probabilities[1].innerHTML).toEqual('60%');
-            expect(probabilities[0].innerHTML).toEqual('40%');
+            expect(probabilities[1].innerHTML).toEqual('92.31%');
+            expect(probabilities[0].innerHTML).toEqual('7.69%');
 
             expect(spectator.queryAll(byTestId('variant-winner-tag')).length).toEqual(0);
             expect(spectator.queryAll(byTestId('variant-promoted-tag')).length).toEqual(0);

@@ -1,6 +1,6 @@
 import { ComponentStore, tapResponse } from '@ngrx/component-store';
 import { ChartData } from 'chart.js';
-import { forkJoin, Observable } from 'rxjs';
+import { forkJoin, Observable, of } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
@@ -8,10 +8,12 @@ import { Title } from '@angular/platform-browser';
 
 import { MessageService } from 'primeng/api';
 
-import { switchMap, tap } from 'rxjs/operators';
+import { catchError, map, switchMap, tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
+    BayesianNoWinnerStatus,
+    BayesianStatusResponse,
     ComponentStatus,
     daysOfTheWeek,
     DEFAULT_VARIANT_ID,
@@ -19,16 +21,24 @@ import {
     DotExperiment,
     DotExperimentResults,
     DotExperimentStatusList,
-    DotExperimentSummary,
-    DotResultDate,
+    DotExperimentVariantDetail,
     DotResultGoal,
-    DotResultSimpleVariant,
-    ExperimentChartDatasetColorsVariants,
+    DotResultVariant,
     ExperimentLineChartDatasetDefaultProperties,
-    LineChartColorsProperties,
-    TrafficProportion,
+    ReportSummaryLegendByBayesianStatus,
+    SummaryLegend,
     Variant
 } from '@dotcms/dotcms-models';
+import {
+    getBayesianVariantResult,
+    getConversionRate,
+    getConversionRateRage,
+    getParsedChartData,
+    getProbabilityToBeBest,
+    getPropertyColors,
+    isPromotedVariant,
+    orderVariants
+} from '@portlets/dot-experiments/shared/dot-experiment.utils';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
@@ -51,23 +61,27 @@ const initialState: DotExperimentsReportsState = {
 
 // ViewModel Interfaces
 export interface VmReportExperiment {
-    isLoading: boolean;
-    hasEnoughSessions: boolean;
     experiment: DotExperiment;
-    status: ComponentStatus;
-    showSummary: boolean;
     results: DotExperimentResults;
     chartData: ChartData<'line'> | null;
-    showDialog: boolean;
-    summaryData: DotExperimentSummary[];
+    detailData: DotExperimentVariantDetail[];
+    isLoading: boolean;
+    hasEnoughSessions: boolean;
+    status: ComponentStatus;
+    showSummary: boolean;
+    winnerLegendSummary: SummaryLegend;
+    showPromoteDialog: boolean;
+    suggestedWinner: DotResultVariant | null;
 }
 
 export interface VmPromoteVariant {
     experimentId: string;
     showDialog: boolean;
     isSaving: boolean;
-    variants: DotResultSimpleVariant[] | null;
+    variants: DotExperimentVariantDetail[] | null;
 }
+
+const NOT_ENOUGH_DATA_LABEL = 'Not enough data';
 
 @Injectable()
 export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsReportsState> {
@@ -78,30 +92,28 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
         ({ promoteDialog }) => promoteDialog.visibility === DialogStatus.SHOW
     );
 
+    readonly summaryWinnerLegend$: Observable<{ icon: string; legend: string }> = this.select(
+        ({ experiment, results }) => {
+            if (experiment != null && results != null) {
+                return this.getSuggestedWinner(experiment, results);
+            }
+
+            return { ...ReportSummaryLegendByBayesianStatus.NO_ENOUGH_SESSIONS };
+        }
+    );
+
+    readonly getSuggestedWinner$: Observable<DotResultVariant | null> = this.select(({ results }) =>
+        BayesianNoWinnerStatus.includes(results?.bayesianResult.suggestedWinner)
+            ? null
+            : results?.goals.primary.variants[results?.bayesianResult.suggestedWinner]
+    );
+
     readonly isSavingPromotedDialog$: Observable<boolean> = this.select(
         ({ promoteDialog }) => promoteDialog.status === ComponentStatus.SAVING
     );
 
-    readonly getResultVariant$: Observable<DotResultSimpleVariant[]> = this.select(
-        ({ results, experiment }) =>
-            Object.values(results.goals.primary.variants).map(
-                ({ variantName, variantDescription, uniqueBySession }) => ({
-                    id: variantName,
-                    name: variantDescription,
-                    isPromoted: experiment.trafficProportion.variants.find(
-                        ({ id }) => id === variantName
-                    )?.promoted,
-                    variantPercentage: uniqueBySession.variantPercentage,
-                    isWinner: results.bayesianResult.suggestedWinner === variantName,
-                    probabilityToWin: results.bayesianResult.probabilities.find(
-                        ({ variant }) => variant === variantName
-                    )?.value
-                })
-            )
-    );
-
     readonly hasEnoughSessions$: Observable<boolean> = this.select(
-        ({ results }) => results && results?.sessions.total === 0
+        ({ results }) => results != null && results.sessions.total > 0
     );
 
     readonly setComponentStatus = this.updater(
@@ -117,15 +129,12 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
             promoteDialog: { ...state.promoteDialog, status }
         })
     );
-    readonly setTrafficProportion = this.updater(
-        (state: DotExperimentsReportsState, trafficProportion: TrafficProportion) => ({
+    readonly setExperiment = this.updater(
+        (state: DotExperimentsReportsState, experiment: DotExperiment) => ({
             ...state,
             experiment: {
                 ...state.experiment,
-                trafficProportion: {
-                    ...state.experiment.trafficProportion,
-                    ...trafficProportion
-                }
+                ...experiment
             },
             promoteDialog: { ...state.promoteDialog, visibility: DialogStatus.HIDE }
         })
@@ -158,44 +167,63 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
             : null
     );
 
-    readonly getSummaryData$: Observable<DotExperimentSummary[]> = this.select(({ results }) =>
-        results
-            ? Object.values(results.goals.primary.variants).map((variant) => ({
-                  id: variant.variantName,
-                  name: variant.variantDescription,
-                  trafficSplit: 'TBD',
-                  pageViews: variant.totalPageViews,
-                  sessions: results.sessions.variants[variant.variantName],
-                  clicks: variant.uniqueBySession.count,
-                  bestVariant: variant.uniqueBySession.totalPercentage / 100,
-                  improvement:
-                      (variant.uniqueBySession.totalPercentage -
-                          results.goals.primary.variants.DEFAULT.uniqueBySession.totalPercentage) /
-                      100,
-                  isWinner: results.bayesianResult.suggestedWinner === variant.variantName
-              }))
-            : []
+    readonly getDetailData$: Observable<DotExperimentVariantDetail[]> = this.select(
+        ({ experiment, results }) => {
+            const noData = this.dotMessageService.get(NOT_ENOUGH_DATA_LABEL);
+
+            return results
+                ? Object.values(results.goals.primary.variants).map((variant) => {
+                      return this.getDotExperimentVariantDetail(
+                          experiment,
+                          results,
+                          variant,
+                          noData
+                      );
+                  })
+                : [];
+        }
     );
 
     readonly loadExperimentAndResults = this.effect((experimentId$: Observable<string>) =>
         experimentId$.pipe(
             tap(() => this.setComponentStatus(ComponentStatus.LOADING)),
             switchMap((experimentId) =>
-                forkJoin({
-                    experiment: this.dotExperimentsService.getById(experimentId),
-                    results: this.dotExperimentsService.getResults(experimentId)
-                }).pipe(
-                    tapResponse(
-                        ({ experiment, results }) => {
-                            this.patchState({
-                                experiment: experiment,
-                                results: results
+                forkJoin([
+                    this.dotExperimentsService.getById(experimentId),
+                    this.dotExperimentsService.getResults(experimentId).pipe(
+                        catchError((response) => {
+                            const { error } = response;
+                            this.dotHttpErrorManagerService.handle({
+                                ...response,
+                                error: {
+                                    ...error,
+                                    header: error.header
+                                        ? error.header
+                                        : this.dotMessageService.get(
+                                              'dot.common.http.error.400.experiment.analytics-app-not-configured.header'
+                                          ),
+                                    message: error.message.split('.')[0]
+                                }
                             });
-                            this.updateTabTitle(experiment);
-                        },
-                        (error: HttpErrorResponse) => this.dotHttpErrorManagerService.handle(error),
-                        () => this.setComponentStatus(ComponentStatus.IDLE)
+
+                            return of(null);
+                        })
                     )
+                ]).pipe(
+                    map(([experiment, results]) => {
+                        this.patchState({
+                            experiment: experiment,
+                            results: results,
+                            status: ComponentStatus.IDLE
+                        });
+                        this.updateTabTitle(experiment);
+                        this.setComponentStatus(ComponentStatus.IDLE);
+                    }),
+                    catchError((err) => {
+                        this.setComponentStatus(ComponentStatus.IDLE);
+
+                        return this.dotHttpErrorManagerService.handle(err);
+                    })
                 )
             )
         )
@@ -221,7 +249,7 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
                                         variantToPromote.variant.name
                                     )
                                 });
-                                this.setTrafficProportion(experiment.trafficProportion);
+                                this.setExperiment(experiment);
                             },
                             (error: HttpErrorResponse) =>
                                 this.dotHttpErrorManagerService.handle(error),
@@ -240,32 +268,43 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
         this.showExperimentSummary$,
         this.getChartData$,
         this.isShowPromotedDialog$,
-        this.getSummaryData$,
+        this.summaryWinnerLegend$,
+        this.getSuggestedWinner$,
+        this.getDetailData$,
         (
             { experiment, status, results },
             isLoading,
             hasEnoughSessions,
             showSummary,
             chartData,
-            showDialog,
-            summaryData
+            showPromoteDialog,
+            winnerLegendSummary,
+            suggestedWinner,
+            detailData
         ) => ({
             experiment,
             status,
+            results,
             isLoading,
             hasEnoughSessions,
             showSummary,
-            results,
             chartData,
-            showDialog,
-            summaryData
+            showPromoteDialog,
+            winnerLegendSummary: {
+                ...winnerLegendSummary,
+                legend: this.dotMessageService.get(
+                    winnerLegendSummary?.legend,
+                    suggestedWinner?.variantDescription
+                )
+            },
+            suggestedWinner,
+            detailData
         })
     );
-
     readonly promotedDialogVm$: Observable<VmPromoteVariant> = this.select(
         this.state$,
         this.isShowPromotedDialog$,
-        this.getResultVariant$,
+        this.getDetailData$,
         this.isSavingPromotedDialog$,
         ({ experiment }, showDialog, variants, isSaving) => ({
             experimentId: experiment.id,
@@ -290,7 +329,7 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
     }
 
     private getChartDatasets(result: DotResultGoal['variants']): ChartData<'line'>['datasets'] {
-        const variantsOrdered = this.orderVariants(Object.keys(result));
+        const variantsOrdered = orderVariants(Object.keys(result));
 
         let colorIndex = 0;
 
@@ -299,8 +338,8 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
 
             return {
                 label: result[variantName].variantDescription,
-                data: this.getParsedChartData(details),
-                ...this.getPropertyColors(colorIndex++),
+                data: getParsedChartData(details),
+                ...getPropertyColors(colorIndex++),
                 ...ExperimentLineChartDatasetDefaultProperties
             };
         });
@@ -320,47 +359,63 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
         });
     }
 
-    private getParsedChartData(data: Record<string, DotResultDate>): number[] {
-        return Object.values(data).map((day) => day.multiBySession);
-    }
+    private getSuggestedWinner(
+        experiment: DotExperiment,
+        results: DotExperimentResults
+    ): SummaryLegend {
+        const { bayesianResult, sessions } = results;
 
-    private getPropertyColors(index: number): LineChartColorsProperties {
-        return ExperimentChartDatasetColorsVariants[index];
-    }
+        const hasSessions = sessions.total > 0;
+        const isATieBayesianSuggestionWinner =
+            bayesianResult.suggestedWinner === BayesianStatusResponse.TIE;
+        const isNoneBayesianSuggestionWinner =
+            bayesianResult.suggestedWinner === BayesianStatusResponse.NONE;
 
-    private orderVariants(arrayToOrder: Array<string>): Array<string> {
-        const index = arrayToOrder.indexOf(DEFAULT_VARIANT_ID);
-        if (index > -1) {
-            arrayToOrder.splice(index, 1);
+        if (!hasSessions || isNoneBayesianSuggestionWinner) {
+            return experiment.status === DotExperimentStatusList.ENDED
+                ? ReportSummaryLegendByBayesianStatus.NO_WINNER_FOUND
+                : ReportSummaryLegendByBayesianStatus.NO_ENOUGH_SESSIONS;
         }
 
-        arrayToOrder.unshift(DEFAULT_VARIANT_ID);
+        if (isATieBayesianSuggestionWinner) {
+            return { ...ReportSummaryLegendByBayesianStatus.NO_WINNER_FOUND };
+        }
 
-        return arrayToOrder;
+        return experiment.status === DotExperimentStatusList.ENDED
+            ? { ...ReportSummaryLegendByBayesianStatus.WINNER }
+            : { ...ReportSummaryLegendByBayesianStatus.PRELIMINARY_WINNER };
     }
 
-    private getSummaryData(results: DotExperimentResults): DotExperimentSummary[] {
-        const summary: DotExperimentSummary[] = [];
+    private getDotExperimentVariantDetail(
+        experiment: DotExperiment,
+        results: DotExperimentResults,
+        variant: DotResultVariant,
+        noDataLabel: string
+    ): DotExperimentVariantDetail {
+        const variantBayesianResult = getBayesianVariantResult(
+            variant.variantName,
+            results.bayesianResult.results
+        );
 
-        Object.values(results.goals.primary.variants).map((variant) => {
-            //TODO: Add the traffic split when the endpoint sends the data
-
-            summary.push({
-                id: variant.variantName,
-                name: variant.variantDescription,
-                trafficSplit: 'TBD',
-                pageViews: variant.totalPageViews,
-                sessions: results.sessions.variants[variant.variantName],
-                clicks: variant.uniqueBySession.count,
-                bestVariant: variant.uniqueBySession.totalPercentage / 100,
-                improvement:
-                    (variant.uniqueBySession.totalPercentage -
-                        results.goals.primary.variants.DEFAULT.uniqueBySession.totalPercentage) /
-                    100,
-                isWinner: results.bayesianResult.suggestedWinner === variant.variantName
-            });
-        });
-
-        return summary;
+        return {
+            id: variant.variantName,
+            name: variant.variantDescription,
+            conversions: variant.uniqueBySession.count,
+            conversionRate: getConversionRate(
+                variant.uniqueBySession.count,
+                results.sessions.variants[variant.variantName]
+            ),
+            conversionRateRange: getConversionRateRage(
+                variantBayesianResult?.credibilityInterval,
+                noDataLabel
+            ),
+            sessions: results.sessions.variants[variant.variantName],
+            probabilityToBeBest: getProbabilityToBeBest(
+                variantBayesianResult?.probability,
+                noDataLabel
+            ),
+            isWinner: results.bayesianResult.suggestedWinner === variant.variantName,
+            isPromoted: isPromotedVariant(experiment, variant.variantName)
+        };
     }
 }

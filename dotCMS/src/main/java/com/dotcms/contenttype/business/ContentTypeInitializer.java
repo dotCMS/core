@@ -15,14 +15,18 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
+import com.dotmarketing.quartz.job.ResetPermissionsJob;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -67,6 +71,7 @@ public class ContentTypeInitializer implements DotInitializer {
                     .variable(FAVORITE_PAGE_VAR_NAME)
                     .host(Host.SYSTEM_HOST)
                     .host(Folder.SYSTEM_FOLDER)
+                    .system(true)
                     .fixed(true);
             final SimpleContentType simpleContentType = builder.build();
 
@@ -86,6 +91,25 @@ public class ContentTypeInitializer implements DotInitializer {
 
         if (null != contentType) {
             checkDefaultPermissions(contentType);
+            checkIfMarkedAsSystem(contentType, contentTypeAPI);
+        }
+    }
+
+    private void checkIfMarkedAsSystem(final ContentType contentType, final ContentTypeAPI contentTypeAPI) {
+
+        if (!contentType.system()) {
+
+            try {
+                final ImmutableSimpleContentType newType = ImmutableSimpleContentType.builder()
+                        .from(contentType).system(true).build();
+
+                final ContentType savedContentType = contentTypeAPI.save(newType);
+                APILocator.getWorkflowAPI().saveSchemeIdsForContentType(savedContentType,
+                        new HashSet<>(Arrays.asList(WorkflowAPI.SYSTEM_WORKFLOW_ID)));
+            } catch (DotDataException | DotSecurityException e) {
+
+                Logger.warnAndDebug(this.getClass(), e);
+            }
         }
     }
 
@@ -121,15 +145,23 @@ public class ContentTypeInitializer implements DotInitializer {
 
             try {
 
+                // Add CMS Owner Permissions
                 final int permissionType = PermissionAPI.PERMISSION_USE | PermissionAPI.PERMISSION_EDIT |
                         PermissionAPI.PERMISSION_PUBLISH | PermissionAPI.PERMISSION_EDIT_PERMISSIONS;
                 final Role backendRole = APILocator.getRoleAPI().loadCMSOwnerRole();
-                if (!APILocator.getPermissionAPI().doesRoleHavePermission(
-                        savedContentType, permissionType, backendRole)) {
+                if (!APILocator.getPermissionAPI().doesRoleHavePermission(savedContentType, permissionType, backendRole)) {
+
+                    // remove all current permissions
+                    APILocator.getPermissionAPI().removePermissions(savedContentType);
 
                     Logger.info(this, "Adding default permissions to the Favorite Page Content Type...");
-                    final Permission permission = new Permission(savedContentType.getPermissionId(), backendRole.getId(),permissionType);
-                    APILocator.getPermissionAPI().save(permission, savedContentType, APILocator.systemUser(), false);
+                    final List<Permission> newSetOfPermissions = new ArrayList<>();
+                    // this is the individual permission
+                    newSetOfPermissions.add(new Permission(savedContentType.getPermissionId(), backendRole.getId(), permissionType, true));
+                    // this is the inheritance permission
+                    newSetOfPermissions.add(new Permission(Contentlet.class.getCanonicalName(), savedContentType.getPermissionId(),  backendRole.getId(), permissionType, true));
+                    APILocator.getPermissionAPI().assignPermissions(newSetOfPermissions, savedContentType, APILocator.systemUser(), false);
+                    ResetPermissionsJob.triggerJobImmediately(savedContentType);
                 }
             } catch (DotDataException | DotSecurityException e) {
 

@@ -7,8 +7,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { DotSiteSelectorModule } from '@components/_common/dot-site-selector/dot-site-selector.module';
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
 import { DotThemesService, PaginatorService } from '@dotcms/data-access';
-import { DotIconModule } from '@dotcms/ui';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { DotIconModule, DotMessagePipeModule } from '@dotcms/ui';
 
 import { DotThemeSelectorDropdownComponent } from './dot-theme-selector-dropdown.component';
 

@@ -41,7 +41,7 @@ import {
     DotCMSContentTypeLayoutRow,
     DotFieldVariable
 } from '@dotcms/dotcms-models';
-import { DotIconModule } from '@dotcms/ui';
+import { DotIconModule, DotMessagePipeModule } from '@dotcms/ui';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import {
     cleanUpDialog,
@@ -53,7 +53,6 @@ import {
     FieldUtil,
     MockDotMessageService
 } from '@dotcms/utils-testing';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 
 import { ContentTypeFieldsDropZoneComponent } from '.';
 

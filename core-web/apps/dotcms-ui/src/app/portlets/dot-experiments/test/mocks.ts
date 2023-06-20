@@ -2,6 +2,7 @@ import { ChartData } from 'chart.js';
 import { of } from 'rxjs';
 
 import {
+    BayesianStatusResponse,
     ComponentStatus,
     DEFAULT_VARIANT_ID,
     DEFAULT_VARIANT_NAME,
@@ -13,6 +14,8 @@ import {
     GOAL_PARAMETERS,
     GOAL_TYPES,
     Goals,
+    PROP_NOT_FOUND,
+    SummaryLegend,
     TrafficProportionTypes
 } from '@dotcms/dotcms-models';
 
@@ -29,6 +32,8 @@ export const GoalsMock: Goals = {
         ]
     }
 };
+
+export const suggestedWinnerMock: SummaryLegend = { icon: 'icon', legend: 'legend' };
 
 export const getExperimentMock = (index: number): DotExperiment => {
     return { ...ExperimentMocks[index] };
@@ -231,15 +236,27 @@ export const ExperimentResultsMocks: Array<DotExperimentResults> = [
         sessions: { total: 2, variants: { DEFAULT: 2, '111': 0 } },
         bayesianResult: {
             value: 0.0,
-            suggestedWinner: null,
-            probabilities: [
+            suggestedWinner: BayesianStatusResponse.NONE,
+            results: [
                 {
-                    variant: DEFAULT_VARIANT_ID,
-                    value: 0.6
+                    conversionRate: 1.0,
+                    credibilityInterval: {
+                        lower: 0.6637328830717519,
+                        upper: 0.9971908632621475
+                    },
+                    probability: 0.9230769230769231,
+                    risk: 0.28667531413857206,
+                    variant: DEFAULT_VARIANT_ID
                 },
                 {
-                    variant: '111',
-                    value: 0.4
+                    conversionRate: 0.6666666666666666,
+                    credibilityInterval: {
+                        lower: 0.19412044967368097,
+                        upper: 0.932414013511487
+                    },
+                    probability: 0.07692307692307693,
+                    risk: -0.3043212480282402,
+                    variant: '111'
                 }
             ]
         }
@@ -323,14 +340,26 @@ export const ExperimentResultsMocks: Array<DotExperimentResults> = [
         bayesianResult: {
             value: 0.0,
             suggestedWinner: '111',
-            probabilities: [
+            results: [
                 {
-                    variant: DEFAULT_VARIANT_ID,
-                    value: 0.4
+                    conversionRate: 0.6666666666666666,
+                    credibilityInterval: {
+                        lower: 0.19412044967368097,
+                        upper: 0.932414013511487
+                    },
+                    probability: 0.07692307692307693,
+                    risk: -0.3043212480282402,
+                    variant: DEFAULT_VARIANT_ID
                 },
                 {
-                    variant: '111',
-                    value: 0.6
+                    conversionRate: 1.0,
+                    credibilityInterval: {
+                        lower: 0.6637328830717519,
+                        upper: 0.9971908632621475
+                    },
+                    probability: 0.9230769230769231,
+                    risk: 0.28667531413857206,
+                    variant: '111'
                 }
             ]
         }
@@ -436,6 +465,11 @@ export const DotExperimentsConfigurationStoreMock = {
     targetStepVm$: of({})
 };
 
+export const DotExperimentsStoreMock = {
+    getPageId$: of('1111111'),
+    getPageTitle$: of('title of page')
+};
+
 export const DotExperimentsReportsStoreMock = {
     loadExperimentAndResults: () => of([]),
     promoteVariant: () => of([])
@@ -466,6 +500,17 @@ export class ActivatedRouteMock {
         };
     }
 }
+
+export const ACTIVE_ROUTE_MOCK_CONFIG = {
+    snapshot: {
+        data: {
+            config: {
+                EXPERIMENTS_MIN_DURATION: '5',
+                EXPERIMENTS_MAX_DURATION: PROP_NOT_FOUND
+            }
+        }
+    }
+};
 
 export class ActivatedRouteListStoreMock {
     get snapshot() {

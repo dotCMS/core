@@ -40,10 +40,12 @@ import com.dotcms.experiments.business.result.ExperimentResults;
 import com.dotcms.experiments.business.result.ExperimentResultsQueryFactory;
 import com.dotcms.exception.NotAllowedException;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
+import com.dotcms.experiments.model.Goal;
 import com.dotcms.experiments.model.AbstractTrafficProportion.Type;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Experiment.Builder;
 import com.dotcms.experiments.model.ExperimentVariant;
+import com.dotcms.experiments.model.GoalFactory;
 import com.dotcms.experiments.model.Goals;
 import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.experiments.model.TargetingCondition;
@@ -71,7 +73,9 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
+import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.factories.MultiTreeAPI;
+import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
@@ -221,9 +225,8 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     private void addConditionIfIsNeed(final Goals goals, final HTMLPageAsset page,
             final Builder builder) {
 
-        if (goals.primary().type() == MetricType.REACH_PAGE && !hasCondition(goals, "referer")) {
-            addRefererCondition(page, builder, goals);
-        } else if (goals.primary().type() == MetricType.BOUNCE_RATE && !hasCondition(goals, "url")) {
+        if (goals.primary().getMetric().type() == MetricType.BOUNCE_RATE &&
+                !hasCondition(goals, "url")) {
             addUrlCondition(page, builder, goals);
         }
     }
@@ -249,13 +252,14 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     @NotNull
     private static Goals createNewGoals(final Goals oldGoals,
             final com.dotcms.analytics.metrics.Condition newConditionToAdd) {
-        final Metric newMetric = Metric.builder().from(oldGoals.primary())
+        final Metric newMetric = Metric.builder().from(oldGoals.primary().getMetric())
                 .addConditions(newConditionToAdd).build();
-        return Goals.builder().from(oldGoals).primary(newMetric).build();
+        final Goal newGoal = GoalFactory.create(newMetric);
+        return Goals.builder().from(oldGoals).primary(newGoal).build();
     }
 
     private boolean hasCondition(final Goals goals, final String conditionName){
-        return goals.primary().conditions()
+        return goals.primary().getMetric().conditions()
                 .stream()
                 .anyMatch(condition ->conditionName .equals(condition.parameter()));
     }
@@ -489,7 +493,8 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             final Experiment runningExperiment = runningExperimentsOnPage.get(0);
             DotPreconditions.isTrue(runningExperiment.scheduling().orElseThrow().endDate()
                     .orElseThrow().isBefore(persistedExperiment.scheduling().orElseThrow().startDate().orElseThrow()),
-                    ()-> "Start date of the Experiment is before the end date of the running Experiment. Name: "
+                    ()-> "Scheduling conflict: The same page can't be included in different experiments with overlapping schedules. "
+                            + "Overlapping with Experiment: "
                             + runningExperiment.name(),
                     DotStateException.class);
         }
@@ -501,6 +506,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             final Experiment experimentToSave = persistedExperiment.withScheduling(scheduling).withStatus(RUNNING);
             validateNoConflictsWithScheduledExperiments(experimentToSave, user);
             toReturn = save(experimentToSave, user);
+            publishExperimentPage(toReturn, user);
             publishContentOnExperimentVariants(user, toReturn);
             cacheRunningExperiments();
         } else {
@@ -511,6 +517,30 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         }
 
         return toReturn;
+    }
+
+    private void publishExperimentPage(final Experiment experiment, final User user)
+            throws DotDataException, DotSecurityException {
+        final HTMLPageAsset htmlPageAsset = APILocator.getHTMLPageAssetAPI().fromContentlet(contentletAPI
+                .findContentletByIdentifierAnyLanguage(experiment.pageId(), false));
+
+        if(htmlPageAsset.isLive()) {
+            return;
+        }
+
+        final List relatedNotPublished = PublishFactory.getUnpublishedRelatedAssetsForPage(htmlPageAsset, new ArrayList(),
+                true, user, false);
+        relatedNotPublished.stream().filter(asset -> asset instanceof Contentlet).forEach(
+                asset -> Contentlet.class.cast(asset)
+                        .setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE));
+        //Publish the page and the related content
+        htmlPageAsset.setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE);
+        try {
+            PublishFactory.publishHTMLPage(htmlPageAsset, relatedNotPublished, user,
+                    false);
+        } catch(WebAssetException e) {
+            throw new DotDataException(e);
+        }
     }
 
     private static boolean emptyScheduling(Experiment persistedExperiment) {
@@ -535,7 +565,8 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                     schedulingToCheck.endDate().orElseThrow().isBefore(scheduling.startDate().orElseThrow());
         });
 
-        DotPreconditions.isTrue(noConflicts, ()-> "There is a scheduling conflict between the Experiment and the scheduled Experiment. Name: "
+        DotPreconditions.isTrue(noConflicts, ()-> "Scheduling conflict: The same page can't be included in different experiments with overlapping schedules. "
+                        + "Overlapping with Experiment: "
                 + scheduledExperimentsOnPage.get(0).name(),
                 DotStateException.class);
     }
@@ -560,6 +591,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
         Experiment running = save(persistedExperiment.withStatus(RUNNING), user);
         cacheRunningExperiments();
+        publishExperimentPage(running, user);
         publishContentOnExperimentVariants(user, running);
 
         return running;
@@ -575,7 +607,9 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final List<Contentlet> contentByVariants = contentletAPI.getAllContentByVariants(user, false,
                 runningExperiment.trafficProportion().variants().stream()
                         .map(ExperimentVariant::id).filter((id) -> !id.equals(DEFAULT_VARIANT.name()))
-                        .toArray(String[]::new));
+                        .toArray(String[]::new)).stream()
+                        .filter((contentlet -> Try.of(contentlet::isWorking)
+                                .getOrElse(false))).collect(Collectors.toList());
 
         contentletAPI.publish(contentByVariants, user, false);
     }
@@ -598,11 +632,8 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 "You don't have permission to archive the Experiment. "
                         + "Experiment Id: " + persistedExperimentOpt.get().id());
 
-        DotPreconditions.isTrue(experimentFromFactory.status()==Status.RUNNING,()->
+        DotPreconditions.isTrue(experimentFromFactory.status()==Status.RUNNING, ()->
                         "Only RUNNING experiments can be ended", DotStateException.class);
-
-        DotPreconditions.isTrue(experimentFromFactory.status()!= ENDED,
-                ()-> "Cannot end an already ended Experiment.", DotStateException.class);
 
         DotPreconditions.isTrue(persistedExperimentOpt.get().scheduling().isPresent(),
                 ()-> "Scheduling not valid.", DotStateException.class);
@@ -924,7 +955,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final String goal = StringUtils.defaultIfBlank(goalName, PRIMARY_GOAL);
         final BayesianInput bayesianInput = BayesianHelper.get().toBayesianInput(experimentResults, goal);
 
-        return variantsNumber == 2 ? bayesianAPI.calcProbBOverA(bayesianInput) : bayesianAPI.calcProbABC(bayesianInput);
+        return bayesianAPI.doBayesian(bayesianInput);
     }
 
     @Override
@@ -940,7 +971,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             final CubeJSQuery cubeJSQuery = ExperimentResultsQueryFactory.INSTANCE
                     .create(experiment);
 
-            final CubeJSResultSet cubeJSResultSet = cubeClient.send(cubeJSQuery);
+            final CubeJSResultSet cubeJSResultSet = cubeClient.sendWithPagination(cubeJSQuery);
 
             String previousLookBackWindow = null;
             final List<Event> currentEvents = new ArrayList<>();
@@ -1035,6 +1066,30 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         }
 
         return withUpdatedVariants;
+    }
+
+    @Override
+    public Experiment cancel(String experimentId, User user)
+            throws DotDataException, DotSecurityException {
+        DotPreconditions.checkArgument(UtilMethods.isSet(experimentId), "experiment Id must be provided.");
+
+        final Optional<Experiment> persistedExperimentOpt =  find(experimentId, user);
+
+        DotPreconditions.isTrue(persistedExperimentOpt.isPresent(),()-> "Experiment with provided id not found",
+                DoesNotExistException.class);
+
+        final Experiment experimentFromFactory = persistedExperimentOpt.get();
+        validatePermissions(user, experimentFromFactory,
+                "You don't have permission to cancel the Experiment. "
+                        + "Experiment Id: " + persistedExperimentOpt.get().id());
+
+        DotPreconditions.isTrue(experimentFromFactory.status()== SCHEDULED, ()->
+                "Only SCHEDULED experiments can be canceled", DotStateException.class);
+
+        DotPreconditions.isTrue(persistedExperimentOpt.get().scheduling().isPresent(),
+                ()-> "Scheduling not valid.", DotStateException.class);
+
+        return save(experimentFromFactory.withStatus(DRAFT), user);
     }
 
     @Override
@@ -1136,6 +1191,11 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
             DotPreconditions.checkState(scheduling.endDate().get().isAfter(scheduling.startDate().get()),
                     "Invalid Scheduling. End date must be after the start date");
+
+            DotPreconditions.checkState(Duration.between(scheduling.startDate().get(),
+                            scheduling.endDate().get()).toDays() >= EXPERIMENTS_MIN_DURATION.get(),
+                    "Experiment duration must be at least "
+                            + EXPERIMENTS_MIN_DURATION.get() +" days. ");
 
             DotPreconditions.checkState(Duration.between(scheduling.startDate().get(),
                             scheduling.endDate().get()).toDays() <= EXPERIMENTS_MAX_DURATION.get(),

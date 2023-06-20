@@ -7,6 +7,8 @@ import {
 } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
+import { ActivatedRoute } from '@angular/router';
+
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { Card, CardModule } from 'primeng/card';
@@ -17,7 +19,7 @@ import { DotExperimentStatusList } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
-import { getExperimentMock } from '@portlets/dot-experiments/test/mocks';
+import { ACTIVE_ROUTE_MOCK_CONFIG, getExperimentMock } from '@portlets/dot-experiments/test/mocks';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotExperimentsConfigurationTargetingComponent } from './dot-experiments-configuration-targeting.component';
@@ -42,6 +44,7 @@ describe('DotExperimentsConfigurationTargetingComponent', () => {
             mockProvider(DotExperimentsService),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(MessageService),
+            mockProvider(ActivatedRoute, ACTIVE_ROUTE_MOCK_CONFIG),
             {
                 provide: DotMessageService,
                 useValue: messageServiceMock
