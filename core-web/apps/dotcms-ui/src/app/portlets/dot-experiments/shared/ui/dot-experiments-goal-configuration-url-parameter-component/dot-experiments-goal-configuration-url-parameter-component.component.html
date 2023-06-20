@@ -7,20 +7,23 @@
             formArrayName="conditions"
         >
             <div class="condition flex" [formGroupName]="i">
-                <div class="field flex-none flex flex-column w-15rem">
-                    <label dotFieldRequired for="parameter">{{
-                        'experiments.goal.reach_page.form.conditions.parameter.label' | dm
+                <div class="field flex-grow-1 flex flex-column w-15rem">
+                    <label dotFieldRequired for="value">{{
+                        'experiments.goal.url_parameter.form.conditions.parameter.label' | dm
                     }}</label>
-                    <p-dropdown
+                    <input
                         id="parameter"
-                        [dotOptions]="parametersList"
                         data-testId="parameter-input"
-                        dotDropdown
                         formControlName="parameter"
+                        name="value"
+                        pInputText
                         placeholder="{{
-                            'experiments.goal.reach_page.form.conditions.parameter.placeholder' | dm
+                            'experiments.goal.url_parameter.form.conditions.parameter.placeholder'
+                                | dm
                         }}"
-                    ></p-dropdown>
+                        required
+                        type="text"
+                    />
                     <dot-field-validation-message
                         [field]="getConditionsFormArrayItemByIndex(i).controls['parameter']"
                     ></dot-field-validation-message>
@@ -28,7 +31,7 @@
 
                 <div class="field flex-none flex flex-column w-15rem">
                     <label dotFieldRequired for="operator">{{
-                        'experiments.goal.reach_page.form.conditions.operator.label' | dm
+                        'experiments.goal.url_parameter.form.conditions.operator.label' | dm
                     }}</label>
                     <p-dropdown
                         id="operator"
@@ -37,10 +40,10 @@
                         dotDropdown
                         formControlName="operator"
                         placeholder="{{
-                            'experiments.goal.reach_page.form.conditions.operator.placeholder' | dm
+                            'experiments.goal.url_parameter.form.conditions.operator.placeholder'
+                                | dm
                         }}"
                     ></p-dropdown>
-
                     <dot-field-validation-message
                         [field]="getConditionsFormArrayItemByIndex(i).controls['operator']"
                     ></dot-field-validation-message>
@@ -48,7 +51,7 @@
 
                 <div class="field flex-grow-1 flex flex-column">
                     <label dotFieldRequired for="value">{{
-                        'experiments.goal.reach_page.form.conditions.value.label' | dm
+                        'experiments.goal.url_parameter.form.conditions.value.label' | dm
                     }}</label>
                     <input
                         id="value"
@@ -57,7 +60,7 @@
                         name="value"
                         pInputText
                         placeholder="{{
-                            'experiments.goal.reach_page.form.conditions.value.placeholder' | dm
+                            'experiments.goal.url_parameter.form.conditions.value.placeholder' | dm
                         }}"
                         required
                         type="text"

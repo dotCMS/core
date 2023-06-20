@@ -1,14 +1,15 @@
 import { Observable, Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, OnDestroy, OnInit } from '@angular/core';
 import {
-    ChangeDetectionStrategy,
-    ChangeDetectorRef,
-    Component,
-    OnDestroy,
-    OnInit
-} from '@angular/core';
-import { FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+    FormArray,
+    FormControl,
+    FormGroup,
+    ReactiveFormsModule,
+    ValidatorFn,
+    Validators
+} from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
@@ -25,6 +26,7 @@ import { DotMessageService } from '@dotcms/data-access';
 import {
     ComponentStatus,
     GOAL_TYPES,
+    GoalConditionsControlsNames,
     Goals,
     GOALS_METADATA_MAP,
     MAX_INPUT_DESCRIPTIVE_LENGTH,
@@ -34,12 +36,14 @@ import { DotMessagePipeModule } from '@dotcms/ui';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 import { DotExperimentsOptionsModule } from '@portlets/dot-experiments/shared/ui/dot-experiment-options/dot-experiments-options.module';
 import { DotExperimentsGoalConfigurationReachPageComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-goal-configuration-reach-page/dot-experiments-goal-configuration-reach-page.component';
+import { DotExperimentsGoalConfigurationUrlParameterComponentComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-goal-configuration-url-parameter-component/dot-experiments-goal-configuration-url-parameter-component.component';
 import { DotDropdownDirective } from '@portlets/shared/directives/dot-dropdown.directive';
 import {
     DotSidebarDirective,
     SIDEBAR_SIZES
 } from '@portlets/shared/directives/dot-sidebar.directive';
 import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sidebar-header.component';
+import { DotValidators } from '@shared/validators/dotValidators';
 
 @Component({
     selector: 'dot-experiments-configuration-goal-select',
@@ -62,7 +66,8 @@ import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sideba
         CardModule,
         InputTextModule,
         DropdownModule,
-        DotExperimentsGoalConfigurationReachPageComponent
+        DotExperimentsGoalConfigurationReachPageComponent,
+        DotExperimentsGoalConfigurationUrlParameterComponentComponent
     ],
     templateUrl: './dot-experiments-configuration-goal-select.component.html',
     styleUrls: ['./dot-experiments-configuration-goal-select.component.scss'],
@@ -77,18 +82,24 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
     vm$: Observable<{ experimentId: string; goals: Goals; status: StepStatus }> =
         this.dotExperimentsConfigurationStore.goalsStepVm$;
     protected readonly maxNameLength = MAX_INPUT_DESCRIPTIVE_LENGTH;
+
+    protected readonly defaultNameValuesByType: Partial<Record<GOAL_TYPES, string>> = {
+        [GOAL_TYPES.BOUNCE_RATE]: this.dotMessageService.get(
+            'experiments.goal.conditions.minimize.bounce.rate'
+        ),
+        [GOAL_TYPES.REACH_PAGE]: this.dotMessageService.get(
+            'experiments.goal.conditions.maximize.reach.page'
+        ),
+        [GOAL_TYPES.URL_PARAMETER]: this.dotMessageService.get(
+            'experiments.goal.conditions.detect.queryparam.in.url'
+        )
+    };
+
     private destroy$: Subject<boolean> = new Subject<boolean>();
-    private BOUNCE_RATE_LABEL = this.dotMessageService.get(
-        'experiments.goal.conditions.minimize.bounce.rate'
-    );
-    private REACH_PAGE_LABEL = this.dotMessageService.get(
-        'experiments.goal.conditions.maximize.reach.page'
-    );
 
     constructor(
         private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore,
-        private readonly dotMessageService: DotMessageService,
-        private readonly cdr: ChangeDetectorRef
+        private readonly dotMessageService: DotMessageService
     ) {}
 
     /**
@@ -145,10 +156,9 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
             .get('primary.type')
             .valueChanges.pipe(takeUntil(this.destroy$))
             .subscribe((type) => {
-                if (type === GOAL_TYPES.REACH_PAGE || type === GOAL_TYPES.CLICK_ON_ELEMENT) {
+                this.removeConditionsControlValidations();
+                if (type != GOAL_TYPES.BOUNCE_RATE) {
                     this.addConditionsControlValidations();
-                } else {
-                    this.removeConditionsControlValidations();
                 }
             });
     }
@@ -186,29 +196,60 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
      */
     private defineDefaultName(typeValue: string): void {
         const nameControl = this.form.get('primary.name') as FormControl;
+
         if (
             nameControl.value === '' ||
-            nameControl.value === this.BOUNCE_RATE_LABEL ||
-            nameControl.value === this.REACH_PAGE_LABEL
+            Object.values(this.defaultNameValuesByType).includes(nameControl.value)
         ) {
-            nameControl.setValue(
-                typeValue === GOAL_TYPES.BOUNCE_RATE
-                    ? this.BOUNCE_RATE_LABEL
-                    : this.REACH_PAGE_LABEL
-            );
+            nameControl.setValue(this.defaultNameValuesByType[typeValue]);
         }
     }
 
+    /**
+     * Add the required validations to the controls of the conditions controls FormArray
+     * @private
+     */
     private addConditionsControlValidations(): void {
-        Object.values(this.conditionsFormArray.controls).forEach((controlArray: FormArray) => {
-            Object.values(controlArray.controls).forEach((control) => {
-                control.setValidators([Validators.required]);
-                control.updateValueAndValidity();
-            });
-        });
+        const selectedGoalType = this.form.get('primary.type').value;
+
+        const RequiredConditionsControlsByGoalTypeRules: Partial<
+            Record<GOAL_TYPES, Record<GoalConditionsControlsNames, ValidatorFn[]>>
+        > = {
+            [GOAL_TYPES.REACH_PAGE]: {
+                parameter: [Validators.required],
+                operator: [Validators.required],
+                value: [Validators.required]
+            },
+            [GOAL_TYPES.URL_PARAMETER]: {
+                parameter: [Validators.required, DotValidators.validQueryParamName],
+                operator: [Validators.required],
+                value: [Validators.required]
+            }
+        };
+
+        Object.keys(RequiredConditionsControlsByGoalTypeRules[selectedGoalType]).forEach(
+            (controlName) => {
+                Object.values(this.conditionsFormArray.controls).forEach(
+                    (conditionFormGroup: FormArray) => {
+                        conditionFormGroup.controls[controlName].enable();
+                        conditionFormGroup.controls[controlName].setValidators([
+                            ...RequiredConditionsControlsByGoalTypeRules[selectedGoalType][
+                                controlName
+                            ]
+                        ]);
+                        conditionFormGroup.controls[controlName].updateValueAndValidity();
+                    }
+                );
+            }
+        );
+
         this.conditionsFormArray.enable();
     }
 
+    /**
+     * Remove the validations to the controls of the conditions controls FormArray
+     * @private
+     */
     private removeConditionsControlValidations(): void {
         Object.values(this.conditionsFormArray.controls).forEach((controlArray: FormArray) => {
             Object.values(controlArray.controls).forEach((control) => {
