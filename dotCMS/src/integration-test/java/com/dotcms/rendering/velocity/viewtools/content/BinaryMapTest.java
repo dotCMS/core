@@ -10,6 +10,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import org.apache.velocity.context.Context;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -289,7 +290,10 @@ public class BinaryMapTest {
         final Field binaryField = APILocator.getContentTypeFieldAPI()
                 .byContentTypeIdAndVar(banner.getContentTypeId(), "image");
 
-        final BinaryMap binaryMap = new BinaryMap(banner, new LegacyFieldTransformer(binaryField).asOldField());
+        final Context velocityContext = mock(Context.class);
+
+        final BinaryMap binaryMap = new BinaryMap(banner,
+                new LegacyFieldTransformer(binaryField).asOldField(), velocityContext);
 
         String resizeUri = binaryMap.getResizeUri(200,200);
 
