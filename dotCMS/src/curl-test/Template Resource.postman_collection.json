@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "4c874a7c-31d9-4468-acc6-4dbf21e367b1",
+		"_postman_id": "925415e7-c24a-471e-8d35-9ec7abc784b6",
 		"name": "Template Resource",
 		"description": "Make the test for the template resource crud",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "11174695"
+		"_exporter_id": "1549189"
 	},
 	"item": [
 		{
@@ -6147,6 +6147,156 @@
 			]
 		},
 		{
+			"name": "Remove a Container from a Template",
+			"item": [
+				{
+					"name": "Create Templete with the same Containers include twice",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Storage Template ID\", function () {",
+									"",
+									"    pm.collectionVariables.set(\"templateID\", jsonData.entity.identifier);",
+									"",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n   \"title\":\"Template with the same Containers twice\",\n   \"theme\":\"13f88067-1e25-4e30-bc64-7e8f42ad542f\",\n   \"layout\":{\n      \"body\":{\n         \"rows\":[\n            {\n               \"styleClass\":\"\",\n               \"columns\":[\n                  {\n                     \"styleClass\":\"\",\n                     \"leftOffset\":1,\n                     \"width\":12,\n                     \"containers\":[\n                        {\n                           \"identifier\":\"SYSTEM_CONTAINER\",\n                           \"uuid\": \"1\"\n                        },\n                        {\n                           \"identifier\":\"SYSTEM_CONTAINER\",\n                           \"uuid\": \"2\"\n                        }\n                     ]\n                  }\n               ]\n            }\n         ]\n      },\n      \"header\":true,\n      \"footer\":true,\n      \"sidebar\":{\n         \"location\":\"\",\n         \"containers\":[\n            \n         ],\n         \"width\":\"small\"\n      }\n   }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							]
+						},
+						"description": "Create a new template successfully, the template is a design one, this is to test the updateUUIDofContainers method, that will assign the uuid to the container according to the number of times the container is present in the template."
+					},
+					"response": []
+				},
+				{
+					"name": "Remove one Container",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"identifier\":\"{{templateID}}\",\n   \"title\":\"Template with the same Containers twice\",\n   \"theme\":\"13f88067-1e25-4e30-bc64-7e8f42ad542f\",\n   \"layout\":{\n      \"body\":{\n         \"rows\":[\n            {\n               \"styleClass\":\"\",\n               \"columns\":[\n                  {\n                     \"styleClass\":\"\",\n                     \"leftOffset\":1,\n                     \"width\":12,\n                     \"containers\":[\n                        {\n                           \"identifier\":\"SYSTEM_CONTAINER\",\n                           \"uuid\": \"2\"\n                        }\n                     ]\n                  }\n               ]\n            }\n         ]\n      },\n      \"header\":true,\n      \"footer\":true,\n      \"sidebar\":{\n         \"location\":\"\",\n         \"containers\":[\n            \n         ],\n         \"width\":\"small\"\n      }\n   }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/_savepublish",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"_savepublish"
+							]
+						},
+						"description": "Create a new template successfully, the template is a design one, this is to test the updateUUIDofContainers method, that will assign the uuid to the container according to the number of times the container is present in the template."
+					},
+					"response": []
+				}
+			],
+			"description": "We need to be sure that after remove a Container from a Template it is working.\n\n- Create a Template and include the same Container twicer.\n- Remove one of the Container must return 200."
+		},
+		{
 			"name": "Create New Template Theme Not Send BadRequest",
 			"event": [
 				{
@@ -7271,6 +7421,14 @@
 		},
 		{
 			"key": "templateIdToPublished",
+			"value": ""
+		},
+		{
+			"key": "templateIdToID",
+			"value": ""
+		},
+		{
+			"key": "templateID",
 			"value": ""
 		}
 	]

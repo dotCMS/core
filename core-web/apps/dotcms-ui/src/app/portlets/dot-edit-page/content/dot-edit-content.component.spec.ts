@@ -171,7 +171,9 @@ export class MockDotPaletteComponent {
 
 const mockRenderedPageState = new DotPageRenderState(
     mockUser(),
-    new DotPageRender(mockDotRenderedPage())
+    new DotPageRender(mockDotRenderedPage()),
+    null,
+    EXPERIMENT_MOCK
 );
 
 describe('DotEditContentComponent', () => {
@@ -410,13 +412,9 @@ describe('DotEditContentComponent', () => {
 
         describe('dot-edit-page-toolbar', () => {
             let toolbarElement: DebugElement;
-            let dotExperimentsService: DotExperimentsService;
 
             beforeEach(() => {
-                dotExperimentsService = de.injector.get(DotExperimentsService);
-
                 spyOn(dialogService, 'open');
-                spyOn(dotExperimentsService, 'getByStatus').and.returnValue(of([EXPERIMENT_MOCK]));
 
                 fixture.detectChanges();
                 toolbarElement = de.query(By.css('dot-edit-page-toolbar'));

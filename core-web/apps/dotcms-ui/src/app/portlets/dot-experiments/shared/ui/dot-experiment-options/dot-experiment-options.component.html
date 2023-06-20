@@ -15,7 +15,9 @@
         [class.expanded]="expanded.has(i)"
         data-testId="dot-options-item-content"
     >
-        <ng-container *ngTemplateOutlet="item?.content?.templateRef"></ng-container>
+        <ng-container *ngIf="expanded.has(i) && item?.content?.templateRef">
+            <ng-container *ngTemplateOutlet="item?.content?.templateRef"></ng-container>
+        </ng-container>
     </div>
 </div>
 

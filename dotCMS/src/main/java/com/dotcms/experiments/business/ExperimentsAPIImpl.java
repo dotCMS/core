@@ -607,7 +607,9 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final List<Contentlet> contentByVariants = contentletAPI.getAllContentByVariants(user, false,
                 runningExperiment.trafficProportion().variants().stream()
                         .map(ExperimentVariant::id).filter((id) -> !id.equals(DEFAULT_VARIANT.name()))
-                        .toArray(String[]::new));
+                        .toArray(String[]::new)).stream()
+                        .filter((contentlet -> Try.of(contentlet::isWorking)
+                                .getOrElse(false))).collect(Collectors.toList());
 
         contentletAPI.publish(contentByVariants, user, false);
     }

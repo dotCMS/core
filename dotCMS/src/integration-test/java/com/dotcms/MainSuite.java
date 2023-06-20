@@ -83,6 +83,7 @@ import com.dotcms.rest.BundlePublisherResourceIntegrationTest;
 import com.dotcms.rest.BundleResourceTest;
 import com.dotcms.rest.IntegrityResourceIntegrationTest;
 import com.dotcms.rest.api.v1.apps.AppsResourceTest;
+import com.dotcms.rest.api.v1.apps.SiteViewPaginatorIntegrationTest;
 import com.dotcms.rest.api.v1.apps.view.AppsInterpolationTest;
 import com.dotcms.rest.api.v1.assets.AssetPathResolverImplTest;
 import com.dotcms.rest.api.v1.authentication.ResetPasswordTokenUtilTest;
@@ -129,6 +130,7 @@ import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactoryT
 import com.dotmarketing.portlets.containers.business.ContainerFactoryImplTest;
 import com.dotmarketing.portlets.containers.business.ContainerStructureFinderStrategyResolverTest;
 import com.dotmarketing.portlets.contentlet.business.ContentletCacheImplTest;
+import com.dotmarketing.portlets.contentlet.business.HostFactoryImplTest;
 import com.dotmarketing.portlets.contentlet.business.web.ContentletWebAPIImplIntegrationTest;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependenciesTest;
 import com.dotmarketing.portlets.contentlet.model.IntegrationResourceLinkTest;
@@ -641,8 +643,10 @@ import org.junit.runners.Suite.SuiteClasses;
         Task230523CreateVariantFieldInContentletIntegrationTest.class,
 //        AnalyticsAPIImplTest.class,
 //        AccessTokenRenewJobTest.class,
+        SiteViewPaginatorIntegrationTest.class,
         AssetPathResolverImplTest.class,
-        CMSUrlUtilIntegrationTest.class
+        CMSUrlUtilIntegrationTest.class,
+        HostFactoryImplTest.class
 })
 
 public class MainSuite {

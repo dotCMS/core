@@ -1,14 +1,20 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
-import { FormArray, FormGroup, FormGroupDirective, ReactiveFormsModule } from '@angular/forms';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { FormGroupDirective, ReactiveFormsModule } from '@angular/forms';
 
-import { ButtonModule } from 'primeng/button';
 import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
+import { PaginatorModule } from 'primeng/paginator';
 
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
-import { GoalsConditionsOperatorsList, GoalsConditionsParametersList } from '@dotcms/dotcms-models';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
+import {
+    GoalsConditionsOperatorsListByType,
+    GoalsConditionsParametersListByType
+} from '@dotcms/dotcms-models';
+import { DotFieldRequiredDirective } from '@dotcms/ui';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotExperimentsOptionContentBaseComponent } from '@portlets/dot-experiments/shared/ui/dot-experiment-options/components/dot-experiments-option-content-base-component/dot-experiments-option-content-base.component';
 import { DotDropdownDirective } from '@portlets/shared/directives/dot-dropdown.directive';
 
 /**
@@ -19,44 +25,25 @@ import { DotDropdownDirective } from '@portlets/shared/directives/dot-dropdown.d
     standalone: true,
     imports: [
         CommonModule,
-        ReactiveFormsModule,
+        DotAutofocusModule,
         DotDropdownDirective,
-        DotMessagePipeModule,
+        DotFieldRequiredDirective,
         DotFieldValidationMessageModule,
-        //PrimeNg
-        ButtonModule,
+        DotPipesModule,
         DropdownModule,
-        InputTextModule
+        InputTextModule,
+        PaginatorModule,
+        ReactiveFormsModule
     ],
     templateUrl: './dot-experiments-goal-configuration-reach-page.component.html',
     styleUrls: ['./dot-experiments-goal-configuration-reach-page.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotExperimentsGoalConfigurationReachPageComponent implements OnInit {
-    parametersList = GoalsConditionsParametersList;
-    operatorsList = GoalsConditionsOperatorsList;
+export class DotExperimentsGoalConfigurationReachPageComponent extends DotExperimentsOptionContentBaseComponent {
+    parametersList = GoalsConditionsParametersListByType['REACH_PAGE'];
+    operatorsList = GoalsConditionsOperatorsListByType['REACH_PAGE'];
 
-    form!: FormGroup;
-
-    constructor(private readonly rootFormGroup: FormGroupDirective) {}
-
-    get primaryFormGroup() {
-        return this.rootFormGroup.control.get('primary') as FormGroup;
-    }
-
-    get conditionsFormArray() {
-        return this.rootFormGroup.control.get('primary.conditions') as FormArray;
-    }
-
-    /**
-     * Get all Control of the FormArray with the index of the array
-     * @param index
-     */
-    conditionsControl(index: number) {
-        return this.conditionsFormArray.controls[index] as FormGroup;
-    }
-
-    ngOnInit(): void {
-        this.form = this.rootFormGroup.control;
+    constructor(private readonly fgd: FormGroupDirective) {
+        super(fgd);
     }
 }

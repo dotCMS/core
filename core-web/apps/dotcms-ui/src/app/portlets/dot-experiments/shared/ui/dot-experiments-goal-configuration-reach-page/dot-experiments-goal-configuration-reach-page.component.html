@@ -1,5 +1,5 @@
 <div class="flex flex-column wrapper" [formGroup]="primaryFormGroup">
-    <div class="field flex-auto flex flex-column">
+    <div class="flex-auto flex flex-column">
         <h3>{{ 'experiments.goal.reach_page.form.conditions.label' | dm }}</h3>
 
         <ng-container
@@ -22,7 +22,7 @@
                         }}"
                     ></p-dropdown>
                     <dot-field-validation-message
-                        [field]="conditionsControl(i).controls['parameter']"
+                        [field]="getConditionsFormArrayItemByIndex(i).controls['parameter']"
                     ></dot-field-validation-message>
                 </div>
 
@@ -40,8 +40,9 @@
                             'experiments.goal.reach_page.form.conditions.operator.placeholder' | dm
                         }}"
                     ></p-dropdown>
+
                     <dot-field-validation-message
-                        [field]="conditionsControl(i).controls['operator']"
+                        [field]="getConditionsFormArrayItemByIndex(i).controls['operator']"
                     ></dot-field-validation-message>
                 </div>
 
@@ -52,7 +53,6 @@
                     <input
                         id="value"
                         data-testId="value-input"
-                        dotAutofocus
                         formControlName="value"
                         name="value"
                         pInputText
@@ -63,7 +63,7 @@
                         type="text"
                     />
                     <dot-field-validation-message
-                        [field]="conditionsControl(i).controls['value']"
+                        [field]="getConditionsFormArrayItemByIndex(i).controls['value']"
                     ></dot-field-validation-message>
                 </div>
             </div>

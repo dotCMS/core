@@ -14,6 +14,7 @@ import com.dotcms.cube.CubeJSQuery.Builder;
 import com.dotcms.cube.CubeJSResultSet;
 import com.dotcms.cube.filters.SimpleFilter.Operator;
 
+import com.dotcms.experiments.business.ExperimentUrlPatternCalculator;
 import com.dotcms.experiments.model.Goal;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.ExperimentVariant;
@@ -25,6 +26,7 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import graphql.VisibleForTesting;
 import io.vavr.Lazy;
@@ -113,26 +115,23 @@ public enum ExperimentAnalyzerUtil {
         final String pageId = experiment.pageId();
         final HTMLPageAsset page = getPage(pageId);
 
+        if (!UtilMethods.isSet(page)) {
+            throw new IllegalArgumentException("The page with id " + pageId + " does not exist");
+        }
+
         final MetricType goalMetricType = goal.getMetric().type();
 
         final MetricExperimentAnalyzer metricExperimentAnalyzer = experimentResultQueryHelpers.get()
                 .get(goalMetricType);
 
+        final String urlRegexPattern = ExperimentUrlPatternCalculator.INSTANCE
+                .calculateUrlRegexPattern(page);
+
         for (final BrowserSession browserSession : browserSessions) {
 
             final boolean isIntoExperiment = browserSession.getEvents().stream()
                     .map(event -> event.get("url").map(Object::toString).orElse(StringPool.BLANK))
-                    .anyMatch(url -> {
-                        try {
-                            final String uri = page.getURI();
-                            final String alternativeURI = uri.endsWith("index")
-                                ? uri.substring(0, uri.indexOf("index"))
-                                : uri;
-                            return url.contains(uri) || url.contains(alternativeURI);
-                        } catch (DotDataException e) {
-                            throw new RuntimeException(e);
-                        }
-                    });
+                    .anyMatch(url -> url.matches(urlRegexPattern));
 
             if (isIntoExperiment) {
                 builder.addSession(browserSession);

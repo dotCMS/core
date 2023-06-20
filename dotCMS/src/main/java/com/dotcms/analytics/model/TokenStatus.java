@@ -1,5 +1,8 @@
 package com.dotcms.analytics.model;
 
+import java.util.Arrays;
+import java.util.Optional;
+
 /**
  * Token Status possible values.
  *
@@ -12,6 +15,13 @@ public enum TokenStatus {
     EXPIRED,
     BLOCKED,
     NOOP,
-    NONE
+    NONE;
+
+    public boolean matchesAny(final TokenStatus... statuses) {
+        return Optional
+            .ofNullable(statuses)
+            .map(s -> Arrays.stream(s).anyMatch(status -> status == this))
+            .orElse(false);
+    }
 
 }

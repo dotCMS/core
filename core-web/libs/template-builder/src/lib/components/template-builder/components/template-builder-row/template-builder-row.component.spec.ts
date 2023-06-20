@@ -18,7 +18,7 @@ import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-co
 @Component({
     selector: 'dotcms-host-component',
     template: ` <dotcms-template-builder-row
-        (editStyleClasses)="editRowStyleClass()"
+        (editClasses)="editRowStyleClass()"
         (deleteRow)="deleteRow()"
     >
         <p>Some component</p>
