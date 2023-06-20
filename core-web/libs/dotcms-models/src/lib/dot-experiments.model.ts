@@ -122,8 +122,8 @@ export interface GoalCondition {
 }
 
 export interface RangeOfDateAndTime {
-    startDate: number;
-    endDate: number;
+    startDate: number | null;
+    endDate: number | null;
 }
 
 export type GroupedExperimentByStatus = {
@@ -141,13 +141,13 @@ export type StepStatus = SidebarStatus & {
 };
 
 export enum ExperimentSteps {
-    EXPERIMENT_DESCRIPTION = 'experimentDescription',
     VARIANTS = 'variants',
     GOAL = 'goal',
     TARGETING = 'targeting',
     TRAFFIC_LOAD = 'trafficLoad',
     TRAFFICS_SPLIT = 'trafficSplit',
-    SCHEDULING = 'scheduling'
+    SCHEDULING = 'scheduling',
+    EXPERIMENT_DESCRIPTION = 'EXPERIMENT_DESCRIPTION'
 }
 
 export enum GOAL_TYPES {
