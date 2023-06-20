@@ -91,7 +91,7 @@ export class TemplateBuilderThemeSelectorComponent implements OnInit, OnDestroy 
         this.paginatorService.url = 'v1/themes';
         this.paginatorService.setExtraParams(
             'hostId',
-            this.current?.hostId || this.siteService.currentSite.identifier
+            this.current?.hostId || this.siteService.currentSite?.identifier
         );
         this.paginatorService.deleteExtraParams(this.SEARCH_PARAM);
         this.paginatorService.paginationPerPage = 8;
@@ -119,10 +119,7 @@ export class TemplateBuilderThemeSelectorComponent implements OnInit, OnDestroy 
             .pipe(take(1))
             .subscribe((themes: DotTheme[]) => {
                 if (this.noThemesInInitialLoad(themes, $event)) {
-                    this.siteService.getSiteById('SYSTEM_HOST').subscribe((site: Site) => {
-                        // eslint-disable-next-line no-console
-                        console.log(site);
-                        /*    this.siteSelector.searchableDropdown.handleClick(site); */
+                    this.siteService?.getSiteById('SYSTEM_HOST').subscribe(() => {
                         this.cd.detectChanges();
                     });
                 } else {
