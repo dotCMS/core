@@ -20,11 +20,9 @@ import { ResponseView } from '@dotcms/dotcms-js';
 import {
     DotContainer,
     DotContainerMap,
-    DotLayout,
     DotPageRender,
     DotPageRenderState,
     DotTemplateDesignerPayload,
-    DotTheme,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
 
@@ -124,36 +122,6 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
     nextUpdateTemplate(value: DotTemplateDesignerPayload) {
         this.canRouteBeDesativated(false);
         this.updateTemplate.next(value);
-    }
-
-    /**
-     * Handle layout change event.
-     * Take the layout out, update the template and save it.
-     *
-     * @param {DotLayout} layout
-     * @memberof DotEditLayoutComponent
-     */
-    onLayoutChange(layout: DotLayout) {
-        this.nextUpdateTemplate({
-            layout,
-            themeId: this.pageState.template.theme,
-            title: this.pageState.page.title
-        });
-    }
-
-    /**
-     * Handle theme change event.
-     * Take the theme out, update the template and save it.
-     *
-     * @param {DotLayout} layout
-     * @memberof DotEditLayoutComponent
-     */
-    onThemeChange(theme: DotTheme) {
-        this.nextUpdateTemplate({
-            layout: this.pageState.layout,
-            themeId: theme.identifier,
-            title: this.pageState.page.title
-        });
     }
 
     /**

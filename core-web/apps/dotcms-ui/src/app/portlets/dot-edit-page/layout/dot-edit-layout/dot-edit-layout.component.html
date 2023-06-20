@@ -3,8 +3,7 @@
     <dotcms-template-builder
         [templateLayout]="pageState.layout"
         [theme]="pageState.template.theme"
-        (layoutChange)="onLayoutChange($event)"
-        (themeChange)="onThemeChange($event)"
+        (templateChange)="nextUpdateTemplate($event)"
         data-testId="new-template-builder"
     >
         <dot-global-message toolbar-left></dot-global-message>

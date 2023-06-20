@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 
 import { IframeComponent } from '@components/_common/iframe/iframe-component';
-import { DotLayout, FeaturedFlags } from '@dotcms/dotcms-models';
+import { DotTemplateDesignerPayload, FeaturedFlags } from '@dotcms/dotcms-models';
 
 import { DotTemplateItem } from '../store/dot-template.store';
 
@@ -48,10 +48,10 @@ export class DotTemplateBuilderComponent implements OnInit, OnChanges {
      * @param {DotLayout} layout
      * @memberof DotTemplateBuilderComponent
      */
-    onLayoutChange(layout: DotLayout) {
+    onTemplateChange(template: DotTemplateDesignerPayload) {
         this.updateTemplate.emit({
             ...this.item,
-            layout
+            ...template
         } as DotTemplateItem);
     }
 }

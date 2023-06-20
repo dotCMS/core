@@ -18,7 +18,7 @@ import {
 } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock, SiteService } from '@dotcms/dotcms-js';
 import { DotContainerOptionsDirective, DotMessagePipeModule } from '@dotcms/ui';
-import { DotContainersServiceMock } from '@dotcms/utils-testing';
+import { DotContainersServiceMock, SiteServiceMock } from '@dotcms/utils-testing';
 
 import { AddStyleClassesDialogComponent } from './components/add-style-classes-dialog/add-style-classes-dialog.component';
 import { DotAddStyleClassesDialogStore } from './components/add-style-classes-dialog/store/add-style-classes-dialog.store';
@@ -80,24 +80,18 @@ export default {
                 {
                     provide: HttpClient,
                     useValue: {
-                        get: (_: string) => of(MOCK_STYLE_CLASSES_FILE)
+                        get: (_: string) => of(MOCK_STYLE_CLASSES_FILE),
+                        request: () => of({})
                     }
-                },
-                {
-                    provide: CoreWebService,
-                    useValue: CoreWebServiceMock
                 },
                 {
                     provide: PaginatorService
                 },
                 {
                     provide: SiteService,
-                    useValue: {
-                        getCurrentSite() {
-                            return of({ identifier: '123' });
-                        }
-                    }
+                    useValue: new SiteServiceMock()
                 },
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 {
                     provide: DotEventsService
                 }
