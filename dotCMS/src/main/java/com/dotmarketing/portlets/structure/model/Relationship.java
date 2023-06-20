@@ -273,6 +273,14 @@ public class Relationship extends LegacyInode implements Serializable, ManifestI
 				.matches("[a-zA-z0-9]+\\.[a-zA-Z0-9]+");
 	}
 
+	/**
+	 * Returns true if the relationship is itself a content type
+	 * @return boolean
+	 */
+	public boolean isSelfRelated() {
+		return this.getParentStructureInode().equals(this.getChildStructureInode());
+	}
+
 	public void setFixed(boolean fixed) {
 	    
 	}

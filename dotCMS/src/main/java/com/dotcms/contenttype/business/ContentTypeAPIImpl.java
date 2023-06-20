@@ -56,7 +56,6 @@ import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
-import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 import java.util.ArrayList;
@@ -64,7 +63,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -545,7 +543,8 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
             newField = APILocator.getContentTypeFieldAPI()
                     .save(FieldBuilder
-                            .builder(generateNewRelationshipFiledIfNeeded(sourceField, newContentType))
+                            .builder(
+                                    generateNewRelationshipFieldIfNeeded(sourceField, newContentType))
                             .sortOrder(sourceField.sortOrder())
                             .contentTypeId(newContentType.id())
                             .id(null)
@@ -576,17 +575,16 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
    * @param newContentType the new content type
    *
    */
-  private Field generateNewRelationshipFiledIfNeeded(final Field sourceField, ContentType newContentType)
+  private Field generateNewRelationshipFieldIfNeeded(final Field sourceField, ContentType newContentType)
           throws DotDataException, DotSecurityException {
 
     if (sourceField instanceof RelationshipField) {
 
       final RelationshipField relationshipField = (RelationshipField) sourceField;
       final Relationship relationship = relationshipAPI.getRelationshipFromField(sourceField, user);
-      final boolean isSelfRelated = relationship.getParentStructureInode().equals(relationship.getChildStructureInode());
 
       return RelationshipFieldBuilder.builder(relationshipField)
-              .relationType(isSelfRelated ? newContentType.variable() : sourceField.relationType())
+              .relationType(relationship.isSelfRelated() ? newContentType.variable() : sourceField.relationType())
               .variable(sourceField.variable())
               .name(sourceField.name())
               .build();

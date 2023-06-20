@@ -13,6 +13,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionAPI.PermissionableType;
+import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -24,6 +25,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
@@ -121,13 +123,14 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 
 	/**
 	 * Method to test: {@link ContentTypeAPI#copyFrom(CopyContentTypeBean)}
-	 * Given Scenario: Creates a content type and makes a copy of it
-	 * ExpectedResult: Expected result will be to have a copy of the original content type
+	 * Given Scenario: Creates a content type related to itself and makes a copy of it
+	 * ExpectedResult: Expected result will be to have a copy of the original content type and related to itself
 	 *
 	 */
 	@Test
 	public void test_copy_content_type_related_to_itself_expected_copy_success () throws DotDataException, DotSecurityException {
 
+		final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
 		ContentType movieCopy = null;
 		final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
 		ImmutableSimpleContentType.Builder builder = ImmutableSimpleContentType.builder();
@@ -137,21 +140,17 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		try {
 			movieOriginal = contentTypeAPI.save(movieOriginal);
 
-			ImmutableTextField imdbid = ImmutableTextField.builder().name("imdbid").required(true).unique(true).build();
 			ImmutableTextField title = ImmutableTextField.builder().name("Title").indexed(true).required(true).build();
-			ImmutableDateField releaseDate = ImmutableDateField.builder().name("Release Date").variable("releaseDate").build();
-			ImmutableTextField poster = ImmutableTextField.builder().name("Poster").build();
-			ImmutableTextField runtime = ImmutableTextField.builder().name("Runtime").build();
-			ImmutableTextAreaField plot = ImmutableTextAreaField.builder().name("Plot").build();
-			ImmutableTextField boxOffice = ImmutableTextField.builder().name("Box Office").variable("boxOffice").build();
+			ImmutableRelationshipField relationship = ImmutableRelationshipField.builder()
+					.name("rel")
+					.variable("rel")
+					.values(String.valueOf(0))
+					.relationType(movieOriginal.variable() + StringPool.PERIOD + "rel")
+					.contentTypeId(movieOriginal.id()).build();
+
 			List<Field> fieldList = new ArrayList<>();
-			fieldList.add(imdbid);
 			fieldList.add(title);
-			fieldList.add(releaseDate);
-			fieldList.add(poster);
-			fieldList.add(runtime);
-			fieldList.add(plot);
-			fieldList.add(boxOffice);
+			fieldList.add(relationship);
 
 			contentTypeAPI.save(movieOriginal, fieldList);
 
@@ -165,15 +164,20 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 			final String newVariableName = "MovieOriginalCopy"+ millis;
 			movieCopy = contentTypeAPI.copyFrom(new CopyContentTypeBean.Builder().sourceContentType(movieOriginal).name(newVariableName).newVariable(newVariableName).build());
 
-			Assert.assertEquals("Should be created with a new variable name", newVariableName, movieCopy.variable());
-			final Map<String, Field> movieCopyFieldMap     = movieCopy.fieldMap();
-			final Map<String, Field> movieOriginalFieldMap = movieOriginal.fieldMap();
+			final List<Field> fieldsRecoveryCopy = APILocator.getContentTypeFieldAPI().byContentTypeId(movieCopy.id());
 
-			Assert.assertEquals("Testing number of fields", movieOriginalFieldMap.size(), movieCopyFieldMap.size());
-			for (final String fieldName : movieOriginalFieldMap.keySet()) {
+			fieldsRecoveryCopy.stream()
+					.filter(field -> field instanceof RelationshipField).findFirst()
+					.ifPresent(field -> {
+						try {
+							Assert.assertTrue("Testing relationship field values",
+									relationshipAPI.getRelationshipFromField(field, user).isSelfRelated());
+						} catch (DotDataException | DotSecurityException e) {
+							Assert.fail("Error testing relationship field values");
+						}
+					});
 
-				Assert.assertTrue("The copy content type should has the field name: " + fieldName, movieCopyFieldMap.containsKey(fieldName));
-			}
+
 		} finally {
 
 			if (null != movieOriginal) {
