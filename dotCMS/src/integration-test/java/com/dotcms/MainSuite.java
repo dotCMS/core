@@ -46,6 +46,8 @@ import com.dotcms.enterprise.publishing.staticpublishing.LanguageFolderTest;
 import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTest;
 import com.dotcms.enterprise.rules.RulesAPIImplIntegrationTest;
 import com.dotcms.experiments.business.ExperimentAPIImpIntegrationTest;
+import com.dotcms.experiments.business.IndexRegexUrlPatterStrategyIntegrationTest;
+import com.dotcms.experiments.business.RootIndexRegexUrlPatterStrategyIntegrationTest;
 import com.dotcms.experiments.business.web.ExperimentWebAPIImplIntegrationTest;
 import com.dotcms.filters.interceptor.meta.MetaWebInterceptorTest;
 import com.dotcms.graphql.DotGraphQLHttpServletTest;
@@ -644,7 +646,9 @@ import org.junit.runners.Suite.SuiteClasses;
 //        AccessTokenRenewJobTest.class,
         AssetPathResolverImplTest.class,
         CMSUrlUtilIntegrationTest.class,
-        HostFactoryImplTest.class
+        HostFactoryImplTest.class,
+        RootIndexRegexUrlPatterStrategyIntegrationTest.class,
+        IndexRegexUrlPatterStrategyIntegrationTest.class
 })
 
 public class MainSuite {

@@ -19,18 +19,16 @@ import org.junit.Test;
 
 public class RootIndexRegexUrlPatterStrategyIntegrationTest {
 
+    private static String EXPECTED_REGEX = "^(http|https):\\/\\/(localhost|\\b(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,})(:\\d{1,5})?(\\/[iI][nN][dD][eE][xX]|\\/)?(\\?.*)?$";
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
     }
 
     /**
-     * Method to test: {@link RootIndexRegexUrlPatterStrategy#isMatch(HTMLPageAsset)} and
-     * {@link RootIndexRegexUrlPatterStrategy#getRegexPattern(HTMLPageAsset)}
+     * Method to test: {@link RootIndexRegexUrlPatterStrategy#isMatch(HTMLPageAsset)}
      * When: The page is the root index page
      * Should: the {@link RootIndexRegexUrlPatterStrategy#isMatch(HTMLPageAsset)} return true
-     * and the {@link RootIndexRegexUrlPatterStrategy#getRegexPattern(HTMLPageAsset)} return the correct regex pattern
-     * also the regex pattern should match the page url
      *
      * @throws DotDataException
      */
@@ -47,24 +45,42 @@ public class RootIndexRegexUrlPatterStrategyIntegrationTest {
         final boolean match = rootIndexRegexUrlPatterStrategy.isMatch(htmlPageAsset);
         assertTrue(match);
 
-        //assertEquals("^(http|https):\\/\\/((?!(.*\\/){0}).*)(:[0-9])?(\\/index|\\/)?(\\?.*)?",
-          //      rootIndexRegexUrlPatterStrategy.getRegexPattern(htmlPageAsset));
+        assertEquals(EXPECTED_REGEX, rootIndexRegexUrlPatterStrategy.getRegexPattern(htmlPageAsset));
 
         final String regexPattern = rootIndexRegexUrlPatterStrategy.getRegexPattern(htmlPageAsset);
-        /*assertTrue(("http://localhost:8080/index").matches(regexPattern));
-        assertTrue(("http://localhost/index").matches(regexPattern));*/
+
+        assertFalse(("http://localhost:8080/any_folder/index").matches(regexPattern));
+        assertFalse(("http://localhost/any_folder/index").matches(regexPattern));
+
+        assertTrue(("http://localhost:8080/index").matches(regexPattern));
+        assertTrue(("http://localhost/index").matches(regexPattern));
+
+        assertFalse(("http://localhost:8080/index/index").matches(regexPattern));
+        assertFalse(("http://localhost/index/index").matches(regexPattern));
+
+        assertTrue(("http://localhost:8080/INDEX").matches(regexPattern));
+        assertTrue(("http://localhost/INDEX").matches(regexPattern));
+
+        assertTrue(("http://localhost:8080/IndEX").matches(regexPattern));
+        assertTrue(("http://localhost/IndEX").matches(regexPattern));
 
         assertTrue(("http://localhost:8080/").matches(regexPattern));
         assertTrue(("http://localhost/").matches(regexPattern));
 
-        /*assertTrue(("http://localhost:8080").matches(regexPattern));
-        assertTrue(("http://localhost").matches(regexPattern));
-
-        assertTrue(("http://localhost:8080/INDEX").matches(regexPattern));
-        assertTrue(("http://localhost/INDEX").matches(regexPattern));*/
-
         assertFalse(("http://localhost:8080/aaaa/bbb").matches(regexPattern));
         assertFalse(("http://localhost:8080/aaaa").matches(regexPattern));
+
+        assertFalse(("http://localhost/aaaa/bbb").matches(regexPattern));
+        assertFalse(("http://localhost/aaaa").matches(regexPattern));
+
+        assertFalse(("http://localhost/xedni").matches(regexPattern));
+
+        assertFalse(("http://localhost:8080/indexindex").matches(regexPattern));
+        assertFalse(("http://localhost/indexindex").matches(regexPattern));
+
+        assertTrue(("http://localhost:8080").matches(regexPattern));
+        assertTrue(("http://localhost").matches(regexPattern));
+        assertTrue(("http://localhost").matches(regexPattern));
     }
 
     /**
@@ -90,17 +106,37 @@ public class RootIndexRegexUrlPatterStrategyIntegrationTest {
         final boolean match = rootIndexRegexUrlPatterStrategy.isMatch(htmlPageAsset);
         assertTrue(match);
 
-        assertEquals("^(http|https):\\/\\/((?!(.*\\/)).*)(:[0-9])?(\\/index|\\/)?(\\?.*)?",
-                rootIndexRegexUrlPatterStrategy.getRegexPattern(htmlPageAsset));
+        assertEquals(EXPECTED_REGEX, rootIndexRegexUrlPatterStrategy.getRegexPattern(htmlPageAsset));
 
         final String regexPattern = rootIndexRegexUrlPatterStrategy.getRegexPattern(htmlPageAsset);
         assertTrue(("https://localhost:8080/index").matches(regexPattern));
         assertTrue(("https://localhost/index").matches(regexPattern));
 
+        assertFalse(("https://localhost:8080/index/index").matches(regexPattern));
+        assertFalse(("https://localhost/index/index").matches(regexPattern));
+
+        assertTrue(("https://localhost:8080/INDEX").matches(regexPattern));
+        assertTrue(("https://localhost/INDEX").matches(regexPattern));
+
+        assertTrue(("https://localhost:8080/IndEX").matches(regexPattern));
+        assertTrue(("https://localhost/IndEX").matches(regexPattern));
+
         assertTrue(("https://localhost:8080/").matches(regexPattern));
         assertTrue(("https://localhost/").matches(regexPattern));
 
+        assertFalse(("https://localhost:8080/aaaa/bbb").matches(regexPattern));
+        assertFalse(("https://localhost:8080/aaaa").matches(regexPattern));
+
+        assertFalse(("https://localhost/aaaa/bbb").matches(regexPattern));
+        assertFalse(("https://localhost/aaaa").matches(regexPattern));
+
+        assertFalse(("https://localhost/xedni").matches(regexPattern));
+
+        assertFalse(("https://localhost:8080/indexindex").matches(regexPattern));
+        assertFalse(("https://localhost/indexindex").matches(regexPattern));
+
         assertTrue(("https://localhost:8080").matches(regexPattern));
+        assertTrue(("https://localhost").matches(regexPattern));
         assertTrue(("https://localhost").matches(regexPattern));
     }
 
