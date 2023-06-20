@@ -300,7 +300,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
     );
 
     /**
-     * @description This method adds a container to a box
+     * @description This method deletes a container from a box
      *
      * @memberof DotTemplateBuilderStore
      */
@@ -321,10 +321,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
 
                 const updatedChildren = row.subGridOpts.children.map((child) => {
                     if (affectedColumn.id !== child.id) return child;
-                    child.containers = [
-                        ...child.containers.slice(0, containerIndex),
-                        ...child.containers.slice(containerIndex + 1)
-                    ];
+                    child.containers = child.containers.filter((_, i) => i !== containerIndex);
 
                     return child;
                 });
