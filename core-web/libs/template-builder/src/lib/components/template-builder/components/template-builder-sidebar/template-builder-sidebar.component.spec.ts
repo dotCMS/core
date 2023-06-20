@@ -1,9 +1,13 @@
 import { SpectatorHost, byTestId, createHostFactory } from '@ngneat/spectator';
 
 import { CommonModule } from '@angular/common';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { FormsModule } from '@angular/forms';
 
 import { DropdownModule } from 'primeng/dropdown';
+
+import { DotContainersService } from '@dotcms/data-access';
+import { DotContainersServiceMock } from '@dotcms/utils-testing';
 
 import { TemplateBuilderSidebarComponent } from './template-builder-sidebar.component';
 
@@ -12,7 +16,13 @@ describe('TemplateBuilderSidebarComponent', () => {
 
     const createHost = createHostFactory({
         component: TemplateBuilderSidebarComponent,
-        imports: [CommonModule, DropdownModule, FormsModule]
+        imports: [CommonModule, DropdownModule, FormsModule, HttpClientTestingModule],
+        providers: [
+            {
+                provide: DotContainersService,
+                useValue: new DotContainersServiceMock()
+            }
+        ]
     });
 
     beforeEach(() => {

@@ -27,5 +27,10 @@
 
 .template-builder-sidebar__body-container {
     flex: 1;
-    background-color: red;
+
+    ::ng-deep dotcms-template-builder-box {
+        .template-builder-box {
+            height: 100%;
+        }
+    }
 }
