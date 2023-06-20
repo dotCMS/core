@@ -40,8 +40,8 @@ import { DotDropdownDirective } from '@portlets/shared/directives/dot-dropdown.d
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsGoalConfigurationReachPageComponent extends DotExperimentsOptionContentBaseComponent {
-    parametersList = GoalsConditionsParametersListByType['REACH_PAGE'];
-    operatorsList = GoalsConditionsOperatorsListByType['REACH_PAGE'];
+    override parametersList = GoalsConditionsParametersListByType['REACH_PAGE'];
+    override operatorsList = GoalsConditionsOperatorsListByType['REACH_PAGE'];
 
     constructor(private readonly fgd: FormGroupDirective) {
         super(fgd);
