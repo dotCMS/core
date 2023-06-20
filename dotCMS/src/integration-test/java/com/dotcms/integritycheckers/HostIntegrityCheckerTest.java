@@ -7,6 +7,7 @@ import com.dotcms.LicenseTestUtil;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -59,7 +60,6 @@ public class HostIntegrityCheckerTest extends IntegrationTestBase {
     public void setup() throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
-        LicenseTestUtil.getLicense();
 
         integrityChecker = new HostIntegrityChecker();
         user = APILocator.getUserAPI().getSystemUser();
@@ -281,58 +281,63 @@ public class HostIntegrityCheckerTest extends IntegrationTestBase {
     /**
      * Method to test: {@link HostIntegrityChecker#executeFix(String)}
      * When: Tests that after conflicts are detected a fix is applied in favor of remote host.
-     * Should: fix the content
+     * Should: Columns Asset_subtype, owner and create_date should be populated
      * @throws Exception
      */
     @Test
     public void test_executeFix() throws Exception {
-        final byte[] pngPixel= Base64.getDecoder().decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==");
-        final File pngFile=File.createTempFile("tmp", ".img");
-        Files.write(pngFile.toPath(), pngPixel);
-        final Host host = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
-        final Folder folder = new FolderDataGen().name("testFolder"+UUID.randomUUID().toString()).site(host).nextPersisted();
-        final Contentlet contentlet = new FileAssetDataGen(folder, pngFile).nextPersisted();
-        final FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
 
-//        final Contentlet contentlet = new FileAssetDataGen(folder, file).title("testFileAsset1").languageId(1).nextPersisted();
+        //Create new Site
+        final Host newSite = new SiteDataGen().nextPersisted();
 
-        final Tuple2<String,String> introConflict = introduceConflict(fileAsset ,endpointId);
+        //Introduce Conflict, will return new identifier of the site
+        final String remoteIdentifier = introduceConflict(newSite ,endpointId);
 
         integrityChecker.executeFix(endpointId);
 
+        //Query to check that the columns were populated, using the remoteIdentifier since
+        //it's the new Id of the site.
         final DotConnect dotConnect = new DotConnect();
-        dotConnect.setSQL("SELECT asset_type FROM identifier WHERE id = ?");
-        dotConnect.addParam(fileAsset.getIdentifier());
-        final Connection connection = DbConnectionFactory.getConnection();
-        final List<Map<String, Object>> results = dotConnect.loadObjectResults(connection);
+        dotConnect.setSQL("SELECT asset_subtype, owner, create_date FROM identifier WHERE id = ?");
+        dotConnect.addParam(remoteIdentifier);
+        final List<Map<String, Object>> results = dotConnect.loadObjectResults();
 
         boolean assetSubtypeNotNull = results.stream()
                 .anyMatch(result -> result.containsKey("asset_subtype") && result.get("asset_subtype") != null);
 
-        Assert.assertTrue(assetSubtypeNotNull);
+        Assert.assertTrue("Asset_SubType is null", assetSubtypeNotNull);
 
+        boolean createDateNotNull = results.stream()
+                .anyMatch(result -> result.containsKey("create_date") && result.get("create_date") != null);
+
+        Assert.assertTrue("Create Date is null", createDateNotNull);
+
+        boolean ownerNotNull = results.stream()
+                .anyMatch(result -> result.containsKey("owner") && result.get("owner") != null);
+
+        Assert.assertTrue("Owner is null", ownerNotNull);
 
     }
 
     @WrapInTransaction
-    Tuple2<String,String> introduceConflict(final FileAsset contentlet, final String endpointId) throws DotDataException {
+    private String introduceConflict(final Host site, final String endpointId) throws DotDataException {
         final DotConnect dotConnect = new DotConnect();
-        dotConnect.setSQL("INSERT INTO fileassets_ir \n"
-                + "(file_name, local_working_inode, remote_working_inode, local_identifier, remote_identifier, endpoint_id, language_id)\n"
+        dotConnect.setSQL("INSERT INTO hosts_ir \n"
+                + "(local_identifier, remote_identifier, endpoint_id, local_working_inode, remote_working_inode, language_id, host)\n"
                 + "VALUES(?, ?, ?, ?, ?, ?, ?)");
 
         final String remoteIdentifier = UUID.randomUUID().toString();
         final String remoteWorkingInode = UUID.randomUUID().toString();
 
-        dotConnect.addParam(contentlet.getFileName());
-        dotConnect.addParam(contentlet.getInode());
-        dotConnect.addParam(remoteWorkingInode);
-        dotConnect.addParam(contentlet.getIdentifier());
+        dotConnect.addParam(site.getIdentifier());
         dotConnect.addParam(remoteIdentifier);
         dotConnect.addParam(endpointId);
-        dotConnect.addParam(contentlet.getLanguageId());
+        dotConnect.addParam(site.getInode());
+        dotConnect.addParam(remoteWorkingInode);
+        dotConnect.addParam(site.getLanguageId());
+        dotConnect.addParam(site.getHostname());
         dotConnect.loadResult();
-        return Tuple.of(remoteIdentifier, remoteWorkingInode);
+        return remoteIdentifier;
     }
 
 }
