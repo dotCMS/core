@@ -9,9 +9,10 @@
     position: relative;
 
     input {
-        font-size: $font-size-md;
-        border: 1px solid $color-palette-gray-200;
-        padding: $spacing-1;
+        font-size: $font-size-lg;
+        border: 1px solid $color-palette-gray-500;
+        padding: $spacing-3;
+        border-radius: $spacing-1;
     }
 }
 
@@ -38,6 +39,13 @@
         box-shadow: 0 10px 10px #0003;
         background: #ffffff;
     }
+}
+
+.theme-footer {
+    display: flex;
+    gap: $spacing-1;
+    justify-content: flex-end;
+    margin: $spacing-6 0 0;
 }
 
 ::ng-deep {

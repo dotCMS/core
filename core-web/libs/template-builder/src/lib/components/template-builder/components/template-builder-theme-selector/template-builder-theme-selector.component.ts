@@ -155,15 +155,6 @@ export class TemplateBuilderThemeSelectorComponent implements OnInit, OnDestroy 
      */
     selectTheme(theme: DotTheme): void {
         this.current = theme;
-        // eslint-disable-next-line no-console
-        console.log('SELECT:', this.current);
-        /*     this.dialogActions = {
-            ...this.dialogActions,
-            accept: {
-                ...this.dialogActions.accept,
-                disabled: this.value.inode === this.current.inode
-            }
-        }; */
     }
 
     /**
