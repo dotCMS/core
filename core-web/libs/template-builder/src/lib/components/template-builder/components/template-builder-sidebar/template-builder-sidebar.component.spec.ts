@@ -5,11 +5,13 @@ import { FormsModule } from '@angular/forms';
 
 import { DropdownModule } from 'primeng/dropdown';
 
-import { DotContainersService } from '@dotcms/data-access';
+import { DotContainersService, DotMessageService } from '@dotcms/data-access';
+import { DotMessagePipeModule } from '@dotcms/ui';
 import { DotContainersServiceMock } from '@dotcms/utils-testing';
 
 import { TemplateBuilderSidebarComponent } from './template-builder-sidebar.component';
 
+import { DOT_MESSAGE_SERVICE_TB_MOCK } from '../../utils/mocks';
 import { TemplateBuilderBoxComponent } from '../template-builder-box/template-builder-box.component';
 
 describe('TemplateBuilderSidebarComponent', () => {
@@ -21,12 +23,17 @@ describe('TemplateBuilderSidebarComponent', () => {
             DropdownModule,
             FormsModule,
             HttpClientTestingModule,
-            TemplateBuilderBoxComponent
+            TemplateBuilderBoxComponent,
+            DotMessagePipeModule
         ],
         providers: [
             {
                 provide: DotContainersService,
                 useValue: new DotContainersServiceMock()
+            },
+            {
+                provide: DotMessageService,
+                useValue: DOT_MESSAGE_SERVICE_TB_MOCK
             }
         ]
     });

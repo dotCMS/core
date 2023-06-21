@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { DropdownModule } from 'primeng/dropdown';
 
 import { DotContainer } from '@dotcms/dotcms-models';
+import { DotMessagePipeModule } from '@dotcms/ui';
 
 import { DotTemplateSidebarProperties } from '../../models/models';
 import { TemplateBuilderBoxComponent } from '../template-builder-box/template-builder-box.component';
@@ -11,7 +12,7 @@ import { TemplateBuilderBoxComponent } from '../template-builder-box/template-bu
 @Component({
     selector: 'dotcms-template-builder-sidebar',
     standalone: true,
-    imports: [DropdownModule, FormsModule, TemplateBuilderBoxComponent],
+    imports: [DropdownModule, FormsModule, TemplateBuilderBoxComponent, DotMessagePipeModule],
     templateUrl: './template-builder-sidebar.component.html',
     styleUrls: ['./template-builder-sidebar.component.scss']
 })
