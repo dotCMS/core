@@ -119,6 +119,9 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
                 tap(([items, layoutProperties]) => {
                     this.layoutChange.emit({
                         ...layoutProperties,
+                        sidebar: layoutProperties?.sidebar?.location?.length // Make it null if it's empty so it doesn't get saved
+                            ? layoutProperties.sidebar
+                            : null,
                         body: items as DotLayoutBody
                     });
                 })
