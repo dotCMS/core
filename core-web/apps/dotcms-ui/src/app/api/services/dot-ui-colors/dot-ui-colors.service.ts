@@ -20,6 +20,8 @@ const dictionary = {
 
 type HslObject = { hue: string; saturation: string; lightness: string };
 
+type ColorType = 'primary' | 'secondary';
+
 function parseHSL(hslString: string): HslObject {
     // Use regex to match HSL values with their units
     const regex = /hsl\((\d+deg),\s*(\d+%),\s*(\d+)%\)/;
@@ -51,8 +53,18 @@ export class DotUiColorsService {
     setColors(el: HTMLElement, colors?: DotUiColors): void {
         this.currentColors = colors || this.currentColors;
 
-        this.setColor(el, this.currentColors.primary, 'primary');
-        this.setColor(el, this.currentColors.secondary, 'secondary');
+        if (colors.primary === '#426BF0') {
+            this.setDefaultPrimaryColor(el);
+        } else {
+            this.setColor(el, this.currentColors.primary, 'primary');
+        }
+
+        if (colors.secondary === '#7042F0') {
+            this.setDefaultSecondaryColor(el);
+        } else {
+            this.setColor(el, this.currentColors.secondary, 'secondary');
+        }
+
         this.setColorBackground(el, this.currentColors.background);
     }
 
@@ -64,7 +76,7 @@ export class DotUiColorsService {
         }
     }
 
-    private setColor(el: HTMLElement, hex: string, type: string): void {
+    private setColor(el: HTMLElement, hex: string, type: ColorType): void {
         const color = new TinyColor(hex);
 
         if (color.isValid) {
@@ -79,7 +91,7 @@ export class DotUiColorsService {
         }
     }
 
-    private setShades(el: HTMLElement, hex: string, type: string) {
+    private setShades(el: HTMLElement, hex: string, type: ColorType) {
         const shades = ShadeGenerator.hue(hex).shadesMap('hsl');
 
         for (const shade in dictionary) {
@@ -88,12 +100,42 @@ export class DotUiColorsService {
         }
     }
 
-    private setOpacities(el: HTMLElement, saturation: string, type: string) {
+    private setOpacities(el: HTMLElement, saturation: string, type: ColorType) {
         for (let i = 1; i < 10; i++) {
             el.style.setProperty(
                 `--color-palette-${type}-op-${i}0`,
                 `hsla(var(--color-primary-h), var(--color-primary-s), ${saturation}, 0.${i})`
             );
         }
+    }
+
+    private setDefaultPrimaryColor(el: HTMLElement): void {
+        el.style.setProperty(`--color-primary-h`, '226deg');
+        el.style.setProperty(`--color-primary-s`, '85%');
+
+        const saturations = [98, 96, 90, 78, 60, 48, 36, 27, 21];
+
+        saturations.forEach((saturation, index) => {
+            const level = `${index + 1}00`;
+            el.style.setProperty(
+                `--color-palette-primary-${level}`,
+                `hsl(var(--color-primary-h) var(--color-primary-s) ${saturation}%)`
+            );
+        });
+    }
+
+    private setDefaultSecondaryColor(el: HTMLElement): void {
+        el.style.setProperty(`--color-secondary-h`, '256deg');
+        el.style.setProperty(`--color-secondary-s`, '85%');
+
+        const saturations = [98, 94, 84, 71, 60, 51, 42, 30, 22];
+
+        saturations.forEach((saturation, index) => {
+            const level = `${index + 1}00`;
+            el.style.setProperty(
+                `--color-palette-secondary-${level}`,
+                `hsl(var(--color-secondary-h) var(--color-secondary-s) ${saturation}%)`
+            );
+        });
     }
 }

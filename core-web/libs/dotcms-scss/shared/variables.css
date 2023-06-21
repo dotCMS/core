@@ -33,14 +33,14 @@
     --color-palette-primary-op-80: hsla(var(--color-primary-h), var(--color-primary-s), 60%, 0.8);
     --color-palette-primary-op-90: hsla(var(--color-primary-h), var(--color-primary-s), 60%, 0.9);
     --color-palette-secondary-100: hsl(var(--color-secondary-h) var(--color-secondary-s) 98%);
-    --color-palette-secondary-200: hsl(var(--color-secondary-h) var(--color-secondary-s) 96%);
-    --color-palette-secondary-300: hsl(var(--color-secondary-h) var(--color-secondary-s) 90%);
-    --color-palette-secondary-400: hsl(var(--color-secondary-h) var(--color-secondary-s) 78%);
+    --color-palette-secondary-200: hsl(var(--color-secondary-h) var(--color-secondary-s) 94%);
+    --color-palette-secondary-300: hsl(var(--color-secondary-h) var(--color-secondary-s) 84%);
+    --color-palette-secondary-400: hsl(var(--color-secondary-h) var(--color-secondary-s) 71%);
     --color-palette-secondary-500: hsl(var(--color-secondary-h) var(--color-secondary-s) 60%);
-    --color-palette-secondary-600: hsl(var(--color-secondary-h) var(--color-secondary-s) 48%);
-    --color-palette-secondary-700: hsl(var(--color-secondary-h) var(--color-secondary-s) 36%);
-    --color-palette-secondary-800: hsl(var(--color-secondary-h) var(--color-secondary-s) 27%);
-    --color-palette-secondary-900: hsl(var(--color-secondary-h) var(--color-secondary-s) 21%);
+    --color-palette-secondary-600: hsl(var(--color-secondary-h) var(--color-secondary-s) 51%);
+    --color-palette-secondary-700: hsl(var(--color-secondary-h) var(--color-secondary-s) 42%);
+    --color-palette-secondary-800: hsl(var(--color-secondary-h) var(--color-secondary-s) 30%);
+    --color-palette-secondary-900: hsl(var(--color-secondary-h) var(--color-secondary-s) 22%);
     --color-palette-secondary-op-10: hsla(
         var(--color-secondary-h),
         var(--color-secondary-s),
