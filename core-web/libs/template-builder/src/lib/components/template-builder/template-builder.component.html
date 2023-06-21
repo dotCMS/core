@@ -59,8 +59,7 @@
                 [attr.gs-y]="row.y"
                 [attr.gs-w]="row.w"
                 [attr.gs-h]="row.h"
-                (deleteRow)="deleteRow(row.id)"
-                (editClasses)="editRowStyleClasses(row.id, row.styleClass)"
+                [row]="row"
                 data-testId="row"
             >
                 <div class="grid-stack-item-content grid-stack">

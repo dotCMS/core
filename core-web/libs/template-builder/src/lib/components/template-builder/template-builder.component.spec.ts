@@ -132,12 +132,6 @@ describe('TemplateBuilderComponent', () => {
         });
     });
 
-    it('should call removeRow from store when triggering deleteRow', () => {
-        const removeRowMock = jest.spyOn(store, 'removeRow');
-        spectator.component.deleteRow('123');
-        expect(removeRowMock).toHaveBeenCalledWith('123');
-    });
-
     it('should call addContainer from store when triggering addContainer', () => {
         const addContainerMock = jest.spyOn(store, 'addContainer');
 
@@ -154,14 +148,6 @@ describe('TemplateBuilderComponent', () => {
 
             expect(addContainerMock).toHaveBeenCalled();
         });
-    });
-
-    it('should open a dialog when clicking on row-style-class-button ', () => {
-        const editRowStyleClassesButton = spectator.query(byTestId('row-style-class-button'));
-
-        spectator.dispatchFakeEvent(editRowStyleClassesButton, 'onClick');
-
-        expect(openDialogMock).toHaveBeenCalled();
     });
 
     it('should open a dialog when clicking on box-style-class-button', () => {

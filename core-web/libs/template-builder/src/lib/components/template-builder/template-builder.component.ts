@@ -249,16 +249,6 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     }
 
     /**
-     * @description This method deletes the row from the store
-     *
-     * @param {numberOrString} id
-     * @memberof TemplateBuilderComponent
-     */
-    deleteRow(id: numberOrString): void {
-        this.store.removeRow(id as string);
-    }
-
-    /**
      * @description This method is used to update the layout properties
      *
      * @param {DotTemplateLayoutProperties} layoutProperties
@@ -289,18 +279,6 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
         this.store.addContainer({
             affectedColumn: { ...box, parentId: rowId as string },
             container
-        });
-    }
-
-    /**
-     * @description This method opens the dialog to edit the row styleclasses
-     *
-     * @param {numberOrString} rowID
-     * @memberof TemplateBuilderComponent
-     */
-    editRowStyleClasses(rowID: numberOrString, styleClasses: string[]): void {
-        this.openDynamicDialog(styleClasses).subscribe((styleClasses: string[]) => {
-            this.store.updateRow({ id: rowID as string, styleClass: styleClasses });
         });
     }
 
