@@ -297,8 +297,12 @@ public class WebAssetHelper {
                 .showContent(true);
 
         if (form.language().isPresent()) {
-            final Language language = lang(form.language().get());
-            builder.withLanguageId(language.getId());
+            final Optional<Language> language = lang(form.language().get(),false);
+            if (language.isEmpty()) {
+                throw new IllegalArgumentException(
+                        String.format("Language [%s] not found.", form.language().get()));
+            }
+            builder.withLanguageId(language.get().getId());
         }
 
         if (form.live().isPresent()) {
@@ -338,7 +342,12 @@ public class WebAssetHelper {
         final FileUploadDetail detail = form.getDetail();
         final String assetPath = detail.getAssetPath();
         final boolean live = toBooleanDefaultIfNull(detail.getLive(),true);
-        final Language lang = lang(detail.getLanguage());
+        final Optional<Language> lang = lang(detail.getLanguage(), true);
+
+        if(lang.isEmpty()){
+            throw new IllegalArgumentException("Unable to determine what language for asset.");
+        }
+
         final ResolvedAssetAndPath assetAndPath = AssetPathResolver.newInstance()
                 .resolve(assetPath, user, true);
 
@@ -382,18 +391,18 @@ public class WebAssetHelper {
 
             if (assets.isEmpty()) {
                 //The file does not exist
-                final Contentlet contentlet = makeFileAsset(tempFile.file, folder, lang);
+                final Contentlet contentlet = makeFileAsset(tempFile.file, folder, lang.get());
                 savedAsset = checkinOrPublish(contentlet, user, live);
 
             } else {
 
                 final Optional<Contentlet> found = assets.stream()
-                        .filter(contentlet -> lang.getId() == contentlet.getLanguageId())
+                        .filter(contentlet -> lang.get().getId() == contentlet.getLanguageId())
                         .findFirst();
 
                 if (found.isEmpty()) {
                     //We're required to create a new version in a different language
-                    final Contentlet contentlet = makeFileAsset(tempFile.file, folder, lang);
+                    final Contentlet contentlet = makeFileAsset(tempFile.file, folder, lang.get());
                     savedAsset = checkinOrPublish(contentlet, user, live);
 
                 } else {
@@ -409,7 +418,7 @@ public class WebAssetHelper {
 
                     final Contentlet checkout = contentletAPI.checkout(asset.getInode(), user, false);
 
-                    updateFileAsset(tempFile.file, folder, lang, checkout);
+                    updateFileAsset(tempFile.file, folder, lang.get(), checkout);
                     savedAsset = checkinOrPublish(checkout, user, live);
                 }
             }
@@ -461,22 +470,25 @@ public class WebAssetHelper {
         return contentlet;
     }
 
-    Language lang(final String language) {
+    Optional<Language> lang(final String language, final boolean defaultLangFallback) {
         Language resolvedLang = Try.of(() -> {
                     //Typically locales are separated by a dash, but our Language API uses an underscore in the toString method
                     //So here I'm preparing for both cases
-                    final String splitBy =  language.contains("-") ? "-" : "_"  ;
+                    final String splitBy = language.contains("-") ? "-" : language.contains("_") ? "_" : null;
+                    if (null == splitBy) {
+                        return languageAPI.getLanguage(language,null);
+                    }
                     final String[] split = language.split(splitBy, 2);
                     return languageAPI.getLanguage(split[0], split[1]);
                 }
-        ).getOrElse(() -> languageAPI.getDefaultLanguage());
-        if (null == resolvedLang) {
+        ).getOrNull();
+        if (defaultLangFallback  && (null == resolvedLang || resolvedLang.getId() == 0)) {
             resolvedLang = languageAPI.getDefaultLanguage();
             Logger.warn(this,
                     String.format("Unable to  get language from param [%s]. Defaulting to [%s].",
                             language, resolvedLang));
         }
-        return resolvedLang;
+        return Optional.ofNullable(resolvedLang);
     }
 
     /**

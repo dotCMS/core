@@ -1,4 +1,4 @@
-package com.dotcms.rest.api.v1.assets;
+package com.dotcms.rest.api.v1.asset;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -7,8 +7,6 @@ import static org.junit.Assert.assertNull;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.rest.api.v1.asset.AssetPathResolver;
-import com.dotcms.rest.api.v1.asset.ResolvedAssetAndPath;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;

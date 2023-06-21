@@ -1,4 +1,4 @@
-package com.dotcms.rest.api.v1.assets;
+package com.dotcms.rest.api.v1.asset;
 
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.datagen.FileAssetDataGen;
@@ -10,10 +10,6 @@ import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
-import com.dotcms.rest.api.v1.asset.AssetsRequestForm;
-import com.dotcms.rest.api.v1.asset.FileUploadData;
-import com.dotcms.rest.api.v1.asset.FileUploadDetail;
-import com.dotcms.rest.api.v1.asset.WebAssetHelper;
 import com.dotcms.rest.api.v1.asset.view.AssetView;
 import com.dotcms.rest.api.v1.asset.view.FolderView;
 import com.dotcms.rest.api.v1.asset.view.WebAssetView;
@@ -35,6 +31,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.Map;
+import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.glassfish.jersey.internal.util.Base64;
@@ -44,7 +41,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class WebAssetHelperIntegrationTest {
-
 
     public static final String ASSET_PATH_TEMPLATE = "//%s/%s/%s/%s";
     static Host host;
@@ -291,20 +287,87 @@ public class WebAssetHelperIntegrationTest {
 
     /**
      * Method to test : {@link WebAssetHelper#getAssetContent(AssetsRequestForm, User)}
-     * Given Scenario: We submit a valid path for file but using a different language
-     * Expected Result: We should get 404 since the file does not exist in that language
+     * Given Scenario: We submit a valid path to retrieve a file
+     * Expected Result: We get the asset content back as proof of success
      * @throws DotDataException
      * @throws DotSecurityException
      * @throws IOException
      */
     @Test(expected = NotFoundInDbException.class)
-    public void TestDownloadFileDifferentLanguage() throws DotDataException, DotSecurityException {
+    public void TestDownloadFileDifferentLang() throws DotDataException, DotSecurityException {
+
+        final Language anyLang = new LanguageDataGen().nextPersisted();
+
+        final AssetsRequestForm form = AssetsRequestForm.builder()
+                .assetPath(assetPath()).language(anyLang.toString()).live(false)
+                .build();
+        WebAssetHelper webAssetHelper = WebAssetHelper.newInstance();
+        final File assetContent = webAssetHelper.getAssetContent(form, APILocator.systemUser());
+        Assert.assertNotNull(assetContent);
+        Assert.assertTrue(assetContent.exists());
+        Assert.assertEquals(testFile.length(), assetContent.length());
+    }
+
+    /**
+     * Method to test : {@link WebAssetHelper#getAssetContent(AssetsRequestForm, User)}
+     * Given Scenario: We submit a valid path for file but using an invalid language
+     * Expected Result: We should get BadRequestException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws IOException
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void TestDownloadFileInvalidLanguage() throws DotDataException, DotSecurityException {
         final AssetsRequestForm form = AssetsRequestForm.builder()
                 .assetPath(assetPath()).language("nonExisting_lang").live(false)
                 .build();
         WebAssetHelper webAssetHelper = WebAssetHelper.newInstance();
         webAssetHelper.getAssetContent(form, APILocator.systemUser());
+    }
+
+    /**
+     * Method to test : {@link WebAssetHelper#lang(String, boolean)}
+     * Given Scenario: We're testing various scenarios here,
+     *       First we test sending an invalid lang expect a default lang
+     *       Send an empty lang and expect an empty optional
+     *       Send a valid lang with no country and expect the same lang back
+     * Expected Results: When defaultLangFallback is true, we should get the default lang back
+     *                   When defaultLangFallback is false, we should get an empty optional
+     *                   When we send a valid lang with no country, we should get the same lang back
+     *                   When we send a valid lang with a country, we should get the same lang back
+     */
+    @Test
+    public void Test_Parse_Language(){
+        final WebAssetHelper webAssetHelper = WebAssetHelper.newInstance();
+
+        //Upon invalid language when defaultLangFallback is true, we should get the default language back
+        final Optional<Language> def = webAssetHelper.lang("",true);
+        Assert.assertFalse(def.isEmpty());
+        Assert.assertEquals(def.get(), defaultLanguage);
+
+        //Upon invalid language when defaultLangFallback is false, we should get an empty optional
+        final Optional<Language> empty1 = webAssetHelper.lang("",false);
+        Assert.assertTrue(empty1.isEmpty());
+
+        final Language countryLessLang = new LanguageDataGen().languageCode("lol").languageName("lol").countryCode("").country("").nextPersisted();
+        final Language language1 = new LanguageDataGen().nextPersisted();
+        try {
+            //Test upon passing a language lacking country code nothing breaks
+            final Optional<Language> countryLess = webAssetHelper.lang(
+                    countryLessLang.getLanguageCode(), false);
+            Assert.assertFalse(countryLess.isEmpty());
+            Assert.assertEquals(countryLess.get(), countryLessLang);
+
+            //Test that upon passing a valid language with country  we get the same language back
+            final Optional<Language> fullLang = webAssetHelper.lang(language1.toString(), false);
+            Assert.assertEquals(fullLang.get(), language1);
+
+        }finally {
+            LanguageDataGen.remove(countryLessLang);
+            LanguageDataGen.remove(language1);
+        }
 
     }
+
 
 }
