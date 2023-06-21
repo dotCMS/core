@@ -1,6 +1,8 @@
 package com.dotcms.experiments.business;
 
+
 import static com.dotcms.util.CollectionsUtils.list;
+
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -58,6 +60,8 @@ public enum ExperimentUrlPatternCalculator {
         }
     }
 
-
+    private static String getUriForRegex(final String uri) throws DotDataException {
+        return uri.replaceAll("/", "\\\\/");
+    }
 
 }
