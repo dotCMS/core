@@ -6,7 +6,12 @@ import { Injectable } from '@angular/core';
 import { catchError, map, pluck, take } from 'rxjs/operators';
 
 import { CoreWebService, DotRequestOptionsArgs } from '@dotcms/dotcms-js';
-import { DotActionBulkResult, DotTemplate } from '@dotcms/dotcms-models';
+import {
+    DotActionBulkResult,
+    DotContainerMap,
+    DotLayoutRow,
+    DotTemplate
+} from '@dotcms/dotcms-models';
 
 import { DotHttpErrorManagerService } from '../dot-http-error-manager/dot-http-error-manager.service';
 
@@ -46,7 +51,21 @@ export class DotTemplatesService {
 
         return this.request<DotTemplate>({
             url
-        }).pipe(map((template) => this.addContainerInfo(template)));
+        }).pipe(
+            map((template) => ({
+                ...template,
+                layout: {
+                    ...template?.layout,
+                    body: {
+                        ...template?.layout?.body,
+                        rows: this.addContainerInfo(
+                            template?.layout?.body?.rows,
+                            template.containers
+                        )
+                    }
+                }
+            }))
+        );
     }
 
     /**
@@ -186,39 +205,26 @@ export class DotTemplatesService {
         );
     }
 
-    private addContainerInfo(template: DotTemplate): DotTemplate {
-        if (template?.layout?.body?.rows) {
-            const updatedRows = template.layout.body.rows.map((row) => {
-                if (!row.columns) return row;
+    private addContainerInfo(rows: DotLayoutRow[], containers: DotContainerMap): DotLayoutRow[] {
+        if (!rows) return rows;
 
-                return {
-                    ...row,
-                    columns: row.columns.map((column) => {
-                        if (!column.containers) return column;
-
-                        return {
-                            ...column,
-                            containers: column.containers.map((container) => ({
-                                ...container,
-                                title: template.containers[container.identifier].title
-                            }))
-                        };
-                    })
-                };
-            });
+        return rows.map((row) => {
+            if (!row.columns) return row;
 
             return {
-                ...template,
-                layout: {
-                    ...template.layout,
-                    body: {
-                        ...template.layout.body,
-                        rows: updatedRows
-                    }
-                }
-            };
-        }
+                ...row,
+                columns: row.columns.map((column) => {
+                    if (!column.containers) return column;
 
-        return template;
+                    return {
+                        ...column,
+                        containers: column.containers.map((container) => ({
+                            ...container,
+                            title: containers[container.identifier].title
+                        }))
+                    };
+                })
+            };
+        });
     }
 }
