@@ -1,4 +1,4 @@
-import { expect } from '@jest/globals';
+import { expect, it } from '@jest/globals';
 import { SpectatorHost, byTestId, createHostFactory } from '@ngneat/spectator';
 import { GridItemHTMLElement } from 'gridstack';
 
