@@ -130,8 +130,14 @@ describe('TemplateBuilderBoxComponent', () => {
     it('should trigger deleteContainer when click on container trash button', () => {
         const deleteContainerMock = jest.spyOn(spectator.component.deleteContainer, 'emit');
         const containerTrashButton = spectator.query(byTestId('btn-trash-container'));
+        const removeContainerButton = containerTrashButton.querySelector(
+            '[data-testId="btn-remove-item"]'
+        );
 
-        spectator.dispatchFakeEvent(containerTrashButton, 'onClick');
+        spectator.dispatchFakeEvent(removeContainerButton, 'onClick');
+        spectator.detectChanges();
+        const confirmButton = spectator.query('.p-confirm-popup-accept');
+        spectator.click(confirmButton);
 
         expect(deleteContainerMock).toHaveBeenCalled();
     });

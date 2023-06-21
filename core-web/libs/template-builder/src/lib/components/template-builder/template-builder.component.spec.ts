@@ -1,4 +1,4 @@
-import { expect } from '@jest/globals';
+import { expect, it } from '@jest/globals';
 import { SpectatorHost, byTestId, createHostFactory } from '@ngneat/spectator';
 import { GridItemHTMLElement } from 'gridstack';
 
@@ -148,6 +148,24 @@ describe('TemplateBuilderComponent', () => {
             spectator.component.addContainer(widgetToAddContainer, rowId, mockContainer);
 
             expect(addContainerMock).toHaveBeenCalled();
+        });
+    });
+
+    it('should call deleteContainer from store when triggering deleteContainer', () => {
+        const deleteContainerMock = jest.spyOn(store, 'deleteContainer');
+
+        let widgetToDeleteContainer: DotGridStackWidget;
+        let rowId: string;
+
+        expect.assertions(1);
+
+        store.state$.pipe(take(1)).subscribe(({ items }) => {
+            widgetToDeleteContainer = items[0].subGridOpts.children[0];
+            rowId = items[0].id as string;
+
+            spectator.component.deleteContainer(widgetToDeleteContainer, rowId, 0);
+
+            expect(deleteContainerMock).toHaveBeenCalled();
         });
     });
 

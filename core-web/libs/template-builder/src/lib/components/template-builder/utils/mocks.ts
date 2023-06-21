@@ -3,7 +3,7 @@ import { v4 as uuid } from 'uuid';
 import { DotLayoutBody } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
-import { DotGridStackWidget } from '../models/models';
+import { DotGridStackWidget, DotTemplateBuilderContainer } from '../models/models';
 
 export const GRIDSTACK_DATA_MOCK: DotGridStackWidget[] = [
     { x: 0, y: 0, w: 12, id: uuid() },
@@ -238,7 +238,8 @@ export const MESSAGES_MOCK = {
     'dot.template.builder.toolbar.button.theme.label': 'Theme',
     'dot.template.builder.box.containers.error': 'Error loading containers',
     'dot.template.builder.classes.dialog.autocomplete.label': 'Class',
-    'dot.template.builder.classes.dialog.header.label': 'Edit Classes'
+    'dot.template.builder.classes.dialog.header.label': 'Edit Classes',
+    'dot.template.builder.classes.dialog.update.button': 'Update'
 };
 
 export const DOT_MESSAGE_SERVICE_TB_MOCK = new MockDotMessageService(MESSAGES_MOCK);
@@ -304,7 +305,6 @@ export const MOCK_STYLE_CLASSES_FILE = {
     ]
 };
 
-
 const noop = () => {
     //
 };
@@ -326,3 +326,8 @@ export function mockMatchMedia() {
             };
         };
 }
+
+export const mockTemplateBuilderContainer: DotTemplateBuilderContainer = {
+    identifier: '1',
+    uuid: '1'
+};
