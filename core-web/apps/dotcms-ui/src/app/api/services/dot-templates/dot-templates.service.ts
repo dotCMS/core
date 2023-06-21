@@ -187,15 +187,37 @@ export class DotTemplatesService {
     }
 
     private addContainerInfo(template: DotTemplate): DotTemplate {
-        if (template?.layout?.body?.rows)
-            for (const row of template.layout.body.rows) {
-                if (row.columns)
-                    for (const column of row.columns) {
-                        for (const container of column.containers) {
-                            container.title = template.containers[container.identifier].title;
-                        }
+        if (template?.layout?.body?.rows) {
+            const updatedRows = template.layout.body.rows.map((row) => {
+                if (!row.columns) return row;
+
+                return {
+                    ...row,
+                    columns: row.columns.map((column) => {
+                        if (!column.containers) return column;
+
+                        return {
+                            ...column,
+                            containers: column.containers.map((container) => ({
+                                ...container,
+                                title: template.containers[container.identifier].title
+                            }))
+                        };
+                    })
+                };
+            });
+
+            return {
+                ...template,
+                layout: {
+                    ...template.layout,
+                    body: {
+                        ...template.layout.body,
+                        rows: updatedRows
                     }
-            }
+                }
+            };
+        }
 
         return template;
     }
