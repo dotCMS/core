@@ -91,8 +91,7 @@ describe('TemplateBuilderComponent', () => {
         expect(spectator.query(byTestId('add-box'))).toBeTruthy();
     });
 
-    // TODO: Uncomment when adding again the dotcms-template-builder-background-columns
-    it.skip('should have a background', () => {
+    it('should have a background', () => {
         expect(spectator.query('dotcms-template-builder-background-columns')).toBeTruthy();
     });
 
