@@ -339,5 +339,6 @@ export function mockMatchMedia() {
 
 export const mockTemplateBuilderContainer: DotTemplateBuilderContainer = {
     identifier: '1',
-    uuid: '1'
+    uuid: '1',
+    title: 'A Container'
 };
