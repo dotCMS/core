@@ -11,6 +11,7 @@
         <p-dropdown
             [showClear]="false"
             [filter]="true"
+            [formControl]="formControl"
             [placeholder]="'dot.template.builder.add.container' | dm"
             (onChange)="onContainerSelect($event)"
             data-testId="btn-plus"
@@ -60,6 +61,7 @@
         <p-dropdown
             [showClear]="false"
             [filter]="true"
+            [formControl]="formControl"
             (onChange)="onContainerSelect($event)"
             dotContainerOptions
             appendTo="body"

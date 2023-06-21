@@ -12,9 +12,13 @@ import { DotContentletEditorService } from '@components/dot-contentlet-editor/se
 import { DotLicenseService, DotMessageService, DotPropertiesService } from '@dotcms/data-access';
 import { DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
 import { DotIconModule } from '@dotcms/ui';
-import { MockDotMessageService, mockDotRenderedPage, mockUser } from '@dotcms/utils-testing';
+import {
+    getExperimentMock,
+    MockDotMessageService,
+    mockDotRenderedPage,
+    mockUser
+} from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { getExperimentMock } from '@portlets/dot-experiments/test/mocks';
 
 import { DotEditPageNavComponent } from './dot-edit-page-nav.component';
 
