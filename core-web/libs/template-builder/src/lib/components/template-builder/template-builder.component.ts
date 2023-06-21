@@ -6,7 +6,7 @@ import {
     GridStackWidget,
     numberOrString
 } from 'gridstack';
-import { Observable } from 'rxjs';
+import { Observable, combineLatest } from 'rxjs';
 
 import {
     AfterViewInit,
@@ -24,10 +24,10 @@ import {
 
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { filter, take, tap } from 'rxjs/operators';
+import { filter, scan, take, tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotContainer, DotLayout, DotLayoutSideBar } from '@dotcms/dotcms-models';
+import { DotContainer, DotLayout, DotLayoutBody, DotLayoutSideBar } from '@dotcms/dotcms-models';
 
 import { colIcon, rowIcon } from './assets/icons';
 import { AddStyleClassesDialogComponent } from './components/add-style-classes-dialog/add-style-classes-dialog.component';
@@ -74,7 +74,8 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     @Output()
     layoutChange: EventEmitter<Partial<DotLayout>> = new EventEmitter<DotLayout>();
 
-    public items$: Observable<DotGridStackWidget[]>;
+    public items$: Observable<DotGridStackWidget[] | DotLayoutBody>;
+    public layoutProperties$: Observable<DotTemplateLayoutProperties>;
     public vm$: Observable<DotTemplateBuilderState>;
 
     @ViewChildren('rowElement', {
@@ -100,19 +101,29 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
         private dialogService: DialogService,
         private dotMessage: DotMessageService
     ) {
-        this.vm$ = this.store.vm$.pipe(
-            tap(({ items, layoutProperties }) => {
-                if (!items.length) {
-                    return;
-                }
+        this.vm$ = this.store.vm$;
 
-                const body = parseFromGridStackToDotObject(items);
-                this.layoutChange.emit({
-                    ...layoutProperties,
-                    body
-                });
-            })
+        this.items$ = this.store.items$.pipe(
+            scan(
+                (acc, items) =>
+                    items !== null
+                        ? parseFromGridStackToDotObject(items as DotGridStackWidget[])
+                        : acc,
+                null // If it doesn't emit anything it will return the last parsed data
+            )
         );
+        this.layoutProperties$ = this.store.layoutProperties$.pipe(scan((_, curr) => curr, null)); //Starts with null
+
+        combineLatest([this.items$, this.layoutProperties$])
+            .pipe(
+                tap(([items, layoutProperties]) => {
+                    this.layoutChange.emit({
+                        ...layoutProperties,
+                        body: items as DotLayoutBody
+                    });
+                })
+            )
+            .subscribe();
     }
 
     ngOnInit(): void {
