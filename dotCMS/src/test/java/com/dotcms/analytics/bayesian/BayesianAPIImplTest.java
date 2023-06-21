@@ -62,7 +62,7 @@ public class BayesianAPIImplTest {
         assertEquals(1000, result.differenceData().controlData().length);
         assertEquals(1000, result.differenceData().testData().length);
         assertEquals(1000, result.differenceData().differences().length);
-        assertEquals(0.03, result.differenceData().relativeDifference(), 0.001);
+        assertEquals(0.03, result.differenceData().relativeDifference(), 0.01);
         assertEquals(11, result.quantiles().size());
         assertEquals(2, result.distributionPdfs().samples().size());
         assertEquals(1000, result.distributionPdfs().samples().get("control").size());

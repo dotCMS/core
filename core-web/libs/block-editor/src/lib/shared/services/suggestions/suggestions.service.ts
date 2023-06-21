@@ -41,10 +41,11 @@ export class SuggestionsService {
         contentletIdentifier
     }: ContentletFilters): Observable<DotCMSContentlet[]> {
         const identifierQuery = contentletIdentifier ? `-identifier:${contentletIdentifier}` : '';
+        const search = filter.includes('-') ? filter : `*${filter}*`;
 
         return this.http
             .post('/api/content/_search', {
-                query: `+contentType:${contentType}  ${identifierQuery}  +languageId:${currentLanguage} +deleted:false +working:true +catchall:*${filter}* `,
+                query: `+contentType:${contentType} ${identifierQuery} +languageId:${currentLanguage} +deleted:false +working:true +catchall:${search} title:'${filter}'^15`,
                 sort: 'modDate desc',
                 offset: 0,
                 limit: 40

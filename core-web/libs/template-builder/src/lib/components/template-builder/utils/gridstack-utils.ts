@@ -174,7 +174,7 @@ export const parseFromGridStackToDotObject = (gridData: DotGridStackWidget[]): D
 };
 
 /**
- *@description This function returns the variant of a box based on the number of width
+ * @description This function returns the variant of a box based on the number of width
  *
  * @param {number} width
  * @return {*}  {TemplateBuilderBoxSize}
