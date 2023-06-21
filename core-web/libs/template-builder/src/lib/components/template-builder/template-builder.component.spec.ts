@@ -150,6 +150,14 @@ describe('TemplateBuilderComponent', () => {
         });
     });
 
+    it('should open a dialog when clicking on row-style-class-button ', () => {
+        const editRowStyleClassesButton = spectator.query(byTestId('row-style-class-button'));
+
+        spectator.dispatchFakeEvent(editRowStyleClassesButton, 'onClick');
+
+        expect(openDialogMock).toHaveBeenCalled();
+    });
+
     it('should open a dialog when clicking on box-style-class-button', () => {
         const editBoxStyleClassesButton = spectator.query(byTestId('box-style-class-button'));
 
