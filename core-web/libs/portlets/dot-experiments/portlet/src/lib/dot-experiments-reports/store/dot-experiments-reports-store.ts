@@ -17,7 +17,6 @@ import {
     ComponentStatus,
     daysOfTheWeek,
     DEFAULT_VARIANT_ID,
-    DialogStatus,
     DotExperiment,
     DotExperimentResults,
     DotExperimentStatusList,
@@ -47,17 +46,12 @@ export interface DotExperimentsReportsState {
     experiment: DotExperiment | null;
     status: ComponentStatus;
     results: DotExperimentResults | null;
-    promoteDialog: {
-        status: ComponentStatus;
-        visibility: DialogStatus;
-    };
 }
 
 const initialState: DotExperimentsReportsState = {
     experiment: null,
     status: ComponentStatus.INIT,
-    results: null,
-    promoteDialog: { status: ComponentStatus.IDLE, visibility: DialogStatus.HIDE }
+    results: null
 };
 
 // ViewModel Interfaces
@@ -71,15 +65,8 @@ export interface VmReportExperiment {
     status: ComponentStatus;
     showSummary: boolean;
     winnerLegendSummary: SummaryLegend;
-    showPromoteDialog: boolean;
     suggestedWinner: DotResultVariant | null;
-}
-
-export interface VmPromoteVariant {
-    experimentId: string;
-    showDialog: boolean;
-    isSaving: boolean;
-    variants: DotExperimentVariantDetail[] | null;
+    promotedVariant: Variant | null;
 }
 
 const NOT_ENOUGH_DATA_LABEL = 'Not enough data';
@@ -88,9 +75,6 @@ const NOT_ENOUGH_DATA_LABEL = 'Not enough data';
 export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsReportsState> {
     readonly isLoading$: Observable<boolean> = this.select(
         ({ status }) => status === ComponentStatus.LOADING
-    );
-    readonly isShowPromotedDialog$: Observable<boolean> = this.select(
-        ({ promoteDialog }) => promoteDialog.visibility === DialogStatus.SHOW
     );
 
     readonly summaryWinnerLegend$: Observable<{ icon: string; legend: string }> = this.select(
@@ -109,8 +93,8 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
             : results?.goals.primary.variants[results?.bayesianResult.suggestedWinner]
     );
 
-    readonly isSavingPromotedDialog$: Observable<boolean> = this.select(
-        ({ promoteDialog }) => promoteDialog.status === ComponentStatus.SAVING
+    readonly getPromotedVariant$: Observable<Variant | null> = this.select(({ experiment }) =>
+        experiment?.trafficProportion?.variants.find(({ promoted }) => promoted)
     );
 
     readonly hasEnoughSessions$: Observable<boolean> = this.select(
@@ -124,32 +108,15 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
         })
     );
 
-    readonly setDialogStatus = this.updater(
-        (state: DotExperimentsReportsState, status: ComponentStatus) => ({
-            ...state,
-            promoteDialog: { ...state.promoteDialog, status }
-        })
-    );
     readonly setExperiment = this.updater(
         (state: DotExperimentsReportsState, experiment: DotExperiment) => ({
             ...state,
             experiment: {
                 ...state.experiment,
                 ...experiment
-            },
-            promoteDialog: { ...state.promoteDialog, visibility: DialogStatus.HIDE }
+            }
         })
     );
-
-    readonly showPromoteDialog = this.updater((state: DotExperimentsReportsState) => ({
-        ...state,
-        promoteDialog: { ...state.promoteDialog, visibility: DialogStatus.SHOW }
-    }));
-
-    readonly hidePromoteDialog = this.updater((state: DotExperimentsReportsState) => ({
-        ...state,
-        promoteDialog: { ...state.promoteDialog, visibility: DialogStatus.HIDE }
-    }));
 
     readonly showExperimentSummary$: Observable<boolean> = this.select(({ experiment }) =>
         Object.values([
@@ -231,9 +198,8 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
     );
 
     readonly promoteVariant = this.effect(
-        (variant$: Observable<{ experimentId: string; variant: Variant }>) => {
+        (variant$: Observable<{ experimentId: string; variant: DotExperimentVariantDetail }>) => {
             return variant$.pipe(
-                tap(() => this.setDialogStatus(ComponentStatus.SAVING)),
                 switchMap((variantToPromote) => {
                     const { experimentId, variant } = variantToPromote;
 
@@ -253,8 +219,7 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
                                 this.setExperiment(experiment);
                             },
                             (error: HttpErrorResponse) =>
-                                this.dotHttpErrorManagerService.handle(error),
-                            () => this.setDialogStatus(ComponentStatus.IDLE)
+                                this.dotHttpErrorManagerService.handle(error)
                         )
                     );
                 })
@@ -268,20 +233,20 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
         this.hasEnoughSessions$,
         this.showExperimentSummary$,
         this.getChartData$,
-        this.isShowPromotedDialog$,
         this.summaryWinnerLegend$,
         this.getSuggestedWinner$,
         this.getDetailData$,
+        this.getPromotedVariant$,
         (
             { experiment, status, results },
             isLoading,
             hasEnoughSessions,
             showSummary,
             chartData,
-            showPromoteDialog,
             winnerLegendSummary,
             suggestedWinner,
-            detailData
+            detailData,
+            promotedVariant
         ) => ({
             experiment,
             status,
@@ -290,7 +255,6 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
             hasEnoughSessions,
             showSummary,
             chartData,
-            showPromoteDialog,
             winnerLegendSummary: {
                 ...winnerLegendSummary,
                 legend: this.dotMessageService.get(
@@ -299,19 +263,8 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
                 )
             },
             suggestedWinner,
-            detailData
-        })
-    );
-    readonly promotedDialogVm$: Observable<VmPromoteVariant> = this.select(
-        this.state$,
-        this.isShowPromotedDialog$,
-        this.getDetailData$,
-        this.isSavingPromotedDialog$,
-        ({ experiment }, showDialog, variants, isSaving) => ({
-            experimentId: experiment.id,
-            showDialog,
-            variants,
-            isSaving
+            detailData,
+            promotedVariant
         })
     );
 
