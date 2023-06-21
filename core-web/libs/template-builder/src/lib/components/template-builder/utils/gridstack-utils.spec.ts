@@ -1,7 +1,11 @@
 import { describe, expect, it } from '@jest/globals';
 
-import { parseFromDotObjectToGridStack } from './gridstack-utils';
+import { parseFromDotObjectToGridStack, parseFromGridStackToDotObject } from './gridstack-utils';
 import { MINIMAL_DATA_MOCK } from './mocks';
+
+global.structuredClone = jest.fn((val) => {
+    return JSON.parse(JSON.stringify(val));
+});
 
 describe('parseFromDotObjectToGridStack', () => {
     it('should parse the backend object to gridStack', () => {
@@ -40,5 +44,22 @@ describe('parseFromDotObjectToGridStack', () => {
         const result = parseFromDotObjectToGridStack(undefined);
 
         expect(result).toEqual([]);
+    });
+});
+
+describe('parseFromGridStackToDotObject', () => {
+    it('should parse the gridStack object to dot backend object', () => {
+        const data = MINIMAL_DATA_MOCK;
+
+        const gridstack = parseFromDotObjectToGridStack(data);
+        const result = parseFromGridStackToDotObject(gridstack);
+
+        expect(result).toEqual(data);
+    });
+
+    it('should return an empty DotBodyLayour when no rows are provided', () => {
+        const result = parseFromGridStackToDotObject([]);
+
+        expect(result).toEqual({ rows: [] });
     });
 });

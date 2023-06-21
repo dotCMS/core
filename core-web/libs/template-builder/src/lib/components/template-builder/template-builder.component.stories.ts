@@ -1,14 +1,21 @@
 import { moduleMetadata, Story, Meta } from '@storybook/angular';
+import { of } from 'rxjs';
 
 import { NgFor, AsyncPipe } from '@angular/common';
+import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
+import { ButtonModule } from 'primeng/button';
 import { DividerModule } from 'primeng/divider';
+import { DialogService, DynamicDialogModule, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { ToolbarModule } from 'primeng/toolbar';
 
-import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotContainersService, DotMessageService } from '@dotcms/data-access';
+import { DotContainerOptionsDirective, DotMessagePipeModule } from '@dotcms/ui';
+import { DotContainersServiceMock } from '@dotcms/utils-testing';
 
+import { AddStyleClassesDialogComponent } from './components/add-style-classes-dialog/add-style-classes-dialog.component';
+import { DotAddStyleClassesDialogStore } from './components/add-style-classes-dialog/store/add-style-classes-dialog.store';
 import { AddWidgetComponent } from './components/add-widget/add-widget.component';
 import { RemoveConfirmDialogComponent } from './components/remove-confirm-dialog/remove-confirm-dialog.component';
 import { TemplateBuilderActionsComponent } from './components/template-builder-actions/template-builder-actions.component';
@@ -18,7 +25,11 @@ import { TemplateBuilderRowComponent } from './components/template-builder-row/t
 import { TemplateBuilderSectionComponent } from './components/template-builder-section/template-builder-section.component';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { TemplateBuilderComponent } from './template-builder.component';
-import { DOT_MESSAGE_SERVICE_TB_MOCK, FULL_DATA_MOCK } from './utils/mocks';
+import {
+    DOT_MESSAGE_SERVICE_TB_MOCK,
+    FULL_DATA_MOCK,
+    MOCK_STYLE_CLASSES_FILE
+} from './utils/mocks';
 
 export default {
     title: 'Template Builder',
@@ -36,15 +47,33 @@ export default {
                 BrowserAnimationsModule,
                 TemplateBuilderBackgroundColumnsComponent,
                 TemplateBuilderSectionComponent,
+                AddStyleClassesDialogComponent,
+                DynamicDialogModule,
+                HttpClientModule,
+                ButtonModule,
                 TemplateBuilderActionsComponent,
                 ToolbarModule,
-                DividerModule
+                DividerModule,
+                DotContainerOptionsDirective
             ],
             providers: [
                 DotTemplateBuilderStore,
+                DialogService,
+                DynamicDialogRef,
+                DotAddStyleClassesDialogStore,
                 {
                     provide: DotMessageService,
                     useValue: DOT_MESSAGE_SERVICE_TB_MOCK
+                },
+                {
+                    provide: DotContainersService,
+                    useValue: new DotContainersServiceMock()
+                },
+                {
+                    provide: HttpClient,
+                    useValue: {
+                        get: (_: string) => of(MOCK_STYLE_CLASSES_FILE)
+                    }
                 }
             ]
         })
@@ -52,7 +81,17 @@ export default {
 } as Meta<TemplateBuilderComponent>;
 
 const Template: Story<TemplateBuilderComponent> = (args: TemplateBuilderComponent) => ({
-    props: args
+    props: args,
+    template: `
+        <dotcms-template-builder [templateLayout]="templateLayout">
+            <button
+                [label]="'Publish'"
+                toolbar-actions-right
+                type="button"
+                pButton
+            ></button>
+        </dotcms-template-builder>
+    `
 });
 
 export const Base = Template.bind({});

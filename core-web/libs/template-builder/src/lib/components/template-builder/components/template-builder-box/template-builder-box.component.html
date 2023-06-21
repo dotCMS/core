@@ -8,22 +8,27 @@
     data-testId="template-builder-box"
 >
     <div class="template-builder-box__header-container">
-        <p-button
-            [label]="
-                boxVariant === templateBuilderSizes.large
-                    ? ('dot.template.builder.add.container' | dm)
-                    : ''
-            "
-            (onClick)="addContainer.emit()"
-            icon="pi pi-plus"
+        <p-dropdown
+            [showClear]="false"
+            [filter]="true"
+            [formControl]="formControl"
+            [placeholder]="'dot.template.builder.add.container' | dm"
+            (onChange)="onContainerSelect($event)"
             data-testId="btn-plus"
-            styleClass="p-button-text p-button-sm"
-        ></p-button>
+            dotContainerOptions
+            appendTo="body"
+            dropdownIcon="pi pi-plus"
+            optionLabel="label"
+        >
+            <ng-template pTemplate="selectedItem">
+                {{ 'dot.template.builder.add.container' | dm }}
+            </ng-template>
+        </p-dropdown>
 
         <div>
             <p-button
-                (onClick)="editStyle.emit()"
-                data-testId="btn-palette"
+                (onClick)="editClasses.emit()"
+                data-testId="box-style-class-button"
                 icon="pi pi-palette"
                 styleClass="p-button-rounded p-button-text p-button-sm"
             ></p-button>
@@ -53,15 +58,20 @@
         class="template-builder-box template-builder-box--small"
         data-testId="template-builder-box-small"
     >
-        <p-button
-            (onClick)="addContainer.emit()"
+        <p-dropdown
+            [showClear]="false"
+            [filter]="true"
+            [formControl]="formControl"
+            (onChange)="onContainerSelect($event)"
+            dotContainerOptions
+            appendTo="body"
             data-testId="btn-plus-small"
-            icon="pi pi-plus"
-            styleClass="p-button-rounded  p-button-text p-button-sm"
-        ></p-button>
+            dropdownIcon="pi pi-plus"
+            optionLabel="label"
+        ></p-dropdown>
         <p-button
-            (onClick)="editStyle.emit()"
-            data-testId="btn-palette-small"
+            (onClick)="editClasses.emit()"
+            data-testId="box-style-class-button-small"
             icon="pi pi-palette"
             styleClass="p-button-rounded  p-button-text p-button-sm"
         ></p-button>

@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.htmlpages.business;
 
 import static com.dotcms.contenttype.model.type.PageContentType.PAGE_CACHE_TTL_FIELD_VAR;
+import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 import static com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.TEMPLATE_FIELD;
 import static com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.URL_FIELD;
 import static org.junit.Assert.assertEquals;
@@ -22,8 +23,10 @@ import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -550,5 +553,25 @@ public class HTMLPageAPITest extends IntegrationTestBase {
             }
         }
     }
+	/**
+	 * Method to test: {@link HTMLPageAssetAPI#fromContentlet(Contentlet)}
+	 * Given: A contentlet with a variantId different than the default variant
+	 * Expected: The returned HTMLPageAsset should have the same variantId as the contentlet
+	 *
+	 */
+	@Test
+	public void testFromContentlet_contentOnVariant_shouldKeepVariant()
+			throws DotDataException, DotSecurityException {
+		final Contentlet contentletOnDefaultVariant = TestDataUtils.getPageContent(true,
+				APILocator.getLanguageAPI().getDefaultLanguage().getId());
+		final Variant newVariant = new VariantDataGen().nextPersisted();
+		Contentlet contentletOnDifferentVariant = APILocator.getContentletAPI()
+				.checkout(contentletOnDefaultVariant.getInode(), sysuser, true);
+		contentletOnDifferentVariant.setVariantId(newVariant.name());
+		contentletOnDifferentVariant = APILocator.getContentletAPI().checkin(contentletOnDifferentVariant, sysuser, false);
+
+		final HTMLPageAsset page = APILocator.getHTMLPageAssetAPI().fromContentlet(contentletOnDifferentVariant);
+		assertEquals(newVariant.name(), page.getVariantId());
+	}
 
 }
