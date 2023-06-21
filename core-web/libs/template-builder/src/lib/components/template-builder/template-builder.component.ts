@@ -22,7 +22,7 @@ import {
     ViewChildren
 } from '@angular/core';
 
-import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { DialogService } from 'primeng/dynamicdialog';
 
 import { filter, scan, take, tap } from 'rxjs/operators';
 
@@ -57,8 +57,21 @@ import {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestroy {
+    @ViewChildren('rowElement', {
+        emitDistinctChangesOnly: true
+    })
+    rows!: QueryList<TemplateBuilderRowComponent>;
+
+    @ViewChildren('boxElement', {
+        emitDistinctChangesOnly: true
+    })
+    boxes!: QueryList<ElementRef<GridItemHTMLElement>>;
+
     @Input()
     templateLayout!: DotLayout;
+
+    @Output()
+    layoutChange: EventEmitter<Partial<DotLayout>> = new EventEmitter<DotLayout>();
 
     get layoutProperties(): DotTemplateLayoutProperties {
         return {
@@ -71,30 +84,15 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
         return this.templateLayout.sidebar;
     }
 
-    @Output()
-    layoutChange: EventEmitter<Partial<DotLayout>> = new EventEmitter<DotLayout>();
-
     public items$: Observable<DotGridStackWidget[] | DotLayoutBody>;
     public layoutProperties$: Observable<DotTemplateLayoutProperties>;
     public vm$: Observable<DotTemplateBuilderState>;
 
-    @ViewChildren('rowElement', {
-        emitDistinctChangesOnly: true
-    })
-    rows!: QueryList<TemplateBuilderRowComponent>;
-
-    @ViewChildren('boxElement', {
-        emitDistinctChangesOnly: true
-    })
-    boxes!: QueryList<ElementRef<GridItemHTMLElement>>;
-
-    grid!: GridStack;
-
-    ref: DynamicDialogRef;
-
     public readonly rowIcon = rowIcon;
     public readonly colIcon = colIcon;
     public readonly rowDisplayHeight = `${GRID_STACK_ROW_HEIGHT - 1}${GRID_STACK_UNIT}`; // setting a lower height to have space between rows
+
+    grid!: GridStack;
 
     constructor(
         private store: DotTemplateBuilderStore,
@@ -269,7 +267,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
      * @memberof TemplateBuilderComponent
      */
     editBoxStyleClasses(rowID: numberOrString, box: DotGridStackNode): void {
-        this.ref = this.dialogService.open(AddStyleClassesDialogComponent, {
+        const ref = this.dialogService.open(AddStyleClassesDialogComponent, {
             header: this.dotMessage.get('dot.template.builder.classes.dialog.header.label'),
             data: {
                 selectedClasses: box.styleClass || []
@@ -277,7 +275,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
             resizable: false
         });
 
-        this.ref.onClose
+        ref.onClose
             .pipe(
                 take(1),
                 filter((styleClasses) => styleClasses)
