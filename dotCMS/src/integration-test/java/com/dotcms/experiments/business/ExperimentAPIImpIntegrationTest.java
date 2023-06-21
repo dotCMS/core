@@ -2373,7 +2373,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         final Instant firstEventStartDate = Instant.now();
         final String[] pagesUrl = new String[]{pageA.getPageUrl(),
-                prefixUrlMapper + "test",
+                prefixUrlMapper.substring(1) + "test",
                 pageD.getPageUrl(),
                 pageC.getPageUrl()};
 

@@ -21,9 +21,11 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
  * - If the page is a Detail Page for a Content Type then we need to take account that the URL can be different.
  */
 abstract class RegexUrlPatterStrategy {
-    public static String DOMAIN_NAME_REGEX = "(localhost|\\b(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,})";
-    public static String REDIRECT_REGEX_TEMPLATE = "^(http|https):\\/\\/" + DOMAIN_NAME_REGEX +
-            "(:\\d{1,5})?%s(\\?.*)?$";
+    private static String DOMAIN_NAME_REGEX = "(localhost|127.0.0.1|\\b(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,})";
+    protected static String DEFAULT_URL_REGEX_TEMPLATE = "(http|https):\\/\\/" + DOMAIN_NAME_REGEX + "(:\\d{1,5})?%s(\\?.*)?";
+    protected static String REDIRECT_REGEX_TEMPLATE = "^" + DEFAULT_URL_REGEX_TEMPLATE + "$";
+
+
     public abstract boolean isMatch(final HTMLPageAsset htmlPageAsset) throws RegexUrlPatterStrategyException;
 
     public abstract String getRegexPattern(final HTMLPageAsset htmlPageAsset);
