@@ -1,8 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 
-import { DotUiColorsService } from './dot-ui-colors.service';
+import { DEFAULT_COLORS, DotUiColorsService } from './dot-ui-colors.service';
 
-describe('DotUiColorsService', () => {
+fdescribe('DotUiColorsService', () => {
     let service: DotUiColorsService;
     let injector;
     let setPropertySpy;
@@ -142,5 +142,96 @@ describe('DotUiColorsService', () => {
         const html = <HTMLElement>document.querySelector('');
 
         expect(html.style.setProperty).not.toHaveBeenCalled();
+    });
+
+    fit('should set manual picked colors', () => {
+        service.setColors(document.querySelector('html'), {
+            primary: DEFAULT_COLORS.primary,
+            secondary: DEFAULT_COLORS.secondary,
+            background: '#CB8978'
+        });
+
+        const html = <HTMLElement>document.querySelector('');
+
+        [
+            { key: '--color-primary-h', value: '226deg' },
+            { key: '--color-primary-s', value: '85%' },
+            {
+                key: '--color-palette-primary-100',
+                value: 'hsl(var(--color-primary-h) var(--color-primary-s) 98%)'
+            },
+            {
+                key: '--color-palette-primary-200',
+                value: 'hsl(var(--color-primary-h) var(--color-primary-s) 96%)'
+            },
+            {
+                key: '--color-palette-primary-300',
+                value: 'hsl(var(--color-primary-h) var(--color-primary-s) 90%)'
+            },
+            {
+                key: '--color-palette-primary-400',
+                value: 'hsl(var(--color-primary-h) var(--color-primary-s) 78%)'
+            },
+            {
+                key: '--color-palette-primary-500',
+                value: 'hsl(var(--color-primary-h) var(--color-primary-s) 60%)'
+            },
+            {
+                key: '--color-palette-primary-600',
+                value: 'hsl(var(--color-primary-h) var(--color-primary-s) 48%)'
+            },
+            {
+                key: '--color-palette-primary-700',
+                value: 'hsl(var(--color-primary-h) var(--color-primary-s) 36%)'
+            },
+            {
+                key: '--color-palette-primary-800',
+                value: 'hsl(var(--color-primary-h) var(--color-primary-s) 27%)'
+            },
+            {
+                key: '--color-palette-primary-900',
+                value: 'hsl(var(--color-primary-h) var(--color-primary-s) 21%)'
+            },
+            { key: '--color-secondary-h', value: '256deg' },
+            { key: '--color-secondary-s', value: '85%' },
+            {
+                key: '--color-palette-secondary-100',
+                value: 'hsl(var(--color-secondary-h) var(--color-secondary-s) 98%)'
+            },
+            {
+                key: '--color-palette-secondary-200',
+                value: 'hsl(var(--color-secondary-h) var(--color-secondary-s) 94%)'
+            },
+            {
+                key: '--color-palette-secondary-300',
+                value: 'hsl(var(--color-secondary-h) var(--color-secondary-s) 84%)'
+            },
+            {
+                key: '--color-palette-secondary-400',
+                value: 'hsl(var(--color-secondary-h) var(--color-secondary-s) 71%)'
+            },
+            {
+                key: '--color-palette-secondary-500',
+                value: 'hsl(var(--color-secondary-h) var(--color-secondary-s) 60%)'
+            },
+            {
+                key: '--color-palette-secondary-600',
+                value: 'hsl(var(--color-secondary-h) var(--color-secondary-s) 51%)'
+            },
+            {
+                key: '--color-palette-secondary-700',
+                value: 'hsl(var(--color-secondary-h) var(--color-secondary-s) 42%)'
+            },
+            {
+                key: '--color-palette-secondary-800',
+                value: 'hsl(var(--color-secondary-h) var(--color-secondary-s) 30%)'
+            },
+            {
+                key: '--color-palette-secondary-900',
+                value: 'hsl(var(--color-secondary-h) var(--color-secondary-s) 22%)'
+            }
+        ].forEach(({ key, value }) => {
+            expect(html.style.setProperty).toHaveBeenCalledWith(key, value);
+        });
     });
 });

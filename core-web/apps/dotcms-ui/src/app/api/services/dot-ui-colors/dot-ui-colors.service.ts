@@ -22,6 +22,11 @@ type HslObject = { hue: string; saturation: string; lightness: string };
 
 type ColorType = 'primary' | 'secondary';
 
+export const DEFAULT_COLORS = {
+    primary: '#426BF0',
+    secondary: '#7042F0'
+};
+
 function parseHSL(hslString: string): HslObject {
     // Use regex to match HSL values with their units
     const regex = /hsl\((\d+deg),\s*(\d+%),\s*(\d+)%\)/;
@@ -53,13 +58,13 @@ export class DotUiColorsService {
     setColors(el: HTMLElement, colors?: DotUiColors): void {
         this.currentColors = colors || this.currentColors;
 
-        if (colors.primary === '#426BF0') {
+        if (colors.primary === DEFAULT_COLORS.primary) {
             this.setDefaultPrimaryColor(el);
         } else {
             this.setColor(el, this.currentColors.primary, 'primary');
         }
 
-        if (colors.secondary === '#7042F0') {
+        if (colors.secondary === DEFAULT_COLORS.secondary) {
             this.setDefaultSecondaryColor(el);
         } else {
             this.setColor(el, this.currentColors.secondary, 'secondary');
