@@ -7,17 +7,7 @@ import { Injectable } from '@angular/core';
 import { MenuItem, SelectItem } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 
-import {
-    catchError,
-    delay,
-    filter,
-    map,
-    mergeMap,
-    retryWhen,
-    switchMap,
-    take,
-    tap
-} from 'rxjs/operators';
+import { catchError, filter, map, mergeMap, switchMap, take, tap } from 'rxjs/operators';
 
 import { DotFavoritePageService } from '@dotcms/app/api/services/dot-favorite-page/dot-favorite-page.service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
@@ -107,7 +97,7 @@ interface UserPagePermission {
     canUserWriteContent: boolean;
 }
 
-export const FAVORITE_PAGE_LIMIT = 5;
+export const FAVORITE_PAGE_LIMIT = 500;
 
 export const LOCAL_STORAGE_FAVORITES_PANEL_KEY = 'FavoritesPanelCollapsed';
 
@@ -380,76 +370,50 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         ) => {
             return params$.pipe(
                 mergeMap((params) => {
-                    let localPageData: DotCMSContentlet;
-                    let retries = 0;
                     const { identifier, isFavoritePage } = params;
                     const sortOrderValue = this.getSortOrderValue();
 
-                    if (isFavoritePage) {
-                        localPageData = this.get().favoritePages.items.filter(
-                            (item) => item?.identifier === identifier
-                        )[0];
-                    } else {
-                        localPageData = this.get().pages.items.filter(
-                            (item) => item?.identifier === identifier
-                        )[0];
-                        this.setPagesStatus(ComponentStatus.LOADING);
-                    }
+                    if (!isFavoritePage) this.setPagesStatus(ComponentStatus.LOADING);
 
-                    return this.getPagesDataFn(isFavoritePage, sortOrderValue, identifier)
-                        .pipe(
-                            tap(
-                                (items) => {
-                                    retries++;
+                    return this.getPagesDataFn(isFavoritePage, sortOrderValue, identifier).pipe(
+                        tap(
+                            (items) => {
+                                // Finished fetch loop and will proceed to set data on store
+                                if (isFavoritePage) {
+                                    const pagesData = this.get().favoritePages.items.map((page) => {
+                                        return page?.identifier === identifier
+                                            ? items.jsonObjectView.contentlets[0]
+                                            : page;
+                                    });
 
-                                    // Will continue repeating fetch until data has changed or limit fetch reached
-                                    if (
-                                        localPageData?.modDate ===
-                                            items.jsonObjectView.contentlets[0]?.modDate &&
-                                        retries < 10
-                                    ) {
-                                        throw false;
+                                    this.setFavoritePages({ items: pagesData });
+                                } else {
+                                    let pagesData = this.get().pages.items;
+
+                                    if (items.jsonObjectView.contentlets[0] === undefined) {
+                                        pagesData = pagesData.filter((page) => {
+                                            return page?.identifier !== identifier;
+                                        });
+
+                                        // Add undefined to keep the same length of the array,
+                                        // otherwise the pagination(endless scroll) will break
+                                        pagesData.push(undefined);
                                     } else {
-                                        // Finished fetch loop and will proceed to set data on store
-                                        if (isFavoritePage) {
-                                            const pagesData = this.get().favoritePages.items.map(
-                                                (page) => {
-                                                    return page?.identifier === identifier
-                                                        ? items.jsonObjectView.contentlets[0]
-                                                        : page;
-                                                }
-                                            );
-
-                                            this.setFavoritePages({ items: pagesData });
-                                        } else {
-                                            let pagesData = this.get().pages.items;
-
-                                            if (items.jsonObjectView.contentlets[0] === undefined) {
-                                                pagesData = pagesData.filter((page) => {
-                                                    return page?.identifier !== identifier;
-                                                });
-
-                                                // Add undefined to keep the same length of the array,
-                                                // otherwise the pagination(endless scroll) will break
-                                                pagesData.push(undefined);
-                                            } else {
-                                                pagesData = pagesData.map((page) => {
-                                                    return page?.identifier === identifier
-                                                        ? items.jsonObjectView.contentlets[0]
-                                                        : page;
-                                                });
-                                            }
-
-                                            this.setPages({ items: pagesData });
-                                        }
+                                        pagesData = pagesData.map((page) => {
+                                            return page?.identifier === identifier
+                                                ? items.jsonObjectView.contentlets[0]
+                                                : page;
+                                        });
                                     }
-                                },
-                                (error: HttpErrorResponse) => {
-                                    return this.httpErrorManagerService.handle(error);
+
+                                    this.setPages({ items: pagesData });
                                 }
-                            )
+                            },
+                            (error: HttpErrorResponse) => {
+                                return this.httpErrorManagerService.handle(error);
+                            }
                         )
-                        .pipe(retryWhen((errors) => errors.pipe(delay(1000))));
+                    );
                 })
             );
         }
@@ -631,7 +595,10 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             catchError((error: HttpErrorResponse) => {
                 console.warn(error);
 
-                return of(null);
+                return of({
+                    actions: [],
+                    page: item
+                });
             })
         );
     };
@@ -696,9 +663,9 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
     }
 
     private getLocalStorageFavoritePanelParams(): Observable<boolean> {
-        const collapsed = JSON.parse(
-            this.dotLocalstorageService.getItem(LOCAL_STORAGE_FAVORITES_PANEL_KEY)
-        );
+        const collapsed =
+            JSON.parse(this.dotLocalstorageService.getItem(LOCAL_STORAGE_FAVORITES_PANEL_KEY)) ??
+            true;
 
         return of(collapsed);
     }
@@ -826,11 +793,15 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         return actionsMenu;
     }
 
-    private getNewFavoritePages(items: ESContent) {
+    private getNewFavoritePages(items: ESContent): DotFavoritePagesInfo {
         return {
             items: [...items.jsonObjectView.contentlets],
             showLoadMoreButton: items.jsonObjectView.contentlets.length <= items.resultsSize,
-            total: items.resultsSize
+            total: items.resultsSize,
+            collapsed:
+                JSON.parse(
+                    this.dotLocalstorageService.getItem(LOCAL_STORAGE_FAVORITES_PANEL_KEY)
+                ) ?? true
         };
     }
 
@@ -1003,16 +974,6 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                     });
                 }
             );
-    }
-
-    /**
-     * Limit Favorite page data
-     * @param number limit
-     * @memberof DotFavoritePageStore
-     */
-    limitFavoritePages(limit: number): void {
-        const favoritePages = this.get().favoritePages.items;
-        this.setFavoritePages({ items: favoritePages.slice(0, limit) });
     }
 
     /**

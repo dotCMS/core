@@ -83,6 +83,7 @@ import com.dotcms.rest.BundlePublisherResourceIntegrationTest;
 import com.dotcms.rest.BundleResourceTest;
 import com.dotcms.rest.IntegrityResourceIntegrationTest;
 import com.dotcms.rest.api.v1.apps.AppsResourceTest;
+import com.dotcms.rest.api.v1.apps.SiteViewPaginatorIntegrationTest;
 import com.dotcms.rest.api.v1.apps.view.AppsInterpolationTest;
 import com.dotcms.rest.api.v1.assets.AssetPathResolverImplTest;
 import com.dotcms.rest.api.v1.authentication.ResetPasswordTokenUtilTest;
@@ -118,7 +119,7 @@ import com.dotmarketing.business.helper.PermissionHelperTest;
 import com.dotmarketing.cache.FolderCacheImplIntegrationTest;
 import com.dotmarketing.common.db.DBTimeZoneCheckTest;
 import com.dotmarketing.filters.AutoLoginFilterTest;
-import com.dotmarketing.filters.CMSUrlUtilTest;
+import com.dotmarketing.filters.CMSUrlUtilIntegrationTest;
 import com.dotmarketing.image.filter.ImageFilterAPIImplTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.osgi.GenericBundleActivatorTest;
@@ -129,6 +130,7 @@ import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactoryT
 import com.dotmarketing.portlets.containers.business.ContainerFactoryImplTest;
 import com.dotmarketing.portlets.containers.business.ContainerStructureFinderStrategyResolverTest;
 import com.dotmarketing.portlets.contentlet.business.ContentletCacheImplTest;
+import com.dotmarketing.portlets.contentlet.business.HostFactoryImplTest;
 import com.dotmarketing.portlets.contentlet.business.web.ContentletWebAPIImplIntegrationTest;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependenciesTest;
 import com.dotmarketing.portlets.contentlet.model.IntegrationResourceLinkTest;
@@ -201,6 +203,7 @@ import com.dotmarketing.startup.runonce.Task221007AddVariantIntoPrimaryKeyTest;
 import com.dotmarketing.startup.runonce.Task230110MakeSomeSystemFieldsRemovableByBaseTypeTest;
 import com.dotmarketing.startup.runonce.Task230328AddMarkedForDeletionColumnTest;
 import com.dotmarketing.startup.runonce.Task230426AlterVarcharLengthOfLockedByColTest;
+import com.dotmarketing.startup.runonce.Task230523CreateVariantFieldInContentletIntegrationTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
@@ -637,10 +640,13 @@ import org.junit.runners.Suite.SuiteClasses;
         Task230328AddMarkedForDeletionColumnTest.class,
         StartupTasksExecutorDataTest.class,
         Task230426AlterVarcharLengthOfLockedByColTest.class,
+        Task230523CreateVariantFieldInContentletIntegrationTest.class,
 //        AnalyticsAPIImplTest.class,
 //        AccessTokenRenewJobTest.class,
+        SiteViewPaginatorIntegrationTest.class,
         AssetPathResolverImplTest.class,
-        CMSUrlUtilTest.class
+        CMSUrlUtilIntegrationTest.class,
+        HostFactoryImplTest.class
 })
 
 public class MainSuite {

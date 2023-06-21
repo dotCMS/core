@@ -19,12 +19,8 @@ describe('TemplateBuilderBackgroundColumnsComponent', () => {
         );
     });
 
-    it('should create the component', () => {
-        expect(spectator.component).toBeTruthy();
-    });
-
     it('should have 12 columns', () => {
-        const columns = spectator.debugElement.queryAll(By.css('[data-testclass="column"]'));
+        const columns = spectator.debugElement.queryAll(By.css('[data-testId="column"]'));
         expect(columns.length).toEqual(12);
     });
 });
