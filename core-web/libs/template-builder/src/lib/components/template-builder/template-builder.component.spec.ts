@@ -180,16 +180,6 @@ describe('TemplateBuilderComponent', () => {
         expect(updateSidebarWidthMock).toHaveBeenCalledWith('large');
     });
 
-    it('should trigger updateLayoutProperties when triggering layoutPropertiesChange', () => {
-        const updateLayoutPropertiesMock = jest.spyOn(store, 'updateLayoutProperties');
-        spectator.component.layoutPropertiesChange({ header: false, footer: false, sidebar: {} });
-        expect(updateLayoutPropertiesMock).toHaveBeenCalledWith({
-            header: false,
-            footer: false,
-            sidebar: {}
-        });
-    });
-
     describe('layoutChange', () => {
         it('should emit layoutChange when the store changes', (done) => {
             const layoutChangeMock = jest.spyOn(spectator.component.layoutChange, 'emit');

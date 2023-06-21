@@ -1,14 +1,18 @@
 import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
 
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { TemplateBuilderActionsComponent } from './template-builder-actions.component';
 
+import { DotTemplateBuilderStore } from '../../store/template-builder.store';
 import { DOT_MESSAGE_SERVICE_TB_MOCK } from '../../utils/mocks';
 
 describe('TemplateBuilderActionsComponent', () => {
     let spectator: Spectator<TemplateBuilderActionsComponent>;
+    let store: DotTemplateBuilderStore;
     const createComponent = createComponentFactory({
         component: TemplateBuilderActionsComponent,
         providers: [
@@ -16,26 +20,29 @@ describe('TemplateBuilderActionsComponent', () => {
             {
                 provide: DotMessageService,
                 useValue: DOT_MESSAGE_SERVICE_TB_MOCK
-            }
-        ]
+            },
+            DotTemplateBuilderStore
+        ],
+        imports: [HttpClientTestingModule]
     });
 
-    beforeEach(
-        () =>
-            (spectator = createComponent({
-                props: {
-                    layoutProperties: {
-                        footer: true,
-                        header: false,
-                        sidebar: {
-                            location: 'left',
-                            width: 'small',
-                            containers: []
-                        }
+    beforeEach(() => {
+        spectator = createComponent({
+            props: {
+                layoutProperties: {
+                    footer: true,
+                    header: false,
+                    sidebar: {
+                        location: 'left',
+                        width: 'small',
+                        containers: []
                     }
                 }
-            }))
-    );
+            }
+        });
+
+        store = spectator.inject(DotTemplateBuilderStore);
+    });
 
     it('should emit selectTheme event when style button is clicked', () => {
         const spy = jest.spyOn(spectator.component.selectTheme, 'emit');
@@ -55,7 +62,7 @@ describe('TemplateBuilderActionsComponent', () => {
     });
 
     it('should emit changes everytime the layout properties changes', () => {
-        const changesMock = jest.spyOn(spectator.component.layoutPropertiesChange, 'emit');
+        const changesMock = jest.spyOn(store, 'updateLayoutProperties');
         spectator.component.group.setValue({
             footer: true,
             header: false,

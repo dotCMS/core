@@ -249,16 +249,6 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     }
 
     /**
-     * @description This method is used to update the layout properties
-     *
-     * @param {DotTemplateLayoutProperties} layoutProperties
-     * @memberof TemplateBuilderComponent
-     */
-    layoutPropertiesChange(layoutProperties: DotTemplateLayoutProperties): void {
-        this.store.updateLayoutProperties(layoutProperties);
-    }
-
-    /**
      * @description This method is used to update the sidebar width
      *
      * @param {string} width

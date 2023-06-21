@@ -14,9 +14,12 @@ import { UntypedFormControl, UntypedFormGroup } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 
+import { takeUntil } from 'rxjs/operators';
+
 import { DotMessagePipeModule } from '@dotcms/ui';
 
 import { DotTemplateLayoutProperties } from '../../models/models';
+import { DotTemplateBuilderStore } from '../../store/template-builder.store';
 import { DotLayoutPropertiesModule } from '../dot-layout-properties/dot-layout-properties.module';
 
 @Component({
@@ -39,6 +42,8 @@ export class TemplateBuilderActionsComponent implements OnInit, OnDestroy {
 
     destroy$: Subject<boolean> = new Subject<boolean>();
 
+    constructor(private store: DotTemplateBuilderStore) {}
+
     ngOnInit(): void {
         this.group = new UntypedFormGroup({
             header: new UntypedFormControl(this.layoutProperties.header ?? true),
@@ -50,8 +55,8 @@ export class TemplateBuilderActionsComponent implements OnInit, OnDestroy {
             )
         });
 
-        this.group.valueChanges.subscribe((value) => {
-            this.layoutPropertiesChange.emit(value);
+        this.group.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((value) => {
+            this.store.updateLayoutProperties(value);
         });
     }
 
