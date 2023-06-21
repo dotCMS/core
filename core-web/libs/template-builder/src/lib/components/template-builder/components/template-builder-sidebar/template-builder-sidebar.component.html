@@ -13,7 +13,7 @@
         [width]="4"
         [items]="containers"
         [actions]="['add']"
-        (addContainer)="addContainer.emit($event)"
-        (deleteContainer)="deleteContainer.emit($event)"
+        (addContainer)="addContainer($event)"
+        (deleteContainer)="deleteContainer($event)"
     ></dotcms-template-builder-box>
 </div>

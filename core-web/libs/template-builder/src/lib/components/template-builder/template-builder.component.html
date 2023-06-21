@@ -43,9 +43,6 @@
                 'template-builder__sidebar--large': vm.layoutProperties.sidebar.width == 'large'
             }"
             [sidebarProperties]="vm.layoutProperties.sidebar"
-            (sidebarWidthChange)="sidebarWidthChange($event)"
-            (addContainer)="addSidebarContainer($event)"
-            (deleteContainer)="deleteSidebarContainer($event)"
         />
         <div class="grid-stack">
             <dotcms-template-builder-background-columns></dotcms-template-builder-background-columns>

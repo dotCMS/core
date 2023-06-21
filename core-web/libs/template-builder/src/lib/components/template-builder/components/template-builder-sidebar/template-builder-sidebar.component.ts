@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { DropdownModule } from 'primeng/dropdown';
@@ -6,6 +6,7 @@ import { DropdownModule } from 'primeng/dropdown';
 import { DotContainer, DotLayoutSideBar } from '@dotcms/dotcms-models';
 import { DotMessagePipeModule } from '@dotcms/ui';
 
+import { DotTemplateBuilderStore } from '../../store/template-builder.store';
 import { TemplateBuilderBoxComponent } from '../template-builder-box/template-builder-box.component';
 
 @Component({
@@ -21,10 +22,6 @@ export class TemplateBuilderSidebarComponent {
         containers: []
     };
 
-    @Output() sidebarWidthChange = new EventEmitter<string>();
-    @Output() addContainer: EventEmitter<DotContainer> = new EventEmitter<DotContainer>();
-    @Output() deleteContainer: EventEmitter<number> = new EventEmitter<number>();
-
     get width() {
         return this.sidebarProperties.width.replace(/^\w/g, (l) => l.toUpperCase());
     }
@@ -35,6 +32,8 @@ export class TemplateBuilderSidebarComponent {
 
     readonly widthOptions = ['Small', 'Medium', 'Large'];
 
+    constructor(private store: DotTemplateBuilderStore) {}
+
     /**
      * @description Change the sidebar width
      *
@@ -42,6 +41,26 @@ export class TemplateBuilderSidebarComponent {
      * @memberof TemplateBuilderSidebarComponent
      */
     widthChange({ value = 'medium' }: { value: string }) {
-        this.sidebarWidthChange.emit(value.toLowerCase());
+        this.store.updateSidebarWidth(value.toLowerCase());
+    }
+
+    /**
+     * @description Add a container to the sidebar
+     *
+     * @param {DotContainer} container
+     * @memberof TemplateBuilderSidebarComponent
+     */
+    addContainer(container: DotContainer) {
+        this.store.addSidebarContainer(container);
+    }
+
+    /**
+     * @description Delete a container from the sidebar
+     *
+     * @param {DotContainer} container
+     * @memberof TemplateBuilderSidebarComponent
+     */
+    deleteContainer(index: number) {
+        this.store.deleteSidebarContainer(index);
     }
 }

@@ -321,6 +321,8 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
     readonly addSidebarContainer = this.updater((state, container: DotContainer) => {
         const { layoutProperties } = state;
 
+        if (!container) return state;
+
         return {
             ...state,
             layoutProperties: {
@@ -352,7 +354,9 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
                 ...layoutProperties,
                 sidebar: {
                     ...layoutProperties.sidebar,
-                    containers: layoutProperties.sidebar.containers.filter((_, i) => i !== index)
+                    containers: (layoutProperties.sidebar.containers ?? []).filter(
+                        (_, i) => i !== index
+                    )
                 }
             }
         };

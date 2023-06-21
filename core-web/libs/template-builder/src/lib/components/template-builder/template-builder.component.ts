@@ -249,16 +249,6 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     }
 
     /**
-     * @description This method is used to update the sidebar width
-     *
-     * @param {string} width
-     * @memberof TemplateBuilderComponent
-     */
-    sidebarWidthChange(width: string): void {
-        this.store.updateSidebarWidth(width);
-    }
-
-    /**
      * @description This method calls the store to add a container to a box
      *
      * @param {DotGridStackWidget} box
@@ -287,26 +277,15 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
             });
         });
     }
-    /**
-     * @description This method adds a container to the sidebar
-     *
-     * @param {DotContainer} container
-     * @memberof TemplateBuilderComponent
-     */
-    addSidebarContainer(container: DotContainer): void {
-        this.store.addSidebarContainer(container);
-    }
 
     /**
-     * @description This method deletes a container from the sidebar
+     * @description This method opens the dialog to edit the box styleclasses
      *
-     * @param {number} index
+     * @private
+     * @param {*} [selectedClasses=[]]
+     * @return {*}  {Observable<string[]>}
      * @memberof TemplateBuilderComponent
      */
-    deleteSidebarContainer(index: number): void {
-        this.store.deleteSidebarContainer(index);
-    }
-
     private openDynamicDialog(selectedClasses = []): Observable<string[]> {
         this.ref = this.dialogService.open(AddStyleClassesDialogComponent, {
             header: this.dotMessage.get('dot.template.builder.classes.dialog.header.label'),

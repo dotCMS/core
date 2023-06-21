@@ -174,12 +174,6 @@ describe('TemplateBuilderComponent', () => {
         expect(spectator.query(byTestId('template-layout-properties-panel'))).toBeTruthy();
     });
 
-    it('should trigger updateSidebarWidth on store when triggering sidebarWidthChange', () => {
-        const updateSidebarWidthMock = jest.spyOn(store, 'updateSidebarWidth');
-        spectator.component.sidebarWidthChange('large');
-        expect(updateSidebarWidthMock).toHaveBeenCalledWith('large');
-    });
-
     describe('layoutChange', () => {
         it('should emit layoutChange when the store changes', (done) => {
             const layoutChangeMock = jest.spyOn(spectator.component.layoutChange, 'emit');
