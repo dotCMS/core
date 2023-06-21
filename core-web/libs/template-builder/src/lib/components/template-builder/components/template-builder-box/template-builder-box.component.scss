@@ -7,12 +7,50 @@
         .pi.pi-trash {
             color: $color-palette-primary-400;
         }
+
+        .p-dropdown {
+            margin-left: 0;
+        }
     }
 
     .template-builder-box--small {
         .p-button-text {
             margin: $spacing-3 0;
         }
+
+        .p-dropdown-label {
+            @include visually-hidden;
+        }
+
+        .p-dropdown-trigger-icon {
+            font-size: $font-size-sm;
+            margin: $spacing-3;
+        }
+    }
+
+    .p-dropdown {
+        display: flex;
+        flex-direction: row-reverse; // this allows having the plus icon at the left of the placeholder
+        border: none;
+        background: none;
+        font-size: $spacing-2;
+        margin-left: $spacing-4;
+        padding: $spacing-2;
+    }
+    .p-dropdown:hover {
+        background: $color-palette-primary-200;
+    }
+    .p-dropdown-label.p-inputtext {
+        font-size: $font-size-sm;
+        color: $black;
+        padding: 0 0 0 $spacing-2;
+        max-width: 10rem;
+    }
+    .p-dropdown-trigger-icon {
+        color: $color-palette-primary;
+    }
+    .p-dropdown .p-dropdown-trigger {
+        width: auto;
     }
 }
 
@@ -20,6 +58,9 @@
     border: 1px solid $color-palette-primary-300;
     border-radius: $border-radius-sm;
     height: 14rem;
+    width: 100%;
+    background-color: $white;
+    overflow: hidden;
 }
 
 .template-builder-box__header-container {
@@ -56,17 +97,8 @@
     }
 }
 
-.template-builder-box--medium {
-    width: $spacing-11;
-}
-
-.template-builder-box--large {
-    width: 100%;
-}
-
 .template-builder-box--small {
     display: flex;
-    width: $spacing-9;
     justify-content: center;
     align-items: center;
     flex-direction: column;

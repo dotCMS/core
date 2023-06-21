@@ -107,7 +107,8 @@ export class DotEditPageNavComponent implements OnChanges {
         // https://github.com/dotCMS/core-web/pull/589
         return {
             needsEntepriseLicense: !enterpriselicense,
-            disabled: !this.canGoToLayout(dotRenderedPage),
+            disabled:
+                !this.canGoToLayout(dotRenderedPage) || this.disableLayoutOnExperimentVariant(),
             icon: 'view_quilt',
             label: this.getTemplateItemLabel(dotRenderedPage.template),
             link: 'layout',
@@ -149,5 +150,14 @@ export class DotEditPageNavComponent implements OnChanges {
         return this.dotMessageService.get(
             !template ? 'editpage.toolbar.nav.layout' : 'editpage.toolbar.nav.layout'
         );
+    }
+
+    private disableLayoutOnExperimentVariant(): boolean {
+        const experimentId = this.route.snapshot?.queryParams?.experimentId;
+        const runningExperiment = this.pageState.state?.runningExperiment;
+
+        const isCurrentExperimentAndRunning = experimentId === runningExperiment?.id;
+
+        return isCurrentExperimentAndRunning && this.isVariantMode;
     }
 }

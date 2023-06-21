@@ -30,8 +30,11 @@ build_by_commit() {
 
   rm -rf ./dist ./dotCMS/build ./core-web/node_modules
   cd dotCMS
-  ./gradlew clean createDistPrep
+  ./gradlew clean generateDependenciesFromMaven
+  ./gradlew createDistPrep
   cd ..
+  du -hs ./core-web/node_modules
+  rm -rf ./core-web/node_modules
 
   find ./dist/  -name "*.sh" -exec chmod 500 {} \;
   mv ./dist/* "${build_target_dir}"

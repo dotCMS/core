@@ -27,6 +27,7 @@ import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotcms.repackage.org.apache.struts.action.ActionMessage;
 import com.dotcms.util.I18NMessage;
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -1218,7 +1219,17 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		}
 
 		if(InodeUtils.isSet(contentlet.getInode())){
-			workingContentlet = contAPI.findContentletByIdentifier(contentlet.getIdentifier(), false, contentlet.getLanguageId(), user, false);
+			final String currentVariantId = WebAPILocator.getVariantWebAPI().currentVariantId();
+
+			workingContentlet = contAPI.findContentletByIdentifier(contentlet.getIdentifier(),
+					false, contentlet.getLanguageId(), currentVariantId, user, false);
+
+			if(workingContentlet == null) {
+				workingContentlet = contAPI.findContentletByIdentifier(contentlet.getIdentifier(),
+						false, contentlet.getLanguageId(), VariantAPI.DEFAULT_VARIANT.name(),
+						user, false);
+
+			}
 		}else{
 			workingContentlet = contentlet;
 		}

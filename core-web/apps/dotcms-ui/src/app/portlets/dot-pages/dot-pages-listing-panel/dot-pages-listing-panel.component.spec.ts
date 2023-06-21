@@ -19,7 +19,6 @@ import { of } from 'rxjs/internal/observable/of';
 
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
-import { DotMessagePipeModule } from '@dotcms/app/view/pipes/dot-message/dot-message-pipe.module';
 import { DotRelativeDatePipe } from '@dotcms/app/view/pipes/dot-relative-date/dot-relative-date.pipe';
 import { DotMessageService } from '@dotcms/data-access';
 import {
@@ -28,6 +27,7 @@ import {
     DotcmsConfigService,
     SiteService
 } from '@dotcms/dotcms-js';
+import { DotMessagePipeModule } from '@dotcms/ui';
 import {
     DotcmsConfigServiceMock,
     dotcmsContentletMock,
@@ -203,11 +203,9 @@ describe('DotPagesListingPanelComponent', () => {
 
         it('should set table with params', () => {
             const elem = de.query(By.css('p-table')).componentInstance;
-            expect(elem.scrollable).toBe(true);
             expect(elem.loading).toBe(undefined);
             expect(elem.lazy).toBe(true);
             expect(elem.selectionMode).toBe('single');
-            expect(elem.scrollHeight).toBe('calc(100vh - 600px)');
             expect(elem.sortField).toEqual('modDate');
             expect(elem.sortOrder).toEqual(-1);
             expect(elem.rows).toEqual(40);

@@ -833,6 +833,11 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             updateHTMLPageVersionTS(pageId, variantId);
             refreshPageInCache(pageId,variantId );
         }
+
+        if (!variants.contains(VariantAPI.DEFAULT_VARIANT.name())) {
+            updateHTMLPageVersionTS(pageId, VariantAPI.DEFAULT_VARIANT.name());
+            refreshPageInCache(pageId, VariantAPI.DEFAULT_VARIANT.name() );
+        }
     }
 
     @Override
@@ -1190,6 +1195,9 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     @WrapInTransaction
     public void updateMultiTrees(final Collection<String> pagesId, final String containerId,
             final String oldValue, final String newValue) throws DotDataException {
+
+        DotPreconditions.notNull(pagesId, () -> "Pages id collection cannot be null");
+        DotPreconditions.isTrue(!pagesId.isEmpty(), () -> "Pages id collection cannot be empty");
 
         final String innerContainerId = FileAssetContainerUtil.getInstance().isFolderAssetContainerId(containerId)
                 ? getFileContainerId(containerId) : containerId;

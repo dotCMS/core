@@ -70,11 +70,13 @@ import {
     DotPageRender,
     DotPageRenderState
 } from '@dotcms/dotcms-models';
+import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import {
     CoreWebServiceMock,
     dotcmsContentletMock,
     DotWorkflowServiceMock,
+    getExperimentMock,
     LoginServiceMock,
     mockDotLanguage,
     MockDotMessageService,
@@ -85,8 +87,6 @@ import {
     processedContainers,
     SiteServiceMock
 } from '@dotcms/utils-testing';
-import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
-import { getExperimentMock } from '@portlets/dot-experiments/test/mocks';
 
 import { DotEditPageWorkflowsActionsModule } from './components/dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
 import {
@@ -171,7 +171,9 @@ export class MockDotPaletteComponent {
 
 const mockRenderedPageState = new DotPageRenderState(
     mockUser(),
-    new DotPageRender(mockDotRenderedPage())
+    new DotPageRender(mockDotRenderedPage()),
+    null,
+    EXPERIMENT_MOCK
 );
 
 describe('DotEditContentComponent', () => {
@@ -410,13 +412,9 @@ describe('DotEditContentComponent', () => {
 
         describe('dot-edit-page-toolbar', () => {
             let toolbarElement: DebugElement;
-            let dotExperimentsService: DotExperimentsService;
 
             beforeEach(() => {
-                dotExperimentsService = de.injector.get(DotExperimentsService);
-
                 spyOn(dialogService, 'open');
-                spyOn(dotExperimentsService, 'getByStatus').and.returnValue(of([EXPERIMENT_MOCK]));
 
                 fixture.detectChanges();
                 toolbarElement = de.query(By.css('dot-edit-page-toolbar'));

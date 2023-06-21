@@ -934,7 +934,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                             entry.getIdentToIndex() + StringPool.UNDERLINE + language.getId()
                                     + StringPool.UNDERLINE + variant.name();
 
-                    System.err.println("deleting:" + id);
+                    Logger.debug(this.getClass(),"deleting:" + id);
                     bulk.add(new DeleteRequest(index, "_doc", id));
                 }
             }

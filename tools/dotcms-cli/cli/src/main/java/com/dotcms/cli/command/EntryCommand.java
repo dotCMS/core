@@ -1,6 +1,7 @@
 package com.dotcms.cli.command;
 
 import com.dotcms.cli.command.contenttype.*;
+import com.dotcms.cli.command.files.FilesCommand;
 import com.dotcms.cli.command.language.LanguageCommand;
 import com.dotcms.cli.command.site.*;
 import io.quarkus.picocli.runtime.annotations.TopCommand;
@@ -27,7 +28,9 @@ import picocli.CommandLine.Command;
           //--- Site related stuff
            SiteCommand.class,
           //--- Language related stuff
-           LanguageCommand.class
+           LanguageCommand.class,
+          //--- Files related stuff
+           FilesCommand.class
         }
 )
 public class EntryCommand {
