@@ -1,5 +1,3 @@
-import { mockDotLanguage } from './dot-language.mock';
-import { dotcmsContentTypeBasicMock } from './dot-content-types.mock';
 import {
     DotPage,
     DotLayout,
@@ -9,6 +7,9 @@ import {
     DotTemplate,
     DotPageContainerStructure
 } from '@dotcms/dotcms-models';
+
+import { dotcmsContentTypeBasicMock } from './dot-content-types.mock';
+import { mockDotLanguage } from './dot-language.mock';
 
 export const mockDotPage = (): DotPage => {
     return {
@@ -57,7 +58,8 @@ export const mockDotLayout = (): DotLayout => {
             containers: [
                 {
                     identifier: 'fc193c82-8c32-4abe-ba8a-49522328c93e',
-                    uuid: 'LEGACY_RELATION_TYPE'
+                    uuid: 'LEGACY_RELATION_TYPE',
+                    title: 'A Container'
                 }
             ]
         },

@@ -71,7 +71,8 @@ export const FULL_DATA_MOCK: DotLayoutBody = {
                     containers: [
                         {
                             identifier: '//demo.dotcms.com/application/containers/banner/',
-                            uuid: '1'
+                            uuid: '1',
+                            title: 'Banner'
                         }
                     ],
                     leftOffset: 1,
@@ -87,7 +88,8 @@ export const FULL_DATA_MOCK: DotLayoutBody = {
                     containers: [
                         {
                             identifier: '//demo.dotcms.com/application/containers/default/',
-                            uuid: '1'
+                            uuid: '1',
+                            title: 'Default'
                         }
                     ],
                     leftOffset: 1,
@@ -103,7 +105,8 @@ export const FULL_DATA_MOCK: DotLayoutBody = {
                     containers: [
                         {
                             identifier: '//demo.dotcms.com/application/containers/default/',
-                            uuid: '2'
+                            uuid: '2',
+                            title: 'Default'
                         }
                     ],
                     leftOffset: 1,
@@ -114,7 +117,8 @@ export const FULL_DATA_MOCK: DotLayoutBody = {
                     containers: [
                         {
                             identifier: '//demo.dotcms.com/application/containers/default/',
-                            uuid: '3'
+                            uuid: '3',
+                            title: 'Default'
                         }
                     ],
                     leftOffset: 4,
@@ -125,7 +129,8 @@ export const FULL_DATA_MOCK: DotLayoutBody = {
                     containers: [
                         {
                             identifier: '//demo.dotcms.com/application/containers/default/',
-                            uuid: '4'
+                            uuid: '4',
+                            title: 'Default'
                         }
                     ],
                     leftOffset: 7,
@@ -136,7 +141,8 @@ export const FULL_DATA_MOCK: DotLayoutBody = {
                     containers: [
                         {
                             identifier: '//demo.dotcms.com/application/containers/default/',
-                            uuid: '5'
+                            uuid: '5',
+                            title: 'Default'
                         }
                     ],
                     leftOffset: 10,
@@ -152,7 +158,8 @@ export const FULL_DATA_MOCK: DotLayoutBody = {
                     containers: [
                         {
                             identifier: '//demo.dotcms.com/application/containers/default/',
-                            uuid: '6'
+                            uuid: '6',
+                            title: 'Default'
                         }
                     ],
                     leftOffset: 1,
@@ -163,7 +170,8 @@ export const FULL_DATA_MOCK: DotLayoutBody = {
                     containers: [
                         {
                             identifier: '//demo.dotcms.com/application/containers/default/',
-                            uuid: '7'
+                            uuid: '7',
+                            title: 'Default'
                         }
                     ],
                     leftOffset: 7,
@@ -174,7 +182,8 @@ export const FULL_DATA_MOCK: DotLayoutBody = {
                     containers: [
                         {
                             identifier: '//demo.dotcms.com/application/containers/default/',
-                            uuid: '8'
+                            uuid: '8',
+                            title: 'Default'
                         }
                     ],
                     leftOffset: 10,
@@ -190,7 +199,8 @@ export const FULL_DATA_MOCK: DotLayoutBody = {
                     containers: [
                         {
                             identifier: '//demo.dotcms.com/application/containers/default/',
-                            uuid: '9'
+                            uuid: '9',
+                            title: 'Default'
                         }
                     ],
                     leftOffset: 1,
@@ -206,7 +216,8 @@ export const FULL_DATA_MOCK: DotLayoutBody = {
                     containers: [
                         {
                             identifier: '//demo.dotcms.com/application/containers/default/',
-                            uuid: '10'
+                            uuid: '10',
+                            title: 'Default'
                         }
                     ],
                     leftOffset: 1,

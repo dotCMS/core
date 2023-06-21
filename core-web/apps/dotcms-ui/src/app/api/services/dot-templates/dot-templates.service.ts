@@ -46,7 +46,7 @@ export class DotTemplatesService {
 
         return this.request<DotTemplate>({
             url
-        });
+        }).pipe(map((template) => this.addContainerInfo(template)));
     }
 
     /**
@@ -184,5 +184,17 @@ export class DotTemplatesService {
                 );
             })
         );
+    }
+
+    private addContainerInfo(template: DotTemplate): DotTemplate {
+        for (const row of template.layout.body.rows) {
+            for (const column of row.columns) {
+                for (const container of column.containers) {
+                    container.title = template.containers[container.identifier].title;
+                }
+            }
+        }
+
+        return template;
     }
 }

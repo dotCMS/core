@@ -20,6 +20,7 @@ export interface DotGridStackOptions extends GridStackOptions {
 export interface DotTemplateBuilderContainer {
     identifier: string;
     uuid?: string;
+    title: string;
 }
 
 /**

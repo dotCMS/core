@@ -103,7 +103,7 @@ describe('DotTemplateBuilderStore', () => {
         const updatedRow: DotGridStackWidget = {
             ...initialState[0],
             styleClass: ['new-class', 'flex-mock'],
-            containers: [{ identifier: 'mock-container', uuid: uuid() }]
+            containers: [{ identifier: 'mock-container', uuid: uuid(), title: 'Mock Container' }]
         };
 
         service.updateRow(updatedRow);

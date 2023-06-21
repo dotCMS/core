@@ -286,7 +286,8 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
                 const updatedChildren = row.subGridOpts.children.map((child) => {
                     if (affectedColumn.id === child.id)
                         child.containers.push({
-                            identifier: container.identifier
+                            identifier: container.identifier,
+                            title: container.title
                         });
 
                     return child;

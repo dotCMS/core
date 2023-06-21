@@ -6,6 +6,7 @@ export interface DotPageContainer {
     uuid?: string;
     contentletsId?: string[];
     path?: string;
+    title?: string;
 }
 
 export interface DotPageContainerPersonalized extends DotPageContainer {

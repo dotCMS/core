@@ -26,6 +26,10 @@ export class DotTemplateCreateEditResolver implements Resolve<DotTemplate> {
                       }
                   })
               )
-            : this.service.getById(route.paramMap.get('id'));
+            : this.service.getById(route.paramMap.get('id')).pipe(
+                  map((template) => {
+                      return template;
+                  })
+              );
     }
 }
