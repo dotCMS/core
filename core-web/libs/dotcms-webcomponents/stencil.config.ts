@@ -47,10 +47,5 @@ export const config: Config = {
         ]
     },
 
-    plugins: [
-        sass({
-            // injectGlobalPaths: [`${__dirname}/dotcms-scss/shared/_colors.scss`],
-            // includePaths: [`/libs/dotcms-scss/shared`],
-        })
-    ]
+    plugins: [sass()]
 };
