@@ -210,7 +210,7 @@ describe('DotExperimentsReportsComponent', () => {
         };
 
         spectator.detectChanges();
-        spyOn(store, 'promoteVariant');
+        jest.spyOn(store, 'promoteVariant');
 
         spectator.click(byTestId('promote-variant-button'));
 

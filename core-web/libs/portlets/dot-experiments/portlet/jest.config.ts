@@ -2,7 +2,7 @@
 export default {
     displayName: 'DotExperiments Portlet',
     preset: '../../../../jest.preset.js',
-    setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts', 'jest-canvas-mock'],
+    setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
     globals: {
         'ts-jest': {
             tsconfig: '<rootDir>/tsconfig.spec.json',
