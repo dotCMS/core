@@ -269,35 +269,25 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
      * @memberof TemplateBuilderComponent
      */
     editBoxStyleClasses(rowID: numberOrString, box: DotGridStackNode): void {
-        this.openDynamicDialog(box.styleClass).subscribe((styleClasses: string[]) => {
-            this.store.updateColumnStyleClasses({
-                ...box,
-                styleClass: styleClasses,
-                parentId: rowID as string
-            });
-        });
-    }
-
-    /**
-     * @description This method opens the dialog to edit the box styleclasses
-     *
-     * @private
-     * @param {*} [selectedClasses=[]]
-     * @return {*}  {Observable<string[]>}
-     * @memberof TemplateBuilderComponent
-     */
-    private openDynamicDialog(selectedClasses = []): Observable<string[]> {
         this.ref = this.dialogService.open(AddStyleClassesDialogComponent, {
             header: this.dotMessage.get('dot.template.builder.classes.dialog.header.label'),
             data: {
-                selectedClasses
+                selectedClasses: box.styleClass || []
             },
             resizable: false
         });
 
-        return this.ref.onClose.pipe(
-            take(1),
-            filter((styleClasses) => styleClasses)
-        );
+        this.ref.onClose
+            .pipe(
+                take(1),
+                filter((styleClasses) => styleClasses)
+            )
+            .subscribe((styleClasses: string[]) => {
+                this.store.updateColumnStyleClasses({
+                    ...box,
+                    styleClass: styleClasses,
+                    parentId: rowID as string
+                });
+            });
     }
 }
