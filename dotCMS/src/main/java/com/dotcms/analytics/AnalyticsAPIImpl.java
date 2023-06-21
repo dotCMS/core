@@ -4,6 +4,7 @@ import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.analytics.cache.AnalyticsCache;
 import com.dotcms.analytics.helper.AnalyticsHelper;
 import com.dotcms.analytics.model.AccessToken;
+import com.dotcms.analytics.model.AccessTokenFetchMode;
 import com.dotcms.analytics.model.AccessTokenStatus;
 import com.dotcms.analytics.model.AnalyticsKey;
 import com.dotcms.analytics.model.TokenStatus;
@@ -19,7 +20,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.ImmutableMap;
-import org.apache.commons.lang.StringUtils;
+import io.vavr.control.Try;
 
 import javax.ws.rs.ProcessingException;
 import javax.ws.rs.core.HttpHeaders;
@@ -27,7 +28,6 @@ import javax.ws.rs.core.MediaType;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
-
 
 /**
  * Analytics API class which provides convenience methods to fetch analytics access tokens and analytics keys based on
@@ -43,7 +43,6 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
 
     private final String analyticsIdpUrl;
     private final AnalyticsCache analyticsCache;
-
 
     public AnalyticsAPIImpl(final String analyticsIdpUrl, final AnalyticsCache analyticsCache) {
         this.analyticsIdpUrl = analyticsIdpUrl;
@@ -71,13 +70,19 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
      */
     @Override
     public AccessToken getAccessToken(final AnalyticsApp analyticsApp,
-                                      final boolean fetchWhenNotCached) throws AnalyticsException {
+                                      final AccessTokenFetchMode fetchMode) throws AnalyticsException {
+        if (fetchMode == AccessTokenFetchMode.FORCE_RENEW) {
+            // renew it right away
+            return refreshAccessToken(analyticsApp);
+        }
+
         // check for token at cache and not expired
         final AccessToken accessToken = getAccessToken(analyticsApp);
 
         if (Objects.isNull(accessToken)) {
-            if (fetchWhenNotCached) {
-                return fetchAccessToken(analyticsApp);
+            if (fetchMode == AccessTokenFetchMode.BACKEND_FALLBACK) {
+                // try to get it from backend only when previous attempt return null
+                return refreshAccessToken(analyticsApp);
             }
 
             Logger.debug(
@@ -96,6 +101,14 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
      */
     @Override
     public AccessToken refreshAccessToken(final AnalyticsApp analyticsApp) throws AnalyticsException {
+        try {
+            // validates that we have the url
+            validateAnalytics();
+        } catch (DotStateException e) {
+            // there is no IDP server defined, this is an "unrecoverable" error
+            throw new UnrecoverableAnalyticsException(e.getMessage(), e);
+        }
+
         try {
             final CircuitBreakerUrl.Response<AccessToken> response = requestAccessToken(analyticsApp);
 
@@ -155,20 +168,7 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
             throw new UnrecoverableAnalyticsException("Analytics App is missing or it is not configured correctly");
         }
 
-        final String analyticsKey = analyticsApp.getAnalyticsProperties().analyticsKey();
-        // check if it found and the return it
-        if (StringUtils.isNotBlank(analyticsKey)) {
-            return analyticsKey;
-        }
-
-        Logger.warn(
-            this,
-            String.format(
-                "Analytics key from clientId %s could not be resolved, resetting it",
-                analyticsApp.getAnalyticsProperties().clientId()));
-        _resetAnalyticsKey(analyticsApp, false);
-
-        return AnalyticsHelper.get().appFromHost(host).getAnalyticsProperties().analyticsKey();
+        return analyticsApp.getAnalyticsProperties().analyticsKey();
     }
 
     /**
@@ -179,25 +179,6 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
         // validates app
         validateAnalyticsApp(analyticsApp);
 
-        _resetAnalyticsKey(analyticsApp, force);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void resetAnalyticsKey(final AnalyticsApp analyticsApp) throws AnalyticsException {
-        resetAnalyticsKey(analyticsApp, false);
-    }
-
-    /**
-     * Reset analytics key to the app storage by requesting it again to the configuration server.
-     *
-     * @param analyticsApp resolved analytics app
-     * @param force force flag
-     * @throws AnalyticsException if analytics key cannot be extracted from response or when saving to app storage
-     */
-    private void _resetAnalyticsKey(final AnalyticsApp analyticsApp, final boolean force) throws AnalyticsException {
         // fetches access token and if not found than throw exception
         try {
             final CircuitBreakerUrl.Response<AnalyticsKey> response = requestAnalyticsKey(analyticsApp, force);
@@ -209,15 +190,15 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
                     DotObjectMapperProvider.getInstance().getDefaultObjectMapper().writeValueAsString(response)));
 
             AnalyticsHelper.get().extractAnalyticsKey(response)
-                .map(key -> {
-                    try {
+                .map(key -> Try
+                    .of(() -> {
                         analyticsApp.saveAnalyticsKey(key);
-                    } catch (Exception e) {
-                        Logger.error(this, String.format("Could not save ANALYTICS_KEY %s at app", key), e);
-                        return null;
-                    }
-                    return key;
-                })
+                        return key;
+                    })
+                    .getOrElseGet(e -> {
+                            Logger.error(this, String.format("Could not save ANALYTICS_KEY %s at app", key), e);
+                            return null;
+                    }))
                 .orElseThrow(() -> new AnalyticsException("Could not fetch ANALYTICS_KEY"));
         } catch (ProcessingException | JsonProcessingException e) {
             throw new AnalyticsException("Could not request ANALYTICS_KEY", e);
@@ -304,27 +285,6 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
     }
 
     /**
-     * Given an {@link AnalyticsApp} instance it will try to fetch an {@link AccessToken} from the analytics
-     * infrastructure and if found it will save it in the cache.
-     *
-     * @param analyticsApp analytics app
-     * @return the actual access token
-     * @throws AnalyticsException when access token could not be fetched
-     */
-    private AccessToken fetchAccessToken(AnalyticsApp analyticsApp) throws AnalyticsException {
-        try {
-            // validates that we have the url
-            validateAnalytics();
-        } catch (DotStateException e) {
-            // there is no IDP server defined, this is an "unrecoverable" error
-            throw new UnrecoverableAnalyticsException(e.getMessage(), e);
-        }
-
-        // Extract token and verify that is not expired (it shouldn't but anyway)
-        return refreshAccessToken(analyticsApp);
-    }
-
-    /**
      * Prepares access token request headers in a {@link Map} with values found in a {@link AccessToken} instance.
      *
      * @param accessToken access token
@@ -366,13 +326,14 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
      */
     private CircuitBreakerUrl.Response<AnalyticsKey> requestAnalyticsKey(final AnalyticsApp analyticsApp,
                                                                          final boolean force)
-        throws AnalyticsException {
+            throws AnalyticsException {
+        final AccessToken accessToken = resolveToken(analyticsApp, force);
         final CircuitBreakerUrl.Response<AnalyticsKey> response = CircuitBreakerUrl.builder()
             .setMethod(CircuitBreakerUrl.Method.GET)
             .setUrl(analyticsApp.getAnalyticsProperties().analyticsConfigUrl())
             .setTimeout(ANALYTICS_KEY_RENEW_TIMEOUT)
             .setTryAgainAttempts(ANALYTICS_KEY_RENEW_ATTEMPTS)
-            .setHeaders(analyticsKeyHeaders(resolveToken(analyticsApp, force)))
+            .setHeaders(analyticsKeyHeaders(accessToken))
             .build()
             .doResponse(AnalyticsKey.class);
         logKeyResponse(response, analyticsApp);
@@ -381,7 +342,8 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
     }
 
     /**
-     * Resolves token for analytics key taking into consideration if the app is being saved (thai is force == true).
+     * Resolves token for analytics key taking into consideration if the app is being saved
+     * (thai is fetchMode == {@link AccessTokenFetchMode#FORCE_RENEW}).
      * If so, it will try to refresh the access token.
      *
      * @param analyticsApp analytics app
@@ -389,8 +351,8 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
      * @return ready to use {@link AccessToken} instance
      * @throws AnalyticsException if is null and force is disabled
      */
-    private AccessToken resolveToken(AnalyticsApp analyticsApp, boolean force) throws AnalyticsException {
-        final AccessToken accessToken = getAccessToken(analyticsApp, force);
+    private AccessToken resolveToken(final AnalyticsApp analyticsApp, final boolean force) throws AnalyticsException {
+        final AccessToken accessToken = getAccessToken(analyticsApp, AccessTokenFetchMode.BACKEND_FALLBACK);
 
         if (Objects.isNull(accessToken) && !force) {
             throw new AnalyticsException(String.format(
@@ -399,9 +361,9 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
                 analyticsIdpUrl));
         }
 
-        if ((Objects.isNull(accessToken) || AnalyticsHelper.get().hasTokenExpired(accessToken)) && force) {
-            refreshAccessToken(analyticsApp);
-            return getAccessToken(analyticsApp, true);
+        final TokenStatus tokenStatus = AnalyticsHelper.get().resolveTokenStatus(accessToken);
+        if (tokenStatus.matchesAny(TokenStatus.EXPIRED, TokenStatus.NONE) && force) {
+            return getAccessToken(analyticsApp, AccessTokenFetchMode.FORCE_RENEW);
         }
 
         return accessToken;

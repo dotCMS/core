@@ -22,6 +22,12 @@
         .p-tabview-panel:not([hidden]) {
             height: 100%;
         }
+
+        dotcms-template-builder {
+            display: block;
+            height: 100%;
+            overflow: auto;
+        }
     }
 }
 

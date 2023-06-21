@@ -29,12 +29,12 @@ import {
     dotcmsContentletMock,
     DotPageStateServiceMock,
     DotPersonalizeServiceMock,
+    getExperimentMock,
     MockDotMessageService,
     mockDotRenderedPage,
     mockUser
 } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { getExperimentMock } from '@portlets/dot-experiments/test/mocks';
 
 import { DotEditPageLockInfoComponent } from './components/dot-edit-page-lock-info/dot-edit-page-lock-info.component';
 import { DotEditPageStateControllerComponent } from './dot-edit-page-state-controller.component';

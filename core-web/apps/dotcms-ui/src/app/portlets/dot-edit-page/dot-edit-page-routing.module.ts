@@ -3,7 +3,7 @@ import { RouterModule, Routes } from '@angular/router';
 
 import { LayoutEditorCanDeactivateGuardService } from '@dotcms/app/api/services/guards/layout-editor-can-deactivate-guard.service';
 import { FeaturedFlags } from '@dotcms/dotcms-models';
-import { DotExperimentExperimentResolver } from '@portlets/dot-experiments/shared/resolvers/dot-experiment-experiment.resolver';
+import { DotExperimentExperimentResolver } from '@dotcms/portlets/dot-experiments/data-access';
 import { DotFeatureFlagResolver } from '@portlets/shared/resolvers/dot-feature-flag-resolver.service';
 
 import { DotEditPageMainComponent } from './main/dot-edit-page-main/dot-edit-page-main.component';
@@ -54,11 +54,13 @@ const dotEditPage: Routes = [
             {
                 path: 'experiments',
                 loadChildren: async () =>
-                    (
-                        await import(
-                            '../dot-experiments/dot-experiments-shell/dot-experiments-shell-routes'
-                        )
-                    ).DotExperimentsShellRoutes
+                    //TODO: move all the core-web/apps/dotcms-ui/src/app/view/components/_common
+                    // folder with components reused in experiments to a Library to
+                    // avoid this circular dependency
+
+                    // eslint-disable-next-line @nrwl/nx/enforce-module-boundaries
+                    (await import('@dotcms/portlets/dot-experiments/portlet'))
+                        .DotExperimentsPortletRoutes
             }
         ]
     },
