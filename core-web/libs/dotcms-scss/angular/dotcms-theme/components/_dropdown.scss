@@ -137,7 +137,13 @@ p-dropdown.ng-dirty.ng-invalid > .p-dropdown {
     background-color: rgba(63, 81, 181, 0.16);
 }
 
-.p-dropdown-sm .p-dropdown .p-dropdown-label {
+.p-dropdown-sm .p-dropdown-label.p-inputtext {
     font-size: $font-size-sm;
-    padding: $spacing-1 $spacing-2;
+    padding: 0 0 0 $spacing-2;
+    max-width: 10rem;
+}
+
+.p-dropdown-sm .p-dropdown-label.p-inputtext .p-dropdown-label-empty {
+    width: 0;
+    padding: 0;
 }

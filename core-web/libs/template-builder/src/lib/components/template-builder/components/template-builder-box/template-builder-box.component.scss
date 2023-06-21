@@ -62,23 +62,12 @@ p-dropdown {
             flex-direction: row-reverse; // this allows having the plus icon at the left of the placeholder
             border: none;
             background: none;
-            font-size: $spacing-2;
+            font-size: $font-size-xs;
             margin-left: $spacing-4;
             padding: $spacing-2;
         }
         .p-dropdown:hover {
             background: $color-palette-primary-200;
-        }
-        .p-dropdown-label.p-inputtext {
-            font-size: $font-size-sm;
-            color: $black;
-            padding: 0 0 0 $spacing-2;
-            max-width: 10rem;
-
-            &.p-dropdown-label-empty {
-                width: 0;
-                padding: 0;
-            }
         }
         .p-dropdown-trigger-icon {
             color: $color-palette-primary;
