@@ -1,5 +1,7 @@
 import { GridStackNode, GridStackOptions, GridStackWidget } from 'gridstack';
 
+import { DotLayoutSideBar } from '@dotcms/dotcms-models';
+
 /**
  * @description This is the model for using custom data on the GridStackOptions
  *
@@ -96,19 +98,7 @@ export enum TemplateBuilderBoxSize {
 export interface DotTemplateLayoutProperties {
     header: boolean;
     footer: boolean;
-    sidebar: DotTemplateSidebarProperties;
-}
-
-/**
- * @description This interface is used to define the properties of the template sidebar
- *
- * @export
- * @interface DotTemplateSidebarProperties
- */
-export interface DotTemplateSidebarProperties {
-    location?: string;
-    containers?: DotTemplateBuilderContainer[];
-    width?: string;
+    sidebar: DotLayoutSideBar;
 }
 
 /**

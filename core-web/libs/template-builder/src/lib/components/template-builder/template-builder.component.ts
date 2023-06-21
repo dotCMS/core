@@ -27,7 +27,7 @@ import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { filter, take, tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotContainer, DotLayout } from '@dotcms/dotcms-models';
+import { DotContainer, DotLayout, DotLayoutSideBar } from '@dotcms/dotcms-models';
 
 import { colIcon, rowIcon } from './assets/icons';
 import { AddStyleClassesDialogComponent } from './components/add-style-classes-dialog/add-style-classes-dialog.component';
@@ -36,8 +36,7 @@ import {
     DotGridStackNode,
     DotGridStackWidget,
     DotTemplateBuilderState,
-    DotTemplateLayoutProperties,
-    DotTemplateSidebarProperties
+    DotTemplateLayoutProperties
 } from './models/models';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import {
@@ -68,7 +67,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
             sidebar: this.templateLayout.sidebar
         };
     }
-    get sidebarProperties(): DotTemplateSidebarProperties {
+    get sidebarProperties(): DotLayoutSideBar {
         return this.templateLayout.sidebar;
     }
 
