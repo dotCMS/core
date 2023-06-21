@@ -55,7 +55,8 @@ describe('TemplateBuilderRowComponent', () => {
                 DotTemplateBuilderStore,
                 DialogService,
                 DotAddStyleClassesDialogStore
-            ]
+            ],
+            teardown: { destroyAfterEach: false }
         }).compileComponents();
 
         fixture = TestBed.createComponent(HostComponent);
