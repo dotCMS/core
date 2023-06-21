@@ -187,13 +187,15 @@ export class DotTemplatesService {
     }
 
     private addContainerInfo(template: DotTemplate): DotTemplate {
-        for (const row of template.layout.body.rows) {
-            for (const column of row.columns) {
-                for (const container of column.containers) {
-                    container.title = template.containers[container.identifier].title;
-                }
+        if (template?.layout?.body?.rows)
+            for (const row of template.layout.body.rows) {
+                if (row.columns)
+                    for (const column of row.columns) {
+                        for (const container of column.containers) {
+                            container.title = template.containers[container.identifier].title;
+                        }
+                    }
             }
-        }
 
         return template;
     }
