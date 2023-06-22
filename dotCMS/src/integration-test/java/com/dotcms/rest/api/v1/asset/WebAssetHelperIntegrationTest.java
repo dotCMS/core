@@ -11,6 +11,7 @@ import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.rest.api.v1.asset.view.AssetView;
+import com.dotcms.rest.api.v1.asset.view.DeleteAssetView;
 import com.dotcms.rest.api.v1.asset.view.FolderView;
 import com.dotcms.rest.api.v1.asset.view.WebAssetView;
 import com.dotcms.util.IntegrationTestInitService;
@@ -326,7 +327,7 @@ public class WebAssetHelperIntegrationTest {
     }
 
     /**
-     * Method to test : {@link WebAssetHelper#lang(String, boolean)}
+     * Method to test : {@link WebAssetHelper#parseLang(String, boolean)}
      * Given Scenario: We're testing various scenarios here,
      *       First we test sending an invalid lang expect a default lang
      *       Send an empty lang and expect an empty optional
@@ -338,34 +339,72 @@ public class WebAssetHelperIntegrationTest {
      */
     @Test
     public void Test_Parse_Language(){
+
         final WebAssetHelper webAssetHelper = WebAssetHelper.newInstance();
 
         //Upon invalid language when defaultLangFallback is true, we should get the default language back
-        final Optional<Language> def = webAssetHelper.lang("",true);
+        final Optional<Language> def = webAssetHelper.parseLang("",true);
         Assert.assertFalse(def.isEmpty());
         Assert.assertEquals(def.get(), defaultLanguage);
 
         //Upon invalid language when defaultLangFallback is false, we should get an empty optional
-        final Optional<Language> empty1 = webAssetHelper.lang("",false);
+        final Optional<Language> empty1 = webAssetHelper.parseLang("",false);
         Assert.assertTrue(empty1.isEmpty());
 
         final Language countryLessLang = new LanguageDataGen().languageCode("lol").languageName("lol").countryCode("").country("").nextPersisted();
         final Language language1 = new LanguageDataGen().nextPersisted();
         try {
             //Test upon passing a language lacking country code nothing breaks
-            final Optional<Language> countryLess = webAssetHelper.lang(
+            final Optional<Language> countryLess = webAssetHelper.parseLang(
                     countryLessLang.getLanguageCode(), false);
             Assert.assertFalse(countryLess.isEmpty());
             Assert.assertEquals(countryLess.get(), countryLessLang);
 
             //Test that upon passing a valid language with country  we get the same language back
-            final Optional<Language> fullLang = webAssetHelper.lang(language1.toString(), false);
+            final Optional<Language> fullLang = webAssetHelper.parseLang(language1.toString(), false);
             Assert.assertEquals(fullLang.get(), language1);
 
         }finally {
             LanguageDataGen.remove(countryLessLang);
             LanguageDataGen.remove(language1);
         }
+
+    }
+
+    /**
+     * Method to test : {@link WebAssetHelper#delete(AssetsRequestForm, User)}
+     * Given Scenario: We submit a valid path to delete a file
+     * Expected Result: We get the asset content back as proof of success
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void Test_Delete_File_Then_Delete_Folder() throws DotDataException, DotSecurityException {
+        final WebAssetHelper webAssetHelper = WebAssetHelper.newInstance();
+
+        Folder foo2 = new FolderDataGen().site(host).name("foo2").nextPersisted();
+        Folder bar2 = new FolderDataGen().parent(foo2).name("bar2").nextPersisted();
+
+        new FileAssetDataGen(bar2, testFile).languageId(defaultLanguage.getId()).nextPersisted();
+
+        String assetPath = String.format(ASSET_PATH_TEMPLATE, host.getHostname(), foo2.getName(),
+                bar2.getName(), testFile.getName());
+
+        final AssetsRequestForm deleteAssetForm = AssetsRequestForm.builder()
+                .assetPath(assetPath).language("en_US").live(false)
+                .build();
+        final DeleteAssetView deleteAssetView = webAssetHelper.delete(deleteAssetForm, APILocator.systemUser());
+        Assert.assertEquals(deleteAssetView.assetPath(),assetPath);
+
+       String folderPath = assetPath.replaceFirst(testFile.getName(), "");
+
+        final AssetsRequestForm deleteFolderForm = AssetsRequestForm.builder()
+                .assetPath(folderPath).live(false)
+                .build();
+
+        final DeleteAssetView deleteFolderView = webAssetHelper.delete(deleteFolderForm, APILocator.systemUser());
+        Assert.assertEquals(deleteFolderView.assetPath(),folderPath);
+
 
     }
 

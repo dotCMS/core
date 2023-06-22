@@ -112,4 +112,29 @@ public class WebAssetResource {
         return Response.ok(new WebAssetEntityView(webAssetView)).build();
     }
 
+    @Path("/")
+    @DELETE
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response deleteAsset(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            AssetsRequestForm form
+    ) throws DotSecurityException, DotDataException, IOException {
+
+        final InitDataObject initDataObject = new WebResource.InitBuilder()
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true).init();
+
+        final User user = initDataObject.getUser();
+
+        final WebAssetView webAssetView = helper.delete(form, user);
+        Logger.info(this, String.format("User [%s] is uploading asset for path [%s]", user.getUserId(), form.assetPath()));
+        return Response.ok(new WebAssetEntityView(webAssetView)).build();
+    }
+
+
 }

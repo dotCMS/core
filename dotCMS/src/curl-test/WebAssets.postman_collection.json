@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "76a448cf-fe5d-4edb-9f70-5d04b1388e45",
+		"_postman_id": "b929423c-87c7-4fa0-a725-852e8b439dd4",
 		"name": "WebAssets",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "10041132"
@@ -63,7 +63,8 @@
 						"createfolders",
 						"default"
 					]
-				}
+				},
+				"description": "We're simply creating a folder required by our test"
 			},
 			"response": []
 		},
@@ -138,7 +139,8 @@
 						"fire",
 						"PUBLISH"
 					]
-				}
+				},
+				"description": "Here we're uploading a file into the previously created folder"
 			},
 			"response": []
 		},
@@ -213,7 +215,94 @@
 						"fire",
 						"PUBLISH"
 					]
+				},
+				"description": "We need to verify we can access stuff directly under root folder"
+			},
+			"response": []
+		},
+		{
+			"name": "CreateLanguage",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () { pm.response.to.be.ok });",
+							"",
+							"pm.test(\"languageCode returned\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"languageCode\");",
+							"});",
+							"",
+							"pm.test(\"countryCode returned\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"countryCode\");",
+							"});",
+							"",
+							"pm.test(\"language returned\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"language\");",
+							"});",
+							"",
+							"pm.test(\"country returned\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"country\");",
+							"});",
+							"",
+							"pm.test(\"Expected Language info returned\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.entity.languageCode).to.eql(\"it\");",
+							"    pm.expect(jsonData.entity.countryCode).to.eql(\"IT\");",
+							"    pm.expect(jsonData.entity.language).to.eql(\"Italian\");",
+							"    pm.expect(jsonData.entity.country).to.eql(\"Italy\");",
+							"});"
+						],
+						"type": "text/javascript"
+					}
 				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"languageCode\":\"es\",\n\t\"language\":\"Espanol\", \n\t\"countryCode\":\"CAN\", \n\t\"country\":\"Canada\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v2/languages",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v2",
+						"languages"
+					]
+				},
+				"description": "a valid existing lang will be requied to test trying to access assets under a different lang other than the one they were created with."
 			},
 			"response": []
 		},
@@ -279,7 +368,8 @@
 						"v1",
 						"assets"
 					]
-				}
+				},
+				"description": "This should breing back all sort of information related with the folder we just created and the assets it holds."
 			},
 			"response": []
 		},
@@ -345,7 +435,8 @@
 						"v1",
 						"assets"
 					]
-				}
+				},
+				"description": "Simple test to verify we can lookup folders ending with forward slash"
 			},
 			"response": []
 		},
@@ -430,7 +521,8 @@
 						"v1",
 						"assets"
 					]
-				}
+				},
+				"description": "Test file look up via assetpath"
 			},
 			"response": []
 		},
@@ -514,7 +606,8 @@
 						"v1",
 						"assets"
 					]
-				}
+				},
+				"description": "Here we want to validate that we can access content that lives directly under root folder"
 			},
 			"response": []
 		},
@@ -570,7 +663,363 @@
 						"v1",
 						"assets"
 					]
+				},
+				"description": "Test Accessing non-existing content should give us a 404"
+			},
+			"response": []
+		},
+		{
+			"name": "WebAsset :: Create or Replace Copy",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
 				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": "/Users/fabrizzioaraya/Downloads/tetsujin.jpg"
+						},
+						{
+							"key": "detail",
+							"value": "{\n   \"assetPath\":\"//default/newFolder/tetsujin.jpg\",\n   \"language\":\"en_us\",\n   \"live\":true\n}",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/assets",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"assets"
+					]
+				},
+				"description": "Testing the update"
+			},
+			"response": []
+		},
+		{
+			"name": "WebAsset :: Get File",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"    const contentType = pm.response.headers.find(e => e.key == 'Content-Type');",
+							"    const contentDisposition = pm.response.headers.find(e => e.key == 'Content-Disposition');",
+							"",
+							"    pm.expect(contentType.value).to.eql('application/octet-stream');    ",
+							"    pm.expect(contentDisposition.value.includes('filename=\"tetsujin.jpg\"')).to.be.true;",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n   \"assetPath\":\"//default/newFolder/Tetsujin.jpg\",\n   \"language\":\"en_US\",\n   \"live\":false\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/assets/_download",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"assets",
+						"_download"
+					]
+				},
+				"description": "Accessing/downloading the file via file path"
+			},
+			"response": []
+		},
+		{
+			"name": "WebAsset :: Get File in a Different Lang Expect 404",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 404\", function () {",
+							"    pm.response.to.have.status(404);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n   \"assetPath\":\"//default/newFolder/Tetsujin.jpg\",\n   \"language\":\"es_CAN\",\n   \"live\":false\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/assets/_download",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"assets",
+						"_download"
+					]
+				},
+				"description": "Requesting using a valid path but a different lang"
+			},
+			"response": []
+		},
+		{
+			"name": "WebAsset :: Delete File in a Different Lang Expect 404",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 404\", function () {",
+							"    pm.response.to.have.status(404);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n   \"assetPath\":\"//default/newFolder/Tetsujin.jpg\",\n   \"language\":\"es_CAN\",\n   \"live\":true\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/assets",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"assets"
+					]
+				},
+				"description": "Delete using a valid path but a different lang should also give you .404"
+			},
+			"response": []
+		},
+		{
+			"name": "WebAsset :: Delete File Expect Success",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n   \"assetPath\":\"//default/newFolder/Tetsujin.jpg\",\n   \"language\":\"en_US\",\n   \"live\":true\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/assets",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"assets"
+					]
+				},
+				"description": "Simple delete file test"
+			},
+			"response": []
+		},
+		{
+			"name": "WebAsset :: Delete Folder Expect Succes",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n   \"assetPath\":\"//default/newFolder/\"   \n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/assets",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"assets"
+					]
+				},
+				"description": "Delete folder"
 			},
 			"response": []
 		}

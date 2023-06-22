@@ -9,6 +9,7 @@ import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.rest.api.v1.asset.view.AssetVersionsView;
 import com.dotcms.rest.api.v1.asset.view.AssetView;
+import com.dotcms.rest.api.v1.asset.view.DeleteAssetView;
 import com.dotcms.rest.api.v1.asset.view.FolderView;
 import com.dotcms.rest.api.v1.asset.view.WebAssetView;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
@@ -302,7 +303,7 @@ public class WebAssetHelper {
                 .showContent(true);
 
         if (form.language().isPresent()) {
-            final Optional<Language> language = lang(form.language().get(),false);
+            final Optional<Language> language = parseLang(form.language().get(),false);
             if (language.isEmpty()) {
                 throw new IllegalArgumentException(
                         String.format("Language [%s] not found.", form.language().get()));
@@ -339,6 +340,16 @@ public class WebAssetHelper {
     }
 
 
+    /**
+     * Saves or updates an asset given the asset path that will be used to locate it
+     * @param request
+     * @param form
+     * @param user
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws IOException
+     */
     public WebAssetView saveUpdateAsset(final HttpServletRequest request, final FileUploadData form,
             final User user) throws DotDataException, DotSecurityException, IOException {
 
@@ -348,7 +359,7 @@ public class WebAssetHelper {
         final FileUploadDetail detail = form.getDetail();
         final String assetPath = detail.getAssetPath();
         final boolean live = toBooleanDefaultIfNull(detail.getLive(),true);
-        final Optional<Language> lang = lang(detail.getLanguage(), true);
+        final Optional<Language> lang = parseLang(detail.getLanguage(), true);
 
         if(lang.isEmpty()){
             throw new IllegalArgumentException("Unable to determine what language for asset.");
@@ -418,10 +429,6 @@ public class WebAssetHelper {
                         contentletAPI.unarchive(asset, user, false);
                     }
 
-                    if(asset.isLocked()){
-                        contentletAPI.unlock(asset, user, false);
-                    }
-
                     final Contentlet checkout = contentletAPI.checkout(asset.getInode(), user, false);
 
                     updateFileAsset(tempFile.file, folder, lang.get(), checkout);
@@ -436,6 +443,15 @@ public class WebAssetHelper {
         }
     }
 
+    /**
+     * Deletes an asset given the asset path that will be used to locate it
+     * @param form
+     * @param user
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws IOException
+     */
     void disposeTempFile(final DotTempFile tempFile){
         final File file = tempFile.file;
         try {
@@ -458,6 +474,16 @@ public class WebAssetHelper {
         return contentletAPI.checkin(checkout, user, false);
     }
 
+    /**
+     * Creates a new file asset with the given file, folder and language
+     * So it can be saved within dotCMS
+     * @param file
+     * @param folder
+     * @param lang
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     Contentlet makeFileAsset(final File file, final Folder folder, Language lang)
             throws DotDataException, DotSecurityException {
         final Contentlet contentlet = new Contentlet();
@@ -466,6 +492,14 @@ public class WebAssetHelper {
     }
 
 
+    /**
+     * Updates a file asset with the given file, folder and language
+     * @param file
+     * @param folder
+     * @param lang
+     * @param contentlet
+     * @return
+     */
     Contentlet updateFileAsset(final File file, final Folder folder, final Language lang, final Contentlet contentlet){
         final String name = file.getName();
         contentlet.setProperty(FileAssetAPI.TITLE_FIELD, name);
@@ -476,7 +510,93 @@ public class WebAssetHelper {
         return contentlet;
     }
 
-    Optional<Language> lang(final String language, final boolean defaultLangFallback) {
+    /**
+     * Delete an asset
+     * @param form
+     * @param user
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    public DeleteAssetView delete(final AssetsRequestForm form, final User user)
+            throws DotDataException, DotSecurityException {
+        final ResolvedAssetAndPath assetAndPath = AssetPathResolver.newInstance()
+                .resolve(form.assetPath(), user);
+
+        final Host host = assetAndPath.resolvedHost();
+        final Folder folder = assetAndPath.resolvedFolder();
+        final String assetName = assetAndPath.asset();
+
+        final List<Treeable> assets;
+
+        final Builder builder = BrowserQuery.builder();
+        builder.showDotAssets(false)
+                .withUser(user)
+                .showFiles(true)
+                .showFolders(true)
+                .showArchived(false)
+                .showWorking(true)
+                .showLinks(false)
+                .showDotAssets(false)
+                .showImages(true)
+                .showContent(true);
+
+        if (null != assetName) {
+
+            if (form.language().isEmpty() || form.live().isEmpty()) {
+                throw new IllegalArgumentException(
+                        "[Language] and [live] params are required when attempting to delete a file asset. Please notice that folders must end with a slash (/).");
+            }
+
+            final Optional<Language> language = parseLang(form.language().get(), false);
+            if (language.isEmpty()) {
+                throw new IllegalArgumentException(
+                        String.format("Language [%s] not found.", form.language().get()));
+            }
+            builder.withLanguageId(language.get().getId());
+
+            final boolean live = BooleanUtils.toBoolean(form.live().get());
+            builder.showWorking(!live);
+
+            if (folder.isSystemFolder()) {
+                builder.withHostOrFolderId(host.getIdentifier());
+            } else {
+                builder.withHostOrFolderId(folder.getInode());
+            }
+            builder.withFileName(assetName);
+            final List<Treeable> folderContent = browserAPI.getFolderContentList(builder.build());
+            assets = folderContent.stream().filter(Contentlet.class::isInstance)
+                    .collect(Collectors.toList());
+            if (assets.isEmpty()) {
+                throw new NotFoundInDbException(String.format(" Asset [%s] with language [%s] and status live [%b] was not found", assetName, form.language().get(), live));
+            }
+
+            final Contentlet asset = (Contentlet) assets.get(0);
+            final FileAsset fileAsset = fileAssetAPI.fromContentlet(asset);
+
+            if (!fileAsset.isArchived()) {
+                contentletAPI.archive(fileAsset, user, false);
+            }
+            contentletAPI.delete(fileAsset, user, false);
+            return DeleteAssetView.builder().assetPath(form.assetPath()).live(live)
+                    .language(form.language().get()).build();
+        } else {
+            if (folder.isSystemFolder()) {
+                throw new IllegalArgumentException("Unable to delete system folder.");
+            } else {
+                folderAPI.delete(folder, user, false);
+            }
+            return DeleteAssetView.builder().assetPath(form.assetPath()).build();
+        }
+    }
+
+    /**
+     * Parses the language param and returns the respective Language object
+     * @param language the language param
+     * @param defaultLangFallback if true, it will return the default language if the language param is not found
+     * @return
+     */
+    Optional<Language> parseLang(final String language, final boolean defaultLangFallback) {
         Language resolvedLang = Try.of(() -> {
                     //Typically locales are separated by a dash, but our Language API uses an underscore in the toString method
                     //So here I'm preparing for both cases
@@ -491,7 +611,7 @@ public class WebAssetHelper {
         if (defaultLangFallback  && (null == resolvedLang || resolvedLang.getId() == 0)) {
             resolvedLang = languageAPI.getDefaultLanguage();
             Logger.warn(this,
-                    String.format("Unable to  get language from param [%s]. Defaulting to [%s].",
+                    String.format("Unable to get language from param [%s]. Defaulting to [%s].",
                             language, resolvedLang));
         }
         return Optional.ofNullable(resolvedLang);
