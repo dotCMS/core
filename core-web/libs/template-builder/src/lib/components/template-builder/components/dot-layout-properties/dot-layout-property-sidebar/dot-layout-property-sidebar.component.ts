@@ -6,6 +6,7 @@ import { DotLayoutSideBar } from '@dotcms/dotcms-models';
 import { DotLayoutPropertiesItemComponent } from '../dot-layout-properties-item/dot-layout-properties-item.component';
 
 @Component({
+    // eslint-disable-next-line @angular-eslint/component-selector
     selector: 'dot-layout-property-sidebar',
     templateUrl: './dot-layout-property-sidebar.component.html',
     providers: [

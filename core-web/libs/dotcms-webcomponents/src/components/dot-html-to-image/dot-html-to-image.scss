@@ -12,7 +12,7 @@ dot-html-to-image {
     }
 
     mwc-circular-progress {
-        --mdc-theme-primary: var(--color-main);
+        --mdc-theme-primary: $color-palette-primary-500;
         position: absolute;
         z-index: 1;
     }

@@ -9,7 +9,6 @@ import { ConfirmPopup } from 'primeng/confirmpopup';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
 
 import { DotContainersService, DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipeModule } from '@dotcms/ui';
 import { DotContainersServiceMock, mockMatchMedia } from '@dotcms/utils-testing';
 
 import { TemplateBuilderBoxComponent } from './template-builder-box.component';
@@ -29,8 +28,7 @@ describe('TemplateBuilderBoxComponent', () => {
             ButtonModule,
             ScrollPanelModule,
             RemoveConfirmDialogComponent,
-            NoopAnimationsModule,
-            DotMessagePipeModule
+            NoopAnimationsModule
         ],
         providers: [
             {
@@ -50,7 +48,8 @@ describe('TemplateBuilderBoxComponent', () => {
             {
                 hostProps: {
                     width: 10,
-                    items: CONTAINERS_DATA_MOCK
+                    items: CONTAINERS_DATA_MOCK,
+                    showEditStyleButton: true
                 }
             }
         );
@@ -96,6 +95,15 @@ describe('TemplateBuilderBoxComponent', () => {
         expect(secondTemplate).toBeNull();
     });
 
+    it('should only show the specified actions on actions input', () => {
+        spectator.setInput('actions', ['add', 'delete']); // Here we hide the edit button
+        spectator.detectComponentChanges();
+
+        const paletteButton = spectator.query(byTestId('box-style-class-button'));
+
+        expect(paletteButton).toBeFalsy();
+    });
+
     it('should show all buttons for small variant', () => {
         spectator.setInput('width', 1);
         spectator.detectComponentChanges();
@@ -130,8 +138,14 @@ describe('TemplateBuilderBoxComponent', () => {
     it('should trigger deleteContainer when click on container trash button', () => {
         const deleteContainerMock = jest.spyOn(spectator.component.deleteContainer, 'emit');
         const containerTrashButton = spectator.query(byTestId('btn-trash-container'));
+        const removeContainerButton = containerTrashButton.querySelector(
+            '[data-testId="btn-remove-item"]'
+        );
 
-        spectator.dispatchFakeEvent(containerTrashButton, 'onClick');
+        spectator.dispatchFakeEvent(removeContainerButton, 'onClick');
+        spectator.detectChanges();
+        const confirmButton = spectator.query('.p-confirm-popup-accept');
+        spectator.click(confirmButton);
 
         expect(deleteContainerMock).toHaveBeenCalled();
     });

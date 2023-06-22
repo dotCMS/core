@@ -1,3 +1,5 @@
+import { describe, expect, it } from '@jest/globals';
+
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule, UntypedFormControl, UntypedFormGroup } from '@angular/forms';
@@ -13,6 +15,7 @@ import { DotLayoutPropertiesComponent } from './dot-layout-properties.component'
 import { DotLayoutSidebarModule } from './dot-layout-property-sidebar/dot-layout-property-sidebar.module';
 
 @Component({
+    // eslint-disable-next-line @angular-eslint/component-selector
     selector: 'dot-test-host-component',
     template: `<form [formGroup]="group">
         <dot-layout-properties></dot-layout-properties>
@@ -59,7 +62,7 @@ describe('DotLayoutPropertiesComponent', () => {
         de = fixture.debugElement;
     });
 
-    xit('should modify the group model', () => {
+    it.skip('should modify the group model', () => {
         expect(comp.group).toBeDefined();
         expect(de).toBeDefined();
     });

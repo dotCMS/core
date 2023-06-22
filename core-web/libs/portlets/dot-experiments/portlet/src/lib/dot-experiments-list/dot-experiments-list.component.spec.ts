@@ -15,12 +15,16 @@ import { ButtonModule } from 'primeng/button';
 import { ConfirmPopupModule } from 'primeng/confirmpopup';
 import { SkeletonModule } from 'primeng/skeleton';
 
-import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus, DotExperimentStatusList } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
-import { DotIconModule, DotMessagePipe, DotMessagePipeModule } from '@dotcms/ui';
+import {
+    DotIconModule,
+    DotMessagePipeModule,
+    DotMessagePipe,
+    UiDotIconButtonModule
+} from '@dotcms/ui';
 import {
     ActivatedRouteListStoreMock,
     DotExperimentsStoreMock,

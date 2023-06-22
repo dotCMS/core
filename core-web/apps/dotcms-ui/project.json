@@ -35,6 +35,11 @@
                     }
                 ],
                 "styles": [
+                    {
+                        "input": "libs/dotcms-scss/shared/variables.css",
+                        "inject": true,
+                        "bundleName": "variables"
+                    },
                     "libs/dotcms-scss/angular/styles.scss",
                     "node_modules/primeicons/primeicons.css",
                     "node_modules/primeicons/primeicons.css",
@@ -152,7 +157,6 @@
             "executor": "@storybook/angular:build-storybook",
             "outputs": ["{options.outputPath}"],
             "options": {
-                "deleteOutputPath": false,
                 "outputDir": "dist-docs",
                 "configDir": "apps/dotcms-ui/.storybook",
                 "browserTarget": "dotcms-ui:build",

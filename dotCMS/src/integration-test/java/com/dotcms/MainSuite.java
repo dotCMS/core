@@ -49,6 +49,8 @@ import com.dotcms.experiments.business.ExperimentAPIImpIntegrationTest;
 import com.dotcms.experiments.business.web.ExperimentWebAPIImplIntegrationTest;
 import com.dotcms.filters.interceptor.meta.MetaWebInterceptorTest;
 import com.dotcms.graphql.DotGraphQLHttpServletTest;
+import com.dotcms.integritycheckers.ContentFileAssetIntegrityCheckerTest;
+import com.dotcms.integritycheckers.ContentPageIntegrityCheckerTest;
 import com.dotcms.integritycheckers.HostIntegrityCheckerTest;
 import com.dotcms.integritycheckers.IntegrityUtilTest;
 import com.dotcms.junit.MainBaseSuite;
@@ -648,12 +650,13 @@ import org.junit.runners.Suite.SuiteClasses;
 //        AnalyticsAPIImplTest.class,
 //        AccessTokenRenewJobTest.class,
         SiteViewPaginatorIntegrationTest.class,
-        AssetPathResolverImplIntegrationTest.class,
         CMSUrlUtilIntegrationTest.class,
-        HostFactoryImplTest.class,
+        HostFactoryImplTest.class,        
+        CMSUrlUtilTest.class,
+        ContentFileAssetIntegrityCheckerTest.class,
+        ContentPageIntegrityCheckerTest.class,
         AssetPathResolverImplIntegrationTest.class,
-        WebAssetHelperIntegrationTest.class,
-        CMSUrlUtilTest.class
+        WebAssetHelperIntegrationTest.class  
 })
 
 public class MainSuite {
