@@ -29,7 +29,18 @@ describe('DotTemplateBuilderStore', () => {
         service = TestBed.inject(DotTemplateBuilderStore);
 
         // Reset the state because is manipulated by reference
-        service.init(GRIDSTACK_DATA_MOCK);
+        service.init({
+            items: GRIDSTACK_DATA_MOCK,
+            layoutProperties: {
+                header: true,
+                footer: true,
+                sidebar: {
+                    location: 'left',
+                    width: 'small',
+                    containers: []
+                }
+            }
+        });
 
         // Get the initial state
         service.items$.pipe(take(1)).subscribe((items) => {
@@ -201,7 +212,14 @@ describe('DotTemplateBuilderStore', () => {
             }
         ];
 
-        service.setState({ items: GRIDSTACK_DATA_MOCK });
+        service.setState({
+            items: GRIDSTACK_DATA_MOCK,
+            layoutProperties: {
+                footer: false,
+                header: false,
+                sidebar: {}
+            }
+        });
 
         const affectedColumns: DotGridStackNode[] = [
             {
@@ -251,7 +269,14 @@ describe('DotTemplateBuilderStore', () => {
             }
         ];
 
-        service.setState({ items: GRIDSTACK_DATA_MOCK });
+        service.setState({
+            items: GRIDSTACK_DATA_MOCK,
+            layoutProperties: {
+                footer: false,
+                header: false,
+                sidebar: {}
+            }
+        });
 
         const affectedColumn: DotGridStackNode = {
             x: 1,
@@ -286,6 +311,49 @@ describe('DotTemplateBuilderStore', () => {
             const row = items.find((item) => item.id === parentRow.id);
 
             expect(row?.subGridOpts?.children).not.toContain(columnToDelete);
+        });
+    });
+
+    it('should update layout properties', () => {
+        service.updateLayoutProperties({
+            header: true,
+            footer: true,
+            sidebar: { location: 'left' }
+        });
+
+        service.layoutProperties$.subscribe((layoutProperties) => {
+            expect(layoutProperties).toEqual({
+                header: true,
+                footer: true,
+                sidebar: { location: 'left' }
+            });
+        });
+    });
+
+    it('should update sidebar width properties', () => {
+        service.updateSidebarWidth('large');
+
+        service.layoutProperties$.subscribe((layoutProperties) => {
+            expect(layoutProperties.sidebar).toEqual({
+                location: 'left',
+                width: 'large'
+            });
+        });
+    });
+
+    it('should add a container to the sidebar', () => {
+        service.addSidebarContainer(mockContainer);
+        service.vm$.subscribe(({ layoutProperties }) => {
+            expect(layoutProperties.sidebar.containers).toContain(mockContainer);
+        });
+    });
+
+    it('should delete a container from the sidebar', () => {
+        service.addSidebarContainer(mockContainer);
+        service.vm$.subscribe(({ layoutProperties }) => {
+            expect(layoutProperties.sidebar.containers).toContain(mockContainer);
+            service.deleteSidebarContainer(0);
+            expect(layoutProperties.sidebar.containers).not.toContain(mockContainer);
         });
     });
 

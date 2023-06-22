@@ -13,7 +13,6 @@ import { ConfirmationService } from 'primeng/api';
 import { Menu, MenuModule } from 'primeng/menu';
 
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
@@ -43,6 +42,7 @@ import {
     StringUtils
 } from '@dotcms/dotcms-js';
 import { DotPage } from '@dotcms/dotcms-models';
+import { UiDotIconButtonModule } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     dotcmsContentletMock,
