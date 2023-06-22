@@ -1,7 +1,7 @@
 import { v4 as uuid } from 'uuid';
 
-import { DotLayoutBody } from '@dotcms/dotcms-models';
-import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotLayoutBody, DotTemplate } from '@dotcms/dotcms-models';
+import { containersMapMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotGridStackWidget, DotTemplateBuilderContainer } from '../models/models';
 
@@ -19,21 +19,25 @@ export const GRIDSTACK_DATA_MOCK: DotGridStackWidget[] = [
     }
 ];
 
+export const DEFAULT_CONTAINER_IDENTIFIER = '//demo.dotcms.com/application/containers/default/';
+
+export const BANNER_CONTAINER_IDENTIFIER = '//demo.dotcms.com/application/containers/banner/';
+
 export const CONTAINERS_DATA_MOCK = [
     {
-        identifier: '//demo.dotcms.com/application/containers/banner/',
+        identifier: BANNER_CONTAINER_IDENTIFIER,
         uuid: '1'
     },
     {
-        identifier: '//demo.dotcms.com/application/containers/banner/',
+        identifier: BANNER_CONTAINER_IDENTIFIER,
         uuid: '2'
     },
     {
-        identifier: '//demo.dotcms.com/application/containers/banner/',
+        identifier: BANNER_CONTAINER_IDENTIFIER,
         uuid: '3'
     },
     {
-        identifier: '//demo.dotcms.com/application/containers/banner/',
+        identifier: BANNER_CONTAINER_IDENTIFIER,
         uuid: '4'
     }
 ];
@@ -45,7 +49,7 @@ export const MINIMAL_DATA_MOCK: DotLayoutBody = {
                 {
                     containers: [
                         {
-                            identifier: '//demo.dotcms.com/application/containers/banner/',
+                            identifier: BANNER_CONTAINER_IDENTIFIER,
                             uuid: '1'
                         },
                         {
@@ -70,7 +74,7 @@ export const FULL_DATA_MOCK: DotLayoutBody = {
                 {
                     containers: [
                         {
-                            identifier: '//demo.dotcms.com/application/containers/banner/',
+                            identifier: BANNER_CONTAINER_IDENTIFIER,
                             uuid: '1'
                         }
                     ],
@@ -86,7 +90,7 @@ export const FULL_DATA_MOCK: DotLayoutBody = {
                 {
                     containers: [
                         {
-                            identifier: '//demo.dotcms.com/application/containers/default/',
+                            identifier: DEFAULT_CONTAINER_IDENTIFIER,
                             uuid: '1'
                         }
                     ],
@@ -102,7 +106,7 @@ export const FULL_DATA_MOCK: DotLayoutBody = {
                 {
                     containers: [
                         {
-                            identifier: '//demo.dotcms.com/application/containers/default/',
+                            identifier: DEFAULT_CONTAINER_IDENTIFIER,
                             uuid: '2'
                         }
                     ],
@@ -113,7 +117,7 @@ export const FULL_DATA_MOCK: DotLayoutBody = {
                 {
                     containers: [
                         {
-                            identifier: '//demo.dotcms.com/application/containers/default/',
+                            identifier: DEFAULT_CONTAINER_IDENTIFIER,
                             uuid: '3'
                         }
                     ],
@@ -124,7 +128,7 @@ export const FULL_DATA_MOCK: DotLayoutBody = {
                 {
                     containers: [
                         {
-                            identifier: '//demo.dotcms.com/application/containers/default/',
+                            identifier: DEFAULT_CONTAINER_IDENTIFIER,
                             uuid: '4'
                         }
                     ],
@@ -135,7 +139,7 @@ export const FULL_DATA_MOCK: DotLayoutBody = {
                 {
                     containers: [
                         {
-                            identifier: '//demo.dotcms.com/application/containers/default/',
+                            identifier: DEFAULT_CONTAINER_IDENTIFIER,
                             uuid: '5'
                         }
                     ],
@@ -151,7 +155,7 @@ export const FULL_DATA_MOCK: DotLayoutBody = {
                 {
                     containers: [
                         {
-                            identifier: '//demo.dotcms.com/application/containers/default/',
+                            identifier: DEFAULT_CONTAINER_IDENTIFIER,
                             uuid: '6'
                         }
                     ],
@@ -162,7 +166,7 @@ export const FULL_DATA_MOCK: DotLayoutBody = {
                 {
                     containers: [
                         {
-                            identifier: '//demo.dotcms.com/application/containers/default/',
+                            identifier: DEFAULT_CONTAINER_IDENTIFIER,
                             uuid: '7'
                         }
                     ],
@@ -173,7 +177,7 @@ export const FULL_DATA_MOCK: DotLayoutBody = {
                 {
                     containers: [
                         {
-                            identifier: '//demo.dotcms.com/application/containers/default/',
+                            identifier: DEFAULT_CONTAINER_IDENTIFIER,
                             uuid: '8'
                         }
                     ],
@@ -189,7 +193,7 @@ export const FULL_DATA_MOCK: DotLayoutBody = {
                 {
                     containers: [
                         {
-                            identifier: '//demo.dotcms.com/application/containers/default/',
+                            identifier: DEFAULT_CONTAINER_IDENTIFIER,
                             uuid: '9'
                         }
                     ],
@@ -205,7 +209,7 @@ export const FULL_DATA_MOCK: DotLayoutBody = {
                 {
                     containers: [
                         {
-                            identifier: '//demo.dotcms.com/application/containers/default/',
+                            identifier: DEFAULT_CONTAINER_IDENTIFIER,
                             uuid: '10'
                         }
                     ],
@@ -308,6 +312,42 @@ export const MOCK_STYLE_CLASSES_FILE = {
         'text-center',
         'text-justify'
     ]
+};
+
+export const CONTAINER_MAP_MOCK = {
+    [DEFAULT_CONTAINER_IDENTIFIER]: {
+        title: 'Default',
+        identifier: DEFAULT_CONTAINER_IDENTIFIER
+    },
+    [BANNER_CONTAINER_IDENTIFIER]: {
+        title: 'Banner',
+        identifier: BANNER_CONTAINER_IDENTIFIER
+    },
+    ...containersMapMock
+};
+
+export const LAYOUT_MOCK = {
+    body: FULL_DATA_MOCK,
+    footer: null,
+    header: null,
+    sidebar: null,
+    title: 'A Title',
+    width: null
+};
+
+export const TEMPLATE_MOCK: DotTemplate = {
+    anonymous: null,
+    canEdit: true,
+    friendlyName: 'Story Template',
+    hasLiveVersion: true,
+    identifier: '1da7b620-e8fc-43f0-9e9c-4453a8f946c8',
+    inode: '123',
+    name: 'templateName',
+    type: '',
+    versionType: '',
+    working: true,
+    layout: LAYOUT_MOCK,
+    containers: CONTAINER_MAP_MOCK
 };
 
 const noop = () => {

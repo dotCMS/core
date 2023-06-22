@@ -11,7 +11,12 @@ import { DotContainersServiceMock } from '@dotcms/utils-testing';
 
 import { TemplateBuilderBoxComponent } from './template-builder-box.component';
 
-import { DOT_MESSAGE_SERVICE_TB_MOCK } from '../../utils/mocks';
+import {
+    BANNER_CONTAINER_IDENTIFIER,
+    CONTAINER_MAP_MOCK,
+    DEFAULT_CONTAINER_IDENTIFIER,
+    DOT_MESSAGE_SERVICE_TB_MOCK
+} from '../../utils/mocks';
 import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-confirm-dialog.component';
 
 export default {
@@ -44,14 +49,10 @@ const Template: Story<TemplateBuilderBoxComponent> = (args: TemplateBuilderBoxCo
     props: args
 });
 
-const items = [
-    { identifier: 'demo.dotcms.com' },
-    { identifier: 'System Container' },
-    { identifier: 'demo.dotcms.com' },
-    { identifier: 'demo.dotcms.com' },
-    { identifier: 'demo.dotcms.com' },
-    { identifier: 'demo.dotcms.com' }
-];
+const DEFAULT_ITEM = { identifier: DEFAULT_CONTAINER_IDENTIFIER };
+const BANNER_ITEM = { identifier: BANNER_CONTAINER_IDENTIFIER };
+
+const items = [DEFAULT_ITEM, BANNER_ITEM, DEFAULT_ITEM, DEFAULT_ITEM, DEFAULT_ITEM, DEFAULT_ITEM];
 
 export const Small = Template.bind({});
 
@@ -59,15 +60,20 @@ export const Medium = Template.bind({});
 
 export const Large = Template.bind({});
 
+const containerMap = CONTAINER_MAP_MOCK;
+
 Small.args = {
     width: 1,
-    items
+    items,
+    containerMap
 };
 Medium.args = {
     width: 3,
-    items
+    items,
+    containerMap
 };
 Large.args = {
     width: 10,
-    items
+    items,
+    containerMap
 };

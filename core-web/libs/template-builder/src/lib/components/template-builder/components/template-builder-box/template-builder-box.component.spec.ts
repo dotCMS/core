@@ -13,7 +13,11 @@ import { DotContainersServiceMock, mockMatchMedia } from '@dotcms/utils-testing'
 
 import { TemplateBuilderBoxComponent } from './template-builder-box.component';
 
-import { CONTAINERS_DATA_MOCK, DOT_MESSAGE_SERVICE_TB_MOCK } from '../../utils/mocks';
+import {
+    CONTAINER_MAP_MOCK,
+    CONTAINERS_DATA_MOCK,
+    DOT_MESSAGE_SERVICE_TB_MOCK
+} from '../../utils/mocks';
 import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-confirm-dialog.component';
 
 describe('TemplateBuilderBoxComponent', () => {
@@ -44,11 +48,12 @@ describe('TemplateBuilderBoxComponent', () => {
 
     beforeEach(() => {
         spectator = createHost(
-            `<dotcms-template-builder-box [width]="width" [items]="items"> </dotcms-template-builder-box>`,
+            `<dotcms-template-builder-box [width]="width" [items]="items" [containerMap]="containerMap"> </dotcms-template-builder-box>`,
             {
                 hostProps: {
                     width: 10,
                     items: CONTAINERS_DATA_MOCK,
+                    containerMap: CONTAINER_MAP_MOCK,
                     showEditStyleButton: true
                 }
             }

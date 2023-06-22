@@ -16,8 +16,9 @@ import { ButtonModule } from 'primeng/button';
 import { DropdownModule } from 'primeng/dropdown';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
 
+import { DotContainersService } from '@dotcms/data-access';
 import { DotMessageService } from '@dotcms/data-access';
-import { DotContainer } from '@dotcms/dotcms-models';
+import { DotContainer, DotContainerMap } from '@dotcms/dotcms-models';
 import { DotContainerOptionsDirective } from '@dotcms/ui';
 
 import { DotTemplateBuilderContainer, TemplateBuilderBoxSize } from '../../models/models';
@@ -59,6 +60,7 @@ export class TemplateBuilderBoxComponent implements OnChanges {
     @Input() items: DotTemplateBuilderContainer[];
 
     @Input() width = 1;
+    @Input() containerMap: DotContainerMap;
     @Input() actions = ['add', 'delete', 'edit'];
 
     boxVariant = TemplateBuilderBoxSize.small;

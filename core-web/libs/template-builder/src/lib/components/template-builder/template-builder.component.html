@@ -73,6 +73,7 @@
                     >
                         <dotcms-template-builder-box
                             class="grid-stack-item-content"
+                            [containerMap]="containerMap"
                             [items]="box.containers"
                             [width]="box.w"
                             (deleteColumn)="removeColumn(box, boxElement, row.id)"

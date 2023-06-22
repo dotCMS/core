@@ -1,9 +1,4 @@
-import {
-    CONTAINER_SOURCE,
-    DotContainer,
-    DotContainerEntity,
-    DotContainerMap
-} from '@dotcms/dotcms-models';
+import { CONTAINER_SOURCE, DotContainer, DotContainerMap } from '@dotcms/dotcms-models';
 
 export const dotContainerMapMock = (): DotContainerMap => {
     return {
@@ -78,3 +73,8 @@ export const containersMock: DotContainer[] = Array.from(Array(10).keys()).map((
     parentPermissionable: { hostname: '' },
     identifier: String(number)
 }));
+
+export const containersMapMock: DotContainerMap = containersMock.reduce(
+    (prev: DotContainerMap, curr) => ({ ...prev, [curr.identifier as string]: curr }),
+    {}
+);
