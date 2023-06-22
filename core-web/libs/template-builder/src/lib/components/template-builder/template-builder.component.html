@@ -71,22 +71,18 @@
                         [attr.gs-h]="box.h"
                         data-testId="box"
                     >
-       <dotcms-template-builder-box
-                    class="grid-stack-item-content"
-                    [items]="box.containers"
-                    [width]="box.w"
-                    (deleteColumn)="removeColumn(box, boxElement, row.id)"
-                    (addContainer)="addContainer(box, row.id, $event)"
-                    (deleteContainer)="deleteContainer(box, row.id, $event)"
-                    (editClasses)="editBoxStyleClasses(row.id, box)"
-                ></dotcms-template-builder-box>
+                        <dotcms-template-builder-box
+                            class="grid-stack-item-content"
+                            [items]="box.containers"
+                            [width]="box.w"
+                            (deleteColumn)="removeColumn(box, boxElement, row.id)"
+                            (addContainer)="addContainer(box, row.id, $event)"
+                            (deleteContainer)="deleteContainer(box, row.id, $event)"
+                            (editClasses)="editBoxStyleClasses(row.id, box)"
+                        ></dotcms-template-builder-box>
                     </div>
                 </div>
             </dotcms-template-builder-row>
-
-         
-            </div>
-
         </div>
     </div>
     <dotcms-template-builder-section *ngIf="vm.layoutProperties.footer">{{
