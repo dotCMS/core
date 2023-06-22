@@ -21,7 +21,7 @@ import {
     DotSessionStorageService
 } from '@dotcms/data-access';
 import { DotCMSResponse, HttpCode, ResponseView } from '@dotcms/dotcms-js';
-import { DotLayout, DotPageRender } from '@dotcms/dotcms-models';
+import { DotLayout, DotPageRender, DotTemplateDesignerPayload } from '@dotcms/dotcms-models';
 import {
     MockDotMessageService,
     mockDotRenderedPage,
@@ -41,7 +41,7 @@ export class MockTemplateBuilderComponent {
     templateLayout: DotLayout;
 
     @Output()
-    layoutChange = new EventEmitter();
+    templateChange = new EventEmitter();
 }
 
 @Component({
@@ -333,12 +333,15 @@ describe('DotEditLayoutComponent', () => {
             const builder = fixture.debugElement.query(
                 By.css('[data-testId="new-template-builder"]')
             );
-            const layout = EMPTY_TEMPLATE_DESIGN.layout;
+            const template = {
+                layout: EMPTY_TEMPLATE_DESIGN.layout,
+                themeId: '123',
+                title: null
+            } as DotTemplateDesignerPayload;
 
-            spyOn(component, 'onLayoutChange').and.callThrough();
-            spyOn(component.updateTemplate, 'next').and.callThrough();
+            spyOn(component.updateTemplate, 'next');
 
-            builder.triggerEventHandler('layoutChange', layout);
+            builder.triggerEventHandler('templateChange', template);
 
             expect(component.updateTemplate.next).toHaveBeenCalled();
         });

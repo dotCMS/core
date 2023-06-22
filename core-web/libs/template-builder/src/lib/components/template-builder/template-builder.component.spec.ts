@@ -24,7 +24,10 @@ import { TemplateBuilderSectionComponent } from './components/template-builder-s
 import { DotGridStackWidget } from './models/models';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { TemplateBuilderComponent } from './template-builder.component';
-import { parseFromDotObjectToGridStack } from './utils/gridstack-utils';
+import {
+    parseFromDotObjectToGridStack,
+    parseFromGridStackToDotObject
+} from './utils/gridstack-utils';
 import { DOT_MESSAGE_SERVICE_TB_MOCK, FULL_DATA_MOCK } from './utils/mocks';
 
 global.structuredClone = jest.fn((val) => {
@@ -171,12 +174,12 @@ describe('TemplateBuilderComponent', () => {
         it('should emit templateChange when the store changes', (done) => {
             const templateChangeMock = jest.spyOn(spectator.component.templateChange, 'emit');
             store.init(parseFromDotObjectToGridStack(FULL_DATA_MOCK));
-            store.items$.pipe(take(1)).subscribe(() => {
-                // const body = parseFromGridStackToDotObject(items);
+            store.items$.pipe(take(1)).subscribe((items) => {
+                const body = parseFromGridStackToDotObject(items);
 
                 expect(templateChangeMock).toHaveBeenCalledWith({
                     title: null,
-                    layout: { body: FULL_DATA_MOCK }
+                    layout: { body }
                 });
 
                 done();

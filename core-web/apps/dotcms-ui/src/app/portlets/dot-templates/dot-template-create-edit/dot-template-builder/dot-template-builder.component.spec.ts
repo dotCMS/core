@@ -22,7 +22,7 @@ import { IframeComponent } from '@components/_common/iframe/iframe-component';
 import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
 import { DotShowHideFeatureDirective } from '@dotcms/app/shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
 import { DotEventsService, DotMessageService, DotPropertiesService } from '@dotcms/data-access';
-import { DotLayout } from '@dotcms/dotcms-models';
+import { DotLayout, DotTemplateDesignerPayload } from '@dotcms/dotcms-models';
 import { DotIconModule, DotMessagePipeModule } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -42,7 +42,7 @@ import {
 })
 class TemplateBuilderMockComponent {
     @Input() templateLayout: DotLayout;
-    @Output() layoutChange: EventEmitter<Event> = new EventEmitter();
+    @Output() templateChange: EventEmitter<Event> = new EventEmitter();
 }
 
 @Component({
@@ -259,13 +259,17 @@ describe('DotTemplateBuilderComponent', () => {
 
         it('should emit events from new-template-builder when the layout is changed', () => {
             const builder = de.query(By.css('[data-testId="new-template-builder"]'));
-            const layout = EMPTY_TEMPLATE_DESIGN.layout;
+            const template = {
+                layout: EMPTY_TEMPLATE_DESIGN.layout,
+                themeId: '123',
+                title: null
+            } as DotTemplateDesignerPayload;
 
-            spyOn(component, 'onLayoutChange').and.callThrough();
+            spyOn(component, 'onTemplateChange').and.callThrough();
 
-            builder.triggerEventHandler('layoutChange', layout);
+            builder.triggerEventHandler('templateChange', template);
 
-            expect(component.onLayoutChange).toHaveBeenCalledWith(layout);
+            expect(component.onTemplateChange).toHaveBeenCalledWith(template);
             expect(component.updateTemplate.emit).toHaveBeenCalled();
         });
 
