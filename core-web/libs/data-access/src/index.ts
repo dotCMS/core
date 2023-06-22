@@ -1,5 +1,6 @@
 export * from './lib/add-to-bundle/add-to-bundle.service';
 export * from './lib/dot-alert-confirm/dot-alert-confirm.service';
+export * from './lib/dot-containers/dot-containers.service';
 export * from './lib/dot-content-type/dot-content-type.service';
 export * from './lib/dot-content-types-info/dot-content-types-info.service';
 export * from './lib/dot-contentlet-locker/dot-contentlet-locker.service';

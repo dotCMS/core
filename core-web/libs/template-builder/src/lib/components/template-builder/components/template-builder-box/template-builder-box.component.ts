@@ -10,11 +10,15 @@ import {
     OnChanges,
     Output
 } from '@angular/core';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
+import { DropdownModule } from 'primeng/dropdown';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
 
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotContainersService } from '@dotcms/data-access';
+import { DotContainer } from '@dotcms/dotcms-models';
+import { DotContainerOptionsDirective, DotMessagePipeModule } from '@dotcms/ui';
 
 import { DotTemplateBuilderContainer, TemplateBuilderBoxSize } from '../../models/models';
 import { getBoxVariantByWidth } from '../../utils/gridstack-utils';
@@ -33,18 +37,21 @@ import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-co
         ButtonModule,
         ScrollPanelModule,
         DotMessagePipeModule,
-        RemoveConfirmDialogComponent
+        RemoveConfirmDialogComponent,
+        DropdownModule,
+        DotContainerOptionsDirective,
+        ReactiveFormsModule
     ]
 })
 export class TemplateBuilderBoxComponent implements OnChanges {
     protected readonly templateBuilderSizes = TemplateBuilderBoxSize;
 
     @Output()
-    editStyle: EventEmitter<void> = new EventEmitter<void>();
+    editClasses: EventEmitter<void> = new EventEmitter<void>();
     @Output()
-    addContainer: EventEmitter<void> = new EventEmitter<void>();
+    addContainer: EventEmitter<DotContainer> = new EventEmitter<DotContainer>();
     @Output()
-    deleteContainer: EventEmitter<void> = new EventEmitter<void>();
+    deleteContainer: EventEmitter<number> = new EventEmitter<number>();
     @Output()
     deleteColumn: EventEmitter<void> = new EventEmitter<void>();
     @Output()
@@ -55,8 +62,9 @@ export class TemplateBuilderBoxComponent implements OnChanges {
     @Input() width = 1;
 
     boxVariant = TemplateBuilderBoxSize.small;
+    formControl = new FormControl(null); // used to programmatically set dropdown value, so that the same value can be selected twice consecutively
 
-    constructor(private el: ElementRef) {}
+    constructor(private containerService: DotContainersService, private el: ElementRef) {}
 
     get nativeElement(): GridItemHTMLElement {
         return this.el.nativeElement;
@@ -64,5 +72,10 @@ export class TemplateBuilderBoxComponent implements OnChanges {
 
     ngOnChanges(): void {
         this.boxVariant = getBoxVariantByWidth(this.width);
+    }
+
+    onContainerSelect({ value }: { value: DotContainer }) {
+        this.addContainer.emit(value);
+        this.formControl.setValue(null);
     }
 }

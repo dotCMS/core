@@ -7,30 +7,79 @@
         .pi.pi-trash {
             color: $color-palette-primary-400;
         }
+
+        .p-dropdown {
+            margin-left: 0;
+        }
     }
 
     .template-builder-box--small {
         .p-button-text {
             margin: $spacing-3 0;
         }
+
+        .p-dropdown-label {
+            @include visually-hidden;
+        }
+
+        .p-dropdown-trigger-icon {
+            font-size: $font-size-sm;
+            margin: $spacing-3;
+        }
+    }
+
+    .p-dropdown {
+        display: flex;
+        flex-direction: row-reverse; // this allows having the plus icon at the left of the placeholder
+        border: none;
+        background: none;
+        font-size: $spacing-2;
+        margin-left: $spacing-4;
+        padding: $spacing-2;
+
+        &:hover {
+            background: $color-palette-primary-200;
+        }
+
+        &.p-dropdown-open {
+            background: $color-palette-primary-200;
+        }
+
+        &:not(.p-disabled).p-focus,
+        &.p-focus {
+            box-shadow: none;
+            border: none;
+        }
+    }
+
+    .p-dropdown-label.p-inputtext {
+        font-size: $font-size-sm;
+        color: $black;
+        padding: 0 0 0 $spacing-2;
+        max-width: 10rem;
+    }
+
+    .p-dropdown-trigger-icon {
+        color: $color-palette-primary;
+    }
+
+    .p-dropdown .p-dropdown-trigger {
+        width: auto;
     }
 }
 
 .template-builder-box {
-    border: 1px solid $color-palette-primary-300;
+    border: 1px solid $color-palette-gray-400;
     border-radius: $border-radius-sm;
     height: 14rem;
     width: 100%;
     background-color: $white;
+    overflow: hidden;
 }
 
 .template-builder-box__header-container {
-    background-color: $color-palette-primary-100;
+    background-color: $color-palette-gray-200;
     padding: $spacing-1 $spacing-4 $spacing-1 $spacing-2;
-
-    border-top: 1px solid $color-palette-primary-100;
-    border-radius: $border-radius-sm;
-
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -38,7 +87,6 @@
 
 .template-builder-box__item {
     padding: 0px $spacing-1 0px $spacing-3;
-    border: 1px solid $color-palette-primary-300;
     margin: $spacing-1 $spacing-3;
 
     &:first-child {

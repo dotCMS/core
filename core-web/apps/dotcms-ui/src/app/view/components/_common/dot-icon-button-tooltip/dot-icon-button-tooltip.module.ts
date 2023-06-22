@@ -7,6 +7,9 @@ import { UiDotIconButtonTooltipComponent } from './dot-icon-button-tooltip.compo
 
 import { UiDotIconButtonModule } from '../dot-icon-button/dot-icon-button.module';
 
+/**
+ * @deprecated
+ */
 @NgModule({
     declarations: [UiDotIconButtonTooltipComponent],
     exports: [UiDotIconButtonTooltipComponent],

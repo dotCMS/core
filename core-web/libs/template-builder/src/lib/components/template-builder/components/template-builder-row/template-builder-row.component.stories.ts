@@ -13,7 +13,7 @@ import { DOT_MESSAGE_SERVICE_TB_MOCK } from '../../utils/mocks';
 import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-confirm-dialog.component';
 
 export default {
-    title: 'Components/Row',
+    title: 'Library/Template Builder/Components/Row',
     component: TemplateBuilderRowComponent,
     decorators: [
         moduleMetadata({

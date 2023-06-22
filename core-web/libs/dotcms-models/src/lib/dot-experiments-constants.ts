@@ -61,26 +61,59 @@ export const ExperimentsStatusList: Array<DotDropdownSelectOption<string>> = [
     }
 ];
 
-export const GoalsConditionsParametersList: Array<DotDropdownSelectOption<GOAL_PARAMETERS>> = [
-    {
-        label: 'experiments.goal.conditions.params.url.label',
-        value: GOAL_PARAMETERS.URL,
-        inactive: false
-    }
-];
+export const GoalsConditionsParametersListByType: Partial<
+    Record<GOAL_TYPES, Array<DotDropdownSelectOption<GOAL_PARAMETERS>>>
+> = {
+    [GOAL_TYPES.URL_PARAMETER]: [
+        {
+            label: 'experiments.goal.conditions.params.query_param.label',
+            value: GOAL_PARAMETERS.QUERY_PARAM,
+            inactive: false
+        }
+    ],
+    [GOAL_TYPES.REACH_PAGE]: [
+        {
+            label: 'experiments.goal.conditions.params.url.label',
+            value: GOAL_PARAMETERS.URL,
+            inactive: false
+        }
+    ]
+};
 
-export const GoalsConditionsOperatorsList: Array<DotDropdownSelectOption<GOAL_OPERATORS>> = [
-    {
-        label: 'experiments.goal.conditions.operators.contains.label',
-        value: GOAL_OPERATORS.CONTAINS,
-        inactive: false
-    },
-    {
-        label: 'experiments.goal.conditions.operators.equals.label',
-        value: GOAL_OPERATORS.EQUALS,
-        inactive: false
-    }
-];
+type SelectOptionsOperators = Array<DotDropdownSelectOption<GOAL_OPERATORS>>;
+export const GoalsConditionsOperatorsListByType: Partial<
+    Record<GOAL_TYPES, SelectOptionsOperators>
+> = {
+    [GOAL_TYPES.URL_PARAMETER]: [
+        {
+            label: 'experiments.goal.conditions.operators.contains.label',
+            value: GOAL_OPERATORS.CONTAINS,
+            inactive: false
+        },
+        {
+            label: 'experiments.goal.conditions.operators.equals.label',
+            value: GOAL_OPERATORS.EQUALS,
+            inactive: false
+        },
+        {
+            label: 'experiments.goal.conditions.operators.exists.label',
+            value: GOAL_OPERATORS.EXISTS,
+            inactive: false
+        }
+    ],
+    [GOAL_TYPES.REACH_PAGE]: [
+        {
+            label: 'experiments.goal.conditions.operators.contains.label',
+            value: GOAL_OPERATORS.CONTAINS,
+            inactive: false
+        },
+        {
+            label: 'experiments.goal.conditions.operators.equals.label',
+            value: GOAL_OPERATORS.EQUALS,
+            inactive: false
+        }
+    ]
+};
 
 export enum SIDEBAR_STATUS {
     OPEN = 'OPEN',
@@ -113,6 +146,10 @@ export const GOALS_METADATA_MAP: Record<GOAL_TYPES, { label: string; description
     [GOAL_TYPES.CLICK_ON_ELEMENT]: {
         label: 'experiments.goal.click_on_element.name',
         description: 'experiments.goal.click_on_element.description'
+    },
+    [GOAL_TYPES.URL_PARAMETER]: {
+        label: 'experiments.goal.url_parameter.name',
+        description: 'experiments.goal.url_parameter.description'
     }
 };
 

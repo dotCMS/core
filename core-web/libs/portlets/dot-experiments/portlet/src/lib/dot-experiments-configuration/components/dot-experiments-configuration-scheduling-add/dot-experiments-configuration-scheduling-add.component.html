@@ -1,0 +1,62 @@
+<ng-container *ngIf="vm$ | async as vm">
+    <p-sidebar [(visible)]="vm.status.isOpen" (onHide)="closeSidebar()" dotSidebar>
+        <dot-sidebar-header
+            [actionButtonTpl]="actionHeaderBtnTpl"
+            dotTitle="{{ 'experiments.configure.scheduling.name' | dm }}"
+        ></dot-sidebar-header>
+        <div class="experiment-scheduling-add__form-wrapper flex flex-column">
+            <form class="p-fluid" [formGroup]="form" data-testId="add-scheduling-form" novalidate>
+                <div class="field">
+                    <label for="initialDate">
+                        {{ 'experiments.configure.scheduling.start.time' | dm }}
+                    </label>
+                    <p-calendar
+                        id="initialDate"
+                        [defaultDate]="initialDate"
+                        [minDate]="today"
+                        [readonlyInput]="true"
+                        [showClear]="true"
+                        [showIcon]="true"
+                        [showTime]="true"
+                        [stepMinute]="30"
+                        (onClear)="setDateBoundaries()"
+                        (onSelect)="setDateBoundaries()"
+                        data-testId="scheduling-startDate"
+                        formControlName="startDate"
+                    ></p-calendar>
+                </div>
+                <div class="field">
+                    <label for="endTime">
+                        {{ 'experiments.configure.scheduling.end.time' | dm }}
+                    </label>
+                    <p-calendar
+                        id="endTime"
+                        [defaultDate]="minEndDate || initialDate"
+                        [maxDate]="maxEndDate"
+                        [minDate]="minEndDate || initialDate"
+                        [readonlyInput]="true"
+                        [showClear]="true"
+                        [showIcon]="true"
+                        [showTime]="true"
+                        [stepMinute]="30"
+                        data-testId="scheduling-endDate"
+                        formControlName="endDate"
+                    >
+                    </p-calendar>
+                </div>
+            </form>
+        </div>
+    </p-sidebar>
+
+    <ng-template #actionHeaderBtnTpl>
+        <button
+            [disabled]="!form.valid"
+            [loading]="vm.status.status === stepStatus.SAVING"
+            (click)="save(vm.experimentId)"
+            data-testId="add-scheduling-button"
+            label="{{ 'Done' | dm }}"
+            pButton
+            type="submit"
+        ></button>
+    </ng-template>
+</ng-container>

@@ -49,6 +49,8 @@ import com.dotcms.experiments.business.ExperimentAPIImpIntegrationTest;
 import com.dotcms.experiments.business.web.ExperimentWebAPIImplIntegrationTest;
 import com.dotcms.filters.interceptor.meta.MetaWebInterceptorTest;
 import com.dotcms.graphql.DotGraphQLHttpServletTest;
+import com.dotcms.integritycheckers.ContentFileAssetIntegrityCheckerTest;
+import com.dotcms.integritycheckers.ContentPageIntegrityCheckerTest;
 import com.dotcms.integritycheckers.HostIntegrityCheckerTest;
 import com.dotcms.integritycheckers.IntegrityUtilTest;
 import com.dotcms.junit.MainBaseSuite;
@@ -83,6 +85,7 @@ import com.dotcms.rest.BundlePublisherResourceIntegrationTest;
 import com.dotcms.rest.BundleResourceTest;
 import com.dotcms.rest.IntegrityResourceIntegrationTest;
 import com.dotcms.rest.api.v1.apps.AppsResourceTest;
+import com.dotcms.rest.api.v1.apps.SiteViewPaginatorIntegrationTest;
 import com.dotcms.rest.api.v1.apps.view.AppsInterpolationTest;
 import com.dotcms.rest.api.v1.assets.AssetPathResolverImplTest;
 import com.dotcms.rest.api.v1.authentication.ResetPasswordTokenUtilTest;
@@ -642,8 +645,12 @@ import org.junit.runners.Suite.SuiteClasses;
         Task230523CreateVariantFieldInContentletIntegrationTest.class,
 //        AnalyticsAPIImplTest.class,
 //        AccessTokenRenewJobTest.class,
+        SiteViewPaginatorIntegrationTest.class,
         AssetPathResolverImplTest.class,
         CMSUrlUtilIntegrationTest.class,
+        HostFactoryImplTest.class,
+        ContentFileAssetIntegrityCheckerTest.class,
+        ContentPageIntegrityCheckerTest.class,
         HostFactoryImplTest.class
 })
 

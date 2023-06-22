@@ -24,6 +24,7 @@ import {
 } from '@dotcms/data-access';
 import { CoreWebService, HttpCode, LoginService, SiteService } from '@dotcms/dotcms-js';
 import { DotPageMode, DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
+import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import {
     CoreWebServiceMock,
     LoginServiceMock,
@@ -33,7 +34,6 @@ import {
     mockUser,
     SiteServiceMock
 } from '@dotcms/utils-testing';
-import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 
 import { DotEditPageResolver } from './dot-edit-page-resolver.service';
 
