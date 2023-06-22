@@ -44,4 +44,15 @@ p-divider {
     .p-toolbar-group-end {
         gap: $spacing-1;
     }
+
+    .p-toolbar {
+        border-color: $color-palette-gray-300;
+        padding: 1rem 0;
+    }
+
+    .p-divider {
+        &.p-component {
+            color: $color-palette-gray-300;
+        }
+    }
 }
