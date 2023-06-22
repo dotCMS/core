@@ -70,7 +70,7 @@ $box-height: 206px;
         background-color: $color-palette-gray-200;
 
         &:hover {
-            background-color: rgba($color-palette-primary, 0.2);
+            background-color: $color-palette-primary-op-20;
             color: $color-palette-primary;
         }
     }
