@@ -2,11 +2,11 @@ import { expect, it } from '@jest/globals';
 import { SpectatorHost, byTestId, createHostFactory } from '@ngneat/spectator';
 import { GridItemHTMLElement } from 'gridstack';
 
-import { AsyncPipe, NgFor } from '@angular/common';
+import { AsyncPipe, NgClass, NgFor, NgIf, NgStyle } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 import { DividerModule } from 'primeng/divider';
-import { DialogService } from 'primeng/dynamicdialog';
+import { DialogService, DynamicDialogModule, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { ToolbarModule } from 'primeng/toolbar';
 
 import { take } from 'rxjs/operators';
@@ -16,11 +16,7 @@ import { DotMessagePipeModule } from '@dotcms/ui';
 import { containersMock, DotContainersServiceMock } from '@dotcms/utils-testing';
 
 import { DotAddStyleClassesDialogStore } from './components/add-style-classes-dialog/store/add-style-classes-dialog.store';
-import { TemplateBuilderActionsComponent } from './components/template-builder-actions/template-builder-actions.component';
-import { TemplateBuilderBackgroundColumnsComponent } from './components/template-builder-background-columns/template-builder-background-columns.component';
-import { TemplateBuilderBoxComponent } from './components/template-builder-box/template-builder-box.component';
 import { TemplateBuilderComponentsModule } from './components/template-builder-components.module';
-import { TemplateBuilderSectionComponent } from './components/template-builder-section/template-builder-section.component';
 import { DotGridStackWidget } from './models/models';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { TemplateBuilderComponent } from './template-builder.component';
@@ -42,20 +38,22 @@ describe('TemplateBuilderComponent', () => {
         component: TemplateBuilderComponent,
         imports: [
             NgFor,
+            NgIf,
             AsyncPipe,
-            TemplateBuilderBoxComponent,
-            TemplateBuilderBackgroundColumnsComponent,
-            TemplateBuilderSectionComponent,
             DotMessagePipeModule,
-            TemplateBuilderActionsComponent,
-            DotMessagePipeModule,
-            HttpClientTestingModule,
+            DynamicDialogModule,
+            NgStyle,
+            NgClass,
             ToolbarModule,
             DividerModule,
-            TemplateBuilderComponentsModule
+            TemplateBuilderComponentsModule,
+            HttpClientTestingModule
         ],
         providers: [
             DotTemplateBuilderStore,
+            DialogService,
+            DynamicDialogRef,
+            DotAddStyleClassesDialogStore,
             {
                 provide: DotMessageService,
                 useValue: DOT_MESSAGE_SERVICE_TB_MOCK
@@ -63,9 +61,7 @@ describe('TemplateBuilderComponent', () => {
             {
                 provide: DotContainersService,
                 useValue: new DotContainersServiceMock()
-            },
-            DialogService,
-            DotAddStyleClassesDialogStore
+            }
         ]
     });
     beforeEach(() => {
@@ -73,7 +69,16 @@ describe('TemplateBuilderComponent', () => {
             `<dotcms-template-builder [templateLayout]="templateLayout"></dotcms-template-builder>`,
             {
                 hostProps: {
-                    templateLayout: { body: FULL_DATA_MOCK }
+                    templateLayout: {
+                        body: FULL_DATA_MOCK,
+                        header: true,
+                        footer: true,
+                        sidebar: {
+                            location: 'left',
+                            width: 'small',
+                            containers: []
+                        }
+                    }
                 }
             }
         );
@@ -125,12 +130,6 @@ describe('TemplateBuilderComponent', () => {
 
             expect(removeColMock).toHaveBeenCalledWith({ ...widgetToDelete, parentId: rowId });
         });
-    });
-
-    it('should call removeRow from store when triggering deleteRow', () => {
-        const removeRowMock = jest.spyOn(store, 'removeRow');
-        spectator.component.deleteRow('123');
-        expect(removeRowMock).toHaveBeenCalledWith('123');
     });
 
     it('should call addContainer from store when triggering addContainer', () => {
@@ -185,13 +184,37 @@ describe('TemplateBuilderComponent', () => {
         expect(openDialogMock).toHaveBeenCalled();
     });
 
+    it('should open a panel when clicking on Layout button', () => {
+        const actionsButton = spectator.query(byTestId('btn-select-layout'));
+
+        spectator.click(actionsButton);
+
+        expect(spectator.query(byTestId('template-layout-properties-panel'))).toBeTruthy();
+    });
+
     describe('layoutChange', () => {
         it('should emit layoutChange when the store changes', (done) => {
             const layoutChangeMock = jest.spyOn(spectator.component.layoutChange, 'emit');
-            store.init(parseFromDotObjectToGridStack(FULL_DATA_MOCK));
+            store.init({
+                items: parseFromDotObjectToGridStack(FULL_DATA_MOCK),
+                layoutProperties: {
+                    header: true,
+                    footer: true,
+                    sidebar: {}
+                }
+            });
             store.items$.pipe(take(1)).subscribe(() => {
                 // const body = parseFromGridStackToDotObject(items);
-                expect(layoutChangeMock).toHaveBeenCalledWith({ body: FULL_DATA_MOCK });
+                expect(layoutChangeMock).toHaveBeenCalledWith({
+                    body: FULL_DATA_MOCK,
+                    header: true,
+                    footer: true,
+                    sidebar: {
+                        location: 'left',
+                        width: 'small',
+                        containers: []
+                    }
+                });
                 done();
             });
         });

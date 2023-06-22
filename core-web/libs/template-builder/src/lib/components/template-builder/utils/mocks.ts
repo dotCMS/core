@@ -236,10 +236,15 @@ export const MESSAGES_MOCK = {
     'dot.template.builder.footer': 'Footer',
     'dot.template.builder.toolbar.button.layout.label': 'Layout',
     'dot.template.builder.toolbar.button.theme.label': 'Theme',
+    'editpage.layout.properties.header': 'Header',
+    'editpage.layout.properties.footer': 'Footer',
+    'editpage.layout.properties.sidebar.left': 'Sidebar Left',
+    'editpage.layout.properties.sidebar.right': 'Sidebar Right',
     'dot.template.builder.box.containers.error': 'Error loading containers',
     'dot.template.builder.classes.dialog.autocomplete.label': 'Class',
     'dot.template.builder.classes.dialog.header.label': 'Edit Classes',
-    'dot.template.builder.classes.dialog.update.button': 'Update'
+    'dot.template.builder.classes.dialog.update.button': 'Update',
+    'dot.template.builder.sidebar.header.title': 'Sidebar'
 };
 
 export const DOT_MESSAGE_SERVICE_TB_MOCK = new MockDotMessageService(MESSAGES_MOCK);
