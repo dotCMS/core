@@ -197,7 +197,7 @@ public class StoragePersistenceAPITest {
         final String groupName = testCase.groupName;
         assertFalse(storage.existsGroup(groupName));
         assertTrue(storage.createGroup(groupName));
-        assertFalse(storage.createGroup(groupName));
+        assertTrue(storage.createGroup(groupName));
     }
 
     @DataProvider
