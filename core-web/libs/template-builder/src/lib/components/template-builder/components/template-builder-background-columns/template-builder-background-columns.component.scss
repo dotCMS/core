@@ -1,7 +1,5 @@
 @use "variables" as *;
 
-$columns-padding: 3.2rem;
-
 :host {
     grid-template-columns: repeat(12, minmax(0, 1fr));
     display: grid;
@@ -10,4 +8,5 @@ $columns-padding: 3.2rem;
 .column {
     height: 100%;
     background-color: $color-palette-gray-200;
+    border-radius: $border-radius-sm;
 }

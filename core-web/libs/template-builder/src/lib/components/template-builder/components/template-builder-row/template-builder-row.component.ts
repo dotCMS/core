@@ -13,6 +13,7 @@ import { DotGridStackWidget } from '../../models/models';
 import { DotTemplateBuilderStore } from '../../store/template-builder.store';
 import { AddStyleClassesDialogComponent } from '../add-style-classes-dialog/add-style-classes-dialog.component';
 import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-confirm-dialog.component';
+import { TemplateBuilderBackgroundColumnsComponent } from '../template-builder-background-columns/template-builder-background-columns.component';
 
 @Component({
     selector: 'dotcms-template-builder-row',
@@ -20,7 +21,7 @@ import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-co
     templateUrl: './template-builder-row.component.html',
     styleUrls: ['./template-builder-row.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [ButtonModule, RemoveConfirmDialogComponent]
+    imports: [ButtonModule, RemoveConfirmDialogComponent, TemplateBuilderBackgroundColumnsComponent]
 })
 export class TemplateBuilderRowComponent {
     @Input() row: DotGridStackWidget;
