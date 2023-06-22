@@ -1,15 +1,20 @@
-<p-overlayPanel #op appendTo="body" styleClass="dot-layout-properties__overlayPanel">
-    <div [formGroup]="group" class="field">
+<p-overlayPanel
+    #op
+    appendTo="body"
+    styleClass="dot-layout-properties__overlayPanel"
+    data-testId="template-layout-properties-panel"
+>
+    <div class="field" [formGroup]="group">
         <dot-layout-properties-item
-            [label]="'editpage.layout.properties.header' | dm"
             class="property-item__header"
+            [label]="'editpage.layout.properties.header' | dm"
             formControlName="header"
         >
         </dot-layout-properties-item>
 
         <dot-layout-properties-item
-            [label]="'editpage.layout.properties.footer' | dm"
             class="property-item__footer"
+            [label]="'editpage.layout.properties.footer' | dm"
             formControlName="footer"
         >
         </dot-layout-properties-item>
@@ -17,11 +22,12 @@
     </div>
 </p-overlayPanel>
 <button
+    class="p-button-text p-button-vertical"
+    (click)="op.toggle($event)"
     pButton
     type="button"
-    class="p-button-text p-button-vertical"
     label="{{ 'Layout' | dm }}"
-    (click)="op.toggle($event)"
+    data-testId="btn-select-layout"
 >
     <span class="p-button-icon material-icons">view_quilt</span>
 </button>

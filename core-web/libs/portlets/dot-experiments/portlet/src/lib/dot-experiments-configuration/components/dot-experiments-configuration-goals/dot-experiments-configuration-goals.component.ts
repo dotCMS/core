@@ -11,7 +11,6 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { tap } from 'rxjs/operators';
 
-import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { DotMessageService } from '@dotcms/data-access';
 import {
@@ -23,7 +22,12 @@ import {
     GoalsLevels,
     StepStatus
 } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipe, DotMessagePipeModule } from '@dotcms/ui';
+import {
+    DotIconModule,
+    DotMessagePipe,
+    DotMessagePipeModule,
+    UiDotIconButtonModule
+} from '@dotcms/ui';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
 
 import { DotExperimentsDetailsTableComponent } from '../../../shared/ui/dot-experiments-details-table/dot-experiments-details-table.component';

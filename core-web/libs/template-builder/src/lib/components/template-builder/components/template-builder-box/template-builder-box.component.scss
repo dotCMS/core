@@ -1,9 +1,9 @@
 @use "variables" as *;
 @import "mixins";
 
-::ng-deep {
-    .template-builder-box,
-    .template-builder-box--small {
+.template-builder-box,
+.template-builder-box--small {
+    ::ng-deep {
         .pi.pi-trash {
             color: $color-palette-primary-400;
         }
@@ -12,8 +12,10 @@
             margin-left: 0;
         }
     }
+}
 
-    .template-builder-box--small {
+.template-builder-box--small {
+    ::ng-deep {
         .p-button-text {
             margin: $spacing-3 0;
         }
@@ -26,45 +28,37 @@
             font-size: $font-size-sm;
             margin: $spacing-3;
         }
-    }
-
-    .p-dropdown {
-        display: flex;
-        flex-direction: row-reverse; // this allows having the plus icon at the left of the placeholder
-        border: none;
-        background: none;
-        font-size: $spacing-2;
-        margin-left: $spacing-4;
-        padding: $spacing-2;
-
-        &:hover {
-            background: $color-palette-primary-200;
+        .p-dropdown .p-dropdown-trigger {
+            width: 0.875rem; // 14px
+            height: 0.875rem; // 14px
         }
 
-        &.p-dropdown-open {
-            background: $color-palette-primary-200;
-        }
-
-        &:not(.p-disabled).p-focus,
-        &.p-focus {
-            box-shadow: none;
-            border: none;
+        .p-dropdown {
+            border-radius: 50%;
+            padding: 0.5625rem; // 9px
+            margin-top: $spacing-3;
+            margin-bottom: $spacing-3;
         }
     }
+}
 
-    .p-dropdown-label.p-inputtext {
-        font-size: $font-size-sm;
-        color: $black;
-        padding: 0 0 0 $spacing-2;
-        max-width: 10rem;
+p-scrollpanel {
+    ::ng-deep {
+        .p-scrollpanel {
+            height: 10.9375rem;
+            width: 100%;
+        }
     }
+}
 
-    .p-dropdown-trigger-icon {
-        color: $color-palette-primary;
-    }
-
-    .p-dropdown .p-dropdown-trigger {
-        width: auto;
+p-dropdown {
+    ::ng-deep {
+        .p-dropdown {
+            display: flex;
+            flex-direction: row-reverse; // this allows having the plus icon at the left of the placeholder
+            background: none;
+            margin-left: $spacing-4;
+        }
     }
 }
 

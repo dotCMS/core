@@ -1,15 +1,22 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Component, DebugElement } from '@angular/core';
-import { ComponentFixture } from '@angular/core/testing';
-import { UntypedFormControl, UntypedFormGroup } from '@angular/forms';
-import { By } from '@angular/platform-browser';
+import { describe, expect, it } from '@jest/globals';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { CommonModule } from '@angular/common';
+import { Component, DebugElement } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import {
+    FormsModule,
+    ReactiveFormsModule,
+    UntypedFormControl,
+    UntypedFormGroup
+} from '@angular/forms';
+import { By } from '@angular/platform-browser';
 
 import { DotLayoutPropertiesItemComponent } from './dot-layout-properties-item.component';
 
 @Component({
+    // eslint-disable-next-line @angular-eslint/component-selector
     selector: 'dot-test-host-component',
     template: `<form [formGroup]="group">
         <dot-layout-properties-item formControlName="header"></dot-layout-properties-item>
@@ -17,7 +24,7 @@ import { DotLayoutPropertiesItemComponent } from './dot-layout-properties-item.c
 })
 class TestHostComponent {
     group: UntypedFormGroup;
-    f;
+
     constructor() {
         this.group = new UntypedFormGroup({
             header: new UntypedFormControl({
@@ -34,11 +41,12 @@ describe('DotLayoutPropertiesItemComponent', () => {
     let hostComponentfixture: ComponentFixture<TestHostComponent>;
 
     beforeEach(() => {
-        DOTTestBed.configureTestingModule({
-            declarations: [DotLayoutPropertiesItemComponent, TestHostComponent]
+        TestBed.configureTestingModule({
+            declarations: [DotLayoutPropertiesItemComponent, TestHostComponent],
+            imports: [FormsModule, CommonModule, ReactiveFormsModule]
         });
 
-        fixture = DOTTestBed.createComponent(DotLayoutPropertiesItemComponent);
+        fixture = TestBed.createComponent(DotLayoutPropertiesItemComponent);
         comp = fixture.componentInstance;
         de = fixture.debugElement;
     });
@@ -47,7 +55,7 @@ describe('DotLayoutPropertiesItemComponent', () => {
         comp.value = false;
         expect(comp.value).toEqual(false);
 
-        spyOn(comp, 'propagateChange');
+        jest.spyOn(comp, 'propagateChange');
         de.nativeElement.click();
 
         expect(comp.value).toEqual(true);
@@ -73,12 +81,12 @@ describe('DotLayoutPropertiesItemComponent', () => {
     });
 
     it('should call writeValue to define the initial value of the property item', () => {
-        hostComponentfixture = DOTTestBed.createComponent(TestHostComponent);
+        hostComponentfixture = TestBed.createComponent(TestHostComponent);
         de = hostComponentfixture.debugElement.query(By.css('dot-layout-properties-item'));
         const component: DotLayoutPropertiesItemComponent = de.componentInstance;
         comp.value = false;
 
-        spyOn(component, 'writeValue');
+        jest.spyOn(component, 'writeValue');
         fixture.debugElement.nativeElement.click();
         hostComponentfixture.detectChanges();
 

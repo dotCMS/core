@@ -7,7 +7,7 @@ import { InputSwitchModule } from 'primeng/inputswitch';
 import { InputTextModule } from 'primeng/inputtext';
 import { TableModule } from 'primeng/table';
 
-import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { UiDotIconButtonModule } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotKeyValueTableRowComponent } from './dot-key-value-table-row.component';
