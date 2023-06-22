@@ -242,8 +242,7 @@ public class InitServlet extends HttpServlet {
         //Just get the Engine to make sure it gets inited on time before the first request
         VelocityUtil.getEngine();
 
-        // Tell the world we are started up
-        System.setProperty(WebKeys.DOTCMS_STARTED_UP, "true");
+
 
 
         //Initializing System felix
@@ -263,7 +262,12 @@ public class InitServlet extends HttpServlet {
         }
         
         
+
+        // Starting the re-indexation thread
+        ReindexThread.startThread();
         
+        // Tell the world we are started up
+        System.setProperty(WebKeys.DOTCMS_STARTED_UP, "true");
 
         // Record how long it took to start us up.
         try{
@@ -275,10 +279,6 @@ public class InitServlet extends HttpServlet {
         } catch (Exception e) {
             Logger.warn(this.getClass(), "Unable to record startup time :" + e);
         }
-        // Starting the re-indexation thread
-        ReindexThread.startThread();
-        
-        
 
     }
 

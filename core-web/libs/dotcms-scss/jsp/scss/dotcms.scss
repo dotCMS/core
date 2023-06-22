@@ -1,5 +1,3 @@
-@use "variables" as *;
-
 // Font-icons
 @import "font-awesome-4.7.0/mixins";
 @import "font-awesome-4.7.0/variables";
@@ -12,6 +10,8 @@
 @import "bootstrap-sass-3.3.7/assets/stylesheets/bootstrap/mixins";
 @import "bootstrap-sass-3.3.7/assets/stylesheets/bootstrap/grid";
 
+@import "variables";
+
 // MATERIAL DESIGN FOR DOJO THEME
 @import "dijit-theme-dotcms";
 
@@ -21,16 +21,6 @@
 // BACKEND
 //@import "backend/legacy"; // THINGS WE ARE GOING TO GET RID OFF
 @import "backend/common";
-
-// Compass SASS Framework
-:root {
-    --color-background: #3a3847;
-    --color-main: #c336e5;
-    --color-main_mod: #d369ec;
-    --color-main_rgb: 195, 54, 229;
-    --color-sec: #54428e;
-    --color-sec_rgb: 84, 66, 142;
-}
 
 @font-face {
     font-family: "Material Icons";

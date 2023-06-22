@@ -18,7 +18,7 @@ $field-hover-border: solid $field-border-size $color-palette-primary;
 $field-hover-arrow-color: $color-palette-primary;
 $field-hoverarrow-arrow-color: $color-palette-primary;
 $field-hoverarrow-arrow-border: solid $field-border-size $color-palette-gray-800;
-$field-hoverarrow-arrow-bgcolor: rgba(var(--color-sec_rgb), 0.2);
+$field-hoverarrow-arrow-bgcolor: $color-palette-secondary-op-20;
 
 $field-active-bgcolor: $white;
 $field-active-textcolor: $font-color-base;
@@ -461,7 +461,6 @@ $calendar-prev-next-month-date-textcolor: $color-palette-gray-400;
 $calendar-prev-next-month-date-hover-bgcolor: $color-palette-gray-200;
 $calendar-prev-next-month-date-hover-textcolor: $color-palette-gray-700;
 $calendar-year-label-bgcolor: $color-palette-gray-800;
-$calendar-year-label-textcolor: $white;
 $calendar-dropdown-color: $white;
 $calendar-dropdown-arrow-color: $calendar-dropdown-color;
 $calendar-dropdown-arrow-border: solid 1px $white;
