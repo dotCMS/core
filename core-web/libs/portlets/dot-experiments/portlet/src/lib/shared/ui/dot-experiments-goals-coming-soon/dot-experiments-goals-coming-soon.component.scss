@@ -6,7 +6,7 @@
     flex-direction: column;
     align-items: center;
     border-radius: $border-radius-sm;
-    padding: 0.5rem;
+    padding: $spacing-1;
 
     h5 {
         margin: $spacing-1 0 $spacing-4;
@@ -24,12 +24,12 @@
                 min-height: 9rem;
 
                 .p-card-title {
-                    font-size: 1rem;
+                    font-size: $font-size-md;
                 }
             }
 
             .p-card-header {
-                min-height: 9rem;
+                min-height: 5rem;
                 padding: 0;
                 background-color: $color-palette-secondary-200;
                 display: flex;
@@ -38,7 +38,7 @@
                 border-radius: $border-radius-sm $border-radius-sm 0 0;
 
                 i {
-                    font-size: 1.5rem;
+                    font-size: $font-size-xl;
                     color: $color-palette-secondary-500;
                 }
             }
