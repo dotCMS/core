@@ -5,8 +5,8 @@
     color: $black;
     border: 0 none;
     border-radius: $border-radius-xs;
-    box-shadow: 0 11px 15px -7px rgba(0, 0, 0, 0.2), 0 24px 38px 3px rgba(0, 0, 0, 0.14),
-        0 9px 46px 8px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 11px 15px -7px $color-palette-black-op-20,
+        0 24px 38px 3px $color-palette-black-op-10, 0 9px 46px 8px $color-palette-black-op-10;
 }
 
 .p-overlaypanel .p-overlaypanel-content {
@@ -32,12 +32,12 @@
 
 .p-overlaypanel:after {
     border: solid transparent;
-    border-color: rgba($white, 0);
+    border-color: $color-palette-white-op-30;
 }
 
 .p-overlaypanel:before {
     border: solid transparent;
-    border-color: rgba($white, 0);
+    border-color: $white;
 }
 
 .p-overlaypanel.p-overlaypanel-flipped:after {

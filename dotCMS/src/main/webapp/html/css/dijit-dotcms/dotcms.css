@@ -3762,27 +3762,27 @@ body {
 }
 .dijitTextBoxHover {
   background-color: #ffffff;
-  border: solid 1px #426bf0;
+  border: solid 1px var(--color-palette-primary-500);
 }
 .dijitTextBoxHover .dijitInputInner {
   color: #14151a;
 }
 .dijitTextBoxHover .dijitArrowButton {
   background-color: #ffffff;
-  border-left: solid 1px #426bf0;
+  border-left: solid 1px var(--color-palette-primary-500);
 }
 .dijitTextBoxHover .dijitArrowButton:before {
-  border-top-color: #426bf0;
+  border-top-color: var(--color-palette-primary-500);
 }
 .dijitTextBoxHover .dijitDownArrowButtonHover {
-  background-color: rgba(var(--color-sec_rgb), 0.2);
+  background-color: var(--color-palette-secondary-op-20);
   border-left: solid 1px #515667;
 }
 .dijitTextBoxHover .dijitDownArrowButtonHover:before {
-  border-top-color: #426bf0;
+  border-top-color: var(--color-palette-primary-500);
 }
 .dijitTextBoxFocused {
-  border: solid 2px #426bf0;
+  border: solid 2px var(--color-palette-primary-500);
   background-color: #ffffff;
 }
 .dijitTextBoxFocused .dijitInputInner {
@@ -3790,7 +3790,7 @@ body {
 }
 .dijitTextBoxFocused .dijitArrowButton {
   background-color: #ffffff;
-  border-left: solid 2px #426bf0;
+  border-left: solid 2px var(--color-palette-primary-500);
 }
 .dijitTextBoxFocused .dijitArrowButton:before {
   left: 50%;
@@ -3800,14 +3800,14 @@ body {
   top: 50%;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-top: 5px solid #426bf0;
+  border-top: 5px solid var(--color-palette-primary-500);
   content: "";
   height: 0;
   width: 0;
 }
 .dijitTextBoxFocused .dijitDownArrowButtonHover {
-  background-color: #426bf0;
-  border-left: #426bf0;
+  background-color: var(--color-palette-primary-500);
+  border-left: var(--color-palette-primary-500);
 }
 .dijitTextBoxFocused .dijitDownArrowButtonHover:before {
   left: 50%;
@@ -3817,7 +3817,7 @@ body {
   top: 50%;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-top: 5px solid #426bf0;
+  border-top: 5px solid var(--color-palette-primary-500);
   content: "";
   height: 0;
   width: 0;
@@ -3862,8 +3862,8 @@ body {
   border-top-color: #d82b2e;
 }
 .dijitTextBox .dijitDownArrowButtonActive {
-  background-color: #426bf0;
-  border-left: solid 1px #426bf0;
+  background-color: var(--color-palette-primary-500);
+  border-left: solid 1px var(--color-palette-primary-500);
 }
 .dijitTextBox .dijitDownArrowButtonActive:before {
   border-top-color: #ffffff;
@@ -3878,11 +3878,11 @@ body {
 }
 .dijitTextAreaHover {
   background-color: #ffffff;
-  border: solid 1px #426bf0;
+  border: solid 1px var(--color-palette-primary-500);
   color: #14151a;
 }
 .dijitTextAreaFocused {
-  border: solid 2px #426bf0;
+  border: solid 2px var(--color-palette-primary-500);
   background-color: #ffffff;
   color: #14151a;
 }
@@ -3927,53 +3927,53 @@ body {
 }
 .dijitSpinnerHover {
   background-color: #ffffff;
-  border: solid 1px #426bf0;
+  border: solid 1px var(--color-palette-primary-500);
 }
 .dijitSpinnerHover .dijitSpinnerButtonContainer {
-  border-left: solid 1px #426bf0;
+  border-left: solid 1px var(--color-palette-primary-500);
 }
 .dijitSpinnerHover .dijitSpinnerButtonContainer .dijitDownArrowButton {
-  border-top: solid 1px #426bf0 !important;
+  border-top: solid 1px var(--color-palette-primary-500) !important;
 }
 .dijitSpinnerHover .dijitArrowButton {
-  border-left: solid 1px #426bf0;
+  border-left: solid 1px var(--color-palette-primary-500);
 }
 .dijitSpinnerHover .dijitArrowButton:before {
-  border-top-color: #426bf0;
+  border-top-color: var(--color-palette-primary-500);
 }
 .dijitSpinnerHover .dijitDownArrowButtonHover,
 .dijitSpinnerHover .dijitUpArrowButtonHover {
-  background-color: rgba(var(--color-sec_rgb), 0.2);
+  background-color: var(--color-palette-secondary-op-20);
   border-left: solid 1px #515667;
 }
 .dijitSpinnerHover .dijitDownArrowButtonHover:before,
 .dijitSpinnerHover .dijitUpArrowButtonHover:before {
-  border-top-color: #426bf0;
+  border-top-color: var(--color-palette-primary-500);
 }
 .dijitSpinnerFocused {
   background-color: #ffffff;
-  border: solid 1px #426bf0;
+  border: solid 1px var(--color-palette-primary-500);
 }
 .dijitSpinnerFocused .dijitSpinnerButtonContainer {
-  border-left: solid 1px #426bf0;
+  border-left: solid 1px var(--color-palette-primary-500);
 }
 .dijitSpinnerFocused .dijitSpinnerButtonContainer .dijitDownArrowButton {
-  border-top: solid 1px #426bf0 !important;
+  border-top: solid 1px var(--color-palette-primary-500) !important;
 }
 .dijitSpinnerFocused .dijitArrowButton {
-  border-left: solid 1px #426bf0;
+  border-left: solid 1px var(--color-palette-primary-500);
 }
 .dijitSpinnerFocused .dijitArrowButton:before {
-  border-top-color: #426bf0;
+  border-top-color: var(--color-palette-primary-500);
 }
 .dijitSpinnerFocused .dijitDownArrowButtonHover,
 .dijitSpinnerFocused .dijitUpArrowButtonHover {
-  background-color: rgba(var(--color-sec_rgb), 0.2);
-  border-left: solid 1px #426bf0;
+  background-color: var(--color-palette-secondary-op-20);
+  border-left: solid 1px var(--color-palette-primary-500);
 }
 .dijitSpinnerFocused .dijitDownArrowButtonHover:before,
 .dijitSpinnerFocused .dijitUpArrowButtonHover:before {
-  border-top-color: #426bf0;
+  border-top-color: var(--color-palette-primary-500);
 }
 .dijitSpinnerDisabled {
   background-color: #f3f3f4;
@@ -4012,8 +4012,8 @@ body {
 }
 .dijitSpinner .dijitDownArrowButtonActive,
 .dijitSpinner .dijitUpArrowButtonActive {
-  background-color: #426bf0;
-  border-left: solid 1px #426bf0;
+  background-color: var(--color-palette-primary-500);
+  border-left: solid 1px var(--color-palette-primary-500);
 }
 .dijitSpinner .dijitDownArrowButtonActive:before,
 .dijitSpinner .dijitUpArrowButtonActive:before {
@@ -4040,8 +4040,8 @@ body {
 
 .dijitButton {
   background-color: #ffffff;
-  border: solid 1px #426bf0;
-  color: #426bf0;
+  border: solid 1px var(--color-palette-primary-500);
+  color: var(--color-palette-primary-500);
   box-shadow: 0;
 }
 .dijitButtonText {
@@ -4051,15 +4051,15 @@ body {
   border: none;
 }
 .dijitButtonHover {
-  background-color: #f7f9fe;
-  border: solid 1px #426bf0;
-  color: #426bf0;
+  background-color: var(--color-palette-primary-100);
+  border: solid 1px var(--color-palette-primary-500);
+  color: var(--color-palette-primary-500);
   box-shadow: 0;
 }
 .dijitButtonFocused {
-  background-color: #edf3ff;
-  border: solid 1px #426bf0;
-  color: #426bf0;
+  background-color: var(--color-palette-primary-200);
+  border: solid 1px var(--color-palette-primary-500);
+  color: var(--color-palette-primary-500);
   box-shadow: 0;
 }
 .dijitButtonDisabled {
@@ -4070,8 +4070,8 @@ body {
 }
 .dijitDropDownButton {
   background-color: #ffffff;
-  border: solid 1px #426bf0;
-  color: #426bf0;
+  border: solid 1px var(--color-palette-primary-500);
+  color: var(--color-palette-primary-500);
   box-shadow: 0;
 }
 .dijitDropDownButton .dijitButtonNode {
@@ -4089,15 +4089,15 @@ body {
   top: 50%;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-top: 5px solid #426bf0;
+  border-top: 5px solid var(--color-palette-primary-500);
   content: "";
   height: 0;
   width: 0;
 }
 .dijitDropDownButtonHover {
-  background-color: #f7f9fe;
-  border: solid 1px #426bf0;
-  color: #426bf0;
+  background-color: var(--color-palette-primary-100);
+  border: solid 1px var(--color-palette-primary-500);
+  color: var(--color-palette-primary-500);
   box-shadow: 0;
 }
 .dijitDropDownButtonHover .dijitArrowButtonInner {
@@ -4111,15 +4111,15 @@ body {
   top: 50%;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-top: 5px solid #426bf0;
+  border-top: 5px solid var(--color-palette-primary-500);
   content: "";
   height: 0;
   width: 0;
 }
 .dijitDropDownButtonActive {
-  background-color: #edf3ff;
-  border: solid 1px #426bf0;
-  color: #426bf0;
+  background-color: var(--color-palette-primary-200);
+  border: solid 1px var(--color-palette-primary-500);
+  color: var(--color-palette-primary-500);
   box-shadow: 0;
 }
 .dijitDropDownButtonActive .dijitArrowButtonInner {
@@ -4139,9 +4139,9 @@ body {
   width: 0;
 }
 .dijitDropDownButtonFocused {
-  background-color: #edf3ff;
-  border: solid 1px #426bf0;
-  color: #426bf0;
+  background-color: var(--color-palette-primary-200);
+  border: solid 1px var(--color-palette-primary-500);
+  color: var(--color-palette-primary-500);
   box-shadow: 0;
 }
 .dijitDropDownButtonDisabled {
@@ -4169,8 +4169,8 @@ body {
 .dijitComboButton {
   border-collapse: inherit;
   background-color: #ffffff;
-  border: solid 1px #426bf0;
-  color: #426bf0;
+  border: solid 1px var(--color-palette-primary-500);
+  color: var(--color-palette-primary-500);
   box-shadow: 0;
 }
 .dijitComboButton .dijitArrowButtonInner {
@@ -4185,7 +4185,7 @@ body {
   top: 50%;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-top: 5px solid #426bf0;
+  border-top: 5px solid var(--color-palette-primary-500);
   content: "";
   height: 0;
   width: 0;
@@ -4197,9 +4197,9 @@ body {
   padding-left: 0;
 }
 .dijitComboButtonHover {
-  background-color: #f7f9fe;
-  border: solid 1px #426bf0;
-  color: #426bf0;
+  background-color: var(--color-palette-primary-100);
+  border: solid 1px var(--color-palette-primary-500);
+  color: var(--color-palette-primary-500);
   box-shadow: 0;
 }
 .dijitComboButtonHover .dijitArrowButtonInner {
@@ -4213,15 +4213,15 @@ body {
   top: 50%;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-top: 5px solid #426bf0;
+  border-top: 5px solid var(--color-palette-primary-500);
   content: "";
   height: 0;
   width: 0;
 }
 .dijitComboButtonActive {
-  background-color: #edf3ff;
-  border: solid 1px #426bf0;
-  color: #426bf0;
+  background-color: var(--color-palette-primary-200);
+  border: solid 1px var(--color-palette-primary-500);
+  color: var(--color-palette-primary-500);
   box-shadow: 0;
 }
 .dijitComboButtonActive .dijitArrowButtonInner {
@@ -4235,15 +4235,15 @@ body {
   top: 50%;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-top: 5px solid #426bf0;
+  border-top: 5px solid var(--color-palette-primary-500);
   content: "";
   height: 0;
   width: 0;
 }
 .dijitComboButtonFocused, .dijitComboButtonHoverFocused {
-  background-color: #edf3ff;
-  border: solid 1px #426bf0;
-  color: #426bf0;
+  background-color: var(--color-palette-primary-200);
+  border: solid 1px var(--color-palette-primary-500);
+  color: var(--color-palette-primary-500);
   box-shadow: 0;
 }
 .dijitComboButtonFocused .dijitArrowButtonInner, .dijitComboButtonHoverFocused .dijitArrowButtonInner {
@@ -4257,7 +4257,7 @@ body {
   top: 50%;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-top: 5px solid #426bf0;
+  border-top: 5px solid var(--color-palette-primary-500);
   content: "";
   height: 0;
   width: 0;
@@ -4287,8 +4287,8 @@ body {
 }
 .dijitToggleButton {
   background-color: #ffffff;
-  border: solid 1px #426bf0;
-  color: #426bf0;
+  border: solid 1px var(--color-palette-primary-500);
+  color: var(--color-palette-primary-500);
   box-shadow: 0;
 }
 .dijitToggleButton .dijitIcon {
@@ -4298,15 +4298,15 @@ body {
   visibility: visible;
 }
 .dijitToggleButtonFocused, .dijitToggleButtonChecked {
-  background-color: #edf3ff;
-  border: solid 1px #426bf0;
-  color: #426bf0;
+  background-color: var(--color-palette-primary-200);
+  border: solid 1px var(--color-palette-primary-500);
+  color: var(--color-palette-primary-500);
   box-shadow: 0;
 }
 .dijitToggleButtonHover, .dijitToggleButtonHoverFocused, .dijitToggleButtonCheckedHover {
-  background-color: #f7f9fe;
-  border: solid 1px #426bf0;
-  color: #426bf0;
+  background-color: var(--color-palette-primary-100);
+  border: solid 1px var(--color-palette-primary-500);
+  color: var(--color-palette-primary-500);
   box-shadow: 0;
 }
 .dijitToggleButtonDisabled {
@@ -4324,8 +4324,8 @@ body {
   height: 18px;
 }
 .dijitCheckBoxChecked {
-  border: solid 1px #426bf0;
-  background: #426bf0 url("data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48c3ZnIHdpZHRoPSIxMHB4IiBoZWlnaHQ9IjhweCIgdmlld0JveD0iMCAwIDEwIDgiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+ICAgICAgICA8dGl0bGU+U2hhcGU8L3RpdGxlPiAgICA8ZGVzYz5DcmVhdGVkIHdpdGggU2tldGNoLjwvZGVzYz4gICAgPGRlZnM+PC9kZWZzPiAgICA8ZyBpZD0iU3ltYm9scyIgc3Ryb2tlPSJub25lIiBzdHJva2Utd2lkdGg9IjEiIGZpbGw9Im5vbmUiIGZpbGwtcnVsZT0iZXZlbm9kZCI+ICAgICAgICA8ZyBpZD0iY2hlY2tib3gtYWN0aXZlIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtNC4wMDAwMDAsIC01LjAwMDAwMCkiIGZpbGw9IiNGRkZGRkYiPiAgICAgICAgICAgIDxwb2x5Z29uIGlkPSJTaGFwZSIgcG9pbnRzPSI3LjMxMDcyMDMyIDExLjQyMjQ0NDkgNC45ODYxOTU2MyA5LjA5NzkyMDE5IDQuMTk0NjMwODcgOS44ODM5MTA1NSA3LjMxMDcyMDMyIDEzIDE0IDYuMzEwNzIwMzIgMTMuMjE0MDA5NiA1LjUyNDcyOTk2Ij48L3BvbHlnb24+ICAgICAgICA8L2c+ICAgIDwvZz48L3N2Zz4=") center center no-repeat;
+  border: solid 1px var(--color-palette-primary-500);
+  background: var(--color-palette-primary-500) url("data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48c3ZnIHdpZHRoPSIxMHB4IiBoZWlnaHQ9IjhweCIgdmlld0JveD0iMCAwIDEwIDgiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+ICAgICAgICA8dGl0bGU+U2hhcGU8L3RpdGxlPiAgICA8ZGVzYz5DcmVhdGVkIHdpdGggU2tldGNoLjwvZGVzYz4gICAgPGRlZnM+PC9kZWZzPiAgICA8ZyBpZD0iU3ltYm9scyIgc3Ryb2tlPSJub25lIiBzdHJva2Utd2lkdGg9IjEiIGZpbGw9Im5vbmUiIGZpbGwtcnVsZT0iZXZlbm9kZCI+ICAgICAgICA8ZyBpZD0iY2hlY2tib3gtYWN0aXZlIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtNC4wMDAwMDAsIC01LjAwMDAwMCkiIGZpbGw9IiNGRkZGRkYiPiAgICAgICAgICAgIDxwb2x5Z29uIGlkPSJTaGFwZSIgcG9pbnRzPSI3LjMxMDcyMDMyIDExLjQyMjQ0NDkgNC45ODYxOTU2MyA5LjA5NzkyMDE5IDQuMTk0NjMwODcgOS44ODM5MTA1NSA3LjMxMDcyMDMyIDEzIDE0IDYuMzEwNzIwMzIgMTMuMjE0MDA5NiA1LjUyNDcyOTk2Ij48L3BvbHlnb24+ICAgICAgICA8L2c+ICAgIDwvZz48L3N2Zz4=") center center no-repeat;
 }
 .dijitCheckBoxDisabled {
   border: solid 1px transparent;
@@ -4344,12 +4344,12 @@ body {
   width: 18px;
 }
 .dijitRadioChecked {
-  border: solid 1px #426bf0;
+  border: solid 1px var(--color-palette-primary-500);
   position: relative;
 }
 .dijitRadioChecked:before {
   border-radius: 5px;
-  background-color: #426bf0;
+  background-color: var(--color-palette-primary-500);
   content: "";
   height: 10px;
   left: 50%;
@@ -4410,11 +4410,11 @@ body {
 }
 .dijitSelectHover {
   background-color: #ffffff;
-  border: solid 1px #426bf0;
+  border: solid 1px var(--color-palette-primary-500);
   color: #14151a;
 }
 .dijitSelectHover .dijitArrowButton {
-  border-left: solid 1px #426bf0;
+  border-left: solid 1px var(--color-palette-primary-500);
   background-color: transparent;
 }
 .dijitSelectHover .dijitArrowButton > .dijitArrowButtonInner {
@@ -4425,18 +4425,18 @@ body {
   top: 50%;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-top: 5px solid #426bf0;
+  border-top: 5px solid var(--color-palette-primary-500);
   content: "";
   height: 0;
   width: 0;
 }
 .dijitSelectActive, .dijitSelectOpened {
   background-color: #ffffff;
-  border: solid 1px #426bf0;
+  border: solid 1px var(--color-palette-primary-500);
   color: #14151a;
 }
 .dijitSelectActive .dijitArrowButton, .dijitSelectOpened .dijitArrowButton {
-  border-left: solid 1px #426bf0;
+  border-left: solid 1px var(--color-palette-primary-500);
   background-color: transparent;
 }
 .dijitSelectActive .dijitArrowButton > .dijitArrowButtonInner, .dijitSelectOpened .dijitArrowButton > .dijitArrowButtonInner {
@@ -4447,7 +4447,7 @@ body {
   top: 50%;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-top: 5px solid #426bf0;
+  border-top: 5px solid var(--color-palette-primary-500);
   content: "";
   height: 0;
   width: 0;
@@ -4490,33 +4490,33 @@ body {
 }
 .dijitComboBoxHover {
   background-color: #ffffff;
-  border: solid 1px #426bf0;
+  border: solid 1px var(--color-palette-primary-500);
 }
 .dijitComboBoxHover .dijitArrowButton {
   background-color: #ffffff;
-  border-left: solid 1px #426bf0;
+  border-left: solid 1px var(--color-palette-primary-500);
 }
 .dijitComboBoxHover .dijitArrowButton:before {
-  border-top-color: #426bf0;
+  border-top-color: var(--color-palette-primary-500);
 }
 .dijitComboBoxHover .dijitDownArrowButtonHover {
-  background-color: rgba(var(--color-sec_rgb), 0.2);
+  background-color: var(--color-palette-secondary-op-20);
   border-left: solid 1px #515667;
 }
 .dijitComboBoxHover .dijitDownArrowButtonHover:before {
-  border-top-color: #426bf0;
+  border-top-color: var(--color-palette-primary-500);
 }
 .dijitComboBoxFocused {
-  border: solid 1px #426bf0;
+  border: solid 1px var(--color-palette-primary-500);
   background-color: #ffffff;
 }
 .dijitComboBoxFocused .dijitArrowButton {
   background-color: #ffffff;
-  border-left: solid 1px #426bf0;
+  border-left: solid 1px var(--color-palette-primary-500);
 }
 .dijitComboBoxFocused .dijitDownArrowButtonHover {
-  background-color: rgba(var(--color-sec_rgb), 0.2);
-  border-left: solid 1px #426bf0;
+  background-color: var(--color-palette-secondary-op-20);
+  border-left: solid 1px var(--color-palette-primary-500);
 }
 .dijitComboBoxDisabled {
   border: solid 1px #e3e4e6;
@@ -4545,8 +4545,8 @@ body {
   border-top-color: #d82b2e;
 }
 .dijitComboBox .dijitDownArrowButtonActive {
-  background-color: #426bf0;
-  border-left: solid 1px #426bf0;
+  background-color: var(--color-palette-primary-500);
+  border-left: solid 1px var(--color-palette-primary-500);
 }
 .dijitComboBox .dijitDownArrowButtonActive:before {
   border-top-color: #ffffff;
@@ -4567,7 +4567,7 @@ body {
   border: solid 1px #d1d4db;
 }
 .dijitSliderProgressBar, .dijitSliderBottomBumper, .dijitSliderLeftBumper {
-  background: #426bf0;
+  background: var(--color-palette-primary-500);
   border-color: #d1d4db;
 }
 .dijitSliderRemainingBar, .dijitSliderTopBumper, .dijitSliderRightBumper {
@@ -4590,7 +4590,7 @@ body {
   border-radius: 0.5rem;
   width: 20px;
   height: 16px;
-  border: solid 1px #426bf0;
+  border: solid 1px var(--color-palette-primary-500);
   background-color: #ffffff;
   position: relative;
 }
@@ -4598,7 +4598,7 @@ body {
   display: none;
 }
 .dijitSliderDecrementButtonHover, .dijitSliderIncrementButtonHover {
-  border: solid 1px #426bf0;
+  border: solid 1px var(--color-palette-primary-500);
 }
 .dijitSliderIncrementIconV {
   margin-bottom: 5px;
@@ -4633,14 +4633,14 @@ body {
   width: 0;
 }
 .dijitSliderDecrementButtonActive, .dijitSliderIncrementButtonActive {
-  background-color: #edf3ff;
-  border: solid 1px #426bf0;
+  background-color: var(--color-palette-primary-200);
+  border: solid 1px var(--color-palette-primary-500);
 }
 .dijitSliderIncrementButtonActive:before {
-  border-top-color: #426bf0;
+  border-top-color: var(--color-palette-primary-500);
 }
 .dijitSliderDecrementButtonActive:before {
-  border-bottom-color: #426bf0;
+  border-bottom-color: var(--color-palette-primary-500);
 }
 .dijitSliderImageHandle {
   transition: all 0.1s;
@@ -4660,7 +4660,7 @@ body {
 .dijitSliderHover .dijitSliderBottomBumper,
 .dijitSliderHover .dijitSliderProgressBar,
 .dijitSliderHover .dijitSliderLeftBumper {
-  background: #426bf0;
+  background: var(--color-palette-primary-500);
   border-color: #515667;
 }
 .dijitSliderHover .dijitSliderRemainingBar,
@@ -4753,10 +4753,10 @@ body {
 
 .dijitTitlePane {
   border-radius: 1px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+  box-shadow: 0 1px 3px var(--color-palette-black-op-10), 0 1px 2px var(--color-palette-black-op-20);
 }
 .dijitTitlePaneHover {
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+  box-shadow: 0 3px 6px var(--color-palette-black-op-10), 0 3px 6px var(--color-palette-black-op-20);
 }
 .dijitTitlePaneHover .dijitTitlePaneContentOuter {
   border: none;
@@ -4812,7 +4812,7 @@ body {
   background-color: #ffffff;
   border-radius: 0px;
   border: none;
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+  box-shadow: 0 3px 6px var(--color-palette-black-op-10), 0 3px 6px var(--color-palette-black-op-20);
 }
 .dijitDialogCloseIcon {
   width: 17px;
@@ -4861,23 +4861,23 @@ body {
 
 .dijitPopup {
   border: none;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+  box-shadow: 0 1px 3px var(--color-palette-black-op-10), 0 1px 2px var(--color-palette-black-op-20);
 }
 .dijitTimePickerPopup {
   border: none;
 }
 
 .dijitSplitter {
-  background: rgba(243, 243, 244, 0.25);
+  background: var(--color-palette-black-op-20);
 }
 .dijitSplitterHover {
-  background: rgba(243, 243, 244, 0.5);
+  background: var(--color-palette-black-op-50);
 }
 .dijitSplitterHover .dijitSplitterThumb {
   background: #6c7389;
 }
 .dijitSplitterActive {
-  background-color: rgba(108, 115, 137, 0.2);
+  background-color: var(--color-palette-black-op-20);
 }
 .dijitSplitterActive .dijitSplitterThumb {
   background: #6c7389;
@@ -4933,10 +4933,10 @@ body {
   overflow: visible;
 }
 .dijitTabChecked, .dijitTabChecked.dijitTabCheckedHover {
-  background-color: #edf3ff;
+  background-color: var(--color-palette-primary-200);
   border-width: 0 0 4px 0;
   border-style: solid;
-  border-color: transparent transparent #426bf0 transparent;
+  border-color: transparent transparent var(--color-palette-primary-500) transparent;
   height: 59px;
 }
 .dijitTabCloseIcon {
@@ -5030,16 +5030,16 @@ body {
   border-top-color: #14151a;
 }
 .dijitTab.tabStripButtonActive {
-  background-color: rgba(var(--color-sec_rgb), 0.2);
+  background-color: var(--color-palette-secondary-op-20);
 }
 .dijitTab.tabStripButtonActive .dijitTabStripSlideLeftIcon:before {
-  border-right-color: #426bf0;
+  border-right-color: var(--color-palette-primary-500);
 }
 .dijitTab.tabStripButtonActive .dijitTabStripSlideRightIcon:before {
-  border-left-color: #426bf0;
+  border-left-color: var(--color-palette-primary-500);
 }
 .dijitTab.tabStripButtonActive .dijitTabStripMenuIcon:before {
-  border-top-color: #426bf0;
+  border-top-color: var(--color-palette-primary-500);
 }
 .dijitTab.tabStripButtonDisabled {
   background-color: #ffffff;
@@ -5327,11 +5327,11 @@ body {
   color: #6c7389;
 }
 .dijitCalendarNextYear, .dijitCalendarPreviousYear {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--color-palette-white-op-10);
 }
 .dijitCalendarSelectedDate .dijitCalendarDateLabel {
   border-radius: 0.5rem;
-  background-color: #426bf0;
+  background-color: var(--color-palette-primary-500);
   color: #ffffff;
   display: block;
   height: 40px;
@@ -5359,7 +5359,7 @@ body {
 }
 
 .dijitMenu {
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+  box-shadow: 0 3px 6px var(--color-palette-black-op-10), 0 3px 6px var(--color-palette-black-op-20);
   background-color: #ffffff;
   border: none;
 }
@@ -5474,7 +5474,7 @@ body {
 }
 .dijitInlineEditBoxDisplayModeHover {
   border-radius: 2px;
-  border: solid 1px solid 2px #426bf0;
+  border: solid 1px solid 2px var(--color-palette-primary-500);
   background: #ffffff;
 }
 .dijitInlineEditBoxDisplayMode.dijitOffScreen {
@@ -5686,8 +5686,8 @@ tt {
   border: 1px solid #c9c9c9;
   border-top: 0;
   padding: 10px 0;
-  -webkit-box-shadow: 0 -1px 6px rgba(0, 0, 0, 0.2);
-  box-shadow: 0 -1px 6px rgba(0, 0, 0, 0.2);
+  -webkit-box-shadow: 0 -1px 6px var(--color-palette-black-op-20);
+  box-shadow: 0 -1px 6px var(--color-palette-black-op-20);
 }
 
 #ft {
@@ -6151,14 +6151,14 @@ fieldset {
 }
 
 a {
-  color: #426bf0;
+  color: var(--color-palette-primary-500);
 }
 a:hover {
   text-decoration: none;
 }
 
 .link {
-  color: #426bf0 !important;
+  color: var(--color-palette-primary-500) !important;
   text-decoration: underline !important;
 }
 .link:hover {
@@ -6309,13 +6309,13 @@ select[multiple] {
   width: 100%;
 }
 select[multiple]:hover {
-  border: solid 1px #426bf0;
+  border: solid 1px var(--color-palette-primary-500);
 }
 
 .fakeDojoButton {
   background-color: #ffffff;
-  border: solid 1px #426bf0;
-  color: #426bf0;
+  border: solid 1px var(--color-palette-primary-500);
+  color: var(--color-palette-primary-500);
   box-shadow: 0;
   transition: all 0.1s;
   border-radius: 0.5rem;
@@ -6327,9 +6327,9 @@ select[multiple]:hover {
   text-transform: uppercase;
 }
 .fakeDojoButton:hover {
-  background-color: #f7f9fe;
-  border: solid 1px #426bf0;
-  color: #426bf0;
+  background-color: var(--color-palette-primary-100);
+  border: solid 1px var(--color-palette-primary-500);
+  color: var(--color-palette-primary-500);
   box-shadow: 0;
 }
 .fakeDojoButton img {
@@ -6347,7 +6347,7 @@ select[multiple]:hover {
 }
 
 .dijitDropDownActionButton {
-  background-color: #426bf0;
+  background-color: var(--color-palette-primary-500);
   border: none;
   border-radius: 1.5rem;
   height: 3rem;
@@ -6369,7 +6369,7 @@ select[multiple]:hover {
   display: none;
 }
 .dijitDropDownActionButton.dijitDropDownButtonHover {
-  background-color: #819eee;
+  background-color: var(--color-palette-primary-400);
 }
 .dijitDropDownActionButton.dijitDropDownButtonDisabled {
   background-color: #d1d4db;
@@ -6382,10 +6382,10 @@ select[multiple]:hover {
   border: 0;
   background-color: transparent;
   box-shadow: none;
-  color: #426bf0;
+  color: var(--color-palette-primary-500);
 }
 .dijitButtonFlat.dijitButtonHover {
-  background-color: #edf3ff;
+  background-color: var(--color-palette-primary-200);
 }
 .dijitButtonDanger {
   border: 0;
@@ -6397,11 +6397,11 @@ select[multiple]:hover {
 }
 .dijitButtonAction {
   border: solid 1px transparent;
-  background-color: #426bf0;
+  background-color: var(--color-palette-primary-500);
   color: #ffffff;
 }
 .dijitButtonAction.dijitButtonHover {
-  background-color: #819eee;
+  background-color: var(--color-palette-primary-400);
 }
 
 .dotCMSHostFileFilteringSelect .dijitTextBox {
@@ -6464,7 +6464,7 @@ select[multiple]:hover {
 }
 
 #admin-site-tools-div a.trigger-off:hover {
-  background-color: rgba(255, 255, 255, 0.15);
+  background-color: var(--color-palette-white-op-10);
 }
 
 #admin-site-tools-div a.trigger-on {
@@ -6482,9 +6482,9 @@ select[multiple]:hover {
   -khtml-border-radius-topright: 14px;
   -moz-border-radius-topright: 4px;
   border-top-right-radius: 4px;
-  -moz-box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.2);
-  -webkit-box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.2);
-  box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.2);
+  -moz-box-shadow: 0px 3px 10px var(--color-palette-black-op-20);
+  -webkit-box-shadow: 0px 3px 10px var(--color-palette-black-op-20);
+  box-shadow: 0px 3px 10px var(--color-palette-black-op-20);
 }
 
 #closeTab {
@@ -6494,7 +6494,7 @@ select[multiple]:hover {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--color-palette-white-op-30);
 }
 
 .bannerBG {
@@ -6524,9 +6524,9 @@ select[multiple]:hover {
   border-top: 0;
   background: #fff;
   z-index: 9998;
-  -moz-box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.2);
-  -webkit-box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.2);
-  box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.2);
+  -moz-box-shadow: 0px 2px 10px var(--color-palette-black-op-20);
+  -webkit-box-shadow: 0px 2px 10px var(--color-palette-black-op-20);
+  box-shadow: 0px 2px 10px var(--color-palette-black-op-20);
 }
 
 .account-flyout h3 {
@@ -6594,9 +6594,9 @@ select[multiple]:hover {
 
 #helpcontent {
   border: 1px solid #ddd;
-  -moz-box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.1);
-  -webkit-box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.1);
-  box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.1);
+  -moz-box-shadow: 3px 3px 5px var(--color-palette-black-op-10);
+  -webkit-box-shadow: 3px 3px 5px var(--color-palette-black-op-10);
+  box-shadow: 3px 3px 5px var(--color-palette-black-op-10);
   color: #dddddd;
   background: #fff;
   margin-bottom: -10px;
@@ -6609,40 +6609,20 @@ select[multiple]:hover {
   background: #000;
   margin-bottom: -1px;
   opacity: 0.7;
-  -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=70)";
-  /* IE 8 */
-  /* IE 7 and olders */
-  -khtml-opacity: 0.7;
-  -moz-opacity: 0.7;
-  -webkit-opcity: 0.7;
   color: #ddd;
   line-height: 14px;
   font-size: 11px;
-  -moz-box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.5);
-  -webkit-box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.5);
-  box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.5);
-  -webkit-border-top-left-radius: 8px;
-  -khtml-border-radius-topleft: 8px;
-  -moz-border-radius-topleft: 8px;
+  box-shadow: 0px 0px 5px var(--color-palette-black-op-50);
   border-top-left-radius: 8px;
-  -webkit-border-top-right-radius: 8px;
-  -khtml-border-radius-topright: 8px;
-  -moz-border-radius-topright: 8px;
   border-top-right-radius: 8px;
   display: inline-block;
   outline: none;
 }
 
 .dotcmsHelpButton:hover {
-  background: #000;
+  background: #14151a;
   opacity: 0.9;
-  -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=90)";
-  /* IE 8 */
-  /* IE 7 and olders */
-  -khtml-opacity: 0.9;
-  -moz-opacity: 0.9;
-  -webkit-opcity: 0.9;
-  color: #fff;
+  color: #ffffff;
 }
 
 .changeHost {
@@ -6721,7 +6701,7 @@ select[multiple]:hover {
   border: none;
 }
 .listingTable.relateContent td a {
-  color: #426bf0;
+  color: var(--color-palette-primary-500);
   text-decoration: underline;
 }
 
@@ -7508,10 +7488,10 @@ table.sTypeTable.sTypeItem {
   position: relative;
   padding: 20px 20px 30px 40px;
   color: #fff;
-  background: rgba(0, 0, 0, 0.8);
-  -moz-box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.2);
-  -webkit-box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.2);
-  box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.2);
+  background: var(--color-palette-black-op-80);
+  -moz-box-shadow: 3px 3px 5px var(--color-palette-black-op-20);
+  -webkit-box-shadow: 3px 3px 5px var(--color-palette-black-op-20);
+  box-shadow: 3px 3px 5px var(--color-palette-black-op-20);
   -webkit-border-radius: 8px;
   -khtml-border-radius: 8px;
   -moz-border-radius: 8px;
@@ -7529,10 +7509,10 @@ table.sTypeTable.sTypeItem {
   position: relative;
   padding: 20px 20px 30px 40px;
   color: #fff;
-  background: rgba(0, 0, 0, 0.8);
-  -moz-box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.2);
-  -webkit-box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.2);
-  box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.2);
+  background: var(--color-palette-black-op-80);
+  -moz-box-shadow: 3px 3px 5px var(--color-palette-black-op-20);
+  -webkit-box-shadow: 3px 3px 5px var(--color-palette-black-op-20);
+  box-shadow: 3px 3px 5px var(--color-palette-black-op-20);
   -webkit-border-radius: 8px;
   -khtml-border-radius: 8px;
   -moz-border-radius: 8px;
@@ -7557,10 +7537,10 @@ table.sTypeTable.sTypeItem {
   width: 150px;
   padding: 20px;
   color: #fff;
-  background: rgba(0, 0, 0, 0.8);
-  -moz-box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.2);
-  -webkit-box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.2);
-  box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.2);
+  background: var(--color-palette-black-op-80);
+  -moz-box-shadow: 3px 3px 5px var(--color-palette-black-op-20);
+  -webkit-box-shadow: 3px 3px 5px var(--color-palette-black-op-20);
+  box-shadow: 3px 3px 5px var(--color-palette-black-op-20);
   -webkit-border-radius: 8px;
   -khtml-border-radius: 8px;
   -moz-border-radius: 8px;
@@ -8017,9 +7997,9 @@ table.bgThumbnail td div {
   padding: 4px;
   border: 1px solid #a0a0a0;
   margin: 6px;
-  -moz-box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.3);
-  -webkit-box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.3);
-  box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.3);
+  -moz-box-shadow: 0px 3px 10px var(--color-palette-black-op-30);
+  -webkit-box-shadow: 0px 3px 10px var(--color-palette-black-op-30);
+  box-shadow: 0px 3px 10px var(--color-palette-black-op-30);
 }
 
 table.bgThumbnail td div a {
@@ -9128,7 +9108,7 @@ div#_dotHelpMenu {
 }
 
 .hostDefaultIcon {
-  color: #426bf0;
+  color: var(--color-palette-primary-500);
 }
 
 .hostStoppedIcon {
@@ -9171,7 +9151,7 @@ Styles for commons fields along the backend
   width: 100%;
 }
 .fileAjaxUploader input[type=file]::-webkit-file-upload-button {
-  background-color: #426bf0;
+  background-color: var(--color-palette-primary-500);
   height: 36px;
   border: 0;
   color: #ffffff;
@@ -9179,7 +9159,7 @@ Styles for commons fields along the backend
   padding: 0 1rem;
 }
 .fileAjaxUploader input[type=file]::-webkit-file-upload-button:hover {
-  background-color: #819eee;
+  background-color: var(--color-palette-primary-400);
 }
 .fileAjaxUploaderActions div {
   display: inline-block;
@@ -9379,7 +9359,7 @@ Styles for commons fields along the backend
   width: 20px;
 }
 .tagLink:hover {
-  border: 1px solid #426bf0;
+  border: 1px solid var(--color-palette-primary-500);
 }
 
 .tagsWrapper {
@@ -9734,9 +9714,9 @@ dd .buttonCaption {
 }
 
 .callOutBox {
-  background-color: rgba(129, 158, 238, 0.1);
+  background-color: var(--color-palette-black-op-10);
   border-radius: 0.125rem;
-  border: 1px solid rgba(129, 158, 238, 0.3);
+  border: 1px solid var(--color-palette-black-op-30);
   margin: 1rem 0;
   padding: 0.5rem;
   text-align: center;
@@ -9918,7 +9898,7 @@ dd .buttonCaption {
 }
 
 .navSelectedDay {
-  background-color: rgba(66, 107, 240, 0.2);
+  background-color: var(--color-palette-black-op-20);
 }
 
 .previousPageLink {
@@ -10052,7 +10032,7 @@ dd .buttonCaption {
 }
 
 #navMonthYearName {
-  background-color: #426bf0;
+  background-color: var(--color-palette-primary-500);
   color: #ffffff;
   cursor: pointer;
   text-align: center;
@@ -10087,7 +10067,7 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .network-action__title {
-  background-color: #426bf0;
+  background-color: var(--color-palette-primary-500);
   color: #ffffff;
   margin: -1rem -1rem 1rem;
   height: 39px;
@@ -10346,7 +10326,7 @@ a.category_higlighted, a.tag_higlighted {
 
 .import-preview {
   margin: 50px auto;
-  border: solid 1px #9747ff;
+  border: solid 1px var(--color-palette-secondary-500);
   border-color: #d1d4db;
   border-radius: 0.25rem;
 }
@@ -10385,7 +10365,7 @@ a.category_higlighted, a.tag_higlighted {
   transition: background-color 0.1s;
 }
 .content-type__fields-list-row:hover {
-  background-color: rgba(66, 107, 240, 0.1);
+  background-color: var(--color-palette-primary-op-10);
 }
 
 .content-type__url-pattern-help {
@@ -10816,7 +10796,7 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .context-menu {
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+  box-shadow: 0 3px 6px var(--color-palette-black-op-10), 0 3px 6px var(--color-palette-black-op-20);
   position: absolute;
   background: #ffffff;
   border: 1px solid #d1d4db;
@@ -10966,7 +10946,7 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .file-selector-tree__card {
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+  box-shadow: 0 1px 3px var(--color-palette-black-op-10), 0 1px 2px var(--color-palette-black-op-20);
   cursor: pointer;
   display: flex;
   flex-direction: column;
@@ -10976,7 +10956,7 @@ a.category_higlighted, a.tag_higlighted {
   margin: 0.25rem;
 }
 .file-selector-tree__card:hover {
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+  box-shadow: 0 3px 6px var(--color-palette-black-op-10), 0 3px 6px var(--color-palette-black-op-20);
 }
 .file-selector-tree__card .thumbnail {
   position: relative;
@@ -11022,7 +11002,7 @@ a.category_higlighted, a.tag_higlighted {
   color: #d82b2e;
 }
 .host-list__item .hostDefaultIcon + a {
-  color: #426bf0;
+  color: var(--color-palette-primary-500);
 }
 .host-list__item .hostStoppedIcon + a {
   color: #afb3c0;
@@ -11282,7 +11262,7 @@ a.category_higlighted, a.tag_higlighted {
   border-top: 1px solid silver;
   padding: 5px 15px 1px 15px;
   vertical-align: middle;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 1px 3px var(--color-palette-black-op-20);
 }
 
 #imageViewPort {
@@ -11540,8 +11520,8 @@ Resize Handle
 .api-link {
   align-items: center;
   border-radius: 2px;
-  border: solid 1px var(--color-sec);
-  color: var(--color-sec);
+  border: solid 1px var(--color-palette-secondary-500);
+  color: var(--color-palette-secondary-500);
   display: inline-flex;
   line-height: 1em;
   padding: 2px 6px 2px 4px;
@@ -11550,7 +11530,7 @@ Resize Handle
   transition: background-color 150ms ease, color 150ms ease;
 }
 .api-link:hover {
-  background-color: var(--color-sec);
+  background-color: var(--color-palette-secondary-500);
   color: #fff;
 }
 
@@ -11585,15 +11565,6 @@ Resize Handle
   font-family: Roboto, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
   font-size: 14px;
   line-height: 40px;
-}
-
-:root {
-  --color-background: #3a3847;
-  --color-main: #c336e5;
-  --color-main_mod: #d369ec;
-  --color-main_rgb: 195, 54, 229;
-  --color-sec: #54428e;
-  --color-sec_rgb: 84, 66, 142;
 }
 
 @font-face {
@@ -11663,5 +11634,3 @@ body {
   text-rendering: optimizeLegibility;
   -moz-osx-font-smoothing: grayscale;
 }
-
-/*# sourceMappingURL=dotcms.css.map */

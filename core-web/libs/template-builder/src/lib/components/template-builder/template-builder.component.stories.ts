@@ -32,7 +32,7 @@ import {
 } from './utils/mocks';
 
 export default {
-    title: 'Template Builder',
+    title: 'Library/Template Builder',
     component: TemplateBuilderComponent,
     decorators: [
         moduleMetadata({
