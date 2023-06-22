@@ -155,6 +155,7 @@ public class HostIntegrityCheckerTest extends IntegrationTestBase {
 
             integrityChecker.executeFix(endpointId);
             assertHostsFix(dc);
+            assertHostHasContentletAsJson(dc, host.getInode());
 
             HibernateUtil.startTransaction();
             removeHost(dc, host.getInode());
@@ -213,6 +214,12 @@ public class HostIntegrityCheckerTest extends IntegrationTestBase {
                 throw new RuntimeException(e);
             }
         });
+    }
+
+    private void assertHostHasContentletAsJson(DotConnect dc, String inode) throws Exception {
+        Assert.assertEquals(
+                1L,
+                dc.getRecordCount("contentlet", "WHERE inode = '" + inode + "' AND contentlet_as_json IS NOT NULL").longValue());
     }
 
     @NotNull
