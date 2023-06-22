@@ -2383,7 +2383,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         assertEquals(1,  conditions.size());
 
         assertEquals("url", conditions.get(0).parameter());
-        assertEquals("^(http|https):\\/\\/.*:.*\\" + experimentPage.getURI() + "(\\?.*)?$",
+        assertEquals("^(http|https):\\/\\/(localhost|127.0.0.1|\\b(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,})(:\\d{1,5})?\\" + experimentPage.getURI() + "(\\?.*)?$",
                 conditions.get(0).value());
         assertEquals(Operator.REGEX, conditions.get(0).operator());
     }
