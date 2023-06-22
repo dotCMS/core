@@ -3,7 +3,7 @@ import { v4 as uuid } from 'uuid';
 import { DotLayoutBody } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
-import { DotGridStackWidget } from '../models/models';
+import { DotGridStackWidget, DotTemplateBuilderContainer } from '../models/models';
 
 export const GRIDSTACK_DATA_MOCK: DotGridStackWidget[] = [
     { x: 0, y: 0, w: 12, id: uuid() },
@@ -331,3 +331,8 @@ export function mockMatchMedia() {
             };
         };
 }
+
+export const mockTemplateBuilderContainer: DotTemplateBuilderContainer = {
+    identifier: '1',
+    uuid: '1'
+};
