@@ -1,9 +1,16 @@
 @use "variables" as *;
-:host {
+
+:host ::ng-deep {
     &.ui-draggable-dragging {
         .row {
             background-color: $white;
             box-shadow: $md-shadow-2;
+        }
+    }
+
+    .grid-stack {
+        .grid-stack-item .grid-stack-item-content {
+            inset: 1rem;
         }
     }
 }
@@ -11,28 +18,35 @@
 .row {
     display: flex;
     height: 16rem;
-    border: 1px solid $color-palette-gray-300;
+    border: 1px solid $color-palette-primary;
     border-radius: $border-radius-md;
+    background-color: $white;
 }
 
-.row__drag-container,
 .row__actions-container {
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
     align-items: center;
     width: 2.625rem;
     flex-direction: column;
     gap: $spacing-1;
+    background-color: $color-palette-gray-200;
+    border-left: 1px solid $color-palette-primary;
+    border-radius: 0 $border-radius-md $border-radius-md 0;
 }
 
 .row__drag-container {
+    padding: $spacing-2;
+
     .drag-container__drag-handler {
-        color: $color-palette-gray-700;
+        color: $color-palette-primary-500;
+        user-select: none;
     }
 
     &:hover {
         cursor: grab;
     }
+
     &:active {
         cursor: grabbing;
     }

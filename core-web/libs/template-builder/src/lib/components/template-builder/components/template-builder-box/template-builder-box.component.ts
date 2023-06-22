@@ -51,7 +51,7 @@ export class TemplateBuilderBoxComponent implements OnChanges {
     @Output()
     addContainer: EventEmitter<DotContainer> = new EventEmitter<DotContainer>();
     @Output()
-    deleteContainer: EventEmitter<void> = new EventEmitter<void>();
+    deleteContainer: EventEmitter<number> = new EventEmitter<number>();
     @Output()
     deleteColumn: EventEmitter<void> = new EventEmitter<void>();
     @Output()
