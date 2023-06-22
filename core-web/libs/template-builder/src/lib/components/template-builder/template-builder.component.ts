@@ -27,12 +27,7 @@ import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { filter, take, tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-import {
-    DotContainer,
-    DotLayout,
-    DotTemplateDesignerPayload,
-    DotTheme
-} from '@dotcms/dotcms-models';
+import { DotContainer, DotLayout, DotTemplateDesigner, DotTheme } from '@dotcms/dotcms-models';
 
 import { colIcon, rowIcon } from './assets/icons';
 import { AddStyleClassesDialogComponent } from './components/add-style-classes-dialog/add-style-classes-dialog.component';
@@ -59,11 +54,16 @@ import {
 })
 export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestroy {
     @Input()
-    templateLayout!: DotLayout;
+    layout!: DotLayout;
+
+    @Input()
+    themeId!: string;
+
+    @Input()
+    title!: string;
 
     @Output()
-    templateChange: EventEmitter<DotTemplateDesignerPayload> =
-        new EventEmitter<DotTemplateDesignerPayload>();
+    templateChange: EventEmitter<DotTemplateDesigner> = new EventEmitter<DotTemplateDesigner>();
 
     public items$: Observable<DotGridStackWidget[]>;
 
@@ -84,7 +84,8 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     public readonly rowIcon = rowIcon;
     public readonly colIcon = colIcon;
     public readonly rowDisplayHeight = `${GRID_STACK_ROW_HEIGHT - 1}${GRID_STACK_UNIT}`; // setting a lower height to have space between rows
-    latestLayout: DotLayout;
+    private dotLayout: DotLayout;
+
     constructor(
         private store: DotTemplateBuilderStore,
         private dialogService: DialogService,
@@ -97,21 +98,22 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
                 }
 
                 const body = parseFromGridStackToDotObject(items);
-                this.latestLayout = {
-                    ...this.templateLayout,
+                this.dotLayout = {
+                    ...this.layout,
                     body
                 };
+
                 this.templateChange.emit({
-                    themeId: this.templateLayout.themeId,
-                    layout: { ...this.latestLayout },
-                    title: null
+                    themeId: this.layout.themeId,
+                    layout: { ...this.dotLayout },
+                    title: this.title || null
                 });
             })
         );
     }
 
     ngOnInit(): void {
-        this.store.init(parseFromDotObjectToGridStack(this.templateLayout.body));
+        this.store.init(parseFromDotObjectToGridStack(this.layout.body));
     }
 
     ngAfterViewInit() {
@@ -302,8 +304,8 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
                 onSelectTheme: (theme: DotTheme): void => {
                     this.templateChange.emit({
                         themeId: theme.identifier,
-                        layout: { ...this.latestLayout },
-                        title: null
+                        layout: { ...this.dotLayout },
+                        title: this.title || null
                     });
                     this.ref.destroy();
                 },

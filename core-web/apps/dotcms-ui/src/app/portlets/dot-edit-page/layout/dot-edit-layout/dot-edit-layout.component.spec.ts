@@ -21,7 +21,7 @@ import {
     DotSessionStorageService
 } from '@dotcms/data-access';
 import { DotCMSResponse, HttpCode, ResponseView } from '@dotcms/dotcms-js';
-import { DotLayout, DotPageRender, DotTemplateDesignerPayload } from '@dotcms/dotcms-models';
+import { DotLayout, DotPageRender, DotTemplateDesigner } from '@dotcms/dotcms-models';
 import {
     MockDotMessageService,
     mockDotRenderedPage,
@@ -337,7 +337,7 @@ describe('DotEditLayoutComponent', () => {
                 layout: EMPTY_TEMPLATE_DESIGN.layout,
                 themeId: '123',
                 title: null
-            } as DotTemplateDesignerPayload;
+            } as DotTemplateDesigner;
 
             spyOn(component.updateTemplate, 'next');
 

@@ -22,7 +22,7 @@ import { IframeComponent } from '@components/_common/iframe/iframe-component';
 import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
 import { DotShowHideFeatureDirective } from '@dotcms/app/shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
 import { DotEventsService, DotMessageService, DotPropertiesService } from '@dotcms/data-access';
-import { DotLayout, DotTemplateDesignerPayload } from '@dotcms/dotcms-models';
+import { DotLayout, DotTemplateDesigner } from '@dotcms/dotcms-models';
 import { DotIconModule, DotMessagePipeModule } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -263,7 +263,7 @@ describe('DotTemplateBuilderComponent', () => {
                 layout: EMPTY_TEMPLATE_DESIGN.layout,
                 themeId: '123',
                 title: null
-            } as DotTemplateDesignerPayload;
+            } as DotTemplateDesigner;
 
             spyOn(component, 'onTemplateChange').and.callThrough();
 

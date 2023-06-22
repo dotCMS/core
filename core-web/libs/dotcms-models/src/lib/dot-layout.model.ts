@@ -11,7 +11,7 @@ export interface DotLayout {
     width: string;
 }
 
-export interface DotTemplateDesignerPayload {
+export interface DotTemplateDesigner {
     layout: DotLayout;
     title: string;
     themeId: string;

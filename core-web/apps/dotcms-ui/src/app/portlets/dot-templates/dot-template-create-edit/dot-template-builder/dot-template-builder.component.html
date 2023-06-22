@@ -15,8 +15,9 @@
         <ng-template #elseBlock>
             <ng-template #enabledComponent>
                 <dotcms-template-builder
-                    [templateLayout]="item.layout"
-                    (templateChange)="onTemplateChange($event)"
+                    [layout]="item.layout"
+                    [themeId]="item.theme"
+                    (templateChange)="updateTemplate.emit($event)"
                     data-testId="new-template-builder"
                 >
                     <dot-global-message toolbar-left></dot-global-message>
