@@ -18,6 +18,7 @@ import { DotTemplateBuilderStore } from '../../store/template-builder.store';
 import { DOT_MESSAGE_SERVICE_TB_MOCK } from '../../utils/mocks';
 import { DotAddStyleClassesDialogStore } from '../add-style-classes-dialog/store/add-style-classes-dialog.store';
 import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-confirm-dialog.component';
+import { TemplateBuilderBackgroundColumnsComponent } from '../template-builder-background-columns/template-builder-background-columns.component';
 
 @Component({
     selector: 'dotcms-host-component',
@@ -44,7 +45,8 @@ describe('TemplateBuilderRowComponent', () => {
                 RemoveConfirmDialogComponent,
                 NoopAnimationsModule,
                 DotMessagePipeModule,
-                HttpClientTestingModule
+                HttpClientTestingModule,
+                TemplateBuilderBackgroundColumnsComponent
             ],
             declarations: [HostComponent],
             providers: [
@@ -84,6 +86,12 @@ describe('TemplateBuilderRowComponent', () => {
 
     it('should render child', () => {
         expect(fixture.debugElement.query(By.css('p'))).toBeTruthy();
+    });
+
+    it('should have a background', () => {
+        expect(
+            fixture.debugElement.query(By.css('dotcms-template-builder-background-columns'))
+        ).toBeTruthy();
     });
 
     it('should trigger editRowStyleClass when clicking on editStyleClass button', () => {
