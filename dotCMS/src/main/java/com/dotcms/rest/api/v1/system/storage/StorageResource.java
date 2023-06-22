@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.system.storage;
 
 import com.dotcms.rest.ResponseEntityBooleanView;
+import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.storage.StorageType;
@@ -42,20 +43,13 @@ public class StorageResource {
 
         this.webResource = webResource;
     }
-    /**
-     * Returns the providers associated to a group
-     * @param request   {@link HttpServletRequest}
-     * @param response  {@link HttpServletResponse}
-     * @param group {@link String}
-     * @return Response
-     */
+
     @NoCache
     @GET
-    @Path("/chain/_replicate/{segment}/to/{segment}")
+    @Path("/hello")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public Response replicateStorages(@Context final HttpServletRequest request,
-                                      @Context final HttpServletResponse response,
-                                      @PathParam("segment") final List<PathSegment> pathSegmentsStorageTypes) {
+    public Response hello(@Context final HttpServletRequest request,
+                                      @Context final HttpServletResponse response) {
 
         new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response)
@@ -65,20 +59,49 @@ public class StorageResource {
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init();
 
-        Logger.debug(this, ()-> "Doing storage replication " + pathSegmentsStorageTypes);
+
+        return Response.ok(new ResponseEntityView<>("hello")).build();
+    }
+
+    /**
+     * Fires a replication from one storage to others
+     * @param request   {@link HttpServletRequest}
+     * @param response  {@link HttpServletResponse}
+     * @param fromStorageType {@link StorageType}
+     * @param pathSegmentsStorageTypes {@link List} of {@link PathSegment}
+     * @return Response
+     */
+    @NoCache
+    @GET
+    @Path("/chain/_replicate/{from}/to/{to: .+}")
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response replicateStorages(@Context final HttpServletRequest request,
+                                      @Context final HttpServletResponse response,
+                                      @PathParam("from") final StorageType fromStorageType,
+                                      @PathParam("to") final List<PathSegment> pathSegmentsStorageTypes) {
+
+        new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requiredRoles(Role.CMS_ADMINISTRATOR_ROLE)
+                .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
+                .rejectWhenNoUser(true).init();
+
+        Logger.debug(this, ()-> "Doing storage replication from: " +
+                fromStorageType + ", to: " + pathSegmentsStorageTypes);
 
         if (!UtilMethods.isSet(pathSegmentsStorageTypes)) {
 
             throw new IllegalArgumentException("The storage types are required");
         }
 
-        if (pathSegmentsStorageTypes.size() >= 2) {
+        if (pathSegmentsStorageTypes.isEmpty()) {
 
-            throw new IllegalArgumentException("Have to have at least two storage types, for example: v1/storages/chain/FILE_SYSTEM/to/DB/S3");
+            throw new IllegalArgumentException("Have to have at least one storage type, for example: v1/storages/chain/FILE_SYSTEM/to/DB/S3");
         }
 
-        final StorageType fromStorageType = StorageType.valueOf(pathSegmentsStorageTypes.get(0).getPath());
-        final List<StorageType> toStorageType = pathSegmentsStorageTypes.subList(1, pathSegmentsStorageTypes.size()).stream().
+        final List<StorageType> toStorageType = pathSegmentsStorageTypes.stream().
                 map(segment -> StorageType.valueOf(segment.getPath())).collect(Collectors.toList());
 
         // todo: call a job with the from and to storages to slowly replicate the elements from one to the others
