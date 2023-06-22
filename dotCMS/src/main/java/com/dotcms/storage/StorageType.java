@@ -7,7 +7,9 @@ package com.dotcms.storage;
  */
 public enum StorageType {
 
-    FILE_SYSTEM, DB, S3, MEMORY, DEFAULT_CHAIN,
+    // implementation that stores on assets/dotGenerated
+    FILE_SYSTEM, // NTS_FILE_SYSTEM
+    DB, S3, MEMORY, DEFAULT_CHAIN,
     // we give you three chains to use to the clients
     CHAIN1, CHAIN2, CHAIN3
 }

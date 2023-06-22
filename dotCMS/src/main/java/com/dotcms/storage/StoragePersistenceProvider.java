@@ -19,24 +19,45 @@ public final class StoragePersistenceProvider {
 
     private final Map<StorageType, StoragePersistenceAPI> storagePersistenceInstances = new ConcurrentHashMap<>();
     
-    private final Map<StorageType, Supplier<StoragePersistenceAPI>> initializers = new ConcurrentHashMap<>(ImmutableMap.of(
-            StorageType.FILE_SYSTEM, () -> {
-                final FileSystemStoragePersistenceAPIImpl fileSystemStorage = new FileSystemStoragePersistenceAPIImpl();
-                final String metadataGroupName = Config
-                        .getStringProperty(METADATA_GROUP_NAME, "dotmetadata");
-                final File assetsDir = new File(ConfigUtils.getAbsoluteAssetsRootPath());
-                if (!assetsDir.exists()) {
-                    assetsDir.mkdirs();
-                }
-                fileSystemStorage.addGroupMapping(metadataGroupName, assetsDir);
-                return fileSystemStorage;
-            },
-            StorageType.DB, DataBaseStoragePersistenceAPIImpl::new
-    ));
+    private final Map<StorageType, Supplier<StoragePersistenceAPI>> initializers =
+            new ConcurrentHashMap<>(this.getDefaultInitializer());
+
+    private Map<StorageType, Supplier<StoragePersistenceAPI>> getDefaultInitializer() {
+
+        if (Config.getBooleanProperty("STORAGE_MEMORY_ENABLE", false)) {
+
+            return ImmutableMap.of(
+                    StorageType.FILE_SYSTEM, this.getFileSystemProvider(),
+                    StorageType.DB, DataBaseStoragePersistenceAPIImpl::new
+            );
+        }
+
+        return ImmutableMap.of(
+                StorageType.MEMORY, RedisStoragePersistenceAPI::new,
+                StorageType.FILE_SYSTEM, this.getFileSystemProvider(), // todo: we need at slow task, to do propagation to lower layers
+                StorageType.DB, DataBaseStoragePersistenceAPIImpl::new
+        );
+    }
+
+    private Supplier<StoragePersistenceAPI> getFileSystemProvider () {
+
+        return () -> {
+            final FileSystemStoragePersistenceAPIImpl fileSystemStorage = new FileSystemStoragePersistenceAPIImpl();
+            final String metadataGroupName = Config
+                    .getStringProperty(METADATA_GROUP_NAME, "dotmetadata");
+            final File assetsDir = new File(ConfigUtils.getAbsoluteAssetsRootPath());
+            if (!assetsDir.exists()) {
+                assetsDir.mkdirs();
+            }
+            fileSystemStorage.addGroupMapping(metadataGroupName, assetsDir);
+            return fileSystemStorage;
+        };
+    }
 
     {
         // default chain, creates a storage composited from file system and db
         final ChainableStoragePersistenceAPIBuilder builder = new ChainableStoragePersistenceAPIBuilder();
+        builder.add(this.getStorage(StorageType.MEMORY));
         builder.add(this.getStorage(StorageType.FILE_SYSTEM));
         builder.add(this.getStorage(StorageType.DB));
         addStorageInitializer(StorageType.DEFAULT_CHAIN, builder);

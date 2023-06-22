@@ -1,12 +1,15 @@
 package com.dotcms.storage;
 
 import com.dotcms.cache.lettuce.RedisCache;
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.google.common.io.Files;
 import com.liferay.util.FileUtil;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.mutable.MutableObject;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -24,17 +27,17 @@ import java.util.concurrent.Future;
  * certain size.
  * @author jsanca
  */
-public class RedisStoragePersistanceAPI implements StoragePersistenceAPI {
+public class RedisStoragePersistenceAPI implements StoragePersistenceAPI {
 
     private final long maxObjectSize;
     private final RedisCache redisCache = new RedisCache();
     private final Set<String> groups = ConcurrentHashMap.newKeySet();
 
-    public RedisStoragePersistanceAPI() {
-        this(Config.getLongProperty("REDIS_STORAGE_MAX_OBJECT_SIZE", FileUtil.KILO_BYTE));
+    public RedisStoragePersistenceAPI() {
+        this(Config.getLongProperty("REDIS_STORAGE_MAX_OBJECT_SIZE", FileUtil.KILO_BYTE*100));
     }
 
-    public RedisStoragePersistanceAPI(final long maxObjectSize) {
+    public RedisStoragePersistenceAPI(final long maxObjectSize) {
         this.maxObjectSize = maxObjectSize;
     }
 
@@ -173,34 +176,92 @@ public class RedisStoragePersistanceAPI implements StoragePersistenceAPI {
     }
 
     @Override
-    public Future<Object> pushFileAsync(final String groupName, final String path, final File file, final Map<String, Serializable> extraMeta) {
-        return null;
+    public Future<Object> pushFileAsync(final String groupName, final String path,
+                                        final File file, final Map<String, Serializable> extraMeta) {
+
+        return DotConcurrentFactory.getInstance().getSubmitter(STORAGE_POOL).submit(
+                () -> this.pushFile(groupName, path, file, extraMeta)
+        );
     }
 
     @Override
     public Future<Object> pushObjectAsync(final String bucketName, final String path, final ObjectWriterDelegate writerDelegate,
                                           final Serializable object, final Map<String, Serializable> extraMeta) {
-        return null;
+
+        return DotConcurrentFactory.getInstance().getSubmitter(STORAGE_POOL).submit(
+                () -> this.pushObject(bucketName, path, writerDelegate, object, extraMeta)
+        );
     }
 
     @Override
     public File pullFile(final String groupName, final String path) throws DotDataException {
 
-        return null;
+        final MutableObject<File> file = new MutableObject<>(null);
+
+        if (this.existsGroup(groupName)) {
+
+            try {
+
+                final Object rawObject = this.redisCache.get(groupName, path);
+                if (null != rawObject) {
+
+                    if (rawObject instanceof byte[]) {
+                        // todo: we have to test this to see if works fine or we need to storage a metadata
+                        file.setValue(File.createTempFile("temp", "temp"));
+                        FileUtils.writeByteArrayToFile(file.getValue(), byte[].class.cast(rawObject));
+                    } else {
+                        throw new DotDataException("The storage, group: " + groupName + ", path: " + path
+                                + " is not a file");
+                    }
+                } else {
+                    throw new DoesNotExistException(
+                            "The storage, group: " + groupName + ", path: " + path
+                                    + " does not exists");
+                }
+
+            } catch (final Exception e) {
+                Logger.error(this, e.getMessage());
+            }
+        }
+
+        return file.getValue();
     }
 
     @Override
-    public Object pullObject(String groupName, String path, ObjectReaderDelegate readerDelegate) throws DotDataException {
-        return null;
+    public Object pullObject(final String groupName, final String path,
+                             final ObjectReaderDelegate readerDelegate) throws DotDataException {
+
+        Object object = null;
+
+        if (this.existsGroup(groupName)) {
+            final Object rawObject = this.redisCache.get(groupName, path);
+            if (null != rawObject) {
+
+                object = rawObject;
+            } else {
+                throw new DoesNotExistException(
+                        "The storage, group: " + groupName + ", path: " + path
+                                + " does not exists");
+            }
+        }
+
+        return object;
     }
 
     @Override
-    public Future<File> pullFileAsync(String groupName, String path) {
-        return null;
+    public Future<File> pullFileAsync(final String groupName, final String path) {
+
+        return DotConcurrentFactory.getInstance().getSubmitter(STORAGE_POOL).submit(
+                () -> this.pullFile(groupName, path)
+        );
     }
 
     @Override
-    public Future<Object> pullObjectAsync(String groupName, String path, ObjectReaderDelegate readerDelegate) {
-        return null;
+    public Future<Object> pullObjectAsync(final String groupName, final String path,
+                                          final ObjectReaderDelegate readerDelegate) {
+
+        return DotConcurrentFactory.getInstance().getSubmitter(STORAGE_POOL).submit(
+                () -> this.pullObject(groupName, path, readerDelegate)
+        );
     }
 }

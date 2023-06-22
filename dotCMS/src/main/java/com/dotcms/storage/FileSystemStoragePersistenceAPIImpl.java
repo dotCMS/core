@@ -31,6 +31,7 @@ import org.apache.commons.lang3.mutable.MutableInt;
  * Any new group created will result in a new folder under that root folder.
  * @author jsanca
  */
+// todo: we would like to store file by using sha, this could be a subclass implementation
 public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAPI {
 
     private static final String DEFAULT_ROOT = "root";

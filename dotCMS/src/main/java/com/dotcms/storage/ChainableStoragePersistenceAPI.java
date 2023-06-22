@@ -187,7 +187,7 @@ public class ChainableStoragePersistenceAPI implements StoragePersistenceAPI {
                              final ObjectWriterDelegate writerDelegate, final Serializable objectIn,
                              final Map<String, Serializable> extraMeta) throws DotDataException {
 
-            Object objectToReturn = null;
+        Object objectToReturn = null;
         for(final StoragePersistenceAPI storage : this.storagePersistenceAPIList) {
 
             // since this is a composite and in theory the object should be the same, we just return the first one
@@ -242,7 +242,8 @@ public class ChainableStoragePersistenceAPI implements StoragePersistenceAPI {
         }
 
         // if the object was previously not found, we remove it from the cache since it is now a valid path
-        cache.remove(bucketName, path);
+        cache.remove(bucketName, path); // todo: this should be done when the future is done
+
 
         return futures.get(0); // well we return the first one at least
     }
