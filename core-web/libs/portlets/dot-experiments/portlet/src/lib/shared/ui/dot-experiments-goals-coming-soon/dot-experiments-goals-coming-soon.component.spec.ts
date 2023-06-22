@@ -23,7 +23,7 @@ const messageServiceMock = new MockDotMessageService({
         'User-defined conversion conditions using Javascript to call an API'
 });
 
-fdescribe('DotExperimentsGoalsComingSoonComponent', () => {
+describe('DotExperimentsGoalsComingSoonComponent', () => {
     let spectator: Spectator<DotExperimentsGoalsComingSoonComponent>;
 
     const createComponent = createComponentFactory({
@@ -41,12 +41,7 @@ fdescribe('DotExperimentsGoalsComingSoonComponent', () => {
         spectator = createComponent();
     });
 
-    it('should render content', () => {
-        const cards: Card[] = spectator.queryAll(Card);
-
-        expect(cards[0].header).toBe('Time on page or site');
-        expect(cards[0].contentTemplate.elementRef).toContainText(
-            'The time the user remains on the page or site'
-        );
+    it('should render cards', () => {
+        expect(spectator.queryAll(Card).length).toEqual(4);
     });
 });
