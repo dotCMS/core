@@ -9,6 +9,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.File;
 import java.io.IOException;
 import javax.servlet.http.HttpServletRequest;
@@ -32,6 +33,7 @@ import org.glassfish.jersey.server.JSONP;
  * <p> An Asset is a File or Folder </p>
  */
 @Path("/v1/assets")
+@Tag(name = "Web Assets")
 public class WebAssetResource {
 
     private final WebAssetHelper helper = WebAssetHelper.newInstance();

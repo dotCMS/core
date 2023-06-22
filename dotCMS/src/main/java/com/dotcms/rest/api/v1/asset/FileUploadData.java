@@ -6,6 +6,9 @@ import java.io.InputStream;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 
+/**
+ * Assets Request Form is a json representation of a request to get assets
+ */
 public class FileUploadData {
 
     @FormDataParam("file")

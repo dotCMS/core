@@ -6,6 +6,9 @@ import java.time.Instant;
 import java.util.Map;
 import org.immutables.value.Value;
 
+/**
+ * Asset View is a json representation of an asset
+ */
 @Value.Style(typeImmutable="*", typeAbstract="Abstract*")
 @Value.Immutable
 @JsonDeserialize(as = AssetView.Builder.class)

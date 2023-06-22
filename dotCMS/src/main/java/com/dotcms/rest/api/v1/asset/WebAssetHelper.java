@@ -462,6 +462,15 @@ public class WebAssetHelper {
         }
     }
 
+    /**
+     * checkin or publish the given contentlet
+     * @param checkout
+     * @param user
+     * @param live
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     Contentlet checkinOrPublish(final Contentlet checkout, User user, final boolean live) throws DotDataException, DotSecurityException {
         if(live){
             contentletAPI.publish(checkout, user, false);
