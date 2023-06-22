@@ -38,6 +38,15 @@ public class WebAssetResource {
 
     private final WebAssetHelper helper = WebAssetHelper.newInstance();
 
+    /**
+     * Get Assets and their metadata by path
+     * @param request
+     * @param response
+     * @param form
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
     @Path("/")
     @POST
     @JSONP
@@ -63,6 +72,15 @@ public class WebAssetResource {
     }
 
 
+    /**
+     * Get a hold of the asset content for download by path, language and version
+     * @param request
+     * @param response
+     * @param form
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
     @Path("/_download")
     @POST
     @JSONP
@@ -89,6 +107,16 @@ public class WebAssetResource {
     }
 
 
+    /**
+     * Push or update an asset by path
+     * @param request
+     * @param response
+     * @param form
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @throws IOException
+     */
     @Path("/")
     @PUT
     @JSONP
@@ -114,6 +142,16 @@ public class WebAssetResource {
         return Response.ok(new WebAssetEntityView(webAssetView)).build();
     }
 
+    /**
+     * Delete an asset by path language and version
+     * @param request
+     * @param response
+     * @param form
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @throws IOException
+     */
     @Path("/")
     @DELETE
     @JSONP
