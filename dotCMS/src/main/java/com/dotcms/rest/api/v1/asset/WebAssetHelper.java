@@ -22,6 +22,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -60,6 +61,7 @@ public class WebAssetHelper {
 
     ContentTypeAPI contentTypeAPI;
 
+    FolderAPI folderAPI;
 
     /**
      * Constructor for testing
@@ -74,7 +76,8 @@ public class WebAssetHelper {
             final ContentletAPI contentletAPI,
             final BrowserAPI browserAPI,
             final TempFileAPI tempFileAPI,
-            final ContentTypeAPI contentTypeAPI
+            final ContentTypeAPI contentTypeAPI,
+            final FolderAPI folderAPI
     ){
         this.languageAPI = languageAPI;
         this.fileAssetAPI = fileAssetAPI;
@@ -82,6 +85,7 @@ public class WebAssetHelper {
         this.browserAPI = browserAPI;
         this.tempFileAPI = tempFileAPI;
         this.contentTypeAPI = contentTypeAPI;
+        this.folderAPI = folderAPI;
     }
 
     /**
@@ -94,7 +98,8 @@ public class WebAssetHelper {
                 APILocator.getContentletAPI(),
                 APILocator.getBrowserAPI(),
                 APILocator.getTempFileAPI(),
-                APILocator.getContentTypeAPI(APILocator.systemUser())
+                APILocator.getContentTypeAPI(APILocator.systemUser()),
+                APILocator.getFolderAPI()
                 );
     }
 
@@ -333,6 +338,7 @@ public class WebAssetHelper {
         return fileAsset.getFileAsset();
     }
 
+
     public WebAssetView saveUpdateAsset(final HttpServletRequest request, final FileUploadData form,
             final User user) throws DotDataException, DotSecurityException, IOException {
 
@@ -381,7 +387,7 @@ public class WebAssetHelper {
                 builder.withHostOrFolderId(folder.getInode());
             }
 
-            builder.withFilter(assetName);
+            builder.withFileName(assetName);
             final List<Treeable> folderContent = browserAPI.getFolderContentList(builder.build());
             final List<Contentlet> assets = folderContent.stream()
                     .filter(Contentlet.class::isInstance).map(Contentlet.class::cast)
@@ -474,11 +480,11 @@ public class WebAssetHelper {
         Language resolvedLang = Try.of(() -> {
                     //Typically locales are separated by a dash, but our Language API uses an underscore in the toString method
                     //So here I'm preparing for both cases
-                    final String splitBy = language.contains("-") ? "-" : language.contains("_") ? "_" : null;
-                    if (null == splitBy) {
+                    final Optional<String> splitBy = splitBy(language);
+                    if (splitBy.isEmpty()) {
                         return languageAPI.getLanguage(language,null);
                     }
-                    final String[] split = language.split(splitBy, 2);
+                    final String[] split = language.split(splitBy.get(), 2);
                     return languageAPI.getLanguage(split[0], split[1]);
                 }
         ).getOrNull();
@@ -489,6 +495,21 @@ public class WebAssetHelper {
                             language, resolvedLang));
         }
         return Optional.ofNullable(resolvedLang);
+    }
+
+    /**
+     * Splits the language by either a dash or underscore
+     * @param language
+     * @return
+     */
+    Optional<String> splitBy(final String language){
+        if(language.contains("-")){
+          return Optional.of("-");
+        }
+        if(language.contains("_")){
+            return Optional.of("_");
+        }
+        return Optional.empty();
     }
 
     /**
