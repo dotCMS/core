@@ -1,5 +1,7 @@
 package com.dotcms.rendering.velocity.directive;
 
+import com.dotcms.variant.business.web.VariantWebAPI.RenderContext;
+import com.dotmarketing.business.web.WebAPILocator;
 import java.io.File;
 import java.io.Writer;
 import java.util.Optional;
@@ -106,8 +108,12 @@ public class DotParse extends DotDirective {
                 throwNotResourceNotFoundException(params, templatePath);
             }
 
+            final RenderContext renderContext = WebAPILocator.getVariantWebAPI()
+                    .getRenderContext(params.language.getId(), idAndField._1.getId(), params.mode, params.user);
+
             Optional<ContentletVersionInfo> contentletVersionInfo =
-                            APILocator.getVersionableAPI().getContentletVersionInfo(idAndField._1.getId(), languageId);
+                            APILocator.getVersionableAPI().getContentletVersionInfo(idAndField._1.getId(),
+                                    renderContext.getCurrentLanguageId(), renderContext.getCurrentVariantKey());
 
             if (contentletVersionInfo.isEmpty()
                     || UtilMethods.isNotSet(contentletVersionInfo.get().getIdentifier())
