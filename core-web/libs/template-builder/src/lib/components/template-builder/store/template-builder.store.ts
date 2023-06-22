@@ -299,6 +299,40 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
         }
     );
 
+    /**
+     * @description This method deletes a container from a box
+     *
+     * @memberof DotTemplateBuilderStore
+     */
+    readonly deleteContainer = this.updater(
+        (
+            state,
+            {
+                affectedColumn,
+                containerIndex
+            }: { affectedColumn: DotGridStackWidget; containerIndex: number }
+        ) => {
+            const { items } = state;
+
+            const updatedItems = items.map((row) => {
+                if (row.id != affectedColumn.parentId) {
+                    return row;
+                }
+
+                const updatedChildren = row.subGridOpts.children.map((child) => {
+                    if (affectedColumn.id !== child.id) return child;
+                    child.containers = child.containers.filter((_, i) => i !== containerIndex);
+
+                    return child;
+                });
+
+                return { ...row, subGridOpts: { ...row.subGridOpts, children: updatedChildren } };
+            });
+
+            return { ...state, items: updatedItems };
+        }
+    );
+
     // Effects
 
     // Utils methods
