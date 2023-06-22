@@ -1,13 +1,4 @@
 <div class="row">
-    <div class="row__drag-container">
-        <i
-            class="drag-container__drag-handler material-icons"
-            [style.font-size.px]="16"
-            data-testid="row-drag-handler"
-        >
-            drag_indicator
-        </i>
-    </div>
     <div class="row__content-container">
         <ng-content></ng-content>
     </div>
@@ -19,6 +10,15 @@
             icon="pi pi-palette"
         >
         </p-button>
+        <div class="row__drag-container">
+            <i
+                class="drag-container__drag-handler material-icons"
+                [style.font-size.px]="20"
+                data-testid="row-drag-handler"
+            >
+                drag_indicator
+            </i>
+        </div>
         <dotcms-remove-confirm-dialog
             (deleteConfirmed)="deleteRow.emit()"
             (deleteRejected)="deleteRowRejected.emit()"

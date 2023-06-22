@@ -239,6 +239,20 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     }
 
     /**
+     * @description This method calls the store to remove a container from a box
+     *
+     * @param {DotGridStackWidget} box
+     * @param {numberOrString} rowId
+     * @param {number} containerIndex
+     */
+    deleteContainer(box: DotGridStackWidget, rowId: numberOrString, containerIndex: number) {
+        this.store.deleteContainer({
+            affectedColumn: { ...box, parentId: rowId as string },
+            containerIndex
+        });
+    }
+
+    /**
      * @description This method opens the dialog to edit the row styleclasses
      *
      * @param {numberOrString} rowID
