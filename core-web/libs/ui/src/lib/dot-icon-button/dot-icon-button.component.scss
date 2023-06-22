@@ -51,7 +51,7 @@
         background-color: transparent;
 
         &:hover {
-            background-color: rgba($white, 0.3);
+            background-color: $color-palette-white-op-30;
         }
 
         ::ng-deep i {
@@ -129,7 +129,7 @@
         }
 
         &:hover {
-            background-color: rgba($black, 0.07);
+            background-color: $color-palette-black-op-10;
         }
     }
 }

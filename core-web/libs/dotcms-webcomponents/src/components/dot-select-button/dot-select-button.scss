@@ -1,4 +1,6 @@
+@import "../../../../dotcms-scss/shared/colors";
+
 .active {
-    color: var(--color-main);
+    color: $color-palette-primary-500;
     pointer-events: none;
 }

@@ -28,8 +28,8 @@
 .api-link {
     align-items: center;
     border-radius: 2px;
-    border: solid 1px var(--color-sec);
-    color: var(--color-sec);
+    border: solid 1px $color-palette-secondary-500;
+    color: $color-palette-secondary-500;
     display: inline-flex;
     line-height: 1em;
     padding: 2px 6px 2px 4px;
@@ -38,7 +38,7 @@
     transition: background-color 150ms ease, color 150ms ease;
 
     &:hover {
-        background-color: var(--color-sec);
+        background-color: $color-palette-secondary-500;
         color: #fff;
     }
 }

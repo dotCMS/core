@@ -1,6 +1,7 @@
 @use "sass:math";
 @use "variables" as *;
 @import "mixins";
+
 .p-button {
     background: $color-palette-primary;
     border-radius: $border-radius-md;
@@ -13,8 +14,10 @@
     padding: $spacing-2 $spacing-3;
     transition: background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s,
         background-size 0.2s cubic-bezier(0.64, 0.09, 0.08, 1);
+    text-decoration: none;
 }
 
+a.p-button:hover,
 .p-button:enabled:hover,
 .p-button:enabled:active,
 .p-button:enabled:focus {
@@ -79,7 +82,7 @@
 }
 
 .p-button.p-button-text.p-button-plain:enabled:active {
-    background: rgba(0, 0, 0, 0.16);
+    background: $color-palette-black-op-10;
     color: $black;
 }
 
@@ -131,8 +134,8 @@
 }
 
 .p-button.p-button-raised {
-    box-shadow: 0 3px 1px -2px rgba(0, 0, 0, 0.2), 0 2px 2px 0 rgba(0, 0, 0, 0.14),
-        0 1px 5px 0 rgba(0, 0, 0, 0.12);
+    box-shadow: 0 3px 1px -2px $color-palette-black-op-20, 0 2px 2px 0 $color-palette-black-op-10,
+        0 1px 5px 0 $color-palette-black-op-10;
 }
 
 .p-button.p-button-rounded {
@@ -264,7 +267,7 @@
 .p-buttonset.p-button-disabled > .p-button,
 .p-splitbutton.p-button-disabled > .p-button {
     color: $button-text-color-disabled;
-    background: rgba(0, 0, 0, 0.12);
+    background: $color-palette-black-op-10;
     border: none;
 }
 
@@ -450,11 +453,11 @@
 }
 
 .p-button .p-ink {
-    background-color: rgba($white, 0.32);
+    background-color: $color-palette-white-op-30;
 }
 
 .p-button:disabled {
-    background-color: rgba(0, 0, 0, 0.12) !important;
+    background-color: $color-palette-black-op-10 !important;
     color: $button-text-color-disabled !important;
     opacity: 1;
 }
@@ -478,8 +481,8 @@
 }
 
 .p-button.p-button-raised:enabled:focus {
-    box-shadow: 0 3px 1px -2px rgba(0, 0, 0, 0.2), 0 2px 2px 0 rgba(0, 0, 0, 0.14),
-        0 1px 5px 0 rgba(0, 0, 0, 0.12);
+    box-shadow: 0 3px 1px -2px $color-palette-black-op-20, 0 2px 2px 0 $color-palette-black-op-10,
+        0 1px 5px 0 $color-palette-black-op-10;
 }
 
 .p-button.p-button-secondary:enabled:focus,
