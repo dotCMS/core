@@ -292,7 +292,7 @@ public class HostIntegrityCheckerTest extends IntegrationTestBase {
      * @throws Exception
      */
     @Test
-    public void test_executeFix() throws Exception {
+    public void test_executeFix_identifierColumnsNotNull() throws Exception {
 
         //Create new Site
         final Host newSite = new SiteDataGen().nextPersisted();

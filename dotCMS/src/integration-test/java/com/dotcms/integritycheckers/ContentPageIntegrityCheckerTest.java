@@ -18,6 +18,8 @@ import java.util.UUID;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Simple test to validate the ContentPageIntegrityChecker
@@ -91,5 +93,49 @@ public class ContentPageIntegrityCheckerTest extends IntegrationTestBase impleme
         Assert.assertTrue(validateFix(remoteIdentifier));
     }
 
+    /**
+     * Method to test: {@link ContentPageIntegrityChecker#executeFix(String)}
+     * When: Tests that after conflicts are detected a fix is applied in favor of remote Page.
+     * Should: Columns Asset_subtype, owner and create_date should be populated
+     * @throws Exception
+     */
+    @Test
+    public void test_executeFix_identifierColumnsNotNull() throws Exception {
+        ContentPageIntegrityChecker integrityChecker = new  ContentPageIntegrityChecker();
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).languageId(1).title("conflicted page").nextPersisted();
+
+        //Introduce Conflict, will return new identifier of the site
+        final Tuple2<String, String> remoteIdentifierAndInode = introduceConflict(page ,endpointId.get());
+        final String remoteIdentifier = remoteIdentifierAndInode._1();
+        final String remoteWorkingInode = remoteIdentifierAndInode._2();
+
+        integrityChecker.executeFix(endpointId.get());
+
+        //Query to check that the columns were populated, using the remoteIdentifier since
+        //it's the new Id of the site.
+        final DotConnect dotConnect = new DotConnect();
+        dotConnect.setSQL("SELECT asset_subtype, owner, create_date FROM identifier WHERE id = ?");
+        dotConnect.addParam(remoteIdentifier);
+        final List<Map<String, Object>> results = dotConnect.loadObjectResults();
+
+        boolean assetSubtypeNotNull = results.stream()
+                .anyMatch(result -> result.containsKey("asset_subtype") && result.get("asset_subtype") != null);
+
+        Assert.assertTrue("Asset_SubType is null", assetSubtypeNotNull);
+
+        boolean createDateNotNull = results.stream()
+                .anyMatch(result -> result.containsKey("create_date") && result.get("create_date") != null);
+
+        Assert.assertTrue("Create Date is null", createDateNotNull);
+
+        boolean ownerNotNull = results.stream()
+                .anyMatch(result -> result.containsKey("owner") && result.get("owner") != null);
+
+        Assert.assertTrue("Owner is null", ownerNotNull);
+
+    }
 
 }
