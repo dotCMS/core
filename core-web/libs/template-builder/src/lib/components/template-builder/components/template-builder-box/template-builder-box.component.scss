@@ -82,9 +82,10 @@ p-dropdown {
 .template-builder-box__item {
     padding: 0px $spacing-1 0px $spacing-3;
     margin: $spacing-1 $spacing-3;
+    height: $spacing-6;
 
     &:first-child {
-        margin-top: $spacing-3;
+        margin-top: $spacing-2;
     }
 
     &:last-child {
