@@ -33,11 +33,11 @@
     <div
         class="template-builder__container"
         [ngClass]="{
-            'template-builder__container--right': sidebarProperties.location == 'right'
+            'template-builder__container--right': vm.layoutProperties.sidebar.location == 'right'
         }"
     >
         <dotcms-template-builder-sidebar
-            *ngIf="sidebarProperties.location.length"
+            *ngIf="vm.layoutProperties.sidebar.location.length"
             [ngClass]="{
                 'template-builder__sidebar--small': vm.layoutProperties.sidebar.width == 'small',
                 'template-builder__sidebar--large': vm.layoutProperties.sidebar.width == 'large'
