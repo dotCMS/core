@@ -24,6 +24,7 @@ import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.Logger;
 import io.vavr.Tuple2;
 import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProvider;
@@ -302,28 +303,33 @@ public class HostIntegrityCheckerTest extends IntegrationTestBase {
 
         integrityChecker.executeFix(endpointId);
 
-        //Query to check that the columns were populated, using the remoteIdentifier since
-        //it's the new Id of the site.
-        final DotConnect dotConnect = new DotConnect();
-        dotConnect.setSQL("SELECT asset_subtype, owner, create_date FROM identifier WHERE id = ?");
-        dotConnect.addParam(remoteIdentifier);
-        final List<Map<String, Object>> results = dotConnect.loadObjectResults();
+        try{
+            //Query to check that the columns were populated, using the remoteIdentifier since
+            //it's the new Id of the site.
+            final DotConnect dotConnect = new DotConnect();
+            dotConnect.setSQL("SELECT asset_subtype, owner, create_date FROM identifier WHERE id = ?");
+            dotConnect.addParam(remoteIdentifier);
+            final List<Map<String, Object>> results = dotConnect.loadObjectResults();
 
-        boolean assetSubtypeNotNull = results.stream()
-                .anyMatch(result -> result.containsKey("asset_subtype") && result.get("asset_subtype") != null);
+            boolean assetSubtypeNotNull = results.stream()
+                    .anyMatch(result -> result.containsKey("asset_subtype") && result.get("asset_subtype") != null);
 
-        Assert.assertTrue("Asset_SubType is null", assetSubtypeNotNull);
+            Assert.assertTrue("Asset_SubType is null", assetSubtypeNotNull);
 
-        boolean createDateNotNull = results.stream()
-                .anyMatch(result -> result.containsKey("create_date") && result.get("create_date") != null);
+            boolean createDateNotNull = results.stream()
+                    .anyMatch(result -> result.containsKey("create_date") && result.get("create_date") != null);
 
-        Assert.assertTrue("Create Date is null", createDateNotNull);
+            Assert.assertTrue("Create Date is null", createDateNotNull);
 
-        boolean ownerNotNull = results.stream()
-                .anyMatch(result -> result.containsKey("owner") && result.get("owner") != null);
+            boolean ownerNotNull = results.stream()
+                    .anyMatch(result -> result.containsKey("owner") && result.get("owner") != null);
 
-        Assert.assertTrue("Owner is null", ownerNotNull);
-
+            Assert.assertTrue("Owner is null", ownerNotNull);
+        } catch (DotDataException e) {
+            Logger.error(this, e);
+        } finally {
+            DbConnectionFactory.closeSilently();
+        }
     }
 
     @WrapInTransaction

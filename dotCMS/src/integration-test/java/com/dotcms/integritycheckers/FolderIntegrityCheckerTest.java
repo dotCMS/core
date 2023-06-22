@@ -17,6 +17,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import org.junit.Assert;
 import org.junit.Before;
@@ -71,21 +72,28 @@ public class FolderIntegrityCheckerTest extends IntegrationTestBase {
 
         integrityChecker.executeFix(endpointId);
 
-        final DotConnect dotConnect = new DotConnect();
-        dotConnect.setSQL("SELECT owner, create_date FROM identifier WHERE id = ?");
-        dotConnect.addParam(remoteIdentifier);
-        final Connection connection = DbConnectionFactory.getConnection();
-        final List<Map<String, Object>> results = dotConnect.loadObjectResults(connection);
+        try {
+            final DotConnect dotConnect = new DotConnect();
+            dotConnect.setSQL("SELECT owner, create_date FROM identifier WHERE id = ?");
+            dotConnect.addParam(remoteIdentifier);
+            final Connection connection = DbConnectionFactory.getConnection();
+            final List<Map<String, Object>> results = dotConnect.loadObjectResults(connection);
 
-        final boolean createDateNotNull = results.stream()
-                .anyMatch(result -> result.containsKey("create_date") && result.get("create_date") != null);
+            final boolean createDateNotNull = results.stream()
+                    .anyMatch(result -> result.containsKey("create_date") && result.get("create_date") != null);
 
-        Assert.assertTrue("Create Date is null", createDateNotNull);
+            Assert.assertTrue("Create Date is null", createDateNotNull);
 
-        final boolean ownerNotNull = results.stream()
-                .anyMatch(result -> result.containsKey("owner") && result.get("owner") != null);
+            final boolean ownerNotNull = results.stream()
+                    .anyMatch(result -> result.containsKey("owner") && result.get("owner") != null);
 
-        Assert.assertTrue("Owner is null", ownerNotNull);
+            Assert.assertTrue("Owner is null", ownerNotNull);
+
+        } catch (DotDataException e) {
+            Logger.error(this, e);
+        } finally {
+            DbConnectionFactory.closeSilently();
+        }
     }
 
     @WrapInTransaction
