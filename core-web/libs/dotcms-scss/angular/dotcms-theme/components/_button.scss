@@ -226,6 +226,10 @@
     font-size: $font-size-sm;
     padding: 0.25rem $spacing-1;
     gap: 0.25rem;
+
+    .p-button-label {
+        text-transform: none;
+    }
 }
 
 .p-button.p-button-sm.p-button-outlined {
