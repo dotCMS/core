@@ -19,8 +19,8 @@ import {
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
+import { DotMessagePipeModule } from '@dotcms/ui';
 import { CoreWebServiceMock, MockDotMessageService, mockResponseView } from '@dotcms/utils-testing';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotBlockEditorSidebarComponent } from '@portlets/dot-edit-page/components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
 
 const DEFAULT_LANG_ID = 1;

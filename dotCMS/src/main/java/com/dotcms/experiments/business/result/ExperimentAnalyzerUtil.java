@@ -6,7 +6,6 @@ import static com.dotcms.util.CollectionsUtils.map;
 import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.analytics.helper.AnalyticsHelper;
 import com.dotcms.analytics.metrics.EventType;
-import com.dotcms.analytics.metrics.Metric;
 import com.dotcms.analytics.metrics.MetricType;
 
 import com.dotcms.cube.CubeJSClient;
@@ -15,11 +14,11 @@ import com.dotcms.cube.CubeJSQuery.Builder;
 import com.dotcms.cube.CubeJSResultSet;
 import com.dotcms.cube.filters.SimpleFilter.Operator;
 
-import com.dotcms.analytics.metrics.Metric;
-import com.dotcms.analytics.metrics.MetricType;
-
+import com.dotcms.experiments.business.ExperimentUrlPatternCalculator;
+import com.dotcms.experiments.model.Goal;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.ExperimentVariant;
+import com.dotcms.experiments.model.Goal.GoalType;
 import com.dotcms.experiments.model.Goals;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -27,10 +26,12 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import graphql.VisibleForTesting;
 import io.vavr.Lazy;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
@@ -79,54 +80,76 @@ public enum ExperimentAnalyzerUtil {
         final Goals goals = experiment.goals()
                 .orElseThrow(() -> new IllegalArgumentException("The Experiment must have a Goal"));
 
-        final MetricType goalMetricType = goals.primary().type();
-        final MetricExperimentAnalyzer metricExperimentAnalyzer = experimentResultQueryHelpers.get()
-                .get(goalMetricType);
-
+        final Goal primaryGoal = goals.primary();
         final SortedSet<ExperimentVariant> variants = experiment.trafficProportion().variants();
 
-        final CubeJSResultSet pageViewsByVariants = getPageViewsByVariants(experiment, variants);
-
         final  ExperimentResults.Builder builder = new ExperimentResults.Builder(variants);
+        builder.addPrimaryGoal(primaryGoal);
+        builder.trafficProportion(experiment.trafficProportion());
 
-        final Metric goal = goals.primary();
-        builder.addPrimaryGoal(goal);
+        if (!browserSessions.isEmpty()) {
+            final CubeJSResultSet pageViewsByVariants = getPageViewsByVariants(experiment,
+                    variants);
+            pageViewsByVariants.forEach(row -> {
+                final String variantId = row.get("Events.variant")
+                        .map(variant -> variant.toString())
+                        .orElse(StringPool.BLANK);
+                final long pageViews = row.get("Events.count")
+                        .map(object -> Long.parseLong(object.toString()))
+                        .orElse(0L);
 
-        pageViewsByVariants.forEach(row -> {
-            final String variantId = row.get("Events.variant").map(variant -> variant.toString())
-                    .orElse(StringPool.BLANK);
-            final long pageViews = row.get("Events.count").map(object -> Long.parseLong(object.toString()))
-                    .orElse(0L);
+                builder.goal(primaryGoal).variant(variantId).pageView(pageViews);
+            });
 
-            builder.goal(goal).variant(variantId).pageView(pageViews);
-        });
+            analyzeBrowserSessions(browserSessions, primaryGoal, builder, experiment);
+        }
+
+        return builder.build();
+    }
+
+    private void analyzeBrowserSessions(final List<BrowserSession> browserSessions,
+            final Goal goal,
+            final ExperimentResults.Builder builder,
+            final Experiment experiment) {
 
         final String pageId = experiment.pageId();
         final HTMLPageAsset page = getPage(pageId);
+
+        if (!UtilMethods.isSet(page)) {
+            throw new IllegalArgumentException("The page with id " + pageId + " does not exist");
+        }
+
+        final MetricType goalMetricType = goal.getMetric().type();
+
+        final MetricExperimentAnalyzer metricExperimentAnalyzer = experimentResultQueryHelpers.get()
+                .get(goalMetricType);
+
+        final String urlRegexPattern = ExperimentUrlPatternCalculator.INSTANCE
+                .calculateUrlRegexPattern(page);
 
         for (final BrowserSession browserSession : browserSessions) {
 
             final boolean isIntoExperiment = browserSession.getEvents().stream()
                     .map(event -> event.get("url").map(Object::toString).orElse(StringPool.BLANK))
-                    .anyMatch(url -> {
-                        try {
-                            final String uri = page.getURI();
-                            final String alternativeURI = uri.endsWith("index")
-                                ? uri.substring(0, uri.indexOf("index"))
-                                : uri;
-                            return url.contains(uri) || url.contains(alternativeURI);
-                        } catch (DotDataException e) {
-                            throw new RuntimeException(e);
-                        }
-                    });
+                    .anyMatch(url -> url.matches(urlRegexPattern));
 
             if (isIntoExperiment) {
                 builder.addSession(browserSession);
-                metricExperimentAnalyzer.addResults(goal, browserSession, builder);
+                final Collection<Event> occurrences = metricExperimentAnalyzer.getOccurrences(
+                        goal.getMetric(), browserSession);
+
+                final String lookBackWindow = browserSession.getLookBackWindow();
+
+                if (goal.type() == GoalType.MINIMIZE && occurrences.isEmpty()) {
+                    final Event event = browserSession.getEvents().get(0);
+                    builder.goal(goal).success(lookBackWindow, event);
+                } if (goal.type() == GoalType.MAXIMIZE && !occurrences.isEmpty()) {
+                    occurrences.stream().forEach(event -> builder.goal(goal)
+                            .success(lookBackWindow, event));
+                }
+
             }
         }
-
-        return builder.build();
     }
 
     private static CubeJSResultSet getPageViewsByVariants(

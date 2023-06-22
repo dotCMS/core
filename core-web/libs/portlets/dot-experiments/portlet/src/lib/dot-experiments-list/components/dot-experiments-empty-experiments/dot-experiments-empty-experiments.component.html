@@ -1,0 +1,10 @@
+<div class="empty-experiment-wrapper" *ngIf="description">
+    <i class="pi pi-filter-fill"></i>
+    <h2 data-testId="description">{{ description }}</h2>
+    <p-button
+        *ngIf="showButton"
+        [label]="'experimentspage.add.new.experiment' | dm"
+        (onClick)="addNew.emit()"
+        data-testId="add-btn"
+    ></p-button>
+</div>

@@ -1,0 +1,74 @@
+<dotcms-template-builder-background-columns></dotcms-template-builder-background-columns>
+<p-toolbar>
+    <div class="p-toolbar-group-start">
+        <ng-content select="[toolbar-left]"></ng-content>
+    </div>
+    <div class="p-toolbar-group-end">
+        <dotcms-add-widget
+            [label]="'dot.template.builder.add.row' | dm"
+            [icon]="rowIcon"
+            data-widget-type="row"
+            gs-w="12"
+            gs-h="1"
+            data-testId="add-row"
+        ></dotcms-add-widget>
+        <dotcms-add-widget
+            [label]="'dot.template.builder.add.box' | dm"
+            [icon]="colIcon"
+            data-widget-type="col"
+            gs-w="1"
+            gs-h="1"
+            data-testId="add-box"
+        ></dotcms-add-widget>
+        <p-divider layout="vertical"></p-divider>
+        <dotcms-template-builder-actions></dotcms-template-builder-actions>
+        <ng-content select="[toolbar-actions-right]"></ng-content>
+    </div>
+</p-toolbar>
+
+<dotcms-template-builder-section>{{
+    'dot.template.builder.header' | dm
+}}</dotcms-template-builder-section>
+<div class="grid-stack">
+    <dotcms-template-builder-row
+        class="grid-stack-item"
+        #rowElement
+        *ngFor="let row of items$ | async; trackBy: identify"
+        [attr.gs-id]="row.id"
+        [attr.gs-x]="row.x"
+        [attr.gs-y]="row.y"
+        [attr.gs-w]="row.w"
+        [attr.gs-h]="row.h"
+        (deleteRow)="deleteRow(row.id)"
+        (editClasses)="editRowStyleClasses(row.id, row.styleClass)"
+        data-testId="row"
+    >
+        <div class="grid-stack-item-content grid-stack">
+            <div
+                class="grid-stack-item sub"
+                #boxElement
+                *ngFor="let box of row.subGridOpts?.children; trackBy: identify"
+                [attr.gs-id]="box.id"
+                [attr.gs-auto]="true"
+                [attr.gs-x]="box.x"
+                [attr.gs-y]="box.y"
+                [attr.gs-w]="box.w"
+                [attr.gs-h]="box.h"
+                data-testId="box"
+            >
+                <dotcms-template-builder-box
+                    class="grid-stack-item-content"
+                    [items]="box.containers"
+                    [width]="box.w"
+                    (deleteColumn)="removeColumn(box, boxElement, row.id)"
+                    (addContainer)="addContainer(box, row.id, $event)"
+                    (deleteContainer)="deleteContainer(box, row.id, $event)"
+                    (editClasses)="editBoxStyleClasses(row.id, box)"
+                ></dotcms-template-builder-box>
+            </div>
+        </div>
+    </dotcms-template-builder-row>
+</div>
+<dotcms-template-builder-section>{{
+    'dot.template.builder.footer' | dm
+}}</dotcms-template-builder-section>

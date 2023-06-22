@@ -43,7 +43,7 @@ public class TestPushPublisher extends PushPublisher {
         try {
             //Compressing bundle
             File bundleRoot = BundlerUtil.getBundleRoot(this.config);
-            ArrayList<File> list = new ArrayList<File>(1);
+            ArrayList<File> list = new ArrayList<>(1);
             list.add(bundleRoot);
             File bundle = new File(bundleRoot + ".tar.gz");
 
@@ -64,7 +64,7 @@ public class TestPushPublisher extends PushPublisher {
             int totalEndpoints = 0;
             for (Environment environment : environments) {
                 List<PublishingEndPoint> allEndpoints = this.publishingEndPointAPI.findSendingEndPointsByEnvironment(environment.getId());
-                List<PublishingEndPoint> endpoints = new ArrayList<PublishingEndPoint>();
+                List<PublishingEndPoint> endpoints = new ArrayList<>();
                 totalEndpoints += (null != allEndpoints) ? allEndpoints.size() : 0;
 
                 Map<String, EndpointDetail> endpointsDetail = endpointsMap.get(environment.getId());
@@ -105,9 +105,6 @@ public class TestPushPublisher extends PushPublisher {
 
                         Bundle b=APILocator.getBundleAPI().getBundleById(this.config.getId());
 
-                        System.out.println("******** PUBLISHER TEST UTIL *******");
-                        System.out.println("******** PRINTING BUNDLE *******");
-                        System.out.println(IOUtils.toString(bundleStream));
                         //For logging purpose
                         PushPublishLogger.log(this.getClass(), "Status Update: Bundle sent");
                         detail.setStatus(PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY.getCode());

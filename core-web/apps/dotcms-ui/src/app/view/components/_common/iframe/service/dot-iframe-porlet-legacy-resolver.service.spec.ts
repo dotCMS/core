@@ -8,6 +8,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
+import { DotFavoritePageService } from '@dotcms/app/api/services/dot-favorite-page/dot-favorite-page.service';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import {
     DotContentletLockerService,
@@ -17,6 +18,7 @@ import {
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
+import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import { LoginServiceMock, mockDotRenderedPage, mockUser } from '@dotcms/utils-testing';
 import { DotPageStateService } from '@portlets/dot-edit-page/content/services/dot-page-state/dot-page-state.service';
 
@@ -42,9 +44,11 @@ describe('DotIframePorletLegacyResolver', () => {
                 DotPageStateService,
                 DotIframePortletLegacyResolver,
                 DotPageRenderService,
+                DotExperimentsService,
                 DotContentletLockerService,
                 DotLicenseService,
                 DotESContentService,
+                DotFavoritePageService,
                 { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
                 {
                     provide: ActivatedRouteSnapshot,

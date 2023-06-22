@@ -10,6 +10,7 @@ import java.net.InetAddress;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.List;
 import javax.management.InstanceAlreadyExistsException;
@@ -241,8 +242,7 @@ public class InitServlet extends HttpServlet {
         //Just get the Engine to make sure it gets inited on time before the first request
         VelocityUtil.getEngine();
 
-        // Tell the world we are started up
-        System.setProperty(WebKeys.DOTCMS_STARTED_UP, "true");
+
 
 
         //Initializing System felix
@@ -262,7 +262,12 @@ public class InitServlet extends HttpServlet {
         }
         
         
+
+        // Starting the re-indexation thread
+        ReindexThread.startThread();
         
+        // Tell the world we are started up
+        System.setProperty(WebKeys.DOTCMS_STARTED_UP, "true");
 
         // Record how long it took to start us up.
         try{
@@ -274,10 +279,6 @@ public class InitServlet extends HttpServlet {
         } catch (Exception e) {
             Logger.warn(this.getClass(), "Unable to record startup time :" + e);
         }
-        // Starting the re-indexation thread
-        ReindexThread.startThread();
-        
-        
 
     }
 
@@ -399,7 +400,7 @@ public class InitServlet extends HttpServlet {
                 if(UtilMethods.isSet(LicenseUtil.getValidUntil())){
                     data.append(URLEncoder.encode("licenseValid", "UTF-8"));
                     data.append("=");
-                    data.append(URLEncoder.encode(UtilMethods.dateToJDBC(LicenseUtil.getValidUntil())));
+                    data.append(URLEncoder.encode(UtilMethods.dateToJDBC(LicenseUtil.getValidUntil()), StandardCharsets.UTF_8));
                     data.append("&");
                 }
                 data.append(URLEncoder.encode("perpetual", "UTF-8"));

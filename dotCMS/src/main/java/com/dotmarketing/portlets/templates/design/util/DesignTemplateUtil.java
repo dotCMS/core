@@ -179,7 +179,7 @@ public class DesignTemplateUtil {
 	 */
 	public static List<PreviewFileAsset> getFilesInodes(String _body){
 		Document templateBody = Jsoup.parse(_body);
-		List<PreviewFileAsset> result = new ArrayList<PreviewFileAsset>();
+		List<PreviewFileAsset> result = new ArrayList<>();
 		Element divFilesToAdd = templateBody.getElementById(FILES_TO_ADD_DIV_ID);
 		if(null!=divFilesToAdd){
 			Elements filesToAdd = divFilesToAdd.getElementsByAttributeValueStarting(ID_ATTRIBUTE, FILE_TO_ADD_START_ID);
@@ -330,7 +330,7 @@ public class DesignTemplateUtil {
 
         //***************************************************************
         //Split the drawed body in rows
-        List<TemplateLayoutRow> splitBodiesList = new ArrayList<TemplateLayoutRow>();
+        List<TemplateLayoutRow> splitBodiesList = new ArrayList<>();
         Elements splitBodies = templateDrawedBody.select( DIV_TAG + "[" + ID_ATTRIBUTE + "~=" + getRegexForSelectBody() );
         for ( int i = 0; i < splitBodies.size(); i++ ) {
 
@@ -441,7 +441,7 @@ public class DesignTemplateUtil {
     	final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
     	final Optional<ShortyId> shortyId = shortyIdAPI.getShorty(containerId);
 
-    	if (!shortyId.isPresent()) {
+    	if (shortyId.isEmpty()) {
     		return containerId;
 		}
 

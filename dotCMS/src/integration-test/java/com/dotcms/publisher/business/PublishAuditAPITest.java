@@ -24,7 +24,6 @@ import com.liferay.portal.model.User;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -66,7 +65,7 @@ public class PublishAuditAPITest {
         final String bundleID_FailedToPublish = insertPublishAuditStatus(Status.FAILED_TO_PUBLISH,UUIDGenerator.generateUuid());
 
         final List<String> listOfBundleIDS = publishAuditAPI.getBundleIdByStatus(new ArrayList<>(
-                Collections.singleton(Status.SUCCESS)),100,0);
+                Set.of(Status.SUCCESS)),100,0);
 
         assertFalse(listOfBundleIDS.isEmpty());
         assertTrue(listOfBundleIDS.contains(bundleID_Success));

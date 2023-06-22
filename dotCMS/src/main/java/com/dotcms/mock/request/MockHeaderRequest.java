@@ -15,7 +15,7 @@ import javax.servlet.http.HttpServletRequestWrapper;
  * See an example here: {@link MockHttpRequest#MockHttpRequest(String, String)}
  */
 public class MockHeaderRequest extends HttpServletRequestWrapper implements MockRequest {
-  final Map<String, String> headers = new HashMap<String, String>();
+  final Map<String, String> headers = new HashMap<>();
 
 
   public MockHeaderRequest(HttpServletRequest request) {

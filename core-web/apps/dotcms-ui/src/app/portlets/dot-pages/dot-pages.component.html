@@ -1,5 +1,5 @@
 <div class="dot-pages__container" *ngIf="vm$ | async as vm">
-    <ng-template [ngIf]="!vm.isPortletLoading" [ngIfElse]="loading">
+    <div class="dot-pages__inner-container" *ngIf="!vm.isPortletLoading; else loading">
         <dot-pages-favorite-panel
             (goToUrl)="goToUrl($event)"
             (showActionsMenu)="showActionsMenu($event)"
@@ -15,6 +15,7 @@
         <dot-pages-listing-panel
             (goToUrl)="goToUrl($event)"
             (showActionsMenu)="showActionsMenu($event)"
+            (tableScroll)="closeMenu()"
         ></dot-pages-listing-panel>
 
         <dot-add-to-bundle
@@ -22,7 +23,7 @@
             [assetIdentifier]="vm.pages.addToBundleCTId"
             (cancel)="vm.pages.addToBundleCTId = null"
         ></dot-add-to-bundle>
-    </ng-template>
+    </div>
 
     <ng-template #loading>
         <div class="dot-pages__spinner-container">

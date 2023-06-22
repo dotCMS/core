@@ -23,7 +23,6 @@ import { DotGlobalMessageService } from '@components/_common/dot-global-message/
 import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { ActivatedRouteMock } from '@dotcms/app/portlets/dot-experiments/test/mocks';
 import { dotEventSocketURLFactory } from '@dotcms/app/test/dot-test-bed';
 import {
     DotAlertConfirmService,
@@ -43,8 +42,12 @@ import {
     StringUtils
 } from '@dotcms/dotcms-js';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { CoreWebServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { DotMessagePipeModule } from '@dotcms/ui';
+import {
+    ActivatedRouteMock,
+    CoreWebServiceMock,
+    MockDotMessageService
+} from '@dotcms/utils-testing';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 import { DotAddVariableComponent } from './dot-add-variable.component';

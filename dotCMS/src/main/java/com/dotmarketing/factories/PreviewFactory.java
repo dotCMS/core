@@ -20,7 +20,7 @@ public class PreviewFactory {
 
 		HttpSession session = hreq.getSession();
 
-		java.util.Map<String, String[]> params = new java.util.HashMap<String, String[]>();
+		java.util.Map<String, String[]> params = new java.util.HashMap<>();
 		params.put("struts_action",new String[] {"/ext/director/direct"});
 		String directorURL = com.dotmarketing.util.PortletURLUtil.getActionURL(hreq,WindowState.MAXIMIZED.toString(),params);
 		session.setAttribute(WebKeys.DIRECTOR_URL, directorURL);
@@ -62,7 +62,7 @@ public class PreviewFactory {
 		HttpSession session = hreq.getSession();
 
 		String portletId=null;
-		java.util.Map<String, String[]> params = new java.util.HashMap<String, String[]>();
+		java.util.Map<String, String[]> params = new java.util.HashMap<>();
 		params.put("struts_action",new String[] {"/ext/director/direct"});
 		// director portlet
 		portletId="site-browser";

@@ -78,7 +78,7 @@ import org.w3c.dom.Text;
 public class AccessibilityValidator {
 	
 	// Number of success for each check_id
-	private Map<Integer, Integer> num_success = new HashMap<Integer, Integer>();
+	private Map<Integer, Integer> num_success = new HashMap<>();
 
 	// number of errors
 	private int num_of_errors = 0;              
@@ -90,22 +90,22 @@ public class AccessibilityValidator {
 	private List<Integer> guidelines;
 
 	// all check results, including success ones and failed ones
-	private List<AccessibilityResult> result = new LinkedList<AccessibilityResult>();
+	private List<AccessibilityResult> result = new LinkedList<>();
 
 	// all check results, including success ones and failed ones
-	private List<AccessibilityResult> errors = new LinkedList<AccessibilityResult>();
+	private List<AccessibilityResult> errors = new LinkedList<>();
 
 	// array of the to-be-checked check_ids 
-	private Set<Integer> allChecks = new TreeSet<Integer>();
+	private Set<Integer> allChecks = new TreeSet<>();
 
 	// array of the to-be-checked check_ids 
-	private Map<String, Set<Integer>> checkIdsForTagName = new HashMap<String, Set<Integer>>();
+	private Map<String, Set<Integer>> checkIdsForTagName = new HashMap<>();
 
 	// array of prerequisite check_ids of the to-be-checked check_ids 
-	private Map<Integer, Set<Integer>> checkPrerequisites = new HashMap<Integer, Set<Integer>>();
+	private Map<Integer, Set<Integer>> checkPrerequisites = new HashMap<>();
 
 	// array of all the check functions 
-	private Map<Integer, String> check_func_array = new HashMap<Integer, String>();
+	private Map<Integer, String> check_func_array = new HashMap<>();
 
 	// dom of $validate_content
 	private Document content_dom;
@@ -236,7 +236,7 @@ public class AccessibilityValidator {
 			for ( CheckBean row : rows ) {
 
 				if ( this.checkIdsForTagName.get(row.getHtml_tag() ) == null ) {
-					this.checkIdsForTagName.put((String) row.getHtml_tag( ), new TreeSet<Integer>());
+					this.checkIdsForTagName.put((String) row.getHtml_tag( ), new TreeSet<>());
 				}
 
 				this.checkIdsForTagName.get((String) row.getHtml_tag( )).add((Integer) row.getCheck_id());
@@ -247,7 +247,7 @@ public class AccessibilityValidator {
 		// generate array of prerequisite check_ids
 		List<Map<String, Object>>  rowspre = checksDAO.getOpenPreChecksByGuidelineIDs(guidelines);
 
-		Map<Integer, Set<Integer>> checkPrerequisites = new HashMap<Integer, Set<Integer>>();
+		Map<Integer, Set<Integer>> checkPrerequisites = new HashMap<>();
 
 		if (rowspre != null && rowspre.size() > 0) {
 			for ( Map<String, Object> row : rowspre ) {
@@ -257,7 +257,7 @@ public class AccessibilityValidator {
 				
 				Set<Integer> list = checkPrerequisites.get(checkId);
 				if ( list == null ) {
-					list = new TreeSet<Integer>();
+					list = new TreeSet<>();
 					checkPrerequisites.put(checkId, list);
 				}
 
@@ -276,7 +276,7 @@ public class AccessibilityValidator {
 	 */
 	private void validate_element(NodeList element_array) {
 
-		Map<String, Set<Integer>> check_array = new HashMap<String, Set<Integer>>();
+		Map<String, Set<Integer>> check_array = new HashMap<>();
 
 		for ( int i = 0; i < element_array.getLength(); i ++ ) {
 
@@ -541,7 +541,7 @@ public class AccessibilityValidator {
 	 * return array of all checks that have been done by check id, including successful and failed ones
 	 */
 	public List<AccessibilityResult> getResultsByCheckID(int check_id) {
-		List<AccessibilityResult> rtn = new LinkedList<AccessibilityResult>();
+		List<AccessibilityResult> rtn = new LinkedList<>();
 		for ( AccessibilityResult oneResult : this.result ) {
 			if ( oneResult.getCheck().getCheck_id() == check_id ) {
 				rtn.add(new AccessibilityResult(oneResult));
@@ -555,7 +555,7 @@ public class AccessibilityValidator {
 	 * return array of all checks that have been done by line number, including successful and failed ones
 	 */
 	public List<AccessibilityResult> getResultsByLine(int line_number) {
-		List<AccessibilityResult> rtn = new LinkedList<AccessibilityResult>();
+		List<AccessibilityResult> rtn = new LinkedList<>();
 		for ( AccessibilityResult oneResult : this.result ) {
 			if ( oneResult.getLine_number() == line_number ) {
 				rtn.add(new AccessibilityResult(oneResult));

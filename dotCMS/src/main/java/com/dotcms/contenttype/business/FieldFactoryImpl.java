@@ -597,7 +597,7 @@ public class FieldFactoryImpl implements FieldFactory {
     dc.addParam(field.contentTypeId());
     dc.addParam(dataType + "%");
     List<Map<String, Object>> rows = dc.loadObjectResults();
-    Set<String> columns = new TreeSet<String>();
+    Set<String> columns = new TreeSet<>();
     for (int i = 0; i < rows.size(); i++) {
       columns.add((String) rows.get(i).get("field_contentlet"));
     }

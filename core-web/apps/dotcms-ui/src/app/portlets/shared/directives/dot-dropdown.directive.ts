@@ -3,9 +3,9 @@ import { Directive, Input, Optional, Self } from '@angular/core';
 import { Dropdown } from 'primeng/dropdown';
 import { MultiSelect } from 'primeng/multiselect';
 
-import { DotMessagePipe } from '@dotcms/app/view/pipes';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotDropdownSelectOption } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
 const DEFAULT_LABEL_NAME_INDEX = 'label';
 const DEFAULT_VALUE_NAME_INDEX = 'value';

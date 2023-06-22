@@ -164,6 +164,7 @@
             String displayCountBar = "";
             String charLimit = "";
             String customBlocks = "";
+            String contentletIdentifier = contentlet.getIdentifier();
             Boolean showVideoThumbnail = Config.getBooleanProperty("SHOW_VIDEO_THUMBNAIL", true);
 
             // By default this is an empty JSON `{}`.
@@ -208,7 +209,10 @@
                 display-count-bar="<%=displayCountBar%>"
                 char-limit="<%=charLimit%>"
                 lang="<%=contentLanguage%>"
-                custom-blocks='<%=customBlocks%>'>
+                custom-blocks='<%=customBlocks%>'
+                contentlet-identifier='<%=contentletIdentifier%>'
+            >
+                
             </dotcms-block-editor>
             <input type="hidden" name="<%=field.getFieldContentlet()%>" id="editor-input-value-<%=field.getVelocityVarName()%>"/>
 
@@ -257,15 +261,7 @@
                      * to the editor.
                      */
                     blockEditor.addEventListener('valueChange', (event) => {
-                        // https://tiptap.dev/api/commands/clear-content
-                        // https://github.com/ueberdosis/tiptap/issues/154
-                        // By default Editor Initialize with default node p even if you clear nodes
-                        // block.editor.isEmpty not working in our block editor
-                        if(block.editor.getHTML().toLowerCase() === "<p></p>"){
-                            field.value = null;
-                        } else {
-                            field.value = JSON.stringify(event.detail);
-                        }
+                        field.value = block.editor.isEmpty ? null : JSON.stringify(event.detail);;
                     });
 
                     if (content) {

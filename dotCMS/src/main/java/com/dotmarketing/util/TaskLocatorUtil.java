@@ -232,6 +232,8 @@ import com.dotmarketing.startup.runonce.Task230119MigrateContentToProperPersonaT
 import com.dotmarketing.startup.runonce.Task230110MakeSomeSystemFieldsRemovableByBaseType;
 import com.dotmarketing.startup.runonce.Task230328AddMarkedForDeletionColumn;
 import com.dotmarketing.startup.runonce.Task230320FixMissingContentletAsJSON;
+import com.dotmarketing.startup.runonce.Task230426AlterVarcharLengthOfLockedByCol;
+import com.dotmarketing.startup.runonce.Task230523CreateVariantFieldInContentlet;
 import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayList;
@@ -538,6 +540,8 @@ public class TaskLocatorUtil {
 		.add(Task230119MigrateContentToProperPersonaTagAndRemoveDupTags.class)
 	    .add(Task230110MakeSomeSystemFieldsRemovableByBaseType.class)
 		.add(Task230328AddMarkedForDeletionColumn.class)
+		.add(Task230426AlterVarcharLengthOfLockedByCol.class)
+		.add(Task230523CreateVariantFieldInContentlet.class)
 		.build();
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}

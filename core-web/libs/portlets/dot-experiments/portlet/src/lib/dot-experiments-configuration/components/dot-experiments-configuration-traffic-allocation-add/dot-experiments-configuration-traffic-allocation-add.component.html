@@ -1,0 +1,44 @@
+<ng-container *ngIf="vm$ | async as vm">
+    <p-sidebar [(visible)]="vm.status.isOpen" (onHide)="closeSidebar()" dotSidebar>
+        <dot-sidebar-header
+            [actionButtonTpl]="actionHeaderBtnTpl"
+            dotTitle="{{ 'experiments.configure.traffic.allocation' | dm }}"
+        ></dot-sidebar-header>
+        <div class="experiment-traffic-allocation-add__form-wrapper flex flex-column">
+            <h5>{{ 'experiments.configure.traffic.allocation' | dm }}</h5>
+            <p>{{ 'experiments.configure.traffic.allocation.add.description' | dm }}</p>
+            <form class="p-fluid" [formGroup]="form" novalidate>
+                <div class="field">
+                    <p-slider [max]="100" [min]="1" formControlName="trafficAllocation"></p-slider>
+                    <div class="flex justify-content-end align-items-baseline gap-2">
+                        <input
+                            id="trafficAllocation"
+                            [max]="100"
+                            [min]="1"
+                            [value]="form.value.trafficAllocation"
+                            (keyup)="checkAllocationRange()"
+                            data-testId="traffic-allocation-input"
+                            formControlName="trafficAllocation"
+                            maxlength="3"
+                            pInputText
+                            type="number"
+                        />
+                        <label class="p-label-input" for="trafficAllocation">%</label>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </p-sidebar>
+
+    <ng-template #actionHeaderBtnTpl>
+        <button
+            [disabled]="!form.valid"
+            [loading]="vm.status.status === stepStatus.SAVING"
+            (click)="save(vm.experimentId)"
+            data-testId="add-trafficAllocation-button"
+            label="{{ 'Done' | dm }}"
+            pButton
+            type="submit"
+        ></button>
+    </ng-template>
+</ng-container>

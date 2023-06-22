@@ -141,7 +141,7 @@ public class StructureBundler implements IBundler {
 	{
 		List<Field> fields = FieldsCache.getFieldsByStructureInode(structure.getInode());
         
-		List<FieldVariable> fieldVariables=new ArrayList<FieldVariable>();
+		List<FieldVariable> fieldVariables=new ArrayList<>();
         for(Field ff : fields) {
             fieldVariables.addAll(
                     APILocator.getFieldAPI().getFieldVariablesForField(ff.getInode(), APILocator.getUserAPI().getSystemUser(), false));

@@ -61,6 +61,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -69,6 +70,7 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.apache.commons.lang3.BooleanUtils;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
@@ -134,7 +136,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
     public void findContentlets() throws Exception {
         DotConnect dc=new DotConnect();
         dc.setSQL("select inode from contentlet");
-        List<String> inodes=new ArrayList<String>();
+        List<String> inodes=new ArrayList<>();
         for(Map<String,Object> r : dc.loadObjectResults()) {
             inodes.add((String)r.get("inode"));
         }
@@ -143,7 +145,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
         
         Assert.assertEquals(inodes.size(), contentlets.size());
         
-        Set<String> inodesSet=new HashSet<String>(inodes);
+        Set<String> inodesSet=new HashSet<>(inodes);
         for(Contentlet cc : contentlets) {
             Assert.assertTrue(inodesSet.remove(cc.getInode()));
         }
@@ -169,7 +171,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
         dc.setSQL("select inode from contentlet order by mod_date desc");
         dc.setMaxRows(10);
         
-        List<String> inodesToOrderBy=new ArrayList<String>();
+        List<String> inodesToOrderBy=new ArrayList<>();
         for(Map<String,Object> r : dc.loadObjectResults()) {
           inodesToOrderBy.add((String)r.get("inode"));
         }
@@ -1337,6 +1339,12 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
                 .equals(contentletLanguage2DefaultVariant.getIdentifier())));
         assertTrue(contentlets.stream().anyMatch(contentlet -> contentlet.getIdentifier()
                 .equals(contentletLanguage3DefaultVariant.getIdentifier())));
+
+      //Now test findAllVersions is returning the versions in descending order
+       final List<Contentlet>  copy = new ArrayList<>(contentlets);
+       copy.sort((o1, o2) -> o2.getModDate().compareTo(o1.getModDate()));
+       assertEquals(copy,contentlets);
+
     }
 
     /**
@@ -1410,6 +1418,12 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
 
         expectedInodes.forEach(inode -> assertTrue(contentlets.stream()
                 .anyMatch(contentlet -> contentlet.getInode().equals(inode))));
+
+        //Now test findAllVersions is returning the versions in descending order
+        final List<Contentlet>  copy = new ArrayList<>(contentlets);
+        copy.sort((o1, o2) -> o2.getModDate().compareTo(o1.getModDate()));
+        assertEquals(copy,contentlets);
+
     }
 
 }

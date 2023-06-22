@@ -43,6 +43,8 @@ export const CMS_OWNER_ROLE_ID = '6b1fa42f-8729-4625-80d1-17e4ef691ce7';
 
 const IMG_RATIO_43 = 1.333;
 
+export const CMS_OWNER_ROLE_LIST = ['CMS OWNER'];
+
 @Injectable()
 export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
     readonly vm$ = this.state$;
@@ -164,6 +166,11 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
                 url: formData.url,
                 order: formData.order,
                 inode: formData.inode || null
+            },
+            {
+                READ: CMS_OWNER_ROLE_LIST,
+                WRITE: CMS_OWNER_ROLE_LIST,
+                PUBLISH: CMS_OWNER_ROLE_LIST
             }
         );
     };
@@ -242,7 +249,10 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
                         loading: false,
                         formState: {
                             ...formInitialState,
-                            title: favoritePage?.title || pageRender.page.title
+                            title:
+                                pageRender.urlContentMap?.title ||
+                                favoritePage?.title ||
+                                pageRender.page.title
                         },
                         imgHeight:
                             parseInt(pageRender.viewAs.device?.cssHeight, 10) ||

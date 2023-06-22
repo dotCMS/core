@@ -1,5 +1,6 @@
 package com.dotcms.security.multipart;
 
+import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableList;
@@ -32,8 +33,7 @@ public class MultiPartSecurityRequestWrapper extends HttpServletRequestWrapper {
     private final byte[] body;
     private final File tmpFile;
 
-    private static final List<SecureFileValidator> secureFileValidatorList = new ImmutableList.Builder<SecureFileValidator>()
-            .add(new IllegalTraversalFilePathValidator()).add(new IllegalFileExtensionsValidator()).build();
+    private static final SecurityUtils securityUtils = new SecurityUtils();
 
     // if greater than 50MB, cache to disk
     private static final long CACHE_IF_LARGER = Config.getIntProperty("MULTI_PART_CACHE_IF_LARGER",1024*1000*50);
@@ -192,10 +192,6 @@ public class MultiPartSecurityRequestWrapper extends HttpServletRequestWrapper {
         }
 
         final String fileName = ContentDispositionFileNameParser.parse(lineToTestLower);
-
-        for (final SecureFileValidator secureFileValidator : secureFileValidatorList) {
-
-            secureFileValidator.validate(fileName);
-        }
+        securityUtils.validateFile(fileName);
     }
 }

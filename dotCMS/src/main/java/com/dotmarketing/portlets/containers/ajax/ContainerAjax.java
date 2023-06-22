@@ -177,7 +177,7 @@ public class ContainerAjax {
         HttpServletRequest request = WebContextFactory.get().getHttpServletRequest();
 	    Container cont = (Container) InodeFactory.getInode(containerInode, Container.class);
 
-		List<Map<String,String>> resultList = new ArrayList<Map<String,String>>();
+		List<Map<String,String>> resultList = new ArrayList<>();
 		List<ContainerStructure> csList;
 
 		try {
@@ -185,14 +185,14 @@ public class ContainerAjax {
 
             // Include ALL option
             if (withAllOption) {
-                Map<String, String> result = new HashMap<String, String>();
+                Map<String, String> result = new HashMap<>();
                 result.put("inode", Structure.STRUCTURE_TYPE_ALL);
                 result.put("name", LanguageUtil.get(userWebAPI.getLoggedInUser(request), "all"));
                 resultList.add(result);
             }
 
 			for (ContainerStructure cs : csList) {
-				Map<String, String> result = new HashMap<String, String>();
+				Map<String, String> result = new HashMap<>();
 				Structure st = CacheLocator.getContentTypeCache().getStructureByInode(cs.getStructureId());
 				result.put("inode", cs.getStructureId());
 				result.put("name", st.getName());
@@ -222,7 +222,7 @@ public class ContainerAjax {
 			csList = APILocator.getContainerAPI().getContainerStructures(cont);
 
 			for (ContainerStructure cs : csList) {
-				Map<String, String> result = new HashMap<String, String>();
+				Map<String, String> result = new HashMap<>();
 				Structure st = CacheLocator.getContentTypeCache().getStructureByInode(cs.getStructureId());
 				if(permissionAPI.doesUserHavePermission(st, PERMISSION_WRITE, user)){
 					result.put("inode", cs.getStructureId());

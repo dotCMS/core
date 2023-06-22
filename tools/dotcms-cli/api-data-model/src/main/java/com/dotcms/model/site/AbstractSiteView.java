@@ -14,8 +14,10 @@ import org.immutables.value.Value;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public interface AbstractSiteView  {
 
+    @Nullable
     String inode();
 
+    @Nullable
     String identifier();
 
     @Nullable

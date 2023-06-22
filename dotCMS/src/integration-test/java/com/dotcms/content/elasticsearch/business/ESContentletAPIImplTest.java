@@ -35,6 +35,7 @@ import com.dotcms.contenttype.model.type.VanityUrlContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.*;
 import com.dotcms.mock.response.MockHttpStatusAndHeadersResponse;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.test.util.FileTestUtil;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
@@ -47,6 +48,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.*;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -71,6 +73,8 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Files;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
@@ -79,6 +83,7 @@ import com.liferay.util.StringPool;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
@@ -2413,6 +2418,53 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         assertEquals(content.getContentTypeId(), type.id());
 
         assertEquals("/testing/urlMapValue1/urlMapValue2",contentletAPI.getUrlMapForContentlet(content, user, false));
+    }
+
+    /***
+     * Method to test:
+     * When: Save a {@link Contentlet}
+     * Should: Save the Variant name inside a new column and not inside the Json Field
+     *
+     * @throws DotDataException
+     * @throws JsonProcessingException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void variantIdOutsideJsonFIeld() throws DotDataException, JsonProcessingException, DotSecurityException {
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final Language language = new LanguageDataGen().nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType)
+                .languageId(language.getId())
+                .host(host)
+                .variant(variant)
+                .nextPersisted();
+
+        final ArrayList<Map<String, Object>> results = new DotConnect().setSQL(
+                        "SELECT contentlet_as_json, variant_id FROM contentlet where inode = ?")
+                .addParam(contentlet.getInode())
+                .loadResults();
+
+        assertEquals(1, results.size());
+
+        final ObjectMapper defaultObjectMapper = DotObjectMapperProvider.createDefaultMapper();
+        final Map<String, Object> map = defaultObjectMapper.readValue(
+                (String) results.get(0).get("contentlet_as_json"), Map.class);
+
+        assertEquals(contentlet.getInode(), map.get("inode"));
+
+        assertNull(map.get("variantId"));
+
+        assertEquals(variant.name(), results.get(0).get("variant_id"));
+
+        final List<Contentlet> contentletsFromDataBase = APILocator.getContentletAPIImpl()
+                .findContentlets(list(contentlet.getInode()));
+
+        assertEquals(1, contentletsFromDataBase.size());
+        assertEquals(variant.name(), contentletsFromDataBase.get(0).getVariantId());
+
     }
 
 }

@@ -321,7 +321,7 @@ public class SiteResourceTest extends UnitTestBase {
                                    }
                                }
         );
-        PaginatedArrayList<Host> hosts = new PaginatedArrayList<Host>();
+        PaginatedArrayList<Host> hosts = new PaginatedArrayList<>();
         hosts.addAll(temp);
         hosts.setTotalResults(1);
         return hosts;
@@ -415,7 +415,7 @@ public class SiteResourceTest extends UnitTestBase {
 
         });
 
-        PaginatedArrayList<Host> hosts = new PaginatedArrayList<Host>();
+        PaginatedArrayList<Host> hosts = new PaginatedArrayList<>();
         hosts.addAll(temp);
         hosts.setTotalResults(2);
         return hosts;
@@ -505,7 +505,7 @@ public class SiteResourceTest extends UnitTestBase {
 
         );
 
-        PaginatedArrayList<Host> hosts = new PaginatedArrayList<Host>();
+        PaginatedArrayList<Host> hosts = new PaginatedArrayList<>();
         hosts.addAll(temp);
         hosts.setTotalResults(2);
         return hosts;
@@ -517,7 +517,7 @@ public class SiteResourceTest extends UnitTestBase {
      * @return
      */
     private PaginatedArrayList<Host> getNoSites() {
-        PaginatedArrayList<Host> hosts = new PaginatedArrayList<Host>();
+        PaginatedArrayList<Host> hosts = new PaginatedArrayList<>();
         hosts.setTotalResults(0);
         return hosts;
     }

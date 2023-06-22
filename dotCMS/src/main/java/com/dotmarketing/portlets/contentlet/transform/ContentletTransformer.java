@@ -108,6 +108,7 @@ public class ContentletTransformer implements DBTransformer<Contentlet> {
         contentlet.setOwner((String) map.get("owner"));
         contentlet.setSortOrder(ConversionUtils.toInt(map.get("sort_order"),0));
         contentlet.setLanguageId(ConversionUtils.toLong(map.get("language_id"), 0L));
+        contentlet.setVariantId((String) map.get("variant_id"));
 
         try {
            if(!hasJsonFields) {
@@ -231,7 +232,7 @@ public class ContentletTransformer implements DBTransformer<Contentlet> {
     private static void populateWysiwyg(final Map<String, Object> map, Contentlet contentlet) {
         final String wysiwyg = (String) map.get(DISABLED_WYSIWYG);
         if( UtilMethods.isSet(wysiwyg) ) {
-            final List<String> wysiwygFields = new ArrayList<String>();
+            final List<String> wysiwygFields = new ArrayList<>();
             final StringTokenizer st = new StringTokenizer(wysiwyg,StringPool.COMMA);
             while( st.hasMoreTokens() ) wysiwygFields.add(st.nextToken().trim());
             contentlet.setDisabledWysiwyg(wysiwygFields);

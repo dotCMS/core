@@ -335,7 +335,7 @@ public class ApiTokenResource implements Serializable {
         final User user = initDataObject.getUser();
         final Optional<ApiToken> optToken = tokenApi.findApiToken(tokenId);
 
-        if (!optToken.isPresent()) {
+        if (optToken.isEmpty()) {
 
             return ExceptionMapperUtil.createResponse(new DotStateException("token id not found"), Response.Status.NOT_FOUND);
         }

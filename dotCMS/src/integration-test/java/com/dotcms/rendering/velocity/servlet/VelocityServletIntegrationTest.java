@@ -291,7 +291,7 @@ public class VelocityServletIntegrationTest {
         final Template template = new TemplateDataGen().site(host)
                 .withContainer(container.getIdentifier()).nextPersisted();
 
-        final List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
+        final List<ContainerStructure> csList = new ArrayList<>();
         final ContainerStructure containerStructure = new ContainerStructure();
         containerStructure.setStructureId(contentGenericType.id());
         containerStructure.setCode("$!{body}");
@@ -416,7 +416,7 @@ public class VelocityServletIntegrationTest {
         when(response.getOutputStream()).thenReturn(outputStream);
 
         final HTMLPageAssetRenderedAPI pageAssetRenderedAPI = createHtmlPageAssetRenderedAPIMock(
-                loginUser, "<html>lol</html>", PageMode.LIVE);
+                loginUser, "<html>lol</html>", PageMode.PREVIEW_MODE);
 
         final VelocityServlet velocityServlet = new VelocityServlet(WebAPILocator.getUserWebAPI(),
                 pageAssetRenderedAPI);
@@ -466,7 +466,7 @@ public class VelocityServletIntegrationTest {
         when(response.getOutputStream()).thenReturn(outputStream);
 
         final HTMLPageAssetRenderedAPI pageAssetRenderedAPI = createHtmlPageAssetRenderedAPIMock(
-                loginUser, "<html>lol</html>", PageMode.LIVE);
+                loginUser, "<html>lol</html>", PageMode.PREVIEW_MODE);
 
         final VelocityServlet velocityServlet = new VelocityServlet(WebAPILocator.getUserWebAPI(),
                 pageAssetRenderedAPI);
@@ -537,7 +537,7 @@ public class VelocityServletIntegrationTest {
         when(response.getOutputStream()).thenReturn(outputStream);
 
         final HTMLPageAssetRenderedAPI pageAssetRenderedAPI = createHtmlPageAssetRenderedAPIMock(
-                loginUser, "<html>lol</html>", PageMode.LIVE);
+                loginUser, "<html>lol</html>", PageMode.PREVIEW_MODE);
 
         final VelocityServlet velocityServlet = new VelocityServlet(WebAPILocator.getUserWebAPI(),
                 pageAssetRenderedAPI);
@@ -574,8 +574,9 @@ public class VelocityServletIntegrationTest {
         final ServletOutputStream outputStream = mock(ServletOutputStream.class);
         when(response.getOutputStream()).thenReturn(outputStream);
 
-        final HTMLPageAssetRenderedAPI pageAssetRenderedAPI = createHtmlPageAssetRenderedAPIMock(user, pageContent,
-                PageMode.LIVE);
+        final HTMLPageAssetRenderedAPI pageAssetRenderedAPI = createHtmlPageAssetRenderedAPIMock(user,
+                pageContent,
+                mode == LoginMode.BE ? PageMode.PREVIEW_MODE : PageMode.LIVE);
 
         final VelocityServlet velocityServlet = new VelocityServlet(WebAPILocator.getUserWebAPI(),
                 pageAssetRenderedAPI);

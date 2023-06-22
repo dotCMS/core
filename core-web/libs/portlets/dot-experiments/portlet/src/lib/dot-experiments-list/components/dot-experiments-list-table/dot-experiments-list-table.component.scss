@@ -1,0 +1,100 @@
+@use "variables" as *;
+
+:host {
+    .dot-experiment-list-table {
+        display: flex;
+        flex-direction: column;
+        gap: $spacing-4;
+        margin-bottom: $spacing-5;
+        overflow: auto;
+    }
+
+    //ng-table overwritte
+    ::ng-deep .p-datatable {
+        border-collapse: separate;
+        border-spacing: 0;
+
+        tr:last-child td:first-child {
+            border-bottom-left-radius: $border-radius-sm;
+        }
+
+        td:last-child {
+            border-bottom-right-radius: $border-radius-sm;
+        }
+
+        th,
+        td {
+            font-size: $font-size-md;
+            font-weight: normal;
+        }
+
+        .p-datatable-thead > tr > th,
+        .p-datatable-tbody > tr > td {
+            background: transparent;
+        }
+
+        .p-datatable-thead {
+            tr > th {
+                height: 40px;
+                padding: 0;
+                color: $color-palette-gray-700;
+                font-size: $font-size-md;
+                font-weight: normal;
+                border: 1px solid $color-palette-gray-300;
+                border-width: 0 0 1px 0;
+                font-weight: 500;
+
+                &:first-child {
+                    padding-left: $spacing-3;
+                }
+
+                &:last-child {
+                    padding-right: 0;
+                }
+            }
+        }
+
+        .p-datatable-header {
+            border: none;
+            color: $color-palette-gray-700;
+            background: transparent;
+        }
+
+        .p-datatable-wrapper {
+            border-radius: $border-radius-sm;
+            border: 1px solid $color-palette-gray-300;
+            overflow: hidden;
+
+            .p-datatable-tbody {
+                tr {
+                    height: 40px;
+                    border: 1px solid $color-palette-gray-300;
+                    transition: background-color $basic-speed ease;
+                    background: transparent;
+
+                    &:last-child {
+                        border-width: 0 0 0 0;
+                    }
+
+                    &:hover {
+                        background-color: $color-palette-primary-100;
+                    }
+
+                    td {
+                        padding: 0;
+
+                        &:first-child {
+                            padding-left: $spacing-3;
+                        }
+
+                        &:last-child {
+                            justify-content: flex-end;
+                            display: flex;
+                            padding-right: $spacing-3;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

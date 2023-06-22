@@ -2,17 +2,6 @@
 package com.dotmarketing.db;
 
 import static com.dotmarketing.util.Constants.DATABASE_DEFAULT_DATASOURCE;
-
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Constants;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.StringUtils;
-import com.dotmarketing.util.UtilMethods;
-import com.liferay.util.JNDIUtil;
-import com.microsoft.sqlserver.jdbc.ISQLServerConnection;
-import io.vavr.control.Try;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
@@ -30,14 +19,22 @@ import javax.naming.InitialContext;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Constants;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.StringUtils;
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.util.JNDIUtil;
+import io.vavr.control.Try;
 
 public class DbConnectionFactory {
 
 
-    public static final String MYSQL = "MySQL";
+
     public static final String POSTGRESQL = "PostgreSQL";
-    public static final String ORACLE = "Oracle";
-    public static final String MSSQL = "Microsoft SQL Server";
+
 
     private static DataSource defaultDataSource = null;
 
@@ -79,9 +76,7 @@ public class DbConnectionFactory {
      */
     public static Date now() {
 
-        return MSSQL.equals(getDBType())?
-                new java.sql.Date(System.currentTimeMillis()):
-                new Timestamp(System.currentTimeMillis());
+        return new Timestamp(System.currentTimeMillis());
     }
 
 
@@ -96,14 +91,14 @@ public class DbConnectionFactory {
 
     
     public enum DataBaseType {
-        POSTGRES, MySQL, MSSQL, ORACLE;
+        POSTGRES;
     }
 
-    private static String _dbType = null;
+
 
     private static final ThreadLocal<HashMap<String, Connection>>
         connectionsHolder =
-        new ThreadLocal<HashMap<String, Connection>>();
+        new ThreadLocal<>();
 
     public static DataSource getDataSource() {
 
@@ -217,7 +212,7 @@ public class DbConnectionFactory {
             Connection connection = null;
             connectionsCalledFor++;
             if (connectionsList == null) {
-                connectionsList = new HashMap<String, Connection>();
+                connectionsList = new HashMap<>();
                 connectionsHolder.set(connectionsList);
             }
 
@@ -232,10 +227,7 @@ public class DbConnectionFactory {
                         DATABASE_DEFAULT_DATASOURCE);
             }
 
-            // _dbType would only be null until the getDbType was called, then it is static
-            if (_dbType != null && MSSQL.equals(getDBType())) {
-                connection.setTransactionIsolation(ISQLServerConnection.TRANSACTION_SNAPSHOT);
-            }
+ 
 
             return connection;
         } catch (Exception e) {
@@ -300,7 +292,7 @@ public class DbConnectionFactory {
      */
     @SuppressWarnings("unchecked")
     public static ArrayList<String> getAllDataSources() throws NamingException {
-        ArrayList<String> results = new ArrayList<String>();
+        ArrayList<String> results = new ArrayList<>();
         Context ctx;
 
         ctx = (Context) new InitialContext().lookup("java:comp/env");
@@ -354,7 +346,7 @@ public class DbConnectionFactory {
             Connection connection = null;
 
             if (connectionsList == null) {
-                connectionsList = new HashMap<String, Connection>();
+                connectionsList = new HashMap<>();
                 connectionsHolder.set(connectionsList);
             }
 
@@ -391,7 +383,7 @@ public class DbConnectionFactory {
             HashMap<String, Connection> connectionsList = (HashMap<String, Connection>) connectionsHolder.get();
 
             if (connectionsList == null) {
-                connectionsList = new HashMap<String, Connection>();
+                connectionsList = new HashMap<>();
                 connectionsHolder.set(connectionsList);
             }
 
@@ -433,7 +425,7 @@ public class DbConnectionFactory {
             HashMap<String, Connection> connectionsList = (HashMap<String, Connection>) connectionsHolder.get();
 
             if (connectionsList == null) {
-                connectionsList = new HashMap<String, Connection>();
+                connectionsList = new HashMap<>();
                 connectionsHolder.set(connectionsList);
             }
 
@@ -459,71 +451,30 @@ public class DbConnectionFactory {
 
     public static String getDBType() {
 
-		/*
-		 * Here is what this out outputs : MySQL PostgreSQL Microsoft SQL Server
-		 * Oracle
-		 */
-
-        if (_dbType != null) {
-            return _dbType;
-        }
-
-        try (Connection conn = getDataSource().getConnection()){
-            _dbType = conn.getMetaData().getDatabaseProductName();
-        } catch (Exception e) {
-            Logger.warn(DbConnectionFactory.class, "unable to determine dbType:" + e.getMessage());
-        } 
-
-        return _dbType;
+        return POSTGRESQL;
     }
 
     public static String getDBDateTimeFunction() {
-        if (MSSQL.equals(getDBType())) {
-            return "GETDATE()";
-        } else if (ORACLE.equals(getDBType())) {
-            return "SYSDATE";
-        } else {
+
             return "now()";
-        }
+        
     }
 
     public static String getDBDateTimeType() {
-        if (isOracle() || isPostgres()) {
-            return "timestamp";
-        } else {
-            return "datetime";
-        }
+        return "timestamp";
+
     }
 
     public static String getDBTrue() {
-        String x = getDBType();
+        return "'true'";
 
-        if (MYSQL.equals(x)) {
-            return "1";
-        } else if (POSTGRESQL.equals(x)) {
-            return "'true'";
-        } else if (MSSQL.equals(x)) {
-            return "1";
-        } else if (ORACLE.equals(x)) {
-            return "1";
-        }
-        return "true";
 
     }
 
     public static String getDBFalse() {
-        String x = getDBType();
 
-        if (MYSQL.equals(x)) {
-            return "0";
-        } else if (POSTGRESQL.equals(x)) {
             return "'false'";
-        } else if (MSSQL.equals(x)) {
-            return "0";
-        } else if (ORACLE.equals(x)) {
-            return "0";
-        }
-        return "false";
+
 
     }
 
@@ -534,14 +485,9 @@ public class DbConnectionFactory {
      * @return true is the string represents a DB true value
      */
     public static boolean isDBTrue(String value) {
-        String x = getDBType();
 
-        if (MYSQL.equals(x) || MSSQL.equals(x) || ORACLE.equals(x)) {
-            return "1".equals(value.trim()) || "true".equals(value.trim());
-        } else if (POSTGRESQL.equals(x)) {
             return "t".equals(value.trim()) || "true".equals(value.trim());
-        }
-        return false;
+
 
     }
 
@@ -552,14 +498,9 @@ public class DbConnectionFactory {
      * @return true is the string represents a DB false value
      */
     public static boolean isDBFalse(final String value) {
-        String x = getDBType();
 
-        if (MYSQL.equals(x) || MSSQL.equals(x) || ORACLE.equals(x)) {
-            return "0".equals(value.trim()) || "false".equals(value.trim());
-        } else if (POSTGRESQL.equals(x)) {
             return "f".equals(value.trim()) || "false".equals(value.trim());
-        }
-        return false;
+
 
     }
 
@@ -574,19 +515,19 @@ public class DbConnectionFactory {
     }
 
     public static boolean isOracle() {
-        return ORACLE.equals(getDBType());
+        return false;
     }
 
     public static boolean isMsSql() {
-        return MSSQL.equals(getDBType());
+        return false;
     }
 
     public static boolean isPostgres() {
-        return POSTGRESQL.equals(getDBType());
+        return true;
     }
 
     public static boolean isMySql() {
-        return MYSQL.equals(getDBType());
+        return false;
     }
 
     public static int getDbVersion() {

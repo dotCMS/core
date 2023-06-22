@@ -30,6 +30,7 @@ public class VariantResultsBuilder {
     private long totalSessions;
     private long totalVariantSessions;
     private long pageViews;
+    private float weight;
 
     VariantResultsBuilder(final ExperimentVariant experimentVariant) {
         this.experimentVariant = experimentVariant;
@@ -76,7 +77,7 @@ public class VariantResultsBuilder {
         return new VariantResults(experimentVariant.id(), experimentVariant.description(),
                 totalMultiBySession(eventsByLookBackWindow),
                 uniqueBySessionResume,
-                details, pageViews);
+                details, pageViews, weight);
     }
 
     private Map<String, ResultResumeItem> getDetails(List<Instant> allDates) {
@@ -161,5 +162,9 @@ public class VariantResultsBuilder {
 
     public void setTotalSessionToVariant(final long total) {
         this.totalVariantSessions = total;
+    }
+
+    public void weight(final float weight) {
+        this.weight = weight;
     }
 }

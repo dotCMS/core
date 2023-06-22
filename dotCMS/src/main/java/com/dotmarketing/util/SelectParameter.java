@@ -172,7 +172,7 @@ public class SelectParameter {
     private void test() {
 	//	String[] opt = { "Opt1", "Opt2" };
 	//	boolean[] sel = { true, false };
-    java.util.ArrayList<String> options = new java.util.ArrayList<String>();
+    java.util.ArrayList<String> options = new java.util.ArrayList<>();
     options.add("Opt3");
     options.add("Opt4");
 	SelectParameter selparam = new com.dotmarketing.util.SelectParameter(options, new int[] { 1 }, "single");
