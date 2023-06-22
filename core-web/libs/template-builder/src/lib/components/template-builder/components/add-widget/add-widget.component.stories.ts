@@ -5,7 +5,7 @@ import { AddWidgetComponent } from './add-widget.component';
 import { rowIcon, colIcon } from '../../assets/icons';
 
 export default {
-    title: 'Components/Add',
+    title: 'Library/Template Builder/Components/Add',
     component: AddWidgetComponent,
     decorators: [
         moduleMetadata({

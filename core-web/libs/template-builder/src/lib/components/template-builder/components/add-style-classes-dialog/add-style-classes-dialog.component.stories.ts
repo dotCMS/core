@@ -23,7 +23,7 @@ import {
 } from '../../utils/mocks';
 
 export default {
-    title: 'Components/Add Style Classes Dialog',
+    title: 'Template Builder/Components/Add Style Classes',
     component: AddStyleClassesDialogComponent,
     decorators: [
         moduleMetadata({
