@@ -23,7 +23,7 @@ export class TemplateBuilderSidebarComponent {
     };
 
     get width() {
-        return this.sidebarProperties.width.replace(/^\w/g, (l) => l.toUpperCase());
+        return (this.sidebarProperties.width ?? 'medium').replace(/^\w/g, (l) => l.toUpperCase());
     }
 
     get containers() {

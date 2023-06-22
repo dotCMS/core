@@ -77,11 +77,17 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
         return {
             header: this.templateLayout.header,
             footer: this.templateLayout.footer,
-            sidebar: this.templateLayout.sidebar
+            sidebar: this.templateLayout.sidebar ?? {
+                location: ''
+            }
         };
     }
     get sidebarProperties(): DotLayoutSideBar {
-        return this.templateLayout.sidebar;
+        return (
+            this.templateLayout.sidebar ?? {
+                location: ''
+            }
+        );
     }
 
     public items$: Observable<DotGridStackWidget[] | DotLayoutBody>;
