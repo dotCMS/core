@@ -28,7 +28,6 @@
             font-size: $font-size-sm;
             margin: $spacing-3;
         }
-
         .p-dropdown .p-dropdown-trigger {
             width: 0.875rem; // 14px
             height: 0.875rem; // 14px
@@ -54,40 +53,13 @@ p-scrollpanel {
 
 p-dropdown {
     ::ng-deep {
-        p-dropdown {
-            height: 100%;
-        }
         .p-dropdown {
             display: flex;
             flex-direction: row-reverse; // this allows having the plus icon at the left of the placeholder
-            border: none;
             background: none;
-            font-size: $font-size-xs;
             margin-left: $spacing-4;
-            padding: $spacing-2;
-
-
-        &:hover {
-            background: $color-palette-primary-200;
         }
-
-        &.p-dropdown-open {
-            background: $color-palette-primary-200;
-        }
-
-        &:not(.p-disabled).p-focus,
-        &.p-focus {
-            box-shadow: none;
-            border: none;
-        }
-      }
-        .p-dropdown-trigger-icon {
-            color: $color-palette-primary;
-        }
-        .p-dropdown .p-dropdown-trigger {
-            width: auto;
-        }
-  }
+    }
 }
 
 .template-builder-box {
