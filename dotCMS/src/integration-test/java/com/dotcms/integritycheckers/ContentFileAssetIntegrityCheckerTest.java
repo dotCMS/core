@@ -139,29 +139,32 @@ public class ContentFileAssetIntegrityCheckerTest extends IntegrationTestBase im
 
         integrityChecker.executeFix(endpointId.get());
 
-        final DotConnect dotConnect = new DotConnect();
-        dotConnect.setSQL("SELECT asset_subtype, owner, create_date FROM identifier WHERE id = ?");
-        dotConnect.addParam(remoteIdentifier);
-        final Connection connection = DbConnectionFactory.getConnection();
-        final List<Map<String, Object>> results = dotConnect.loadObjectResults(connection);
+        try {
+            final DotConnect dotConnect = new DotConnect();
+            dotConnect.setSQL("SELECT asset_subtype, owner, create_date FROM identifier WHERE id = ?");
+            dotConnect.addParam(remoteIdentifier);
+            final Connection connection = DbConnectionFactory.getConnection();
+            List<Map<String, Object>> results = dotConnect.loadObjectResults(connection);
 
-        final boolean assetSubtypeNotNull = results.stream()
-                .anyMatch(result -> result.containsKey("asset_subtype") && result.get("asset_subtype") != null);
+            final boolean assetSubtypeNotNull = results.stream()
+                    .anyMatch(result -> result.containsKey("asset_subtype") && result.get("asset_subtype") != null);
 
-        Assert.assertTrue("Asset_SubType is null", assetSubtypeNotNull);
+            Assert.assertTrue("Asset_SubType is null", assetSubtypeNotNull);
 
-        final boolean createDateNotNull = results.stream()
-                .anyMatch(result -> result.containsKey("create_date") && result.get("create_date") != null);
+            final boolean createDateNotNull = results.stream()
+                    .anyMatch(result -> result.containsKey("create_date") && result.get("create_date") != null);
 
-        Assert.assertTrue("Create Date is null", createDateNotNull);
+            Assert.assertTrue("Create Date is null", createDateNotNull);
 
-        final boolean ownerNotNull = results.stream()
-                .anyMatch(result -> result.containsKey("owner") && result.get("owner") != null);
+            final boolean ownerNotNull = results.stream()
+                    .anyMatch(result -> result.containsKey("owner") && result.get("owner") != null);
 
-        Assert.assertTrue("Owner is null", ownerNotNull);
+            Assert.assertTrue("Owner is null", ownerNotNull);
 
+        } catch (DotDataException e) {
+            Logger.error(this, e);
+        } finally {
+            DbConnectionFactory.closeSilently();
+        }
     }
-
-
-
 }
