@@ -33,7 +33,7 @@ import {
 } from '../../shared';
 
 export default {
-    title: 'Block Editor'
+    title: 'Library/Block Editor'
 };
 
 export const primary = () => ({

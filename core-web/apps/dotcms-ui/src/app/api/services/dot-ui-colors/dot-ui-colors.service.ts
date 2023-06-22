@@ -1,13 +1,53 @@
 import { TinyColor } from '@ctrl/tinycolor';
+import ShadeGenerator from 'shade-generator';
 
 import { Injectable } from '@angular/core';
 
 import { DotUiColors } from '@dotcms/dotcms-js';
 
+// ShadeGenerator generates 20 colors and we only use 10, so we need to map the colors.
+const dictionary = {
+    '100': '10',
+    '200': '30',
+    '300': '50',
+    '400': '70',
+    '500': '100',
+    '600': '300',
+    '700': '500',
+    '800': '800',
+    '900': '1000'
+};
+
+type HslObject = { hue: string; saturation: string; lightness: string };
+
+type ColorType = 'primary' | 'secondary';
+
+export const DEFAULT_COLORS = {
+    primary: '#426BF0',
+    secondary: '#7042F0'
+};
+
+function parseHSL(hslString: string): HslObject {
+    // Use regex to match HSL values with their units
+    const regex = /hsl\((\d+deg),\s*(\d+%),\s*(\d+)%\)/;
+    const match = hslString.match(regex);
+
+    // Check if HSL values were found
+    if (match) {
+        return {
+            hue: match[1],
+            saturation: match[2],
+            lightness: match[3]
+        };
+    } else {
+        // Handle case where input was not in correct format
+        throw new Error('Input is not a valid HSL color string');
+    }
+}
+
 @Injectable()
 export class DotUiColorsService {
     private currentColors: DotUiColors;
-    private readonly COL_MAIN_LIGHTEN_VAL = 12;
 
     /**
      * Set CSS variables colors
@@ -18,56 +58,89 @@ export class DotUiColorsService {
     setColors(el: HTMLElement, colors?: DotUiColors): void {
         this.currentColors = colors || this.currentColors;
 
-        this.setColorMain(el, this.currentColors.primary);
-        this.setColorSec(el, this.currentColors.secondary);
+        if (colors.primary === DEFAULT_COLORS.primary) {
+            this.setDefaultPrimaryColor(el);
+        } else {
+            this.setColor(el, this.currentColors.primary, 'primary');
+        }
+
+        if (colors.secondary === DEFAULT_COLORS.secondary) {
+            this.setDefaultSecondaryColor(el);
+        } else {
+            this.setColor(el, this.currentColors.secondary, 'secondary');
+        }
+
         this.setColorBackground(el, this.currentColors.background);
-    }
-
-    private getDefaultsColors(el: HTMLElement): DotUiColors {
-        const values = window.getComputedStyle(el);
-
-        return {
-            primary: values.getPropertyValue('--color-main'),
-            secondary: values.getPropertyValue('--color-sec'),
-            background: values.getPropertyValue('--color-background')
-        };
-    }
-
-    private getRgbString(color: TinyColor): string {
-        const rgb = color.toRgb();
-
-        return `${rgb.r}, ${rgb.g}, ${rgb.b}`;
     }
 
     private setColorBackground(el: HTMLElement, color: string): void {
         const colorBackground: TinyColor = new TinyColor(color);
 
-        if (colorBackground.isValid && this.getDefaultsColors(el).background !== color) {
+        if (colorBackground.isValid) {
             el.style.setProperty('--color-background', colorBackground.toHexString().toUpperCase());
         }
     }
 
-    private setColorMain(el: HTMLElement, color: string): void {
-        const colorMain = new TinyColor(color);
+    private setColor(el: HTMLElement, hex: string, type: ColorType): void {
+        const color = new TinyColor(hex);
 
-        if (colorMain.isValid && this.getDefaultsColors(el).primary !== color) {
-            const colorMainMod = `#${colorMain
-                .lighten(this.COL_MAIN_LIGHTEN_VAL)
-                .toHex()
-                .toUpperCase()}`;
+        if (color.isValid) {
+            const baseColor = ShadeGenerator.hue(hex).shade('100').hsl();
+            const baseColorHsl = parseHSL(baseColor);
 
-            el.style.setProperty('--color-main', colorMain.toHexString().toUpperCase());
-            el.style.setProperty('--color-main_mod', colorMainMod);
-            el.style.setProperty('--color-main_rgb', this.getRgbString(colorMain));
+            el.style.setProperty(`--color-${type}-h`, baseColorHsl.hue);
+            el.style.setProperty(`--color-${type}-s`, baseColorHsl.saturation);
+
+            this.setShades(el, hex, type);
+            this.setOpacities(el, baseColorHsl.saturation, type);
         }
     }
 
-    private setColorSec(el: HTMLElement, color: string): void {
-        const colorSec = new TinyColor(color);
+    private setShades(el: HTMLElement, hex: string, type: ColorType) {
+        const shades = ShadeGenerator.hue(hex).shadesMap('hsl');
 
-        if (colorSec.isValid && this.getDefaultsColors(el).secondary !== color) {
-            el.style.setProperty('--color-sec', colorSec.toHexString().toUpperCase());
-            el.style.setProperty('--color-sec_rgb', this.getRgbString(colorSec));
+        for (const shade in dictionary) {
+            const color = shades[dictionary[shade]];
+            el.style.setProperty(`--color-palette-${type}-${shade}`, color);
         }
+    }
+
+    private setOpacities(el: HTMLElement, saturation: string, type: ColorType) {
+        for (let i = 1; i < 10; i++) {
+            el.style.setProperty(
+                `--color-palette-${type}-op-${i}0`,
+                `hsla(var(--color-primary-h), var(--color-primary-s), ${saturation}, 0.${i})`
+            );
+        }
+    }
+
+    private setDefaultPrimaryColor(el: HTMLElement): void {
+        el.style.setProperty(`--color-primary-h`, '226deg');
+        el.style.setProperty(`--color-primary-s`, '85%');
+
+        const saturations = [98, 96, 90, 78, 60, 48, 36, 27, 21];
+
+        saturations.forEach((saturation, index) => {
+            const level = `${index + 1}00`;
+            el.style.setProperty(
+                `--color-palette-primary-${level}`,
+                `hsl(var(--color-primary-h) var(--color-primary-s) ${saturation}%)`
+            );
+        });
+    }
+
+    private setDefaultSecondaryColor(el: HTMLElement): void {
+        el.style.setProperty(`--color-secondary-h`, '256deg');
+        el.style.setProperty(`--color-secondary-s`, '85%');
+
+        const saturations = [98, 94, 84, 71, 60, 51, 42, 30, 22];
+
+        saturations.forEach((saturation, index) => {
+            const level = `${index + 1}00`;
+            el.style.setProperty(
+                `--color-palette-secondary-${level}`,
+                `hsl(var(--color-secondary-h) var(--color-secondary-s) ${saturation}%)`
+            );
+        });
     }
 }
