@@ -22,7 +22,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
  */
 abstract class RegexUrlPatterStrategy {
     private static String DOMAIN_NAME_REGEX = "(localhost|127.0.0.1|\\b(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,})";
-    protected static String DEFAULT_URL_REGEX_TEMPLATE = "(http|https):\\/\\/" + DOMAIN_NAME_REGEX + "(:\\d{1,5})?%s(\\?.*)?";
+    protected static String DEFAULT_URL_REGEX_TEMPLATE = "(http|https):\\/\\/" + DOMAIN_NAME_REGEX + "(:\\d{1,5})?%s(\\/?\\?.*)?";
     protected static String REDIRECT_REGEX_TEMPLATE = "^" + DEFAULT_URL_REGEX_TEMPLATE + "$";
 
 
