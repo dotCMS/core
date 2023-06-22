@@ -522,7 +522,7 @@ $finder-s-input: ".ui.input input";
     }
 
     cw-modal-dialog .ui.dimmer {
-        background-color: rgba(0, 0, 0, 0.55);
+        background-color: $color-palette-black-op-50;
     }
 
     .cw-rule-engine__empty {

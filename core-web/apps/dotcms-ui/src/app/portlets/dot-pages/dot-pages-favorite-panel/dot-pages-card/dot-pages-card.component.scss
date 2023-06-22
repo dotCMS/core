@@ -46,7 +46,7 @@
     }
 
     .p-card .p-card-body {
-        box-shadow: 0px -15px 20px -20px rgba(0, 0, 0, 0.3);
+        box-shadow: 0px -15px 20px -20px $color-palette-black-op-30;
         padding: $spacing-3 $spacing-1 $spacing-3 $spacing-3;
     }
 }

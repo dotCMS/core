@@ -51,6 +51,8 @@ import com.dotcms.experiments.business.RootIndexRegexUrlPatterStrategyIntegratio
 import com.dotcms.experiments.business.web.ExperimentWebAPIImplIntegrationTest;
 import com.dotcms.filters.interceptor.meta.MetaWebInterceptorTest;
 import com.dotcms.graphql.DotGraphQLHttpServletTest;
+import com.dotcms.integritycheckers.ContentFileAssetIntegrityCheckerTest;
+import com.dotcms.integritycheckers.ContentPageIntegrityCheckerTest;
 import com.dotcms.integritycheckers.HostIntegrityCheckerTest;
 import com.dotcms.integritycheckers.IntegrityUtilTest;
 import com.dotcms.junit.MainBaseSuite;
@@ -650,7 +652,9 @@ import org.junit.runners.Suite.SuiteClasses;
         CMSUrlUtilIntegrationTest.class,
         HostFactoryImplTest.class,
         RootIndexRegexUrlPatterStrategyIntegrationTest.class,
-        IndexRegexUrlPatterStrategyIntegrationTest.class
+        IndexRegexUrlPatterStrategyIntegrationTest.class,
+        ContentFileAssetIntegrityCheckerTest.class,
+        ContentPageIntegrityCheckerTest.class
 })
 
 public class MainSuite {

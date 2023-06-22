@@ -1,9 +1,11 @@
+@import "../../../../dotcms-scss/shared/colors";
+
 dot-progress-bar {
     text-align: center;
 
     div {
-        color: var(--color-sec);
-        border: 1px solid var(--color-sec);
+        color: $color-palette-secondary-500;
+        border: 1px solid $color-palette-secondary-500;
         border-radius: var(--border-radius);
         height: 32px;
         width: 100%;
@@ -12,7 +14,7 @@ dot-progress-bar {
 
         &:before {
             content: "";
-            background-color: var(--color-sec);
+            background-color: $color-palette-secondary-500;
             width: calc(var(--progress-width, 0) * 1%);
             display: flex;
             position: absolute;
@@ -25,6 +27,6 @@ dot-progress-bar {
     }
 
     span {
-        color: var(--color-sec);
+        color: $color-palette-secondary-500;
     }
 }
