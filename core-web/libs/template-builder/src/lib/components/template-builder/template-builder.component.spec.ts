@@ -73,10 +73,10 @@ describe('TemplateBuilderComponent', () => {
     });
     beforeEach(() => {
         spectator = createHost(
-            `<dotcms-template-builder [templateLayout]="templateLayout"></dotcms-template-builder>`,
+            `<dotcms-template-builder [layout]="layout"></dotcms-template-builder>`,
             {
                 hostProps: {
-                    templateLayout: { body: FULL_DATA_MOCK }
+                    layout: { body: FULL_DATA_MOCK }
                 }
             }
         );

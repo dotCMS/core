@@ -38,7 +38,13 @@ import { DotEditLayoutComponent } from './dot-edit-layout.component';
 })
 export class MockTemplateBuilderComponent {
     @Input()
-    templateLayout: DotLayout;
+    layout: DotLayout;
+
+    @Input()
+    themeId: string;
+
+    @Input()
+    title: string;
 
     @Output()
     templateChange = new EventEmitter();
@@ -64,6 +70,8 @@ export class MockDotEditLayoutDesignerComponent {
     @Input()
     url: string;
 }
+
+const PAGE_STATE = new DotPageRender(mockDotRenderedPage());
 
 let fixture: ComponentFixture<DotEditLayoutComponent>;
 
@@ -142,7 +150,7 @@ describe('DotEditLayoutComponent', () => {
                         parent: {
                             parent: {
                                 data: of({
-                                    content: new DotPageRender(mockDotRenderedPage())
+                                    content: PAGE_STATE
                                 })
                             }
                         }
@@ -327,6 +335,13 @@ describe('DotEditLayoutComponent', () => {
             );
 
             expect(component).toBeTruthy();
+        });
+
+        it('should set the themeId @Input correctly', () => {
+            const templateBuilder = fixture.debugElement.query(
+                By.css('[data-testId="new-template-builder"]')
+            );
+            expect(templateBuilder.componentInstance.themeId).toBe(PAGE_STATE.template.theme);
         });
 
         it('should emit events from new-template-builder when the layout is changed', () => {

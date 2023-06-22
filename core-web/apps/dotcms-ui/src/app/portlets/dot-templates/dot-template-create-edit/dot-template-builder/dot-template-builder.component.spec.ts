@@ -41,7 +41,9 @@ import {
         <ng-content select="[toolbar-actions-right]"></ng-content>`
 })
 class TemplateBuilderMockComponent {
-    @Input() templateLayout: DotLayout;
+    @Input() layout: DotLayout;
+    @Input() themeId: string;
+    @Input() title: string;
     @Output() templateChange: EventEmitter<Event> = new EventEmitter();
 }
 
@@ -257,19 +259,20 @@ describe('DotTemplateBuilderComponent', () => {
             expect(component).toBeTruthy();
         });
 
+        it('should set the themeId @Input correctly', () => {
+            const templateBuilder = de.query(By.css('[data-testId="new-template-builder"]'));
+            expect(templateBuilder.componentInstance.themeId).toBe('123');
+        });
+
         it('should emit events from new-template-builder when the layout is changed', () => {
-            const builder = de.query(By.css('[data-testId="new-template-builder"]'));
+            const templateBuilder = de.query(By.css('[data-testId="new-template-builder"]'));
             const template = {
                 layout: EMPTY_TEMPLATE_DESIGN.layout,
                 themeId: '123',
                 title: null
             } as DotTemplateDesigner;
 
-            spyOn(component, 'onTemplateChange').and.callThrough();
-
-            builder.triggerEventHandler('templateChange', template);
-
-            expect(component.onTemplateChange).toHaveBeenCalledWith(template);
+            templateBuilder.triggerEventHandler('templateChange', template);
             expect(component.updateTemplate.emit).toHaveBeenCalled();
         });
 
