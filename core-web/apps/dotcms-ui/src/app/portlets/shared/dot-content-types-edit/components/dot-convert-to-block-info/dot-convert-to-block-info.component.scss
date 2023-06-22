@@ -1,7 +1,7 @@
 @use "variables" as *;
 
 :host {
-    background-color: rgba($color-palette-primary, 0.2);
+    background-color: $color-palette-primary-op-20;
     padding: $spacing-1 $spacing-6;
     color: $brand-background;
     display: flex;

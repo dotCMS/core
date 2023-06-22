@@ -1,6 +1,6 @@
 @use "variables" as *;
 
-$datatable-bg-hover: rgba($color-palette-secondary, 0.05);
+$datatable-bg-hover: $color-palette-black-op-10;
 
 .p-datatable .p-paginator-top {
     border-width: 0 0 1px 0;
