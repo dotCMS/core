@@ -30,8 +30,6 @@ import {
  */
 @Injectable()
 export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderState> {
-    // We need to discuss how we will save this to not trigger the parse every time
-
     public items$ = this.select((state) => state.items);
     public layoutProperties$ = this.select((state) => state.layoutProperties);
 

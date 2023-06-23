@@ -22,7 +22,7 @@ import { TemplateBuilderBackgroundColumnsComponent } from '../template-builder-b
 
 @Component({
     selector: 'dotcms-host-component',
-    template: ` <dotcms-template-builder-row [row]="row">
+    template: ` <dotcms-template-builder-row [row]="row" [isResizing]="true">
         <p>Some component</p>
     </dotcms-template-builder-row>`
 })
@@ -88,7 +88,7 @@ describe('TemplateBuilderRowComponent', () => {
         expect(fixture.debugElement.query(By.css('p'))).toBeTruthy();
     });
 
-    it('should have a background', () => {
+    it('should have a background when resizing', () => {
         expect(
             fixture.debugElement.query(By.css('dotcms-template-builder-background-columns'))
         ).toBeTruthy();
