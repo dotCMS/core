@@ -92,6 +92,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     public readonly rowDisplayHeight = `${GRID_STACK_ROW_HEIGHT - 1}${GRID_STACK_UNIT}`; // setting a lower height to have space between rows
 
     grid!: GridStack;
+    resizingRow = '';
 
     constructor(
         private store: DotTemplateBuilderStore,
@@ -153,6 +154,13 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
             subgrid.on('dropped', (_: Event, oldNode: GridStackNode, newNode: GridStackNode) => {
                 this.store.subGridOnDropped(oldNode, newNode);
             });
+
+            subgrid.on('resizestart', (_: Event, el: GridItemHTMLElement) => {
+                this.resizingRow = el.gridstackNode.grid.parentGridItem.id;
+            });
+            subgrid.on('resizestop', () => {
+                this.resizingRow = '';
+            });
         });
 
         this.grid.on('dropped', (_: Event, previousNode: GridStackNode, newNode: GridStackNode) => {
@@ -199,6 +207,12 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
                             )
                             .on('change', (_: Event, nodes: GridStackNode[]) => {
                                 this.store.updateColumnGridStackData(nodes as DotGridStackWidget[]);
+                            })
+                            .on('resizestart', (_: Event, el: GridItemHTMLElement) => {
+                                this.resizingRow = el.gridstackNode.grid.parentGridItem.id;
+                            })
+                            .on('resizestop', () => {
+                                this.resizingRow = '';
                             });
                     }
 

@@ -1,5 +1,6 @@
 import { GridItemHTMLElement } from 'gridstack';
 
+import { NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ElementRef, Input } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -21,10 +22,17 @@ import { TemplateBuilderBackgroundColumnsComponent } from '../template-builder-b
     templateUrl: './template-builder-row.component.html',
     styleUrls: ['./template-builder-row.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [ButtonModule, RemoveConfirmDialogComponent, TemplateBuilderBackgroundColumnsComponent]
+    imports: [
+        NgIf,
+        ButtonModule,
+        RemoveConfirmDialogComponent,
+        TemplateBuilderBackgroundColumnsComponent
+    ]
 })
 export class TemplateBuilderRowComponent {
     @Input() row: DotGridStackWidget;
+
+    @Input() isResizing = false;
 
     constructor(
         private el: ElementRef,

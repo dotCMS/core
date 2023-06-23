@@ -23,5 +23,7 @@
             (deleteConfirmed)="deleteRow()"
         ></dotcms-remove-confirm-dialog>
     </div>
-    <dotcms-template-builder-background-columns></dotcms-template-builder-background-columns>
+    <dotcms-template-builder-background-columns
+        *ngIf="isResizing"
+    ></dotcms-template-builder-background-columns>
 </div>
