@@ -1,10 +1,18 @@
+import { describe, expect, it } from '@jest/globals';
+
+import { CommonModule } from '@angular/common';
 import { Component, DebugElement } from '@angular/core';
-import { ComponentFixture } from '@angular/core/testing';
-import { UntypedFormControl, UntypedFormGroup } from '@angular/forms';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import {
+    FormsModule,
+    ReactiveFormsModule,
+    UntypedFormControl,
+    UntypedFormGroup
+} from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService } from '@dotcms/data-access';
+import { DotMessagePipeModule } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotLayoutSidebarComponent } from './dot-layout-property-sidebar.component';
@@ -12,6 +20,7 @@ import { DotLayoutSidebarComponent } from './dot-layout-property-sidebar.compone
 import { DotLayoutPropertiesItemModule } from '../dot-layout-properties-item/dot-layout-properties-item.module';
 
 @Component({
+    // eslint-disable-next-line @angular-eslint/component-selector
     selector: 'dot-test-host-component',
     template: `<form [formGroup]="group">
         <dot-layout-property-sidebar formControlName="sidebar"></dot-layout-property-sidebar>
@@ -22,7 +31,7 @@ class TestHostComponent {
     constructor() {
         this.group = new UntypedFormGroup({
             sidebar: new UntypedFormControl({
-                location: 'left',
+                location: 'right',
                 containers: [],
                 width: ''
             })
@@ -42,18 +51,24 @@ describe('DotLayoutSidebarComponent', () => {
     });
 
     beforeEach(() => {
-        DOTTestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             declarations: [DotLayoutSidebarComponent, TestHostComponent],
-            imports: [DotLayoutPropertiesItemModule],
+            imports: [
+                DotLayoutPropertiesItemModule,
+                DotMessagePipeModule,
+                FormsModule,
+                ReactiveFormsModule,
+                CommonModule
+            ],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
         });
 
-        fixture = DOTTestBed.createComponent(DotLayoutSidebarComponent);
+        fixture = TestBed.createComponent(DotLayoutSidebarComponent);
         comp = fixture.componentInstance;
         de = fixture.debugElement;
 
         comp.value = {
-            location: 'left',
+            location: 'right',
             containers: [],
             width: ''
         };
@@ -71,8 +86,8 @@ describe('DotLayoutSidebarComponent', () => {
         ).nativeElement;
 
         dotLayoutPropertiesItem.switch.subscribe((value) => (res = value));
+        jest.spyOn(comp, 'propagateChange');
         layoutPropertyItemEl.click();
-        spyOn(comp, 'propagateChange');
         comp.setValue(true, 'left');
 
         expect(res).toEqual(true);
@@ -91,8 +106,8 @@ describe('DotLayoutSidebarComponent', () => {
         dotLayoutPropertiesItem.switch.subscribe((value) => (res = value));
         layoutPropertyItemEl.click();
 
-        spyOn(comp.propertyItemLeft, 'setChecked');
-        spyOn(comp.propertyItemRight, 'setUnchecked');
+        jest.spyOn(comp.propertyItemLeft, 'setChecked');
+        jest.spyOn(comp.propertyItemRight, 'setUnchecked');
         comp.setValue(true, 'left');
 
         expect(res).toEqual(true);
@@ -112,8 +127,8 @@ describe('DotLayoutSidebarComponent', () => {
         dotLayoutPropertiesItem.switch.subscribe((value) => (res = value));
         layoutPropertyItemEl.click();
 
-        spyOn(comp.propertyItemLeft, 'setUnchecked');
-        spyOn(comp.propertyItemRight, 'setChecked');
+        jest.spyOn(comp.propertyItemLeft, 'setUnchecked');
+        jest.spyOn(comp.propertyItemRight, 'setChecked');
         comp.setValue(true, 'right');
 
         expect(res).toEqual(true);
@@ -122,7 +137,7 @@ describe('DotLayoutSidebarComponent', () => {
     });
 
     it('should call writeValue to define the initial value of sidebar item', () => {
-        hostComponentfixture = DOTTestBed.createComponent(TestHostComponent);
+        hostComponentfixture = TestBed.createComponent(TestHostComponent);
         de = hostComponentfixture.debugElement.query(By.css('dot-layout-property-sidebar'));
         const component: DotLayoutSidebarComponent = de.componentInstance;
         component.value = {
@@ -131,19 +146,19 @@ describe('DotLayoutSidebarComponent', () => {
             width: ''
         };
 
-        spyOn(component, 'writeValue');
-        comp.setValue(true, 'left');
+        jest.spyOn(component, 'writeValue');
+        comp.setValue(true, 'right');
         hostComponentfixture.detectChanges();
 
-        expect(comp.value.location).toEqual('left');
+        expect(comp.value.location).toEqual('right');
         expect(component.writeValue).toHaveBeenCalledWith({
-            location: 'left',
+            location: 'right',
             containers: [],
             width: ''
         });
     });
 
-    xit('should show selected left or right based on the sidebar location value', () => {
+    it.skip('should show selected left or right based on the sidebar location value', () => {
         //
     });
 });

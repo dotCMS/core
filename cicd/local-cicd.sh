@@ -125,7 +125,7 @@ export ENTERPRISE_GITHUB_REPO=enterprise
 export CORE_WEB_GITHUB_REPO=core-web
 export DOCKER_GITHUB_REPO=docker
 export PLUGIN_SEEDS_GITHUB_REPO=plugin-seeds
-export TEST_RESULTS_GITHUB_REPO=test-results
+export TEST_RESULTS_GITHUB_REPO=core-test-results
 : ${DEBUG:=true} && export DEBUG
 
 echo "###########
