@@ -221,8 +221,7 @@ describe('TemplateBuilderComponent', () => {
                             containers: []
                         }
                     },
-                    themeId: '123',
-                    title: null
+                    themeId: '123'
                 });
                 done();
             });

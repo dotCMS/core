@@ -43,7 +43,6 @@ import {
 class TemplateBuilderMockComponent {
     @Input() layout: DotLayout;
     @Input() themeId: string;
-    @Input() title: string;
     @Output() templateChange: EventEmitter<Event> = new EventEmitter();
 }
 
@@ -268,8 +267,7 @@ describe('DotTemplateBuilderComponent', () => {
             const templateBuilder = de.query(By.css('[data-testId="new-template-builder"]'));
             const template = {
                 layout: EMPTY_TEMPLATE_DESIGN.layout,
-                themeId: '123',
-                title: null
+                themeId: '123'
             } as DotTemplateDesigner;
 
             templateBuilder.triggerEventHandler('templateChange', template);

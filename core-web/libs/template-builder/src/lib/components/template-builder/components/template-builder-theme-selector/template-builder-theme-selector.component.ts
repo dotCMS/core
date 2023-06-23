@@ -1,4 +1,4 @@
-import { fromEvent as observableFromEvent, Subject } from 'rxjs';
+import { fromEvent, Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import {
@@ -91,7 +91,7 @@ export class TemplateBuilderThemeSelectorComponent implements OnInit, OnDestroy 
         );
         this.paginatorService.deleteExtraParams(this.SEARCH_PARAM);
         this.paginatorService.paginationPerPage = 8;
-        observableFromEvent(this.searchInput.nativeElement, 'keyup')
+        fromEvent(this.searchInput.nativeElement, 'keyup')
             .pipe(debounceTime(500), takeUntil(this.destroy$))
             .subscribe((keyboardEvent: Event) => {
                 this.filterThemes(keyboardEvent.target['value']);

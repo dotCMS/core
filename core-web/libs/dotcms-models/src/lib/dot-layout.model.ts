@@ -13,6 +13,6 @@ export interface DotLayout {
 
 export interface DotTemplateDesigner {
     layout: DotLayout;
-    title: string;
+    title?: string;
     themeId: string;
 }

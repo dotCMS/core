@@ -70,9 +70,6 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     @Input()
     themeId!: string;
 
-    @Input()
-    title!: string;
-
     @Output()
     templateChange: EventEmitter<DotTemplateDesigner> = new EventEmitter<DotTemplateDesigner>();
 
@@ -133,8 +130,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
 
                     this.templateChange.emit({
                         themeId: this.themeId,
-                        layout: { ...this.dotLayout },
-                        title: this.title || null
+                        layout: { ...this.dotLayout }
                     });
                 })
             )
@@ -326,8 +322,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
                 onSelectTheme: (theme: DotTheme): void => {
                     this.templateChange.emit({
                         themeId: theme.identifier,
-                        layout: { ...this.dotLayout },
-                        title: this.title || null
+                        layout: { ...this.dotLayout }
                     });
                     this.ref.destroy();
                 },

@@ -43,9 +43,6 @@ export class MockTemplateBuilderComponent {
     @Input()
     themeId: string;
 
-    @Input()
-    title: string;
-
     @Output()
     templateChange = new EventEmitter();
 }
@@ -350,8 +347,7 @@ describe('DotEditLayoutComponent', () => {
             );
             const template = {
                 layout: EMPTY_TEMPLATE_DESIGN.layout,
-                themeId: '123',
-                title: null
+                themeId: '123'
             } as DotTemplateDesigner;
 
             spyOn(component.updateTemplate, 'next');
