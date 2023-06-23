@@ -24,7 +24,7 @@ import {
 
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { filter, scan, startWith, take, tap, map } from 'rxjs/operators';
+import { filter, startWith, take, tap, map } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
