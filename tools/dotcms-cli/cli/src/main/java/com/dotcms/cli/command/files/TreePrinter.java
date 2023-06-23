@@ -168,6 +168,9 @@ public class TreePrinter {
             return;
         }
 
+        // Calculate the parent path for this first node
+        String parentPath = calculateRootParentPath(rootNode);
+
         var status = FilesUtils.StatusToString(isLive);
         sb.append("\r ").append(status).append('\n');
 
@@ -191,7 +194,7 @@ public class TreePrinter {
                     append(rootNode.folder().host()).
                     append('\n');
 
-            if (rootNode.folder().path().equals("/")) {
+            if (parentPath.isEmpty() || parentPath.equals("/")) {
                 format(sb,
                         "     " + (isLastLang ? "    " : "│   ") + "    ",
                         filteredRoot,
@@ -202,7 +205,7 @@ public class TreePrinter {
                 sb.append("     ").
                         append((isLastLang ? "    " : "│   ")).
                         append("    └── ").
-                        append(rootNode.folder().path()).
+                        append(String.format("@|bold \uD83D\uDCC2 %s|@", parentPath)).
                         append('\n');
 
                 format(sb,
@@ -271,6 +274,49 @@ public class TreePrinter {
             boolean lastSibling = i == childCount - 1;
             format(sb, filePrefix, child, nextIndent, lastSibling, includeAssets);
         }
+    }
+
+    /**
+     * Calculates the parent path of the given root node.
+     *
+     * @param rootNode The root node to calculate the parent path from.
+     * @return A String containing the root parent path.
+     */
+    private String calculateRootParentPath(TreeNode rootNode) {
+
+        // Calculating the root folder path
+        var folderPath = rootNode.folder().path();
+        var folderName = rootNode.folder().name();
+
+        // Determine if the folder path and folder name are empty or null
+        var emptyFolderPath = folderPath == null
+                || folderPath.isEmpty()
+                || folderPath.equals("/");
+
+        var emptyFolderName = folderName == null
+                || folderName.isEmpty()
+                || folderName.equals("/");
+
+        // Remove firsts and last slash from folder path
+        if (!emptyFolderPath) {
+            folderPath = folderPath.
+                    replaceAll("^/", "").
+                    replaceAll("/$", "");
+        }
+
+        if (!emptyFolderName) {
+            if (folderPath.endsWith(folderName)) {
+
+                int folderIndex = folderPath.lastIndexOf(folderName);
+                folderPath = folderPath.substring(0, folderIndex);
+
+                folderPath = folderPath.
+                        replaceAll("^/", "").
+                        replaceAll("/$", "");
+            }
+        }
+
+        return folderPath;
     }
 
 }
