@@ -1,6 +1,6 @@
 import { User } from '@dotcms/dotcms-js';
 
-import { DotContainerMap, DotPageContainerStructure } from './dot-container.model';
+import { DotPageContainerStructure } from './dot-container.model';
 import { DotCMSContentlet } from './dot-contentlet.model';
 import { DotEditPageViewAs } from './dot-edit-page-view-as.model';
 import { DotExperiment } from './dot-experiments.model';
