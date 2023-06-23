@@ -202,7 +202,8 @@ describe('TemplateBuilderComponent', () => {
                     header: true,
                     footer: true,
                     sidebar: {}
-                }
+                },
+                containerMap: {}
             });
             store.items$.pipe(take(1)).subscribe(() => {
                 // const body = parseFromGridStackToDotObject(items);

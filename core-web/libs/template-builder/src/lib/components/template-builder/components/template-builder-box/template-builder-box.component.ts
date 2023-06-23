@@ -16,7 +16,6 @@ import { ButtonModule } from 'primeng/button';
 import { DropdownModule } from 'primeng/dropdown';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
 
-import { DotContainersService } from '@dotcms/data-access';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotContainer, DotContainerMap } from '@dotcms/dotcms-models';
 import { DotContainerOptionsDirective } from '@dotcms/ui';

@@ -36,13 +36,23 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
     public containerMap$ = this.select((state) => state.containerMap);
     public layoutProperties$ = this.select((state) => state.layoutProperties);
 
-    public vm$ = this.select(this.items$, this.layoutProperties$, (items, layoutProperties) => ({
-        items,
-        layoutProperties
-    }));
+    public vm$ = this.select(
+        this.items$,
+        this.layoutProperties$,
+        this.containerMap$,
+        (items, layoutProperties, containerMap) => ({
+            containerMap,
+            items,
+            layoutProperties
+        })
+    );
 
     constructor() {
-        super({ items: [], layoutProperties: { header: true, footer: true, sidebar: {} }, containerMap: {} });
+        super({
+            items: [],
+            layoutProperties: { header: true, footer: true, sidebar: {} },
+            containerMap: {}
+        });
     }
 
     // Init store

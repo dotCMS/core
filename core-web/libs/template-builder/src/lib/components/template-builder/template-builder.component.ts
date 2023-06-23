@@ -63,11 +63,6 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     @Input()
     containerMap!: DotContainerMap;
 
-    @Output()
-    layoutChange: EventEmitter<DotLayout> = new EventEmitter<DotLayout>();
-
-    public items$: Observable<DotGridStackWidget[]>;
-
     @ViewChildren('rowElement', {
         emitDistinctChangesOnly: true
     })
@@ -141,7 +136,8 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     ngOnInit(): void {
         this.store.init({
             items: parseFromDotObjectToGridStack(this.templateLayout.body),
-            layoutProperties: this.layoutProperties
+            layoutProperties: this.layoutProperties,
+            containerMap: {}
         });
     }
 

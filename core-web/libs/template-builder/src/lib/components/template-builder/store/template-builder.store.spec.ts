@@ -39,7 +39,8 @@ describe('DotTemplateBuilderStore', () => {
                     width: 'small',
                     containers: []
                 }
-            }
+            },
+            containerMap: {}
         });
 
         // Get the initial state
