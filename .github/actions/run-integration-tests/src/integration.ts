@@ -83,7 +83,7 @@ export interface Commands {
 export const COMMANDS: Commands = {
   gradle: [
     {
-      cmd: '../gradlew',
+      cmd: './gradlew',
       args: ['generateDependenciesFromMaven'],
       workingDir: dotCmsRoot
     },
