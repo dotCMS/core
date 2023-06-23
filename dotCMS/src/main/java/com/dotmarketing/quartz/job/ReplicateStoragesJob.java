@@ -48,7 +48,7 @@ public class ReplicateStoragesJob extends DotStatefulJob {
 
         final Map<String, Serializable> nextExecutionData = ImmutableMap
                 .of("fromStorageType", fromStorageType,
-                        "toStoragesType", toStoragesType instanceof Serializable? (Serializable) toStoragesType: new ArrayList<>(toStoragesType)
+                        "toStoragesType", toStoragesType instanceof Serializable? (Serializable) toStoragesType: new ArrayList<>(toStoragesType),
                         "user", user);
 
         try {
@@ -120,7 +120,7 @@ public class ReplicateStoragesJob extends DotStatefulJob {
                 toStoragePersistenceAPI.createGroup(group);
             }
         }
-    }
+    } // ensureGroup.
 
     private void replicateToStorages(final List<StoragePersistenceAPI> toStoragePersistenceAPIs,
                                      final String group, final ObjectPath objectPath) {

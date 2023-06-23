@@ -1,11 +1,14 @@
 package com.dotcms.rest.api.v1.system.storage;
 
+import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityBooleanView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.storage.StorageType;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.quartz.job.DeleteUserJob;
+import com.dotmarketing.quartz.job.ReplicateStoragesJob;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UtilMethods;
@@ -80,7 +83,7 @@ public class StorageResource {
                                       @PathParam("from") final StorageType fromStorageType,
                                       @PathParam("to") final List<PathSegment> pathSegmentsStorageTypes) {
 
-        new WebResource.InitBuilder(webResource)
+        final InitDataObject initDataObject = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
@@ -104,7 +107,7 @@ public class StorageResource {
         final List<StorageType> toStorageType = pathSegmentsStorageTypes.stream().
                 map(segment -> StorageType.valueOf(segment.getPath())).collect(Collectors.toList());
 
-        // todo: call a job with the from and to storages to slowly replicate the elements from one to the others
+        ReplicateStoragesJob.triggerReplicationStoragesJob(fromStorageType, toStorageType, initDataObject.getUser());
         return Response.ok(new ResponseEntityBooleanView(true)).build();
     }
 } // E:O:F:StorageResource.
