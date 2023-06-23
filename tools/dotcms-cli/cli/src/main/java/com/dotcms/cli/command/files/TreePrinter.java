@@ -6,6 +6,9 @@ import com.dotcms.model.asset.AssetView;
 import com.dotcms.model.asset.FolderView;
 import com.dotcms.model.language.Language;
 
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -170,6 +173,13 @@ public class TreePrinter {
 
         // Calculate the parent path for this first node
         String parentPath = calculateRootParentPath(rootNode);
+        Path initialPath;
+        try {
+            initialPath = Paths.get(parentPath);
+        } catch (InvalidPathException e) {
+            var error = String.format("Invalid folder path [%s] provided", parentPath);
+            throw new IllegalArgumentException(error, e);
+        }
 
         var status = FilesUtils.StatusToString(isLive);
         sb.append("\r ").append(status).append('\n');
@@ -202,16 +212,24 @@ public class TreePrinter {
                         true, true);
             } else {
 
-                sb.append("     ").
-                        append((isLastLang ? "    " : "│   ")).
-                        append("    └── ").
-                        append(String.format("@|bold \uD83D\uDCC2 %s|@", parentPath)).
-                        append('\n');
+                // If the initial path is not the root we need to try to print the folder structure it has
+                var parentFolderIdent = "    ";
+                for (var i = 0; i < initialPath.getNameCount(); i++) {
+                    sb.append("     ").
+                            append((isLastLang ? "    " : "│   ")).
+                            append(parentFolderIdent).
+                            append("└── ").
+                            append(String.format("@|bold \uD83D\uDCC2 %s|@", initialPath.getName(i))).
+                            append('\n');
+                    if (i + 1 < initialPath.getNameCount()) {
+                        parentFolderIdent += "    ";
+                    }
+                }
 
                 format(sb,
-                        "     " + (isLastLang ? "    " : "│   ") + "        ",
+                        parentFolderIdent + "     " + (isLastLang ? "" : "│   ") + "        ",
                         filteredRoot,
-                        "     " + (isLastLang ? "    " : "│   ") + "        ",
+                        parentFolderIdent + "     " + (isLastLang ? "" : "│   ") + "        ",
                         true, true);
             }
         }
@@ -255,8 +273,6 @@ public class TreePrinter {
             for (int i = 0; i < assetCount; i++) {
 
                 AssetView asset = node.assets().get(i);
-                /*final var fileStr = String.format("%s [%s] (%s)", asset.name(), asset.lang(),
-                        asset.live());*/
                 final var fileStr = String.format("%s", asset.name());
                 boolean lastAsset = i == assetCount - 1 && node.children().isEmpty();
 
