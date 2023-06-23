@@ -190,14 +190,14 @@ describe('TemplateBuilderBoxComponent', () => {
     it('should use titles from container map', (done) => {
         const displayedContainerTitles = spectator
             .queryAll(byTestId('container-title'))
-            .map((element) => element.textContent);
+            .map((element) => element.textContent.trim());
         const containerMapTitles = Object.values(CONTAINER_MAP_MOCK).map(
             (container) => container.title
         );
 
         displayedContainerTitles.forEach((title) => {
             if (!containerMapTitles.includes(title)) {
-                fail('A title not included the container map is displayed');
+                throw new Error(`title: "${title} not included the container map is displayed`);
             }
         });
 
