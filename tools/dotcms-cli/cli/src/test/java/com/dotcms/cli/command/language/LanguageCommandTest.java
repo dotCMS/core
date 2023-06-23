@@ -123,7 +123,7 @@ public class LanguageCommandTest extends CommandTest {
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
-            final int status = commandLine.execute(LanguageCommand.NAME, LanguagePush.NAME, "--byTag", "es-VE");
+            final int status = commandLine.execute(LanguageCommand.NAME, LanguagePush.NAME, "--byIso", "es-VE");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
             Assertions.assertTrue(output.contains("Spanish"));
@@ -142,7 +142,8 @@ public class LanguageCommandTest extends CommandTest {
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             //Create a JSON file with the language to push
-            final Language language = Language.builder().languageCode("it-IT").countryCode("IT").language("Italian").country("Italy").build();
+            final Language language = Language.builder().isoCode("it-it").languageCode("it-IT")
+                    .countryCode("IT").language("Italian").country("Italy").build();
             final ObjectMapper mapper = new ClientObjectMapper().getContext(null);
             final File targetFile = File.createTempFile("language", ".json");
             mapper.writeValue(targetFile, language);
@@ -166,7 +167,8 @@ public class LanguageCommandTest extends CommandTest {
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             //Create a YAML file with the language to push
-            final Language language = Language.builder().languageCode("it-IT").countryCode("IT").language("Italian").country("Italy").build();
+            final Language language = Language.builder().isoCode("it-it").languageCode("it-IT")
+                    .countryCode("IT").language("Italian").country("Italy").build();
             final ObjectMapper mapper = new YAMLMapperSupplier().get();
             final File targetFile = File.createTempFile("language", ".yml");
             mapper.writeValue(targetFile, language);
@@ -192,7 +194,7 @@ public class LanguageCommandTest extends CommandTest {
             commandLine.setOut(out);
 
             //A language with tag "es-VE" is pushed
-            commandLine.execute(LanguageCommand.NAME, LanguagePush.NAME, "--byTag", "es-VE");
+            commandLine.execute(LanguageCommand.NAME, LanguagePush.NAME, "--byIso", "es-VE");
 
             //We remove the language with tag "es-VE"
             int status = commandLine.execute(LanguageCommand.NAME, LanguageRemove.NAME, "es-VE", "--cli-test");
@@ -215,7 +217,7 @@ public class LanguageCommandTest extends CommandTest {
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             //A language with tag "es-VE" is pushed
-            commandLine.execute(LanguageCommand.NAME, LanguagePush.NAME, "--byTag", "es-VE");
+            commandLine.execute(LanguageCommand.NAME, LanguagePush.NAME, "--byIso", "es-VE");
             commandLine.setOut(out);
             //we pull the language with tag "es-VE" to get its id
             int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "es-VE");
