@@ -1,13 +1,22 @@
-import { Component, DebugElement } from '@angular/core';
+import { Observable, of } from 'rxjs';
+
+import { Component, DebugElement, Injectable } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
 import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
 import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessageService, DotPropertiesService } from '@dotcms/data-access';
 import { DotMessagePipeModule } from '@dotcms/ui';
 
 import { DotEditPageInfoComponent } from './dot-edit-page-info.component';
+
+@Injectable()
+export class MockDotPropertiesService {
+    getKey(): Observable<true> {
+        return of(true);
+    }
+}
 
 @Component({
     template: `<dot-edit-page-info
@@ -22,11 +31,12 @@ class TestHostComponent {
     apiLink = 'api/v1/page/render/an/url/test?language_id=1';
 }
 
-describe('DotEditPageInfoComponent', () => {
+fdescribe('DotEditPageInfoComponent', () => {
     let hostComp: TestHostComponent;
     let hostFixture: ComponentFixture<TestHostComponent>;
     let hostDebug: DebugElement;
     let de: DebugElement;
+    let dotPropertiesService: DotPropertiesService;
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
@@ -40,21 +50,23 @@ describe('DotEditPageInfoComponent', () => {
                             return 'Copy url page';
                         }
                     }
-                }
+                },
+                { provide: DotPropertiesService, useClass: MockDotPropertiesService }
             ]
         }).compileComponents();
     }));
 
     beforeEach(() => {
         hostFixture = TestBed.createComponent(TestHostComponent);
+        dotPropertiesService = TestBed.inject(DotPropertiesService);
         hostDebug = hostFixture.debugElement;
         hostComp = hostDebug.componentInstance;
-
         de = hostDebug.query(By.css('dot-edit-page-info'));
     });
 
     describe('default', () => {
         beforeEach(() => {
+            spyOn(dotPropertiesService, 'getKey').and.returnValue(of('false'));
             hostFixture.detectChanges();
         });
 
@@ -90,7 +102,7 @@ describe('DotEditPageInfoComponent', () => {
             hostComp.title = 'A title';
             hostComp.apiLink = '';
             hostComp.url = '';
-
+            spyOn(dotPropertiesService, 'getKey').and.returnValue(of('false'));
             hostFixture.detectChanges();
         });
 

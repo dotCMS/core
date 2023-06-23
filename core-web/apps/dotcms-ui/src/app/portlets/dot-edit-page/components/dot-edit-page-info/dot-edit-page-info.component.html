@@ -8,7 +8,7 @@
 <dot-api-link *ngIf="innerApiLink" [href]="innerApiLink"></dot-api-link>
 
 <dot-link
-    *ngIf="innerApiLink"
+    *ngIf="innerApiLink && !seoImprovements"
     [href]="previewUrl"
     label="editpage.preview"
     icon="pi-eye"
