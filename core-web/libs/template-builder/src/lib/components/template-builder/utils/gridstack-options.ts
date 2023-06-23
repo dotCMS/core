@@ -57,7 +57,10 @@ export const subGridOptions: GridStackOptions = {
     minRow: 1,
     maxRow: 1,
     acceptWidgets: isAColumnWidget,
-    disableOneColumnMode: true
+    disableOneColumnMode: true,
+    resizable: {
+        handles: 'e'
+    }
 };
 
 export const gridOptions: GridStackOptions = {
