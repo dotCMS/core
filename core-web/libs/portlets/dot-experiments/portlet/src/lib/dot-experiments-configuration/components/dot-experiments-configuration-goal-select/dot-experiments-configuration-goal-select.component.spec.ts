@@ -30,6 +30,7 @@ import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot
 
 import { DotExperimentsConfigurationGoalSelectComponent } from './dot-experiments-configuration-goal-select.component';
 
+import { DotExperimentsGoalsComingSoonComponent } from '../../../shared/ui/dot-experiments-goals-coming-soon/dot-experiments-goals-coming-soon.component';
 import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-configuration-store';
 
 const messageServiceMock = new MockDotMessageService({
@@ -269,5 +270,9 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
         sidebar.onHide.subscribe(() => {
             expect(spectator.component.closeSidebar).toHaveBeenCalled();
         });
+    });
+
+    it('should render coming soon placeholder', () => {
+        expect(spectator.query(DotExperimentsGoalsComingSoonComponent)).not.toBeNull();
     });
 });
