@@ -47,7 +47,7 @@ public class PullFilesServiceTest {
     FolderTraversalService folderTraversalService;
 
     @Inject
-    PullFilesService pullAssetsService;
+    PullService pullAssetsService;
 
     @BeforeEach
     public void setupTest() throws IOException {
@@ -87,7 +87,7 @@ public class PullFilesServiceTest {
 
             // Pulling the content
             OutputOptionMixin outputOptions = new MockOutputOptionMixin();
-            pullAssetsService.pull(outputOptions, treeNode, tempFolder.toAbsolutePath().toString(), true, true);
+            pullAssetsService.pullTree(outputOptions, treeNode, tempFolder.toAbsolutePath().toString(), true, true);
 
             // ============================
             //Validating the file system

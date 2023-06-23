@@ -3,6 +3,7 @@ package com.dotcms.api;
 import com.dotcms.api.provider.DefaultResponseExceptionMapper;
 import com.dotcms.api.provider.DotCMSClientHeaders;
 import com.dotcms.model.ResponseEntityView;
+import com.dotcms.model.asset.AssetVersionsView;
 import com.dotcms.model.asset.FolderView;
 import com.dotcms.model.asset.SearchByPathRequest;
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -36,7 +37,14 @@ public interface AssetAPI {
     @Operation(
             summary = "Lists the files and directories in the specified path"
     )
-    ResponseEntityView<FolderView> byPath(final SearchByPathRequest request);
+    ResponseEntityView<FolderView> folderByPath(final SearchByPathRequest request);
+
+    @POST
+    @Path("/")
+    @Operation(
+            summary = "Retrieves the asset information of the specified path"
+    )
+    ResponseEntityView<AssetVersionsView> assetByPath(final SearchByPathRequest request);
 
     @POST
     @Path("/_download")

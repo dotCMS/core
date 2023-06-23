@@ -16,6 +16,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.RecursiveTask;
 
+import static com.dotcms.common.AssetsUtils.BuildRemoteAssetURL;
+import static com.dotcms.common.AssetsUtils.BuildRemoteURL;
 import static com.dotcms.model.asset.BasicMetadataFields.SHA256_META_KEY;
 
 /**
@@ -115,7 +117,7 @@ public class FileSystemTreeBuilderTask extends RecursiveTask<Void> {
         String remoteFolderURL = generateRemoteFolderURL(folder);
 
         // Create the corresponding folder in the file system
-        var folderPath = Paths.get(destination, generateLocalFolderPath(folder));
+        var folderPath = Paths.get(destination, folder.path());
 
         try {
             if (!Files.exists(folderPath)) {
@@ -141,8 +143,8 @@ public class FileSystemTreeBuilderTask extends RecursiveTask<Void> {
      */
     private void createFileInFileSystem(final String destination, final FolderView folder, final AssetView asset) {
 
-        String remoteAssetURL = generateRemoteFolderURL(folder) + asset.name();
-        var assetFilePath = Paths.get(destination, generateLocalFolderPath(folder), asset.name());
+        String remoteAssetURL = generateRemoteAssetURL(folder, asset.name());
+        var assetFilePath = Paths.get(destination, folder.path(), asset.name());
 
         // Remove SHA-256
         final String remoteFileHash = (String) asset.metadata().get(SHA256_META_KEY.key());
@@ -194,42 +196,19 @@ public class FileSystemTreeBuilderTask extends RecursiveTask<Void> {
      * @param folder the folder view representing the parent folder
      * @return the remote URL for the folder
      */
-    private static String generateRemoteFolderURL(FolderView folder) {
-
-        String remoteFolderURL;
-        if ("/".equals(folder.path())) {
-            if (folder.name().isEmpty() || folder.name().equals("/")) {
-                remoteFolderURL = "//" + folder.host() + "/";
-            } else {
-                remoteFolderURL = "//" + folder.host() + "/" + folder.name() + "/";
-            }
-        } else {
-            remoteFolderURL = "//" + folder.host() + folder.path();
-        }
-
-        return remoteFolderURL;
+    private String generateRemoteFolderURL(final FolderView folder) {
+        return BuildRemoteURL(folder.host(), folder.path());
     }
 
     /**
-     * Generates the local path for a given folder
+     * Generates the remote URL for an asset
      *
-     * @param folder the folder view representing the parent folder
-     * @return the local path for the folder
+     * @param folder    the folder view representing the parent folder
+     * @param assetName the name of the asset
+     * @return the remote URL for the folder
      */
-    private static String generateLocalFolderPath(FolderView folder) {
-
-        String localFolderPath;
-        if ("/".equals(folder.path())) {
-            if (folder.name().isEmpty() || folder.name().equals("/")) {
-                localFolderPath = "/";
-            } else {
-                localFolderPath = "/" + folder.name();
-            }
-        } else {
-            localFolderPath = "/" + folder.path();
-        }
-
-        return localFolderPath;
+    private String generateRemoteAssetURL(final FolderView folder, final String assetName) {
+        return BuildRemoteAssetURL(folder.host(), folder.path(), assetName);
     }
 
 }

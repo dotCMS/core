@@ -23,7 +23,7 @@ public class FilesUtils {
      * @param isLive the status to convert
      * @return the string representation of the status
      */
-    public static String statusToString(boolean isLive) {
+    public static String StatusToString(boolean isLive) {
         return isLive ? STATUS_LIVE : STATUS_WORKING;
     }
 
@@ -50,4 +50,5 @@ public class FilesUtils {
 
         uniqueLiveLanguages.add(languageTag.toString());
     }
+
 }

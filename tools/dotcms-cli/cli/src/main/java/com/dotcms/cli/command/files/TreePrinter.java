@@ -97,7 +97,7 @@ public class TreePrinter {
             final var fileStr = String.format("%s [%s] (%s)",
                     asset.name(),
                     asset.lang(),
-                    FilesUtils.statusToString(asset.live()));
+                    FilesUtils.StatusToString(asset.live()));
             boolean lastAsset = i == assetCount - 1 && node.children().isEmpty();
             sb.append(filePrefix).append(lastAsset ? "└── " : "├── ").append(fileStr).append('\n');
         }
@@ -168,7 +168,7 @@ public class TreePrinter {
             return;
         }
 
-        var status = FilesUtils.statusToString(isLive);
+        var status = FilesUtils.StatusToString(isLive);
         sb.append("\r ").append(status).append('\n');
 
         Iterator<String> langIterator = sortedLanguages.iterator();

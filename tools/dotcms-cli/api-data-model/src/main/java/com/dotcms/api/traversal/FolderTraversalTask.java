@@ -68,7 +68,6 @@ public class FolderTraversalTask extends RecursiveTask<TreeNode> {
             var fetchedFolder = this.restCall(
                     this.siteName,
                     folder.path(),
-                    folder.name(),
                     folder.level(),
                     folder.implicitGlobInclude(),
                     folder.explicitGlobInclude(),
@@ -91,8 +90,7 @@ public class FolderTraversalTask extends RecursiveTask<TreeNode> {
                         // Create a new task to traverse the sub-folder and add it to the list of sub-tasks
                         var task = searchForFolder(
                                 this.siteName,
-                                folder.name(),
-                                subFolder.name(),
+                                subFolder.path(),
                                 subFolder.level(),
                                 subFolder.implicitGlobInclude(),
                                 subFolder.explicitGlobInclude(),
@@ -120,8 +118,7 @@ public class FolderTraversalTask extends RecursiveTask<TreeNode> {
                         // Create a new task to traverse the sub-folder and add it to the list of sub-tasks
                         var task = searchForFolder(
                                 this.siteName,
-                                folder.path(),
-                                subFolder.name(),
+                                subFolder.path(),
                                 subFolder.level(),
                                 subFolder.implicitGlobInclude(),
                                 subFolder.explicitGlobInclude(),
@@ -152,8 +149,7 @@ public class FolderTraversalTask extends RecursiveTask<TreeNode> {
      * parameters.
      *
      * @param siteName            The name of the site containing the folder to search for.
-     * @param parentFolderName    The name of the parent folder of the folder to search for.
-     * @param folderName          The name of the folder to search for.
+     * @param folderPath          The path of the folder to search for.
      * @param level               The level of the folder to search for.
      * @param implicitGlobInclude This property represents whether a folder should be implicitly included based on the
      *                            absence of any include patterns. When implicitGlobInclude is set to true, it means
@@ -176,15 +172,14 @@ public class FolderTraversalTask extends RecursiveTask<TreeNode> {
      */
     private FolderTraversalTask searchForFolder(
             final String siteName,
-            final String parentFolderName,
-            final String folderName,
+            final String folderPath,
             final int level,
             final boolean implicitGlobInclude,
             final Boolean explicitGlobInclude,
             final Boolean explicitGlobExclude
     ) {
 
-        final var folder = this.restCall(siteName, parentFolderName, folderName, level,
+        final var folder = this.restCall(siteName, folderPath, level,
                 implicitGlobInclude, explicitGlobInclude, explicitGlobExclude);
 
         return new FolderTraversalTask(
@@ -199,10 +194,9 @@ public class FolderTraversalTask extends RecursiveTask<TreeNode> {
     /**
      * Retrieves the contents of a folder
      *
-     * @param siteName            the name of the site containing the folder
-     * @param parentFolderName    the name of the parent folder containing the folder
-     * @param folderName          the name of the folder to retrieve metadata for
-     * @param level               the hierarchical level of the folder
+     * @param siteName            The name of the site containing the folder
+     * @param folderPath          The path of the folder to search for.
+     * @param level               The hierarchical level of the folder
      * @param implicitGlobInclude This property represents whether a folder should be implicitly included based on the
      *                            absence of any include patterns. When implicitGlobInclude is set to true, it means
      *                            that there are no include patterns specified, so all folders should be included by
@@ -222,16 +216,14 @@ public class FolderTraversalTask extends RecursiveTask<TreeNode> {
      *                            rules or patterns.
      * @return an {@code FolderView} object containing the metadata for the requested folder
      */
-    private FolderView restCall(final String siteName, final String parentFolderName,
-                                final String folderName, final int level,
+    private FolderView restCall(final String siteName, final String folderPath, final int level,
                                 final boolean implicitGlobInclude,
                                 final Boolean explicitGlobInclude,
                                 final Boolean explicitGlobExclude) {
 
         var foundFolder = this.retriever.retrieveFolderContents(
                 siteName,
-                parentFolderName,
-                folderName,
+                folderPath,
                 level,
                 implicitGlobInclude,
                 explicitGlobInclude,
