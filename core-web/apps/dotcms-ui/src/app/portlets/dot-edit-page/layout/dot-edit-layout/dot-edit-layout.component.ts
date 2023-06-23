@@ -34,7 +34,6 @@ import {
 })
 export class DotEditLayoutComponent implements OnInit, OnDestroy {
     pageState: DotPageRender | DotPageRenderState;
-    containerMap: DotContainerMap;
     apiLink: string;
 
     updateTemplate = new Subject<DotTemplateDesignerPayload>();
@@ -65,7 +64,6 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
             )
             .subscribe((state: DotPageRenderState) => {
                 this.pageState = state;
-                this.containerMap = state.containerMap;
                 const mappedContainers = this.getRemappedContainers(state.containers);
                 this.templateContainersCacheService.set(mappedContainers);
             });

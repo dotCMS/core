@@ -22,6 +22,16 @@ describe('DotTemplateBuilderStore', () => {
     let initialState: DotGridStackWidget[];
     const mockContainer = containersMock[0];
 
+    const addContainer = () => {
+        const parentRow = initialState[2];
+
+        const columnToAddContainer: DotGridStackWidget = {
+            ...(parentRow.subGridOpts?.children[0] as DotGridStackWidget),
+            parentId: parentRow.id as string
+        };
+        service.addContainer({ affectedColumn: columnToAddContainer, container: mockContainer });
+    };
+
     beforeEach(() => {
         TestBed.configureTestingModule({
             providers: [DotTemplateBuilderStore]
@@ -361,17 +371,20 @@ describe('DotTemplateBuilderStore', () => {
     });
 
     it('should add a container to specific box', () => {
-        const parentRow = initialState[2];
+        addContainer();
 
-        const columnToAddContainer: DotGridStackWidget = {
-            ...(parentRow.subGridOpts?.children[0] as DotGridStackWidget),
-            parentId: parentRow.id as string
-        };
-        service.addContainer({ affectedColumn: columnToAddContainer, container: mockContainer });
         service.items$.subscribe((items) => {
-            const row = items.find((item) => item.id === parentRow.id);
+            const row = items.find((item) => item.id === initialState[2].id);
 
             expect(row?.subGridOpts?.children[0].containers).toContain(mockContainer);
+        });
+    });
+
+    it('should add a container to container map', () => {
+        addContainer();
+
+        service.containerMap$.subscribe((containerMap) => {
+            expect(containerMap).toHaveProperty(mockContainer.identifier);
         });
     });
 

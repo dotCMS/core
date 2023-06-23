@@ -326,6 +326,18 @@ export const CONTAINER_MAP_MOCK = {
     ...containersMapMock
 };
 
+const DEFAULT_ITEM_MOCK = { identifier: DEFAULT_CONTAINER_IDENTIFIER };
+const BANNER_ITEM_MOCK = { identifier: BANNER_CONTAINER_IDENTIFIER };
+
+export const ITEMS_MOCK = [
+    DEFAULT_ITEM_MOCK,
+    BANNER_ITEM_MOCK,
+    DEFAULT_ITEM_MOCK,
+    DEFAULT_ITEM_MOCK,
+    DEFAULT_ITEM_MOCK,
+    DEFAULT_ITEM_MOCK
+];
+
 const noop = () => {
     //
 };

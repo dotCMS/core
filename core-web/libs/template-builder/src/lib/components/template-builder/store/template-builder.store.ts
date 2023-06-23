@@ -57,11 +57,14 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
 
     // Init store
 
-    readonly init = this.updater((state, { items, layoutProperties }: DotTemplateBuilderState) => ({
-        ...state,
-        items,
-        layoutProperties
-    }));
+    readonly init = this.updater(
+        (state, { items, layoutProperties, containerMap }: DotTemplateBuilderState) => ({
+            ...state,
+            items,
+            layoutProperties,
+            containerMap
+        })
+    );
 
     // Rows Updaters
 

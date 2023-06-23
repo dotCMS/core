@@ -24,7 +24,7 @@ import {
 
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { filter, map, scan, take, tap } from 'rxjs/operators';
+import { filter, scan, take, tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotContainer, DotContainerMap, DotLayout, DotLayoutBody } from '@dotcms/dotcms-models';
@@ -90,10 +90,6 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     public layoutProperties$: Observable<DotTemplateLayoutProperties>;
     public vm$: Observable<DotTemplateBuilderState>;
 
-    public containerMap$: Observable<DotContainerMap> = this.store.containerMap$.pipe(
-        map((storeContainerMap) => ({ ...storeContainerMap, ...this.containerMap }))
-    );
-
     public readonly rowIcon = rowIcon;
     public readonly colIcon = colIcon;
     public readonly rowDisplayHeight = `${GRID_STACK_ROW_HEIGHT - 1}${GRID_STACK_UNIT}`; // setting a lower height to have space between rows
@@ -137,7 +133,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
         this.store.init({
             items: parseFromDotObjectToGridStack(this.templateLayout.body),
             layoutProperties: this.layoutProperties,
-            containerMap: {}
+            containerMap: this.containerMap
         });
     }
 

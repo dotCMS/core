@@ -186,4 +186,21 @@ describe('TemplateBuilderBoxComponent', () => {
 
         expect(rejectDeleteMock).toHaveBeenCalled();
     });
+
+    it('should use titles from container map', (done) => {
+        const displayedContainerTitles = spectator
+            .queryAll(byTestId('container-title'))
+            .map((element) => element.textContent);
+        const containerMapTitles = Object.values(CONTAINER_MAP_MOCK).map(
+            (container) => container.title
+        );
+
+        displayedContainerTitles.forEach((title) => {
+            if (!containerMapTitles.includes(title)) {
+                fail('A title not included the container map is displayed');
+            }
+        });
+
+        done();
+    });
 });
