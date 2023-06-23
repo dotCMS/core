@@ -1,5 +1,5 @@
 import { DOCUMENT } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Inject, Input, OnInit } from '@angular/core';
+import { Component, Inject, Input, OnInit } from '@angular/core';
 
 import { take } from 'rxjs/operators';
 
@@ -15,8 +15,7 @@ import { FeaturedFlags } from '@dotcms/dotcms-models';
 @Component({
     selector: 'dot-edit-page-info',
     templateUrl: './dot-edit-page-info.component.html',
-    styleUrls: ['./dot-edit-page-info.component.scss'],
-    changeDetection: ChangeDetectionStrategy.Default
+    styleUrls: ['./dot-edit-page-info.component.scss']
 })
 export class DotEditPageInfoComponent implements OnInit {
     @Input() title: string;
