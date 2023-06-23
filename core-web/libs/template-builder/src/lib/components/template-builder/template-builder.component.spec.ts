@@ -21,12 +21,7 @@ import { DotGridStackWidget } from './models/models';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { TemplateBuilderComponent } from './template-builder.component';
 import { parseFromDotObjectToGridStack } from './utils/gridstack-utils';
-import {
-    DOT_MESSAGE_SERVICE_TB_MOCK,
-    FULL_DATA_MOCK,
-    LAYOUT_MOCK,
-    TEMPLATE_MOCK
-} from './utils/mocks';
+import { CONTAINER_MAP_MOCK, DOT_MESSAGE_SERVICE_TB_MOCK, FULL_DATA_MOCK } from './utils/mocks';
 
 global.structuredClone = jest.fn((val) => {
     return JSON.parse(JSON.stringify(val));
@@ -71,7 +66,7 @@ describe('TemplateBuilderComponent', () => {
     });
     beforeEach(() => {
         spectator = createHost(
-            `<dotcms-template-builder [template]="template"></dotcms-template-builder>`,
+            `<dotcms-template-builder [containerMap]="containerMap" [templateLayout]="templateLayout"></dotcms-template-builder>`,
             {
                 hostProps: {
                     templateLayout: {
@@ -84,7 +79,7 @@ describe('TemplateBuilderComponent', () => {
                             containers: []
                         }
                     },
-                    // todo add prop for containerMap
+                    containerMap: CONTAINER_MAP_MOCK
                 }
             }
         );

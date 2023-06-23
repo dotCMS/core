@@ -218,7 +218,8 @@ describe('DotTemplateBuilderStore', () => {
                 footer: false,
                 header: false,
                 sidebar: {}
-            }
+            },
+            containerMap: {}
         });
 
         const affectedColumns: DotGridStackNode[] = [
@@ -275,7 +276,8 @@ describe('DotTemplateBuilderStore', () => {
                 footer: false,
                 header: false,
                 sidebar: {}
-            }
+            },
+            containerMap: {}
         });
 
         const affectedColumn: DotGridStackNode = {

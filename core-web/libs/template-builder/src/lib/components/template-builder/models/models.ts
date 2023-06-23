@@ -1,5 +1,7 @@
 import { GridStackNode, GridStackOptions, GridStackWidget } from 'gridstack';
 
+import { DotContainerMap } from '@dotcms/dotcms-models';
+
 import { DotLayoutSideBar } from '@dotcms/dotcms-models';
 
 /**
@@ -60,6 +62,7 @@ export interface DotGridStackNode extends GridStackNode {
  */
 export interface DotTemplateBuilderState {
     items: DotGridStackWidget[];
+    containerMap: DotContainerMap;
     layoutProperties: DotTemplateLayoutProperties;
 }
 

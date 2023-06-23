@@ -33,6 +33,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
     // We need to discuss how we will save this to not trigger the parse every time
 
     public items$ = this.select((state) => state.items);
+    public containerMap$ = this.select((state) => state.containerMap);
     public layoutProperties$ = this.select((state) => state.layoutProperties);
 
     public vm$ = this.select(this.items$, this.layoutProperties$, (items, layoutProperties) => ({
@@ -41,7 +42,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
     }));
 
     constructor() {
-        super({ items: [], layoutProperties: { header: true, footer: true, sidebar: {} } });
+        super({ items: [], layoutProperties: { header: true, footer: true, sidebar: {} }, containerMap: {} });
     }
 
     // Init store
@@ -395,7 +396,11 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
                 return { ...row, subGridOpts: { ...row.subGridOpts, children: updatedChildren } };
             });
 
-            return { ...state, items: updatedItems };
+            return {
+                ...state,
+                items: updatedItems,
+                containerMap: { ...state.containerMap, [container.identifier]: container }
+            };
         }
     );
 

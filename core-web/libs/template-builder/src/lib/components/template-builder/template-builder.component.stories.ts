@@ -19,7 +19,12 @@ import { DotAddStyleClassesDialogStore } from './components/add-style-classes-di
 import { TemplateBuilderComponentsModule } from './components/template-builder-components.module';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { TemplateBuilderComponent } from './template-builder.component';
-import { DOT_MESSAGE_SERVICE_TB_MOCK, MOCK_STYLE_CLASSES_FILE, TEMPLATE_MOCK } from './utils/mocks';
+import {
+    CONTAINER_MAP_MOCK,
+    DOT_MESSAGE_SERVICE_TB_MOCK,
+    FULL_DATA_MOCK,
+    MOCK_STYLE_CLASSES_FILE
+} from './utils/mocks';
 
 export default {
     title: 'Library/Template Builder',
@@ -68,7 +73,7 @@ export default {
 const Template: Story<TemplateBuilderComponent> = (args: TemplateBuilderComponent) => ({
     props: args,
     template: `
-        <dotcms-template-builder [template]="template">
+        <dotcms-template-builder [containerMap]="containerMap" [templateLayout]="templateLayout">
             <button
                 [label]="'Publish'"
                 toolbar-actions-right
@@ -91,5 +96,6 @@ Base.args = {
             width: 'medium',
             containers: []
         }
-    }
+    },
+    containerMap: CONTAINER_MAP_MOCK
 };

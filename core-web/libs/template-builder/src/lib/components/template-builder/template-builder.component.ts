@@ -24,10 +24,10 @@ import {
 
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { filter, scan, take, tap } from 'rxjs/operators';
+import { filter, map, scan, take, tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotContainer, DotLayout, DotLayoutBody } from '@dotcms/dotcms-models';
+import { DotContainer, DotContainerMap, DotLayout, DotLayoutBody } from '@dotcms/dotcms-models';
 
 import { colIcon, rowIcon } from './assets/icons';
 import { AddStyleClassesDialogComponent } from './components/add-style-classes-dialog/add-style-classes-dialog.component';
@@ -57,6 +57,17 @@ import {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestroy {
+    @Input()
+    templateLayout!: DotLayout;
+
+    @Input()
+    containerMap!: DotContainerMap;
+
+    @Output()
+    layoutChange: EventEmitter<DotLayout> = new EventEmitter<DotLayout>();
+
+    public items$: Observable<DotGridStackWidget[]>;
+
     @ViewChildren('rowElement', {
         emitDistinctChangesOnly: true
     })
@@ -66,9 +77,6 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
         emitDistinctChangesOnly: true
     })
     boxes!: QueryList<ElementRef<GridItemHTMLElement>>;
-
-    @Input()
-    templateLayout!: DotLayout;
 
     @Output()
     layoutChange: EventEmitter<Partial<DotLayout>> = new EventEmitter<DotLayout>();
@@ -86,6 +94,10 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     public items$: Observable<DotGridStackWidget[] | DotLayoutBody>;
     public layoutProperties$: Observable<DotTemplateLayoutProperties>;
     public vm$: Observable<DotTemplateBuilderState>;
+
+    public containerMap$: Observable<DotContainerMap> = this.store.containerMap$.pipe(
+        map((storeContainerMap) => ({ ...storeContainerMap, ...this.containerMap }))
+    );
 
     public readonly rowIcon = rowIcon;
     public readonly colIcon = colIcon;

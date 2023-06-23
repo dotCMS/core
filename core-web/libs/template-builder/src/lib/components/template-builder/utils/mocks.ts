@@ -1,6 +1,6 @@
 import { v4 as uuid } from 'uuid';
 
-import { DotLayoutBody, DotTemplate } from '@dotcms/dotcms-models';
+import { DotLayoutBody } from '@dotcms/dotcms-models';
 import { containersMapMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotGridStackWidget, DotTemplateBuilderContainer } from '../models/models';
@@ -333,21 +333,6 @@ export const LAYOUT_MOCK = {
     sidebar: null,
     title: 'A Title',
     width: null
-};
-
-export const TEMPLATE_MOCK: DotTemplate = {
-    anonymous: null,
-    canEdit: true,
-    friendlyName: 'Story Template',
-    hasLiveVersion: true,
-    identifier: '1da7b620-e8fc-43f0-9e9c-4453a8f946c8',
-    inode: '123',
-    name: 'templateName',
-    type: '',
-    versionType: '',
-    working: true,
-    layout: LAYOUT_MOCK,
-    containers: CONTAINER_MAP_MOCK
 };
 
 const noop = () => {
