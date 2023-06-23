@@ -3,10 +3,13 @@ import { NgModule } from '@angular/core';
 
 import { TooltipModule } from 'primeng/tooltip';
 
+import { UiDotIconButtonModule } from '@dotcms/ui';
+
 import { UiDotIconButtonTooltipComponent } from './dot-icon-button-tooltip.component';
 
-import { UiDotIconButtonModule } from '../dot-icon-button/dot-icon-button.module';
-
+/**
+ * @deprecated
+ */
 @NgModule({
     declarations: [UiDotIconButtonTooltipComponent],
     exports: [UiDotIconButtonTooltipComponent],

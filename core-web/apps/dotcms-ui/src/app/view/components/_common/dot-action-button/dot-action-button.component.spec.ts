@@ -6,9 +6,9 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { MenuModule } from 'primeng/menu';
 
-import { DotActionButtonComponent } from './dot-action-button.component';
+import { UiDotIconButtonModule } from '@dotcms/ui';
 
-import { UiDotIconButtonModule } from '../dot-icon-button/dot-icon-button.module';
+import { DotActionButtonComponent } from './dot-action-button.component';
 
 describe('ActionButtonComponent', () => {
     let comp: DotActionButtonComponent;

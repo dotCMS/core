@@ -19,7 +19,6 @@ import { DotActionButtonModule } from '@components/_common/dot-action-button/dot
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotGlobalMessageModule } from '@components/_common/dot-global-message/dot-global-message.module';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
 import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
@@ -27,7 +26,7 @@ import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router
 import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
 import { DotEventsService, DotMessageService, DotThemesService } from '@dotcms/data-access';
 import { DotTemplateDesigner, DotTheme } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe, UiDotIconButtonModule } from '@dotcms/ui';
 import {
     cleanUpDialog,
     DotThemesServiceMock,

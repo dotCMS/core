@@ -1,0 +1,20 @@
+@use "variables" as *;
+
+.wrapper {
+    gap: $spacing-4;
+}
+
+h3 {
+    font-size: $font-size-md;
+    margin: $spacing-0;
+    margin-bottom: $spacing-1;
+    font-weight: $font-weight-bold;
+}
+
+.condition {
+    gap: $spacing-3;
+
+    .field {
+        margin: $spacing-0;
+    }
+}

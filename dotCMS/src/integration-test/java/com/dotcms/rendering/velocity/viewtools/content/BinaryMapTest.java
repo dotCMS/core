@@ -9,6 +9,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -237,6 +238,43 @@ public class BinaryMapTest {
 
         assertTrue(binaryMap.getName().startsWith("image"));
         assertTrue(binaryMap.getName().endsWith(".jpg"));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link BinaryMap#getResizeUri(Integer, Integer)}</li>
+     *     <li><b>Given Scenario:</b> Verify that the {@link BinaryMap#getResizeUri(Integer, Integer)} method returns the URI in the
+     *     expected format.</li>
+     *     <li><b>Expected Result:</b> The URI must not contain double slash.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getResizeUri() throws DotDataException {
+        final Language language = new LanguageDataGen().nextPersisted();
+
+        final Contentlet banner =
+                TestDataUtils.getBannerLikeContent(true, language.getId(), null, null);
+
+        final Field binaryField = APILocator.getContentTypeFieldAPI()
+                .byContentTypeIdAndVar(banner.getContentTypeId(), "image");
+
+        final BinaryMap binaryMap = new BinaryMap(banner, new LegacyFieldTransformer(binaryField).asOldField());
+
+        String resizeUri = binaryMap.getResizeUri(200,200);
+
+        Assert.assertFalse("Contains double slash sending both params", resizeUri.contains("//"));
+
+        resizeUri = binaryMap.getResizeUri(0,200);
+
+        Assert.assertFalse("Contains double slash sending only height", resizeUri.contains("//"));
+
+        resizeUri = binaryMap.getResizeUri(200,0);
+
+        Assert.assertFalse("Contains double slash sending only width", resizeUri.contains("//"));
+
+        resizeUri = binaryMap.getResizeUri(0,0);
+
+        Assert.assertFalse("Contains double slash sending no params", resizeUri.contains("//"));
     }
 
 }

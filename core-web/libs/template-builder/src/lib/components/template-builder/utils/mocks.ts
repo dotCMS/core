@@ -3,7 +3,7 @@ import { v4 as uuid } from 'uuid';
 import { DotLayoutBody } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
-import { DotGridStackWidget } from '../models/models';
+import { DotGridStackWidget, DotTemplateBuilderContainer } from '../models/models';
 
 export const GRIDSTACK_DATA_MOCK: DotGridStackWidget[] = [
     { x: 0, y: 0, w: 12, id: uuid() },
@@ -236,6 +236,10 @@ export const MESSAGES_MOCK = {
     'dot.template.builder.footer': 'Footer',
     'dot.template.builder.toolbar.button.layout.label': 'Layout',
     'dot.template.builder.toolbar.button.theme.label': 'Theme',
+    'editpage.layout.properties.header': 'Header',
+    'editpage.layout.properties.footer': 'Footer',
+    'editpage.layout.properties.sidebar.left': 'Sidebar Left',
+    'editpage.layout.properties.sidebar.right': 'Sidebar Right',
     'dot.template.builder.box.containers.error': 'Error loading containers',
     'dot.template.builder.classes.dialog.autocomplete.label': 'Class',
     'dot.template.builder.classes.dialog.header.label': 'Edit Classes',
@@ -243,7 +247,9 @@ export const MESSAGES_MOCK = {
     'editpage.layout.theme.no.records.found': 'No records found',
     'dot.common.cancel': 'Cancel',
     'dot.common.apply': 'Apply',
-    'editpage.layout.theme.search': 'Search'
+    'editpage.layout.theme.search': 'Search',
+    'dot.template.builder.classes.dialog.update.button': 'Update',
+    'dot.template.builder.sidebar.header.title': 'Sidebar'
 };
 
 export const DOT_MESSAGE_SERVICE_TB_MOCK = new MockDotMessageService(MESSAGES_MOCK);
@@ -330,3 +336,8 @@ export function mockMatchMedia() {
             };
         };
 }
+
+export const mockTemplateBuilderContainer: DotTemplateBuilderContainer = {
+    identifier: '1',
+    uuid: '1'
+};
