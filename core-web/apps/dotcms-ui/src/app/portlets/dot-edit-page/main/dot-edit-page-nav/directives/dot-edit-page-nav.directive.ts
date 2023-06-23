@@ -38,12 +38,10 @@ export class DotEditPageNavDirective implements OnDestroy {
                     takeUntil(this.destroy$)
                 )
                 .subscribe((event: NavigationEnd) => {
-                    const key = Object.keys(urlPortletRules).find((key) =>
-                        event.urlAfterRedirects.includes(key)
-                    );
-                    this.removePortletsClasess();
-                    renderer.addClass(hostElement.nativeElement, urlPortletRules[key].clazz);
+                    this.addPortletClass(event.urlAfterRedirects);
                 });
+            //when the page is refreshed by the user, the router event is not triggered
+            this.addPortletClass(this.router.url);
         } else {
             console.warn('DotNavbarDirective is for use with DotEditPageNavComponent');
         }
@@ -54,7 +52,13 @@ export class DotEditPageNavDirective implements OnDestroy {
         this.destroy$.complete();
     }
 
-    private removePortletsClasess() {
+    private addPortletClass(url: string) {
+        const key = Object.keys(urlPortletRules).find((key) => url.includes(key));
+        this.removePortletsClasses();
+        this.renderer.addClass(this.hostElement.nativeElement, urlPortletRules[key].clazz);
+    }
+
+    private removePortletsClasses() {
         Object.keys(urlPortletRules).forEach((key) =>
             this.renderer.removeClass(this.hostElement.nativeElement, urlPortletRules[key].clazz)
         );
