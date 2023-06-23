@@ -1,26 +1,18 @@
 package com.dotmarketing.quartz.job;
 
-import com.dotcms.concurrent.DotConcurrentFactory;
-import com.dotcms.concurrent.lock.IdentifierStripedLock;
-import com.dotcms.notifications.business.NotificationAPI;
+import com.dotcms.storage.FileStorageAPI;
 import com.dotcms.storage.ObjectPath;
 import com.dotcms.storage.StoragePersistenceAPI;
 import com.dotcms.storage.StoragePersistenceProvider;
 import com.dotcms.storage.StorageType;
 import com.dotcms.util.LogTime;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.quartz.DotStatefulJob;
 import com.dotmarketing.util.AdminLogger;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableMap;
-import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
@@ -28,11 +20,12 @@ import org.quartz.SchedulerException;
 import org.quartz.Trigger;
 
 import java.io.Serializable;
-import java.text.MessageFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * Does the replication from a storage to others
@@ -84,40 +77,73 @@ public class ReplicateStoragesJob extends DotStatefulJob {
 
         Logger.debug(this, ()-> "Starting the replication from: " + fromStorageType.name()
                         + " to: " + toStoragesType.toString() + " by user: " + user.getUserId());
-        // todo: we have to iterate from the StorageType N times and replicate in each other StorageType,
-        // then sleep current thread between iterations.
 
         try {
+
             final StoragePersistenceAPI storagePersistenceAPI = StoragePersistenceProvider.INSTANCE.get().getStorage(fromStorageType);
-            final List<StoragePersistenceAPI> toStoragePersistenceAPIs = new ArrayList<>();
-            toStoragesType.stream().forEach(storageType ->
-                    toStoragePersistenceAPIs.add(StoragePersistenceProvider.INSTANCE.get().getStorage(fromStorageType)));
-            if (null != storagePersistenceAPI) {
+            final List<StoragePersistenceAPI> toStoragePersistenceAPIs = toStoragesType.stream()
+                    .map(type -> StoragePersistenceProvider.INSTANCE.get().getStorage(type))
+                    .filter(Objects::nonNull).collect(Collectors.toList());
+            if (null != storagePersistenceAPI && !toStoragePersistenceAPIs.isEmpty()) {
 
                 for (final String group: storagePersistenceAPI.listGroups()) {
 
-                    for (final ObjectPath objectPath : storagePersistenceAPI.toIterable(group))
+                    ensureGroup(toStoragePersistenceAPIs, group);
+                    int count = 0;
+                    for (final ObjectPath objectPath : storagePersistenceAPI.toIterable(group)) {
 
-                        for (final StoragePersistenceAPI toStoragePersistenceAPI : toStoragePersistenceAPIs) {
+                        this.replicateToStorages(toStoragePersistenceAPIs, group, objectPath);
+                        if (count++ % 100 == 0) { // todo: both values may be configurable
 
-                            try {
-
-                                //toStoragePersistenceAPI.pushObject(group, object);
-                            } catch (Exception e) {
-
-                                Logger.error(this, "Error replicating storages", e);
-                            }
+                            DateUtil.sleep(DateUtil.SECOND_MILLIS);
+                        }
                     }
                 }
-
             } else {
 
-                Logger.debug(this, () -> "The from storage type: " + fromStorageType.name() + " is not available");
+                Logger.debug(this, () -> "The from storage type: " + fromStorageType.name() + " is not available or " +
+                        " not any of the to storage types: " + toStoragesType + " are available");
             }
         } catch (DotDataException e) {
-            Logger.error(this, "Error replicating storages", e);
+            Logger.error(this, "Error replicating storages: " + e.getMessage(), e);
         } catch (Throwable e) {
             Logger.error(this, "Error replicating storages", e);
         }
     } // run
+
+    private static void ensureGroup(final List<StoragePersistenceAPI> toStoragePersistenceAPIs,
+                                    final String group) throws DotDataException {
+
+        for (final StoragePersistenceAPI toStoragePersistenceAPI : toStoragePersistenceAPIs) {
+
+            if (!toStoragePersistenceAPI.existsGroup(group)) {
+                toStoragePersistenceAPI.createGroup(group);
+            }
+        }
+    }
+
+    private void replicateToStorages(final List<StoragePersistenceAPI> toStoragePersistenceAPIs,
+                                     final String group, final ObjectPath objectPath) {
+
+        for (final StoragePersistenceAPI toStoragePersistenceAPI : toStoragePersistenceAPIs) {
+
+            try {
+
+                if (objectPath.getObject() instanceof Serializable) {
+
+                    toStoragePersistenceAPI.pushObject(group, objectPath.getPath(),
+                            FileStorageAPI.DEFAULT_OBJECT_WRITER_DELEGATE,
+                            Serializable.class.cast(objectPath.getObject()), null);
+                } else {
+
+                    Logger.debug(this, () -> "The object: " + objectPath.getObject().toString() +
+                            " under the group: " + group + " and path: " + objectPath.getPath() +
+                            " is not serializable");
+                }
+            } catch (Exception e) {
+
+                Logger.error(this, "Error replicating storages", e);
+            }
+        }
+    } // replicateToStorages.
 }

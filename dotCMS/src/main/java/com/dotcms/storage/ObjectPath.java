@@ -2,6 +2,10 @@ package com.dotcms.storage;
 
 import java.io.Serializable;
 
+/**
+ * Represents an object recovered from a storage, it contains the path and the object itself.
+ * @author jsanca
+ */
 public class ObjectPath implements Serializable {
 
     private final String path;
