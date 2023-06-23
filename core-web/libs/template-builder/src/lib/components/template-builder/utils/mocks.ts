@@ -326,15 +326,6 @@ export const CONTAINER_MAP_MOCK = {
     ...containersMapMock
 };
 
-export const LAYOUT_MOCK = {
-    body: FULL_DATA_MOCK,
-    footer: null,
-    header: null,
-    sidebar: null,
-    title: 'A Title',
-    width: null
-};
-
 const noop = () => {
     //
 };
