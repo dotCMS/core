@@ -59,7 +59,7 @@ export const subGridOptions: GridStackOptions = {
     acceptWidgets: isAColumnWidget,
     disableOneColumnMode: true,
     resizable: {
-        handles: 'e'
+        handles: 'e, w'
     }
 };
 
