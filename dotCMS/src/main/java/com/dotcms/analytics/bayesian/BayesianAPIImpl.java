@@ -673,7 +673,7 @@ public class BayesianAPIImpl implements BayesianAPI {
             validateInput(input);
             return Optional.empty();
         } catch (final DotDataException e) {
-            Logger.error(
+            Logger.debug(
                 this,
                 String.format("Cannot calculate probability with zero interactions for input: %s", input), e);
             return Optional.of(NOOP_RESULT);
