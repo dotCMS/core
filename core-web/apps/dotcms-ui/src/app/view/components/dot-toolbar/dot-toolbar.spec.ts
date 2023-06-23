@@ -11,12 +11,11 @@ import { DotNavLogoService } from '@dotcms/app/api/services/dot-nav-logo/dot-nav
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { SiteService } from '@dotcms/dotcms-js';
-import { DotIconModule } from '@dotcms/ui';
+import { DotIconModule, UiDotIconButtonModule } from '@dotcms/ui';
 import { mockSites, SiteServiceMock } from '@dotcms/utils-testing';
 
 import { DotToolbarComponent } from './dot-toolbar.component';
 
-import { UiDotIconButtonModule } from '../_common/dot-icon-button/dot-icon-button.module';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 import { DotNavigationService } from '../dot-navigation/services/dot-navigation.service';
 

@@ -11,7 +11,7 @@ import {
 import { ButtonModule } from 'primeng/button';
 import { Sidebar } from 'primeng/sidebar';
 
-import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { UiDotIconButtonModule } from '@dotcms/ui';
 
 /**
  * Used to add a header bar to Sidebar (PrimeNg)

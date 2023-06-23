@@ -1,16 +1,10 @@
 @use "variables" as *;
 
-:host ::ng-deep {
+:host {
     &.ui-draggable-dragging {
         .row {
             background-color: $white;
             box-shadow: $md-shadow-2;
-        }
-    }
-
-    .grid-stack {
-        .grid-stack-item .grid-stack-item-content {
-            inset: 1rem;
         }
     }
 }
@@ -54,4 +48,5 @@
 
 .row__content-container {
     flex-grow: 1;
+    padding: 0 $spacing-1;
 }
