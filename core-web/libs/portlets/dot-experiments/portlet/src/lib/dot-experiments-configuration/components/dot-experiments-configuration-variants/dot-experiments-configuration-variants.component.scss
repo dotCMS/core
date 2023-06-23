@@ -1,5 +1,9 @@
 @use "variables" as *;
 
+.variant-row-wrapper {
+    min-height: 2.2rem;
+}
+
 h2 {
     margin: 0;
     font-size: $font-size-lg;

@@ -17,3 +17,19 @@ This lib contain all related to Experiments in dotCMS, has 2 main libraries:
 - For run the portlet unit test do: `nx run portlets-dot-experiments-portlet:lint`.
 - For run the data-access unit test do: `nx run portlets-dot-experiments-data-access:lint`.
 
+## Portlet Library Structure
+
+| Folder name                     | Project Name                                                               |
+|---------------------------------|----------------------------------------------------------------------------|
+| `dot-experiments-configuration` | Container of Experiment Configuration and all components related to it.    |
+| `dot-experiments-list`          | Container of Experiment List and all components related to it.             | 
+| `dot-experiments-reports`       | Container of Experiment Reports and all components related to it.          | 
+| `dot-experiments-shell`         | Shell of the Experiment Library and the Featured Component Store           | 
+| `shared`                        | Reusable components, directives and utils with specific use in Experiment. | 
+
+## Data Access Library Structure
+
+| Folder name | Project Name               |
+|-------------|----------------------------|
+| `resolvers` | Resolvers of experiments   |
+| `services`  | Main service of experiment | 
