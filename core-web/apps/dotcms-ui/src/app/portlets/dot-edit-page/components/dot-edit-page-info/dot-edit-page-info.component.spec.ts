@@ -31,7 +31,7 @@ class TestHostComponent {
     apiLink = 'api/v1/page/render/an/url/test?language_id=1';
 }
 
-fdescribe('DotEditPageInfoComponent', () => {
+describe('DotEditPageInfoComponent', () => {
     let hostComp: TestHostComponent;
     let hostFixture: ComponentFixture<TestHostComponent>;
     let hostDebug: DebugElement;
