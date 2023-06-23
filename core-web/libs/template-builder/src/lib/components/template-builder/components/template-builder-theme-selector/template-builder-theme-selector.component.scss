@@ -5,7 +5,7 @@
     display: block;
 }
 
-.theme-search-box {
+.theme__header--search-box {
     position: relative;
 
     input {
@@ -22,18 +22,18 @@
     align-items: center;
 }
 
-.theme-item {
+.theme__item {
     align-items: center;
     background: $color-palette-gray-200;
-    border-radius: 4px;
+    border-radius: $border-radius-sm;
     cursor: pointer;
     display: flex;
     flex-direction: column;
     height: 15rem;
-    margin: 1rem 0.5rem 0;
-    padding: 1.5rem 1rem;
-    transition: background-color 0.15s ease-in;
     width: 15rem;
+    margin: $spacing-3 $spacing-1 0;
+    padding: $spacing-4 $spacing-3;
+    transition: background-color 0.15s ease-in;
 
     &.active {
         box-shadow: 0 10px 10px #0003;
@@ -41,7 +41,7 @@
     }
 }
 
-.theme-footer {
+.theme__footer {
     display: flex;
     gap: $spacing-1;
     justify-content: flex-end;
@@ -49,16 +49,6 @@
 }
 
 ::ng-deep {
-    .p-dropdown {
-        border: 1px solid $color-palette-gray-500;
-        padding: $spacing-3;
-        margin-left: 0;
-    }
-
-    .theme__header .p-dropdown-label.p-inputtext {
-        font-size: $font-size-lg;
-    }
-
     .p-dataview .p-dataview-content {
         padding-left: 0;
     }
