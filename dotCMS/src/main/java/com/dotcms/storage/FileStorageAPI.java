@@ -16,6 +16,11 @@ public interface FileStorageAPI {
     int SIZE                       = 1024;
     int DEFAULT_META_DATA_MAX_SIZE = 5;
 
+
+    ObjectReaderDelegate DEFAULT_OBJECT_READER_DELEGATE = new JsonReaderDelegate<>(Map.class);
+    ObjectWriterDelegate DEFAULT_OBJECT_WRITER_DELEGATE = new JsonWriterDelegate();
+    MetadataGenerator DEFAULT_METADATA_GENERATOR = new MetadataGeneratorImpl();
+
     /**
      * Returns the default configured max length
      * @return int

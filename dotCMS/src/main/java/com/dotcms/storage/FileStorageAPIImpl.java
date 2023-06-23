@@ -70,8 +70,8 @@ public class FileStorageAPIImpl implements FileStorageAPI {
      * Default constructor
      */
     public FileStorageAPIImpl() {
-        this(new JsonReaderDelegate<>(Map.class), new JsonWriterDelegate(),
-                new MetadataGeneratorImpl(), StoragePersistenceProvider.INSTANCE.get(), CacheLocator.getMetadataCache());
+        this(DEFAULT_OBJECT_READER_DELEGATE, DEFAULT_OBJECT_WRITER_DELEGATE,
+                DEFAULT_METADATA_GENERATOR, StoragePersistenceProvider.INSTANCE.get(), CacheLocator.getMetadataCache());
     }
 
     /**

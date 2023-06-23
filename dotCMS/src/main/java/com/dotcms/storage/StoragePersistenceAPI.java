@@ -168,4 +168,7 @@ public interface StoragePersistenceAPI {
      */
     Future<Object> pullObjectAsync (final String groupName, final String path, final ObjectReaderDelegate readerDelegate);
 
+    default Iterable<? extends ObjectPath> toIterable(String group) {
+        return null; // todo: this is null because it's not implemented yet
+    }
 }
