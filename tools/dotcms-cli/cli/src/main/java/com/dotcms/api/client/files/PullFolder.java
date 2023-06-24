@@ -34,7 +34,9 @@ public class PullFolder extends PullBase {
                         "@|bold,green [%s]|@ Assets in " +
                         "@|bold,green [%s]|@ Folders and " +
                         "@|bold,green [%s]|@ Languages\n\n",
-                treeNodeInfo.assetsCount(), treeNodeInfo.foldersCount(), treeNodeInfo.languages().size()));
+                treeNodeInfo.assetsCount(),
+                treeNodeInfo.foldersCount() == 0 ? 1 : treeNodeInfo.foldersCount(),
+                treeNodeInfo.languages().size()));
 
         // ConsoleProgressBar instance to handle the download progress bar
         ConsoleProgressBar progressBar = new ConsoleProgressBar(output);

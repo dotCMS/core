@@ -46,9 +46,9 @@ public class PullFile extends PullBase {
         final var treeNodeInfo = tree.collectUniqueStatusesAndLanguages(false);
 
         output.info(String.format("\rStarting pull process for: " +
-                        "@|bold,green [%s]|@ Assets and " +
+                        "@|bold,green [%s]|@ Assets in " +
                         "@|bold,green [%s]|@ Languages\n\n",
-                treeNodeInfo.assetsCount(), treeNodeInfo.languages().size()));
+                1, treeNodeInfo.languages().size()));
 
         // ConsoleProgressBar instance to handle the download progress bar
         ConsoleProgressBar progressBar = new ConsoleProgressBar(output);
