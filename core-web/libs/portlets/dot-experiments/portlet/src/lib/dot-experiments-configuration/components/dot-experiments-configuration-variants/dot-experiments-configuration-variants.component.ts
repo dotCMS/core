@@ -15,7 +15,6 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { tap } from 'rxjs/operators';
 
-import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 import { DotSessionStorageService } from '@dotcms/data-access';
@@ -29,7 +28,12 @@ import {
     TrafficProportion,
     Variant
 } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipe, DotMessagePipeModule } from '@dotcms/ui';
+import {
+    DotIconModule,
+    DotMessagePipe,
+    DotMessagePipeModule,
+    UiDotIconButtonModule
+} from '@dotcms/ui';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
 
 import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-configuration-store';

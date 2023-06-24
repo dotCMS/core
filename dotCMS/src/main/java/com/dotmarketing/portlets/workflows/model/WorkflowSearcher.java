@@ -1,17 +1,18 @@
 package com.dotmarketing.portlets.workflows.model;
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Map;
-
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
-public class WorkflowSearcher {
+import java.io.Serializable;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Map;
+
+public class WorkflowSearcher implements Serializable {
 
 	String schemeId;
 	String assignedTo;

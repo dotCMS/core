@@ -5,15 +5,6 @@
         [title]="vm.experiment?.name"
         (goBack)="goToExperimentList(vm.experiment.pageId)"
     >
-        <button
-            class="p-button-outlined"
-            *ngIf="vm.hasEnoughSessions"
-            [label]="'experiments.report.promote.variant' | dm"
-            (click)="openPublishVariantDialog()"
-            data-testId="publish-variant-button"
-            pButton
-            type="button"
-        ></button>
     </dot-experiments-header>
     <div class="flex flex-column dot-experiment-report-content">
         <ng-container *ngIf="!vm.isLoading; else loadingTpl">
@@ -42,7 +33,7 @@
                             <div class="flex col row-container">
                                 <div
                                     class="flex col-fixed flex-wrap align-items-center"
-                                    style="width: 220px"
+                                    style="width: 200px"
                                 >
                                     {{ 'experiments.reports.variants' | dm }}
                                 </div>
@@ -65,14 +56,19 @@
                                     {{ 'experiments.reports.conversions.rate' | dm }}
                                 </div>
                                 <div
-                                    class="flex col flex-wrap align-items-center justify-content-end"
+                                    class="flex col flex-wrap align-items-center justify-content-end text-right"
                                 >
                                     {{ 'experiments.reports.probability.best' | dm }}
                                 </div>
                                 <div
-                                    class="flex col flex-wrap align-items-center justify-content-end"
+                                    class="flex col flex-wrap align-items-center justify-content-end text-right"
                                 >
                                     {{ 'experiments.reports.conversion.rate.range' | dm }}
+                                </div>
+                                <div
+                                    class="flex col flex-wrap align-items-center justify-content-end"
+                                >
+                                    {{ 'experiments.reports.promote' | dm }}
                                 </div>
                             </div>
                         </ng-template>
@@ -82,7 +78,7 @@
                                 <div
                                     class="flex col-fixed flex-wrap align-content-center first-column"
                                     [ngClass]="{ 'prospect-winner': row.isWinner }"
-                                    style="width: 220px"
+                                    style="width: 200px"
                                 >
                                     <div class="flex flex-row align-items-center gap-2">
                                         <svg
@@ -96,13 +92,6 @@
                                             />
                                         </svg>
                                         <span>{{ row.name }}</span>
-                                        <p-tag
-                                            class="sm p-tag-info"
-                                            *ngIf="row.isPromoted"
-                                            [value]="'promoted' | dm | titlecase"
-                                            data-testId="variant-promoted-tag"
-                                            icon="pi pi-send"
-                                        />
                                     </div>
                                 </div>
                                 <div
@@ -138,6 +127,28 @@
                                 >
                                     {{ row.conversionRateRange }}
                                 </div>
+                                <div
+                                    class="flex col flex-wrap align-content-center justify-content-end"
+                                    [ngClass]="{ 'prospect-winner': row.isWinner }"
+                                >
+                                    <button
+                                        class="p-button-sm p-button-secondary"
+                                        *ngIf="!vm.promotedVariant && row.id !== defaultVariantId"
+                                        [label]="'experiments.reports.promote' | dm"
+                                        (click)="promoteVariant($event, vm.experiment.id, row)"
+                                        data-testId="promote-variant-button"
+                                        pButton
+                                        type="button"
+                                        icon="pi pi-send"
+                                    ></button>
+                                    <p-tag
+                                        class="sm p-tag-info"
+                                        *ngIf="row.isPromoted"
+                                        [value]="'promoted' | dm | titlecase"
+                                        data-testId="variant-promoted-tag"
+                                        icon="pi pi-send"
+                                    />
+                                </div>
                             </div>
                         </ng-template>
                     </dot-experiments-details-table>
@@ -151,3 +162,4 @@
     <dot-experiments-reports-skeleton />
 </ng-template>
 <ng-template dotDynamic></ng-template>
+<p-confirmPopup></p-confirmPopup>

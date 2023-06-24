@@ -926,6 +926,7 @@ export class DotEditContentHtmlService {
         );
 
         const doc = this.getEditPageDocument();
+
         doc.documentElement.id = timeStampId;
         doc.head.appendChild(style);
     }

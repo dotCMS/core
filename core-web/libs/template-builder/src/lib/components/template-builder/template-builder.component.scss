@@ -8,6 +8,27 @@
     flex: 1;
 }
 
+.template-builder__container {
+    display: flex;
+    gap: $spacing-4;
+    padding-top: $spacing-3;
+
+    .grid-stack {
+        flex: 1;
+    }
+
+    .template-builder__sidebar--small {
+        width: 16.25rem; // 260px
+    }
+    .template-builder__sidebar--large {
+        width: 21.25rem; // 340px
+    }
+}
+
+.template-builder__container--right {
+    flex-direction: row-reverse;
+}
+
 // Class added by the gridstack library when the widget is being dragged
 dotcms-add-widget.ui-draggable-dragging {
     transform: rotate(-3.66deg);
@@ -16,7 +37,7 @@ dotcms-add-widget.ui-draggable-dragging {
 
 dotcms-template-builder-background-columns {
     position: absolute;
-    inset: 0 3.2rem;
+    inset: 0 3.625rem 0 1rem;
     z-index: -1;
 }
 
@@ -33,7 +54,6 @@ p-toolbar {
 
 dotcms-template-builder-section {
     margin-top: $spacing-3;
-    margin-bottom: $spacing-4;
 }
 
 p-divider {
@@ -43,5 +63,16 @@ p-divider {
 ::ng-deep {
     .p-toolbar-group-end {
         gap: $spacing-1;
+    }
+
+    .p-toolbar {
+        border-color: $color-palette-gray-300;
+        padding: 1rem 0;
+    }
+
+    .p-divider {
+        &.p-component {
+            color: $color-palette-gray-300;
+        }
     }
 }
