@@ -190,7 +190,7 @@ jobs:
           tests_report_url: ${{ steps.github-publish-integration-tests.outputs.tests_report_url }}
         if: (success() || failure()) && steps.github-publish-integration-tests.outputs.tests_report_url != ''
   postman-tests-setup-job:
-    name: Postman tests matrix setup
+    name: Postman Matrix Setup
     runs-on: ubuntu-latest
     outputs:
       built_image_name: ${{ steps.build-dotcms-image.outputs.built_image_name }}
@@ -287,7 +287,7 @@ jobs:
           run_identifier: ${{ steps.run-postman-tests.outputs.normalized_parallel_collection }}
         if: (success() || failure()) && steps.run-postman-tests.outputs.tests_results_skip_report != 'true'
   postman-tests-complete-job:
-    name: Postman tests complete
+    name: Close Postman Tests
     runs-on: ubuntu-latest
     needs: run-postman-tests-job
     if: (success() || failure()) && needs.run-postman-tests-job.outputs.tests_results_skip_report != 'true'
@@ -328,7 +328,7 @@ jobs:
         if: (success() || failure()) && steps.github-close-test-results.outputs.tests_report_url != ''
 
   test-results-handler-job:
-    name: Tests results handler
+    name: Tests Results Handler
     runs-on: ubuntu-latest
     needs: [run-unit-tests-job, run-integration-tests-job, run-postman-tests-job]
     if: (success() || failure()) && (needs.run-unit-tests-job.outputs.tests_results_report_url != '' || needs.run-integration-tests-job.outputs.postgres_tests_results_report_url != '' || needs.run-postman-tests-job.outputs.tests_results_report_url != '')

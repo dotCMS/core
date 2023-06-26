@@ -16,6 +16,7 @@
             <ng-template #enabledComponent>
                 <dotcms-template-builder
                     [templateLayout]="item.layout"
+                    [containerMap]="item.containers"
                     (layoutChange)="onLayoutChange($event)"
                     data-testId="new-template-builder"
                 >

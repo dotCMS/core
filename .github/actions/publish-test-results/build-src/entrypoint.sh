@@ -13,10 +13,8 @@ case "${INPUT_PARTIAL}" in
     ;;
   close)
     closeResults
-    rc=$?
     setOutputs
     printStatus
-    exit $rc
     ;;
   *)
     copyResults

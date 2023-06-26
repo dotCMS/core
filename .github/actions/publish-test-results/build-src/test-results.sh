@@ -37,23 +37,43 @@ function resolveResultsPath {
   echo ${path}
 }
 
+function resolveTestResultsBase {
+  local build_idh=$1
+  local test_results_path=${INPUT_PROJECT_ROOT}/${TEST_RESULTS_GITHUB_REPO}
+  local is_main_branch=false
+  [[ "${MULTI_BRANCH}" == 'true' ]] \
+      && [[ "${build_id}" == 'master' \
+        || ${build_id} =~ ^release-[0-9]{2}.[0-9]{2}(.[0-9]{1,2})?$|^v[0-9]{2}.[0-9]{2}(.[0-9]{1,2})?$ ]] \
+          && test_results_path=${test_results_path}_${build_id}
+  echo ${test_results_path}
+}
+
+function resolveInitialBranch {
+  local build_id=$1
+  local remote_branch=$2
+
+  if [[ ${remote_branch} == 1 ]]; then
+    clone_branch=${build_id}
+  else
+    clone_branch=scratch
+  fi
+
+  echo ${clone_branch}
+}
+
 # Creates initial branch to add tests results to in case it does not exist
-function initResults {
+function initBranchResults {
+  local build_id=$1
+
   cd ${INPUT_PROJECT_ROOT}
 
   # Resolve test results fully
   local test_results_repo_url=$(resolveRepoUrl ${TEST_RESULTS_GITHUB_REPO} ${INPUT_CICD_GITHUB_TOKEN} ${GITHUB_USER})
-  local test_results_path=${INPUT_PROJECT_ROOT}/${TEST_RESULTS_GITHUB_REPO}
+  local test_results_path=$(resolveTestResultsBase ${build_id})
 
-  gitRemoteLs ${test_results_repo_url} ${BUILD_ID}
+  gitRemoteLs ${test_results_repo_url} ${build_id}
   local remote_branch=$?
-  echo "Branch ${BUILD_ID} exists: ${remote_branch}"
-  # If it does not exist use master
-  if [[ ${remote_branch} == 1 ]]; then
-    clone_branch=${BUILD_ID}
-  else
-    clone_branch=scratch
-  fi
+  local clone_branch=$(resolveInitialBranch ${build_id} ${remote_branch})
 
   # Clone test-results repo at resolved branch
   gitClone ${test_results_repo_url} ${clone_branch} ${test_results_path}
@@ -64,25 +84,14 @@ function initResults {
 
   # If no remote branch detected create one
   [[ ${remote_branch} != 1 ]] \
-    && executeCmd "git checkout -b ${BUILD_ID}" \
+    && executeCmd "git checkout -b ${build_id}" \
     && executeCmd "git push ${test_results_repo_url}"
 }
 
-# Creates required directory structure for the provided results folder and copies them to the new location
-#
-# $1: results_path: to copy to results location
-function addResults {
-  local results_path=${1}
-  if [[ -z "${results_path}" ]]; then
-    echo "Cannot add results path since its empty, ignoring"
-    exit 1
-  fi
-
-  local target_folder=$(resolveResultsPath ${results_path})
-  mkdir -p ${target_folder}
-  echo "Adding test results path ${results_path} to: ${target_folder}"
-
-  executeCmd "cp -R ${OUTPUT_FOLDER}/* ${target_folder}"
+# Creates initial branch to add tests results to in case it does not exist
+function initResults {
+  initBranchResults ${BUILD_ID}
+  [[ "${MULTI_BRANCH}" == 'true' ]] && initBranchResults ${INPUT_BUILD_ID}
 }
 
 # Creates required directory structure for the provided results folder and copies them to the new location
@@ -103,9 +112,12 @@ function addResults {
 }
 
 # Resolves possible conflicts by checking out ours
-function resolveConflicts {
-  local pull_output=$("git pull origin ${BUILD}")
-  [[ ${cmd_result} != 0 ]] && echo "Error pulling from git branch ${BUILD_ID}, error code: ${cmd_result}"
+function pullAndResolve {
+  local build_id=$1
+  local pull_output=$(git pull origin ${build_id})
+  [[ $? != 0 ]] \
+    && echo "Error pulling from git branch ${build_id}, error code: ${cmd_result}" \
+    && exit 1
 
   local ifs_bak=${IFS}
   while IFS= read -r line; do
@@ -127,87 +139,81 @@ function resolveConflicts {
 }
 
 # Persists results in 'test-results' repo in the provided INPUT_BUILD_ID branch.
-function persistResults {
+function persistBranchResults {
+  local build_id=$1
+
   cd ${INPUT_PROJECT_ROOT}
 
   # Resolve test results fully
   local test_results_repo_url=$(resolveRepoUrl ${TEST_RESULTS_GITHUB_REPO} ${INPUT_CICD_GITHUB_TOKEN} ${GITHUB_USER})
-  local test_results_path=${INPUT_PROJECT_ROOT}/${TEST_RESULTS_GITHUB_REPO}
+  local test_results_path=$(resolveTestResultsBase ${BUILD_ID})
 
   # Query for remote branch
-  gitRemoteLs ${test_results_repo_url} ${BUILD_ID}
+  gitRemoteLs ${test_results_repo_url} ${build_id}
   local remote_branch=$?
-  echo "Branch ${BUILD_ID} exists: ${remote_branch}"
-  # If it does not exist use master
-  if [[ ${remote_branch} == 1 ]]; then
-    clone_branch=${BUILD_ID}
-  else
-    clone_branch=scratch
-  fi
+  local clone_branch=$(resolveInitialBranch ${build_id} ${remote_branch})
 
   # Clone test-results repo at resolved branch
   gitClone ${test_results_repo_url} ${clone_branch} ${test_results_path}
+
   # Create results folder if ir does not exist and switch to it
-  local results_folder=${test_results_path}/projects/${INPUT_TARGET_PROJECT}
-  [[ ! -d ${results_folder} ]] && executeCmd "mkdir -p ${results_folder}"
-  cd ${results_folder}
+  [[ ! -d ${test_results_path} ]] && executeCmd "mkdir -p ${test_results_path}"
+  cd ${test_results_path}
 
   # Prepare who is pushing the changes
   gitConfig ${GITHUB_USER}
 
   # If no remote branch detected create one
-  [[ ${remote_branch} != 1 ]] && executeCmd "git checkout -b ${BUILD_ID}"
+  [[ ${remote_branch} != 1 ]] && executeCmd "git checkout -b ${build_id}"
 
   # Clean test results folders by removing contents and committing them
   cleanTestFolders
-
-  if [[ "${MULTI_COMMIT}" == 'true' ]]; then
-    # Do not add commit results when the branch is master, otherwise add test results to commit
-    addResults ./${INPUT_BUILD_HASH}
-    # Add results to current
-    addResults ./current
-  else
-    addResults .
-  fi
+  # Add results to the branch
+  addResults .
 
   # Check for something new to commit
-  [[ "${DEBUG}" == 'true' ]] \
-    && executeCmd "git branch && git status"
-
+  executeCmd "git branch && git status"
   executeCmd "git status | grep \"nothing to commit, working tree clean\""
+
   # If there are changes then start the fun part
   if [[ ${cmd_result} != 0 ]]; then
     # Add everything
     executeCmd "git add ."
     if [[ ${cmd_result} != 0 ]]; then
-      echo "Error adding to git for ${INPUT_BUILD_HASH} at ${INPUT_BUILD_ID}, error code: ${cmd_result}"
+      echo "Error adding to git for ${INPUT_BUILD_HASH} at ${build_id}, error code: ${cmd_result}"
       exit 1
     fi
 
     # Commit the changes
-    executeCmd "git commit -m \"Adding ${INPUT_TEST_TYPE} tests results for ${INPUT_BUILD_HASH} at ${INPUT_BUILD_ID}\""
+    executeCmd "git commit -m \"Adding ${INPUT_TEST_TYPE} tests results for ${INPUT_BUILD_HASH} at ${build_id}\""
     if [[ ${cmd_result} != 0 ]]; then
-      echo "Error committing to git for ${INPUT_BUILD_HASH} at ${INPUT_BUILD_ID}, error code: ${cmd_result}"
+      echo "Error committing to git for ${INPUT_BUILD_HASH} at ${build_id}, error code: ${cmd_result}"
       exit 1
     fi
 
     # Do not pull unless branch is remote
     if [[ ${remote_branch} == 1 ]]; then
       # Perform a pull just in case
-      resolveConflicts
+      pullAndResolve ${build_id}
     else
-      echo "Not pulling ${BUILD_ID} since it is not remote yet"
+      echo "Not pulling ${build_id} since it is not remote yet"
     fi
 
     # Finally push the changes
     executeCmd "git push ${test_results_repo_url}"
     if [[ ${cmd_result} != 0 ]]; then
-      echo "Error pushing to git for ${INPUT_BUILD_HASH} at ${INPUT_BUILD_ID}, error code: ${cmd_result}"
+      echo "Error pushing to git for ${INPUT_BUILD_HASH} at ${build_id}, error code: ${cmd_result}"
       exit 1
     fi
   else
     echo 'No changes detected, not committing nor pushing'
   fi
+}
+
+# Persists results in 'test-results' repo in the provided INPUT_BUILD_ID branch.
+function persistResults {
+  persistBranchResults ${BUILD_ID}
+  [[ "${MULTI_BRANCH}" == 'true' ]] && persistBranchResults ${INPUT_BUILD_ID}
 }
 
 # Build necessary results files
@@ -233,49 +239,61 @@ function buildResults {
 }
 
 # Executes logic for matrix partitioned tests such as postman tests
-function closeResults {
+function closeBranchResults {
+  local build_id=$1
+
   [[ "${INPUT_TEST_TYPE}" != 'postman' ]] && return 1
 
   local test_results_repo_url=$(resolveRepoUrl ${TEST_RESULTS_GITHUB_REPO} ${INPUT_CICD_GITHUB_TOKEN} ${GITHUB_USER})
-  local test_results_path=${INPUT_PROJECT_ROOT}/${TEST_RESULTS_GITHUB_REPO}
+  local test_results_path=$(resolveTestResultsBase ${build_id})
 
-  gitRemoteLs ${test_results_repo_url} ${BUILD_ID}
+  gitRemoteLs ${test_results_repo_url} ${build_id}
   local remote_branch=$?
-  echo "Branch ${BUILD_ID} exists: ${remote_branch}"
+  echo "Branch ${build_id} exists: ${remote_branch}"
   [[ ${remote_branch} != 1 ]] \
-    && echo "Tests results branch ${BUILD_ID} does not exist, cannot close results" \
+    && echo "Tests results branch ${build_id} does not exist, cannot close results" \
     && exit 1
 
-  gitClone ${test_results_repo_url} ${BUILD_ID} ${test_results_path}
+  gitClone ${test_results_repo_url} ${build_id} ${test_results_path}
 
-  local base_path=${test_results_path}/projects/${INPUT_TARGET_PROJECT}
-  local results_base_path=${base_path}
-  [[ "${MULTI_COMMIT}" == 'true' ]] && results_base_path="${results_base_path}/${INPUT_BUILD_HASH}"
-
-  cd ${results_base_path}/postman/reports/html
+  cd ${test_results_path}/postman/reports/html
   gitConfig ${GITHUB_USER}
   executeCmd "mkdir -p ${INPUT_TESTS_RESULTS_LOCATION}"
   setOutput tests_results_location ${INPUT_TESTS_RESULTS_LOCATION}
 
-  buildResults ${results_base_path}
-  [[ "${MULTI_COMMIT}" == 'true' ]] \
-    && results_base_path=${base_path}/current \
-    && cd ${results_base_path}/postman/reports/html \
-    && buildResults ${results_base_path}
+  buildResults ${test_results_path}
 
-  cd ${base_path}
+  cd ${test_results_path}
   executeCmd "git status"
   executeCmd "git add ."
   executeCmd "git commit -m \"Closing results for branch ${BUILD_ID}\""
 
-  resolveConflicts
+  pullAndResolve ${build_id}
 
   executeCmd "git push ${test_results_repo_url}"
-  [[ ${cmd_result} != 0 ]] \
+  local push_rc=${cmd_result}
+
+  executeCmd "rm -rf ${INPUT_TESTS_RESULTS_LOCATION}"
+
+  [[ ${push_rc} != 0 ]] \
     && echo "Error pushing to git for ${INPUT_BUILD_HASH} at ${INPUT_BUILD_ID}, error code: ${cmd_result}" \
     && exit 1
 
   return 0
+}
+
+# Executes logic for matrix partitioned tests such as postman tests
+function closeResults {
+  closeBranchResults ${BUILD_ID}
+  [[ $? != 0 ]] \
+    && echo "Error closing results for branch ${BUILD_ID}" \
+    && return $?
+
+  local rc=0
+  [[ "${MULTI_BRANCH}" == 'true' ]] \
+    && closeBranchResults ${INPUT_BUILD_ID} \
+    && rc=$?
+  return $rc
 }
 
 # Creates a summary status file for test the specific INPUT_TEST_TYPE, INPUT_DB_TYPE in both commit and branch paths.
@@ -344,21 +362,41 @@ function appendLogLocation {
 # Prints information about the status of any test type
 function printStatus {
   local pull_request_url="https://github.com/dotCMS/${INPUT_TARGET_PROJECT}/pull/${INPUT_PULL_REQUEST}"
-  local results_base_path=${INPUT_PROJECT_ROOT}/${TEST_RESULTS_GITHUB_REPO}/projects/${INPUT_TARGET_PROJECT}
-  [[ "${MULTI_COMMIT}" == 'true' ]] && results_base_path="${results_base_path}/${INPUT_BUILD_HASH}"
+  local results_base_path=${INPUT_PROJECT_ROOT}/${TEST_RESULTS_GITHUB_REPO}
 
   echo
   echo -e "\e[36m==========================================================================================================================\e[0m"
   echo -e "\e[36m==========================================================================================================================\e[0m"
-  echo -e "\e[1;36m                                                REPORTING\e[0m"
+  echo -e "\e[1;36m                                                REPORTING [${BUILD_ID}]\e[0m"
   echo
 
-  cd ${results_base_path}/postman/logs
+  [[ "${INCLUDE_RESULTS}" == 'true' ]] && echo -e "\e[31m         ${BRANCH_TEST_RESULT_URL}\e[0m"
+  if [[ "${INCLUDE_LOGS}" == 'true' ]]; then
+    if [[ "${INPUT_TEST_TYPE}" == 'postman' ]]; then
+      cd ${results_base_path}/postman/logs
+      if [[ -n "${INPUT_RUN_IDENTIFIER}" ]]; then
+        echo -e "\e[31m         ${BRANCH_TEST_LOG_URL}\e[0m"
+      else
+        for l in *.log
+        do
+          echo -e "\e[31m         ${GITHUB_PERSIST_BRANCH_URL}/${HTML_REPORTS_LOCATION}/${l%.*}.html\e[0m"
+          echo -e "\e[31m         ${GITHUB_PERSIST_BRANCH_URL}/logs/${l}\e[0m"
+        done
+      fi
+    else
+      echo -e "\e[31m         ${BRANCH_TEST_LOG_URL}\e[0m"
+    fi
+  fi
 
-  if [[ "${MULTI_COMMIT}" == 'true' ]]; then
+  if [[ "${MULTI_BRANCH}" == 'true' ]]; then
+    echo
+    echo
+    echo -e "\e[1;36m                                                REPORTING [${INPUT_BUILD_ID}]\e[0m"
+    echo
     [[ "${INCLUDE_RESULTS}" == 'true' ]] && echo -e "\e[31m         ${COMMIT_TEST_RESULT_URL}\e[0m"
     if [[ "${INCLUDE_LOGS}" == 'true' ]]; then
       if [[ "${INPUT_TEST_TYPE}" == 'postman' ]]; then
+        cd ${results_base_path}/postman/logs
         if [[ -n "${INPUT_RUN_IDENTIFIER}" ]]; then
           echo -e "\e[31m         ${COMMIT_TEST_LOG_URL}\e[0m"
         else
@@ -370,23 +408,6 @@ function printStatus {
         fi
       else
         echo -e "\e[31m         ${COMMIT_TEST_LOG_URL}\e[0m"
-      fi
-    fi
-  else
-    [[ "${INCLUDE_RESULTS}" == 'true' ]] && echo -e "\e[31m         ${BRANCH_TEST_RESULT_URL}\e[0m"
-    if [[ "${INCLUDE_LOGS}" == 'true' ]]; then
-      if [[ "${INPUT_TEST_TYPE}" == 'postman' ]]; then
-        if [[ -n "${INPUT_RUN_IDENTIFIER}" ]]; then
-          echo -e "\e[31m         ${BRANCH_TEST_LOG_URL}\e[0m"
-        else
-          for l in *.log
-          do
-            echo -e "\e[31m         ${GITHUB_PERSIST_BRANCH_URL}/${HTML_REPORTS_LOCATION}/${l%.*}.html\e[0m"
-            echo -e "\e[31m         ${GITHUB_PERSIST_BRANCH_URL}/logs/${l}\e[0m"
-          done
-        fi
-      else
-        echo -e "\e[31m         ${BRANCH_TEST_LOG_URL}\e[0m"
       fi
     fi
   fi
@@ -409,12 +430,12 @@ function printStatus {
 # More Env-Vars definition, specifically to results storage
 githack_url=$(resolveRepoPath ${TEST_RESULTS_GITHUB_REPO} | sed -e 's/github.com/raw.githack.com/')
 
-if [[ "${INPUT_BUILD_ID}" != 'master' \
-    && ! ${INPUT_BUILD_ID} =~ ^release-[0-9]{2}.[0-9]{2}(.[0-9]{1,2})?$|^v[0-9]{2}.[0-9]{2}(.[0-9]{1,2})?$ ]]; then
-  export MULTI_COMMIT=false
+if [[ "${INPUT_BUILD_ID}" == 'master' \
+    || ${INPUT_BUILD_ID} =~ ^release-[0-9]{2}.[0-9]{2}(.[0-9]{1,2})?$|^v[0-9]{2}.[0-9]{2}(.[0-9]{1,2})?$ ]]; then
+  export MULTI_BRANCH=true
   export BUILD_ID="${INPUT_BUILD_ID}_${INPUT_BUILD_HASH}"
 else
-  export MULTI_COMMIT=true
+  export MULTI_BRANCH=false
   export BUILD_ID=${INPUT_BUILD_ID}
 fi
 export OUTPUT_FOLDER="${INPUT_PROJECT_ROOT}/output"
@@ -423,12 +444,13 @@ export HTML_REPORTS_FOLDER="${OUTPUT_FOLDER}/${HTML_REPORTS_LOCATION}"
 export XML_REPORTS_LOCATION='reports/xml'
 export XML_REPORTS_FOLDER="${OUTPUT_FOLDER}/${XML_REPORTS_LOCATION}"
 export LOGS_FOLDER="${OUTPUT_FOLDER}/logs"
-export BASE_STORAGE_URL="${githack_url}/$(urlEncode ${BUILD_ID})/projects/${INPUT_TARGET_PROJECT}"
+export BASE_STORAGE_URL="${githack_url}/$(urlEncode ${BUILD_ID})"
 
-if [[ "${MULTI_COMMIT}" == 'true' ]]; then
-  export STORAGE_JOB_BRANCH_FOLDER="$(resolveResultsPath current)"
-  export STORAGE_JOB_COMMIT_FOLDER="$(resolveResultsPath ${INPUT_BUILD_HASH})"
-  export GITHUB_PERSIST_COMMIT_URL="${BASE_STORAGE_URL}/${STORAGE_JOB_COMMIT_FOLDER}"
+export STORAGE_JOB_BRANCH_FOLDER="$(resolveResultsPath '')"
+if [[ "${MULTI_BRANCH}" == 'true' ]]; then
+  export STORAGE_JOB_COMMIT_FOLDER="${STORAGE_JOB_BRANCH_FOLDER}"
+  export COMMIT_BASE_STORAGE_URL="${githack_url}/$(urlEncode ${INPUT_BUILD_ID})"
+  export GITHUB_PERSIST_COMMIT_URL="${COMMIT_BASE_STORAGE_URL}/${STORAGE_JOB_COMMIT_FOLDER}"
   export REPORT_PERSIST_COMMIT_URL="${GITHUB_PERSIST_COMMIT_URL}/${HTML_REPORTS_LOCATION}"
   COMMIT_TEST_RESULT_URL=${REPORT_PERSIST_COMMIT_URL}/index.html
   COMMIT_TEST_LOG_URL=${GITHUB_PERSIST_COMMIT_URL}/logs/dotcms.log
@@ -437,8 +459,6 @@ if [[ "${MULTI_COMMIT}" == 'true' ]]; then
     && COMMIT_TEST_LOG_URL=${GITHUB_PERSIST_COMMIT_URL}/logs/${INPUT_RUN_IDENTIFIER}.log
   export COMMIT_TEST_RESULT_URL
   export COMMIT_TEST_LOG_URL
-else
-  export STORAGE_JOB_BRANCH_FOLDER="$(resolveResultsPath '')"
 fi
 
 export GITHUB_PERSIST_BRANCH_URL="${BASE_STORAGE_URL}/${STORAGE_JOB_BRANCH_FOLDER}"
@@ -464,6 +484,7 @@ XML_REPORTS_FOLDER: ${XML_REPORTS_FOLDER}
 LOGS_FOLDER: ${LOGS_FOLDER}
 BASE_STORAGE_URL: ${BASE_STORAGE_URL}
 GITHUB_PERSIST_BRANCH_URL: ${GITHUB_PERSIST_BRANCH_URL}
+COMMIT_BASE_STORAGE_URL: ${COMMIT_BASE_STORAGE_URL}
 STORAGE_JOB_BRANCH_FOLDER: ${STORAGE_JOB_BRANCH_FOLDER}
 STORAGE_JOB_COMMIT_FOLDER: ${STORAGE_JOB_COMMIT_FOLDER}
 INPUT_MODE: ${INPUT_MODE}
