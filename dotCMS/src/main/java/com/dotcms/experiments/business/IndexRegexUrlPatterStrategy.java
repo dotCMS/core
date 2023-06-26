@@ -8,7 +8,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
  * {@link RegexUrlPatterStrategy} implementation to any Index Page but no the Root index Page,
  * it means that the page's url ends with /index but not be equalt to /index.
  */
-public class IndexRegexUrlPatterStrategy extends RegexUrlPatterStrategy {
+public class IndexRegexUrlPatterStrategy implements RegexUrlPatterStrategy {
 
     public static final String INDEX = "/index";
 

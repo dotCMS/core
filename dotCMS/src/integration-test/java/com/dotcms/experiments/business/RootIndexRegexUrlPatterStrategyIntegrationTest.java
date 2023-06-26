@@ -19,7 +19,9 @@ import org.junit.Test;
 
 public class RootIndexRegexUrlPatterStrategyIntegrationTest {
 
-    private static String EXPECTED_REGEX = "^(http|https):\\/\\/(localhost|127.0.0.1|\\b(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,})(:\\d{1,5})?(\\/[iI][nN][dD][eE][xX]|\\/)?(\\?.*)?$";
+
+    private static String EXPECTED_REGEX = "^(http|https):\\/\\/(localhost|127.0.0.1|\\b(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,})(:\\d{1,5})?(\\/[iI][nN][dD][eE][xX]|\\/)?(\\/?\\?.*)?$";
+
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
@@ -81,6 +83,12 @@ public class RootIndexRegexUrlPatterStrategyIntegrationTest {
         assertTrue(("http://localhost:8080").matches(regexPattern));
         assertTrue(("http://localhost").matches(regexPattern));
         assertTrue(("http://localhost").matches(regexPattern));
+
+        assertFalse(("http://localhost:8080/blog/?variantName=dotexperiment-fcaef4575a-variant-1&redirect=true").matches(regexPattern));
+        assertFalse(("http://localhost/blog/?variantName=dotexperiment-fcaef4575a-variant-1&redirect=true").matches(regexPattern));
+
+        assertTrue(("http://localhost:8080/?variantName=dotexperiment-fcaef4575a-variant-1&redirect=true").matches(regexPattern));
+        assertTrue(("http://localhost/?variantName=dotexperiment-fcaef4575a-variant-1&redirect=true").matches(regexPattern));
     }
 
     /**
@@ -138,6 +146,13 @@ public class RootIndexRegexUrlPatterStrategyIntegrationTest {
         assertTrue(("https://localhost:8080").matches(regexPattern));
         assertTrue(("https://localhost").matches(regexPattern));
         assertTrue(("https://localhost").matches(regexPattern));
+
+        assertFalse(("https://localhost:8080/blog/?variantName=dotexperiment-fcaef4575a-variant-1&redirect=true").matches(regexPattern));
+        assertFalse(("https://localhost/blog/?variantName=dotexperiment-fcaef4575a-variant-1&redirect=true").matches(regexPattern));
+
+        assertTrue(("https://localhost:8080/?variantName=dotexperiment-fcaef4575a-variant-1&redirect=true").matches(regexPattern));
+        assertTrue(("https://localhost/?variantName=dotexperiment-fcaef4575a-variant-1&redirect=true").matches(regexPattern));
+
     }
 
 
@@ -197,6 +212,12 @@ public class RootIndexRegexUrlPatterStrategyIntegrationTest {
         assertTrue(("http://demo.dotcms.com:8080").matches(regexPattern));
         assertTrue(("http://demo.dotcms.com").matches(regexPattern));
         assertTrue(("http://demo.dotcms.com").matches(regexPattern));
+
+        assertFalse(("http://demo.dotcms.com:8080/blog/?variantName=dotexperiment-fcaef4575a-variant-1&redirect=true").matches(regexPattern));
+        assertFalse(("http://demo.dotcms.com/blog/?variantName=dotexperiment-fcaef4575a-variant-1&redirect=true").matches(regexPattern));
+
+        assertTrue(("http://demo.dotcms.com:8080/?variantName=dotexperiment-fcaef4575a-variant-1&redirect=true").matches(regexPattern));
+        assertTrue(("http://demo.dotcms.com/?variantName=dotexperiment-fcaef4575a-variant-1&redirect=true").matches(regexPattern));
     }
 
     /**

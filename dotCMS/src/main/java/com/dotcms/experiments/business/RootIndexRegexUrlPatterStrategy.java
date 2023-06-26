@@ -8,7 +8,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
  * {@link RegexUrlPatterStrategy} implementation to Root Index Page,
  * it means that the page is the root index page
  */
-public class RootIndexRegexUrlPatterStrategy extends RegexUrlPatterStrategy{
+public class RootIndexRegexUrlPatterStrategy implements RegexUrlPatterStrategy{
 
     public static final String INDEX = "/index";
 
