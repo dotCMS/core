@@ -123,7 +123,7 @@ public class IndexRegexUrlPatterStrategyIntegrationTest {
     /**
      * Method to test: {@link IndexRegexUrlPatterStrategy#isMatch(HTMLPageAsset)} and
      * {@link IndexRegexUrlPatterStrategy#getRegexPattern(HTMLPageAsset)}
-     * When: The page is the an index page and the protocol is https
+     * When: The page is an index page and the protocol is https
      * Should: the {@link IndexRegexUrlPatterStrategy#isMatch(HTMLPageAsset)} return true
      * and the {@link IndexRegexUrlPatterStrategy#getRegexPattern(HTMLPageAsset)} return the correct regex pattern
      * also the regex pattern should match the page url
@@ -219,7 +219,7 @@ public class IndexRegexUrlPatterStrategyIntegrationTest {
     /**
      * Method to test: {@link IndexRegexUrlPatterStrategy#isMatch(HTMLPageAsset)} and
      * {@link IndexRegexUrlPatterStrategy#getRegexPattern(HTMLPageAsset)}
-     * When: The page an index page but not the root Index Page and the Domain is not localhost
+     * When: The page is an index page but not the root Index Page and the Domain is not localhost
      * Should: the {@link IndexRegexUrlPatterStrategy#isMatch(HTMLPageAsset)} return true
      * and the {@link IndexRegexUrlPatterStrategy#getRegexPattern(HTMLPageAsset)} return the correct regex pattern
      * also the regex pattern should match the page url
