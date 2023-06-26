@@ -5,7 +5,7 @@
     display: block;
 }
 
-.theme__header--search-box {
+.theme-header__search-box {
     position: relative;
 
     input {
@@ -35,7 +35,7 @@
     padding: $spacing-4 $spacing-3;
     transition: background-color 0.15s ease-in;
 
-    &.active {
+    &.theme__item--active {
         box-shadow: 0 10px 10px #0003;
         background: $white;
     }

@@ -11,13 +11,13 @@
     >
     </p-dropdown>
 
-    <div class="theme__header--search-box">
+    <div class="theme-header__search-box">
         <input
             #searchInput
-            data-testId="searchInput"
             pInputText
-            placeholder="{{ 'editpage.layout.theme.search' | dm }} "
             type="text"
+            data-testId="searchInput"
+            placeholder="{{ 'editpage.layout.theme.search' | dm }} "
         />
     </div>
 </div>
@@ -37,8 +37,8 @@
     >
         <ng-template let-theme pTemplate="gridItem">
             <div
-                class="p-col-12 p-lg-3 theme__item"
-                [ngClass]="{ active: theme.inode === current?.inode }"
+                class="theme__item"
+                [ngClass]="{ 'theme__item--active': theme.inode === current?.inode }"
                 (click)="selectTheme(theme); $event.stopImmediatePropagation()"
             >
                 <svg
