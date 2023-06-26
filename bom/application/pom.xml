@@ -1296,7 +1296,7 @@
                 <!-- Microsoft Document Processing -->
                 <groupId>org.apache.poi</groupId>
                 <artifactId>poi</artifactId>
-                <version>3.17</version>
+                <version>4.1.1</version>
             </dependency>
             <dependency>
                 <!-- Batik SVG Processing -->
