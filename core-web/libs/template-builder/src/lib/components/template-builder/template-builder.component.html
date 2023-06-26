@@ -43,9 +43,9 @@
                 'template-builder__sidebar--large': vm.layoutProperties.sidebar.width == 'large'
             }"
             [sidebarProperties]="vm.layoutProperties.sidebar"
+            [containerMap]="vm.containerMap"
         />
         <div class="grid-stack">
-            <dotcms-template-builder-background-columns></dotcms-template-builder-background-columns>
             <dotcms-template-builder-row
                 class="grid-stack-item"
                 #rowElement
@@ -56,6 +56,7 @@
                 [attr.gs-w]="row.w"
                 [attr.gs-h]="row.h"
                 [row]="row"
+                [isResizing]="vm.resizingRowID === row.id"
                 data-testId="row"
             >
                 <div class="grid-stack-item-content grid-stack">

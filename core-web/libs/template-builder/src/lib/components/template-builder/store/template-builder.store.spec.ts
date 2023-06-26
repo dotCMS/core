@@ -61,6 +61,7 @@ describe('DotTemplateBuilderStore', () => {
                     containers: []
                 }
             },
+            resizingRowID: '',
             containerMap: {}
         });
 
@@ -147,6 +148,25 @@ describe('DotTemplateBuilderStore', () => {
         expect.assertions(1);
         items$.subscribe((items) => {
             expect(items[0]).toEqual(updatedRow);
+        });
+    });
+
+    it('should update the rowResizingID', () => {
+        const rowId = uuid();
+        service.setResizingRowID(rowId);
+        expect.assertions(1);
+        service.vm$.subscribe(({ resizingRowID }) => {
+            expect(resizingRowID).toEqual(rowId);
+        });
+    });
+
+    it('should clean the rowResizingID', () => {
+        const rowId = uuid();
+        service.setResizingRowID(rowId);
+        expect.assertions(1);
+        service.setResizingRowID(null);
+        service.vm$.subscribe(({ resizingRowID }) => {
+            expect(resizingRowID).toEqual(null);
         });
     });
 
@@ -245,6 +265,7 @@ describe('DotTemplateBuilderStore', () => {
                 header: false,
                 sidebar: {}
             },
+            resizingRowID: '',
             containerMap: {}
         });
 
@@ -303,6 +324,7 @@ describe('DotTemplateBuilderStore', () => {
                 header: false,
                 sidebar: {}
             },
+            resizingRowID: '',
             containerMap: {}
         });
 
