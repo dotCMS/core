@@ -8,8 +8,15 @@ import io.vavr.control.Try;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Stream;
 
+/**
+ * Test for the {@link FileStorageAPI} implementations
+ * @author jsanca
+ */
 public class FileStorageAPITest {
 
     private static final String WRITE_METADATA_ON_REINDEX = ESMappingAPIImpl.WRITE_METADATA_ON_REINDEX;
@@ -338,6 +345,59 @@ public class FileStorageAPITest {
             Assert.assertFalse("The object on group bucket-test, /path1 should be 404", cache.is404(groupName, path1));
             Assert.assertFalse("The object on group bucket-test, /path2 should be 404", cache.is404(groupName, path2));
 
+        } finally {
+
+            Stream.of(fileStorage).forEach(storage -> {
+                Try.run(() -> storage.deleteGroup(groupName)).getOrElseThrow((e) -> new RuntimeException(e));
+            });
+        }
+    }
+
+    /**
+     * Method to test: This test tries the {@link FileSystemStoragePersistenceAPIImpl#toIterable(String)}
+     * Given Scenario: Initially will create a few object in a bucket, after that will iterate over it
+     * ExpectedResult: The iteration should return the files created successfully
+     *
+     * @throws Exception
+     */
+    @Test
+    public void Test_File_Iterable() throws Exception {
+
+        // we need to clean any previous storage configuration to proceed on the test
+        StoragePersistenceProvider.INSTANCE.get().forceInitialize();
+        final StoragePersistenceAPI fileStorage = StoragePersistenceProvider.INSTANCE.get().getStorage(StorageType.FILE_SYSTEM);
+
+        // group for testing on the storage
+        final String groupName = "bucket-test-iterable";
+
+        try {
+
+            // this creates the group on the storage
+            Try.run(() -> fileStorage.createGroup(groupName)).getOrElseThrow((e) -> new RuntimeException(e));
+
+            // Now create a few objects on the fileStorage
+            final String[] paths = {"path1.txt", "path2.txt", "path3.txt"};
+            final Serializable[] objects = { new HashMap<>(Map.of("key1","Object1")),
+                    new HashMap<>(Map.of("key2","Object2")),
+                    new HashMap<>(Map.of("key3","Object3"))};
+
+            for (int i = 0; i < paths.length; i++) {
+                fileStorage.pushObject(groupName, paths[i], FileStorageAPI.DEFAULT_OBJECT_WRITER_DELEGATE, objects[i], null);
+            }
+
+            final Map<String, Map> resultMap = new HashMap<>();
+            for (final ObjectPath objectPath : fileStorage.toIterable(groupName)) {
+                final String path = objectPath.getPath();
+                final Object object = fileStorage.pullObject(groupName, path, FileStorageAPI.DEFAULT_OBJECT_READER_DELEGATE);
+                Assert.assertNotNull("The object on group bucket-test, /path1 should be NOT null", object);
+                resultMap.put(path, (Map)objectPath.getObject());
+            }
+
+            Assert.assertEquals("Should retrieve 3 elements", 3, resultMap.size());
+            for (int i = 0; i < paths.length; i++) {
+                Assert.assertTrue("Should retrieve 3 elements", resultMap.containsKey(paths[i]));
+                Assert.assertEquals("Should retrieve 3 elements", objects[i], resultMap.get(paths[i]));
+            }
         } finally {
 
             Stream.of(fileStorage).forEach(storage -> {

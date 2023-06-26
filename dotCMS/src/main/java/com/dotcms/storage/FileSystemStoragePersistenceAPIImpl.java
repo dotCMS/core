@@ -1,6 +1,7 @@
 package com.dotcms.storage;
 
 import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.enterprise.achecker.parsing.EmptyIterable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
@@ -8,9 +9,13 @@ import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.util.FileUtil;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import io.vavr.Lazy;
+import io.vavr.control.Try;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
@@ -18,11 +23,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
+import java.util.stream.Stream;
+
 import org.apache.commons.lang3.mutable.MutableInt;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a Storage on the file system The groups here are folder previously registered, you can
@@ -469,4 +478,95 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
             }
         }
     }
+
+    @Override
+    public Iterable<? extends ObjectPath> toIterable(final String group) {
+
+        final File destBucketFile = this.groups.get(group.toLowerCase());
+        if (destBucketFile.exists() && destBucketFile.isDirectory()) {
+
+            final Iterable<? extends ObjectPath> ite = Try.of(()->new FilesIterable(destBucketFile, group)).getOrNull();
+            return ite != null ? ite : new EmptyIterable<>();
+        }
+
+        return new EmptyIterable<>();
+    }
+
+    public class FilesIterable implements Iterable<ObjectPath> {
+
+        private final Stream<Path> stream;
+        private final File destBucketFile;
+
+        private final String groupName;
+
+        public FilesIterable(final File destBucketFile, final String groupName) throws IOException {
+            this.groupName      = groupName;
+            this.destBucketFile = destBucketFile;
+            this.stream = Files.walk(destBucketFile.toPath());
+        }
+
+        @NotNull
+        @Override
+        public Iterator<ObjectPath> iterator() {
+
+            return new ObjectPathIterator(stream.iterator(), destBucketFile, groupName);
+        }
+    } // FilesIterable.
+
+    class ObjectPathIterator implements Iterator<ObjectPath> {
+
+        private final File destBucketFile;
+        private final String groupName;
+        private Path currentElement = null;
+        private final Iterator<Path> iterator;
+
+        public ObjectPathIterator(final Iterator<Path> iterator, final File destBucketFile, final String groupName) {
+            this.groupName      = groupName;
+            this.destBucketFile = destBucketFile;
+            this.iterator       = iterator;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return null != nextFile();
+        }
+
+        @Override
+        public ObjectPath next() {
+
+            ObjectPath objectPath = null;
+
+            if (null == currentElement) {
+                nextFile();
+            }
+
+            if (null != currentElement) {
+
+                final Path path = this.currentElement;
+                final String absolutePath = path.toFile().getAbsolutePath();
+                final String relativePath = absolutePath.substring(this.destBucketFile.getAbsolutePath().length() + 1);
+                objectPath = Try.of(()->new ObjectPath(relativePath,
+                        FileSystemStoragePersistenceAPIImpl.this.pullObject(groupName, relativePath,
+                                FileStorageAPI.DEFAULT_OBJECT_READER_DELEGATE))).getOrNull();
+            }
+
+            return objectPath;
+        }
+
+        private Path nextFile() {
+            if (this.iterator.hasNext()) {
+
+                Path path = iterator.next();
+                // if we have to find the fist file
+                while(path.toFile().isDirectory() && this.iterator.hasNext()) {
+                    path = iterator.next();
+                }
+                currentElement = path.toFile().isFile()?path: null;
+                return currentElement;
+            }
+
+            currentElement = null;
+            return currentElement;
+        }
+    } // ObjectPathIterator.
 }

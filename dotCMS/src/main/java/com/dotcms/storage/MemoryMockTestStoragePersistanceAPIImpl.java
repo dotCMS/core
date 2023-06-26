@@ -1,6 +1,7 @@
 package com.dotcms.storage;
 
 import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.enterprise.achecker.parsing.EmptyIterable;
 import com.dotmarketing.exception.DotDataException;
 import com.google.common.annotations.VisibleForTesting;
 
@@ -138,5 +139,11 @@ public class MemoryMockTestStoragePersistanceAPIImpl implements StoragePersisten
         return DotConcurrentFactory.getInstance().getSubmitter().submit(() -> {
             return this.pullObject(groupName, path, readerDelegate);
         });
+    }
+
+    @Override
+    public Iterable<? extends ObjectPath> toIterable(final String group) {
+
+        return new EmptyIterable<>();
     }
 }

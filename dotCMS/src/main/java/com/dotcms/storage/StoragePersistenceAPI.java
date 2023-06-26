@@ -1,5 +1,6 @@
 package com.dotcms.storage;
 
+import com.dotcms.enterprise.achecker.parsing.EmptyIterable;
 import com.dotmarketing.exception.DotDataException;
 import java.io.File;
 import java.io.Serializable;
@@ -168,7 +169,12 @@ public interface StoragePersistenceAPI {
      */
     Future<Object> pullObjectAsync (final String groupName, final String path, final ObjectReaderDelegate readerDelegate);
 
+    /**
+     * Returns an iterable object with all the paths and objects on the group
+     * @param group {@link String} group name
+     * @return Iterable
+     */
     default Iterable<? extends ObjectPath> toIterable(String group) {
-        return null; // todo: this is null because it's not implemented yet
+        return new EmptyIterable<>();
     }
 }

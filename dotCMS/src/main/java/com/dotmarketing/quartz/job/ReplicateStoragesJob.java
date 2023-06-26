@@ -12,6 +12,7 @@ import com.dotmarketing.quartz.DotStatefulJob;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import org.quartz.JobExecutionContext;
@@ -78,6 +79,11 @@ public class ReplicateStoragesJob extends DotStatefulJob {
         Logger.debug(this, ()-> "Starting the replication from: " + fromStorageType.name()
                         + " to: " + toStoragesType.toString() + " by user: " + user.getUserId());
 
+        replicate(fromStorageType, toStoragesType);
+    } // run
+
+    @VisibleForTesting
+    public void replicate(final StorageType fromStorageType, final List<StorageType> toStoragesType) {
         try {
 
             final StoragePersistenceAPI storagePersistenceAPI = StoragePersistenceProvider.INSTANCE.get().getStorage(fromStorageType);
@@ -109,7 +115,7 @@ public class ReplicateStoragesJob extends DotStatefulJob {
         } catch (Throwable e) {
             Logger.error(this, "Error replicating storages", e);
         }
-    } // run
+    }
 
     private static void ensureGroup(final List<StoragePersistenceAPI> toStoragePersistenceAPIs,
                                     final String group) throws DotDataException {

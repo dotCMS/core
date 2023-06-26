@@ -94,12 +94,12 @@ public class StorageResource {
         Logger.debug(this, ()-> "Doing storage replication from: " +
                 fromStorageType + ", to: " + pathSegmentsStorageTypes);
 
-        if (!UtilMethods.isSet(pathSegmentsStorageTypes)) {
+        if (!UtilMethods.isSet(fromStorageType)) {
 
-            throw new IllegalArgumentException("The storage types are required");
+            throw new IllegalArgumentException("The from storage is required, for example FILE_SYSTEM on this: v1/storages/chain/FILE_SYSTEM/to/DB/S3");
         }
 
-        if (pathSegmentsStorageTypes.isEmpty()) {
+        if (!UtilMethods.isSet(pathSegmentsStorageTypes) || pathSegmentsStorageTypes.isEmpty()) {
 
             throw new IllegalArgumentException("Have to have at least one storage type, for example: v1/storages/chain/FILE_SYSTEM/to/DB/S3");
         }

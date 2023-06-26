@@ -1,6 +1,7 @@
 package com.dotcms.storage;
 
 import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.enterprise.achecker.parsing.EmptyIterable;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -381,5 +382,11 @@ public class ChainableStoragePersistenceAPI implements StoragePersistenceAPI {
         // since we do not want to wait for all the futures to be completed, we do not which layer does not have the file, so we fire a new thread to call the sync method
         DotConcurrentFactory.getInstance().getSubmitter(SUBMITTER_NAME).submit(()-> this.pullObject(groupName, path, readerDelegate));
         return DotConcurrentFactory.getInstance().toCompletableAnyFuture(futures);
+    }
+
+    @Override
+    public Iterable<? extends ObjectPath> toIterable(final String group) {
+
+        return new EmptyIterable<>();
     }
 }

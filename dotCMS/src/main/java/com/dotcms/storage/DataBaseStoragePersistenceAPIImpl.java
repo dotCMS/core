@@ -3,6 +3,7 @@ package com.dotcms.storage;
 import static com.dotcms.storage.model.BasicMetadataFields.SHA256_META_KEY;
 
 import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.enterprise.achecker.parsing.EmptyIterable;
 import com.dotcms.storage.repository.BinaryFileWrapper;
 import com.dotcms.storage.repository.FileRepositoryManager;
 import com.dotcms.storage.repository.HashedLocalFileRepositoryManager;
@@ -815,6 +816,12 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
         return DotConcurrentFactory.getInstance().getSubmitter(STORAGE_POOL).submit(
                 () -> this.pullObject(groupName, path, readerDelegate)
         );
+    }
+
+    @Override
+    public Iterable<? extends ObjectPath> toIterable(final String group) {
+
+        return new EmptyIterable<>();
     }
 
     /**
