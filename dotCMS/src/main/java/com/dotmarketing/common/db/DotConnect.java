@@ -95,6 +95,17 @@ public class DotConnect {
         }
     }
 
+    public int loadInt(final String columnName, final Connection conn) throws DotDataException {
+
+        final String lowerColumnName = columnName.toLowerCase();
+        try {
+            return Integer.parseInt(String.valueOf(loadObjectResults(conn).get(0).get(lowerColumnName)));
+        } catch (Exception e) {
+            Logger.debug(this, "loadInt: " + e);
+            throw new DotDataException(e.toString(), e);
+        }
+    }
+
     public int loadInt(String x) throws DotDataException {
         x = x.toLowerCase();
         try {

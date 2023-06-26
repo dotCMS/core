@@ -279,11 +279,22 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
         return wrapInTransaction(() ->
                 Try.of(() -> {
                     try (Connection connection = getConnection()) {
-                        new DotConnect()
-                                .setSQL(" INSERT INTO storage_group (group_name) VALUES (?) ")
-                                .addParam(groupNameLC).loadResult(
-                                connection);
-                        return true;
+
+                        boolean existsGroup = Try.of(()->new DotConnect()
+                                .setSQL(" SELECT count(*) as count from storage_group where group_name = ? ")
+                                .addParam(groupNameLC)
+                                .loadInt("count", connection)).getOrElse(-1) > 0;
+
+                        if (!existsGroup) {
+
+                            new DotConnect()
+                                    .setSQL(" INSERT INTO storage_group (group_name) VALUES (?) ")
+                                    .addParam(groupNameLC).loadResult(
+                                            connection);
+                            existsGroup = true;
+                        }
+
+                        return existsGroup;
                     }
                 }).getOrElseGet(throwable -> false)
         );
