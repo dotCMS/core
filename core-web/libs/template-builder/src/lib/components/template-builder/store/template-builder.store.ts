@@ -33,13 +33,14 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
     public items$ = this.select((state) => state.items);
     public layoutProperties$ = this.select((state) => state.layoutProperties);
 
-    public vm$ = this.select(this.items$, this.layoutProperties$, (items, layoutProperties) => ({
-        items,
-        layoutProperties
-    }));
+    public vm$ = this.select((state) => state);
 
     constructor() {
-        super({ items: [], layoutProperties: { header: true, footer: true, sidebar: {} } });
+        super({
+            items: [],
+            layoutProperties: { header: true, footer: true, sidebar: {} },
+            resizingRowID: ''
+        });
     }
 
     // Init store
@@ -121,6 +122,26 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
 
         return { ...state, items: itemsCopy };
     });
+
+    /**
+     * @description This Method updates the resizing rowID
+     *
+     * @memberof DotTemplateBuilderStore
+     */
+    readonly setResizingRowID = this.updater((state, resizingRowID: string) => ({
+        ...state,
+        resizingRowID
+    }));
+
+    /**
+     * @description This Method cleans the resizing rowID
+     *
+     * @memberof DotTemplateBuilderStore
+     */
+    readonly cleanResizingRowID = this.updater((state) => ({
+        ...state,
+        resizingRowID: ''
+    }));
 
     // Columns Updaters
 

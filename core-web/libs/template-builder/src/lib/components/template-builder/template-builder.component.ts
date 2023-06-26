@@ -11,6 +11,7 @@ import { Observable, combineLatest } from 'rxjs';
 import {
     AfterViewInit,
     ChangeDetectionStrategy,
+    ChangeDetectorRef,
     Component,
     ElementRef,
     EventEmitter,
@@ -92,12 +93,12 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     public readonly rowDisplayHeight = `${GRID_STACK_ROW_HEIGHT - 1}${GRID_STACK_UNIT}`; // setting a lower height to have space between rows
 
     grid!: GridStack;
-    resizingRow = '';
 
     constructor(
         private store: DotTemplateBuilderStore,
         private dialogService: DialogService,
-        private dotMessage: DotMessageService
+        private dotMessage: DotMessageService,
+        private cd: ChangeDetectorRef
     ) {
         this.vm$ = this.store.vm$;
 
@@ -130,7 +131,8 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     ngOnInit(): void {
         this.store.init({
             items: parseFromDotObjectToGridStack(this.templateLayout.body),
-            layoutProperties: this.layoutProperties
+            layoutProperties: this.layoutProperties,
+            resizingRowID: ''
         });
     }
 
@@ -156,10 +158,10 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
             });
 
             subgrid.on('resizestart', (_: Event, el: GridItemHTMLElement) => {
-                this.resizingRow = el.gridstackNode.grid.parentGridItem.id;
+                this.store.setResizingRowID(el.gridstackNode.grid.parentGridItem.id);
             });
             subgrid.on('resizestop', () => {
-                this.resizingRow = '';
+                this.store.cleanResizingRowID();
             });
         });
 
@@ -189,9 +191,8 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
             this.rows.forEach((ref) => {
                 const isNew = !ref.nativeElement.gridstackNode;
 
-                const row =
-                    ref.nativeElement.gridstackNode ||
-                    this.grid.makeWidget(ref.nativeElement).gridstackNode;
+                const row = ref.nativeElement.gridstackNode || this.cd.detectChanges();
+                this.grid.makeWidget(ref.nativeElement).gridstackNode;
 
                 if (row && row.el) {
                     if (isNew) {
@@ -209,10 +210,12 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
                                 this.store.updateColumnGridStackData(nodes as DotGridStackWidget[]);
                             })
                             .on('resizestart', (_: Event, el: GridItemHTMLElement) => {
-                                this.resizingRow = el.gridstackNode.grid.parentGridItem.id;
+                                this.store.setResizingRowID(
+                                    el.gridstackNode.grid.parentGridItem.id
+                                );
                             })
                             .on('resizestop', () => {
-                                this.resizingRow = '';
+                                this.store.cleanResizingRowID();
                             });
                     }
 

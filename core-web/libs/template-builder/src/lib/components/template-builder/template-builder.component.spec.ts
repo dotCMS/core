@@ -197,7 +197,8 @@ describe('TemplateBuilderComponent', () => {
                     header: true,
                     footer: true,
                     sidebar: {}
-                }
+                },
+                resizingRowID: ''
             });
             store.items$.pipe(take(1)).subscribe(() => {
                 // const body = parseFromGridStackToDotObject(items);

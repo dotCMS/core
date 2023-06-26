@@ -39,7 +39,8 @@ describe('DotTemplateBuilderStore', () => {
                     width: 'small',
                     containers: []
                 }
-            }
+            },
+            resizingRowID: ''
         });
 
         // Get the initial state
@@ -121,6 +122,25 @@ describe('DotTemplateBuilderStore', () => {
         expect.assertions(1);
         service.items$.subscribe((items) => {
             expect(items[0]).toEqual(updatedRow);
+        });
+    });
+
+    it('should update the rowResizingID', () => {
+        const rowId = uuid();
+        service.setResizingRowID(rowId);
+        expect.assertions(1);
+        service.vm$.subscribe(({ resizingRowID }) => {
+            expect(resizingRowID).toEqual(rowId);
+        });
+    });
+
+    it('should clean the rowResizingID', () => {
+        const rowId = uuid();
+        service.setResizingRowID(rowId);
+        expect.assertions(1);
+        service.cleanResizingRowID();
+        service.vm$.subscribe(({ resizingRowID }) => {
+            expect(resizingRowID).toEqual('');
         });
     });
 
@@ -218,7 +238,8 @@ describe('DotTemplateBuilderStore', () => {
                 footer: false,
                 header: false,
                 sidebar: {}
-            }
+            },
+            resizingRowID: ''
         });
 
         const affectedColumns: DotGridStackNode[] = [
@@ -275,7 +296,8 @@ describe('DotTemplateBuilderStore', () => {
                 footer: false,
                 header: false,
                 sidebar: {}
-            }
+            },
+            resizingRowID: ''
         });
 
         const affectedColumn: DotGridStackNode = {
