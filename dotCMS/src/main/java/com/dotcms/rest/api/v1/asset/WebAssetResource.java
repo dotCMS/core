@@ -17,7 +17,6 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -54,7 +53,7 @@ public class WebAssetResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response getAssetsInfo(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            AssetsRequestForm form
+            AssetInfoRequestForm form
     ) throws DotSecurityException, DotDataException {
 
         final InitDataObject initDataObject = new WebResource.InitBuilder()
@@ -100,7 +99,7 @@ public class WebAssetResource {
         final User user = initDataObject.getUser();
         Logger.info(this,
                 String.format("User [%s] is requesting asset content for download for path [%s]", user.getUserId(), form.assetPath()));
-        final File file = helper.getAssetContent(form, user);
+        final File file = helper.getAsset(form, user).getFileAsset();
         return Response.ok(file, MediaType.APPLICATION_OCTET_STREAM)
                 .header("Content-Disposition", "attachment; filename=\"" + file.getName() + "\"")
                 .build();
@@ -170,10 +169,49 @@ public class WebAssetResource {
                 .rejectWhenNoUser(true).init();
 
         final User user = initDataObject.getUser();
+        helper.deleteAsset(form, user);
+        Logger.info(this,
+                String.format("User [%s] deleted asset for path [%s] with status live [%b] and lang [%s] ",
+                        user.getUserId(), form.assetPath(), form.live(), form.language()
+        ));
+        return Response.ok().build();
+    }
 
-        final WebAssetView webAssetView = helper.delete(form, user);
-        Logger.info(this, String.format("User [%s] is uploading asset for path [%s]", user.getUserId(), form.assetPath()));
-        return Response.ok(new WebAssetEntityView(webAssetView)).build();
+
+    /**
+     * Delete a folder by path
+     * @param request
+     * @param response
+     * @param form
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @throws IOException
+     */
+    @Path("/folder")
+    @DELETE
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response deleteFolder(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            AssetInfoRequestForm form
+    ) throws DotSecurityException, DotDataException, IOException {
+
+        final InitDataObject initDataObject = new WebResource.InitBuilder()
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true).init();
+
+        final User user = initDataObject.getUser();
+        helper.deleteFolder(form.assetPath(), user);
+        Logger.info(this,
+                String.format("User [%s] deleted foldr for path [%s]. ",
+                        user.getUserId(), form.assetPath()
+                ));
+        return Response.ok().build();
     }
 
 

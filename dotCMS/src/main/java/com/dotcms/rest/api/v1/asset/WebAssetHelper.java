@@ -1,7 +1,5 @@
 package com.dotcms.rest.api.v1.asset;
 
-import static org.apache.commons.lang3.BooleanUtils.toBooleanDefaultIfNull;
-
 import com.dotcms.browser.BrowserAPI;
 import com.dotcms.browser.BrowserQuery;
 import com.dotcms.browser.BrowserQuery.Builder;
@@ -9,7 +7,6 @@ import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.rest.api.v1.asset.view.AssetVersionsView;
 import com.dotcms.rest.api.v1.asset.view.AssetView;
-import com.dotcms.rest.api.v1.asset.view.DeleteAssetView;
 import com.dotcms.rest.api.v1.asset.view.FolderView;
 import com.dotcms.rest.api.v1.asset.view.WebAssetView;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
@@ -39,7 +36,9 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.BooleanUtils;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
@@ -50,6 +49,7 @@ import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
  */
 public class WebAssetHelper {
 
+    public static final String SORT_BY = "modDate";
     LanguageAPI languageAPI;
 
     FileAssetAPI fileAssetAPI;
@@ -130,22 +130,27 @@ public class WebAssetHelper {
                 .showFiles(true)
                 .showFolders(true)
                 .showArchived(false)
-                .showWorking(true)
                 .showLinks(false)
                 .showDotAssets(false)
                 .showImages(true)
-                .showContent(true);
+                .showContent(true)
+                .sortBy(SORT_BY)
+                .sortByDesc(true)
+        ;
+
+        //We're not really looking at system but / is mapped as system folder therefore
+        //whenever system folder pops up we need to find the folders straight under host
+        if (folder.isSystemFolder()) {
+            builder.withHostOrFolderId(host.getIdentifier());
+        } else {
+            builder.withHostOrFolderId(folder.getInode());
+        }
 
         if (null != assetName) {
             Logger.debug(this, String.format("Asset name: [%s]" , assetName));
             //We're requesting an asset specifically therefore we need to find it and  build the response
-            if(folder.isSystemFolder()){
-                builder.withHostOrFolderId(host.getIdentifier());
-            } else {
-                builder.withHostOrFolderId(folder.getInode());
-            }
             builder.withFileName(assetName);
-            final List<Treeable> folderContent = browserAPI.getFolderContentList(builder.build());
+            final Set<Treeable> folderContent = collectLiveAndWorkingContents(builder);
             assets = folderContent.stream().filter(Contentlet.class::isInstance).collect(Collectors.toList());
             if (assets.isEmpty()) {
                 throw new NotFoundInDbException(String.format(" Asset [%s] not found", assetName));
@@ -155,23 +160,9 @@ public class WebAssetHelper {
                     .build();
         } else {
             Logger.debug(this, String.format("Retrieving a folder by name: [%s] " , folder.getName()));
-            final List<Treeable> folderContent;
+            final Set<Treeable> folderContent = collectLiveAndWorkingContents(builder);
             //We're requesting a folder and all of its contents
-            final List<Folder> subFolders;
-            //We're not really looking at system but / is mapped as system folder therefore
-            //whenever system folder pops up we need to find the folders straight under host
-            if (folder.isSystemFolder()) {
-
-                builder.withHostOrFolderId(host.getIdentifier());
-                folderContent = browserAPI.getFolderContentList(builder.build());
-
-            } else {
-
-                builder.withHostOrFolderId(folder.getInode());
-                folderContent = browserAPI.getFolderContentList(builder.build());
-            }
-
-            subFolders = folderContent.stream().filter(Folder.class::isInstance)
+            final List<Folder> subFolders = folderContent.stream().filter(Folder.class::isInstance)
                     .map(f -> (Folder) f).collect(Collectors.toList());
             assets = folderContent.stream().filter(Contentlet.class::isInstance)
                     .map(f -> (Contentlet) f).collect(Collectors.toList());
@@ -195,11 +186,30 @@ public class WebAssetHelper {
     }
 
     /**
+     * We need to combine the live and working contents of a folder in one single list
+     * That since the BrowserAPI is designed to return one or the other at a time
+     * This needs to be wrapped in a set cuz when there's only one version of the asset, both live and working point to the same inode
+     * Meaning the same asset would get returned twice
+     * @param builder
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    final Set<Treeable> collectLiveAndWorkingContents(final Builder builder)
+            throws DotDataException, DotSecurityException {
+        return Stream.concat(
+                        browserAPI.getFolderContentList(builder.showWorking(true).build()).stream(),
+                        browserAPI.getFolderContentList(builder.showWorking(false).build()).stream()
+                  ).collect(Collectors.toSet());
+    }
+
+    /**
      * Converts a list of folders to a list of {@link FolderView}
      * @param assets folders to convert
      * @return list of {@link FolderView}
      */
     Iterable<AssetView> toAssets(final List<Treeable> assets) {
+
         return assets.stream().filter(Contentlet.class::isInstance).map(Contentlet.class::cast)
                 .filter(Contentlet::isFileAsset)
                 .map(contentlet -> fileAssetAPI.fromContentlet(contentlet)).map(this::toAsset)
@@ -215,7 +225,14 @@ public class WebAssetHelper {
         final Language language = languageAPI.getLanguage(fileAsset.getLanguageId());
         final boolean live = Try.of(fileAsset::isLive)
                 .getOrElse(() -> {
-                    Logger.warn(this, String.format("Unable to determine status for asset: [%s]",
+                    Logger.warn(this, String.format("Unable to determine if asset: [%s] is live",
+                            fileAsset.getIdentifier()));
+                    return false;
+                });
+
+        final boolean working = Try.of(fileAsset::isWorking)
+                .getOrElse(() -> {
+                    Logger.warn(this, String.format("Unable to determine if asset: [%s] is in working state ",
                             fileAsset.getIdentifier()));
                     return false;
                 });
@@ -230,7 +247,7 @@ public class WebAssetHelper {
                 "isImage", fileAsset.isImage(),
                 "width", fileAsset.getWidth(),
                 "height", fileAsset.getHeight(),
-                "modDate", fileAsset.getModDate().toInstant()
+                SORT_BY, fileAsset.getModDate().toInstant()
         );
 
         return AssetView.builder()
@@ -240,6 +257,7 @@ public class WebAssetHelper {
                 .identifier(fileAsset.getIdentifier())
                 .inode(fileAsset.getInode())
                 .live(live)
+                .working(working)
                 .lang(language.toString())
                 .metadata(metadata)
                 .build();
@@ -274,7 +292,15 @@ public class WebAssetHelper {
                 .build();
     }
 
-    public File getAssetContent(final AssetsRequestForm form, final User user)
+    /**
+     * Retrieve the binary from the given request params
+     * @param form
+     * @param user
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    public FileAsset getAsset(final AssetsRequestForm form, final User user)
             throws DotDataException, DotSecurityException {
 
         final String path = form.assetPath();
@@ -288,7 +314,12 @@ public class WebAssetHelper {
             throw new IllegalArgumentException("Unspecified Asset name.");
         }
 
-        final List<Contentlet> assets;
+        final boolean live = form.live();
+        final Optional<Language> language = parseLang(form.language(),false);
+        if (language.isEmpty()) {
+            throw new IllegalArgumentException(
+                    String.format("Language [%s] not found.", form.language()));
+        }
 
         final Builder builder = BrowserQuery.builder();
         builder.showDotAssets(false)
@@ -296,25 +327,15 @@ public class WebAssetHelper {
                 .showFiles(true)
                 .showFolders(true)
                 .showArchived(false)
-                .showWorking(true)
+                .showWorking(!live)
                 .showLinks(false)
                 .showDotAssets(false)
                 .showImages(true)
-                .showContent(true);
-
-        if (form.language().isPresent()) {
-            final Optional<Language> language = parseLang(form.language().get(),false);
-            if (language.isEmpty()) {
-                throw new IllegalArgumentException(
-                        String.format("Language [%s] not found.", form.language().get()));
-            }
-            builder.withLanguageId(language.get().getId());
-        }
-
-        if (form.live().isPresent()) {
-            final boolean live = BooleanUtils.toBoolean(form.live().get());
-            builder.showWorking(!live);
-        }
+                .showContent(true)
+                .withLanguageId(language.get().getId())
+                .sortBy(SORT_BY)
+                .sortByDesc(true)
+        ;
 
         //We're requesting an asset specifically therefore we need to find it and  build the response
         if (folder.isSystemFolder()) {
@@ -324,24 +345,22 @@ public class WebAssetHelper {
         }
         builder.withFileName(assetName);
         final List<Treeable> folderContent = browserAPI.getFolderContentList(builder.build());
-        assets = folderContent.stream().filter(Contentlet.class::isInstance).map(
+        final List<Contentlet> assets = folderContent.stream().filter(Contentlet.class::isInstance).map(
                 Contentlet.class::cast).collect(Collectors.toList());
         if (assets.isEmpty()) {
-
             throw new NotFoundInDbException(
                     String.format(" Asset [%s] not found for lang [%s] and working/live state [%b] ",
-                            assetName, form.language().orElse("unspecified"),
-                            BooleanUtils.toString(form.live().get(), "live", "working", "unspecified"))
+                            assetName, form.language(),
+                            BooleanUtils.toString(form.live(), "live", "working", "unspecified"))
             );
         }
         final Contentlet asset = assets.get(0);
-        final FileAsset fileAsset = fileAssetAPI.fromContentlet(asset);
-        return fileAsset.getFileAsset();
+        return fileAssetAPI.fromContentlet(asset);
     }
 
 
     /**
-     * Saves or updates an asset given the asset path that will be used to locate it
+     * Saves or updates an asset given the asset path lang and version that will be used to locate it
      * @param request
      * @param form
      * @param user
@@ -358,7 +377,7 @@ public class WebAssetHelper {
         final InputStream fileInputStream = form.getFileInputStream();
         final FileUploadDetail detail = form.getDetail();
         final String assetPath = detail.getAssetPath();
-        final boolean live = toBooleanDefaultIfNull(detail.getLive(),true);
+        final boolean live = detail.getLive();
         final Optional<Language> lang = parseLang(detail.getLanguage(), true);
 
         if(lang.isEmpty()){
@@ -386,11 +405,15 @@ public class WebAssetHelper {
                     .showFiles(true)
                     .showFolders(true)
                     .showArchived(true)
-                    .showWorking(true)
+                    .showWorking(!live)
                     .showLinks(false)
                     .showDotAssets(false)
                     .showImages(true)
-                    .showContent(true);
+                    .showContent(true)
+                    .withLanguageId(lang.get().getId())
+                    .sortBy(SORT_BY)
+                    .sortByDesc(true)
+            ;
 
             if (folder.isSystemFolder()) {
                 builder.withHostOrFolderId(host.getIdentifier());
@@ -445,8 +468,7 @@ public class WebAssetHelper {
 
     /**
      * Deletes an asset given the asset path that will be used to locate it
-     * @param form
-     * @param user
+     * @param tempFile
      * @return
      * @throws DotDataException
      * @throws DotSecurityException
@@ -527,75 +549,26 @@ public class WebAssetHelper {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    public DeleteAssetView delete(final AssetsRequestForm form, final User user)
+    public void deleteAsset(final AssetsRequestForm form, final User user)
             throws DotDataException, DotSecurityException {
-        final ResolvedAssetAndPath assetAndPath = AssetPathResolver.newInstance()
-                .resolve(form.assetPath(), user);
 
-        final Host host = assetAndPath.resolvedHost();
-        final Folder folder = assetAndPath.resolvedFolder();
-        final String assetName = assetAndPath.asset();
+        final FileAsset fileAsset = getAsset(form, user);
+        if (!fileAsset.isArchived()) {
+            contentletAPI.archive(fileAsset, user, false);
+        }
+        contentletAPI.delete(fileAsset, user, false);
 
-        final List<Treeable> assets;
+    }
 
-        final Builder builder = BrowserQuery.builder();
-        builder.showDotAssets(false)
-                .withUser(user)
-                .showFiles(true)
-                .showFolders(true)
-                .showArchived(false)
-                .showWorking(true)
-                .showLinks(false)
-                .showDotAssets(false)
-                .showImages(true)
-                .showContent(true);
-
-        if (null != assetName) {
-
-            if (form.language().isEmpty() || form.live().isEmpty()) {
-                throw new IllegalArgumentException(
-                        "[Language] and [live] params are required when attempting to delete a file asset. Please notice that folders must end with a slash (/).");
-            }
-
-            final Optional<Language> language = parseLang(form.language().get(), false);
-            if (language.isEmpty()) {
-                throw new IllegalArgumentException(
-                        String.format("Language [%s] not found.", form.language().get()));
-            }
-            builder.withLanguageId(language.get().getId());
-
-            final boolean live = BooleanUtils.toBoolean(form.live().get());
-            builder.showWorking(!live);
-
-            if (folder.isSystemFolder()) {
-                builder.withHostOrFolderId(host.getIdentifier());
-            } else {
-                builder.withHostOrFolderId(folder.getInode());
-            }
-            builder.withFileName(assetName);
-            final List<Treeable> folderContent = browserAPI.getFolderContentList(builder.build());
-            assets = folderContent.stream().filter(Contentlet.class::isInstance)
-                    .collect(Collectors.toList());
-            if (assets.isEmpty()) {
-                throw new NotFoundInDbException(String.format(" Asset [%s] with language [%s] and status live [%b] was not found", assetName, form.language().get(), live));
-            }
-
-            final Contentlet asset = (Contentlet) assets.get(0);
-            final FileAsset fileAsset = fileAssetAPI.fromContentlet(asset);
-
-            if (!fileAsset.isArchived()) {
-                contentletAPI.archive(fileAsset, user, false);
-            }
-            contentletAPI.delete(fileAsset, user, false);
-            return DeleteAssetView.builder().assetPath(form.assetPath()).live(live)
-                    .language(form.language().get()).build();
+    public void deleteFolder(final String path, final User user)
+            throws DotDataException, DotSecurityException {
+        final WebAssetView assetInfo = getAssetInfo(path, user);
+        if(assetInfo instanceof FolderView){
+            final FolderView folderView = (FolderView) assetInfo;
+            final Folder folder = folderAPI.find(folderView.inode(), user, false);
+            folderAPI.delete(folder, user, false);
         } else {
-            if (folder.isSystemFolder()) {
-                throw new IllegalArgumentException("Unable to delete system folder.");
-            } else {
-                folderAPI.delete(folder, user, false);
-            }
-            return DeleteAssetView.builder().assetPath(form.assetPath()).build();
+            throw new IllegalArgumentException(String.format("The path [%s] can not be resolved as a folder", path));
         }
     }
 

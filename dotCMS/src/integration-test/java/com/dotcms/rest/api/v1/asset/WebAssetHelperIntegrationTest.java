@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.asset;
 
 import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.LanguageDataGen;
@@ -10,8 +11,8 @@ import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
+import com.dotcms.rest.api.v1.asset.view.AssetVersionsView;
 import com.dotcms.rest.api.v1.asset.view.AssetView;
-import com.dotcms.rest.api.v1.asset.view.DeleteAssetView;
 import com.dotcms.rest.api.v1.asset.view.FolderView;
 import com.dotcms.rest.api.v1.asset.view.WebAssetView;
 import com.dotcms.util.IntegrationTestInitService;
@@ -21,10 +22,12 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import java.io.File;
@@ -267,7 +270,7 @@ public class WebAssetHelperIntegrationTest {
     }
 
     /**
-     * Method to test : {@link WebAssetHelper#getAssetContent(AssetsRequestForm, User)}
+     * Method to test : {@link WebAssetHelper#getAsset(AssetsRequestForm, User)}
      * Given Scenario: We submit a valid path to retrieve a file
      * Expected Result: We get the asset content back as proof of success
      * @throws DotDataException
@@ -280,14 +283,14 @@ public class WebAssetHelperIntegrationTest {
                 .assetPath(assetPath()).language(defaultLanguage.toString()).live(false)
                 .build();
         WebAssetHelper webAssetHelper = WebAssetHelper.newInstance();
-        final File assetContent = webAssetHelper.getAssetContent(form, APILocator.systemUser());
-        Assert.assertNotNull(assetContent);
-        Assert.assertTrue(assetContent.exists());
-        Assert.assertEquals(testFile.length(), assetContent.length());
+        final FileAsset asset = webAssetHelper.getAsset(form, APILocator.systemUser());
+        Assert.assertNotNull(asset);
+        Assert.assertTrue(asset.getFileAsset().exists());
+        Assert.assertEquals(testFile.length(), asset.getFileAsset().length());
     }
 
     /**
-     * Method to test : {@link WebAssetHelper#getAssetContent(AssetsRequestForm, User)}
+     * Method to test : {@link WebAssetHelper#getAsset(AssetsRequestForm, User)}
      * Given Scenario: We submit a valid path to retrieve a file
      * Expected Result: We get the asset content back as proof of success
      * @throws DotDataException
@@ -303,14 +306,14 @@ public class WebAssetHelperIntegrationTest {
                 .assetPath(assetPath()).language(anyLang.toString()).live(false)
                 .build();
         WebAssetHelper webAssetHelper = WebAssetHelper.newInstance();
-        final File assetContent = webAssetHelper.getAssetContent(form, APILocator.systemUser());
+        final FileAsset assetContent = webAssetHelper.getAsset(form, APILocator.systemUser());
         Assert.assertNotNull(assetContent);
-        Assert.assertTrue(assetContent.exists());
-        Assert.assertEquals(testFile.length(), assetContent.length());
+        Assert.assertTrue(assetContent.getFileAsset().exists());
+        Assert.assertEquals(testFile.length(), assetContent.getFileAsset().length());
     }
 
     /**
-     * Method to test : {@link WebAssetHelper#getAssetContent(AssetsRequestForm, User)}
+     * Method to test : {@link WebAssetHelper#getAsset(AssetsRequestForm, User)}
      * Given Scenario: We submit a valid path for file but using an invalid language
      * Expected Result: We should get BadRequestException
      * @throws DotDataException
@@ -323,7 +326,7 @@ public class WebAssetHelperIntegrationTest {
                 .assetPath(assetPath()).language("nonExisting_lang").live(false)
                 .build();
         WebAssetHelper webAssetHelper = WebAssetHelper.newInstance();
-        webAssetHelper.getAssetContent(form, APILocator.systemUser());
+        webAssetHelper.getAsset(form, APILocator.systemUser());
     }
 
     /**
@@ -372,7 +375,7 @@ public class WebAssetHelperIntegrationTest {
     }
 
     /**
-     * Method to test : {@link WebAssetHelper#delete(AssetsRequestForm, User)}
+     * Method to test : {@link WebAssetHelper#deleteAsset(AssetsRequestForm, User)}
      * Given Scenario: We submit a valid path to delete a file
      * Expected Result: We get the asset content back as proof of success
      * @throws DotDataException
@@ -393,20 +396,71 @@ public class WebAssetHelperIntegrationTest {
         final AssetsRequestForm deleteAssetForm = AssetsRequestForm.builder()
                 .assetPath(assetPath).language("en_US").live(false)
                 .build();
-        final DeleteAssetView deleteAssetView = webAssetHelper.delete(deleteAssetForm, APILocator.systemUser());
-        Assert.assertEquals(deleteAssetView.assetPath(),assetPath);
+        webAssetHelper.deleteAsset(deleteAssetForm, APILocator.systemUser());
 
-       String folderPath = assetPath.replaceFirst(testFile.getName(), "");
-
-        final AssetsRequestForm deleteFolderForm = AssetsRequestForm.builder()
-                .assetPath(folderPath).live(false)
-                .build();
-
-        final DeleteAssetView deleteFolderView = webAssetHelper.delete(deleteFolderForm, APILocator.systemUser());
-        Assert.assertEquals(deleteFolderView.assetPath(),folderPath);
+       final String folderPath = assetPath.replaceFirst(testFile.getName(), "");
+       webAssetHelper.deleteFolder(folderPath, APILocator.systemUser());
 
 
     }
 
+
+    /**
+     * Method to test : {@link WebAssetHelper#getAssetInfo(String, User)}
+     * Given Scenario: First we create a file asset then we publish it making it be live and working at the same time.
+     * Expected Result: We should one single version of the asset with the same inode for both working and live.
+     * Once more versions get added we should see the inode change for the working version but not for the live version.
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws IOException
+     */
+
+    @Test
+    public void Test_Retrieve_All_Versions()
+            throws DotDataException, DotSecurityException, IOException {
+
+        final File testFile2 = FileUtil.createTemporaryFile("lol", ".txt", RandomStringUtils.random(1000));
+        final String path = String.format(ASSET_PATH_TEMPLATE, host.getHostname(), foo.getName(),
+                bar.getName(), testFile2.getName());
+
+        final Contentlet contentlet = new FileAssetDataGen(bar, testFile2).languageId(
+                defaultLanguage.getId()).nextPersisted();
+
+        ContentletDataGen.publish(contentlet);
+
+        final WebAssetHelper webAssetHelper = WebAssetHelper.newInstance();
+        final AssetVersionsView assetInfo = (AssetVersionsView) webAssetHelper.getAssetInfo(path, APILocator.systemUser());
+
+        //At this point both working in and live are the same  inode therefore we should get back only 1 version
+        Assert.assertEquals(1, assetInfo.versions().size());
+        final AssetView singleVersionedAsset = assetInfo.versions().get(0);
+        Assert.assertTrue(singleVersionedAsset.live());
+        Assert.assertTrue(singleVersionedAsset.working());
+
+        //Now we create a new version
+        final Contentlet checkout = ContentletDataGen.checkout(contentlet);
+        checkout.getMap().put(Contentlet.TITTLE_KEY, "new title");
+
+        final String newInode = UUIDGenerator.generateUuid();
+        checkout.setInode(newInode);
+        ContentletDataGen.checkin(checkout);
+
+        final AssetVersionsView withMultipleVersions = (AssetVersionsView) webAssetHelper.getAssetInfo(path, APILocator.systemUser());
+        Assert.assertEquals(2, withMultipleVersions.versions().size());
+
+        Assert.assertEquals(1,
+                withMultipleVersions.versions().stream().filter(AssetView::live).count());
+
+        Assert.assertEquals(1,
+                withMultipleVersions.versions().stream().filter(assetView -> !assetView.live()).count());
+
+        //Now validate the working state
+        Assert.assertEquals(1,
+                withMultipleVersions.versions().stream().filter(AssetView::working).count());
+
+        Assert.assertEquals(1,
+                withMultipleVersions.versions().stream().filter(assetView -> !assetView.working()).count());
+
+    }
 
 }

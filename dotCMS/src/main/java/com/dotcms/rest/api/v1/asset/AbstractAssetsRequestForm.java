@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.asset;
 
+import com.dotmarketing.business.APILocator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -20,8 +21,11 @@ public interface AbstractAssetsRequestForm {
      String assetPath();
 
      @JsonProperty("language")
-     Optional<String> language();
+     @Value.Default
+     default String language() {
+         return APILocator.getLanguageAPI().getDefaultLanguage().toString();
+     }
 
      @JsonProperty("live")
-     Optional<Boolean> live();
+     boolean live();
 }

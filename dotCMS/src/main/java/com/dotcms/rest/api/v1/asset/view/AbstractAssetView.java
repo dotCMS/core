@@ -19,8 +19,8 @@ public interface AbstractAssetView  extends WebAssetView {
     String inode();
     Instant modDate();
     boolean live();
+    boolean working();
     String lang();
     long sortOrder();
-
     Map<String, Object> metadata();
 }
