@@ -62,6 +62,7 @@ export interface DotTemplateBuilderState {
     items: DotGridStackWidget[];
     containerMap: DotContainerMap;
     layoutProperties: DotTemplateLayoutProperties;
+    resizingRowID: string;
 }
 
 /**

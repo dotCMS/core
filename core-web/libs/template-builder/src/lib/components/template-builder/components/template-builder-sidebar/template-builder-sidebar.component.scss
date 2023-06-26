@@ -26,17 +26,4 @@
 
 .template-builder-sidebar__body-container {
     flex: 1;
-
-    ::ng-deep dotcms-template-builder-box {
-        .template-builder-box {
-            height: 100%;
-        }
-        p-scrollpanel {
-            ::ng-deep {
-                .p-scrollpanel {
-                    height: 100%;
-                }
-            }
-        }
-    }
 }

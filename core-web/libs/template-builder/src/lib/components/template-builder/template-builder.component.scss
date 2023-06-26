@@ -35,12 +35,6 @@ dotcms-add-widget.ui-draggable-dragging {
     box-shadow: $md-shadow-6;
 }
 
-dotcms-template-builder-background-columns {
-    position: absolute;
-    inset: 0 3.625rem 0 1rem;
-    z-index: -1;
-}
-
 dotcms-add-widget {
     cursor: grab;
     z-index: 3;
@@ -67,7 +61,7 @@ p-divider {
 
     .p-toolbar {
         border-color: $color-palette-gray-300;
-        padding: 1rem 0;
+        padding: $spacing-3 0;
     }
 
     .p-divider {

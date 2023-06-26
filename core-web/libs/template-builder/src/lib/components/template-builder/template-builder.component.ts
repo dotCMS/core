@@ -137,6 +137,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
         this.store.init({
             items: parseFromDotObjectToGridStack(this.templateLayout.body),
             layoutProperties: this.layoutProperties,
+            resizingRowID: '',
             containerMap: this.containerMap
         });
     }
@@ -160,6 +161,13 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
             });
             subgrid.on('dropped', (_: Event, oldNode: GridStackNode, newNode: GridStackNode) => {
                 this.store.subGridOnDropped(oldNode, newNode);
+            });
+
+            subgrid.on('resizestart', (_: Event, el: GridItemHTMLElement) => {
+                this.store.setResizingRowID(el.gridstackNode.grid.parentGridItem.id);
+            });
+            subgrid.on('resizestop', () => {
+                this.store.setResizingRowID(null);
             });
         });
 
@@ -207,6 +215,14 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
                             )
                             .on('change', (_: Event, nodes: GridStackNode[]) => {
                                 this.store.updateColumnGridStackData(nodes as DotGridStackWidget[]);
+                            })
+                            .on('resizestart', (_: Event, el: GridItemHTMLElement) => {
+                                this.store.setResizingRowID(
+                                    el.gridstackNode.grid.parentGridItem.id
+                                );
+                            })
+                            .on('resizestop', () => {
+                                this.store.setResizingRowID(null);
                             });
                     }
 
