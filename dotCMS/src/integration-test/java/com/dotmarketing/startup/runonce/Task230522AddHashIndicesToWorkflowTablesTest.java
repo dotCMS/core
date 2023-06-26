@@ -4,6 +4,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.Logger;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -35,7 +36,7 @@ public class Task230522AddHashIndicesToWorkflowTablesTest {
      * </ul>
      */
     @Test
-    public void executeTaskUpgrade() throws SQLException, DotDataException {
+    public void executeTaskUpgrade() throws DotDataException {
         final List<String> tables = List.of("workflow_comment", "workflow_history", "workflowtask_files");
         final Task230522AddHashIndicesToWorkflowTables task = new Task230522AddHashIndicesToWorkflowTables();
         task.executeUpgrade();
@@ -48,12 +49,12 @@ public class Task230522AddHashIndicesToWorkflowTablesTest {
                     final String columnName = indicesInfo.getString("COLUMN_NAME");
                     final boolean nonUnique = indicesInfo.getBoolean("NON_UNIQUE");
                     if (indexName.equals(table + "_hash_idx")) {
-                        assertTrue(nonUnique);
-                        assertEquals(columnName, "workflowtask_id");
+                        assertTrue("Hash Indices are always non-unique", nonUnique);
+                        assertEquals("Column name '" + columnName + "' is not 'workflowtask_id'", "workflowtask_id", columnName);
                     }
                 }
             } catch (final SQLException e) {
-                e.printStackTrace();
+                Logger.error(this, e);
             }
         });
     }
