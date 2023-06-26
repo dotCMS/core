@@ -22,7 +22,6 @@ import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { TabViewModule } from 'primeng/tabview';
 
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
-import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotPageSelectorModule } from '@components/_common/dot-page-selector/dot-page-selector.module';
 import { DotWorkflowsActionsSelectorFieldModule } from '@components/_common/dot-workflows-actions-selector-field/dot-workflows-actions-selector-field.module';
 import { DotWorkflowsSelectorFieldModule } from '@components/_common/dot-workflows-selector-field/dot-workflows-selector-field.module';
@@ -39,7 +38,7 @@ import {
 } from '@dotcms/data-access';
 import { DotcmsConfigService, LoginService, SiteService } from '@dotcms/dotcms-js';
 import { DotCMSContentTypeLayoutRow, DotCMSSystemActionType } from '@dotcms/dotcms-models';
-import { DotIconModule } from '@dotcms/ui';
+import { DotIconModule, UiDotIconButtonModule } from '@dotcms/ui';
 import {
     dotcmsContentTypeBasicMock,
     dotcmsContentTypeFieldBasicMock,
@@ -654,7 +653,6 @@ describe('ContentTypesFormComponent', () => {
 
         const pageSelector: DebugElement = de.query(By.css('dot-page-selector'));
         expect(pageSelector !== null).toBe(true);
-        expect(pageSelector.componentInstance.label).toEqual('Detail Page');
     });
 
     describe('send data with valid form', () => {

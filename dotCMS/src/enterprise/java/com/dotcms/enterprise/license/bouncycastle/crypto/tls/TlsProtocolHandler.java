@@ -537,7 +537,7 @@ public class TlsProtocolHandler
                                             int extType = TlsUtils.readUint16(ext);
                                             byte[] extValue = TlsUtils.readOpaque16(ext);
 
-                                            serverExtensions.put(new Integer(extType), extValue);
+                                            serverExtensions.put(Integer.valueOf(extType), extValue);
                                         }
 
                                         // TODO Validate/process serverExtensions (via client?)

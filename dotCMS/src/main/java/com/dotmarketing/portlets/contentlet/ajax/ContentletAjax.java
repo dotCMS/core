@@ -147,7 +147,7 @@ public class ContentletAjax {
             .getIntProperty("RELATIONSHIPS_FILTER_CRITERIA_SIZE", 500);
 
 	public List<Map<String, Object>> getContentletsData(String inodesStr) {
-		List<Map<String,Object>> rows = new ArrayList<Map<String, Object>>();
+		List<Map<String,Object>> rows = new ArrayList<>();
 
 		if(inodesStr == null || !UtilMethods.isSet(inodesStr)) {
 			return rows;
@@ -165,7 +165,7 @@ public class ContentletAjax {
 
 	public Map<String, Object> getContentletData(String inode) {
 
-		Map<String,Object> result = new HashMap<String, Object>();
+		Map<String,Object> result = new HashMap<>();
 
 		try {
 
@@ -247,7 +247,7 @@ public class ContentletAjax {
 
 	private List<Map<String, String>> getContentSiblingsData(String inode) {//GIT-1057
 
-		List<Map<String, String>> result = new ArrayList<Map<String, String>>();
+		List<Map<String, String>> result = new ArrayList<>();
 
 		try {
 
@@ -256,7 +256,7 @@ public class ContentletAjax {
 
 			Contentlet firstContentlet = conAPI.find(inode, currentUser, true);
 
-			List<Map<String,String>> contentletList = new ArrayList<Map<String,String>>();
+			List<Map<String,String>> contentletList = new ArrayList<>();
 
 			LanguageAPI langAPI = APILocator.getLanguageAPI();
 			ContentletAPI contentletAPI = APILocator.getContentletAPI();
@@ -278,7 +278,7 @@ public class ContentletAjax {
 
 			for(Language lang : langs){
 
-				Map<String, String> contentDetails = new HashMap<String, String>();
+				Map<String, String> contentDetails = new HashMap<>();
 				try{
 					languageContentlet = null;
 					languageContentlet = contentletAPI.findContentletByIdentifier(firstContentlet.getIdentifier(), true, lang.getId(), currentUser, false);
@@ -578,7 +578,7 @@ public class ContentletAjax {
 
 		String specialCharsToEscape = "([+\\-!\\(\\){}\\[\\]^\"~*?:\\\\]|[&\\|]{2})";
 		String specialCharsToEscapeForMetaData = "([+\\-!\\(\\){}\\[\\]^\"~?:/\\\\]{2})";
-		Map<String, Object> lastSearchMap = new HashMap<String, Object>();
+		Map<String, Object> lastSearchMap = new HashMap<>();
 
 		List<String> relatedIdentifiers = new ArrayList();
 		List<RelationshipFieldData> relationshipFields = new ArrayList();
@@ -592,9 +592,9 @@ public class ContentletAjax {
             sess.setAttribute(ESMappingConstants.WORKFLOW_STEP, null);
 		}
 
-		Map<String, String> fieldsSearch = new HashMap<String, String>();
-		List<Object> headers = new ArrayList<Object>();
-		Map<String, Field> fieldsMapping = new HashMap<String, Field>();
+		Map<String, String> fieldsSearch = new HashMap<>();
+		List<Object> headers = new ArrayList<>();
+		Map<String, Field> fieldsMapping = new HashMap<>();
 		final String[] structureInodes = structureInode.split(CONTENT_TYPES_INODE_SEPARATOR);
 		Structure st = null;
 		if(!Structure.STRUCTURE_TYPE_ALL.equals(structureInode) && !hasContentTypesInodeSeparator(structureInode)){
@@ -629,6 +629,8 @@ public class ContentletAjax {
 		            break;
 		        }
 		    }
+
+			luceneQuery.append("+" + ESMappingConstants.SYSTEM_TYPE + ":false ");
             luceneQuery.append("-contentType:forms ");
             luceneQuery.append("-contentType:Host ");
 		}
@@ -636,14 +638,14 @@ public class ContentletAjax {
         final String finalSort = getFinalSort(fields, orderBy, st, structureInodes);
 
 		// Stores (database name,type description) pairs to catch certain field types.
-		List<Field> targetFields = new ArrayList<Field>();
+		List<Field> targetFields = new ArrayList<>();
 
 		if(st!=null  && structureInodes.length == 1){
 		    targetFields = FieldsCache.getFieldsByStructureInode(st.getInode());
 		}
 
-		Map<String,String> fieldContentletNames = new HashMap<String,String>();
-		Map<String,Field> decimalFields = new HashMap<String,Field>();//DOTCMS-5478
+		Map<String,String> fieldContentletNames = new HashMap<>();
+		Map<String,Field> decimalFields = new HashMap<>();//DOTCMS-5478
 		for( Field f : targetFields ) {
 			fieldContentletNames.put(f.getFieldContentlet(), f.getFieldType());
 			if(f.getFieldContentlet().startsWith("float")){
@@ -999,10 +1001,10 @@ public class ContentletAjax {
 		before = System.currentTimeMillis();
 
 		//The results list returned to the page
-		List<Object> results = new ArrayList<Object>();
+		List<Object> results = new ArrayList<>();
 
 		//Adding the result counters as the first row of the results
-		Map<String, Object> counters = new HashMap<String, Object>();
+		Map<String, Object> counters = new HashMap<>();
 		results.add(counters);
 
 
@@ -1152,7 +1154,7 @@ public class ContentletAjax {
 						expiredInodes.add(con.getInode()); // it is unpublished and can't be manualy published
 				}
 
-				searchResult = new HashMap<String, String>();
+				searchResult = new HashMap<>();
 				ContentType type = con.getContentType();
 				searchResult.put("typeVariable", type.variable());
 				searchResult.put("baseType",type.baseType().name());
@@ -1570,7 +1572,7 @@ public class ContentletAjax {
 	@CloseDB
 	public ArrayList<String[]> doSearchGlossaryTerm(String valueToComplete, String language) throws Exception {
 		final int limit = Config.getIntProperty("glossary.term.max.limit",15);
-		ArrayList<String[]> list = new ArrayList<String[]>(limit);
+		ArrayList<String[]> list = new ArrayList<>(limit);
 		final User systemUser = APILocator.systemUser();
 		final long languageId = Long.parseLong(language);
 		List<String> listAddedKeys = new ArrayList<>();
@@ -1621,7 +1623,7 @@ public class ContentletAjax {
 	 */
 	@CloseDB
 	public List<Map<String, Object>> publishContentlets(List<String> identifiersList, boolean isPublish, long languageId) {
-		List<Map<String, Object>> rows = new ArrayList<Map<String, Object>>();
+		List<Map<String, Object>> rows = new ArrayList<>();
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
 
 		for (int x = 0; x < identifiersList.size(); x++) {
@@ -1631,7 +1633,7 @@ public class ContentletAjax {
 			try {
 				User currentUser = com.liferay.portal.util.PortalUtil.getUser(req);
 				Contentlet contentlet = new Contentlet();
-				List<Contentlet> contentletList = new ArrayList<Contentlet>();
+				List<Contentlet> contentletList = new ArrayList<>();
 				if(languageId == 0){
 					contentlet = conAPI.findContentletByIdentifier(id, false, langAPI.getDefaultLanguage().getId(), currentUser, false);
 					contentletList = conAPI.getAllLanguages(contentlet, false, currentUser, false);
@@ -1686,9 +1688,9 @@ public class ContentletAjax {
 	//http://jira.dotmarketing.net/browse/DOTCMS-2273
 	@CloseDB
 	public Map<String,Object> saveContent(List<String> formData, boolean isAutoSave,boolean isCheckin, boolean publish) throws LanguageException, PortalException, SystemException {
-	  Map<String,Object> contentletFormData = new HashMap<String,Object>();
-	  Map<String,Object> callbackData = new HashMap<String,Object>();
-	  List<String> saveContentErrors = new ArrayList<String>();
+	  Map<String,Object> contentletFormData = new HashMap<>();
+	  Map<String,Object> callbackData = new HashMap<>();
+	  List<String> saveContentErrors = new ArrayList<>();
 	  User user = null;
       boolean clearBinary = true;//flag to check if the binary field needs to be cleared or not
       HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
@@ -1950,7 +1952,7 @@ public class ContentletAjax {
 					List<RegExMatch> matches = RegEX.find(referer, StructureUtil.generateRegExForURLMap(urlMap));
 					if (matches != null && matches.size() > 0) {
 						String[] urlFrags = urlMap.split("/");
-						Map<String,Integer> vars = new HashMap<String, Integer>();
+						Map<String,Integer> vars = new HashMap<>();
 						int index = 0;
 						for (String frag : urlFrags) {
 							if(UtilMethods.isSet(frag)){
@@ -2329,9 +2331,9 @@ public class ContentletAjax {
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
 		User user = com.liferay.portal.util.PortalUtil.getUser((HttpServletRequest)req);
 		Contentlet cont  = conAPI.find(inode, user, false);
-		Map<String,Object> contentletFormData = new HashMap<String,Object>();
-		Map<String,Object> callbackData = new HashMap<String,Object>();
-		List<String> saveContentErrors = new ArrayList<String>();
+		Map<String,Object> contentletFormData = new HashMap<>();
+		Map<String,Object> callbackData = new HashMap<>();
+		List<String> saveContentErrors = new ArrayList<>();
 		callbackData.put("contentletInode",inode);
 		// Storing form data into map.
 		for (Iterator iterator = formData.iterator(); iterator.hasNext();) {
@@ -2368,12 +2370,12 @@ public class ContentletAjax {
 		}
 		try{
 			HibernateUtil.startTransaction();
-			Map<Relationship, List<Contentlet>> contentRelationships = new HashMap<Relationship, List<Contentlet>>();
+			Map<Relationship, List<Contentlet>> contentRelationships = new HashMap<>();
 			List<Relationship> rels =  APILocator.getRelationshipAPI().byContentType(structure);
 			for (Relationship r : rels) {
 				if (!contentRelationships.containsKey(r)) {
 					contentRelationships
-					.put(r, new ArrayList<Contentlet>());
+					.put(r, new ArrayList<>());
 				}
 				List<Contentlet> cons = conAPI.getRelatedContent(
 						cont, r, user, true);
@@ -2542,7 +2544,7 @@ public class ContentletAjax {
 		Contentlet currentContentlet;
 		Contentlet contentletToUnrelate;
 		Relationship relationship;
-		List<Contentlet> conList = new ArrayList<Contentlet>();
+		List<Contentlet> conList = new ArrayList<>();
 		String resultStr = "Content Unrelated";
 		try {
 			currentContentlet = conAPI.find(contentletIdentifier, currentUser, false);
@@ -2585,7 +2587,7 @@ public class ContentletAjax {
 		Contentlet c = conAPI.find(contentletInode, currentUser, false);
 
 
-		Map<String, String> ret = new HashMap<String, String>();
+		Map<String, String> ret = new HashMap<>();
 		ret.put("lockedIdent", contentletInode );
 		try{
 			conAPI.lock(c, currentUser, false);
@@ -2619,7 +2621,7 @@ public class ContentletAjax {
 		}
 		Contentlet c = conAPI.find(contentletInode, currentUser, false);
 		conAPI.unlock(c, currentUser, false);
-		Map<String, String> ret = new HashMap<String, String>();
+		Map<String, String> ret = new HashMap<>();
 		ret.put("lockedIdent", contentletInode );
 		return ret;
 	}

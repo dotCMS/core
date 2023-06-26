@@ -7,10 +7,7 @@ import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.experiments.model.TargetingCondition;
-import com.dotcms.rest.InitDataObject;
-import com.dotcms.rest.PATCH;
-import com.dotcms.rest.ResponseEntityView;
-import com.dotcms.rest.WebResource;
+import com.dotcms.rest.*;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.util.DotPreconditions;
@@ -38,6 +35,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+
 import org.glassfish.jersey.server.JSONP;
 
 /**
@@ -302,6 +300,25 @@ public class ExperimentsResource {
     }
 
     /**
+     * Cancels the future execution of a Scheduled {@link Experiment}. The Experiment needs to be in
+     * {@link Status#SCHEDULED} status to be able to cancel it.
+     */
+
+    @POST
+    @Path("/scheduled/{experimentId}/_cancel")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public ResponseEntitySingleExperimentView cancel(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("experimentId") final String experimentId) throws DotDataException, DotSecurityException {
+        final InitDataObject initData = getInitData(request, response);
+        final User user = initData.getUser();
+        final Experiment endedExperiment = experimentsAPI.cancel(experimentId, user);
+        return new ResponseEntitySingleExperimentView(endedExperiment);
+    }
+
+    /**
      * Adds a new {@link com.dotcms.variant.model.Variant} to the {@link Experiment}
      *
      */
@@ -478,7 +495,7 @@ public class ExperimentsResource {
                 .orElseThrow(
                         () -> new NotFoundException("Experiment with id: " + id + " not found."));
 
-        final ExperimentResults experimentResults = APILocator.getExperimentsAPI().getResults(experiment);
+        final ExperimentResults experimentResults = APILocator.getExperimentsAPI().getResults(experiment, user);
 
         return new ResponseEntityExperimentResults(experimentResults);
     }

@@ -59,7 +59,7 @@ public class AdminConfigUtil {
 
 		if (Validator.isNotNull(LISTENER)) {
 			try {
-				listener = (ModelListener)Class.forName(LISTENER).newInstance();
+				listener = (ModelListener)Class.forName(LISTENER).getDeclaredConstructor().newInstance();
 			}
 			catch (Exception e) {
 				Logger.error(AdminConfigUtil.class,e.getMessage(),e);
@@ -87,7 +87,7 @@ public class AdminConfigUtil {
 
 		if (Validator.isNotNull(LISTENER)) {
 			try {
-				listener = (ModelListener)Class.forName(LISTENER).newInstance();
+				listener = (ModelListener)Class.forName(LISTENER).getDeclaredConstructor().newInstance();
 			}
 			catch (Exception e) {
 				Logger.error(AdminConfigUtil.class,e.getMessage(),e);

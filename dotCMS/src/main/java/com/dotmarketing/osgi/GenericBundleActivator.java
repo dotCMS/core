@@ -634,8 +634,8 @@ public abstract class GenericBundleActivator implements BundleActivator {
                 URL file = context.getBundle().getEntry(langFile);
                 Map<String, String> generalKeysToAdd = new HashMap<>();
 
-                try {
-                    BufferedReader in = new BufferedReader(new InputStreamReader(file.openStream()));
+                try(BufferedReader in = new BufferedReader(new InputStreamReader(file.openStream()))) {
+
                     String line;
                     while ((line = in.readLine()) != null){
                         //Make sure line contains = sign.

@@ -1,28 +1,30 @@
-import { Injectable } from '@angular/core';
-import { Subject, Observable, throwError } from 'rxjs';
-import { map, catchError, filter } from 'rxjs/operators';
+import { Observable, Subject, throwError } from 'rxjs';
 
 import {
-    CwError,
-    NETWORK_CONNECTION_ERROR,
-    UNKNOWN_RESPONSE_ERROR,
-    CLIENTS_ONLY_MESSAGES,
-    SERVER_RESPONSE_ERROR
-} from './util/http-response-util';
-import { ResponseView } from './util/response-view';
-import { LoggerService } from './logger.service';
-import { HttpCode } from './util/http-code';
-import { Router } from '@angular/router';
-import {
     HttpClient,
-    HttpRequest,
+    HttpErrorResponse,
+    HttpEvent,
+    HttpEventType,
     HttpHeaders,
     HttpParams,
-    HttpResponse,
-    HttpEventType,
-    HttpEvent,
-    HttpErrorResponse
+    HttpRequest,
+    HttpResponse
 } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+import { Router } from '@angular/router';
+
+import { catchError, filter, map } from 'rxjs/operators';
+
+import { LoggerService } from './logger.service';
+import { HttpCode } from './util/http-code';
+import {
+    CLIENTS_ONLY_MESSAGES,
+    CwError,
+    NETWORK_CONNECTION_ERROR,
+    SERVER_RESPONSE_ERROR,
+    UNKNOWN_RESPONSE_ERROR
+} from './util/http-response-util';
+import { ResponseView } from './util/response-view';
 
 export interface DotCMSResponse<T> {
     contentlets?: T;
@@ -52,9 +54,9 @@ export interface DotRequestOptionsArgs {
 
 /**
  * Request data from dotCMS endpoints
- * @deprecated use Angular HttpClient instead
  * @export
  * @class CoreWebService
+ * @deprecated Use Angular HttpClient instead
  */
 @Injectable()
 export class CoreWebService {
@@ -140,6 +142,7 @@ export class CoreWebService {
                             );
                         }
                     }
+
                     return null;
                 }
             )
@@ -192,6 +195,7 @@ export class CoreWebService {
             }),
             catchError((err: HttpErrorResponse) => {
                 this.emitHttpError(err.status);
+
                 return throwError(this.handleResponseHttpErrors(err));
             })
         );
@@ -253,6 +257,7 @@ export class CoreWebService {
         }
 
         const method = <'GET' | 'HEAD' | 'JSONP' | 'OPTIONS'>options.method;
+
         return new HttpRequest<T>(method, url, {
             headers,
             params
@@ -273,6 +278,7 @@ export class CoreWebService {
                 httpHeaders = httpHeaders.delete('Content-Type');
             }
         }
+
         return httpHeaders;
     }
 
@@ -285,6 +291,7 @@ export class CoreWebService {
         if (version.match(/v[1-9]/g)) {
             return `/api/${url}`;
         }
+
         return url;
     }
 
@@ -295,6 +302,7 @@ export class CoreWebService {
             Object.keys(params).forEach((key: string) => {
                 httpParams = httpParams.set(key, params[key]);
             });
+
             return httpParams;
         }
 
@@ -305,6 +313,7 @@ export class CoreWebService {
         const headers = new HttpHeaders()
             .set('Accept', '*/*')
             .set('Content-Type', 'application/json');
+
         return headers;
     }
 }

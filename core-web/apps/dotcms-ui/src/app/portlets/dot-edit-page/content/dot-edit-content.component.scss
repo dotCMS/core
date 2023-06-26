@@ -57,7 +57,7 @@ dot-whats-changed,
         flex-grow: 0;
         border-radius: 10px;
         border: 2px solid #ddd;
-        box-shadow: 4px 4px 15px rgba(0, 0, 0, 0.1);
+        box-shadow: 4px 4px 15px $color-palette-black-op-10;
         background: $white;
         background: linear-gradient(135deg, $white 0%, rgba(240, 240, 240, 1) 100%);
         filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffff', endColorstr='#f0f0f0', GradientType=1);

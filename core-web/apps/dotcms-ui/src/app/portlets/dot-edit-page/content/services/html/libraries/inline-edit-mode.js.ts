@@ -7,7 +7,6 @@ export const INLINE_TINYMCE_SCRIPTS = `
             const dataset = ed.targetElm.dataset;
             const element = ed.targetElm;
             const container = ed.bodyElement.closest('[data-dot-object="container"]');
-
             const data = {
                 dataset,
                 innerHTML: content,
@@ -81,30 +80,63 @@ export const INLINE_TINYMCE_SCRIPTS = `
     };
 
     document.addEventListener("click", function (event) {
-        
-    const { target: { dataset } } = event;
+        const { target } = event;
+        const { dataset } = target;
 
-    const dataSelector =
-        '[data-inode="' +
-        dataset.inode +
-        '"][data-field-name="' +
-        dataset.fieldName +
-        '"]';
-
-    // if the mode is truthy we initialize tinymce
-        if (dataset.mode) {
-
-            event.stopPropagation();
-            event.preventDefault();
-
-            tinymce
-            .init({
-                ...tinyMCEConfig[dataset.mode || 'minimal'],
-                selector: dataSelector,
-            })
-            .then(([ed]) => {
-                ed?.editorCommands.execCommand("mceFocus");
-            });
+        // if the mode is falsy we do not initialize tinymce.
+        if(!dataset.mode) {
+            return;
         }
+
+        event?.stopPropagation();
+        event?.preventDefault();
+
+        if(isInMultiplePages(target)) {
+            window.contentletEvents.next({
+                name: "showCopyModal",
+                data: showCopyModalData(target)
+            });
+
+            return;
+        };
+
+        initEdit(target);
     });
+
+    // Register this function into the windows (?) so we can call it from the Angular
+    function initEdit(editorElement) {
+        const { dataset } = editorElement;
+        const dataSelector =
+            '[data-inode="' +
+            dataset.inode +
+            '"][data-field-name="' +
+            dataset.fieldName +
+            '"]';
+
+        tinymce
+        .init({
+            ...tinyMCEConfig[dataset.mode || 'minimal'],
+            selector: dataSelector,
+        })
+        .then(([ed]) => {
+            ed?.editorCommands.execCommand("mceFocus");
+        });
+    }
+
+    function isInMultiplePages(editorElement) {
+        const contentlet = editorElement.closest('[data-dot-object="contentlet"]');
+        return Number(contentlet.dataset.dotOnNumberOfPages || 0) > 1;
+    }
+
+    function showCopyModalData(element) {
+        const container = element.closest('[data-dot-object="container"]');
+        const contentlet = element.closest('[data-dot-object="contentlet"]');
+
+        return {
+            container,
+            contentlet,
+            selector: "[data-mode]",
+            initEdit
+        }
+    }
 `;

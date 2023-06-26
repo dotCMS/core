@@ -294,7 +294,7 @@ public String getGravatar(String postedBy){
 	                            <% } %>
 	                        <% } %>
 
-	                        <div data-dojo-type="dijit/MenuItem" onclick="contentAdmin.executeWfAction('<%=a.getId()%>', <%=a.isAssignable() || hasPushPublishActionlet%>, <%=a.isCommentable() || UtilMethods.isSet(a.getCondition())%>, '<%=contentlet.getInode()%>', <%=hasPushPublishActionlet%>, '<%=(a.hasMoveActionletActionlet() && !a.hasMoveActionletHasPathActionlet())%>')">
+	                        <div data-dojo-type="dijit/MenuItem" onclick="contentAdmin.executeWfAction('<%=a.getId()%>', <%=a.isAssignable() || hasPushPublishActionlet%>, <%=a.isCommentable() || UtilMethods.isSet(a.getCondition())%>, '<%=contentlet.getInode()%>', <%=hasPushPublishActionlet%>, <%=(a.hasMoveActionletActionlet() && !a.hasMoveActionletHasPathActionlet())%>)">
 	                            <!-- <span class="<%=a.getIcon()%>"></span> -->
 	                            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, a.getName())) %>
 	                            <% hasAction = true; %>

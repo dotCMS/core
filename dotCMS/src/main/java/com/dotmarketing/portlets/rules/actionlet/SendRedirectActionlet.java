@@ -119,7 +119,7 @@ public class SendRedirectActionlet extends RuleActionlet<SendRedirectActionlet.I
 
         String rewriteUrl(String urlIn, Optional<Pattern> patternOpt) {
 
-            if (!patternOpt.isPresent()) {
+            if (patternOpt.isEmpty()) {
                 return redirectToUrl;
             }
 

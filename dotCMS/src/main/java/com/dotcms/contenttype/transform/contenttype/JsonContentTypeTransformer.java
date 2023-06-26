@@ -144,7 +144,7 @@ public class JsonContentTypeTransformer implements ContentTypeTransformer, JsonT
   }
 
   public List<Map<String, Object>> mapList() {
-    List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+    List<Map<String, Object>> list = new ArrayList<>();
     for (ContentType type : asList()) {
       list.add(new JsonContentTypeTransformer(type).mapObject());
     }

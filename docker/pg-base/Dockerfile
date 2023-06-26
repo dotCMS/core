@@ -4,7 +4,7 @@
 FROM ubuntu:20.04 as pg-base-builder
 
 ENV DEBIAN_FRONTEND=noninteractive
-ARG PG_VERSION=13
+ARG PG_VERSION=15
 ENV PG_VERSION=$PG_VERSION
 
 RUN apt-get update -y \
@@ -12,15 +12,21 @@ RUN apt-get update -y \
   && sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list' \
   && wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
   && apt-get update -y \
-  && apt-get upgrade -y \
-  && apt-get install -y postgresql-$PG_VERSION
+  && apt-get install -y postgresql-$PG_VERSION \
+  && export ARCH=$(uname -m) \
+  && echo "ARCH: $ARCH" \
+  && find /usr/lib/postgresql/$PG_VERSION/bin -type f -not -name "pg_dump" -delete \
+  && rm -rf /usr/lib/postgresql/$PG_VERSION/lib/pgxs /usr/lib/postgresql/$PG_VERSION/lib/bitcode \
+  && apt purge --allow-remove-essential -y \
+  && apt autoremove -y \
+  && apt clean \
+  && rm -rf /var/lib/apt/lists/* \
+  && /usr/lib/postgresql/$PG_VERSION/bin/pg_dump --version
+
 
 # ----------------------------------------------
 # Stage 2:  Flatten everything to 1 layer
 # ----------------------------------------------
 FROM scratch
 
-ARG PG_VERSION=13
-ENV PG_VERSION=$PG_VERSION
-
-COPY --from=pg-base-builder /usr/lib/postgresql/$PG_VERSION/bin/pg_dump /usr/bin/
+COPY --from=pg-base-builder / /

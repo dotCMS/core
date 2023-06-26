@@ -22,7 +22,9 @@ import {
     DotContainerMap,
     DotLayout,
     DotPageRender,
-    DotPageRenderState
+    DotPageRenderState,
+    DotTemplateDesignerPayload,
+    FeaturedFlags
 } from '@dotcms/dotcms-models';
 
 @Component({
@@ -34,8 +36,9 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
     pageState: DotPageRender | DotPageRenderState;
     apiLink: string;
 
-    updateTemplate = new Subject<DotLayout>();
+    updateTemplate = new Subject<DotTemplateDesignerPayload>();
     destroy$: Subject<boolean> = new Subject<boolean>();
+    featureFlag = FeaturedFlags.FEATURE_FLAG_TEMPLATE_BUILDER;
 
     @HostBinding('style.minWidth') width = '100%';
 
@@ -95,7 +98,7 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
      * @param {DotTemplate} value
      * @memberof DotEditLayoutComponent
      */
-    onSave(value: DotLayout): void {
+    onSave(value: DotTemplateDesignerPayload): void {
         this.dotGlobalMessageService.loading(
             this.dotMessageService.get('dot.common.message.saving')
         );
@@ -117,9 +120,24 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
      * @param {DotLayout} value
      * @memberof DotEditLayoutComponent
      */
-    nextUpdateTemplate(value: DotLayout) {
+    nextUpdateTemplate(value: DotTemplateDesignerPayload) {
         this.canRouteBeDesativated(false);
         this.updateTemplate.next(value);
+    }
+
+    /**
+     * Handle layout change event.
+     * Take the layout out, update the template and save it.
+     *
+     * @param {DotLayout} layout
+     * @memberof DotEditLayoutComponent
+     */
+    onLayoutChange(layout: DotLayout) {
+        this.nextUpdateTemplate({
+            layout,
+            themeId: this.pageState.template.theme,
+            title: this.pageState.page.title
+        });
     }
 
     /**
@@ -141,7 +159,7 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
                 // More information: https://stackoverflow.com/questions/58974320/how-is-it-possible-to-stop-a-debounced-rxjs-observable
                 debounceTime(10000),
                 takeUntil(this.destroy$),
-                switchMap((layout: DotLayout) => {
+                switchMap((layout: DotTemplateDesignerPayload) => {
                     this.dotGlobalMessageService.loading(
                         this.dotMessageService.get('dot.common.message.saving')
                     );

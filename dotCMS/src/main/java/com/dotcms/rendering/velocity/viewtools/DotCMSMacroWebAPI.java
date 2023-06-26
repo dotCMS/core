@@ -78,7 +78,7 @@ public class DotCMSMacroWebAPI implements ViewTool {
 
 	public List<Link> getLinkRepository(String folderPath,HttpServletRequest request)
 	{
-		List<Link> links = new ArrayList<Link>();
+		List<Link> links = new ArrayList<>();
 		try
 		{
 			Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
@@ -239,7 +239,7 @@ public class DotCMSMacroWebAPI implements ViewTool {
 		toCal.set(GregorianCalendar.SECOND, 58);
 
 		String[] categorieInodes=categories.split(",");
-		List<Category> categoriesList=new ArrayList<Category>(categorieInodes.length);
+		List<Category> categoriesList=new ArrayList<>(categorieInodes.length);
 		for(String inode : categorieInodes)
 			categoriesList.add(categoryAPI.find(inode, userAPI.getSystemUser(), false));
 
@@ -311,10 +311,10 @@ public class DotCMSMacroWebAPI implements ViewTool {
 	    */
 	   public ArrayList<HashMap<String, String>> getSQLResults(String dataSource, String sql, int startRow, int maxRow) {
 		   
-		   ArrayList<HashMap<String, String>> errorResults = new ArrayList<HashMap<String, String>>();
+		   ArrayList<HashMap<String, String>> errorResults = new ArrayList<>();
 		   
 		   if(!canUserEvaluate()){
-	            HashMap<String, String> map = new HashMap<String, String>();
+	            HashMap<String, String> map = new HashMap<>();
 	            map.put("hasDotConnectSQLError", "true");
 	            map.put("dotConnectSQLError", "External scripting is disabled in your dotcms instance.");
 	            errorResults.add(map);
@@ -322,32 +322,32 @@ public class DotCMSMacroWebAPI implements ViewTool {
 		   }
 		   else{
 			   if (!UtilMethods.isSet(sql)) {
-		            return new ArrayList<HashMap<String, String>>();
+		            return new ArrayList<>();
 		        }
 		        if (sql.toLowerCase().indexOf("user_") > -1) {
 		            Logger.error(this,"getSQLResults macro is trying to pull from the users table");
-		            HashMap<String, String> map = new HashMap<String, String>();
+		            HashMap<String, String> map = new HashMap<>();
 		            map.put("hasDotConnectSQLError", "true");
 		            map.put("dotConnectSQLError", "getSQLResults macro is trying to pull from the user_ table");
 		            errorResults.add(map);
-		            return new ArrayList<HashMap<String, String>>();
+		            return new ArrayList<>();
 		        }
 		        if (sql.toLowerCase().indexOf("cms_role") > -1) {
 		            Logger.error(this,"getSQLResults macro is trying to pull from the cms_role table");
-		            HashMap<String, String> map = new HashMap<String, String>();
+		            HashMap<String, String> map = new HashMap<>();
 		            map.put("hasDotConnectSQLError", "true");
 		            map.put("dotConnectSQLError", "getSQLResults macro is trying to pull from the cms_role table");
 		            errorResults.add(map);
-		            return new ArrayList<HashMap<String, String>>();
+		            return new ArrayList<>();
 		        }
 		        if (sql.toLowerCase().indexOf("delete from") > -1 || sql.toLowerCase().indexOf("drop") > -1
 		        		|| sql.toLowerCase().indexOf("truncate") > -1) {
 		            Logger.error(this,"getSQLResults macro is trying to run a DELETE/DROP/TRUNCATE query");
-		            HashMap<String, String> map = new HashMap<String, String>();
+		            HashMap<String, String> map = new HashMap<>();
 		            map.put("hasDotConnectSQLError", "true");
 		            map.put("dotConnectSQLError", "getSQLResults macro is trying to run a DELETE/DROP/TRUNCATE query");
 		            errorResults.add(map);
-		            return new ArrayList<HashMap<String, String>>();
+		            return new ArrayList<>();
 		        }
 		        
 		        try {
@@ -363,11 +363,11 @@ public class DotCMSMacroWebAPI implements ViewTool {
 		            if (dataSource.equals("default")) {
 		            	if(!Config.getBooleanProperty("ALLOW_VELOCITY_SQL_ACCESS_TO_DOTCMS_DB", false)){
 		            		Logger.error(this,"getSQLResults macro is trying to execute queries using the default connection pool. ALLOW_VELOCITY_SQL_ACCESS_TO_DOTCMS_DB is set to false");
-				            HashMap<String, String> map = new HashMap<String, String>();
+				            HashMap<String, String> map = new HashMap<>();
 				            map.put("hasDotConnectSQLError", "true");
 				            map.put("dotConnectSQLError", "getSQLResults macro is trying to execute queries using the default connection pool. ALLOW_VELOCITY_SQL_ACCESS_TO_DOTCMS_DB is set to false");
 				            errorResults.add(map);
-				            return new ArrayList<HashMap<String, String>>();
+				            return new ArrayList<>();
 		            	}
 		            	else{
 		            		return dc.getResults();
@@ -376,7 +376,7 @@ public class DotCMSMacroWebAPI implements ViewTool {
 		                return dc.getResults(dataSource);
 		            }
 		        } catch (Exception e) {
-		            HashMap<String, String> map = new HashMap<String, String>();
+		            HashMap<String, String> map = new HashMap<>();
 		            map.put("hasDotConnectSQLError", "true");
 		            map.put("dotConnectSQLError", "There was a sql error:" + e.getMessage());
 		            errorResults.add(map);
@@ -396,7 +396,7 @@ public class DotCMSMacroWebAPI implements ViewTool {
 	 * @return string set alphabetically ordered
 	 */
 	public static List<String> sortAlpha(Set<String> stringSet){
-		List<String> result = new ArrayList<String>(30);
+		List<String> result = new ArrayList<>(30);
 
 		int i;
 		String tempStringKey;
@@ -430,7 +430,7 @@ public class DotCMSMacroWebAPI implements ViewTool {
 	 * @return map of the top most popular tags
 	 */
 	public static HashMap topMostPopularTags(HashMap tagHashMap, int maxNumberOfTags){
-		List<String> tempList = new ArrayList<String>(30);
+		List<String> tempList = new ArrayList<>(30);
 		HashMap result = new HashMap();
 
 		int i;
@@ -484,21 +484,21 @@ public class DotCMSMacroWebAPI implements ViewTool {
 			Logger.error(this,e.getMessage(), e);
 			throw new DotRuntimeException(e.getMessage(),e);
 		}
-        List<IFileAsset> fileList = new ArrayList<IFileAsset>();
+        List<IFileAsset> fileList = new ArrayList<>();
 		try {
 			fileList.addAll(APILocator.getFileAssetAPI().findFileAssetsByFolder(folder, "", true, APILocator.getUserAPI().getSystemUser(), false));
 		} catch (Exception e) {
 			Logger.error(this, e.getMessage());
 		}
-        List<HashMap<String, IFileAsset>> result = new ArrayList<HashMap<String, IFileAsset>>();
+        List<HashMap<String, IFileAsset>> result = new ArrayList<>();
         HashMap<String, IFileAsset> resultFile;
-        List<IFileAsset> noPhotoFile = new ArrayList<IFileAsset>();
+        List<IFileAsset> noPhotoFile = new ArrayList<>();
         int pos;
         IFileAsset fileListFile;
         String videoPhotoFileName;
 
         for (IFileAsset file: fileList) {
-        	resultFile = new HashMap<String, IFileAsset>();
+        	resultFile = new HashMap<>();
 			if (file.getExtension().toLowerCase().endsWith("flv")) {
 				resultFile.put("movie", file);
 

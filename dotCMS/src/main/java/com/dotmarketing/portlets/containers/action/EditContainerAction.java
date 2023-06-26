@@ -122,7 +122,7 @@ public class EditContainerAction extends DotPortletAction implements
 					if (ae.getMessage().equals(WebKeys.EDIT_ASSET_EXCEPTION)) {
 						// The web asset edit threw an exception because it's
 						// locked so it should redirect back with message
-						java.util.Map<String, String[]> params = new java.util.HashMap<String, String[]>();
+						java.util.Map<String, String[]> params = new java.util.HashMap<>();
 						params.put("struts_action",
 								new String[] { "/ext/director/direct" });
 						params.put("cmd", new String[] { "editContainer" });
@@ -184,7 +184,7 @@ public class EditContainerAction extends DotPortletAction implements
 					return;
 					}
 					catch(Exception e){
-                        java.util.Map<String,String[]> params = new java.util.HashMap<String,String[]>();
+                        java.util.Map<String,String[]> params = new java.util.HashMap<>();
                         params.put("struts_action",new String[] { "/ext/containers/view_containers" });
                         String directorURL = com.dotmarketing.util.PortletURLUtil.getActionURL(httpReq, WindowState.MAXIMIZED.toString(), params);
                         _sendToReferral(req, res, directorURL);

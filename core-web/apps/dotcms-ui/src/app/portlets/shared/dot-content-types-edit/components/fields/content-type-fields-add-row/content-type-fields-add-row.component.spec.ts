@@ -7,9 +7,9 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { SplitButtonModule } from 'primeng/splitbutton';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotEventsService, DotMessageService } from '@dotcms/data-access';
+import { UiDotIconButtonModule } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { ContentTypeFieldsAddRowComponent } from './content-type-fields-add-row.component';

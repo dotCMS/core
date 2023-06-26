@@ -1,16 +1,14 @@
 package com.dotcms.rendering.velocity.viewtools.navigation;
 
 
-import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.rest.api.v1.browsertree.BrowserTreeHelper;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.Versionable;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.browser.ajax.BrowserAjax;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
@@ -27,14 +25,15 @@ import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
+import org.apache.commons.beanutils.BeanUtils;
+import org.apache.velocity.tools.view.context.ViewContext;
+import org.apache.velocity.tools.view.tools.ViewTool;
+
+import javax.servlet.http.HttpServletRequest;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
-import org.apache.commons.beanutils.BeanUtils;
-import org.apache.velocity.tools.view.context.ViewContext;
-import org.apache.velocity.tools.view.tools.ViewTool;
 
 public class NavTool implements ViewTool {
 
@@ -68,6 +67,23 @@ public class NavTool implements ViewTool {
 
     protected NavResult getNav(Host host, String path) throws DotDataException, DotSecurityException {
         return getNav(host, path, this.currentLanguage, this.systemUser);
+    }
+
+    protected void setItemLinkValues(NavResult nav,Link itemLink, List<NavResult> children){
+        if (itemLink.getLinkType()
+                .equals(LinkType.CODE.toString()) && LinkType.CODE.toString() != null) {
+            nav.setCodeLink(itemLink.getLinkCode());
+        } else {
+            nav.setHref(itemLink.getWorkingURL());
+        }
+
+        nav.setTitle(itemLink.getTitle());
+        nav.setOrder(itemLink.getSortOrder());
+        nav.setType("link");
+        nav.setTarget(itemLink.getTarget());
+        nav.setPermissionId(itemLink.getPermissionId());
+        nav.setShowOnMenu(itemLink.isShowOnMenu());
+        children.add(nav);
     }
 
     protected NavResultHydrated getNav(final Host host, String path, final long languageId, final User systemUserParam)
@@ -124,8 +140,8 @@ public class NavTool implements ViewTool {
         result.setOrder(folder.getSortOrder());
         result.setType("folder");
         result.setPermissionId(folder.getPermissionId());
-        List<NavResult> children = new ArrayList<NavResult>();
-        List<String> folderIds = new ArrayList<String>();
+        List<NavResult> children = new ArrayList<>();
+        List<String> folderIds = new ArrayList<>();
         result.setChildren(children);
         result.setChildrenFolderIds(folderIds);
         result.setShowOnMenu(folder.isShowOnMenu());
@@ -162,19 +178,14 @@ public class NavTool implements ViewTool {
                 Link itemLink = (Link) item;
                 NavResult nav = new NavResult(folder.getInode(), host.getIdentifier(), languageId);
 
-                if (itemLink.getLinkType()
-                        .equals(LinkType.CODE.toString()) && LinkType.CODE.toString() != null) {
-                    nav.setCodeLink(itemLink.getLinkCode());
+                if (!pageMode.showLive) {
+                    this.setItemLinkValues(nav, itemLink, children);
                 } else {
-                    nav.setHref(itemLink.getWorkingURL());
+                    if (itemLink.isLive() && itemLink.isWorking()){
+                        this.setItemLinkValues(nav, itemLink, children);
+                    }
                 }
-                nav.setTitle(itemLink.getTitle());
-                nav.setOrder(itemLink.getSortOrder());
-                nav.setType("link");
-                nav.setTarget(itemLink.getTarget());
-                nav.setPermissionId(itemLink.getPermissionId());
-                nav.setShowOnMenu(itemLink.isShowOnMenu());
-                children.add(nav);
+
             } else if ((Contentlet.class.cast(item)).isHTMLPage()) {
                 final IHTMLPage itemPage = APILocator.getHTMLPageAssetAPI().fromContentlet(Contentlet.class.cast(item));
 
@@ -334,18 +345,19 @@ public class NavTool implements ViewTool {
     }
 
     public NavResult getNav(String path) throws DotDataException, DotSecurityException {
-        if(path.contains("/api/v1/containers")){
-            final String folderInode = ((BrowserAjax)this.request.getSession().getAttribute("BrowserAjax")).getActiveFolderInode();
+        if (path.contains("/api/v1/containers")) {
+            String folderInode = (String) this.request.getSession().getAttribute(BrowserTreeHelper.OPEN_FOLDER_IDS);
+            if (null == folderInode) {
+                folderInode = StringPool.BLANK;
+            }
             final String folderIdentifier = APILocator.getFolderAPI().find(folderInode,systemUser,false).getIdentifier();
             path = APILocator.getIdentifierAPI().find(folderIdentifier).getPath();
         }
-
-        Host host = getHostFromPath(path);
-
-        if (host == null)
-            host = currenthost;
-
-        return getNav(host, path);
+        Host site = this.getHostFromPath(path);
+        if (site == null) {
+            site = this.currenthost;
+        }
+        return this.getNav(site, path);
     }
 
     public NavResult getNav(String path, long languageId) throws DotDataException, DotSecurityException {

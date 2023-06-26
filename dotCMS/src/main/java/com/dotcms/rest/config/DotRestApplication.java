@@ -22,6 +22,7 @@ import com.dotcms.rest.annotation.RequestFilter;
 import com.dotcms.rest.api.CorsFilter;
 import com.dotcms.rest.api.MyObjectMapperProvider;
 import com.dotcms.rest.api.v1.apps.AppsResource;
+import com.dotcms.rest.api.v1.asset.WebAssetResource;
 import com.dotcms.rest.api.v1.authentication.ApiTokenResource;
 import com.dotcms.rest.api.v1.authentication.AuthenticationResource;
 import com.dotcms.rest.api.v1.authentication.CreateJsonWebTokenResource;
@@ -258,6 +259,7 @@ public class DotRestApplication extends Application {
 			.add(ExperimentsResource.class)
 			.add(TailLogResource.class)
 			.add(VariantResource.class)
+			.add(WebAssetResource.class)
 			.build();
 
 

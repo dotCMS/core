@@ -47,7 +47,7 @@
     border-top-right-radius: 4px;
 }
 #admin-site-tools-div a.trigger-off:hover {
-    background-color: rgba(255, 255, 255, 0.15);
+    background-color: $color-palette-white-op-10;
 }
 #admin-site-tools-div a.trigger-on {
     padding: 5px 28px 0 10px;
@@ -64,9 +64,9 @@
     -khtml-border-radius-topright: 14px;
     -moz-border-radius-topright: 4px;
     border-top-right-radius: 4px;
-    -moz-box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.2);
-    -webkit-box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.2);
-    box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.2);
+    -moz-box-shadow: 0px 3px 10px $color-palette-black-op-20;
+    -webkit-box-shadow: 0px 3px 10px $color-palette-black-op-20;
+    box-shadow: 0px 3px 10px $color-palette-black-op-20;
 }
 #closeTab {
     z-index: 8000;
@@ -75,7 +75,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(255, 255, 255, 0.3);
+    background: $color-palette-white-op-30;
 }
 .bannerBG {
     background: url($skin-sprite) repeat-x 0 0;
@@ -102,9 +102,9 @@
     border-top: 0;
     background: #fff;
     z-index: 9998;
-    -moz-box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.2);
-    -webkit-box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.2);
-    box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.2);
+    -moz-box-shadow: 0px 2px 10px $color-palette-black-op-20;
+    -webkit-box-shadow: 0px 2px 10px $color-palette-black-op-20;
+    box-shadow: 0px 2px 10px $color-palette-black-op-20;
 }
 .account-flyout h3 {
     margin: 20px 0 0 0;
@@ -160,9 +160,9 @@
 }
 #helpcontent {
     border: 1px solid #ddd;
-    -moz-box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.1);
-    -webkit-box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.1);
-    box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.1);
+    -moz-box-shadow: 3px 3px 5px $color-palette-black-op-10;
+    -webkit-box-shadow: 3px 3px 5px $color-palette-black-op-10;
+    box-shadow: 3px 3px 5px $color-palette-black-op-10;
     color: #dddddd;
     background: #fff;
     margin-bottom: -10px;
@@ -174,41 +174,21 @@
     background: #000;
     margin-bottom: -1px;
     opacity: 0.7;
-    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=70)";
-    /* IE 8 */
-    //filter: progid: DXImageTransform.Microsoft.Alpha(Opacity=70);
-    /* IE 7 and olders */
-    -khtml-opacity: 0.7;
-    -moz-opacity: 0.7;
-    -webkit-opcity: 0.7;
     color: #ddd;
     line-height: 14px;
     font-size: 11px;
-    -moz-box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.5);
-    -webkit-box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.5);
-    box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.5);
-    -webkit-border-top-left-radius: 8px;
-    -khtml-border-radius-topleft: 8px;
-    -moz-border-radius-topleft: 8px;
+    box-shadow: 0px 0px 5px $color-palette-black-op-50;
+
     border-top-left-radius: 8px;
-    -webkit-border-top-right-radius: 8px;
-    -khtml-border-radius-topright: 8px;
-    -moz-border-radius-topright: 8px;
+
     border-top-right-radius: 8px;
     display: inline-block;
     outline: none;
 }
 .dotcmsHelpButton:hover {
-    background: #000;
+    background: $black;
     opacity: 0.9;
-    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=90)";
-    /* IE 8 */
-    //filter: progid: DXImageTransform.Microsoft.Alpha(Opacity=90);
-    /* IE 7 and olders */
-    -khtml-opacity: 0.9;
-    -moz-opacity: 0.9;
-    -webkit-opcity: 0.9;
-    color: #fff;
+    color: $white;
 }
 .changeHost {
     cursor: pointer;
@@ -253,14 +233,6 @@ $table-border: 1px solid $color-palette-gray-200;
         .selected {
             background-color: #e0e9f6;
         }
-
-        // &:not(.trIdxActive, .trIdxNothing):hover {
-        //   background-color: rgba($color-palette-primary-400, 0.05);
-        // }
-
-        // &:not(.trIdxActive, .trIdxNothing):nth-child(even) {
-        //   background-color: $color-palette-gray-200;
-        // }
     }
 
     th,
@@ -1003,10 +975,10 @@ table.sTypeTable.sTypeItem {
     position: relative;
     padding: 20px 20px 30px 40px;
     color: #fff;
-    background: rgba(0, 0, 0, 0.8);
-    -moz-box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.2);
-    -webkit-box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.2);
-    box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.2);
+    background: $color-palette-black-op-80;
+    -moz-box-shadow: 3px 3px 5px $color-palette-black-op-20;
+    -webkit-box-shadow: 3px 3px 5px $color-palette-black-op-20;
+    box-shadow: 3px 3px 5px $color-palette-black-op-20;
     -webkit-border-radius: 8px;
     -khtml-border-radius: 8px;
     -moz-border-radius: 8px;
@@ -1022,10 +994,10 @@ table.sTypeTable.sTypeItem {
     position: relative;
     padding: 20px 20px 30px 40px;
     color: #fff;
-    background: rgba(0, 0, 0, 0.8);
-    -moz-box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.2);
-    -webkit-box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.2);
-    box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.2);
+    background: $color-palette-black-op-80;
+    -moz-box-shadow: 3px 3px 5px $color-palette-black-op-20;
+    -webkit-box-shadow: 3px 3px 5px $color-palette-black-op-20;
+    box-shadow: 3px 3px 5px $color-palette-black-op-20;
     -webkit-border-radius: 8px;
     -khtml-border-radius: 8px;
     -moz-border-radius: 8px;
@@ -1049,10 +1021,10 @@ table.sTypeTable.sTypeItem {
     width: 150px;
     padding: 20px;
     color: #fff;
-    background: rgba(0, 0, 0, 0.8);
-    -moz-box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.2);
-    -webkit-box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.2);
-    box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.2);
+    background: $color-palette-black-op-80;
+    -moz-box-shadow: 3px 3px 5px $color-palette-black-op-20;
+    -webkit-box-shadow: 3px 3px 5px $color-palette-black-op-20;
+    box-shadow: 3px 3px 5px $color-palette-black-op-20;
     -webkit-border-radius: 8px;
     -khtml-border-radius: 8px;
     -moz-border-radius: 8px;
@@ -1454,9 +1426,9 @@ table.bgThumbnail td div {
     padding: 4px;
     border: 1px solid #a0a0a0;
     margin: 6px;
-    -moz-box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.3);
-    -webkit-box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.3);
-    box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.3);
+    -moz-box-shadow: 0px 3px 10px $color-palette-black-op-30;
+    -webkit-box-shadow: 0px 3px 10px $color-palette-black-op-30;
+    box-shadow: 0px 3px 10px $color-palette-black-op-30;
 }
 table.bgThumbnail td div a {
     border: 1px solid #a0a0a0;

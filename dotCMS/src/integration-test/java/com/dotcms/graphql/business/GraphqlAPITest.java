@@ -88,7 +88,6 @@ import graphql.schema.GraphQLSchema;
 import io.vavr.Tuple2;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.function.BiFunction;
@@ -143,7 +142,7 @@ public class GraphqlAPITest extends IntegrationTestBase {
                 // CREATE TYPE CASES
                 new TypeTestCase.Builder()
                         .description("Given Content BaseType, Should Create Type")
-                        .operations(Collections.singletonList(GraphqlAPITest::createType))
+                        .operations(List.of(GraphqlAPITest::createType))
                         .baseType(BaseContentType.CONTENT)
                         .contentTypeName("newContentContentType" + random.nextPositive())
                         .assertions(
@@ -154,7 +153,7 @@ public class GraphqlAPITest extends IntegrationTestBase {
                         .build(),
                 new TypeTestCase.Builder()
                         .description("Given Widget BaseType, Should Create Type")
-                        .operations(Collections.singletonList(GraphqlAPITest::createType))
+                        .operations(List.of(GraphqlAPITest::createType))
                         .baseType(BaseContentType.WIDGET)
                         .contentTypeName("newWidgetContentType" + random.nextPositive())
                         .assertions(
@@ -165,7 +164,7 @@ public class GraphqlAPITest extends IntegrationTestBase {
                         .build(),
                 new TypeTestCase.Builder()
                         .description("Given FORM BaseType, Should Create Type")
-                        .operations(Collections.singletonList(GraphqlAPITest::createType))
+                        .operations(List.of(GraphqlAPITest::createType))
                         .baseType(BaseContentType.FORM)
                         .contentTypeName("newFormContentType" + random.nextPositive())
                         .assertions(
@@ -176,7 +175,7 @@ public class GraphqlAPITest extends IntegrationTestBase {
                         .build(),
                 new TypeTestCase.Builder()
                         .description("Given FILEASSET BaseType, Should Create Type")
-                        .operations(Collections.singletonList(GraphqlAPITest::createType))
+                        .operations(List.of(GraphqlAPITest::createType))
                         .baseType(BaseContentType.FILEASSET)
                         .contentTypeName("newFileContentType" + random.nextPositive())
                         .assertions(
@@ -187,7 +186,7 @@ public class GraphqlAPITest extends IntegrationTestBase {
                         .build(),
                 new TypeTestCase.Builder()
                         .description("Given HTMLPAGE BaseType, Should Create Type")
-                        .operations(Collections.singletonList(GraphqlAPITest::createType))
+                        .operations(List.of(GraphqlAPITest::createType))
                         .baseType(BaseContentType.HTMLPAGE)
                         .contentTypeName("newPageContentType" + random.nextPositive())
                         .assertions(
@@ -198,7 +197,7 @@ public class GraphqlAPITest extends IntegrationTestBase {
                         .build(),
                 new TypeTestCase.Builder()
                         .description("Given PERSONA BaseType, Should Create Type")
-                        .operations(Collections.singletonList(GraphqlAPITest::createType))
+                        .operations(List.of(GraphqlAPITest::createType))
                         .baseType(BaseContentType.PERSONA)
                         .contentTypeName("newPersonaContentType" + random.nextPositive())
                         .assertions(
@@ -209,7 +208,7 @@ public class GraphqlAPITest extends IntegrationTestBase {
                         .build(),
                 new TypeTestCase.Builder()
                         .description("Given VANITY_URL BaseType, Should Create Type")
-                        .operations(Collections.singletonList(GraphqlAPITest::createType))
+                        .operations(List.of(GraphqlAPITest::createType))
                         .baseType(BaseContentType.VANITY_URL)
                         .contentTypeName("newVanityURLContentType" + random.nextPositive())
                         .assertions(
@@ -220,7 +219,7 @@ public class GraphqlAPITest extends IntegrationTestBase {
                         .build(),
                 new TypeTestCase.Builder()
                         .description("Given KEY_VALUE BaseType, Should Create Type")
-                        .operations(Collections.singletonList(GraphqlAPITest::createType))
+                        .operations(List.of(GraphqlAPITest::createType))
                         .baseType(BaseContentType.KEY_VALUE)
                         .contentTypeName("newKeyValueContentType" + random.nextPositive())
                         .assertions(
@@ -243,7 +242,7 @@ public class GraphqlAPITest extends IntegrationTestBase {
                         .baseType(BaseContentType.CONTENT)
                         .contentTypeName("newContentContentType" + random.nextPositive())
                         .expectedGraphQLInterfaceToInherit(CONTENT_INTERFACE_NAME)
-                        .assertions(Collections.singletonList(GraphqlAPITest::assertTypeDeleted))
+                        .assertions(List.of(GraphqlAPITest::assertTypeDeleted))
                         .build(),
 
                 new TypeTestCase.Builder()
@@ -257,7 +256,7 @@ public class GraphqlAPITest extends IntegrationTestBase {
                         .baseType(BaseContentType.WIDGET)
                         .contentTypeName("newWidgetContentType" + random.nextPositive())
                         .expectedGraphQLInterfaceToInherit(WIDGET_INTERFACE_NAME)
-                        .assertions(Collections.singletonList(GraphqlAPITest::assertTypeDeleted))
+                        .assertions(List.of(GraphqlAPITest::assertTypeDeleted))
                         .build(),
                 new TypeTestCase.Builder()
                         .description("Given existing FORM BaseType, Should Delete Type")
@@ -270,7 +269,7 @@ public class GraphqlAPITest extends IntegrationTestBase {
                         .baseType(BaseContentType.FORM)
                         .expectedGraphQLInterfaceToInherit(FORM_INTERFACE_NAME)
                         .contentTypeName("newFormContentType" + random.nextPositive())
-                        .assertions(Collections.singletonList(GraphqlAPITest::assertTypeDeleted))
+                        .assertions(List.of(GraphqlAPITest::assertTypeDeleted))
                         .build(),
                 new TypeTestCase.Builder()
                         .description("Given existing FILEASSET BaseType, Should Delete Type")
@@ -283,7 +282,7 @@ public class GraphqlAPITest extends IntegrationTestBase {
                         .baseType(BaseContentType.FILEASSET)
                         .expectedGraphQLInterfaceToInherit(FILE_INTERFACE_NAME)
                         .contentTypeName("newFileContentType" + random.nextPositive())
-                        .assertions(Collections.singletonList(GraphqlAPITest::assertTypeDeleted))
+                        .assertions(List.of(GraphqlAPITest::assertTypeDeleted))
                         .build(),
                 new TypeTestCase.Builder()
                         .description("Given existing HTMLPAGE BaseType, Should Delete Type")
@@ -296,7 +295,7 @@ public class GraphqlAPITest extends IntegrationTestBase {
                         .baseType(BaseContentType.HTMLPAGE)
                         .expectedGraphQLInterfaceToInherit(PAGE_INTERFACE_NAME)
                         .contentTypeName("newPageContentType" + random.nextPositive())
-                        .assertions(Collections.singletonList(GraphqlAPITest::assertTypeDeleted))
+                        .assertions(List.of(GraphqlAPITest::assertTypeDeleted))
                         .build(),
                 new TypeTestCase.Builder()
                         .description("Given existing PERSONA BaseType, Should Delete Type")
@@ -309,7 +308,7 @@ public class GraphqlAPITest extends IntegrationTestBase {
                         .baseType(BaseContentType.PERSONA)
                         .expectedGraphQLInterfaceToInherit(PERSONA_INTERFACE_NAME)
                         .contentTypeName("newPersonaContentType" + random.nextPositive())
-                        .assertions(Collections.singletonList(GraphqlAPITest::assertTypeDeleted))
+                        .assertions(List.of(GraphqlAPITest::assertTypeDeleted))
                         .build(),
                 new TypeTestCase.Builder()
                         .description("Given existing VANITY_URL BaseType, Should Delete Type")
@@ -322,7 +321,7 @@ public class GraphqlAPITest extends IntegrationTestBase {
                         .baseType(BaseContentType.VANITY_URL)
                         .expectedGraphQLInterfaceToInherit(VANITY_URL_INTERFACE_NAME)
                         .contentTypeName("newVanityURLContentType" + random.nextPositive())
-                        .assertions(Collections.singletonList(GraphqlAPITest::assertTypeDeleted))
+                        .assertions(List.of(GraphqlAPITest::assertTypeDeleted))
                         .build(),
                 new TypeTestCase.Builder()
                         .description("Given existing KEY_VALUE BaseType, Should Delete Type")
@@ -335,7 +334,7 @@ public class GraphqlAPITest extends IntegrationTestBase {
                         .baseType(BaseContentType.KEY_VALUE)
                         .expectedGraphQLInterfaceToInherit(KEY_VALUE_INTERFACE_NAME)
                         .contentTypeName("newKeyValueContentType" + random.nextPositive())
-                        .assertions(Collections.singletonList(GraphqlAPITest::assertTypeDeleted))
+                        .assertions(List.of(GraphqlAPITest::assertTypeDeleted))
                         .build(),
 
 

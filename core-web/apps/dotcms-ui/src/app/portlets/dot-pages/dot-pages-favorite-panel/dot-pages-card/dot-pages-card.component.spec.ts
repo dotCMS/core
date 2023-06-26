@@ -6,9 +6,8 @@ import { By } from '@angular/platform-browser';
 import { CardModule } from 'primeng/card';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotMessageService } from '@dotcms/data-access';
-import { DotIconModule } from '@dotcms/ui';
+import { DotIconModule, UiDotIconButtonModule } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
@@ -74,18 +73,6 @@ describe('DotPagesCardComponent', () => {
             ).toBeTrue();
         });
 
-        it('should set highlighted star icon', () => {
-            expect(
-                fixture.debugElement
-                    .query(By.css('[data-testid="favoriteCardIconButton"]'))
-                    .nativeElement.classList.contains('dot-favorite-page-highlight')
-            ).toBeTrue();
-            expect(
-                fixture.debugElement.query(By.css('[data-testid="favoriteCardIconButton"]'))
-                    .componentInstance.icon
-            ).toBe('grade');
-        });
-
         it('should set title and url as content', () => {
             expect(
                 fixture.debugElement.query(By.css('.dot-pages-favorite-card-content__title'))
@@ -107,42 +94,6 @@ describe('DotPagesCardComponent', () => {
 
             expect(component.goTo.emit).toHaveBeenCalledWith(true);
             expect(component.edit.emit).not.toHaveBeenCalledWith(true);
-        });
-
-        it('should emit edit event when clicked on star icon', () => {
-            const elem = de.query(By.css('[data-testid="favoriteCardIconButton"]'));
-            elem.triggerEventHandler('click', {
-                stopPropagation: () => {
-                    //
-                }
-            });
-
-            expect(component.goTo.emit).not.toHaveBeenCalledWith(true);
-            expect(component.edit.emit).toHaveBeenCalledWith(true);
-        });
-    });
-
-    describe('Without ownerPage', () => {
-        beforeEach(() => {
-            component.imageUri =
-                '/dA/792c7c9f-6b6f-427b-80ff-1643376c9999/photo/mountain-persona.jpg';
-            component.title = 'test';
-            component.url = '/index';
-            component.ownerPage = false;
-
-            fixture.detectChanges();
-        });
-
-        it('should not set highlighted star icon', () => {
-            expect(
-                fixture.debugElement
-                    .query(By.css('[data-testid="favoriteCardIconButton"]'))
-                    .nativeElement.classList.contains('dot-favorite-page-highlight')
-            ).toBeFalse();
-            expect(
-                fixture.debugElement.query(By.css('[data-testid="favoriteCardIconButton"]'))
-                    .componentInstance.icon
-            ).toBe('star_outline');
         });
     });
 

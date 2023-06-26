@@ -169,7 +169,7 @@ public class CategoryAjax {
 
 		Category cat = categoryAPI.find(catInode, user, respectFrontendRoles);
 		List<Category> cats = categoryAPI.getChildren(cat, user, respectFrontendRoles);
-		List<Map<String, Object>> mapsList = new ArrayList<Map<String, Object>> ();
+		List<Map<String, Object>> mapsList = new ArrayList<> ();
 		for (Category childCat : cats) {
 			Map<String, Object> childCategoryMap = childCat.getMap();
 			String categoryName = (String) childCategoryMap.get("categoryName");
@@ -203,7 +203,7 @@ public class CategoryAjax {
 		}
 
 		String separator = "    ";
-		ArrayList<Map<String, Object>> categories = new ArrayList<Map<String, Object>>();
+		ArrayList<Map<String, Object>> categories = new ArrayList<>();
 		if(level <= maxLevel)
 		{
 			int nextLevel = level + 1;
@@ -457,7 +457,7 @@ public class CategoryAjax {
 	public Map<String, Object> getCategoryMap (String catInode)
 			throws DotDataException, DotSecurityException, PortalException, SystemException {
 		
-		Map<String,Object> categoryMap = new HashMap<String,Object>();
+		Map<String,Object> categoryMap = new HashMap<>();
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();		
 		//Retrieving the current user

@@ -23,6 +23,8 @@
 package com.liferay.util;
 
 import com.dotcms.publisher.pusher.PushUtils;
+import java.util.Comparator;
+import java.util.stream.Stream;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 import com.dotmarketing.business.DotStateException;
@@ -239,7 +241,11 @@ public class FileUtil {
 		if (destination.exists()) {
 			Path destinationPath = Paths.get(destination.getAbsolutePath());
 			//"If the file is a symbolic link then the symbolic link itself, not the final target of the link, is deleted."
-			Files.delete(destinationPath);
+			try (Stream<Path> fileStream = Files.walk(destinationPath)) {
+				fileStream.sorted(Comparator.reverseOrder())
+						.map(Path::toFile)
+						.forEach(File::delete);
+			}
 		}
 
 		Path newLink = Paths.get(destination.getAbsolutePath());
@@ -351,7 +357,7 @@ public class FileUtil {
 	 */
 	private static boolean internalDelete(File f) {
 		try {
-			Files.delete(f.toPath());
+			Files.deleteIfExists(f.toPath());
 			return true;
 		} catch (IOException e) {
 			Logger.debug(FileUtil.class, String.format("Fail to delete file/dir [%s]", f), e);
@@ -389,7 +395,7 @@ public class FileUtil {
 
 	public static byte[] getBytes(File file) throws IOException {
 		if (file == null || !file.exists()) {
-			return null;
+			return new byte[0];
 		}
 
 		try(
@@ -421,9 +427,14 @@ public class FileUtil {
 	 */
 	public static String getRealPath(String relativePath){
 		ServletContext context = Config.CONTEXT;
+		// This is for UNIT TESTS
 		if(context ==null){
-			Logger.fatal(FileUtil.class, "Config.CONTEXT not initialized with a servlet context, dying");
-			throw new DotStateException("Config.CONTEXT not initialized with a servlet context, dying");
+		    String tmpPath = System.getProperty("java.io.tmpdir");
+		    relativePath = relativePath.replace("/", File.separator);
+		    relativePath = relativePath.startsWith(File.separator) ? relativePath : File.separator + relativePath;
+		    Logger.error(FileUtil.class, "Config.CONTEXT not initialized returning a tmp path: " + tmpPath + relativePath);
+		    return tmpPath + relativePath;
+
 		}
 
 		//Fallback for wrong use of the File.separator using the context.getRealPath
@@ -579,10 +590,11 @@ public class FileUtil {
 	}
 
 	public static void mkdirs(String pathName) {
-		File file = new File(pathName);
-		final boolean mkdirsOk = file.mkdirs();
-		if(!mkdirsOk){
-			Logger.error(FileUtil.class,String.format("Fail to makeDir [%s]",file));
+		Path path = Paths.get(pathName);
+		try {
+			Files.createDirectories(path);
+		} catch (IOException e) {
+			Logger.error(FileUtil.class, String.format("Fail to makeDir [%s]", path), e);
 		}
 	}
 
@@ -781,28 +793,20 @@ public class FileUtil {
 			finalVal = "";
 		}else if(filesize< MEGA_BYTE){
 			byteVal = new BigDecimal(KILO_BYTE);
-			if(size!=null){
-				changedByteVal = size.divide(byteVal,MathContext.UNLIMITED);
-				finalVal = Long.toString(Math.round(Math.ceil(changedByteVal.doubleValue())))+" KB";
-			}
+			changedByteVal = size.divide(byteVal,MathContext.UNLIMITED);
+			finalVal = Long.toString(Math.round(Math.ceil(changedByteVal.doubleValue())))+" KB";
 		}else if(filesize< GIGA_BYTE ){
 			byteVal = new BigDecimal(MEGA_BYTE);
-			if(size!=null){
-				changedByteVal = size.divide(byteVal,MathContext.UNLIMITED);
-				finalVal = Long.toString(Math.round(Math.ceil(changedByteVal.doubleValue())))+" MB";
-			}
+			changedByteVal = size.divide(byteVal,MathContext.UNLIMITED);
+			finalVal = Math.round(Math.ceil(changedByteVal.doubleValue())) +" MB";
 		}else if(filesize< TERA_BYTE){
 			byteVal = new BigDecimal(GIGA_BYTE);
-			if(size!=null){
-				changedByteVal = size.divide(byteVal,MathContext.UNLIMITED);
-				finalVal = Long.toString(Math.round(Math.ceil(changedByteVal.doubleValue())))+" GB";
-			}
+			changedByteVal = size.divide(byteVal,MathContext.UNLIMITED);
+			finalVal = Math.round(Math.ceil(changedByteVal.doubleValue())) +" GB";
 		} else{
 			byteVal = new BigDecimal(TERA_BYTE);
-			if(size!=null){
-				changedByteVal = size.divide(byteVal,MathContext.UNLIMITED);
-				finalVal = Long.toString(Math.round(Math.ceil(changedByteVal.doubleValue())))+" TB";
-			}
+			changedByteVal = size.divide(byteVal,MathContext.UNLIMITED);
+			finalVal = Math.round(Math.ceil(changedByteVal.doubleValue())) +" TB";
 		}
 		return finalVal;
 	}

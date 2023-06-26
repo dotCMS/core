@@ -2,10 +2,10 @@ import { Observable } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 
-import { pluck, mergeMap, map } from 'rxjs/operators';
+import { map, mergeMap, pluck } from 'rxjs/operators';
 
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { DotBundle, DotCurrentUser, DotAjaxActionResponseView } from '@dotcms/dotcms-models';
+import { DotAjaxActionResponseView, DotBundle, DotCurrentUser } from '@dotcms/dotcms-models';
 
 import { DotCurrentUserService } from '../dot-current-user/dot-current-user.service';
 
@@ -14,9 +14,9 @@ export class AddToBundleService {
     private bundleUrl = `api/bundle/getunsendbundles/userid`;
 
     /*
-        TODO: I had to do this because this line concat 'api/' into the URL
-        https://github.com/dotCMS/dotcms-js/blob/master/src/core/core-web.service.ts#L169
-    */
+  TODO: I had to do this because this line concat 'api/' into the URL
+  https://github.com/dotCMS/dotcms-js/blob/master/src/core/core-web.service.ts#L169
+*/
     private addToBundleUrl = `/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/addToBundle`;
 
     constructor(
@@ -61,6 +61,6 @@ export class AddToBundleService {
                 method: 'POST',
                 url: this.addToBundleUrl
             })
-            .pipe(map((res: DotAjaxActionResponseView) => res));
+            .pipe(map((res) => res as DotAjaxActionResponseView));
     }
 }
