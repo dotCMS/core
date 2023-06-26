@@ -24,10 +24,10 @@ import {
 
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { filter, scan, take, tap } from 'rxjs/operators';
+import { filter, pluck, scan, take, tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotContainer, DotLayout, DotLayoutBody } from '@dotcms/dotcms-models';
+import { DotContainer, DotContainerMap, DotLayout, DotLayoutBody } from '@dotcms/dotcms-models';
 
 import { colIcon, rowIcon } from './assets/icons';
 import { AddStyleClassesDialogComponent } from './components/add-style-classes-dialog/add-style-classes-dialog.component';
@@ -57,6 +57,12 @@ import {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestroy {
+    @Input()
+    templateLayout!: DotLayout;
+
+    @Input()
+    containerMap!: DotContainerMap;
+
     @ViewChildren('rowElement', {
         emitDistinctChangesOnly: true
     })
@@ -66,9 +72,6 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
         emitDistinctChangesOnly: true
     })
     boxes!: QueryList<ElementRef<GridItemHTMLElement>>;
-
-    @Input()
-    templateLayout!: DotLayout;
 
     @Output()
     layoutChange: EventEmitter<Partial<DotLayout>> = new EventEmitter<DotLayout>();
@@ -100,7 +103,8 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     ) {
         this.vm$ = this.store.vm$;
 
-        this.items$ = this.store.items$.pipe(
+        this.items$ = this.store.vm$.pipe(
+            pluck('items'),
             scan(
                 (acc, items) =>
                     items !== null
@@ -109,7 +113,10 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
                 null // If it doesn't emit anything it will return the last parsed data
             )
         );
-        this.layoutProperties$ = this.store.layoutProperties$.pipe(scan((_, curr) => curr, null)); //Starts with null
+        this.layoutProperties$ = this.store.vm$.pipe(
+            pluck('layoutProperties'),
+            scan((_, curr) => curr, null)
+        ); //Starts with null
 
         combineLatest([this.items$, this.layoutProperties$])
             .pipe(
@@ -129,7 +136,9 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     ngOnInit(): void {
         this.store.init({
             items: parseFromDotObjectToGridStack(this.templateLayout.body),
-            layoutProperties: this.layoutProperties
+            layoutProperties: this.layoutProperties,
+            resizingRowID: '',
+            containerMap: this.containerMap
         });
     }
 
@@ -152,6 +161,13 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
             });
             subgrid.on('dropped', (_: Event, oldNode: GridStackNode, newNode: GridStackNode) => {
                 this.store.subGridOnDropped(oldNode, newNode);
+            });
+
+            subgrid.on('resizestart', (_: Event, el: GridItemHTMLElement) => {
+                this.store.setResizingRowID(el.gridstackNode.grid.parentGridItem.id);
+            });
+            subgrid.on('resizestop', () => {
+                this.store.setResizingRowID(null);
             });
         });
 
@@ -199,6 +215,14 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
                             )
                             .on('change', (_: Event, nodes: GridStackNode[]) => {
                                 this.store.updateColumnGridStackData(nodes as DotGridStackWidget[]);
+                            })
+                            .on('resizestart', (_: Event, el: GridItemHTMLElement) => {
+                                this.store.setResizingRowID(
+                                    el.gridstackNode.grid.parentGridItem.id
+                                );
+                            })
+                            .on('resizestop', () => {
+                                this.store.setResizingRowID(null);
                             });
                     }
 
