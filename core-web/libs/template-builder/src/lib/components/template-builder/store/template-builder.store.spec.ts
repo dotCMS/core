@@ -1,16 +1,21 @@
 import { expect, jest, describe } from '@jest/globals';
-import { of } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { v4 as uuid } from 'uuid';
 
 import { TestBed } from '@angular/core/testing';
 
-import { take } from 'rxjs/operators';
+import { pluck, take } from 'rxjs/operators';
 
+import { DotContainerMap } from '@dotcms/dotcms-models';
 import { containersMock } from '@dotcms/utils-testing';
 
 import { DotTemplateBuilderStore } from './template-builder.store';
 
-import { DotGridStackNode, DotGridStackWidget } from '../models/models';
+import {
+    DotGridStackNode,
+    DotGridStackWidget,
+    DotTemplateLayoutProperties
+} from '../models/models';
 import { GRIDSTACK_DATA_MOCK, mockTemplateBuilderContainer } from '../utils/mocks';
 
 global.structuredClone = jest.fn((val) => {
@@ -19,14 +24,30 @@ global.structuredClone = jest.fn((val) => {
 
 describe('DotTemplateBuilderStore', () => {
     let service: DotTemplateBuilderStore;
+    let items$: Observable<DotGridStackWidget[]>;
+    let layoutProperties$: Observable<DotTemplateLayoutProperties>;
+    let containerMap$: Observable<DotContainerMap>;
     let initialState: DotGridStackWidget[];
     const mockContainer = containersMock[0];
+
+    const addContainer = () => {
+        const parentRow = initialState[2];
+
+        const columnToAddContainer: DotGridStackWidget = {
+            ...(parentRow.subGridOpts?.children[0] as DotGridStackWidget),
+            parentId: parentRow.id as string
+        };
+        service.addContainer({ affectedColumn: columnToAddContainer, container: mockContainer });
+    };
 
     beforeEach(() => {
         TestBed.configureTestingModule({
             providers: [DotTemplateBuilderStore]
         });
         service = TestBed.inject(DotTemplateBuilderStore);
+        items$ = service.vm$.pipe(pluck('items'));
+        layoutProperties$ = service.vm$.pipe(pluck('layoutProperties'));
+        containerMap$ = service.vm$.pipe(pluck('containerMap'));
 
         // Reset the state because is manipulated by reference
         service.init({
@@ -39,11 +60,12 @@ describe('DotTemplateBuilderStore', () => {
                     width: 'small',
                     containers: []
                 }
-            }
+            },
+            containerMap: {}
         });
 
         // Get the initial state
-        service.items$.pipe(take(1)).subscribe((items) => {
+        items$.pipe(take(1)).subscribe((items) => {
             initialState = structuredClone(items); // To lose the reference
         });
     });
@@ -54,7 +76,7 @@ describe('DotTemplateBuilderStore', () => {
 
     it('should initialize the state', () => {
         expect.assertions(1);
-        service.items$.subscribe((items) => {
+        items$.subscribe((items) => {
             expect(items).toEqual(initialState);
         });
     });
@@ -69,7 +91,7 @@ describe('DotTemplateBuilderStore', () => {
         service.addRow(mockRow);
 
         expect.assertions(1);
-        service.items$.subscribe((items) => {
+        items$.subscribe((items) => {
             expect(items.length).toBeGreaterThan(initialState.length);
         });
     });
@@ -92,7 +114,7 @@ describe('DotTemplateBuilderStore', () => {
         service.moveRow(mockAffectedRows);
 
         expect.assertions(1);
-        service.items$.subscribe((items) => {
+        items$.subscribe((items) => {
             expect(items[0]).toEqual(mockAffectedRows[0]);
         });
     });
@@ -105,7 +127,7 @@ describe('DotTemplateBuilderStore', () => {
         service.removeRow(toDeleteID as string);
 
         expect.assertions(1);
-        service.items$.subscribe((items) => {
+        items$.subscribe((items) => {
             expect(items).not.toContainEqual(rowToDelete);
         });
     });
@@ -119,7 +141,7 @@ describe('DotTemplateBuilderStore', () => {
 
         service.updateRow(updatedRow);
         expect.assertions(1);
-        service.items$.subscribe((items) => {
+        items$.subscribe((items) => {
             expect(items[0]).toEqual(updatedRow);
         });
     });
@@ -143,7 +165,7 @@ describe('DotTemplateBuilderStore', () => {
 
         expect.assertions(1);
 
-        service.items$.subscribe((items) => {
+        items$.subscribe((items) => {
             const row = items.find((item) => item.id === parentId);
             expect(row?.subGridOpts?.children).toContainEqual(newColumn);
         });
@@ -178,7 +200,7 @@ describe('DotTemplateBuilderStore', () => {
         service.moveColumnInYAxis([columnToDelete, columnToAdd] as DotGridStackNode[]);
 
         expect.assertions(2);
-        service.items$.subscribe((items) => {
+        items$.subscribe((items) => {
             const row = items.find((item) => item.id === newParent);
             const oldRow = items.find((item) => item.id === oldParent);
 
@@ -218,7 +240,8 @@ describe('DotTemplateBuilderStore', () => {
                 footer: false,
                 header: false,
                 sidebar: {}
-            }
+            },
+            containerMap: {}
         });
 
         const affectedColumns: DotGridStackNode[] = [
@@ -240,7 +263,7 @@ describe('DotTemplateBuilderStore', () => {
         service.updateColumnGridStackData(affectedColumns);
 
         expect.assertions(1);
-        service.items$.subscribe((items) => {
+        items$.subscribe((items) => {
             const row = items.find((item) => item.id === parentId);
             expect(row?.subGridOpts?.children).toEqual(createdWidgets);
         });
@@ -275,7 +298,8 @@ describe('DotTemplateBuilderStore', () => {
                 footer: false,
                 header: false,
                 sidebar: {}
-            }
+            },
+            containerMap: {}
         });
 
         const affectedColumn: DotGridStackNode = {
@@ -290,7 +314,7 @@ describe('DotTemplateBuilderStore', () => {
         service.updateColumnStyleClasses(affectedColumn);
 
         expect.assertions(1);
-        service.items$.subscribe((items) => {
+        items$.subscribe((items) => {
             const row = items.find((item) => item.id === parentId);
             expect(row?.subGridOpts?.children).toContainEqual(affectedColumn);
         });
@@ -307,7 +331,7 @@ describe('DotTemplateBuilderStore', () => {
         service.removeColumn(columnToDelete);
 
         expect.assertions(1);
-        service.items$.subscribe((items) => {
+        items$.subscribe((items) => {
             const row = items.find((item) => item.id === parentRow.id);
 
             expect(row?.subGridOpts?.children).not.toContain(columnToDelete);
@@ -321,7 +345,7 @@ describe('DotTemplateBuilderStore', () => {
             sidebar: { location: 'left' }
         });
 
-        service.layoutProperties$.subscribe((layoutProperties) => {
+        layoutProperties$.subscribe((layoutProperties) => {
             expect(layoutProperties).toEqual({
                 header: true,
                 footer: true,
@@ -333,7 +357,7 @@ describe('DotTemplateBuilderStore', () => {
     it('should update sidebar width properties', () => {
         service.updateSidebarWidth('large');
 
-        service.layoutProperties$.subscribe((layoutProperties) => {
+        layoutProperties$.subscribe((layoutProperties) => {
             expect(layoutProperties.sidebar).toEqual({
                 location: 'left',
                 width: 'large'
@@ -358,17 +382,20 @@ describe('DotTemplateBuilderStore', () => {
     });
 
     it('should add a container to specific box', () => {
-        const parentRow = initialState[2];
+        addContainer();
 
-        const columnToAddContainer: DotGridStackWidget = {
-            ...(parentRow.subGridOpts?.children[0] as DotGridStackWidget),
-            parentId: parentRow.id as string
-        };
-        service.addContainer({ affectedColumn: columnToAddContainer, container: mockContainer });
-        service.items$.subscribe((items) => {
-            const row = items.find((item) => item.id === parentRow.id);
+        items$.subscribe((items) => {
+            const row = items.find((item) => item.id === initialState[2].id);
 
             expect(row?.subGridOpts?.children[0].containers).toContain(mockContainer);
+        });
+    });
+
+    it('should add a container to container map', () => {
+        addContainer();
+
+        containerMap$.subscribe((containerMap) => {
+            expect(containerMap).toHaveProperty(mockContainer.identifier);
         });
     });
 
@@ -384,7 +411,7 @@ describe('DotTemplateBuilderStore', () => {
             affectedColumn: columnToAddContainer,
             containerIndex: 0
         });
-        service.items$.subscribe((items) => {
+        items$.subscribe((items) => {
             const row = items.find((item) => item.id === parentRow.id);
 
             expect(row?.subGridOpts?.children[0].containers).not.toContain(
