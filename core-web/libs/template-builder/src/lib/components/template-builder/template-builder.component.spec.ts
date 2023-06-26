@@ -9,7 +9,7 @@ import { DividerModule } from 'primeng/divider';
 import { DialogService, DynamicDialogModule, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { ToolbarModule } from 'primeng/toolbar';
 
-import { take } from 'rxjs/operators';
+import { pluck, take } from 'rxjs/operators';
 
 import { DotContainersService, DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipeModule } from '@dotcms/ui';
@@ -205,7 +205,7 @@ describe('TemplateBuilderComponent', () => {
                 },
                 containerMap: {}
             });
-            store.items$.pipe(take(1)).subscribe(() => {
+            store.vm$.pipe(pluck('items'), take(1)).subscribe(() => {
                 // const body = parseFromGridStackToDotObject(items);
                 expect(layoutChangeMock).toHaveBeenCalledWith({
                     body: FULL_DATA_MOCK,

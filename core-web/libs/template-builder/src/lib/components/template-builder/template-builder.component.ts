@@ -24,7 +24,7 @@ import {
 
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { filter, scan, take, tap } from 'rxjs/operators';
+import { filter, pluck, scan, take, tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotContainer, DotContainerMap, DotLayout, DotLayoutBody } from '@dotcms/dotcms-models';
@@ -103,7 +103,8 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     ) {
         this.vm$ = this.store.vm$;
 
-        this.items$ = this.store.items$.pipe(
+        this.items$ = this.store.vm$.pipe(
+            pluck('items'),
             scan(
                 (acc, items) =>
                     items !== null
@@ -112,7 +113,10 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
                 null // If it doesn't emit anything it will return the last parsed data
             )
         );
-        this.layoutProperties$ = this.store.layoutProperties$.pipe(scan((_, curr) => curr, null)); //Starts with null
+        this.layoutProperties$ = this.store.vm$.pipe(
+            pluck('layoutProperties'),
+            scan((_, curr) => curr, null)
+        ); //Starts with null
 
         combineLatest([this.items$, this.layoutProperties$])
             .pipe(

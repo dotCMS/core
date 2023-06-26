@@ -32,20 +32,7 @@ import {
 export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderState> {
     // We need to discuss how we will save this to not trigger the parse every time
 
-    public items$ = this.select((state) => state.items);
-    public containerMap$ = this.select((state) => state.containerMap);
-    public layoutProperties$ = this.select((state) => state.layoutProperties);
-
-    public vm$ = this.select(
-        this.items$,
-        this.layoutProperties$,
-        this.containerMap$,
-        (items, layoutProperties, containerMap) => ({
-            containerMap,
-            items,
-            layoutProperties
-        })
-    );
+    public vm$ = this.select((state) => state);
 
     constructor() {
         super({
