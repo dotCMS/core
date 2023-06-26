@@ -167,7 +167,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
                 this.store.setResizingRowID(el.gridstackNode.grid.parentGridItem.id);
             });
             subgrid.on('resizestop', () => {
-                this.store.cleanResizingRowID();
+                this.store.setResizingRowID(null);
             });
         });
 
@@ -222,7 +222,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
                                 );
                             })
                             .on('resizestop', () => {
-                                this.store.cleanResizingRowID();
+                                this.store.setResizingRowID(null);
                             });
                     }
 

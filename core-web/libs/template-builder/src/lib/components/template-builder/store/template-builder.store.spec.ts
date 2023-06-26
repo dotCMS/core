@@ -160,9 +160,9 @@ describe('DotTemplateBuilderStore', () => {
         const rowId = uuid();
         service.setResizingRowID(rowId);
         expect.assertions(1);
-        service.cleanResizingRowID();
+        service.setResizingRowID(null);
         service.vm$.subscribe(({ resizingRowID }) => {
-            expect(resizingRowID).toEqual('');
+            expect(resizingRowID).toEqual(null);
         });
     });
 

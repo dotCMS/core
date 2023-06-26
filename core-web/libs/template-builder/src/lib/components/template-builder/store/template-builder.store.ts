@@ -132,19 +132,9 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      *
      * @memberof DotTemplateBuilderStore
      */
-    readonly setResizingRowID = this.updater((state, resizingRowID: string) => ({
+    readonly setResizingRowID = this.updater((state, resizingRowID: string = null) => ({
         ...state,
         resizingRowID
-    }));
-
-    /**
-     * @description This Method cleans the resizing rowID
-     *
-     * @memberof DotTemplateBuilderStore
-     */
-    readonly cleanResizingRowID = this.updater((state) => ({
-        ...state,
-        resizingRowID: ''
     }));
 
     // Columns Updaters
