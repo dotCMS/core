@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "91ca6074-9762-4cea-99d8-ae8c851dae99",
+		"_postman_id": "153ce97e-b133-46ef-a88f-e6a93e2b2819",
 		"name": "Workflow Resource Tests [/api/v1/workflows]",
 		"description": "Test the necesary validations to every end point of the worlflow resource ",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -12621,6 +12621,27 @@
 			"name": "mergeAction",
 			"item": [
 				{
+					"name": "SetDefaultHostJustInCase",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/site/switch/8a7d5e23-da1e-420a-b4f0-471e7da8ea2d",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"site",
+								"switch",
+								"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "AddMergeContentlet",
 					"event": [
 						{
@@ -12694,7 +12715,7 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/NEW",
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/NEW?indexPolicty=WAIT_FOR",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -12706,6 +12727,12 @@
 								"default",
 								"fire",
 								"NEW"
+							],
+							"query": [
+								{
+									"key": "indexPolicty",
+									"value": "WAIT_FOR"
+								}
 							]
 						}
 					},
@@ -12829,7 +12856,7 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/NEW",
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/NEW?indexPolicty=WAIT_FOR",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -12841,6 +12868,12 @@
 								"default",
 								"fire",
 								"NEW"
+							],
+							"query": [
+								{
+									"key": "indexPolicty",
+									"value": "WAIT_FOR"
+								}
 							]
 						}
 					},
@@ -12899,7 +12932,7 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?inode={{genericContentletInode}}",
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?inode={{genericContentletInode}}&indexPolicty=WAIT_FOR",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -12916,6 +12949,10 @@
 								{
 									"key": "inode",
 									"value": "{{genericContentletInode}}"
+								},
+								{
+									"key": "indexPolicty",
+									"value": "WAIT_FOR"
 								}
 							]
 						}
@@ -12981,7 +13018,7 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?inode=xxxx",
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?inode=xxxx&indexPolicty=WAIT_FOR",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -12998,6 +13035,10 @@
 								{
 									"key": "inode",
 									"value": "xxxx"
+								},
+								{
+									"key": "indexPolicty",
+									"value": "WAIT_FOR"
 								}
 							]
 						}
