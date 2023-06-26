@@ -95,7 +95,7 @@ jobs:
             core-web/installs
           key: node-${{ steps.get-date.outputs.date }}
       - name: Build and Test with Maven
-        run: ./mvnw --no-transfer-progress --fail-at-end  --show-version -DskipTests=true clean install --file pom.xml
+        run: ./mvnw --no-transfer-progress --fail-at-end  --show-version -DskipTests=true -DskipITs=true clean install --file pom.xml
 
       - name: Tar Maven Repo
         shell: bash
