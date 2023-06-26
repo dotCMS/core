@@ -1,5 +1,5 @@
-import { NgFor, NgStyle } from '@angular/common';
-import { ChangeDetectionStrategy, Component, HostBinding } from '@angular/core';
+import { NgClass, NgFor, NgStyle } from '@angular/common';
+import { ChangeDetectionStrategy, Component, HostBinding, Input } from '@angular/core';
 import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
 
 import { GRID_STACK_MARGIN_HORIZONTAL, GRID_STACK_UNIT } from '../../utils/gridstack-options';
@@ -10,9 +10,11 @@ import { GRID_STACK_MARGIN_HORIZONTAL, GRID_STACK_UNIT } from '../../utils/grids
     styleUrls: ['./template-builder-background-columns.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     standalone: true,
-    imports: [NgFor, NgStyle]
+    imports: [NgFor, NgStyle, NgClass]
 })
 export class TemplateBuilderBackgroundColumnsComponent {
+    @Input() show = true;
+
     readonly columnList = [].constructor(12);
     readonly gridStackGap = `${GRID_STACK_MARGIN_HORIZONTAL * 2}${GRID_STACK_UNIT}`;
 
@@ -20,6 +22,6 @@ export class TemplateBuilderBackgroundColumnsComponent {
     hostStyle: SafeStyle;
 
     constructor(private sanitizer: DomSanitizer) {
-        this.hostStyle = sanitizer.bypassSecurityTrustStyle(`gap: ${this.gridStackGap}`);
+        this.hostStyle = this.sanitizer.bypassSecurityTrustStyle(`gap: ${this.gridStackGap}`);
     }
 }
