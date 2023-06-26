@@ -50,7 +50,6 @@ import { DotMessagePipeModule, DotSiteSelectorDirective } from '@dotcms/ui';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TemplateBuilderThemeSelectorComponent implements OnInit, OnDestroy {
-    ref: DynamicDialogRef;
     themes: DotTheme[] = [];
 
     @Input()
@@ -81,10 +80,11 @@ export class TemplateBuilderThemeSelectorComponent implements OnInit, OnDestroy 
     }
 
     constructor(
+        private ref: DynamicDialogRef,
+        private config: DynamicDialogConfig,
         private paginatorService: PaginatorService,
         private siteService: SiteService,
-        private cd: ChangeDetectorRef,
-        private config: DynamicDialogConfig
+        private cd: ChangeDetectorRef
     ) {}
 
     ngOnInit() {
@@ -161,7 +161,7 @@ export class TemplateBuilderThemeSelectorComponent implements OnInit, OnDestroy 
      * @memberof DotThemeSelectorComponent
      */
     apply(): void {
-        this.config?.data?.onSelectTheme(this.current);
+        this.ref.close(this.current);
     }
 
     /**
@@ -170,7 +170,7 @@ export class TemplateBuilderThemeSelectorComponent implements OnInit, OnDestroy 
      * @memberof TemplateBuilderThemeSelectorComponent
      */
     close(): void {
-        this.config?.data?.onClose();
+        this.ref.close();
     }
 
     /**
@@ -179,7 +179,7 @@ export class TemplateBuilderThemeSelectorComponent implements OnInit, OnDestroy 
      * @memberof DotThemeSelectorComponent
      */
     hideDialog(): void {
-        this.config?.data?.onClose();
+        this.ref.close();
     }
 
     private filterThemes(searchCriteria?: string): void {

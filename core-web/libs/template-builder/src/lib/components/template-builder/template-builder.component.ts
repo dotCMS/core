@@ -312,29 +312,38 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
             });
     }
 
-    public openThemeSelectorDynamicDialog(): void {
+    /**
+     * @description This method opens the dialog to edit the row styleclasses
+     *
+     * @memberof TemplateBuilderComponent
+     */
+    openThemeSelectorDynamicDialog(): void {
         const ref: DynamicDialogRef = this.dialogService.open(
             TemplateBuilderThemeSelectorComponent,
             {
                 header: this.dotMessage.get('dot.template.builder.theme.dialog.header.label'),
                 resizable: false,
                 width: '80%',
-                data: {
-                    onSelectTheme: (theme: DotTheme): void => {
-                        this.templateChange.emit({
-                            themeId: theme.identifier,
-                            layout: { ...this.dotLayout }
-                        });
-                        ref.close();
-                        ref.destroy();
-                    },
-                    onClose(): void {
-                        ref.close();
-                        ref.destroy();
-                    }
-                },
                 closeOnEscape: true
             }
         );
+
+        ref.onClose
+            .pipe(
+                take(1),
+                filter((theme: DotTheme) => !!theme)
+            )
+            .subscribe(
+                (theme: DotTheme) => {
+                    this.templateChange.emit({
+                        themeId: theme.identifier,
+                        layout: { ...this.dotLayout }
+                    });
+                },
+                () => {
+                    /* */
+                },
+                () => ref.destroy() // Destroy the dialog when it's closed
+            );
     }
 }
