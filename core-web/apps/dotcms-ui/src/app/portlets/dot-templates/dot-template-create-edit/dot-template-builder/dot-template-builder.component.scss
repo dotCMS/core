@@ -28,6 +28,10 @@
             height: 100%;
             overflow: auto;
         }
+
+        .p-tabview-nav {
+            padding: 0 $spacing-5;
+        }
     }
 }
 
