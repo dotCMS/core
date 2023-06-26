@@ -1,6 +1,8 @@
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
-import { ChartModule, UIChart } from 'primeng/chart';
+import { Component, Input, NgModule } from '@angular/core';
+
+import { ChartModule } from 'primeng/chart';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
@@ -8,7 +10,6 @@ import {
     CHARTJS_DATA_MOCK_WITH_DATA,
     MockDotMessageService
 } from '@dotcms/utils-testing';
-import { DotMessagePipe } from '@tests/dot-message-mock.pipe';
 
 import { DotExperimentsReportsChartComponent } from './dot-experiments-reports-chart.component';
 
@@ -17,14 +18,43 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.reports.chart.empty.title': 'x axis label',
     'experiments.reports.chart.empty.description': 'y axis label'
 });
+
+// TODO: Use ng-mocks to mock the component automatically
+@Component({
+    // eslint-disable-next-line @angular-eslint/component-selector
+    selector: 'p-chart',
+    template: 'chart - mocked component'
+})
+// eslint-disable-next-line @angular-eslint/component-class-suffix
+class MockUIChart {
+    @Input()
+    data: unknown;
+    @Input()
+    options: unknown;
+    @Input()
+    plugins: unknown;
+}
+
+@NgModule({
+    declarations: [MockUIChart],
+    exports: [MockUIChart]
+})
+export class MockChartModule {}
+
 describe('DotExperimentsReportsChartComponent', () => {
     let spectator: Spectator<DotExperimentsReportsChartComponent>;
 
     const createComponent = createComponentFactory({
         component: DotExperimentsReportsChartComponent,
-        imports: [ChartModule, DotMessagePipe],
-        componentProviders: [],
-        declarations: [],
+        overrideComponents: [
+            [
+                DotExperimentsReportsChartComponent,
+                {
+                    remove: { imports: [ChartModule] },
+                    add: { imports: [MockChartModule] }
+                }
+            ]
+        ],
         providers: [
             {
                 provide: DotMessageService,
@@ -34,16 +64,9 @@ describe('DotExperimentsReportsChartComponent', () => {
     });
 
     beforeEach(() => {
-        spectator = createComponent();
-
-        // Jest mock for ResizeObserver (it is not supported by JSDOM)
-        window.ResizeObserver =
-            window.ResizeObserver ||
-            jest.fn().mockImplementation(() => ({
-                disconnect: jest.fn(),
-                observe: jest.fn(),
-                unobserve: jest.fn()
-            }));
+        spectator = createComponent({
+            detectChanges: false
+        });
     });
 
     it('should has title, legends container and PrimeNG Chart Component', () => {
@@ -60,7 +83,7 @@ describe('DotExperimentsReportsChartComponent', () => {
 
         expect(spectator.query(byTestId('chart-title'))).toContainText('title');
         expect(spectator.query(byTestId('chart-legends'))).toExist();
-        expect(spectator.query(UIChart)).toExist();
+        expect(spectator.query(MockUIChart)).toExist();
     });
 
     it('should show the loading state', () => {
@@ -83,4 +106,3 @@ describe('DotExperimentsReportsChartComponent', () => {
         expect(spectator.query(byTestId('empty-data-msg'))).toExist();
     });
 });
-3;

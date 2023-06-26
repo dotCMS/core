@@ -1,13 +1,14 @@
 <p-inplace class="flex w-full" [disabled]="disabled">
     <ng-template pTemplate="display">
         <div class="flex flex-wrap align-items-center gap-2">
-            <ng-container *ngIf="text; else noTextDefinedTpl" data-testId="text-input">
-                {{ text }}
+            <ng-container *ngIf="text; else noTextDefinedTpl">
+                <span data-testId="text-input">{{ text }}</span>
             </ng-container>
             <button
                 class="p-button-rounded p-button-sm p-button-text"
                 *ngIf="!disabled"
                 [class]="inplaceSizes[inputSize].button"
+                data-testId="text-input-button"
                 icon="pi pi-pencil"
                 pButton
             ></button>
