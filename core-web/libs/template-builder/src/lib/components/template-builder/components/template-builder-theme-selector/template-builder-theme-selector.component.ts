@@ -67,18 +67,23 @@ export class TemplateBuilderThemeSelectorComponent implements OnInit, OnDestroy 
 
     @ViewChild('siteSelector', { static: true })
     current: DotTheme;
-    visible = true;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private SEARCH_PARAM = 'searchParam';
     private initialLoad = true;
 
+    get totalRecords(): number {
+        return this.paginatorService.totalRecords;
+    }
+
+    get paginationPerPage(): number {
+        return this.paginatorService.paginationPerPage;
+    }
+
     constructor(
-        public dialogService: DialogService,
-        public messageService: MessageService,
-        public paginatorService: PaginatorService,
+        private paginatorService: PaginatorService,
         private siteService: SiteService,
-        public cd: ChangeDetectorRef,
+        private cd: ChangeDetectorRef,
         private config: DynamicDialogConfig
     ) {}
 
@@ -157,6 +162,15 @@ export class TemplateBuilderThemeSelectorComponent implements OnInit, OnDestroy 
      */
     apply(): void {
         this.config?.data?.onSelectTheme(this.current);
+    }
+
+    /**
+     *
+     *
+     * @memberof TemplateBuilderThemeSelectorComponent
+     */
+    close(): void {
+        this.config?.data?.onClose();
     }
 
     /**

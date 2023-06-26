@@ -14,9 +14,9 @@ import {
 
 import { Dropdown } from 'primeng/dropdown';
 
-import { delay, retryWhen, take, takeUntil, tap } from 'rxjs/operators';
+import { debounceTime, delay, retryWhen, take, takeUntil, tap } from 'rxjs/operators';
 
-import { DotEventsService, PaginatorService } from '@dotcms/data-access';
+import { DotEventsService, PaginatorService, DotSiteService } from '@dotcms/data-access';
 import { Site, SiteService } from '@dotcms/dotcms-js';
 
 @Directive({
@@ -25,58 +25,52 @@ import { Site, SiteService } from '@dotcms/dotcms-js';
     standalone: true
 })
 export class DotSiteSelectorDirective implements OnInit, OnDestroy {
-    @Input() archive: boolean;
-    @Input() id: string;
-    @Input() live: boolean;
-    @Input() system: boolean;
-    @Input() cssClass: string;
-    @Input() width: string;
-    @Input() pageSize = 15;
-    @Input() asField = false;
+    @Input() archive = false;
+    @Input() live = true;
+    @Input() system = true;
+    @Input() pageSize = 10;
 
-    @Output() switch: EventEmitter<Site> = new EventEmitter();
-    @Output() hide: EventEmitter<unknown> = new EventEmitter();
-    @Output() display: EventEmitter<unknown> = new EventEmitter();
+    @Output() switchSite: EventEmitter<Site> = new EventEmitter();
 
-    currentSite: Site;
-
-    sitesCurrentPage: Site[];
-    moreThanOneSite = false;
-
-    private destroy$: Subject<boolean> = new Subject<boolean>();
+    protected currentSite: Site;
+    private readonly destroy$: Subject<boolean> = new Subject<boolean>();
+    private readonly dotEvents = ['login-as', 'logout-as'];
+    private readonly control: Dropdown;
 
     constructor(
-        private siteService: SiteService,
-        public paginationService: PaginatorService,
-        private dotEventsService: DotEventsService,
         @Optional() @Self() private readonly primeDropdown: Dropdown,
-        private readonly changeDetectorRef: ChangeDetectorRef
-    ) {}
+        private readonly dotEventsService: DotEventsService,
+        private readonly dotSiteService: DotSiteService,
+        private readonly cd: ChangeDetectorRef,
+        private readonly siteService: SiteService
+    ) {
+        this.control = this.primeDropdown;
+
+        if (this.control) {
+            this.control.onFilter.pipe(debounceTime(225)).subscribe((event) => {
+                this.getSitesList(event.filter);
+            });
+        } else {
+            console.warn('ContainerOptionsDirective is for use with PrimeNg Dropdown');
+        }
+    }
 
     ngOnInit() {
-        this.paginationService.url = 'v1/site';
-        this.paginationService.setExtraParams('archive', this.archive);
-        this.paginationService.setExtraParams('live', this.live);
-        this.paginationService.setExtraParams('system', this.system);
-        this.paginationService.paginationPerPage = this.pageSize;
+        this.getSitesList();
 
         this.siteService.refreshSites$
             .pipe(takeUntil(this.destroy$))
-            .subscribe((_site: Site) => this.handleSitesRefresh(_site));
-        this.getSitesList();
-        ['login-as', 'logout-as'].forEach((event: string) => {
+            .subscribe((site: Site) => this.handleSitesRefresh(site));
+
+        this.dotEvents.forEach((event: string) => {
             this.dotEventsService
                 .listen(event)
                 .pipe(takeUntil(this.destroy$))
-                .subscribe(() => {
-                    this.getSitesList();
-                });
+                .subscribe(() => this.getSitesList());
         });
 
         this.siteService.switchSite$.pipe(takeUntil(this.destroy$)).subscribe(() => {
-            setTimeout(() => {
-                this.updateCurrentSite(this.siteService.currentSite);
-            }, 200);
+            this.updateCurrentSite(this.siteService.currentSite);
         });
     }
 
@@ -85,24 +79,24 @@ export class DotSiteSelectorDirective implements OnInit, OnDestroy {
      * @memberof SiteSelectorComponent
      */
     handleSitesRefresh(site: Site): void {
-        this.paginationService
-            .getCurrentPage()
+        this.dotSiteService
+            .getSites()
             .pipe(
                 take(1),
                 tap((items: Site[]) => {
                     const siteIndex = items.findIndex(
                         (item: Site) => site.identifier === item.identifier
                     );
+
                     const shouldRetry = site.archived ? siteIndex >= 0 : siteIndex === -1;
+
                     if (shouldRetry) {
                         throw new Error('Indexing... site still present');
                     }
                 }),
                 retryWhen((error) => error.pipe(delay(1000), take(10)))
             )
-            .subscribe((items: Site[]) => {
-                this.updateValues(items);
-            });
+            .subscribe((items: Site[]) => this.updateOptions(items));
     }
 
     ngOnDestroy(): void {
@@ -116,7 +110,7 @@ export class DotSiteSelectorDirective implements OnInit, OnDestroy {
      */
     private setOptions(options: Array<Site>): void {
         this.primeDropdown.options = [...options];
-        this.changeDetectorRef.detectChanges();
+        this.cd.detectChanges();
     }
 
     /**
@@ -125,31 +119,33 @@ export class DotSiteSelectorDirective implements OnInit, OnDestroy {
      * @param {Site} site
      * @memberof DotSiteSelectorComponent
      */
-    updateCurrentSite(site: Site): void {
+    private updateCurrentSite(site: Site): void {
         this.currentSite = site;
+        this.switchSite.emit(site);
+        this.cd.detectChanges();
     }
 
-    private updateValues(items: Site[]): void {
-        this.sitesCurrentPage = [...items];
-        this.moreThanOneSite = items.length > 1;
+    /**
+     * Updates the options and the current site
+     *
+     * @private
+     * @param {Site[]} items
+     * @memberof DotSiteSelectorDirective
+     */
+    private updateOptions(items: Site[]): void {
+        this.setOptions(items);
         this.updateCurrentSite(this.siteService.currentSite);
     }
 
     /**
      * Call to load a new page.
      * @param string [filter='']
-     * @param number [page=1]
      * @memberof SiteSelectorComponent
      */
-    getSitesList(filter = '', offset = 0): void {
-        this.paginationService.filter = `*${filter}`;
-        this.paginationService
-            .getWithOffset(offset)
+    private getSitesList(filter = ''): void {
+        this.dotSiteService
+            .getSites(filter, this.pageSize)
             .pipe(take(1))
-            .subscribe((items: Site[]) => {
-                this.sitesCurrentPage = [...items];
-                this.moreThanOneSite = this.moreThanOneSite || items.length > 1;
-                this.setOptions(items);
-            });
+            .subscribe((items: Site[]) => this.setOptions(items));
     }
 }

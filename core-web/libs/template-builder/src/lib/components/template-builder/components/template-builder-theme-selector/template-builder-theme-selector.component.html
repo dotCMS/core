@@ -25,13 +25,13 @@
 <div class="theme__container">
     <p-dataView
         #dataView
-        [value]="themes"
-        [paginator]="paginatorService.totalRecords > paginatorService.paginationPerPage"
-        [rows]="paginatorService?.paginationPerPage"
-        [totalRecords]="paginatorService?.totalRecords"
-        [lazy]="true"
-        [emptyMessage]="'editpage.layout.theme.no.records.found' | dm"
         [alwaysShowPaginator]="false"
+        [emptyMessage]="'editpage.layout.theme.no.records.found' | dm"
+        [lazy]="true"
+        [paginator]="totalRecords > paginationPerPage"
+        [rows]="paginationPerPage"
+        [totalRecords]="totalRecords"
+        [value]="themes"
         (onLazyLoad)="paginate($event)"
         layout="grid"
     >
@@ -71,6 +71,10 @@
 </div>
 
 <div class="theme__footer">
-    <p-button styleClass="p-button-outlined" label="{{ 'dot.common.cancel' | dm }}"></p-button>
+    <p-button
+        (onClick)="close()"
+        styleClass="p-button-outlined"
+        label="{{ 'dot.common.cancel' | dm }}"
+    ></p-button>
     <p-button (onClick)="apply()" label="{{ 'dot.common.apply' | dm }}"></p-button>
 </div>

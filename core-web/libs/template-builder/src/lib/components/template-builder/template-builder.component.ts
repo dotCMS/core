@@ -98,7 +98,6 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
 
     public items$: Observable<DotLayoutBody>;
     public vm$: Observable<DotTemplateBuilderState> = this.store.vm$;
-    private ref!: DynamicDialogRef;
 
     public readonly rowIcon = rowIcon;
     public readonly colIcon = colIcon;
@@ -314,22 +313,28 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     }
 
     public openThemeSelectorDynamicDialog(): void {
-        this.ref = this.dialogService.open(TemplateBuilderThemeSelectorComponent, {
-            header: this.dotMessage.get('dot.template.builder.theme.dialog.header.label'),
-            resizable: false,
-            width: '80%',
-            data: {
-                onSelectTheme: (theme: DotTheme): void => {
-                    this.templateChange.emit({
-                        themeId: theme.identifier,
-                        layout: { ...this.dotLayout }
-                    });
-                    this.ref.destroy();
+        const ref: DynamicDialogRef = this.dialogService.open(
+            TemplateBuilderThemeSelectorComponent,
+            {
+                header: this.dotMessage.get('dot.template.builder.theme.dialog.header.label'),
+                resizable: false,
+                width: '80%',
+                data: {
+                    onSelectTheme: (theme: DotTheme): void => {
+                        this.templateChange.emit({
+                            themeId: theme.identifier,
+                            layout: { ...this.dotLayout }
+                        });
+                        ref.close();
+                        ref.destroy();
+                    },
+                    onClose(): void {
+                        ref.close();
+                        ref.destroy();
+                    }
                 },
-                onClose(): void {
-                    this.ref.destroy();
-                }
+                closeOnEscape: true
             }
-        });
+        );
     }
 }
