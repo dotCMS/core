@@ -74,7 +74,22 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
                     x: 0,
                     id: uuid(),
                     subGridOpts: {
-                        children: []
+                        children: [
+                            {
+                                id: uuid(),
+                                w: 3,
+                                h: 1,
+                                x: 0,
+                                y: 0,
+                                containers: [
+                                    {
+                                        identifier: 'SYSTEM_CONTAINER'
+                                    }
+                                ],
+                                parentId: newRow.id,
+                                styleClass: null
+                            }
+                        ]
                     }
                 }
             ]
