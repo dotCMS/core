@@ -31,12 +31,5 @@
         .template-builder-box {
             height: 100%;
         }
-        p-scrollpanel {
-            ::ng-deep {
-                .p-scrollpanel {
-                    height: 100%;
-                }
-            }
-        }
     }
 }
