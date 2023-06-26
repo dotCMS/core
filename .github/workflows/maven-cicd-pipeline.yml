@@ -1,6 +1,15 @@
 name: Maven CICD Pipeline
 
 on:
+  workflow_dispatch:
+    inputs:
+      logLevel:
+        description: 'Log level'
+        required: true
+        default: 'warning'
+      tags:
+        description: 'Tags'
+        required: false
   push:
     branches:
         - '*-test-maven'
@@ -18,9 +27,6 @@ on:
       - '*.adoc'
       - '*.txt'
       - '.github/ISSUE_TEMPLATE/**'
-      - '.github/*.yml'
-      - '.github/*.java'
-      - '.github/*.conf'
   pull_request:
     branches:
         - '*-test-maven'
@@ -38,9 +44,6 @@ on:
       - '*.adoc'
       - '*.txt'
       - '.github/ISSUE_TEMPLATE/**'
-      - '.github/*.yml'
-      - '.github/*.java'
-      - '.github/*.conf'
 env:
   JVM_TEST_MAVEN_OPTS: "-e -B"
 jobs:

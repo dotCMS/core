@@ -49,6 +49,7 @@
         <docker.output.image.name>dotcms/dotcms-test</docker.output.image.name>
 
         <legacy.webapp.dir>${project.basedir}/../dotCMS/src/main/webapp</legacy.webapp.dir>
+        <sonar.skip>true</sonar.skip>
     </properties>
     <dependencies>
 

@@ -493,7 +493,6 @@
                             <services>
                                 <service>db-test</service>
                                 <service>elasticsearch-test</service>
-                                <service>dejavu</service>
                             </services>
                         </configuration>
                     </execution>
@@ -508,8 +507,8 @@
                             <!--We clean docker volumes before but not after as we may need to debug -->
                             <!--<removeVolumes>${clean.docker.volumes}</removeVolumes>-->
                             <services>
-                                <service>db</service>
-                                <service>elasticsearch</service>
+                                <service>db-test</service>
+                                <service>elasticsearch-test</service>
                             </services>
                         </configuration>
                     </execution>
