@@ -370,8 +370,8 @@
             <artifactId>dot.wbmp</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.github.darkxanter</groupId>
-            <artifactId>webp-imageio</artifactId>
+            <groupId>com.dotcms.lib</groupId>
+            <artifactId>dot.webp-imageio-core</artifactId>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>

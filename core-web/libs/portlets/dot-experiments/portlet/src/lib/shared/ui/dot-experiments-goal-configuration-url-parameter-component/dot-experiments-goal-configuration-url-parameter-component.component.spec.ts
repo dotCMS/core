@@ -1,4 +1,4 @@
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
+import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { FormArray, FormControl, FormGroup, FormGroupDirective, Validators } from '@angular/forms';
 
@@ -29,6 +29,7 @@ const formMock = new FormGroup({
         ])
     })
 });
+
 const formGroupDirectiveMock = new FormGroupDirective([], []);
 formGroupDirectiveMock.form = formMock;
 
@@ -64,7 +65,7 @@ describe('DotExperimentsGoalConfigurationUrlParameterComponentComponent', () => 
         spectator.component.form.setValue(formValues);
         spectator.component.form.updateValueAndValidity();
 
-        expect(spectator.component.form.valid).toBeTrue();
+        expect(spectator.component.form.valid).toBe(true);
     });
 
     it('should show DotFieldValidationMessageComponent message when the control is invalid', () => {
@@ -85,7 +86,7 @@ describe('DotExperimentsGoalConfigurationUrlParameterComponentComponent', () => 
         spectator.component.form.setValue(formValues);
         spectator.component.form.updateValueAndValidity();
 
-        expect(spectator.component.form.valid).toBeFalse();
+        expect(spectator.component.form.valid).toBe(false);
         expect(spectator.query(DotFieldValidationMessageComponent)).toExist();
     });
 

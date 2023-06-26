@@ -14,8 +14,9 @@ import {
 } from '@dotcms/dotcms-models';
 import { DotFieldRequiredDirective } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { DotExperimentsOptionContentBaseComponent } from '@portlets/dot-experiments/shared/ui/dot-experiment-options/components/dot-experiments-option-content-base-component/dot-experiments-option-content-base.component';
 import { DotDropdownDirective } from '@portlets/shared/directives/dot-dropdown.directive';
+
+import { DotExperimentsOptionContentBaseComponent } from '../dot-experiment-options/components/dot-experiments-option-content-base-component/dot-experiments-option-content-base.component';
 
 /**
  * Component with all the inputs of the configuration of Goal Type REACH PAGE
