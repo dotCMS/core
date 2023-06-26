@@ -26,6 +26,13 @@
                                 detail="{{ goals.BOUNCE_RATE.description | dm }}"
                                 title="{{ goals.BOUNCE_RATE.label | dm }}"
                             />
+
+                            <dot-experiment-options-item
+                                [value]="goalsTypes.EXIT_RATE"
+                                detail="{{ goals.EXIT_RATE.description | dm }}"
+                                title="{{ goals.EXIT_RATE.label | dm }}"
+                            />
+
                             <dot-experiment-options-item
                                 [value]="goalsTypes.REACH_PAGE"
                                 detail="{{ goals.REACH_PAGE.description | dm }}"
