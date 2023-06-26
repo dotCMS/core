@@ -97,10 +97,6 @@ describe('TemplateBuilderComponent', () => {
         expect(spectator.query(byTestId('add-box'))).toBeTruthy();
     });
 
-    it('should have a background', () => {
-        expect(spectator.query('dotcms-template-builder-background-columns')).toBeTruthy();
-    });
-
     it('should have the same quantity of rows as mocked data', () => {
         expect(spectator.queryAll(byTestId('row')).length).toBe(FULL_DATA_MOCK.rows.length);
     });
@@ -203,6 +199,7 @@ describe('TemplateBuilderComponent', () => {
                     footer: true,
                     sidebar: {}
                 },
+                resizingRowID: '',
                 containerMap: {}
             });
             store.vm$.pipe(pluck('items'), take(1)).subscribe(() => {

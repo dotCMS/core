@@ -30,7 +30,8 @@ import {
  */
 @Injectable()
 export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderState> {
-    // We need to discuss how we will save this to not trigger the parse every time
+    public items$ = this.select((state) => state.items);
+    public layoutProperties$ = this.select((state) => state.layoutProperties);
 
     public vm$ = this.select((state) => state);
 
@@ -38,6 +39,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
         super({
             items: [],
             layoutProperties: { header: true, footer: true, sidebar: {} },
+            resizingRowID: '',
             containerMap: {}
         });
     }
@@ -74,7 +76,22 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
                     x: 0,
                     id: uuid(),
                     subGridOpts: {
-                        children: []
+                        children: [
+                            {
+                                id: uuid(),
+                                w: 3,
+                                h: 1,
+                                x: 0,
+                                y: 0,
+                                containers: [
+                                    {
+                                        identifier: 'SYSTEM_CONTAINER'
+                                    }
+                                ],
+                                parentId: newRow.id,
+                                styleClass: null
+                            }
+                        ]
                     }
                 }
             ]
@@ -124,6 +141,16 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
 
         return { ...state, items: itemsCopy };
     });
+
+    /**
+     * @description This Method updates the resizing rowID
+     *
+     * @memberof DotTemplateBuilderStore
+     */
+    readonly setResizingRowID = this.updater((state, resizingRowID: string = null) => ({
+        ...state,
+        resizingRowID
+    }));
 
     // Columns Updaters
 
@@ -384,11 +411,13 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
                 }
 
                 const updatedChildren = row.subGridOpts.children.map((child) => {
-                    if (affectedColumn.id === child.id)
+                    if (affectedColumn.id === child.id) {
                         if (!child.containers) child.containers = [];
-                    child.containers.push({
-                        identifier: container.identifier
-                    });
+
+                        child.containers.push({
+                            identifier: container.identifier
+                        });
+                    }
 
                     return child;
                 });

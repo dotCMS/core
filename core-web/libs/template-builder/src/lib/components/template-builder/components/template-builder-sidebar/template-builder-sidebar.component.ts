@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 
 import { DropdownModule } from 'primeng/dropdown';
 
-import { DotContainer, DotLayoutSideBar } from '@dotcms/dotcms-models';
+import { DotContainer, DotContainerMap, DotLayoutSideBar } from '@dotcms/dotcms-models';
 import { DotMessagePipeModule } from '@dotcms/ui';
 
 import { DotTemplateBuilderStore } from '../../store/template-builder.store';
@@ -21,6 +21,8 @@ export class TemplateBuilderSidebarComponent {
         width: 'medium',
         containers: []
     };
+
+    @Input() containerMap: DotContainerMap;
 
     get width() {
         return (this.sidebarProperties.width ?? 'medium').replace(/^\w/g, (l) => l.toUpperCase());

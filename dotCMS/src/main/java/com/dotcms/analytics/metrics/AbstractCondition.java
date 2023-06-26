@@ -25,7 +25,7 @@ public interface AbstractCondition {
     enum Operator {
         EQUALS((value1, value2) -> value1.equals(value2)),
         CONTAINS((value1, value2) -> value1.toString().contains(value2.toString())),
-        REGEX((regex, value) -> value.toString().matches(regex.toString()));
+        REGEX((value, regex) -> value.toString().matches(regex.toString()));
 
         private OperatorFunc function;
 
