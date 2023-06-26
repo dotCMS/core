@@ -74,7 +74,10 @@ export class DotPageRenderService {
             ...this.getPersonaParam(viewAsConfig.persona),
             ...this.getDeviceParam(viewAsConfig.device),
             ...this.getLanguageParam(viewAsConfig.language),
-            ...this.getModeParam(mode)
+            ...this.getModeParam(mode),
+            ...{
+                variantName: 'DEFAULT'
+            }
         };
     }
 
