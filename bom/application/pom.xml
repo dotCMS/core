@@ -826,7 +826,7 @@
                 <!-- JGroups: Reliable Multicast Communication -->
                 <groupId>org.jgroups</groupId>
                 <artifactId>jgroups</artifactId>
-                <version>3.6.1.Final</version>
+                <version>3.6.10.Final</version>
             </dependency>
 
 
