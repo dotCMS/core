@@ -39,17 +39,21 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
         super({
             items: [],
             layoutProperties: { header: true, footer: true, sidebar: {} },
-            resizingRowID: ''
+            resizingRowID: '',
+            containerMap: {}
         });
     }
 
     // Init store
 
-    readonly init = this.updater((state, { items, layoutProperties }: DotTemplateBuilderState) => ({
-        ...state,
-        items,
-        layoutProperties
-    }));
+    readonly init = this.updater(
+        (state, { items, layoutProperties, containerMap }: DotTemplateBuilderState) => ({
+            ...state,
+            items,
+            layoutProperties,
+            containerMap
+        })
+    );
 
     // Rows Updaters
 
@@ -403,9 +407,10 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
 
                 const updatedChildren = row.subGridOpts.children.map((child) => {
                     if (affectedColumn.id === child.id)
-                        child.containers.push({
-                            identifier: container.identifier
-                        });
+                        if (!child.containers) child.containers = [];
+                    child.containers.push({
+                        identifier: container.identifier
+                    });
 
                     return child;
                 });
@@ -413,7 +418,11 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
                 return { ...row, subGridOpts: { ...row.subGridOpts, children: updatedChildren } };
             });
 
-            return { ...state, items: updatedItems };
+            return {
+                ...state,
+                items: updatedItems,
+                containerMap: { ...state.containerMap, [container.identifier]: container }
+            };
         }
     );
 

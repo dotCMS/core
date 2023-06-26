@@ -1,6 +1,6 @@
 import { GridStackNode, GridStackOptions, GridStackWidget } from 'gridstack';
 
-import { DotLayoutSideBar } from '@dotcms/dotcms-models';
+import { DotContainerMap, DotLayoutSideBar } from '@dotcms/dotcms-models';
 
 /**
  * @description This is the model for using custom data on the GridStackOptions
@@ -60,6 +60,7 @@ export interface DotGridStackNode extends GridStackNode {
  */
 export interface DotTemplateBuilderState {
     items: DotGridStackWidget[];
+    containerMap: DotContainerMap;
     layoutProperties: DotTemplateLayoutProperties;
     resizingRowID: string;
 }
