@@ -15,7 +15,7 @@ import { DOT_MESSAGE_SERVICE_TB_MOCK } from '../../utils/mocks';
 import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-confirm-dialog.component';
 
 export default {
-    title: 'Components/Box',
+    title: 'Library/Template Builder/Components/Box',
     component: TemplateBuilderBoxComponent,
     decorators: [
         moduleMetadata({
