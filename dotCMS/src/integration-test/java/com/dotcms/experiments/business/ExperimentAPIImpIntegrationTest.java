@@ -138,7 +138,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
      * - Second one in RUNNING state, it was already started and it was not stopped yet
      * - Finally one in STOP State, it was started, but it was stopped already
      */
-    //@Test
+    @Test
     public void getRunningExperiment() throws DotDataException, DotSecurityException {
         final Experiment draftExperiment = new ExperimentDataGen().nextPersisted();
 
@@ -194,7 +194,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
      * When: an {@link Experiment} is started
      * Should: publish all the contents in the variants created for the experiment.
      */
-    //@Test
+    @Test
     public void testStartExperiment_shouldPublishContent()
             throws DotDataException, DotSecurityException {
 
@@ -281,7 +281,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
      * When: an {@link Experiment} is started
      * Should: publish all the contents in the variants created for the experiment.
      */
-    //@Test(expected = IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testAddMoreThanOneOriginalVariant_shouldFail() throws DotDataException, DotSecurityException {
         final Experiment newExperiment = new ExperimentDataGen()
                 .addVariant("Test Green Button")
@@ -296,7 +296,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
      * When: Try to delete the Experiment Original variant
      * Should: throw a NotAllowedException
      */
-    //@Test(expected = NotAllowedException.class)
+    @Test(expected = NotAllowedException.class)
     public void testADeleteOriginalVariant_shouldFail() throws DotDataException, DotSecurityException {
         final Experiment newExperiment = new ExperimentDataGen()
                 .addVariant("Test Green Button")
@@ -337,7 +337,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    //@Test
+    @Test
     public void getEvents() throws DotDataException, DotSecurityException {
         final Host host = new SiteDataGen().nextPersisted();
         final Template template = new TemplateDataGen().host(host).nextPersisted();
@@ -490,7 +490,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
      * When: get the Experiment's Results
      * Should: get the Split traffic too
      */
-    //@Test
+    @Test
     public void getSplitTrafficInsideExperimentResults()
             throws DotDataException, DotSecurityException {
         final Host host = new SiteDataGen().nextPersisted();
@@ -552,7 +552,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
      *
      * Should:  get a Success PAGE_REACH
      */
-    //@Test
+    @Test
     public void pageReachDirectReferer() throws DotDataException, DotSecurityException {
         final Host host = new SiteDataGen().nextPersisted();
         final Template template = new TemplateDataGen().host(host).nextPersisted();
@@ -661,7 +661,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    //@Test
+    @Test
     public void resultWithPagination() throws DotDataException, DotSecurityException {
         final Host host = new SiteDataGen().nextPersisted();
         final Template template = new TemplateDataGen().host(host).nextPersisted();
@@ -791,7 +791,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    //@Test
+    @Test
     public void resultWithPaginationWhenTheLastPageIsNotComplte() throws DotDataException, DotSecurityException {
 
         final Host host = new SiteDataGen().nextPersisted();
@@ -970,7 +970,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
      *     - Today: 1
      *     - Tomorrow: 0
      */
-    //@Test
+    @Test
     public void multiDaysEvent() throws DotDataException, DotSecurityException {
         final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("MM/dd/yyyy")
                 .withZone(ZoneId.systemDefault());
@@ -1126,7 +1126,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
      *
      * Should:  get a Failed PAGE_REACH
      */
-    //@Test
+    @Test
     public void pageReachNotDirectReferer() throws DotDataException, DotSecurityException {
         final Host host = new SiteDataGen().nextPersisted();
         final Template template = new TemplateDataGen().host(host).nextPersisted();
@@ -1216,7 +1216,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
      *
      * Should:  get a Failed PAGE_REACH
      */
-    //@Test
+    @Test
     public void pageNotReachButExperimentPageWasView() throws DotDataException, DotSecurityException {
         final Host host = new SiteDataGen().nextPersisted();
         final Template template = new TemplateDataGen().host(host).nextPersisted();
@@ -1306,7 +1306,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
      *
      * Should:  get a Failed PAGE_REACH
      */
-    //@Test
+    @Test
     public void pageReachButExperimentPageWasNotView() throws DotDataException, DotSecurityException {
         final Host host = new SiteDataGen().nextPersisted();
         final Template template = new TemplateDataGen().host(host).nextPersisted();
@@ -1397,7 +1397,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
      *
      * Should:  get a Faliled PAGE_REACH
      */
-    //@Test
+    @Test
     public void pageReachAfterExperimentPageButNotDirectReferer() throws DotDataException, DotSecurityException {
         final Host host = new SiteDataGen().nextPersisted();
         final Template template = new TemplateDataGen().host(host).nextPersisted();
@@ -1492,7 +1492,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
      *
      * Should:  count 0 Minimize Bounce Rate success to the specific variant
      */
-    //@Test
+    @Test
     public void bounceRate() throws DotDataException, DotSecurityException {
         final Host host = new SiteDataGen().nextPersisted();
         final Template template = new TemplateDataGen().host(host).nextPersisted();
@@ -1591,7 +1591,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
      *
      * Should:  count 1 Minimize Bounce Rate success to the specific variant
      */
-    //@Test
+    @Test
     @UseDataProvider("indexPaths")
     public void bounceRateWithIndex(final String indexPath) throws DotDataException, DotSecurityException {
         final Host host = new SiteDataGen().nextPersisted();
@@ -1697,7 +1697,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
      *
      * Should:  count 0 Minimize Bounce Rate success to the specific variant
      */
-    //@Test
+    @Test
     @UseDataProvider("indexPaths")
     public void noBounceRateWithIndex(final String indexPath) throws DotDataException, DotSecurityException {
         final Host host = new SiteDataGen().nextPersisted();
@@ -1807,7 +1807,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
      *
      * Should:  count 1 Minimize Bounce Rate success to the specific variant
      */
-    //@Test
+    @Test
     public void notBounceRate() throws DotDataException, DotSecurityException {
         final Host host = new SiteDataGen().nextPersisted();
         final Template template = new TemplateDataGen().host(host).nextPersisted();
@@ -1902,7 +1902,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
      *
      * Should:  Not Sessions into Experiment
      */
-    //@Test
+    @Test
     public void notBounceRateSession() throws DotDataException, DotSecurityException {
         final Host host = new SiteDataGen().nextPersisted();
         final Template template = new TemplateDataGen().host(host).nextPersisted();
@@ -1992,7 +1992,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
      *
      * Should:  get a Success PAGE_REACH
      */
-    //@Test
+    @Test
     public void pageReachDirectRefererMultiDays() throws DotDataException, DotSecurityException {
         final String cubeServerIp = "127.0.0.1";
         final int cubeJsServerPort = 5000;
@@ -2386,7 +2386,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    //@Test
+    @Test
     public void addUrlConditionToReachPageGoal() throws DotDataException, DotSecurityException {
         final Host host = new SiteDataGen().nextPersisted();
         final Template template = new TemplateDataGen().host(host).nextPersisted();
@@ -2429,7 +2429,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
      * When: Try to get the result from a not starting {@link Experiment}
      * Should: Throw a {@link IllegalArgumentException}
      */
-    //@Test(expected = IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void tryToGetResultFromExperimentNotStarted()
             throws DotDataException, DotSecurityException {
         final Host host = new SiteDataGen().nextPersisted();
@@ -2450,7 +2450,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
      * When: Try to get the result from a not saved {@link Experiment}
      * Should: Throw a {@link IllegalArgumentException}
      */
-    //@Test(expected = IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void tryToGetResultFromExperimentNotSaved()
             throws DotDataException, DotSecurityException {
         final Host host = new SiteDataGen().nextPersisted();
@@ -2474,7 +2474,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    //@Test
+    @Test
     public void addUrlConditionToBounceRateCondition() throws DotDataException, DotSecurityException {
         final Host host = new SiteDataGen().nextPersisted();
         final Template template = new TemplateDataGen().host(host).nextPersisted();
@@ -2516,7 +2516,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
      * When: an Ended Experiment is archived
      * Should: not call the validateSchedule method
      */
-    //@Test
+    @Test
     public void testSaveExperiment_shouldNotValidateSchedule() throws DotDataException, DotSecurityException {
         final Host host = new SiteDataGen().nextPersisted();
         final Template template = new TemplateDataGen().host(host).nextPersisted();
@@ -2563,7 +2563,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    //@Test
+    @Test
     public void resultWithUrlMap() throws DotDataException, DotSecurityException {
         final Host host = new SiteDataGen().nextPersisted();
         final Template template = new TemplateDataGen().host(host).nextPersisted();
@@ -2692,7 +2692,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
      *
      * Should: calculate the probability that B beats A is 0.99
      */
-    //@Test
+    @Test
     public void test_calcBayesian_BOverA() throws DotDataException, DotSecurityException {
         final Host host = new SiteDataGen().nextPersisted();
         final Template template = new TemplateDataGen().host(host).nextPersisted();
@@ -2763,7 +2763,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
      *
      * Should: calculate the probability that B beats A is 0.99
      */
-    //@Test
+    @Test
     public void test_calcBayesian_BOverA_BounceRate() throws DotDataException, DotSecurityException {
         final Host host = new SiteDataGen().nextPersisted();
         final Template template = new TemplateDataGen().host(host).nextPersisted();
@@ -2844,7 +2844,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
      *
      * Should: calculate the probability that B beats A by 0.02
      */
-    //@Test
+    @Test
     public void test_calcBayesian_AOverB() throws DotDataException, DotSecurityException {
         final Host host = new SiteDataGen().nextPersisted();
         final Template template = new TemplateDataGen().host(host).nextPersisted();
@@ -2915,7 +2915,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
      * - The experiment is ended
      * Should: calculate the probability that B beats A by 0.02
      */
-    //@Test
+    @Test
     public void test_calcBayesian_AOverB_ended() throws DotDataException, DotSecurityException {
         final Host host = new SiteDataGen().nextPersisted();
         final Template template = new TemplateDataGen().host(host).nextPersisted();
@@ -2987,7 +2987,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
      *
      * Should: calculate the probability that B beats A is 0.99
      */
-    //@Test
+    @Test
     @Ignore
     public void test_calcBayesian_ABC() throws DotDataException, DotSecurityException {
         final Host host = new SiteDataGen().nextPersisted();
