@@ -11,7 +11,6 @@ import { Observable, combineLatest } from 'rxjs';
 import {
     AfterViewInit,
     ChangeDetectionStrategy,
-    ChangeDetectorRef,
     Component,
     ElementRef,
     EventEmitter,
@@ -100,8 +99,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     constructor(
         private store: DotTemplateBuilderStore,
         private dialogService: DialogService,
-        private dotMessage: DotMessageService,
-        private cd: ChangeDetectorRef
+        private dotMessage: DotMessageService
     ) {
         this.vm$ = this.store.vm$;
 
@@ -199,8 +197,9 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
             this.rows.forEach((ref) => {
                 const isNew = !ref.nativeElement.gridstackNode;
 
-                const row = ref.nativeElement.gridstackNode || this.cd.detectChanges();
-                this.grid.makeWidget(ref.nativeElement).gridstackNode;
+                const row =
+                    ref.nativeElement.gridstackNode ||
+                    this.grid.makeWidget(ref.nativeElement).gridstackNode;
 
                 if (row && row.el) {
                     if (isNew) {
