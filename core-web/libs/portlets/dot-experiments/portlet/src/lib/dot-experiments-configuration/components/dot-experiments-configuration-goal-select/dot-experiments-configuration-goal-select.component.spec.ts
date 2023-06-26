@@ -38,7 +38,9 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.configure.goals.sidebar.header.button': 'Apply',
     'experiments.configure.goals.name.default': 'Primary goal',
     'experiments.goal.conditions.maximize.reach.page': 'Maximize Reaching a Page',
-    'experiments.goal.conditions.minimize.bounce.rate': 'Minimize Bounce Rate'
+    'experiments.goal.conditions.minimize.bounce.rate': 'Minimize Bounce Rate',
+    'experiments.goal.conditions.detect.exit.rate': 'Detect exit rate',
+    'experiments.goal.conditions.detect.queryparam.in.url': 'Detect URL Parameter'
 });
 
 const EXPERIMENT_MOCK = getExperimentMock(0);
@@ -105,15 +107,23 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
         const optionsRendered = spectator.queryAll(byTestId('dot-options-item-header'));
 
         spectator.click(optionsRendered[0]);
-
         expect((spectator.query(byTestId('goal-name-input')) as HTMLInputElement).value).toEqual(
             'Minimize Bounce Rate'
         );
 
         spectator.click(optionsRendered[1]);
+        expect((spectator.query(byTestId('goal-name-input')) as HTMLInputElement).value).toEqual(
+            'Detect exit rate'
+        );
 
+        spectator.click(optionsRendered[2]);
         expect((spectator.query(byTestId('goal-name-input')) as HTMLInputElement).value).toEqual(
             'Maximize Reaching a Page'
+        );
+
+        spectator.click(optionsRendered[3]);
+        expect((spectator.query(byTestId('goal-name-input')) as HTMLInputElement).value).toEqual(
+            'Detect URL Parameter'
         );
     });
 
@@ -137,8 +147,9 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
 
     it('should have rendered BOUNCE_RATE and REACH_PAGE and URL_PARAMETER options items', () => {
         const optionsRendered = spectator.queryAll(byTestId('dot-options-item-header'));
+        const EXPECTED_GOAL_OPTIONS_COUNT = 4;
 
-        expect(optionsRendered.length).toBe(3);
+        expect(optionsRendered.length).toBe(EXPECTED_GOAL_OPTIONS_COUNT);
     });
 
     it('should be a form valid in case of click on a No content option item', () => {
@@ -246,12 +257,14 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
 
     it('should add the class expand to an option clicked that contains content', () => {
         const goalsOption = spectator.queryAll(byTestId('dot-options-item-header'));
-        spectator.click(goalsOption[1]);
+        const OPTION_INDEX_WITH_CONTENT = 2;
 
+        spectator.click(goalsOption[OPTION_INDEX_WITH_CONTENT]);
         spectator.detectComponentChanges();
-        const contentRendered = spectator.queryAll(byTestId('dot-options-item-content'));
 
-        expect(contentRendered[0]).toHaveClass('expanded');
+        const firstOptionContentRendered = spectator.query(byTestId('dot-options-item-content'));
+
+        expect(firstOptionContentRendered).toHaveClass('expanded');
     });
 
     it('should emit closedSidebar when the sidebar its closed', async () => {

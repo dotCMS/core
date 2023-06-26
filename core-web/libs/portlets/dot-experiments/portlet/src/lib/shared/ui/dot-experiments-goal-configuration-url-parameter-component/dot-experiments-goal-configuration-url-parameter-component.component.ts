@@ -9,8 +9,9 @@ import { DotFieldValidationMessageModule } from '@components/_common/dot-field-v
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { GoalsConditionsOperatorsListByType } from '@dotcms/dotcms-models';
 import { DotFieldRequiredDirective, DotMessagePipeModule } from '@dotcms/ui';
-import { DotExperimentsOptionContentBaseComponent } from '@portlets/dot-experiments/shared/ui/dot-experiment-options/components/dot-experiments-option-content-base-component/dot-experiments-option-content-base.component';
 import { DotDropdownDirective } from '@portlets/shared/directives/dot-dropdown.directive';
+
+import { DotExperimentsOptionContentBaseComponent } from '../dot-experiment-options/components/dot-experiments-option-content-base-component/dot-experiments-option-content-base.component';
 
 @Component({
     standalone: true,
