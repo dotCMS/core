@@ -1,6 +1,6 @@
 import { moduleMetadata, Story, Meta } from '@storybook/angular';
 
-import { NgIf } from '@angular/common';
+import { NgIf, NgStyle } from '@angular/common';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
@@ -20,6 +20,7 @@ export default {
     decorators: [
         moduleMetadata({
             imports: [
+                NgStyle,
                 NgIf,
                 DotIconModule,
                 ButtonModule,

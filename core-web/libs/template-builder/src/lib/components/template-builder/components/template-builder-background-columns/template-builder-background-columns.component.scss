@@ -8,10 +8,5 @@
 .column {
     height: 100%;
     border-radius: $border-radius-sm;
-    background-color: $white;
-    transition: background-color 0.35s ease-in-out;
-}
-
-.visible {
     background-color: $color-palette-gray-200;
 }

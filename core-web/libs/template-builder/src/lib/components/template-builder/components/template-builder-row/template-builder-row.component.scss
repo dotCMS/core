@@ -19,9 +19,9 @@
 
 dotcms-template-builder-background-columns {
     position: absolute;
-    inset: $spacing-3 3.625rem $spacing-3 $spacing-3;
+    inset: $spacing-3 3.625rem $spacing-4 $spacing-3;
     z-index: -1;
-    height: 14rem;
+    transition: opacity 0.35s ease-in-out;
 }
 
 .row__actions-container {

@@ -1,6 +1,6 @@
 import { createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
 
-import { NgClass, NgFor, NgStyle } from '@angular/common';
+import { NgFor, NgStyle } from '@angular/common';
 import { By } from '@angular/platform-browser';
 
 import { TemplateBuilderBackgroundColumnsComponent } from './template-builder-background-columns.component';
@@ -10,7 +10,7 @@ describe('TemplateBuilderBackgroundColumnsComponent', () => {
 
     const createHost = createHostFactory({
         component: TemplateBuilderBackgroundColumnsComponent,
-        imports: [NgFor, NgStyle, NgClass]
+        imports: [NgFor, NgStyle]
     });
 
     beforeEach(() => {

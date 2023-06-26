@@ -24,6 +24,8 @@
         ></dotcms-remove-confirm-dialog>
     </div>
     <dotcms-template-builder-background-columns
-        [show]="isResizing"
+        [ngStyle]="{
+            opacity: isResizing ? 1 : 0
+        }"
     ></dotcms-template-builder-background-columns>
 </div>
