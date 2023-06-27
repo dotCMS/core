@@ -94,6 +94,10 @@ describe('DotTemplateBuilderStore', () => {
         expect.assertions(1);
         items$.subscribe((items) => {
             expect(items.length).toBeGreaterThan(initialState.length);
+            expect(items[0].subGridOpts.children[0].w).toBe(3);
+            expect(items[0].subGridOpts.children[0].containers[0].identifier).toBe(
+                'SYSTEM_CONTAINER'
+            );
         });
     });
 

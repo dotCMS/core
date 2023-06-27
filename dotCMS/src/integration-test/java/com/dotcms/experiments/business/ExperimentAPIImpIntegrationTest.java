@@ -1775,7 +1775,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
             final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
             ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
-            final ExperimentResults experimentResult = experimentsAPIImpl.getResults(experiment);
+            final ExperimentResults experimentResult = experimentsAPIImpl.getResults(
+                experiment,
+                APILocator.systemUser());
 
             mockhttpServer.validate();
 
@@ -2358,6 +2360,27 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
         final AnalyticsHelper mockAnalyticsHelper = mock(AnalyticsHelper.class);
         when(mockAnalyticsHelper.appFromHost(currentHost)).thenReturn(mockAnalyticsApp);
+
+        return mockAnalyticsHelper;
+    }
+
+    private static AnalyticsHelper mockInvalidAnalyticsHelper() throws DotDataException, DotSecurityException {
+        final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHost();
+        final AnalyticsProperties analyticsProperties = AnalyticsProperties.builder()
+            .clientId("clientId")
+            .clientSecret("clientSecret")
+            .analyticsKey("analyticsKey")
+            .analyticsConfigUrl("http://localhost:8088/c/customer1/cluster1/keys")
+            .analyticsWriteUrl("http://localhost:8081/api/v1/event")
+            .analyticsReadUrl(CUBEJS_SERVER_URL)
+            .build();
+
+        final AnalyticsApp mockAnalyticsApp = mock(AnalyticsApp.class);
+        when(mockAnalyticsApp.getAnalyticsProperties()).thenReturn(analyticsProperties);
+
+        final AnalyticsHelper mockAnalyticsHelper = mock(AnalyticsHelper.class);
+        when(mockAnalyticsHelper.appFromHost(currentHost)).thenThrow(new IllegalStateException("Error!"));
+
         return mockAnalyticsHelper;
     }
 
@@ -3097,6 +3120,28 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
             IPUtils.disabledIpPrivateSubnet(false);
             mockhttpServer.stop();
         }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPI#getResults(Experiment, User)}
+     * When:
+     * - You have a set of pages that are required to create an experiment
+     * And:
+     * - A missing analytics application
+     *
+     * Should: thrown an exception
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void test_getResults_missingAnalyticsApp() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+        final HTMLPageAsset pageA = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageC = new HTMLPageDataGen(host, template).nextPersisted();
+        final Experiment experiment = createExperimentWithReachPageGoalAndVariant(pageA, pageC, "variantB", "variantC");
+        final AnalyticsHelper mockAnalyticsHelper = mockInvalidAnalyticsHelper();
+        ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+        final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+        experimentsAPIImpl.getResults(experiment, APILocator.systemUser());
     }
 
     /**
