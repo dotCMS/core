@@ -42,8 +42,8 @@ module.exports = () => {
             reportName: 'report'
         },
         junitReporter: {
-            outputDir: join(__dirname, './target/karma-tests'), // results will be saved as $outputDir/$browserName.xml
-            outputFile: 'test-results.xml'
+            outputDir: join(__dirname, 'target', 'surefire-reports'), // results will be saved as $outputDir/$browserName.xml
+            outputFile: 'TEST-karma.xml'
         },
         singleRun: true,
         browserDisconnectTimeout: 20000

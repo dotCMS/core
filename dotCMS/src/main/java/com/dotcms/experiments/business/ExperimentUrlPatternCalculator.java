@@ -46,13 +46,10 @@ public enum ExperimentUrlPatternCalculator {
      */
     public String calculateUrlRegexPattern(final HTMLPageAsset htmlPageAsset) {
         try {
-            final String resultRegex = URL_REGEX_PATTERN_STRATEGIES.stream()
+            return URL_REGEX_PATTERN_STRATEGIES.stream()
                 .filter(strategy -> strategy.isMatch(htmlPageAsset))
                 .findFirst()
                 .orElseGet(()-> DEFAULT_REGEX_URL_PATTERN_STRATEGY).getRegexPattern(htmlPageAsset);
-
-
-            return String.format("^%s$",  resultRegex);
 
         } catch (final RegexUrlPatterStrategyException e) {
             throw new RuntimeException(String.format("It is not possible to get the URI for %s",

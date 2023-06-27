@@ -34,7 +34,7 @@
         <repository>
             <snapshots>
                 <enabled>true</enabled>
-                <updatePolicy>always</updatePolicy>
+                <updatePolicy>never</updatePolicy>
             </snapshots>
             <releases>
                 <enabled>false</enabled>

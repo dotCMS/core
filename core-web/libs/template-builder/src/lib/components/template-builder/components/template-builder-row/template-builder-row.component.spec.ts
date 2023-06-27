@@ -1,5 +1,6 @@
 import { describe, it, expect } from '@jest/globals';
 
+import { NgStyle } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -18,14 +19,16 @@ import { DotTemplateBuilderStore } from '../../store/template-builder.store';
 import { DOT_MESSAGE_SERVICE_TB_MOCK } from '../../utils/mocks';
 import { DotAddStyleClassesDialogStore } from '../add-style-classes-dialog/store/add-style-classes-dialog.store';
 import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-confirm-dialog.component';
+import { TemplateBuilderBackgroundColumnsComponent } from '../template-builder-background-columns/template-builder-background-columns.component';
 
 @Component({
     selector: 'dotcms-host-component',
-    template: ` <dotcms-template-builder-row [row]="row">
+    template: ` <dotcms-template-builder-row [row]="row" [isResizing]="isResizing">
         <p>Some component</p>
     </dotcms-template-builder-row>`
 })
 class HostComponent {
+    isResizing = false;
     row = {
         id: '1'
     };
@@ -39,12 +42,14 @@ describe('TemplateBuilderRowComponent', () => {
     beforeEach(async () => {
         await TestBed.configureTestingModule({
             imports: [
+                NgStyle,
                 ButtonModule,
                 TemplateBuilderRowComponent,
                 RemoveConfirmDialogComponent,
                 NoopAnimationsModule,
                 DotMessagePipeModule,
-                HttpClientTestingModule
+                HttpClientTestingModule,
+                TemplateBuilderBackgroundColumnsComponent
             ],
             declarations: [HostComponent],
             providers: [
@@ -84,6 +89,15 @@ describe('TemplateBuilderRowComponent', () => {
 
     it('should render child', () => {
         expect(fixture.debugElement.query(By.css('p'))).toBeTruthy();
+    });
+
+    it('should have a background when resizing', () => {
+        fixture.componentInstance.isResizing = true;
+        fixture.detectChanges();
+
+        expect(
+            fixture.debugElement.query(By.css('dotcms-template-builder-background-columns'))
+        ).toBeTruthy();
     });
 
     it('should trigger editRowStyleClass when clicking on editStyleClass button', () => {
