@@ -11,6 +11,7 @@ import { MockDotHttpErrorManagerService } from '@dotcms/app/test/dot-http-error-
 import {
     DotMessageService,
     DotPageRenderService,
+    DotSessionStorageService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
@@ -60,6 +61,7 @@ describe('DotFavoritePageStore', () => {
         TestBed.configureTestingModule({
             imports: [HttpClientTestingModule],
             providers: [
+                DotSessionStorageService,
                 DotFavoritePageStore,
                 DotPageRenderService,
                 { provide: CoreWebService, useClass: CoreWebServiceMock },

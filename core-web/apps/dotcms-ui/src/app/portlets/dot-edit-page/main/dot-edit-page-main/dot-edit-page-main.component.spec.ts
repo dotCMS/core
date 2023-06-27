@@ -32,7 +32,8 @@ import {
     DotGenerateSecurePasswordService,
     DotLicenseService,
     DotMessageService,
-    DotWorkflowActionsFireService
+    DotWorkflowActionsFireService,
+    DotSessionStorageService
 } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -131,6 +132,7 @@ describe('DotEditPageMainComponent', () => {
             ],
             declarations: [DotEditPageMainComponent, MockDotEditContentletComponent],
             providers: [
+                DotSessionStorageService,
                 { provide: DotMessageService, useValue: messageServiceMock },
                 {
                     provide: ActivatedRoute,

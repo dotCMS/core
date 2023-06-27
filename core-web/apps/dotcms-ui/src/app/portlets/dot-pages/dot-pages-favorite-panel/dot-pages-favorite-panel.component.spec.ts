@@ -15,7 +15,11 @@ import { of } from 'rxjs/internal/observable/of';
 
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { MockDotHttpErrorManagerService } from '@dotcms/app/test/dot-http-error-manager.service.mock';
-import { DotMessageService, DotPageRenderService } from '@dotcms/data-access';
+import {
+    DotMessageService,
+    DotPageRenderService,
+    DotSessionStorageService
+} from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock, HttpCode } from '@dotcms/dotcms-js';
 import { DotMessagePipeModule } from '@dotcms/ui';
 import {
@@ -130,6 +134,7 @@ describe('DotPagesFavoritePanelComponent', () => {
                     HttpClientTestingModule
                 ],
                 providers: [
+                    DotSessionStorageService,
                     DialogService,
                     DotPageRenderService,
                     {
