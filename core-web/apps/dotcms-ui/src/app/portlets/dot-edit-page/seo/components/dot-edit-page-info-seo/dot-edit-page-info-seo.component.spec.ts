@@ -7,7 +7,7 @@ import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipeModule } from '@dotcms/ui';
 
-import { DotEditPageInfoComponent } from './dot-edit-page-info.component';
+import { DotEditPageInfoSeoComponent } from './dot-edit-page-info-seo.component';
 
 @Component({
     template: `<dot-edit-page-info
@@ -22,7 +22,7 @@ class TestHostComponent {
     apiLink = 'api/v1/page/render/an/url/test?language_id=1';
 }
 
-describe('DotEditPageInfoComponent', () => {
+describe('DotEditPageInfoSeoComponent', () => {
     let hostComp: TestHostComponent;
     let hostFixture: ComponentFixture<TestHostComponent>;
     let hostDebug: DebugElement;
@@ -30,7 +30,7 @@ describe('DotEditPageInfoComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [TestHostComponent, DotEditPageInfoComponent],
+            declarations: [TestHostComponent, DotEditPageInfoSeoComponent],
             imports: [DotApiLinkModule, DotCopyButtonModule, DotMessagePipeModule],
             providers: [
                 {

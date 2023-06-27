@@ -8,11 +8,11 @@ import { Component, Inject, Input } from '@angular/core';
  * @class DotEditPageInfoComponent
  */
 @Component({
-    selector: 'dot-edit-page-info',
-    templateUrl: './dot-edit-page-info.component.html',
-    styleUrls: ['./dot-edit-page-info.component.scss']
+    selector: 'dot-edit-page-info-seo',
+    templateUrl: './dot-edit-page-info-seo.component.html',
+    styleUrls: ['./dot-edit-page-info-seo.component.scss']
 })
-export class DotEditPageInfoComponent {
+export class DotEditPageInfoSeoComponent {
     @Input() title: string;
     @Input() url: string;
     innerApiLink: string;
