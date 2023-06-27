@@ -103,16 +103,27 @@ public class ContentPageIntegrityCheckerTest extends IntegrationTestBase impleme
      */
     @Test
     public void test_executeFix_identifierColumnsNotNull() throws Exception {
+        DbConnectionFactory.closeSilently();
+
         ContentPageIntegrityChecker integrityChecker = new  ContentPageIntegrityChecker();
         final Host host = new SiteDataGen().nextPersisted();
+        Assert.assertNotNull(host);
+
         final Folder folder = new FolderDataGen().site(host).nextPersisted();
+        Assert.assertNotNull(host);
+
         final Template template = new TemplateDataGen().host(host).nextPersisted();
+        Assert.assertNotNull(template);
+
         final HTMLPageAsset page = new HTMLPageDataGen(folder, template).languageId(1).title("conflicted page").nextPersisted();
+        Assert.assertNotNull(page);
 
         //Introduce Conflict, will return new identifier of the site
         final Tuple2<String, String> remoteIdentifierAndInode = introduceConflict(page ,endpointId.get());
+        Assert.assertNotNull("introduced conflict values are null", remoteIdentifierAndInode);
+
         final String remoteIdentifier = remoteIdentifierAndInode._1();
-        final String remoteWorkingInode = remoteIdentifierAndInode._2();
+        Assert.assertNotNull("remote identifier value is null", remoteIdentifier);
 
         integrityChecker.executeFix(endpointId.get());
 
@@ -124,6 +135,8 @@ public class ContentPageIntegrityCheckerTest extends IntegrationTestBase impleme
             dotConnect.setSQL("SELECT asset_subtype, owner, create_date FROM identifier WHERE id = ?");
             dotConnect.addParam(remoteIdentifier);
             final List<Map<String, Object>> results = dotConnect.loadObjectResults();
+
+            Assert.assertNotNull("db response values are null", results);
 
             boolean assetSubtypeNotNull = results.stream()
                     .anyMatch(result -> result.containsKey("asset_subtype") && result.get("asset_subtype") != null);
