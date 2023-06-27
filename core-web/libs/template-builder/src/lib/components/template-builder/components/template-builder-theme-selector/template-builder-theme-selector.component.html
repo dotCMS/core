@@ -40,6 +40,7 @@
                 class="theme__item"
                 [ngClass]="{ 'theme__item--active': theme.inode === current?.inode }"
                 (click)="selectTheme(theme); $event.stopImmediatePropagation()"
+                data-testId="theme-item"
             >
                 <svg
                     *ngIf="!theme?.themeThumbnail"

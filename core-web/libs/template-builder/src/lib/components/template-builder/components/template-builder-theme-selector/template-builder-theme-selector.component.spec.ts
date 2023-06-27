@@ -1,7 +1,9 @@
-import { Spectator, createComponentFactory } from '@ngneat/spectator';
+import { Spectator, createComponentFactory } from '@ngneat/spectator/jest';
+import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { fakeAsync } from '@angular/core/testing';
 
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -9,17 +11,17 @@ import { DataViewModule } from 'primeng/dataview';
 import { DropdownModule } from 'primeng/dropdown';
 import { DialogService, DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { DotEventsService, DotMessageService, PaginatorService } from '@dotcms/data-access';
-import { CoreWebService, SiteService } from '@dotcms/dotcms-js';
+import { DotEventsService, PaginatorService } from '@dotcms/data-access';
+import { CoreWebService, SiteService, mockSites } from '@dotcms/dotcms-js';
 import { DotMessagePipeModule, DotSiteSelectorDirective } from '@dotcms/ui';
-import { CoreWebServiceMock, SiteServiceMock } from '@dotcms/utils-testing';
+import { CoreWebServiceMock, SiteServiceMock, mockDotThemes } from '@dotcms/utils-testing';
 
 import { TemplateBuilderThemeSelectorComponent } from './template-builder-theme-selector.component';
 
-import { DOT_MESSAGE_SERVICE_TB_MOCK } from '../../utils/mocks';
-
 describe('TemplateBuilderThemeSelectorComponent', () => {
     let spectator: Spectator<TemplateBuilderThemeSelectorComponent>;
+    let paginatorService: PaginatorService;
+
     const siteServiceMock = new SiteServiceMock();
     const createComponent = createComponentFactory({
         component: TemplateBuilderThemeSelectorComponent,
@@ -33,40 +35,143 @@ describe('TemplateBuilderThemeSelectorComponent', () => {
             HttpClientTestingModule
         ],
         providers: [
-            PaginatorService,
             DialogService,
+            DotEventsService,
+            DynamicDialogConfig,
             DynamicDialogRef,
             MessageService,
-            {
-                provide: DynamicDialogConfig
-            },
-            {
-                provide: DotMessageService,
-                useValue: DOT_MESSAGE_SERVICE_TB_MOCK
-            },
+            PaginatorService,
             {
                 provide: CoreWebService,
                 useClass: CoreWebServiceMock
             },
-            {
-                provide: PaginatorService
-            },
-
-            { provide: SiteService, useValue: siteServiceMock },
-            {
-                provide: DotEventsService
-            }
-        ],
-        mocks: [PaginatorService, DialogService, MessageService],
-        detectChanges: false
+            { provide: SiteService, useValue: siteServiceMock }
+        ]
     });
 
     beforeEach(() => {
         spectator = createComponent();
+        spectator.component.value = mockDotThemes[0];
+        paginatorService = spectator.inject(PaginatorService, true);
     });
 
     it('should create', () => {
         spectator.detectChanges();
         expect(spectator.component).toBeTruthy();
+    });
+
+    describe('On Init', () => {
+        it('should set url, the page size and hostid for the pagination service', () => {
+            paginatorService.searchParam = 'test';
+            jest.spyOn(paginatorService, 'setExtraParams');
+            jest.spyOn(paginatorService, 'deleteExtraParams');
+
+            spectator.component.ngOnInit();
+            spectator.detectChanges();
+
+            expect(paginatorService.paginationPerPage).toBe(8);
+            expect(paginatorService.url).toBe('v1/themes');
+            expect(paginatorService.setExtraParams).toHaveBeenCalledWith(
+                'hostId',
+                mockDotThemes[0].hostId
+            );
+            expect(paginatorService.deleteExtraParams).toHaveBeenCalled();
+        });
+
+        it('should set the current theme variable based on the Input value', () => {
+            const value = mockDotThemes[0];
+            spectator.setInput('value', value);
+
+            spectator.component.ngOnInit();
+            spectator.detectChanges();
+            expect(spectator.component.current).toBe(value);
+        });
+
+        it('should call pagination service with offset of 0 when dataview onLazyLoad emit', () => {
+            jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(of(mockDotThemes));
+            spectator.component.ngOnInit();
+
+            spectator.detectChanges();
+            spectator.component.dataView.onLazyLoad.emit({ first: 0 });
+
+            expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
+        });
+
+        it('should show theme image when available', () => {
+            const systemTheme = {
+                name: 'system Theme',
+                title: 'Theme tittle',
+                inode: '1',
+                themeThumbnail: '/system/theme/url',
+                identifier: 'SYSTEM_THEME',
+                hostId: '1',
+                host: {
+                    hostName: 'Test',
+                    inode: '3',
+                    identifier: '345'
+                }
+            };
+
+            jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(
+                of([...mockDotThemes, systemTheme])
+            );
+
+            spectator.component.siteChange(mockSites[0]);
+            spectator.detectChanges();
+
+            const themeImages = spectator.queryAll(
+                '[data-testId="themeImage"]'
+            ) as HTMLImageElement[];
+
+            expect(themeImages[0].src).toContain(
+                `/dA/${mockDotThemes[2].themeThumbnail}/130w/130h/thumbnail.png`
+            );
+            expect(themeImages[1].src).toContain(systemTheme.themeThumbnail);
+        });
+    });
+
+    describe('User interaction', () => {
+        beforeEach(() => {
+            jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(of(mockDotThemes));
+        });
+
+        it('should set pagination, call endpoint and clear search field on site change event', () => {
+            jest.spyOn(paginatorService, 'setExtraParams');
+            const site = mockSites[0];
+            spectator.component.siteChange(site);
+            spectator.detectChanges();
+
+            expect(paginatorService.setExtraParams).toHaveBeenCalledWith('hostId', site.identifier);
+            expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
+            expect(spectator.component.searchInput.nativeElement.value).toBe('');
+        });
+
+        it('should set the current value when the user click a specific theme item', () => {
+            jest.spyOn(spectator.component, 'selectTheme');
+            spectator.component.paginate({ first: 0 });
+
+            spectator.component.ngOnInit();
+            spectator.detectChanges();
+
+            const themeItem = spectator.queryAll('[data-testId="theme-item"]') as HTMLElement[];
+            themeItem[0].click();
+
+            expect(spectator.component.current).toBe(mockDotThemes[0]);
+            expect(spectator.component.selectTheme).toHaveBeenCalled();
+        });
+
+        it('should call theme enpoint on search', fakeAsync(() => {
+            spectator.component.paginate({ first: 0 });
+            spectator.component.ngOnInit();
+            spectator.detectChanges();
+
+            const searchInput = spectator.component.searchInput.nativeElement;
+            searchInput.dispatchEvent(new Event('keyup'));
+            searchInput.dispatchEvent(new Event('input'));
+            spectator.detectChanges();
+
+            spectator.tick(500);
+            expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
+        }));
     });
 });

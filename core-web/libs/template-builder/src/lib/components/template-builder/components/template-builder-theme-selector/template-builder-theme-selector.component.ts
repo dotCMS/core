@@ -88,14 +88,13 @@ export class TemplateBuilderThemeSelectorComponent implements OnInit, OnDestroy 
     ) {}
 
     ngOnInit() {
+        const hostId = this.value?.hostId || this.siteService.currentSite?.identifier;
         this.current = this.value;
         this.paginatorService.url = 'v1/themes';
-        this.paginatorService.setExtraParams(
-            'hostId',
-            this.current?.hostId || this.siteService.currentSite?.identifier
-        );
-        this.paginatorService.deleteExtraParams(this.SEARCH_PARAM);
         this.paginatorService.paginationPerPage = 8;
+        this.paginatorService.setExtraParams('hostId', hostId);
+        this.paginatorService.deleteExtraParams(this.SEARCH_PARAM);
+
         fromEvent(this.searchInput.nativeElement, 'keyup')
             .pipe(debounceTime(500), takeUntil(this.destroy$))
             .subscribe((keyboardEvent: Event) => {
