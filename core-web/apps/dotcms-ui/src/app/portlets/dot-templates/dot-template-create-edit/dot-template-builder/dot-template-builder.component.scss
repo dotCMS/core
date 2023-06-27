@@ -26,7 +26,8 @@
         dotcms-template-builder {
             display: block;
             height: 100%;
-            overflow: auto;
+            overflow-x: auto;
+            overflow-y: hidden;
         }
 
         .p-tabview-nav {
