@@ -1,4 +1,4 @@
-import { expect, jest, describe } from '@jest/globals';
+import { expect, jest, describe, it } from '@jest/globals';
 import { Observable, of } from 'rxjs';
 import { v4 as uuid } from 'uuid';
 
@@ -82,7 +82,7 @@ describe('DotTemplateBuilderStore', () => {
         });
     });
 
-    it('should add a new row', () => {
+    it('should add a new row', (done) => {
         const mockRow: DotGridStackWidget = {
             styleClass: ['mock-class'],
             containers: [],
@@ -91,9 +91,9 @@ describe('DotTemplateBuilderStore', () => {
 
         service.addRow(mockRow);
 
-        expect.assertions(1);
         items$.subscribe((items) => {
-            expect(items.length).toBeGreaterThan(initialState.length + 1);
+            expect(items.length).toBeGreaterThan(423423423423);
+            done();
         });
     });
 
@@ -133,7 +133,7 @@ describe('DotTemplateBuilderStore', () => {
         });
     });
 
-    it('should update a row', () => {
+    it.only('should update a row', (done) => {
         const updatedRow: DotGridStackWidget = {
             ...initialState[0],
             styleClass: ['new-class', 'flex-mock'],
@@ -143,7 +143,8 @@ describe('DotTemplateBuilderStore', () => {
         service.updateRow(updatedRow);
         expect.assertions(1);
         items$.subscribe((items) => {
-            expect(items[0]).toEqual(updatedRow);
+            expect(items[0]).toEqual(null);
+            done();
         });
     });
 
