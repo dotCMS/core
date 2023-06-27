@@ -13,9 +13,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import net.bytebuddy.utility.RandomString;
 import org.apache.commons.lang.RandomStringUtils;
-import org.jetbrains.annotations.NotNull;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -37,6 +38,7 @@ public class VariantWebAPIImplIntegrationTest {
     @Test
     public void getDefaultWhenRequestIsNull() {
 
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(null);
         final VariantWebAPI variantWebAPI = WebAPILocator.getVariantWebAPI();
         final String currentVariantId = variantWebAPI.currentVariantId();
 
@@ -63,13 +65,21 @@ public class VariantWebAPIImplIntegrationTest {
 
         HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
 
-        final VariantWebAPI variantWebAPI = WebAPILocator.getVariantWebAPI();
+        try {
+            final VariantWebAPI variantWebAPI = WebAPILocator.getVariantWebAPI();
 
-        final String currentVariantId = variantWebAPI.currentVariantId();
+            final String currentVariantId = variantWebAPI.currentVariantId();
 
-        assertEquals(variant.name(), currentVariantId);
+            assertEquals(variant.name(), currentVariantId);
 
-        assertEquals(mockSession.getAttribute(VariantAPI.VARIANT_KEY), variant.name());
+            assertNotNull(mockSession.getAttribute(VariantAPI.VARIANT_KEY));
+
+            final CurrentVariantSessionItem currentVariantSessionItem = (CurrentVariantSessionItem)
+                    mockSession.getAttribute(VariantAPI.VARIANT_KEY);
+            assertEquals(currentVariantSessionItem.getVariantName(), variant.name());
+        } finally {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(null);
+        }
     }
 
     /**
@@ -83,12 +93,20 @@ public class VariantWebAPIImplIntegrationTest {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getParameter(VariantAPI.VARIANT_KEY)).thenReturn("notExistsVariant");
 
+        final MockSession mockSession = new MockSession(RandomStringUtils.random(10));
+        when(request.getSession()).thenReturn(mockSession);
+        when(request.getSession(true)).thenReturn(mockSession);
+
         HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
 
-        final VariantWebAPI variantWebAPI = WebAPILocator.getVariantWebAPI();
-        final String currentVariantId = variantWebAPI.currentVariantId();
+        try {
+            final VariantWebAPI variantWebAPI = WebAPILocator.getVariantWebAPI();
+            final String currentVariantId = variantWebAPI.currentVariantId();
 
-        assertEquals(VariantAPI.DEFAULT_VARIANT.name(), currentVariantId);
+            assertEquals(VariantAPI.DEFAULT_VARIANT.name(), currentVariantId);
+        } finally {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(null);
+        }
     }
 
     /**
@@ -108,13 +126,20 @@ public class VariantWebAPIImplIntegrationTest {
 
         HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
 
-        final VariantWebAPI variantWebAPI = WebAPILocator.getVariantWebAPI();
+        try {
+            final VariantWebAPI variantWebAPI = WebAPILocator.getVariantWebAPI();
 
-        final String currentVariantId = variantWebAPI.currentVariantId();
+            final String currentVariantId = variantWebAPI.currentVariantId();
 
-        assertEquals(variant.name(), currentVariantId);
+            assertEquals(variant.name(), currentVariantId);
 
-        assertEquals(mockSession.getAttribute(VariantAPI.VARIANT_KEY), variant.name());
+            final CurrentVariantSessionItem currentVariantSessionItem = (CurrentVariantSessionItem)
+                    mockSession.getAttribute(VariantAPI.VARIANT_KEY);
+
+            assertEquals(currentVariantSessionItem.getVariantName(), variant.name());
+        } finally {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(null);
+        }
     }
 
     /**
@@ -123,7 +148,7 @@ public class VariantWebAPIImplIntegrationTest {
      * Should: Not set the Session Attribute again
      */
     @Test
-    public void justOnceSessionattributeSet() {
+    public void justOnceSessionAttributeSet() {
         final Variant variant = new VariantDataGen().nextPersisted();
         final Variant anotherVariant = new VariantDataGen().nextPersisted();
 
@@ -131,7 +156,8 @@ public class VariantWebAPIImplIntegrationTest {
         final HttpServletRequest request = createHttpServletRequest(variant, anotherVariant,
                 mockSession);
 
-        when(mockSession.getAttribute(VariantAPI.VARIANT_KEY)).thenReturn(variant.name());
+        final CurrentVariantSessionItem currentVariantSessionItem = new CurrentVariantSessionItem(variant.name());
+        when(mockSession.getAttribute(VariantAPI.VARIANT_KEY)).thenReturn(currentVariantSessionItem);
 
         HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
 
@@ -139,19 +165,85 @@ public class VariantWebAPIImplIntegrationTest {
 
         variantWebAPI.currentVariantId();
 
-        verify(mockSession, never()).setAttribute(VariantAPI.VARIANT_KEY, variant.name());
+        final CurrentVariantSessionItem currentVariantSessionItemExpected = new CurrentVariantSessionItem(variant.name());
+
+        verify(mockSession, never()).setAttribute(VariantAPI.VARIANT_KEY, currentVariantSessionItemExpected);
 
     }
 
-    @NotNull
-    private static HttpServletRequest createHttpServletRequest(Variant variant, Variant anotherVariant,
-            HttpSession mockSession_1) {
+    /**
+     * Method to test {@link VariantWebAPIImpl#currentVariantId()}.
+     * When: The current request had the variantName Query Params and the Session already set the Variant attribute,
+     * but they are different
+     * Should: Must set the session Attribute again with the new value
+     */
+    @Test
+    public void setAgainIfCurrentVariantChanged() {
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final Variant anotherVariant = new VariantDataGen().nextPersisted();
+
+        final HttpSession mockSession = mock(HttpSession.class);
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getParameter(VariantAPI.VARIANT_KEY)).thenReturn(anotherVariant.name());
+
+        when(request.getSession()).thenReturn(mockSession);
+        when(request.getSession(true)).thenReturn(mockSession);
+
+        final CurrentVariantSessionItem currentVariantSessionItem =  new CurrentVariantSessionItem(variant.name());
+        when(mockSession.getAttribute(VariantAPI.VARIANT_KEY)).thenReturn(currentVariantSessionItem);
+
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+
+        final VariantWebAPI variantWebAPI = WebAPILocator.getVariantWebAPI();
+
+        variantWebAPI.currentVariantId();
+
+        final CurrentVariantSessionItem currentVariantSessionItemExpected = new CurrentVariantSessionItem(anotherVariant.name());
+
+        verify(mockSession, times(1)).setAttribute(VariantAPI.VARIANT_KEY, currentVariantSessionItemExpected);
+
+    }
+
+    /**
+     * Method to test {@link VariantWebAPIImpl#currentVariantId()}.
+     * When: The current request had the variantName Query Params and the Session already set the Variant attribute
+     * They are the same values
+     * Should: Not set the Session Attribute again
+     */
+    @Test
+    public void notSetAgainIfCurrentVariantIsSame() {
+        final Variant variant = new VariantDataGen().nextPersisted();
+
+        final HttpSession mockSession = mock(HttpSession.class);
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getParameter(VariantAPI.VARIANT_KEY)).thenReturn(variant.name());
+
+        when(request.getSession()).thenReturn(mockSession);
+        when(request.getSession(true)).thenReturn(mockSession);
+
+        final CurrentVariantSessionItem currentVariantSessionItem =  new CurrentVariantSessionItem(variant.name());
+        when(mockSession.getAttribute(VariantAPI.VARIANT_KEY)).thenReturn(currentVariantSessionItem);
+
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+
+        final VariantWebAPI variantWebAPI = WebAPILocator.getVariantWebAPI();
+
+        variantWebAPI.currentVariantId();
+
+        final CurrentVariantSessionItem currentVariantSessionItemExpected = new CurrentVariantSessionItem(variant.name());
+
+        verify(mockSession, never()).setAttribute(VariantAPI.VARIANT_KEY, currentVariantSessionItemExpected);
+
+    }
+    private static HttpServletRequest createHttpServletRequest(final Variant variant,
+            final Variant anotherVariant,
+            final HttpSession mockSession) {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getParameter(VariantAPI.VARIANT_KEY)).thenReturn(variant.name());
         when(request.getAttribute(VariantAPI.VARIANT_KEY)).thenReturn(anotherVariant.name());
 
-        when(request.getSession()).thenReturn(mockSession_1);
-        when(request.getSession(true)).thenReturn(mockSession_1);
+        when(request.getSession()).thenReturn(mockSession);
+        when(request.getSession(true)).thenReturn(mockSession);
         return request;
     }
 }

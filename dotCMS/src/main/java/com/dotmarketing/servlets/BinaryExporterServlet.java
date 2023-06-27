@@ -6,6 +6,8 @@ import static com.liferay.util.HttpHeaders.EXPIRES;
 
 import com.dotcms.storage.FileMetadataAPI;
 import com.dotcms.storage.model.Metadata;
+import com.dotcms.variant.business.web.VariantWebAPI.RenderContext;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.UUIDUtil;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.util.PortalUtil;
@@ -324,7 +326,7 @@ public class BinaryExporterServlet extends HttpServlet {
 						If the property DEFAULT_FILE_TO_DEFAULT_LANGUAGE is false OR the language in request/session
 						is equals to the default language, continue with the default behavior.
 						 */
-						content = contentAPI.findContentletByIdentifier(assetIdentifier, live, lang, user, mode.respectAnonPerms);
+						content = getContentletByIdentifier(mode, assetIdentifier, lang, user);
 					}
 					assetInode = content.getInode();
 				}
@@ -681,6 +683,18 @@ public class BinaryExporterServlet extends HttpServlet {
 
 		}
 		
+	}
+
+	private static Contentlet getContentletByIdentifier(final PageMode pageMode,
+			final String identifier, final long languageId, final User user)
+			throws DotDataException, DotSecurityException {
+
+		final RenderContext renderContext = WebAPILocator.getVariantWebAPI()
+				.getRenderContext(languageId, identifier, pageMode, APILocator.systemUser());
+
+		return APILocator.getContentletAPI().findContentletByIdentifier(identifier, pageMode.showLive,
+						renderContext.getCurrentLanguageId(), renderContext.getCurrentVariantKey(),
+						user, false);
 	}
 
 	private boolean isBrowserSafariAndVersionBelow14(final UserAgent userAgent) {

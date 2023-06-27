@@ -69,14 +69,29 @@ public class VariantWebAPIImpl implements VariantWebAPI{
         return currentVariantName;
     }
 
-    private static void setSessionAttribute(HttpServletRequest request, String currentVariantName) {
+    private static void setSessionAttribute(final HttpServletRequest request,
+            final String currentVariantName) {
+
         final HttpSession session = request.getSession(true);
 
         final Object attribute = session.getAttribute(VariantAPI.VARIANT_KEY);
 
-        if (!UtilMethods.isSet(attribute)) {
-            session.setAttribute(VariantAPI.VARIANT_KEY, currentVariantName);
+        if (mustOverwrite(attribute, currentVariantName)) {
+            final CurrentVariantSessionItem currentVariantSessionItem = new
+                    CurrentVariantSessionItem(currentVariantName);
+            session.setAttribute(VariantAPI.VARIANT_KEY, currentVariantSessionItem);
         }
+    }
+
+    private static boolean mustOverwrite(final Object currentVariantSessionItemAsObject, final String currentVariantName) {
+
+        if (!UtilMethods.isSet(currentVariantSessionItemAsObject)) {
+            return true;
+        }
+
+        final CurrentVariantSessionItem currentVariantSessionItem = (CurrentVariantSessionItem) currentVariantSessionItemAsObject;
+        return currentVariantSessionItem instanceof CurrentVariantSessionItem &&
+                (!currentVariantSessionItem.getVariantName().equals(currentVariantName) || currentVariantSessionItem.isExpired());
     }
 
     private Optional<String> getCurrentVariantNameFromAttribute(

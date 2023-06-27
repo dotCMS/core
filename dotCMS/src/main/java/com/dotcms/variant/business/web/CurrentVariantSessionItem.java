@@ -1,6 +1,7 @@
 package com.dotcms.variant.business.web;
 
 import java.time.Instant;
+import java.util.Objects;
 
 public class CurrentVariantSessionItem {
 
@@ -14,8 +15,28 @@ public class CurrentVariantSessionItem {
         this.variantName = variantName;
     }
 
-    public boolean isExpire() {
+    public boolean isExpired() {
         return Instant.now().isAfter(addedDate.plusSeconds(SECONDS_EXPIRE_TIME));
     }
 
+    public String getVariantName() {
+        return variantName;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        CurrentVariantSessionItem that = (CurrentVariantSessionItem) o;
+        return Objects.equals(variantName, that.variantName);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(variantName);
+    }
 }
