@@ -1,10 +1,10 @@
 dependencies {
     implementation (group: 'cglib', name: 'cglib-nodep', version: '3.2.6'){}
-    implementation (group: 'com.amazonaws', name: 'aws-java-sdk-core', version: '1.12.429'){}
-    implementation (group: 'com.amazonaws', name: 'aws-java-sdk-kms', version: '1.12.429'){}
-    implementation (group: 'com.amazonaws', name: 'aws-java-sdk-rekognition', version: '1.12.429'){}
-    implementation (group: 'com.amazonaws', name: 'aws-java-sdk-s3', version: '1.12.429'){}
-    implementation (group: 'com.amazonaws', name: 'jmespath-java', version: '1.12.429'){}
+    implementation (group: 'com.amazonaws', name: 'aws-java-sdk-core', version: '1.12.488'){}
+    implementation (group: 'com.amazonaws', name: 'aws-java-sdk-kms', version: '1.12.488'){}
+    implementation (group: 'com.amazonaws', name: 'aws-java-sdk-rekognition', version: '1.12.488'){}
+    implementation (group: 'com.amazonaws', name: 'aws-java-sdk-s3', version: '1.12.488'){}
+    implementation (group: 'com.amazonaws', name: 'jmespath-java', version: '1.12.488'){}
     implementation (group: 'com.carrotsearch', name: 'hppc', version: '0.8.1') {
         transitive=false
     }
@@ -233,8 +233,8 @@ dependencies {
     implementation (group: 'jakarta.validation', name: 'jakarta.validation-api', version: '2.0.2'){}
     implementation (group: 'jakarta.xml.bind', name: 'jakarta.xml.bind-api', version: '2.3.3'){}
     implementation (group: 'javax.annotation', name: 'javax.annotation-api', version: '1.2'){}
-    compileOnly (group: 'javax.servlet.jsp', name: 'javax.servlet.jsp-api', version: '2.2.1'){}
-    compileOnly (group: 'javax.servlet', name: 'javax.servlet-api', version: '3.1.0'){}
+    implementation (group: 'javax.servlet.jsp', name: 'javax.servlet.jsp-api', version: '2.2.1'){}
+    implementation (group: 'javax.servlet', name: 'javax.servlet-api', version: '3.1.0'){}
     implementation (group: 'javax.validation', name: 'validation-api', version: '1.1.0.Final'){}
     implementation (group: 'javax.websocket', name: 'javax.websocket-api', version: '1.1'){}
     implementation (group: 'javax.ws.rs', name: 'javax.ws.rs-api', version: '2.0.1'){}

@@ -93,7 +93,12 @@ describe('DotTemplateBuilderStore', () => {
 
         items$.subscribe((items) => {
             expect(items.length).toBeGreaterThan(423423423423);
+            expect(items[0].subGridOpts.children[0].w).toBe(100);
+            expect(items[0].subGridOpts.children[0].containers[0].identifier).toBe(
+                'SYSTEM_CONTAINER123'
+            );
             done();
+          
         });
     });
 
