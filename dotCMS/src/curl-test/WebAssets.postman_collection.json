@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "b929423c-87c7-4fa0-a725-852e8b439dd4",
+		"_postman_id": "d1e460bd-5b8f-40b6-9bfd-20a784629378",
 		"name": "WebAssets",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "10041132"
@@ -829,63 +829,6 @@
 			"response": []
 		},
 		{
-			"name": "WebAsset :: Delete File in a Different Lang Expect 404",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code should be 404\", function () {",
-							"    pm.response.to.have.status(404);",
-							"});"
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						}
-					]
-				},
-				"method": "DELETE",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n   \"assetPath\":\"//default/newFolder/make-my-day.jpeg\",\n   \"language\":\"es_CAN\",\n   \"live\":true\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{serverURL}}/api/v1/assets",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"assets"
-					]
-				},
-				"description": "Delete using a valid path but a different lang should also give you .404"
-			},
-			"response": []
-		},
-		{
 			"name": "WebAsset :: Delete File Expect Success",
 			"event": [
 				{
@@ -920,7 +863,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n   \"assetPath\":\"//default/newFolder/make-my-day.jpeg\",\n   \"language\":\"en_US\",\n   \"live\":true\n}",
+					"raw": "{\n   \"assetPath\":\"//default/newFolder/make-my-day.jpeg\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -997,6 +940,63 @@
 					]
 				},
 				"description": "Delete folder"
+			},
+			"response": []
+		},
+		{
+			"name": "WebAsset :: Archive File Expect Success",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n   \"assetPath\":\"//default/odisea.pdf\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/assets",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"assets"
+					]
+				},
+				"description": "Simple delete file test"
 			},
 			"response": []
 		}
