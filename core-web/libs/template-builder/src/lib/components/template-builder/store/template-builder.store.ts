@@ -76,7 +76,22 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
                     x: 0,
                     id: uuid(),
                     subGridOpts: {
-                        children: []
+                        children: [
+                            {
+                                id: uuid(),
+                                w: 3,
+                                h: 1,
+                                x: 0,
+                                y: 0,
+                                containers: [
+                                    {
+                                        identifier: 'SYSTEM_CONTAINER'
+                                    }
+                                ],
+                                parentId: newRow.id,
+                                styleClass: null
+                            }
+                        ]
                     }
                 }
             ]
@@ -396,11 +411,13 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
                 }
 
                 const updatedChildren = row.subGridOpts.children.map((child) => {
-                    if (affectedColumn.id === child.id)
+                    if (affectedColumn.id === child.id) {
                         if (!child.containers) child.containers = [];
-                    child.containers.push({
-                        identifier: container.identifier
-                    });
+
+                        child.containers.push({
+                            identifier: container.identifier
+                        });
+                    }
 
                     return child;
                 });

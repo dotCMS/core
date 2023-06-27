@@ -17,6 +17,7 @@ const GRADLE_FOLDER = path.join(HOME_FOLDER, '.gradle')
 const M2_FOLDER = path.join(HOME_FOLDER, '.m2')
 const PROJECT_ROOT = core.getInput('project_root')
 const DOTCMS_ROOT = path.join(PROJECT_ROOT, 'dotCMS')
+const TOMCAT_WEBINF = path.join(PROJECT_ROOT, 'dist', 'dotserver', 'tomcat-9.0.60', 'webapps', 'ROOT', 'WEB-INF')
 const CACHE_CONFIGURATION: CacheConfiguration = {
   gradle: {
     dependencies: [
@@ -29,7 +30,9 @@ const CACHE_CONFIGURATION: CacheConfiguration = {
       path.join(DOTCMS_ROOT, 'gradle'),
       path.join(DOTCMS_ROOT, 'build', 'classes'),
       path.join(DOTCMS_ROOT, 'build', 'generated'),
-      path.join(DOTCMS_ROOT, 'build', 'resources')
+      path.join(DOTCMS_ROOT, 'build', 'resources'),
+      path.join(TOMCAT_WEBINF, 'felix'),
+      path.join(TOMCAT_WEBINF, 'felix-system')
     ]
   },
   maven: {

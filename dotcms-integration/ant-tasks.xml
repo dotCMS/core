@@ -1,0 +1,79 @@
+<?xml version="1.0"?>
+
+<project name="dotcms.org" default="build" basedir="." xmlns:ac="antlib:net.sf.antcontrib">
+    <target name="build">
+        <echo>This should be run from the maven-antrun plugin</echo>
+    </target>
+
+    <target name="pre-integration">
+        <!-- run cleanup -->
+        <ac:if>
+            <isset property="cleanup"/>
+            <then>
+                <antcall target="cleanup-test=folders"/>
+            </then>
+        </ac:if>
+
+        <!-- create test folders for forks-->
+        <antcall target="create-test-folder" inheritAll="true" inheritRefs="true">
+            <param name="forknum" value="1"/>
+        </antcall>
+        <ac:if>
+            <equals arg1="${it.test.forkcount}" arg2="1" />
+            <then>
+                <antcall target="create-test-folder" inheritAll="true" inheritRefs="true">
+                    <param name="forknum" value="1"/>
+                </antcall>
+            </then>
+            <else>
+                <ac:for param="i" begin="1" end="${it.test.forkcount}">
+                    <sequential>
+                        <antcall target="create-test-folder" inheritAll="true" inheritRefs="true">
+                            <param name="forknum" value="@{i}"/>
+                        </antcall>
+                    </sequential>
+                </ac:for>
+            </else>
+        </ac:if>
+    </target>
+
+    <target name="create-test-folder">
+        <property name="forkfolder" value="${it.test.fork-folder.prefix}${forknum}"/>
+        <mkdir dir="${forkfolder}/${test.temp.folder}"/>
+        <mkdir dir="${forkfolder}/${test.assets.folder}"/>
+        <mkdir dir="${forkfolder}/${test.dynamic.folder}"/>
+        <mkdir dir="${forkfolder}/${test.felix.cache.folder}"/>
+        <mkdir dir="${forkfolder}/${test.felix.load.folder}"/>
+        <mkdir dir="${forkfolder}/${test.felix.undeployed.folder}"/>
+        <mkdir dir="${forkfolder}/${test.felix.system.cache.folder}"/>
+        <mkdir dir="${forkfolder}/${test.felix.load.folder}"/>
+        <mkdir dir="${forkfolder}/${test.felix.system.undeployed.folder}"/>
+        <mkdir dir="${forkfolder}/${test.logs.folder}"/>
+        <mkdir dir="${forkfolder}/${test.working.folder}"/>
+
+        <!-- get LICENSE_KEY environment variable -->
+        <property environment="env"/>
+        <mkdir dir="${forkfolder}/${test.dynamic.folder}/license" />
+
+        <!-- Move this functionality into core code -->
+        <ac:if>
+            <isset property="env.DOT_DOTCMS_LICENSE"/>
+            <then>
+                <echo>Writing license.dat to ${forkfolder}/${test.dynamic.folder}/license/license.dat</echo>
+                <echo file="${forkfolder}/${test.dynamic.folder}/license/license.dat" append="false" message="${env.DOT_DOTCMS_LICENSE}"/>
+            </then>
+            <else>
+                <echo>Copying license from ${user.home}/.dotcms/license</echo>
+                <copy todir="${forkfolder}/${test.assets.folder}">
+                    <fileset dir="${user.home}/.dotcms/license" includes="license.zip" />
+                </copy>
+            </else>
+        </ac:if>
+
+    </target>
+
+    <target name="cleanup-test=folders">
+        <delete dir="${testdata.dir}" includeemptydirs="true"/>
+    </target>
+
+</project>
