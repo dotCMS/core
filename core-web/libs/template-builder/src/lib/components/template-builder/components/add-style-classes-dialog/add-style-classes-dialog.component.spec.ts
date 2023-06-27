@@ -24,6 +24,7 @@ import {
     mockMatchMedia
 } from '../../utils/mocks';
 
+// todo check for assertions
 describe('AddStyleClassesDialogComponent', () => {
     let spectator: SpectatorHost<AddStyleClassesDialogComponent>;
     let input: HTMLInputElement;

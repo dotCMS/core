@@ -10,6 +10,7 @@ import { RemoveConfirmDialogComponent } from './remove-confirm-dialog.component'
 
 import { DOT_MESSAGE_SERVICE_TB_MOCK } from '../../utils/mocks';
 
+// todo check for assertions
 describe('RemoveConfirmDialogComponent', () => {
     let spectator: Spectator<RemoveConfirmDialogComponent>;
 

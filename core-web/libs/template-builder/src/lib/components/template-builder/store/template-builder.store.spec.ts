@@ -23,6 +23,7 @@ global.structuredClone = jest.fn((val) => {
     return JSON.parse(JSON.stringify(val));
 });
 
+// todo check for assertions
 describe('DotTemplateBuilderStore', () => {
     let service: DotTemplateBuilderStore;
     let items$: Observable<DotGridStackWidget[]>;

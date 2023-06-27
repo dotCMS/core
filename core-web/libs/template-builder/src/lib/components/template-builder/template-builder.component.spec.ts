@@ -27,6 +27,7 @@ global.structuredClone = jest.fn((val) => {
     return JSON.parse(JSON.stringify(val));
 });
 
+// todo check for assertions
 describe('TemplateBuilderComponent', () => {
     let spectator: SpectatorHost<TemplateBuilderComponent>;
     let store: DotTemplateBuilderStore;

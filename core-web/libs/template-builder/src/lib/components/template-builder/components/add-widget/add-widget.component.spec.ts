@@ -15,6 +15,7 @@ class HostComponent {
     @Input() icon = rowIcon;
 }
 
+// todo check for assertions
 describe('AddWidgetComponent', () => {
     let fixture: ComponentFixture<HostComponent>;
     let de: DebugElement;

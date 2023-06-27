@@ -39,6 +39,7 @@ class TestHostComponent {
     }
 }
 
+// todo check for assertions
 describe('DotLayoutSidebarComponent', () => {
     let comp: DotLayoutSidebarComponent;
     let fixture: ComponentFixture<DotLayoutSidebarComponent>;

@@ -10,6 +10,7 @@ import { TemplateBuilderActionsComponent } from './template-builder-actions.comp
 import { DotTemplateBuilderStore } from '../../store/template-builder.store';
 import { DOT_MESSAGE_SERVICE_TB_MOCK } from '../../utils/mocks';
 
+// todo check for assertions
 describe('TemplateBuilderActionsComponent', () => {
     let spectator: Spectator<TemplateBuilderActionsComponent>;
     let store: DotTemplateBuilderStore;

@@ -7,6 +7,7 @@ import { DotAddStyleClassesDialogStore } from './add-style-classes-dialog.store'
 
 import { MOCK_STYLE_CLASSES_FILE } from '../../../utils/mocks';
 
+// todo check for assertions
 describe('DotAddStyleClassesDialogStore', () => {
     let service: DotAddStyleClassesDialogStore;
     let httpTestingController: HttpTestingController;

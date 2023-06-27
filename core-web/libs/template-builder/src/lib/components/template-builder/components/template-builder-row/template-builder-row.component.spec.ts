@@ -21,6 +21,7 @@ import { DotAddStyleClassesDialogStore } from '../add-style-classes-dialog/store
 import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-confirm-dialog.component';
 import { TemplateBuilderBackgroundColumnsComponent } from '../template-builder-background-columns/template-builder-background-columns.component';
 
+// todo check for assertions
 @Component({
     selector: 'dotcms-host-component',
     template: ` <dotcms-template-builder-row [row]="row" [isResizing]="isResizing">

@@ -15,6 +15,7 @@ import { DotTemplateBuilderStore } from '../../store/template-builder.store';
 import { DOT_MESSAGE_SERVICE_TB_MOCK } from '../../utils/mocks';
 import { TemplateBuilderBoxComponent } from '../template-builder-box/template-builder-box.component';
 
+// todo check for assertions
 describe('TemplateBuilderSidebarComponent', () => {
     let spectator: SpectatorHost<TemplateBuilderSidebarComponent>;
     let store: DotTemplateBuilderStore;

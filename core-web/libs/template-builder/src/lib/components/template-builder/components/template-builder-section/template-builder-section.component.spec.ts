@@ -4,6 +4,7 @@ import { TemplateBuilderSectionComponent } from './template-builder-section.comp
 
 import { MOCK_TEXT } from '../../utils/mocks';
 
+// todo check for assertions
 describe('TemplateBuilderSectionComponent', () => {
     let spectator: SpectatorHost<TemplateBuilderSectionComponent>;
 

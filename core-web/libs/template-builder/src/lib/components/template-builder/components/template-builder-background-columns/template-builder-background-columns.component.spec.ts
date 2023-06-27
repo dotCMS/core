@@ -5,6 +5,7 @@ import { By } from '@angular/platform-browser';
 
 import { TemplateBuilderBackgroundColumnsComponent } from './template-builder-background-columns.component';
 
+// todo check for assertions
 describe('TemplateBuilderBackgroundColumnsComponent', () => {
     let spectator: SpectatorHost<TemplateBuilderBackgroundColumnsComponent>;
 

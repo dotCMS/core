@@ -7,6 +7,7 @@ global.structuredClone = jest.fn((val) => {
     return JSON.parse(JSON.stringify(val));
 });
 
+// todo check for assertions
 describe('parseFromDotObjectToGridStack', () => {
     it('should parse the backend object to gridStack', () => {
         const data = MINIMAL_DATA_MOCK;
