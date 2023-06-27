@@ -6,7 +6,7 @@ import { Injectable } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 
 import { switchMap, tap } from 'rxjs/operators';
 
@@ -14,6 +14,7 @@ import { DotMessageService } from '@dotcms/data-access';
 import {
     ComponentStatus,
     ConditionDefaultByTypeOfGoal,
+    CONFIRM_DIALOG_KEY,
     DotExperiment,
     DotExperimentStatusList,
     ExperimentSteps,
@@ -62,6 +63,7 @@ export interface ConfigurationViewModel {
     experimentStatus: DotExperimentStatusList;
     isSaving: boolean;
     isDescriptionSaving: boolean;
+    menuItems: MenuItem[];
 }
 
 @Injectable()
@@ -110,6 +112,69 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         this.state$,
         ({ stepStatusSidebar }) => checkIfExperimentDescriptionIsSaving(stepStatusSidebar)
     );
+
+    readonly getMenuItems$: Observable<MenuItem[]> = this.select(this.state$, ({ experiment }) => {
+        const { scheduling } = experiment ? experiment : { scheduling: null };
+
+        const schedulingLabel =
+            scheduling === null || Object.values(experiment.scheduling).includes(null)
+                ? this.dotMessageService.get('experiments.action.start-experiment')
+                : this.dotMessageService.get('experiments.action.schedule-experiment');
+
+        const isDraft: boolean = experiment?.status === DotExperimentStatusList.DRAFT;
+
+        const menuItems: MenuItem[] = [
+            {
+                label: schedulingLabel,
+                visible: isDraft,
+                disabled: experiment?.trafficProportion.variants.length < 2 || !experiment?.goals,
+                command: () => this.startExperiment(experiment)
+            },
+            {
+                label: this.dotMessageService.get('experiments.action.end-experiment'),
+                visible: experiment?.status === DotExperimentStatusList.RUNNING,
+                disabled: experiment?.trafficProportion.variants.length < 2 || !experiment?.goals,
+                command: () => {
+                    this.confirmationService.confirm({
+                        key: CONFIRM_DIALOG_KEY,
+                        header: this.dotMessageService.get('experiments.action.end-experiment'),
+                        message: this.dotMessageService.get(
+                            'experiments.action.stop.delete-confirm'
+                        ),
+                        icon: 'pi pi-exclamation-triangle',
+                        acceptLabel: this.dotMessageService.get('stop'),
+                        rejectLabel: this.dotMessageService.get('dot.common.dialog.reject'),
+                        accept: () => {
+                            this.stopExperiment(experiment);
+                        }
+                    });
+                }
+            },
+            {
+                label: this.dotMessageService.get('experiments.configure.scheduling.cancel'),
+                visible: experiment?.status === DotExperimentStatusList.SCHEDULED,
+                command: () => {
+                    this.confirmationService.confirm({
+                        key: CONFIRM_DIALOG_KEY,
+                        header: this.dotMessageService.get(
+                            'experiments.configure.scheduling.cancel'
+                        ),
+                        message: this.dotMessageService.get(
+                            'experiments.action.cancel.schedule-confirm'
+                        ),
+                        icon: 'pi pi-exclamation-triangle',
+                        acceptLabel: this.dotMessageService.get('dot.common.dialog.accept'),
+                        rejectLabel: this.dotMessageService.get('dot.common.dialog.reject'),
+                        accept: () => {
+                            this.cancelSchedule(experiment);
+                        }
+                    });
+                }
+            }
+        ];
+
+        return menuItems;
+    });
 
     // Goals Step //
     readonly goals$: Observable<Goals> = this.select(({ experiment }) => {
@@ -725,6 +790,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         this.isSaving$,
         this.getExperimentStatus$,
         this.getIsDescriptionSaving$,
+        this.getMenuItems$,
         (
             { experiment, stepStatusSidebar },
             isExperimentADraft,
@@ -734,7 +800,8 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
             showExperimentSummary,
             isSaving,
             experimentStatus,
-            isDescriptionSaving
+            isDescriptionSaving,
+            menuItems
         ) => ({
             experiment,
             stepStatusSidebar,
@@ -745,7 +812,8 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
             showExperimentSummary,
             isSaving,
             experimentStatus,
-            isDescriptionSaving
+            isDescriptionSaving,
+            menuItems
         })
     );
 
@@ -856,7 +924,8 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         private readonly dotHttpErrorManagerService: DotHttpErrorManagerService,
         private readonly messageService: MessageService,
         private readonly title: Title,
-        private readonly route: ActivatedRoute
+        private readonly route: ActivatedRoute,
+        private readonly confirmationService: ConfirmationService
     ) {
         const configProps = route.snapshot.data['config'];
 

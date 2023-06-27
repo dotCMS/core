@@ -209,3 +209,5 @@ export const ReportSummaryLegendByBayesianStatus: Record<BayesianLegendStatus, S
         legend: 'experiments.summary.suggested-winner.no-enough-sessions'
     }
 };
+
+export const CONFIRM_DIALOG_KEY = 'confirmDialog';

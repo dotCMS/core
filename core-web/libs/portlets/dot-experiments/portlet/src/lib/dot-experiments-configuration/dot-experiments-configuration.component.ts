@@ -7,11 +7,18 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { InplaceModule } from 'primeng/inplace';
 import { InputTextModule } from 'primeng/inputtext';
+import { MenuModule } from 'primeng/menu';
 import { RippleModule } from 'primeng/ripple';
 
-import { ComponentStatus, DotExperiment, DotExperimentStatusList } from '@dotcms/dotcms-models';
+import {
+    ComponentStatus,
+    CONFIRM_DIALOG_KEY,
+    DotExperiment,
+    DotExperimentStatusList
+} from '@dotcms/dotcms-models';
 import { DotMessagePipe, DotMessagePipeModule } from '@dotcms/ui';
 
 import { DotExperimentsConfigurationGoalsComponent } from './components/dot-experiments-configuration-goals/dot-experiments-configuration-goals.component';
@@ -47,7 +54,9 @@ import { DotExperimentsInlineEditTextComponent } from '../shared/ui/dot-experime
         RippleModule,
         InplaceModule,
         InputTextModule,
-        RippleModule
+        RippleModule,
+        MenuModule,
+        ConfirmDialogModule
     ],
     selector: 'dot-experiments-configuration',
     templateUrl: './dot-experiments-configuration.component.html',
@@ -59,6 +68,7 @@ export class DotExperimentsConfigurationComponent implements OnInit {
     vm$: Observable<ConfigurationViewModel> = this.dotExperimentsConfigurationStore.vm$;
     experimentStatus = DotExperimentStatusList;
     protected readonly ComponentStatus = ComponentStatus;
+    confirmDialogKey = CONFIRM_DIALOG_KEY;
 
     constructor(
         private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore,
@@ -88,56 +98,6 @@ export class DotExperimentsConfigurationComponent implements OnInit {
                 experimentId: null
             },
             queryParamsHandling: 'merge'
-        });
-    }
-
-    /**
-     * Run the Experiment
-     * @param {DotExperiment} experiment
-     * @returns void
-     * @memberof DotExperimentsConfigurationVariantsComponent
-     */
-    runExperiment(experiment: DotExperiment) {
-        this.dotExperimentsConfigurationStore.startExperiment(experiment);
-    }
-
-    /**
-     * Stop the Experiment
-     * @param {MouseEvent} $event
-     * @param {DotExperiment} experiment
-     * @returns void
-     * @memberof DotExperimentsConfigurationVariantsComponent
-     */
-    stopExperiment($event: MouseEvent, experiment: DotExperiment) {
-        this.confirmationService.confirm({
-            target: $event.target as EventTarget,
-            message: this.dotMessagePipe.transform('experiments.action.stop.delete-confirm'),
-            icon: 'pi pi-exclamation-triangle',
-            acceptLabel: this.dotMessagePipe.transform('stop'),
-            rejectLabel: this.dotMessagePipe.transform('dot.common.dialog.reject'),
-            accept: () => {
-                this.dotExperimentsConfigurationStore.stopExperiment(experiment);
-            }
-        });
-    }
-
-    /**
-     * Cancel the Schedule Experiment and set the status to Draft
-     * @param {MouseEvent} $event
-     * @param {DotExperiment} experiment
-     * @returns void
-     * @memberof DotExperimentsConfigurationVariantsComponent
-     */
-    cancelScheduleExperiment($event: MouseEvent, experiment: DotExperiment) {
-        this.confirmationService.confirm({
-            target: $event.target,
-            message: this.dotMessagePipe.transform('experiments.action.cancel.schedule-confirm'),
-            icon: 'pi pi-exclamation-triangle',
-            acceptLabel: this.dotMessagePipe.transform('dot.common.dialog.accept'),
-            rejectLabel: this.dotMessagePipe.transform('dot.common.dialog.reject'),
-            accept: () => {
-                this.dotExperimentsConfigurationStore.cancelSchedule(experiment);
-            }
         });
     }
 
