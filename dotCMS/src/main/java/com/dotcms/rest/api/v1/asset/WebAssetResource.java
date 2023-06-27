@@ -142,7 +142,7 @@ public class WebAssetResource {
     }
 
     /**
-     * Delete an asset by path language and version
+     * Delete an asset by path
      * @param request
      * @param response
      * @param form
@@ -159,7 +159,7 @@ public class WebAssetResource {
     public Response deleteAsset(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            AssetsRequestForm form
+            AssetInfoRequestForm form
     ) throws DotSecurityException, DotDataException, IOException {
 
         final InitDataObject initDataObject = new WebResource.InitBuilder()
@@ -169,11 +169,44 @@ public class WebAssetResource {
                 .rejectWhenNoUser(true).init();
 
         final User user = initDataObject.getUser();
-        helper.deleteAsset(form, user);
+        helper.deleteAsset(form.assetPath(), user);
         Logger.info(this,
-                String.format("User [%s] deleted asset for path [%s] with status live [%b] and lang [%s] ",
-                        user.getUserId(), form.assetPath(), form.live(), form.language()
-        ));
+                String.format("User [%s] deleted asset for path [%s] ", user.getUserId(), form.assetPath()));
+        return Response.ok().build();
+    }
+
+
+    /**
+     * Delete an asset by path
+     * @param request
+     * @param response
+     * @param form
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @throws IOException
+     */
+    @Path("/archive")
+    @DELETE
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response archiveAsset(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            AssetInfoRequestForm form
+    ) throws DotSecurityException, DotDataException, IOException {
+
+        final InitDataObject initDataObject = new WebResource.InitBuilder()
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true).init();
+
+        final User user = initDataObject.getUser();
+        helper.archiveAsset(form.assetPath(), user);
+        Logger.info(this,
+                String.format("User [%s] deleted asset for path [%s] ", user.getUserId(), form.assetPath()));
         return Response.ok().build();
     }
 

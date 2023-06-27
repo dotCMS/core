@@ -160,7 +160,7 @@ public class WebAssetHelper {
                     .build();
         } else {
             Logger.debug(this, String.format("Retrieving a folder by name: [%s] " , folder.getName()));
-            final Set<Treeable> folderContent = collectLiveAndWorkingContents(builder);
+            final List<Treeable> folderContent = browserAPI.getFolderContentList(builder.build());
             //We're requesting a folder and all of its contents
             final List<Folder> subFolders = folderContent.stream().filter(Folder.class::isInstance)
                     .map(f -> (Folder) f).collect(Collectors.toList());
@@ -542,22 +542,50 @@ public class WebAssetHelper {
     }
 
     /**
-     * Delete an asset
-     * @param form
+     * archive an asset
+     * @param assetPath
      * @param user
      * @return
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    public void deleteAsset(final AssetsRequestForm form, final User user)
+    public void archiveAsset(final String assetPath, final User user)
             throws DotDataException, DotSecurityException {
-
-        final FileAsset fileAsset = getAsset(form, user);
-        if (!fileAsset.isArchived()) {
-            contentletAPI.archive(fileAsset, user, false);
+        final WebAssetView assetInfo = getAssetInfo(assetPath, user);
+        if(assetInfo instanceof AssetVersionsView){
+            final AssetVersionsView fileAssetView = (AssetVersionsView) assetInfo;
+             final String identifier = fileAssetView.versions().get(0).identifier();
+             final Contentlet fileAsset = contentletAPI.findContentletByIdentifierAnyLanguage(identifier) ;
+            if(!fileAsset.isArchived()){
+                contentletAPI.archive(fileAsset, user, false);
+            }
+        } else {
+            throw new IllegalArgumentException(String.format("The path [%s] can not be resolved as an asset", assetPath));
         }
-        contentletAPI.delete(fileAsset, user, false);
+    }
 
+    /**
+     * Delete an asset
+     * @param assetPath
+     * @param user
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    public void deleteAsset(final String assetPath, final User user)
+            throws DotDataException, DotSecurityException {
+        final WebAssetView assetInfo = getAssetInfo(assetPath, user);
+        if(assetInfo instanceof AssetVersionsView){
+            final AssetVersionsView fileAssetView = (AssetVersionsView) assetInfo;
+            final String identifier = fileAssetView.versions().get(0).identifier();
+            final Contentlet fileAsset = contentletAPI.findContentletByIdentifierAnyLanguage(identifier) ;
+            if(!fileAsset.isArchived()){
+                contentletAPI.archive(fileAsset, user, false);
+            }
+            contentletAPI.delete(fileAsset, user, false);
+        } else {
+            throw new IllegalArgumentException(String.format("The path [%s] can not be resolved as an asset", assetPath));
+        }
     }
 
     public void deleteFolder(final String path, final User user)

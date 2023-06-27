@@ -375,14 +375,14 @@ public class WebAssetHelperIntegrationTest {
     }
 
     /**
-     * Method to test : {@link WebAssetHelper#deleteAsset(AssetsRequestForm, User)}
+     * Method to test : {@link WebAssetHelper#archiveAsset(String, User)}
      * Given Scenario: We submit a valid path to delete a file
      * Expected Result: We get the asset content back as proof of success
      * @throws DotDataException
      * @throws DotSecurityException
      */
     @Test
-    public void Test_Delete_File_Then_Delete_Folder() throws DotDataException, DotSecurityException {
+    public void Test_Archive_File() throws DotDataException, DotSecurityException {
         final WebAssetHelper webAssetHelper = WebAssetHelper.newInstance();
 
         Folder foo2 = new FolderDataGen().site(host).name("foo2").nextPersisted();
@@ -393,14 +393,41 @@ public class WebAssetHelperIntegrationTest {
         String assetPath = String.format(ASSET_PATH_TEMPLATE, host.getHostname(), foo2.getName(),
                 bar2.getName(), testFile.getName());
 
-        final AssetsRequestForm deleteAssetForm = AssetsRequestForm.builder()
-                .assetPath(assetPath).language("en_US").live(false)
-                .build();
-        webAssetHelper.deleteAsset(deleteAssetForm, APILocator.systemUser());
+        webAssetHelper.archiveAsset(assetPath, APILocator.systemUser());
+
+        webAssetHelper.deleteAsset(assetPath, APILocator.systemUser());
 
        final String folderPath = assetPath.replaceFirst(testFile.getName(), "");
        webAssetHelper.deleteFolder(folderPath, APILocator.systemUser());
 
+
+    }
+
+
+    /**
+     * Method to test : {@link WebAssetHelper#deleteAsset(String, User)}
+     * Given Scenario: We submit a valid path to delete a file
+     * Expected Result: We get the asset content back as proof of success
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void Test_Delete_File_Then_Delete_Folder() throws DotDataException, DotSecurityException {
+        final WebAssetHelper webAssetHelper = WebAssetHelper.newInstance();
+
+        Folder foo3 = new FolderDataGen().site(host).name("foo3").nextPersisted();
+        Folder bar3 = new FolderDataGen().parent(foo3).name("bar3").nextPersisted();
+
+        new FileAssetDataGen(bar3, testFile).languageId(defaultLanguage.getId()).nextPersisted();
+
+        String assetPath = String.format(ASSET_PATH_TEMPLATE, host.getHostname(), foo3.getName(),
+                bar3.getName(), testFile.getName());
+
+
+        webAssetHelper.deleteAsset(assetPath, APILocator.systemUser());
+
+        final String folderPath = assetPath.replaceFirst(testFile.getName(), "");
+        webAssetHelper.deleteFolder(folderPath, APILocator.systemUser());
 
     }
 
