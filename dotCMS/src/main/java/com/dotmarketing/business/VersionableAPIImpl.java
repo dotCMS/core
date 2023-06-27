@@ -287,7 +287,8 @@ public class VersionableAPIImpl implements VersionableAPI {
                     getContentletVersionInfo(identifier, contentlet) :
                     getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId(),
                             contentlet.getVariantId());
-
+            if (info.isEmpty())
+                return false;
             liveInode=info.get().getLiveInode();
         } else {
             final VersionInfo info = versionableFactory.getVersionInfo(versionable.getVersionId());

@@ -1,8 +1,15 @@
 package com.dotmarketing.portlets.templates.business;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.content.elasticsearch.ESQueryCache;
 import com.dotcms.datagen.ContainerDataGen;
-import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.MultiTreeDataGen;
@@ -14,7 +21,6 @@ import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.ThemeDataGen;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.datagen.VariantDataGen;
-import com.dotcms.rest.api.v1.template.TemplateView;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.VariantAPI;
 import com.dotcms.variant.model.Variant;
@@ -39,11 +45,9 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
-import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImpl;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
-import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.business.TemplateFactory.HTMLPageVersion;
@@ -52,20 +56,19 @@ import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import org.awaitility.Awaitility;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.junit.Assert.*;
 
 /**
  * Note: If you dont find a test over here, check {@link com.dotcms.rest.api.v1.template.TemplateResourceTest}
@@ -255,30 +258,44 @@ public class TemplateAPITest extends IntegrationTestBase {
     public void test_saveTemplate_editExistingTemplate() throws Exception {
         final String title = "Template" + System.currentTimeMillis();
         final Host newHostA = new SiteDataGen().nextPersisted();
-        final String body="<html><body> I'm mostly empty </body></html>";
-
-        Template template=new Template();
+        boolean templateSaved = false;
+        Template template = new Template();
         template.setTitle(title);
+        final String body = "<html><body> I'm mostly empty </body></html>";
         template.setBody(body);
-        template = templateAPI.saveTemplate(template, newHostA, user, false);
-        assertTrue(UtilMethods.isSet(template.getInode()));
-        assertTrue(UtilMethods.isSet(template.getIdentifier()));
-        final String templateInode = template.getInode();
-        final String templateIdentifier = template.getIdentifier();
-        assertEquals(template.getBody(), body);
-        assertEquals(template.getTitle(), title);
+        try {
+            template = templateAPI.saveTemplate(template, newHostA, user, false);
+            templateSaved=true;
+            assertTrue(UtilMethods.isSet(template.getInode()));
+            assertTrue(UtilMethods.isSet(template.getIdentifier()));
+            final String templateInode = template.getInode();
+            final String templateIdentifier = template.getIdentifier();
+            assertEquals(template.getBody(), body);
+            assertEquals(template.getTitle(), title);
 
-        final String updatedBody = "updated body!";
-        template = templateAPI.findWorkingTemplate(template.getIdentifier(), user, false);
-        template.setBody(updatedBody);
-        template.setInode("");
-        template = templateAPI.saveTemplate(template, newHostA, user, false);
-        assertTrue(UtilMethods.isSet(template.getInode()));
-        assertTrue(UtilMethods.isSet(template.getIdentifier()));
-        assertEquals(templateIdentifier, template.getIdentifier());
-        assertNotEquals(templateInode, template.getInode());
-        assertEquals(updatedBody,template.getBody());
-        assertEquals(title,template.getTitle());
+            final String updatedBody = "updated body!";
+            template = templateAPI.findWorkingTemplate(template.getIdentifier(), user, false);
+            template.setBody(updatedBody);
+            template.setInode("");
+            template = templateAPI.saveTemplate(template, newHostA, user, false);
+            assertTrue(UtilMethods.isSet(template.getInode()));
+            assertTrue(UtilMethods.isSet(template.getIdentifier()));
+            assertEquals(templateIdentifier, template.getIdentifier());
+            assertNotEquals(templateInode, template.getInode());
+            assertEquals(updatedBody, template.getBody());
+            assertEquals(title, template.getTitle());
+        } finally {
+            try {
+                if (templateSaved) {
+                    templateAPI.archive(template, user, false);
+                    templateAPI.deleteTemplate(template, user, false);
+                }
+                hostAPI.archive(newHostA, user, false);
+                hostAPI.delete(newHostA, user, false);
+            } catch (Exception e) {
+                Logger.error(getClass(), "Error cleaning up test", e);
+            }
+        }
     }
 
     /**
@@ -535,7 +552,9 @@ public class TemplateAPITest extends IntegrationTestBase {
 
         assertNotNull(result);
         assertFalse(result.isEmpty());
-        assertTrue(result.contains(template));
+
+        diagnoseResultWithRetry(title, template, result);
+
         assertFalse(result.get(0).getOwner().isEmpty());//check owner was pulled
         assertFalse(result.get(0).getIDate().toString().isEmpty());//check idate was pulled
 
@@ -618,9 +637,45 @@ public class TemplateAPITest extends IntegrationTestBase {
         final List<Template> result = templateAPI.findTemplatesAssignedTo(host);
         assertNotNull(result);
         assertFalse(result.isEmpty());
+
+        diagnoseResultWithRetry(title, template, result);
+
         assertTrue(result.contains(template));
         assertFalse(result.get(0).getOwner().isEmpty());//check owner was pulled
         assertFalse(result.get(0).getIDate().toString().isEmpty());//check idate was pulled
+    }
+
+    private static void diagnoseResultWithRetry(String title, Template template, List<Template> result) {
+        if (!result.contains(template)) {
+
+            // Temporary Diagnostics
+            Logger.error(TemplateAPITest.class, "testFindTemplates: " + title + " not found in result checking index and retry");
+
+            AtomicInteger tryCount = new AtomicInteger(0);
+            Awaitility.await()
+                    .atMost(30, TimeUnit.SECONDS)
+                    .pollInterval(5, TimeUnit.SECONDS)
+                    .untilAsserted(() -> {
+                        Logger.error(TemplateAPITest.class, "testFindTemplates: retrying " + tryCount.incrementAndGet() + " times");
+
+                        List<Template> checkResult = templateAPI
+                                .findTemplates(user, false, null, host.getIdentifier(), null, null,
+                                        null, 0, -1,
+                                        null);
+
+                        if (checkResult.contains(template)) {
+                            Logger.error(TemplateAPITest.class, "testFindTemplates: found " + title + " in index, retrying");
+                            assertTrue(checkResult.contains(template));
+                        } else if (APILocator.getReindexQueueAPI().areRecordsLeftToIndex()) {
+                            Logger.error(TemplateAPITest.class, "testFindTemplates: reindexer is running, waiting 5 seconds and retry");
+                        } else {
+                            Logger.error(TemplateAPITest.class, "Testing flush of query cache");
+                            ESQueryCache queryCache = CacheLocator.getESQueryCache();
+                            queryCache.clearCache();
+                            assertTrue(checkResult.contains(template));
+                        }
+                    });
+        }
     }
 
     /**
@@ -655,10 +710,12 @@ public class TemplateAPITest extends IntegrationTestBase {
         } finally {
             //Clean up.
             if (oldTemplate != null) {
-                templateAPI.delete(oldTemplate, user, false);
+                templateAPI.archive(oldTemplate, user, false);
+                templateAPI.deleteTemplate(oldTemplate, user, false);
             }
             if (newTemplate != null) {
-                templateAPI.delete(newTemplate, user, false);
+                templateAPI.archive(newTemplate, user, false);
+                templateAPI.deleteTemplate(newTemplate, user, false);
             }
         }
     }

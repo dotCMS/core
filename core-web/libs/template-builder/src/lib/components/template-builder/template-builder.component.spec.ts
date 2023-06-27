@@ -77,7 +77,9 @@ describe('TemplateBuilderComponent', () => {
                             location: 'left',
                             width: 'small',
                             containers: []
-                        }
+                        },
+                        width: 'Mobile',
+                        title: 'Test Title'
                     },
                     containerMap: CONTAINER_MAP_MOCK
                 }
@@ -208,11 +210,9 @@ describe('TemplateBuilderComponent', () => {
                     body: FULL_DATA_MOCK,
                     header: true,
                     footer: true,
-                    sidebar: {
-                        location: 'left',
-                        width: 'small',
-                        containers: []
-                    }
+                    sidebar: null,
+                    width: 'Mobile',
+                    title: 'Test Title'
                 });
                 done();
             });
