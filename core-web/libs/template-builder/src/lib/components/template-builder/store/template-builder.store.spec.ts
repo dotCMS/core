@@ -93,7 +93,7 @@ describe('DotTemplateBuilderStore', () => {
 
         expect.assertions(1);
         items$.subscribe((items) => {
-            expect(items.length).toBeGreaterThan(initialState.length);
+            expect(items.length).toBeGreaterThan(initialState.length + 1);
         });
     });
 
