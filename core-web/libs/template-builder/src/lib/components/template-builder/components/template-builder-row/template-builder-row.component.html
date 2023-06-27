@@ -4,7 +4,7 @@
     </div>
     <div class="row__actions-container">
         <p-button
-            (onClick)="editClasses.emit()"
+            (onClick)="editClasses()"
             data-testid="row-style-class-button"
             styleClass="p-button-text p-button-sm p-button-rounded"
             icon="pi pi-palette"
@@ -20,8 +20,12 @@
             </i>
         </div>
         <dotcms-remove-confirm-dialog
-            (deleteConfirmed)="deleteRow.emit()"
-            (deleteRejected)="deleteRowRejected.emit()"
+            (deleteConfirmed)="deleteRow()"
         ></dotcms-remove-confirm-dialog>
     </div>
+    <dotcms-template-builder-background-columns
+        [ngStyle]="{
+            opacity: isResizing ? 1 : 0
+        }"
+    ></dotcms-template-builder-background-columns>
 </div>

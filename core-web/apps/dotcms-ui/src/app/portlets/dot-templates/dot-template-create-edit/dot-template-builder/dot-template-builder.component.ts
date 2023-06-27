@@ -1,12 +1,4 @@
-import {
-    Component,
-    EventEmitter,
-    Input,
-    OnChanges,
-    OnInit,
-    Output,
-    ViewChild
-} from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
 
 import { IframeComponent } from '@components/_common/iframe/iframe-component';
 import { DotLayout, FeaturedFlags } from '@dotcms/dotcms-models';
@@ -18,7 +10,7 @@ import { DotTemplateItem } from '../store/dot-template.store';
     templateUrl: './dot-template-builder.component.html',
     styleUrls: ['./dot-template-builder.component.scss']
 })
-export class DotTemplateBuilderComponent implements OnInit, OnChanges {
+export class DotTemplateBuilderComponent implements OnInit {
     @Input() item: DotTemplateItem;
     @Input() didTemplateChanged: boolean;
     @Output() saveAndPublish = new EventEmitter<DotTemplateItem>();
@@ -36,12 +28,6 @@ export class DotTemplateBuilderComponent implements OnInit, OnChanges {
         this.historyUrl = `/html/templates/push_history.jsp?templateId=${this.item.identifier}&popup=true`;
     }
 
-    ngOnChanges(): void {
-        if (this.historyIframe) {
-            this.historyIframe.iframeElement.nativeElement.contentWindow.location.reload();
-        }
-    }
-
     /**
      * Update template and publish it
      *
@@ -53,5 +39,22 @@ export class DotTemplateBuilderComponent implements OnInit, OnChanges {
             ...this.item,
             layout
         } as DotTemplateItem);
+
+        if (this.historyIframe) {
+            this.historyIframe.iframeElement.nativeElement.contentWindow.location.reload();
+        }
+    }
+
+    /**
+     * Update template and publish it
+     *
+     * @param {DotTemplateItem} item
+     * @memberof DotTemplateBuilderComponent
+     */
+    onTemplateItemChange(item: DotTemplateItem) {
+        this.updateTemplate.emit(item);
+        if (this.historyIframe) {
+            this.historyIframe.iframeElement.nativeElement.contentWindow.location.reload();
+        }
     }
 }

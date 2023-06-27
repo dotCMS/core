@@ -1,64 +1,75 @@
 import { describe, it, expect } from '@jest/globals';
 
+import { NgStyle } from '@angular/common';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
+import { DialogService } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipeModule } from '@dotcms/ui';
 
 import { TemplateBuilderRowComponent } from './template-builder-row.component';
 
+import { DotTemplateBuilderStore } from '../../store/template-builder.store';
 import { DOT_MESSAGE_SERVICE_TB_MOCK } from '../../utils/mocks';
+import { DotAddStyleClassesDialogStore } from '../add-style-classes-dialog/store/add-style-classes-dialog.store';
 import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-confirm-dialog.component';
+import { TemplateBuilderBackgroundColumnsComponent } from '../template-builder-background-columns/template-builder-background-columns.component';
 
 @Component({
     selector: 'dotcms-host-component',
-    template: ` <dotcms-template-builder-row
-        (editClasses)="editRowStyleClass()"
-        (deleteRow)="deleteRow()"
-    >
+    template: ` <dotcms-template-builder-row [row]="row" [isResizing]="isResizing">
         <p>Some component</p>
     </dotcms-template-builder-row>`
 })
 class HostComponent {
-    deleteRow() {
-        /*  */
-    }
-    editRowStyleClass() {
-        /*  */
-    }
+    isResizing = false;
+    row = {
+        id: '1'
+    };
 }
 
 describe('TemplateBuilderRowComponent', () => {
     let component: TemplateBuilderRowComponent;
     let fixture: ComponentFixture<HostComponent>;
+    let store: DotTemplateBuilderStore;
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
             imports: [
+                NgStyle,
                 ButtonModule,
                 TemplateBuilderRowComponent,
                 RemoveConfirmDialogComponent,
                 NoopAnimationsModule,
-                DotMessagePipeModule
+                DotMessagePipeModule,
+                HttpClientTestingModule,
+                TemplateBuilderBackgroundColumnsComponent
             ],
             declarations: [HostComponent],
             providers: [
                 {
                     provide: DotMessageService,
                     useValue: DOT_MESSAGE_SERVICE_TB_MOCK
-                }
-            ]
+                },
+                DotTemplateBuilderStore,
+                DialogService,
+                DotAddStyleClassesDialogStore
+            ],
+            teardown: { destroyAfterEach: false }
         }).compileComponents();
 
         fixture = TestBed.createComponent(HostComponent);
         component = fixture.debugElement.query(
             By.css('dotcms-template-builder-row')
         ).componentInstance;
+
+        store = TestBed.inject(DotTemplateBuilderStore);
 
         fixture.detectChanges();
     });
@@ -80,8 +91,17 @@ describe('TemplateBuilderRowComponent', () => {
         expect(fixture.debugElement.query(By.css('p'))).toBeTruthy();
     });
 
+    it('should have a background when resizing', () => {
+        fixture.componentInstance.isResizing = true;
+        fixture.detectChanges();
+
+        expect(
+            fixture.debugElement.query(By.css('dotcms-template-builder-background-columns'))
+        ).toBeTruthy();
+    });
+
     it('should trigger editRowStyleClass when clicking on editStyleClass button', () => {
-        const editRowStyleClassMock = jest.spyOn(fixture.componentInstance, 'editRowStyleClass');
+        const editRowStyleClassMock = jest.spyOn(component, 'editClasses');
         const button = fixture.debugElement.query(
             By.css('p-button[data-testid="row-style-class-button"]')
         );
@@ -97,8 +117,8 @@ describe('TemplateBuilderRowComponent', () => {
         ).toBeTruthy();
     });
 
-    it('should trigger deleteRow when clicking on deleteRow button and click yes', () => {
-        const deleteMock = jest.spyOn(fixture.componentInstance, 'deleteRow');
+    it('should trigger removeRow from store when clicking on deleteRow button and click yes', () => {
+        const deleteMock = jest.spyOn(store, 'removeRow');
 
         const deleteButton = fixture.debugElement.query(
             By.css('p-button[data-testid="btn-remove-item"]')
@@ -114,8 +134,8 @@ describe('TemplateBuilderRowComponent', () => {
         expect(deleteMock).toHaveBeenCalled();
     });
 
-    it('should not trigger deleteRow when clicking on deleteRow button and click no', () => {
-        const deleteMock = jest.spyOn(fixture.componentInstance, 'deleteRow');
+    it('should not trigger removeRow from store when clicking on deleteRow button and click no', () => {
+        const deleteMock = jest.spyOn(store, 'removeRow');
 
         const deleteButton = fixture.debugElement.query(
             By.css('p-button[data-testid="btn-remove-item"]')

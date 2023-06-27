@@ -1,14 +1,18 @@
 package com.dotmarketing.portlets.structure.factories;
 
+import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisher;
+import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper;
 import com.dotmarketing.business.query.GenericQueryFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.portlets.ContentletBaseTest;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.UtilMethods;
+import java.io.IOException;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -142,9 +146,14 @@ public class StructureFactoryTest extends ContentletBaseTest {
      * @see StructureFactory
      */
     @Test
-    public void findStructureURLMapPatterns () throws DotDataException {
+    public void findStructureURLMapPatterns ()
+            throws DotDataException, WebAssetException, IOException, DotSecurityException {
+        // This test is requiring a structure with a URL Map Pattern and is
+        // only passing when the structure is created in the same test
+        // Will use the helper to create the structure
 
-        //Getting the structures map patterns
+        StaticPublisherIntegrationTestHelper.getURLMapPageWithImage();
+
         Collection<SimpleStructureURLMap> simpleStructureURLMaps = StructureFactory.findStructureURLMapPatterns();
 
         //Validations
