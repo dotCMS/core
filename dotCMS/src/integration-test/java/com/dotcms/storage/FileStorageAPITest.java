@@ -3,6 +3,7 @@ package com.dotcms.storage;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
+import com.dotmarketing.quartz.job.ReplicateStoragesJob;
 import com.dotmarketing.util.DateUtil;
 import io.vavr.control.Try;
 import org.junit.Assert;
@@ -10,6 +11,7 @@ import org.junit.Test;
 
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -355,7 +357,7 @@ public class FileStorageAPITest {
 
     /**
      * Method to test: This test tries the {@link FileSystemStoragePersistenceAPIImpl#toIterable(String)}
-     * Given Scenario: Initially will create a few object in a bucket, after that will iterate over it
+     * Given Scenario: Initially will create a few objects in a bucket, after that will iterate over it
      * ExpectedResult: The iteration should return the files created successfully
      *
      * @throws Exception
@@ -404,6 +406,54 @@ public class FileStorageAPITest {
                 Try.run(() -> storage.deleteGroup(groupName)).getOrElseThrow((e) -> new RuntimeException(e));
             });
         }
-    }
+    } // Test_File_Iterable.
 
+    /**
+     * Method to test: This test tries the {@link com.dotmarketing.quartz.job.ReplicateStoragesJob#replicate(StorageType, List)}
+     * Given Scenario: Initially will create a few objects in a bucket, and replicate it to a db storage
+     * ExpectedResult: The bucket has to be replicated successfully to the db
+     *
+     * @throws Exception
+     */
+    @Test
+    public void Test_File_Replication() throws Exception {
+
+        // we need to clean any previous storage configuration to proceed on the test
+        StoragePersistenceProvider.INSTANCE.get().forceInitialize();
+        final StoragePersistenceAPI fileStorage = StoragePersistenceProvider.INSTANCE.get().getStorage(StorageType.FILE_SYSTEM);
+        final StoragePersistenceAPI dbStorage = StoragePersistenceProvider.INSTANCE.get().getStorage(StorageType.DB);
+
+        // group for testing on the storage
+        final String groupName = "bucket-test-replication";
+
+        try {
+
+            // this creates the group on the storage
+            Try.run(() -> fileStorage.createGroup(groupName)).getOrElseThrow((e) -> new RuntimeException(e));
+
+            // Now create a few objects on the fileStorage
+            final String[] paths = {"path1.txt", "path2.txt", "path3.txt"};
+            final Serializable[] objects = { new HashMap<>(Map.of("key1","Object1")),
+                    new HashMap<>(Map.of("key2","Object2")),
+                    new HashMap<>(Map.of("key3","Object3"))};
+
+            for (int i = 0; i < paths.length; i++) {
+                fileStorage.pushObject(groupName, paths[i], FileStorageAPI.DEFAULT_OBJECT_WRITER_DELEGATE, objects[i], null);
+            }
+
+            // fires replication from file system to db
+            new ReplicateStoragesJob().replicate(StorageType.FILE_SYSTEM, List.of(StorageType.DB));
+            for (int i = 0; i < paths.length; i++) {
+
+                Assert.assertTrue("The object path: " + paths[i] + " should be exist", dbStorage.existsObject(groupName, paths[i]));
+                final Object object = dbStorage.pullObject(groupName, paths[i], FileStorageAPI.DEFAULT_OBJECT_READER_DELEGATE);
+                Assert.assertEquals("The object path: " + paths[i] + " should be equals", objects[i], object);
+            }
+        } finally {
+
+            Stream.of(fileStorage, dbStorage).forEach(storage -> {
+                Try.run(() -> storage.deleteGroup(groupName)).getOrElseThrow((e) -> new RuntimeException(e));
+            });
+        }
+    } // Test_File_Iterable.
 }

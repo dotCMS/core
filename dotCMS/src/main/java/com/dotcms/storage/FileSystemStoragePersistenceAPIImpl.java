@@ -546,8 +546,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
                 final String absolutePath = path.toFile().getAbsolutePath();
                 final String relativePath = absolutePath.substring(this.destBucketFile.getAbsolutePath().length() + 1);
                 objectPath = Try.of(()->new ObjectPath(relativePath,
-                        FileSystemStoragePersistenceAPIImpl.this.pullObject(groupName, relativePath,
-                                FileStorageAPI.DEFAULT_OBJECT_READER_DELEGATE))).getOrNull();
+                        FileSystemStoragePersistenceAPIImpl.this.pullFile(groupName, relativePath))).getOrNull();
             }
 
             return objectPath;

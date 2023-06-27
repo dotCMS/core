@@ -495,8 +495,8 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
         // 2.1 if exists only insert on the reference
         // 2.2 if does not exists, insert a new one
         final Map<String, Serializable> metaData = hashFile(file, extraMeta);
-        final String fileHash = (String) metaData.get(SHA256_META_KEY.key());
-        final String hashRef = (String)extraMeta.get(HASH_REF);
+        final String fileHash = (String)metaData.get(SHA256_META_KEY.key());
+        final String hashRef  = (String)metaData.get(HASH_REF); //null != metaData.get(HASH_REF)? (String)metaData.get(HASH_REF): fileHash;
         Logger.debug(DataBaseStoragePersistenceAPIImpl.class, " fileHash is : " + fileHash);
 
             return wrapInTransaction(

@@ -20,6 +20,7 @@ import org.quartz.JobExecutionException;
 import org.quartz.SchedulerException;
 import org.quartz.Trigger;
 
+import java.io.File;
 import java.io.Serializable;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -98,10 +99,12 @@ public class ReplicateStoragesJob extends DotStatefulJob {
                     int count = 0;
                     for (final ObjectPath objectPath : storagePersistenceAPI.toIterable(group)) {
 
-                        this.replicateToStorages(toStoragePersistenceAPIs, group, objectPath);
-                        if (count++ % 100 == 0) { // todo: both values may be configurable
+                        if (null != objectPath) {
+                            this.replicateToStorages(toStoragePersistenceAPIs, group, objectPath);
+                            if (count++ % 100 == 0) { // todo: both values may be configurable
 
-                            DateUtil.sleep(DateUtil.SECOND_MILLIS);
+                                DateUtil.sleep(DateUtil.SECOND_MILLIS);
+                            }
                         }
                     }
                 }
@@ -135,16 +138,26 @@ public class ReplicateStoragesJob extends DotStatefulJob {
 
             try {
 
-                if (objectPath.getObject() instanceof Serializable) {
+                // note: we do replicate even if the object exist on the destination storage, since we want to override and sync both storages
+                if (null != objectPath.getObject()) {
+                    if (objectPath.getObject() instanceof File) {
 
-                    toStoragePersistenceAPI.pushObject(group, objectPath.getPath(),
-                            FileStorageAPI.DEFAULT_OBJECT_WRITER_DELEGATE,
-                            Serializable.class.cast(objectPath.getObject()), null);
-                } else {
+                        toStoragePersistenceAPI.pushFile(group, objectPath.getPath(),
+                                File.class.cast(objectPath.getObject() ), null);
+                    } else if (objectPath.getObject() instanceof Serializable) {
 
-                    Logger.debug(this, () -> "The object: " + objectPath.getObject().toString() +
-                            " under the group: " + group + " and path: " + objectPath.getPath() +
-                            " is not serializable");
+                        toStoragePersistenceAPI.pushObject(group, objectPath.getPath(),
+                                FileStorageAPI.DEFAULT_OBJECT_WRITER_DELEGATE,
+                                Serializable.class.cast(objectPath.getObject()), null);
+                    } else {
+
+                        Logger.debug(this, () -> "The object: " + objectPath.getObject().toString() +
+                                " under the group: " + group + " and path: " + objectPath.getPath() +
+                                " is not serializable");
+                    }
+                }  else {
+
+                    Logger.debug(this, () -> "The object: " + objectPath.getPath() + " is null, could not replicate it");
                 }
             } catch (Exception e) {
 
