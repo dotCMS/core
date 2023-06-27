@@ -262,7 +262,7 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy, OnChan
                     this.currentTheme = theme;
                     this.cd.detectChanges();
                 });
-            this.initialFormValue = _.cloneDeep(this.form.value) as DotTemplateDesigner;
+            this.initialFormValue = structuredClone(this.form.value) as DotTemplateDesigner;
         }
     }
 
