@@ -1,7 +1,7 @@
 <ng-container *ngIf="vm$ | async as vm">
     <p-card>
         <ng-template pTemplate="title">
-            <div class="flex justify-content-between">
+            <div class="variant--title__wrapper flex justify-content-between">
                 <h2 class="flex align-items-center gap-1 uppercase">
                     <dot-icon
                         [ngClass]="{ isDone: vm.trafficProportion.variants?.length > 1 }"
@@ -30,9 +30,9 @@
         >
             <p-card [ngClass]="{ first: first, last: last }" data-testId="variant-row-card">
                 <div
-                    class="variant-row-wrapper flex flex-row align-items-center align-content-between gap-2"
+                    class="variant--row__wrapper flex flex-row align-items-center align-content-between gap-2"
                 >
-                    <div class="title flex flex-grow-1 flex-row align-items-center gap-2">
+                    <div class="flex flex-grow-1 flex-row align-items-center gap-2">
                         <ng-container
                             *ngIf="
                                 variant.name === defaultVariantName || !vm.isExperimentADraft;
@@ -49,7 +49,6 @@
                             [tooltipText]="'dot.common.message.pageurl.copy.clipboard' | dm"
                         ></dot-copy-button>
                     </div>
-
                     <span class="separator">|</span>
 
                     <div

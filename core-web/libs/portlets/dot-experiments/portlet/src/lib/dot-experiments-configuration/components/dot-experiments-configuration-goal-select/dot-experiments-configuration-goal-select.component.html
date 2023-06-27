@@ -60,13 +60,11 @@
                         <input
                             id="name"
                             [maxlength]="this.maxNameLength + 1"
+                            [placeholder]="'experiments.goal.reach_page.form.name.placeholder' | dm"
                             data-testId="goal-name-input"
                             formControlName="name"
                             name="name"
                             pInputText
-                            placeholder="{{
-                                'experiments.goal.reach_page.form.name.placeholder' | dm
-                            }}"
                             required
                             type="text"
                         />

@@ -1,26 +1,28 @@
 @use "variables" as *;
 
-.variant-row-wrapper {
+.variant--title__wrapper {
+    h2 {
+        margin: 0;
+        font-size: $font-size-lg;
+        font-weight: $font-weight-bold;
+    }
+
+    .variant-name dot-icon {
+        display: inline;
+        color: $color-palette-primary;
+    }
+}
+
+.variant--row__wrapper {
     min-height: 2.2rem;
-}
 
-h2 {
-    margin: 0;
-    font-size: $font-size-lg;
-    font-weight: $font-weight-bold;
-}
+    .separator {
+        color: $color-palette-gray-300;
+    }
 
-.variant-name dot-icon {
-    display: inline;
-    color: $color-palette-primary;
-}
-
-.separator {
-    color: $color-palette-gray-300;
-}
-
-button {
-    min-width: 55px;
+    button {
+        min-width: 55px;
+    }
 }
 
 :host ::ng-deep {
@@ -53,27 +55,6 @@ button {
 
         .p-card-footer .p-button-link {
             padding: $spacing-0;
-        }
-    }
-
-    p-inplace .p-inplace {
-        .p-inplace-display {
-            padding: 0;
-
-            i {
-                margin-left: $spacing-1;
-                margin-right: $spacing-1;
-                font-size: 0.85rem;
-            }
-
-            &:hover {
-                background: transparent;
-            }
-        }
-
-        .p-inplace-content {
-            display: flex;
-            gap: $spacing-1;
         }
     }
 }
