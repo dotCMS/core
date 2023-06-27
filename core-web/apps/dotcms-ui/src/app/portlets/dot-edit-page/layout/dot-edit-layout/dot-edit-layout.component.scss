@@ -6,3 +6,11 @@
         padding-right: 5rem;
     }
 }
+
+::ng-deep {
+    dotcms-template-builder {
+        .layout-toolbar.p-toolbar {
+            padding-right: 0;
+        }
+    }
+}
