@@ -25,16 +25,25 @@
         <ng-template pTemplate="caption">
             <div class="flex justify-content-between dot-pages-listing-header">
                 <div class="dot-pages-listing-header__inputs">
-                    <input
-                        class="dot-pages-listing-header__filter-input"
-                        [placeholder]="'Type-To-Search' | dm"
-                        [value]="vm.keywordValue"
-                        (input)="filterData($event.target.value)"
-                        data-testid="dot-pages-listing-header__keyword-input"
-                        type="text"
-                        pInputText
-                        dotAutofocus
-                    />
+                    <div class="p-input-icon-right">
+                        <input
+                            class="dot-pages-listing-header__filter-input"
+                            #input
+                            [placeholder]="'Type-To-Search' | dm"
+                            [value]="vm.keywordValue"
+                            (input)="filterData($event.target.value)"
+                            data-testid="dot-pages-listing-header__keyword-input"
+                            type="text"
+                            pInputText
+                            dotAutofocus
+                        />
+                        <i
+                            class="pi pi-times"
+                            *ngIf="input.value.length"
+                            (click)="filterData('')"
+                            data-testid="dot-pages-listing-header__keyword-input-clear"
+                        ></i>
+                    </div>
                     <p-dropdown
                         class="dot-pages-listing-header__language-input"
                         [(ngModel)]="vm.languageIdValue"
