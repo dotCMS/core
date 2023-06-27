@@ -5,6 +5,7 @@ import static com.dotcms.util.CollectionsUtils.set;
 
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.experiments.model.Experiment;
 import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.util.PublisherUtil;
@@ -324,6 +325,17 @@ public class DependencyManager {
 						.title(getSyncingAllCategoriesTitle())
 						.build(), ManifestReason.INCLUDE_BY_USER.getMessage());
 
+			} else if (asset.getType().equals(PusheableAsset.EXPERIMENT.getType())) {
+				final Optional<Experiment> experiment = APILocator.getExperimentsAPI()
+						.find(asset.getAsset(), user);
+				if (experiment.isPresent()) {
+					add(experiment.get(), PusheableAsset.EXPERIMENT);
+				} else {
+					Logger.warn(getClass(), "Experiment  id: "
+							+ (asset.getAsset() != null ? asset.getAsset()
+							: "N/A")
+							+ " is not present in the database, not Pushed.");
+				}
 			}
 		}
 

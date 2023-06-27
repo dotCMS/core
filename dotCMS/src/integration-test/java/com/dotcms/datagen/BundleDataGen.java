@@ -2,14 +2,17 @@ package com.dotcms.datagen;
 
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.publishing.remote.bundler.AssignableFromMap;
+import com.dotcms.experiments.model.Experiment;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublishQueueElement;
+import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.publisher.business.PublisherAPIImpl;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherConfig;
+import com.dotcms.publishing.PublisherConfig.DeliveryStrategy;
 import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.util.FunctionUtils;
 import com.dotmarketing.beans.Host;
@@ -25,7 +28,6 @@ import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.google.common.collect.Lists;
 
 import com.liferay.portal.model.User;
 import java.util.*;
@@ -133,6 +135,13 @@ public class BundleDataGen extends AbstractDataGen<Bundle> {
                         PusheableAsset.LANGUAGE
                 )
         );
+
+        howAddInBundle.put(Experiment.class, new MetaData(
+                        (PushPublisherConfig config) -> config.getIncludedLanguages(), // TODO change this
+                        (Object asset) -> ((Experiment) asset).id().orElseThrow(),
+                        PusheableAsset.EXPERIMENT
+                )
+        );
     }
 
     public BundleDataGen setSavePublishQueueElements(boolean savePublishQueueElements) {
@@ -207,7 +216,7 @@ public class BundleDataGen extends AbstractDataGen<Bundle> {
                     .collect(Collectors.toList());
 
             final List<String> ids = FunctionUtils.map(assetWithoutWorkflow, asset -> asset.inode);
-            PublisherAPIImpl.getInstance().saveBundleAssets( ids, bundle.getId(), APILocator.systemUser() );
+            PublisherAPI.getInstance().saveBundleAssets(ids, bundle.getId(), user);
         } catch (DotPublisherException e) {
             throw new DotRuntimeException(e);
         }

@@ -2,6 +2,7 @@ package com.dotcms.publisher.util.dependencies;
 
 import com.dotcms.contenttype.business.StoryBlockAPI;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.experiments.model.Experiment;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.util.PusheableAsset;
@@ -10,6 +11,7 @@ import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.publishing.PublisherFilter;
 import com.dotcms.publishing.manifest.ManifestItem;
 import com.dotcms.publishing.manifest.ManifestReason;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -56,6 +58,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
+import org.apache.commons.math3.analysis.function.Exp;
 
 /**
  * Implementation class for the {@link DependencyProcessor} interface.
@@ -144,6 +147,9 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
         if (publisherFilter.isDependencies() && !config.justIncludesUsers() && !config.justIncludesCategories()) {
             setLanguageVariables();
         }
+
+        dependencyProcessor.addProcessor(PusheableAsset.EXPERIMENT,
+                (experiment) -> processExperimentDependencies((Experiment) experiment));
     }
 
     /**
@@ -779,6 +785,40 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
             Logger.error(this,
                     String.format("An error occurred when processing dependencies on HTML Page with ID '%s': %s", pageId,
                             e.getMessage()), e);
+        }
+    }
+
+    private void processExperimentDependencies(final Experiment experiment)  {
+        try {
+            final Contentlet parentPage = APILocator.getContentletAPI()
+                    .findContentletByIdentifierAnyLanguage(experiment.pageId());
+
+            if (UtilMethods.isSet(parentPage)) {
+                tryToAddSilently(PusheableAsset.CONTENTLET, parentPage,
+                        ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(experiment));
+            } else {
+                throw new DotDataException(
+                        String.format("For Experiment '%s', no parent with ID '%s' could be found", experiment.id().orElse(""),
+                                experiment.pageId()));
+            }
+
+            final List<Variant> variants = experiment.trafficProportion().variants().stream()
+                    .map((experimentVariant -> {
+                        try {
+                            return APILocator.getVariantAPI()
+                                    .get(experimentVariant.id()).orElseThrow();
+                        } catch (DotDataException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }))
+                    .collect(Collectors.toList());
+
+
+
+
+        } catch (final DotDataException e) {
+            Logger.error(this, String.format("An error occurred when processing dependencies on Experiment '%s' [%s]: %s",
+                    experiment.name(), experiment.id().orElse(""), e.getMessage()), e);
         }
     }
 

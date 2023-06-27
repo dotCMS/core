@@ -456,6 +456,7 @@ public class PushPublisher extends Publisher {
 		boolean buildLanguages = false;
 		boolean buildRules = false;
 		boolean buildAsset = false;
+		boolean buildExperiments = false;
 		List<Class> list = new ArrayList<>();
 		for ( PublishQueueElement element : config.getAssets() ) {
 			if ( element.getType().equals(PusheableAsset.CATEGORY.getType()) ) {
@@ -468,6 +469,8 @@ public class PushPublisher extends Publisher {
 				buildLanguages = true;
 			} else if (element.getType().equals(PusheableAsset.RULE.getType())) {
 				buildRules = true;
+			} else if (element.getType().equals(PusheableAsset.EXPERIMENT.getType())) {
+				buildExperiments = true;
 			} else {
 				buildAsset = true;
 			}
@@ -509,6 +512,9 @@ public class PushPublisher extends Publisher {
 			list.add( CategoryFullBundler.class );
 		} else { // If we are PP from anywhere else, for example a contentlet, site, folder, etc.
 			list.add(CategoryBundler.class);
+		}
+		if(buildExperiments) {
+			list.add(ExperimentBundler.class);
 		}
 		return list;
 	}
