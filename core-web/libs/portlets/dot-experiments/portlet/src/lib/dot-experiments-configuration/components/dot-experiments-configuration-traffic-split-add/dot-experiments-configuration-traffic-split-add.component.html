@@ -49,7 +49,7 @@
                                 {{ variant.value.name }}
                             </span>
                             <p-inputNumber
-                                class="experiment-traffic-split__variants-weight"
+                                class="experiment-traffic-split__variants-weight p-inputtext-sm"
                                 *ngIf="
                                     form.value.type === customPercentages;
                                     else splitEvenTemplate
@@ -67,7 +67,7 @@
                                 <span
                                     class="experiment-traffic-split__variants-weight"
                                     data-testId="variant-weight"
-                                    >{{ variant.value.weight | json }}</span
+                                    >{{ variant.value.weight }}</span
                                 >
                             </ng-template>
                         </div>
