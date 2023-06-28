@@ -44,7 +44,7 @@ export class MockTemplateBuilderComponent {
     themeId: string;
 
     @Output()
-    templateChange = new EventEmitter();
+    templateChange: EventEmitter<DotTemplateDesigner> = new EventEmitter();
 }
 
 @Component({

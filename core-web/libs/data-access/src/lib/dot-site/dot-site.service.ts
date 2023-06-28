@@ -32,6 +32,15 @@ export class DotSiteService {
 
     constructor(private http: HttpClient) {}
 
+    /**
+     * Get sites by filter
+     * If no filter is provided, it will return all sites
+     *
+     * @param {string} [filter='*']
+     * @param {number} [perPage]
+     * @return {*}  {Observable<Site[]>}
+     * @memberof DotSiteService
+     */
     getSites(filter: string = '*', perPage?: number): Observable<Site[]> {
         return this.http
             .get<{ entity: Site[] }>(this.siteURL(filter, perPage))

@@ -43,7 +43,7 @@ import {
 class TemplateBuilderMockComponent {
     @Input() layout: DotLayout;
     @Input() themeId: string;
-    @Output() templateChange: EventEmitter<Event> = new EventEmitter();
+    @Output() templateChange: EventEmitter<DotTemplateDesigner> = new EventEmitter();
 }
 
 @Component({
