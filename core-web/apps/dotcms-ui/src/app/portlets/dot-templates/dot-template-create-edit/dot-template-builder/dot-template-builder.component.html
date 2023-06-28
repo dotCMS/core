@@ -1,4 +1,6 @@
-<p-tabView>
+<p-tabView
+    [styleClass]="(featureFlagIsOn$ | async) && 'dot-template-builder__new-template-builder'"
+>
     <p-tabPanel
         [header]="item.type === 'advanced' ? ('code' | dm) : ('design' | dm)"
         data-testId="builder"
