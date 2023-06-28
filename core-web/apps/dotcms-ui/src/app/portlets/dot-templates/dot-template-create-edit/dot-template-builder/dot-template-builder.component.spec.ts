@@ -179,6 +179,7 @@ describe('DotTemplateBuilderComponent', () => {
         fixture = TestBed.createComponent(DotTemplateBuilderComponent);
         de = fixture.debugElement;
         component = fixture.componentInstance;
+
         dotPropertiesService = TestBed.inject(DotPropertiesService);
         spyOn(component.save, 'emit');
         spyOn(component.updateTemplate, 'emit');
@@ -352,6 +353,9 @@ describe('DotTemplateBuilderComponent', () => {
                 theme: '123'
             };
             hostFixture.detectChanges();
+            const builder = hostFixture.debugElement.query(
+                By.css('dot-edit-layout-designer')
+            ).componentInstance;
             dotTestHostComponent.builder.historyIframe = {
                 iframeElement: {
                     nativeElement: {
@@ -367,6 +371,9 @@ describe('DotTemplateBuilderComponent', () => {
                 ...EMPTY_TEMPLATE_DESIGN,
                 theme: 'dotcms-123'
             };
+
+            builder.updateTemplate.emit(dotTestHostComponent.item);
+
             hostFixture.detectChanges();
             expect(
                 dotTestHostComponent.builder.historyIframe.iframeElement.nativeElement.contentWindow

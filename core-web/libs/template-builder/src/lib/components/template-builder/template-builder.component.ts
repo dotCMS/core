@@ -32,7 +32,8 @@ import {
     DotLayout,
     DotLayoutBody,
     DotTemplateDesigner,
-    DotTheme
+    DotTheme,
+    DotContainerMap
 } from '@dotcms/dotcms-models';
 
 import { colIcon, rowIcon } from './assets/icons';
@@ -69,6 +70,9 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
 
     @Input()
     themeId!: string;
+
+    @Input()
+    containerMap!: DotContainerMap;
 
     @Output()
     templateChange: EventEmitter<DotTemplateDesigner> = new EventEmitter<DotTemplateDesigner>();
@@ -124,7 +128,9 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
                         sidebar: layoutProperties?.sidebar?.location?.length // Make it null if it's empty so it doesn't get saved
                             ? layoutProperties.sidebar
                             : null,
-                        body: items as DotLayoutBody
+                        body: items,
+                        title: this.layout?.title ?? '',
+                        width: this.layout?.width ?? ''
                     };
 
                     this.templateChange.emit({
@@ -139,7 +145,9 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     ngOnInit(): void {
         this.store.init({
             items: parseFromDotObjectToGridStack(this.layout.body),
-            layoutProperties: this.layoutProperties
+            layoutProperties: this.layoutProperties,
+            resizingRowID: '',
+            containerMap: this.containerMap
         });
     }
 
@@ -162,6 +170,13 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
             });
             subgrid.on('dropped', (_: Event, oldNode: GridStackNode, newNode: GridStackNode) => {
                 this.store.subGridOnDropped(oldNode, newNode);
+            });
+
+            subgrid.on('resizestart', (_: Event, el: GridItemHTMLElement) => {
+                this.store.setResizingRowID(el.gridstackNode.grid.parentGridItem.id);
+            });
+            subgrid.on('resizestop', () => {
+                this.store.setResizingRowID(null);
             });
         });
 
@@ -209,6 +224,14 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
                             )
                             .on('change', (_: Event, nodes: GridStackNode[]) => {
                                 this.store.updateColumnGridStackData(nodes as DotGridStackWidget[]);
+                            })
+                            .on('resizestart', (_: Event, el: GridItemHTMLElement) => {
+                                this.store.setResizingRowID(
+                                    el.gridstackNode.grid.parentGridItem.id
+                                );
+                            })
+                            .on('resizestop', () => {
+                                this.store.setResizingRowID(null);
                             });
                     }
 

@@ -30,6 +30,7 @@ import { TemplateBuilderComponentsModule } from './components/template-builder-c
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { TemplateBuilderComponent } from './template-builder.component';
 import {
+    CONTAINER_MAP_MOCK,
     DOT_MESSAGE_SERVICE_TB_MOCK,
     FULL_DATA_MOCK,
     MOCK_STYLE_CLASSES_FILE
@@ -97,7 +98,7 @@ const Template: Story<TemplateBuilderComponent> = (args: TemplateBuilderComponen
         <dotcms-template-builder
             [layout]="layout"
             [themeId]="themeId"
-            [title]="title"
+            [containerMap]="containerMap"
         >
             <button
                 [label]="'Publish'"
@@ -123,5 +124,5 @@ Base.args = {
         }
     },
     themeId: '123',
-    title: null
+    containerMap: CONTAINER_MAP_MOCK
 };

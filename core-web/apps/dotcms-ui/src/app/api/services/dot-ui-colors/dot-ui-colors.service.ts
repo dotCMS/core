@@ -58,13 +58,13 @@ export class DotUiColorsService {
     setColors(el: HTMLElement, colors?: DotUiColors): void {
         this.currentColors = colors || this.currentColors;
 
-        if (colors.primary === DEFAULT_COLORS.primary) {
+        if (this.currentColors.primary === DEFAULT_COLORS.primary) {
             this.setDefaultPrimaryColor(el);
         } else {
             this.setColor(el, this.currentColors.primary, 'primary');
         }
 
-        if (colors.secondary === DEFAULT_COLORS.secondary) {
+        if (this.currentColors.secondary === DEFAULT_COLORS.secondary) {
             this.setDefaultSecondaryColor(el);
         } else {
             this.setColor(el, this.currentColors.secondary, 'secondary');

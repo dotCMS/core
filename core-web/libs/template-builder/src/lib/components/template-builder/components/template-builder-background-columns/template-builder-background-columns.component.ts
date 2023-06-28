@@ -20,6 +20,6 @@ export class TemplateBuilderBackgroundColumnsComponent {
     hostStyle: SafeStyle;
 
     constructor(private sanitizer: DomSanitizer) {
-        this.hostStyle = sanitizer.bypassSecurityTrustStyle(`gap: ${this.gridStackGap}`);
+        this.hostStyle = this.sanitizer.bypassSecurityTrustStyle(`gap: ${this.gridStackGap}`);
     }
 }

@@ -3,6 +3,7 @@
     <dotcms-template-builder
         [layout]="pageState.layout"
         [themeId]="pageState.template.theme"
+        [containerMap]="pageState.containerMap"
         (templateChange)="nextUpdateTemplate($event)"
         data-testId="new-template-builder"
     >
