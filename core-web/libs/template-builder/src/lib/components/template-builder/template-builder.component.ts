@@ -126,7 +126,9 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
                         sidebar: layoutProperties?.sidebar?.location?.length // Make it null if it's empty so it doesn't get saved
                             ? layoutProperties.sidebar
                             : null,
-                        body: items as DotLayoutBody
+                        body: items as DotLayoutBody,
+                        title: this.templateLayout?.title ?? '',
+                        width: this.templateLayout?.width ?? ''
                     });
                 })
             )
