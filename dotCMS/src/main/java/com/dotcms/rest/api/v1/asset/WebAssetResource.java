@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.asset;
 
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityBooleanView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.asset.view.WebAssetEntityView;
@@ -172,7 +173,7 @@ public class WebAssetResource {
         helper.deleteAsset(form.assetPath(), user);
         Logger.info(this,
                 String.format("User [%s] deleted asset for path [%s] ", user.getUserId(), form.assetPath()));
-        return Response.ok().build();
+        return Response.ok(new ResponseEntityBooleanView(true)).build();
     }
 
 
@@ -207,7 +208,7 @@ public class WebAssetResource {
         helper.archiveAsset(form.assetPath(), user);
         Logger.info(this,
                 String.format("User [%s] deleted asset for path [%s] ", user.getUserId(), form.assetPath()));
-        return Response.ok().build();
+        return Response.ok(new ResponseEntityBooleanView(true)).build();
     }
 
 
@@ -244,7 +245,7 @@ public class WebAssetResource {
                 String.format("User [%s] deleted foldr for path [%s]. ",
                         user.getUserId(), form.assetPath()
                 ));
-        return Response.ok().build();
+        return Response.ok(new ResponseEntityBooleanView(true)).build();
     }
 
 

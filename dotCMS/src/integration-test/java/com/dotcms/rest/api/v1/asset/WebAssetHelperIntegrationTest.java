@@ -23,6 +23,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.FileUtil;
@@ -458,13 +459,16 @@ public class WebAssetHelperIntegrationTest {
         Assert.assertTrue(singleVersionedAsset.live());
         Assert.assertTrue(singleVersionedAsset.working());
 
-        //Now we create a new version
+        //Now we create a new version with a brand-new file different from the previous one
+        final File testFile3 = FileUtil.createTemporaryFile("new-lol", ".txt", RandomStringUtils.random(1000));
         final Contentlet checkout = ContentletDataGen.checkout(contentlet);
         checkout.getMap().put(Contentlet.TITTLE_KEY, "new title");
+        checkout.getMap().put(FileAssetAPI.BINARY_FIELD,testFile3);
 
         final String newInode = UUIDGenerator.generateUuid();
         checkout.setInode(newInode);
-        ContentletDataGen.checkin(checkout);
+        final Contentlet checkin = ContentletDataGen.checkin(checkout);
+        System.out.println(checkin);
 
         final AssetVersionsView withMultipleVersions = (AssetVersionsView) webAssetHelper.getAssetInfo(path, APILocator.systemUser());
         Assert.assertEquals(2, withMultipleVersions.versions().size());
