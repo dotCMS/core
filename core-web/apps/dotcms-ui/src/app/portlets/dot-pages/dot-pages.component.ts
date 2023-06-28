@@ -15,6 +15,7 @@ import { Menu } from 'primeng/menu';
 import { Observable } from 'rxjs/internal/Observable';
 import { filter, take, takeUntil } from 'rxjs/operators';
 
+import { DotCreateContentletComponent } from '@components/dot-contentlet-editor/components/dot-create-contentlet/dot-create-contentlet.component';
 import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
@@ -28,7 +29,6 @@ import {
     DotPageStore,
     FAVORITE_PAGE_LIMIT
 } from './dot-pages-store/dot-pages.store';
-import { DotCreateContentletComponent } from '@components/dot-contentlet-editor/components/dot-create-contentlet/dot-create-contentlet.component';
 
 export interface DotActionsMenuEventParams {
     event: MouseEvent;
