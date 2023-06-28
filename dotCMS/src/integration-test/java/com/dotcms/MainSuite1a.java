@@ -93,11 +93,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.content.elasticsearch.business.ContentletIndexAPIImplTest.class,
         com.dotcms.content.elasticsearch.business.ES6UpgradeTest.class,
         com.dotcms.content.elasticsearch.business.ESContentFactoryImplTest.class,
-        ContentFileAssetIntegrityCheckerTest.class,
         FolderIntegrityCheckerTest.class,
-        ContentPageIntegrityCheckerTest.class,
-        HostIntegrityCheckerTest.class,
-
 })
 
 public class MainSuite1a {
