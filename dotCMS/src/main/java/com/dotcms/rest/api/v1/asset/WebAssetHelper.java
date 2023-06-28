@@ -12,6 +12,7 @@ import com.dotcms.rest.api.v1.asset.view.WebAssetView;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.exception.DotDataException;
@@ -33,6 +34,8 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -122,7 +125,7 @@ public class WebAssetHelper {
         final Folder folder = assetAndPath.resolvedFolder();
         final String assetName = assetAndPath.asset();
 
-        final List<Treeable> assets;
+        final Set<Treeable> assets;
 
         final Builder builder = BrowserQuery.builder();
         builder.showDotAssets(false)
@@ -150,8 +153,8 @@ public class WebAssetHelper {
             Logger.debug(this, String.format("Asset name: [%s]" , assetName));
             //We're requesting an asset specifically therefore we need to find it and  build the response
             builder.withFileName(assetName);
-            final Set<Treeable> folderContent = collectLiveAndWorkingContents(builder);
-            assets = folderContent.stream().filter(Contentlet.class::isInstance).collect(Collectors.toList());
+            final Set<Treeable> folderContent = collectAllVersions(builder);
+            assets = folderContent.stream().filter(Contentlet.class::isInstance).collect(Collectors.toSet());
             if (assets.isEmpty()) {
                 throw new NotFoundInDbException(String.format(" Asset [%s] not found", assetName));
             }
@@ -164,8 +167,14 @@ public class WebAssetHelper {
             //We're requesting a folder and all of its contents
             final List<Folder> subFolders = folderContent.stream().filter(Folder.class::isInstance)
                     .map(f -> (Folder) f).collect(Collectors.toList());
+            //Once we get the folder contents we need to include all other versions per identifier
             assets = folderContent.stream().filter(Contentlet.class::isInstance)
-                    .map(f -> (Contentlet) f).collect(Collectors.toList());
+                    .map(f -> (Contentlet) f).flatMap(contentlet -> Try.of(
+                                    () -> contentletAPI.findAllVersions(
+                                            new Identifier(contentlet.getIdentifier()), user, false))
+                            .getOrElse(List.of()).stream())
+                    .collect(Collectors.toSet());
+
 
             return FolderView.builder()
                     .sortOrder(folder.getSortOrder())
@@ -195,12 +204,19 @@ public class WebAssetHelper {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    final Set<Treeable> collectLiveAndWorkingContents(final Builder builder)
+    final Set<Treeable> collectAllVersions(final Builder builder)
             throws DotDataException, DotSecurityException {
-        return Stream.concat(
-                        browserAPI.getFolderContentList(builder.showWorking(true).build()).stream(),
-                        browserAPI.getFolderContentList(builder.showWorking(false).build()).stream()
-                  ).collect(Collectors.toSet());
+        final Optional<Treeable> first = browserAPI.getFolderContentList(
+                builder.showWorking(true).build()).stream().findFirst();
+
+        if(first.isPresent()){
+           final String identifier = first.get().getIdentifier();
+          return new HashSet<>(
+                  contentletAPI.findAllVersions(new Identifier(identifier), APILocator.systemUser(),
+                          false));
+
+        }
+        return Set.of();
     }
 
     /**
@@ -208,7 +224,7 @@ public class WebAssetHelper {
      * @param assets folders to convert
      * @return list of {@link FolderView}
      */
-    Iterable<AssetView> toAssets(final List<Treeable> assets) {
+    Iterable<AssetView> toAssets(final Collection<Treeable> assets) {
 
         return assets.stream().filter(Contentlet.class::isInstance).map(Contentlet.class::cast)
                 .filter(Contentlet::isFileAsset)

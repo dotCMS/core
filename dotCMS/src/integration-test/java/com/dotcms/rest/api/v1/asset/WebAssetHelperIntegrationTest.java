@@ -395,12 +395,6 @@ public class WebAssetHelperIntegrationTest {
 
         webAssetHelper.archiveAsset(assetPath, APILocator.systemUser());
 
-        webAssetHelper.deleteAsset(assetPath, APILocator.systemUser());
-
-       final String folderPath = assetPath.replaceFirst(testFile.getName(), "");
-       webAssetHelper.deleteFolder(folderPath, APILocator.systemUser());
-
-
     }
 
 

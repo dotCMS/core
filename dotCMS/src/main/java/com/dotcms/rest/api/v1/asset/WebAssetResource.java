@@ -186,7 +186,7 @@ public class WebAssetResource {
      * @throws DotDataException
      * @throws IOException
      */
-    @Path("/archive")
+    @Path("/_archive")
     @DELETE
     @JSONP
     @NoCache

@@ -169,7 +169,7 @@ public class AssetPathResolverImplIntegrationTest {
 
 
     /**
-     * Given scenario: We request a ur with a non-existing folder
+     * Given scenario: We request an url with a non-existing folder
      * Expected: Should resolve the resource and create the missing folder
      * @throws DotDataException
      * @throws DotSecurityException

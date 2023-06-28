@@ -986,14 +986,15 @@
 					}
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v1/assets",
+					"raw": "{{serverURL}}/api/v1/assets/_archive",
 					"host": [
 						"{{serverURL}}"
 					],
 					"path": [
 						"api",
 						"v1",
-						"assets"
+						"assets",
+						"_archive"
 					]
 				},
 				"description": "Simple delete file test"
