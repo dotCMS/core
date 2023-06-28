@@ -71,6 +71,7 @@ export class DotShowHideFeatureDirective implements OnInit {
             .subscribe((value) => {
                 const isEnabled = value && value === 'true';
                 this.viewContainer.clear();
+
                 if (isEnabled) {
                     this.viewContainer.createEmbeddedView(this.templateRef);
                 } else if (this.alternateTemplateRef) {

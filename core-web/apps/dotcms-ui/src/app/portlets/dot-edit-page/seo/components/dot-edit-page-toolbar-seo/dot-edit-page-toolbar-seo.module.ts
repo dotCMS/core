@@ -15,6 +15,7 @@ import { DotGlobalMessageModule } from '@dotcms/app/view/components/_common/dot-
 import { DotPropertiesService } from '@dotcms/data-access';
 import { DotIconModule, UiDotIconButtonModule } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotFavoritePageModule } from '@portlets/dot-edit-page/components/dot-favorite-page/dot-favorite-page.module';
 import { DotEditPageStateControllerModule } from '@portlets/dot-edit-page/content/components/dot-edit-page-state-controller/dot-edit-page-state-controller.module';
 import { DotEditPageViewAsControllerModule } from '@portlets/dot-edit-page/content/components/dot-edit-page-view-as-controller/dot-edit-page-view-as-controller.module';
 import { DotEditPageWorkflowsActionsModule } from '@portlets/dot-edit-page/content/components/dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
@@ -22,7 +23,6 @@ import { DotEditPageNavDirective } from '@portlets/dot-edit-page/main/dot-edit-p
 
 import { DotEditPageToolbarSeoComponent } from './dot-edit-page-toolbar-seo.component';
 
-import { DotFavoritePageModule } from '@portlets/dot-edit-page/components/dot-favorite-page/dot-favorite-page.module';
 import { DotEditPageInfoSeoModule } from '../dot-edit-page-info-seo/dot-edit-page-info-seo.module';
 
 @NgModule({
