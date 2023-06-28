@@ -1,7 +1,10 @@
 import { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
 
+import { map } from 'rxjs/operators';
+
 import { IframeComponent } from '@components/_common/iframe/iframe-component';
-import { FeaturedFlags } from '@dotcms/dotcms-models';
+import { DotPropertiesService } from '@dotcms/data-access';
+import { DotLayout, FeaturedFlags } from '@dotcms/dotcms-models';
 
 import { DotTemplateItem } from '../store/dot-template.store';
 
@@ -21,7 +24,12 @@ export class DotTemplateBuilderComponent implements OnInit {
     @ViewChild('historyIframe') historyIframe: IframeComponent;
     permissionsUrl = '';
     historyUrl = '';
-    featureFlag = FeaturedFlags.FEATURE_FLAG_TEMPLATE_BUILDER;
+    readonly featureFlag = FeaturedFlags.FEATURE_FLAG_TEMPLATE_BUILDER;
+    featureFlagIsOn$ = this.propertiesService
+        .getKey(this.featureFlag)
+        .pipe(map((result) => result && result === 'true'));
+
+    constructor(private propertiesService: DotPropertiesService) {}
 
     ngOnInit() {
         this.permissionsUrl = `/html/templates/permissions.jsp?templateId=${this.item.identifier}&popup=true`;
