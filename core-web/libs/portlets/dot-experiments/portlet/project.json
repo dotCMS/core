@@ -10,12 +10,17 @@
             "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
             "options": {
                 "jestConfig": "libs/portlets/dot-experiments/portlet/jest.config.ts",
-                "passWithNoTests": true
+                "passWithNoTests": true,
+                "verbose": true,
+                "codeCoverage": true,
+                "coverageReporters": ["json", "lcov", "text-summary"],
+                "collectCoverage": true
             },
             "configurations": {
                 "ci": {
                     "ci": true,
-                    "codeCoverage": true
+                    "codeCoverage": true,
+                    "verbose": false
                 }
             }
         },
