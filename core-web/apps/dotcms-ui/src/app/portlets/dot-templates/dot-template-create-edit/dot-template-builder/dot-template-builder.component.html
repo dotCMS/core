@@ -7,7 +7,7 @@
             <dot-template-advanced
                 [didTemplateChanged]="didTemplateChanged"
                 [body]="item.body"
-                (updateTemplate)="updateTemplate.emit($event)"
+                (updateTemplate)="onTemplateItemChange($event)"
                 (save)="save.emit($event)"
                 (cancel)="cancel.emit()"
             ></dot-template-advanced>
@@ -37,7 +37,7 @@
                     [disablePublish]="item.live"
                     [layout]="item.layout"
                     (saveAndPublish)="saveAndPublish.emit($event)"
-                    (updateTemplate)="updateTemplate.emit($event)"
+                    (updateTemplate)="onTemplateItemChange($event)"
                     (save)="save.emit($event)"
                 ></dot-edit-layout-designer>
             </ng-template>
