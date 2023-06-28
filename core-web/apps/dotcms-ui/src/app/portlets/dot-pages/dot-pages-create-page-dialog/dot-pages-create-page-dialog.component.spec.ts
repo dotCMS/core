@@ -168,7 +168,8 @@ describe('DotPagesCreatePageDialogComponent', () => {
         const pageType = de.query(By.css(`.dot-pages-create-page-dialog__page-item`));
         pageType.triggerEventHandler('click', mockContentType.variable);
         expect(dotRouterService.goToURL).toHaveBeenCalledWith(
-            `/pages/new/${mockContentType.variable}`
+            `/pages/new/${mockContentType.variable}`,
+            { skipLocationChange: true }
         );
         expect(dialogRef.close).toHaveBeenCalled();
     });
