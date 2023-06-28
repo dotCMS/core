@@ -32,6 +32,7 @@ import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-er
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
 import { DotPaletteComponent } from '@dotcms/app/portlets/dot-edit-page/components/dot-palette/dot-palette.component';
+import { DotShowHideFeatureDirective } from '@dotcms/app/shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/test/dot-test-bed';
 import {
     DotAlertConfirmService,
@@ -253,7 +254,8 @@ describe('DotEditContentComponent', () => {
                         component: DotEditContentComponent,
                         path: 'test'
                     }
-                ])
+                ]),
+                DotShowHideFeatureDirective
             ],
             providers: [
                 DotSessionStorageService,
@@ -367,6 +369,8 @@ describe('DotEditContentComponent', () => {
     describe('elements', () => {
         beforeEach(() => {
             spyOn<any>(dotEditPageService, 'save').and.returnValue(of({}));
+
+            spyOn(dotConfigurationService, 'getKey').and.returnValue(of('false'));
             spyOn(dotConfigurationService, 'getKeyAsList').and.returnValue(
                 of(['host', 'vanityurl', 'persona', 'languagevariable'])
             );
@@ -1435,6 +1439,22 @@ describe('DotEditContentComponent', () => {
 
                 expect<any>(dotEditContentHtmlService.renderAddedForm).toHaveBeenCalledWith('123');
             });
+        });
+    });
+
+    describe('dot-edit-page-toolbar-seo', () => {
+        let toolbarElement: DebugElement;
+
+        beforeEach(() => {
+            spyOn(dialogService, 'open');
+            spyOn(dotConfigurationService, 'getKey').and.returnValue(of('true'));
+
+            fixture.detectChanges();
+            toolbarElement = de.query(By.css('dot-edit-page-toolbar-seo'));
+        });
+
+        it('should have', () => {
+            expect(toolbarElement).not.toBeNull();
         });
     });
 

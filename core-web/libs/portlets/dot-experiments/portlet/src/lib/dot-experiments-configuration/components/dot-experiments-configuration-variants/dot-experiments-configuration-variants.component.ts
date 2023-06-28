@@ -15,23 +15,30 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { tap } from 'rxjs/operators';
 
-import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 import { DotSessionStorageService } from '@dotcms/data-access';
 import {
     ComponentStatus,
     DEFAULT_VARIANT_NAME,
+    DotExperimentStatusList,
     DotPageMode,
     ExperimentSteps,
+    MAX_INPUT_TITLE_LENGTH,
     MAX_VARIANTS_ALLOWED,
     StepStatus,
     TrafficProportion,
     Variant
 } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipe, DotMessagePipeModule } from '@dotcms/ui';
+import {
+    DotIconModule,
+    DotMessagePipe,
+    DotMessagePipeModule,
+    UiDotIconButtonModule
+} from '@dotcms/ui';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
 
+import { DotExperimentsInlineEditTextComponent } from '../../../shared/ui/dot-experiments-inline-edit-text/dot-experiments-inline-edit-text.component';
 import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-configuration-store';
 import { DotExperimentsConfigurationItemsCountComponent } from '../dot-experiments-configuration-items-count/dot-experiments-configuration-items-count.component';
 import { DotExperimentsConfigurationVariantsAddComponent } from '../dot-experiments-configuration-variants-add/dot-experiments-configuration-variants-add.component';
@@ -57,7 +64,8 @@ import { DotExperimentsConfigurationVariantsAddComponent } from '../dot-experime
         InputTextModule,
         TooltipModule,
         ConfirmPopupModule,
-        AutoFocusModule
+        AutoFocusModule,
+        DotExperimentsInlineEditTextComponent
     ],
     templateUrl: './dot-experiments-configuration-variants.component.html',
     styleUrls: ['./dot-experiments-configuration-variants.component.scss'],
@@ -72,12 +80,13 @@ export class DotExperimentsConfigurationVariantsComponent {
     }> = this.dotExperimentsConfigurationStore.variantsStepVm$.pipe(
         tap(({ status }) => this.handleSidebar(status))
     );
-    statusList = ComponentStatus;
-    maxVariantsAllowed = MAX_VARIANTS_ALLOWED;
-    defaultVariantName = DEFAULT_VARIANT_NAME;
     dotPageMode = DotPageMode;
     @ViewChild(DotDynamicDirective, { static: true }) sidebarHost!: DotDynamicDirective;
-
+    protected readonly statusList = ComponentStatus;
+    protected readonly maxVariantsAllowed = MAX_VARIANTS_ALLOWED;
+    protected readonly defaultVariantName = DEFAULT_VARIANT_NAME;
+    protected readonly maxInputTitleLength = MAX_INPUT_TITLE_LENGTH;
+    protected readonly DotExperimentStatusList = DotExperimentStatusList;
     private componentRef: ComponentRef<DotExperimentsConfigurationVariantsAddComponent>;
 
     constructor(

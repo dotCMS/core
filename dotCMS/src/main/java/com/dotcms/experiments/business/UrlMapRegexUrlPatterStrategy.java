@@ -12,7 +12,7 @@ import java.util.List;
 /**
  * {@link RegexUrlPatterStrategy} implementation to UrlMap {@link HTMLPageAsset}
  */
-public class UrlMapRegexUrlPatterStrategy extends RegexUrlPatterStrategy{
+public class UrlMapRegexUrlPatterStrategy implements RegexUrlPatterStrategy{
     private List<String>  urlMappedPattern;
     private String urlMappedPatternLoadedFOr;
 
@@ -49,7 +49,7 @@ public class UrlMapRegexUrlPatterStrategy extends RegexUrlPatterStrategy{
             regExForURLMap = regExForURLMap.substring(0, regExForURLMap.length() - 1);
             final String uriForRegex = getUriForRegex(regExForURLMap);
 
-            regexs.add(String.format(REDIRECT_REGEX_TEMPLATE, uriForRegex));
+            regexs.add(String.format(DEFAULT_URL_REGEX_TEMPLATE, uriForRegex));
         }
 
         return String.join("|", regexs);

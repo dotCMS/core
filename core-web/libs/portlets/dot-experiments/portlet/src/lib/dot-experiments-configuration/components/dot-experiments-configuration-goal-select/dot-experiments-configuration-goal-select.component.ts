@@ -33,7 +33,6 @@ import {
     StepStatus
 } from '@dotcms/dotcms-models';
 import { DotMessagePipeModule } from '@dotcms/ui';
-import { DotExperimentsGoalConfigurationUrlParameterComponentComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-goal-configuration-url-parameter-component/dot-experiments-goal-configuration-url-parameter-component.component';
 import { DotDropdownDirective } from '@portlets/shared/directives/dot-dropdown.directive';
 import {
     DotSidebarDirective,
@@ -44,6 +43,10 @@ import { DotValidators } from '@shared/validators/dotValidators';
 
 import { DotExperimentsOptionsModule } from '../../../shared/ui/dot-experiment-options/dot-experiments-options.module';
 import { DotExperimentsGoalConfigurationReachPageComponent } from '../../../shared/ui/dot-experiments-goal-configuration-reach-page/dot-experiments-goal-configuration-reach-page.component';
+import { DotExperimentsGoalConfigurationUrlParameterComponentComponent } from '../../../shared/ui/dot-experiments-goal-configuration-url-parameter-component/dot-experiments-goal-configuration-url-parameter-component.component';
+import {
+    DotExperimentsGoalsComingSoonComponent
+} from "../../../shared/ui/dot-experiments-goals-coming-soon/dot-experiments-goals-coming-soon.component";
 import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-configuration-store';
 
 @Component({
@@ -68,7 +71,8 @@ import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-co
         InputTextModule,
         DropdownModule,
         DotExperimentsGoalConfigurationReachPageComponent,
-        DotExperimentsGoalConfigurationUrlParameterComponentComponent
+        DotExperimentsGoalConfigurationUrlParameterComponentComponent,
+        DotExperimentsGoalsComingSoonComponent
     ],
     templateUrl: './dot-experiments-configuration-goal-select.component.html',
     styleUrls: ['./dot-experiments-configuration-goal-select.component.scss'],
@@ -85,6 +89,9 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
     protected readonly maxNameLength = MAX_INPUT_DESCRIPTIVE_LENGTH;
 
     protected readonly defaultNameValuesByType: Partial<Record<GOAL_TYPES, string>> = {
+        [GOAL_TYPES.EXIT_RATE]: this.dotMessageService.get(
+            'experiments.goal.conditions.detect.exit.rate'
+        ),
         [GOAL_TYPES.BOUNCE_RATE]: this.dotMessageService.get(
             'experiments.goal.conditions.minimize.bounce.rate'
         ),
@@ -153,12 +160,13 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
     }
 
     private listenGoalTypeSelection(): void {
+        const goalsWithConditions = [GOAL_TYPES.URL_PARAMETER, GOAL_TYPES.REACH_PAGE];
         this.form
             .get('primary.type')
             .valueChanges.pipe(takeUntil(this.destroy$))
             .subscribe((type) => {
                 this.removeConditionsControlValidations();
-                if (type != GOAL_TYPES.BOUNCE_RATE) {
+                if (goalsWithConditions.includes(type)) {
                     this.addConditionsControlValidations();
                 }
             });

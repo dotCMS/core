@@ -387,9 +387,12 @@ task integrationTest(type: Test, dependsOn:['prepareIntegrationTests']) {
     // Check if we want to run the tests suite
     def singleTest = System.getProperty("test.single")
     if (null != singleTest && singleTest == "com.dotcms.MainSuite"){
-        include "**/MainSuite.class"
+        include "**/MainSuite1a.class"
+        include "**/MainSuite1b.class"
+        include "**/MainSuite2a.class"
+        include "**/MainSuite2b.class"
     } else {
-        exclude "**/MainSuite.class"
+        exclude "**/MainSuite*.class"
     }
 
 
@@ -553,10 +556,13 @@ task generateDependenciesFromMaven(type: Exec) {
 
 
 task mavenClean(type: Exec) {
-    workingDir parentProjectDir
-    commandLine mvnCommand, 'clean'
+            workingDir parentProjectDir
+            commandLine mvnCommand, 'clean'
 }
-tasks.clean.dependsOn(tasks.mavenClean)
+
+if (project.gradle.startParameter.taskNames.contains("generateDependenciesFromMaven") && project.gradle.startParameter.taskNames.contains("clean")) {
+    tasks.clean.dependsOn(tasks.mavenClean)
+}
 
 task unpackMavenUI(type: Copy) {
        from(zipTree("${project.projectDir}/../core-web/target/core-web-${mavenUiVersion}.war")) {

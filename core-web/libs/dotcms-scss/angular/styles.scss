@@ -6,19 +6,6 @@
 @import "dotcms-theme/utils/theme-variables"; /* temporary */
 @import "dotcms-theme/theme"; /* prime-ng */
 
-// CSS VARIABLEs
-:root {
-    --color-background: #3a3847;
-    --color-main: #6b4de2;
-    --color-main_mod: #8674c0;
-    --color-main_rgb: 107, 77, 226;
-    --color-sec: #6f5fa3;
-    --color-sec_rgb: 111, 95, 163;
-    --color-white: #fff;
-    --color-white_rgb: 255, 255, 255;
-    --empty-message: "";
-}
-
 /*
     FONT AWESOME
     Legacy code, this is to support font awesome icons in the main navigation
@@ -92,6 +79,10 @@
         /* Chrome 26+, Opera 23+, Firefox 39+ */
             url("/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-700.woff")
             format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+}
+
+:root {
+    @include root-colors();
 }
 
 *,

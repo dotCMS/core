@@ -396,4 +396,21 @@ public class AnalyticsHelper {
         return null;
     }
 
+    /**
+     * Extracts the missing analytics properties from the provided {@link IllegalStateException} exception.
+     *
+     * @param exception provided exception
+     * @return missing analytics properties
+     */
+    public static String extractMissingAnalyticsProps(final IllegalStateException exception) {
+        final int openBracket = exception.getMessage().indexOf("[");
+        final int closeBracket = exception.getMessage().indexOf("]");
+
+        if (openBracket == -1 || closeBracket == -1) {
+            return StringPool.BLANK;
+        }
+
+        return exception.getMessage().substring(openBracket + 1, closeBracket);
+    }
+
 }

@@ -5,7 +5,7 @@ import { CommonModule } from '@angular/common';
 import { SuggestionsListItemComponent } from './suggestions-list-item.component';
 
 export default {
-    title: 'Suggestions List Item',
+    title: 'Library/Block Editor/Components/Suggestions List Item',
     decorators: [
         moduleMetadata({
             declarations: [SuggestionsListItemComponent],

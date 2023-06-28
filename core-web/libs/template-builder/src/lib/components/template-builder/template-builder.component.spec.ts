@@ -1,31 +1,27 @@
-import { expect } from '@jest/globals';
+import { expect, it } from '@jest/globals';
 import { SpectatorHost, byTestId, createHostFactory } from '@ngneat/spectator';
 import { GridItemHTMLElement } from 'gridstack';
 
-import { AsyncPipe, NgFor } from '@angular/common';
+import { AsyncPipe, NgClass, NgFor, NgIf, NgStyle } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 import { DividerModule } from 'primeng/divider';
-import { DialogService } from 'primeng/dynamicdialog';
+import { DialogService, DynamicDialogModule, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { ToolbarModule } from 'primeng/toolbar';
 
-import { take } from 'rxjs/operators';
+import { pluck, take } from 'rxjs/operators';
 
 import { DotContainersService, DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipeModule } from '@dotcms/ui';
 import { containersMock, DotContainersServiceMock } from '@dotcms/utils-testing';
 
 import { DotAddStyleClassesDialogStore } from './components/add-style-classes-dialog/store/add-style-classes-dialog.store';
-import { TemplateBuilderActionsComponent } from './components/template-builder-actions/template-builder-actions.component';
-import { TemplateBuilderBackgroundColumnsComponent } from './components/template-builder-background-columns/template-builder-background-columns.component';
-import { TemplateBuilderBoxComponent } from './components/template-builder-box/template-builder-box.component';
 import { TemplateBuilderComponentsModule } from './components/template-builder-components.module';
-import { TemplateBuilderSectionComponent } from './components/template-builder-section/template-builder-section.component';
 import { DotGridStackWidget } from './models/models';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { TemplateBuilderComponent } from './template-builder.component';
 import { parseFromDotObjectToGridStack } from './utils/gridstack-utils';
-import { DOT_MESSAGE_SERVICE_TB_MOCK, FULL_DATA_MOCK } from './utils/mocks';
+import { CONTAINER_MAP_MOCK, DOT_MESSAGE_SERVICE_TB_MOCK, FULL_DATA_MOCK } from './utils/mocks';
 
 global.structuredClone = jest.fn((val) => {
     return JSON.parse(JSON.stringify(val));
@@ -42,20 +38,22 @@ describe('TemplateBuilderComponent', () => {
         component: TemplateBuilderComponent,
         imports: [
             NgFor,
+            NgIf,
             AsyncPipe,
-            TemplateBuilderBoxComponent,
-            TemplateBuilderBackgroundColumnsComponent,
-            TemplateBuilderSectionComponent,
             DotMessagePipeModule,
-            TemplateBuilderActionsComponent,
-            DotMessagePipeModule,
-            HttpClientTestingModule,
+            DynamicDialogModule,
+            NgStyle,
+            NgClass,
             ToolbarModule,
             DividerModule,
-            TemplateBuilderComponentsModule
+            TemplateBuilderComponentsModule,
+            HttpClientTestingModule
         ],
         providers: [
             DotTemplateBuilderStore,
+            DialogService,
+            DynamicDialogRef,
+            DotAddStyleClassesDialogStore,
             {
                 provide: DotMessageService,
                 useValue: DOT_MESSAGE_SERVICE_TB_MOCK
@@ -63,17 +61,27 @@ describe('TemplateBuilderComponent', () => {
             {
                 provide: DotContainersService,
                 useValue: new DotContainersServiceMock()
-            },
-            DialogService,
-            DotAddStyleClassesDialogStore
+            }
         ]
     });
     beforeEach(() => {
         spectator = createHost(
-            `<dotcms-template-builder [templateLayout]="templateLayout"></dotcms-template-builder>`,
+            `<dotcms-template-builder [containerMap]="containerMap" [templateLayout]="templateLayout"></dotcms-template-builder>`,
             {
                 hostProps: {
-                    templateLayout: { body: FULL_DATA_MOCK }
+                    templateLayout: {
+                        body: FULL_DATA_MOCK,
+                        header: true,
+                        footer: true,
+                        sidebar: {
+                            location: 'left',
+                            width: 'small',
+                            containers: []
+                        },
+                        width: 'Mobile',
+                        title: 'Test Title'
+                    },
+                    containerMap: CONTAINER_MAP_MOCK
                 }
             }
         );
@@ -89,10 +97,6 @@ describe('TemplateBuilderComponent', () => {
 
     it('should have a Add Box Button', () => {
         expect(spectator.query(byTestId('add-box'))).toBeTruthy();
-    });
-
-    it('should have a background', () => {
-        expect(spectator.query('dotcms-template-builder-background-columns')).toBeTruthy();
     });
 
     it('should have the same quantity of rows as mocked data', () => {
@@ -127,12 +131,6 @@ describe('TemplateBuilderComponent', () => {
         });
     });
 
-    it('should call removeRow from store when triggering deleteRow', () => {
-        const removeRowMock = jest.spyOn(store, 'removeRow');
-        spectator.component.deleteRow('123');
-        expect(removeRowMock).toHaveBeenCalledWith('123');
-    });
-
     it('should call addContainer from store when triggering addContainer', () => {
         const addContainerMock = jest.spyOn(store, 'addContainer');
 
@@ -148,6 +146,24 @@ describe('TemplateBuilderComponent', () => {
             spectator.component.addContainer(widgetToAddContainer, rowId, mockContainer);
 
             expect(addContainerMock).toHaveBeenCalled();
+        });
+    });
+
+    it('should call deleteContainer from store when triggering deleteContainer', () => {
+        const deleteContainerMock = jest.spyOn(store, 'deleteContainer');
+
+        let widgetToDeleteContainer: DotGridStackWidget;
+        let rowId: string;
+
+        expect.assertions(1);
+
+        store.state$.pipe(take(1)).subscribe(({ items }) => {
+            widgetToDeleteContainer = items[0].subGridOpts.children[0];
+            rowId = items[0].id as string;
+
+            spectator.component.deleteContainer(widgetToDeleteContainer, rowId, 0);
+
+            expect(deleteContainerMock).toHaveBeenCalled();
         });
     });
 
@@ -167,13 +183,37 @@ describe('TemplateBuilderComponent', () => {
         expect(openDialogMock).toHaveBeenCalled();
     });
 
+    it('should open a panel when clicking on Layout button', () => {
+        const actionsButton = spectator.query(byTestId('btn-select-layout'));
+
+        spectator.click(actionsButton);
+
+        expect(spectator.query(byTestId('template-layout-properties-panel'))).toBeTruthy();
+    });
+
     describe('layoutChange', () => {
         it('should emit layoutChange when the store changes', (done) => {
             const layoutChangeMock = jest.spyOn(spectator.component.layoutChange, 'emit');
-            store.init(parseFromDotObjectToGridStack(FULL_DATA_MOCK));
-            store.items$.pipe(take(1)).subscribe(() => {
+            store.init({
+                items: parseFromDotObjectToGridStack(FULL_DATA_MOCK),
+                layoutProperties: {
+                    header: true,
+                    footer: true,
+                    sidebar: {}
+                },
+                resizingRowID: '',
+                containerMap: {}
+            });
+            store.vm$.pipe(pluck('items'), take(1)).subscribe(() => {
                 // const body = parseFromGridStackToDotObject(items);
-                expect(layoutChangeMock).toHaveBeenCalledWith({ body: FULL_DATA_MOCK });
+                expect(layoutChangeMock).toHaveBeenCalledWith({
+                    body: FULL_DATA_MOCK,
+                    header: true,
+                    footer: true,
+                    sidebar: null,
+                    width: 'Mobile',
+                    title: 'Test Title'
+                });
                 done();
             });
         });

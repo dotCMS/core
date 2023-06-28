@@ -79,8 +79,8 @@ describe('DotKeyValueTableInputRowComponent', () => {
 
             expect(inputs[0].nativeElement.placeholder).toContain('Enter Key');
             expect(inputs[1].nativeElement.placeholder).toContain('Enter Value');
-            expect(btns[0].nativeElement.innerText).toContain('CANCEL');
-            expect(btns[1].nativeElement.innerText).toContain('SAVE');
+            expect(btns[0].nativeElement.innerText).toContain('Cancel');
+            expect(btns[1].nativeElement.innerText).toContain('Save');
             expect(comp.saveDisabled).toBe(true);
         });
 

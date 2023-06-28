@@ -15,7 +15,6 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService, MenuItem } from 'primeng/api';
 
-import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
@@ -35,7 +34,7 @@ import {
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow
 } from '@dotcms/dotcms-models';
-import { DotIconModule } from '@dotcms/ui';
+import { DotIconModule, UiDotIconButtonModule } from '@dotcms/ui';
 import {
     cleanUpDialog,
     CoreWebServiceMock,
