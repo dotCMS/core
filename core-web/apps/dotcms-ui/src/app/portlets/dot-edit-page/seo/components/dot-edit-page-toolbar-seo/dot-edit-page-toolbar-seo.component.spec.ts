@@ -68,7 +68,6 @@ import {
     SiteServiceMock
 } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { DotEditPageInfoModule } from '@portlets/dot-edit-page/components/dot-edit-page-info/dot-edit-page-info.module';
 import { DotEditPageStateControllerModule } from '@portlets/dot-edit-page/content/components/dot-edit-page-state-controller/dot-edit-page-state-controller.module';
 import { DotEditPageViewAsControllerModule } from '@portlets/dot-edit-page/content/components/dot-edit-page-view-as-controller/dot-edit-page-view-as-controller.module';
 import { DotEditPageWorkflowsActionsModule } from '@portlets/dot-edit-page/content/components/dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
@@ -76,6 +75,8 @@ import { DotPageStateService } from '@portlets/dot-edit-page/content/services/do
 import { DotExperimentClassDirective } from '@portlets/shared/directives/dot-experiment-class.directive';
 
 import { DotEditPageToolbarSeoComponent } from './dot-edit-page-toolbar-seo.component';
+
+import { DotEditPageInfoSeoModule } from '../dot-edit-page-info-seo/dot-edit-page-info-seo.module';
 
 @Component({
     selector: 'dot-test-host-component',
@@ -119,6 +120,13 @@ class MockDotPageStateService {
     }
 }
 
+@Injectable()
+export class MockDotPropertiesService {
+    getKey(): Observable<true> {
+        return of(true);
+    }
+}
+
 export class ActivatedRouteListStoreMock {
     get queryParams() {
         return of({
@@ -129,7 +137,7 @@ export class ActivatedRouteListStoreMock {
     }
 }
 
-describe('DotEditPageToolbarComponent', () => {
+describe('DotEditPageToolbarSeoComponent', () => {
     let fixtureHost: ComponentFixture<TestHostComponent>;
     let componentHost: TestHostComponent;
     let component: DotEditPageToolbarSeoComponent;
@@ -138,6 +146,7 @@ describe('DotEditPageToolbarComponent', () => {
     let dotLicenseService: DotLicenseService;
     let dotMessageDisplayService: DotMessageDisplayService;
     let dotDialogService: DialogService;
+    let dotPropertiesService: DotPropertiesService;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -157,7 +166,7 @@ describe('DotEditPageToolbarComponent', () => {
                 ToolbarModule,
                 DotEditPageViewAsControllerModule,
                 DotEditPageStateControllerModule,
-                DotEditPageInfoModule,
+                DotEditPageInfoSeoModule,
                 DotEditPageWorkflowsActionsModule,
                 DotPipesModule,
                 DotWizardModule,
@@ -216,7 +225,8 @@ describe('DotEditPageToolbarComponent', () => {
                 DialogService,
                 DotESContentService,
                 DotPropertiesService,
-                { provide: ActivatedRoute, useClass: ActivatedRouteListStoreMock }
+                { provide: ActivatedRoute, useClass: ActivatedRouteListStoreMock },
+                { provide: DotPropertiesService, useClass: MockDotPropertiesService }
             ]
         });
     });
@@ -226,12 +236,14 @@ describe('DotEditPageToolbarComponent', () => {
         deHost = fixtureHost.debugElement;
         componentHost = fixtureHost.componentInstance;
 
-        de = deHost.query(By.css('dot-edit-page-toolbar'));
+        de = deHost.query(By.css('dot-edit-page-toolbar-seo'));
         component = de.componentInstance;
 
         dotLicenseService = de.injector.get(DotLicenseService);
         dotMessageDisplayService = de.injector.get(DotMessageDisplayService);
         dotDialogService = de.injector.get(DialogService);
+        dotPropertiesService = TestBed.inject(DotPropertiesService);
+        spyOn(dotPropertiesService, 'getKey').and.returnValue(of('true'));
     });
 
     describe('elements', () => {
@@ -242,7 +254,7 @@ describe('DotEditPageToolbarComponent', () => {
         it('should have elements placed correctly', () => {
             const editToolbar = de.query(By.css('dot-secondary-toolbar'));
             const editPageInfo = de.query(
-                By.css('dot-secondary-toolbar .main-toolbar-left dot-edit-page-info')
+                By.css('dot-secondary-toolbar .main-toolbar-left dot-edit-page-info-seo')
             );
             const editCancelBtn = de.query(
                 By.css('dot-secondary-toolbar .main-toolbar-right .edit-page-toolbar__cancel')
@@ -271,10 +283,10 @@ describe('DotEditPageToolbarComponent', () => {
         });
     });
 
-    describe('dot-edit-page-info', () => {
+    describe('dot-edit-page-info-seo', () => {
         it('should have the right attr', () => {
             fixtureHost.detectChanges();
-            const dotEditPageInfo = de.query(By.css('dot-edit-page-info')).componentInstance;
+            const dotEditPageInfo = de.query(By.css('dot-edit-page-info-seo')).componentInstance;
             expect(dotEditPageInfo.title).toBe('A title');
             expect(dotEditPageInfo.url).toBe('/an/url/test');
             expect(dotEditPageInfo.innerApiLink).toBe(

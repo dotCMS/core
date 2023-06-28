@@ -10,11 +10,11 @@ import { DotMessagePipeModule } from '@dotcms/ui';
 import { DotEditPageInfoSeoComponent } from './dot-edit-page-info-seo.component';
 
 @Component({
-    template: `<dot-edit-page-info
+    template: `<dot-edit-page-info-seo
         [title]="title"
         [url]="url"
         [apiLink]="apiLink"
-    ></dot-edit-page-info>`
+    ></dot-edit-page-info-seo>`
 })
 class TestHostComponent {
     title = 'A title';
@@ -49,7 +49,7 @@ describe('DotEditPageInfoSeoComponent', () => {
         hostFixture = TestBed.createComponent(TestHostComponent);
         hostDebug = hostFixture.debugElement;
         hostComp = hostDebug.componentInstance;
-        de = hostDebug.query(By.css('dot-edit-page-info'));
+        de = hostDebug.query(By.css('dot-edit-page-info-seo'));
     });
 
     describe('default', () => {
@@ -75,12 +75,10 @@ describe('DotEditPageInfoSeoComponent', () => {
             );
         });
 
-        it('should have preview link', () => {
+        it('should not have preview link', () => {
             const previewLink: DebugElement = de.query(By.css('dot-link[icon="pi-eye"]'));
 
-            expect(previewLink.nativeElement.href).toBe(
-                '/an/url/test?language_id=1&disabledNavigateMode=true'
-            );
+            expect(previewLink).toBeNull();
         });
     });
 
