@@ -11,7 +11,7 @@ import { DataViewModule } from 'primeng/dataview';
 import { DropdownModule } from 'primeng/dropdown';
 import { DialogService, DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { DotEventsService, PaginatorService } from '@dotcms/data-access';
+import { DotEventsService, DotThemesService, PaginatorService } from '@dotcms/data-access';
 import { CoreWebService, SiteService, mockSites } from '@dotcms/dotcms-js';
 import { DotMessagePipeModule, DotSiteSelectorDirective } from '@dotcms/ui';
 import { CoreWebServiceMock, SiteServiceMock, mockDotThemes } from '@dotcms/utils-testing';
@@ -37,10 +37,18 @@ describe('TemplateBuilderThemeSelectorComponent', () => {
         providers: [
             DialogService,
             DotEventsService,
-            DynamicDialogConfig,
             DynamicDialogRef,
             MessageService,
             PaginatorService,
+            DotThemesService,
+            {
+                provide: DynamicDialogConfig,
+                useValue: {
+                    data: {
+                        themeId: mockDotThemes[0].inode
+                    }
+                }
+            },
             {
                 provide: CoreWebService,
                 useClass: CoreWebServiceMock
@@ -51,7 +59,6 @@ describe('TemplateBuilderThemeSelectorComponent', () => {
 
     beforeEach(() => {
         spectator = createComponent();
-        spectator.component.value = mockDotThemes[0];
         paginatorService = spectator.inject(PaginatorService, true);
     });
 
@@ -73,18 +80,17 @@ describe('TemplateBuilderThemeSelectorComponent', () => {
             expect(paginatorService.url).toBe('v1/themes');
             expect(paginatorService.setExtraParams).toHaveBeenCalledWith(
                 'hostId',
-                mockDotThemes[0].hostId
+                mockSites[0].identifier
             );
             expect(paginatorService.deleteExtraParams).toHaveBeenCalled();
         });
 
-        it('should set the current theme variable based on the Input value', () => {
-            const value = mockDotThemes[0];
-            spectator.setInput('value', value);
+        it('should set the current theme id variable based on dialog config', () => {
+            const value = mockDotThemes[0].inode;
 
             spectator.component.ngOnInit();
             spectator.detectChanges();
-            expect(spectator.component.current).toBe(value);
+            expect(spectator.component.themeId).toBe(value);
         });
 
         it('should call pagination service with offset of 0 when dataview onLazyLoad emit', () => {
@@ -156,7 +162,7 @@ describe('TemplateBuilderThemeSelectorComponent', () => {
             const themeItem = spectator.queryAll('[data-testId="theme-item"]') as HTMLElement[];
             themeItem[0].click();
 
-            expect(spectator.component.current).toBe(mockDotThemes[0]);
+            expect(spectator.component.currentTheme).toBe(mockDotThemes[0]);
             expect(spectator.component.selectTheme).toHaveBeenCalled();
         });
 

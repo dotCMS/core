@@ -7,7 +7,6 @@ import {
     Component,
     ElementRef,
     EventEmitter,
-    Input,
     OnDestroy,
     OnInit,
     Output,
@@ -22,7 +21,7 @@ import { DialogService, DynamicDialogConfig, DynamicDialogRef } from 'primeng/dy
 
 import { debounceTime, take, takeUntil } from 'rxjs/operators';
 
-import { PaginatorService } from '@dotcms/data-access';
+import { DotThemesService, PaginatorService } from '@dotcms/data-access';
 import { Site, SiteService } from '@dotcms/dotcms-js';
 import { DotTheme } from '@dotcms/dotcms-models';
 import { DotMessagePipeModule, DotSiteSelectorDirective } from '@dotcms/ui';
@@ -35,7 +34,7 @@ import { DotMessagePipeModule, DotSiteSelectorDirective } from '@dotcms/ui';
  */
 @Component({
     selector: 'dotcms-template-builder-theme-selector',
-    providers: [PaginatorService, DialogService, MessageService],
+    providers: [PaginatorService, DotThemesService, DialogService, MessageService],
     imports: [
         ButtonModule,
         DropdownModule,
@@ -50,11 +49,6 @@ import { DotMessagePipeModule, DotSiteSelectorDirective } from '@dotcms/ui';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TemplateBuilderThemeSelectorComponent implements OnInit, OnDestroy {
-    themes: DotTheme[] = [];
-
-    @Input()
-    value: DotTheme;
-
     @Output()
     selected = new EventEmitter<DotTheme>();
 
@@ -64,12 +58,13 @@ export class TemplateBuilderThemeSelectorComponent implements OnInit, OnDestroy 
     @ViewChild('dataView', { static: true })
     dataView: DataView;
 
-    @ViewChild('siteSelector', { static: true })
-    current: DotTheme;
-
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private SEARCH_PARAM = 'searchParam';
     private initialLoad = true;
+
+    themes: DotTheme[] = [];
+    themeId: string;
+    currentTheme: DotTheme;
 
     get totalRecords(): number {
         return this.paginatorService.totalRecords;
@@ -80,16 +75,29 @@ export class TemplateBuilderThemeSelectorComponent implements OnInit, OnDestroy 
     }
 
     constructor(
-        private ref: DynamicDialogRef,
         private config: DynamicDialogConfig,
+        private dotThemesService: DotThemesService,
         private paginatorService: PaginatorService,
+        private ref: DynamicDialogRef,
         private siteService: SiteService,
         private cd: ChangeDetectorRef
-    ) {}
+    ) {
+        const { themeId } = this.config.data;
+        this.themeId = themeId;
+
+        if (this.themeId) {
+            this.dotThemesService
+                .get(this.themeId)
+                .pipe(take(1))
+                .subscribe((theme: DotTheme) => {
+                    this.currentTheme = theme;
+                    this.cd.detectChanges();
+                });
+        }
+    }
 
     ngOnInit() {
-        const hostId = this.value?.hostId || this.siteService.currentSite?.identifier;
-        this.current = this.value;
+        const hostId = this.currentTheme?.hostId || this.siteService.currentSite?.identifier;
         this.paginatorService.url = 'v1/themes';
         this.paginatorService.paginationPerPage = 8;
         this.paginatorService.setExtraParams('hostId', hostId);
@@ -151,7 +159,7 @@ export class TemplateBuilderThemeSelectorComponent implements OnInit, OnDestroy 
      * @memberof DotThemeSelectorComponent
      */
     selectTheme(theme: DotTheme): void {
-        this.current = theme;
+        this.currentTheme = theme;
     }
 
     /**
@@ -160,7 +168,7 @@ export class TemplateBuilderThemeSelectorComponent implements OnInit, OnDestroy 
      * @memberof DotThemeSelectorComponent
      */
     apply(): void {
-        this.ref.close(this.current);
+        this.ref.close(this.currentTheme);
     }
 
     /**

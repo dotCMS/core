@@ -38,7 +38,7 @@
         <ng-template let-theme pTemplate="gridItem">
             <div
                 class="theme__item"
-                [ngClass]="{ 'theme__item--active': theme.inode === current?.inode }"
+                [ngClass]="{ 'theme__item--active': theme.inode === currentTheme?.inode }"
                 (click)="selectTheme(theme); $event.stopImmediatePropagation()"
                 data-testId="theme-item"
             >
@@ -77,5 +77,9 @@
         styleClass="p-button-outlined"
         label="{{ 'dot.common.cancel' | dm }}"
     ></p-button>
-    <p-button (onClick)="apply()" label="{{ 'dot.common.apply' | dm }}"></p-button>
+    <p-button
+        [disabled]="!currentTheme || currentTheme?.inode === themeId"
+        (onClick)="apply()"
+        label="{{ 'dot.common.apply' | dm }}"
+    ></p-button>
 </div>

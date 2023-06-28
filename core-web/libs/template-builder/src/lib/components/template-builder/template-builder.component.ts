@@ -87,9 +87,6 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     })
     boxes!: QueryList<ElementRef<GridItemHTMLElement>>;
 
-    @Output()
-    layoutChange: EventEmitter<Partial<DotLayout>> = new EventEmitter<DotLayout>();
-
     get layoutProperties(): DotTemplateLayoutProperties {
         return {
             header: this.layout.header,
@@ -347,7 +344,10 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
                 header: this.dotMessage.get('dot.template.builder.theme.dialog.header.label'),
                 resizable: false,
                 width: '80%',
-                closeOnEscape: true
+                closeOnEscape: true,
+                data: {
+                    themeId: this.themeId
+                }
             }
         );
 
@@ -358,8 +358,9 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
             )
             .subscribe(
                 (theme: DotTheme) => {
+                    this.themeId = theme.identifier;
                     this.templateChange.emit({
-                        themeId: theme.identifier,
+                        themeId: this.themeId,
                         layout: { ...this.dotLayout }
                     });
                 },
