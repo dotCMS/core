@@ -74,6 +74,7 @@ describe('DotTemplateBuilderStore', () => {
     });
 
     it('should be created', () => {
+        expect.assertions(1);
         expect(service).toBeTruthy();
     });
 
@@ -85,6 +86,7 @@ describe('DotTemplateBuilderStore', () => {
     });
 
     it('should add a new row', () => {
+        expect.assertions(1);
         const mockRow: DotGridStackWidget = {
             styleClass: ['mock-class'],
             containers: [],
@@ -93,7 +95,6 @@ describe('DotTemplateBuilderStore', () => {
 
         service.addRow(mockRow);
 
-        expect.assertions(1);
         items$.subscribe((items) => {
             expect(items.length).toBeGreaterThan(initialState.length);
             expect(items[0].subGridOpts.children[0].w).toBe(3);
@@ -104,6 +105,7 @@ describe('DotTemplateBuilderStore', () => {
     });
 
     it('should move a row', () => {
+        expect.assertions(1);
         const mockAffectedRows: DotGridStackWidget[] = [
             { x: 0, y: 1, w: 12, id: uuid() },
             { x: 0, y: 2, w: 12, id: uuid() },
@@ -120,26 +122,26 @@ describe('DotTemplateBuilderStore', () => {
 
         service.moveRow(mockAffectedRows);
 
-        expect.assertions(1);
         items$.subscribe((items) => {
             expect(items[0]).toEqual(mockAffectedRows[0]);
         });
     });
 
     it('should remove a row', () => {
+        expect.assertions(1);
         const rowToDelete = initialState[0];
 
         const toDeleteID = rowToDelete.id;
 
         service.removeRow(toDeleteID as string);
 
-        expect.assertions(1);
         items$.subscribe((items) => {
             expect(items).not.toContainEqual(rowToDelete);
         });
     });
 
     it('should update a row', () => {
+        expect.assertions(1);
         const updatedRow: DotGridStackWidget = {
             ...initialState[0],
             styleClass: ['new-class', 'flex-mock'],
@@ -147,25 +149,24 @@ describe('DotTemplateBuilderStore', () => {
         };
 
         service.updateRow(updatedRow);
-        expect.assertions(1);
         items$.subscribe((items) => {
             expect(items[0]).toEqual(updatedRow);
         });
     });
 
     it('should update the rowResizingID', () => {
+        expect.assertions(1);
         const rowId = uuid();
         service.setResizingRowID(rowId);
-        expect.assertions(1);
         service.vm$.subscribe(({ resizingRowID }) => {
             expect(resizingRowID).toEqual(rowId);
         });
     });
 
     it('should clean the rowResizingID', () => {
+        expect.assertions(1);
         const rowId = uuid();
         service.setResizingRowID(rowId);
-        expect.assertions(1);
         service.setResizingRowID(null);
         service.vm$.subscribe(({ resizingRowID }) => {
             expect(resizingRowID).toEqual(null);
@@ -173,6 +174,7 @@ describe('DotTemplateBuilderStore', () => {
     });
 
     it('should add a column', (done) => {
+        expect.assertions(1);
         const parentId = initialState[0].id as string;
 
         const grid = {
@@ -212,6 +214,7 @@ describe('DotTemplateBuilderStore', () => {
     });
 
     it('should move a column in the Y-axis', () => {
+        expect.assertions(2);
         const fromRow = initialState[2];
         const toRow = initialState[0];
 
@@ -239,7 +242,6 @@ describe('DotTemplateBuilderStore', () => {
 
         service.moveColumnInYAxis([columnToDelete, columnToAdd] as DotGridStackNode[]);
 
-        expect.assertions(2);
         items$.subscribe((items) => {
             const row = items.find((item) => item.id === newParent);
             const oldRow = items.find((item) => item.id === oldParent);
@@ -254,6 +256,7 @@ describe('DotTemplateBuilderStore', () => {
     });
 
     it('should update gridStack data of a column', () => {
+        expect.assertions(1);
         const parentId = uuid();
         const [firstId, secondId, thirdId, fourthId] = [1, 2, 3, 4].map(() => uuid());
 
@@ -303,13 +306,13 @@ describe('DotTemplateBuilderStore', () => {
 
         service.updateColumnGridStackData(affectedColumns);
 
-        expect.assertions(1);
         items$.subscribe((items) => {
             const row = items.find((item) => item.id === parentId);
             expect(row?.subGridOpts?.children).toEqual(createdWidgets);
         });
     });
     it('should update styleClass data of a column', () => {
+        expect.assertions(1);
         const parentId = uuid();
         const firstId = uuid();
 
@@ -355,7 +358,6 @@ describe('DotTemplateBuilderStore', () => {
 
         service.updateColumnStyleClasses(affectedColumn);
 
-        expect.assertions(1);
         items$.subscribe((items) => {
             const row = items.find((item) => item.id === parentId);
             expect(row?.subGridOpts?.children).toContainEqual(affectedColumn);
@@ -363,6 +365,7 @@ describe('DotTemplateBuilderStore', () => {
     });
 
     it('should remove a column', () => {
+        expect.assertions(1);
         const parentRow = initialState[2];
 
         const columnToDelete: DotGridStackWidget = {
@@ -372,7 +375,6 @@ describe('DotTemplateBuilderStore', () => {
 
         service.removeColumn(columnToDelete);
 
-        expect.assertions(1);
         items$.subscribe((items) => {
             const row = items.find((item) => item.id === parentRow.id);
 
@@ -381,6 +383,7 @@ describe('DotTemplateBuilderStore', () => {
     });
 
     it('should update layout properties', () => {
+        expect.assertions(1);
         service.updateLayoutProperties({
             header: true,
             footer: true,
@@ -397,6 +400,7 @@ describe('DotTemplateBuilderStore', () => {
     });
 
     it('should update sidebar width properties', () => {
+        expect.assertions(1);
         service.updateSidebarWidth('large');
 
         layoutProperties$.subscribe((layoutProperties) => {
@@ -408,6 +412,7 @@ describe('DotTemplateBuilderStore', () => {
     });
 
     it('should add a container to the sidebar', () => {
+        expect.assertions(1);
         service.addSidebarContainer(mockContainer);
         service.vm$.subscribe(({ layoutProperties }) => {
             expect(layoutProperties.sidebar.containers).toContain(mockContainer);
@@ -415,6 +420,7 @@ describe('DotTemplateBuilderStore', () => {
     });
 
     it('should delete a container from the sidebar', () => {
+        expect.assertions(1);
         service.addSidebarContainer(mockContainer);
         service.vm$.subscribe(({ layoutProperties }) => {
             expect(layoutProperties.sidebar.containers).toContain(mockContainer);
@@ -424,6 +430,7 @@ describe('DotTemplateBuilderStore', () => {
     });
 
     it('should add a container to specific box', () => {
+        expect.assertions(1);
         addContainer();
 
         items$.subscribe((items) => {
@@ -434,6 +441,7 @@ describe('DotTemplateBuilderStore', () => {
     });
 
     it('should add a container to container map', () => {
+        expect.assertions(1);
         addContainer();
 
         containerMap$.subscribe((containerMap) => {
@@ -442,6 +450,7 @@ describe('DotTemplateBuilderStore', () => {
     });
 
     it('should delete a container from specific box', () => {
+        expect.assertions(1);
         const parentRow = initialState[2];
 
         const columnToAddContainer: DotGridStackWidget = {
@@ -465,6 +474,7 @@ describe('DotTemplateBuilderStore', () => {
     describe('Util Methods', () => {
         describe('subGridOnDropped', () => {
             it('should execute moveColumnInYAxis when oldNode and newNode exist', () => {
+                expect.assertions(1);
                 jest.spyOn(service, 'moveColumnInYAxis').mockReturnValue(of('').subscribe());
 
                 const oldNode: DotGridStackNode = {
@@ -486,6 +496,7 @@ describe('DotTemplateBuilderStore', () => {
             });
 
             it('should execute addColumnInYAxis when oldNode is undefined', () => {
+                expect.assertions(1);
                 jest.spyOn(service, 'addColumn').mockReturnValue(of('').subscribe());
 
                 const newNode: DotGridStackNode = {
