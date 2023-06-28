@@ -1,5 +1,5 @@
 import { DOCUMENT } from '@angular/common';
-import { Component, Inject, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Inject, Input } from '@angular/core';
 
 /**
  * Basic page information for edit mode
@@ -10,6 +10,7 @@ import { Component, Inject, Input } from '@angular/core';
 @Component({
     selector: 'dot-edit-page-info',
     templateUrl: './dot-edit-page-info.component.html',
+    changeDetection: ChangeDetectionStrategy.OnPush,
     styleUrls: ['./dot-edit-page-info.component.scss']
 })
 export class DotEditPageInfoComponent {
@@ -18,7 +19,6 @@ export class DotEditPageInfoComponent {
     innerApiLink: string;
     previewUrl: string;
     baseUrl: string;
-    seoImprovements: boolean;
 
     constructor(@Inject(DOCUMENT) private document: Document) {
         this.baseUrl = document.defaultView.location.href.includes('edit-page')

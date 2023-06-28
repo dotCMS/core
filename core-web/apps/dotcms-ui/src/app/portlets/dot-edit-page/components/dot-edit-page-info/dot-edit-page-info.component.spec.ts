@@ -49,6 +49,7 @@ describe('DotEditPageInfoComponent', () => {
         hostFixture = TestBed.createComponent(TestHostComponent);
         hostDebug = hostFixture.debugElement;
         hostComp = hostDebug.componentInstance;
+
         de = hostDebug.query(By.css('dot-edit-page-info'));
     });
 
@@ -89,6 +90,7 @@ describe('DotEditPageInfoComponent', () => {
             hostComp.title = 'A title';
             hostComp.apiLink = '';
             hostComp.url = '';
+
             hostFixture.detectChanges();
         });
 
