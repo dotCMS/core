@@ -7,7 +7,6 @@ global.structuredClone = jest.fn((val) => {
     return JSON.parse(JSON.stringify(val));
 });
 
-// todo check for assertions
 describe('parseFromDotObjectToGridStack', () => {
     it('should parse the backend object to gridStack', () => {
         const data = MINIMAL_DATA_MOCK;
@@ -42,6 +41,7 @@ describe('parseFromDotObjectToGridStack', () => {
     });
 
     it('should return an empty array when no rows are provided', () => {
+        expect.assertions(1);
         const result = parseFromDotObjectToGridStack(undefined);
 
         expect(result).toEqual([]);
@@ -50,6 +50,7 @@ describe('parseFromDotObjectToGridStack', () => {
 
 describe('parseFromGridStackToDotObject', () => {
     it('should parse the gridStack object to dot backend object', () => {
+        expect.assertions(1);
         const data = MINIMAL_DATA_MOCK;
 
         const gridstack = parseFromDotObjectToGridStack(data);
@@ -59,6 +60,7 @@ describe('parseFromGridStackToDotObject', () => {
     });
 
     it('should return an empty DotBodyLayour when no rows are provided', () => {
+        expect.assertions(1);
         const result = parseFromGridStackToDotObject([]);
 
         expect(result).toEqual({ rows: [] });
