@@ -10,7 +10,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 
 import { take } from 'rxjs/operators';
 
@@ -86,7 +86,8 @@ describe('DotExperimentsConfigurationStore', () => {
                 provide: DotMessageService,
                 useValue: messageServiceMock
             },
-            mockProvider(DotHttpErrorManagerService)
+            mockProvider(DotHttpErrorManagerService),
+            mockProvider(ConfirmationService)
         ]
     });
 

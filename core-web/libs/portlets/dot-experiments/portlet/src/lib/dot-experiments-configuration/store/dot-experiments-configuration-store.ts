@@ -113,68 +113,9 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         ({ stepStatusSidebar }) => checkIfExperimentDescriptionIsSaving(stepStatusSidebar)
     );
 
-    readonly getMenuItems$: Observable<MenuItem[]> = this.select(this.state$, ({ experiment }) => {
-        const { scheduling } = experiment ? experiment : { scheduling: null };
-
-        const schedulingLabel =
-            scheduling === null || Object.values(experiment.scheduling).includes(null)
-                ? this.dotMessageService.get('experiments.action.start-experiment')
-                : this.dotMessageService.get('experiments.action.schedule-experiment');
-
-        const isDraft: boolean = experiment?.status === DotExperimentStatusList.DRAFT;
-
-        const menuItems: MenuItem[] = [
-            {
-                label: schedulingLabel,
-                visible: isDraft,
-                disabled: experiment?.trafficProportion.variants.length < 2 || !experiment?.goals,
-                command: () => this.startExperiment(experiment)
-            },
-            {
-                label: this.dotMessageService.get('experiments.action.end-experiment'),
-                visible: experiment?.status === DotExperimentStatusList.RUNNING,
-                disabled: experiment?.trafficProportion.variants.length < 2 || !experiment?.goals,
-                command: () => {
-                    this.confirmationService.confirm({
-                        key: CONFIRM_DIALOG_KEY,
-                        header: this.dotMessageService.get('experiments.action.end-experiment'),
-                        message: this.dotMessageService.get(
-                            'experiments.action.stop.delete-confirm'
-                        ),
-                        icon: 'pi pi-exclamation-triangle',
-                        acceptLabel: this.dotMessageService.get('stop'),
-                        rejectLabel: this.dotMessageService.get('dot.common.dialog.reject'),
-                        accept: () => {
-                            this.stopExperiment(experiment);
-                        }
-                    });
-                }
-            },
-            {
-                label: this.dotMessageService.get('experiments.configure.scheduling.cancel'),
-                visible: experiment?.status === DotExperimentStatusList.SCHEDULED,
-                command: () => {
-                    this.confirmationService.confirm({
-                        key: CONFIRM_DIALOG_KEY,
-                        header: this.dotMessageService.get(
-                            'experiments.configure.scheduling.cancel'
-                        ),
-                        message: this.dotMessageService.get(
-                            'experiments.action.cancel.schedule-confirm'
-                        ),
-                        icon: 'pi pi-exclamation-triangle',
-                        acceptLabel: this.dotMessageService.get('dot.common.dialog.accept'),
-                        rejectLabel: this.dotMessageService.get('dot.common.dialog.reject'),
-                        accept: () => {
-                            this.cancelSchedule(experiment);
-                        }
-                    });
-                }
-            }
-        ];
-
-        return menuItems;
-    });
+    readonly getMenuItems$: Observable<MenuItem[]> = this.select(this.state$, ({ experiment }) =>
+        this.setMenuItems(experiment)
+    );
 
     // Goals Step //
     readonly goals$: Observable<Goals> = this.select(({ experiment }) => {
@@ -947,5 +888,67 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                 })
             ]
         };
+    }
+
+    private setMenuItems(experiment: DotExperiment): MenuItem[] {
+        const { scheduling } = experiment ? experiment : { scheduling: null };
+        const schedulingLabel =
+            scheduling === null || Object.values(experiment.scheduling).includes(null)
+                ? this.dotMessageService.get('experiments.action.start-experiment')
+                : this.dotMessageService.get('experiments.action.schedule-experiment');
+
+        const isDraft: boolean = experiment?.status === DotExperimentStatusList.DRAFT;
+
+        const menuItems: MenuItem[] = [
+            {
+                label: schedulingLabel,
+                visible: isDraft,
+                disabled: experiment?.trafficProportion.variants.length < 2 || !experiment?.goals,
+                command: () => this.startExperiment(experiment)
+            },
+            {
+                label: this.dotMessageService.get('experiments.action.end-experiment'),
+                visible: experiment?.status === DotExperimentStatusList.RUNNING,
+                disabled: experiment?.trafficProportion.variants.length < 2 || !experiment?.goals,
+                command: () => {
+                    this.confirmationService.confirm({
+                        key: CONFIRM_DIALOG_KEY,
+                        header: this.dotMessageService.get('experiments.action.end-experiment'),
+                        message: this.dotMessageService.get(
+                            'experiments.action.stop.delete-confirm'
+                        ),
+                        icon: 'pi pi-exclamation-triangle',
+                        acceptLabel: this.dotMessageService.get('stop'),
+                        rejectLabel: this.dotMessageService.get('dot.common.dialog.reject'),
+                        accept: () => {
+                            this.stopExperiment(experiment);
+                        }
+                    });
+                }
+            },
+            {
+                label: this.dotMessageService.get('experiments.configure.scheduling.cancel'),
+                visible: experiment?.status === DotExperimentStatusList.SCHEDULED,
+                command: () => {
+                    this.confirmationService.confirm({
+                        key: CONFIRM_DIALOG_KEY,
+                        header: this.dotMessageService.get(
+                            'experiments.configure.scheduling.cancel'
+                        ),
+                        message: this.dotMessageService.get(
+                            'experiments.action.cancel.schedule-confirm'
+                        ),
+                        icon: 'pi pi-exclamation-triangle',
+                        acceptLabel: this.dotMessageService.get('dot.common.dialog.accept'),
+                        rejectLabel: this.dotMessageService.get('dot.common.dialog.reject'),
+                        accept: () => {
+                            this.cancelSchedule(experiment);
+                        }
+                    });
+                }
+            }
+        ];
+
+        return menuItems;
     }
 }

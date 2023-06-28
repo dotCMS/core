@@ -7,12 +7,17 @@
     >
         <div class="flex flex-grow-0 align-items-center justify-content-between">
             <p-button
-                #actionsButton
                 (click)="menu.toggle($event)"
                 icon="pi pi-ellipsis-v"
                 styleClass="p-button-rounded"
+                data-testId="experiment-button-menu"
             ></p-button>
-            <p-menu #menu [model]="vm.menuItems" [popup]="true"></p-menu>
+            <p-menu
+                #menu
+                [model]="vm.menuItems"
+                [popup]="true"
+                data-testId="experiment-menu"
+            ></p-menu>
         </div>
     </dot-experiments-header>
 
