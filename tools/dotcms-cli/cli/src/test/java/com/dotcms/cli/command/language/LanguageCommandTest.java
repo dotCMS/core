@@ -72,12 +72,12 @@ public class LanguageCommandTest extends CommandTest {
 
     /**
      * <b>Command to test:</b> language pull <br>
-     * <b>Given Scenario:</b> Test the language pull command by tag (en-US). This test will fail if the returned language is not English <br>
+     * <b>Given Scenario:</b> Test the language pull command by iso code (en-US). This test will fail if the returned language is not English <br>
      * <b>Expected Result:</b> The language returned should be English
      * @throws JsonProcessingException
      */
     @Test
-    void Test_Command_Language_Pull_By_Tag() throws IOException {
+    void Test_Command_Language_Pull_By_IsoCode() throws IOException {
         final CommandLine commandLine = getFactory().create();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
@@ -114,11 +114,11 @@ public class LanguageCommandTest extends CommandTest {
 
     /**
      * <b>Command to test:</b> language push<br>
-     * <b>Given Scenario:</b>Test the language push command. A new language with tag "es-VE" will be created.<br>
+     * <b>Given Scenario:</b>Test the language push command. A new language with iso code "es-VE" will be created.<br>
      * <b>Expected Result:</b> The language returned should be Spanish
      */
     @Test
-    void Test_Command_Language_Push_byTag() {
+    void Test_Command_Language_Push_byIsoCode() {
         final CommandLine commandLine = getFactory().create();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
@@ -132,8 +132,26 @@ public class LanguageCommandTest extends CommandTest {
 
     /**
      * <b>Command to test:</b> language push<br>
+     * <b>Given Scenario:</b>Test the language push command. A new language with iso code "fr" will be created.<br>
+     * <b>Expected Result:</b> The language returned should be French
+     */
+    @Test
+    void Test_Command_Language_Push_byIsoCodeWithoutCountry() {
+        final CommandLine commandLine = getFactory().create();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final int status = commandLine.execute(LanguageCommand.NAME, LanguagePush.NAME, "--byIso", "fr");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            final String output = writer.toString();
+            Assertions.assertTrue(output.contains("French"));
+        }
+    }
+
+    /**
+     * <b>Command to test:</b> language push<br>
      * <b>Given Scenario:</b> Test the language push command using a JSON file as an input.
-     * A new language with tag "it-IT" will be created.<br>
+     * A new language with iso code "it-IT" will be created.<br>
      * <b>Expected Result:</b> The language returned should be Italian
      */
     @Test
@@ -158,7 +176,7 @@ public class LanguageCommandTest extends CommandTest {
     /**
      * <b>Command to test:</b> language push <br>
      * <b>Given Scenario:</b> Test the language push command using a YAML file as an input.
-     * A new language with tag "it-IT" will be created. <br>
+     * A new language with iso code "it-IT" will be created. <br>
      * <b>Expected Result:</b> The language returned should be Italian
      */
     @Test
@@ -173,34 +191,40 @@ public class LanguageCommandTest extends CommandTest {
             final File targetFile = File.createTempFile("language", ".yml");
             mapper.writeValue(targetFile, language);
             commandLine.setOut(out);
-            final int status = commandLine.execute(LanguageCommand.NAME, LanguagePush.NAME, "-f", targetFile.getAbsolutePath(), "-fmt",
+            int status = commandLine.execute(LanguageCommand.NAME, LanguagePush.NAME, "-f", targetFile.getAbsolutePath(), "-fmt",
                     InputOutputFormat.YAML.toString());
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
-            final String output = writer.toString();
+            String output = writer.toString();
+            Assertions.assertTrue(output.contains("Italian"));
+
+            //The push command should work without specifying the format
+            status = commandLine.execute(LanguageCommand.NAME, LanguagePush.NAME, "-f", targetFile.getAbsolutePath());
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            output = writer.toString();
             Assertions.assertTrue(output.contains("Italian"));
         }
     }
 
     /**
      * <b>Command to test:</b> language remove <br>
-     * <b>Given Scenario:</b> Test the language remove command given a language tag.<br>
-     * <b>Expected Result:</b> The language with tag "es-VE" should be removed
+     * <b>Given Scenario:</b> Test the language remove command given a language iso code.<br>
+     * <b>Expected Result:</b> The language with iso code "es-VE" should be removed
      */
     @Test
-    void Test_Command_Language_Remove_byTag() {
+    void Test_Command_Language_Remove_byIsoCode() {
         final CommandLine commandLine = getFactory().create();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
 
-            //A language with tag "es-VE" is pushed
+            //A language with iso code "es-VE" is pushed
             commandLine.execute(LanguageCommand.NAME, LanguagePush.NAME, "--byIso", "es-VE");
 
-            //We remove the language with tag "es-VE"
+            //We remove the language with iso code "es-VE"
             int status = commandLine.execute(LanguageCommand.NAME, LanguageRemove.NAME, "es-VE", "--cli-test");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
 
-            //We check that the language with tag "es-VE" is not present
+            //We check that the language with iso code "es-VE" is not present
             status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "es-VE");
             Assertions.assertEquals(ExitCode.SOFTWARE, status);
         }
@@ -209,17 +233,17 @@ public class LanguageCommandTest extends CommandTest {
     /**
      * <b>Command to test:</b> language remove <br>
      * <b>Given Scenario:</b> Test the language remove command given a language id. <br>
-     * <b>Expected Result:</b> The language with tag "es-VE" should be removed
+     * <b>Expected Result:</b> The language with iso code "es-VE" should be removed
      */
     @Test
     void Test_Command_Language_Remove_byId() throws IOException {
         final CommandLine commandLine = getFactory().create();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
-            //A language with tag "es-VE" is pushed
-            commandLine.execute(LanguageCommand.NAME, LanguagePush.NAME, "--byIso", "es-VE");
+            //A language with iso code "es-VE" is pushed (we are validating that the iso code is not case-sensitive)
+            commandLine.execute(LanguageCommand.NAME, LanguagePush.NAME, "--byIso", "es-ve");
             commandLine.setOut(out);
-            //we pull the language with tag "es-VE" to get its id
+            //we pull the language with iso code "es-VE" to get its id
             int status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "es-VE");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
@@ -227,11 +251,11 @@ public class LanguageCommandTest extends CommandTest {
             Language result = mapper.readValue(output, Language.class);
 
 
-            //We remove the language with tag "es-VE"
+            //We remove the language with iso code "es-VE"
             status = commandLine.execute(LanguageCommand.NAME, LanguageRemove.NAME, String.valueOf(result.id().get()), "--cli-test");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
 
-            //We check that the language with tag "es-VE" is not present
+            //We check that the language with iso code "es-VE" is not present
             status = commandLine.execute(LanguageCommand.NAME, LanguagePull.NAME, "es-VE");
             Assertions.assertEquals(ExitCode.SOFTWARE, status);
         } finally {
