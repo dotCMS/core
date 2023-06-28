@@ -14,7 +14,8 @@ import { DotTemplateBuilderStore } from './template-builder.store';
 import {
     DotGridStackNode,
     DotGridStackWidget,
-    DotTemplateLayoutProperties
+    DotTemplateLayoutProperties,
+    SYSTEM_CONTAINER_IDENTIFIER
 } from '../models/models';
 import { GRIDSTACK_DATA_MOCK, mockTemplateBuilderContainer } from '../utils/mocks';
 
@@ -96,7 +97,7 @@ describe('DotTemplateBuilderStore', () => {
             expect(items.length).toBeGreaterThan(initialState.length);
             expect(items[0].subGridOpts.children[0].w).toBe(3);
             expect(items[0].subGridOpts.children[0].containers[0].identifier).toBe(
-                'SYSTEM_CONTAINER'
+                SYSTEM_CONTAINER_IDENTIFIER
             );
         });
     });
@@ -201,7 +202,7 @@ describe('DotTemplateBuilderStore', () => {
                 styleClass: undefined,
                 containers: [
                     {
-                        identifier: 'SYSTEM_CONTAINER'
+                        identifier: SYSTEM_CONTAINER_IDENTIFIER
                     }
                 ]
             });
