@@ -24,12 +24,9 @@ import com.dotcms.analytics.metrics.Condition;
 import com.dotcms.analytics.metrics.EventType;
 import com.dotcms.analytics.metrics.Metric;
 import com.dotcms.analytics.metrics.MetricType;
-import com.dotcms.analytics.model.AbstractAnalyticsProperties;
-
-
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.analytics.model.AnalyticsProperties;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
@@ -79,6 +76,9 @@ import com.dotmarketing.util.WebKeys;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.control.Try;
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -105,10 +105,12 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /**
  * Test of {@link ExperimentsAPIImpl}
  */
+@RunWith(DataProviderRunner.class)
 public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     
     private static final String CUBEJS_SERVER_IP = "127.0.0.1";
@@ -307,7 +309,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ExperimentsAPIImpl#getEvents(Experiment)}
+     * Method to test: {@link ExperimentsAPI#getEvents(Experiment, User)}
      * When: You have 4 pages let call them: A, B, C and D and:
      * - We create a Experiment with the B page.
      * - We mock in the test 4 Browser Session with different lookBackWindows, each of this session
@@ -325,7 +327,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
      * Session 3: 2
      * Session 4: 4
      *
-     * If we call the {@link ExperimentsAPIImpl#getEvents(Experiment)} now
+     * If we call the {@link ExperimentsAPI#getEvents(Experiment, User)} now
      *
      * Should: Return 4 {@link BrowserSession} each one with the right numbers of {@link com.dotcms.experiments.business.result.Event}
      *
@@ -393,7 +395,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         try {
             final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            final List<BrowserSession> browserSessions = experimentsAPIImpl.getEvents(experiment);
+            final List<BrowserSession> browserSessions = experimentsAPIImpl.getEvents(
+                    experiment,
+                    APILocator.systemUser());
 
             mockHttpServer.validate();
 
@@ -481,7 +485,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
+     * Method to test: {@link ExperimentsAPI#getResults(Experiment, User)}
      * When: get the Experiment's Results
      * Should: get the Split traffic too
      */
@@ -518,7 +522,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
             mockhttpServer.start();
             IPUtils.disabledIpPrivateSubnet(true);
 
-            final ExperimentResults results = experimentsAPI.getResults(experiment);
+            final ExperimentResults results = experimentsAPI.getResults(experiment, APILocator.systemUser());
 
             mockhttpServer.validate();
 
@@ -539,7 +543,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
 
     /**
-     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
+     * Method to test: {@link ExperimentsAPI#getResults(Experiment, User)}
      * When:
      * - You have four pages: A, B, C and D
      * - You create an {@link Experiment} using the B page with a PAGE_REACH Goal: url EQUALS TO PAge D .
@@ -597,7 +601,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
 
-            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
+            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(
+                    experiment,
+                    APILocator.systemUser());
 
             mockhttpServer.validate();
 
@@ -640,7 +646,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
 
     /**
-     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
+     * Method to test: {@link ExperimentsAPI#getResults(Experiment, User)}
      * When:
      * - You have four pages: A, B, C and D
      * - You create an {@link Experiment} with one Variant using the B page with a PAGE_REACH Goal: url EQUALS TO PAge D.
@@ -730,7 +736,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
 
-            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
+            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(
+                    experiment,
+                    APILocator.systemUser());
 
             mockhttpServer.validate();
 
@@ -770,7 +778,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
+     * Method to test: {@link ExperimentsAPI#getResults(Experiment, User)}
      * When:
      * - You have four pages: A, B, C and D
      * - You create an {@link Experiment} with one Variant using the B page with a PAGE_REACH Goal: url EQUALS TO PAge D.
@@ -862,7 +870,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
 
-            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
+            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(
+                    experiment,
+                    APILocator.systemUser());
 
             mockhttpServer.validate();
 
@@ -912,7 +922,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
+     * Method to test: {@link ExperimentsAPI#getResults(Experiment, User)}
      * When:
      * - You have four pages: A, B, C and D
      * - You create an {@link Experiment} using the B page with a PAGE_REACH Goal: url EQUALS TO PAge D.
@@ -1038,7 +1048,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
 
-            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
+            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(
+                    experiment,
+                    APILocator.systemUser());
 
             mockhttpServer.validate();
 
@@ -1113,7 +1125,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
+     * Method to test: {@link ExperimentsAPI#getResults(Experiment, User)}
      * When:
      * - You have four pages: A, B, C and D
      * - You create an {@link Experiment} using the B page with a PAGE_REACH Goal: url EQUALS TO PAge D .
@@ -1170,7 +1182,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
             ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
 
-            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
+            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(
+                    experiment,
+                    APILocator.systemUser());
 
             mockhttpServer.validate();
 
@@ -1203,7 +1217,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
+     * Method to test: {@link ExperimentsAPI#getResults(Experiment, User)}
      * When:
      * - You have four pages: A, B, C and D
      * - You create an {@link Experiment} using the B page with a PAGE_REACH Goal: url EQUALS TO PAge D .
@@ -1260,7 +1274,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
             final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
             ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
-            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
+            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(
+                    experiment,
+                    APILocator.systemUser());
 
             mockhttpServer.validate();
 
@@ -1293,7 +1309,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
+     * Method to test: {@link ExperimentsAPI#getResults(Experiment, User)}
      * When:
      * - You have four pages: A, B, C and D
      * - You create an {@link Experiment} using the B page with a PAGE_REACH Goal: url EQUALS TO PAge D .
@@ -1351,7 +1367,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
             ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
 
-            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
+            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(
+                    experiment,
+                    APILocator.systemUser());
 
             mockhttpServer.validate();
 
@@ -1384,7 +1402,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
+     * Method to test: {@link ExperimentsAPI#getResults(Experiment, User)}
      * When:
      * - You have four pages: A, B, C and D
      * - You create an {@link Experiment} using the B page with a PAGE_REACH Goal: url EQUALS TO PAge D .
@@ -1442,7 +1460,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
             final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
             ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
-            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
+            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(
+                    experiment,
+                    APILocator.systemUser());
 
             mockhttpServer.validate();
 
@@ -1478,7 +1498,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
+     * Method to test: {@link ExperimentsAPI#getResults(Experiment, User)}
      * When:
      * - You have 3 pages: A, B and C
      * - You create an {@link Experiment} using the B page with a BOUNCE_RATE Goal: url EQUALS TO PAge B .
@@ -1534,7 +1554,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
             final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
             ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
-            final ExperimentResults experimentResult = experimentsAPIImpl.getResults(experiment);
+            final ExperimentResults experimentResult = experimentsAPIImpl.getResults(
+                    experiment,
+                    APILocator.systemUser());
 
             mockhttpServer.validate();
 
@@ -1570,17 +1592,25 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         }
     }
 
+    @DataProvider
+    public static String[] indexPaths() throws Exception {
+        return new String[]{
+                "/index", "/INDEX", "/IndEX", "", "/", "/?variantName=dotexperiment-fcaef4575a-variant-1&redirect=true"
+        };
+    }
+
     /**
-     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
+     * Method to test: {@link ExperimentsAPI#getResults(Experiment, User)}
      * When:
      * - You have 3 pages: A, B and Index
      * - You create an {@link Experiment} using the Index page with a BOUNCE_RATE Goal: url EQUALS TO PAge Index .
      * - You have the follow page_view to the pages order by timestamp: A, Index and C to the Specific Variant
      *
-     * Should:  count 0 Minimize Bounce Rate success to the specific variant
+     * Should:  count 1 Minimize Bounce Rate success to the specific variant
      */
     @Test
-    public void bounceRateWithIndex() throws DotDataException, DotSecurityException {
+    @UseDataProvider("indexPaths")
+    public void bounceRateWithIndex(final String indexPath) throws DotDataException, DotSecurityException {
         final Host host = new SiteDataGen().nextPersisted();
         final Template template = new TemplateDataGen().host(host).nextPersisted();
 
@@ -1602,9 +1632,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         final Instant firstEventStartDate = Instant.now();
 
         final String[] pagesUrl = new String[]{
-                pageA.getPageUrl(),
-                "/",
-                pageC.getPageUrl()};
+                pageA.getURI(),
+                indexPath,
+                pageC.getURI()};
 
         final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(firstEventStartDate,
                 experiment, variantName, pagesUrl);
@@ -1637,7 +1667,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
             final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
             ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
-            final ExperimentResults experimentResult = experimentsAPIImpl.getResults(experiment);
+            final ExperimentResults experimentResult = experimentsAPIImpl.getResults(
+                experiment,
+                APILocator.systemUser());
 
             mockhttpServer.validate();
 
@@ -1666,6 +1698,118 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                 assertNotNull(resultResumeItem);
                 Assert.assertEquals(sessionExpected, resultResumeItem.getUniqueBySession());
                 Assert.assertEquals(sessionExpected, resultResumeItem.getMultiBySession());
+            }
+        } finally {
+            APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
+
+            IPUtils.disabledIpPrivateSubnet(false);
+            mockhttpServer.stop();
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment, User)}
+     * When:
+     * - You have 3 pages: A, B and Index
+     * - You create an {@link Experiment} using the Index page with a BOUNCE_RATE Goal: url EQUALS TO PAge Index .
+     * - You have the follow page_view to the pages order by timestamp: A, C and Index  to the Specific Variant
+     *
+     * Should:  count 0 Minimize Bounce Rate success to the specific variant
+     */
+    @Test
+    @UseDataProvider("indexPaths")
+    public void noBounceRateWithIndex(final String indexPath) throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset pageA = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageIndex = new HTMLPageDataGen(host, template).pageURL("index").nextPersisted();
+        final HTMLPageAsset pageC = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Metric metric = Metric.builder()
+                .name("Testing Metric")
+                .type(MetricType.BOUNCE_RATE)
+                .build();
+
+        final Experiment experiment = createExperiment(pageIndex, metric);
+
+        final String variantName = getNotDefaultVariantName(experiment);
+
+        final Variant variant = APILocator.getVariantAPI().get(variantName).orElseThrow();
+
+        final Instant firstEventStartDate = Instant.now();
+
+        final String[] pagesUrl = new String[]{
+                pageA.getURI(),
+                pageC.getURI(),
+                indexPath};
+
+        final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(firstEventStartDate,
+                experiment, variantName, pagesUrl);
+
+        final Map<String, List<Map<String, String>>> cubeJsQueryResult =  map("data", cubeJsQueryData);
+
+        APILocator.getExperimentsAPI()
+                .start(experiment.getIdentifier(), APILocator.systemUser());
+
+        IPUtils.disabledIpPrivateSubnet(true);
+        final String cubeJSQueryExpected = getExpectedBounceRateQuery(experiment);
+
+        final MockHttpServer mockhttpServer = new MockHttpServer(CUBEJS_SERVER_IP, CUBEJS_SERVER_PORT);
+        addContext(mockhttpServer, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        final String queryTotalPageViews = getTotalPageViewsQuery(experiment.id().get(), "DEFAULT", variantName);
+
+        final List<Map<String, Object>> totalPageViewsResponseExpected = list(
+                map("Events.variant", variantName, "Events.count", "3")
+        );
+
+        addContext(mockhttpServer, queryTotalPageViews,
+                JsonUtil.getJsonStringFromObject(map("data", totalPageViewsResponseExpected)));
+
+        addCountQueryContext(experiment, 3, mockhttpServer);
+
+        mockhttpServer.start();
+
+        try {
+            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
+            final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+            ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+            final ExperimentResults experimentResult = experimentsAPIImpl.getResults(
+                experiment,
+                APILocator.systemUser());
+
+            mockhttpServer.validate();
+
+            assertEquals(1, experimentResult.getSessions().getTotal());
+
+            for (VariantResults variantResult : experimentResult.getGoals().get("primary").getVariants().values()) {
+                final int sessionExpected =  0;
+
+                if (variantResult.getVariantName().equals(variantName)) {
+                    assertEquals(variant.description().get(), variantResult.getVariantDescription());
+                    assertEquals(3, variantResult.getTotalPageViews());
+
+                    Assert.assertEquals(1,
+                            (long) experimentResult.getSessions().getVariants()
+                                    .get(variantResult.getVariantName()));
+                } else {
+                    assertEquals("Original", variantResult.getVariantDescription());
+                    assertEquals(0, variantResult.getTotalPageViews());
+
+                    Assert.assertEquals(0,
+                            (long) experimentResult.getSessions().getVariants()
+                                    .get(variantResult.getVariantName()));
+                }
+
+                Assert.assertEquals(sessionExpected, variantResult.getUniqueBySession().getCount());
+                Assert.assertEquals(sessionExpected, variantResult.getMultiBySession());
+
+
+                final ResultResumeItem resultResumeItem = variantResult.getDetails()
+                        .get(SIMPLE_FORMATTER.format(firstEventStartDate));
+
+                assertNull(resultResumeItem);
             }
         } finally {
             APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
@@ -1730,7 +1874,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
             final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
             ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
-            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
+            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(
+                    experiment,
+                    APILocator.systemUser());
 
             mockhttpServer.validate();
 
@@ -1771,7 +1917,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
+     * Method to test: {@link ExperimentsAPI#getResults(Experiment, User)}
      * When:
      * - You have 3 pages: A, B and C
      * - You create an {@link Experiment} using the B page with a BOUNCE_RATE Goal: url EQUALS TO PAge B .
@@ -1826,7 +1972,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
             final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
             ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
-            final ExperimentResults experimentResult = experimentsAPIImpl.getResults(experiment);
+            final ExperimentResults experimentResult = experimentsAPIImpl.getResults(
+                    experiment,
+                    APILocator.systemUser());
 
             mockhttpServer.validate();
 
@@ -1860,7 +2008,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
+     * Method to test: {@link ExperimentsAPI#getResults(Experiment, User)}
      * When:
      * - You have four pages: A, B, C and D
      * - You create an {@link Experiment} using the B page with a PAGE_REACH Goal: url EQUALS TO PAge D .
@@ -1929,7 +2077,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
             ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
 
-            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
+            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(
+                    experiment,
+                    APILocator.systemUser());
 
             mockhttpServer.validate();
 
@@ -1996,7 +2146,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
             final String variantName,
             final HTMLPageAsset... pages) throws DotDataException {
         return createPageViewEvents(firstEventTime, experiment, variantName, Arrays.stream(pages)
-                .map(HTMLPageAsset::getPageUrl)
+                .map(page -> "/" + page.getPageUrl())
                 .toArray(String[]::new));
     }
     private List<Map<String, String>> createPageViewEvents(final Instant firstEventTime,
@@ -2015,7 +2165,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                     "Events.variant", variantName,
                     "Events.utcTime", EVENTS_FORMATTER.format(nextEventTriggerTime),
                     "Events.referer", previousPageUrl,
-                    "Events.url", "http://127.0.0.1:5000/" + pageUrl,
+                    "Events.url", "http://127.0.0.1:5000" + pageUrl,
                     "Events.lookBackWindow", lookBackWindows,
                     "Events.eventType", EventType.PAGE_VIEW.getName()
             ));
@@ -2196,14 +2346,41 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
     private static AnalyticsHelper mockAnalyticsHelper() throws DotDataException, DotSecurityException {
         final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHost();
-        final AbstractAnalyticsProperties mockAnalyticsProperties = mock(AbstractAnalyticsProperties.class);
-        when(mockAnalyticsProperties.analyticsReadUrl()).thenReturn(CUBEJS_SERVER_URL);
+        final AnalyticsProperties analyticsProperties = AnalyticsProperties.builder()
+                .clientId("clientId")
+                .clientSecret("clientSecret")
+                .analyticsKey("analyticsKey")
+                .analyticsConfigUrl("http://localhost:8088/c/customer1/cluster1/keys")
+                .analyticsWriteUrl("http://localhost:8081/api/v1/event")
+                .analyticsReadUrl(CUBEJS_SERVER_URL)
+                .build();
 
         final AnalyticsApp mockAnalyticsApp = mock(AnalyticsApp.class);
-        when(mockAnalyticsApp.getAnalyticsProperties()).thenReturn(mockAnalyticsProperties);
+        when(mockAnalyticsApp.getAnalyticsProperties()).thenReturn(analyticsProperties);
 
         final AnalyticsHelper mockAnalyticsHelper = mock(AnalyticsHelper.class);
         when(mockAnalyticsHelper.appFromHost(currentHost)).thenReturn(mockAnalyticsApp);
+
+        return mockAnalyticsHelper;
+    }
+
+    private static AnalyticsHelper mockInvalidAnalyticsHelper() throws DotDataException, DotSecurityException {
+        final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHost();
+        final AnalyticsProperties analyticsProperties = AnalyticsProperties.builder()
+            .clientId("clientId")
+            .clientSecret("clientSecret")
+            .analyticsKey("analyticsKey")
+            .analyticsConfigUrl("http://localhost:8088/c/customer1/cluster1/keys")
+            .analyticsWriteUrl("http://localhost:8081/api/v1/event")
+            .analyticsReadUrl(CUBEJS_SERVER_URL)
+            .build();
+
+        final AnalyticsApp mockAnalyticsApp = mock(AnalyticsApp.class);
+        when(mockAnalyticsApp.getAnalyticsProperties()).thenReturn(analyticsProperties);
+
+        final AnalyticsHelper mockAnalyticsHelper = mock(AnalyticsHelper.class);
+        when(mockAnalyticsHelper.appFromHost(currentHost)).thenThrow(new IllegalStateException("Error!"));
+
         return mockAnalyticsHelper;
     }
 
@@ -2302,7 +2479,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
+     * Method to test: {@link ExperimentsAPI#getResults(Experiment, User)}
      * When: Try to get the result from a not starting {@link Experiment}
      * Should: Throw a {@link IllegalArgumentException}
      */
@@ -2319,11 +2496,11 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                 .page(experimentPage)
                 .addVariant("description")
                 .nextPersisted();
-        APILocator.getExperimentsAPI().getResults(experiment);
+        APILocator.getExperimentsAPI().getResults(experiment, APILocator.systemUser());
     }
 
     /**
-     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
+     * Method to test: {@link ExperimentsAPI#getResults(Experiment, User)}
      * When: Try to get the result from a not saved {@link Experiment}
      * Should: Throw a {@link IllegalArgumentException}
      */
@@ -2340,7 +2517,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                 .page(experimentPage)
                 .addVariant("description")
                 .next();
-        APILocator.getExperimentsAPI().getResults(experiment);
+        APILocator.getExperimentsAPI().getResults(experiment, APILocator.systemUser());
     }
     
     /**
@@ -2383,7 +2560,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         assertEquals(1,  conditions.size());
 
         assertEquals("url", conditions.get(0).parameter());
-        assertEquals("^(http|https):\\/\\/.*:.*\\" + experimentPage.getURI() + "(\\?.*)?$",
+        assertEquals("^(http|https):\\/\\/(localhost|127.0.0.1|\\b(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,})(:\\d{1,5})?\\" + experimentPage.getURI() + "(\\/?\\?.*)?$",
                 conditions.get(0).value());
         assertEquals(Operator.REGEX, conditions.get(0).operator());
     }
@@ -2427,7 +2604,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
      }
 
     /**
-     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
+     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment, User)}
      * When:
      * - Create 4 pages,: a, B, C and D.
      * - Create a content type with a text field and pageB as detail page,
@@ -2482,8 +2659,8 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         final Instant firstEventStartDate = Instant.now();
         final String[] pagesUrl = new String[]{pageA.getPageUrl(),
                 prefixUrlMapper + "test",
-                pageD.getPageUrl(),
-                pageC.getPageUrl()};
+                pageD.getURI(),
+                pageC.getURI()};
 
         final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(firstEventStartDate,
                 experiment, variantName, pagesUrl);
@@ -2519,7 +2696,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
 
-            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
+            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(
+                experiment,
+                APILocator.systemUser());
 
             mockhttpServer.validate();
 
@@ -2561,7 +2740,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     }
 
      /**
-     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
+     * Method to test: {@link ExperimentsAPI#getResults(Experiment, User)}
      * When:
      * - You have three pages: A, B and C
      * - You create an {@link Experiment} using the A page with a PAGE_REACH Goal: url EQUALS TO Page C .
@@ -2614,7 +2793,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
             final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
             ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
-            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
+            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(
+                    experiment,
+                    APILocator.systemUser());
             assertEquals(120, experimentResults.getSessions().getTotal());
 
             final BayesianResult bayesianResult = experimentResults.getBayesianResult();
@@ -2629,7 +2810,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
+     * Method to test: {@link ExperimentsAPI#getResults(Experiment, User)}
      * When:
      * - You have three pages: A, B and C
      * - You create an {@link Experiment} using the A page with a Bounce Rate Goal
@@ -2698,7 +2879,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
             final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
             ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
-            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
+            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(
+                    experiment,
+                    APILocator.systemUser());
             assertEquals(3, experimentResults.getSessions().getTotal());
 
             final BayesianResult bayesianResult = experimentResults.getBayesianResult();
@@ -2713,7 +2896,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
+     * Method to test: {@link ExperimentsAPI#getResults(Experiment, User)}
      * When:
      * - You have four pages: A, B and C
      * - You create an {@link Experiment} using the A page with a PAGE_REACH Goal: url EQUALS TO Page C .
@@ -2767,7 +2950,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
             final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
             ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
-            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
+            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(
+                    experiment,
+                    APILocator.systemUser());
             assertEquals(120, experimentResults.getSessions().getTotal());
 
             final BayesianResult bayesianResult = experimentResults.getBayesianResult();
@@ -2783,7 +2968,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
+     * Method to test: {@link ExperimentsAPI#getResults(Experiment, User)}
      * When:
      * - You have four pages: A, B and C
      * - You create an {@link Experiment} using the A page with a PAGE_REACH Goal: url EQUALS TO Page C .
@@ -2841,7 +3026,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
 
             APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
 
-            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
+            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(
+                    experiment,
+                    APILocator.systemUser());
             assertEquals(120, experimentResults.getSessions().getTotal());
 
             final BayesianResult bayesianResult = experimentResults.getBayesianResult();
@@ -2856,7 +3043,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
+     * Method to test: {@link ExperimentsAPI#getResults(Experiment, User)}
      * When:
      * - You have four pages: A, B and C
      * - You create an {@link Experiment} using the A page with a PAGE_REACH Goal: url EQUALS TO Page C .
@@ -2919,7 +3106,9 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
             final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
             ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
+            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(
+                    experiment,
+                    APILocator.systemUser());
             assertEquals(180, experimentResults.getSessions().getTotal());
 
             final BayesianResult bayesianResult = experimentResults.getBayesianResult();
@@ -2934,7 +3123,29 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
+     * Method to test: {@link ExperimentsAPI#getResults(Experiment, User)}
+     * When:
+     * - You have a set of pages that are required to create an experiment
+     * And:
+     * - A missing analytics application
+     *
+     * Should: thrown an exception
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void test_getResults_missingAnalyticsApp() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+        final HTMLPageAsset pageA = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageC = new HTMLPageDataGen(host, template).nextPersisted();
+        final Experiment experiment = createExperimentWithReachPageGoalAndVariant(pageA, pageC, "variantB", "variantC");
+        final AnalyticsHelper mockAnalyticsHelper = mockInvalidAnalyticsHelper();
+        ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+        final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+        experimentsAPIImpl.getResults(experiment, APILocator.systemUser());
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment, User)}
      * When:
      * - Create a Page.
      * - Create a content type with a text field and newly created page as detail page,

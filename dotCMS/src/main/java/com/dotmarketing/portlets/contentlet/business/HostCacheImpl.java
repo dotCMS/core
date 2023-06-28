@@ -8,6 +8,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableSet;
 import java.util.Set;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * @author Jason Tesser
@@ -106,7 +107,9 @@ public class HostCacheImpl extends HostCache {
 	 * @see com.dotmarketing.business.PermissionCache#remove(java.lang.String)
 	 */
     protected void remove(Host host){
-
+		if(host == null || StringUtils.isBlank(host.getIdentifier())){
+			return;
+		}
     	// always remove default host
     	String _defaultHost =PRIMARY_GROUP +DEFAULT_HOST;
     	cache.remove(_defaultHost,PRIMARY_GROUP);

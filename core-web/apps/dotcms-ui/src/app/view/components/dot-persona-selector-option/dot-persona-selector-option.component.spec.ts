@@ -72,7 +72,7 @@ describe('DotPersonaSelectorOptionComponent', () => {
 
         it('should have personalized button with right properties', () => {
             const btnElement: DebugElement = de.query(By.css('button'));
-            expect(btnElement.nativeElement.innerText).toBe('PERSONALIZED');
+            expect(btnElement.nativeElement.innerText).toBe('Personalized');
             expect(btnElement.attributes.icon).toBe('pi pi-times');
             expect(btnElement.attributes.iconPos).toBe('right');
         });

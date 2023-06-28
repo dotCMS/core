@@ -170,7 +170,7 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
                                         : this.dotMessageService.get(
                                               'dot.common.http.error.400.experiment.analytics-app-not-configured.header'
                                           ),
-                                    message: error.message.split('.')[0]
+                                    message: error.message
                                 }
                             });
 

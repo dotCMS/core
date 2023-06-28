@@ -19,16 +19,20 @@ export class DotContainersService {
     constructor(private readonly http: HttpClient) {}
 
     /**
-     * Get the container filtered by tittle or inode .
+     * Get the container filtered by tittle or inode.
      *
      * @param {string} filter
      * @param {number} perPage
-     *
-     * @returns {Observable<DotContainerEntity>}
+     * @param {boolean} [fetchSystemContainers=false]
+     * @return {*}  {Observable<DotContainer[]>}
      * @memberof DotContainersService
      */
-    getFiltered(filter: string, perPage: number): Observable<DotContainer[]> {
-        const url = `${CONTAINER_API_URL}?filter=${filter}&perPage=${perPage}`;
+    getFiltered(
+        filter: string,
+        perPage: number,
+        fetchSystemContainers: boolean = false
+    ): Observable<DotContainer[]> {
+        const url = `${CONTAINER_API_URL}?filter=${filter}&perPage=${perPage}&system=${fetchSystemContainers}`;
 
         return this.http.get<{ entity: DotContainer[] }>(url).pipe(pluck('entity'));
     }

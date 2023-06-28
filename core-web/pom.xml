@@ -7,6 +7,7 @@
         <groupId>com.dotcms</groupId>
         <artifactId>dotcms-parent</artifactId>
         <version>1.0.0-SNAPSHOT</version>
+        <relativePath>../parent/pom.xml</relativePath>
     </parent>
 
     <artifactId>core-web</artifactId>
@@ -144,7 +145,7 @@
 
                         <configuration>
                             <skip>${skipTests}</skip>
-                            <arguments>run nx run dotcms-ui:test</arguments>
+                            <arguments>run nx test</arguments>
                         </configuration>
                     </execution>
                 </executions>

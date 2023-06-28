@@ -9,7 +9,7 @@ import { DividerModule } from 'primeng/divider';
 import { DialogService, DynamicDialogModule, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { ToolbarModule } from 'primeng/toolbar';
 
-import { take } from 'rxjs/operators';
+import { pluck, take } from 'rxjs/operators';
 
 import { DotContainersService, DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipeModule } from '@dotcms/ui';
@@ -21,7 +21,7 @@ import { DotGridStackWidget } from './models/models';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { TemplateBuilderComponent } from './template-builder.component';
 import { parseFromDotObjectToGridStack } from './utils/gridstack-utils';
-import { DOT_MESSAGE_SERVICE_TB_MOCK, FULL_DATA_MOCK } from './utils/mocks';
+import { CONTAINER_MAP_MOCK, DOT_MESSAGE_SERVICE_TB_MOCK, FULL_DATA_MOCK } from './utils/mocks';
 
 global.structuredClone = jest.fn((val) => {
     return JSON.parse(JSON.stringify(val));
@@ -66,7 +66,7 @@ describe('TemplateBuilderComponent', () => {
     });
     beforeEach(() => {
         spectator = createHost(
-            `<dotcms-template-builder [templateLayout]="templateLayout"></dotcms-template-builder>`,
+            `<dotcms-template-builder [containerMap]="containerMap" [templateLayout]="templateLayout"></dotcms-template-builder>`,
             {
                 hostProps: {
                     templateLayout: {
@@ -77,8 +77,11 @@ describe('TemplateBuilderComponent', () => {
                             location: 'left',
                             width: 'small',
                             containers: []
-                        }
-                    }
+                        },
+                        width: 'Mobile',
+                        title: 'Test Title'
+                    },
+                    containerMap: CONTAINER_MAP_MOCK
                 }
             }
         );
@@ -94,10 +97,6 @@ describe('TemplateBuilderComponent', () => {
 
     it('should have a Add Box Button', () => {
         expect(spectator.query(byTestId('add-box'))).toBeTruthy();
-    });
-
-    it('should have a background', () => {
-        expect(spectator.query('dotcms-template-builder-background-columns')).toBeTruthy();
     });
 
     it('should have the same quantity of rows as mocked data', () => {
@@ -201,19 +200,19 @@ describe('TemplateBuilderComponent', () => {
                     header: true,
                     footer: true,
                     sidebar: {}
-                }
+                },
+                resizingRowID: '',
+                containerMap: {}
             });
-            store.items$.pipe(take(1)).subscribe(() => {
+            store.vm$.pipe(pluck('items'), take(1)).subscribe(() => {
                 // const body = parseFromGridStackToDotObject(items);
                 expect(layoutChangeMock).toHaveBeenCalledWith({
                     body: FULL_DATA_MOCK,
                     header: true,
                     footer: true,
-                    sidebar: {
-                        location: 'left',
-                        width: 'small',
-                        containers: []
-                    }
+                    sidebar: null,
+                    width: 'Mobile',
+                    title: 'Test Title'
                 });
                 done();
             });

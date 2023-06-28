@@ -394,7 +394,7 @@ public class FileUtil {
 	public static String getFileContentFromResourceContext(final String path) throws IOException {
 		DotPreconditions.checkArgument(!path.startsWith(StringPool.FORWARD_SLASH), "Path must be relative");
 
-		final ClassLoader classLoader = FileUtil.class.getClassLoader();
+		final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 		final URL initFileURL = classLoader.getResource(path);
 		return new String (com.liferay.util.FileUtil.getBytes(new File(initFileURL.getPath())));
 	}
