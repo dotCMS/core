@@ -10,8 +10,8 @@ import { ChangeDetectionStrategy, Component, Inject, Input } from '@angular/core
 @Component({
     selector: 'dot-edit-page-info',
     templateUrl: './dot-edit-page-info.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    styleUrls: ['./dot-edit-page-info.component.scss']
+    styleUrls: ['./dot-edit-page-info.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotEditPageInfoComponent {
     @Input() title: string;

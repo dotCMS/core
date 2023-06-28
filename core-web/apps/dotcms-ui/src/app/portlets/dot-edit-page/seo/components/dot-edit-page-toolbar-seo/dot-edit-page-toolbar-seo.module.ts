@@ -22,7 +22,7 @@ import { DotEditPageNavDirective } from '@portlets/dot-edit-page/main/dot-edit-p
 
 import { DotEditPageToolbarSeoComponent } from './dot-edit-page-toolbar-seo.component';
 
-import { DotFavoritePageModule } from '../../../components/dot-favorite-page/dot-favorite-page.module';
+import { DotFavoritePageModule } from '@portlets/dot-edit-page/components/dot-favorite-page/dot-favorite-page.module';
 import { DotEditPageInfoSeoModule } from '../dot-edit-page-info-seo/dot-edit-page-info-seo.module';
 
 @NgModule({
