@@ -1,17 +1,14 @@
 package com.dotmarketing.startup.runonce;
 
-import static com.dotcms.util.CollectionsUtils.list;
-
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.startup.AbstractJDBCStartupTask;
 import com.dotmarketing.startup.StartupTask;
-import com.liferay.util.StringPool;
+import com.dotmarketing.util.Logger;
+
 import java.sql.SQLException;
-import java.util.stream.Collectors;
 
 /**
  * Task to create the variant_id column in the contentlet table, Also it removes the variantId attribute
@@ -29,24 +26,18 @@ public class Task230523CreateVariantFieldInContentlet implements StartupTask {
         if (forceRun()) {
             final DotConnect dotConnect = new DotConnect();
             try {
-                dotConnect.executeStatement(getStatements());
+                Logger.info(this, "Adding the 'variant_id' column to the 'contentlet' table");
+                dotConnect.executeStatement(createVariantId());
+                Logger.info(this, "Removing the 'variantId' property from the 'contentlet_as_json' value");
+                dotConnect.executeStatement(removeVariantFromJsonField());
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }
         }
     }
 
-    private String getStatements() {
-        return list(createVariantId(), removeVariantFromJsonField(), updateVariantToDefault()).stream()
-                .collect(Collectors.joining(";\n"));
-    }
-
-    private String updateVariantToDefault() {
-        return "UPDATE contentlet SET variant_id = 'DEFAULT'";
-    }
-
     private String removeVariantFromJsonField() {
-        return "UPDATE contentlet SET contentlet_as_json = contentlet_as_json - 'variantId'";
+        return "UPDATE contentlet SET contentlet_as_json = contentlet_as_json - 'variantId' WHERE contentlet_as_json IS NOT NULL";
     }
 
     public String createVariantId() throws  DotRuntimeException {
@@ -66,4 +57,5 @@ public class Task230523CreateVariantFieldInContentlet implements StartupTask {
             return false;
         }
     }
+
 }
