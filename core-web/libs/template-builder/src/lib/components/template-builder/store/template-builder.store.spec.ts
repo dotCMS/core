@@ -170,28 +170,42 @@ describe('DotTemplateBuilderStore', () => {
         });
     });
 
-    it('should add a column', () => {
+    it('should add a column', (done) => {
         const parentId = initialState[0].id as string;
 
-        const newColumn: unknown = {
+        const grid = {
             grid: {
                 parentGridItem: {
                     id: parentId
                 }
-            },
+            }
+        };
+
+        const newColumn: DotGridStackWidget = {
             x: 0,
             y: 0,
-            w: 4,
+            w: 3,
             id: uuid()
         };
 
-        service.addColumn(newColumn as DotGridStackNode);
-
-        expect.assertions(1);
+        service.addColumn({ ...newColumn, ...grid } as DotGridStackNode);
 
         items$.subscribe((items) => {
             const row = items.find((item) => item.id === parentId);
-            expect(row?.subGridOpts?.children).toContainEqual(newColumn);
+            expect(row?.subGridOpts?.children).toContainEqual({
+                x: newColumn.x,
+                y: newColumn.y,
+                w: newColumn.w,
+                id: newColumn.id,
+                parentId: parentId,
+                styleClass: undefined,
+                containers: [
+                    {
+                        identifier: 'SYSTEM_CONTAINER'
+                    }
+                ]
+            });
+            done();
         });
     });
 
