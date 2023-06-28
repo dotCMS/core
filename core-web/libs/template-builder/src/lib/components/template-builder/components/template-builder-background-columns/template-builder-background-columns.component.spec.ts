@@ -1,3 +1,4 @@
+import { expect } from '@jest/globals';
 import { createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
 
 import { NgFor, NgStyle } from '@angular/common';
@@ -5,7 +6,6 @@ import { By } from '@angular/platform-browser';
 
 import { TemplateBuilderBackgroundColumnsComponent } from './template-builder-background-columns.component';
 
-// todo check for assertions
 describe('TemplateBuilderBackgroundColumnsComponent', () => {
     let spectator: SpectatorHost<TemplateBuilderBackgroundColumnsComponent>;
 
@@ -21,6 +21,7 @@ describe('TemplateBuilderBackgroundColumnsComponent', () => {
     });
 
     it('should have 12 columns', () => {
+        expect.assertions(1);
         const columns = spectator.debugElement.queryAll(By.css('[data-testId="column"]'));
         expect(columns.length).toEqual(12);
     });

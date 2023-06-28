@@ -39,7 +39,6 @@ class TestHostComponent {
     }
 }
 
-// todo check for assertions
 describe('DotLayoutSidebarComponent', () => {
     let comp: DotLayoutSidebarComponent;
     let fixture: ComponentFixture<DotLayoutSidebarComponent>;
@@ -78,6 +77,7 @@ describe('DotLayoutSidebarComponent', () => {
     });
 
     it('should propagate switch after sidebar property item is clicked', () => {
+        expect.assertions(2);
         let res = false;
         const dotLayoutPropertiesItem = de.query(
             By.css('dot-layout-properties-item')
@@ -96,6 +96,7 @@ describe('DotLayoutSidebarComponent', () => {
     });
 
     it('should check left value and unchecked right value', () => {
+        expect.assertions(3);
         let res = false;
         const dotLayoutPropertiesItem = de.query(
             By.css('dot-layout-properties-item')
@@ -117,6 +118,7 @@ describe('DotLayoutSidebarComponent', () => {
     });
 
     it('should check right value and unchecked left value', () => {
+        expect.assertions(3);
         let res = false;
         const dotLayoutPropertiesItem = de.query(
             By.css('dot-layout-properties-item')
@@ -138,6 +140,7 @@ describe('DotLayoutSidebarComponent', () => {
     });
 
     it('should call writeValue to define the initial value of sidebar item', () => {
+        expect.assertions(2);
         hostComponentfixture = TestBed.createComponent(TestHostComponent);
         de = hostComponentfixture.debugElement.query(By.css('dot-layout-property-sidebar'));
         const component: DotLayoutSidebarComponent = de.componentInstance;

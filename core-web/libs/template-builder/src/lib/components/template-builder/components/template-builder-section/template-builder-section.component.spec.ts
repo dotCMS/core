@@ -1,10 +1,10 @@
+import { expect } from '@jest/globals';
 import { createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
 
 import { TemplateBuilderSectionComponent } from './template-builder-section.component';
 
 import { MOCK_TEXT } from '../../utils/mocks';
 
-// todo check for assertions
 describe('TemplateBuilderSectionComponent', () => {
     let spectator: SpectatorHost<TemplateBuilderSectionComponent>;
 
@@ -24,6 +24,7 @@ describe('TemplateBuilderSectionComponent', () => {
     });
 
     it('should use the given title', () => {
+        expect.assertions(1);
         expect(spectator.debugElement.nativeElement.textContent).toEqual(MOCK_TEXT);
     });
 });

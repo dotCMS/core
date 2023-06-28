@@ -1,3 +1,5 @@
+import { expect } from '@jest/globals';
+
 import { Component, DebugElement, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -15,7 +17,6 @@ class HostComponent {
     @Input() icon = rowIcon;
 }
 
-// todo check for assertions
 describe('AddWidgetComponent', () => {
     let fixture: ComponentFixture<HostComponent>;
     let de: DebugElement;
@@ -35,19 +36,23 @@ describe('AddWidgetComponent', () => {
     });
 
     it('should create', () => {
+        expect.assertions(1);
         expect(component).toBeTruthy();
     });
 
     describe('inputs', () => {
         it('should set label', () => {
+            expect.assertions(1);
             expect(component.label).toBe('Add Widget');
         });
 
         it('should have row icon', () => {
+            expect.assertions(1);
             expect(component.icon).toBe(rowIcon);
         });
 
         it('should have col icon', () => {
+            expect.assertions(1);
             component.icon = colIcon;
             fixture.detectChanges();
             expect(component.icon).toBe(colIcon);
@@ -56,12 +61,14 @@ describe('AddWidgetComponent', () => {
 
     describe('template', () => {
         it('should have label', () => {
+            expect.assertions(1);
             de.query(By.css('[data-testid="cancelBtn"]'));
             const label = de.query(By.css('[data-testid="addWidgetLabel"]'));
             expect(label.nativeElement.textContent).toBe('Add Widget');
         });
 
         it('should have a image element with the row icon', () => {
+            expect.assertions(1);
             component.icon = rowIcon;
             fixture.detectChanges();
             const img = de.query(By.css('img'));
@@ -69,6 +76,7 @@ describe('AddWidgetComponent', () => {
         });
 
         it('it should have material icon element when image load fails', () => {
+            expect.assertions(1);
             component.icon = 'add';
             fixture.detectChanges();
             const img = de.query(By.css('img'));

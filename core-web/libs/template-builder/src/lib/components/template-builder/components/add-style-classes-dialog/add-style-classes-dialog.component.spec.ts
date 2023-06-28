@@ -24,7 +24,6 @@ import {
     mockMatchMedia
 } from '../../utils/mocks';
 
-// todo check for assertions
 describe('AddStyleClassesDialogComponent', () => {
     let spectator: SpectatorHost<AddStyleClassesDialogComponent>;
     let input: HTMLInputElement;
@@ -83,10 +82,12 @@ describe('AddStyleClassesDialogComponent', () => {
     });
 
     it('should have an update button', () => {
+        expect.assertions(1);
         expect(spectator.query(byTestId('update-btn'))).toBeTruthy();
     });
 
     it('should trigger filterClasses when focusing on the input', () => {
+        expect.assertions(1);
         const filterMock = jest.spyOn(store, 'filterClasses');
         const query = 'custom-class';
 
@@ -100,6 +101,7 @@ describe('AddStyleClassesDialogComponent', () => {
     });
 
     it('should trigger addClass when autocomplete emits onSelect', () => {
+        expect.assertions(1);
         const autoComplete = spectator.query('p-autocomplete');
 
         const addClassMock = jest.spyOn(store, 'addClass');
@@ -112,6 +114,7 @@ describe('AddStyleClassesDialogComponent', () => {
     });
 
     it('should trigger removeLastClass when autocomplete emits onUnselect', () => {
+        expect.assertions(1);
         const autoComplete = spectator.query('p-autocomplete');
 
         const removeLastClassMock = jest.spyOn(store, 'removeLastClass');
@@ -124,6 +127,7 @@ describe('AddStyleClassesDialogComponent', () => {
     });
 
     it('should trigger saveClass when clicking on update-btn', () => {
+        expect.assertions(1);
         const closeMock = jest.spyOn(ref, 'close');
 
         const updateBtn = spectator.query(byTestId('update-btn'));
