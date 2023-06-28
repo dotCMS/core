@@ -6,18 +6,19 @@
         (goBack)="goToExperimentList(vm.experiment.pageId)"
     >
         <div class="flex flex-grow-0 align-items-center justify-content-between">
-            <p-button
+            <button
                 (click)="menu.toggle($event)"
-                icon="pi pi-ellipsis-v"
-                styleClass="p-button-rounded"
                 data-testId="experiment-button-menu"
-            ></p-button>
+                icon="pi pi-ellipsis-v"
+                pButton
+            ></button>
             <p-menu
                 #menu
                 [model]="vm.menuItems"
                 [popup]="true"
                 data-testId="experiment-menu"
             ></p-menu>
+            {{ vm.menuItems | json }}
         </div>
     </dot-experiments-header>
 
@@ -45,4 +46,5 @@
 <ng-template #loadingTpl>
     <dot-experiments-configuration-skeleton />
 </ng-template>
+
 <p-confirmDialog [key]="confirmDialogKey"></p-confirmDialog>
