@@ -29,15 +29,11 @@ public class Task230523CreateVariantFieldInContentlet implements StartupTask {
                 Logger.info(this, "Adding the 'variant_id' column to the 'contentlet' table");
                 dotConnect.executeStatement(createVariantId());
                 Logger.info(this, "Removing the 'variantId' property from the 'contentlet_as_json' value");
-                dotConnect.executeStatement(removeVariantFromJsonField());
+                dotConnect.executeStatement("UPDATE contentlet SET contentlet_as_json = contentlet_as_json - 'variantId' WHERE contentlet_as_json IS NOT NULL");
             } catch (SQLException e) {
-                throw new RuntimeException(e);
+                throw new DotRuntimeException(e);
             }
         }
-    }
-
-    private String removeVariantFromJsonField() {
-        return "UPDATE contentlet SET contentlet_as_json = contentlet_as_json - 'variantId' WHERE contentlet_as_json IS NOT NULL";
     }
 
     public String createVariantId() throws  DotRuntimeException {
