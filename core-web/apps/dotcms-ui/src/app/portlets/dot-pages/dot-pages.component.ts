@@ -1,4 +1,4 @@
-import { Subject } from 'rxjs';
+import { Subject, Subscription } from 'rxjs';
 
 import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import {
@@ -28,6 +28,7 @@ import {
     DotPageStore,
     FAVORITE_PAGE_LIMIT
 } from './dot-pages-store/dot-pages.store';
+import { DotCreateContentletComponent } from '@components/dot-contentlet-editor/components/dot-create-contentlet/dot-create-contentlet.component';
 
 export interface DotActionsMenuEventParams {
     event: MouseEvent;
@@ -47,6 +48,7 @@ export class DotPagesComponent implements AfterViewInit, OnDestroy {
 
     private domIdMenuAttached = '';
     private destroy$: Subject<boolean> = new Subject<boolean>();
+    private contentletDialogShutdown: Subscription;
 
     constructor(
         private store: DotPageStore,
@@ -195,5 +197,31 @@ export class DotPagesComponent implements AfterViewInit, OnDestroy {
         return (
             menuDOMID.includes('pageActionButton') || menuDOMID.includes('favoritePageActionButton')
         );
+    }
+
+    /**
+     * Subscribe to the shutdown event of the contentlet dialog
+     *
+     * @param {*} componentRef
+     * @return {*}
+     * @memberof DotPagesComponent
+     */
+    subscribeToShutdown(componentRef: Component): void {
+        if (!(componentRef instanceof DotCreateContentletComponent)) return;
+
+        this.contentletDialogShutdown = componentRef.shutdown.subscribe(() => {
+            this.store.getPages({
+                offset: 0
+            });
+        });
+    }
+
+    /**
+     * Unsubscribe to the shutdown event of the contentlet dialog
+     *
+     * @memberof DotPagesComponent
+     */
+    unsubscribeToShutdown() {
+        if (this.contentletDialogShutdown) this.contentletDialogShutdown.unsubscribe();
     }
 }
