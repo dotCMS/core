@@ -1,7 +1,7 @@
 <ng-container *ngIf="vm$ | async as vm">
     <p-card>
         <ng-template pTemplate="title">
-            <div class="flex justify-content-between">
+            <div class="variant--title__wrapper flex justify-content-between">
                 <h2 class="flex align-items-center gap-1 uppercase">
                     <dot-icon
                         [ngClass]="{ isDone: vm.trafficProportion.variants?.length > 1 }"
@@ -29,15 +29,17 @@
             "
         >
             <p-card [ngClass]="{ first: first, last: last }" data-testId="variant-row-card">
-                <div class="flex flex-row align-items-center align-content-between gap-2">
-                    <div class="title flex flex-grow-1 flex-row align-items-center gap-2">
+                <div
+                    class="variant--row__wrapper flex flex-row align-items-center align-content-between gap-2"
+                >
+                    <div class="flex flex-grow-1 flex-row align-items-center gap-2">
                         <ng-container
                             *ngIf="
                                 variant.name === defaultVariantName || !vm.isExperimentADraft;
                                 else editVariantNameTpl
                             "
                         >
-                            <span data-testId="variant-name"> {{ variant.name }} </span>
+                            <span data-testId="variant-name-original"> {{ variant.name }} </span>
                         </ng-container>
 
                         <dot-copy-button
@@ -47,7 +49,6 @@
                             [tooltipText]="'dot.common.message.pageurl.copy.clipboard' | dm"
                         ></dot-copy-button>
                     </div>
-
                     <span class="separator">|</span>
 
                     <div
@@ -117,45 +118,15 @@
                     type="button"
                 ></button>
             </ng-template>
+
             <ng-template #editVariantNameTpl>
-                <p-inplace #editName>
-                    <ng-template pTemplate="display">
-                        <span data-testId="variant-name">{{ variant.name }}</span>
-                        <i class="pi pi-pencil cursor-pointer"></i>
-                    </ng-template>
-                    <ng-template pTemplate="content">
-                        <span class="p-input-icon-right">
-                            <i
-                                class="pi pi-times cursor-pointer"
-                                (click)="editName.deactivate()"
-                                data-testId="variant-inplace-button"
-                            ></i>
-                            <input
-                                class="dot-container-properties__title-input w-20rem"
-                                #variantName
-                                [required]="true"
-                                [value]="variant.name"
-                                (keydown.enter)="
-                                    editVariantName(variantName.value, variant, vm.experimentId)
-                                "
-                                data-testId="inplace-input"
-                                dotAutofocus
-                                maxlength="maxNameLength"
-                                pInputText
-                                type="text"
-                            />
-                        </span>
-                        <button
-                            class="p-button-rounded p-button-text"
-                            [loading]="vm.status && vm.status.status === statusList.SAVING"
-                            (click)="editVariantName(variantName.value, variant, vm.experimentId)"
-                            data-testId="variant-save-name-btn"
-                            icon="pi pi-save"
-                            pButton
-                            type="button"
-                        ></button>
-                    </ng-template>
-                </p-inplace>
+                <dot-experiments-inplace-edit-text
+                    [isLoading]="vm.status && vm.status.status === statusList.SAVING"
+                    [maxCharacterLength]="maxInputTitleLength"
+                    [required]="true"
+                    [text]="variant.name"
+                    (textChanged)="editVariantName($event, variant, vm.experimentId)"
+                />
             </ng-template>
         </ng-container>
 

@@ -54,8 +54,10 @@ export class DotEditPageNavDirective implements OnDestroy {
 
     private addPortletClass(url: string) {
         const key = Object.keys(urlPortletRules).find((key) => url.includes(key));
-        this.removePortletsClasses();
-        this.renderer.addClass(this.hostElement.nativeElement, urlPortletRules[key].clazz);
+        if (key) {
+            this.removePortletsClasses();
+            this.renderer.addClass(this.hostElement.nativeElement, urlPortletRules[key].clazz);
+        }
     }
 
     private removePortletsClasses() {

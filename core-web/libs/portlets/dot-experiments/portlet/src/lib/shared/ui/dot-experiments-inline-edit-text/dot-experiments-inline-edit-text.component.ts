@@ -17,16 +17,24 @@ import {
     Validators
 } from '@angular/forms';
 
-import { ChipsModule } from 'primeng/chips';
+import { SharedModule } from 'primeng/api';
 import { Inplace, InplaceModule } from 'primeng/inplace';
+import { InputTextModule } from 'primeng/inputtext';
 
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { MAX_INPUT_DESCRIPTIVE_LENGTH } from '@dotcms/dotcms-models';
 import { DotMessagePipeModule } from '@dotcms/ui';
 
+type InplaceInputSize = 'small' | 'large';
+const InplaceInputSizeMapPrimeNg: Record<InplaceInputSize, { button: string; input: string }> = {
+    small: { input: 'p-inputtext-sm', button: 'p-button-sm' },
+    large: { input: 'p-inputtext-lg', button: 'p-button-lg' }
+};
+
 /**
- * Component to edit a text inplace and expose the changed value
+ * Component to edit a text inplace and if the text control is valid
+ * emit the value
  *
  * @export
  * @class DotExperimentsInlineEditTextComponent
@@ -35,51 +43,83 @@ import { DotMessagePipeModule } from '@dotcms/ui';
     selector: 'dot-experiments-inplace-edit-text',
     standalone: true,
     imports: [
+        NgIf,
         ReactiveFormsModule,
         DotMessagePipeModule,
         DotAutofocusModule,
         DotFieldValidationMessageModule,
-        ChipsModule,
         InplaceModule,
-        NgIf
+        InputTextModule,
+        SharedModule
     ],
     templateUrl: './dot-experiments-inline-edit-text.component.html',
     styleUrls: ['./dot-experiments-inline-edit-text.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsInlineEditTextComponent implements OnChanges {
+    /**
+     * Max length of the text override by the user
+     */
     @Input()
     maxCharacterLength = MAX_INPUT_DESCRIPTIVE_LENGTH;
 
+    /**
+     * Flag to show the loading spinner
+     */
     @Input()
     isLoading = false;
 
+    /**
+     * Text to be edited
+     */
     @Input()
     text: string;
+
+    /**
+     * Text to be shown when the text is empty
+     */
     @Input()
     emptyTextMessage = 'dot.common.inplace.empty.text';
-    @Output()
-    textChanged = new EventEmitter<string>();
-    @ViewChild(Inplace) inplace!: Inplace;
-    form: FormGroup;
+
+    /**
+     * Flag to disable the inplace
+     */
     @Input()
     disabled: boolean;
+
+    /**
+     * Size of the input and button
+     **/
+    @Input()
+    inputSize: InplaceInputSize = 'small';
+
+    /**
+     * Flag to make the text required
+     */
+    @Input()
+    required: boolean;
+
+    /**
+     * Emitted when the text is changed and valid
+     */
+    @Output()
+    textChanged = new EventEmitter<string>();
+
+    @ViewChild(Inplace) inplace!: Inplace;
+    form: FormGroup;
+
+    protected readonly inplaceSizes = InplaceInputSizeMapPrimeNg;
     private validatorsFn: ValidatorFn[] = [];
 
     constructor() {
         this.initForm();
     }
 
-    @Input()
-    set textRequired(value: boolean) {
-        if (value) this.validatorsFn.push(Validators.required);
-    }
-
     get textControl(): FormControl {
         return this.form.controls['text'] as FormControl;
     }
 
-    ngOnChanges({ text, isLoading, maxCharacterLength }: SimpleChanges): void {
+    ngOnChanges({ text, isLoading, maxCharacterLength, required }: SimpleChanges): void {
         if (text) {
             this.textControl.setValue(text.currentValue);
         }
@@ -94,17 +134,24 @@ export class DotExperimentsInlineEditTextComponent implements OnChanges {
             this.validatorsFn.push(Validators.maxLength(this.maxCharacterLength));
         }
 
+        if (required && required.currentValue) {
+            this.validatorsFn.push(Validators.required);
+        }
+
         this.updateValidators();
     }
 
     /**
      * Take te value of the input and emit the value
+     * if the textControls is valid
      *
      * @memberof DotExperimentsInlineEditTextComponent
      * @returns void
      */
     saveAction(): void {
-        this.textChanged.emit(this.textControl.value);
+        if (this.textControl.valid) {
+            this.textChanged.emit(this.textControl.value);
+        }
     }
 
     /**
@@ -128,6 +175,7 @@ export class DotExperimentsInlineEditTextComponent implements OnChanges {
 
     private resetForm() {
         this.textControl.setValue(this.text);
+        this.textControl.markAsPristine();
     }
 
     private updateValidators() {
