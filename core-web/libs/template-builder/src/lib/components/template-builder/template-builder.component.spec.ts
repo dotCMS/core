@@ -66,10 +66,10 @@ describe('TemplateBuilderComponent', () => {
     });
     beforeEach(() => {
         spectator = createHost(
-            `<dotcms-template-builder [containerMap]="containerMap" [templateLayout]="templateLayout"></dotcms-template-builder>`,
+            `<dotcms-template-builder [containerMap]="containerMap" [layout]="layout" [themeId]="themeId" ></dotcms-template-builder>`,
             {
                 hostProps: {
-                    templateLayout: {
+                    layout: {
                         body: FULL_DATA_MOCK,
                         header: true,
                         footer: true,
@@ -81,6 +81,7 @@ describe('TemplateBuilderComponent', () => {
                         width: 'Mobile',
                         title: 'Test Title'
                     },
+                    themeId: '123',
                     containerMap: CONTAINER_MAP_MOCK
                 }
             }
@@ -193,26 +194,41 @@ describe('TemplateBuilderComponent', () => {
 
     describe('layoutChange', () => {
         it('should emit layoutChange when the store changes', (done) => {
-            const layoutChangeMock = jest.spyOn(spectator.component.layoutChange, 'emit');
+            const layoutChangeMock = jest.spyOn(spectator.component.templateChange, 'emit');
+
+            spectator.detectChanges();
+
             store.init({
                 items: parseFromDotObjectToGridStack(FULL_DATA_MOCK),
                 layoutProperties: {
                     header: true,
                     footer: true,
-                    sidebar: {}
+                    sidebar: {
+                        containers: [],
+                        location: 'left',
+                        width: 'small'
+                    }
                 },
                 resizingRowID: '',
                 containerMap: {}
             });
+
             store.vm$.pipe(pluck('items'), take(1)).subscribe(() => {
-                // const body = parseFromGridStackToDotObject(items);
+                expect(true).toBeTruthy();
                 expect(layoutChangeMock).toHaveBeenCalledWith({
-                    body: FULL_DATA_MOCK,
-                    header: true,
-                    footer: true,
-                    sidebar: null,
-                    width: 'Mobile',
-                    title: 'Test Title'
+                    layout: {
+                        body: FULL_DATA_MOCK,
+                        header: true,
+                        footer: true,
+                        sidebar: {
+                            containers: [],
+                            location: 'left',
+                            width: 'small'
+                        },
+                        width: 'Mobile',
+                        title: 'Test Title'
+                    },
+                    themeId: '123'
                 });
                 done();
             });

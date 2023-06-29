@@ -5,7 +5,9 @@
     transition: background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s,
         background-size 0.2s cubic-bezier(0.64, 0.09, 0.08, 1);
     border-radius: $field-border-radius;
+    border: 1px solid $color-palette-gray-500;
     padding: $spacing-2;
+    margin-left: 0;
 }
 
 .p-dropdown.p-dropdown-open {
@@ -134,10 +136,6 @@ p-dropdown.ng-dirty.ng-invalid > .p-dropdown {
 .p-dropdown .p-inputtext,
 .p-dropdown .p-dropdown-trigger {
     background: initial;
-}
-
-.p-dropdown .p-inputtext {
-    border: 0 none;
 }
 
 .p-dropdown-item .p-ink {

@@ -25,7 +25,7 @@ import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-er
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
 import { DotEventsService, DotMessageService, DotThemesService } from '@dotcms/data-access';
-import { DotTheme } from '@dotcms/dotcms-models';
+import { DotTemplateDesigner, DotTheme } from '@dotcms/dotcms-models';
 import { DotMessagePipe, UiDotIconButtonModule } from '@dotcms/ui';
 import {
     cleanUpDialog,
@@ -217,7 +217,9 @@ describe('DotEditLayoutDesignerComponent', () => {
             const publishButton = fixture.debugElement.query(By.css('[data-testId="publishBtn"]'));
             publishButton.triggerEventHandler('click', null);
             fixture.detectChanges();
-            expect(component.saveAndPublish.emit).toHaveBeenCalledWith(component.form.value);
+            expect(component.saveAndPublish.emit).toHaveBeenCalledWith(
+                component.form.value as DotTemplateDesigner
+            );
         });
 
         it('should save changes when closeEditLayout is true', () => {
