@@ -196,7 +196,7 @@ describe('DotExperimentsConfigurationStore', () => {
         spectator.service.loadExperiment(EXPERIMENT_MOCK_2.id);
 
         store.vm$.subscribe(({ menuItems }) => {
-            expect(menuItems[0].visible).toEqual(true);
+            expect(menuItems[0].visible).toEqual(false);
             expect(menuItems[1].visible).toEqual(true);
             expect(menuItems[2].visible).toEqual(false);
             done();
