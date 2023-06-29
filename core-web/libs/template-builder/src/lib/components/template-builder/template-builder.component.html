@@ -22,6 +22,7 @@
         <p-divider layout="vertical"></p-divider>
         <dotcms-template-builder-actions
             [layoutProperties]="layoutProperties"
+            (selectTheme)="openThemeSelectorDynamicDialog()"
         ></dotcms-template-builder-actions>
         <ng-content select="[toolbar-actions-right]"></ng-content>
     </div>
