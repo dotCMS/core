@@ -9,29 +9,32 @@ import { TemplateBuilderBoxComponent } from './template-builder-box/template-bui
 import { TemplateBuilderRowComponent } from './template-builder-row/template-builder-row.component';
 import { TemplateBuilderSectionComponent } from './template-builder-section/template-builder-section.component';
 import { TemplateBuilderSidebarComponent } from './template-builder-sidebar/template-builder-sidebar.component';
+import { TemplateBuilderThemeSelectorComponent } from './template-builder-theme-selector/template-builder-theme-selector.component';
 
 @NgModule({
     imports: [
         AddWidgetComponent,
+        DotLayoutPropertiesModule,
         RemoveConfirmDialogComponent,
         TemplateBuilderActionsComponent,
         TemplateBuilderBackgroundColumnsComponent,
         TemplateBuilderBoxComponent,
         TemplateBuilderRowComponent,
         TemplateBuilderSectionComponent,
-        DotLayoutPropertiesModule,
-        TemplateBuilderSidebarComponent
+        TemplateBuilderSidebarComponent,
+        TemplateBuilderThemeSelectorComponent
     ],
     exports: [
         AddWidgetComponent,
+        DotLayoutPropertiesModule,
         RemoveConfirmDialogComponent,
         TemplateBuilderActionsComponent,
         TemplateBuilderBackgroundColumnsComponent,
         TemplateBuilderBoxComponent,
         TemplateBuilderRowComponent,
         TemplateBuilderSectionComponent,
-        DotLayoutPropertiesModule,
-        TemplateBuilderSidebarComponent
+        TemplateBuilderSidebarComponent,
+        TemplateBuilderThemeSelectorComponent
     ]
 })
 export class TemplateBuilderComponentsModule {}
