@@ -24,7 +24,7 @@ import {
 
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { filter, startWith, take, tap, map } from 'rxjs/operators';
+import { filter, startWith, take, tap, map, skip } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
@@ -119,6 +119,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
 
         combineLatest([this.items$, this.store.layoutProperties$.pipe(startWith())])
             .pipe(
+                skip(3), // One for every observable startWith and one for the store init
                 tap(([items, layoutProperties]) => {
                     this.dotLayout = {
                         ...this.layout,
