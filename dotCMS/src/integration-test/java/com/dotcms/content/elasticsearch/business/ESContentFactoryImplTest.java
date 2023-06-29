@@ -1426,4 +1426,75 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
 
     }
 
+    /**
+     * Testing the method {@link ESContentFactoryImpl#findAllVersions(Identifier, boolean)}
+     * This version of the method takes a collection of identifiers and returns all the versions of the contentlets
+     * Given scenario: The contentlet had several versions in different {@link Language} `
+     * Expected result: The method should return all the versions of the contentlets
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void TestFindAllVersions() throws DotDataException, DotSecurityException {
+
+        final Language language_1 = new com.dotcms.datagen.LanguageDataGen().nextPersisted();
+        final Language language_2 = new com.dotcms.datagen.LanguageDataGen().nextPersisted();
+        final Language language_3 = new com.dotcms.datagen.LanguageDataGen().nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentletLanguage1Live = new ContentletDataGen(contentType)
+                .languageId(language_1.getId())
+                .host(host)
+                .nextPersistedAndPublish();
+
+        Contentlet contentlet1Checkout = ContentletDataGen.checkout(contentletLanguage1Live);
+        final Contentlet contentletLanguage1Working = ContentletDataGen.checkin(contentlet1Checkout);
+
+        final Contentlet contentletLanguage2Live = createNewLangVersionAndPublish(language_2, contentletLanguage1Live);
+
+        final Contentlet contentlet2Checkout = ContentletDataGen.checkout(contentletLanguage2Live);
+        final Contentlet contentletLanguage2Working = ContentletDataGen.checkin(contentlet2Checkout);
+
+        final Contentlet contentletLanguage3Live = createNewLangVersionAndPublish(language_3, contentletLanguage1Live);
+        final Contentlet contentlet3Checkout = ContentletDataGen.checkout(contentletLanguage3Live);
+        final Contentlet contentletLanguage3Working = ContentletDataGen.checkin(contentlet3Checkout);
+
+        final Contentlet contentletLanguage1Live2 = new ContentletDataGen(contentType)
+                .languageId(language_1.getId())
+                .host(host)
+                .nextPersistedAndPublish();
+
+        final Contentlet contentletLanguage1Live3 = new ContentletDataGen(contentType)
+                .languageId(language_1.getId())
+                .host(host)
+                .nextPersistedAndPublish();
+
+        final Contentlet contentletLanguage1Live4 = new ContentletDataGen(contentType)
+                .languageId(language_1.getId())
+                .host(host)
+                .nextPersistedAndPublish();
+
+        final List<Contentlet> contentlets = List.of(contentletLanguage1Live,
+                contentletLanguage1Working, contentletLanguage2Live, contentletLanguage2Working,
+                contentletLanguage3Live, contentletLanguage3Working, contentletLanguage1Live2,
+                contentletLanguage1Live3,
+                contentletLanguage1Live4);
+
+        final Set<String> identifiers = contentlets.stream().map(Contentlet::getIdentifier)
+                .collect(Collectors.toSet());
+
+        ESContentFactoryImpl impl = (ESContentFactoryImpl) FactoryLocator.getContentletFactory();
+        final List<Contentlet> allVersions = impl.findAllVersions(identifiers);
+
+        Assert.assertEquals(9, allVersions.size());
+
+        for (Contentlet c:contentlets) {
+            Assert.assertTrue(allVersions.stream().anyMatch(contentlet -> contentlet.getIdentifier().equals(c.getIdentifier())));
+            Assert.assertTrue(allVersions.stream().anyMatch(contentlet -> contentlet.getInode().equals(c.getInode())));
+        }
+
+    }
+
 }

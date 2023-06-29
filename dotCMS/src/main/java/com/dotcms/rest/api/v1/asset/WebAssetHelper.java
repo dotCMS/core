@@ -35,16 +35,17 @@ import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.BooleanUtils;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * In typical dotCMS resource fashion this class is responsible for undertaking the heavy lifting
@@ -125,7 +126,7 @@ public class WebAssetHelper {
         final Folder folder = assetAndPath.resolvedFolder();
         final String assetName = assetAndPath.asset();
 
-        final Set<Treeable> assets;
+        final List<Treeable> assets;
 
         final Builder builder = BrowserQuery.builder();
         builder.showDotAssets(false)
@@ -153,8 +154,11 @@ public class WebAssetHelper {
             Logger.debug(this, String.format("Asset name: [%s]" , assetName));
             //We're requesting an asset specifically therefore we need to find it and  build the response
             builder.withFileName(assetName);
-            final Set<Treeable> folderContent = collectAllVersions(builder);
-            assets = folderContent.stream().filter(Contentlet.class::isInstance).collect(Collectors.toSet());
+
+            final List<Treeable> folderContent = excludeNonLiveOrWorkingThenSortByIdentifier(
+                    collectAllVersions(builder)
+            );
+            assets = folderContent.stream().filter(Contentlet.class::isInstance).collect(Collectors.toList());
             if (assets.isEmpty()) {
                 throw new NotFoundInDbException(String.format(" Asset [%s] not found", assetName));
             }
@@ -168,13 +172,13 @@ public class WebAssetHelper {
             final List<Folder> subFolders = folderContent.stream().filter(Folder.class::isInstance)
                     .map(f -> (Folder) f).collect(Collectors.toList());
             //Once we get the folder contents we need to include all other versions per identifier
-            assets = folderContent.stream().filter(Contentlet.class::isInstance)
-                    .map(f -> (Contentlet) f).flatMap(contentlet -> Try.of(
-                                    () -> contentletAPI.findAllVersions(
-                                            new Identifier(contentlet.getIdentifier()), user, false))
-                            .getOrElse(List.of()).stream())
+            final Set<String> identifiers = folderContent.stream().filter(Contentlet.class::isInstance)
+                    .map(f -> (Contentlet) f).map(Contentlet::getIdentifier)
                     .collect(Collectors.toSet());
-
+           // Once we have all the identifiers corresponding to the assets under the folder we need to fetch all of their versions
+           assets = excludeNonLiveOrWorkingThenSortByIdentifier(
+                   contentletAPI.findAllVersions(identifiers, user, false)
+           );
 
             return FolderView.builder()
                     .sortOrder(folder.getSortOrder())
@@ -195,6 +199,29 @@ public class WebAssetHelper {
     }
 
     /**
+     * Exclude contentlets that are not live or working and sort them by identifier
+     * This to improve presentation of the assets in our API
+     * @param contentlets
+     * @return
+     */
+    List<Treeable> excludeNonLiveOrWorkingThenSortByIdentifier(Collection<Contentlet> contentlets) {
+        return contentlets.stream().filter(isLiveOrWorking())
+                .sorted(Comparator.comparing(Contentlet::getIdentifier))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Predicate to determine if a contentlet is live or working
+     */
+    @NotNull
+    private static Predicate<Contentlet> isLiveOrWorking() {
+        return contentlet -> (boolean) Try.of(
+                () -> contentlet.isLive() || contentlet.isWorking()
+        ).getOrElse(false);
+    }
+
+
+    /**
      * We need to combine the live and working contents of a folder in one single list
      * That since the BrowserAPI is designed to return one or the other at a time
      * This needs to be wrapped in a set cuz when there's only one version of the asset, both live and working point to the same inode
@@ -204,19 +231,18 @@ public class WebAssetHelper {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    final Set<Treeable> collectAllVersions(final Builder builder)
+    final List<Contentlet> collectAllVersions(final Builder builder)
             throws DotDataException, DotSecurityException {
         final Optional<Treeable> first = browserAPI.getFolderContentList(
                 builder.showWorking(true).build()).stream().findFirst();
 
         if(first.isPresent()){
            final String identifier = first.get().getIdentifier();
-          return new HashSet<>(
+          return
                   contentletAPI.findAllVersions(new Identifier(identifier), APILocator.systemUser(),
-                          false));
-
+                          false);
         }
-        return Set.of();
+        return List.of();
     }
 
     /**
@@ -420,7 +446,7 @@ public class WebAssetHelper {
                     .withUser(user)
                     .showFiles(true)
                     .showFolders(true)
-                    .showArchived(true)
+                    .showArchived(true) // yes we need to take into account archived assets here
                     .showWorking(!live)
                     .showLinks(false)
                     .showDotAssets(false)
@@ -598,7 +624,7 @@ public class WebAssetHelper {
             if(!fileAsset.isArchived()){
                 contentletAPI.archive(fileAsset, user, false);
             }
-            contentletAPI.delete(fileAsset, user, false);
+            contentletAPI.destroy(fileAsset, user, false);
         } else {
             throw new IllegalArgumentException(String.format("The path [%s] can not be resolved as an asset", assetPath));
         }

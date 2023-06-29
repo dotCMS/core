@@ -859,7 +859,7 @@
 						}
 					]
 				},
-				"method": "DELETE",
+				"method": "POST",
 				"header": [],
 				"body": {
 					"mode": "raw",
@@ -871,14 +871,15 @@
 					}
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v1/assets",
+					"raw": "{{serverURL}}/api/v1/assets/_delete",
 					"host": [
 						"{{serverURL}}"
 					],
 					"path": [
 						"api",
 						"v1",
-						"assets"
+						"assets",
+						"_delete"
 					]
 				},
 				"description": "Simple delete file test"
@@ -916,7 +917,7 @@
 						}
 					]
 				},
-				"method": "DELETE",
+				"method": "POST",
 				"header": [],
 				"body": {
 					"mode": "raw",
@@ -928,7 +929,7 @@
 					}
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v1/assets/folder",
+					"raw": "{{serverURL}}/api/v1/assets/folders/_delete",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -936,7 +937,8 @@
 						"api",
 						"v1",
 						"assets",
-						"folder"
+						"folders",
+						"_delete"
 					]
 				},
 				"description": "Delete folder"
@@ -974,7 +976,7 @@
 						}
 					]
 				},
-				"method": "DELETE",
+				"method": "POST",
 				"header": [],
 				"body": {
 					"mode": "raw",

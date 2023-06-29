@@ -1,5 +1,8 @@
 package com.dotcms.rest.api.v1.asset;
 
+import static com.dotcms.util.CollectionsUtils.map;
+
+import com.amazonaws.services.rekognition.model.Asset;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
@@ -18,6 +21,7 @@ import com.dotcms.rest.api.v1.asset.view.WebAssetView;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -31,12 +35,15 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
+import io.vavr.control.Try;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.glassfish.jersey.internal.util.Base64;
@@ -436,7 +443,6 @@ public class WebAssetHelperIntegrationTest {
      * @throws DotSecurityException
      * @throws IOException
      */
-
     @Test
     public void Test_Retrieve_All_Versions()
             throws DotDataException, DotSecurityException, IOException {

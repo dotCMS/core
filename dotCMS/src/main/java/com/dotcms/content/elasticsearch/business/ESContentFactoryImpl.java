@@ -128,7 +128,6 @@ import java.util.stream.Collectors;
 import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.MAX_LIMIT;
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
-import static com.dotmarketing.db.DbConnectionFactory.isPostgres;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.AUTO_ASSIGN_WORKFLOW;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITLE_IMAGE_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_ACTION_KEY;
@@ -1058,6 +1057,33 @@ public class ESContentFactoryImpl extends ContentletFactory {
             inodes.add(r.get("inode").toString());
         return findContentlets(inodes);
 	}
+
+
+    /**
+     * Find all versions for  the given set of identifiers
+     * @param identifiers
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Override
+    public List<Contentlet> findAllVersions(final Set<String> identifiers)
+            throws DotDataException, DotSecurityException {
+        final DotConnect dc = new DotConnect();
+        final String query =  "SELECT inode FROM contentlet c INNER JOIN contentlet_version_info cvi \n"
+                + "ON (c.inode = cvi.working_inode OR c.inode = cvi.live_inode) \n"
+                + "WHERE c.identifier IN (?) order by c.mod_date desc";
+        final String parameterPlaceholders = DotConnect.createParametersPlaceholder(identifiers.size());
+        dc.setSQL(query.replace("?", parameterPlaceholders));
+        for (  final String identifier : identifiers) {
+            dc.addParam(identifier);
+        }
+        @SuppressWarnings("unchecked")
+        final List<Map<String,Object>> list = dc.loadResults();
+        final List<String> inodes = list.stream().map(map -> map.get("inode").toString())
+                .collect(Collectors.toList());
+        return findContentlets(inodes);
+    }
 
     @Override
     protected List<Contentlet> findByStructure(String structureInode, int limit, int offset)

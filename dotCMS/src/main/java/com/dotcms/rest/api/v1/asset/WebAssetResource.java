@@ -17,7 +17,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -152,8 +151,8 @@ public class WebAssetResource {
      * @throws DotDataException
      * @throws IOException
      */
-    @Path("/")
-    @DELETE
+    @Path("/_delete")
+    @POST
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
@@ -188,7 +187,7 @@ public class WebAssetResource {
      * @throws IOException
      */
     @Path("/_archive")
-    @DELETE
+    @POST
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
@@ -222,8 +221,8 @@ public class WebAssetResource {
      * @throws DotDataException
      * @throws IOException
      */
-    @Path("/folder")
-    @DELETE
+    @Path("/folders/_delete")
+    @POST
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
