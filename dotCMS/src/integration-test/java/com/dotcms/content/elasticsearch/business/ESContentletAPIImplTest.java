@@ -2225,7 +2225,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     }
 
     /**
-     * Testing the method {@link ContentletAPI#findAllVersions(Set, User, boolean)} 
+     * Testing the method {@link ContentletAPI#findLiveOrWorkingVersions(Set, User, boolean)}
      * This version of the method takes a collection of identifiers and returns all the versions of the contentlets
      * Given scenario: The contentlet had several versions in different {@link Language} `
      * Expected result: The method should return all the versions of the contentlets
@@ -2233,7 +2233,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
      * @throws DotSecurityException
      */
     @Test
-    public void TestFindAllVersions() throws DotDataException, DotSecurityException {
+    public void TestFindLiveOrWorkingVersions() throws DotDataException, DotSecurityException {
 
         final Language language_1 = new com.dotcms.datagen.LanguageDataGen().nextPersisted();
         final Language language_2 = new com.dotcms.datagen.LanguageDataGen().nextPersisted();
@@ -2284,17 +2284,18 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
                 .collect(Collectors.toSet());
 
         final ContentletAPI contentletAPI1 = APILocator.getContentletAPI();
-        final List<Contentlet> allVersions = contentletAPI1.findAllVersions(identifiers, APILocator.systemUser(), false);
+        final List<Contentlet> allVersions = contentletAPI1.findLiveOrWorkingVersions(identifiers, APILocator.systemUser(), false);
 
         Assert.assertEquals(9, allVersions.size());
 
         for (Contentlet c:contentlets) {
+            Assert.assertTrue(c.isLive() || c.isWorking() );
             Assert.assertTrue(allVersions.stream().anyMatch(contentlet -> contentlet.getIdentifier().equals(c.getIdentifier())));
             Assert.assertTrue(allVersions.stream().anyMatch(contentlet -> contentlet.getInode().equals(c.getInode())));
         }
         //Random dude with no permissions
         final User randomUser = new UserDataGen().nextPersisted();
-        Assert.assertTrue(contentletAPI1.findAllVersions(identifiers, randomUser, false).isEmpty());
+        Assert.assertTrue(contentletAPI1.findLiveOrWorkingVersions(identifiers, randomUser, false).isEmpty());
     }
 
 

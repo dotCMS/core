@@ -784,18 +784,18 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	}
 
 	@Override
-	public List<Contentlet> findAllVersions(Set<String> identifiers, User user,
+	public List<Contentlet> findLiveOrWorkingVersions(Set<String> identifiers, User user,
 			boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
-			boolean preResult = pre.findAllVersions(identifiers, user, respectFrontendRoles);
+			boolean preResult = pre.findLiveOrWorkingVersions(identifiers, user, respectFrontendRoles);
 			if(!preResult){
 				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
 				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
 			}
 		}
-		List<Contentlet> c = conAPI.findAllVersions(identifiers, user, respectFrontendRoles);
+		List<Contentlet> c = conAPI.findLiveOrWorkingVersions(identifiers, user, respectFrontendRoles);
 		for(ContentletAPIPostHook post : postHooks){
-			post.findAllVersions(identifiers, user, respectFrontendRoles);
+			post.findLiveOrWorkingVersions(identifiers, user, respectFrontendRoles);
 		}
 		return c;
 	}

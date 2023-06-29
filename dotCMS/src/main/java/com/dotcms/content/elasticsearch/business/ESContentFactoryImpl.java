@@ -1067,8 +1067,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
      * @throws DotSecurityException
      */
     @Override
-    public List<Contentlet> findAllVersions(final Set<String> identifiers)
+    public List<Contentlet> findLiveOrWorkingVersions(final Set<String> identifiers)
             throws DotDataException, DotSecurityException {
+        if(identifiers == null || identifiers.isEmpty()) {
+            return List.of();
+        }
         final DotConnect dc = new DotConnect();
         final String query =  "SELECT inode FROM contentlet c INNER JOIN contentlet_version_info cvi \n"
                 + "ON (c.inode = cvi.working_inode OR c.inode = cvi.live_inode) \n"

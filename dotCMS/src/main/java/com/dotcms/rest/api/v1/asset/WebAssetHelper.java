@@ -12,7 +12,6 @@ import com.dotcms.rest.api.v1.asset.view.WebAssetView;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.exception.DotDataException;
@@ -155,7 +154,7 @@ public class WebAssetHelper {
             //We're requesting an asset specifically therefore we need to find it and  build the response
             builder.withFileName(assetName);
 
-            final List<Treeable> folderContent = excludeNonLiveOrWorkingThenSortByIdentifier(
+            final List<Treeable> folderContent = sortByIdentifier(
                     collectAllVersions(builder)
             );
             assets = folderContent.stream().filter(Contentlet.class::isInstance).collect(Collectors.toList());
@@ -176,8 +175,8 @@ public class WebAssetHelper {
                     .map(f -> (Contentlet) f).map(Contentlet::getIdentifier)
                     .collect(Collectors.toSet());
            // Once we have all the identifiers corresponding to the assets under the folder we need to fetch all of their versions
-           assets = excludeNonLiveOrWorkingThenSortByIdentifier(
-                   contentletAPI.findAllVersions(identifiers, user, false)
+           assets = sortByIdentifier(
+                   contentletAPI.findLiveOrWorkingVersions(identifiers, user, false)
            );
 
             return FolderView.builder()
@@ -204,22 +203,11 @@ public class WebAssetHelper {
      * @param contentlets
      * @return
      */
-    List<Treeable> excludeNonLiveOrWorkingThenSortByIdentifier(Collection<Contentlet> contentlets) {
-        return contentlets.stream().filter(isLiveOrWorking())
+    List<Treeable> sortByIdentifier(Collection<Contentlet> contentlets) {
+        return contentlets.stream()
                 .sorted(Comparator.comparing(Contentlet::getIdentifier))
                 .collect(Collectors.toList());
     }
-
-    /**
-     * Predicate to determine if a contentlet is live or working
-     */
-    @NotNull
-    private static Predicate<Contentlet> isLiveOrWorking() {
-        return contentlet -> (boolean) Try.of(
-                () -> contentlet.isLive() || contentlet.isWorking()
-        ).getOrElse(false);
-    }
-
 
     /**
      * We need to combine the live and working contents of a folder in one single list
@@ -239,7 +227,7 @@ public class WebAssetHelper {
         if(first.isPresent()){
            final String identifier = first.get().getIdentifier();
           return
-                  contentletAPI.findAllVersions(new Identifier(identifier), APILocator.systemUser(),
+                  contentletAPI.findLiveOrWorkingVersions(Set.of(identifier), APILocator.systemUser(),
                           false);
         }
         return List.of();

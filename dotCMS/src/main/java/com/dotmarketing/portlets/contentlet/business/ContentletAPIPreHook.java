@@ -1059,7 +1059,7 @@ public interface ContentletAPIPreHook {
 	 * @param respectFrontendRoles
 	 * @return
 	 */
-	public default boolean findAllVersions(Set<String> identifiers, User user, boolean respectFrontendRoles){
+	public default boolean findLiveOrWorkingVersions(Set<String> identifiers, User user, boolean respectFrontendRoles){
 		return true;
 	}
 

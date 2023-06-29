@@ -398,7 +398,7 @@ public abstract class ContentletFactory {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	public abstract List<Contentlet> findAllVersions(final Set<String> identifiers)
+	public abstract List<Contentlet> findLiveOrWorkingVersions(final Set<String> identifiers)
 			throws DotDataException, DotSecurityException;
 
 	/**

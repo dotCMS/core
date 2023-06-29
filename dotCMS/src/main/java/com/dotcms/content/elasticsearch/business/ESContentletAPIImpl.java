@@ -6954,10 +6954,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotSecurityException
      */
     @Override
-    public List<Contentlet> findAllVersions(Set<String> identifiers, User user,
+    public List<Contentlet> findLiveOrWorkingVersions(Set<String> identifiers, User user,
             boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
-        final List<Contentlet> allVersions = contentFactory.findAllVersions(identifiers);
+        final List<Contentlet> allVersions = contentFactory.findLiveOrWorkingVersions(identifiers);
         if (allVersions.isEmpty()) {
             return List.of();
         }

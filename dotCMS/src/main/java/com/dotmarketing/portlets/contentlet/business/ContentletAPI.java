@@ -1668,7 +1668,7 @@ public interface ContentletAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	public List<Contentlet> findAllVersions(final Set<String> identifiers, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	public List<Contentlet> findLiveOrWorkingVersions(final Set<String> identifiers, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Retrieves all versions even the old ones for a {@link Contentlet} identifier and {@link Variant

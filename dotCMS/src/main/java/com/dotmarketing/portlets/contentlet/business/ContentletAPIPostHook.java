@@ -929,7 +929,7 @@ public interface ContentletAPIPostHook {
 	 * @param user
 	 * @param respectFrontendRoles
 	 */
-	public default void findAllVersions(Set<String> identifiers, User user, boolean respectFrontendRoles){
+	public default void findLiveOrWorkingVersions(Set<String> identifiers, User user, boolean respectFrontendRoles){
 
 	}
 

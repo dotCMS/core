@@ -61,7 +61,6 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -70,7 +69,6 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import org.apache.commons.lang3.BooleanUtils;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
@@ -1486,7 +1484,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
                 .collect(Collectors.toSet());
 
         ESContentFactoryImpl impl = (ESContentFactoryImpl) FactoryLocator.getContentletFactory();
-        final List<Contentlet> allVersions = impl.findAllVersions(identifiers);
+        final List<Contentlet> allVersions = impl.findLiveOrWorkingVersions(identifiers);
 
         Assert.assertEquals(9, allVersions.size());
 
