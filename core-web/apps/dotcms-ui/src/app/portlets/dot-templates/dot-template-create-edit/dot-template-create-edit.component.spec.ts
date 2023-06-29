@@ -253,7 +253,8 @@ describe('DotTemplateCreateEditComponent', () => {
             goToEditTemplate: jasmine.createSpy(),
             goToTemplateList: jasmine.createSpy(),
             saveTemplate: jasmine.createSpy(),
-            saveWorkingTemplate: jasmine.createSpy()
+            saveWorkingTemplate: jasmine.createSpy(),
+            updateTemplate: jasmine.createSpy()
         };
     });
 
@@ -493,43 +494,7 @@ describe('DotTemplateCreateEditComponent', () => {
             });
 
             describe('edit layout', () => {
-                it('should save', () => {
-                    const builder = de.query(By.css('dot-template-builder'));
-                    builder.triggerEventHandler('save', {
-                        layout: {
-                            title: '',
-                            width: '',
-                            footer: true,
-                            header: false,
-                            sidebar: {},
-                            body: {
-                                rows: []
-                            }
-                        },
-                        themeId: '123'
-                    });
-
-                    expect(store.saveTemplate).toHaveBeenCalledWith({
-                        type: 'design',
-                        title: 'Some template',
-                        layout: {
-                            title: '',
-                            width: '',
-                            footer: true,
-                            header: false,
-                            sidebar: {},
-                            body: {
-                                rows: []
-                            }
-                        },
-                        identifier: '123',
-                        friendlyName: '',
-                        theme: '123',
-                        image: ''
-                    });
-                });
-
-                it('should call saveWorkingTemplate when updateTemplate', () => {
+                it('should call updateTemplate from store when updateTemplate', () => {
                     const builder = de.query(By.css('dot-template-builder'));
                     builder.triggerEventHandler('updateTemplate', {
                         layout: {
@@ -564,7 +529,7 @@ describe('DotTemplateCreateEditComponent', () => {
                         image: ''
                     };
 
-                    expect(store.saveWorkingTemplate).toHaveBeenCalledWith(template);
+                    expect(store.updateTemplate).toHaveBeenCalledWith(template);
                 });
 
                 it('should saveAndPublishTemplate', () => {
