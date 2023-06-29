@@ -24,6 +24,7 @@ import com.dotmarketing.common.db.Params;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
@@ -35,6 +36,7 @@ import com.dotmarketing.util.PushPublishLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -44,6 +46,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.apache.commons.lang.StringUtils;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
@@ -224,6 +227,13 @@ public class PublisherAPIImpl extends PublisherAPI{
                                       }
                                   }
                                   Folder folder;
+								  Lazy<Optional<Experiment>> lazyExperiment = Lazy.of(()-> {
+									  try {
+										  return APILocator.getExperimentsAPI().find(identifier, user);
+									  } catch (DotDataException | DotSecurityException e) {
+										  throw new RuntimeException(e);
+									  }
+								  });
 
                                   // check if it is a category
                                   if ( !UtilMethods.isSet(type) && CATEGORY.equals( identifier ) ) {
@@ -245,8 +255,8 @@ public class PublisherAPIImpl extends PublisherAPI{
                                       }
                                       type = PusheableAsset.FOLDER.getType();
                                   }  // check if it is an Experiment
-								  else if ( !UtilMethods.isSet(type) && APILocator.getExperimentsAPI().find(identifier, user).isPresent() ) {
-									  final Experiment experiment = APILocator.getExperimentsAPI().find(identifier, user).get();
+								  else if ( !UtilMethods.isSet(type) && lazyExperiment.get().isPresent()) {
+									  final Experiment experiment = lazyExperiment.get().get();
 									  Logger.info(this, "Experiment found: " + experiment.pageId());
 									  Logger.info(this, "Content: " + APILocator.getContentletAPI()
 											  .findContentletByIdentifierAnyLanguage(experiment.pageId()));
