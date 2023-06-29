@@ -6,6 +6,7 @@
         0 24px 38px 3px $color-palette-black-op-10, 0 9px 46px 8px $color-palette-black-op-10;
     border: 0 none;
     overflow: auto;
+    border-radius: $border-radius-md;
 }
 
 .p-dialog .p-dialog-header {
