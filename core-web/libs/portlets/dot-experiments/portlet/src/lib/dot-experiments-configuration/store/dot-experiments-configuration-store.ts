@@ -57,7 +57,6 @@ export interface ConfigurationViewModel {
     stepStatusSidebar: StepStatus;
     isLoading: boolean;
     isExperimentADraft: boolean;
-    runExperimentBtnLabel: string;
     disabledStartExperiment: boolean;
     showExperimentSummary: boolean;
     experimentStatus: DotExperimentStatusList;
@@ -80,21 +79,13 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     readonly isExperimentADraft$: Observable<boolean> = this.select(
         ({ experiment }) => experiment?.status === DotExperimentStatusList.DRAFT
     );
-    readonly disabledStartExperiment$: Observable<boolean> = this.select(
-        ({ experiment }) => experiment?.trafficProportion.variants.length < 2 || !experiment?.goals
+    readonly disabledStartExperiment$: Observable<boolean> = this.select(({ experiment }) =>
+        this.disableStartExperiment(experiment)
     );
 
     readonly getExperimentStatus$: Observable<DotExperimentStatusList> = this.select(
         ({ experiment }) => experiment?.status
     );
-
-    readonly getRunExperimentBtnLabel$: Observable<string> = this.select(({ experiment }) => {
-        const { scheduling } = experiment ? experiment : { scheduling: null };
-
-        return scheduling === null || Object.values(experiment.scheduling).includes(null)
-            ? this.dotMessageService.get('experiments.action.start-experiment')
-            : this.dotMessageService.get('experiments.action.schedule-experiment');
-    });
 
     readonly showExperimentSummary$: Observable<boolean> = this.select(({ experiment }) =>
         Object.values([
@@ -724,7 +715,6 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     readonly vm$: Observable<ConfigurationViewModel> = this.select(
         this.state$,
         this.isExperimentADraft$,
-        this.getRunExperimentBtnLabel$,
         this.isLoading$,
         this.disabledStartExperiment$,
         this.showExperimentSummary$,
@@ -735,7 +725,6 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         (
             { experiment, stepStatusSidebar },
             isExperimentADraft,
-            runExperimentBtnLabel,
             isLoading,
             disabledStartExperiment,
             showExperimentSummary,
@@ -747,7 +736,6 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
             experiment,
             stepStatusSidebar,
             isExperimentADraft,
-            runExperimentBtnLabel,
             isLoading,
             disabledStartExperiment,
             showExperimentSummary,
@@ -890,26 +878,22 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         };
     }
 
+    private disableStartExperiment(experiment: DotExperiment): boolean {
+        return experiment?.trafficProportion.variants.length < 2 || !experiment?.goals;
+    }
+
     private setMenuItems(experiment: DotExperiment): MenuItem[] {
-        const { scheduling } = experiment ? experiment : { scheduling: null };
-        const schedulingLabel =
-            scheduling === null || Object.values(experiment.scheduling).includes(null)
-                ? this.dotMessageService.get('experiments.action.start-experiment')
-                : this.dotMessageService.get('experiments.action.schedule-experiment');
-
-        const isDraft: boolean = experiment?.status === DotExperimentStatusList.DRAFT;
-
-        const menuItems: MenuItem[] = [
+        return [
             {
-                label: schedulingLabel,
-                visible: isDraft,
-                disabled: experiment?.trafficProportion.variants.length < 2 || !experiment?.goals,
+                label: this.setStartLabel(experiment),
+                visible: experiment?.status === DotExperimentStatusList.DRAFT,
+                disabled: this.disableStartExperiment(experiment),
                 command: () => this.startExperiment(experiment)
             },
             {
                 label: this.dotMessageService.get('experiments.action.end-experiment'),
                 visible: experiment?.status === DotExperimentStatusList.RUNNING,
-                disabled: experiment?.trafficProportion.variants.length < 2 || !experiment?.goals,
+                disabled: this.disableStartExperiment(experiment),
                 command: () => {
                     this.confirmationService.confirm({
                         key: CONFIRM_DIALOG_KEY,
@@ -948,7 +932,15 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                 }
             }
         ];
+    }
 
-        return menuItems;
+    private setStartLabel(experiment: DotExperiment): string {
+        const { scheduling } = experiment ? experiment : { scheduling: null };
+        const schedulingLabel =
+            scheduling === null || Object.values(experiment.scheduling).includes(null)
+                ? this.dotMessageService.get('experiments.action.start-experiment')
+                : this.dotMessageService.get('experiments.action.schedule-experiment');
+
+        return schedulingLabel;
     }
 }

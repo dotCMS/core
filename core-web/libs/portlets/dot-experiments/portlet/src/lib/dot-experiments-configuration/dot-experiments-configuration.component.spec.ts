@@ -12,11 +12,12 @@ import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
+import { ConfirmDialog } from 'primeng/confirmdialog';
 import { ConfirmPopup } from 'primeng/confirmpopup';
 import { Menu } from 'primeng/menu';
 
 import { DotMessageService, DotSessionStorageService } from '@dotcms/data-access';
-import { ComponentStatus, DotExperimentStatusList, PROP_NOT_FOUND } from '@dotcms/dotcms-models';
+import { ComponentStatus, PROP_NOT_FOUND } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 import { getExperimentMock, MockDotMessageService } from '@dotcms/utils-testing';
@@ -67,7 +68,6 @@ const defaultVmMock: ConfigurationViewModel = {
     },
     isLoading: false,
     isExperimentADraft: false,
-    runExperimentBtnLabel: '',
     disabledStartExperiment: false,
     showExperimentSummary: false,
     isSaving: false,
@@ -151,11 +151,6 @@ describe('DotExperimentsConfigurationComponent', () => {
         expect(spectator.query(DotExperimentsInlineEditTextComponent)).toExist();
     });
 
-    // it('should show Start Experiment button if isExperimentADraft true', () => {
-    //     spectator.detectChanges();
-    //     expect(spectator.query(byTestId('start-experiment-button'))).toExist();
-    // });
-
     it("shouldn't show Start Experiment button if isExperimentADraft false", () => {
         spectator.component.vm$ = of({
             ...defaultVmMock,
@@ -166,7 +161,7 @@ describe('DotExperimentsConfigurationComponent', () => {
         expect(spectator.query(byTestId('start-experiment-button'))).not.toExist();
     });
 
-    fit('should show Stop Experiment button if experiment status is running and call stopExperiment after confirmation', () => {
+    it('should show Stop Experiment  after confirmation', () => {
         jest.spyOn(dotExperimentsConfigurationStore, 'stopExperiment');
         dotExperimentsService.stop.mockReturnValue(of());
 
@@ -175,49 +170,35 @@ describe('DotExperimentsConfigurationComponent', () => {
         expect(spectator.query(byTestId('experiment-button-menu'))).toExist();
 
         spectator.dispatchMouseEvent(spectator.query(byTestId('experiment-button-menu')), 'click');
-
         spectator.detectComponentChanges();
 
-        // console.info(spectator.debugElement.nativeElement.innerHTML);
         expect(spectator.query(Menu)).toExist();
-        // expect(spectator.queryAll(MenuItemContent).length).toBe(1);
-
-        // console.info(spectator.queryAll(MenuItemContent));
-
-        // expect(ConfirmDialog).not.toExist();
         spectator.query(Menu).model[1].command();
+
+        spectator.query(ConfirmDialog).accept();
+
+        expect(dotExperimentsConfigurationStore.stopExperiment).toHaveBeenCalledWith(
+            EXPERIMENT_MOCK
+        );
+    });
+
+    it('should un schedule the experiment after confirmation', () => {
+        jest.spyOn(dotExperimentsConfigurationStore, 'cancelSchedule');
+
+        spectator.detectChanges();
+
+        expect(spectator.query(byTestId('experiment-button-menu'))).toExist();
+
+        spectator.dispatchMouseEvent(spectator.query(byTestId('experiment-button-menu')), 'click');
         spectator.detectComponentChanges();
-        // console.info(ConfirmDialog.visible);
-        // expect(ConfirmDialog.visible).toExist();
 
-        // spectator.query(ConfirmDialog).accept();
+        expect(spectator.query(Menu)).toExist();
+        spectator.query(Menu).model[2].command();
 
-        // expect(dotExperimentsConfigurationStore.stopExperiment).toHaveBeenCalledWith(
-        //     EXPERIMENT_MOCK
-        // );
-    });
+        spectator.query(ConfirmDialog).accept();
 
-    xit('should show hide stop Experiment button if experiment status is different than running', () => {
-        spectator.component.vm$ = of({
-            ...defaultVmMock,
-            experimentStatus: DotExperimentStatusList.DRAFT
-        });
-        spectator.detectChanges();
-        expect(spectator.query(byTestId('stop-experiment-button'))).not.toExist();
-    });
-
-    xit('should show Start Experiment button disabled if disabledStartExperiment true', () => {
-        spectator.component.vm$ = of({
-            ...defaultVmMock,
-            isExperimentADraft: true,
-            disabledStartExperiment: true
-        });
-        spectator.detectChanges();
-
-        const startButton = spectator.query(
-            byTestId('start-experiment-button')
-        ) as HTMLButtonElement;
-
-        expect(startButton.disabled).toEqual(true);
+        expect(dotExperimentsConfigurationStore.cancelSchedule).toHaveBeenCalledWith(
+            EXPERIMENT_MOCK
+        );
     });
 });

@@ -62,7 +62,15 @@ const ActivatedRouteMock = {
 
 const messageServiceMock = new MockDotMessageService({
     'experiments.action.schedule-experiment': 'schedule-experiment',
-    'experiments.action.start-experiment': 'run-experiment'
+    'experiments.action.start-experiment': 'Start Experiment',
+    'experiments.action.end-experiment': 'End Experiment',
+    'experiments.configure.scheduling.cancel': 'Cancel Scheduling',
+    'experiments.action.stop.delete-confirm': 'Are you sure you want to stop this experiment?',
+    stop: 'Stop',
+    'dot.common.dialog.reject': 'Reject',
+    'experiments.action.cancel.schedule-confirm':
+        'Are you sure you want to cancel the scheduling of this experiment?',
+    'dot.common.dialog.accept': 'Accept'
 });
 
 describe('DotExperimentsConfigurationStore', () => {
@@ -164,13 +172,95 @@ describe('DotExperimentsConfigurationStore', () => {
         });
     });
 
+    // it('should set the Menu Items when the experiment is in draft', () => {
+    //     dotExperimentsService.getById.mockReturnValue(
+    //         of({ ...EXPERIMENT_MOCK_2, status: DotExperimentStatusList.DRAFT })
+    //     );
+    //
+    //     spectator.service.loadExperiment(EXPERIMENT_MOCK_2.id);
+    //
+    //     store.state$.subscribe(({ menuItems }) => {
+    //         expect(menuItems).toEqual([
+    //             {
+    //                 label: 'Start',
+    //                 command: expect.any(Function),
+    //                 disabled: false
+    //             },
+    //             {
+    //                 label: 'Cancel',
+    //                 command: expect.any(Function),
+    //                 disabled: false
+    //             }
+    //         ]);
+    //     });
+    // });
+
+    it('should set Menu items visibility when and experiment if is a DRAFT and has variants and Goal defined', (done) => {
+        dotExperimentsService.getById.mockReturnValue(
+            of({ ...EXPERIMENT_MOCK_2, status: DotExperimentStatusList.DRAFT })
+        );
+
+        spectator.service.loadExperiment(EXPERIMENT_MOCK_2.id);
+
+        store.vm$.subscribe(({ menuItems }) => {
+            expect(menuItems[0].visible).toEqual(true);
+            expect(menuItems[0].disabled).toEqual(false);
+            expect(menuItems[1].visible).toEqual(false);
+            expect(menuItems[2].visible).toEqual(false);
+            done();
+        });
+    });
+
+    it('should set Menu items visibility when experiment is RUNNING', (done) => {
+        dotExperimentsService.getById.mockReturnValue(
+            of({ ...EXPERIMENT_MOCK_2, status: DotExperimentStatusList.RUNNING })
+        );
+
+        spectator.service.loadExperiment(EXPERIMENT_MOCK_2.id);
+
+        store.vm$.subscribe(({ menuItems }) => {
+            expect(menuItems[0].visible).toEqual(false);
+            expect(menuItems[1].visible).toEqual(true);
+            expect(menuItems[2].visible).toEqual(false);
+            done();
+        });
+    });
+
+    it('should set Menu items visibility when experiment SCHEDULED ', (done) => {
+        dotExperimentsService.getById.mockReturnValue(
+            of({ ...EXPERIMENT_MOCK_2, status: DotExperimentStatusList.SCHEDULED })
+        );
+
+        spectator.service.loadExperiment(EXPERIMENT_MOCK_2.id);
+
+        store.vm$.subscribe(({ menuItems }) => {
+            expect(menuItems[0].visible).toEqual(false);
+            expect(menuItems[1].visible).toEqual(false);
+            expect(menuItems[2].visible).toEqual(true);
+            done();
+        });
+    });
+
+    it('should execute commands of menu items', (done) => {
+        dotExperimentsService.getById.mockReturnValue(of({ ...EXPERIMENT_MOCK }));
+
+        spectator.service.loadExperiment(EXPERIMENT_MOCK.id);
+
+        store.vm$.pipe(take(1)).subscribe(({ menuItems }) => {
+            menuItems[0].command();
+            expect(dotExperimentsService.start).toHaveBeenCalledWith(EXPERIMENT_MOCK.id);
+            // test the ones with confirm dialog in the DotConfigurationComponent.
+            done();
+        });
+    });
+
     it('should return `Schedule Experiment` when the experiment has schedule set', (done) => {
         spectator.service.loadExperiment(EXPERIMENT_MOCK.id);
 
         expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_MOCK.id);
 
-        store.vm$.subscribe(({ runExperimentBtnLabel }) => {
-            expect(runExperimentBtnLabel).toEqual('schedule-experiment');
+        store.vm$.subscribe(({ menuItems }) => {
+            expect(menuItems[0].label).toEqual('schedule-experiment');
             done();
         });
     });
@@ -181,8 +271,8 @@ describe('DotExperimentsConfigurationStore', () => {
 
         expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_MOCK_1.id);
 
-        store.vm$.subscribe(({ runExperimentBtnLabel }) => {
-            expect(runExperimentBtnLabel).toEqual('run-experiment');
+        store.vm$.subscribe(({ menuItems }) => {
+            expect(menuItems[0].label).toEqual('Start Experiment');
             done();
         });
     });
@@ -193,8 +283,8 @@ describe('DotExperimentsConfigurationStore', () => {
 
         expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_MOCK_3.id);
 
-        store.vm$.subscribe(({ runExperimentBtnLabel }) => {
-            expect(runExperimentBtnLabel).toEqual('run-experiment');
+        store.vm$.subscribe(({ menuItems }) => {
+            expect(menuItems[0].label).toEqual('Start Experiment');
             done();
         });
     });
