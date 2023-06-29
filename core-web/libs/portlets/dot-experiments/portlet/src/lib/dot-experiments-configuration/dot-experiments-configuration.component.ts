@@ -4,14 +4,12 @@ import { AsyncPipe, JsonPipe, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { InplaceModule } from 'primeng/inplace';
 import { InputTextModule } from 'primeng/inputtext';
 import { MenuModule } from 'primeng/menu';
-import { RippleModule } from 'primeng/ripple';
 
 import {
     ComponentStatus,
@@ -52,10 +50,9 @@ import { DotExperimentsInlineEditTextComponent } from '../shared/ui/dot-experime
         DotExperimentsInlineEditTextComponent,
         CardModule,
         ButtonModule,
-        RippleModule,
+
         InplaceModule,
         InputTextModule,
-        RippleModule,
         MenuModule,
         ConfirmDialogModule
     ],
@@ -74,9 +71,7 @@ export class DotExperimentsConfigurationComponent implements OnInit {
     constructor(
         private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore,
         private readonly router: Router,
-        private readonly route: ActivatedRoute,
-        private readonly confirmationService: ConfirmationService,
-        private readonly dotMessagePipe: DotMessagePipe
+        private readonly route: ActivatedRoute
     ) {}
 
     ngOnInit(): void {

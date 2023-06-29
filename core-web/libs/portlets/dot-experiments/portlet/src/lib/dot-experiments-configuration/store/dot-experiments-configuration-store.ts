@@ -105,7 +105,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     );
 
     readonly getMenuItems$: Observable<MenuItem[]> = this.select(this.state$, ({ experiment }) =>
-        this.setMenuItems(experiment)
+        this.getMenuItems(experiment)
     );
 
     // Goals Step //
@@ -882,7 +882,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         return experiment?.trafficProportion.variants.length < 2 || !experiment?.goals;
     }
 
-    private setMenuItems(experiment: DotExperiment): MenuItem[] {
+    private getMenuItems(experiment: DotExperiment): MenuItem[] {
         return [
             {
                 label: this.setStartLabel(experiment),
@@ -901,9 +901,9 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                         message: this.dotMessageService.get(
                             'experiments.action.stop.delete-confirm'
                         ),
-                        icon: 'pi pi-exclamation-triangle',
                         acceptLabel: this.dotMessageService.get('stop'),
                         rejectLabel: this.dotMessageService.get('dot.common.dialog.reject'),
+                        rejectButtonStyleClass: 'p-button-secondary',
                         accept: () => {
                             this.stopExperiment(experiment);
                         }
@@ -922,9 +922,9 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                         message: this.dotMessageService.get(
                             'experiments.action.cancel.schedule-confirm'
                         ),
-                        icon: 'pi pi-exclamation-triangle',
                         acceptLabel: this.dotMessageService.get('dot.common.dialog.accept'),
                         rejectLabel: this.dotMessageService.get('dot.common.dialog.reject'),
+                        rejectButtonStyleClass: 'p-button-secondary',
                         accept: () => {
                             this.cancelSchedule(experiment);
                         }

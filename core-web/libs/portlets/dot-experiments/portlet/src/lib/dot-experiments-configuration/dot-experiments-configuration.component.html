@@ -7,6 +7,7 @@
     >
         <div class="flex flex-grow-0 align-items-center justify-content-between">
             <button
+                class="p-button-rounded"
                 (click)="menu.toggle($event)"
                 data-testId="experiment-button-menu"
                 icon="pi pi-ellipsis-v"
@@ -18,7 +19,6 @@
                 [popup]="true"
                 data-testId="experiment-menu"
             ></p-menu>
-            {{ vm.menuItems | json }}
         </div>
     </dot-experiments-header>
 
