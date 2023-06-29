@@ -15,6 +15,7 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.configure.scheduling.start': 'When the experiment start'
 });
 
+const EMPTY_TEXT = '';
 const SHORT_TEXT = 'short text';
 const LONG_TEXT =
     'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed condimentum eros sit amet malesuada mattis. Morbi ac congue lectus, ut vestibulum velit. Ut sed ornare metus. Proin a orci lacus. Aenean odio lacus, fringilla eu ipsum non, pellentesque sagittis purus. Integer non.';
@@ -23,9 +24,7 @@ const NEW_EXPERIMENT_DESCRIPTION = 'new experiment description';
 describe('DotExperimentsExperimentSummaryComponent', () => {
     let spectator: Spectator<DotExperimentsInlineEditTextComponent>;
     const createComponent = createComponentFactory({
-        imports: [],
         component: DotExperimentsInlineEditTextComponent,
-
         providers: [
             {
                 provide: DotMessageService,
@@ -74,7 +73,7 @@ describe('DotExperimentsExperimentSummaryComponent', () => {
 
         it('should show a icon to edit', () => {
             expect(spectator.query(byTestId('text-input'))).toExist();
-            expect(spectator.query(byTestId('text-input-icon'))).toExist();
+            expect(spectator.query(byTestId('text-input-button'))).toExist();
         });
 
         it('should change the `maxLength` Validator if the `@Input maxCharacterLength` is sent', () => {
@@ -85,10 +84,37 @@ describe('DotExperimentsExperimentSummaryComponent', () => {
             expect(spectator.component.form.invalid).toEqual(true);
         });
 
+        it('should add the Validator `required` if the `@Input required` is true', () => {
+            spectator.setInput('text', EMPTY_TEXT);
+            spectator.setInput('required', true);
+
+            spectator.component.form.controls['text'].setValue(SHORT_TEXT);
+            expect(spectator.component.form.invalid).toEqual(false);
+
+            spectator.component.form.controls['text'].setValue(EMPTY_TEXT);
+            expect(spectator.component.form.invalid).toEqual(true);
+        });
+
         describe('/interactions', () => {
             it('should show an input if you click on edit', () => {
-                spectator.dispatchMouseEvent(byTestId('text-input'), 'click');
+                spectator.click(byTestId('text-input'));
                 expect(spectator.query(byTestId('inplace-input'))).toExist();
+            });
+
+            it('should not show an input if you press `ESC` in the keyboard', () => {
+                jest.spyOn(spectator.component, 'deactivateInplace');
+
+                spectator.click(byTestId('text-input'));
+                expect(spectator.query(byTestId('inplace-input'))).toExist();
+
+                spectator.dispatchKeyboardEvent(
+                    spectator.query(byTestId('inplace-input')),
+                    'keydown',
+                    'Escape'
+                );
+
+                expect(spectator.component.deactivateInplace).toHaveBeenCalled();
+                expect(spectator.query(byTestId('inplace-input'))).not.toExist();
             });
 
             it('should save button be disabled if the input has more than `MAX_INPUT_DESCRIPTIVE_LENGTH` ', () => {
