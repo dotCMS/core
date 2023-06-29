@@ -1,5 +1,7 @@
 import { ChartDataset } from 'chart.js';
 
+import { MenuItem } from 'primeng/api';
+
 import {
     BayesianStatusResponse,
     ComponentStatus,
@@ -23,6 +25,8 @@ export interface DotExperiment {
     modDate: Date;
     goals: Goals | null;
 }
+
+export type DotExperimentsWithActions = DotExperiment & { actionsItemsMenu: MenuItem[] };
 
 export interface DotExperimentResults {
     bayesianResult: DotResultBayesian;
@@ -128,7 +132,7 @@ export interface RangeOfDateAndTime {
 
 export type GroupedExperimentByStatus = {
     status: DotExperimentStatusList;
-    experiments: DotExperiment[];
+    experiments: DotExperimentsWithActions[];
 };
 
 export interface SidebarStatus {
