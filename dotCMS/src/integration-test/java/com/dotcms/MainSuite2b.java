@@ -153,7 +153,6 @@ import org.junit.runners.Suite.SuiteClasses;
 /* grep -l -r "@Test" dotCMS/src/integration-test */
 /* ./gradlew integrationTest -Dtest.single=com.dotcms.MainSuite */
 
-
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
         Task05380ChangeContainerPathToAbsoluteTest.class,
@@ -304,11 +303,12 @@ import org.junit.runners.Suite.SuiteClasses;
         Task230328AddMarkedForDeletionColumnTest.class,
         StartupTasksExecutorDataTest.class,
         Task230426AlterVarcharLengthOfLockedByColTest.class,
+        CMSUrlUtilTest.class,
         AssetPathResolverImplIntegrationTest.class,
-        WebAssetHelperIntegrationTest.class,
-        CMSUrlUtilTest.class
+        WebAssetHelperIntegrationTest.class
 })
 
 public class MainSuite2b {
 
 }
+
