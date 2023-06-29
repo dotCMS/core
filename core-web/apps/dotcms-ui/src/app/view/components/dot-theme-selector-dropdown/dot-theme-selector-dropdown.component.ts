@@ -93,6 +93,7 @@ export class DotThemeSelectorDropdownComponent
             .pipe(take(1))
             .subscribe((themes: DotTheme[]) => {
                 this.value = themes[0];
+                this.propagateChange(themes[0].identifier);
             });
     }
 
