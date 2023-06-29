@@ -45,12 +45,19 @@
     </div>
 
     <div class="lower-toolbar-right w-5">
-        <dot-edit-page-view-as-controller
+        <!--    <dot-edit-page-view-as-controller
             class="flex w-full gap-2"
             [pageState]="pageState"
             [variant]="variant"
         >
-        </dot-edit-page-view-as-controller>
+        </dot-edit-page-view-as-controller> -->
+
+        <dot-device-selector-seo
+            [pTooltip]="pageState.viewAs.device?.name || ('editpage.viewas.default.device' | dm)"
+            appendTo="body"
+            tooltipPosition="bottom"
+            tooltipStyleClass="dot-device-selector__dialog"
+        ></dot-device-selector-seo>
     </div>
 </dot-secondary-toolbar>
 

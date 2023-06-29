@@ -1,0 +1,78 @@
+@use "variables" as *;
+@import "dotcms-theme/utils/theme-variables";
+@import "dotcms-theme/utils/extends";
+
+.dotDeviceSelector__panel {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    border-radius: 6px;
+    border: 1px solid var(--gray-scale-300, #ebecef);
+}
+
+.dotDeviceSelector__header {
+    display: flex;
+    height: 40px;
+    padding: 8px 16px;
+    justify-content: space-between;
+    align-items: center;
+    align-self: stretch;
+
+    background: var(--gray-scale-200, #f4f4f6);
+}
+
+.dotDeviceSelector__header__title {
+    color: var(--black, #14151a);
+    /* Heading/XS/Semi Bold */
+    font-size: 20px;
+    font-style: normal;
+    font-weight: 500;
+    line-height: 140%;
+}
+
+.dotDeviceSelector__column {
+    gap: 16px;
+    display: flex;
+    flex-direction: column;
+}
+
+.dotDeviceSelector__content {
+    .device-list {
+        padding: 0;
+        .device-list__item {
+            list-style: none;
+            display: flex;
+            width: 276px;
+            height: 40px;
+            padding: 14px 16px;
+            align-items: left;
+            gap: 8px;
+            &:hover {
+                background-color: var(--gray-scale-100, #f8f8f9);
+            }
+        }
+    }
+}
+
+::ng-deep {
+    .p-overlaypanel.dotDeviceSelector__overlayPanel {
+        .p-overlaypanel-content {
+            display: flex;
+            gap: 16px;
+        }
+
+        &:before {
+            content: none;
+        }
+
+        &:after {
+            content: none;
+        }
+
+        .pi {
+            color: #8d92a5;
+        }
+
+        margin-top: 5px;
+    }
+}

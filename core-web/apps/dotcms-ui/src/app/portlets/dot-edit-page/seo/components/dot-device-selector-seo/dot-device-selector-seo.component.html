@@ -1,0 +1,84 @@
+<!-- <div class="dot-device-selector wrapper h-full flex-auto flex align-items-center gap-3 min-w-full"> -->
+<!--   <dot-icon big name="devices"></dot-icon> -->
+
+<!--     <div class="device-selector__field flex-grow-1"> -->
+<!-- <p-dropdown
+            class="p-dropdown-sm"
+            id="device-selector"
+            [(ngModel)]="value"
+            [disabled]="disabled"
+            [options]="options"
+            [placeholder]="placeholder"
+            (onChange)="change($event.value)"
+            dataKey="inode"
+            optionLabel="name"
+        >
+        </p-dropdown> -->
+
+<!--     </div>
+</div>
+
+ -->
+<p-overlayPanel #op styleClass="dotDeviceSelector__overlayPanel">
+    <div class="dotDeviceSelector__column">
+        <div class="dotDeviceSelector__panel">
+            <div class="dotDeviceSelector__header">
+                <h3 class="dotDeviceSelector__header__title">Devices</h3>
+            </div>
+            <div class="dotDeviceSelector__content">
+                <ul class="device-list">
+                    <li class="device-list__item">
+                        <i class="pi pi-mobile" style="font-size: 1rem"></i>
+                        {{ options[0].name }}
+                    </li>
+                    <li class="device-list__item">
+                        <i class="pi pi-desktop" style="font-size: 1rem"></i>
+                        {{ options[1].name }}
+                    </li>
+                    <li class="device-list__item">
+                        <i class="pi pi-tablet" style="font-size: 1rem"></i>
+                        {{ options[2].name }}
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="dotDeviceSelector__column">
+        <div class="dotDeviceSelector__panel">
+            <div class="dotDeviceSelector__header">
+                <h3 class="dotDeviceSelector__header__title">Social Media Tiles</h3>
+            </div>
+            <div class="dotDeviceSelector__content">
+                <ul class="device-list">
+                    <li class="device-list__item">
+                        <i class="pi pi-facebook" style="font-size: 1rem"></i>
+                        Facebook
+                    </li>
+                    <li class="device-list__item">
+                        <i class="pi pi-twitter" style="font-size: 1rem"></i>
+                        Twitter
+                    </li>
+                    <li class="device-list__item">
+                        <i class="pi pi-linkedin" style="font-size: 1rem"></i>
+                        Linkedin
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="dotDeviceSelector__panel">
+            <div class="dotDeviceSelector__header">
+                <h3 class="dotDeviceSelector__header__title">Search Engine Results Pages</h3>
+            </div>
+            <div class="dotDeviceSelector__content">
+                <ul class="device-list">
+                    <li class="device-list__item">
+                        <i class="pi pi-google" style="font-size: 1rem"></i>
+                        Google
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</p-overlayPanel>
+<p-button (click)="op.toggle($event)" styleClass="p-button-outlined" label="Preview"></p-button>
