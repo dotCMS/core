@@ -19,6 +19,7 @@ export default {
         '!src/index.ts'
     ],
     reporters: [
+        ['github-actions', { silent: false }],
         [
             'jest-junit',
             { outputDirectory: 'target/core-web-reports', outputName: 'TEST-template-builder.xml' }
