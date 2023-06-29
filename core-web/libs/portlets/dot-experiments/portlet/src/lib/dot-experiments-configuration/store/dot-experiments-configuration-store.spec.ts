@@ -172,29 +172,6 @@ describe('DotExperimentsConfigurationStore', () => {
         });
     });
 
-    // it('should set the Menu Items when the experiment is in draft', () => {
-    //     dotExperimentsService.getById.mockReturnValue(
-    //         of({ ...EXPERIMENT_MOCK_2, status: DotExperimentStatusList.DRAFT })
-    //     );
-    //
-    //     spectator.service.loadExperiment(EXPERIMENT_MOCK_2.id);
-    //
-    //     store.state$.subscribe(({ menuItems }) => {
-    //         expect(menuItems).toEqual([
-    //             {
-    //                 label: 'Start',
-    //                 command: expect.any(Function),
-    //                 disabled: false
-    //             },
-    //             {
-    //                 label: 'Cancel',
-    //                 command: expect.any(Function),
-    //                 disabled: false
-    //             }
-    //         ]);
-    //     });
-    // });
-
     it('should set Menu items visibility when and experiment if is a DRAFT and has variants and Goal defined', (done) => {
         dotExperimentsService.getById.mockReturnValue(
             of({ ...EXPERIMENT_MOCK_2, status: DotExperimentStatusList.DRAFT })
@@ -219,7 +196,7 @@ describe('DotExperimentsConfigurationStore', () => {
         spectator.service.loadExperiment(EXPERIMENT_MOCK_2.id);
 
         store.vm$.subscribe(({ menuItems }) => {
-            expect(menuItems[0].visible).toEqual(false);
+            expect(menuItems[0].visible).toEqual(true);
             expect(menuItems[1].visible).toEqual(true);
             expect(menuItems[2].visible).toEqual(false);
             done();
@@ -249,7 +226,7 @@ describe('DotExperimentsConfigurationStore', () => {
         store.vm$.pipe(take(1)).subscribe(({ menuItems }) => {
             menuItems[0].command();
             expect(dotExperimentsService.start).toHaveBeenCalledWith(EXPERIMENT_MOCK.id);
-            // test the ones with confirm dialog in the DotConfigurationComponent.
+            // test the ones with confirm dialog in the DotExperimentsConfigurationComponent.
             done();
         });
     });
