@@ -15,6 +15,7 @@ import {
     DotPageRenderOptionsViewAs,
     DotPageRenderRequestParams
 } from '@dotcms/dotcms-models';
+import { DotSessionStorageService } from '../dot-session-storage/dot-session-storage.service';
 
 /**
  * Get a render page with the received params
@@ -24,7 +25,10 @@ import {
  */
 @Injectable()
 export class DotPageRenderService {
-    constructor(private coreWebService: CoreWebService) {}
+    constructor(
+        private coreWebService: CoreWebService,
+        private readonly dotSessionStorageService: DotSessionStorageService
+    ) {}
 
     /**
      * Verifies if a use can access a page based on the path param
@@ -74,7 +78,10 @@ export class DotPageRenderService {
             ...this.getPersonaParam(viewAsConfig.persona),
             ...this.getDeviceParam(viewAsConfig.device),
             ...this.getLanguageParam(viewAsConfig.language),
-            ...this.getModeParam(mode)
+            ...this.getModeParam(mode),
+            ...{
+                variantName: this.dotSessionStorageService.getVariationId()
+            }
         };
     }
 

@@ -11,6 +11,9 @@ import {
 } from '@dotcms/utils-testing';
 
 import { DotPageRenderService } from './dot-page-render.service';
+
+import { DotSessionStorageService } from '../dot-session-storage/dot-session-storage.service';
+
 describe('DotPageRenderService', () => {
     let injector: TestBed;
     let dotPageRenderService: DotPageRenderService;
@@ -21,6 +24,7 @@ describe('DotPageRenderService', () => {
         TestBed.configureTestingModule({
             imports: [HttpClientTestingModule],
             providers: [
+                DotSessionStorageService,
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 {
                     provide: LoginService,
