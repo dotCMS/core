@@ -1,6 +1,6 @@
 import { GridItemHTMLElement } from 'gridstack';
 
-import { NgClass, NgFor, NgIf } from '@angular/common';
+import { CommonModule, NgClass, NgFor, NgIf } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -13,6 +13,7 @@ import {
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
 import { DropdownModule } from 'primeng/dropdown';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
 
@@ -37,9 +38,11 @@ import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-co
         ButtonModule,
         ScrollPanelModule,
         RemoveConfirmDialogComponent,
+        DialogModule,
         DropdownModule,
         DotContainerOptionsDirective,
-        ReactiveFormsModule
+        ReactiveFormsModule,
+        CommonModule
     ]
 })
 export class TemplateBuilderBoxComponent implements OnChanges {
@@ -62,8 +65,9 @@ export class TemplateBuilderBoxComponent implements OnChanges {
     @Input() containerMap: DotContainerMap;
     @Input() actions = ['add', 'delete', 'edit'];
 
+    private _dropdownLabel: string | null = null;
+    dialogVisible = false;
     boxVariant = TemplateBuilderBoxSize.small;
-    dropdownLabel: string | null = null;
     formControl = new FormControl(null); // used to programmatically set dropdown value, so that the same value can be selected twice consecutively
 
     constructor(private el: ElementRef, private dotMessage: DotMessageService) {}
@@ -72,16 +76,23 @@ export class TemplateBuilderBoxComponent implements OnChanges {
         return this.el.nativeElement;
     }
 
+    get dropdownLabel(): string {
+        return this.boxVariant === this.templateBuilderSizes.large || this.dialogVisible
+            ? this._dropdownLabel
+            : '';
+    }
+
     ngOnChanges(): void {
         this.boxVariant = getBoxVariantByWidth(this.width);
-        this.dropdownLabel =
-            this.boxVariant === TemplateBuilderBoxSize.large
-                ? this.dotMessage.get('dot.template.builder.add.container')
-                : null;
+        this._dropdownLabel = this.dotMessage.get('dot.template.builder.add.container');
     }
 
     onContainerSelect({ value }: { value: DotContainer }) {
         this.addContainer.emit(value);
         this.formControl.setValue(null);
+    }
+
+    boxSizeMatches(size: TemplateBuilderBoxSize): boolean {
+        return this.boxVariant === this.templateBuilderSizes[size];
     }
 }

@@ -19,7 +19,7 @@
 
 .p-dialog .p-dialog-header .p-dialog-title {
     font-size: $font-size-xl;
-    font-size: 1.7rem;
+    font-size: 1.5rem;
 }
 
 .p-dialog .p-dialog-header .p-dialog-header-icon {
@@ -81,4 +81,10 @@
 .p-dialog-mask.p-component-overlay {
     background-color: $color-palette-black-op-80;
     backdrop-filter: blur(5px);
+}
+
+.p-dialog-header .p-dialog-header-icons .p-dialog-header-close {
+    background-color: $color-palette-gray-200;
+    color: $color-palette-primary-500;
+    border-radius: 0;
 }
