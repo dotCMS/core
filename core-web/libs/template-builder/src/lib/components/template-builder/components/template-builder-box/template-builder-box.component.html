@@ -11,6 +11,7 @@
     [resizable]="false"
     [blockScroll]="true"
     [modal]="true"
+    data-testId="edit-box-dialog"
 >
     <ng-container [ngTemplateOutlet]="largeTemplate"></ng-container>
 </p-dialog>
@@ -89,6 +90,7 @@
             (onClick)="dialogVisible = true"
             icon="pi pi-plus"
             styleClass="p-button-rounded  p-button-text p-button-sm"
+            data-testId="btn-plus-small"
         ></p-button>
         <p-button
             *ngIf="actions.includes('edit')"
