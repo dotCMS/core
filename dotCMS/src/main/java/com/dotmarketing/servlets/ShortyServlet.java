@@ -1,5 +1,6 @@
 package com.dotmarketing.servlets;
 
+import com.dotcms.variant.business.web.VariantWebAPI.RenderContext;
 import java.io.IOException;
 import java.util.Optional;
 import java.util.StringTokenizer;
@@ -295,7 +296,7 @@ public class ShortyServlet extends HttpServlet {
         String inodePath = null;
         if(shorty.type!= ShortType.TEMP_FILE) {
           final Optional<Contentlet> conOpt = (shorty.type == ShortType.IDENTIFIER)
-                      ? APILocator.getContentletAPI().findContentletByIdentifierOrFallback(shorty.longId, live, language.getId(), APILocator.systemUser(), false)
+                      ? getContentletByIdentifier(live, shorty.longId, language)
                       : Optional.ofNullable(APILocator.getContentletAPI().find(shorty.longId, systemUser, false));
                       
           if(conOpt.isEmpty()) {
@@ -338,7 +339,20 @@ public class ShortyServlet extends HttpServlet {
     }
   }
 
+    private static Optional<Contentlet> getContentletByIdentifier(final boolean live,
+            final String identifier, final Language language)
+            throws DotDataException, DotSecurityException {
 
+        final PageMode pageMode = live ? PageMode.LIVE : PageMode.PREVIEW_MODE;
+        final RenderContext renderContext = WebAPILocator.getVariantWebAPI()
+                .getRenderContext(language.getId(), identifier, pageMode, APILocator.systemUser());
+
+        return Optional.ofNullable(
+                APILocator.getContentletAPI().findContentletByIdentifier(identifier, live,
+                        renderContext.getCurrentLanguageId(), renderContext.getCurrentVariantKey(),
+                        APILocator.systemUser(), false)
+        );
+    }
 
   private void doForward(final HttpServletRequest request,
                          final HttpServletResponse response,
