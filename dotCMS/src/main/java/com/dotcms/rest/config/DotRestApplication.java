@@ -297,10 +297,10 @@ public class DotRestApplication extends Application {
 	 */
 	public static synchronized void addClass(Class<?> clazz) {
 		if(clazz==null)return;
-		customClasses.computeIfAbsent(clazz, k -> {
+		if (Boolean.TRUE.equals(customClasses.computeIfAbsent(clazz,c -> true)))
+		{
 			ContainerReloader.getInstance().reload();
-			return true;
-		});
+		}
 	}
 
 	/**
