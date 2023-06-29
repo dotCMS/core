@@ -10,6 +10,7 @@ import { DialogModule } from 'primeng/dialog';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
 
 import { DotContainersService, DotMessageService } from '@dotcms/data-access';
+import { DotMessagePipeModule } from '@dotcms/ui';
 import { DotContainersServiceMock, mockMatchMedia } from '@dotcms/utils-testing';
 
 import { TemplateBuilderBoxComponent } from './template-builder-box.component';
@@ -34,7 +35,8 @@ describe('TemplateBuilderBoxComponent', () => {
             ScrollPanelModule,
             RemoveConfirmDialogComponent,
             NoopAnimationsModule,
-            DialogModule
+            DialogModule,
+            DotMessagePipeModule
         ],
         providers: [
             {

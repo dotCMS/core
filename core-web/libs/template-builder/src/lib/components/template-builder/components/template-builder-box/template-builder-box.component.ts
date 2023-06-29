@@ -19,7 +19,7 @@ import { ScrollPanelModule } from 'primeng/scrollpanel';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotContainer, DotContainerMap } from '@dotcms/dotcms-models';
-import { DotContainerOptionsDirective } from '@dotcms/ui';
+import { DotContainerOptionsDirective, DotMessagePipeModule } from '@dotcms/ui';
 
 import { DotTemplateBuilderContainer, TemplateBuilderBoxSize } from '../../models/models';
 import { getBoxVariantByWidth } from '../../utils/gridstack-utils';
@@ -42,7 +42,8 @@ import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-co
         DropdownModule,
         DotContainerOptionsDirective,
         ReactiveFormsModule,
-        CommonModule
+        CommonModule,
+        DotMessagePipeModule
     ]
 })
 export class TemplateBuilderBoxComponent implements OnChanges {
