@@ -40,32 +40,25 @@
 
 package com.dotcms.rest.servlet;
 
-import com.dotcms.rest.annotation.HeaderFilter;
-import com.dotcms.rest.annotation.RequestFilter;
-import com.dotcms.rest.api.CorsFilter;
-import com.dotcms.rest.api.MyObjectMapperProvider;
 import com.dotcms.rest.config.DotRestApplication;
-import com.dotcms.rest.exception.mapper.*;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.exception.AlreadyExistException;
-import com.dotmarketing.portlets.folders.exception.InvalidFolderNameException;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
-
 import java.util.Collections;
 import java.util.Enumeration;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
+import javax.servlet.FilterConfig;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
-import javax.ws.rs.core.Application;
-import org.glassfish.jersey.server.ResourceConfig;
-import org.glassfish.jersey.server.spi.AbstractContainerLifecycleListener;
-import org.glassfish.jersey.server.spi.Container;
 import org.glassfish.jersey.servlet.ServletContainer;
+import org.glassfish.jersey.servlet.WebConfig;
+import org.glassfish.jersey.servlet.WebServletConfig;
 
+/**
+ * This class is a wrapper around the Jersey ServletContainer that prevents needing
+ * to reconfigure the web.xml file.   The base DotRestApplication now handles the
+ * servlet reloading.  This class is only needed to add the additional init parameters
+ *
+ */
 public class ReloadableServletContainer extends ServletContainer  {
 
     /**
@@ -73,105 +66,70 @@ public class ReloadableServletContainer extends ServletContainer  {
      */
     private static final long serialVersionUID = 1L;
 
+    private static final Map<String,String> ADDITIONAL_INIT_PARAMS = Map.of("javax.ws.rs.Application", DotRestApplication.class.getName());
+
     public ReloadableServletContainer() {
-        super(createResourceConfig(new DotRestApplication()));
     }
-
-    public static class Reloader extends AbstractContainerLifecycleListener {
-
-        static AtomicReference<Container> containerAtomicReference = new AtomicReference<>();
-        @Override
-        public void onStartup(Container container) {
-            containerAtomicReference.set(container);
-        }
-        public static void reload() {
-            Container container = containerAtomicReference.get();
-            if (container!=null) {
-                container.reload(createResourceConfig(DotRestApplication.class));
-            }
-        }
-    }
-
-    public static ResourceConfig createResourceConfig(Application app) {
-        return configureResourceConfig(ResourceConfig.forApplication(app));
-    }
-
-    public static ResourceConfig createResourceConfig(Class<? extends Application> appClass) {
-        return configureResourceConfig(ResourceConfig.forApplicationClass(appClass));
-    }
-
-    public static ResourceConfig configureResourceConfig(ResourceConfig config) {
-        return config
-                .register(RequestFilter.class)
-                .register(HeaderFilter.class)
-                .register(CorsFilter.class)
-                .register(MyObjectMapperProvider.class)
-                .register(JacksonJaxbJsonProvider.class)
-                .register(HttpStatusCodeExceptionMapper.class)
-                .register(ResourceNotFoundExceptionMapper.class)
-                .register(InvalidFormatExceptionMapper.class)
-                .register(JsonParseExceptionMapper.class)
-                .register(ParamExceptionMapper.class)
-                .register(JsonMappingExceptionMapper.class)
-                .register(UnrecognizedPropertyExceptionMapper.class)
-                .register(InvalidLicenseExceptionMapper.class)
-                .register(WorkflowPortletAccessExceptionMapper.class)
-                .register(NotFoundInDbExceptionMapper.class)
-                .register(DoesNotExistExceptionMapper.class)
-                .register((new DotBadRequestExceptionMapper<AlreadyExistException>(){}).getClass())
-                .register((new DotBadRequestExceptionMapper<IllegalArgumentException>(){}).getClass())
-                .register((new DotBadRequestExceptionMapper<DotStateException>(){}).getClass())
-                .register(DefaultDotBadRequestExceptionMapper.class)
-                .register((new DotBadRequestExceptionMapper<JsonProcessingException>(){}).getClass())
-                .register((new DotBadRequestExceptionMapper<NumberFormatException>(){}).getClass())
-                .register(DotSecurityExceptionMapper.class)
-                .register(DotDataExceptionMapper.class)
-                .register(ElasticsearchStatusExceptionMapper.class)
-                .register((new DotBadRequestExceptionMapper<InvalidFolderNameException>(){}).getClass())
-                .register(NotAllowedExceptionMapper.class)
-                .register(RuntimeExceptionMapper.class)
-                .register(new Reloader());
-        //.register(ExceptionMapper.class); // temporaly unregister since some services are expecting just a plain message as an error instead of a json, so to keep the compatibility we won't apply this change yet.
-    }
-
 
     @Override
-    public void init(ServletConfig config) throws ServletException {
-        super.init(new ServletConfigWrapper(config, Map.of("javax.ws.rs.Application", DotRestApplication.class.getName())));
+    public void init() throws ServletException {
+        // Cannot extend WebServletConfig because it is final so we will decorate it to modify
+        // the init parameters
+        init(new WebServletConfigDecorator(new WebServletConfig(this)));
     }
 
-    private static class ServletConfigWrapper extends HashMap<String,Object> implements ServletConfig {
 
-        private final ServletConfig config;
-        private final Map<String, String> initParams=new HashMap<>();
+    private class WebServletConfigDecorator implements WebConfig {
 
-        public ServletConfigWrapper(ServletConfig config, Map<String, String> defaultInitParams) {
-            this.config = config;
-            this.initParams.putAll(defaultInitParams);
-            for (Enumeration<String> e = config.getInitParameterNames(); e.hasMoreElements();) {
-                String name = e.nextElement();
-                initParams.put(name, config.getInitParameter(name));
-            }
+        private final WebServletConfig webServletConfig;
+
+        public WebServletConfigDecorator(WebServletConfig webServletConfig) {
+            this.webServletConfig = webServletConfig;
         }
 
         @Override
-        public String getServletName() {
-            return config.getServletName();
+        public ConfigType getConfigType() {
+            return webServletConfig.getConfigType();
         }
 
         @Override
-        public ServletContext getServletContext() {
-            return config.getServletContext();
+        public ServletConfig getServletConfig() {
+            return webServletConfig.getServletConfig();
+        }
+
+        @Override
+        public FilterConfig getFilterConfig() {
+            return webServletConfig.getFilterConfig();
+        }
+
+        @Override
+        public String getName() {
+            return webServletConfig.getName();
         }
 
         @Override
         public String getInitParameter(String name) {
-            return initParams.get(name);
+            if (ADDITIONAL_INIT_PARAMS.containsKey(name)) {
+                return ADDITIONAL_INIT_PARAMS.get(name);
+            }
+            return webServletConfig.getInitParameter(name);
         }
 
         @Override
-        public Enumeration<String> getInitParameterNames() {
-            return Collections.enumeration(initParams.keySet());
+        public Enumeration getInitParameterNames() {
+            // Add the "javax.ws.rs.Application" init parameter to the list of init parameters
+            // so that the Jersey application can be configured via web.xml
+
+            @SuppressWarnings("unchecked")
+            HashSet<String> paramNamesSet = new HashSet<String>(Collections.list(webServletConfig.getInitParameterNames()));
+
+            paramNamesSet.addAll(ADDITIONAL_INIT_PARAMS.keySet());
+            return Collections.enumeration(paramNamesSet);
+        }
+
+        @Override
+        public ServletContext getServletContext() {
+            return webServletConfig.getServletContext();
         }
     }
 }
