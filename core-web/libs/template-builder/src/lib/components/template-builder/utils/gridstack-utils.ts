@@ -2,6 +2,8 @@ import { v4 as uuid } from 'uuid';
 
 import { DotLayoutBody } from '@dotcms/dotcms-models';
 
+import { EMPTY_ROWS_VALUE } from './mocks';
+
 import {
     DotGridStackNode,
     DotGridStackWidget,
@@ -113,9 +115,7 @@ export function removeColumnByID(row: DotGridStackWidget, columnID: string): Dot
 export function parseFromDotObjectToGridStack(
     body: DotLayoutBody | undefined
 ): DotGridStackWidget[] {
-    if (!body) {
-        return [];
-    }
+    if (!body?.rows.length || !body) return EMPTY_ROWS_VALUE;
 
     return body.rows.map((row, i) => ({
         w: 12,
