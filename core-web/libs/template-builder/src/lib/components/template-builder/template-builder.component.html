@@ -1,5 +1,4 @@
-<dotcms-template-builder-background-columns></dotcms-template-builder-background-columns>
-<p-toolbar>
+<p-toolbar styleClass="layout-toolbar">
     <div class="p-toolbar-group-start">
         <ng-content select="[toolbar-left]"></ng-content>
     </div>
@@ -16,55 +15,80 @@
             [label]="'dot.template.builder.add.box' | dm"
             [icon]="colIcon"
             data-widget-type="col"
-            gs-w="1"
+            gs-w="3"
             gs-h="1"
             data-testId="add-box"
         ></dotcms-add-widget>
         <p-divider layout="vertical"></p-divider>
-        <dotcms-template-builder-actions></dotcms-template-builder-actions>
+        <dotcms-template-builder-actions
+            [layoutProperties]="layoutProperties"
+            (selectTheme)="openThemeSelectorDynamicDialog()"
+        ></dotcms-template-builder-actions>
         <ng-content select="[toolbar-actions-right]"></ng-content>
     </div>
 </p-toolbar>
-
-<dotcms-template-builder-section>{{
-    'dot.template.builder.header' | dm
-}}</dotcms-template-builder-section>
-<div class="grid-stack">
-    <dotcms-template-builder-row
-        class="grid-stack-item"
-        #rowElement
-        *ngFor="let row of items$ | async; trackBy: identify"
-        [attr.gs-id]="row.id"
-        [attr.gs-x]="row.x"
-        [attr.gs-y]="row.y"
-        [attr.gs-w]="row.w"
-        [attr.gs-h]="row.h"
-        (deleteRow)="deleteRow(row.id)"
-        data-testId="row"
+<div class="template-builder__main" *ngIf="vm$ | async as vm">
+    <dotcms-template-builder-section *ngIf="vm.layoutProperties.header">{{
+        'dot.template.builder.header' | dm
+    }}</dotcms-template-builder-section>
+    <div
+        class="template-builder__container"
+        [ngClass]="{
+            'template-builder__container--right': vm.layoutProperties.sidebar.location == 'right'
+        }"
     >
-        <div class="grid-stack-item-content grid-stack">
-            <div
-                class="grid-stack-item sub"
-                #boxElement
-                *ngFor="let box of row.subGridOpts?.children; trackBy: identify"
-                [attr.gs-id]="box.id"
-                [attr.gs-auto]="true"
-                [attr.gs-x]="box.x"
-                [attr.gs-y]="box.y"
-                [attr.gs-w]="box.w"
-                [attr.gs-h]="box.h"
-                data-testId="box"
+        <dotcms-template-builder-sidebar
+            *ngIf="vm.layoutProperties.sidebar.location.length"
+            [ngClass]="{
+                'template-builder__sidebar--small': vm.layoutProperties.sidebar.width == 'small',
+                'template-builder__sidebar--large': vm.layoutProperties.sidebar.width == 'large'
+            }"
+            [sidebarProperties]="vm.layoutProperties.sidebar"
+            [containerMap]="vm.containerMap"
+        />
+        <div class="grid-stack">
+            <dotcms-template-builder-row
+                class="grid-stack-item"
+                #rowElement
+                *ngFor="let row of vm.items; trackBy: identify"
+                [attr.gs-id]="row.id"
+                [attr.gs-x]="row.x"
+                [attr.gs-y]="row.y"
+                [attr.gs-w]="row.w"
+                [attr.gs-h]="row.h"
+                [row]="row"
+                [isResizing]="vm.resizingRowID === row.id"
+                data-testId="row"
             >
-                <dotcms-template-builder-box
-                    class="grid-stack-item-content"
-                    [items]="box.containers"
-                    [width]="box.w"
-                    (deleteColumn)="removeColumn(box, boxElement, row.id)"
-                ></dotcms-template-builder-box>
-            </div>
+                <div class="grid-stack-item-content grid-stack">
+                    <div
+                        class="grid-stack-item sub"
+                        #boxElement
+                        *ngFor="let box of row.subGridOpts?.children; trackBy: identify"
+                        [attr.gs-id]="box.id"
+                        [attr.gs-auto]="true"
+                        [attr.gs-x]="box.x"
+                        [attr.gs-y]="box.y"
+                        [attr.gs-w]="box.w"
+                        [attr.gs-h]="box.h"
+                        data-testId="box"
+                    >
+                        <dotcms-template-builder-box
+                            class="grid-stack-item-content"
+                            [containerMap]="vm.containerMap"
+                            [items]="box.containers"
+                            [width]="box.w"
+                            (deleteColumn)="removeColumn(box, boxElement, row.id)"
+                            (addContainer)="addContainer(box, row.id, $event)"
+                            (deleteContainer)="deleteContainer(box, row.id, $event)"
+                            (editClasses)="editBoxStyleClasses(row.id, box)"
+                        ></dotcms-template-builder-box>
+                    </div>
+                </div>
+            </dotcms-template-builder-row>
         </div>
-    </dotcms-template-builder-row>
+    </div>
+    <dotcms-template-builder-section *ngIf="vm.layoutProperties.footer">{{
+        'dot.template.builder.footer' | dm
+    }}</dotcms-template-builder-section>
 </div>
-<dotcms-template-builder-section>{{
-    'dot.template.builder.footer' | dm
-}}</dotcms-template-builder-section>

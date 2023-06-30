@@ -8,10 +8,13 @@ import { ActivatedRoute } from '@angular/router';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { ActivatedRouteMock } from '@dotcms/app/portlets/dot-experiments/test/mocks';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { CoreWebServiceMock, MockDotRouterService } from '@dotcms/utils-testing';
+import {
+    ActivatedRouteMock,
+    CoreWebServiceMock,
+    MockDotRouterService
+} from '@dotcms/utils-testing';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 import { DotPagesCreatePageDialogComponent } from './dot-pages-create-page-dialog.component';
@@ -70,6 +73,7 @@ class storeMock {
             pageTypes: [mockContentType]
         });
     }
+
     getPageTypes(): void {
         /* */
     }
@@ -163,7 +167,10 @@ describe('DotPagesCreatePageDialogComponent', () => {
     it('should redirect url when click on page', () => {
         const pageType = de.query(By.css(`.dot-pages-create-page-dialog__page-item`));
         pageType.triggerEventHandler('click', mockContentType.variable);
-        expect(dotRouterService.goToCreateContent).toHaveBeenCalledWith(mockContentType.variable);
+        expect(dotRouterService.goToURL).toHaveBeenCalledWith(
+            `/pages/new/${mockContentType.variable}`,
+            { skipLocationChange: true }
+        );
         expect(dialogRef.close).toHaveBeenCalled();
     });
 

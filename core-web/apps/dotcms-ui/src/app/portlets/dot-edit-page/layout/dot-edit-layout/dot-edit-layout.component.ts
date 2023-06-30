@@ -20,9 +20,9 @@ import { ResponseView } from '@dotcms/dotcms-js';
 import {
     DotContainer,
     DotContainerMap,
-    DotLayout,
     DotPageRender,
     DotPageRenderState,
+    DotTemplateDesigner,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
 
@@ -35,7 +35,7 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
     pageState: DotPageRender | DotPageRenderState;
     apiLink: string;
 
-    updateTemplate = new Subject<DotLayout>();
+    updateTemplate = new Subject<DotTemplateDesigner>();
     destroy$: Subject<boolean> = new Subject<boolean>();
     featureFlag = FeaturedFlags.FEATURE_FLAG_TEMPLATE_BUILDER;
 
@@ -97,7 +97,7 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
      * @param {DotTemplate} value
      * @memberof DotEditLayoutComponent
      */
-    onSave(value: DotLayout): void {
+    onSave(value: DotTemplateDesigner): void {
         this.dotGlobalMessageService.loading(
             this.dotMessageService.get('dot.common.message.saving')
         );
@@ -119,7 +119,7 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
      * @param {DotLayout} value
      * @memberof DotEditLayoutComponent
      */
-    nextUpdateTemplate(value: DotLayout) {
+    nextUpdateTemplate(value: DotTemplateDesigner) {
         this.canRouteBeDesativated(false);
         this.updateTemplate.next(value);
     }
@@ -143,7 +143,7 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
                 // More information: https://stackoverflow.com/questions/58974320/how-is-it-possible-to-stop-a-debounced-rxjs-observable
                 debounceTime(10000),
                 takeUntil(this.destroy$),
-                switchMap((layout: DotLayout) => {
+                switchMap((layout: DotTemplateDesigner) => {
                     this.dotGlobalMessageService.loading(
                         this.dotMessageService.get('dot.common.message.saving')
                     );

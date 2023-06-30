@@ -4,6 +4,9 @@ import java.io.File;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.Optional;
+
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotmarketing.util.Constants;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
@@ -18,6 +21,10 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.Lazy;
+import org.apache.velocity.context.Context;
+import org.apache.velocity.tools.view.context.ViewContext;
+
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * A helper class to provide an object to return to the dotCMS when a content has a binary field
@@ -30,15 +37,32 @@ public class BinaryMap {
 	private final Contentlet content;
 	private final Field field;
 
+	private final boolean includeLanguageInLink;
 	
-	public BinaryMap(Contentlet content, Field field) {
+	public BinaryMap(Contentlet content, Field field, Context context) {
 		this.content = content;
 		this.field = field;
-
+		// don't include language in the URL if the request has the request attribute User-Agent set for PP
+		HttpServletRequest request = null;
+		if (context instanceof ViewContext) {
+			final ViewContext viewContext = (ViewContext) context;
+			request = viewContext.getRequest();
+		}
+		if (request == null) {
+			request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+		}
+		if (request != null) {
+			final String userAgent = (String) request.getAttribute("User-Agent");
+			this.includeLanguageInLink = !(UtilMethods.isSet(userAgent)
+					&& userAgent.equalsIgnoreCase(Constants.USER_AGENT_DOTCMS_PUSH_PUBLISH));
+		} else {
+			this.includeLanguageInLink = true;
+		}
 	}
 	
-    public BinaryMap(Contentlet content, com.dotmarketing.portlets.structure.model.Field field) {
-        this(content, new LegacyFieldTransformer(field).from() );
+    public BinaryMap(Contentlet content,
+					 com.dotmarketing.portlets.structure.model.Field field, Context context) {
+        this(content, new LegacyFieldTransformer(field).from(), context);
     }
     
     Lazy<Metadata> meta = Lazy.of(this::getMetadata);
@@ -117,14 +141,17 @@ public class BinaryMap {
 	 */
     public String getRawUri() {
         return getName().length() > 0
-            ? UtilMethods.espaceForVelocity("/dA/" + content.getIdentifier() + "/" + field.variable() + "/" + getName()+ "?language_id=" + content.getLanguageId())
+            ? UtilMethods.espaceForVelocity("/dA/" + content.getIdentifier() + "/"
+				+ field.variable() + "/" + getName()
+				+ (includeLanguageInLink ? "?language_id=" + content.getLanguageId() : ""))
             : null;
     }
 
     public String getShortyUrl() {
 
         if(meta.get() != null) {
-            return "/dA/"+getShorty()+"/"+field.variable()+"/" + getName()+ "?language_id=" + content.getLanguageId();
+            return "/dA/"+getShorty()+"/"+field.variable()+"/" + getName()
+					+ (includeLanguageInLink ? "?language_id=" + content.getLanguageId() : "");
         } else {
 	        return null;
         }
@@ -171,10 +198,15 @@ public class BinaryMap {
 	    if(getName().length()==0) return "";
 	    StringBuilder uri=new StringBuilder();
 	    uri.append(getResizeUri());
-	    if(width!=null && width>0)
-	        uri.append("/").append(width).append("w");
-	    if(height!=null && height>0)
-	        uri.append("/").append(height).append("h");
+	    if(width!=null && width>0) {
+			uri.append(width).append("w");
+		}
+		if(width!=null && width>0 && height!=null && height>0) {
+			uri.append("/");
+		}
+	    if(height!=null && height>0) {
+			uri.append(height).append("h");
+		}
 	    return uri.toString();
 	}
 	

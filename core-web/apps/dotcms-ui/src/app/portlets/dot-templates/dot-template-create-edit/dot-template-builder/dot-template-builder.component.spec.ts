@@ -15,11 +15,15 @@ import {
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
+import { ButtonModule } from 'primeng/button';
+
+import { DotGlobalMessageComponent } from '@components/_common/dot-global-message/dot-global-message.component';
 import { IframeComponent } from '@components/_common/iframe/iframe-component';
 import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
 import { DotShowHideFeatureDirective } from '@dotcms/app/shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
-import { DotMessageService, DotPropertiesService } from '@dotcms/data-access';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotEventsService, DotMessageService, DotPropertiesService } from '@dotcms/data-access';
+import { DotLayout, DotTemplateDesigner } from '@dotcms/dotcms-models';
+import { DotIconModule, DotMessagePipeModule } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotTemplateBuilderComponent } from './dot-template-builder.component';
@@ -29,6 +33,18 @@ import {
     EMPTY_TEMPLATE_ADVANCED,
     EMPTY_TEMPLATE_DESIGN
 } from '../store/dot-template.store';
+
+@Component({
+    // eslint-disable-next-line @angular-eslint/component-selector
+    selector: 'dotcms-template-builder',
+    template: ` <ng-content select="[toolbar-left]"></ng-content>
+        <ng-content select="[toolbar-actions-right]"></ng-content>`
+})
+class TemplateBuilderMockComponent {
+    @Input() layout: DotLayout;
+    @Input() themeId: string;
+    @Output() templateChange: EventEmitter<DotTemplateDesigner> = new EventEmitter();
+}
 
 @Component({
     selector: 'dot-edit-layout-designer',
@@ -129,9 +145,17 @@ describe('DotTemplateBuilderComponent', () => {
                 IframeMockComponent,
                 TabViewMockComponent,
                 TabPanelMockComponent,
-                DotTestHostComponent
+                DotTestHostComponent,
+                TemplateBuilderMockComponent,
+                DotGlobalMessageComponent
             ],
-            imports: [DotMessagePipeModule, DotPortletBoxModule, DotShowHideFeatureDirective],
+            imports: [
+                DotMessagePipeModule,
+                DotPortletBoxModule,
+                DotShowHideFeatureDirective,
+                ButtonModule,
+                DotIconModule
+            ],
             providers: [
                 {
                     provide: DotMessageService,
@@ -145,7 +169,8 @@ describe('DotTemplateBuilderComponent', () => {
                     useValue: {
                         getKey: () => of('false')
                     }
-                }
+                },
+                DotEventsService
             ]
         }).compileComponents();
     });
@@ -154,6 +179,7 @@ describe('DotTemplateBuilderComponent', () => {
         fixture = TestBed.createComponent(DotTemplateBuilderComponent);
         de = fixture.debugElement;
         component = fixture.componentInstance;
+
         dotPropertiesService = TestBed.inject(DotPropertiesService);
         spyOn(component.save, 'emit');
         spyOn(component.updateTemplate, 'emit');
@@ -214,7 +240,7 @@ describe('DotTemplateBuilderComponent', () => {
         });
     });
 
-    describe('New design tempalte', () => {
+    describe('New template design', () => {
         beforeEach(() => {
             component.item = {
                 ...EMPTY_TEMPLATE_DESIGN,
@@ -222,15 +248,40 @@ describe('DotTemplateBuilderComponent', () => {
                 live: true
             };
             spyOn(dotPropertiesService, 'getKey').and.returnValue(of('true'));
+            fixture.detectChanges();
         });
 
         it('should show new template builder component', () => {
-            fixture.detectChanges();
             const component: DebugElement = fixture.debugElement.query(
                 By.css('[data-testId="new-template-builder"]')
             );
 
             expect(component).toBeTruthy();
+        });
+
+        it('should set the themeId @Input correctly', () => {
+            const templateBuilder = de.query(By.css('[data-testId="new-template-builder"]'));
+            expect(templateBuilder.componentInstance.themeId).toBe('123');
+        });
+
+        it('should emit events from new-template-builder when the layout is changed', () => {
+            const templateBuilder = de.query(By.css('[data-testId="new-template-builder"]'));
+            const template = {
+                layout: EMPTY_TEMPLATE_DESIGN.layout,
+                themeId: '123'
+            } as DotTemplateDesigner;
+
+            templateBuilder.triggerEventHandler('templateChange', template);
+            expect(component.updateTemplate.emit).toHaveBeenCalled();
+        });
+
+        it('should emit events from new-template-builder when click on save button', () => {
+            const btnsave = de.query(By.css('[data-testId="save-and-publish-btn"]'));
+            spyOn(component.saveAndPublish, 'emit');
+            btnsave.triggerEventHandler('click', component.item);
+
+            (btnsave.nativeElement as HTMLElement).click();
+            expect(component.saveAndPublish.emit).toHaveBeenCalled();
         });
     });
 
@@ -302,6 +353,9 @@ describe('DotTemplateBuilderComponent', () => {
                 theme: '123'
             };
             hostFixture.detectChanges();
+            const builder = hostFixture.debugElement.query(
+                By.css('dot-edit-layout-designer')
+            ).componentInstance;
             dotTestHostComponent.builder.historyIframe = {
                 iframeElement: {
                     nativeElement: {
@@ -317,6 +371,9 @@ describe('DotTemplateBuilderComponent', () => {
                 ...EMPTY_TEMPLATE_DESIGN,
                 theme: 'dotcms-123'
             };
+
+            builder.updateTemplate.emit(dotTestHostComponent.item);
+
             hostFixture.detectChanges();
             expect(
                 dotTestHostComponent.builder.historyIframe.iframeElement.nativeElement.contentWindow

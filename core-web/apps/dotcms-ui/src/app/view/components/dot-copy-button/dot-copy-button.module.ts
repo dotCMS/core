@@ -4,8 +4,8 @@ import { NgModule } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotClipboardUtil } from '@dotcms/app/api/util/clipboard/ClipboardUtil';
+import { UiDotIconButtonModule } from '@dotcms/ui';
 
 import { DotCopyButtonComponent } from './dot-copy-button.component';
 

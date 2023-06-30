@@ -2,7 +2,12 @@ import { v4 as uuid } from 'uuid';
 
 import { DotLayoutBody } from '@dotcms/dotcms-models';
 
-import { DotGridStackNode, DotGridStackWidget, TemplateBuilderBoxSize } from '../models/models';
+import {
+    DotGridStackNode,
+    DotGridStackWidget,
+    SYSTEM_CONTAINER_IDENTIFIER,
+    TemplateBuilderBoxSize
+} from '../models/models';
 
 /**
  * @description This function parses the oldNode and newNode to a DotGridStackWidget array
@@ -63,7 +68,11 @@ export function createDotGridStackWidgetFromNode(node: DotGridStackNode): DotGri
         parentId: node.grid?.parentGridItem?.id as string,
         w: node.w,
         styleClass: node.styleClass,
-        containers: node.containers,
+        containers: node.containers ?? [
+            {
+                identifier: SYSTEM_CONTAINER_IDENTIFIER
+            }
+        ],
         y: node.y
     } as DotGridStackWidget;
 }
@@ -131,8 +140,50 @@ export function parseFromDotObjectToGridStack(
     })) as DotGridStackWidget[];
 }
 
+export const parseFromGridStackToDotObject = (gridData: DotGridStackWidget[]): DotLayoutBody => {
+    if (!gridData) {
+        return { rows: [] };
+    }
+
+    // Clone the data so we don't mutate the original
+    const clone = structuredClone(gridData);
+    const ordered = clone.sort((a, b) => a.y - b.y);
+
+    const rows = ordered.map((row) => {
+        const { x: colWidth, subGridOpts, styleClass: styles } = row;
+        const { children = [] } = subGridOpts || {};
+        const styleClass = styles?.join(' ') || null;
+
+        if (!subGridOpts) {
+            return {
+                columns: [],
+                styleClass
+            };
+        }
+
+        const columns = children.map(({ x, w, containers = [], styleClass: styles }) => {
+            const leftOffset = x + colWidth + 1;
+            const styleClass = styles?.join(' ') || '';
+
+            return {
+                containers,
+                leftOffset,
+                width: w,
+                styleClass
+            };
+        });
+
+        return {
+            columns,
+            styleClass
+        };
+    });
+
+    return { rows };
+};
+
 /**
- *@description This function returns the variant of a box based on the number of width
+ * @description This function returns the variant of a box based on the number of width
  *
  * @param {number} width
  * @return {*}  {TemplateBuilderBoxSize}

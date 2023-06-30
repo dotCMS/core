@@ -10,6 +10,7 @@ import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.test.ContentTypeBaseTest;
 
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -230,6 +231,8 @@ public class RelationshipFactoryImplTest extends ContentTypeBaseTest{
         child2InGerman.setLanguageId(german.getId());
         childInGerman = contentletAPI.checkin(childInGerman, user, false);
         child2InGerman = contentletAPI.checkin(child2InGerman, user, false);
+
+        TestDataUtils.waitForEmptyQueue();
 
         final List<Contentlet> contentletList = relationshipFactory.dbRelatedContentByParent(parentContentlet.getIdentifier(),relationship.getRelationTypeValue(),false,null);
 

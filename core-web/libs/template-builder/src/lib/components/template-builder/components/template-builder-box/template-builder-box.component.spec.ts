@@ -1,18 +1,23 @@
 import { byTestId, createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
 
 import { NgClass, NgFor, NgIf } from '@angular/common';
+import { By } from '@angular/platform-browser';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
 import { ConfirmPopup } from 'primeng/confirmpopup';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
 
-import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotContainersService, DotMessageService } from '@dotcms/data-access';
+import { DotContainersServiceMock, mockMatchMedia } from '@dotcms/utils-testing';
 
 import { TemplateBuilderBoxComponent } from './template-builder-box.component';
 
-import { CONTAINERS_DATA_MOCK, DOT_MESSAGE_SERVICE_TB_MOCK } from '../../utils/mocks';
+import {
+    CONTAINER_MAP_MOCK,
+    CONTAINERS_DATA_MOCK,
+    DOT_MESSAGE_SERVICE_TB_MOCK
+} from '../../utils/mocks';
 import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-confirm-dialog.component';
 
 describe('TemplateBuilderBoxComponent', () => {
@@ -27,24 +32,29 @@ describe('TemplateBuilderBoxComponent', () => {
             ButtonModule,
             ScrollPanelModule,
             RemoveConfirmDialogComponent,
-            NoopAnimationsModule,
-            DotMessagePipeModule
+            NoopAnimationsModule
         ],
         providers: [
             {
                 provide: DotMessageService,
                 useValue: DOT_MESSAGE_SERVICE_TB_MOCK
+            },
+            {
+                provide: DotContainersService,
+                useValue: new DotContainersServiceMock()
             }
         ]
     });
 
     beforeEach(() => {
         spectator = createHost(
-            `<dotcms-template-builder-box [width]="width" [items]="items"> </dotcms-template-builder-box>`,
+            `<dotcms-template-builder-box [width]="width" [items]="items" [containerMap]="containerMap"> </dotcms-template-builder-box>`,
             {
                 hostProps: {
                     width: 10,
-                    items: CONTAINERS_DATA_MOCK
+                    items: CONTAINERS_DATA_MOCK,
+                    containerMap: CONTAINER_MAP_MOCK,
+                    showEditStyleButton: true
                 }
             }
         );
@@ -52,6 +62,7 @@ describe('TemplateBuilderBoxComponent', () => {
         spectator.detectChanges();
 
         jest.spyOn(ConfirmPopup.prototype, 'bindScrollListener').mockImplementation(jest.fn());
+        mockMatchMedia();
     });
 
     it('should create the component', () => {
@@ -89,12 +100,21 @@ describe('TemplateBuilderBoxComponent', () => {
         expect(secondTemplate).toBeNull();
     });
 
+    it('should only show the specified actions on actions input', () => {
+        spectator.setInput('actions', ['add', 'delete']); // Here we hide the edit button
+        spectator.detectComponentChanges();
+
+        const paletteButton = spectator.query(byTestId('box-style-class-button'));
+
+        expect(paletteButton).toBeFalsy();
+    });
+
     it('should show all buttons for small variant', () => {
         spectator.setInput('width', 1);
         spectator.detectComponentChanges();
 
         const addButton = spectator.query(byTestId('btn-plus-small'));
-        const paletteButton = spectator.query(byTestId('btn-palette-small'));
+        const paletteButton = spectator.query(byTestId('box-style-class-button-small'));
         const deleteButton = spectator.query(byTestId('btn-remove-item'));
         expect(addButton).toBeTruthy();
         expect(paletteButton).toBeTruthy();
@@ -103,15 +123,17 @@ describe('TemplateBuilderBoxComponent', () => {
 
     it('should trigger addContainer when click on plus button', () => {
         const addContainerMock = jest.spyOn(spectator.component.addContainer, 'emit');
-        const addButton = spectator.query(byTestId('btn-plus'));
+        const addButton = spectator.debugElement.query(By.css('.p-dropdown'));
+        spectator.click(addButton);
+        const option = spectator.query('.p-dropdown-item');
 
-        spectator.dispatchFakeEvent(addButton, 'onClick');
+        spectator.click(option);
         expect(addContainerMock).toHaveBeenCalled();
     });
 
-    it('should trigger editStyle when click on palette button', () => {
-        const editStyleMock = jest.spyOn(spectator.component.editStyle, 'emit');
-        const paletteButton = spectator.query(byTestId('btn-palette'));
+    it('should trigger editClasses when click on palette button', () => {
+        const editStyleMock = jest.spyOn(spectator.component.editClasses, 'emit');
+        const paletteButton = spectator.query(byTestId('box-style-class-button'));
 
         spectator.dispatchFakeEvent(paletteButton, 'onClick');
 
@@ -121,8 +143,14 @@ describe('TemplateBuilderBoxComponent', () => {
     it('should trigger deleteContainer when click on container trash button', () => {
         const deleteContainerMock = jest.spyOn(spectator.component.deleteContainer, 'emit');
         const containerTrashButton = spectator.query(byTestId('btn-trash-container'));
+        const removeContainerButton = containerTrashButton.querySelector(
+            '[data-testId="btn-remove-item"]'
+        );
 
-        spectator.dispatchFakeEvent(containerTrashButton, 'onClick');
+        spectator.dispatchFakeEvent(removeContainerButton, 'onClick');
+        spectator.detectChanges();
+        const confirmButton = spectator.query('.p-confirm-popup-accept');
+        spectator.click(confirmButton);
 
         expect(deleteContainerMock).toHaveBeenCalled();
     });
@@ -157,5 +185,22 @@ describe('TemplateBuilderBoxComponent', () => {
         spectator.dispatchFakeEvent(rejectButton, 'click');
 
         expect(rejectDeleteMock).toHaveBeenCalled();
+    });
+
+    it('should use titles from container map', (done) => {
+        const displayedContainerTitles = spectator
+            .queryAll(byTestId('container-title'))
+            .map((element) => element.textContent.trim());
+        const containerMapTitles = Object.values(CONTAINER_MAP_MOCK).map(
+            (container) => container.title
+        );
+
+        displayedContainerTitles.forEach((title) => {
+            if (!containerMapTitles.includes(title)) {
+                throw new Error(`title: "${title} not included the container map is displayed`);
+            }
+        });
+
+        done();
     });
 });

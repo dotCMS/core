@@ -17,7 +17,6 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { of } from 'rxjs/internal/observable/of';
 
-import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { DotRelativeDatePipe } from '@dotcms/app/view/pipes/dot-relative-date/dot-relative-date.pipe';
 import { DotMessageService } from '@dotcms/data-access';
@@ -27,7 +26,7 @@ import {
     DotcmsConfigService,
     SiteService
 } from '@dotcms/dotcms-js';
-import { DotMessagePipeModule } from '@dotcms/ui';
+import { DotMessagePipeModule, UiDotIconButtonModule } from '@dotcms/ui';
 import {
     DotcmsConfigServiceMock,
     dotcmsContentletMock,
@@ -248,6 +247,21 @@ describe('DotPagesListingPanelComponent', () => {
             expect(store.setKeyword).toHaveBeenCalledWith('test');
             expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
             expect(store.setSessionStorageFilterParams).toHaveBeenCalledTimes(1);
+        });
+
+        it('should send event to filter keyword when cleaning', () => {
+            const elem = de.query(By.css('.dot-pages-listing-header__inputs input'));
+            elem.triggerEventHandler('input', { target: { value: 'test' } });
+
+            const elemClean = de.query(
+                By.css('[data-testid="dot-pages-listing-header__keyword-input-clear"]')
+            );
+
+            elemClean.triggerEventHandler('click', {});
+
+            expect(store.setKeyword).toHaveBeenCalledWith('');
+            expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
+            expect(store.setSessionStorageFilterParams).toHaveBeenCalledTimes(2);
         });
 
         it('should send event to filter language', () => {

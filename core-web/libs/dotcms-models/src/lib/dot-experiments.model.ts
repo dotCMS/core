@@ -30,10 +30,23 @@ export interface DotExperimentResults {
     sessions: DotResultSessions;
 }
 
-interface DotResultBayesian {
+export interface DotResultBayesian {
     value: number;
     suggestedWinner: BayesianStatusResponse | string;
-    probabilities: Array<{ variant: string; value: number }>;
+    results: DotBayesianVariantResult[];
+}
+
+export interface DotBayesianVariantResult {
+    conversionRate: number;
+    credibilityInterval: DotCreditabilityInterval;
+    probability: number;
+    risk: number;
+    variant: string;
+}
+
+export interface DotCreditabilityInterval {
+    lower: number;
+    upper: number;
 }
 
 export interface DotResultGoal {
@@ -48,14 +61,6 @@ export interface DotResultVariant {
     variantName: string;
     variantDescription: string;
     totalPageViews: number;
-}
-
-export interface DotResultSimpleVariant {
-    id: string;
-    name: string;
-    isPromoted: boolean;
-    variantPercentage: number;
-    isWinner: boolean;
 }
 
 export interface DotResultUniqueBySession {
@@ -79,16 +84,16 @@ export interface TrafficProportion {
     variants: Array<Variant>;
 }
 
-export interface DotExperimentDetail {
+export interface DotExperimentVariantDetail {
     id: string;
     name: string;
-    trafficSplit: string;
-    pageViews: number;
+    conversions: number;
+    conversionRate: string;
+    conversionRateRange: string;
     sessions: number;
-    clicks: number;
-    bestVariant: number;
-    improvement: number;
+    probabilityToBeBest: string;
     isWinner: boolean;
+    isPromoted: boolean;
 }
 
 export interface Variant {
@@ -110,15 +115,15 @@ export interface Goal {
 export type Goals = Record<GoalsLevels, Goal>;
 
 export interface GoalCondition {
-    parameter: GOAL_PARAMETERS;
+    parameter: GOAL_PARAMETERS | string;
     operator: GOAL_OPERATORS;
     value: string;
     isDefault?: boolean;
 }
 
 export interface RangeOfDateAndTime {
-    startDate: number;
-    endDate: number;
+    startDate: number | null;
+    endDate: number | null;
 }
 
 export type GroupedExperimentByStatus = {
@@ -136,32 +141,39 @@ export type StepStatus = SidebarStatus & {
 };
 
 export enum ExperimentSteps {
-    EXPERIMENT_DESCRIPTION = 'experimentDescription',
     VARIANTS = 'variants',
     GOAL = 'goal',
     TARGETING = 'targeting',
     TRAFFIC_LOAD = 'trafficLoad',
     TRAFFICS_SPLIT = 'trafficSplit',
-    SCHEDULING = 'scheduling'
+    SCHEDULING = 'scheduling',
+    EXPERIMENT_DESCRIPTION = 'EXPERIMENT_DESCRIPTION'
 }
 
 export enum GOAL_TYPES {
     REACH_PAGE = 'REACH_PAGE',
     BOUNCE_RATE = 'BOUNCE_RATE',
-    CLICK_ON_ELEMENT = 'CLICK_ON_ELEMENT'
+    CLICK_ON_ELEMENT = 'CLICK_ON_ELEMENT',
+    URL_PARAMETER = 'URL_PARAMETER',
+    EXIT_RATE = 'EXIT_RATE'
 }
 
 export enum GOAL_OPERATORS {
     EQUALS = 'EQUALS',
-    CONTAINS = 'CONTAINS'
+    CONTAINS = 'CONTAINS',
+    EXISTS = 'EXISTS'
 }
 
 export enum GOAL_PARAMETERS {
     URL = 'url',
-    REFERER = 'referer'
+    REFERER = 'referer',
+    QUERY_PARAM = 'queryParam'
 }
 
-export const ConditionDefaultByTypeOfGoal: Record<GOAL_TYPES, GOAL_PARAMETERS> = {
+/**
+ * Default condition by type of goal in Goal Selection Sidebar
+ */
+export const ConditionDefaultByTypeOfGoal: Partial<Record<GOAL_TYPES, GOAL_PARAMETERS>> = {
     [GOAL_TYPES.BOUNCE_RATE]: GOAL_PARAMETERS.URL,
     [GOAL_TYPES.REACH_PAGE]: GOAL_PARAMETERS.REFERER,
     [GOAL_TYPES.CLICK_ON_ELEMENT]: GOAL_PARAMETERS.URL
@@ -226,3 +238,5 @@ export const ExperimentLineChartDatasetDefaultProperties: Partial<ChartDataset<'
     cubicInterpolationMode: 'monotone',
     borderWidth: 1.5
 };
+
+export type GoalConditionsControlsNames = 'parameter' | 'operator' | 'value';

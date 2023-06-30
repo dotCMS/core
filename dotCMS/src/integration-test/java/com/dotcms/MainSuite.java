@@ -46,10 +46,15 @@ import com.dotcms.enterprise.publishing.staticpublishing.LanguageFolderTest;
 import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTest;
 import com.dotcms.enterprise.rules.RulesAPIImplIntegrationTest;
 import com.dotcms.experiments.business.ExperimentAPIImpIntegrationTest;
+import com.dotcms.experiments.business.IndexRegexUrlPatterStrategyIntegrationTest;
+import com.dotcms.experiments.business.RootIndexRegexUrlPatterStrategyIntegrationTest;
 import com.dotcms.experiments.business.web.ExperimentWebAPIImplIntegrationTest;
 import com.dotcms.filters.interceptor.meta.MetaWebInterceptorTest;
 import com.dotcms.graphql.DotGraphQLHttpServletTest;
+import com.dotcms.integritycheckers.ContentFileAssetIntegrityCheckerTest;
+import com.dotcms.integritycheckers.ContentPageIntegrityCheckerTest;
 import com.dotcms.integritycheckers.HostIntegrityCheckerTest;
+import com.dotcms.integritycheckers.FolderIntegrityCheckerTest;
 import com.dotcms.integritycheckers.IntegrityUtilTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.mail.MailAPIImplTest;
@@ -83,6 +88,7 @@ import com.dotcms.rest.BundlePublisherResourceIntegrationTest;
 import com.dotcms.rest.BundleResourceTest;
 import com.dotcms.rest.IntegrityResourceIntegrationTest;
 import com.dotcms.rest.api.v1.apps.AppsResourceTest;
+import com.dotcms.rest.api.v1.apps.SiteViewPaginatorIntegrationTest;
 import com.dotcms.rest.api.v1.apps.view.AppsInterpolationTest;
 import com.dotcms.rest.api.v1.assets.AssetPathResolverImplTest;
 import com.dotcms.rest.api.v1.authentication.ResetPasswordTokenUtilTest;
@@ -129,6 +135,7 @@ import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactoryT
 import com.dotmarketing.portlets.containers.business.ContainerFactoryImplTest;
 import com.dotmarketing.portlets.containers.business.ContainerStructureFinderStrategyResolverTest;
 import com.dotmarketing.portlets.contentlet.business.ContentletCacheImplTest;
+import com.dotmarketing.portlets.contentlet.business.HostFactoryImplTest;
 import com.dotmarketing.portlets.contentlet.business.web.ContentletWebAPIImplIntegrationTest;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependenciesTest;
 import com.dotmarketing.portlets.contentlet.model.IntegrationResourceLinkTest;
@@ -641,8 +648,15 @@ import org.junit.runners.Suite.SuiteClasses;
         Task230523CreateVariantFieldInContentletIntegrationTest.class,
 //        AnalyticsAPIImplTest.class,
 //        AccessTokenRenewJobTest.class,
+        SiteViewPaginatorIntegrationTest.class,
         AssetPathResolverImplTest.class,
-        CMSUrlUtilIntegrationTest.class
+        CMSUrlUtilIntegrationTest.class,
+        HostFactoryImplTest.class,
+        RootIndexRegexUrlPatterStrategyIntegrationTest.class,
+        IndexRegexUrlPatterStrategyIntegrationTest.class,
+        ContentFileAssetIntegrityCheckerTest.class,
+        FolderIntegrityCheckerTest.class,
+        ContentPageIntegrityCheckerTest.class
 })
 
 public class MainSuite {

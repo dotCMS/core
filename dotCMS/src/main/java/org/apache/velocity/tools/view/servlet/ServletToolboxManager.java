@@ -173,7 +173,7 @@ public class ServletToolboxManager extends XMLToolboxManager
                 // if not under WEB-INF/toolbox.xml, try the classpath
                 if(is==null) {
                     LOG.info("Trying config file 'toolbox.xml'");
-                    is= ServletToolboxManager.class.getClassLoader().getResourceAsStream("toolbox.xml");
+                    is= Thread.currentThread().getContextClassLoader().getResourceAsStream("toolbox.xml");
                 }
                 if (is != null)
                 {

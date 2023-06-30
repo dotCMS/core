@@ -1,0 +1,60 @@
+<p-inplace class="flex w-full" [disabled]="disabled">
+    <ng-template pTemplate="display">
+        <div class="flex flex-wrap align-items-center gap-2">
+            <ng-container *ngIf="text; else noTextDefinedTpl">
+                <span data-testId="text-input">{{ text }}</span>
+            </ng-container>
+            <button
+                class="p-button-rounded p-button-sm p-button-text"
+                *ngIf="!disabled"
+                [class]="inplaceSizes[inputSize].button"
+                data-testId="text-input-button"
+                icon="pi pi-pencil"
+                pButton
+            ></button>
+        </div>
+
+        <ng-template #noTextDefinedTpl>
+            <span class="text-muted" data-testId="empty-text-message">{{
+                emptyTextMessage | dm
+            }}</span>
+        </ng-template>
+    </ng-template>
+
+    <ng-template pTemplate="content">
+        <form class="flex flex-grow-1 gap-2" [class]="inputSize" [formGroup]="form" novalidate>
+            <div class="flex-grow-1 flex p-input-icon-right">
+                <input
+                    class="w-full"
+                    [class]="inplaceSizes[inputSize].input"
+                    (keydown.enter)="saveAction()"
+                    (keydown.escape)="deactivateInplace()"
+                    data-testId="inplace-input"
+                    dotAutofocus
+                    formControlName="text"
+                    pInputText
+                />
+                <i
+                    class="pi pi-times cursor-pointer"
+                    (click)="deactivateInplace()"
+                    data-testId="variant-inplace-button"
+                ></i>
+            </div>
+            <button
+                class="p-button-rounded p-button-sm p-button-text"
+                [class]="inplaceSizes[inputSize].button"
+                [disabled]="form.invalid || textControl.pristine"
+                [loading]="isLoading"
+                (click)="saveAction()"
+                data-testId="text-save-btn"
+                icon="pi pi-save"
+                pButton
+                type="button"
+            ></button>
+        </form>
+
+        <ng-container *ngIf="form.invalid">
+            <dot-field-validation-message [field]="textControl"></dot-field-validation-message>
+        </ng-container>
+    </ng-template>
+</p-inplace>

@@ -1,0 +1,64 @@
+@use "variables" as *;
+
+:host {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-3;
+
+    .dot-options__item {
+        border: 1px solid $color-palette-gray-200;
+        border-radius: $border-radius-sm;
+        display: flex;
+        flex-direction: column;
+        transition-duration: $basic-speed;
+
+        header {
+            padding: $spacing-4;
+            gap: $spacing-1;
+            flex-direction: column;
+            display: flex;
+            cursor: pointer;
+
+            h2,
+            p {
+                margin: 0;
+                color: $color-palette-gray-800;
+            }
+
+            h2 {
+                font-size: $font-size-lg;
+                font-weight: $font-weight-bold;
+            }
+
+            p {
+                font-size: $font-size-md;
+                color: $color-palette-gray-700;
+            }
+        }
+
+        .option-item__content {
+            padding: 0 $spacing-4 0 $spacing-4;
+
+            &.expanded {
+                padding-bottom: $spacing-4;
+            }
+        }
+
+        &.active {
+            background-color: $color-palette-primary-100;
+
+            header {
+                padding-bottom: $spacing-2;
+
+                h2,
+                p {
+                    color: $black;
+                }
+            }
+        }
+
+        &:hover {
+            background-color: $color-palette-primary-100;
+        }
+    }
+}

@@ -28,6 +28,10 @@ const COMMANDS: Commands = {
       cmd: gradleCmd,
       args: ['createDistPrep', '--stacktrace'],
       workingDir: dotCmsRoot
+    },
+    {
+      cmd: 'rm',
+      args: ['-rf', '/home/runner/.m2/repository/com/dotcms']
     }
   ],
   maven: [

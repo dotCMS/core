@@ -11,6 +11,10 @@ import { LoginService } from './login.service';
 import { DotEventTypeWrapper } from './models/dot-events/dot-event-type-wrapper';
 
 /**
+ * @deprecated
+ * This service is deprecated do not use it in new code.
+ * If you need to interact with the sites use the DotSiteService from @dotcms/data-access.
+ *
  * Provide methods and data to hable the sites.
  * @export
  */

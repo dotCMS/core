@@ -8,8 +8,13 @@ import java.util.Map;
 import java.util.function.Function;
 
 /**
- * Simple Implementation based on a map.
+ * This is a simple implementation of the {@link AppContext}. It uses a Map to store the attributes instead of using,
+ * for instance, the current HTTP Session.
+ * <p>This can be particularly useful in case you need to interact with objects that are not serializable and the Redis
+ * Session Manager is enabled. Trying to persist non-serializable objects to Redis will cause errors in the system.</p>.
+ *
  * @author jsanca
+ * @since Jun 7th, 2023
  */
 public class SimpleMapAppContext implements AppContext {
 

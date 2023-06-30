@@ -5,7 +5,7 @@ import { Injectable } from '@angular/core';
 import { pluck, map } from 'rxjs/operators';
 
 import { CoreWebService, DotRequestOptionsArgs } from '@dotcms/dotcms-js';
-import { DotLayout, DotPageRender, DotPageRenderParameters } from '@dotcms/dotcms-models';
+import { DotPageRender, DotPageRenderParameters, DotTemplateDesigner } from '@dotcms/dotcms-models';
 
 import { DotSessionStorageService } from '../dot-session-storage/dot-session-storage.service';
 
@@ -26,11 +26,11 @@ export class DotPageLayoutService {
      * Save the layout of a page
      *
      * @param {string} pageIdentifier
-     * @param {DotLayout} dotLayout
+     * @param {DotLayout} DotTemplateDesignerPayload
      * @returns {Observable<DotPageRender>}
      * @memberof DotPageLayoutService
      */
-    save(pageIdentifier: string, dotLayout: DotLayout): Observable<DotPageRender> {
+    save(pageIdentifier: string, dotLayout: DotTemplateDesigner): Observable<DotPageRender> {
         const requestOptions: DotRequestOptionsArgs = {
             body: dotLayout,
             method: 'POST',

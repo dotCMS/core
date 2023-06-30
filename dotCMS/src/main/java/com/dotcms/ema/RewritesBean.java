@@ -16,7 +16,11 @@ import java.util.List;
  *    ]
  * }
  * @author jsanca
+ *
+ * @deprecated The ability to map incoming URLs with specific EMA Proxy URLs has been implemented via the new JSON
+ * configuration format. This class is not necessary anymore and should be deleted in the future.
  */
+@Deprecated(forRemoval = true)
 public class RewritesBean {
     private final List<RewriteBean> rewrites;
 

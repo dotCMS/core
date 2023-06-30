@@ -8,27 +8,37 @@
     data-testId="template-builder-box"
 >
     <div class="template-builder-box__header-container">
-        <p-button
-            [label]="
-                boxVariant === templateBuilderSizes.large
-                    ? ('dot.template.builder.add.container' | dm)
-                    : ''
-            "
-            (onClick)="addContainer.emit()"
-            icon="pi pi-plus"
+        <p-dropdown
+            *ngIf="actions.includes('add')"
+            [showClear]="false"
+            [filter]="true"
+            [placeholder]="this.dropdownLabel"
+            [formControl]="formControl"
+            [autoDisplayFirst]="false"
+            (onChange)="onContainerSelect($event)"
             data-testId="btn-plus"
-            styleClass="p-button-text p-button-sm"
-        ></p-button>
+            dotContainerOptions
+            appendTo="body"
+            dropdownIcon="pi pi-plus"
+            optionLabel="label"
+            styleClass="p-dropdown-sm"
+        >
+            <ng-template pTemplate="selectedItem">
+                {{ this.dropdownLabel }}
+            </ng-template>
+        </p-dropdown>
 
         <div>
             <p-button
-                (onClick)="editStyle.emit()"
-                data-testId="btn-palette"
+                *ngIf="actions.includes('edit')"
+                (onClick)="editClasses.emit()"
+                data-testId="box-style-class-button"
                 icon="pi pi-palette"
-                styleClass="p-button-rounded p-button-text p-button-sm"
+                styleClass="p-button-rounded p-button-text p-button-sm edit-classes-button"
             ></p-button>
 
             <dotcms-remove-confirm-dialog
+                *ngIf="actions.includes('delete')"
                 (deleteConfirmed)="deleteColumn.emit()"
                 (deleteRejected)="deleteColumnRejected.emit()"
             >
@@ -36,14 +46,15 @@
         </div>
     </div>
     <p-scrollPanel [style]="{ width: '100%', height: '10.9375rem' }">
-        <div class="template-builder-box__item" *ngFor="let item of items">
-            <p>{{ item.identifier }}</p>
-            <p-button
-                (onClick)="deleteContainer.emit()"
-                icon="pi pi-trash"
-                styleClass="p-button-secondary p-button-rounded p-button-text p-button-sm"
+        <div class="template-builder-box__item" *ngFor="let item of items; let i = index">
+            <p data-testId="container-title">
+                {{ (containerMap && containerMap[item.identifier]?.title) || item.identifier }}
+            </p>
+            <dotcms-remove-confirm-dialog
+                (deleteConfirmed)="deleteContainer.emit(i)"
                 data-testId="btn-trash-container"
-            ></p-button>
+            >
+            </dotcms-remove-confirm-dialog>
         </div>
     </p-scrollPanel>
 </div>
@@ -53,19 +64,27 @@
         class="template-builder-box template-builder-box--small"
         data-testId="template-builder-box-small"
     >
-        <p-button
-            (onClick)="addContainer.emit()"
+        <p-dropdown
+            *ngIf="actions.includes('add')"
+            [showClear]="false"
+            [filter]="true"
+            [formControl]="formControl"
+            (onChange)="onContainerSelect($event)"
+            dotContainerOptions
+            appendTo="body"
             data-testId="btn-plus-small"
-            icon="pi pi-plus"
-            styleClass="p-button-rounded  p-button-text p-button-sm"
-        ></p-button>
+            dropdownIcon="pi pi-plus"
+            optionLabel="label"
+        ></p-dropdown>
         <p-button
-            (onClick)="editStyle.emit()"
-            data-testId="btn-palette-small"
+            *ngIf="actions.includes('edit')"
+            (onClick)="editClasses.emit()"
+            data-testId="box-style-class-button-small"
             icon="pi pi-palette"
             styleClass="p-button-rounded  p-button-text p-button-sm"
         ></p-button>
         <dotcms-remove-confirm-dialog
+            *ngIf="actions.includes('delete')"
             (deleteConfirmed)="deleteColumn.emit()"
             (deleteRejected)="deleteColumnRejected.emit()"
         >

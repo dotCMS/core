@@ -1,3 +1,4 @@
+const path = require('path');
 const rootMain = require('../../../.storybook/main');
 
 module.exports = {
@@ -8,9 +9,11 @@ module.exports = {
     stories: [
         ...rootMain.stories,
         '../src/**/*.stories.mdx',
-        '../src/**/*.stories.@(js|jsx|ts|tsx)'
+        '../src/**/*.stories.@(js|jsx|ts|tsx)',
+        '../../../libs/template-builder/**/*.stories.@(js|jsx|ts|tsx|mdx)',
+        '../../../libs/block-editor/**/*.stories.@(js|jsx|ts|tsx|mdx)'
     ],
-    addons: ['@storybook/addon-essentials', ...rootMain.addons],
+    addons: ['storybook-design-token', '@storybook/addon-essentials', ...rootMain.addons],
     features: {
         previewMdx2: true
     },
@@ -20,7 +23,12 @@ module.exports = {
             config = await rootMain.webpackFinal(config, { configType });
         }
 
-        // add your own webpack tweaks if needed
+        config.module.rules.push({
+            test: /\.css$/,
+            use: ['style-loader', 'css-loader'],
+            include: path.resolve(__dirname, '../../../libs/dotcms-scss/shared')
+            // include: path.resolve(__dirname, '../'),
+        });
 
         return config;
     }
