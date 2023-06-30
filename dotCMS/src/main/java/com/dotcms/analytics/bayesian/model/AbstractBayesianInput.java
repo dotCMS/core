@@ -30,12 +30,13 @@ public interface AbstractBayesianInput {
     ABTestingType type();
 
     @JsonProperty("control")
-    VariantBayesianInput control();
+    VariantInput control();
 
     @JsonProperty("variantPairs")
-    List<VariantBayesianInput> variantPairs();
+    List<VariantInput> variantPairs();
 
     @JsonProperty("priors")
     List<BayesianPriors> priors();
+
 
 }
