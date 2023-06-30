@@ -24,6 +24,7 @@ import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
 import { MockDotHttpErrorManagerService } from '@dotcms/app/test/dot-http-error-manager.service.mock';
 import {
+    DotSessionStorageService,
     DotAlertConfirmService,
     DotEventsService,
     DotPageRenderService
@@ -175,6 +176,7 @@ describe('DotPagesComponent', () => {
             ],
             imports: [MenuModule],
             providers: [
+                DotSessionStorageService,
                 DotEventsService,
                 HttpClient,
                 HttpHandler,
