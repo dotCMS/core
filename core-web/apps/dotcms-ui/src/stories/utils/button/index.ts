@@ -48,31 +48,3 @@ export function createButtonTemplate(
 
     return mainDiv.replace(SEVERITY_PLACEHOLDER_REGEX, buttonsBySeverity);
 }
-
-/**
- * Creates a button template.
- *
- * @export
- * @param {string} [buttonType='']
- * @return {*}
- */
-export function createIconOnlyButtonTemplate(buttonType: string = '') {
-    const mainDiv = MAIN_DIV_TEMPLATE;
-
-    const buttonsBySeverity = severities
-        .map((severity) => {
-            let sizeDiv = '';
-            sizes.forEach((size) => {
-                const button = MAIN_BUTTONS_TEMPLATE.replace(SEVERITY_VALUE_REGEX, severity)
-                    .replace(SIZE_VALUE_REGEX, size)
-                    .replace(BUTTON_TYPE_REGEX, buttonType);
-
-                sizeDiv += SEVERITY_SEPARATOR_TEMPLATE.replace(BUTTONS_PLACEHOLDER_REGEX, button);
-            });
-
-            return sizeDiv;
-        })
-        .join('');
-
-    return mainDiv.replace(SEVERITY_PLACEHOLDER_REGEX, buttonsBySeverity);
-}
