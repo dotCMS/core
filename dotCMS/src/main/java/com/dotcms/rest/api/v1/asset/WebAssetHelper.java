@@ -39,12 +39,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.BooleanUtils;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * In typical dotCMS resource fashion this class is responsible for undertaking the heavy lifting
@@ -379,7 +377,7 @@ public class WebAssetHelper {
                 Contentlet.class::cast).collect(Collectors.toList());
         if (assets.isEmpty()) {
             throw new NotFoundInDbException(
-                    String.format(" Asset [%s] not found for lang [%s] and working/live state [%b] ",
+                    String.format(" Asset [%s] not found for lang [%s] and live status [%b] ",
                             assetName, form.language(),
                             BooleanUtils.toString(form.live(), "live", "working", "unspecified"))
             );

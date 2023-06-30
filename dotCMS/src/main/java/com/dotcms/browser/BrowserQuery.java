@@ -240,7 +240,12 @@ public class BrowserQuery {
 
         public Builder withFileName(@Nonnull String fileName) {
             if (UtilMethods.isSet(fileName)) {
-                luceneQuery.append(StringPool.SPACE).append(fileName);
+                // for exact file-name match we need to relay exclusively on the database
+                // we can not trust on the use of the title field indexed in lucene
+                // As different files can share the same title, and we need an exact match on identifier.asset_name
+                // Therefore we need to make it fail on purpose by adding a non-existing value to the query
+                // If we include this fileNAme here BrowserAPI will try to match the title in lucene bringing back false positives
+                luceneQuery.append(StringPool.SPACE).append("___").append(fileName).append("___");
                 this.fileName = fileName;
             }
             return this;

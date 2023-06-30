@@ -341,7 +341,7 @@ public class BrowserAPIImpl implements BrowserAPI {
         if(UtilMethods.isSet(browserQuery.fileName)){
             final String matchText = browserQuery.fileName.toLowerCase().trim();
             sqlQuery.append(" and (");
-            sqlQuery.append(getAssetNameColumn(ASSET_NAME_EQ.toString()));
+            sqlQuery.append(" LOWER(id.asset_name) = ?");
             sqlQuery.append(" ) ");
             parameters.add( matchText );
         }
