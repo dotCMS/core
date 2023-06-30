@@ -112,14 +112,13 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
         private dialogService: DialogService,
         private dotMessage: DotMessageService
     ) {
-        this.items$ = this.store.items$.pipe(
-            startWith([]),
-            map((items) => parseFromGridStackToDotObject(items))
-        );
+        this.items$ = this.store.items$.pipe(map((items) => parseFromGridStackToDotObject(items)));
 
-        combineLatest([this.items$, this.store.layoutProperties$.pipe(startWith())])
+        combineLatest([this.items$, this.store.layoutProperties$])
             .pipe(
-                skip(3), // One for every observable startWith and one for the store init
+                startWith([]),
+                filter(([items, layoutProperties]) => !!items && !!layoutProperties),
+                skip(1), // Skip the init of the store
                 tap(([items, layoutProperties]) => {
                     this.dotLayout = {
                         ...this.layout,
