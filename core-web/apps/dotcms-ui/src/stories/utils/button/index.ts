@@ -11,8 +11,8 @@ export const MAIN_BUTTONS_TEMPLATE = `<button class="SIZE_VALUE SEVERITY_VALUE B
 <button class="SIZE_VALUE SEVERITY_VALUE BUTTON_TYPE" pButton label="Disabled" disabled="true"></button>`;
 
 export const ICON_ONLY_BUTTONS_TEMPLATE = `<button class="SIZE_VALUE SEVERITY_VALUE BUTTON_TYPE p-button-rounded" pButton icon="pi pi-ellipsis-v"></button>
-<button class="SIZE_VALUE SEVERITY_VALUE BUTTON_TYPE" pButton icon="pi pi-ellipsis-v p-button-rounded"></button>
-<button class="SIZE_VALUE SEVERITY_VALUE BUTTON_TYPE" pButton icon="pi pi-ellipsis-v p-button-rounded" disabled="true"></button>`;
+<button class="SIZE_VALUE SEVERITY_VALUE BUTTON_TYPE p-button-rounded" pButton icon="pi pi-ellipsis-v"></button>
+<button class="SIZE_VALUE SEVERITY_VALUE BUTTON_TYPE p-button-rounded" pButton icon="pi pi-ellipsis-v" disabled="true"></button>`;
 
 const severities = ['', 'p-button-secondary', 'p-button-danger'];
 const sizes = ['p-button-lg', '', 'p-button-sm'];
