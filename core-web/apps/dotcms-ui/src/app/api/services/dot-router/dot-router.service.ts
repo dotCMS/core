@@ -228,8 +228,8 @@ export class DotRouterService {
         ]);
     }
 
-    goToURL(url: string): void {
-        this.router.navigate([url]);
+    goToURL(url: string, extras?: NavigationExtras): void {
+        this.router.navigate([url], extras);
     }
 
     /**
