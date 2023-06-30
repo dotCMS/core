@@ -40,13 +40,13 @@ describe('parseFromDotObjectToGridStack', () => {
         });
     });
 
-    it('should return an empty array when body is undefined', () => {
+    it('should return a row with one container when body is undefined', () => {
         const result = parseFromDotObjectToGridStack(undefined);
 
         expect(result).toEqual(EMPTY_ROWS_VALUE);
     });
 
-    it('should return an empty array when rows is empty', () => {
+    it('should return a row with one container when rows is empty', () => {
         const result = parseFromDotObjectToGridStack({ rows: [] });
 
         expect(result).toEqual(EMPTY_ROWS_VALUE);
