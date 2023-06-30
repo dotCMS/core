@@ -70,7 +70,7 @@ describe('TemplateBuilderBoxComponent', () => {
     });
 
     it('should render with default variant', () => {
-        expect(spectator.query(byTestId('template-builder-box'))).toHaveClass(
+        expect(spectator.query(byTestId('template-builder-box')).classList).toContain(
             'template-builder-box--large'
         );
     });
@@ -78,7 +78,7 @@ describe('TemplateBuilderBoxComponent', () => {
     it('should render with medium variant and update the class', () => {
         spectator.setInput('width', 3);
         spectator.detectComponentChanges();
-        expect(spectator.query(byTestId('template-builder-box'))).toHaveClass(
+        expect(spectator.query(byTestId('template-builder-box')).classList).toContain(
             'template-builder-box--medium'
         );
     });
@@ -86,7 +86,7 @@ describe('TemplateBuilderBoxComponent', () => {
     it('should render with small variant and update the class', () => {
         spectator.setInput('width', 1);
         spectator.detectComponentChanges();
-        expect(spectator.query(byTestId('template-builder-box-small'))).toHaveClass(
+        expect(spectator.query(byTestId('template-builder-box-small')).classList).toContain(
             'template-builder-box--small'
         );
     });
