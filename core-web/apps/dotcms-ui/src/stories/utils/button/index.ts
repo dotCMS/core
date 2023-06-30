@@ -6,9 +6,9 @@ const BUTTON_TYPE_REGEX = /BUTTON_TYPE/g;
 
 const MAIN_DIV_TEMPLATE = `<div style="display: flex; gap: 24px; flex-direction: column; align-items: center;">SEVERITY_TEMPLATE</div>`;
 const SEVERITY_SEPARATOR_TEMPLATE = `<div style="display: flex; gap: 8px; justify-content: center; width: fit-content;">BUTTONS_TEMPLATE</div>`;
-export const MAIN_BUTTONS_TEMPLATE = `<button class="SIZE_VALUE SEVERITY_VALUE BUTTON_TYPE" pButton label="Submit"></button>
-<button class="SIZE_VALUE SEVERITY_VALUE BUTTON_TYPE" pButton label="Submit" icon="pi pi-plus"></button>
-<button class="SIZE_VALUE SEVERITY_VALUE BUTTON_TYPE" pButton label="Disabled" disabled="true"></button>`;
+export const MAIN_BUTTONS_TEMPLATE = `<button class="SIZE_VALUE SEVERITY_VALUE BUTTON_TYPE" pButton label="Button"></button>
+<button class="SIZE_VALUE SEVERITY_VALUE BUTTON_TYPE" pButton label="Button" icon="pi pi-plus"></button>
+<button class="SIZE_VALUE SEVERITY_VALUE BUTTON_TYPE" pButton label="Button" disabled="true"></button>`;
 
 export const ICON_ONLY_BUTTONS_TEMPLATE = `<button class="SIZE_VALUE SEVERITY_VALUE BUTTON_TYPE p-button-rounded" pButton icon="pi pi-ellipsis-v"></button>
 <button class="SIZE_VALUE SEVERITY_VALUE BUTTON_TYPE p-button-rounded" pButton icon="pi pi-ellipsis-v"></button>
