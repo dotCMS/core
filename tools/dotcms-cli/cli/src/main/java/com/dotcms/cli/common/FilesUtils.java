@@ -39,16 +39,17 @@ public class FilesUtils {
 
         // Get the default language from the list of languages
         var defaultLanguage = languages.stream()
-                .filter(Language::defaultLanguage)
+                .filter(language -> {
+                    if (language.defaultLanguage().isPresent()) {
+                        return language.defaultLanguage().get();
+                    }
+
+                    return false;
+                })
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("No default language found"));
 
-        var languageTag = new StringBuilder(defaultLanguage.languageCode());
-        if (defaultLanguage.countryCode() != null && !defaultLanguage.countryCode().isEmpty()) {
-            languageTag.append("-").append(defaultLanguage.countryCode());
-        }
-
-        uniqueLiveLanguages.add(languageTag.toString());
+        uniqueLiveLanguages.add(defaultLanguage.isoCode());
     }
 
 }
