@@ -52,7 +52,7 @@ public class ContentTypePush extends AbstractContentTypeCommand implements Calla
             return CommandLine.ExitCode.SOFTWARE;
         }
 
-        final ObjectMapper objectMapper = formatOptionMixin.objectMapper();
+        final ObjectMapper objectMapper = formatOptionMixin.objectMapper(file);
 
         try {
             final ContentType contentType = objectMapper

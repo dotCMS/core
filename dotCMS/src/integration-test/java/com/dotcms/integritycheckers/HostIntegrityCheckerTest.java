@@ -4,26 +4,42 @@ import static com.dotcms.content.business.json.ContentletJsonAPI.SAVE_CONTENTLET
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
+import com.dotcms.business.WrapInTransaction;
+import com.dotcms.datagen.FileAssetDataGen;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.Logger;
+import io.vavr.Tuple2;
 import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.sql.Connection;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
+import io.vavr.Tuple;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Before;
@@ -45,7 +61,6 @@ public class HostIntegrityCheckerTest extends IntegrationTestBase {
     public void setup() throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
-        LicenseTestUtil.getLicense();
 
         integrityChecker = new HostIntegrityChecker();
         user = APILocator.getUserAPI().getSystemUser();
@@ -270,4 +285,72 @@ public class HostIntegrityCheckerTest extends IntegrationTestBase {
                 false
         };
     }
+
+    /**
+     * Method to test: {@link HostIntegrityChecker#executeFix(String)}
+     * When: Tests that after conflicts are detected a fix is applied in favor of remote host.
+     * Should: Columns Asset_subtype, owner and create_date should be populated
+     * @throws Exception
+     */
+    @Test
+    public void test_executeFix_identifierColumnsNotNull() throws Exception {
+
+        //Create new Site
+        final Host newSite = new SiteDataGen().nextPersisted();
+
+        //Introduce Conflict, will return new identifier of the site
+        final String remoteIdentifier = introduceConflict(newSite ,endpointId);
+
+        integrityChecker.executeFix(endpointId);
+
+        try{
+            //Query to check that the columns were populated, using the remoteIdentifier since
+            //it's the new Id of the site.
+            final DotConnect dotConnect = new DotConnect();
+            dotConnect.setSQL("SELECT asset_subtype, owner, create_date FROM identifier WHERE id = ?");
+            dotConnect.addParam(remoteIdentifier);
+            final List<Map<String, Object>> results = dotConnect.loadObjectResults();
+
+            boolean assetSubtypeNotNull = results.stream()
+                    .anyMatch(result -> result.containsKey("asset_subtype") && result.get("asset_subtype") != null);
+
+            Assert.assertTrue("Asset_SubType is null", assetSubtypeNotNull);
+
+            boolean createDateNotNull = results.stream()
+                    .anyMatch(result -> result.containsKey("create_date") && result.get("create_date") != null);
+
+            Assert.assertTrue("Create Date is null", createDateNotNull);
+
+            boolean ownerNotNull = results.stream()
+                    .anyMatch(result -> result.containsKey("owner") && result.get("owner") != null);
+
+            Assert.assertTrue("Owner is null", ownerNotNull);
+        } catch (DotDataException e) {
+            Logger.error(this, e);
+        } finally {
+            DbConnectionFactory.closeSilently();
+        }
+    }
+
+    @WrapInTransaction
+    private String introduceConflict(final Host site, final String endpointId) throws DotDataException {
+        final DotConnect dotConnect = new DotConnect();
+        dotConnect.setSQL("INSERT INTO hosts_ir \n"
+                + "(local_identifier, remote_identifier, endpoint_id, local_working_inode, remote_working_inode, language_id, host)\n"
+                + "VALUES(?, ?, ?, ?, ?, ?, ?)");
+
+        final String remoteIdentifier = UUID.randomUUID().toString();
+        final String remoteWorkingInode = UUID.randomUUID().toString();
+
+        dotConnect.addParam(site.getIdentifier());
+        dotConnect.addParam(remoteIdentifier);
+        dotConnect.addParam(endpointId);
+        dotConnect.addParam(site.getInode());
+        dotConnect.addParam(remoteWorkingInode);
+        dotConnect.addParam(site.getLanguageId());
+        dotConnect.addParam(site.getHostname());
+        dotConnect.loadResult();
+        return remoteIdentifier;
+    }
+
 }
