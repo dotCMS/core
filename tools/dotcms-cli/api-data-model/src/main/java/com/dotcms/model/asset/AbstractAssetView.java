@@ -3,9 +3,10 @@ package com.dotcms.model.asset;
 import com.dotcms.model.annotation.ValueType;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import org.immutables.value.Value;
+
 import java.time.Instant;
 import java.util.Map;
-import org.immutables.value.Value;
 
 @ValueType
 @Value.Immutable
@@ -24,6 +25,8 @@ public interface AbstractAssetView {
     long sortOrder();
 
     boolean live();
+
+    boolean working();
 
     String lang();
 

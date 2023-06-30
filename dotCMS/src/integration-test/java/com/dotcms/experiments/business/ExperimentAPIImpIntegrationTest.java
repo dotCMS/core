@@ -103,7 +103,6 @@ import javax.servlet.http.HttpSession;
 import net.bytebuddy.utility.RandomString;
 import org.junit.Assert;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -1775,6 +1774,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
             final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper();
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
             ExperimentAnalyzerUtil.setAnalyticsHelper(mockAnalyticsHelper);
+
             final ExperimentResults experimentResult = experimentsAPIImpl.getResults(
                 experiment,
                 APILocator.systemUser());
@@ -3052,7 +3052,6 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
      * Should: calculate the probability that B beats A is 0.99
      */
     @Test
-    @Ignore
     public void test_calcBayesian_ABC() throws DotDataException, DotSecurityException {
         final Host host = new SiteDataGen().nextPersisted();
         final Template template = new TemplateDataGen().host(host).nextPersisted();

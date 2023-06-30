@@ -2,6 +2,8 @@ import { GridStackNode, GridStackOptions, GridStackWidget } from 'gridstack';
 
 import { DotContainerMap, DotLayoutSideBar } from '@dotcms/dotcms-models';
 
+export const SYSTEM_CONTAINER_IDENTIFIER = 'SYSTEM_CONTAINER';
+
 /**
  * @description This is the model for using custom data on the GridStackOptions
  *
