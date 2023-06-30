@@ -127,6 +127,21 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         IntegrationTestInitService.getInstance().init();
     }
 
+    @Test
+    public void createRunningIdWhenExperimentIsTurnToRunning()
+            throws DotDataException, DotSecurityException {
+        final Experiment experiment = new ExperimentDataGen().nextPersisted();
+
+        APILocator.getExperimentsAPI().start(experiment.id().get(), APILocator.systemUser());
+
+        APILocator.getExperimentsAPI().find(experiment.id().get(), APILocator.systemUser())
+                .orElseThrow(() -> new AssertionError("Experiment not found"));
+
+        Assert.assertNotNull(experiment.runningIds());
+
+        Assert.assertEquals(1, experiment.runningIds().size());
+    }
+
     /**
      * Method to test: {@link ExperimentsAPI#getRunningExperiments()}
      * When: You have tree Experiment:

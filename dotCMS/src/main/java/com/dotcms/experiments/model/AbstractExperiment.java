@@ -160,6 +160,11 @@ public interface AbstractExperiment extends Serializable, ManifestItem, Ruleable
                 .build();
     }
 
+    @Value.Default
+    default RunningIds runningIds() {
+        return new RunningIds();
+    }
+
     enum Status {
         RUNNING,
         SCHEDULED,

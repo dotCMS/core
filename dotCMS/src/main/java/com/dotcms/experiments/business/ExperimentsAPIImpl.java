@@ -47,6 +47,8 @@ import com.dotcms.experiments.model.Experiment.Builder;
 import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.experiments.model.GoalFactory;
 import com.dotcms.experiments.model.Goals;
+import com.dotcms.experiments.model.RunningIds;
+import com.dotcms.experiments.model.RunningIds.RunningId;
 import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.experiments.model.TargetingCondition;
 import com.dotcms.experiments.model.TrafficProportion;
@@ -495,10 +497,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             final Scheduling scheduling = startNowScheduling(persistedExperiment);
             final Experiment experimentToSave = persistedExperiment.withScheduling(scheduling).withStatus(RUNNING);
             validateNoConflictsWithScheduledExperiments(experimentToSave, user);
-            toReturn = save(experimentToSave, user);
-            publishExperimentPage(toReturn, user);
-            publishContentOnExperimentVariants(user, toReturn);
-            cacheRunningExperiments();
+            toReturn = innerStart(experimentToSave, user);
         } else {
             Scheduling scheduling = persistedExperiment.scheduling().get();
             final Experiment experimentToSave = persistedExperiment.withScheduling(scheduling).withStatus(SCHEDULED);
@@ -578,6 +577,14 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
         DotPreconditions.isTrue(persistedExperiment.status() == Status.SCHEDULED,()-> "Cannot start an already started Experiment.",
                 DotStateException.class);
+
+        return innerStart(persistedExperiment, user);
+    }
+
+    private Experiment innerStart(final Experiment persistedExperiment, final User user)
+            throws DotSecurityException, DotDataException {
+
+        persistedExperiment.runningIds().add(new RunningId());
 
         Experiment running = save(persistedExperiment.withStatus(RUNNING), user);
         cacheRunningExperiments();
