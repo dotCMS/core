@@ -14,7 +14,8 @@ import {
     DotContentletLockerService,
     DotESContentService,
     DotLicenseService,
-    DotPageRenderService
+    DotPageRenderService,
+    DotSessionStorageService
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
@@ -41,6 +42,7 @@ describe('DotIframePorletLegacyResolver', () => {
     beforeEach(waitForAsync(() => {
         const testbed = DOTTestBed.configureTestingModule({
             providers: [
+                DotSessionStorageService,
                 DotPageStateService,
                 DotIframePortletLegacyResolver,
                 DotPageRenderService,
