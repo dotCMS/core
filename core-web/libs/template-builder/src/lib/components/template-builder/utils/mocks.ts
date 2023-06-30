@@ -401,3 +401,11 @@ export const mockTemplateBuilderContainer: DotTemplateBuilderContainer = {
     identifier: '1',
     uuid: '1'
 };
+
+export const SIDEBAR_MOCK = {
+    location: 'left',
+    width: 'small',
+    containers: []
+};
+
+export const STYLE_CLASS_MOCK = ['test', 'mock-class'];
