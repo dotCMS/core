@@ -115,7 +115,7 @@ export function removeColumnByID(row: DotGridStackWidget, columnID: string): Dot
 export function parseFromDotObjectToGridStack(
     body: DotLayoutBody | undefined
 ): DotGridStackWidget[] {
-    if (!body?.rows.length || !body) return EMPTY_ROWS_VALUE;
+    if (!body || !body.rows?.length) return EMPTY_ROWS_VALUE;
 
     return body.rows.map((row, i) => ({
         w: 12,
