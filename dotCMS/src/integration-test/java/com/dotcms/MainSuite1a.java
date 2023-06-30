@@ -10,6 +10,10 @@ import com.dotcms.enterprise.rules.RulesAPIImplIntegrationTest;
 import com.dotcms.experiments.business.ExperimentAPIImpIntegrationTest;
 import com.dotcms.experiments.business.web.ExperimentWebAPIImplIntegrationTest;
 import com.dotcms.graphql.DotGraphQLHttpServletTest;
+import com.dotcms.integritycheckers.ContentFileAssetIntegrityCheckerTest;
+import com.dotcms.integritycheckers.ContentPageIntegrityCheckerTest;
+import com.dotcms.integritycheckers.FolderIntegrityCheckerTest;
+import com.dotcms.integritycheckers.HostIntegrityCheckerTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.publisher.business.PublishQueueElementTransformerTest;
 import com.dotcms.publisher.util.DependencyModDateUtilTest;
@@ -88,8 +92,8 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.content.elasticsearch.business.ESSiteSearchAPITest.class,
         com.dotcms.content.elasticsearch.business.ContentletIndexAPIImplTest.class,
         com.dotcms.content.elasticsearch.business.ES6UpgradeTest.class,
-        com.dotcms.content.elasticsearch.business.ESContentFactoryImplTest.class
-
+        com.dotcms.content.elasticsearch.business.ESContentFactoryImplTest.class,
+        FolderIntegrityCheckerTest.class,
 })
 
 public class MainSuite1a {
