@@ -4,7 +4,7 @@ import { map } from 'rxjs/operators';
 
 import { IframeComponent } from '@components/_common/iframe/iframe-component';
 import { DotPropertiesService } from '@dotcms/data-access';
-import { DotLayout, FeaturedFlags } from '@dotcms/dotcms-models';
+import { FeaturedFlags } from '@dotcms/dotcms-models';
 
 import { DotTemplateItem } from '../store/dot-template.store';
 
