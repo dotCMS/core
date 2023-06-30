@@ -6,9 +6,13 @@ const BUTTON_TYPE_REGEX = /BUTTON_TYPE/g;
 
 const MAIN_DIV_TEMPLATE = `<div style="display: flex; gap: 24px; flex-direction: column; align-items: center;">SEVERITY_TEMPLATE</div>`;
 const SEVERITY_SEPARATOR_TEMPLATE = `<div style="display: flex; gap: 8px; justify-content: center; width: fit-content;">BUTTONS_TEMPLATE</div>`;
-const BUTTONS_TEMPLATE = `<button class="SIZE_VALUE SEVERITY_VALUE BUTTON_TYPE" pButton label="Submit"></button>
+export const MAIN_BUTTONS_TEMPLATE = `<button class="SIZE_VALUE SEVERITY_VALUE BUTTON_TYPE" pButton label="Submit"></button>
 <button class="SIZE_VALUE SEVERITY_VALUE BUTTON_TYPE" pButton label="Submit" icon="pi pi-plus"></button>
 <button class="SIZE_VALUE SEVERITY_VALUE BUTTON_TYPE" pButton label="Disabled" disabled="true"></button>`;
+
+export const ICON_ONLY_BUTTONS_TEMPLATE = `<button class="SIZE_VALUE SEVERITY_VALUE BUTTON_TYPE p-button-rounded" pButton icon="pi pi-ellipsis-v"></button>
+<button class="SIZE_VALUE SEVERITY_VALUE BUTTON_TYPE" pButton icon="pi pi-ellipsis-v p-button-rounded"></button>
+<button class="SIZE_VALUE SEVERITY_VALUE BUTTON_TYPE" pButton icon="pi pi-ellipsis-v p-button-rounded" disabled="true"></button>`;
 
 const severities = ['', 'p-button-secondary', 'p-button-danger'];
 const sizes = ['p-button-lg', '', 'p-button-sm'];
@@ -20,14 +24,46 @@ const sizes = ['p-button-lg', '', 'p-button-sm'];
  * @param {string} [buttonType='']
  * @return {*}
  */
-export function createButtonTemplate(buttonType: string = '') {
+export function createButtonTemplate(
+    buttonType: string = '',
+    buttonTemplate: string = MAIN_BUTTONS_TEMPLATE
+) {
     const mainDiv = MAIN_DIV_TEMPLATE;
 
     const buttonsBySeverity = severities
         .map((severity) => {
             let sizeDiv = '';
             sizes.forEach((size) => {
-                const button = BUTTONS_TEMPLATE.replace(SEVERITY_VALUE_REGEX, severity)
+                const button = buttonTemplate
+                    .replace(SEVERITY_VALUE_REGEX, severity)
+                    .replace(SIZE_VALUE_REGEX, size)
+                    .replace(BUTTON_TYPE_REGEX, buttonType);
+
+                sizeDiv += SEVERITY_SEPARATOR_TEMPLATE.replace(BUTTONS_PLACEHOLDER_REGEX, button);
+            });
+
+            return sizeDiv;
+        })
+        .join('');
+
+    return mainDiv.replace(SEVERITY_PLACEHOLDER_REGEX, buttonsBySeverity);
+}
+
+/**
+ * Creates a button template.
+ *
+ * @export
+ * @param {string} [buttonType='']
+ * @return {*}
+ */
+export function createIconOnlyButtonTemplate(buttonType: string = '') {
+    const mainDiv = MAIN_DIV_TEMPLATE;
+
+    const buttonsBySeverity = severities
+        .map((severity) => {
+            let sizeDiv = '';
+            sizes.forEach((size) => {
+                const button = MAIN_BUTTONS_TEMPLATE.replace(SEVERITY_VALUE_REGEX, severity)
                     .replace(SIZE_VALUE_REGEX, size)
                     .replace(BUTTON_TYPE_REGEX, buttonType);
 
