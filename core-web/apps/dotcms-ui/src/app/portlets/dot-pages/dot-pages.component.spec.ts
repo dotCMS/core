@@ -42,6 +42,7 @@ import {
 } from '@dotcms/dotcms-js';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
+
 import {
     dotcmsContentletMock,
     dotcmsContentTypeBasicMock,
@@ -52,7 +53,6 @@ import {
 } from '@dotcms/utils-testing';
 
 import { DotPageStore } from './dot-pages-store/dot-pages.store';
-
 import { DotActionsMenuEventParams, DotPagesComponent } from './dot-pages.component';
 
 @Component({
