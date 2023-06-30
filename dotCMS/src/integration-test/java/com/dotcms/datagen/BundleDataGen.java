@@ -176,7 +176,7 @@ public class BundleDataGen extends AbstractDataGen<Bundle> {
 
     @Override
     public Bundle next() {
-        final String bundleName = name != name ? name : "testBundle" + System.currentTimeMillis();
+        final String bundleName = name != null ? name : "testBundle" + System.currentTimeMillis();
         final Bundle bundle = new Bundle(bundleName, new Date(), null, user.getUserId());
         bundle.setOperation(operation.ordinal());
         bundle.setForcePush(forcePush);

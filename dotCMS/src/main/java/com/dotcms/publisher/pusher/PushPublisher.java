@@ -9,6 +9,7 @@ import com.dotcms.enterprise.publishing.remote.bundler.ContainerBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.ContentBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.ContentTypeBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.DependencyBundler;
+import com.dotcms.enterprise.publishing.remote.bundler.ExperimentBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.FolderBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.HostBundler;
 import com.dotcms.enterprise.publishing.remote.bundler.LanguageBundler;
@@ -471,6 +472,7 @@ public class PushPublisher extends Publisher {
 				buildRules = true;
 			} else if (element.getType().equals(PusheableAsset.EXPERIMENT.getType())) {
 				buildExperiments = true;
+				buildAsset = true;
 			} else {
 				buildAsset = true;
 			}

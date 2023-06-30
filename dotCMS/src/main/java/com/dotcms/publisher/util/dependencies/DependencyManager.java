@@ -16,6 +16,7 @@ import com.dotcms.publishing.manifest.CSVManifestBuilder;
 import com.dotcms.publishing.manifest.ManifestItem;
 import com.dotcms.publishing.manifest.ManifestItem.ManifestInfoBuilder;
 import com.dotcms.publishing.manifest.ManifestReason;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -50,6 +51,7 @@ import java.util.*;
 import java.util.concurrent.*;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.math3.analysis.function.Exp;
 import org.apache.felix.framework.OSGIUtil;
 import org.jetbrains.annotations.NotNull;
 
@@ -472,7 +474,13 @@ public class DependencyManager {
 		} else if (User.class.isInstance(asset)) {
 			final User user = User.class.cast(asset);
 			return user.getUserId();
-		} else {
+		}  else if (Experiment.class.isInstance(asset)) {
+			final Experiment experiment = Experiment.class.cast(asset);
+			return experiment.id().orElseThrow();
+		} else if (Variant.class.isInstance(asset)) {
+			final Variant variant = Variant.class.cast(asset);
+			return variant.name();
+		}else {
 			throw new IllegalArgumentException("Not allowed: " + asset.getClass().getName());
 		}
 	}

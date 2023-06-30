@@ -1,8 +1,11 @@
 package com.dotcms.publisher.util.dependencies;
 
+import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
+
 import com.dotcms.contenttype.business.StoryBlockAPI;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.experiments.model.Experiment;
+import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.util.PusheableAsset;
@@ -794,29 +797,25 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
                     .findContentletByIdentifierAnyLanguage(experiment.pageId());
 
             if (UtilMethods.isSet(parentPage)) {
-                tryToAddSilently(PusheableAsset.CONTENTLET, parentPage,
-                        ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(experiment));
+                tryToAddAsDependency(PusheableAsset.CONTENTLET, parentPage,
+                        experiment);
             } else {
                 throw new DotDataException(
                         String.format("For Experiment '%s', no parent with ID '%s' could be found", experiment.id().orElse(""),
                                 experiment.pageId()));
             }
 
-            final List<Variant> variants = experiment.trafficProportion().variants().stream()
-                    .map((experimentVariant -> {
-                        try {
-                            return APILocator.getVariantAPI()
-                                    .get(experimentVariant.id()).orElseThrow();
-                        } catch (DotDataException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }))
-                    .collect(Collectors.toList());
+//            final List<Contentlet> contentOnVariants = APILocator.getContentletAPI().getAllContentByVariants(user, false,
+//                            experiment.trafficProportion().variants().stream()
+//                                    .map(ExperimentVariant::id).filter((id) -> !id.equals(DEFAULT_VARIANT.name()))
+//                                    .toArray(String[]::new)).stream()
+//                    .filter((contentlet -> Try.of(contentlet::isWorking)
+//                            .getOrElse(false))).collect(Collectors.toList());
+//
+//            tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET, contentOnVariants,
+//                    ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(experiment));
 
-
-
-
-        } catch (final DotDataException e) {
+        } catch (final DotDataException | DotSecurityException e) {
             Logger.error(this, String.format("An error occurred when processing dependencies on Experiment '%s' [%s]: %s",
                     experiment.name(), experiment.id().orElse(""), e.getMessage()), e);
         }
@@ -1024,7 +1023,7 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
     }
 
     private <T> boolean shouldCheckModDate(T asset) {
-        return !Language.class.isInstance(asset);
+        return !(asset instanceof Language) && !(asset instanceof Variant);
     }
 
     private void setLanguageVariables() {

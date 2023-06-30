@@ -38,14 +38,6 @@ public class PublisherConfig implements Map<String, Object>, Cloneable {
 
 	static public String STATIC_SUFFIX = "-static";
 
-    public Set<String> getExperiments() {
-		if(get(Config.EXPERIMENTS.name()) == null){
-			Set<String> experimentsToBuild =   new HashSet<>();
-			params.put(Config.EXPERIMENTS.name(), experimentsToBuild);
-		}
-		return (Set<String>) params.get(Config.STRUCTURES.name());
-	}
-
     public enum Config {
 		START_DATE, END_DATE, HOSTS, HOST_SET, LANGUAGES, FOLDERS, STRUCTURES, INCLUDE_PATTERN,
 		EXCLUDE_PATTERN, LANGUAGE, USER, PUBLISHER, MAKE_BUNDLE, LUCENE_QUERY, 
@@ -162,7 +154,7 @@ public class PublisherConfig implements Map<String, Object>, Cloneable {
         }
     }
 
-    @SuppressWarnings("unchecked")
+	@SuppressWarnings("unchecked")
 	public Set<String> getHostSet() {
 		if(get(Config.HOST_SET.name()) == null){
 			Set<String> hostsToBuild =   new HashSet<>();
@@ -644,4 +636,5 @@ public class PublisherConfig implements Map<String, Object>, Cloneable {
 			return Optional.empty();
 		}
 	}
+
 }

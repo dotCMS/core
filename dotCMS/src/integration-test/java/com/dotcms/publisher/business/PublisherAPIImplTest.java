@@ -33,6 +33,7 @@ import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -217,8 +218,24 @@ public class PublisherAPIImplTest {
 
         final Experiment experiment = createExperiment();
 
-        final Bundle bundle = new BundleDataGen()
+        final Bundle bundle = new BundleDataGen().name("Experiments - " + UUIDGenerator.generateUuid())
                 .setSavePublishQueueElements(true).addAssets(List.of(experiment))
+                .nextPersisted();
+
+        final List<PublishQueueElement> queue = PublisherAPI.getInstance().getQueueElementsByBundleId(bundle.getId());
+        Assert.assertEquals(1, queue.size());
+        Assert.assertEquals("experiment", queue.get(0).getType());
+
+    }
+
+    @Test // TODO remove
+    public void test_addExistingExperiment()
+            throws DotDataException, DotPublisherException, DotSecurityException {
+
+        final Optional<Experiment> experiment = APILocator.getExperimentsAPI().find("47b9a080-f2ca-4e34-a2be-2549a68602be", APILocator.systemUser());
+
+        final Bundle bundle = new BundleDataGen().name("Exsting Experiment - " + UUIDGenerator.generateUuid())
+                .setSavePublishQueueElements(true).addAssets(List.of(experiment.orElseThrow()))
                 .nextPersisted();
 
         final List<PublishQueueElement> queue = PublisherAPI.getInstance().getQueueElementsByBundleId(bundle.getId());
