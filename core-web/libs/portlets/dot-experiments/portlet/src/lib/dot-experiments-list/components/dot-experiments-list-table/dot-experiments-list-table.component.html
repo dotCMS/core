@@ -78,7 +78,7 @@
     <ng-container *ngIf="experiment.status === experimentStatus.ENDED">
         <button
             class="p-button-rounded p-button-text"
-            (click)="goToConfiguration.emit(experiment)"
+            (click)="archive($event, experiment)"
             data-testId="experiment-row-archive-button"
             icon="pi pi-briefcase"
             pButton

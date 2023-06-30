@@ -29,7 +29,7 @@ export class DotFavoritePageService {
         url?: string;
         offset?: string;
         sortField?: string;
-        sortOrder?: ESOrderDirection;
+        sortOrder?: ESOrderDirection | string;
     }): Observable<ESContent> {
         const { limit, userId, identifier, url, offset, sortField, sortOrder } = params;
 

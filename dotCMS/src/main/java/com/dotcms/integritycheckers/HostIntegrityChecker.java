@@ -410,8 +410,8 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
                             "Fixing Host conflict for local %s with remote %s",
                             localHostIdentifier,
                             remoteHostIdentifier));
-            dc.setSQL("INSERT INTO identifier (id, parent_path, asset_name, host_inode, asset_type, syspublish_date, sysexpire_date, asset_subtype)" +
-                    " SELECT ?, parent_path, ?, host_inode, asset_type, syspublish_date, sysexpire_date, asset_subtype" +
+            dc.setSQL("INSERT INTO identifier (id, parent_path, asset_name, host_inode, asset_type, syspublish_date, sysexpire_date, asset_subtype, owner, create_date)" +
+                    " SELECT ?, parent_path, ?, host_inode, asset_type, syspublish_date, sysexpire_date, asset_subtype, owner, create_date" +
                     " FROM identifier WHERE id = ?")
                     .addParam(remoteHostIdentifier)
                     .addParam("content." + remoteWorkingInode)

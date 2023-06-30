@@ -60,6 +60,12 @@ p-dropdown {
     width: 100%;
     background-color: $white;
     overflow: hidden;
+
+    ::ng-deep {
+        .edit-classes-button {
+            margin-right: $spacing-1;
+        }
+    }
 }
 
 .template-builder-box__header-container {

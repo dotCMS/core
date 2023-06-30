@@ -14,7 +14,8 @@ import { DotTemplateBuilderStore } from './template-builder.store';
 import {
     DotGridStackNode,
     DotGridStackWidget,
-    DotTemplateLayoutProperties
+    DotTemplateLayoutProperties,
+    SYSTEM_CONTAINER_IDENTIFIER
 } from '../models/models';
 import { GRIDSTACK_DATA_MOCK, mockTemplateBuilderContainer } from '../utils/mocks';
 
@@ -96,7 +97,7 @@ describe('DotTemplateBuilderStore', () => {
             expect(items.length).toBeGreaterThan(initialState.length);
             expect(items[0].subGridOpts.children[0].w).toBe(3);
             expect(items[0].subGridOpts.children[0].containers[0].identifier).toBe(
-                'SYSTEM_CONTAINER'
+                SYSTEM_CONTAINER_IDENTIFIER
             );
         });
     });
@@ -170,28 +171,42 @@ describe('DotTemplateBuilderStore', () => {
         });
     });
 
-    it('should add a column', () => {
+    it('should add a column', (done) => {
         const parentId = initialState[0].id as string;
 
-        const newColumn: unknown = {
+        const grid = {
             grid: {
                 parentGridItem: {
                     id: parentId
                 }
-            },
+            }
+        };
+
+        const newColumn: DotGridStackWidget = {
             x: 0,
             y: 0,
-            w: 4,
+            w: 3,
             id: uuid()
         };
 
-        service.addColumn(newColumn as DotGridStackNode);
-
-        expect.assertions(1);
+        service.addColumn({ ...newColumn, ...grid } as DotGridStackNode);
 
         items$.subscribe((items) => {
             const row = items.find((item) => item.id === parentId);
-            expect(row?.subGridOpts?.children).toContainEqual(newColumn);
+            expect(row?.subGridOpts?.children).toContainEqual({
+                x: newColumn.x,
+                y: newColumn.y,
+                w: newColumn.w,
+                id: newColumn.id,
+                parentId: parentId,
+                styleClass: undefined,
+                containers: [
+                    {
+                        identifier: SYSTEM_CONTAINER_IDENTIFIER
+                    }
+                ]
+            });
+            done();
         });
     });
 

@@ -167,7 +167,10 @@ describe('DotPagesCreatePageDialogComponent', () => {
     it('should redirect url when click on page', () => {
         const pageType = de.query(By.css(`.dot-pages-create-page-dialog__page-item`));
         pageType.triggerEventHandler('click', mockContentType.variable);
-        expect(dotRouterService.goToCreateContent).toHaveBeenCalledWith(mockContentType.variable);
+        expect(dotRouterService.goToURL).toHaveBeenCalledWith(
+            `/pages/new/${mockContentType.variable}`,
+            { skipLocationChange: true }
+        );
         expect(dialogRef.close).toHaveBeenCalled();
     });
 
