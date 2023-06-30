@@ -8,13 +8,13 @@
 <div class="dot-content-palette__items" *ngIf="items?.length; else Loading">
     <div
         *ngFor="let item of items"
+        (dragstart)="dragStart(item)"
         draggable="true"
         data-testId="paletteItem"
-        (dragstart)="dragStart(item)"
     >
         <img
-            src="/dA/{{ item.inode }}/titleImage/48w"
             *ngIf="item?.hasTitleImage === true; else showIcon"
+            src="/dA/{{ item.inode }}/titleImage/500w/20q"
         />
         <ng-template #showIcon>
             <dot-contentlet-icon
@@ -29,11 +29,11 @@
         <p>{{ item.title || item.name }}</p>
     </div>
     <p-paginator
-        pageLinkSize="2"
         [rows]="itemsPerPage"
         [showFirstLastIcon]="false"
         [totalRecords]="totalRecords"
         (onPageChange)="onPaginate($event)"
+        pageLinkSize="2"
     ></p-paginator>
 </div>
 
@@ -42,8 +42,8 @@
 </ng-template>
 
 <span
+    class="dot-content-palette__empty"
     *ngIf="totalRecords < 1 && !loading"
     data-testId="emptyState"
-    class="dot-content-palette__empty"
     >{{ 'No-Results' | dm }}</span
 >
