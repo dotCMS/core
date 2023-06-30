@@ -685,16 +685,20 @@ public class BinaryExporterServlet extends HttpServlet {
 		
 	}
 
-	private static Contentlet getContentletByIdentifier(final PageMode pageMode,
+	private Contentlet getContentletByIdentifier(final PageMode pageMode,
 			final String identifier, final long languageId, final User user)
 			throws DotDataException, DotSecurityException {
 
-		final RenderContext renderContext = WebAPILocator.getVariantWebAPI()
-				.getRenderContext(languageId, identifier, pageMode, APILocator.systemUser());
+		final String currentVariantId = WebAPILocator.getVariantWebAPI().currentVariantId();
 
-		return APILocator.getContentletAPI().findContentletByIdentifier(identifier, pageMode.showLive,
-				renderContext.getCurrentLanguageId(), renderContext.getCurrentVariantKey(),
-				user, false);
+		final Contentlet contentletByIdentifier = contentAPI.findContentletByIdentifier(identifier,
+				pageMode.showLive, languageId, currentVariantId, user, pageMode.respectAnonPerms);
+
+		if (UtilMethods.isSet(contentletByIdentifier)) {
+			return contentletByIdentifier;
+		}
+
+		return contentAPI.findContentletByIdentifier(identifier, pageMode.showLive, languageId, user, pageMode.respectAnonPerms);
 	}
 
 	private boolean isBrowserSafariAndVersionBelow14(final UserAgent userAgent) {
