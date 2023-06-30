@@ -11,6 +11,11 @@
             "options": {
                 "jestConfig": "libs/data-access/jest.config.ts",
                 "passWithNoTests": true
+            },
+            "configurations": {
+                "ci": {
+                    "ci": true
+                }
             }
         },
         "lint": {
