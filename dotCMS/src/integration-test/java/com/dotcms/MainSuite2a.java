@@ -1,13 +1,5 @@
 package com.dotcms;
 
-import com.dotcms.auth.providers.saml.v1.DotSamlResourceTest;
-import com.dotcms.auth.providers.saml.v1.SAMLHelperTest;
-import com.dotcms.cache.lettuce.DotObjectCodecTest;
-import com.dotcms.cache.lettuce.LettuceCacheTest;
-import com.dotcms.cache.lettuce.RedisClientTest;
-import com.dotcms.content.business.ObjectMapperTest;
-import com.dotcms.content.business.json.ContentletJsonAPITest;
-import com.dotcms.content.elasticsearch.business.ESIndexAPITest;
 import com.dotcms.content.elasticsearch.business.ElasticsearchUtilTest;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
 import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
