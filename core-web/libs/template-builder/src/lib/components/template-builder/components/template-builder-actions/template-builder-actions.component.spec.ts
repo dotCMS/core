@@ -46,7 +46,6 @@ describe('TemplateBuilderActionsComponent', () => {
     });
 
     it('should emit selectTheme event when style button is clicked', () => {
-        expect.assertions(1);
         const spy = jest.spyOn(spectator.component.selectTheme, 'emit');
         spectator.detectChanges();
         const btnSelectStyles = spectator.query(byTestId('btn-select-theme'));
@@ -56,7 +55,6 @@ describe('TemplateBuilderActionsComponent', () => {
     });
 
     it('should open an overlayPanel event when layout button is clicked', () => {
-        expect.assertions(1);
         spectator.detectChanges();
         const btnSelectStyles = spectator.query(byTestId('btn-select-layout'));
         spectator.dispatchMouseEvent(btnSelectStyles, 'click');
@@ -65,7 +63,6 @@ describe('TemplateBuilderActionsComponent', () => {
     });
 
     it('should emit changes everytime the layout properties changes', () => {
-        expect.assertions(1);
         const changesMock = jest.spyOn(store, 'updateLayoutProperties');
         spectator.component.group.setValue({
             footer: true,

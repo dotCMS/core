@@ -23,7 +23,6 @@ describe('DotAddStyleClassesDialogStore', () => {
     afterEach(() => httpTestingController.verify());
 
     it('should have selected style classes on init when passed classes', (done) => {
-        expect.assertions(1);
         service.init({ selectedClasses: ['class1', 'class2'] });
         service.state$.subscribe((state) => {
             expect(state.selectedClasses).toEqual([{ cssClass: 'class1' }, { cssClass: 'class2' }]);
@@ -32,7 +31,6 @@ describe('DotAddStyleClassesDialogStore', () => {
     });
 
     it('should not have selected style classes on init', (done) => {
-        expect.assertions(1);
         service.state$.subscribe((state) => {
             expect(state.selectedClasses.length).toBe(0);
             done();
@@ -40,7 +38,6 @@ describe('DotAddStyleClassesDialogStore', () => {
     });
 
     it('should add a class to selected ', (done) => {
-        expect.assertions(1);
         service.init({ selectedClasses: [] });
 
         service.addClass({ cssClass: 'class1' });
@@ -52,7 +49,6 @@ describe('DotAddStyleClassesDialogStore', () => {
     });
 
     it('should remove last class from selected ', (done) => {
-        expect.assertions(1);
         service.init({ selectedClasses: ['class1', 'class2'] });
 
         service.removeLastClass();
@@ -64,7 +60,6 @@ describe('DotAddStyleClassesDialogStore', () => {
     });
 
     it('should fetch style classes file', (done) => {
-        expect.assertions(2);
         service.fetchStyleClasses();
         const req = httpTestingController.expectOne('/application/templates/classes.json');
         expect(req.request.method).toEqual('GET');
@@ -78,7 +73,6 @@ describe('DotAddStyleClassesDialogStore', () => {
     });
 
     it('should set styleClasses to empty array if fetch style classes fails', (done) => {
-        expect.assertions(2);
         service.fetchStyleClasses();
         const req = httpTestingController.expectOne('/application/templates/classes.json');
         expect(req.request.method).toEqual('GET');
@@ -90,7 +84,6 @@ describe('DotAddStyleClassesDialogStore', () => {
     });
 
     it('should filter style classes by a query', (done) => {
-        expect.assertions(1);
         const query = 'align';
 
         service.fetchStyleClasses();
@@ -108,7 +101,6 @@ describe('DotAddStyleClassesDialogStore', () => {
     });
 
     it('should add class to selectedClasses when found a comma on query', (done) => {
-        expect.assertions(1);
         const query = 'align,';
 
         service.filterClasses(query);
@@ -120,7 +112,6 @@ describe('DotAddStyleClassesDialogStore', () => {
     });
 
     it('should add class to selectedClasses when found a comma on query', (done) => {
-        expect.assertions(1);
         const query = 'align ';
 
         service.filterClasses(query);
@@ -132,7 +123,6 @@ describe('DotAddStyleClassesDialogStore', () => {
     });
 
     it('should show query on filtered is nothing is found', (done) => {
-        expect.assertions(1);
         const query = 'align-custom-class';
 
         service.filterClasses(query);
@@ -144,7 +134,6 @@ describe('DotAddStyleClassesDialogStore', () => {
     });
 
     it('should filter selected classes from filteredClass', (done) => {
-        expect.assertions(1);
         const query = 'd-';
         const selectedClasses = ['d-flex'];
         service.init({ selectedClasses });

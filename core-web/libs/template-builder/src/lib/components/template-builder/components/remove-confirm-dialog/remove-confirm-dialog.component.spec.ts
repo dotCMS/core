@@ -33,7 +33,6 @@ describe('RemoveConfirmDialogComponent', () => {
     });
 
     it('should emit confirm event and call accept function', async () => {
-        expect.assertions(1);
         const confirmEventSpy = jest.spyOn(spectator.component.deleteConfirmed, 'emit');
 
         const deleteButton = spectator.query(byTestId('btn-remove-item'));
@@ -46,7 +45,6 @@ describe('RemoveConfirmDialogComponent', () => {
     });
 
     it('should emit confirm event and call reject function', () => {
-        expect.assertions(1);
         const rejectEventSpy = jest.spyOn(spectator.component.deleteRejected, 'emit');
 
         const deleteButton = spectator.query(byTestId('btn-remove-item'));

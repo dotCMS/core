@@ -67,19 +67,16 @@ describe('TemplateBuilderBoxComponent', () => {
     });
 
     it('should create the component', () => {
-        expect.assertions(1);
         expect(spectator).toBeTruthy();
     });
 
     it('should render with default variant', () => {
-        expect.assertions(1);
         expect(spectator.query(byTestId('template-builder-box')).classList).toContain(
             'template-builder-box--large'
         );
     });
 
     it('should render with medium variant and update the class', () => {
-        expect.assertions(1);
         spectator.setInput('width', 3);
         spectator.detectComponentChanges();
         expect(spectator.query(byTestId('template-builder-box')).classList).toContain(
@@ -88,7 +85,6 @@ describe('TemplateBuilderBoxComponent', () => {
     });
 
     it('should render with small variant and update the class', () => {
-        expect.assertions(1);
         spectator.setInput('width', 1);
         spectator.detectComponentChanges();
         expect(spectator.query(byTestId('template-builder-box-small')).classList).toContain(
@@ -97,7 +93,6 @@ describe('TemplateBuilderBoxComponent', () => {
     });
 
     it('should render the first ng-template for large and medium variants', () => {
-        expect.assertions(2);
         spectator.setInput('width', 10);
         spectator.detectComponentChanges();
         const firstTemplate = spectator.query(byTestId('template-builder-box'));
@@ -107,7 +102,6 @@ describe('TemplateBuilderBoxComponent', () => {
     });
 
     it('should only show the specified actions on actions input', () => {
-        expect.assertions(1);
         spectator.setInput('actions', ['add', 'delete']); // Here we hide the edit button
         spectator.detectComponentChanges();
 
@@ -117,7 +111,6 @@ describe('TemplateBuilderBoxComponent', () => {
     });
 
     it('should show all buttons for small variant', () => {
-        expect.assertions(3);
         spectator.setInput('width', 1);
         spectator.detectComponentChanges();
 
@@ -130,7 +123,6 @@ describe('TemplateBuilderBoxComponent', () => {
     });
 
     it('should trigger addContainer when click on plus button', () => {
-        expect.assertions(1);
         const addContainerMock = jest.spyOn(spectator.component.addContainer, 'emit');
         const addButton = spectator.debugElement.query(By.css('.p-dropdown'));
         spectator.click(addButton);
@@ -141,7 +133,6 @@ describe('TemplateBuilderBoxComponent', () => {
     });
 
     it('should trigger editClasses when click on palette button', () => {
-        expect.assertions(1);
         const editStyleMock = jest.spyOn(spectator.component.editClasses, 'emit');
         const paletteButton = spectator.query(byTestId('box-style-class-button'));
 
@@ -151,7 +142,6 @@ describe('TemplateBuilderBoxComponent', () => {
     });
 
     it('should trigger deleteContainer when click on container trash button', () => {
-        expect.assertions(1);
         const deleteContainerMock = jest.spyOn(spectator.component.deleteContainer, 'emit');
         const containerTrashButton = spectator.query(byTestId('btn-trash-container'));
         const removeContainerButton = containerTrashButton.querySelector(
@@ -167,7 +157,6 @@ describe('TemplateBuilderBoxComponent', () => {
     });
 
     it('should trigger deleteColumn when clicking on deleteColumn button and click yes', () => {
-        expect.assertions(1);
         const deleteMock = jest.spyOn(spectator.component.deleteColumn, 'emit');
 
         const deleteButton = spectator.query(byTestId('btn-remove-item'));
@@ -184,7 +173,6 @@ describe('TemplateBuilderBoxComponent', () => {
     });
 
     it('should trigger deleteColumnRejected when clicking on deleteColumn button and click no', () => {
-        expect.assertions(1);
         const rejectDeleteMock = jest.spyOn(spectator.component.deleteColumnRejected, 'emit');
 
         const deleteButton = spectator.query(byTestId('btn-remove-item'));

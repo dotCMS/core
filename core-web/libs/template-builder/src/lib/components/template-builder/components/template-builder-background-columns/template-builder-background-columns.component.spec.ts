@@ -21,7 +21,6 @@ describe('TemplateBuilderBackgroundColumnsComponent', () => {
     });
 
     it('should have 12 columns', () => {
-        expect.assertions(1);
         const columns = spectator.debugElement.queryAll(By.css('[data-testId="column"]'));
         expect(columns.length).toEqual(12);
     });

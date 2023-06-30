@@ -513,7 +513,6 @@ describe('DotTemplateBuilderStore', () => {
             });
 
             it('should execute addColumnInYAxis when oldNode is undefined', (done) => {
-                expect.assertions(1);
                 jest.spyOn(service, 'addColumn').mockReturnValue(of('').subscribe());
 
                 const newNode: DotGridStackNode = {

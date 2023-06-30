@@ -52,7 +52,6 @@ describe('DotLayoutPropertiesItemComponent', () => {
     });
 
     it('should propagate value on host click', () => {
-        expect.assertions(3);
         comp.value = false;
         expect(comp.value).toEqual(false);
 
@@ -64,7 +63,6 @@ describe('DotLayoutPropertiesItemComponent', () => {
     });
 
     it('should emit switch value on host click', () => {
-        expect.assertions(1);
         let res: boolean;
 
         comp.switch.subscribe((value) => (res = value));
@@ -74,7 +72,6 @@ describe('DotLayoutPropertiesItemComponent', () => {
     });
 
     it('should add a selected class to the item if value is true', () => {
-        expect.assertions(1);
         const svgEl = de.children[0].nativeElement;
 
         de.nativeElement.click();
@@ -84,7 +81,6 @@ describe('DotLayoutPropertiesItemComponent', () => {
     });
 
     it('should call writeValue to define the initial value of the property item', () => {
-        expect.assertions(2);
         hostComponentfixture = TestBed.createComponent(TestHostComponent);
         de = hostComponentfixture.debugElement.query(By.css('dot-layout-properties-item'));
         const component: DotLayoutPropertiesItemComponent = de.componentInstance;

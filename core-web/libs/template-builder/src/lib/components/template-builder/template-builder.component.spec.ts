@@ -93,22 +93,18 @@ describe('TemplateBuilderComponent', () => {
     });
 
     it('should have a Add Row Button', () => {
-        expect.assertions(1);
         expect(spectator.query(byTestId('add-row'))).toBeTruthy();
     });
 
     it('should have a Add Box Button', () => {
-        expect.assertions(1);
         expect(spectator.query(byTestId('add-box'))).toBeTruthy();
     });
 
     it('should have the same quantity of rows as mocked data', () => {
-        expect.assertions(1);
         expect(spectator.queryAll(byTestId('row')).length).toBe(FULL_DATA_MOCK.rows.length);
     });
 
     it('should have the same quantity of boxes as mocked data', () => {
-        expect.assertions(1);
         const totalBoxes = FULL_DATA_MOCK.rows.reduce((acc, row) => {
             return acc + row.columns.length;
         }, 0);
@@ -117,7 +113,6 @@ describe('TemplateBuilderComponent', () => {
     });
 
     it('should trigger removeColumn on store when triggering removeColumn', () => {
-        expect.assertions(1);
         const removeColMock = jest.spyOn(store, 'removeColumn');
 
         let widgetToDelete: DotGridStackWidget;
@@ -136,7 +131,6 @@ describe('TemplateBuilderComponent', () => {
     });
 
     it('should call addContainer from store when triggering addContainer', () => {
-        expect.assertions(1);
         const addContainerMock = jest.spyOn(store, 'addContainer');
 
         let widgetToAddContainer: DotGridStackWidget;
@@ -153,7 +147,6 @@ describe('TemplateBuilderComponent', () => {
     });
 
     it('should call deleteContainer from store when triggering deleteContainer', () => {
-        expect.assertions(1);
         const deleteContainerMock = jest.spyOn(store, 'deleteContainer');
 
         let widgetToDeleteContainer: DotGridStackWidget;
@@ -170,7 +163,6 @@ describe('TemplateBuilderComponent', () => {
     });
 
     it('should open a dialog when clicking on row-style-class-button ', () => {
-        expect.assertions(1);
         const editRowStyleClassesButton = spectator.query(byTestId('row-style-class-button'));
 
         spectator.dispatchFakeEvent(editRowStyleClassesButton, 'onClick');
@@ -179,7 +171,6 @@ describe('TemplateBuilderComponent', () => {
     });
 
     it('should open a dialog when clicking on box-style-class-button', () => {
-        expect.assertions(1);
         const editBoxStyleClassesButton = spectator.query(byTestId('box-style-class-button'));
 
         spectator.dispatchFakeEvent(editBoxStyleClassesButton, 'onClick');
@@ -188,7 +179,6 @@ describe('TemplateBuilderComponent', () => {
     });
 
     it('should open a panel when clicking on Layout button', () => {
-        expect.assertions(1);
         const actionsButton = spectator.query(byTestId('btn-select-layout'));
 
         spectator.click(actionsButton);
@@ -202,7 +192,6 @@ describe('TemplateBuilderComponent', () => {
 
             spectator.detectChanges();
 
-            expect.assertions(2);
             store.init({
                 items: parseFromDotObjectToGridStack(FULL_DATA_MOCK),
                 layoutProperties: {

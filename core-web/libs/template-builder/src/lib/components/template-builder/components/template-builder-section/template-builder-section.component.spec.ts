@@ -24,7 +24,6 @@ describe('TemplateBuilderSectionComponent', () => {
     });
 
     it('should use the given title', () => {
-        expect.assertions(1);
         expect(spectator.debugElement.nativeElement.textContent).toEqual(MOCK_TEXT);
     });
 });

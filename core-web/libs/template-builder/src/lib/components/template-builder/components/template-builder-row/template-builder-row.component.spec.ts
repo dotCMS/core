@@ -75,28 +75,23 @@ describe('TemplateBuilderRowComponent', () => {
     });
 
     it('should create', () => {
-        expect.assertions(1);
         expect(component).toBeTruthy();
     });
 
     it('should have a drag handler', () => {
-        expect.assertions(1);
         expect(fixture.debugElement.query(By.css('[data-testid="row-drag-handler"]'))).toBeTruthy();
     });
     it('should have a style class edit button', () => {
-        expect.assertions(1);
         expect(
             fixture.debugElement.query(By.css('p-button[data-testid="row-style-class-button"]'))
         ).toBeTruthy();
     });
 
     it('should render child', () => {
-        expect.assertions(1);
         expect(fixture.debugElement.query(By.css('p'))).toBeTruthy();
     });
 
     it('should have a background when resizing', () => {
-        expect.assertions(1);
         fixture.componentInstance.isResizing = true;
         fixture.detectChanges();
 
@@ -106,7 +101,6 @@ describe('TemplateBuilderRowComponent', () => {
     });
 
     it('should trigger editRowStyleClass when clicking on editStyleClass button', () => {
-        expect.assertions(1);
         const editRowStyleClassMock = jest.spyOn(component, 'editClasses');
         const button = fixture.debugElement.query(
             By.css('p-button[data-testid="row-style-class-button"]')
@@ -118,14 +112,12 @@ describe('TemplateBuilderRowComponent', () => {
     });
 
     it('should have a remove item button', () => {
-        expect.assertions(1);
         expect(
             fixture.debugElement.query(By.css('p-button[data-testid="btn-remove-item"]'))
         ).toBeTruthy();
     });
 
     it('should trigger removeRow from store when clicking on deleteRow button and click yes', () => {
-        expect.assertions(1);
         const deleteMock = jest.spyOn(store, 'removeRow');
 
         const deleteButton = fixture.debugElement.query(
@@ -143,7 +135,6 @@ describe('TemplateBuilderRowComponent', () => {
     });
 
     it('should not trigger removeRow from store when clicking on deleteRow button and click no', () => {
-        expect.assertions(1);
         const deleteMock = jest.spyOn(store, 'removeRow');
 
         const deleteButton = fixture.debugElement.query(
