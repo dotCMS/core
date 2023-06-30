@@ -18,14 +18,14 @@ import picocli.CommandLine;
         name = LanguagePush.NAME,
         header = "@|bold,blue Push a language|@",
         description = {
-                " Save or update a language given a Language object (in JSON or YML format) or tag (e.g.: en-us)",
-                " Push a language given a Language object (in JSON or YML format) or tag (e.g.: en-us)",
-                " If no file is specified, a new language will be created using the tag provided.",
+                " Save or update a language given a Language object (in JSON or YML format) or iso (e.g.: en-us)",
+                " Push a language given a Language object (in JSON or YML format) or iso (e.g.: en-us)",
+                " If no file is specified, a new language will be created using the iso provided.",
                 "" // empty string to add a new line
         }
 )
 /**
- * Command to push a language given a Language object (in JSON or YML format) or tag (e.g.: en-us)
+ * Command to push a language given a Language object (in JSON or YML format) or iso code (e.g.: en-us)
  * @author nollymar
  */
 public class LanguagePush extends AbstractLanguageCommand implements Callable<Integer> {
@@ -34,8 +34,8 @@ public class LanguagePush extends AbstractLanguageCommand implements Callable<In
     @CommandLine.Mixin(name = "format")
     FormatOptionMixin formatOption;
 
-    @CommandLine.Option(names = {"--byTag"}, description = "Tag to be used to create a new language. Used when no file is specified. For example: en-us")
-    String languageTag;
+    @CommandLine.Option(names = {"--byIso"}, description = "Code to be used to create a new language. Used when no file is specified. For example: en-us")
+    String languageIso;
 
     @CommandLine.Option(names = {"-f", "--file"}, description = "The json/yml formatted content-type descriptor file to be pushed. ")
     File file;
@@ -44,12 +44,13 @@ public class LanguagePush extends AbstractLanguageCommand implements Callable<In
     public Integer call() throws Exception {
         final LanguageAPI languageAPI = clientFactory.getClient(LanguageAPI.class);
 
-        if (null == file && StringUtils.isEmpty(languageTag)) {
-            output.error("You must specify a file or a tag to create a new language.");
+        if (null == file && StringUtils.isEmpty(languageIso)) {
+            output.error("You must specify an iso code or file to create a new language.");
             return CommandLine.ExitCode.SOFTWARE;
         }
 
-        final ObjectMapper objectMapper = formatOption.objectMapper();
+
+        ObjectMapper objectMapper = formatOption.objectMapper(file);
 
         ResponseEntityView<Language> responseEntityView;
         if (null != file) {
@@ -68,7 +69,7 @@ public class LanguagePush extends AbstractLanguageCommand implements Callable<In
             }
 
         } else {
-            responseEntityView = pushLanguageByTag(languageAPI);
+            responseEntityView = pushLanguageByIsoCode(languageAPI);
         }
 
         final Language response = responseEntityView.entity();
@@ -78,12 +79,23 @@ public class LanguagePush extends AbstractLanguageCommand implements Callable<In
 
     }
 
+
+
     private ResponseEntityView<Language> pushLanguageByFile(final LanguageAPI languageAPI, final Language language) {
 
         final String languageId = language.id().map(String::valueOf).orElse("");
         final ResponseEntityView<Language> responseEntityView;
 
-        output.info(String.format("Attempting to save language with code @|bold,green [%s]|@",language.languageCode()));
+        final String isoCode = language.isoCode();
+        language.withLanguageCode(isoCode.split("-")[0]);
+
+        if (isoCode.split("-").length > 1) {
+            language.withCountryCode(isoCode.split("-")[1]);
+        } else {
+            language.withCountryCode("");
+        }
+
+        output.info(String.format("Attempting to save language with code @|bold,green [%s]|@",language.languageCode().get()));
 
         if (StringUtils.isNotBlank(languageId)){
             output.info(String.format("The id @|bold,green [%s]|@ provided in the language file will be used for look-up.", languageId));
@@ -94,19 +106,19 @@ public class LanguagePush extends AbstractLanguageCommand implements Callable<In
             responseEntityView = languageAPI.create(Language.builder().from(language).id(Optional.empty()).build());
         }
 
-        output.info(String.format("Language with code @|bold,green [%s]|@ successfully pushed.",language.languageCode()));
+        output.info(String.format("Language with code @|bold,green [%s]|@ successfully pushed.",language.languageCode().get()));
 
         return responseEntityView;
 
     }
 
-    private ResponseEntityView<Language> pushLanguageByTag(final LanguageAPI languageAPI) {
+    private ResponseEntityView<Language> pushLanguageByIsoCode(final LanguageAPI languageAPI) {
 
-        output.info(String.format("Attempting to create language with tag @|bold,green [%s]|@",languageTag));
+        output.info(String.format("Attempting to create language with iso code @|bold,green [%s]|@",languageIso));
 
-        ResponseEntityView responseEntityView = languageAPI.create(languageTag);
+        ResponseEntityView responseEntityView = languageAPI.create(languageIso);
 
-        output.info(String.format("Language with tag @|bold,green [%s]|@ successfully created.",languageTag));
+        output.info(String.format("Language with iso code @|bold,green [%s]|@ successfully created.",languageIso));
 
         return responseEntityView;
     }
