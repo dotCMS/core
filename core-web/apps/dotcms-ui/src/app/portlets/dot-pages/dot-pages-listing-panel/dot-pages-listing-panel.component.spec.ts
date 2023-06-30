@@ -249,6 +249,21 @@ describe('DotPagesListingPanelComponent', () => {
             expect(store.setSessionStorageFilterParams).toHaveBeenCalledTimes(1);
         });
 
+        it('should send event to filter keyword when cleaning', () => {
+            const elem = de.query(By.css('.dot-pages-listing-header__inputs input'));
+            elem.triggerEventHandler('input', { target: { value: 'test' } });
+
+            const elemClean = de.query(
+                By.css('[data-testid="dot-pages-listing-header__keyword-input-clear"]')
+            );
+
+            elemClean.triggerEventHandler('click', {});
+
+            expect(store.setKeyword).toHaveBeenCalledWith('');
+            expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
+            expect(store.setSessionStorageFilterParams).toHaveBeenCalledTimes(2);
+        });
+
         it('should send event to filter language', () => {
             const elem = de.query(By.css('.dot-pages-listing-header__inputs p-dropdown'));
             elem.triggerEventHandler('onChange', { value: '1' });

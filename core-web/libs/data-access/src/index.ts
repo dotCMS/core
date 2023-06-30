@@ -27,6 +27,7 @@ export * from './lib/dot-properties/dot-properties.service';
 export * from './lib/dot-push-publish-filters/dot-push-publish-filters.service';
 export * from './lib/dot-roles/dot-roles.service';
 export * from './lib/dot-session-storage/dot-session-storage.service';
+export * from './lib/dot-site/dot-site.service';
 export * from './lib/dot-site-browser/dot-site-browser.service';
 export * from './lib/dot-tags/dot-tags.service';
 export * from './lib/dot-themes/dot-themes.service';

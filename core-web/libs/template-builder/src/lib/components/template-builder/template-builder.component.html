@@ -1,4 +1,4 @@
-<p-toolbar>
+<p-toolbar styleClass="layout-toolbar">
     <div class="p-toolbar-group-start">
         <ng-content select="[toolbar-left]"></ng-content>
     </div>
@@ -15,18 +15,19 @@
             [label]="'dot.template.builder.add.box' | dm"
             [icon]="colIcon"
             data-widget-type="col"
-            gs-w="1"
+            gs-w="3"
             gs-h="1"
             data-testId="add-box"
         ></dotcms-add-widget>
         <p-divider layout="vertical"></p-divider>
         <dotcms-template-builder-actions
             [layoutProperties]="layoutProperties"
+            (selectTheme)="openThemeSelectorDynamicDialog()"
         ></dotcms-template-builder-actions>
         <ng-content select="[toolbar-actions-right]"></ng-content>
     </div>
 </p-toolbar>
-<ng-container *ngIf="vm$ | async as vm">
+<div class="template-builder__main" *ngIf="vm$ | async as vm">
     <dotcms-template-builder-section *ngIf="vm.layoutProperties.header">{{
         'dot.template.builder.header' | dm
     }}</dotcms-template-builder-section>
@@ -43,9 +44,9 @@
                 'template-builder__sidebar--large': vm.layoutProperties.sidebar.width == 'large'
             }"
             [sidebarProperties]="vm.layoutProperties.sidebar"
+            [containerMap]="vm.containerMap"
         />
         <div class="grid-stack">
-            <dotcms-template-builder-background-columns></dotcms-template-builder-background-columns>
             <dotcms-template-builder-row
                 class="grid-stack-item"
                 #rowElement
@@ -56,6 +57,7 @@
                 [attr.gs-w]="row.w"
                 [attr.gs-h]="row.h"
                 [row]="row"
+                [isResizing]="vm.resizingRowID === row.id"
                 data-testId="row"
             >
                 <div class="grid-stack-item-content grid-stack">
@@ -73,6 +75,7 @@
                     >
                         <dotcms-template-builder-box
                             class="grid-stack-item-content"
+                            [containerMap]="vm.containerMap"
                             [items]="box.containers"
                             [width]="box.w"
                             (deleteColumn)="removeColumn(box, boxElement, row.id)"
@@ -88,4 +91,4 @@
     <dotcms-template-builder-section *ngIf="vm.layoutProperties.footer">{{
         'dot.template.builder.footer' | dm
     }}</dotcms-template-builder-section>
-</ng-container>
+</div>
