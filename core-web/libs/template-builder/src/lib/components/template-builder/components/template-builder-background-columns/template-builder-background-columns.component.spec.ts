@@ -1,4 +1,3 @@
-import { expect } from '@jest/globals';
 import { createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
 
 import { NgFor, NgStyle } from '@angular/common';

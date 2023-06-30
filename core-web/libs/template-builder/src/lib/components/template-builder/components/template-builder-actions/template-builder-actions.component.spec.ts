@@ -1,4 +1,3 @@
-import { expect } from '@jest/globals';
 import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';

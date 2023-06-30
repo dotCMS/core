@@ -1,4 +1,3 @@
-import { expect } from '@jest/globals';
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { ConfirmationService } from 'primeng/api';

@@ -1,5 +1,3 @@
-import { expect } from '@jest/globals';
-
 import { Component, DebugElement, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
