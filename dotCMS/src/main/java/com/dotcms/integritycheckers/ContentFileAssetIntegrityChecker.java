@@ -221,10 +221,10 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
         if (results == null || results.size() == 0) {
             final String temporalAssetName = "TEMP_" + UUID.randomUUID().toString();
             dc.setSQL(new StringBuilder(
-                    "INSERT INTO identifier (id, parent_path, asset_name, host_inode, asset_type, syspublish_date, sysexpire_date) ")
+                    "INSERT INTO identifier (id, parent_path, asset_name, host_inode, asset_type, syspublish_date, sysexpire_date, asset_subtype, create_date, owner) ")
                     .append("SELECT ?, parent_path, '")
                     .append(temporalAssetName)
-                    .append("', host_inode, asset_type, syspublish_date, sysexpire_date FROM identifier WHERE id = ?")
+                    .append("', host_inode, asset_type, syspublish_date, sysexpire_date, asset_subtype, create_date, owner FROM identifier WHERE id = ?")
                     .toString());
             dc.addParam(newContentletIdentifier);
             dc.addParam(oldContentletIdentifier);
