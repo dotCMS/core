@@ -108,12 +108,16 @@ public class DotParse extends DotDirective {
                 throwNotResourceNotFoundException(params, templatePath);
             }
 
-            final RenderContext renderContext = WebAPILocator.getVariantWebAPI()
-                    .getRenderContext(params.language.getId(), idAndField._1.getId(), params.mode, params.user);
+            final String currentVariantId = WebAPILocator.getVariantWebAPI().currentVariantId();
 
             Optional<ContentletVersionInfo> contentletVersionInfo =
-                            APILocator.getVersionableAPI().getContentletVersionInfo(idAndField._1.getId(),
-                                    renderContext.getCurrentLanguageId(), renderContext.getCurrentVariantKey());
+                    APILocator.getVersionableAPI().getContentletVersionInfo(idAndField._1.getId(),
+                            languageId, currentVariantId);
+
+            if (contentletVersionInfo.isEmpty()) {
+                contentletVersionInfo = APILocator.getVersionableAPI()
+                        .getContentletVersionInfo(idAndField._1.getId(), languageId);
+            }
 
             if (contentletVersionInfo.isEmpty()
                     || UtilMethods.isNotSet(contentletVersionInfo.get().getIdentifier())
