@@ -202,7 +202,7 @@ describe('TemplateBuilderComponent', () => {
 
             spectator.detectChanges();
 
-            expect.assertions(1);
+            expect.assertions(2);
             store.init({
                 items: parseFromDotObjectToGridStack(FULL_DATA_MOCK),
                 layoutProperties: {

@@ -98,8 +98,8 @@ describe('DotTemplateBuilderStore', () => {
 
         items$.subscribe((items) => {
             expect(items.length).toBeGreaterThan(initialState.length);
-            expect(items[0].subGridOpts.children[0].w).toBe(3);
-            expect(items[0].subGridOpts.children[0].containers[0].identifier).toBe(
+            expect(items[3].subGridOpts.children[0].w).toBe(3);
+            expect(items[3].subGridOpts.children[0].containers[0].identifier).toBe(
                 SYSTEM_CONTAINER_IDENTIFIER
             );
             done();
