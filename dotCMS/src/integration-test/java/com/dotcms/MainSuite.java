@@ -54,6 +54,7 @@ import com.dotcms.graphql.DotGraphQLHttpServletTest;
 import com.dotcms.integritycheckers.ContentFileAssetIntegrityCheckerTest;
 import com.dotcms.integritycheckers.ContentPageIntegrityCheckerTest;
 import com.dotcms.integritycheckers.HostIntegrityCheckerTest;
+import com.dotcms.integritycheckers.FolderIntegrityCheckerTest;
 import com.dotcms.integritycheckers.IntegrityUtilTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.mail.MailAPIImplTest;
@@ -657,9 +658,10 @@ import org.junit.runners.Suite.SuiteClasses;
         RootIndexRegexUrlPatterStrategyIntegrationTest.class,
         IndexRegexUrlPatterStrategyIntegrationTest.class,
         ContentFileAssetIntegrityCheckerTest.class,
+        FolderIntegrityCheckerTest.class,
         ContentPageIntegrityCheckerTest.class,
         AssetPathResolverImplIntegrationTest.class,
-        WebAssetHelperIntegrationTest.class  
+        WebAssetHelperIntegrationTest.class
 })
 
 public class MainSuite {
