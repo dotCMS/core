@@ -9,7 +9,26 @@ export default {
             stringifyContentPathRegex: '\\.(html|svg)$'
         }
     },
-    coverageDirectory: '../../../../coverage/libs/portlets/dot-experiments/data-access',
+    coverageDirectory: '../../../../target/core-web-reports/',
+    collectCoverage: true,
+    coverageReporters: [['lcovonly', { file: 'TEST-portlet-experiment-data-access.lcov' }]],
+    collectCoverageFrom: [
+        'src/**/*.ts',
+        '!src/**/*.stories.ts',
+        '!src/**/*.module.ts',
+        '!src/index.ts'
+    ],
+    reporters: [
+        'default',
+        ['github-actions', { silent: false }],
+        [
+            'jest-junit',
+            {
+                outputDirectory: 'target/core-web-reports',
+                outputName: 'TEST-portlet-experiment-data-access.xml'
+            }
+        ]
+    ],
     transform: {
         '^.+\\.(ts|mjs|js|html)$': 'jest-preset-angular'
     },
