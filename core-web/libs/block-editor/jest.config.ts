@@ -13,6 +13,8 @@ export default {
     coverageDirectory: '../../target/core-web-reports/',
     coverageReporters: [['lcovonly', { file: 'TEST-block-editor.lcov' }]],
     reporters: [
+        'default',
+        ['github-actions', { silent: false }],
         [
             'jest-junit',
             { outputDirectory: 'target/core-web-reports', outputName: 'TEST-block-editor.xml' }

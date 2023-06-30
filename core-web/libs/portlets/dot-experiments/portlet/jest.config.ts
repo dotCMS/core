@@ -12,6 +12,8 @@ export default {
     coverageDirectory: '../../../../target/core-web-reports/',
     coverageReporters: [['lcovonly', { file: 'TEST-portlet-experiment.lcov' }]],
     reporters: [
+        'default',
+        ['github-actions', { silent: false }],
         [
             'jest-junit',
             {

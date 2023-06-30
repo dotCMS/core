@@ -9,8 +9,7 @@
             "executor": "@nrwl/jest:jest",
             "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
             "options": {
-                "jestConfig": "libs/template-builder/jest.config.ts",
-                "passWithNoTests": true
+                "jestConfig": "libs/template-builder/jest.config.ts"
             },
             "configurations": {
                 "ci": {

@@ -9,6 +9,5 @@ module.exports = {
         '!src/**/*.stories.ts',
         '!src/**/*.module.ts',
         '!src/index.ts'
-    ],
-    reporters: ['default', ['github-actions', { silent: false }]]
+    ]
 };

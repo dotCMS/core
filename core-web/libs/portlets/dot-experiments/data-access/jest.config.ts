@@ -10,7 +10,11 @@ export default {
         }
     },
     coverageDirectory: '../../../../target/core-web-reports/',
-    coverageReporters: [['lcovonly', { file: 'TEST-portlet-experiment-data-access.lcov' }]],
+    coverageReporters: [
+        'default',
+        ['github-actions', { silent: false }],
+        ['lcovonly', { file: 'TEST-portlet-experiment-data-access.lcov' }]
+    ],
     reporters: [
         [
             'jest-junit',
