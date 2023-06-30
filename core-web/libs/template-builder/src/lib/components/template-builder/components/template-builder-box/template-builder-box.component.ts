@@ -61,7 +61,6 @@ export class TemplateBuilderBoxComponent implements OnChanges {
     deleteColumnRejected: EventEmitter<void> = new EventEmitter<void>();
 
     @Input() items: DotTemplateBuilderContainer[];
-
     @Input() width = 1;
     @Input() containerMap: DotContainerMap;
     @Input() actions = ['add', 'delete', 'edit'];
@@ -91,9 +90,5 @@ export class TemplateBuilderBoxComponent implements OnChanges {
     onContainerSelect({ value }: { value: DotContainer }) {
         this.addContainer.emit(value);
         this.formControl.setValue(null);
-    }
-
-    boxSizeMatches(size: TemplateBuilderBoxSize): boolean {
-        return this.boxVariant === this.templateBuilderSizes[size];
     }
 }
