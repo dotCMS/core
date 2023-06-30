@@ -27,5 +27,6 @@ public interface AbstractAssetsRequestForm {
      }
 
      @JsonProperty("live")
-     boolean live();
+     @Value.Default
+     default boolean live() { return false; }
 }
