@@ -12,7 +12,6 @@ on:
         required: false
   push:
     branches:
-        - '*-test-maven'
         - master
         - release-*
     paths-ignore:
@@ -28,10 +27,6 @@ on:
       - '*.txt'
       - '.github/ISSUE_TEMPLATE/**'
   pull_request:
-    branches:
-        - '*-test-maven'
-        - master
-        - release-*
     paths-ignore:
       - '.gitignore'
       - '.dockerignore'
