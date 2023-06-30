@@ -10,7 +10,22 @@ export default {
             tsconfig: '<rootDir>/tsconfig.spec.json'
         }
     },
-    coverageDirectory: '../../coverage/libs/block-editor',
+    coverageDirectory: '../../target/core-web-reports/',
+    collectCoverage: true,
+    coverageReporters: [['lcovonly', { file: 'TEST-template-builder.lcov' }]],
+    collectCoverageFrom: [
+        'src/**/*.ts',
+        '!src/**/*.stories.ts',
+        '!src/**/*.module.ts',
+        '!src/index.ts'
+    ],
+    reporters: [
+        ['github-actions', { silent: false }],
+        [
+            'jest-junit',
+            { outputDirectory: 'target/core-web-reports', outputName: 'TEST-template-builder.xml' }
+        ]
+    ],
     snapshotSerializers: [
         'jest-preset-angular/build/serializers/no-ng-attributes',
         'jest-preset-angular/build/serializers/ng-snapshot',
