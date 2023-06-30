@@ -1660,6 +1660,17 @@ public interface ContentletAPI {
 	public List<Contentlet> findAllVersions(Identifier identifier, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotStateException;
 
 	/**
+	 * Retrieves all versions for a contentlet identifier
+	 * @param identifiers
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public List<Contentlet> findLiveOrWorkingVersions(final Set<String> identifiers, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+	/**
 	 * Retrieves all versions even the old ones for a {@link Contentlet} identifier and {@link Variant
 	 * Note: This method could pull too many versions.
 	 *
