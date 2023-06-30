@@ -45,7 +45,7 @@
         }
 
         &.active {
-            background-color: $color-palette-primary-200;
+            background-color: $color-palette-primary-100;
 
             header {
                 padding-bottom: $spacing-2;
@@ -58,7 +58,7 @@
         }
 
         &:hover {
-            background-color: $color-palette-primary-200;
+            background-color: $color-palette-primary-100;
         }
     }
 }
