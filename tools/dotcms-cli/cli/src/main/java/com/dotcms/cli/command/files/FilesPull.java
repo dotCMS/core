@@ -2,7 +2,7 @@ package com.dotcms.cli.command.files;
 
 import com.dotcms.api.AssetAPI;
 import com.dotcms.api.client.files.PullService;
-import com.dotcms.api.traversal.FolderTraversalService;
+import com.dotcms.api.traversal.RemoteFolderTraversalService;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.common.ConsoleLoadingAnimation;
 import com.dotcms.common.AssetsUtils;
@@ -18,9 +18,9 @@ import java.util.concurrent.CompletableFuture;
 @ActivateRequestContext
 @CommandLine.Command(
         name = FilesPull.NAME,
-        header = "@|bold,blue dotCMS Files ls|@",
+        header = "@|bold,blue dotCMS Files pull|@",
         description = {
-                " This command lists the files and directories in the specified directory.",
+                " This command pulls files from the server and saves them to the specified destination.",
                 "" // empty string here so we can have a new line
         }
 )
@@ -76,7 +76,7 @@ public class FilesPull extends AbstractFilesCommand implements Callable<Integer>
     String includeAssetPatternsOption;
 
     @Inject
-    FolderTraversalService folderTraversalService;
+    RemoteFolderTraversalService folderTraversalService;
 
     @Inject
     PullService pullAssetsService;

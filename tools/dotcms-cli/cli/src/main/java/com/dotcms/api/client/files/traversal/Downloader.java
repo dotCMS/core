@@ -2,11 +2,11 @@
  * This is a class responsible for handling the downloading of assets
  * from a given path through the AssetAPI.
  */
-package com.dotcms.api.client.files;
+package com.dotcms.api.client.files.traversal;
 
 import com.dotcms.api.AssetAPI;
 import com.dotcms.api.client.RestClientFactory;
-import com.dotcms.model.asset.SearchByPathRequest;
+import com.dotcms.model.asset.AssetRequest;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.control.ActivateRequestContext;
@@ -22,13 +22,13 @@ public class Downloader {
     /**
      * Downloads an asset from the given path using the AssetAPI.
      *
-     * @param request The SearchByPathRequest containing necessary parameters
+     * @param request The AssetRequest containing necessary parameters
      *                for downloading an asset such as path, language, and
      *                whether to fetch live or working copy.
      * @return InputStream The input stream of the downloaded asset.
      */
     @ActivateRequestContext
-    public InputStream download(final SearchByPathRequest request) {
+    public InputStream download(final AssetRequest request) {
 
         final AssetAPI assetAPI = this.clientFactory.getClient(AssetAPI.class);
 

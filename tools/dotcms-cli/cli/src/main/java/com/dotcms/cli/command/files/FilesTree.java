@@ -1,7 +1,7 @@
 package com.dotcms.cli.command.files;
 
 import com.dotcms.api.LanguageAPI;
-import com.dotcms.api.traversal.FolderTraversalService;
+import com.dotcms.api.traversal.RemoteFolderTraversalService;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.common.ConsoleLoadingAnimation;
 import com.dotcms.model.language.Language;
@@ -79,7 +79,7 @@ public class FilesTree extends AbstractFilesCommand implements Callable<Integer>
     String includeAssetPatternsOption;
 
     @Inject
-    FolderTraversalService folderTraversalService;
+    RemoteFolderTraversalService folderTraversalService;
 
     @Override
     public Integer call() throws Exception {

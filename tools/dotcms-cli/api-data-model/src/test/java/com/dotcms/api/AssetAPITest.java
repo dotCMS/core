@@ -3,6 +3,7 @@ package com.dotcms.api;
 import com.dotcms.api.client.RestClientFactory;
 import com.dotcms.api.client.ServiceManager;
 import com.dotcms.model.ResponseEntityView;
+import com.dotcms.model.asset.AssetRequest;
 import com.dotcms.model.asset.FolderView;
 import com.dotcms.model.asset.SearchByPathRequest;
 import com.dotcms.model.config.ServiceBean;
@@ -76,7 +77,7 @@ class AssetAPITest {
 
         final AssetAPI assetAPI = clientFactory.getClient(AssetAPI.class);
 
-        var folderByPath = SearchByPathRequest.builder().
+        var folderByPath = AssetRequest.builder().
                 assetPath(String.format("//%s/%s/%s", siteName, "folderDoesNotExist", "image.png")).
                 language("es-CR").
                 live(true).

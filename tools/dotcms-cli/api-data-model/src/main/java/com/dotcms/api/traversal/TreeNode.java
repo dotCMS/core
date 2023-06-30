@@ -98,7 +98,7 @@ public class TreeNode {
      * Clones the current TreeNode and filters its assets based on the provided status and language.
      * It can also optionally filter out empty folders based on the showEmptyFolders parameter.
      *
-     * @param status           A boolean indicating whether the assets should be live (true) or
+     * @param live             A boolean indicating whether the assets should be live (true) or
      *                         working (false).
      * @param language         A string representing the language of the assets to be included in
      *                         the cloned node.
@@ -110,7 +110,7 @@ public class TreeNode {
      * the provided status and language, and its folders filtered based on the showEmptyFolders
      * parameter.
      */
-    public TreeNode cloneAndFilterAssets(final boolean status, final String language,
+    public TreeNode cloneAndFilterAssets(final boolean live, final String language,
                                          final boolean showEmptyFolders) {
 
         TreeNode newNode = new TreeNode(this.folder, true);
@@ -119,8 +119,14 @@ public class TreeNode {
         boolean includeAssets = includeAssets();
         if (includeAssets && this.assets != null) {
             List<AssetView> filteredAssets = this.assets.stream()
-                    .filter(asset -> asset.live() == status
-                            && asset.lang().equalsIgnoreCase(language))
+                    .filter((asset) -> {
+
+                        if (live) {
+                            return asset.live() && asset.lang().equalsIgnoreCase(language);
+                        }
+
+                        return asset.working() && asset.lang().equalsIgnoreCase(language);
+                    })
                     .collect(Collectors.toList());
             newNode.assets(filteredAssets);
         }
@@ -133,7 +139,7 @@ public class TreeNode {
                 continue;
             }
 
-            TreeNode clonedChild = child.cloneAndFilterAssets(status, language, showEmptyFolders);
+            TreeNode clonedChild = child.cloneAndFilterAssets(live, language, showEmptyFolders);
 
             if (showEmptyFolders
                     || !clonedChild.assets.isEmpty()
@@ -172,15 +178,17 @@ public class TreeNode {
         boolean includeAssets = includeAssets();
         if (includeAssets && assets() != null) {
             for (AssetView asset : assets()) {
+
                 if (asset.live()) {
                     nodeInfo.addLiveLanguage(asset.lang());
-                } else {
+                    nodeInfo.incrementAssetsCount();
+                }
+                if (asset.working()) {
                     nodeInfo.addWorkingLanguage(asset.lang());
+                    nodeInfo.incrementAssetsCount();
                 }
 
                 nodeInfo.addLanguage(asset.lang());
-
-                nodeInfo.incrementAssetsCount();
             }
         }
 

@@ -2,6 +2,8 @@ package com.dotcms.api.client.files;
 
 import com.dotcms.api.LanguageAPI;
 import com.dotcms.api.client.RestClientFactory;
+import com.dotcms.api.client.files.traversal.Downloader;
+import com.dotcms.api.client.files.traversal.FileSystemTreeBuilderTask;
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.api.traversal.TreeNodeInfo;
 import com.dotcms.cli.common.ConsoleProgressBar;

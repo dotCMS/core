@@ -19,7 +19,7 @@ import java.util.concurrent.ForkJoinPool;
  */
 @DefaultBean
 @Dependent
-public class FolderTraversalServiceImpl implements FolderTraversalService {
+public class RemoteFolderTraversalServiceImpl implements RemoteFolderTraversalService {
 
     @Inject
     Logger logger;
@@ -71,7 +71,7 @@ public class FolderTraversalServiceImpl implements FolderTraversalService {
         // ---
         var forkJoinPool = ForkJoinPool.commonPool();
 
-        var task = new FolderTraversalTask(
+        var task = new RemoteFolderTraversalTask(
                 retriever,
                 filter,
                 dotCMSPath.site(),

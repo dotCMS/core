@@ -3,6 +3,7 @@ package com.dotcms.api;
 import com.dotcms.api.provider.DefaultResponseExceptionMapper;
 import com.dotcms.api.provider.DotCMSClientHeaders;
 import com.dotcms.model.ResponseEntityView;
+import com.dotcms.model.asset.AssetRequest;
 import com.dotcms.model.asset.AssetVersionsView;
 import com.dotcms.model.asset.FolderView;
 import com.dotcms.model.asset.SearchByPathRequest;
@@ -51,6 +52,6 @@ public interface AssetAPI {
     @Operation(
             summary = "Retrieve a specific asset"
     )
-    InputStream download(final SearchByPathRequest request);
+    InputStream download(final AssetRequest request);
 
 }

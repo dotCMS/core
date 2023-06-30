@@ -11,7 +11,7 @@ import java.util.concurrent.RecursiveTask;
  * representation of its contents. This task is used to split the traversal into smaller sub-tasks
  * that can be executed in parallel, allowing for faster traversal of large directory structures.
  */
-public class FolderTraversalTask extends RecursiveTask<TreeNode> {
+public class RemoteFolderTraversalTask extends RecursiveTask<TreeNode> {
 
     private final Retriever retriever;
     private final Filter filter;
@@ -31,7 +31,7 @@ public class FolderTraversalTask extends RecursiveTask<TreeNode> {
      * @param root      Whether this task is for the root folder.
      * @param depth     The maximum depth to traverse the directory tree.
      */
-    FolderTraversalTask(
+    RemoteFolderTraversalTask(
             Retriever retriever,
             Filter filter,
             final String siteName,
@@ -59,7 +59,7 @@ public class FolderTraversalTask extends RecursiveTask<TreeNode> {
 
         TreeNode currentNode = new TreeNode(folder);
 
-        List<FolderTraversalTask> forks = new LinkedList<>();
+        List<RemoteFolderTraversalTask> forks = new LinkedList<>();
 
         // Processing the very first level
         if (root) {
@@ -74,7 +74,7 @@ public class FolderTraversalTask extends RecursiveTask<TreeNode> {
                     folder.explicitGlobExclude()
             );
 
-            // Using the values set by the filter
+            // Using the values set by the filter in the root folder
             var detailedFolder = folder.withImplicitGlobInclude(fetchedFolder.implicitGlobInclude());
             detailedFolder = detailedFolder.withExplicitGlobInclude(fetchedFolder.explicitGlobInclude());
             detailedFolder = detailedFolder.withExplicitGlobExclude(fetchedFolder.explicitGlobExclude());
@@ -136,7 +136,7 @@ public class FolderTraversalTask extends RecursiveTask<TreeNode> {
         }
 
         // Join all sub-tasks and add their results to the current node
-        for (FolderTraversalTask task : forks) {
+        for (RemoteFolderTraversalTask task : forks) {
             TreeNode childNode = task.join();
             currentNode.addChild(childNode);
         }
@@ -170,7 +170,7 @@ public class FolderTraversalTask extends RecursiveTask<TreeNode> {
      *                            rules or patterns.
      * @return A new FolderTraversalTask instance to search for the specified folder.
      */
-    private FolderTraversalTask searchForFolder(
+    private RemoteFolderTraversalTask searchForFolder(
             final String siteName,
             final String folderPath,
             final int level,
@@ -182,7 +182,7 @@ public class FolderTraversalTask extends RecursiveTask<TreeNode> {
         final var folder = this.restCall(siteName, folderPath, level,
                 implicitGlobInclude, explicitGlobInclude, explicitGlobExclude);
 
-        return new FolderTraversalTask(
+        return new RemoteFolderTraversalTask(
                 this.retriever,
                 this.filter,
                 siteName,

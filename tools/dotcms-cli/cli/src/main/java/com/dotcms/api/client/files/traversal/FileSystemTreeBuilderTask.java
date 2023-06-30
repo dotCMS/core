@@ -1,10 +1,10 @@
-package com.dotcms.api.client.files;
+package com.dotcms.api.client.files.traversal;
 
 import com.dotcms.api.traversal.TreeNode;
 import com.dotcms.cli.common.ConsoleProgressBar;
+import com.dotcms.model.asset.AssetRequest;
 import com.dotcms.model.asset.AssetView;
 import com.dotcms.model.asset.FolderView;
-import com.dotcms.model.asset.SearchByPathRequest;
 import com.dotcms.security.Utils;
 import org.jboss.logging.Logger;
 
@@ -14,7 +14,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.RecursiveTask;
+import java.util.concurrent.RecursiveAction;
 
 import static com.dotcms.common.AssetsUtils.BuildRemoteAssetURL;
 import static com.dotcms.common.AssetsUtils.BuildRemoteURL;
@@ -23,7 +23,7 @@ import static com.dotcms.model.asset.BasicMetadataFields.SHA256_META_KEY;
 /**
  * Recursive task for building the file system tree.
  */
-public class FileSystemTreeBuilderTask extends RecursiveTask<Void> {
+public class FileSystemTreeBuilderTask extends RecursiveAction {
 
     private final TreeNode rootNode;
     private final String destination;
@@ -69,7 +69,7 @@ public class FileSystemTreeBuilderTask extends RecursiveTask<Void> {
     }
 
     @Override
-    protected Void compute() {
+    protected void compute() {
 
         // Create the folder for the current node
         createFolderInFileSystem(destination, rootNode.folder());
@@ -103,7 +103,6 @@ public class FileSystemTreeBuilderTask extends RecursiveTask<Void> {
             }
         }
 
-        return null;
     }
 
     /**
@@ -146,7 +145,7 @@ public class FileSystemTreeBuilderTask extends RecursiveTask<Void> {
         String remoteAssetURL = generateRemoteAssetURL(folder, asset.name());
         var assetFilePath = Paths.get(destination, folder.path(), asset.name());
 
-        // Remove SHA-256
+        // Remote SHA-256
         final String remoteFileHash = (String) asset.metadata().get(SHA256_META_KEY.key());
 
         // Local SHA-256
@@ -167,7 +166,7 @@ public class FileSystemTreeBuilderTask extends RecursiveTask<Void> {
             logger.debug("Downloading file: " + remoteAssetURL);
 
             // Download the file
-            try (var inputStream = this.downloader.download(SearchByPathRequest.builder().
+            try (var inputStream = this.downloader.download(AssetRequest.builder().
                     assetPath(remoteAssetURL).
                     language(language).
                     live(asset.live()).
