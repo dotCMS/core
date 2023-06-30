@@ -23,14 +23,11 @@ import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-er
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
 import { MockDotHttpErrorManagerService } from '@dotcms/app/test/dot-http-error-manager.service.mock';
-
 import {
     DotAlertConfirmService,
     DotEventsService,
-    DotPageRenderService,
-    DotSessionStorageService
+    DotPageRenderService
 } from '@dotcms/data-access';
-
 import {
     CoreWebService,
     CoreWebServiceMock,
@@ -40,9 +37,7 @@ import {
     LoginService,
     StringUtils
 } from '@dotcms/dotcms-js';
-
 import { ComponentStatus } from '@dotcms/dotcms-models';
-
 import {
     dotcmsContentletMock,
     dotcmsContentTypeBasicMock,
@@ -180,7 +175,6 @@ describe('DotPagesComponent', () => {
             ],
             imports: [MenuModule],
             providers: [
-                DotSessionStorageService,
                 DotEventsService,
                 HttpClient,
                 HttpHandler,
