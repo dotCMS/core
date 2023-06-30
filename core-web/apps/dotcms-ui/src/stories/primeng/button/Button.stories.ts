@@ -3,6 +3,8 @@ import { Meta, Story } from '@storybook/angular/types-6-0';
 
 import { ButtonModule } from 'primeng/button';
 
+import { createButtonTemplate } from '../../utils/button';
+
 export default {
     title: 'PrimeNG/Button/Button',
     decorators: [
@@ -14,86 +16,40 @@ export default {
         layout: 'centered',
         docs: {
             description: {
-                component:
-                    'All the buttons, more information: https://primefaces.org/primeng/showcase/#/button'
+                component: 'All the buttons, more information: https://primeng.org/button'
             }
         }
     }
 } as Meta;
 
-const PrimaryTemplate = `
-    <p><button pButton label="Submit"></button></p>
-    <p><button pButton label="Submit" icon="pi pi-check"></button></p>
-    <p><button pButton label="Submit" icon="pi pi-check" iconPos="right"></button></p>
-    <p><button pButton label="Disabled" disabled="true"></button></p>
-    <hr />
-    <p><button pButton label="Small Button" class="p-button-sm"></button></p>
-    <p><button pButton label="Big Button" class="p-button-lg"></button></p>
-`;
+const BasicTemplate = createButtonTemplate();
+const OutlinedTemplate = createButtonTemplate('p-button-outlined');
+const TextTemplate = createButtonTemplate('p-button-text');
 
-const SecondaryTemplate = `
-    <p><button pButton label="Submit" class="p-button-secondary"></button></p>
-    <p><button pButton label="Submit" icon="pi pi-check" class="p-button-secondary"></button></p>
-    <p><button pButton label="Submit" icon="pi pi-check" iconPos="right" class="p-button-secondary"></button></p>
-    <p><button pButton label="Disabled" disabled="true" class="p-button-secondary"></button></p>
-    <hr />
-    <p><button pButton label="Small Button" class="p-button-secondary p-button-sm"></button></p>
-    <p><button pButton label="Big Button" class="p-button-secondary p-button-lg"></button></p>
-`;
-
-const TextTemplate = `
-    <p><button pButton label="Submit" class="p-button-text"></button></p>
-    <p><button pButton label="Submit" icon="pi pi-check" class="p-button-text"></button></p>
-    <p><button pButton label="Submit" icon="pi pi-check" iconPos="right" class="p-button-text"></button></p>
-    <p><button pButton label="Disabled" disabled="true" class="p-button-text"></button></p>
-    <hr />
-    <p><button pButton label="Small Button" class="p-button-text p-button-sm"></button></p>
-    <p><button pButton label="Big Button" class="p-button-text p-button-lg"></button></p>
-`;
-
-export const Primary: Story = () => {
+export const Basic: Story = () => {
     return {
-        template: PrimaryTemplate
+        template: BasicTemplate
     };
 };
 
-Primary.parameters = {
+Basic.parameters = {
     docs: {
         source: {
-            code: PrimaryTemplate
+            code: BasicTemplate
         }
     }
 };
 
-export const Secondary: Story = () => {
+export const Outlined: Story = () => {
     return {
-        template: SecondaryTemplate
+        template: OutlinedTemplate
     };
 };
 
-Secondary.parameters = {
+Outlined.parameters = {
     docs: {
         source: {
-            code: SecondaryTemplate
-        }
-    }
-};
-
-const IconsTemplate = `
-    <p><button pButton type="button" icon="pi pi-check" class="p-button-rounded p-button-text"></button></p>
-    <p><button pButton type="button" icon="pi pi-sitemap" class="p-button-rounded p-button-text"></button></p>
-    <p><button pButton type="button" disabled="true" icon="pi pi-shopping-cart" class="p-button-rounded p-button-text"></button></p>
-`;
-export const Icons: Story = () => {
-    return {
-        template: IconsTemplate
-    };
-};
-
-Icons.parameters = {
-    docs: {
-        source: {
-            code: IconsTemplate
+            code: OutlinedTemplate
         }
     }
 };
