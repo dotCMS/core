@@ -45,7 +45,9 @@ describe('DotPageLayoutService', () => {
                 expect(result.params).toEqual(mockResponse.entity);
             });
 
-        const req = httpMock.expectOne('v1/page/test38923-82393842-23823/layout');
+        const req = httpMock.expectOne(
+            'v1/page/test38923-82393842-23823/layout?variantName=DEFAULT'
+        );
         expect(req.request.method).toBe('POST');
         expect(req.request.body).toEqual(mockDotLayout());
         req.flush(mockResponse);
