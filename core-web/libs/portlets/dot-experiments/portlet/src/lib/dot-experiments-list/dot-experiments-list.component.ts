@@ -13,7 +13,7 @@ import { tap } from 'rxjs/operators';
 import {
     ComponentStatus,
     DotExperiment,
-    DotExperimentStatusList,
+    DotExperimentStatus,
     ExperimentsStatusList,
     SidebarStatus
 } from '@dotcms/dotcms-models';
@@ -110,8 +110,8 @@ export class DotExperimentsListComponent {
         const route = ['/edit-page/experiments/', experiment.pageId, experiment.id];
 
         if (
-            experiment.status === DotExperimentStatusList.RUNNING ||
-            experiment.status === DotExperimentStatusList.ENDED
+            experiment.status === DotExperimentStatus.RUNNING ||
+            experiment.status === DotExperimentStatus.ENDED
         ) {
             route.push('reports');
         } else {

@@ -11,9 +11,10 @@ import { catchError, switchMap, tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
+    AllowedActionsByExperimentStatus,
     ComponentStatus,
     DotExperiment,
-    DotExperimentStatusList,
+    DotExperimentStatus,
     DotExperimentsWithActions,
     GroupedExperimentByStatus,
     SidebarStatus
@@ -33,11 +34,11 @@ export interface DotExperimentsState {
 const initialState: DotExperimentsState = {
     experiments: [],
     filterStatus: [
-        DotExperimentStatusList.RUNNING,
-        DotExperimentStatusList.SCHEDULED,
-        DotExperimentStatusList.DRAFT,
-        DotExperimentStatusList.ENDED,
-        DotExperimentStatusList.ARCHIVED
+        DotExperimentStatus.RUNNING,
+        DotExperimentStatus.SCHEDULED,
+        DotExperimentStatus.DRAFT,
+        DotExperimentStatus.ENDED,
+        DotExperimentStatus.ARCHIVED
     ],
     status: ComponentStatus.INIT,
     sidebar: {
@@ -97,8 +98,8 @@ export class DotExperimentsListStore
                 const grouped: GroupedExperimentByStatus[] = [];
 
                 if (experimentsWithActions.length) {
-                    Object.keys(DotExperimentStatusList).forEach((key) =>
-                        grouped.push({ status: DotExperimentStatusList[key], experiments: [] })
+                    Object.keys(DotExperimentStatus).forEach((key) =>
+                        grouped.push({ status: DotExperimentStatus[key], experiments: [] })
                     );
 
                     experimentsWithActions
@@ -168,7 +169,7 @@ export class DotExperimentsListStore
     readonly archiveExperimentById = this.updater((state, experimentId: string) => ({
         ...state,
         experiments: state.experiments.map((exp) =>
-            experimentId === exp.id ? { ...exp, status: DotExperimentStatusList.ARCHIVED } : exp
+            experimentId === exp.id ? { ...exp, status: DotExperimentStatus.ARCHIVED } : exp
         )
     }));
 
@@ -360,23 +361,12 @@ export class DotExperimentsListStore
     }
 
     private getActionMenuItemsByExperiment(experiment: DotExperiment): MenuItem[] {
-        const statusToShowDeleteItem = [
-            DotExperimentStatusList.DRAFT,
-            DotExperimentStatusList.SCHEDULED
-        ];
-        const statusToShowConfigurationItem = [
-            DotExperimentStatusList.RUNNING,
-            DotExperimentStatusList.ENDED,
-            DotExperimentStatusList.ARCHIVED
-        ];
-        const statusToShowArchiveItem = [DotExperimentStatusList.ENDED];
-
         return [
             // Delete Action
             {
                 id: 'dot-experiments-delete',
                 label: this.dotMessageService.get('experiments.action.delete'),
-                visible: statusToShowDeleteItem.includes(experiment.status),
+                visible: AllowedActionsByExperimentStatus['delete'].includes(experiment.status),
                 command: () =>
                     this.confirmationService.confirm({
                         header: this.dotMessageService.get('experiments.action.delete'),
@@ -389,14 +379,15 @@ export class DotExperimentsListStore
                         acceptLabel: this.dotMessageService.get('experiments.action.delete'),
                         accept: () => this.deleteExperiment(experiment),
                         key: 'positionDialog'
-                    }),
-                automationId: 'experiment-row-action-menu-delete'
+                    })
             },
-            // Delete Action
+            // Go to Configuration Action
             {
                 id: 'dot-experiments-go-to-configuration',
                 label: this.dotMessageService.get('experiments.action.configuration'),
-                visible: statusToShowConfigurationItem.includes(experiment.status),
+                visible: AllowedActionsByExperimentStatus['configuration'].includes(
+                    experiment.status
+                ),
                 routerLink: [
                     '/edit-page/experiments/',
                     experiment.pageId,
@@ -408,17 +399,15 @@ export class DotExperimentsListStore
                     mode: null,
                     variantName: null,
                     experimentId: null
-                },
-                automationId: 'experiment-row-action-menu-got-to-configuration'
+                }
             },
             // Archive Action
             {
                 id: 'dot-experiments-archive',
                 label: this.dotMessageService.get('experiments.action.archive'),
-                visible: statusToShowArchiveItem.includes(experiment.status),
-                command: () => this.archiveExperiment(experiment),
-                automationId: 'experiment-row-action-menu-archive'
+                visible: AllowedActionsByExperimentStatus['archive'].includes(experiment.status),
+                command: () => this.archiveExperiment(experiment)
             }
-        ] as MenuItem[];
+        ];
     }
 }

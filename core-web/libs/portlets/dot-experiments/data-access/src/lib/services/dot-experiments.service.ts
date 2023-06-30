@@ -9,7 +9,7 @@ import { DotCMSResponse } from '@dotcms/dotcms-js';
 import {
     DotExperiment,
     DotExperimentResults,
-    DotExperimentStatusList,
+    DotExperimentStatus,
     Goals,
     GoalsLevels,
     RangeOfDateAndTime,
@@ -51,11 +51,11 @@ export class DotExperimentsService {
     /**
      * Get an array of experiments of a pageId filter by status
      * @param {string} pageId
-     * @param {DotExperimentStatusList} status
+     * @param {DotExperimentStatus} status
      * @returns Observable<DotExperiment[]>
      * @memberof DotExperimentsService
      */
-    getByStatus(pageId: string, status: DotExperimentStatusList): Observable<DotExperiment[]> {
+    getByStatus(pageId: string, status: DotExperimentStatus): Observable<DotExperiment[]> {
         return this.http
             .get<DotCMSResponse<DotExperiment[]>>(
                 `${API_ENDPOINT}?pageId=${pageId}&status=${status}`

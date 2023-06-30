@@ -5,7 +5,7 @@ import { MenuItem } from 'primeng/api';
 import {
     BayesianStatusResponse,
     ComponentStatus,
-    DotExperimentStatusList,
+    DotExperimentStatus,
     TrafficProportionTypes
 } from '@dotcms/dotcms-models';
 
@@ -15,7 +15,7 @@ export interface DotExperiment {
     pageId: string;
     name: string;
     description: string;
-    status: DotExperimentStatusList;
+    status: DotExperimentStatus;
     readyToStart: boolean;
     archived: boolean;
     trafficProportion: TrafficProportion;
@@ -131,7 +131,7 @@ export interface RangeOfDateAndTime {
 }
 
 export type GroupedExperimentByStatus = {
-    status: DotExperimentStatusList;
+    status: DotExperimentStatus;
     experiments: DotExperimentsWithActions[];
 };
 

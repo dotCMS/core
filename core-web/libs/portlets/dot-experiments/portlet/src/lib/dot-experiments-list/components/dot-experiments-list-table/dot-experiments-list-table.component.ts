@@ -1,4 +1,4 @@
-import { JsonPipe, LowerCasePipe, NgForOf, NgIf, UpperCasePipe } from '@angular/common';
+import { LowerCasePipe, NgForOf, NgIf, UpperCasePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 
 import { MessageService } from 'primeng/api';
@@ -31,8 +31,7 @@ import { DotExperimentsEmptyExperimentsComponent } from '../dot-experiments-empt
         TableModule,
         ButtonModule,
         TooltipModule,
-        MenuModule,
-        JsonPipe
+        MenuModule
     ],
     templateUrl: './dot-experiments-list-table.component.html',
     styleUrls: ['./dot-experiments-list-table.component.scss'],
@@ -40,7 +39,7 @@ import { DotExperimentsEmptyExperimentsComponent } from '../dot-experiments-empt
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsListTableComponent {
-    @Input() experimentGroupedByStatus: GroupedExperimentByStatus[];
+    @Input() experimentGroupedByStatus: GroupedExperimentByStatus[] = [];
 
     @Output()
     goToContainer = new EventEmitter<DotExperiment>();
