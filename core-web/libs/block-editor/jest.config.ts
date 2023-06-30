@@ -12,7 +12,7 @@ export default {
     },
     coverageDirectory: '../../target/core-web-reports/',
     collectCoverage: true,
-    coverageReporters: [['lcovonly', { file: 'TEST-template-builder.lcov' }]],
+    coverageReporters: [['lcovonly', { file: 'TEST-block-editor.lcov' }]],
     collectCoverageFrom: [
         'src/**/*.ts',
         '!src/**/*.stories.ts',
@@ -23,7 +23,7 @@ export default {
         ['github-actions', { silent: false }],
         [
             'jest-junit',
-            { outputDirectory: 'target/core-web-reports', outputName: 'TEST-template-builder.xml' }
+            { outputDirectory: 'target/core-web-reports', outputName: 'TEST-block-editor.xml' }
         ]
     ],
     snapshotSerializers: [
