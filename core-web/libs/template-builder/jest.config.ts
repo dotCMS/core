@@ -10,16 +10,8 @@ export default {
         }
     },
     coverageDirectory: '../../target/core-web-reports/',
-    collectCoverage: true,
     coverageReporters: [['lcovonly', { file: 'TEST-template-builder.lcov' }]],
-    collectCoverageFrom: [
-        'src/**/*.ts',
-        '!src/**/*.stories.ts',
-        '!src/**/*.module.ts',
-        '!src/index.ts'
-    ],
     reporters: [
-        ['github-actions', { silent: false }],
         [
             'jest-junit',
             { outputDirectory: 'target/core-web-reports', outputName: 'TEST-template-builder.xml' }

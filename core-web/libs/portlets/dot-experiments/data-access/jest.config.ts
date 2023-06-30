@@ -10,17 +10,8 @@ export default {
         }
     },
     coverageDirectory: '../../../../target/core-web-reports/',
-    collectCoverage: true,
     coverageReporters: [['lcovonly', { file: 'TEST-portlet-experiment-data-access.lcov' }]],
-    collectCoverageFrom: [
-        'src/**/*.ts',
-        '!src/**/*.stories.ts',
-        '!src/**/*.module.ts',
-        '!src/index.ts'
-    ],
     reporters: [
-        'default',
-        ['github-actions', { silent: false }],
         [
             'jest-junit',
             {
