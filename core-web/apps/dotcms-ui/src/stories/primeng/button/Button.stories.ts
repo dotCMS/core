@@ -3,7 +3,7 @@ import { Meta, Story } from '@storybook/angular/types-6-0';
 
 import { ButtonModule } from 'primeng/button';
 
-import { createButtonTemplate } from '../../utils/button';
+import { ICON_ONLY_BUTTONS_TEMPLATE, createButtonTemplate } from '../../utils/button';
 
 export default {
     title: 'PrimeNG/Button/Button',
@@ -22,17 +22,24 @@ export default {
     }
 } as Meta;
 
-const BasicTemplate = createButtonTemplate();
+const BasicTemplate = createButtonTemplate('');
 const OutlinedTemplate = createButtonTemplate('p-button-outlined');
 const TextTemplate = createButtonTemplate('p-button-text');
 
-export const Basic: Story = () => {
+const IconOnlyBasicTemplate = createButtonTemplate('', ICON_ONLY_BUTTONS_TEMPLATE);
+const IconOnlyOutlinedTemplate = createButtonTemplate(
+    'p-button-outlined',
+    ICON_ONLY_BUTTONS_TEMPLATE
+);
+const IconOnlyTextTemplate = createButtonTemplate('p-button-text', ICON_ONLY_BUTTONS_TEMPLATE);
+
+export const MainBasic: Story = () => {
     return {
         template: BasicTemplate
     };
 };
 
-Basic.parameters = {
+MainBasic.parameters = {
     docs: {
         source: {
             code: BasicTemplate
@@ -40,13 +47,13 @@ Basic.parameters = {
     }
 };
 
-export const Outlined: Story = () => {
+export const MainOutlined: Story = () => {
     return {
         template: OutlinedTemplate
     };
 };
 
-Outlined.parameters = {
+MainOutlined.parameters = {
     docs: {
         source: {
             code: OutlinedTemplate
@@ -54,16 +61,58 @@ Outlined.parameters = {
     }
 };
 
-export const Text: Story = () => {
+export const MainText: Story = () => {
     return {
         template: TextTemplate
     };
 };
 
-Text.parameters = {
+MainText.parameters = {
     docs: {
         source: {
             code: TextTemplate
+        }
+    }
+};
+
+export const IconOnlyBasic: Story = () => {
+    return {
+        template: IconOnlyBasicTemplate
+    };
+};
+
+IconOnlyBasic.parameters = {
+    docs: {
+        source: {
+            code: IconOnlyBasicTemplate
+        }
+    }
+};
+
+export const IconOnlyOutlined: Story = () => {
+    return {
+        template: IconOnlyOutlinedTemplate
+    };
+};
+
+IconOnlyOutlined.parameters = {
+    docs: {
+        source: {
+            code: IconOnlyOutlinedTemplate
+        }
+    }
+};
+
+export const IconOnlyText: Story = () => {
+    return {
+        template: IconOnlyTextTemplate
+    };
+};
+
+IconOnlyText.parameters = {
+    docs: {
+        source: {
+            code: IconOnlyTextTemplate
         }
     }
 };
