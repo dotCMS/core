@@ -212,10 +212,9 @@ export class DotKeyValueComponent {
 
         //only manipulate the keys and values of the selected content
         const keys = tblElement.querySelectorAll('.key-value-table-wc__key');
+
         const values = tblElement.querySelectorAll('.key-value-table-wc__value');
 
-        // const keys = document.querySelectorAll('.key-value-table-wc__key');
-        // const values = document.querySelectorAll('.key-value-table-wc__value');
         let keyValueRawData = '';
 
         for (let i = 0, total = keys.length; i < total; i++) {
