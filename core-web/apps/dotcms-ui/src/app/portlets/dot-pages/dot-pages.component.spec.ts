@@ -1,26 +1,48 @@
-import { throwError } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
 
 import { HttpClient, HttpErrorResponse, HttpHandler, HttpResponse } from '@angular/common/http';
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { ActivatedRoute } from '@angular/router';
 
+import { ConfirmationService } from 'primeng/api';
 import { MenuModule } from 'primeng/menu';
 
 import { of } from 'rxjs/internal/observable/of';
 
+import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
+import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
+import { DotCreateContentletComponent } from '@components/dot-contentlet-editor/components/dot-create-contentlet/dot-create-contentlet.component';
+import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
 import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
+import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
 import { MockDotHttpErrorManagerService } from '@dotcms/app/test/dot-http-error-manager.service.mock';
-import { DotEventsService, DotPageRenderService } from '@dotcms/data-access';
-import { CoreWebService, CoreWebServiceMock, HttpCode } from '@dotcms/dotcms-js';
+import {
+    DotAlertConfirmService,
+    DotEventsService,
+    DotPageRenderService
+} from '@dotcms/data-access';
+import {
+    CoreWebService,
+    CoreWebServiceMock,
+    DotcmsEventsService,
+    HttpCode,
+    LoggerService,
+    LoginService,
+    StringUtils
+} from '@dotcms/dotcms-js';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import {
     dotcmsContentletMock,
     dotcmsContentTypeBasicMock,
+    DotcmsEventsServiceMock,
+    LoginServiceMock,
     MockDotRouterService,
     mockResponseView
 } from '@dotcms/utils-testing';
@@ -124,6 +146,12 @@ const storeMock = {
     })
 };
 
+class DotContentletEditorServiceMock {
+    get createUrl$(): Observable<unknown> {
+        return of(undefined);
+    }
+}
+
 describe('DotPagesComponent', () => {
     let fixture: ComponentFixture<DotPagesComponent>;
     let component: DotPagesComponent;
@@ -133,6 +161,9 @@ describe('DotPagesComponent', () => {
     let dotMessageDisplayService: DotMessageDisplayService;
     let dotPageRenderService: DotPageRenderService;
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
+
+    const dotContentletEditorServiceMock: DotContentletEditorServiceMock =
+        new DotContentletEditorServiceMock();
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -148,13 +179,41 @@ describe('DotPagesComponent', () => {
                 HttpClient,
                 HttpHandler,
                 DotPageRenderService,
+                DotIframeService,
+                DotFormatDateService,
+                DotAlertConfirmService,
+                ConfirmationService,
+                DotUiColorsService,
+                IframeOverlayService,
+                LoggerService,
+                StringUtils,
                 {
                     provide: DotHttpErrorManagerService,
                     useClass: MockDotHttpErrorManagerService
                 },
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
-                { provide: DotRouterService, useClass: MockDotRouterService }
+                { provide: DotRouterService, useClass: MockDotRouterService },
+                {
+                    provide: DotContentletEditorService,
+                    useValue: dotContentletEditorServiceMock
+                },
+                {
+                    provide: LoginService,
+                    useClass: LoginServiceMock
+                },
+                {
+                    provide: DotcmsEventsService,
+                    useClass: DotcmsEventsServiceMock
+                },
+                {
+                    provide: ActivatedRoute,
+                    useValue: {
+                        get data() {
+                            return of({ url: undefined });
+                        }
+                    }
+                }
             ]
         }).compileComponents();
     });
@@ -331,5 +390,32 @@ describe('DotPagesComponent', () => {
             identifier: '123',
             isFavoritePage: true
         });
+    });
+
+    it('should get pages after closing DotCreateContentletComponent', () => {
+        const dialogComponentFixture = TestBed.createComponent(DotCreateContentletComponent);
+        fixture.detectChanges();
+
+        const dialogComponent = dialogComponentFixture.componentInstance;
+
+        const routerOutlet = de.query(By.css('router-outlet'));
+
+        routerOutlet.triggerEventHandler('activate', dialogComponent);
+        fixture.detectChanges();
+
+        dialogComponent.shutdown.emit();
+        fixture.detectChanges();
+        expect(store.getPages).toHaveBeenCalled();
+    });
+    it('should trigger unsubscribeToShutdown when deactivating the router-outlet', () => {
+        const routerOutlet = de.query(By.css('router-outlet'));
+        spyOn(component, 'unsubscribeToShutdown');
+
+        routerOutlet.triggerEventHandler('activate');
+        fixture.detectChanges();
+        routerOutlet.triggerEventHandler('deactivate');
+        fixture.detectChanges();
+
+        expect(component.unsubscribeToShutdown).toHaveBeenCalled();
     });
 });

@@ -48,7 +48,7 @@ describe('TemplateBuilderActionsComponent', () => {
         const spy = jest.spyOn(spectator.component.selectTheme, 'emit');
         spectator.detectChanges();
         const btnSelectStyles = spectator.query(byTestId('btn-select-theme'));
-        spectator.dispatchMouseEvent(btnSelectStyles, 'onClick');
+        spectator.dispatchMouseEvent(btnSelectStyles, 'click');
 
         expect(spy).toHaveBeenCalled();
     });

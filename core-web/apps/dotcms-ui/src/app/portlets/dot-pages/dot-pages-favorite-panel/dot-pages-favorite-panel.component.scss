@@ -27,7 +27,7 @@
         column-gap: $spacing-4;
         row-gap: $spacing-4;
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        grid-template-columns: repeat(auto-fill, 250px);
         height: 100%;
         overflow: hidden;
         position: relative;

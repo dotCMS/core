@@ -651,7 +651,13 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
 
         return this.dotCurrentUser.getCurrentUser().pipe(
             switchMap(({ userId }) => {
-                return this.dotFavoritePageService.get({ limit, userId, identifier, url });
+                return this.dotFavoritePageService.get({
+                    limit,
+                    userId,
+                    identifier,
+                    url,
+                    sortOrder: 'ASC, identifier'
+                });
             })
         );
     };

@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
 
 import { IframeComponent } from '@components/_common/iframe/iframe-component';
-import { DotLayout, FeaturedFlags } from '@dotcms/dotcms-models';
+import { FeaturedFlags } from '@dotcms/dotcms-models';
 
 import { DotTemplateItem } from '../store/dot-template.store';
 
@@ -26,23 +26,6 @@ export class DotTemplateBuilderComponent implements OnInit {
     ngOnInit() {
         this.permissionsUrl = `/html/templates/permissions.jsp?templateId=${this.item.identifier}&popup=true`;
         this.historyUrl = `/html/templates/push_history.jsp?templateId=${this.item.identifier}&popup=true`;
-    }
-
-    /**
-     * Update template and publish it
-     *
-     * @param {DotLayout} layout
-     * @memberof DotTemplateBuilderComponent
-     */
-    onLayoutChange(layout: DotLayout) {
-        this.updateTemplate.emit({
-            ...this.item,
-            layout
-        } as DotTemplateItem);
-
-        if (this.historyIframe) {
-            this.historyIframe.iframeElement.nativeElement.contentWindow.location.reload();
-        }
     }
 
     /**

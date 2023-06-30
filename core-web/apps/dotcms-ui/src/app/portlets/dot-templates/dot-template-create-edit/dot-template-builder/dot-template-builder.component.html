@@ -15,9 +15,10 @@
         <ng-template #elseBlock>
             <ng-template #enabledComponent>
                 <dotcms-template-builder
-                    [templateLayout]="item.layout"
+                    [layout]="item.layout"
+                    [themeId]="item.theme"
                     [containerMap]="item.containers"
-                    (layoutChange)="onLayoutChange($event)"
+                    (templateChange)="onTemplateItemChange($event)"
                     data-testId="new-template-builder"
                 >
                     <dot-global-message toolbar-left></dot-global-message>
