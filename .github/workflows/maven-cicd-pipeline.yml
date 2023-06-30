@@ -44,9 +44,9 @@ on:
       - '*.adoc'
       - '*.txt'
       - '.github/ISSUE_TEMPLATE/**'
-  concurrency:
-    group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref || github.run_id }}
-    cancel-in-progress: true
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref || github.run_id }}
+  cancel-in-progress: true
 env:
   JVM_TEST_MAVEN_OPTS: "-e -B"
 jobs:
