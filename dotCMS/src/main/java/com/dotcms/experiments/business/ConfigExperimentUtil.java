@@ -79,7 +79,7 @@ public enum ConfigExperimentUtil {
     }
 
 
-    public  String getAnalyticsKey(Host host) {
+    public String getAnalyticsKey(Host host) {
         try {
             final AnalyticsApp analyticsApp = AnalyticsHelper.get().appFromHost(host);
             return analyticsApp.getAnalyticsProperties().analyticsKey();

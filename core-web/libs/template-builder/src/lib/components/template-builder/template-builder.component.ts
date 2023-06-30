@@ -22,16 +22,24 @@ import {
     ViewChildren
 } from '@angular/core';
 
-import { DialogService } from 'primeng/dynamicdialog';
+import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { filter, scan, take, tap } from 'rxjs/operators';
+import { filter, startWith, take, tap, map } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotContainer, DotLayout, DotLayoutBody } from '@dotcms/dotcms-models';
+import {
+    DotContainer,
+    DotLayout,
+    DotLayoutBody,
+    DotTemplateDesigner,
+    DotTheme,
+    DotContainerMap
+} from '@dotcms/dotcms-models';
 
 import { colIcon, rowIcon } from './assets/icons';
 import { AddStyleClassesDialogComponent } from './components/add-style-classes-dialog/add-style-classes-dialog.component';
 import { TemplateBuilderRowComponent } from './components/template-builder-row/template-builder-row.component';
+import { TemplateBuilderThemeSelectorComponent } from './components/template-builder-theme-selector/template-builder-theme-selector.component';
 import {
     DotGridStackNode,
     DotGridStackWidget,
@@ -57,6 +65,18 @@ import {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestroy {
+    @Input()
+    layout!: DotLayout;
+
+    @Input()
+    themeId!: string;
+
+    @Input()
+    containerMap!: DotContainerMap;
+
+    @Output()
+    templateChange: EventEmitter<DotTemplateDesigner> = new EventEmitter<DotTemplateDesigner>();
+
     @ViewChildren('rowElement', {
         emitDistinctChangesOnly: true
     })
@@ -67,29 +87,23 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     })
     boxes!: QueryList<ElementRef<GridItemHTMLElement>>;
 
-    @Input()
-    templateLayout!: DotLayout;
-
-    @Output()
-    layoutChange: EventEmitter<Partial<DotLayout>> = new EventEmitter<DotLayout>();
-
     get layoutProperties(): DotTemplateLayoutProperties {
         return {
-            header: this.templateLayout.header,
-            footer: this.templateLayout.footer,
-            sidebar: this.templateLayout.sidebar ?? {
+            header: this.layout.header,
+            footer: this.layout.footer,
+            sidebar: this.layout.sidebar ?? {
                 location: ''
             }
         };
     }
 
-    public items$: Observable<DotGridStackWidget[] | DotLayoutBody>;
-    public layoutProperties$: Observable<DotTemplateLayoutProperties>;
-    public vm$: Observable<DotTemplateBuilderState>;
+    public items$: Observable<DotLayoutBody>;
+    public vm$: Observable<DotTemplateBuilderState> = this.store.vm$;
 
     public readonly rowIcon = rowIcon;
     public readonly colIcon = colIcon;
     public readonly rowDisplayHeight = `${GRID_STACK_ROW_HEIGHT - 1}${GRID_STACK_UNIT}`; // setting a lower height to have space between rows
+    private dotLayout: DotLayout;
 
     grid!: GridStack;
 
@@ -98,28 +112,27 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
         private dialogService: DialogService,
         private dotMessage: DotMessageService
     ) {
-        this.vm$ = this.store.vm$;
-
         this.items$ = this.store.items$.pipe(
-            scan(
-                (acc, items) =>
-                    items !== null
-                        ? parseFromGridStackToDotObject(items as DotGridStackWidget[])
-                        : acc,
-                null // If it doesn't emit anything it will return the last parsed data
-            )
+            startWith([]),
+            map((items) => parseFromGridStackToDotObject(items))
         );
-        this.layoutProperties$ = this.store.layoutProperties$.pipe(scan((_, curr) => curr, null)); //Starts with null
 
-        combineLatest([this.items$, this.layoutProperties$])
+        combineLatest([this.items$, this.store.layoutProperties$.pipe(startWith())])
             .pipe(
                 tap(([items, layoutProperties]) => {
-                    this.layoutChange.emit({
-                        ...layoutProperties,
+                    this.dotLayout = {
+                        ...this.layout,
                         sidebar: layoutProperties?.sidebar?.location?.length // Make it null if it's empty so it doesn't get saved
                             ? layoutProperties.sidebar
                             : null,
-                        body: items as DotLayoutBody
+                        body: items,
+                        title: this.layout?.title ?? '',
+                        width: this.layout?.width ?? ''
+                    };
+
+                    this.templateChange.emit({
+                        themeId: this.themeId,
+                        layout: { ...this.dotLayout }
                     });
                 })
             )
@@ -128,8 +141,10 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
 
     ngOnInit(): void {
         this.store.init({
-            items: parseFromDotObjectToGridStack(this.templateLayout.body),
-            layoutProperties: this.layoutProperties
+            items: parseFromDotObjectToGridStack(this.layout.body),
+            layoutProperties: this.layoutProperties,
+            resizingRowID: '',
+            containerMap: this.containerMap
         });
     }
 
@@ -152,6 +167,13 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
             });
             subgrid.on('dropped', (_: Event, oldNode: GridStackNode, newNode: GridStackNode) => {
                 this.store.subGridOnDropped(oldNode, newNode);
+            });
+
+            subgrid.on('resizestart', (_: Event, el: GridItemHTMLElement) => {
+                this.store.setResizingRowID(el.gridstackNode.grid.parentGridItem.id);
+            });
+            subgrid.on('resizestop', () => {
+                this.store.setResizingRowID(null);
             });
         });
 
@@ -199,6 +221,14 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
                             )
                             .on('change', (_: Event, nodes: GridStackNode[]) => {
                                 this.store.updateColumnGridStackData(nodes as DotGridStackWidget[]);
+                            })
+                            .on('resizestart', (_: Event, el: GridItemHTMLElement) => {
+                                this.store.setResizingRowID(
+                                    el.gridstackNode.grid.parentGridItem.id
+                                );
+                            })
+                            .on('resizestop', () => {
+                                this.store.setResizingRowID(null);
                             });
                     }
 
@@ -300,5 +330,44 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
                     parentId: rowID as string
                 });
             });
+    }
+
+    /**
+     * @description This method opens the dialog to edit the row styleclasses
+     *
+     * @memberof TemplateBuilderComponent
+     */
+    openThemeSelectorDynamicDialog(): void {
+        const ref: DynamicDialogRef = this.dialogService.open(
+            TemplateBuilderThemeSelectorComponent,
+            {
+                header: this.dotMessage.get('dot.template.builder.theme.dialog.header.label'),
+                resizable: false,
+                width: '80%',
+                closeOnEscape: true,
+                data: {
+                    themeId: this.themeId
+                }
+            }
+        );
+
+        ref.onClose
+            .pipe(
+                take(1),
+                filter((theme: DotTheme) => !!theme)
+            )
+            .subscribe(
+                (theme: DotTheme) => {
+                    this.themeId = theme.identifier;
+                    this.templateChange.emit({
+                        themeId: this.themeId,
+                        layout: { ...this.dotLayout }
+                    });
+                },
+                () => {
+                    /* */
+                },
+                () => ref.destroy() // Destroy the dialog when it's closed
+            );
     }
 }

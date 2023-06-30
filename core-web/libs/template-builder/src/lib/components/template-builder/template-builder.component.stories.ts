@@ -11,15 +11,26 @@ import { DropdownModule } from 'primeng/dropdown';
 import { DynamicDialogModule, DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { ToolbarModule } from 'primeng/toolbar';
 
-import { DotMessageService, DotContainersService } from '@dotcms/data-access';
+import {
+    DotMessageService,
+    DotContainersService,
+    DotEventsService,
+    PaginatorService
+} from '@dotcms/data-access';
+import { CoreWebService, SiteService } from '@dotcms/dotcms-js';
 import { DotMessagePipeModule } from '@dotcms/ui';
-import { DotContainersServiceMock } from '@dotcms/utils-testing';
+import {
+    DotContainersServiceMock,
+    CoreWebServiceMock,
+    SiteServiceMock
+} from '@dotcms/utils-testing';
 
 import { DotAddStyleClassesDialogStore } from './components/add-style-classes-dialog/store/add-style-classes-dialog.store';
 import { TemplateBuilderComponentsModule } from './components/template-builder-components.module';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { TemplateBuilderComponent } from './template-builder.component';
 import {
+    CONTAINER_MAP_MOCK,
     DOT_MESSAGE_SERVICE_TB_MOCK,
     FULL_DATA_MOCK,
     MOCK_STYLE_CLASSES_FILE
@@ -61,8 +72,20 @@ export default {
                 {
                     provide: HttpClient,
                     useValue: {
-                        get: (_: string) => of(MOCK_STYLE_CLASSES_FILE)
+                        get: (_: string) => of(MOCK_STYLE_CLASSES_FILE),
+                        request: () => of({})
                     }
+                },
+                {
+                    provide: PaginatorService
+                },
+                {
+                    provide: SiteService,
+                    useValue: new SiteServiceMock()
+                },
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                {
+                    provide: DotEventsService
                 }
             ]
         })
@@ -72,7 +95,11 @@ export default {
 const Template: Story<TemplateBuilderComponent> = (args: TemplateBuilderComponent) => ({
     props: args,
     template: `
-        <dotcms-template-builder [templateLayout]="templateLayout">
+        <dotcms-template-builder
+            [layout]="layout"
+            [themeId]="themeId"
+            [containerMap]="containerMap"
+        >
             <button
                 [label]="'Publish'"
                 toolbar-actions-right
@@ -86,7 +113,7 @@ const Template: Story<TemplateBuilderComponent> = (args: TemplateBuilderComponen
 export const Base = Template.bind({});
 
 Base.args = {
-    templateLayout: {
+    layout: {
         body: FULL_DATA_MOCK,
         header: true,
         footer: false,
@@ -95,5 +122,7 @@ Base.args = {
             width: 'medium',
             containers: []
         }
-    }
+    },
+    themeId: '123',
+    containerMap: CONTAINER_MAP_MOCK
 };

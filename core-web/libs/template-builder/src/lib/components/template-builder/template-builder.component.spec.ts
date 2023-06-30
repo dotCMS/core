@@ -9,7 +9,7 @@ import { DividerModule } from 'primeng/divider';
 import { DialogService, DynamicDialogModule, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { ToolbarModule } from 'primeng/toolbar';
 
-import { take } from 'rxjs/operators';
+import { pluck, take } from 'rxjs/operators';
 
 import { DotContainersService, DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipeModule } from '@dotcms/ui';
@@ -21,7 +21,7 @@ import { DotGridStackWidget } from './models/models';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { TemplateBuilderComponent } from './template-builder.component';
 import { parseFromDotObjectToGridStack } from './utils/gridstack-utils';
-import { DOT_MESSAGE_SERVICE_TB_MOCK, FULL_DATA_MOCK } from './utils/mocks';
+import { CONTAINER_MAP_MOCK, DOT_MESSAGE_SERVICE_TB_MOCK, FULL_DATA_MOCK } from './utils/mocks';
 
 global.structuredClone = jest.fn((val) => {
     return JSON.parse(JSON.stringify(val));
@@ -66,10 +66,10 @@ describe('TemplateBuilderComponent', () => {
     });
     beforeEach(() => {
         spectator = createHost(
-            `<dotcms-template-builder [templateLayout]="templateLayout"></dotcms-template-builder>`,
+            `<dotcms-template-builder [containerMap]="containerMap" [layout]="layout" [themeId]="themeId" ></dotcms-template-builder>`,
             {
                 hostProps: {
-                    templateLayout: {
+                    layout: {
                         body: FULL_DATA_MOCK,
                         header: true,
                         footer: true,
@@ -77,8 +77,12 @@ describe('TemplateBuilderComponent', () => {
                             location: 'left',
                             width: 'small',
                             containers: []
-                        }
-                    }
+                        },
+                        width: 'Mobile',
+                        title: 'Test Title'
+                    },
+                    themeId: '123',
+                    containerMap: CONTAINER_MAP_MOCK
                 }
             }
         );
@@ -94,10 +98,6 @@ describe('TemplateBuilderComponent', () => {
 
     it('should have a Add Box Button', () => {
         expect(spectator.query(byTestId('add-box'))).toBeTruthy();
-    });
-
-    it('should have a background', () => {
-        expect(spectator.query('dotcms-template-builder-background-columns')).toBeTruthy();
     });
 
     it('should have the same quantity of rows as mocked data', () => {
@@ -194,26 +194,41 @@ describe('TemplateBuilderComponent', () => {
 
     describe('layoutChange', () => {
         it('should emit layoutChange when the store changes', (done) => {
-            const layoutChangeMock = jest.spyOn(spectator.component.layoutChange, 'emit');
+            const layoutChangeMock = jest.spyOn(spectator.component.templateChange, 'emit');
+
+            spectator.detectChanges();
+
             store.init({
                 items: parseFromDotObjectToGridStack(FULL_DATA_MOCK),
                 layoutProperties: {
                     header: true,
                     footer: true,
-                    sidebar: {}
-                }
-            });
-            store.items$.pipe(take(1)).subscribe(() => {
-                // const body = parseFromGridStackToDotObject(items);
-                expect(layoutChangeMock).toHaveBeenCalledWith({
-                    body: FULL_DATA_MOCK,
-                    header: true,
-                    footer: true,
                     sidebar: {
+                        containers: [],
                         location: 'left',
-                        width: 'small',
-                        containers: []
+                        width: 'small'
                     }
+                },
+                resizingRowID: '',
+                containerMap: {}
+            });
+
+            store.vm$.pipe(pluck('items'), take(1)).subscribe(() => {
+                expect(true).toBeTruthy();
+                expect(layoutChangeMock).toHaveBeenCalledWith({
+                    layout: {
+                        body: FULL_DATA_MOCK,
+                        header: true,
+                        footer: true,
+                        sidebar: {
+                            containers: [],
+                            location: 'left',
+                            width: 'small'
+                        },
+                        width: 'Mobile',
+                        title: 'Test Title'
+                    },
+                    themeId: '123'
                 });
                 done();
             });

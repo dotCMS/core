@@ -29,27 +29,27 @@ import picocli.CommandLine.Parameters;
         name = LanguageRemove.NAME,
         header = "@|bold,blue Remove a language|@",
         description = {
-                " Remove a language given its id or tag (e.g.: en-us)",
+                " Remove a language given its id or iso (e.g.: en-us)",
                 "" // empty string here so we can have a new line
         }
 )
 /**
- * Command to delete a language given its id or tag (e.g.: en-us)
+ * Command to delete a language given its id or iso (e.g.: en-us)
  * @author nollymar
  */
 public class LanguageRemove extends AbstractLanguageCommand implements Callable<Integer> {
     static final String NAME = "remove";
-    @Parameters(index = "0", arity = "1", description = "Language Id or Tag.")
-    String languageIdOrTag;
+    @Parameters(index = "0", arity = "1", description = "Language Id or Iso.")
+    String languageIdOrIso;
 
     @Override
     public Integer call() throws Exception {
 
-        final Optional<Language> result = super.findExistingLanguage(languageIdOrTag);
+        final Optional<Language> result = super.findExistingLanguage(languageIdOrIso);
 
         if (result.isEmpty()){
             output.error(String.format(
-                    "Error occurred while pulling Language Info: [%s].", languageIdOrTag));
+                    "A language with id or ISO code [%s] could not be found.", languageIdOrIso));
             return CommandLine.ExitCode.SOFTWARE;
         }
         final Language language = result.get();

@@ -34,4 +34,7 @@
     </ng-template>
 </div>
 
-<router-outlet></router-outlet>
+<router-outlet
+    (activate)="subscribeToShutdown($event)"
+    (deactivate)="unsubscribeToShutdown()"
+></router-outlet>

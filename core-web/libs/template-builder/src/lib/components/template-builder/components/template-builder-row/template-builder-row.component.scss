@@ -14,7 +14,14 @@
     height: 16rem;
     border: 1px solid $color-palette-primary;
     border-radius: $border-radius-md;
-    background-color: $white;
+    z-index: -2;
+}
+
+dotcms-template-builder-background-columns {
+    position: absolute;
+    inset: $spacing-3 3.625rem $spacing-4 $spacing-3;
+    z-index: -1;
+    transition: opacity 0.35s ease-in-out;
 }
 
 .row__actions-container {
@@ -24,6 +31,7 @@
     width: 2.625rem;
     flex-direction: column;
     gap: $spacing-1;
+    padding: $spacing-1 0;
     background-color: $color-palette-gray-200;
     border-left: 1px solid $color-palette-primary;
     border-radius: 0 $border-radius-md $border-radius-md 0;

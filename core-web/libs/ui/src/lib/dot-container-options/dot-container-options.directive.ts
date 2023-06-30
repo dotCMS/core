@@ -67,7 +67,7 @@ export class DotContainerOptionsDirective implements OnInit, OnDestroy {
     private fetchContainerOptions(
         filter: string = ''
     ): Observable<DotDropdownSelectOption<DotContainer>[]> {
-        return this.dotContainersService.getFiltered(filter, this.maxOptions).pipe(
+        return this.dotContainersService.getFiltered(filter, this.maxOptions, true).pipe(
             take(1),
             map((containerEntities) => {
                 return containerEntities.map((container) => ({
