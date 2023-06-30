@@ -10,7 +10,8 @@ import {
     DotGridStackNode,
     DotGridStackWidget,
     DotTemplateBuilderState,
-    DotTemplateLayoutProperties
+    DotTemplateLayoutProperties,
+    SYSTEM_CONTAINER_IDENTIFIER
 } from '../models/models';
 import {
     getIndexRowInItems,
@@ -30,27 +31,30 @@ import {
  */
 @Injectable()
 export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderState> {
-    // We need to discuss how we will save this to not trigger the parse every time
-
     public items$ = this.select((state) => state.items);
     public layoutProperties$ = this.select((state) => state.layoutProperties);
 
-    public vm$ = this.select(this.items$, this.layoutProperties$, (items, layoutProperties) => ({
-        items,
-        layoutProperties
-    }));
+    public vm$ = this.select((state) => state);
 
     constructor() {
-        super({ items: [], layoutProperties: { header: true, footer: true, sidebar: {} } });
+        super({
+            items: [],
+            layoutProperties: { header: true, footer: true, sidebar: {} },
+            resizingRowID: '',
+            containerMap: {}
+        });
     }
 
     // Init store
 
-    readonly init = this.updater((state, { items, layoutProperties }: DotTemplateBuilderState) => ({
-        ...state,
-        items,
-        layoutProperties
-    }));
+    readonly init = this.updater(
+        (state, { items, layoutProperties, containerMap }: DotTemplateBuilderState) => ({
+            ...state,
+            items,
+            layoutProperties,
+            containerMap
+        })
+    );
 
     // Rows Updaters
 
@@ -73,7 +77,22 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
                     x: 0,
                     id: uuid(),
                     subGridOpts: {
-                        children: []
+                        children: [
+                            {
+                                id: uuid(),
+                                w: 3,
+                                h: 1,
+                                x: 0,
+                                y: 0,
+                                containers: [
+                                    {
+                                        identifier: SYSTEM_CONTAINER_IDENTIFIER
+                                    }
+                                ],
+                                parentId: newRow.id,
+                                styleClass: null
+                            }
+                        ]
                     }
                 }
             ]
@@ -123,6 +142,16 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
 
         return { ...state, items: itemsCopy };
     });
+
+    /**
+     * @description This Method updates the resizing rowID
+     *
+     * @memberof DotTemplateBuilderStore
+     */
+    readonly setResizingRowID = this.updater((state, resizingRowID: string = null) => ({
+        ...state,
+        resizingRowID
+    }));
 
     // Columns Updaters
 
@@ -383,10 +412,13 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
                 }
 
                 const updatedChildren = row.subGridOpts.children.map((child) => {
-                    if (affectedColumn.id === child.id)
+                    if (affectedColumn.id === child.id) {
+                        if (!child.containers) child.containers = [];
+
                         child.containers.push({
                             identifier: container.identifier
                         });
+                    }
 
                     return child;
                 });
@@ -394,7 +426,11 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
                 return { ...row, subGridOpts: { ...row.subGridOpts, children: updatedChildren } };
             });
 
-            return { ...state, items: updatedItems };
+            return {
+                ...state,
+                items: updatedItems,
+                containerMap: { ...state.containerMap, [container.identifier]: container }
+            };
         }
     );
 

@@ -13,7 +13,11 @@ import { DotContainersServiceMock, mockMatchMedia } from '@dotcms/utils-testing'
 
 import { TemplateBuilderBoxComponent } from './template-builder-box.component';
 
-import { CONTAINERS_DATA_MOCK, DOT_MESSAGE_SERVICE_TB_MOCK } from '../../utils/mocks';
+import {
+    CONTAINER_MAP_MOCK,
+    CONTAINERS_DATA_MOCK,
+    DOT_MESSAGE_SERVICE_TB_MOCK
+} from '../../utils/mocks';
 import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-confirm-dialog.component';
 
 describe('TemplateBuilderBoxComponent', () => {
@@ -44,11 +48,12 @@ describe('TemplateBuilderBoxComponent', () => {
 
     beforeEach(() => {
         spectator = createHost(
-            `<dotcms-template-builder-box [width]="width" [items]="items"> </dotcms-template-builder-box>`,
+            `<dotcms-template-builder-box [width]="width" [items]="items" [containerMap]="containerMap"> </dotcms-template-builder-box>`,
             {
                 hostProps: {
                     width: 10,
                     items: CONTAINERS_DATA_MOCK,
+                    containerMap: CONTAINER_MAP_MOCK,
                     showEditStyleButton: true
                 }
             }
@@ -65,7 +70,7 @@ describe('TemplateBuilderBoxComponent', () => {
     });
 
     it('should render with default variant', () => {
-        expect(spectator.query(byTestId('template-builder-box'))).toHaveClass(
+        expect(spectator.query(byTestId('template-builder-box')).classList).toContain(
             'template-builder-box--large'
         );
     });
@@ -73,7 +78,7 @@ describe('TemplateBuilderBoxComponent', () => {
     it('should render with medium variant and update the class', () => {
         spectator.setInput('width', 3);
         spectator.detectComponentChanges();
-        expect(spectator.query(byTestId('template-builder-box'))).toHaveClass(
+        expect(spectator.query(byTestId('template-builder-box')).classList).toContain(
             'template-builder-box--medium'
         );
     });
@@ -81,7 +86,7 @@ describe('TemplateBuilderBoxComponent', () => {
     it('should render with small variant and update the class', () => {
         spectator.setInput('width', 1);
         spectator.detectComponentChanges();
-        expect(spectator.query(byTestId('template-builder-box-small'))).toHaveClass(
+        expect(spectator.query(byTestId('template-builder-box-small')).classList).toContain(
             'template-builder-box--small'
         );
     });
@@ -180,5 +185,22 @@ describe('TemplateBuilderBoxComponent', () => {
         spectator.dispatchFakeEvent(rejectButton, 'click');
 
         expect(rejectDeleteMock).toHaveBeenCalled();
+    });
+
+    it('should use titles from container map', (done) => {
+        const displayedContainerTitles = spectator
+            .queryAll(byTestId('container-title'))
+            .map((element) => element.textContent.trim());
+        const containerMapTitles = Object.values(CONTAINER_MAP_MOCK).map(
+            (container) => container.title
+        );
+
+        displayedContainerTitles.forEach((title) => {
+            if (!containerMapTitles.includes(title)) {
+                throw new Error(`title: "${title} not included the container map is displayed`);
+            }
+        });
+
+        done();
     });
 });

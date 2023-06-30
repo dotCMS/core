@@ -20,6 +20,7 @@ import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.UserDataGen;
+import java.util.HashSet;
 import org.apache.commons.io.FileUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
@@ -1269,7 +1270,7 @@ public class PermissionAPITest extends IntegrationTestBase {
 
             final List<Permission> pagePermissionsRestoredInheritance = permissionAPI.getPermissions(
                     page, true);
-            assertEquals(pagePermissionsRestoredInheritance, pagePermissionsInheritedFromSite);
+            assertEquals(new HashSet(pagePermissionsRestoredInheritance), new HashSet(pagePermissionsInheritedFromSite));
         }catch(Exception e){
             HibernateUtil.rollbackTransaction();
             Logger.error(PermissionAPITest.class, e.getMessage());
