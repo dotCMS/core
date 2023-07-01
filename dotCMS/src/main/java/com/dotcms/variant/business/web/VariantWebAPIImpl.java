@@ -73,6 +73,10 @@ public class VariantWebAPIImpl implements VariantWebAPI{
 
         final HttpSession session = request.getSession(true);
 
+        if (!UtilMethods.isSet(session)) {
+            return;
+        }
+        
         final Object attribute = session.getAttribute(VariantAPI.VARIANT_KEY);
 
         if (mustOverwrite(attribute, currentVariantName)) {
