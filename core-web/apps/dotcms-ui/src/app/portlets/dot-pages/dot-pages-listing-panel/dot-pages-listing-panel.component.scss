@@ -1,7 +1,6 @@
 @use "variables" as *;
 
 :host {
-    flex-grow: 1;
     margin-bottom: $spacing-4;
 }
 
@@ -55,4 +54,8 @@
         margin-left: $spacing-1;
     }
     display: flex;
+}
+
+.pi.pi-times {
+    cursor: pointer;
 }
