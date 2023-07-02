@@ -1,0 +1,15 @@
+# action.yml
+name: 'dotCMS CLI tests'
+description: 'Runs CLI tool tests'
+author: 'danielcolina-dotcms'
+inputs:
+  docker_image:
+    description: 'Docker image to use'
+    required: true
+    default: 'nginx'
+outputs:
+  time:
+    description: 'Index page'
+runs:
+  using: node16
+  main: 'dist/index.js'

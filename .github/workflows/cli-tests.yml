@@ -1,0 +1,58 @@
+name: CLI Tests
+on:
+  pull_request:
+    paths:
+      - 'tools/dotcms-cli/api-data-model/**'
+      - 'tools/dotcms-cli/cli/**'
+  push:
+    branches:
+      - master
+      - 'release-*'
+jobs:
+  cli_test:
+    name: CLI Tests
+    runs-on: ubuntu-latest
+    steps:
+      - id: run-dotcms-cli-tests
+        name: Run DotCMS CLI Tests
+        uses: ./.github/actions/run-cli-tests
+        with:
+          docker_image: nginx
+
+      - id: git-checkout
+        name: Checkout
+        uses: actions/checkout@v3
+
+      - name: tests
+        working-directory: ./tools/dotcms-cli
+        run: |
+          echo "tests"     
+
+
+
+      # - id: run-postman-tests
+      #   name: Run Postman Tests
+      #   timeout-minutes: 90
+      #   uses: ./.github/actions/run-postman-tests
+      #   with:
+      #     built_image_name: ${{ needs.postman-tests-setup-job.outputs.built_image_name }}
+      #     license_key: ${{ secrets.DOTCMS_LICENSE }}
+      #     tests: ${{ steps.get-commit-message.outputs.commit_message }}
+      #     parallel_collection: ${{ matrix.parallel_collection }}
+      #     export_report: ${{ env.PUBLISH_MODE == 'ALL' || env.PUBLISH_MODE == 'RESULTS' }}        
+
+
+    
+      # - name: tests
+      #   working-directory: ./tools/dotcms-cli
+      #   run: |
+      #     echo "tests"
+      #     ./gradlew clean test
+
+      
+
+
+
+
+      
+  
