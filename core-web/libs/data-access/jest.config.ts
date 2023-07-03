@@ -10,7 +10,6 @@ export default {
             stringifyContentPathRegex: '\\.(html|svg)$'
         }
     },
-    coverageDirectory: '../../../target/core-web-reports/',
     coverageReporters: [['lcovonly', { file: 'TEST-data-access.lcov' }]],
     reporters: [
         [

@@ -2,7 +2,7 @@ const nxPreset = require('@nrwl/jest/preset').default;
 
 module.exports = {
     ...nxPreset,
-
+    coverageDirectory: '../../../target/core-web-reports/',
     collectCoverage: true,
     collectCoverageFrom: [
         'src/**/*.ts',

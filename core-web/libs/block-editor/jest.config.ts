@@ -10,7 +10,6 @@ export default {
             tsconfig: '<rootDir>/tsconfig.spec.json'
         }
     },
-    coverageDirectory: '../../../target/core-web-reports/',
     coverageReporters: [['lcovonly', { file: 'TEST-block-editor.lcov' }]],
     reporters: [
         'default',
