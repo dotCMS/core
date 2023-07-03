@@ -13,20 +13,30 @@ jobs:
     name: CLI Tests
     runs-on: ubuntu-latest
     steps:
+      - id: git-checkout
+        name: Checkout
+        uses: actions/checkout@v3
+
       - id: run-dotcms-cli-tests
         name: Run DotCMS CLI Tests
         uses: ./.github/actions/run-cli-tests
         with:
-          docker_image: nginx
+          project_root: tools/dotcms-cli
+          built_image_name: nginx
+          wait_for_deps: true
+          db_type: postgres
+          license_key: 'NOTHING BY THE MOMENT'
+          custom_starter_url: 'NOTHING BY THE MOMENT'
 
-      # - id: git-checkout
-      #   name: Checkout
-      #   uses: actions/checkout@v3
+          # license_key: ${{ secrets.DOTCMS_LICENSE }}
+          # custom_starter_url: ${{ secrets.CUSTOM_STARTER_URL }}
 
-      # - name: tests
-      #   working-directory: ./tools/dotcms-cli
-      #   run: |
-      #     echo "tests"     
+      - name: tests
+        # working-directory: tools/dotcms-cli
+        run: |
+          echo 'HELLO DANI'
+          pwd
+          ls -la
 
 
 

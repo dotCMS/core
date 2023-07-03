@@ -1,6 +1,155 @@
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
+/***/ 504:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.runTests = void 0;
+const core = __importStar(__nccwpck_require__(186));
+// import * as exec from '@actions/exec'
+const fs = __importStar(__nccwpck_require__(147));
+const path = __importStar(__nccwpck_require__(17));
+// import * as shelljs from 'shelljs'
+// import fetch, {Response} from 'node-fetch'
+// import {start} from 'repl'
+// import {create} from 'domain'
+// Action inputs
+const projectRoot = core.getInput('project_root');
+const builtImageName = core.getInput('built_image_name');
+const waitForDeps = core.getInput('wait_for_deps');
+const dbType = core.getInput('db_type');
+const licenseKey = core.getInput('license_key');
+const customStarterUrl = core.getInput('custom_starter_url');
+const cicdFolder = path.join(projectRoot, 'cicd');
+const dockerFolder = path.join(cicdFolder, 'docker');
+const licenseFolder = path.join(dockerFolder, 'license');
+const dotCmsRoot = path.join(projectRoot, 'dotCMS');
+const resultsFolder = path.join(dotCmsRoot, 'build', 'test-results', 'cliTest');
+const reportFolder = path.join(dotCmsRoot, 'build', 'reports', 'tests', 'cliTest');
+const volumes = [licenseFolder, path.join(dockerFolder, 'cms-shared'), path.join(dockerFolder, 'cms-local')];
+const PASSED = 'PASSED';
+const FAILED = 'FAILED';
+const printInputs = () => {
+    core.info(`project_root: ${projectRoot}`);
+    core.info(`built_image_name: ${builtImageName}`);
+    core.info(`wait_for_deps: ${waitForDeps}`);
+    core.info(`db_type: ${dbType}`);
+    core.info(`license_key: ${licenseKey}`);
+    core.info(`custom_starter_url: ${customStarterUrl}`);
+};
+/*
+ * Run postman tests and provides a summary of such.
+ *
+ * @returns a object representing run status
+ */
+const runTests = () => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        printInputs();
+        yield setup();
+    }
+    catch (err) {
+        core.setFailed(`Error setting up environment: ${err}`);
+        return {
+            testsRunExitCode: 127,
+            testsResultsStatus: FAILED,
+            skipResultsReport: true
+        };
+    }
+    return {
+        testsRunExitCode: 0,
+        testsResultsStatus: PASSED,
+        skipResultsReport: false
+    };
+});
+exports.runTests = runTests;
+/**
+ * Sets up everything needed to run dotCMS.
+ */
+const setup = () => __awaiter(void 0, void 0, void 0, function* () {
+    createFolders();
+    yield prepareLicense();
+});
+/**
+ * Create necessary folders
+ */
+const createFolders = () => {
+    const folders = [resultsFolder, reportFolder, ...volumes];
+    for (const folder of folders) {
+        fs.mkdirSync(folder, { recursive: true });
+    }
+};
+/**
+ * Creates license folder and file with appropiate key.
+ */
+const prepareLicense = () => __awaiter(void 0, void 0, void 0, function* () {
+    const licenseFile = path.join(licenseFolder, 'license.dat');
+    core.info(`Adding license to ${licenseFile}`);
+    fs.writeFileSync(licenseFile, licenseKey, { encoding: 'utf8', flag: 'a+', mode: 0o777 });
+});
+// /**
+//  * Delays the resolve part of a promise to simulate a sleep
+//  *
+//  * @param seconds number of seconds
+//  * @returns void promise
+//  */
+// const delay = (seconds: number) => new Promise(resolve => setTimeout(resolve, seconds * 1000))
+// /**
+//  * Waits for specific time with corresponding messages.
+//  *
+//  * @param wait time to wait
+//  * @param startLabel start label
+//  * @param endLabel end label
+//  */
+// const waitFor = async (wait: number, startLabel: string, endLabel?: string) => {
+//     core.info(`Waiting ${wait} seconds for ${startLabel}`)
+//     await delay(wait)
+//     const finalLabel = endLabel || startLabel
+//     core.info(`Waiting on ${finalLabel} loading has ended`)
+//   }
+//   startAppEnvironment = async () => {
+//     core.info('Starting dotCMS environment...')
+//     await exec.exec('docker-compose', ['up', '-d'], {cwd: dockerFolder})
+//     await waitForAppEnvironment()
+//   }
+
+
+/***/ }),
+
 /***/ 109:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -29,19 +178,42 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(186));
+// import * as path from 'path'
+const cli = __importStar(__nccwpck_require__(504));
 /**
  * Main entry point for this action.
  */
-const run = () => {
-    const dockerImage = core.getInput('docker_image');
-    const time = new Date().toTimeString();
-    console.log(`Running tests in ${dockerImage}...${time}`);
-    core.setOutput('time', time);
-};
+const run = () => __awaiter(void 0, void 0, void 0, function* () {
+    const projectRoot = core.getInput('project_root');
+    // const dotCmsRoot = path.join(projectRoot, 'dotCMS')
+    core.info("Running Core's CLI tests on PROJECT ROOT:" + projectRoot);
+    const results = yield cli.runTests();
+    core.setOutput('test_status', results.testsResultsStatus);
+});
 // Run main function
 run();
+// /**
+//  * Main entry point for this action.
+//  */
+// const run = () => {
+//   const dockerImage = core.getInput('docker_image')
+//   const time = new Date().toTimeString()
+//   console.log(`Running tests in ${dockerImage}...${time}`)
+//   core.setOutput('time', time)
+// }
+// // Run main function
+// run()
 
 
 /***/ }),

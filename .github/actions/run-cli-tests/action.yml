@@ -3,13 +3,39 @@ name: 'dotCMS CLI tests'
 description: 'Runs CLI tool tests'
 author: 'danielcolina-dotcms'
 inputs:
-  docker_image:
-    description: 'Docker image to use'
+  project_root:
+    description: 'Project root'
     required: true
-    default: 'nginx'
+    default: ${{ github.WORKSPACE }}
+  # build_env:
+  #   description: 'Build environment to use'
+  #   type: choice
+  #   options:
+  #   - gradle
+  #   - maven
+  #   required: true
+  db_type:
+    description: 'Database type'
+    required: true
+    default: postgres
+  built_image_name:
+    description: 'DotCMS built image name'
+    required: true
+  wait_for_deps:
+    description: 'Time to wait before starting DotCMS instance to let dependencies load'
+    required: true
+    default: '60'
+  license_key:
+    description: 'License key to use'
+    required: true
+  custom_starter_url:
+    description: 'Custom starter URL'
+    required: false
+
 outputs:
   time:
     description: 'Index page'
+
 runs:
   using: node16
   main: 'dist/index.js'
