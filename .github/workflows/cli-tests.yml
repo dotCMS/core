@@ -22,7 +22,7 @@ jobs:
         uses: ./.github/actions/run-cli-tests
         with:
           project_root: tools/dotcms-cli
-          built_image_name: nginx
+          built_image_name: master_a90c97d_SNAPSHOT
           wait_for_deps: true
           db_type: postgres
           license_key: 'NOTHING BY THE MOMENT'

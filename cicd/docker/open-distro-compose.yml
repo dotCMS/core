@@ -3,7 +3,8 @@ version: "3.7"
 services:
 
   elasticsearch:
-    image: ghcr.io/dotcms/elasticsearch:7.9.1
+    # image: ghcr.io/dotcms/elasticsearch:7.9.1
+    image: opensearchproject/opensearch:1.3.6
     environment:
       - cluster.name=elastic-cluster
       - discovery.type=single-node
