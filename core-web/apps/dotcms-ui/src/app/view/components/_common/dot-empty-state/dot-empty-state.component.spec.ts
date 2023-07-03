@@ -77,6 +77,6 @@ describe('DotEmptyStateComponent', () => {
         expect(content.nativeElement.innerText).toEqual(
             "You haven't added anything yet, start by clicking the button below"
         );
-        expect(button.nativeElement.innerText).toEqual('Add new template');
+        expect(button.nativeElement.innerText).toEqual('Add New Template');
     });
 });
