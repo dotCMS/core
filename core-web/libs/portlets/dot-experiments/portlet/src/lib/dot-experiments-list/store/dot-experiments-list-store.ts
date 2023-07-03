@@ -5,21 +5,23 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 
 import { catchError, switchMap, tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
+    AllowedActionsByExperimentStatus,
     ComponentStatus,
     DotExperiment,
-    DotExperimentStatusList,
+    DotExperimentStatus,
+    DotExperimentsWithActions,
     GroupedExperimentByStatus,
     SidebarStatus
 } from '@dotcms/dotcms-models';
+import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
-import { DotExperimentsService } from '../../../../../data-access/src/lib/services/dot-experiments.service';
 import { DotExperimentsStore } from '../../dot-experiments-shell/store/dot-experiments.store';
 
 export interface DotExperimentsState {
@@ -32,11 +34,11 @@ export interface DotExperimentsState {
 const initialState: DotExperimentsState = {
     experiments: [],
     filterStatus: [
-        DotExperimentStatusList.RUNNING,
-        DotExperimentStatusList.SCHEDULED,
-        DotExperimentStatusList.DRAFT,
-        DotExperimentStatusList.ENDED,
-        DotExperimentStatusList.ARCHIVED
+        DotExperimentStatus.RUNNING,
+        DotExperimentStatus.SCHEDULED,
+        DotExperimentStatus.DRAFT,
+        DotExperimentStatus.ENDED,
+        DotExperimentStatus.ARCHIVED
     ],
     status: ComponentStatus.INIT,
     sidebar: {
@@ -47,8 +49,8 @@ const initialState: DotExperimentsState = {
 
 // Vm Interfaces
 export interface VmListExperiments {
-    isLoading: boolean;
     experiments: DotExperiment[];
+    isLoading: boolean;
     experimentsFiltered: GroupedExperimentByStatus[];
     filterStatus: Array<string>;
     sidebar: SidebarStatus;
@@ -72,37 +74,6 @@ export class DotExperimentsListStore
     extends ComponentStore<DotExperimentsState>
     implements OnStateInit
 {
-    // Selectors
-    readonly getExperimentsFilteredAndGroupedByStatus$: Observable<GroupedExperimentByStatus[]> =
-        this.select(({ experiments, filterStatus }) => {
-            const grouped: GroupedExperimentByStatus[] = [];
-
-            if (experiments.length) {
-                Object.keys(DotExperimentStatusList).forEach((key) =>
-                    grouped.push({ status: DotExperimentStatusList[key], experiments: [] })
-                );
-
-                experiments
-                    .filter((experiment) => filterStatus.includes(experiment.status))
-                    .forEach((experiment) => {
-                        const statusGroup = grouped.find(
-                            (item) => item.status === experiment.status
-                        );
-
-                        if (statusGroup) {
-                            statusGroup.experiments.push(experiment);
-                        } else {
-                            grouped.push({
-                                status: experiment.status,
-                                experiments: [experiment]
-                            });
-                        }
-                    });
-            }
-
-            return grouped.filter((item) => !!item.experiments.length);
-        });
-
     readonly isLoading$: Observable<boolean> = this.select(
         (state) => state.status === ComponentStatus.LOADING || state.status === ComponentStatus.INIT
     );
@@ -111,7 +82,47 @@ export class DotExperimentsListStore
             state.sidebar.status === ComponentStatus.SAVING ||
             state.sidebar.status === ComponentStatus.INIT
     );
+    readonly getExperimentsWithActions$: Observable<DotExperimentsWithActions[]> = this.select(
+        ({ experiments }) => {
+            return experiments.map((experiment) => ({
+                ...experiment,
+                actionsItemsMenu: this.getActionMenuItemsByExperiment(experiment)
+            }));
+        }
+    );
+    readonly getExperimentsFilteredAndGroupedByStatus$: Observable<GroupedExperimentByStatus[]> =
+        this.select(
+            this.state$,
+            this.getExperimentsWithActions$,
+            ({ filterStatus }, experimentsWithActions) => {
+                const grouped: GroupedExperimentByStatus[] = [];
 
+                if (experimentsWithActions.length) {
+                    Object.keys(DotExperimentStatus).forEach((key) =>
+                        grouped.push({ status: DotExperimentStatus[key], experiments: [] })
+                    );
+
+                    experimentsWithActions
+                        .filter((experiment) => filterStatus.includes(experiment.status))
+                        .forEach((experiment) => {
+                            const statusGroup = grouped.find(
+                                (item) => item.status === experiment.status
+                            );
+
+                            if (statusGroup) {
+                                statusGroup.experiments.push(experiment);
+                            } else {
+                                grouped.push({
+                                    status: experiment.status,
+                                    experiments: [experiment]
+                                });
+                            }
+                        });
+                }
+
+                return grouped.filter((item) => !!item.experiments.length);
+            }
+        );
     //Updater
     readonly initStore = this.updater((state) => ({
         ...state,
@@ -158,7 +169,7 @@ export class DotExperimentsListStore
     readonly archiveExperimentById = this.updater((state, experimentId: string) => ({
         ...state,
         experiments: state.experiments.map((exp) =>
-            experimentId === exp.id ? { ...exp, status: DotExperimentStatusList.ARCHIVED } : exp
+            experimentId === exp.id ? { ...exp, status: DotExperimentStatus.ARCHIVED } : exp
         )
     }));
 
@@ -300,6 +311,7 @@ export class DotExperimentsListStore
         this.getExperimentsFilteredAndGroupedByStatus$,
         this.dotExperimentsStore.getPageId$,
         this.dotExperimentsStore.getPageTitle$,
+        this.getExperimentsWithActions$,
         (
             { experiments, filterStatus, sidebar },
             isLoading,
@@ -335,7 +347,8 @@ export class DotExperimentsListStore
         private readonly messageService: MessageService,
         private readonly route: ActivatedRoute,
         private readonly router: Router,
-        private readonly dotHttpErrorManagerService: DotHttpErrorManagerService
+        private readonly dotHttpErrorManagerService: DotHttpErrorManagerService,
+        private readonly confirmationService: ConfirmationService
     ) {
         super({
             ...initialState
@@ -345,5 +358,56 @@ export class DotExperimentsListStore
     ngrxOnStateInit(): void {
         const pageId = this.route.snapshot.params['pageId'];
         this.loadExperiments(pageId);
+    }
+
+    private getActionMenuItemsByExperiment(experiment: DotExperiment): MenuItem[] {
+        return [
+            // Delete Action
+            {
+                id: 'dot-experiments-delete',
+                label: this.dotMessageService.get('experiments.action.delete'),
+                visible: AllowedActionsByExperimentStatus['delete'].includes(experiment.status),
+                command: () =>
+                    this.confirmationService.confirm({
+                        header: this.dotMessageService.get('experiments.action.delete'),
+                        message: this.dotMessageService.get(
+                            'experiments.action.delete.confirm-question',
+                            experiment.name
+                        ),
+                        rejectButtonStyleClass: 'p-button-secondary',
+                        rejectLabel: this.dotMessageService.get('experiments.action.cancel'),
+                        acceptLabel: this.dotMessageService.get('experiments.action.delete'),
+                        accept: () => this.deleteExperiment(experiment),
+                        key: 'positionDialog'
+                    })
+            },
+            // Go to Configuration Action
+            {
+                id: 'dot-experiments-go-to-configuration',
+                label: this.dotMessageService.get('experiments.action.configuration'),
+                visible: AllowedActionsByExperimentStatus['configuration'].includes(
+                    experiment.status
+                ),
+                routerLink: [
+                    '/edit-page/experiments/',
+                    experiment.pageId,
+                    experiment.id,
+                    'configuration'
+                ],
+                queryParamsHandling: 'merge',
+                queryParams: {
+                    mode: null,
+                    variantName: null,
+                    experimentId: null
+                }
+            },
+            // Archive Action
+            {
+                id: 'dot-experiments-archive',
+                label: this.dotMessageService.get('experiments.action.archive'),
+                visible: AllowedActionsByExperimentStatus['archive'].includes(experiment.status),
+                command: () => this.archiveExperiment(experiment)
+            }
+        ];
     }
 }
