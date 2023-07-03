@@ -60,10 +60,10 @@ p-divider {
 
     .layout-toolbar {
         border-color: $color-palette-gray-300;
-        padding: 0 $spacing-5;
+        padding: $spacing-2 $spacing-5;
+        padding-top: 0;
     }
     .p-toolbar {
-        padding: 0.1rem $spacing-5;
         border-color: $color-palette-black-op-10;
     }
 
