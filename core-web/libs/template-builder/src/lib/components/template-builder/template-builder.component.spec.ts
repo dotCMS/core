@@ -126,7 +126,6 @@ describe('TemplateBuilderComponent', () => {
 
             spectator.component.removeColumn(widgetToDelete, elementToDelete, rowId);
 
-            expect(removeColMock).toHaveBeenCalledWith({ ...widgetToDelete, parentId: 'rowId' });
             expect(removeColMock).toHaveBeenCalledWith({ ...widgetToDelete, parentId: rowId });
             done();
         });
@@ -171,7 +170,7 @@ describe('TemplateBuilderComponent', () => {
 
         spectator.dispatchFakeEvent(editRowStyleClassesButton, 'onClick');
 
-        expect(openDialogMock).toHaveBeenCalledTimes(10000);
+        expect(openDialogMock).toHaveBeenCalled();
     });
 
     it('should open a dialog when clicking on box-style-class-button', () => {
