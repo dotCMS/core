@@ -14,7 +14,7 @@ import { DotMessageService } from '@dotcms/data-access';
 import {
     ComponentStatus,
     ConditionDefaultByTypeOfGoal,
-    CONFIRM_DIALOG_KEY,
+    CONFIGURATION_CONFIRM_DIALOG_KEY,
     DotExperiment,
     DotExperimentStatusList,
     ExperimentSteps,
@@ -896,7 +896,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                 disabled: this.disableStartExperiment(experiment),
                 command: () => {
                     this.confirmationService.confirm({
-                        key: CONFIRM_DIALOG_KEY,
+                        key: CONFIGURATION_CONFIRM_DIALOG_KEY,
                         header: this.dotMessageService.get('experiments.action.end-experiment'),
                         message: this.dotMessageService.get(
                             'experiments.action.stop.delete-confirm'
@@ -915,7 +915,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                 visible: experiment?.status === DotExperimentStatusList.SCHEDULED,
                 command: () => {
                     this.confirmationService.confirm({
-                        key: CONFIRM_DIALOG_KEY,
+                        key: CONFIGURATION_CONFIRM_DIALOG_KEY,
                         header: this.dotMessageService.get(
                             'experiments.configure.scheduling.cancel'
                         ),

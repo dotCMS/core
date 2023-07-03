@@ -210,4 +210,4 @@ export const ReportSummaryLegendByBayesianStatus: Record<BayesianLegendStatus, S
     }
 };
 
-export const CONFIRM_DIALOG_KEY = 'confirmDialog';
+export const CONFIGURATION_CONFIRM_DIALOG_KEY = 'confirmDialog';

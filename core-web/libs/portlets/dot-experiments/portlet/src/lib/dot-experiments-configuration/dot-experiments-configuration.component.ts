@@ -13,7 +13,7 @@ import { MenuModule } from 'primeng/menu';
 
 import {
     ComponentStatus,
-    CONFIRM_DIALOG_KEY,
+    CONFIGURATION_CONFIRM_DIALOG_KEY,
     DotExperiment,
     DotExperimentStatusList
 } from '@dotcms/dotcms-models';
@@ -65,7 +65,7 @@ import { DotExperimentsInlineEditTextComponent } from '../shared/ui/dot-experime
 export class DotExperimentsConfigurationComponent implements OnInit {
     vm$: Observable<ConfigurationViewModel> = this.dotExperimentsConfigurationStore.vm$;
     experimentStatus = DotExperimentStatusList;
-    confirmDialogKey = CONFIRM_DIALOG_KEY;
+    confirmDialogKey = CONFIGURATION_CONFIRM_DIALOG_KEY;
     protected readonly ComponentStatus = ComponentStatus;
 
     constructor(
