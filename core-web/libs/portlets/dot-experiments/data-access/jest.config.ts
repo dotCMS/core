@@ -10,17 +10,15 @@ export default {
         }
     },
     coverageDirectory: '../../../../target/core-web-reports/',
-    coverageReporters: [
+    coverageReporters: [['lcovonly', { file: 'TEST-data-access-experiment.lcov' }]],
+    reporters: [
         'default',
         ['github-actions', { silent: false }],
-        ['lcovonly', { file: 'TEST-portlet-experiment-data-access.lcov' }]
-    ],
-    reporters: [
         [
             'jest-junit',
             {
                 outputDirectory: 'target/core-web-reports',
-                outputName: 'TEST-portlet-experiment-data-access.xml'
+                outputName: 'TEST-data-access-experiment.xml'
             }
         ]
     ],
