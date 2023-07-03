@@ -22,14 +22,15 @@ export default {
     }
 } as Meta;
 
-const BasicTemplate = createButtonTemplate('');
-const OutlinedTemplate = createButtonTemplate('p-button-outlined');
+const BasicTemplate = createButtonTemplate('', undefined, 2);
+const OutlinedTemplate = createButtonTemplate('p-button-outlined', undefined, 2);
 const TextTemplate = createButtonTemplate('p-button-text');
 
-const IconOnlyBasicTemplate = createButtonTemplate('', ICON_ONLY_BUTTONS_TEMPLATE);
+const IconOnlyBasicTemplate = createButtonTemplate('', ICON_ONLY_BUTTONS_TEMPLATE, 2);
 const IconOnlyOutlinedTemplate = createButtonTemplate(
     'p-button-outlined',
-    ICON_ONLY_BUTTONS_TEMPLATE
+    ICON_ONLY_BUTTONS_TEMPLATE,
+    2
 );
 const IconOnlyTextTemplate = createButtonTemplate('p-button-text', ICON_ONLY_BUTTONS_TEMPLATE);
 

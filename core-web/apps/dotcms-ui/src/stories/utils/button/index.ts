@@ -10,6 +10,8 @@ const SIZE_SEPARATOR_TEMPLATE = `<div style="display: flex; gap: 8px; justify-co
 
 export const MAIN_BUTTONS_TEMPLATE = `<button class="SIZE_VALUE SEVERITY_VALUE BUTTON_TYPE" pButton label="Button"></button>
 <button class="SIZE_VALUE SEVERITY_VALUE BUTTON_TYPE" pButton label="Button" icon="pi pi-plus"></button>
+<button class="SIZE_VALUE SEVERITY_VALUE BUTTON_TYPE" pButton label="Button" icon="pi pi-plus" iconPos="right"></button>
+<button class="SIZE_VALUE SEVERITY_VALUE BUTTON_TYPE" pButton label="Button" icon="pi pi-plus" disabled="true"></button>
 <button class="SIZE_VALUE SEVERITY_VALUE BUTTON_TYPE" pButton label="Button" disabled="true"></button>`;
 
 export const ICON_ONLY_BUTTONS_TEMPLATE = `<button class="SIZE_VALUE SEVERITY_VALUE BUTTON_TYPE p-button-rounded" pButton icon="pi pi-ellipsis-v"></button>
@@ -21,18 +23,22 @@ const severities = ['', 'p-button-secondary', 'p-button-danger'];
 const sizes = ['p-button-lg', '', 'p-button-sm'];
 
 /**
- * Creates a button template.
+ * Creates a button template with the given button type, template and severity quantity.
  *
  * @export
  * @param {string} [buttonType='']
- * @return {*}
+ * @param {string} [buttonTemplate=MAIN_BUTTONS_TEMPLATE]
+ * @param {number} [severityQuantity=3]
+ * @return {*}  {string}
  */
 export function createButtonTemplate(
     buttonType: string = '',
-    buttonTemplate: string = MAIN_BUTTONS_TEMPLATE
+    buttonTemplate: string = MAIN_BUTTONS_TEMPLATE,
+    severityQuantity: number = 3
 ): string {
     // All buttons separated by severity
     const buttonsBySeverity = severities
+        .slice(0, severityQuantity)
         .map((severity) => {
             // All buttons separated by size but with the same severity
             return sizes
