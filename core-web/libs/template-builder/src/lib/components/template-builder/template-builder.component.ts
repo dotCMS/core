@@ -6,7 +6,7 @@ import {
     GridStackWidget,
     numberOrString
 } from 'gridstack';
-import { Observable, combineLatest } from 'rxjs';
+import { Observable, Subject, combineLatest } from 'rxjs';
 
 import {
     AfterViewInit,
@@ -24,7 +24,7 @@ import {
 
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { filter, startWith, take, tap, map, skip } from 'rxjs/operators';
+import { filter, startWith, take, tap, map, skip, takeUntil } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
@@ -98,6 +98,7 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
     }
 
     public items$: Observable<DotLayoutBody>;
+    private destroy$: Subject<boolean> = new Subject<boolean>();
     public vm$: Observable<DotTemplateBuilderState> = this.store.vm$;
 
     public readonly rowIcon = rowIcon;
@@ -134,7 +135,8 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
                         themeId: this.themeId,
                         layout: { ...this.dotLayout }
                     });
-                })
+                }),
+                takeUntil(this.destroy$)
             )
             .subscribe();
     }
@@ -242,6 +244,8 @@ export class TemplateBuilderComponent implements OnInit, AfterViewInit, OnDestro
 
     ngOnDestroy(): void {
         this.grid.destroy(true);
+        this.destroy$.next(true);
+        this.destroy$.complete();
     }
 
     /**

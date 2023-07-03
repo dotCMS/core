@@ -94,7 +94,6 @@ describe('TemplateBuilderComponent', () => {
     });
     it('should not trigger a template change when store is initialized', () => {
         // Store init is called on init
-
         const changeMock = jest.spyOn(spectator.component.templateChange, 'emit');
         expect(changeMock).not.toHaveBeenCalled();
     });
