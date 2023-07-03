@@ -9,5 +9,6 @@ module.exports = {
         '!src/**/*.stories.ts',
         '!src/**/*.module.ts',
         '!src/index.ts'
-    ]
+    ],
+    verbose: true
 };
