@@ -91,7 +91,7 @@ describe('AddToBundleService', () => {
         addToBundleService
             .addToBundle(assetIdentifier, mockBundleData)
             .subscribe((action: DotAjaxActionResponseView) => {
-                expect(action).toEqual('mockResponse');
+                expect(action).toEqual(mockResponse);
             });
 
         const req = httpMock.expectOne((_req) => true);
