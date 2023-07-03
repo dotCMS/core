@@ -1,4 +1,10 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Output } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    EventEmitter,
+    HostListener,
+    Output
+} from '@angular/core';
 
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -18,13 +24,25 @@ import { DotMessagePipe, DotMessagePipeModule } from '@dotcms/ui';
 export class RemoveConfirmDialogComponent {
     @Output() deleteConfirmed: EventEmitter<void> = new EventEmitter();
     @Output() deleteRejected: EventEmitter<void> = new EventEmitter();
+    private currentPopup: ConfirmationService;
+
+    @HostListener('document:keydown.escape', ['$event'])
+    onEscapePress() {
+        if (this.currentPopup) {
+            this.currentPopup.close();
+            this.deleteRejected.emit();
+            this.currentPopup = null;
+        }
+    }
+
     constructor(
         private confirmationService: ConfirmationService,
         private dotMessagePipe: DotMessagePipe
     ) {}
 
     openConfirmationDialog(event: Event): void {
-        this.confirmationService.confirm({
+        this.currentPopup = this.confirmationService.confirm({
+            closeOnEscape: true,
             target: event.target,
             message: this.dotMessagePipe.transform(
                 'dot.template.builder.comfirmation.popup.message'
