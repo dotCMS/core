@@ -90,7 +90,8 @@ import com.dotcms.rest.IntegrityResourceIntegrationTest;
 import com.dotcms.rest.api.v1.apps.AppsResourceTest;
 import com.dotcms.rest.api.v1.apps.SiteViewPaginatorIntegrationTest;
 import com.dotcms.rest.api.v1.apps.view.AppsInterpolationTest;
-import com.dotcms.rest.api.v1.assets.AssetPathResolverImplTest;
+import com.dotcms.rest.api.v1.asset.AssetPathResolverImplIntegrationTest;
+import com.dotcms.rest.api.v1.asset.WebAssetHelperIntegrationTest;
 import com.dotcms.rest.api.v1.authentication.ResetPasswordTokenUtilTest;
 import com.dotcms.rest.api.v1.folder.FolderResourceTest;
 import com.dotcms.rest.api.v1.menu.MenuResourceTest;
@@ -125,6 +126,7 @@ import com.dotmarketing.cache.FolderCacheImplIntegrationTest;
 import com.dotmarketing.common.db.DBTimeZoneCheckTest;
 import com.dotmarketing.filters.AutoLoginFilterTest;
 import com.dotmarketing.filters.CMSUrlUtilIntegrationTest;
+import com.dotmarketing.filters.CMSUrlUtilTest;
 import com.dotmarketing.image.filter.ImageFilterAPIImplTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.osgi.GenericBundleActivatorTest;
@@ -225,6 +227,8 @@ import org.junit.runners.Suite.SuiteClasses;
 
 /* grep -l -r "@Test" dotCMS/src/integration-test */
 /* ./gradlew integrationTest -Dtest.single=com.dotcms.MainSuite */
+
+
 
 
 @RunWith(MainBaseSuite.class)
@@ -649,14 +653,15 @@ import org.junit.runners.Suite.SuiteClasses;
 //        AnalyticsAPIImplTest.class,
 //        AccessTokenRenewJobTest.class,
         SiteViewPaginatorIntegrationTest.class,
-        AssetPathResolverImplTest.class,
         CMSUrlUtilIntegrationTest.class,
-        HostFactoryImplTest.class,
+        HostFactoryImplTest.class,        
         RootIndexRegexUrlPatterStrategyIntegrationTest.class,
         IndexRegexUrlPatterStrategyIntegrationTest.class,
         ContentFileAssetIntegrityCheckerTest.class,
         FolderIntegrityCheckerTest.class,
-        ContentPageIntegrityCheckerTest.class
+        ContentPageIntegrityCheckerTest.class,
+        AssetPathResolverImplIntegrationTest.class,
+        WebAssetHelperIntegrationTest.class
 })
 
 public class MainSuite {

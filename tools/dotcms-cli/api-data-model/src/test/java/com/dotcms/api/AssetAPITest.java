@@ -3,21 +3,23 @@ package com.dotcms.api;
 import com.dotcms.api.client.RestClientFactory;
 import com.dotcms.api.client.ServiceManager;
 import com.dotcms.model.ResponseEntityView;
+import com.dotcms.model.asset.AssetRequest;
 import com.dotcms.model.asset.FolderView;
 import com.dotcms.model.asset.SearchByPathRequest;
 import com.dotcms.model.config.ServiceBean;
 import com.google.common.collect.ImmutableList;
 import io.quarkus.test.junit.QuarkusTest;
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import javax.inject.Inject;
-import javax.ws.rs.NotFoundException;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import javax.inject.Inject;
+import javax.ws.rs.NotFoundException;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 @QuarkusTest
 class AssetAPITest {
@@ -56,11 +58,33 @@ class AssetAPITest {
 
         final AssetAPI assetAPI = clientFactory.getClient(AssetAPI.class);
 
-        var byPath = SearchByPathRequest.builder().
+        var folderByPath = SearchByPathRequest.builder().
                 assetPath(String.format("//%s/%s", siteName, "folderDoesNotExist")).build();
 
         try {
-            assetAPI.byPath(byPath);
+            assetAPI.folderByPath(folderByPath);
+            Assertions.fail(" 404 Exception should have been thrown here.");
+        } catch (Exception e) {
+            Assertions.assertTrue(e instanceof NotFoundException);
+        }
+    }
+
+    /**
+     * Check for the proper response when a file is not found
+     */
+    @Test
+    void Test_Download_Not_Found() {
+
+        final AssetAPI assetAPI = clientFactory.getClient(AssetAPI.class);
+
+        var folderByPath = AssetRequest.builder().
+                assetPath(String.format("//%s/%s/%s", siteName, "folderDoesNotExist", "image.png")).
+                language("es-CR").
+                live(true).
+                build();
+
+        try {
+            assetAPI.download(folderByPath);
             Assertions.fail(" 404 Exception should have been thrown here.");
         } catch (Exception e) {
             Assertions.assertTrue(e instanceof NotFoundException);
@@ -94,9 +118,9 @@ class AssetAPITest {
         Assertions.assertNotNull(makeFoldersResponse.entity());
 
         // Request the folder and check the data is correct
-        var byPath = SearchByPathRequest.builder().
+        var folderByPath = SearchByPathRequest.builder().
                 assetPath(String.format("//%s/%s", siteName, path1)).build();
-        executeAndTest(byPath, true);
+        executeAndTest(folderByPath, true);
     }
 
     /**
@@ -126,9 +150,9 @@ class AssetAPITest {
         Assertions.assertNotNull(makeFoldersResponse.entity());
 
         // Request the folder and check the data is correct
-        var byPath = SearchByPathRequest.builder().
+        var folderByPath = SearchByPathRequest.builder().
                 assetPath(String.format("//%s/%s", siteName, randomFolderName1)).build();
-        executeAndTest(byPath, true, randomFolderName2, randomFolderName3);
+        executeAndTest(folderByPath, true, randomFolderName2, randomFolderName3);
     }
 
     /**
@@ -155,9 +179,9 @@ class AssetAPITest {
         Assertions.assertNotNull(makeFoldersResponse.entity());
 
         // Request the folder and check the data is correct
-        var byPath = SearchByPathRequest.builder().
+        var folderByPath = SearchByPathRequest.builder().
                 assetPath(String.format("//%s/", siteName)).build();
-        executeAndTest(byPath, false, randomFolderName1, randomFolderName2, randomFolderName3);
+        executeAndTest(folderByPath, false, randomFolderName1, randomFolderName2, randomFolderName3);
     }
 
     void executeAndTest(SearchByPathRequest request, boolean exactMatch, String... folderNames) {
@@ -165,7 +189,7 @@ class AssetAPITest {
         final AssetAPI assetAPI = clientFactory.getClient(AssetAPI.class);
 
         // Now, lets try to request the requested folders using the asset API
-        final ResponseEntityView<FolderView> byPathResponse = assetAPI.byPath(request);
+        final ResponseEntityView<FolderView> byPathResponse = assetAPI.folderByPath(request);
         Assertions.assertNotNull(byPathResponse.entity());
 
         // Make sure the roots folder has the basic info

@@ -1,13 +1,12 @@
-package com.dotcms.rest.api.v1.assets;
+package com.dotcms.rest.api.v1.asset;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.rest.api.v1.asset.AssetPathResolver;
-import com.dotcms.rest.api.v1.asset.ResolvedAssetAndPath;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -17,7 +16,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class AssetPathResolverImplTest {
+public class AssetPathResolverImplIntegrationTest {
 
     static Host host;
 
@@ -166,6 +165,43 @@ public class AssetPathResolverImplTest {
         assertEquals(host.getHostname(), parse.host());
         assertEquals("/bar.txt", parse.path());
         assertEquals("bar.txt", parse.asset());
+    }
+
+
+    /**
+     * Given scenario: We request an url with a non-existing folder
+     * Expected: Should resolve the resource and create the missing folder
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void Test_Parse_Asset_Path_Create_Missing_Folder() throws DotDataException, DotSecurityException {
+        final String newFolder = String.format("foo%s",System.currentTimeMillis());
+
+        final Folder folderByPath = APILocator.getFolderAPI()
+                .findFolderByPath(newFolder, host, APILocator.systemUser(), false);
+        //Test Folder we intend to create does not exist
+
+        assertNull(folderByPath.getIdentifier());
+
+        final String url = String.format("http://%s/%s/bar.txt", host.getHostname(), newFolder);
+        final ResolvedAssetAndPath parse = AssetPathResolver.newInstance()
+                .resolve(url, APILocator.systemUser(), true);
+
+        assertNotNull(parse.path());
+        assertNotNull(parse.asset());
+
+        final String expectedFolderPath = String.format("/%s", newFolder);
+
+        assertEquals(host.getHostname(), parse.host());
+        assertEquals(expectedFolderPath, parse.path().replaceAll("/bar.txt",""));
+        assertEquals("bar.txt", parse.asset());
+
+        final Folder folderByPathAfter = APILocator.getFolderAPI()
+                .findFolderByPath(expectedFolderPath, host, APILocator.systemUser(), false);
+        //Test Folder we intend to create does not exist
+        assertNotNull(folderByPathAfter);
+        assertNotNull(folderByPathAfter.getIdentifier());
     }
 
 
