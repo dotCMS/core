@@ -11,6 +11,7 @@
     height: $spacing-6;
     border-radius: 0.375rem;
     border: none;
+    color: $white;
 
     .p-button-label {
         color: $white;
@@ -88,6 +89,7 @@
 .p-button-outlined:enabled {
     background-color: transparent;
     border: 1.5px solid $color-palette-primary;
+    color: $color-palette-primary;
 
     &.p-button-sm {
         border: 1px solid $color-palette-primary;
@@ -112,6 +114,7 @@
     &.p-button-secondary {
         background-color: transparent;
         border: 1.5px solid $color-palette-secondary;
+        color: $color-palette-secondary;
 
         &.p-button-sm {
             border: 1px solid $color-palette-secondary;
@@ -138,6 +141,7 @@
 // Severity for text button
 .p-button-text:enabled {
     background-color: transparent;
+    color: $black;
 
     .p-button-label {
         color: $black;
@@ -159,6 +163,7 @@
 
     &.p-button-secondary {
         background-color: transparent;
+        color: $black;
 
         .p-button-label {
             color: $black;
@@ -181,6 +186,7 @@
 
     &.p-button-danger {
         background-color: transparent;
+        color: $color-accessible-text-red;
 
         .p-button-label {
             color: $color-accessible-text-red;
@@ -205,6 +211,7 @@
 // Buttons disabled styles
 .p-button:disabled {
     background-color: $color-palette-gray-200;
+    color: $color-palette-gray-500;
 
     .p-button-label,
     .p-button-icon {
