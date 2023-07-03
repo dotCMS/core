@@ -197,17 +197,13 @@ describe('DotAppsConfigurationComponent', () => {
                 fixture.debugElement.queryAll(
                     By.css('.dot-apps-configuration__action_header button')
                 )[0].nativeElement.innerText
-            ).toContain(
-                messageServiceMock.get('apps.confirmation.export.all.button').toUpperCase()
-            );
+            ).toContain(messageServiceMock.get('apps.confirmation.export.all.button'));
 
             expect(
                 fixture.debugElement.queryAll(
                     By.css('.dot-apps-configuration__action_header button')
                 )[1].nativeElement.innerText
-            ).toContain(
-                messageServiceMock.get('apps.confirmation.delete.all.button').toUpperCase()
-            );
+            ).toContain(messageServiceMock.get('apps.confirmation.delete.all.button'));
         });
 
         it('should have dot-apps-configuration-list with correct values', () => {

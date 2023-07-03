@@ -439,7 +439,7 @@ describe('DotFavoritePageComponent', () => {
             );
 
             expect(image.nativeElement['src'].includes('123')).toBe(true);
-            expect(reloadBtn.nativeElement.outerText).toBe('RELOAD');
+            expect(reloadBtn.nativeElement.outerText).toBe('Reload');
         });
 
         it('should button Remove Favorite be enabled', () => {
