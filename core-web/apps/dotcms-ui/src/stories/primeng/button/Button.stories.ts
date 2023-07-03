@@ -10,7 +10,7 @@ import {
     IconOnlyTextTemplate,
     OutlinedTemplate,
     TextTemplate
-} from '../../utils/button';
+} from './templates';
 
 export default {
     title: 'PrimeNG/Button/Button',
