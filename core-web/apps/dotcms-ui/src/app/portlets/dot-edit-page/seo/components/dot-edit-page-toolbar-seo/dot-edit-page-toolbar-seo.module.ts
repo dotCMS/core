@@ -23,8 +23,9 @@ import { DotEditPageNavDirective } from '@portlets/dot-edit-page/main/dot-edit-p
 
 import { DotEditPageToolbarSeoComponent } from './dot-edit-page-toolbar-seo.component';
 
-import { DotSiteSelectorSeoModule } from '../dot-device-selector-seo/dot-device-selector-seo.module';
+import { DotDeviceSelectorSeoModule } from '../dot-device-selector-seo/dot-device-selector-seo.module';
 import { DotEditPageInfoSeoModule } from '../dot-edit-page-info-seo/dot-edit-page-info-seo.module';
+import { DotEditPageStateControllerSeoModule } from '../dot-edit-page-state-controller-seo/dot-edit-page-state-controller-seo.module';
 
 @NgModule({
     imports: [
@@ -47,7 +48,8 @@ import { DotEditPageInfoSeoModule } from '../dot-edit-page-info-seo/dot-edit-pag
         RouterLink,
         TagModule,
         DotEditPageInfoSeoModule,
-        DotSiteSelectorSeoModule
+        DotDeviceSelectorSeoModule,
+        DotEditPageStateControllerSeoModule
     ],
     exports: [DotEditPageToolbarSeoComponent],
     declarations: [DotEditPageToolbarSeoComponent],

@@ -29,11 +29,11 @@
 
     <!-- Tab actions and dropdowns -->
     <div class="lower-toolbar-left w-7">
-        <dot-edit-page-state-controller
+        <dot-edit-page-state-controller-seo
             [pageState]="pageState"
             [variant]="variant"
             (modeChange)="stateChange()"
-        ></dot-edit-page-state-controller>
+        ></dot-edit-page-state-controller-seo>
 
         <p-checkbox
             class="dot-edit__what-changed-button"
@@ -51,13 +51,6 @@
             [variant]="variant"
         >
         </dot-edit-page-view-as-controller> -->
-
-        <dot-device-selector-seo
-            [pTooltip]="pageState.viewAs.device?.name || ('editpage.viewas.default.device' | dm)"
-            appendTo="body"
-            tooltipPosition="bottom"
-            tooltipStyleClass="dot-device-selector__dialog"
-        ></dot-device-selector-seo>
     </div>
 </dot-secondary-toolbar>
 

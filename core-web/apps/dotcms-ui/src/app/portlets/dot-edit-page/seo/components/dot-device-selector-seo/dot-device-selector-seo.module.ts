@@ -28,4 +28,4 @@ import { DotDeviceSelectorSeoComponent } from './dot-device-selector-seo.compone
     exports: [DotDeviceSelectorSeoComponent],
     providers: [DotDevicesService]
 })
-export class DotSiteSelectorSeoModule {}
+export class DotDeviceSelectorSeoModule {}
