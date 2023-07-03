@@ -132,7 +132,7 @@
                                     [ngClass]="{ 'prospect-winner': row.isWinner }"
                                 >
                                     <button
-                                        class="p-button-sm p-button-secondary"
+                                        class="p-button-sm p-button-outlined"
                                         *ngIf="!vm.promotedVariant && row.id !== defaultVariantId"
                                         [label]="'experiments.reports.promote' | dm"
                                         (click)="promoteVariant($event, vm.experiment.id, row)"

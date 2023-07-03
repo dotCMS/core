@@ -45,7 +45,7 @@
         <dot-icon-button [size]="40" (click)="addGridBox()" float icon="add"></dot-icon-button>
         <span class="toolbar__sep" *ngIf="!apiLink || saveAsTemplate"></span>
         <button
-            class="p-button-secondary"
+            class="p-button-outlined"
             *ngIf="!apiLink"
             [disabled]="disablePublish"
             [label]="'Publish' | dm"
