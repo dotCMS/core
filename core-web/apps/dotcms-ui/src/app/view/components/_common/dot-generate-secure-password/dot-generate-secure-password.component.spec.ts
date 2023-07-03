@@ -31,7 +31,7 @@ describe('DotGenerateSecurePasswordComponent', () => {
 
     const messageServiceMock = new MockDotMessageService({
         'generate.secure.password': 'Generate Secure Password',
-        Copy: 'COPY',
+        Copy: 'Copy',
         'generate.secure.password.reveal': 'Reveal',
         'generate.secure.password.description': 'Description'
     });
