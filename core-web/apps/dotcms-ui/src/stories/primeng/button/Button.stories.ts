@@ -3,7 +3,14 @@ import { Meta, Story } from '@storybook/angular/types-6-0';
 
 import { ButtonModule } from 'primeng/button';
 
-import { ICON_ONLY_BUTTONS_TEMPLATE, createButtonTemplate } from '../../utils/button';
+import {
+    BasicTemplate,
+    IconOnlyBasicTemplate,
+    IconOnlyOutlinedTemplate,
+    IconOnlyTextTemplate,
+    OutlinedTemplate,
+    TextTemplate
+} from '../../utils/button';
 
 export default {
     title: 'PrimeNG/Button/Button',
@@ -21,18 +28,6 @@ export default {
         }
     }
 } as Meta;
-
-const BasicTemplate = createButtonTemplate('', undefined, 2);
-const OutlinedTemplate = createButtonTemplate('p-button-outlined', undefined, 2);
-const TextTemplate = createButtonTemplate('p-button-text');
-
-const IconOnlyBasicTemplate = createButtonTemplate('', ICON_ONLY_BUTTONS_TEMPLATE, 2);
-const IconOnlyOutlinedTemplate = createButtonTemplate(
-    'p-button-outlined',
-    ICON_ONLY_BUTTONS_TEMPLATE,
-    2
-);
-const IconOnlyTextTemplate = createButtonTemplate('p-button-text', ICON_ONLY_BUTTONS_TEMPLATE);
 
 export const MainBasic: Story = () => {
     return {
