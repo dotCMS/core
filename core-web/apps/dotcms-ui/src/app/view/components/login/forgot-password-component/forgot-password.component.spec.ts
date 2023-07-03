@@ -155,7 +155,7 @@ describe('ForgotPasswordComponent', () => {
     });
 
     it('should call goToLogin when cancel button is clicked', () => {
-        const cancelButton = de.query(By.css('.p-button-secondary'));
+        const cancelButton = de.query(By.css('[data-testid="cancelButton"]'));
         cancelButton.triggerEventHandler('click', {});
 
         expect(dotRouterService.goToLogin).toHaveBeenCalledWith(undefined);
