@@ -11,7 +11,7 @@ import { InplaceModule } from 'primeng/inplace';
 import { InputTextModule } from 'primeng/inputtext';
 import { RippleModule } from 'primeng/ripple';
 
-import { ComponentStatus, DotExperiment, DotExperimentStatusList } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotExperiment, DotExperimentStatus } from '@dotcms/dotcms-models';
 import { DotMessagePipe, DotMessagePipeModule } from '@dotcms/ui';
 
 import { DotExperimentsConfigurationGoalsComponent } from './components/dot-experiments-configuration-goals/dot-experiments-configuration-goals.component';
@@ -57,7 +57,7 @@ import { DotExperimentsInlineEditTextComponent } from '../shared/ui/dot-experime
 })
 export class DotExperimentsConfigurationComponent implements OnInit {
     vm$: Observable<ConfigurationViewModel> = this.dotExperimentsConfigurationStore.vm$;
-    experimentStatus = DotExperimentStatusList;
+    experimentStatus = DotExperimentStatus;
     protected readonly ComponentStatus = ComponentStatus;
 
     constructor(

@@ -15,7 +15,7 @@ import {
     ComponentStatus,
     ConditionDefaultByTypeOfGoal,
     DotExperiment,
-    DotExperimentStatusList,
+    DotExperimentStatus,
     ExperimentSteps,
     Goal,
     Goals,
@@ -59,7 +59,7 @@ export interface ConfigurationViewModel {
     runExperimentBtnLabel: string;
     disabledStartExperiment: boolean;
     showExperimentSummary: boolean;
-    experimentStatus: DotExperimentStatusList;
+    experimentStatus: DotExperimentStatus;
     isSaving: boolean;
     isDescriptionSaving: boolean;
 }
@@ -76,13 +76,13 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     readonly getExperimentId$: Observable<string> = this.select(({ experiment }) => experiment.id);
 
     readonly isExperimentADraft$: Observable<boolean> = this.select(
-        ({ experiment }) => experiment?.status === DotExperimentStatusList.DRAFT
+        ({ experiment }) => experiment?.status === DotExperimentStatus.DRAFT
     );
     readonly disabledStartExperiment$: Observable<boolean> = this.select(
         ({ experiment }) => experiment?.trafficProportion.variants.length < 2 || !experiment?.goals
     );
 
-    readonly getExperimentStatus$: Observable<DotExperimentStatusList> = this.select(
+    readonly getExperimentStatus$: Observable<DotExperimentStatus> = this.select(
         ({ experiment }) => experiment?.status
     );
 
@@ -96,9 +96,9 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
 
     readonly showExperimentSummary$: Observable<boolean> = this.select(({ experiment }) =>
         Object.values([
-            DotExperimentStatusList.ENDED,
-            DotExperimentStatusList.RUNNING,
-            DotExperimentStatusList.ARCHIVED
+            DotExperimentStatus.ENDED,
+            DotExperimentStatus.RUNNING,
+            DotExperimentStatus.ARCHIVED
         ]).includes(experiment?.status)
     );
 
@@ -245,12 +245,12 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                             this.messageService.add({
                                 severity: 'info',
                                 summary: this.dotMessageService.get(
-                                    response.status === DotExperimentStatusList.RUNNING
+                                    response.status === DotExperimentStatus.RUNNING
                                         ? 'experiments.action.start.confirm-title'
                                         : 'experiments.action.scheduled.confirm-title'
                                 ),
                                 detail: this.dotMessageService.get(
-                                    response.status === DotExperimentStatusList.RUNNING
+                                    response.status === DotExperimentStatus.RUNNING
                                         ? 'experiments.action.start.confirm-message'
                                         : 'experiments.action.scheduled.confirm-message',
                                     experiment.name

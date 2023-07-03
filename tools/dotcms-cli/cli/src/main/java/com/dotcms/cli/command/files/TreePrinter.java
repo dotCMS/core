@@ -1,11 +1,18 @@
 package com.dotcms.cli.command.files;
 
 import com.dotcms.api.traversal.TreeNode;
+import com.dotcms.cli.common.FilesUtils;
 import com.dotcms.model.asset.AssetView;
 import com.dotcms.model.asset.FolderView;
 import com.dotcms.model.language.Language;
 
-import java.util.*;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * The {@code TreePrinter} class provides a utility for printing a tree structure of
@@ -16,16 +23,12 @@ import java.util.*;
  */
 public class TreePrinter {
 
-    private static final String STATUS_LIVE = "live";
-    private static final String STATUS_WORKING = "working";
-
     /**
      * The {@code TreePrinterHolder} class is used to implement the singleton pattern for the
      * {@link TreePrinter} class.
      */
     private static class TreePrinterHolder {
-
-        private static TreePrinter instance = new TreePrinter();
+        private static final TreePrinter instance = new TreePrinter();
     }
 
     /**
@@ -38,77 +41,6 @@ public class TreePrinter {
     }
 
     private TreePrinter() {
-    }
-
-    /**
-     * Helper method to generate a short string representation of a tree. The string representation
-     * includes the names of the folder and all files under it in the format
-     * {@code <filename> [<language>] (<status>)}.
-     *
-     * @param sb   the StringBuilder to which the string representation of the tree is appended
-     * @param node the root of the tree that needs to be printed
-     */
-    public void shortFormat(StringBuilder sb, final TreeNode node) {
-        shortFormat(sb, "", node, true, "    ", false);
-    }
-
-    /**
-     * Recursive helper method to generate a short string representation of a tree. The string
-     * representation includes the names of the folder and all files under it in the format
-     * {@code <filename> [<language>] (<status>)}. The string representation for each node is
-     * prepended with a {@code prefix} string, and the {@code indent} string is used for
-     * indentation. If {@code isLastSibling} is true, then the string representation will not
-     * include a vertical bar. This method appends the string representation to the provided
-     * {@code StringBuilder}.
-     *
-     * @param sb            the StringBuilder to which the string representation of the tree is
-     *                      appended
-     * @param prefix        the prefix string that is prepended to the string representation for
-     *                      each node
-     * @param node          the root of the tree that needs to be printed
-     * @param root          true if the current node is the root of the tree, false otherwise
-     * @param indent        the string used for indentation
-     * @param isLastSibling true if the current node is the last sibling, false otherwise
-     */
-    private void shortFormat(StringBuilder sb, String prefix, final TreeNode node,
-            final boolean root, final String indent, boolean isLastSibling) {
-
-        var folderNameStr = String.format("@|bold %s|@", node.folder().name());
-        if (!root) {
-            sb.append(prefix).append(isLastSibling ? "└── " : "├── ").append(folderNameStr)
-                    .append('\n');
-        } else {
-
-            if (node.folder().name().equals("/")) {
-                folderNameStr = String.format("@|bold %s|@", node.folder().host());
-                sb.append("\r").append(folderNameStr).append('\n');
-            } else {
-                sb.append("\r").append(folderNameStr).append('\n');
-            }
-        }
-
-        String filePrefix = indent + (root ? "    " : (isLastSibling ? "    " : "│   "));
-        String nextIndent = indent + (root ? "    " : (isLastSibling ? "    " : "│   "));
-
-        // Adds the names of the node's files to the string representation.
-        int assetCount = node.assets().size();
-        for (int i = 0; i < assetCount; i++) {
-            AssetView asset = node.assets().get(i);
-            final var fileStr = String.format("%s [%s] (%s)",
-                    asset.name(),
-                    asset.lang(),
-                    asset.live() ? STATUS_LIVE : STATUS_WORKING);
-            boolean lastAsset = i == assetCount - 1 && node.children().isEmpty();
-            sb.append(filePrefix).append(lastAsset ? "└── " : "├── ").append(fileStr).append('\n');
-        }
-
-        // Recursively creates string representations for the node's children.
-        int childCount = node.children().size();
-        for (int i = 0; i < childCount; i++) {
-            TreeNode child = node.children().get(i);
-            boolean lastSibling = i == childCount - 1;
-            shortFormat(sb, filePrefix, child, false, nextIndent, lastSibling);
-        }
     }
 
     /**
@@ -129,13 +61,12 @@ public class TreePrinter {
             final List<Language> languages) {
 
         // Collect the list of unique statuses and languages
-        Set<String> uniqueLiveLanguages = new HashSet<>();
-        Set<String> uniqueWorkingLanguages = new HashSet<>();
-
-        collectUniqueStatusesAndLanguages(rootNode, uniqueLiveLanguages, uniqueWorkingLanguages);
+        final var treeNodeInfo = rootNode.collectUniqueStatusesAndLanguages(showEmptyFolders);
+        final var uniqueLiveLanguages = treeNodeInfo.liveLanguages();
+        final var uniqueWorkingLanguages = treeNodeInfo.workingLanguages();
 
         if (uniqueLiveLanguages.isEmpty() && uniqueWorkingLanguages.isEmpty()) {
-            fallbackDefaultLanguage(languages, uniqueLiveLanguages);
+            FilesUtils.FallbackDefaultLanguage(languages, uniqueLiveLanguages);
         }
 
         // Sort the sets and convert them into lists
@@ -169,7 +100,17 @@ public class TreePrinter {
             return;
         }
 
-        var status = isLive ? STATUS_LIVE : STATUS_WORKING;
+        // Calculate the parent path for this first node
+        String parentPath = calculateRootParentPath(rootNode);
+        Path initialPath;
+        try {
+            initialPath = Paths.get(parentPath);
+        } catch (InvalidPathException e) {
+            var error = String.format("Invalid folder path [%s] provided", parentPath);
+            throw new IllegalArgumentException(error, e);
+        }
+
+        var status = FilesUtils.StatusToString(isLive);
         sb.append("\r ").append(status).append('\n');
 
         Iterator<String> langIterator = sortedLanguages.iterator();
@@ -192,7 +133,7 @@ public class TreePrinter {
                     append(rootNode.folder().host()).
                     append('\n');
 
-            if (rootNode.folder().path().equals("/")) {
+            if (parentPath.isEmpty() || parentPath.equals("/")) {
                 format(sb,
                         "     " + (isLastLang ? "    " : "│   ") + "    ",
                         filteredRoot,
@@ -200,16 +141,24 @@ public class TreePrinter {
                         true, true);
             } else {
 
-                sb.append("     ").
-                        append((isLastLang ? "    " : "│   ")).
-                        append("    └── ").
-                        append(rootNode.folder().path()).
-                        append('\n');
+                // If the initial path is not the root we need to try to print the folder structure it has
+                var parentFolderIdent = "    ";
+                for (var i = 0; i < initialPath.getNameCount(); i++) {
+                    sb.append("     ").
+                            append((isLastLang ? "    " : "│   ")).
+                            append(parentFolderIdent).
+                            append("└── ").
+                            append(String.format("@|bold \uD83D\uDCC2 %s|@", initialPath.getName(i))).
+                            append('\n');
+                    if (i + 1 < initialPath.getNameCount()) {
+                        parentFolderIdent += "    ";
+                    }
+                }
 
                 format(sb,
-                        "     " + (isLastLang ? "    " : "│   ") + "        ",
+                        parentFolderIdent + "     " + (isLastLang ? "" : "│   ") + "        ",
                         filteredRoot,
-                        "     " + (isLastLang ? "    " : "│   ") + "        ",
+                        parentFolderIdent + "     " + (isLastLang ? "" : "│   ") + "        ",
                         true, true);
             }
         }
@@ -253,8 +202,6 @@ public class TreePrinter {
             for (int i = 0; i < assetCount; i++) {
 
                 AssetView asset = node.assets().get(i);
-                /*final var fileStr = String.format("%s [%s] (%s)", asset.name(), asset.lang(),
-                        asset.live());*/
                 final var fileStr = String.format("%s", asset.name());
                 boolean lastAsset = i == assetCount - 1 && node.children().isEmpty();
 
@@ -275,55 +222,46 @@ public class TreePrinter {
     }
 
     /**
-     * Traverses the given TreeNode recursively and collects the unique live and working languages
-     * from its assets and its children's assets.
+     * Calculates the parent path of the given root node.
      *
-     * @param node                   The root TreeNode to start the traversal from.
-     * @param uniqueLiveLanguages    A Set to collect unique live languages found in the assets of
-     *                               the TreeNode and its children.
-     * @param uniqueWorkingLanguages A Set to collect unique working languages found in the assets
-     *                               of the TreeNode and its children.
+     * @param rootNode The root node to calculate the parent path from.
+     * @return A String containing the root parent path.
      */
-    private void collectUniqueStatusesAndLanguages(
-            TreeNode node, Set<String> uniqueLiveLanguages, Set<String> uniqueWorkingLanguages) {
+    private String calculateRootParentPath(TreeNode rootNode) {
 
-        if (node.assets() != null) {
-            for (AssetView asset : node.assets()) {
-                if (asset.live()) {
-                    uniqueLiveLanguages.add(asset.lang());
-                } else {
-                    uniqueWorkingLanguages.add(asset.lang());
-                }
+        // Calculating the root folder path
+        var folderPath = rootNode.folder().path();
+        var folderName = rootNode.folder().name();
+
+        // Determine if the folder path and folder name are empty or null
+        var emptyFolderPath = folderPath == null
+                || folderPath.isEmpty()
+                || folderPath.equals("/");
+
+        var emptyFolderName = folderName == null
+                || folderName.isEmpty()
+                || folderName.equals("/");
+
+        // Remove firsts and last slash from folder path
+        if (!emptyFolderPath) {
+            folderPath = folderPath.
+                    replaceAll("^/", "").
+                    replaceAll("/$", "");
+        }
+
+        if (!emptyFolderName) {
+            if (folderPath.endsWith(folderName)) {
+
+                int folderIndex = folderPath.lastIndexOf(folderName);
+                folderPath = folderPath.substring(0, folderIndex);
+
+                folderPath = folderPath.
+                        replaceAll("^/", "").
+                        replaceAll("/$", "");
             }
         }
 
-        for (TreeNode child : node.children()) {
-            collectUniqueStatusesAndLanguages(child, uniqueLiveLanguages,
-                    uniqueWorkingLanguages);
-        }
-    }
-
-    /**
-     * Fallbacks to the default language in case of no languages found scanning the assets.
-     *
-     * @throws RuntimeException if no default language is found in the list of languages
-     */
-    private void fallbackDefaultLanguage(
-            final List<Language> languages, Set<String> uniqueLiveLanguages) {
-
-        // Get the default language from the list of languages
-        var defaultLanguage = languages.stream()
-                .filter(language -> {
-                    if (language.defaultLanguage().isPresent()) {
-                        return language.defaultLanguage().get();
-                    }
-
-                    return false;
-                })
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("No default language found"));
-
-        uniqueLiveLanguages.add(defaultLanguage.isoCode());
+        return folderPath;
     }
 
 }

@@ -20,7 +20,7 @@ import { DotMessageService, DotSessionStorageService } from '@dotcms/data-access
 import {
     DEFAULT_VARIANT_ID,
     DEFAULT_VARIANT_NAME,
-    DotExperimentStatusList,
+    DotExperimentStatus,
     DotPageMode,
     ExperimentSteps
 } from '@dotcms/dotcms-models';
@@ -289,7 +289,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
             dotExperimentsService.getById.mockReturnValue(
                 of({
                     ...EXPERIMENT_MOCK_2,
-                    ...{ status: DotExperimentStatusList.RUNNING }
+                    ...{ status: DotExperimentStatus.RUNNING }
                 })
             );
 
@@ -316,7 +316,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
             dotExperimentsService.getById.mockReturnValue(
                 of({
                     ...EXPERIMENT_MOCK_2,
-                    ...{ status: DotExperimentStatusList.RUNNING }
+                    ...{ status: DotExperimentStatus.RUNNING }
                 })
             );
 
