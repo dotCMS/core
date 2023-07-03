@@ -9,7 +9,7 @@ export default {
             stringifyContentPathRegex: '\\.(html|svg)$'
         }
     },
-    coverageDirectory: '../../../../target/core-web-reports/',
+    coverageDirectory: '../../../../../target/core-web-reports/',
     coverageReporters: [['lcovonly', { file: 'TEST-data-access-experiment.lcov' }]],
     reporters: [
         'default',
@@ -17,7 +17,7 @@ export default {
         [
             'jest-junit',
             {
-                outputDirectory: 'target/core-web-reports',
+                outputDirectory: '../target/core-web-reports',
                 outputName: 'TEST-data-access-experiment.xml'
             }
         ]

@@ -10,12 +10,12 @@ export default {
             stringifyContentPathRegex: '\\.(html|svg)$'
         }
     },
-    coverageDirectory: '../../target/core-web-reports/',
+    coverageDirectory: '../../../target/core-web-reports/',
     coverageReporters: [['lcovonly', { file: 'TEST-data-access.lcov' }]],
     reporters: [
         [
             'jest-junit',
-            { outputDirectory: 'target/core-web-reports', outputName: 'TEST-data-access.xml' }
+            { outputDirectory: '../target/core-web-reports', outputName: 'TEST-data-access.xml' }
         ]
     ],
     transform: {

@@ -9,14 +9,17 @@ export default {
             stringifyContentPathRegex: '\\.(html|svg)$'
         }
     },
-    coverageDirectory: '../../target/core-web-reports/',
+    coverageDirectory: '../../../target/core-web-reports/',
     coverageReporters: [['lcovonly', { file: 'TEST-template-builder.lcov' }]],
     reporters: [
         'default',
         ['github-actions', { silent: false }],
         [
             'jest-junit',
-            { outputDirectory: 'target/core-web-reports', outputName: 'TEST-template-builder.xml' }
+            {
+                outputDirectory: '../target/core-web-reports',
+                outputName: 'TEST-template-builder.xml'
+            }
         ]
     ],
     transform: {
