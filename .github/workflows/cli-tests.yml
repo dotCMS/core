@@ -19,14 +19,14 @@ jobs:
         with:
           docker_image: nginx
 
-      - id: git-checkout
-        name: Checkout
-        uses: actions/checkout@v3
+      # - id: git-checkout
+      #   name: Checkout
+      #   uses: actions/checkout@v3
 
-      - name: tests
-        working-directory: ./tools/dotcms-cli
-        run: |
-          echo "tests"     
+      # - name: tests
+      #   working-directory: ./tools/dotcms-cli
+      #   run: |
+      #     echo "tests"     
 
 
 

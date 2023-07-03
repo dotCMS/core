@@ -225,6 +225,7 @@ jobs:
           partial: init
           pull_request: ${{ github.event.number }}
           cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
+          
   run-postman-tests-job:
     name: Run Postman Tests
     runs-on: ubuntu-latest
