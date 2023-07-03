@@ -21,7 +21,7 @@ import {
 } from '@dotcms/data-access';
 import {
     DotDevice,
-    DotExperimentStatusList,
+    DotExperimentStatus,
     DotPageMode,
     DotPageRenderOptions,
     DotPageRenderState,
@@ -179,7 +179,7 @@ we want to show the lock off so the new user can steal the lock
     private canEditVariant(): boolean {
         return (
             !this.variant.variant.isOriginal &&
-            this.variant.experimentStatus === DotExperimentStatusList.DRAFT
+            this.variant.experimentStatus === DotExperimentStatus.DRAFT
         );
     }
 
