@@ -2,6 +2,8 @@
 @use "variables" as *;
 @import "mixins";
 
+// Main buttons
+
 // Main Buttons sizes
 .p-button:not(.p-button-icon-only) {
     gap: $spacing-1;
@@ -82,9 +84,9 @@
     }
 }
 
-// Severity for main outlined button
+// Severity for outlined button
 .p-button-outlined:enabled {
-    background-color: $white;
+    background-color: transparent;
     border: 1.5px solid $color-palette-primary;
 
     &.p-button-sm {
@@ -103,12 +105,12 @@
         background-color: $color-palette-primary-200;
     }
     &:focus {
-        background-color: $white;
+        background-color: transparent;
         box-shadow: 0px 0px 0px 2.8px rgba(18, 67, 227, 0.2); // Ask what should we do
     }
 
     &.p-button-secondary {
-        background-color: $white;
+        background-color: transparent;
         border: 1.5px solid $color-palette-secondary;
 
         &.p-button-sm {
@@ -127,15 +129,15 @@
             background-color: $color-palette-secondary-200;
         }
         &:focus {
-            background-color: $white;
+            background-color: transparent;
             box-shadow: 0px 0px 0px 2.8px rgba(18, 67, 227, 0.2); // Ask what should we do
         }
     }
 }
 
-// Severity for main text button
+// Severity for text button
 .p-button-text:enabled {
-    background-color: $white;
+    background-color: transparent;
 
     .p-button-label {
         color: $black;
@@ -151,12 +153,12 @@
         background-color: $color-palette-primary-op-20;
     }
     &:focus {
-        background-color: $white;
+        background-color: transparent;
         box-shadow: 0px 0px 0px 2.8px rgba(18, 67, 227, 0.2); // Ask what should we do
     }
 
     &.p-button-secondary {
-        background-color: $white;
+        background-color: transparent;
 
         .p-button-label {
             color: $black;
@@ -172,13 +174,13 @@
             background-color: $color-palette-secondary-op-20;
         }
         &:focus {
-            background-color: $white;
+            background-color: transparent;
             box-shadow: 0px 0px 0px 2.8px rgba(18, 67, 227, 0.2); // Ask what should we do
         }
     }
 
     &.p-button-danger {
-        background-color: $white;
+        background-color: transparent;
 
         .p-button-label {
             color: $color-accessible-text-red;
@@ -194,13 +196,13 @@
             background-color: rgb($color-accessible-text-red, 0.15); // Ask about this
         }
         &:focus {
-            background-color: $white;
+            background-color: transparent;
             box-shadow: 0px 0px 0px 2.8px rgba(18, 67, 227, 0.2); // Ask what should we do
         }
     }
 }
 
-// Main Buttons disabled styles
+// Buttons disabled styles
 .p-button:disabled {
     background-color: $color-palette-gray-200;
 
@@ -215,6 +217,28 @@
 
     &.p-button-text {
         background-color: $white;
+    }
+}
+
+// Icon Only Buttons Sizes
+.p-button-icon-only {
+    height: $spacing-6;
+    width: $spacing-6;
+    border: none;
+
+    .p-button-icon {
+        color: $white;
+        font-size: $font-size-lg;
+        line-height: 140%;
+    }
+
+    &.p-button-sm {
+        height: $spacing-5;
+        width: $spacing-5;
+
+        .p-button-icon {
+            font-size: $font-size-md;
+        }
     }
 }
 
