@@ -15,7 +15,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmPopup } from 'primeng/confirmpopup';
 
 import { DotMessageService, DotSessionStorageService } from '@dotcms/data-access';
-import { ComponentStatus, DotExperimentStatusList, PROP_NOT_FOUND } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotExperimentStatus, PROP_NOT_FOUND } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 import { getExperimentMock, MockDotMessageService } from '@dotcms/utils-testing';
@@ -170,7 +170,7 @@ describe('DotExperimentsConfigurationComponent', () => {
 
         spectator.component.vm$ = of({
             ...defaultVmMock,
-            experimentStatus: DotExperimentStatusList.RUNNING
+            experimentStatus: DotExperimentStatus.RUNNING
         });
         spectator.detectChanges();
 
@@ -185,7 +185,7 @@ describe('DotExperimentsConfigurationComponent', () => {
     it('should show hide stop Experiment button if experiment status is different than running', () => {
         spectator.component.vm$ = of({
             ...defaultVmMock,
-            experimentStatus: DotExperimentStatusList.DRAFT
+            experimentStatus: DotExperimentStatus.DRAFT
         });
         spectator.detectChanges();
         expect(spectator.query(byTestId('stop-experiment-button'))).not.toExist();
