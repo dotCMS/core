@@ -10,15 +10,28 @@ a:active {
 // the problem is the :enabled pseudoclass, hyperlink tag doesn't have that pseudoclass
 
 .p-button {
+    background-color: transparent;
+    color: $black;
+    overflow: hidden;
+    max-width: 100%;
+
+    .p-button-label {
+        color: $black;
+        @include truncate-text;
+    }
+    .p-button-icon,
+    .pi {
+        color: $color-palette-primary;
+    }
+
     &:hover {
-        background: $color-palette-primary-100;
+        background-color: $color-palette-primary-100;
     }
-
-    &:focus {
-        background: $white;
-    }
-
     &:active {
-        background: $color-palette-primary-200;
+        background-color: $color-palette-primary-op-20;
+    }
+    &:focus {
+        background-color: transparent;
+        box-shadow: 0px 0px 0px 2.8px rgba(18, 67, 227, 0.2); // Ask what should we do
     }
 }

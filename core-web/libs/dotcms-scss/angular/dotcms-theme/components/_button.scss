@@ -21,7 +21,8 @@
         line-height: 140%;
     }
 
-    .p-button-icon {
+    .p-button-icon,
+    .pi {
         color: $white;
         font-size: $font-size-lg;
         line-height: 140%;
@@ -36,7 +37,8 @@
             font-size: $font-size-lg;
         }
 
-        .p-button-icon {
+        .p-button-icon,
+        .pi {
             font-size: $font-size-xl;
         }
     }
@@ -52,7 +54,8 @@
             font-size: $font-size-sm;
         }
 
-        .p-button-icon {
+        .p-button-icon,
+        .pi {
             font-size: $font-size-md;
         }
     }
@@ -100,7 +103,8 @@
     }
 
     .p-button-label,
-    .p-button-icon {
+    .p-button-icon,
+    .pi {
         color: $color-palette-primary;
     }
 
@@ -125,7 +129,8 @@
         }
 
         .p-button-label,
-        .p-button-icon {
+        .p-button-icon,
+        .pi {
             color: $color-palette-secondary;
         }
 
@@ -146,11 +151,15 @@
 .p-button-text:enabled {
     background-color: transparent;
     color: $black;
+    overflow: hidden;
+    max-width: 100%;
 
     .p-button-label {
         color: $black;
+        @include truncate-text;
     }
-    .p-button-icon {
+    .p-button-icon,
+    .pi {
         color: $color-palette-primary;
     }
 
@@ -172,7 +181,8 @@
         .p-button-label {
             color: $black;
         }
-        .p-button-icon {
+        .p-button-icon,
+        .pi {
             color: $color-palette-secondary;
         }
 
@@ -195,7 +205,8 @@
         .p-button-label {
             color: $color-accessible-text-red;
         }
-        .p-button-icon {
+        .p-button-icon,
+        .pi {
             color: $color-accessible-text-red;
         }
 
