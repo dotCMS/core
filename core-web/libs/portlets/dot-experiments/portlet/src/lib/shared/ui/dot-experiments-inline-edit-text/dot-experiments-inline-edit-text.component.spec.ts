@@ -166,7 +166,7 @@ describe('DotExperimentsExperimentSummaryComponent', () => {
                 expect(spectator.query(ButtonDirective).loading).toBe(true);
             });
 
-            it('should deactivate the inplace if isLoading input has `previusValue= true` and `currentValue = false` ', () => {
+            it('should deactivate the inplace if isLoading input has `previousValue= true` and `currentValue = false` ', () => {
                 const deactivate = jest.spyOn(spectator.component.inplace, 'deactivate');
                 // saving
                 spectator.setInput('isLoading', true);
@@ -174,6 +174,37 @@ describe('DotExperimentsExperimentSummaryComponent', () => {
                 spectator.setInput('isLoading', false);
 
                 expect(deactivate).toHaveBeenCalled();
+            });
+
+            it('should show `dot-field-validation-message` message error by default', () => {
+                spectator.setInput('text', SHORT_TEXT);
+                spectator.setInput('required', true);
+
+                spectator.click(byTestId('text-input'));
+
+                spectator.component.form.controls['text'].setValue(EMPTY_TEXT);
+                spectator.component.form.updateValueAndValidity();
+                spectator.detectComponentChanges();
+
+                expect(spectator.component.form.invalid).toEqual(true);
+
+                expect(spectator.query(DotFieldValidationMessageComponent)).toExist();
+            });
+
+            it("shouldn't show `dot-field-validation-message` message error if the showError input is `false`", () => {
+                spectator.setInput('text', SHORT_TEXT);
+                spectator.setInput('required', true);
+                spectator.setInput('showErrorMsg', false);
+
+                spectator.click(byTestId('text-input'));
+
+                spectator.component.form.controls['text'].setValue(EMPTY_TEXT);
+                spectator.component.form.updateValueAndValidity();
+                spectator.detectComponentChanges();
+
+                expect(spectator.component.form.invalid).toEqual(true);
+
+                expect(spectator.query(DotFieldValidationMessageComponent)).not.toExist();
             });
         });
     });
