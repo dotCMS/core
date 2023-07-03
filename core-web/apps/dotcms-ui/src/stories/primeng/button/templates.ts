@@ -545,16 +545,6 @@ export const TextTemplate = `<div style="display: flex; gap: 24px; flex-directio
 
 export const IconOnlyBasicTemplate = `<div style="display: flex; gap: 24px; flex-direction: column; align-items: center">
 <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
-    <button class="p-button-lg p-button-rounded" pButton icon="pi pi-ellipsis-v"></button>
-    <button class="p-button-lg p-button-rounded" pButton icon="pi pi-ellipsis-v"></button>
-    <button
-        class="p-button-lg p-button-rounded"
-        pButton
-        icon="pi pi-ellipsis-v"
-        disabled="true"
-    ></button>
-</div>
-<div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
     <button class="p-button-rounded" pButton icon="pi pi-ellipsis-v"></button>
     <button class="p-button-rounded" pButton icon="pi pi-ellipsis-v"></button>
     <button class="p-button-rounded" pButton icon="pi pi-ellipsis-v" disabled="true"></button>
@@ -564,24 +554,6 @@ export const IconOnlyBasicTemplate = `<div style="display: flex; gap: 24px; flex
     <button class="p-button-sm p-button-rounded" pButton icon="pi pi-ellipsis-v"></button>
     <button
         class="p-button-sm p-button-rounded"
-        pButton
-        icon="pi pi-ellipsis-v"
-        disabled="true"
-    ></button>
-</div>
-<div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
-    <button
-        class="p-button-lg p-button-secondary p-button-rounded"
-        pButton
-        icon="pi pi-ellipsis-v"
-    ></button>
-    <button
-        class="p-button-lg p-button-secondary p-button-rounded"
-        pButton
-        icon="pi pi-ellipsis-v"
-    ></button>
-    <button
-        class="p-button-lg p-button-secondary p-button-rounded"
         pButton
         icon="pi pi-ellipsis-v"
         disabled="true"
@@ -628,24 +600,6 @@ export const IconOnlyBasicTemplate = `<div style="display: flex; gap: 24px; flex
 
 export const IconOnlyOutlinedTemplate = `<div style="display: flex; gap: 24px; flex-direction: column; align-items: center">
 <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
-    <button
-        class="p-button-lg p-button-outlined p-button-rounded"
-        pButton
-        icon="pi pi-ellipsis-v"
-    ></button>
-    <button
-        class="p-button-lg p-button-outlined p-button-rounded"
-        pButton
-        icon="pi pi-ellipsis-v"
-    ></button>
-    <button
-        class="p-button-lg p-button-outlined p-button-rounded"
-        pButton
-        icon="pi pi-ellipsis-v"
-        disabled="true"
-    ></button>
-</div>
-<div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
     <button class="p-button-outlined p-button-rounded" pButton icon="pi pi-ellipsis-v"></button>
     <button class="p-button-outlined p-button-rounded" pButton icon="pi pi-ellipsis-v"></button>
     <button
@@ -668,24 +622,6 @@ export const IconOnlyOutlinedTemplate = `<div style="display: flex; gap: 24px; f
     ></button>
     <button
         class="p-button-sm p-button-outlined p-button-rounded"
-        pButton
-        icon="pi pi-ellipsis-v"
-        disabled="true"
-    ></button>
-</div>
-<div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
-    <button
-        class="p-button-lg p-button-secondary p-button-outlined p-button-rounded"
-        pButton
-        icon="pi pi-ellipsis-v"
-    ></button>
-    <button
-        class="p-button-lg p-button-secondary p-button-outlined p-button-rounded"
-        pButton
-        icon="pi pi-ellipsis-v"
-    ></button>
-    <button
-        class="p-button-lg p-button-secondary p-button-outlined p-button-rounded"
         pButton
         icon="pi pi-ellipsis-v"
         disabled="true"
@@ -732,24 +668,6 @@ export const IconOnlyOutlinedTemplate = `<div style="display: flex; gap: 24px; f
 
 export const IconOnlyTextTemplate = `<div style="display: flex; gap: 24px; flex-direction: column; align-items: center">
 <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
-    <button
-        class="p-button-lg p-button-text p-button-rounded"
-        pButton
-        icon="pi pi-ellipsis-v"
-    ></button>
-    <button
-        class="p-button-lg p-button-text p-button-rounded"
-        pButton
-        icon="pi pi-ellipsis-v"
-    ></button>
-    <button
-        class="p-button-lg p-button-text p-button-rounded"
-        pButton
-        icon="pi pi-ellipsis-v"
-        disabled="true"
-    ></button>
-</div>
-<div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
     <button class="p-button-text p-button-rounded" pButton icon="pi pi-ellipsis-v"></button>
     <button class="p-button-text p-button-rounded" pButton icon="pi pi-ellipsis-v"></button>
     <button
@@ -779,24 +697,6 @@ export const IconOnlyTextTemplate = `<div style="display: flex; gap: 24px; flex-
 </div>
 <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
     <button
-        class="p-button-lg p-button-secondary p-button-text p-button-rounded"
-        pButton
-        icon="pi pi-ellipsis-v"
-    ></button>
-    <button
-        class="p-button-lg p-button-secondary p-button-text p-button-rounded"
-        pButton
-        icon="pi pi-ellipsis-v"
-    ></button>
-    <button
-        class="p-button-lg p-button-secondary p-button-text p-button-rounded"
-        pButton
-        icon="pi pi-ellipsis-v"
-        disabled="true"
-    ></button>
-</div>
-<div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
-    <button
         class="p-button-secondary p-button-text p-button-rounded"
         pButton
         icon="pi pi-ellipsis-v"
@@ -826,24 +726,6 @@ export const IconOnlyTextTemplate = `<div style="display: flex; gap: 24px; flex-
     ></button>
     <button
         class="p-button-sm p-button-secondary p-button-text p-button-rounded"
-        pButton
-        icon="pi pi-ellipsis-v"
-        disabled="true"
-    ></button>
-</div>
-<div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
-    <button
-        class="p-button-lg p-button-danger p-button-text p-button-rounded"
-        pButton
-        icon="pi pi-ellipsis-v"
-    ></button>
-    <button
-        class="p-button-lg p-button-danger p-button-text p-button-rounded"
-        pButton
-        icon="pi pi-ellipsis-v"
-    ></button>
-    <button
-        class="p-button-lg p-button-danger p-button-text p-button-rounded"
         pButton
         icon="pi pi-ellipsis-v"
         disabled="true"
