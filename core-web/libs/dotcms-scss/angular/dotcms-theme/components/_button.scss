@@ -2,8 +2,6 @@
 @use "variables" as *;
 @import "mixins";
 
-// Ask about focus and active state
-
 // Main Buttons sizes
 .p-button:not(.p-button-icon-only) {
     gap: $spacing-1;
@@ -159,6 +157,7 @@
 
     &.p-button-secondary {
         background-color: $white;
+
         .p-button-label {
             color: $black;
         }
@@ -180,6 +179,7 @@
 
     &.p-button-danger {
         background-color: $white;
+
         .p-button-label {
             color: $color-accessible-text-red;
         }
@@ -188,7 +188,7 @@
         }
 
         &:hover {
-            background-color: rgb($color-accessible-text-red, 0.08);
+            background-color: rgb($color-accessible-text-red, 0.08); // Ask about this
         }
         &:active {
             background-color: rgb($color-accessible-text-red, 0.15); // Ask about this
