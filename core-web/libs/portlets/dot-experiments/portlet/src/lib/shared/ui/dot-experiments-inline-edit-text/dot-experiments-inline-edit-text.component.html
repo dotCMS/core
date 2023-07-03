@@ -53,7 +53,7 @@
             ></button>
         </form>
 
-        <ng-container *ngIf="form.invalid">
+        <ng-container *ngIf="form.invalid && showErrorMsg">
             <dot-field-validation-message [field]="textControl"></dot-field-validation-message>
         </ng-container>
     </ng-template>
