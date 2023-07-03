@@ -41,7 +41,7 @@ import java.util.Set;
 public class BrowserQuery {
     private static final int MAX_FETCH_PER_REQUEST = Config.getIntProperty("BROWSER_MAX_FETCH_PER_REQUEST", 300);
     final User user;
-    final String  filter, sortBy;
+    final String  filter, fileName, sortBy;
     final int offset, maxResults;
     final boolean showWorking, showArchived, showFolders, sortByDesc, showLinks,showMenuItemsOnly,showContent, showShorties,showDefaultLangItems;
     final long languageId;
@@ -66,6 +66,7 @@ public class BrowserQuery {
         this.user = builder.user == null ? APILocator.systemUser() : builder.user;
         final Tuple2<Host, Folder> siteAndFolder = getParents(builder.hostFolderId,this.user, builder.hostIdSystemFolder);
         this.filter = builder.filter;
+        this.fileName = builder.fileName;
         this.luceneQuery = builder.luceneQuery.toString();
         this.sortBy = UtilMethods.isEmpty(builder.sortBy) ? "moddate" : builder.sortBy;
         this.offset = builder.offset;
@@ -169,6 +170,7 @@ public class BrowserQuery {
 
         private User user;
         private String filter = null;
+        private String fileName = null;
         private String sortBy = "moddate";
         private int offset = 0;
         private int maxResults = MAX_FETCH_PER_REQUEST;
@@ -197,6 +199,7 @@ public class BrowserQuery {
                     ? browserQuery.site.getIdentifier()
                     : browserQuery.folder.getInode();
             this.filter = browserQuery.filter;
+            this.fileName = browserQuery.fileName;
             if (browserQuery.luceneQuery != null) {
                 this.luceneQuery.append(browserQuery.luceneQuery);
             }
@@ -231,6 +234,19 @@ public class BrowserQuery {
             if (UtilMethods.isSet(filter)) {
                 luceneQuery.append(StringPool.SPACE).append(filter);
                 this.filter = filter;
+            }
+            return this;
+        }
+
+        public Builder withFileName(@Nonnull String fileName) {
+            if (UtilMethods.isSet(fileName)) {
+                // for exact file-name match we need to relay exclusively on the database
+                // we can not trust on the use of the title field indexed in lucene
+                // As different files can share the same title, and we need an exact match on identifier.asset_name
+                // Therefore we need to make it fail on purpose by adding a non-existing value to the query
+                // If we include this fileNAme here BrowserAPI will try to match the title in lucene bringing back false positives
+                luceneQuery.append(StringPool.SPACE).append("___").append(fileName).append("___");
+                this.fileName = fileName;
             }
             return this;
         }

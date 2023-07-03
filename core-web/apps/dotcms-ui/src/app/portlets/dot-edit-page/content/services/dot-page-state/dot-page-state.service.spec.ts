@@ -15,7 +15,8 @@ import {
     DotAlertConfirmService,
     DotContentletLockerService,
     DotESContentService,
-    DotPageRenderService
+    DotPageRenderService,
+    DotSessionStorageService
 } from '@dotcms/data-access';
 import { CoreWebService, HttpCode, LoginService } from '@dotcms/dotcms-js';
 import {
@@ -71,6 +72,7 @@ describe('DotPageStateService', () => {
         TestBed.configureTestingModule({
             imports: [HttpClientTestingModule],
             providers: [
+                DotSessionStorageService,
                 DotContentletLockerService,
                 DotHttpErrorManagerService,
                 DotPageRenderService,

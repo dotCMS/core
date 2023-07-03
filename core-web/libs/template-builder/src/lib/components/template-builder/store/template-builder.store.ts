@@ -10,7 +10,8 @@ import {
     DotGridStackNode,
     DotGridStackWidget,
     DotTemplateBuilderState,
-    DotTemplateLayoutProperties
+    DotTemplateLayoutProperties,
+    SYSTEM_CONTAINER_IDENTIFIER
 } from '../models/models';
 import {
     getIndexRowInItems,
@@ -85,7 +86,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
                                 y: 0,
                                 containers: [
                                     {
-                                        identifier: 'SYSTEM_CONTAINER'
+                                        identifier: SYSTEM_CONTAINER_IDENTIFIER
                                     }
                                 ],
                                 parentId: newRow.id,

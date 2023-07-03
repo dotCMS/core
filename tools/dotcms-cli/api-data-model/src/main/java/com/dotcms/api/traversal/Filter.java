@@ -1,7 +1,5 @@
 package com.dotcms.api.traversal;
 
-import static com.dotcms.model.asset.BasicMetadataFields.PATH_META_KEY;
-
 import com.dotcms.model.asset.AssetVersionsView;
 import com.dotcms.model.asset.AssetView;
 import com.dotcms.model.asset.FolderView;
@@ -12,6 +10,8 @@ import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Stream;
+
+import static com.dotcms.model.asset.BasicMetadataFields.PATH_META_KEY;
 
 /**
  * A filter that determines whether a path should be included or excluded based on the given
@@ -60,6 +60,11 @@ public class Filter {
 
         List<FolderView> filteredSubFolders = new ArrayList<>();
         List<AssetView> filteredAssets = new ArrayList<>();
+
+        // We need to analyze also the root folder
+        if (folder.path().equals("/")) {
+            folder = evaluateFolder(folder);
+        }
 
         Optional.ofNullable(folder.subFolders()).ifPresent(
                 subFolders -> subFolders.stream().

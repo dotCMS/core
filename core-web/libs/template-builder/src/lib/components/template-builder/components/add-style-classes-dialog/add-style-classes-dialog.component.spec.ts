@@ -1,4 +1,3 @@
-import { expect } from '@jest/globals';
 import { SpectatorHost, byTestId, createHostFactory } from '@ngneat/spectator';
 import { of } from 'rxjs';
 

@@ -247,6 +247,11 @@ export const MESSAGES_MOCK = {
     'dot.template.builder.box.containers.error': 'Error loading containers',
     'dot.template.builder.classes.dialog.autocomplete.label': 'Class',
     'dot.template.builder.classes.dialog.header.label': 'Edit Classes',
+    'dot.template.builder.theme.dialog.header.label': 'Theme Selection',
+    'editpage.layout.theme.no.records.found': 'No records found',
+    'dot.common.cancel': 'Cancel',
+    'dot.common.apply': 'Apply',
+    'editpage.layout.theme.search': 'Search',
     'dot.template.builder.classes.dialog.update.button': 'Update',
     'dot.template.builder.sidebar.header.title': 'Sidebar'
 };
@@ -364,3 +369,11 @@ export const mockTemplateBuilderContainer: DotTemplateBuilderContainer = {
     identifier: '1',
     uuid: '1'
 };
+
+export const SIDEBAR_MOCK = {
+    location: 'left',
+    width: 'small',
+    containers: []
+};
+
+export const STYLE_CLASS_MOCK = ['test', 'mock-class'];
