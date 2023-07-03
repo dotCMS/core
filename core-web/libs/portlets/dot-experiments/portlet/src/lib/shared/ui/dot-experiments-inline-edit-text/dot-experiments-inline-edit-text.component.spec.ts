@@ -84,6 +84,19 @@ describe('DotExperimentsExperimentSummaryComponent', () => {
             expect(spectator.component.form.invalid).toEqual(true);
         });
 
+        it('should emit text trimmed from the input', () => {
+            const TEXT_WITH_SPACES = '  text with spaces  ';
+            const TEXT_WITHOUT_SPACES = 'text with spaces';
+
+            let output;
+            spectator.output('textChanged').subscribe((result) => (output = result));
+
+            spectator.component.form.controls['text'].setValue(TEXT_WITH_SPACES);
+            spectator.component.saveAction();
+
+            expect(output).toBe(TEXT_WITHOUT_SPACES);
+        });
+
         it('should add the Validator `required` if the `@Input required` is true', () => {
             spectator.setInput('text', EMPTY_TEXT);
             spectator.setInput('required', true);
