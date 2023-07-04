@@ -3,7 +3,39 @@ import { v4 as uuid } from 'uuid';
 import { DotLayoutBody } from '@dotcms/dotcms-models';
 import { containersMapMock, MockDotMessageService } from '@dotcms/utils-testing';
 
-import { DotGridStackWidget, DotTemplateBuilderContainer } from '../models/models';
+import {
+    DotGridStackWidget,
+    DotTemplateBuilderContainer,
+    SYSTEM_CONTAINER_IDENTIFIER
+} from '../models/models';
+
+export const EMPTY_ROWS_VALUE = [
+    {
+        w: 12,
+        h: 1,
+        x: 0,
+        y: 0,
+        subGridOpts: {
+            children: [
+                {
+                    w: 3,
+                    h: 1,
+                    y: 0,
+                    x: 0,
+                    id: uuid(),
+                    styleClass: [],
+                    containers: [
+                        {
+                            identifier: SYSTEM_CONTAINER_IDENTIFIER
+                        }
+                    ]
+                }
+            ]
+        },
+        id: uuid(),
+        styleClass: []
+    }
+];
 
 export const GRIDSTACK_DATA_MOCK: DotGridStackWidget[] = [
     { x: 0, y: 0, w: 12, id: uuid() },

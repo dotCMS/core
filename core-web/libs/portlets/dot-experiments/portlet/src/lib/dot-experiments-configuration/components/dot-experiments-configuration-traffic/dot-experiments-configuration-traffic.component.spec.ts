@@ -15,7 +15,7 @@ import { Card, CardModule } from 'primeng/card';
 import { Tooltip } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotExperimentStatusList, ExperimentSteps } from '@dotcms/dotcms-models';
+import { DotExperimentStatus, ExperimentSteps } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import {
     ACTIVE_ROUTE_MOCK_CONFIG,
@@ -116,7 +116,7 @@ describe('DotExperimentsConfigurationTrafficComponent', () => {
         dotExperimentsService.getById.mockReturnValue(
             of({
                 ...EXPERIMENT_MOCK,
-                ...{ status: DotExperimentStatusList.RUNNING }
+                ...{ status: DotExperimentStatus.RUNNING }
             })
         );
 

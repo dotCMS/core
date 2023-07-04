@@ -17,7 +17,7 @@ import { ConfirmPopup } from 'primeng/confirmpopup';
 import { DotMessageService } from '@dotcms/data-access';
 import {
     ComponentStatus,
-    DotExperimentStatusList,
+    DotExperimentStatus,
     DotExperimentVariantDetail
 } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
@@ -166,7 +166,7 @@ describe('DotExperimentsReportsComponent', () => {
             ...defaultVmMock,
             experiment: {
                 ...defaultVmMock.experiment,
-                status: DotExperimentStatusList.RUNNING
+                status: DotExperimentStatus.RUNNING
             },
             isLoading: false,
             showSummary: true
@@ -180,7 +180,7 @@ describe('DotExperimentsReportsComponent', () => {
             ...defaultVmMock,
             experiment: {
                 ...defaultVmMock.experiment,
-                status: DotExperimentStatusList.RUNNING
+                status: DotExperimentStatus.RUNNING
             },
             isLoading: false,
             showSummary: true

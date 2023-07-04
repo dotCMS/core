@@ -6,14 +6,14 @@ import { ChangeDetectionStrategy, Component, ComponentRef, ViewChild } from '@an
 import { Router } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
-import { RippleModule } from 'primeng/ripple';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 
 import { tap } from 'rxjs/operators';
 
 import {
     ComponentStatus,
     DotExperiment,
-    DotExperimentStatusList,
+    DotExperimentStatus,
     ExperimentsStatusList,
     SidebarStatus
 } from '@dotcms/dotcms-models';
@@ -43,7 +43,7 @@ import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-he
         DotDynamicDirective,
         DotMessagePipeModule,
         ButtonModule,
-        RippleModule
+        ConfirmDialogModule
     ],
     templateUrl: './dot-experiments-list.component.html',
     styleUrls: ['./dot-experiments-list.component.scss'],
@@ -84,16 +84,6 @@ export class DotExperimentsListComponent {
     }
 
     /**
-     * Archive experiment
-     * @param {DotExperiment} experiment
-     * @returns void
-     * @memberof DotExperimentsListComponent
-     */
-    archiveExperimentAction(experiment: DotExperiment): void {
-        this.dotExperimentsListStore.archiveExperiment(experiment);
-    }
-
-    /**
      * Back to Edit Page / Content
      * @returns void
      * @memberof DotExperimentsShellComponent
@@ -120,8 +110,8 @@ export class DotExperimentsListComponent {
         const route = ['/edit-page/experiments/', experiment.pageId, experiment.id];
 
         if (
-            experiment.status === DotExperimentStatusList.RUNNING ||
-            experiment.status === DotExperimentStatusList.ENDED
+            experiment.status === DotExperimentStatus.RUNNING ||
+            experiment.status === DotExperimentStatus.ENDED
         ) {
             route.push('reports');
         } else {
@@ -136,34 +126,6 @@ export class DotExperimentsListComponent {
             },
             queryParamsHandling: 'merge'
         });
-    }
-
-    /**
-     * Delete experiment
-     * @param {DotExperiment} experiment
-     * @returns void
-     * @memberof DotExperimentsListComponent
-     */
-    deleteExperimentAction(experiment: DotExperiment): void {
-        this.dotExperimentsListStore.deleteExperiment(experiment);
-    }
-
-    /**
-     * Go to the experiment configuration container
-     * @param experiment
-     */
-    gotToConfigurationAction(experiment: DotExperiment) {
-        this.router.navigate(
-            ['/edit-page/experiments/', experiment.pageId, experiment.id, 'configuration'],
-            {
-                queryParams: {
-                    mode: null,
-                    variantName: null,
-                    experimentId: null
-                },
-                queryParamsHandling: 'merge'
-            }
-        );
     }
 
     private handleSidebar(status: SidebarStatus): void {

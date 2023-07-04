@@ -159,4 +159,7 @@ class BundleAssets {
     public Set<String> getHosts() {
         return getAll(PusheableAsset.SITE);
     }
+    public Set<String> getExperiments() {
+        return getAll(PusheableAsset.EXPERIMENT);
+    }
 }
