@@ -11,6 +11,10 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
+/**
+ * Represents a Set of Experiment's Running Ids, any time a Experiment is started a new Running Id is created
+ * in this way we can segment the data of different runs of the same Experiment
+ */
 public class RunningIds {
     @JsonProperty()
     private List<RunningId> ids = new ArrayList<>();
