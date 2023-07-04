@@ -54,23 +54,25 @@ public class Task230630CreateRunningIdsExperimentFieldIntegrationTest {
     @Test
     public void mustCreateRunningIdsField() throws SQLException, DotDataException {
         cleanUp();
-        assertFalse("The running_ids Fields must not exists", !isExistsRunningIds());
+        assertFalse("The running_ids Fields must not exists", isExistsRunningIds());
 
         final Task230630CreateRunningIdsExperimentField task230630CreateRunningIdsExperimentField =
                 new Task230630CreateRunningIdsExperimentField();
 
-        assertFalse("The forceRun method must return false", task230630CreateRunningIdsExperimentField.forceRun());
+        assertTrue("The forceRun method must return true", task230630CreateRunningIdsExperimentField.forceRun());
 
         task230630CreateRunningIdsExperimentField.executeUpgrade();
 
         assertTrue("The running_ids Fields must exists", isExistsRunningIds());
+        assertFalse("The forceRun method must return false", task230630CreateRunningIdsExperimentField.forceRun());
+
     }
 
     private static void cleanUp () throws SQLException {
 
         try {
             new DotConnect().executeStatement(
-                    "ALTER TABLE multi_tree DROP COLUMN running_ids");
+                    "ALTER TABLE experiment DROP COLUMN running_ids");
         } catch (SQLException e) {
             //ignore
         }
