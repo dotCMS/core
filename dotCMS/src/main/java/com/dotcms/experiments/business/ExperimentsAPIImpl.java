@@ -584,14 +584,34 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     private Experiment innerStart(final Experiment persistedExperiment, final User user)
             throws DotSecurityException, DotDataException {
 
-        persistedExperiment.runningIds().add(new RunningId());
+        final Experiment experimentToSave = Experiment.builder().from(persistedExperiment)
+                .runningIds(getRunningIds(persistedExperiment))
+                .status(RUNNING)
+                .build();
 
-        Experiment running = save(persistedExperiment.withStatus(RUNNING), user);
+        Experiment running = save(experimentToSave, user);
         cacheRunningExperiments();
         publishExperimentPage(running, user);
         publishContentOnExperimentVariants(user, running);
 
         return running;
+    }
+
+    private RunningIds getRunningIds(final Experiment persistedExperiment) {
+        final RunningIds runningIds = persistedExperiment.runningIds();
+
+        final Optional<RunningId> currentRunningId = runningIds.getAll().stream()
+                .filter((id) -> id.endDate() == null)
+                .limit(1)
+                .findFirst();
+
+        if (currentRunningId.isPresent()) {
+            currentRunningId.get().setEndDate(Instant.now());
+        }
+
+        runningIds.add(RunningIds.RunningId.create());
+
+        return runningIds;
     }
 
 
