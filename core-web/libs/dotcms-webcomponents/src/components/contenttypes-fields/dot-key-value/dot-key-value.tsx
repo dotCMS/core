@@ -204,16 +204,13 @@ export class DotKeyValueComponent {
         event.stopImmediatePropagation();
 
         //created with the purpose of only access the DOM of the triggered element
-        const targetElement = event.target as HTMLElement;
-        const tblElement = targetElement.querySelector('table');
 
         // Hack to clean the items in DOM without showing "No values" label
         this.items = [{ key: ' ', value: '' }];
 
         //only manipulate the keys and values of the selected content
-        const keys = tblElement.querySelectorAll('.key-value-table-wc__key');
-
-        const values = tblElement.querySelectorAll('.key-value-table-wc__value');
+        const keys = this.el.querySelectorAll('.key-value-table-wc__key');
+        const values = this.el.querySelectorAll('.key-value-table-wc__value');
 
         let keyValueRawData = '';
 
