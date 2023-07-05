@@ -64,12 +64,12 @@ select[multiple] {
 }
 
 .dijit {
-    $action-button-size: 3rem;
+    $action-button-size: 2.5rem;
 
     &DropDownActionButton {
         background-color: $color-palette-primary;
         border: none;
-        border-radius: calc($action-button-size / 2);
+        border-radius: 50%;
         height: $action-button-size;
         width: $action-button-size;
 
@@ -78,7 +78,7 @@ select[multiple] {
             color: $white;
             line-height: $action-button-size;
             margin: 0;
-            font-size: 16px;
+            font-size: 1.25rem;
         }
 
         .dijitButtonNode {
@@ -92,15 +92,23 @@ select[multiple] {
         }
 
         &.dijitDropDownButtonHover {
-            background-color: $color-palette-primary-400;
+            background-color: $color-palette-primary-600;
+        }
+
+        &.dijitDropDownButtonActive {
+            background-color: $color-palette-primary-700;
+        }
+        &.dijitDropDownButtonFocused {
+            background-color: $color-palette-primary;
+            box-shadow: 0px 0px 0px 2.8px rgba(18, 67, 227, 0.2); // Ask what should we do
         }
 
         &.dijitDropDownButtonDisabled {
-            background-color: $color-palette-gray-400;
+            background-color: $color-palette-gray-200;
 
             .actionIcon,
             .fa-plus {
-                color: $color-palette-gray-700;
+                color: $color-palette-gray-500;
             }
         }
     }
@@ -109,10 +117,22 @@ select[multiple] {
         border: 0;
         background-color: transparent;
         box-shadow: none;
-        color: $color-palette-primary;
+        color: $black;
 
         &.dijitButtonHover {
-            background-color: $color-palette-primary-200;
+            background-color: $color-palette-primary-100;
+        }
+
+        &.dijitDropDownButtonActive {
+            background-color: $color-palette-primary-op-20;
+        }
+        &.dijitDropDownButtonFocused {
+            background-color: $color-palette-primary;
+            box-shadow: 0px 0px 0px 2.8px rgba(18, 67, 227, 0.2); // Ask what should we do
+        }
+
+        &.dijitDropDownButtonDisabled {
+            background-color: $white;
         }
     }
 

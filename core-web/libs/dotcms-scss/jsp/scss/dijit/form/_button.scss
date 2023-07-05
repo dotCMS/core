@@ -1,11 +1,28 @@
 .dijitButton,
 .dijitToggleButton {
+    height: $spacing-6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.375rem;
+
     .dijitButtonNode {
-        padding: 0 $button-padding;
+        padding: 0 $spacing-3;
+        margin: none;
+
+        .dijitIcon {
+            margin-right: $spacing-1;
+        }
+    }
+
+    .dijitInline .dijitButtonNode {
+        margin: 0;
     }
     .dijitButtonText {
-        line-height: $field-height - 2px;
-        height: $field-height - 2px; // Need to substract the border (top and bottom)
+        line-height: 140%;
+        height: 140%;
+        font-size: $font-size-md;
+        text-transform: capitalize;
     }
 }
 
@@ -25,10 +42,6 @@
             $button-normal-border,
             $button-normal-textcolor
         );
-
-        &Text {
-            text-transform: uppercase;
-        }
 
         &Node {
             border: none;
