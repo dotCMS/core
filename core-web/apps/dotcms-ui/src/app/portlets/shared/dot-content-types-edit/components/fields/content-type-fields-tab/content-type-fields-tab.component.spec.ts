@@ -2,7 +2,9 @@ import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
+import { ButtonModule } from 'primeng/button';
+import { TooltipModule } from 'primeng/tooltip';
+
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
@@ -50,7 +52,7 @@ describe('ContentTypeFieldsTabComponent', () => {
     beforeEach(waitForAsync(() => {
         DOTTestBed.configureTestingModule({
             declarations: [ContentTypeFieldsTabComponent, DotTestHostComponent],
-            imports: [UiDotIconButtonTooltipModule],
+            imports: [TooltipModule, ButtonModule],
             providers: [
                 DotAlertConfirmService,
                 {

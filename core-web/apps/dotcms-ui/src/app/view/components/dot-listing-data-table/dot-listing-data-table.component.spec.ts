@@ -16,8 +16,8 @@ import { ButtonModule } from 'primeng/button';
 import { ContextMenuModule } from 'primeng/contextmenu';
 import { MenuModule } from 'primeng/menu';
 import { TableModule } from 'primeng/table';
+import { TooltipModule } from 'primeng/tooltip';
 
-import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { CoreWebService, DotcmsConfigService, LoggerService, StringUtils } from '@dotcms/dotcms-js';
@@ -136,7 +136,6 @@ describe('DotListingDataTableComponent', () => {
                 RouterTestingModule.withRoutes([
                     { path: 'test', component: DotListingDataTableComponent }
                 ]),
-                UiDotIconButtonTooltipModule,
                 MenuModule,
                 DotMenuModule,
                 DotIconModule,
@@ -145,7 +144,8 @@ describe('DotListingDataTableComponent', () => {
                 DotPipesModule,
                 FormsModule,
                 ContextMenuModule,
-                ButtonModule
+                ButtonModule,
+                TooltipModule
             ],
             providers: [
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
