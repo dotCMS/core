@@ -70,8 +70,11 @@
     width: auto;
 }
 
+//TODO: This need to go to the confirm-dialog stylesheet when we update the look and feel
 .p-dialog.p-confirm-dialog .p-confirm-dialog-icon {
-    font-size: $font-size-xxxl;
+    font-size: $font-size-xxl;
+    padding-right: $spacing-1;
+    color: $color-palette-primary;
 }
 
 .p-dialog.p-confirm-dialog .p-confirm-dialog-message {

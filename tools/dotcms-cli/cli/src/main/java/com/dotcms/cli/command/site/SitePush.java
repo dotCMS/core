@@ -61,7 +61,7 @@ public class SitePush extends AbstractSiteCommand implements Callable<Integer>{
             }
 
             try {
-                final ObjectMapper objectMapper = formatOption.objectMapper();
+                final ObjectMapper objectMapper = formatOption.objectMapper(siteFile);
                 final SiteView in = objectMapper.readValue(siteFile, SiteView.class);
                 final String returnedSiteName = in.siteName();
                 final CreateUpdateSiteRequest createUpdateSiteRequest = toRequest(in);

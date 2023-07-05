@@ -59,7 +59,7 @@ export class DotPagesCreatePageDialogComponent implements OnInit, OnDestroy {
      */
     goToCreatePage(variableName: string): void {
         this.ref.close();
-        this.dotRouterService.goToCreateContent(variableName);
+        this.dotRouterService.goToURL(`/pages/new/${variableName}`, { skipLocationChange: true });
     }
 
     ngOnInit(): void {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from '@jest/globals';
 
 import { parseFromDotObjectToGridStack, parseFromGridStackToDotObject } from './gridstack-utils';
-import { MINIMAL_DATA_MOCK } from './mocks';
+import { EMPTY_ROWS_VALUE, MINIMAL_DATA_MOCK } from './mocks';
 
 global.structuredClone = jest.fn((val) => {
     return JSON.parse(JSON.stringify(val));
@@ -40,10 +40,16 @@ describe('parseFromDotObjectToGridStack', () => {
         });
     });
 
-    it('should return an empty array when no rows are provided', () => {
+    it('should return a row with one container when body is undefined', () => {
         const result = parseFromDotObjectToGridStack(undefined);
 
-        expect(result).toEqual([]);
+        expect(result).toEqual(EMPTY_ROWS_VALUE);
+    });
+
+    it('should return a row with one container when rows is empty', () => {
+        const result = parseFromDotObjectToGridStack({ rows: [] });
+
+        expect(result).toEqual(EMPTY_ROWS_VALUE);
     });
 });
 
