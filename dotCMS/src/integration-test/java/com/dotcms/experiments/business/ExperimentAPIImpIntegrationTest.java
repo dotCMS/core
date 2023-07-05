@@ -151,25 +151,30 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         final Experiment experimentStarted = APILocator.getExperimentsAPI()
                 .start(experiment.id().get(), APILocator.systemUser());
 
-        assertNotNull(experimentStarted.runningIds());
-        assertEquals(1, experimentStarted.runningIds().size());
-        final RunningId runningId = experimentStarted.runningIds().iterator().next();
-        assertNotNull(runningId);
-        assertNotNull(runningId.id());
-        assertNotNull(runningId.startDate());
-        assertNull(runningId.endDate());
+        try {
+            assertNotNull(experimentStarted.runningIds());
+            assertEquals(1, experimentStarted.runningIds().size());
+            final RunningId runningId = experimentStarted.runningIds().iterator().next();
+            assertNotNull(runningId);
+            assertNotNull(runningId.id());
+            assertNotNull(runningId.startDate());
+            assertNull(runningId.endDate());
 
-        final Experiment experimentFromDataBase_2 = APILocator.getExperimentsAPI()
-                .find(experiment.id().get(), APILocator.systemUser())
-                .orElseThrow(() -> new AssertionError("Experiment not found"));
+            final Experiment experimentFromDataBase_2 = APILocator.getExperimentsAPI()
+                    .find(experiment.id().get(), APILocator.systemUser())
+                    .orElseThrow(() -> new AssertionError("Experiment not found"));
 
-        assertNotNull(experimentFromDataBase_2.runningIds());
+            assertNotNull(experimentFromDataBase_2.runningIds());
 
-        final RunningId runningIdFromDataBase_2 = experimentFromDataBase_2.runningIds().iterator().next();
-        assertNotNull(runningIdFromDataBase_2);
-        assertNotNull(runningIdFromDataBase_2.id());
-        assertNotNull(runningIdFromDataBase_2.startDate());
-        assertNull(runningIdFromDataBase_2.endDate());
+            final RunningId runningIdFromDataBase_2 = experimentFromDataBase_2.runningIds()
+                    .iterator().next();
+            assertNotNull(runningIdFromDataBase_2);
+            assertNotNull(runningIdFromDataBase_2.id());
+            assertNotNull(runningIdFromDataBase_2.startDate());
+            assertNull(runningIdFromDataBase_2.endDate());
+        } finally {
+            APILocator.getExperimentsAPI().end(experimentStarted.id().get(), APILocator.systemUser());
+        }
     }
 
     /**
@@ -199,25 +204,30 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         final Experiment experimentStarted = APILocator.getExperimentsAPI()
                 .startScheduled(experiment.id().get(), APILocator.systemUser());
 
-        assertNotNull(experimentStarted.runningIds());
-        assertEquals(1, experimentStarted.runningIds().size());
-        final RunningId runningId = experimentStarted.runningIds().iterator().next();
-        assertNotNull(runningId);
-        assertNotNull(runningId.id());
-        assertNotNull(runningId.startDate());
-        assertNull(runningId.endDate());
+        try {
+            assertNotNull(experimentStarted.runningIds());
+            assertEquals(1, experimentStarted.runningIds().size());
+            final RunningId runningId = experimentStarted.runningIds().iterator().next();
+            assertNotNull(runningId);
+            assertNotNull(runningId.id());
+            assertNotNull(runningId.startDate());
+            assertNull(runningId.endDate());
 
-        final Experiment experimentFromDataBase_2 = APILocator.getExperimentsAPI()
-                .find(experiment.id().get(), APILocator.systemUser())
-                .orElseThrow(() -> new AssertionError("Experiment not found"));
+            final Experiment experimentFromDataBase_2 = APILocator.getExperimentsAPI()
+                    .find(experiment.id().get(), APILocator.systemUser())
+                    .orElseThrow(() -> new AssertionError("Experiment not found"));
 
-        assertNotNull(experimentFromDataBase_2.runningIds());
+            assertNotNull(experimentFromDataBase_2.runningIds());
 
-        final RunningId runningIdFromDataBase_2 = experimentFromDataBase_2.runningIds().iterator().next();
-        assertNotNull(runningIdFromDataBase_2);
-        assertNotNull(runningIdFromDataBase_2.id());
-        assertNotNull(runningIdFromDataBase_2.startDate());
-        assertNull(runningIdFromDataBase_2.endDate());
+            final RunningId runningIdFromDataBase_2 = experimentFromDataBase_2.runningIds()
+                    .iterator().next();
+            assertNotNull(runningIdFromDataBase_2);
+            assertNotNull(runningIdFromDataBase_2.id());
+            assertNotNull(runningIdFromDataBase_2.startDate());
+            assertNull(runningIdFromDataBase_2.endDate());
+        } finally {
+            APILocator.getExperimentsAPI().end(experimentStarted.id().get(), APILocator.systemUser());
+        }
     }
 
     /**
@@ -233,29 +243,33 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         final Experiment experimentStarted = APILocator.getExperimentsAPI()
                 .start(experiment.id().get(), APILocator.systemUser());
 
-        final Experiment experimentToRestart = Experiment.builder().from(experimentStarted)
-                .status(Status.DRAFT)
-                .scheduling(Optional.empty())
-                .build();
+        try {
+            final Experiment experimentToRestart = Experiment.builder().from(experimentStarted)
+                    .status(Status.DRAFT)
+                    .scheduling(Optional.empty())
+                    .build();
 
-       FactoryLocator.getExperimentsFactory().save(experimentToRestart);
+           FactoryLocator.getExperimentsFactory().save(experimentToRestart);
 
-        APILocator.getExperimentsAPI()
-                .start(experimentToRestart.id().get(), APILocator.systemUser());
+            APILocator.getExperimentsAPI()
+                    .start(experimentToRestart.id().get(), APILocator.systemUser());
 
-        final Experiment experimentAfterReStart = APILocator.getExperimentsAPI()
-                .find(experimentToRestart.id().get(), APILocator.systemUser())
-                .orElseThrow(() -> new AssertionError("Experiment not found"));
+            final Experiment experimentAfterReStart = APILocator.getExperimentsAPI()
+                    .find(experimentToRestart.id().get(), APILocator.systemUser())
+                    .orElseThrow(() -> new AssertionError("Experiment not found"));
 
-        assertEquals(2, experimentAfterReStart.runningIds().size());
+            assertEquals(2, experimentAfterReStart.runningIds().size());
 
-        assertTrue(experimentAfterReStart.runningIds().getAll().stream()
-                .anyMatch(runningId -> runningId.endDate() != null));
+            assertTrue(experimentAfterReStart.runningIds().getAll().stream()
+                    .anyMatch(runningId -> runningId.endDate() != null));
 
-        assertTrue(experimentAfterReStart.runningIds().getAll().stream()
-                .anyMatch(runningId -> runningId.endDate() == null));
+            assertTrue(experimentAfterReStart.runningIds().getAll().stream()
+                    .anyMatch(runningId -> runningId.endDate() == null));
 
-        assertTrue(experimentAfterReStart.runningIds().get(0).id() != experimentAfterReStart.runningIds().get(1).id());
+            assertTrue(experimentAfterReStart.runningIds().get(0).id() != experimentAfterReStart.runningIds().get(1).id());
+        } finally {
+            APILocator.getExperimentsAPI().end(experimentStarted.id().get(), APILocator.systemUser());
+        }
     }
 
     /**
@@ -277,29 +291,33 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
         final Experiment experimentStarted = APILocator.getExperimentsAPI()
                 .startScheduled(experiment.id().get(), APILocator.systemUser());
 
-        final Experiment experimentToRestart = Experiment.builder().from(experimentStarted)
-                .status(Status.SCHEDULED)
-                .scheduling(Optional.empty())
-                .build();
+        try {
+            final Experiment experimentToRestart = Experiment.builder().from(experimentStarted)
+                    .status(Status.SCHEDULED)
+                    .scheduling(Optional.empty())
+                    .build();
 
-        FactoryLocator.getExperimentsFactory().save(experimentToRestart);
+            FactoryLocator.getExperimentsFactory().save(experimentToRestart);
 
-        APILocator.getExperimentsAPI()
-                .startScheduled(experimentToRestart.id().get(), APILocator.systemUser());
+            APILocator.getExperimentsAPI()
+                    .startScheduled(experimentToRestart.id().get(), APILocator.systemUser());
 
-        final Experiment experimentAfterReStart = APILocator.getExperimentsAPI()
-                .find(experimentToRestart.id().get(), APILocator.systemUser())
-                .orElseThrow(() -> new AssertionError("Experiment not found"));
+            final Experiment experimentAfterReStart = APILocator.getExperimentsAPI()
+                    .find(experimentToRestart.id().get(), APILocator.systemUser())
+                    .orElseThrow(() -> new AssertionError("Experiment not found"));
 
-        assertEquals(2, experimentAfterReStart.runningIds().size());
+            assertEquals(2, experimentAfterReStart.runningIds().size());
 
-        assertTrue(experimentAfterReStart.runningIds().getAll().stream()
-                .anyMatch(runningId -> runningId.endDate() != null));
+            assertTrue(experimentAfterReStart.runningIds().getAll().stream()
+                    .anyMatch(runningId -> runningId.endDate() != null));
 
-        assertTrue(experimentAfterReStart.runningIds().getAll().stream()
-                .anyMatch(runningId -> runningId.endDate() == null));
+            assertTrue(experimentAfterReStart.runningIds().getAll().stream()
+                    .anyMatch(runningId -> runningId.endDate() == null));
 
-        assertTrue(experimentAfterReStart.runningIds().get(0).id() != experimentAfterReStart.runningIds().get(1).id());
+            assertTrue(experimentAfterReStart.runningIds().get(0).id() != experimentAfterReStart.runningIds().get(1).id());
+        } finally {
+            APILocator.getExperimentsAPI().end(experimentStarted.id().get(), APILocator.systemUser());
+        }
     }
 
     /**
