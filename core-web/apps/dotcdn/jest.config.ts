@@ -9,7 +9,18 @@ export default {
             tsconfig: '<rootDir>/tsconfig.spec.json'
         }
     },
-    coverageDirectory: '../../coverage/apps/dotcdn',
+    coverageReporters: [['lcovonly', { file: 'TEST-dotcdn.lcov' }]],
+    reporters: [
+        'default',
+        ['github-actions', { silent: false }],
+        [
+            'jest-junit',
+            {
+                outputDirectory: '../target/core-web-reports',
+                outputName: 'TEST-dotcdn.xml'
+            }
+        ]
+    ],
     snapshotSerializers: [
         'jest-preset-angular/build/serializers/no-ng-attributes',
         'jest-preset-angular/build/serializers/ng-snapshot',
