@@ -146,7 +146,7 @@ describe('SearchableDropdownComponent', () => {
     });
 
     it('should have placeholder set', () => {
-        expect(mainButton.nativeElement.innerText).toBe('Placeholder');
+        expect(mainButton.nativeElement.innerText).toBe('placeholder');
     });
 
     it('should disabled', () => {
