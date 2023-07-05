@@ -1,11 +1,10 @@
 .dijitButton,
 .dijitToggleButton {
     height: $spacing-6;
-    display: flex;
+    border-radius: 0.375rem;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    border-radius: 0.375rem;
-
     .dijitButtonNode {
         padding: 0 $spacing-3;
         margin: none;
