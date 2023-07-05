@@ -13,6 +13,7 @@ module.exports = () => {
             require('karma-chrome-launcher'),
             require('karma-coverage'),
             require('karma-junit-reporter'),
+            require('karma-summary-reporter'),
             require('@angular-devkit/build-angular/plugins/karma')
         ],
         client: {
@@ -24,7 +25,7 @@ module.exports = () => {
             file: 'TEST-dotcms-ui.lcov',
             reporters: [{ type: 'lcovonly' }]
         },
-        reporters: ['junit', 'progress'],
+        reporters: ['junit', 'summary'],
         port: 9876,
         colors: true,
         logLevel: constants.LOG_INFO,
@@ -41,6 +42,18 @@ module.exports = () => {
             useBrowserName: false,
             outputDir: '../../target/core-web-reports',
             outputFile: 'TEST-dotcms-ui.xml'
+        },
+        summaryReporter: {
+            // 'failed', 'skipped' or 'all'
+            show: 'failed',
+            // Limit the spec label to this length
+            specLength: 50,
+            // Show an 'all' column as a summary
+            overviewColumn: true,
+            // Show a list of test clients, 'always', 'never' or 'ifneeded'
+            browserList: 'always',
+            // Use custom symbols to indicate success and failure
+            symbols: { success: 'o', failure: 'x' }
         },
         singleRun: true,
         browserDisconnectTimeout: 20000
