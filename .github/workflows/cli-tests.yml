@@ -13,6 +13,12 @@ jobs:
   cli_test:
     name: CLI Tests
     runs-on: ubuntu-latest
+    env:
+      DOTCMS_IMAGE: dotcms/dotcms:master_a90c97d_SNAPSHOT
+      DB_TYPE: postgres
+      TEST_TYPE: cli
+      WAIT_FOR_DEPS: 60
+      DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
     steps:
       - id: git-checkout
         name: Checkout
@@ -22,12 +28,6 @@ jobs:
         name: Run Test Dependencies
         working-directory: ./cicd/docker
         run: |
-          pwd
-          export DOTCMS_IMAGE='dotcms/dotcms:master_a90c97d_SNAPSHOT'
-          export DB_TYPE='postgres'
-          export TEST_TYPE='cli'
-          export WAIT_FOR_DEPS='60'
-
           docker-compose -f dotcms-compose.yml -f postgres-compose.yml -f open-distro-compose.yml up -d
 
       # - id: docker-compose-setup
