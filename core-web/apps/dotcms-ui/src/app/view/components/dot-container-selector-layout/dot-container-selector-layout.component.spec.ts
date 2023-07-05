@@ -2,7 +2,7 @@ import { of as observableOf } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { Component, DebugElement } from '@angular/core';
+import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
@@ -31,12 +31,6 @@ import { DotContainerSelectorLayoutComponent } from './dot-container-selector-la
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 import { SearchableDropDownModule } from '../_common/searchable-dropdown/searchable-dropdown.module';
 
-@Component({
-    selector: 'dot-icon-button',
-    template: ''
-})
-class MockDotIconButtonComponent {}
-
 describe('DotContainerSelectorLayoutComponent', () => {
     let comp: DotContainerSelectorLayoutComponent;
     let fixture: ComponentFixture<DotContainerSelectorLayoutComponent>;
@@ -50,7 +44,7 @@ describe('DotContainerSelectorLayoutComponent', () => {
         });
 
         TestBed.configureTestingModule({
-            declarations: [DotContainerSelectorLayoutComponent, MockDotIconButtonComponent],
+            declarations: [DotContainerSelectorLayoutComponent],
             imports: [
                 SearchableDropDownModule,
                 BrowserAnimationsModule,
