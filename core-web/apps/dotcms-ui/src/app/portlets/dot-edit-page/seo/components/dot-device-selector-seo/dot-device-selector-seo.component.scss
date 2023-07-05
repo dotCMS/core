@@ -37,16 +37,28 @@
 }
 
 .dotDeviceSelector__content {
+    display: flex;
     .device-list {
+        width: 100%;
         padding: 0;
         .device-list__item {
-            list-style: none;
             display: flex;
-            width: 276px;
-            height: 40px;
-            padding: 14px 16px;
-            align-items: left;
+            list-style: none;
+            width: 252px;
+            height: 58px;
+            padding: 8px 16px 8px 16px;
             gap: 8px;
+            cursor: pointer;
+
+            .device-list__item--content {
+                display: flex;
+                flex-direction: column;
+            }
+
+            .device-list__item--dimensions {
+                color: #8d92a5;
+            }
+
             &:hover {
                 background-color: var(--gray-scale-100, #f8f8f9);
             }
@@ -72,7 +84,12 @@
         .pi {
             color: #8d92a5;
         }
-
+        border-radius: 12px;
         margin-top: 5px;
+    }
+
+    .p-divider.p-component.p-divider-vertical {
+        margin: 0;
+        color: var(--gray-scale-300, #ebecef);
     }
 }

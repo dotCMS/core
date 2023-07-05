@@ -1,24 +1,3 @@
-<!-- <div class="dot-device-selector wrapper h-full flex-auto flex align-items-center gap-3 min-w-full"> -->
-<!--   <dot-icon big name="devices"></dot-icon> -->
-
-<!--     <div class="device-selector__field flex-grow-1"> -->
-<!-- <p-dropdown
-            class="p-dropdown-sm"
-            id="device-selector"
-            [(ngModel)]="value"
-            [disabled]="disabled"
-            [options]="options"
-            [placeholder]="placeholder"
-            (onChange)="change($event.value)"
-            dataKey="inode"
-            optionLabel="name"
-        >
-        </p-dropdown> -->
-
-<!--     </div>
-</div>
-
- -->
 <p-overlayPanel #op styleClass="dotDeviceSelector__overlayPanel">
     <div class="dotDeviceSelector__column">
         <div class="dotDeviceSelector__panel">
@@ -27,17 +6,25 @@
             </div>
             <div class="dotDeviceSelector__content">
                 <ul class="device-list">
-                    <li class="device-list__item">
-                        <i class="pi pi-mobile" style="font-size: 1rem"></i>
-                        {{ options[0].name }}
+                    <li class="device-list__item" *ngFor="let option of defaultOptions">
+                        <i [class]="option.icon" style="font-size: 1rem"></i>
+                        <div class="device-list__item--content">
+                            <span>{{ option.name }}</span>
+                            <span class="device-list__item--dimensions"
+                                >{{ option.cssHeight }} x {{ option.cssWidth }}</span
+                            >
+                        </div>
                     </li>
-                    <li class="device-list__item">
-                        <i class="pi pi-desktop" style="font-size: 1rem"></i>
-                        {{ options[1].name }}
-                    </li>
-                    <li class="device-list__item">
-                        <i class="pi pi-tablet" style="font-size: 1rem"></i>
-                        {{ options[2].name }}
+                </ul>
+                <p-divider layout="vertical"></p-divider>
+                <ul class="device-list">
+                    <li class="device-list__item" *ngFor="let option of options">
+                        <div class="device-list__item--content">
+                            <span>{{ option.name }}</span>
+                            <span class="device-list__item--dimensions"
+                                >{{ option.cssHeight }} x {{ option.cssWidth }}</span
+                            >
+                        </div>
                     </li>
                 </ul>
             </div>

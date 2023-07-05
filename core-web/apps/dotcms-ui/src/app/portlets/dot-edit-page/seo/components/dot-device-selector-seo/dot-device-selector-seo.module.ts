@@ -3,6 +3,7 @@ import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
+import { DividerModule } from 'primeng/divider';
 import { DropdownModule } from 'primeng/dropdown';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { PanelModule } from 'primeng/panel';
@@ -22,7 +23,8 @@ import { DotDeviceSelectorSeoComponent } from './dot-device-selector-seo.compone
         DotPipesModule,
         ButtonModule,
         OverlayPanelModule,
-        PanelModule
+        PanelModule,
+        DividerModule
     ],
     declarations: [DotDeviceSelectorSeoComponent],
     exports: [DotDeviceSelectorSeoComponent],

@@ -29,6 +29,14 @@ export class DotDeviceSelectorSeoComponent implements OnInit, OnChanges {
 
     options: DotDevice[] = [];
     placeholder = '';
+    defaultOptions = [
+        { name: 'Mobile Portrait', icon: 'pi pi-mobile', cssHeight: '390', cssWidth: '844' },
+        { name: 'Mobile Landscape', icon: 'pi pi-mobile', cssHeight: '844', cssWidth: '390' },
+        { name: 'HD Monitor', icon: 'pi pi-desktop', cssHeight: '1920', cssWidth: '1080' },
+        { name: '4K Monitor', icon: 'pi pi-desktop', cssHeight: '3840', cssWidth: '2160' },
+        { name: 'Table Portrait', icon: 'pi pi-tablet', cssHeight: '820', cssWidth: '1180' },
+        { name: 'Table Landscape', icon: 'pi pi-tablet', cssHeight: '1180', cssWidth: '820' }
+    ];
 
     constructor(
         private dotDevicesService: DotDevicesService,
@@ -47,7 +55,7 @@ export class DotDeviceSelectorSeoComponent implements OnInit, OnChanges {
     }
 
     /**
-     * Track changes in the dropwdow
+     * Track changes in the dropwdown
      * @param DotDevice device
      */
     change(device: DotDevice) {
