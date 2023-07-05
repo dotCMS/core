@@ -5,10 +5,10 @@
         [ngClass]="{ 'dot-add-rows__add': rowState === 'add' }"
     >
         <p-splitButton
-            label="{{ 'contenttypes.dropzone.rows.add' | dm }}"
-            (onClick)="setColumnSelect()"
             [disabled]="disabled"
             [model]="actions"
+            (onClick)="setColumnSelect()"
+            label="{{ 'contenttypes.dropzone.rows.add' | dm }}"
         ></p-splitButton>
     </div>
 
@@ -16,20 +16,26 @@
         <div class="dot-add-rows-columns-list__title">
             {{ 'contenttypes.content.add_column_title' | dm }}
         </div>
-        <dot-icon-button icon="close" (click)="showAddView()"></dot-icon-button>
+
+        <p-button
+            (click)="showAddView()"
+            icon="pi pi-times"
+            styleClass="p-button-rounded  p-button-text p-button-sm"
+        ></p-button>
+
         <ul
-            #colContainer
             class="dot-add-rows-columns-list"
+            #colContainer
             [ngClass]="{ 'dot-add-rows__select': rowState === 'select' }"
         >
             <li
+                class="dot-add-rows-columns-list__item"
                 *ngFor="let colNum of columns; let i = index"
                 [ngClass]="{ active: i === selectedColumnIndex }"
-                class="dot-add-rows-columns-list__item"
-                tabindex="-1"
                 (mouseenter)="onMouseEnter(i, $event)"
                 (mouseleave)="onMouseLeave($event)"
                 (click)="emitColumnNumber()"
+                tabindex="-1"
             >
                 <span class="dot-add-rows-columns-list__item-title">{{ setColumnValue(i) }}</span>
                 <div class="dot-add-rows-columns-list__item-container">
