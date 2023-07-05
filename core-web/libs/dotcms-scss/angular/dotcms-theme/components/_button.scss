@@ -14,11 +14,13 @@
     color: $white;
     font-size: $font-size-md;
     line-height: 140%;
+    text-transform: capitalize;
 
     .p-button-label {
         color: $white;
         font-size: $font-size-md;
         line-height: 140%;
+        text-transform: capitalize;
     }
 
     .p-button-icon,
