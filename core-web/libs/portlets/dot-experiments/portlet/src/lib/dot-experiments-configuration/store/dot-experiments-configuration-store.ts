@@ -59,7 +59,6 @@ const initialState: DotExperimentsConfigurationState = {
 export interface ConfigurationViewModel {
     experiment: DotExperiment;
     stepStatusSidebar: StepStatus;
-    hasEnterpriseLicense: boolean;
     isLoading: boolean;
     isExperimentADraft: boolean;
     disabledStartExperiment: boolean;
@@ -736,7 +735,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         this.getIsDescriptionSaving$,
         this.getMenuItems$,
         (
-            { experiment, stepStatusSidebar, hasEnterpriseLicense, addToBundleContentId },
+            { experiment, stepStatusSidebar, addToBundleContentId },
             isExperimentADraft,
             isLoading,
             disabledStartExperiment,
@@ -748,7 +747,6 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         ) => ({
             experiment,
             stepStatusSidebar,
-            hasEnterpriseLicense,
             addToBundleContentId,
             isExperimentADraft,
             isLoading,

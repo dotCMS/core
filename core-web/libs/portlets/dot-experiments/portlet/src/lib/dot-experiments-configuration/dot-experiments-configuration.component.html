@@ -43,7 +43,7 @@
         </ng-container>
     </div>
     <dot-add-to-bundle
-        *ngIf="vm.hasEnterpriseLicense && vm.addToBundleContentId"
+        *ngIf="vm.addToBundleContentId"
         [assetIdentifier]="vm.addToBundleContentId"
         (cancel)="vm.addToBundleContentId = null"
     />
