@@ -17,16 +17,40 @@ jobs:
         name: Checkout
         uses: actions/checkout@v3
 
-      - id: run-dotcms-cli-tests
-        name: Run DotCMS CLI Tests
-        uses: ./.github/actions/run-cli-tests
-        with:
-          project_root: tools/dotcms-cli
-          built_image_name: master_a90c97d_SNAPSHOT
-          wait_for_deps: true
-          db_type: postgres
-          license_key: 'NOTHING BY THE MOMENT'
-          custom_starter_url: 'NOTHING BY THE MOMENT'
+      - id: run-test-dependencies
+        name: Run Test Dependencies
+        working-directory: ./cicd/docker
+        run: |
+          pwd
+          docker-compose -f dotcms-compose.yml -f postgres-compose.yml -f open-distro-compose.yml up -d
+
+      # - id: docker-compose-setup
+      #   name: Setup Docker Compose
+      #   uses: isbang/compose-action@v1.4.1
+      #   with:
+      #     compose-file: |
+      #       open-distro-compose.yml
+      #       postgres-compose.yml
+      #       dotcms-compose.yml
+      #   env: 
+      #     DOTCMS_IMAGE: 'dotcms/dotcms:master_a90c97d_SNAPSHOT'
+      #     DOTCMS_LICENSE: 'NOTHING BY THE MOMENT'
+      #     DB_TYPE: postgres
+      #     TEST_TYPE: 'cli'
+      #     WAIT_FOR_DEPS: '60'
+      #     CUSTOM_STARTER_URL: 'NOTHING BY THE MOMENT'
+
+
+      # - id: run-dotcms-cli-tests
+      #   name: Run DotCMS CLI Tests
+      #   uses: ./.github/actions/run-cli-tests
+      #   with:
+      #     project_root: tools/dotcms-cli
+      #     built_image_name: 'dotcms/dotcms:master_a90c97d_SNAPSHOT'
+      #     wait_for_deps: 60
+      #     db_type: postgres
+      #     license_key: 'NOTHING BY THE MOMENT'
+      #     custom_starter_url: 'NOTHING BY THE MOMENT'
 
           # license_key: ${{ secrets.DOTCMS_LICENSE }}
           # custom_starter_url: ${{ secrets.CUSTOM_STARTER_URL }}
