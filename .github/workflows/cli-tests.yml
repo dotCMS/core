@@ -67,9 +67,9 @@ jobs:
           sleep 120
           pwd
           ls -la
-          # cd tools/dotcms-cli
-          # echo "Running CLI tests"
-          # ./gradlew clean test
+          cd tools/dotcms-cli
+          echo "Running CLI tests"
+          ./mvnw clean test
 
 
 
