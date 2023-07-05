@@ -3,12 +3,14 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
+import { ButtonModule } from 'primeng/button';
+import { TooltipModule } from 'primeng/tooltip';
+
 import { dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
 import { DotActionMenuItem } from '@shared/models/dot-action-menu/dot-action-menu-item.model';
 
 import { DotActionMenuButtonComponent } from './dot-action-menu-button.component';
 
-import { UiDotIconButtonTooltipModule } from '../dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { DotMenuModule } from '../dot-menu/dot-menu.module';
 
 describe('ActionMenuButtonComponent', () => {
@@ -19,7 +21,7 @@ describe('ActionMenuButtonComponent', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
             declarations: [DotActionMenuButtonComponent],
-            imports: [UiDotIconButtonTooltipModule, DotMenuModule, BrowserAnimationsModule]
+            imports: [ButtonModule, TooltipModule, DotMenuModule, BrowserAnimationsModule]
         }).compileComponents();
 
         fixture = TestBed.createComponent(DotActionMenuButtonComponent);
@@ -53,8 +55,8 @@ describe('ActionMenuButtonComponent', () => {
         comp.actions = fakeActions;
         fixture.detectChanges();
 
-        const button = de.query(By.css('button'));
-        const buttonTooltip = de.query(By.css('dot-icon-button-tooltip'));
+        const button = de.query(By.css('.dot-menu__button'));
+        const buttonTooltip = de.query(By.css('[data-testid="dot-action-tooltip-button"]'));
         const menu = de.query(By.css('dot-menu'));
 
         expect(buttonTooltip).toBeNull();
@@ -78,7 +80,7 @@ describe('ActionMenuButtonComponent', () => {
         comp.actions = fakeActions;
         fixture.detectChanges();
 
-        const actionButtonTooltip = de.query(By.css('dot-icon-button-tooltip'));
+        const actionButtonTooltip = de.query(By.css('[data-testid="dot-action-tooltip-button"]'));
         const actionButtonMenu = de.query(By.css('dot-menu'));
 
         expect(actionButtonTooltip).not.toBeNull();
@@ -117,7 +119,7 @@ describe('ActionMenuButtonComponent', () => {
 
         spyOn(fakeActions[0].menuItem, 'command');
 
-        const actionButtonTooltip = de.query(By.css('dot-icon-button-tooltip'));
+        const actionButtonTooltip = de.query(By.css('[data-testid="dot-action-tooltip-button"]'));
         actionButtonTooltip.nativeElement.click();
 
         expect(fakeActions[0].menuItem.command).toHaveBeenCalledTimes(1);
@@ -203,7 +205,7 @@ describe('ActionMenuButtonComponent', () => {
         comp.item = mockContentType;
         fixture.detectChanges();
 
-        expect(de.query(By.css('dot-icon-button-tooltip')) === null).toEqual(
+        expect(de.query(By.css('[data-testid="dot-action-tooltip-button"]')) === null).toEqual(
             true,
             'tooltip button hide'
         );

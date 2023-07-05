@@ -2,11 +2,10 @@ import { CommonModule } from '@angular/common';
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
+import { ButtonModule } from 'primeng/button';
 import { Menu, MenuModule } from 'primeng/menu';
-
-import { UiDotIconButtonModule } from '@dotcms/ui';
 
 import { DotMenuComponent } from './dot-menu.component';
 
@@ -34,7 +33,7 @@ describe('DotMenuComponent', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
             declarations: [DotMenuComponent],
-            imports: [CommonModule, BrowserAnimationsModule, UiDotIconButtonModule, MenuModule]
+            imports: [CommonModule, ButtonModule, MenuModule, NoopAnimationsModule]
         }).compileComponents();
     });
 
@@ -48,13 +47,13 @@ describe('DotMenuComponent', () => {
     });
 
     it('should set the button to float', () => {
-        expect(button.attributes.float).toBeDefined();
-
         component.float = false;
         fixture.detectChanges();
         button = fixture.debugElement.query(By.css('.dot-menu__button'));
 
-        expect(button.attributes.float).not.toBeDefined();
+        expect(
+            (button.componentInstance.styleClass as string).includes('p-button-text')
+        ).toBeTrue();
     });
 
     it('should pass menu items to the Menu', () => {
