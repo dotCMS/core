@@ -67,3 +67,4 @@ This maintenance release includes the following code fixes:
 52. https://github.com/dotCMS/core/issues/23395 : When you hit the Publish action from the tasks page you get the Push Publish dialog #23395
 53. https://github.com/dotCMS/core/issues/22872 : Lucene queries for personas returning unexpected results #22872
 54. https://github.com/dotCMS/core/issues/23175 : Add a "Velocity Secrets" app and viewtool #23175
+55. https://github.com/dotCMS/core/issues/23199 : Unable to create contentlet through workflow API even if user has appropriate permissions #23199

@@ -1104,6 +1104,20 @@ public interface WorkflowAPI {
 	 */
 	Map<String, List<WorkflowScheme>> findSchemesMapForContentType(List<ContentType> contentTypes)  throws DotDataException;
 
+	/**
+	 * Find the {@link WorkflowAction} associated to the {@link WorkflowScheme} and the permissions associated with
+	 * provided contentlet's content type.
+	 *
+	 * @param scheme {@link WorkflowScheme}
+	 * @param user   {@link User}
+	 * @param contentlet {@link Contentlet}
+	 * @return List of WorkflowAction
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	List<WorkflowAction> findActions(WorkflowScheme scheme, User user, Contentlet contentlet)
+			throws DotDataException, DotSecurityException;
+
 
 	void fireBulkActionTasks(final WorkflowAction action,
 			final User user,

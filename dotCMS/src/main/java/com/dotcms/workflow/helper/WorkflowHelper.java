@@ -399,7 +399,7 @@ public class WorkflowHelper {
                 continue; // we already analized this scheme
             }
 
-            foundAction = this.findActionsOn(actionName, workflowAPI.findActions(scheme, user));
+            foundAction = this.findActionsOn(actionName, workflowAPI.findActions(scheme, user, contentlet));
             if (foundAction.isPresent()) {
 
                 return foundAction.get().getId();

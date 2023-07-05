@@ -109,6 +109,34 @@ public interface PermissionAPI {
 
    }
 
+	boolean doesUserHavePermission(Permissionable permissionable,
+								   int permissionType,
+								   User user,
+								   boolean respectFrontendRoles,
+								   Contentlet contentlet) throws DotDataException;
+
+	/**
+	 * Filters the given list of permissionables that meet the required permission mask using the contentlet's content
+	 * type to evaluate its permisisions when contentlet is new.
+	 *
+	 * @param <P> The type of permissionable given to the method
+	 * @param permissionables
+	 * @param requiredPermission
+	 * @param respectFrontendRoles
+	 * @param user
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 * @since 1.6
+	 * @version 1.8
+	 */
+	<P extends Permissionable> List<P> filterCollection(List<P> permissionables,
+														int requiredPermission,
+														boolean respectFrontendRoles,
+														User user,
+														Contentlet contentlet)
+			throws DotDataException, DotSecurityException;
+
 
 
 
