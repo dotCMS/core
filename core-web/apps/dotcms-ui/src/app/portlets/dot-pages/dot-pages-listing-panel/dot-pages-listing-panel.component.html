@@ -131,7 +131,7 @@
                 </td>
                 <td>{{ rowData['modDate'] | dotRelativeDate }}</td>
                 <td>
-                    <dot-icon-button
+                    <p-button
                         id="pageActionButton-{{ rowIndex }}"
                         (click)="
                             showActionsMenu.emit({
@@ -140,9 +140,9 @@
                                 item: rowData
                             })
                         "
-                        icon="more_vert"
-                        size="32"
-                    ></dot-icon-button>
+                        icon="pi pi-ellipsis-v"
+                        styleClass="p-button-rounded p-button-sm p-button-text"
+                    ></p-button>
                 </td>
             </tr>
         </ng-template>

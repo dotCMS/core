@@ -1,7 +1,7 @@
 import { Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { Component, DebugElement, Input } from '@angular/core';
+import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
@@ -26,7 +26,7 @@ import {
     DotcmsConfigService,
     SiteService
 } from '@dotcms/dotcms-js';
-import { DotMessagePipeModule, UiDotIconButtonModule } from '@dotcms/ui';
+import { DotMessagePipeModule } from '@dotcms/ui';
 import {
     DotcmsConfigServiceMock,
     dotcmsContentletMock,
@@ -38,14 +38,6 @@ import {
 import { DotPagesListingPanelComponent } from './dot-pages-listing-panel.component';
 
 import { DotPageStore } from '../dot-pages-store/dot-pages.store';
-
-@Component({
-    selector: 'dot-icon',
-    template: ''
-})
-class MockDotIconComponent {
-    @Input() name: string;
-}
 
 const messageServiceMock = new MockDotMessageService({});
 
@@ -144,7 +136,7 @@ describe('DotPagesListingPanelComponent', () => {
     describe('Empty state', () => {
         beforeEach(() => {
             TestBed.configureTestingModule({
-                declarations: [DotPagesListingPanelComponent, MockDotIconComponent],
+                declarations: [DotPagesListingPanelComponent],
                 imports: [
                     CommonModule,
                     ButtonModule,
@@ -157,7 +149,6 @@ describe('DotPagesListingPanelComponent', () => {
                     SkeletonModule,
                     TableModule,
                     TooltipModule,
-                    UiDotIconButtonModule,
                     OverlayPanelModule
                 ],
                 providers: [
