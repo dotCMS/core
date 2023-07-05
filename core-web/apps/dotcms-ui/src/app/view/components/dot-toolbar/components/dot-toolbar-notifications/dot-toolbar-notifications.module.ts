@@ -5,7 +5,6 @@ import { ButtonModule } from 'primeng/button';
 
 import { DotCustomTimeModule } from '@components/_common/dot-custom-time.component/dot-custom-time.module';
 import { DotDropdownModule } from '@components/_common/dot-dropdown-component/dot-dropdown.module';
-import { UiDotIconButtonModule } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import {
@@ -15,14 +14,7 @@ import {
 import { DotToolbarNotificationsComponent } from './dot-toolbar-notifications.component';
 
 @NgModule({
-    imports: [
-        CommonModule,
-        DotDropdownModule,
-        ButtonModule,
-        DotCustomTimeModule,
-        DotPipesModule,
-        UiDotIconButtonModule
-    ],
+    imports: [CommonModule, DotDropdownModule, ButtonModule, DotCustomTimeModule, DotPipesModule],
     exports: [DotToolbarNotificationsComponent],
     declarations: [
         DotToolbarNotificationsComponent,
