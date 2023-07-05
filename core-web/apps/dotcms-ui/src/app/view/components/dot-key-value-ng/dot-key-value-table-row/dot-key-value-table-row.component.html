@@ -64,15 +64,17 @@
             ></button>
         </ng-template>
         <ng-template #formButtons>
-            <dot-icon-button
+            <p-button
                 (click)="delete.emit(variableCopy)"
-                icon="delete_outline"
-            ></dot-icon-button>
-            <dot-icon-button
-                [attr.disabled]="isHiddenField || null"
+                icon="pi pi-trash"
+                styleClass="p-button-text p-button-danger p-button-rounded"
+            ></p-button>
+            <p-button
+                [disabled]="isHiddenField || null"
                 (click)="focusKeyInput($event)"
-                icon="edit"
-            ></dot-icon-button>
+                icon="pi pi-pencil"
+                styleClass="p-button-text  p-button-rounded"
+            ></p-button>
         </ng-template>
     </td>
 </tr>
