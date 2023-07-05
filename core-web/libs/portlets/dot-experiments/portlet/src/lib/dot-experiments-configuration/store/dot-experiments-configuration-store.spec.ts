@@ -19,7 +19,7 @@ import {
     ComponentStatus,
     DEFAULT_VARIANT_NAME,
     DotExperiment,
-    DotExperimentStatusList,
+    DotExperimentStatus,
     ExperimentSteps,
     GOAL_OPERATORS,
     GOAL_PARAMETERS,
@@ -659,7 +659,7 @@ describe('DotExperimentsConfigurationStore', () => {
             };
             const expectedExperiment: DotExperiment = {
                 ...EXPERIMENT_MOCK_2,
-                status: DotExperimentStatusList.RUNNING
+                status: DotExperimentStatus.RUNNING
             };
 
             dotExperimentsService.getById.mockReturnValue(of({ ...experimentWithGoalsAndVariant }));
@@ -675,7 +675,7 @@ describe('DotExperimentsConfigurationStore', () => {
             store.startExperiment(experimentWithGoalsAndVariant);
 
             store.state$.subscribe(({ experiment, status }) => {
-                expect(experiment.status).toEqual(DotExperimentStatusList.RUNNING);
+                expect(experiment.status).toEqual(DotExperimentStatus.RUNNING);
                 expect(status).toEqual(ComponentStatus.IDLE);
                 done();
             });
@@ -687,7 +687,7 @@ describe('DotExperimentsConfigurationStore', () => {
             dotExperimentsService.stop.mockReturnValue(
                 of({
                     ...EXPERIMENT_MOCK_2,
-                    status: DotExperimentStatusList.ENDED
+                    status: DotExperimentStatus.ENDED
                 })
             );
 
@@ -696,7 +696,7 @@ describe('DotExperimentsConfigurationStore', () => {
             store.stopExperiment(EXPERIMENT_MOCK_2);
 
             store.state$.subscribe(({ experiment }) => {
-                expect(experiment.status).toEqual(DotExperimentStatusList.ENDED);
+                expect(experiment.status).toEqual(DotExperimentStatus.ENDED);
                 done();
             });
         });
@@ -713,13 +713,13 @@ describe('DotExperimentsConfigurationStore', () => {
 
         it('should call the cancel experiment method when cancel scheduling', (done) => {
             dotExperimentsService.getById.mockReturnValue(
-                of({ ...EXPERIMENT_MOCK_2, status: DotExperimentStatusList.SCHEDULED })
+                of({ ...EXPERIMENT_MOCK_2, status: DotExperimentStatus.SCHEDULED })
             );
 
             dotExperimentsService.cancelSchedule.mockReturnValue(
                 of({
                     ...EXPERIMENT_MOCK_2,
-                    status: DotExperimentStatusList.DRAFT
+                    status: DotExperimentStatus.DRAFT
                 })
             );
 

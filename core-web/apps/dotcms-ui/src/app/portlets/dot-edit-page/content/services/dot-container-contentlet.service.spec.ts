@@ -65,7 +65,7 @@ describe('DotContainerContentletService', () => {
         dotContainerContentletService
             .getContentletToContainer(pageContainer, pageContent, dotPage)
             .subscribe();
-        httpMock.expectOne(`v1/containers/content/2?containerId=1&pageInode=2`);
+        httpMock.expectOne(`v1/containers/content/2?containerId=1&pageInode=2&variantName=DEFAULT`);
     });
 
     it('should do a request for get the form html code', () => {

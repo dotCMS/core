@@ -48,16 +48,47 @@ public class ConsoleLoadingAnimation implements Runnable {
     private final Queue<String> animationQueue;
     private final long animationDelay;
 
+    private final OutputOptionMixin out;
+
     /**
      * Creates a new ConsoleLoadingAnimation object with the given parameters.
      *
+     * @param output       the OutputOptionMixin object that will be used to print the animation.
+     * @param futureResult the Future object that will be used to check if the animation should
+     *                     stop.
+     */
+    public ConsoleLoadingAnimation(
+            OutputOptionMixin output,
+            Future<?> futureResult
+    ) {
+
+        this.out = output;
+
+        this.futureResult = futureResult;
+        this.animationDelay = 250;
+
+        this.animationQueue = new ArrayDeque<>();  // Initialize an ArrayDeque as the animationQueue
+        // Add characters from the array to the queue
+        animationQueue.addAll(Arrays.asList(ANIMATION_CHARS_SIMPLE));
+    }
+
+    /**
+     * Creates a new ConsoleLoadingAnimation object with the given parameters.
+     *
+     * @param output         the OutputOptionMixin object that will be used to print the animation.
      * @param futureResult   the Future object that will be used to check if the animation should
      *                       stop.
      * @param animationChars the array of characters that will be used to create the animation.
      * @param animationDelay the delay between each animation frame.
      */
-    public ConsoleLoadingAnimation(Future<?> futureResult, String[] animationChars,
-            long animationDelay) {
+    public ConsoleLoadingAnimation(
+            OutputOptionMixin output,
+            Future<?> futureResult,
+            String[] animationChars,
+            long animationDelay
+    ) {
+
+        this.out = output;
 
         this.futureResult = futureResult;
         this.animationDelay = animationDelay;
@@ -79,14 +110,14 @@ public class ConsoleLoadingAnimation implements Runnable {
 
                 var nextCharacter = animationQueue.poll();  // Retrieve the next character from the front of the queue
                 animationQueue.offer(nextCharacter);  // Add the character back to the end of the queue
-                System.out.print("\r" + nextCharacter);
+                this.out.print(String.format("\r@|bold,yellow %s|@", nextCharacter));
 
                 Thread.sleep(animationDelay);
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } finally {
-            System.out.print("\r"); // Clear the animation
+            this.out.print("\r"); // Clear the animation
         }
     }
 }

@@ -45,7 +45,7 @@ describe('DotEditPageService', () => {
 
         dotEditPageService.save(pageId, model).subscribe();
 
-        const req = httpMock.expectOne(`v1/page/${pageId}/content`);
+        const req = httpMock.expectOne(`v1/page/${pageId}/content?variantName=DEFAULT`);
         expect(req.request.method).toBe('POST');
         expect(req.request.body).toBe(model);
         req.flush({});

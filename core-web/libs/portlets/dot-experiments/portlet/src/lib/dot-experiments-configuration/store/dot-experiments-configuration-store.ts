@@ -16,7 +16,7 @@ import {
     ConditionDefaultByTypeOfGoal,
     CONFIGURATION_CONFIRM_DIALOG_KEY,
     DotExperiment,
-    DotExperimentStatusList,
+    DotExperimentStatus,
     ExperimentSteps,
     Goal,
     Goals,
@@ -59,7 +59,7 @@ export interface ConfigurationViewModel {
     isExperimentADraft: boolean;
     disabledStartExperiment: boolean;
     showExperimentSummary: boolean;
-    experimentStatus: DotExperimentStatusList;
+    experimentStatus: DotExperimentStatus;
     isSaving: boolean;
     isDescriptionSaving: boolean;
     menuItems: MenuItem[];
@@ -77,21 +77,21 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     readonly getExperimentId$: Observable<string> = this.select(({ experiment }) => experiment.id);
 
     readonly isExperimentADraft$: Observable<boolean> = this.select(
-        ({ experiment }) => experiment?.status === DotExperimentStatusList.DRAFT
+        ({ experiment }) => experiment?.status === DotExperimentStatus.DRAFT
     );
     readonly disabledStartExperiment$: Observable<boolean> = this.select(({ experiment }) =>
         this.disableStartExperiment(experiment)
     );
 
-    readonly getExperimentStatus$: Observable<DotExperimentStatusList> = this.select(
+    readonly getExperimentStatus$: Observable<DotExperimentStatus> = this.select(
         ({ experiment }) => experiment?.status
     );
 
     readonly showExperimentSummary$: Observable<boolean> = this.select(({ experiment }) =>
         Object.values([
-            DotExperimentStatusList.ENDED,
-            DotExperimentStatusList.RUNNING,
-            DotExperimentStatusList.ARCHIVED
+            DotExperimentStatus.ENDED,
+            DotExperimentStatus.RUNNING,
+            DotExperimentStatus.ARCHIVED
         ]).includes(experiment?.status)
     );
 
@@ -242,12 +242,12 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                             this.messageService.add({
                                 severity: 'info',
                                 summary: this.dotMessageService.get(
-                                    response.status === DotExperimentStatusList.RUNNING
+                                    response.status === DotExperimentStatus.RUNNING
                                         ? 'experiments.action.start.confirm-title'
                                         : 'experiments.action.scheduled.confirm-title'
                                 ),
                                 detail: this.dotMessageService.get(
-                                    response.status === DotExperimentStatusList.RUNNING
+                                    response.status === DotExperimentStatus.RUNNING
                                         ? 'experiments.action.start.confirm-message'
                                         : 'experiments.action.scheduled.confirm-message',
                                     experiment.name
@@ -886,13 +886,13 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         return [
             {
                 label: this.setStartLabel(experiment),
-                visible: experiment?.status === DotExperimentStatusList.DRAFT,
+                visible: experiment?.status === DotExperimentStatus.DRAFT,
                 disabled: this.disableStartExperiment(experiment),
                 command: () => this.startExperiment(experiment)
             },
             {
                 label: this.dotMessageService.get('experiments.action.end-experiment'),
-                visible: experiment?.status === DotExperimentStatusList.RUNNING,
+                visible: experiment?.status === DotExperimentStatus.RUNNING,
                 disabled: this.disableStartExperiment(experiment),
                 command: () => {
                     this.confirmationService.confirm({
@@ -912,7 +912,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
             },
             {
                 label: this.dotMessageService.get('experiments.configure.scheduling.cancel'),
-                visible: experiment?.status === DotExperimentStatusList.SCHEDULED,
+                visible: experiment?.status === DotExperimentStatus.SCHEDULED,
                 command: () => {
                     this.confirmationService.confirm({
                         key: CONFIGURATION_CONFIRM_DIALOG_KEY,

@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { AsyncPipe, JsonPipe, NgIf } from '@angular/common';
+import { AsyncPipe, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -15,7 +15,7 @@ import {
     ComponentStatus,
     CONFIGURATION_CONFIRM_DIALOG_KEY,
     DotExperiment,
-    DotExperimentStatusList
+    DotExperimentStatus
 } from '@dotcms/dotcms-models';
 import { DotMessagePipe, DotMessagePipeModule } from '@dotcms/ui';
 
@@ -37,7 +37,6 @@ import { DotExperimentsInlineEditTextComponent } from '../shared/ui/dot-experime
     standalone: true,
     imports: [
         AsyncPipe,
-        JsonPipe,
         NgIf,
         DotMessagePipeModule,
         DotExperimentsUiHeaderComponent,
@@ -64,7 +63,7 @@ import { DotExperimentsInlineEditTextComponent } from '../shared/ui/dot-experime
 })
 export class DotExperimentsConfigurationComponent implements OnInit {
     vm$: Observable<ConfigurationViewModel> = this.dotExperimentsConfigurationStore.vm$;
-    experimentStatus = DotExperimentStatusList;
+    experimentStatus = DotExperimentStatus;
     confirmDialogKey = CONFIGURATION_CONFIRM_DIALOG_KEY;
     protected readonly ComponentStatus = ComponentStatus;
 
