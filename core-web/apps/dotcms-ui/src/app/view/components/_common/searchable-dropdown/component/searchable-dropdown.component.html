@@ -24,6 +24,7 @@
 
 <ng-template #defaultSelectTemplate let-item="item">
     <button
+        class="p-button-text"
         #button
         *ngIf="label"
         [label]="label"
@@ -53,14 +54,11 @@
             ></ng-container>
         </div>
         <div class="searchable-dropdown__search-action" *ngIf="action">
-            <dot-icon-button
+            <p-button
                 (click)="action()"
-                secondary
-                size="36"
-                square
-                icon="add"
-                big
-            ></dot-icon-button>
+                icon="pi pi-plus"
+                styleClass="p-button-text p-button-rounded"
+            ></p-button>
         </div>
     </header>
 

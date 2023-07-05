@@ -15,7 +15,7 @@ import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotIconModule, UiDotIconButtonModule } from '@dotcms/ui';
+import { DotIconModule } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
@@ -108,7 +108,6 @@ describe('SearchableDropdownComponent', () => {
                 ...SEARCHABLE_NGFACES_MODULES,
                 BrowserAnimationsModule,
                 DotIconModule,
-                UiDotIconButtonModule,
                 DotPipesModule
             ],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
@@ -147,7 +146,7 @@ describe('SearchableDropdownComponent', () => {
     });
 
     it('should have placeholder set', () => {
-        expect(mainButton.nativeElement.innerText).toBe('placeholder');
+        expect(mainButton.nativeElement.innerText).toBe('Placeholder');
     });
 
     it('should disabled', () => {
@@ -231,9 +230,9 @@ describe('SearchableDropdownComponent', () => {
 
         hostFixture.detectChanges();
         const actionBtn = de.query(
-            By.css('.searchable-dropdown__search-action dot-icon-button')
+            By.css('.searchable-dropdown__search-action p-button')
         ).componentInstance;
-        expect(actionBtn.icon).toBe('add');
+        expect(actionBtn.icon).toBe('pi pi-plus');
     });
 
     it('should display defaultFilterTemplate', () => {
@@ -244,7 +243,7 @@ describe('SearchableDropdownComponent', () => {
     });
 
     it('should not display Action button', () => {
-        const actionBtn = de.query(By.css('.searchable-dropdown__search-action dot-icon-button'));
+        const actionBtn = de.query(By.css('.searchable-dropdown__search-action p-button'));
         expect(actionBtn).toBeNull();
     });
 
@@ -479,7 +478,6 @@ describe('SearchableDropdownComponent', () => {
                 ...SEARCHABLE_NGFACES_MODULES,
                 BrowserAnimationsModule,
                 DotIconModule,
-                UiDotIconButtonModule,
                 DotPipesModule
             ],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
