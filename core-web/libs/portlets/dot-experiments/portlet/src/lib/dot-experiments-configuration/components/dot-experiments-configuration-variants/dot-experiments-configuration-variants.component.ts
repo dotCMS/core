@@ -21,7 +21,7 @@ import { DotSessionStorageService } from '@dotcms/data-access';
 import {
     ComponentStatus,
     DEFAULT_VARIANT_NAME,
-    DotExperimentStatusList,
+    DotExperimentStatus,
     DotPageMode,
     ExperimentSteps,
     MAX_INPUT_TITLE_LENGTH,
@@ -86,7 +86,7 @@ export class DotExperimentsConfigurationVariantsComponent {
     protected readonly maxVariantsAllowed = MAX_VARIANTS_ALLOWED;
     protected readonly defaultVariantName = DEFAULT_VARIANT_NAME;
     protected readonly maxInputTitleLength = MAX_INPUT_TITLE_LENGTH;
-    protected readonly DotExperimentStatusList = DotExperimentStatusList;
+    protected readonly DotExperimentStatusList = DotExperimentStatus;
     private componentRef: ComponentRef<DotExperimentsConfigurationVariantsAddComponent>;
 
     constructor(

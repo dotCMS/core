@@ -12,10 +12,12 @@ import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
+import { ConfirmDialog } from 'primeng/confirmdialog';
 import { ConfirmPopup } from 'primeng/confirmpopup';
+import { Menu } from 'primeng/menu';
 
 import { DotMessageService, DotSessionStorageService } from '@dotcms/data-access';
-import { ComponentStatus, DotExperimentStatusList, PROP_NOT_FOUND } from '@dotcms/dotcms-models';
+import { ComponentStatus, PROP_NOT_FOUND } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 import { getExperimentMock, MockDotMessageService } from '@dotcms/utils-testing';
@@ -66,12 +68,12 @@ const defaultVmMock: ConfigurationViewModel = {
     },
     isLoading: false,
     isExperimentADraft: false,
-    runExperimentBtnLabel: '',
     disabledStartExperiment: false,
     showExperimentSummary: false,
     isSaving: false,
     experimentStatus: null,
-    isDescriptionSaving: false
+    isDescriptionSaving: false,
+    menuItems: null
 };
 
 @Component({
@@ -149,11 +151,6 @@ describe('DotExperimentsConfigurationComponent', () => {
         expect(spectator.query(DotExperimentsInlineEditTextComponent)).toExist();
     });
 
-    it('should show Start Experiment button if isExperimentADraft true', () => {
-        spectator.detectChanges();
-        expect(spectator.query(byTestId('start-experiment-button'))).toExist();
-    });
-
     it("shouldn't show Start Experiment button if isExperimentADraft false", () => {
         spectator.component.vm$ = of({
             ...defaultVmMock,
@@ -164,45 +161,44 @@ describe('DotExperimentsConfigurationComponent', () => {
         expect(spectator.query(byTestId('start-experiment-button'))).not.toExist();
     });
 
-    it('should show Stop Experiment button if experiment status is running and call stopExperiment after confirmation', () => {
+    it('should show Stop Experiment  after confirmation', () => {
         jest.spyOn(dotExperimentsConfigurationStore, 'stopExperiment');
         dotExperimentsService.stop.mockReturnValue(of());
 
-        spectator.component.vm$ = of({
-            ...defaultVmMock,
-            experimentStatus: DotExperimentStatusList.RUNNING
-        });
         spectator.detectChanges();
 
-        spectator.click(byTestId('stop-experiment-button'));
-        spectator.query(ConfirmPopup).accept();
+        expect(spectator.query(byTestId('experiment-button-menu'))).toExist();
+
+        spectator.dispatchMouseEvent(spectator.query(byTestId('experiment-button-menu')), 'click');
+        spectator.detectComponentChanges();
+
+        expect(spectator.query(Menu)).toExist();
+        spectator.query(Menu).model[1].command();
+
+        spectator.query(ConfirmDialog).accept();
 
         expect(dotExperimentsConfigurationStore.stopExperiment).toHaveBeenCalledWith(
             EXPERIMENT_MOCK
         );
     });
 
-    it('should show hide stop Experiment button if experiment status is different than running', () => {
-        spectator.component.vm$ = of({
-            ...defaultVmMock,
-            experimentStatus: DotExperimentStatusList.DRAFT
-        });
-        spectator.detectChanges();
-        expect(spectator.query(byTestId('stop-experiment-button'))).not.toExist();
-    });
+    it('should un schedule the experiment after confirmation', () => {
+        jest.spyOn(dotExperimentsConfigurationStore, 'cancelSchedule');
 
-    it('should show Start Experiment button disabled if disabledStartExperiment true', () => {
-        spectator.component.vm$ = of({
-            ...defaultVmMock,
-            isExperimentADraft: true,
-            disabledStartExperiment: true
-        });
         spectator.detectChanges();
 
-        const startButton = spectator.query(
-            byTestId('start-experiment-button')
-        ) as HTMLButtonElement;
+        expect(spectator.query(byTestId('experiment-button-menu'))).toExist();
 
-        expect(startButton.disabled).toEqual(true);
+        spectator.dispatchMouseEvent(spectator.query(byTestId('experiment-button-menu')), 'click');
+        spectator.detectComponentChanges();
+
+        expect(spectator.query(Menu)).toExist();
+        spectator.query(Menu).model[2].command();
+
+        spectator.query(ConfirmDialog).accept();
+
+        expect(dotExperimentsConfigurationStore.cancelSchedule).toHaveBeenCalledWith(
+            EXPERIMENT_MOCK
+        );
     });
 });

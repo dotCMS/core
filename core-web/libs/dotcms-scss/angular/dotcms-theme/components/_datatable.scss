@@ -1,7 +1,5 @@
 @use "variables" as *;
 
-$datatable-bg-hover: $color-palette-black-op-10;
-
 .p-datatable .p-paginator-top {
     border-width: 0 0 1px 0;
     border-radius: 0;
@@ -140,7 +138,7 @@ $datatable-bg-hover: $color-palette-black-op-10;
 .p-datatable .p-datatable-tbody > tr > td .p-row-editor-cancel:enabled:hover {
     color: $text-color-hover;
     border-color: transparent;
-    background: $datatable-bg-hover;
+    background: $color-palette-primary-100;
 }
 
 .p-datatable .p-datatable-tbody > tr > td .p-row-toggler:focus,
@@ -168,16 +166,17 @@ $datatable-bg-hover: $color-palette-black-op-10;
 }
 
 .p-datatable .p-datatable-tbody > tr.p-datatable-dragpoint-top > td {
-    box-shadow: inset 0 2px 0 0 $datatable-bg-hover;
+    box-shadow: inset 0 2px 0 0 $color-palette-primary-100;
 }
 
 .p-datatable .p-datatable-tbody > tr.p-datatable-dragpoint-bottom > td {
-    box-shadow: inset 0 -2px 0 0 $datatable-bg-hover;
+    box-shadow: inset 0 -2px 0 0 $color-palette-primary-100;
 }
 
 .p-datatable.p-datatable-hoverable-rows .p-datatable-tbody > tr:not(.p-highlight):hover {
-    background: $datatable-bg-hover;
+    background: $color-palette-primary-100;
     color: $text-color-hover;
+    transition: background-color ease-in $basic-speed;
 }
 
 .p-datatable.p-datatable-hoverable-rows .p-datatable-tbody > tr.disabled-row:hover {
@@ -232,7 +231,7 @@ $datatable-bg-hover: $color-palette-black-op-10;
 }
 
 .p-datatable.p-datatable-striped .p-datatable-tbody > tr:nth-child(even).p-highlight {
-    background: $datatable-bg-hover;
+    background: $color-palette-primary-100;
     color: $text-color-highlight;
 }
 
@@ -291,9 +290,9 @@ $datatable-bg-hover: $color-palette-black-op-10;
 }
 
 .p-datatable .p-sortable-column:focus {
-    background-color: $datatable-bg-hover;
+    background-color: $color-palette-primary-100;
 }
 
 .p-datatable .p-datatable-tbody > tr:not(.p-highlight):focus {
-    background-color: $datatable-bg-hover;
+    background-color: $color-palette-primary-100;
 }

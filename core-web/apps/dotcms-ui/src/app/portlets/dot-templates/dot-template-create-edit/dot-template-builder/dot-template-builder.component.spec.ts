@@ -99,7 +99,9 @@ export class IframeMockComponent {
     selector: 'p-tabView',
     template: '<ng-content></ng-content>'
 })
-export class TabViewMockComponent {}
+export class TabViewMockComponent {
+    @Input() styleClass: string;
+}
 
 @Component({
     // eslint-disable-next-line @angular-eslint/component-selector
@@ -127,6 +129,12 @@ class DotTestHostComponent {
     @ViewChild('builder') builder: DotTemplateBuilderComponent;
     item: DotTemplateItem;
 }
+
+const ITEM_FOR_NEW_TEMPLATE_BUILDER = {
+    ...EMPTY_TEMPLATE_DESIGN,
+    theme: '123',
+    live: true
+};
 
 describe('DotTemplateBuilderComponent', () => {
     let component: DotTemplateBuilderComponent;
@@ -188,11 +196,7 @@ describe('DotTemplateBuilderComponent', () => {
 
     describe('design', () => {
         beforeEach(() => {
-            component.item = {
-                ...EMPTY_TEMPLATE_DESIGN,
-                theme: '123',
-                live: true
-            };
+            component.item = ITEM_FOR_NEW_TEMPLATE_BUILDER;
             fixture.detectChanges();
         });
 
@@ -282,6 +286,17 @@ describe('DotTemplateBuilderComponent', () => {
 
             (btnsave.nativeElement as HTMLElement).click();
             expect(component.saveAndPublish.emit).toHaveBeenCalled();
+        });
+
+        it('should add style classes if new template builder feature flag is on', () => {
+            fixture = TestBed.createComponent(DotTemplateBuilderComponent); // new fixture as async pipe was running before function was replaced
+            fixture.componentInstance.item = ITEM_FOR_NEW_TEMPLATE_BUILDER;
+            fixture.detectChanges();
+            const tabView = fixture.debugElement.query(By.css('p-tabView'));
+            const tabViewComponent: TabViewMockComponent = tabView.componentInstance;
+            expect(tabViewComponent.styleClass).toEqual(
+                'dot-template-builder__new-template-builder'
+            );
         });
     });
 
