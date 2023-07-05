@@ -17,8 +17,7 @@ import {
     DotWorkflowsActionsService,
     DotPageRenderService,
     DotPageTypesService,
-    DotPageWorkflowsActionsService,
-    DotSessionStorageService
+    DotPageWorkflowsActionsService
 } from '@dotcms/data-access';
 
 import { DotPagesCreatePageDialogComponent } from './dot-pages-create-page-dialog/dot-pages-create-page-dialog.component';
@@ -51,8 +50,7 @@ import { DotPagesComponent } from './dot-pages.component';
         DotWorkflowActionsFireService,
         DotWorkflowEventHandlerService,
         DotRouterService,
-        DotFavoritePageService,
-        DotSessionStorageService
+        DotFavoritePageService
     ]
 })
 export class DotPagesModule {}
