@@ -62,8 +62,10 @@ jobs:
           # custom_starter_url: ${{ secrets.CUSTOM_STARTER_URL }}
 
       - name: run-cli-tests
-        working-directory: ./tools/dotcms-cli
+        working-directory: ${{ github.WORKSPACE }}
         run: |
+          pwd
+          cd tools/dotcms-cli
           echo "Running CLI tests"
           ./gradlew clean test
 
