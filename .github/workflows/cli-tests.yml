@@ -23,6 +23,11 @@ jobs:
         working-directory: ./cicd/docker
         run: |
           pwd
+          export DOTCMS_IMAGE='dotcms/dotcms:master_a90c97d_SNAPSHOT'
+          export DB_TYPE='postgres'
+          export TEST_TYPE='cli'
+          export WAIT_FOR_DEPS='60'
+
           docker-compose -f dotcms-compose.yml -f postgres-compose.yml -f open-distro-compose.yml up -d
 
       # - id: docker-compose-setup
