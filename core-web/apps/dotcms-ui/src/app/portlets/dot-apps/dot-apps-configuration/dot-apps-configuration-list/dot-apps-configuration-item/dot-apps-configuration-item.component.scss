@@ -14,17 +14,21 @@
         box-shadow: $md-shadow-5;
     }
 
-    dot-icon {
-        align-self: center;
+    p-button {
         margin-right: $spacing-3;
-        text-align: end;
-        width: 100%;
-        color: $color-palette-primary;
     }
 }
 
 .dot-apps-configuration-list__host-configured {
     display: flex;
+
+    .host-configured__warning-icon {
+        color: $color-palette-primary;
+        align-self: center;
+        margin-right: $spacing-3;
+        text-align: end;
+        width: 100%;
+    }
 }
 
 .dot-apps-configuration-list__name {
