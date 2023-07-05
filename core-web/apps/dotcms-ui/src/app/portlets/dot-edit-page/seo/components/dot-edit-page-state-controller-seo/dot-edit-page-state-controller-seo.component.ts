@@ -20,6 +20,7 @@ import {
     DotPersonalizeService
 } from '@dotcms/data-access';
 import {
+    DotDevice,
     DotExperimentStatusList,
     DotPageMode,
     DotPageRenderOptions,
@@ -287,5 +288,15 @@ we want to show the lock off so the new user can steal the lock
 
     private updatePageState(options: DotPageRenderOptions, lock: boolean = null) {
         this.dotPageStateService.setLock(options, lock);
+    }
+
+    /**
+     * Handle changes in Device Selector.
+     *
+     * @param DotDevice device
+     * @memberof DotEditPageViewAsControllerComponent
+     */
+    changeDeviceHandler(device: DotDevice): void {
+        this.dotPageStateService.setDevice(device);
     }
 }

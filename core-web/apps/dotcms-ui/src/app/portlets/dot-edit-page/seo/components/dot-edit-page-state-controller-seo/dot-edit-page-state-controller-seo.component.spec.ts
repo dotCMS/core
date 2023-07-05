@@ -36,14 +36,13 @@ import {
 } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
-import { DotEditPageLockInfoComponent } from './components/dot-edit-page-lock-info/dot-edit-page-lock-info-seo.component';
-import { DotEditPageStateControllerComponent } from './dot-edit-page-state-controller-seo.component';
+import { DotEditPageLockInfoSeoComponent } from './components/dot-edit-page-lock-info/dot-edit-page-lock-info-seo.component';
+import { DotEditPageStateControllerSeoComponent } from './dot-edit-page-state-controller-seo.component';
 
-import { DotPageStateService } from '../../services/dot-page-state/dot-page-state.service';
+import { DotPageStateService } from '../../../content/services/dot-page-state/dot-page-state.service';
 
 const mockDotMessageService = new MockDotMessageService({
     'editpage.toolbar.edit.page': 'Edit',
-    'editpage.toolbar.live.page': 'Live',
     'editpage.toolbar.preview.page': 'Preview',
     'editpage.content.steal.lock.confirmation.message.header': 'Lock',
     'editpage.content.steal.lock.confirmation.message': 'Steal lock',
@@ -77,10 +76,10 @@ const pageRenderStateMock: DotPageRenderState = new DotPageRenderState(
 @Component({
     selector: 'dot-test-host-component',
     template: `
-        <dot-edit-page-state-controller
+        <dot-edit-page-state-controller-seo
             [pageState]="pageState"
             [variant]="variant"
-        ></dot-edit-page-state-controller>
+        ></dot-edit-page-state-controller-seo>
     `
 })
 class TestHostComponent {
@@ -91,7 +90,7 @@ class TestHostComponent {
 describe('DotEditPageStateControllerComponent', () => {
     let fixtureHost: ComponentFixture<TestHostComponent>;
     let componentHost: TestHostComponent;
-    let component: DotEditPageStateControllerComponent;
+    let component: DotEditPageStateControllerSeoComponent;
     let de: DebugElement;
     let deHost: DebugElement;
     let dotPageStateService: DotPageStateService;
@@ -102,8 +101,8 @@ describe('DotEditPageStateControllerComponent', () => {
         DOTTestBed.configureTestingModule({
             declarations: [
                 TestHostComponent,
-                DotEditPageStateControllerComponent,
-                DotEditPageLockInfoComponent
+                DotEditPageStateControllerSeoComponent,
+                DotEditPageLockInfoSeoComponent
             ],
             providers: [
                 {
@@ -128,7 +127,7 @@ describe('DotEditPageStateControllerComponent', () => {
         fixtureHost = DOTTestBed.createComponent(TestHostComponent);
         deHost = fixtureHost.debugElement;
         componentHost = fixtureHost.componentInstance;
-        de = deHost.query(By.css('dot-edit-page-state-controller'));
+        de = deHost.query(By.css('dot-edit-page-state-controller-seo'));
         component = de.componentInstance;
         dotPageStateService = de.injector.get(DotPageStateService);
         dialogService = de.injector.get(DotAlertConfirmService);
@@ -152,8 +151,7 @@ describe('DotEditPageStateControllerComponent', () => {
                 expect(selectButton).toBeDefined();
                 expect(selectButton.options).toEqual([
                     { label: 'Edit', value: 'EDIT_MODE', disabled: false },
-                    { label: 'Preview', value: 'PREVIEW_MODE', disabled: false },
-                    { label: 'Live', value: 'ADMIN_MODE', disabled: false }
+                    { label: 'Preview', value: 'PREVIEW_MODE', disabled: false }
                 ]);
                 expect(selectButton.value).toBe(DotPageMode.PREVIEW);
             });
@@ -221,25 +219,6 @@ describe('DotEditPageStateControllerComponent', () => {
                 expect(selectButton.options[0]).toEqual({
                     label: 'Edit',
                     value: 'EDIT_MODE',
-                    disabled: true
-                });
-                expect(selectButton.value).toBe(DotPageMode.PREVIEW);
-            });
-
-            it('should disable live', async () => {
-                componentHost.variant = null;
-                componentHost.pageState.page.liveInode = null;
-                fixtureHost.detectChanges();
-                const selectButton = de.query(
-                    By.css('[data-testId="selectButton"]')
-                ).componentInstance;
-
-                await fixtureHost.whenRenderingDone();
-
-                expect(selectButton).toBeDefined();
-                expect(selectButton.options[2]).toEqual({
-                    label: 'Live',
-                    value: 'ADMIN_MODE',
                     disabled: true
                 });
                 expect(selectButton.value).toBe(DotPageMode.PREVIEW);

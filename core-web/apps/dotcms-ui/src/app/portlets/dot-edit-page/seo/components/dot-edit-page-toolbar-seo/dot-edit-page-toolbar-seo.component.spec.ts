@@ -68,10 +68,10 @@ import {
     SiteServiceMock
 } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { DotEditPageStateControllerModule } from '@portlets/dot-edit-page/content/components/dot-edit-page-state-controller/dot-edit-page-state-controller.module';
 import { DotEditPageViewAsControllerModule } from '@portlets/dot-edit-page/content/components/dot-edit-page-view-as-controller/dot-edit-page-view-as-controller.module';
 import { DotEditPageWorkflowsActionsModule } from '@portlets/dot-edit-page/content/components/dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
 import { DotPageStateService } from '@portlets/dot-edit-page/content/services/dot-page-state/dot-page-state.service';
+import { DotEditPageStateControllerSeoModule } from '@portlets/dot-edit-page/seo/components/dot-edit-page-state-controller-seo/dot-edit-page-state-controller-seo.module';
 import { DotExperimentClassDirective } from '@portlets/shared/directives/dot-experiment-class.directive';
 
 import { DotEditPageToolbarSeoComponent } from './dot-edit-page-toolbar-seo.component';
@@ -165,7 +165,7 @@ describe('DotEditPageToolbarSeoComponent', () => {
                 FormsModule,
                 ToolbarModule,
                 DotEditPageViewAsControllerModule,
-                DotEditPageStateControllerModule,
+                DotEditPageStateControllerSeoModule,
                 DotEditPageInfoSeoModule,
                 DotEditPageWorkflowsActionsModule,
                 DotPipesModule,
@@ -321,10 +321,10 @@ describe('DotEditPageToolbarSeoComponent', () => {
         });
     });
 
-    describe('dot-edit-page-state-controller', () => {
+    describe('dot-edit-page-state-controller-seo', () => {
         it('should have pageState attr', () => {
             fixtureHost.detectChanges();
-            const dotEditPageState = de.query(By.css('dot-edit-page-state-controller'));
+            const dotEditPageState = de.query(By.css('dot-edit-page-state-controller-seo'));
             expect(dotEditPageState.componentInstance.pageState).toBe(mockDotRenderedPageState);
         });
     });
@@ -467,7 +467,7 @@ describe('DotEditPageToolbarSeoComponent', () => {
             it('should emit when showWhatsChanged is true', () => {
                 component.showWhatsChanged = true;
                 fixtureHost.detectChanges();
-                const dotEditPageState = de.query(By.css('dot-edit-page-state-controller'));
+                const dotEditPageState = de.query(By.css('dot-edit-page-state-controller-seo'));
                 dotEditPageState.triggerEventHandler('modeChange', DotPageMode.EDIT);
 
                 expect(component.whatschange.emit).toHaveBeenCalledWith(false);
@@ -476,7 +476,7 @@ describe('DotEditPageToolbarSeoComponent', () => {
             it('should not emit when showWhatsChanged is false', () => {
                 component.showWhatsChanged = false;
                 fixtureHost.detectChanges();
-                const dotEditPageState = de.query(By.css('dot-edit-page-state-controller'));
+                const dotEditPageState = de.query(By.css('dot-edit-page-state-controller-seo'));
                 dotEditPageState.triggerEventHandler('modeChange', DotPageMode.EDIT);
 
                 expect(component.whatschange.emit).not.toHaveBeenCalled();

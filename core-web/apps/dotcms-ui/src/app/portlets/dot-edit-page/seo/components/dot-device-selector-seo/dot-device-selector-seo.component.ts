@@ -55,7 +55,7 @@ export class DotDeviceSelectorSeoComponent implements OnInit, OnChanges {
     }
 
     /**
-     * Track changes in the dropwdown
+     * Track changes in the select
      * @param DotDevice device
      */
     change(device: DotDevice) {

@@ -59,10 +59,32 @@
                 color: #8d92a5;
             }
 
+            .device-list__item--name {
+                line-height: 1;
+            }
+
             &:hover {
                 background-color: var(--gray-scale-100, #f8f8f9);
             }
         }
+
+        .device-list__item.device-list__item-media {
+            width: 252px;
+            height: 40px;
+        }
+    }
+}
+
+.dotDeviceSelector__link--container {
+    display: flex;
+    cursor: pointer;
+    flex-grow: 3;
+    align-items: flex-end;
+    justify-content: flex-end;
+    gap: 16px;
+
+    a {
+        text-decoration: underline;
     }
 }
 
@@ -80,10 +102,12 @@
         &:after {
             content: none;
         }
-
-        .pi {
-            color: #8d92a5;
+        .device-list__item {
+            .pi {
+                color: #8d92a5;
+            }
         }
+
         border-radius: 12px;
         margin-top: 5px;
     }
@@ -91,5 +115,11 @@
     .p-divider.p-component.p-divider-vertical {
         margin: 0;
         color: var(--gray-scale-300, #ebecef);
+    }
+
+    .dotDeviceSelector__link--container {
+        .pi.pi-external-link {
+            color: $color-palette-primary;
+        }
     }
 }

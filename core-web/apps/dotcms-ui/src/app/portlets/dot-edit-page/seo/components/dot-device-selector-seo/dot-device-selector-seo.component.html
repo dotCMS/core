@@ -3,22 +3,31 @@
         <div class="dotDeviceSelector__panel">
             <div class="dotDeviceSelector__header">
                 <h3 class="dotDeviceSelector__header__title">Devices</h3>
+                <p-button icon="pi pi-plus" styleClass="p-button-rounded p-button-text"></p-button>
             </div>
             <div class="dotDeviceSelector__content">
                 <ul class="device-list">
-                    <li class="device-list__item" *ngFor="let option of defaultOptions">
+                    <li
+                        class="device-list__item"
+                        *ngFor="let option of defaultOptions"
+                        (click)="change(option)"
+                    >
                         <i [class]="option.icon" style="font-size: 1rem"></i>
                         <div class="device-list__item--content">
-                            <span>{{ option.name }}</span>
-                            <span class="device-list__item--dimensions"
-                                >{{ option.cssHeight }} x {{ option.cssWidth }}</span
-                            >
+                            <span class="device-list__item--name">{{ option.name }}</span>
+                            <span class="device-list__item--dimensions">
+                                {{ option.cssHeight }} x {{ option.cssWidth }}
+                            </span>
                         </div>
                     </li>
                 </ul>
                 <p-divider layout="vertical"></p-divider>
                 <ul class="device-list">
-                    <li class="device-list__item" *ngFor="let option of options">
+                    <li
+                        class="device-list__item"
+                        *ngFor="let option of options"
+                        (click)="change(option); op.toggle($event)"
+                    >
                         <div class="device-list__item--content">
                             <span>{{ option.name }}</span>
                             <span class="device-list__item--dimensions"
@@ -37,15 +46,15 @@
             </div>
             <div class="dotDeviceSelector__content">
                 <ul class="device-list">
-                    <li class="device-list__item">
+                    <li class="device-list__item device-list__item-media">
                         <i class="pi pi-facebook" style="font-size: 1rem"></i>
                         Facebook
                     </li>
-                    <li class="device-list__item">
+                    <li class="device-list__item device-list__item-media">
                         <i class="pi pi-twitter" style="font-size: 1rem"></i>
                         Twitter
                     </li>
-                    <li class="device-list__item">
+                    <li class="device-list__item device-list__item-media">
                         <i class="pi pi-linkedin" style="font-size: 1rem"></i>
                         Linkedin
                     </li>
@@ -59,12 +68,16 @@
             </div>
             <div class="dotDeviceSelector__content">
                 <ul class="device-list">
-                    <li class="device-list__item">
+                    <li class="device-list__item device-list__item-media">
                         <i class="pi pi-google" style="font-size: 1rem"></i>
                         Google
                     </li>
                 </ul>
             </div>
+        </div>
+        <div class="dotDeviceSelector__link--container">
+            <a class="dotDeviceSelector__link"> Open in New Tab </a>
+            <i class="pi pi-external-link" style="font-size: 1rem"></i>
         </div>
     </div>
 </p-overlayPanel>
