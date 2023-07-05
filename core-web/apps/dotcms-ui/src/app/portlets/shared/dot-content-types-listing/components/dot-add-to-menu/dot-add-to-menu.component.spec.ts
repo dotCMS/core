@@ -157,10 +157,10 @@ describe('DotAddToMenuComponent', () => {
         ).toBe(2);
         expect(
             dotdialog.query(By.css('[data-testId="dotDialogAcceptAction"]')).nativeElement.innerText
-        ).toBe(messageServiceMock.get('add'));
+        ).toBe(messageServiceMock.get('Add'));
         expect(
             dotdialog.query(By.css('[data-testId="dotDialogCancelAction"]')).nativeElement.innerText
-        ).toBe(messageServiceMock.get('cancel'));
+        ).toBe(messageServiceMock.get('Cancel'));
     });
 
     it('should load form values when init', () => {
