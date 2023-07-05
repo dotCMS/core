@@ -14,6 +14,7 @@ import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService, MenuItem } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
 
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
@@ -34,7 +35,7 @@ import {
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow
 } from '@dotcms/dotcms-models';
-import { DotIconModule, UiDotIconButtonModule } from '@dotcms/ui';
+import { DotIconModule } from '@dotcms/ui';
 import {
     cleanUpDialog,
     CoreWebServiceMock,
@@ -143,9 +144,9 @@ describe('DotContentTypesEditComponent', () => {
                 ]),
                 BrowserAnimationsModule,
                 DotIconModule,
-                UiDotIconButtonModule,
                 DotDialogModule,
-                HttpClientTestingModule
+                HttpClientTestingModule,
+                ButtonModule
             ],
             providers: [
                 {

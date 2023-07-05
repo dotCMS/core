@@ -28,7 +28,7 @@ import { DotContentCompareModule } from '@components/dot-content-compare/dot-con
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotMessageDisplayModule } from '@components/dot-message-display/dot-message-display.module';
 import { DotToolbarModule } from '@components/dot-toolbar/dot-toolbar.module';
-import { DotIconModule, UiDotIconButtonModule } from '@dotcms/ui';
+import { DotIconModule } from '@dotcms/ui';
 
 import { DotActionButtonModule } from './view/components/_common/dot-action-button/dot-action-button.module';
 import { DotFieldValidationMessageModule } from './view/components/_common/dot-field-validation-message/dot-file-validation-message.module';
@@ -47,7 +47,6 @@ export const CUSTOM_MODULES = [
     DotActionButtonModule,
     DotContentletEditorModule,
     DotDialogModule,
-    UiDotIconButtonModule,
     DotIconModule,
     DotTextareaContentModule,
     DotWorkflowTaskDetailModule,

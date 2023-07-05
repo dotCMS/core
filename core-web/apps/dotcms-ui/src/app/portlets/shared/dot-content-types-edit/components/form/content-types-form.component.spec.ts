@@ -38,7 +38,7 @@ import {
 } from '@dotcms/data-access';
 import { DotcmsConfigService, LoginService, SiteService } from '@dotcms/dotcms-js';
 import { DotCMSContentTypeLayoutRow, DotCMSSystemActionType } from '@dotcms/dotcms-models';
-import { DotIconModule, UiDotIconButtonModule } from '@dotcms/ui';
+import { DotIconModule } from '@dotcms/ui';
 import {
     dotcmsContentTypeBasicMock,
     dotcmsContentTypeFieldBasicMock,
@@ -166,7 +166,6 @@ describe('ContentTypesFormComponent', () => {
                 DotDirectivesModule,
                 DotFieldHelperModule,
                 DotFieldValidationMessageModule,
-                UiDotIconButtonModule,
                 DotIconModule,
                 DotPageSelectorModule,
                 DotWorkflowsActionsSelectorFieldModule,

@@ -11,7 +11,7 @@ import { DataViewModule } from 'primeng/dataview';
 import { InputTextModule } from 'primeng/inputtext';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 
-import { DotIconModule, UiDotIconButtonModule } from '@dotcms/ui';
+import { DotIconModule } from '@dotcms/ui';
 
 import { SearchableDropdownComponent } from '.';
 
@@ -43,7 +43,6 @@ export default {
                 ButtonModule,
                 CommonModule,
                 DataViewModule,
-                UiDotIconButtonModule,
                 DotIconModule,
                 FormsModule,
                 InputTextModule,

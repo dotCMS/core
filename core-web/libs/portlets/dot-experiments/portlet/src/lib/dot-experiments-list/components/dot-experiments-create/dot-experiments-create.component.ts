@@ -12,7 +12,7 @@ import { SidebarModule } from 'primeng/sidebar';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { DotExperiment, MAX_INPUT_TITLE_LENGTH } from '@dotcms/dotcms-models';
-import { DotFieldRequiredDirective, DotMessagePipeModule, UiDotIconButtonModule } from '@dotcms/ui';
+import { DotFieldRequiredDirective, DotMessagePipeModule } from '@dotcms/ui';
 import { DotSidebarDirective } from '@portlets/shared/directives/dot-sidebar.directive';
 import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sidebar-header.component';
 
@@ -38,7 +38,6 @@ interface CreateForm {
         DotSidebarHeaderComponent,
         DotMessagePipeModule,
         DotFieldValidationMessageModule,
-        UiDotIconButtonModule,
         DotAutofocusModule,
         // PrimeNg
         InputTextareaModule,
