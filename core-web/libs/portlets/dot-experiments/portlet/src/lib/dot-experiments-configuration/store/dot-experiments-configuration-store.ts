@@ -40,6 +40,7 @@ export interface DotExperimentsConfigurationState {
     stepStatusSidebar: StepStatus;
     configProps: Record<string, string>;
     hasEnterpriseLicense: boolean;
+    addToBundleContentId: string;
 }
 
 const initialState: DotExperimentsConfigurationState = {
@@ -51,7 +52,8 @@ const initialState: DotExperimentsConfigurationState = {
         experimentStep: null
     },
     configProps: null,
-    hasEnterpriseLicense: false
+    hasEnterpriseLicense: false,
+    addToBundleContentId: null
 };
 
 export interface ConfigurationViewModel {
@@ -66,6 +68,7 @@ export interface ConfigurationViewModel {
     isSaving: boolean;
     isDescriptionSaving: boolean;
     menuItems: MenuItem[];
+    addToBundleContentId: string;
 }
 
 @Injectable()
@@ -107,8 +110,10 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         ({ stepStatusSidebar }) => checkIfExperimentDescriptionIsSaving(stepStatusSidebar)
     );
 
-    readonly getMenuItems$: Observable<MenuItem[]> = this.select(this.state$, ({ experiment }) =>
-        this.getMenuItems(experiment)
+    readonly getMenuItems$: Observable<MenuItem[]> = this.select(
+        this.state$,
+        ({ experiment, hasEnterpriseLicense }) =>
+            this.getMenuItems(experiment, hasEnterpriseLicense)
     );
 
     // Goals Step //
@@ -213,6 +218,11 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     readonly setTrafficAllocation = this.updater((state, trafficAllocation: number) => ({
         ...state,
         experiment: { ...state.experiment, trafficAllocation }
+    }));
+
+    readonly showAddToBundle = this.updater((state, addToBundleContentId: string) => ({
+        ...state,
+        addToBundleContentId
     }));
 
     // Effects
@@ -726,7 +736,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         this.getIsDescriptionSaving$,
         this.getMenuItems$,
         (
-            { experiment, stepStatusSidebar, hasEnterpriseLicense },
+            { experiment, stepStatusSidebar, hasEnterpriseLicense, addToBundleContentId },
             isExperimentADraft,
             isLoading,
             disabledStartExperiment,
@@ -739,6 +749,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
             experiment,
             stepStatusSidebar,
             hasEnterpriseLicense,
+            addToBundleContentId,
             isExperimentADraft,
             isLoading,
             disabledStartExperiment,
@@ -862,9 +873,6 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     ) {
         const configProps = route.snapshot.data['config'];
         const hasEnterpriseLicense = route.parent.snapshot.data['isEnterprise'];
-        // const hasEnterpriseLicense = true;
-        //debugger;
-        //const  test = {...initialState}
 
         super({ ...initialState, hasEnterpriseLicense, configProps });
     }
@@ -890,7 +898,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         return experiment?.trafficProportion.variants.length < 2 || !experiment?.goals;
     }
 
-    private getMenuItems(experiment: DotExperiment): MenuItem[] {
+    private getMenuItems(experiment: DotExperiment, hasEnterpriseLicense: boolean): MenuItem[] {
         return [
             {
                 label: this.setStartLabel(experiment),
@@ -938,6 +946,11 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                         }
                     });
                 }
+            },
+            {
+                label: this.dotMessageService.get('contenttypes.content.add_to_bundle'),
+                visible: hasEnterpriseLicense,
+                command: () => this.showAddToBundle(experiment.identifier)
             }
         ];
     }

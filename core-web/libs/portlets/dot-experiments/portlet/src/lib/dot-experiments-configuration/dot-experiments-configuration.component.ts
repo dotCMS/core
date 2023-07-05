@@ -32,6 +32,7 @@ import {
 import { DotExperimentsExperimentSummaryComponent } from '../shared/ui/dot-experiments-experiment-summary/dot-experiments-experiment-summary.component';
 import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
 import { DotExperimentsInlineEditTextComponent } from '../shared/ui/dot-experiments-inline-edit-text/dot-experiments-inline-edit-text.component';
+import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 
 @Component({
     standalone: true,
@@ -53,7 +54,8 @@ import { DotExperimentsInlineEditTextComponent } from '../shared/ui/dot-experime
         InplaceModule,
         InputTextModule,
         MenuModule,
-        ConfirmDialogModule
+        ConfirmDialogModule,
+        DotAddToBundleModule
     ],
     selector: 'dot-experiments-configuration',
     templateUrl: './dot-experiments-configuration.component.html',
