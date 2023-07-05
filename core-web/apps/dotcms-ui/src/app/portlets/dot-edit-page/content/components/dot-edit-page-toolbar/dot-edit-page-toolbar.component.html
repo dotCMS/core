@@ -62,18 +62,16 @@
         [url]="pageState.page.pageURI"
     ></dot-edit-page-info>
 
-    <dot-icon-button
+    <p-button
         class="flex gap-3"
         *ngIf="showFavoritePageStar"
-        [icon]="pageState.favoritePage ? 'grade' : 'star_outline'"
-        [ngClass]="{
-            'dot-favorite-page-highlight': pageState.favoritePage
-        }"
+        [icon]="!pageState.favoritePage ? 'pi pi-star' : 'pi pi-star-fill'"
         [pTooltip]="'favoritePage.star.icon.tooltip' | dm"
         (click)="favoritePage.emit(true)"
+        styleClass="p-button-rounded p-button-sm p-button-text"
         data-testId="addFavoritePageButton"
         tooltipPosition="bottom"
-    ></dot-icon-button>
+    ></p-button>
 </ng-template>
 
 <ng-template #defaultHeaderRightTpl>
