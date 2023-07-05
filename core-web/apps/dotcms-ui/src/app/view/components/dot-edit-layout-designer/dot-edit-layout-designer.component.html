@@ -42,7 +42,7 @@
             </button>
         </ng-template>
         <dot-layout-properties [group]="form.get('layout')"></dot-layout-properties>
-        <dot-icon-button [size]="40" (click)="addGridBox()" float icon="add"></dot-icon-button>
+        <p-button (click)="addGridBox()" icon="pi pi-plus" styleClass="p-button-rounded"></p-button>
         <span class="toolbar__sep" *ngIf="!apiLink || saveAsTemplate"></span>
         <button
             class="p-button-outlined"

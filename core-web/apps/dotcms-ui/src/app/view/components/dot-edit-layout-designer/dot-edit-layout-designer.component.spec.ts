@@ -26,7 +26,7 @@ import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router
 import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
 import { DotEventsService, DotMessageService, DotThemesService } from '@dotcms/data-access';
 import { DotTemplateDesigner, DotTheme } from '@dotcms/dotcms-models';
-import { DotMessagePipe, UiDotIconButtonModule } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import {
     cleanUpDialog,
     DotThemesServiceMock,
@@ -111,7 +111,6 @@ describe('DotEditLayoutDesignerComponent', () => {
                 ReactiveFormsModule,
                 RouterTestingModule,
                 TooltipModule,
-                UiDotIconButtonModule,
                 ButtonModule
             ],
             providers: [
