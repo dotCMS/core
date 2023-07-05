@@ -4,12 +4,10 @@ import { NgModule } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 
-import { UiDotIconButtonModule } from '@dotcms/ui';
-
 import { DotDialogComponent } from './dot-dialog.component';
 
 @NgModule({
-    imports: [CommonModule, ButtonModule, CommonModule, DialogModule, UiDotIconButtonModule],
+    imports: [CommonModule, ButtonModule, CommonModule, DialogModule],
     declarations: [DotDialogComponent],
     exports: [DotDialogComponent]
 })
