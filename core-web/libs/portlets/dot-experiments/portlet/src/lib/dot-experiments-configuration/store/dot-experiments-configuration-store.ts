@@ -38,6 +38,7 @@ export interface DotExperimentsConfigurationState {
     status: ComponentStatus;
     stepStatusSidebar: StepStatus;
     configProps: Record<string, string>;
+    hasEnterpriseLicense: boolean;
 }
 
 const initialState: DotExperimentsConfigurationState = {
@@ -48,12 +49,14 @@ const initialState: DotExperimentsConfigurationState = {
         isOpen: false,
         experimentStep: null
     },
-    configProps: null
+    configProps: null,
+    hasEnterpriseLicense: false
 };
 
 export interface ConfigurationViewModel {
     experiment: DotExperiment;
     stepStatusSidebar: StepStatus;
+    hasEnterpriseLicense: boolean;
     isLoading: boolean;
     isExperimentADraft: boolean;
     runExperimentBtnLabel: string;
@@ -726,7 +729,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         this.getExperimentStatus$,
         this.getIsDescriptionSaving$,
         (
-            { experiment, stepStatusSidebar },
+            { experiment, stepStatusSidebar, hasEnterpriseLicense },
             isExperimentADraft,
             runExperimentBtnLabel,
             isLoading,
@@ -738,6 +741,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         ) => ({
             experiment,
             stepStatusSidebar,
+            hasEnterpriseLicense,
             isExperimentADraft,
             runExperimentBtnLabel,
             isLoading,
@@ -859,8 +863,12 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         private readonly route: ActivatedRoute
     ) {
         const configProps = route.snapshot.data['config'];
+        const hasEnterpriseLicense = route.parent.snapshot.data['isEnterprise'];
+        // const hasEnterpriseLicense = true;
+        //debugger;
+        //const  test = {...initialState}
 
-        super({ ...initialState, configProps });
+        super({ ...initialState, hasEnterpriseLicense, configProps });
     }
 
     private updateTabTitle(experiment: DotExperiment) {
