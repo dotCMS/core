@@ -93,14 +93,6 @@ class TestHostComponent {
 }
 
 @Component({
-    selector: 'dot-icon-button',
-    template: ''
-})
-class MockDotIconButtonComponent {
-    @Input() icon: string;
-}
-
-@Component({
     selector: 'dot-global-message',
     template: ''
 })
@@ -153,7 +145,6 @@ describe('DotEditPageToolbarSeoComponent', () => {
             declarations: [
                 TestHostComponent,
                 DotEditPageToolbarSeoComponent,
-                MockDotIconButtonComponent,
                 MockGlobalMessageComponent
             ],
             imports: [
