@@ -9,7 +9,7 @@ import { of } from 'rxjs';
 
 import { ActivatedRoute } from '@angular/router';
 
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { InputNumber, InputNumberModule } from 'primeng/inputnumber';
@@ -62,7 +62,8 @@ describe('DotExperimentsConfigurationTrafficSplitAddComponent', () => {
             {
                 provide: DotMessageService,
                 useValue: messageServiceMock
-            }
+            },
+            mockProvider(ConfirmationService)
         ]
     });
 

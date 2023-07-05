@@ -10,7 +10,7 @@ import { of } from 'rxjs';
 
 import { ActivatedRoute } from '@angular/router';
 
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { DropdownModule } from 'primeng/dropdown';
@@ -70,6 +70,7 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
                 useValue: messageServiceMock
             },
             mockProvider(DotHttpErrorManagerService),
+            mockProvider(ConfirmationService),
             DotMessagePipe
         ]
     });
