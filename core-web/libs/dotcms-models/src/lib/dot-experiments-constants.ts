@@ -223,3 +223,5 @@ export const AllowedActionsByExperimentStatus: Record<
     ],
     ['archive']: [DotExperimentStatus.ENDED]
 };
+
+export const CONFIGURATION_CONFIRM_DIALOG_KEY = 'confirmDialog';
