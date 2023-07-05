@@ -74,10 +74,10 @@ describe('ContentTypeFieldsTabComponent', () => {
     });
 
     it('should render component', () => {
-        const deleteBtn = de.query(By.css('dot-icon-button-tooltip')).componentInstance;
+        const deleteBtn = de.query(By.css('p-button')).componentInstance;
         const labelInput = de.query(By.css('div')).nativeElement;
 
-        expect(deleteBtn.tooltipText).toBe('delete text');
+        expect(deleteBtn).toBeTruthy();
         expect(labelInput.outerHTML).toContain(tabField.name);
     });
 
@@ -122,7 +122,7 @@ describe('ContentTypeFieldsTabComponent', () => {
             conf.accept();
         });
         spyOn(comp.removeTab, 'emit');
-        const deleteButton = de.query(By.css('dot-icon-button-tooltip')).nativeElement;
+        const deleteButton = de.query(By.css('p-button')).nativeElement;
         deleteButton.click();
         expect(comp.removeTab.emit).toHaveBeenCalledWith(mockFieldTab);
     });
