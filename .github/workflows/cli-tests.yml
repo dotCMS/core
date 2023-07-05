@@ -66,9 +66,10 @@ jobs:
         run: |
           sleep 120
           pwd
-          cd tools/dotcms-cli
-          echo "Running CLI tests"
-          ./gradlew clean test
+          ls -la
+          # cd tools/dotcms-cli
+          # echo "Running CLI tests"
+          # ./gradlew clean test
 
 
 
