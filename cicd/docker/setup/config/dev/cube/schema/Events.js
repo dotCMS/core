@@ -53,6 +53,11 @@ cube(`Events`, {
       type: `string`
     },
 
+    runningId: {
+      sql: `runningId`,
+      type: `string`
+    },
+
     variant: {
       sql: `variant`,
       type: `string`

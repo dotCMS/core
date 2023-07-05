@@ -6,6 +6,7 @@ import com.dotcms.analytics.metrics.MetricType;
 import com.dotcms.cube.CubeJSQuery;
 import com.dotcms.cube.filters.Filter.Order;
 import com.dotcms.cube.filters.SimpleFilter.Operator;
+import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Goal;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Goals;
@@ -72,6 +73,10 @@ public enum ExperimentResultQueryFactory {
     }
 
     private static CubeJSQuery createRootQuery(final Experiment experiment) {
+        DotPreconditions.isTrue(experiment.status() == Status.RUNNING, "Experiment must be running");
+
+        final String runningId = experiment.runningIds().getCurrent().orElseThrow().id();
+
         return new CubeJSQuery.Builder()
                 .dimensions("Events.experiment",
                         "Events.variant",
@@ -84,6 +89,7 @@ public enum ExperimentResultQueryFactory {
                 .order("Events.lookBackWindow", Order.ASC)
                 .order("Events.utcTime", Order.ASC)
                 .filter("Events.experiment", Operator.EQUALS, experiment.getIdentifier())
+                .filter("Events.runningId", Operator.EQUALS, runningId)
                 .build();
     }
 
