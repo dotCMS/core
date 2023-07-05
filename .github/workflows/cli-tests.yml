@@ -64,6 +64,7 @@ jobs:
       - name: run-cli-tests
         working-directory: ${{ github.WORKSPACE }}
         run: |
+          sleep 120
           pwd
           cd tools/dotcms-cli
           echo "Running CLI tests"
