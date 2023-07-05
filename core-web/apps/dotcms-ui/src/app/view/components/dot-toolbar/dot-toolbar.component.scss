@@ -9,6 +9,20 @@
                 @include truncate-text;
             }
         }
+
+        p-button {
+            .p-button-icon.pi {
+                color: $white;
+            }
+
+            .p-button:hover {
+                background-color: $color-palette-white-op-30;
+            }
+
+            .p-button:focus {
+                box-shadow: none;
+            }
+        }
     }
 }
 
