@@ -2,6 +2,7 @@ package com.dotmarketing.tag.business;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.TagDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -955,4 +956,19 @@ public class TagAPITest extends IntegrationTestBase {
 		}
 	}
 
+	/**
+	 * Method to test: {@link TagAPI#getTagsInText(String, String)}
+	 * Given scenario: An existing persona tag and provided that persona tag name with a suffix of ":persona"
+	 * Expected result: Should return the existing tag and not create a duplicate with the ":persona" suffix.
+	 */
+	@Test
+	public void getTagsInText_givenTagWithPersonaSuffix_shouldNotCreateDup() throws Exception{
+		final Tag personaTag = new TagDataGen().name("personaTagIT").persona(true)
+				.nextPersisted();
+		final List<Tag> fetchedTags = tagAPI
+				.getTagsInText(personaTag.getTagName()+":persona", defaultHostId);
+
+		assertEquals(personaTag.getTagName(), fetchedTags.get(0).getTagName());
+		assertEquals(personaTag.getTagId(), fetchedTags.get(0).getTagId());
+	}
 }

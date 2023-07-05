@@ -609,7 +609,8 @@ import org.junit.runners.Suite.SuiteClasses;
         ManifestUtilTest.class,
         ZipUtilTest.class,
         PopulateContentletAsJSONJobTest.class,
-        Task230426AlterVarcharLengthOfLockedByColTest.class
+        Task230426AlterVarcharLengthOfLockedByColTest.class,
+        Task230119MigrateContentToProperPersonaTagAndRemoveDupTags.class
 
 })
 public class MainSuite {

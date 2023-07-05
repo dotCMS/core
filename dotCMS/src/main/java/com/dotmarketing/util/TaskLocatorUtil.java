@@ -368,6 +368,7 @@ public class TaskLocatorUtil {
 		final List<Class<?>> ret = new ArrayList<Class<?>>();
 		ret.add(Task230320FixMissingContentletAsJSON.class);
 		ret.add(Task230426AlterVarcharLengthOfLockedByCol.class);
+		ret.add(Task230119MigrateContentToProperPersonaTagAndRemoveDupTags.class);
 		return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
 
