@@ -110,7 +110,8 @@ describe('DotExperimentsConfigurationStore', () => {
                 isOpen: false,
                 experimentStep: null
             },
-            configProps: ACTIVE_ROUTE_MOCK_CONFIG.snapshot.data.config
+            configProps: ACTIVE_ROUTE_MOCK_CONFIG.snapshot.data.config,
+            hasEnterpriseLicense: false
         };
 
         expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_MOCK.id);
