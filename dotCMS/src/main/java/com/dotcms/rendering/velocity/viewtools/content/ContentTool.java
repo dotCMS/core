@@ -3,12 +3,10 @@ package com.dotcms.rendering.velocity.viewtools.content;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
-import com.dotcms.util.TimeMachineUtil;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotcms.visitor.domain.Visitor.AccruedTag;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
@@ -26,15 +24,17 @@ import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.vavr.control.Try;
+import org.apache.velocity.context.Context;
+import org.apache.velocity.tools.view.context.ViewContext;
+import org.apache.velocity.tools.view.tools.ViewTool;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 import java.io.StringWriter;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-import org.apache.velocity.context.Context;
-import org.apache.velocity.tools.view.context.ViewContext;
-import org.apache.velocity.tools.view.tools.ViewTool;
 
 /**
  * The purpose of this class is to provide a way to easily search and interact with content and dotcms
@@ -50,8 +50,6 @@ import org.apache.velocity.tools.view.tools.ViewTool;
  */
 public class ContentTool implements ViewTool {
 
-	private UserWebAPI userAPI;
-
 	private HttpServletRequest req;
 	private User user = null;
 
@@ -61,6 +59,7 @@ public class ContentTool implements ViewTool {
 	private Host currentHost;
 	private PageMode mode;
 	private Language language;
+
 	public void init(Object initData) {
 		this.req = ((ViewContext) initData).getRequest();
 
@@ -75,8 +74,6 @@ public class ContentTool implements ViewTool {
 		EDIT_OR_PREVIEW_MODE=!mode.showLive;
 		if(session!=null){
 			tmDate = (String) session.getAttribute("tm_date");
-			boolean tm=tmDate!=null;
-
 		}
 		try{
 			this.currentHost = WebAPILocator.getHostWebAPI().getCurrentHost(req);
@@ -141,8 +138,8 @@ public class ContentTool implements ViewTool {
 	 * @return  Returns empty List if no results are found
 	 */
 	public List<ContentMap> pull(String query, String limit, String sort){
-        int l = Integer.valueOf(limit);
-        return pull(query, l, sort);
+        final int limitAsInt = Integer.parseInt(limit);
+        return pull(query, limitAsInt, sort);
 	}
 	
 	/**
@@ -642,4 +639,18 @@ public class ContentTool implements ViewTool {
             throw new RuntimeException(ex);
         }
 	}
+
+	/**
+	 * Returns the total times that the specified Contentlet is being referenced in one or more HTML Pages in dotCMS.
+	 *
+	 * @param identifier The Contentlet's Identifier.
+	 *
+	 * @return The total number of Containers that are referencing the specified Contentlet.
+	 */
+	public int getAllContentletReferencesCount(final String identifier) {
+		final Optional<Integer> pageReferences =
+				Try.of(() -> APILocator.getContentletAPI().getAllContentletReferencesCount(identifier)).getOrElse(Optional.empty());
+		return pageReferences.orElse(0);
+	}
+
 }
