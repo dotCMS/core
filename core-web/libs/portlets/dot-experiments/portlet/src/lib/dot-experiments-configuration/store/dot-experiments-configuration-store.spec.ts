@@ -174,7 +174,7 @@ describe('DotExperimentsConfigurationStore', () => {
 
     it('should set Menu items visibility when and experiment if is a DRAFT and has variants and Goal defined', (done) => {
         dotExperimentsService.getById.mockReturnValue(
-            of({ ...EXPERIMENT_MOCK_2, status: DotExperimentStatusList.DRAFT })
+            of({ ...EXPERIMENT_MOCK_2, status: DotExperimentStatus.DRAFT })
         );
 
         spectator.service.loadExperiment(EXPERIMENT_MOCK_2.id);
@@ -190,7 +190,7 @@ describe('DotExperimentsConfigurationStore', () => {
 
     it('should set Menu items visibility when experiment is RUNNING', (done) => {
         dotExperimentsService.getById.mockReturnValue(
-            of({ ...EXPERIMENT_MOCK_2, status: DotExperimentStatusList.RUNNING })
+            of({ ...EXPERIMENT_MOCK_2, status: DotExperimentStatus.RUNNING })
         );
 
         spectator.service.loadExperiment(EXPERIMENT_MOCK_2.id);
@@ -205,7 +205,7 @@ describe('DotExperimentsConfigurationStore', () => {
 
     it('should set Menu items visibility when experiment SCHEDULED ', (done) => {
         dotExperimentsService.getById.mockReturnValue(
-            of({ ...EXPERIMENT_MOCK_2, status: DotExperimentStatusList.SCHEDULED })
+            of({ ...EXPERIMENT_MOCK_2, status: DotExperimentStatus.SCHEDULED })
         );
 
         spectator.service.loadExperiment(EXPERIMENT_MOCK_2.id);
