@@ -55,11 +55,10 @@ describe('DotAlertConfirmService', () => {
         confirmationService = testbed.get(ConfirmationService);
     });
 
-    describe('confirmation', (done) => {
+    describe('confirmation', () => {
         it('should set model and call confirm method in primeng service', fakeAsync(() => {
             jest.spyOn(confirmationService, 'confirm');
             service.confirmDialogOpened$.pipe(take(1)).subscribe((response: boolean) => {
-                done();
                 expect(response).toBe(true);
             });
             service.confirm(mockData);
