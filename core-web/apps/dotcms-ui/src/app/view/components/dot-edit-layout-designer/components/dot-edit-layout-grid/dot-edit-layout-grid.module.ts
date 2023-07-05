@@ -4,9 +4,9 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
-import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { DotContainerSelectorLayoutModule } from '@components/dot-container-selector-layout/dot-container-selector-layout.module';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
@@ -28,7 +28,7 @@ import { DotEditLayoutGridComponent } from './dot-edit-layout-grid.component';
         InputTextModule,
         FormsModule,
         ReactiveFormsModule,
-        UiDotIconButtonTooltipModule,
+        TooltipModule,
         DotAutofocusModule,
         DotPipesModule,
         DotFieldRequiredDirective

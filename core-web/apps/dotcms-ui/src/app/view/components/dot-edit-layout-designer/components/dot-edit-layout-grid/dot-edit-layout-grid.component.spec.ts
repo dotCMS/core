@@ -7,7 +7,9 @@ import { UntypedFormControl, UntypedFormGroup } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
+import { ButtonModule } from 'primeng/button';
+import { TooltipModule } from 'primeng/tooltip';
+
 import { DotContainerSelectorLayoutModule } from '@components/dot-container-selector-layout/dot-container-selector-layout.module';
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
@@ -73,12 +75,6 @@ class DotDialogMockComponent {
     close(): void {}
 }
 
-@Component({
-    selector: 'dot-icon-button',
-    template: ''
-})
-class UiDotIconButtonMockComponent {}
-
 describe('DotEditLayoutGridComponent', () => {
     let component: DotEditLayoutGridComponent;
     let de: DebugElement;
@@ -117,18 +113,14 @@ describe('DotEditLayoutGridComponent', () => {
         });
 
         DOTTestBed.configureTestingModule({
-            declarations: [
-                DotEditLayoutGridComponent,
-                TestHostComponent,
-                DotDialogMockComponent,
-                UiDotIconButtonMockComponent
-            ],
+            declarations: [DotEditLayoutGridComponent, TestHostComponent, DotDialogMockComponent],
             imports: [
                 NgGridModule,
                 DotContainerSelectorLayoutModule,
                 BrowserAnimationsModule,
-                UiDotIconButtonTooltipModule,
-                DotAutofocusModule
+                DotAutofocusModule,
+                ButtonModule,
+                TooltipModule
             ],
             providers: [
                 DotAlertConfirmService,
@@ -344,7 +336,7 @@ describe('DotEditLayoutGridComponent', () => {
                 By.css(
                     type === 'box'
                         ? `.box__add-box-class-button`
-                        : `.box__add-${type}-class-button dot-icon-button-tooltip`
+                        : `.box__add-${type}-class-button p-button`
                 )
             );
 
@@ -381,7 +373,7 @@ describe('DotEditLayoutGridComponent', () => {
         hostComponentfixture.detectChanges();
 
         const addRowClassButtons = hostComponentfixture.debugElement.query(
-            By.css('.box__add-row-class-button dot-icon-button-tooltip')
+            By.css('.box__add-row-class-button p-button')
         );
         addRowClassButtons.triggerEventHandler('click', null);
 
@@ -396,8 +388,9 @@ describe('DotEditLayoutGridComponent', () => {
         spyOn(dotDialog.componentInstance, 'close').and.callThrough();
 
         const addRowClassButtons = hostComponentfixture.debugElement.query(
-            By.css('.box__add-row-class-button dot-icon-button-tooltip')
+            By.css('.box__add-row-class-button p-button')
         );
+
         addRowClassButtons.triggerEventHandler('click', null);
 
         component.form.setValue({ classToAdd: 'test_row_class' });
@@ -423,7 +416,7 @@ describe('DotEditLayoutGridComponent', () => {
         spyOn(dotDialog.componentInstance, 'close').and.callThrough();
 
         const addRowClassButtons = hostComponentfixture.debugElement.query(
-            By.css('.box__add-row-class-button dot-icon-button-tooltip')
+            By.css('.box__add-row-class-button p-button')
         );
         addRowClassButtons.triggerEventHandler('click', null);
 
