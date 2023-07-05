@@ -6,8 +6,9 @@ on:
       - 'tools/dotcms-cli/cli/**'
   push:
     branches:
-      - master
-      - 'release-*'
+      - 22706-configure-gha-for-cli
+      # - master
+      # - 'release-*'
 jobs:
   cli_test:
     name: CLI Tests
