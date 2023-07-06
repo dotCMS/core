@@ -152,11 +152,11 @@ describe('DotEditPageToolbarSeoComponent', () => {
         TestBed.configureTestingModule({
             declarations: [
                 TestHostComponent,
-                DotEditPageToolbarSeoComponent,
                 MockDotIconButtonComponent,
                 MockGlobalMessageComponent
             ],
             imports: [
+                DotEditPageToolbarSeoComponent,
                 HttpClientTestingModule,
                 ButtonModule,
                 CommonModule,
