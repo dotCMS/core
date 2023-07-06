@@ -1,3 +1,4 @@
+import { Location } from '@angular/common';
 import {
     Component,
     EventEmitter,
@@ -46,6 +47,8 @@ export class DotIframeDialogComponent implements OnChanges, OnInit {
     keyWasDown: EventEmitter<KeyboardEvent> = new EventEmitter();
 
     show: boolean;
+
+    constructor(private location: Location) {}
 
     ngOnInit() {
         if (this.beforeClose.observers.length) {
@@ -98,6 +101,7 @@ export class DotIframeDialogComponent implements OnChanges, OnInit {
      * @memberof DotIframeDialogComponent
      */
     onDialogHide(): void {
+        this.location.back();
         this.url = null;
         this.show = false;
         this.header = '';

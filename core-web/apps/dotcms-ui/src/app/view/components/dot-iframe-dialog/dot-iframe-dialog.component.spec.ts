@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { CommonModule, Location } from '@angular/common';
 import { Component, DebugElement } from '@angular/core';
-import { ComponentFixture, waitForAsync } from '@angular/core/testing';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -26,6 +27,7 @@ let dialogComponent: DotDialogComponent;
 let hostDe: DebugElement;
 let dotIframe: DebugElement;
 let dotIframeComponent: IframeComponent;
+let location: Location;
 
 const getTestConfig = (hostComponent) => {
     return {
@@ -34,7 +36,8 @@ const getTestConfig = (hostComponent) => {
             BrowserAnimationsModule,
             IFrameModule,
             RouterTestingModule,
-            UiDotIconButtonModule
+            UiDotIconButtonModule,
+            CommonModule
         ],
         providers: [
             {
@@ -81,9 +84,11 @@ describe('DotIframeDialogComponent', () => {
     describe('no beforeClose set', () => {
         let hostComponent: TestHostComponent;
         let hostFixture: ComponentFixture<TestHostComponent>;
+        let testBed: TestBed;
 
         beforeEach(waitForAsync(() => {
-            DOTTestBed.configureTestingModule(getTestConfig(TestHostComponent));
+            testBed = DOTTestBed.configureTestingModule(getTestConfig(TestHostComponent));
+            location = testBed.inject(Location);
         }));
 
         beforeEach(() => {
@@ -172,6 +177,7 @@ describe('DotIframeDialogComponent', () => {
                     spyOn(component.keyWasDown, 'emit');
                     spyOn(component.charge, 'emit');
                     spyOn(dialog.componentInstance, 'close');
+                    spyOn(location, 'back');
                 });
 
                 describe('dot-iframe', () => {
@@ -220,6 +226,7 @@ describe('DotIframeDialogComponent', () => {
                         expect(component.header).toBe('');
                         expect(component.shutdown.emit).toHaveBeenCalledTimes(1);
                         expect(component.beforeClose.emit).not.toHaveBeenCalled();
+                        expect(location.back).toHaveBeenCalled();
                     });
 
                     it('should NOT emit beforeClose when no observer is set', () => {
