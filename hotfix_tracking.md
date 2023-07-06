@@ -70,3 +70,4 @@ This maintenance release includes the following code fixes:
 55. https://github.com/dotCMS/core/issues/23199 : Unable to create contentlet through workflow API even if user has appropriate permissions #23199
 56. https://github.com/dotCMS/core/issues/23924 : Image editor Download button not working #23924
 57. https://github.com/dotCMS/core/issues/25212 : Unable to edit the template using the layout from edit mode #25212
+58. https://github.com/dotCMS/core/issues/25230 : Block Editor Search not working for special chars #25230
