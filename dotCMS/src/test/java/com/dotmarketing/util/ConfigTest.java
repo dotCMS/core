@@ -60,6 +60,7 @@ public class ConfigTest {
         //This forces a re-load.
         Config.props = null;
         Config.initializeConfig();
+
     }
 
 
@@ -114,7 +115,7 @@ public class ConfigTest {
         final String fictionalProperty = Config.getStringProperty(propertyName);
         assertEquals("var",fictionalProperty);
         EnvironmentVariablesService.getInstance().put("DOT_FICTIONAL_PROPERTY", "foo");
-        Config.props = null; //force props reload
+        Config.getConfigWriter().clearOverrides();
 
         final String fictionalPropertyOverride = Config.getStringProperty(propertyName);
         assertEquals("foo",fictionalPropertyOverride);
@@ -142,7 +143,7 @@ public class ConfigTest {
     @Test
     public void testing_notfound_string_returns() {
 
-
+        //TODO : steve fix for config changes
         assert(Config.getStringProperty("no-property") ==null);
 
 
