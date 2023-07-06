@@ -898,12 +898,14 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
 
     private getMenuItems(experiment: DotExperiment, hasEnterpriseLicense: boolean): MenuItem[] {
         return [
+            // Start experiment
             {
                 label: this.setStartLabel(experiment),
                 visible: experiment?.status === DotExperimentStatus.DRAFT,
                 disabled: this.disableStartExperiment(experiment),
                 command: () => this.startExperiment(experiment)
             },
+            // End experiment
             {
                 label: this.dotMessageService.get('experiments.action.end-experiment'),
                 visible: experiment?.status === DotExperimentStatus.RUNNING,
@@ -924,6 +926,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                     });
                 }
             },
+            // Schedule experiment
             {
                 label: this.dotMessageService.get('experiments.configure.scheduling.cancel'),
                 visible: experiment?.status === DotExperimentStatus.SCHEDULED,
@@ -945,6 +948,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                     });
                 }
             },
+            // Add To bundle experiment
             {
                 label: this.dotMessageService.get('contenttypes.content.add_to_bundle'),
                 visible: hasEnterpriseLicense,

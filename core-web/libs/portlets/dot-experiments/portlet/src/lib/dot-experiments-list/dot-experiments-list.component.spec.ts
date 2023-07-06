@@ -87,7 +87,8 @@ describe('ExperimentsListComponent', () => {
             sidebar: {
                 status: ComponentStatus.IDLE,
                 isOpen: false
-            }
+            },
+            addToBundleContentId: null
         };
         spectator.component.vm$ = of(vmListExperimentsMock$);
         spectator.detectComponentChanges();
@@ -107,7 +108,8 @@ describe('ExperimentsListComponent', () => {
             sidebar: {
                 status: ComponentStatus.IDLE,
                 isOpen: false
-            }
+            },
+            addToBundleContentId: null
         };
         spectator.component.vm$ = of(vmListExperimentsMock$);
         spectator.detectComponentChanges();
@@ -129,7 +131,8 @@ describe('ExperimentsListComponent', () => {
             sidebar: {
                 status: ComponentStatus.IDLE,
                 isOpen: false
-            }
+            },
+            addToBundleContentId: null
         };
         spectator.component.vm$ = of(vmListExperimentsMock$);
         spectator.detectComponentChanges();

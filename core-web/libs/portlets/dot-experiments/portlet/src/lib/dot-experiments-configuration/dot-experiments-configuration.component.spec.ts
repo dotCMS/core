@@ -7,6 +7,7 @@ import {
 } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -16,11 +17,23 @@ import { ConfirmDialog } from 'primeng/confirmdialog';
 import { ConfirmPopup } from 'primeng/confirmpopup';
 import { Menu } from 'primeng/menu';
 
-import { DotMessageService, DotSessionStorageService } from '@dotcms/data-access';
+import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
+import { DotAddToBundleComponent } from '@components/_common/dot-add-to-bundle/dot-add-to-bundle.component';
+import {
+    DotCurrentUserService,
+    DotMessageService,
+    DotSessionStorageService
+} from '@dotcms/data-access';
+import { CoreWebService, CoreWebServiceMock, LoggerService } from '@dotcms/dotcms-js';
 import { ComponentStatus, PROP_NOT_FOUND } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
-import { getExperimentMock, MockDotMessageService } from '@dotcms/utils-testing';
+import {
+    PARENT_RESOLVERS_ACTIVE_ROUTE_DATA,
+    getExperimentMock,
+    MockDotMessageService
+} from '@dotcms/utils-testing';
+import { DotCurrentUserServiceMock } from '@portlets/dot-starter/dot-starter-resolver.service.spec';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotExperimentsConfigurationGoalsComponent } from './components/dot-experiments-configuration-goals/dot-experiments-configuration-goals.component';
@@ -52,7 +65,8 @@ const ActivatedRouteMock = {
                 EXPERIMENTS_MAX_DURATION: PROP_NOT_FOUND
             }
         }
-    }
+    },
+    parent: { ...PARENT_RESOLVERS_ACTIVE_ROUTE_DATA }
 };
 
 const messageServiceMock = new MockDotMessageService({
@@ -73,7 +87,8 @@ const defaultVmMock: ConfigurationViewModel = {
     isSaving: false,
     experimentStatus: null,
     isDescriptionSaving: false,
-    menuItems: null
+    menuItems: null,
+    addToBundleContentId: null
 };
 
 @Component({
@@ -92,6 +107,7 @@ describe('DotExperimentsConfigurationComponent', () => {
     const createComponent = createComponentFactory({
         component: DotExperimentsConfigurationComponent,
         componentProviders: [DotExperimentsConfigurationStore],
+        imports: [DotAddToBundleModule, HttpClientTestingModule],
         providers: [
             ConfirmationService,
             {
@@ -102,7 +118,9 @@ describe('DotExperimentsConfigurationComponent', () => {
                 provide: DotMessageService,
                 useValue: messageServiceMock
             },
-
+            { provide: CoreWebService, useClass: CoreWebServiceMock },
+            { provide: DotCurrentUserService, useClass: DotCurrentUserServiceMock },
+            mockProvider(LoggerService),
             mockProvider(DotExperimentsService),
             mockProvider(MessageService),
             mockProvider(Router),
@@ -180,6 +198,26 @@ describe('DotExperimentsConfigurationComponent', () => {
         expect(dotExperimentsConfigurationStore.stopExperiment).toHaveBeenCalledWith(
             EXPERIMENT_MOCK
         );
+    });
+
+    it('should show and remove add to bundle dialog', () => {
+        spectator.detectChanges();
+
+        spectator.dispatchMouseEvent(spectator.query(byTestId('experiment-button-menu')), 'click');
+        spectator.detectComponentChanges();
+        spectator.query(Menu).model[3].command();
+
+        spectator.detectComponentChanges();
+
+        const addToBundle = spectator.query(DotAddToBundleComponent);
+
+        expect(addToBundle.assetIdentifier).toEqual(EXPERIMENT_MOCK.identifier);
+
+        addToBundle.close();
+
+        spectator.detectComponentChanges();
+
+        expect(spectator.query(DotAddToBundleComponent)).not.toExist();
     });
 
     it('should un schedule the experiment after confirmation', () => {

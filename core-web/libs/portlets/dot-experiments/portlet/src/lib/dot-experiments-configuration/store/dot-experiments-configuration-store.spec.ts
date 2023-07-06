@@ -34,6 +34,7 @@ import {
 import { DotExperimentsService } from '@dotcms/portlets/dot-experiments/data-access';
 import {
     ACTIVE_ROUTE_MOCK_CONFIG,
+    PARENT_RESOLVERS_ACTIVE_ROUTE_DATA,
     getExperimentMock,
     GoalsMock,
     MockDotMessageService
@@ -57,7 +58,8 @@ const ActivatedRouteMock = {
             pageId: EXPERIMENT_MOCK.pageId
         },
         data: ACTIVE_ROUTE_MOCK_CONFIG.snapshot.data
-    }
+    },
+    parent: { ...PARENT_RESOLVERS_ACTIVE_ROUTE_DATA }
 };
 
 const messageServiceMock = new MockDotMessageService({
@@ -120,7 +122,8 @@ describe('DotExperimentsConfigurationStore', () => {
                 experimentStep: null
             },
             configProps: ACTIVE_ROUTE_MOCK_CONFIG.snapshot.data.config,
-            hasEnterpriseLicense: false
+            hasEnterpriseLicense: true,
+            addToBundleContentId: null
         };
 
         expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_MOCK.id);
@@ -181,10 +184,15 @@ describe('DotExperimentsConfigurationStore', () => {
         spectator.service.loadExperiment(EXPERIMENT_MOCK_2.id);
 
         store.vm$.subscribe(({ menuItems }) => {
+            // Start Experiment
             expect(menuItems[0].visible).toEqual(true);
             expect(menuItems[0].disabled).toEqual(false);
+            // End Experiment
             expect(menuItems[1].visible).toEqual(false);
+            // Schedule Experiment
             expect(menuItems[2].visible).toEqual(false);
+            // Add to Bundle
+            expect(menuItems[3].visible).toEqual(true);
             done();
         });
     });
@@ -197,9 +205,14 @@ describe('DotExperimentsConfigurationStore', () => {
         spectator.service.loadExperiment(EXPERIMENT_MOCK_2.id);
 
         store.vm$.subscribe(({ menuItems }) => {
+            // Start Experiment
             expect(menuItems[0].visible).toEqual(false);
+            // End Experiment
             expect(menuItems[1].visible).toEqual(true);
+            // Schedule Experiment
             expect(menuItems[2].visible).toEqual(false);
+            // Add to Bundle
+            expect(menuItems[3].visible).toEqual(true);
             done();
         });
     });
@@ -212,21 +225,33 @@ describe('DotExperimentsConfigurationStore', () => {
         spectator.service.loadExperiment(EXPERIMENT_MOCK_2.id);
 
         store.vm$.subscribe(({ menuItems }) => {
+            // Start Experiment
             expect(menuItems[0].visible).toEqual(false);
+            // End Experiment
             expect(menuItems[1].visible).toEqual(false);
+            // Schedule Experiment
             expect(menuItems[2].visible).toEqual(true);
+            // Add to Bundle
+            expect(menuItems[3].visible).toEqual(true);
             done();
         });
     });
 
     it('should execute commands of menu items', (done) => {
+        jest.spyOn(store, 'showAddToBundle');
         dotExperimentsService.getById.mockReturnValue(of({ ...EXPERIMENT_MOCK }));
 
         spectator.service.loadExperiment(EXPERIMENT_MOCK.id);
 
         store.vm$.pipe(take(1)).subscribe(({ menuItems }) => {
+            // Start Experiment
             menuItems[0].command();
             expect(dotExperimentsService.start).toHaveBeenCalledWith(EXPERIMENT_MOCK.id);
+
+            // Add to Bundle
+            menuItems[3].command();
+            expect(store.showAddToBundle).toHaveBeenCalledWith(EXPERIMENT_MOCK.identifier);
+
             // test the ones with confirm dialog in the DotExperimentsConfigurationComponent.
             done();
         });
