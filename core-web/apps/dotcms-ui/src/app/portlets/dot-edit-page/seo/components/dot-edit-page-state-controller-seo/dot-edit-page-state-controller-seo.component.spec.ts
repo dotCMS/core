@@ -87,7 +87,7 @@ class TestHostComponent {
     variant: DotVariantData;
 }
 
-describe('DotEditPageStateControllerComponent', () => {
+describe('DotEditPageStateControllerSeoComponent', () => {
     let fixtureHost: ComponentFixture<TestHostComponent>;
     let componentHost: TestHostComponent;
     let component: DotEditPageStateControllerSeoComponent;

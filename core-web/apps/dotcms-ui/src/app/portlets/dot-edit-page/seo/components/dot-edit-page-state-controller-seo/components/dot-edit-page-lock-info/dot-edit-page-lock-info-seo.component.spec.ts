@@ -14,7 +14,7 @@ const messageServiceMock = new MockDotMessageService({
     'editpage.toolbar.page.locked.by.user': 'Page is locked by...'
 });
 
-describe('DotEditPageLockInfoComponent', () => {
+describe('DotEditPageLockInfoSeoComponent', () => {
     let component: DotEditPageLockInfoSeoComponent;
     let fixture: ComponentFixture<DotEditPageLockInfoSeoComponent>;
     let de: DebugElement;
