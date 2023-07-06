@@ -5,10 +5,10 @@
 // Main buttons
 
 // Main Buttons sizes
-.p-button:not(.p-button-icon-only) {
+.p-button:not(.p-button-icon-only, .p-splitbutton-defaultbutton, .p-splitbutton-menubutton) {
     gap: $spacing-1;
     padding: 0 $spacing-3;
-    height: $spacing-6;
+    height: 2.5rem;
     border-radius: 0.375rem;
     border: none;
     color: $white;
@@ -31,7 +31,7 @@
     }
 
     &.p-button-lg {
-        height: $spacing-7;
+        height: 3rem;
         border-radius: $border-radius-md;
         font-size: $font-size-lg;
 
@@ -46,7 +46,7 @@
     }
 
     &.p-button-sm {
-        height: $spacing-5;
+        height: 2rem;
         gap: 0.25rem;
         padding: 0 $spacing-1;
         border-radius: 0.25rem;
@@ -64,7 +64,7 @@
 }
 
 // Severity colors for main basic button
-.p-button:enabled {
+.p-button:enabled:not(.p-splitbutton-defaultbutton, .p-splitbutton-menubutton) {
     background-color: $color-palette-primary;
 
     &:hover {
@@ -95,7 +95,7 @@
 }
 
 // Severity for outlined button
-.p-button-outlined:enabled {
+.p-button-outlined:enabled:not(.p-splitbutton-defaultbutton, .p-splitbutton-menubutton) {
     background-color: transparent;
     border: 1.5px solid $color-palette-primary;
     color: $color-palette-primary;
@@ -150,7 +150,7 @@
 }
 
 // Severity for text button
-.p-button-text:enabled {
+.p-button-text:enabled:not(.p-splitbutton-defaultbutton, .p-splitbutton-menubutton) {
     background-color: transparent;
     color: $black;
     overflow: hidden;
@@ -213,10 +213,10 @@
         }
 
         &:hover {
-            background-color: rgb($color-accessible-text-red, 0.08); // Ask about this
+            background-color: rgb($color-accessible-text-red, 0.08);
         }
         &:active {
-            background-color: rgb($color-accessible-text-red, 0.15); // Ask about this
+            background-color: rgb($color-accessible-text-red, 0.15);
         }
         &:focus {
             background-color: transparent;
@@ -226,9 +226,10 @@
 }
 
 // Buttons disabled styles
-.p-button:disabled {
+.p-button:disabled:not(.p-splitbutton-defaultbutton, .p-splitbutton-menubutton) {
     background-color: $color-palette-gray-200;
     color: $color-palette-gray-500;
+    opacity: 1;
 
     .p-button-label,
     .p-button-icon {
@@ -245,9 +246,9 @@
 }
 
 // Icon Only Buttons Sizes
-.p-button-icon-only {
-    height: $spacing-6;
-    width: $spacing-6;
+.p-button-icon-only:not(.p-splitbutton-menubutton) {
+    height: 2.5rem;
+    width: 2.5rem;
     border: none;
 
     .p-button-icon {
@@ -257,8 +258,8 @@
     }
 
     &.p-button-sm {
-        height: $spacing-5;
-        width: $spacing-5;
+        height: 2rem;
+        width: 2rem;
 
         .p-button-icon {
             font-size: $font-size-md;

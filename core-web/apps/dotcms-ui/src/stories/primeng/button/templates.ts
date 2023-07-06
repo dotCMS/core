@@ -777,13 +777,14 @@ export const BasicSplitButtonTemplate = `<div style="display: flex; gap: 24px; f
     <p-splitButton label="Save" [model]="items" styleClass="p-button-lg"></p-splitButton>
     <p-splitButton
         label="Save"
-        icon="pi pi-check"
+        icon="pi pi-save"
         [model]="items"
         styleClass="p-button-lg"
-    ></p-splitButton>
+    >
+    </p-splitButton>
     <p-splitButton
         label="Save"
-        icon="pi pi-check"
+        icon="pi pi-save"
         iconPos="right"
         [model]="items"
         styleClass="p-button-lg"
@@ -792,10 +793,10 @@ export const BasicSplitButtonTemplate = `<div style="display: flex; gap: 24px; f
 </div>
 <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
     <p-splitButton label="Save" [model]="items"></p-splitButton>
-    <p-splitButton label="Save" icon="pi pi-check" [model]="items"></p-splitButton>
+    <p-splitButton label="Save" icon="pi pi-save" [model]="items"></p-splitButton>
     <p-splitButton
         label="Save"
-        icon="pi pi-check"
+        icon="pi pi-save"
         iconPos="right"
         [model]="items"
     ></p-splitButton>
@@ -805,13 +806,13 @@ export const BasicSplitButtonTemplate = `<div style="display: flex; gap: 24px; f
     <p-splitButton label="Save" [model]="items" styleClass="p-button-sm"></p-splitButton>
     <p-splitButton
         label="Save"
-        icon="pi pi-check"
+        icon="pi pi-save"
         [model]="items"
         styleClass="p-button-sm"
     ></p-splitButton>
     <p-splitButton
         label="Save"
-        icon="pi pi-check"
+        icon="pi pi-save"
         iconPos="right"
         [model]="items"
         styleClass="p-button-sm"
@@ -826,13 +827,13 @@ export const BasicSplitButtonTemplate = `<div style="display: flex; gap: 24px; f
     ></p-splitButton>
     <p-splitButton
         label="Save"
-        icon="pi pi-check"
+        icon="pi pi-save"
         [model]="items"
         styleClass="p-button-lg p-button-secondary"
     ></p-splitButton>
     <p-splitButton
         label="Save"
-        icon="pi pi-check"
+        icon="pi pi-save"
         iconPos="right"
         [model]="items"
         styleClass="p-button-lg p-button-secondary"
@@ -847,13 +848,13 @@ export const BasicSplitButtonTemplate = `<div style="display: flex; gap: 24px; f
     <p-splitButton label="Save" [model]="items" styleClass="p-button-secondary"></p-splitButton>
     <p-splitButton
         label="Save"
-        icon="pi pi-check"
+        icon="pi pi-save"
         [model]="items"
         styleClass="p-button-secondary"
     ></p-splitButton>
     <p-splitButton
         label="Save"
-        icon="pi pi-check"
+        icon="pi pi-save"
         iconPos="right"
         [model]="items"
         styleClass="p-button-secondary"
@@ -872,13 +873,13 @@ export const BasicSplitButtonTemplate = `<div style="display: flex; gap: 24px; f
     ></p-splitButton>
     <p-splitButton
         label="Save"
-        icon="pi pi-check"
+        icon="pi pi-save"
         [model]="items"
         styleClass="p-button-sm p-button-secondary"
     ></p-splitButton>
     <p-splitButton
         label="Save"
-        icon="pi pi-check"
+        icon="pi pi-save"
         iconPos="right"
         [model]="items"
         styleClass="p-button-sm p-button-secondary"
@@ -897,13 +898,13 @@ export const OutlinedSplitButtonTemplate = `<div style="display: flex; gap: 24px
     <p-splitButton label="Save" [model]="items" styleClass="p-button-lg p-button-outlined"></p-splitButton>
     <p-splitButton
         label="Save"
-        icon="pi pi-check"
+        icon="pi pi-save"
         [model]="items"
         styleClass="p-button-lg p-button-outlined"
     ></p-splitButton>
     <p-splitButton
         label="Save"
-        icon="pi pi-check"
+        icon="pi pi-save"
         iconPos="right"
         [model]="items"
         styleClass="p-button-lg p-button-outlined"
@@ -918,13 +919,13 @@ export const OutlinedSplitButtonTemplate = `<div style="display: flex; gap: 24px
     <p-splitButton label="Save" [model]="items" styleClass="p-button-outlined"></p-splitButton>
     <p-splitButton
         label="Save"
-        icon="pi pi-check"
+        icon="pi pi-save"
         [model]="items"
         styleClass="p-button-outlined"
     ></p-splitButton>
     <p-splitButton
         label="Save"
-        icon="pi pi-check"
+        icon="pi pi-save"
         iconPos="right"
         [model]="items"
         styleClass="p-button-outlined"
@@ -943,13 +944,13 @@ export const OutlinedSplitButtonTemplate = `<div style="display: flex; gap: 24px
     ></p-splitButton>
     <p-splitButton
         label="Save"
-        icon="pi pi-check"
+        icon="pi pi-save"
         [model]="items"
         styleClass="p-button-sm p-button-outlined"
     ></p-splitButton>
     <p-splitButton
         label="Save"
-        icon="pi pi-check"
+        icon="pi pi-save"
         iconPos="right"
         [model]="items"
         styleClass="p-button-sm p-button-outlined"
@@ -968,13 +969,13 @@ export const OutlinedSplitButtonTemplate = `<div style="display: flex; gap: 24px
     ></p-splitButton>
     <p-splitButton
         label="Save"
-        icon="pi pi-check"
+        icon="pi pi-save"
         [model]="items"
         styleClass="p-button-lg p-button-secondary p-button-outlined"
     ></p-splitButton>
     <p-splitButton
         label="Save"
-        icon="pi pi-check"
+        icon="pi pi-save"
         iconPos="right"
         [model]="items"
         styleClass="p-button-lg p-button-secondary p-button-outlined"
@@ -993,13 +994,13 @@ export const OutlinedSplitButtonTemplate = `<div style="display: flex; gap: 24px
     ></p-splitButton>
     <p-splitButton
         label="Save"
-        icon="pi pi-check"
+        icon="pi pi-save"
         [model]="items"
         styleClass="p-button-secondary p-button-outlined"
     ></p-splitButton>
     <p-splitButton
         label="Save"
-        icon="pi pi-check"
+        icon="pi pi-save"
         iconPos="right"
         [model]="items"
         styleClass="p-button-secondary p-button-outlined"
@@ -1018,13 +1019,13 @@ export const OutlinedSplitButtonTemplate = `<div style="display: flex; gap: 24px
     ></p-splitButton>
     <p-splitButton
         label="Save"
-        icon="pi pi-check"
+        icon="pi pi-save"
         [model]="items"
         styleClass="p-button-sm p-button-secondary p-button-outlined"
     ></p-splitButton>
     <p-splitButton
         label="Save"
-        icon="pi pi-check"
+        icon="pi pi-save"
         iconPos="right"
         [model]="items"
         styleClass="p-button-sm p-button-secondary p-button-outlined"
@@ -1048,13 +1049,13 @@ export const TextSplitButtonTemplate = `<div style="display: flex; gap: 24px; fl
     ></p-splitButton>
     <p-splitButton
         label="Save"
-        icon="pi pi-check"
+        icon="pi pi-save"
         [model]="items"
         styleClass="p-button-lg p-button-text"
     ></p-splitButton>
     <p-splitButton
         label="Save"
-        icon="pi pi-check"
+        icon="pi pi-save"
         iconPos="right"
         [model]="items"
         styleClass="p-button-lg p-button-text"
@@ -1069,13 +1070,13 @@ export const TextSplitButtonTemplate = `<div style="display: flex; gap: 24px; fl
     <p-splitButton label="Save" [model]="items" styleClass="p-button-text"></p-splitButton>
     <p-splitButton
         label="Save"
-        icon="pi pi-check"
+        icon="pi pi-save"
         [model]="items"
         styleClass="p-button-text"
     ></p-splitButton>
     <p-splitButton
         label="Save"
-        icon="pi pi-check"
+        icon="pi pi-save"
         iconPos="right"
         [model]="items"
         styleClass="p-button-text"
@@ -1090,13 +1091,13 @@ export const TextSplitButtonTemplate = `<div style="display: flex; gap: 24px; fl
     ></p-splitButton>
     <p-splitButton
         label="Save"
-        icon="pi pi-check"
+        icon="pi pi-save"
         [model]="items"
         styleClass="p-button-sm p-button-text"
     ></p-splitButton>
     <p-splitButton
         label="Save"
-        icon="pi pi-check"
+        icon="pi pi-save"
         iconPos="right"
         [model]="items"
         styleClass="p-button-sm p-button-text"
@@ -1115,13 +1116,13 @@ export const TextSplitButtonTemplate = `<div style="display: flex; gap: 24px; fl
     ></p-splitButton>
     <p-splitButton
         label="Save"
-        icon="pi pi-check"
+        icon="pi pi-save"
         [model]="items"
         styleClass="p-button-lg p-button-secondary p-button-text"
     ></p-splitButton>
     <p-splitButton
         label="Save"
-        icon="pi pi-check"
+        icon="pi pi-save"
         iconPos="right"
         [model]="items"
         styleClass="p-button-lg p-button-secondary p-button-text"
@@ -1140,13 +1141,13 @@ export const TextSplitButtonTemplate = `<div style="display: flex; gap: 24px; fl
     ></p-splitButton>
     <p-splitButton
         label="Save"
-        icon="pi pi-check"
+        icon="pi pi-save"
         [model]="items"
         styleClass="p-button-secondary p-button-text"
     ></p-splitButton>
     <p-splitButton
         label="Save"
-        icon="pi pi-check"
+        icon="pi pi-save"
         iconPos="right"
         [model]="items"
         styleClass="p-button-secondary p-button-text"
@@ -1165,13 +1166,13 @@ export const TextSplitButtonTemplate = `<div style="display: flex; gap: 24px; fl
     ></p-splitButton>
     <p-splitButton
         label="Save"
-        icon="pi pi-check"
+        icon="pi pi-save"
         [model]="items"
         styleClass="p-button-sm p-button-secondary p-button-text"
     ></p-splitButton>
     <p-splitButton
         label="Save"
-        icon="pi pi-check"
+        icon="pi pi-save"
         iconPos="right"
         [model]="items"
         styleClass="p-button-sm p-button-secondary p-button-text"
@@ -1184,19 +1185,19 @@ export const TextSplitButtonTemplate = `<div style="display: flex; gap: 24px; fl
 </div>
 <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
     <p-splitButton
-        label="Save"
+        label="Remove"
         [model]="items"
         styleClass="p-button-lg p-button-danger p-button-text"
     ></p-splitButton>
     <p-splitButton
-        label="Save"
-        icon="pi pi-check"
+        label="Remove"
+        icon="pi pi-trash"
         [model]="items"
         styleClass="p-button-lg p-button-danger p-button-text"
     ></p-splitButton>
     <p-splitButton
-        label="Save"
-        icon="pi pi-check"
+        label="Remove"
+        icon="pi pi-trash"
         iconPos="right"
         [model]="items"
         styleClass="p-button-lg p-button-danger p-button-text"
@@ -1209,19 +1210,19 @@ export const TextSplitButtonTemplate = `<div style="display: flex; gap: 24px; fl
 </div>
 <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
     <p-splitButton
-        label="Save"
+        label="Remove"
         [model]="items"
         styleClass="p-button-danger p-button-text"
     ></p-splitButton>
     <p-splitButton
-        label="Save"
-        icon="pi pi-check"
+        label="Remove"
+        icon="pi pi-trash"
         [model]="items"
         styleClass="p-button-danger p-button-text"
     ></p-splitButton>
     <p-splitButton
-        label="Save"
-        icon="pi pi-check"
+        label="Remove"
+        icon="pi pi-trash"
         iconPos="right"
         [model]="items"
         styleClass="p-button-danger p-button-text"
@@ -1234,19 +1235,19 @@ export const TextSplitButtonTemplate = `<div style="display: flex; gap: 24px; fl
 </div>
 <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
     <p-splitButton
-        label="Save"
+        label="Remove"
         [model]="items"
         styleClass="p-button-sm p-button-danger p-button-text"
     ></p-splitButton>
     <p-splitButton
-        label="Save"
-        icon="pi pi-check"
+        label="Remove"
+        icon="pi pi-trash"
         [model]="items"
         styleClass="p-button-sm p-button-danger p-button-text"
     ></p-splitButton>
     <p-splitButton
-        label="Save"
-        icon="pi pi-check"
+        label="Remove"
+        icon="pi pi-trash"
         iconPos="right"
         [model]="items"
         styleClass="p-button-sm p-button-danger p-button-text"
