@@ -6,32 +6,30 @@
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    border-radius: 6px;
-    border: 1px solid var(--gray-scale-300, #ebecef);
+    border-radius: $border-radius-md;
+    border: 1px solid $color-palette-gray-300;
 }
 
 .dotDeviceSelector__header {
     display: flex;
-    height: 40px;
-    padding: 8px 16px;
+    height: 2.5rem;
+    padding: $spacing-1 $spacing-3;
     justify-content: space-between;
     align-items: center;
     align-self: stretch;
 
-    background: var(--gray-scale-200, #f4f4f6);
+    background: $color-palette-gray-200;
 }
 
-.dotDeviceSelector__header__title {
-    color: var(--black, #14151a);
-    /* Heading/XS/Semi Bold */
-    font-size: 20px;
+.dotDeviceSelector__header-title {
+    font-size: 1.25rem;
     font-style: normal;
     font-weight: 500;
     line-height: 140%;
 }
 
 .dotDeviceSelector__column {
-    gap: 16px;
+    gap: 1rem;
     display: flex;
     flex-direction: column;
 }
@@ -44,19 +42,19 @@
         .device-list__item {
             display: flex;
             list-style: none;
-            width: 252px;
-            height: 58px;
-            padding: 8px 16px 8px 16px;
-            gap: 8px;
+            width: 15.75rem;
+            height: 3.625rem;
+            padding: $spacing-1 $spacing-3 $spacing-1 $spacing-3;
+            gap: 0.5rem;
             cursor: pointer;
 
-            .device-list__item--content {
+            .device-list__item__content {
                 display: flex;
                 flex-direction: column;
             }
 
-            .device-list__item--dimensions {
-                color: #8d92a5;
+            .device-list__item__dimensions {
+                color: $color-palette-gray-600;
             }
 
             .device-list__item--name {
@@ -64,13 +62,13 @@
             }
 
             &:hover {
-                background-color: var(--gray-scale-100, #f8f8f9);
+                background-color: $color-palette-gray-100;
             }
         }
 
         .device-list__item.device-list__item-media {
-            width: 252px;
-            height: 40px;
+            width: 15.75rem;
+            height: 2.5rem;
         }
     }
 }
@@ -81,7 +79,7 @@
     flex-grow: 3;
     align-items: flex-end;
     justify-content: flex-end;
-    gap: 16px;
+    gap: 1rem;
 
     a {
         text-decoration: underline;
@@ -92,29 +90,22 @@
     .p-overlaypanel.dotDeviceSelector__overlayPanel {
         .p-overlaypanel-content {
             display: flex;
-            gap: 16px;
+            gap: 1rem;
         }
 
-        &:before {
-            content: none;
-        }
-
-        &:after {
-            content: none;
-        }
         .device-list__item {
             .pi {
-                color: #8d92a5;
+                color: $color-palette-gray-600;
             }
         }
 
-        border-radius: 12px;
+        border-radius: 0.75rem;
         margin-top: 5px;
     }
 
     .p-divider.p-component.p-divider-vertical {
         margin: 0;
-        color: var(--gray-scale-300, #ebecef);
+        color: $color-palette-gray-300;
     }
 
     .dotDeviceSelector__link--container {

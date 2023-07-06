@@ -2,7 +2,7 @@
     <div class="dotDeviceSelector__column">
         <div class="dotDeviceSelector__panel">
             <div class="dotDeviceSelector__header">
-                <h3 class="dotDeviceSelector__header__title">Devices</h3>
+                <h3 class="dotDeviceSelector__header-title">Devices</h3>
                 <p-button icon="pi pi-plus" styleClass="p-button-rounded p-button-text"></p-button>
             </div>
             <div class="dotDeviceSelector__content">
@@ -28,9 +28,9 @@
                         *ngFor="let option of options"
                         (click)="change(option); op.toggle($event)"
                     >
-                        <div class="device-list__item--content">
+                        <div class="device-list__item__content">
                             <span>{{ option.name }}</span>
-                            <span class="device-list__item--dimensions"
+                            <span class="device-list__item__dimensions"
                                 >{{ option.cssHeight }} x {{ option.cssWidth }}</span
                             >
                         </div>
@@ -42,7 +42,7 @@
     <div class="dotDeviceSelector__column">
         <div class="dotDeviceSelector__panel">
             <div class="dotDeviceSelector__header">
-                <h3 class="dotDeviceSelector__header__title">Social Media Tiles</h3>
+                <h3 class="dotDeviceSelector__header-title">Social Media Tiles</h3>
             </div>
             <div class="dotDeviceSelector__content">
                 <ul class="device-list">
@@ -64,7 +64,7 @@
 
         <div class="dotDeviceSelector__panel">
             <div class="dotDeviceSelector__header">
-                <h3 class="dotDeviceSelector__header__title">Search Engine Results Pages</h3>
+                <h3 class="dotDeviceSelector__header-title">Search Engine Results Pages</h3>
             </div>
             <div class="dotDeviceSelector__content">
                 <ul class="device-list">
