@@ -804,6 +804,10 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             updateHTMLPageVersionTS(pageId, variantId);
             refreshPageInCache(pageId,variantId );
         }
+        if (!variants.contains(VariantAPI.DEFAULT_VARIANT.name())) {
+            updateHTMLPageVersionTS(pageId, VariantAPI.DEFAULT_VARIANT.name());
+            refreshPageInCache(pageId, VariantAPI.DEFAULT_VARIANT.name() );
+        }
     }
 
     @Override

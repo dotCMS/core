@@ -69,3 +69,4 @@ This maintenance release includes the following code fixes:
 54. https://github.com/dotCMS/core/issues/23175 : Add a "Velocity Secrets" app and viewtool #23175
 55. https://github.com/dotCMS/core/issues/23199 : Unable to create contentlet through workflow API even if user has appropriate permissions #23199
 56. https://github.com/dotCMS/core/issues/23924 : Image editor Download button not working #23924
+57. https://github.com/dotCMS/core/issues/25212 : Unable to edit the template using the layout from edit mode #25212
